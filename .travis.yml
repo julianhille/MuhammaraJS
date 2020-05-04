@@ -24,6 +24,7 @@ env:
     - NODE_NVM_VERSION="10.8.0"
     - NODE_NVM_VERSION="11.2.0"
     - NODE_NVM_VERSION="12.0.0"
+    - NODE_NVM_VERSION="13.0.0"
     - ELECTRON_VERSION="2.0.7" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="3.0.10" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="3.1.11" ELECTRON_MOCHA=true
@@ -32,10 +33,16 @@ env:
     - ELECTRON_VERSION="4.2.8" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="5.0.9" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="6.0.2" ELECTRON_MOCHA=true
+    - ELECTRON_VERSION="6.1.10" ELECTRON_MOCHA=true
+    - ELECTRON_VERSION="7.1.14" ELECTRON_MOCHA=true
+    - ELECTRON_VERSION="8.0.3" ELECTRON_MOCHA=true
+    - ELECTRON_VERSION="8.1.1" ELECTRON_MOCHA=true
+    - ELECTRON_VERSION="8.2.5" ELECTRON_MOCHA=true
     - MUSL=true NODE_NVM_VERSION="9.11.1"
     - MUSL=true NODE_NVM_VERSION="10.8.0"
     - MUSL=true NODE_NVM_VERSION="11.2.0"
     - MUSL=true NODE_NVM_VERSION="12.0.0"
+    - MUSL=true NODE_NVM_VERSION="13.0.0"
 matrix:
   exclude:
     - os: osx
@@ -46,6 +53,24 @@ matrix:
       env: MUSL=true NODE_NVM_VERSION="11.2.0"
     - os: linux
       env: ELECTRON_VERSION="2.0.7" ELECTRON_MOCHA=true
+    - os: linux
+      env: ELECTRON_VERSION="3.0.10" ELECTRON_MOCHA=true
+    - os: linux
+      env: ELECTRON_VERSION="4.1.5" ELECTRON_MOCHA=true
+    - os: linux
+      env: ELECTRON_VERSION="5.0.0" ELECTRON_MOCHA=true
+    - os: linux
+      env: ELECTRON_VERSION="6.0.2" ELECTRON_MOCHA=true
+    - os: linux
+      env: ELECTRON_VERSION="6.1.10" ELECTRON_MOCHA=true
+    - os: linux
+      env: ELECTRON_VERSION="7.1.14" ELECTRON_MOCHA=true
+    - os: linux
+      env: ELECTRON_VERSION="8.0.3" ELECTRON_MOCHA=true
+    - os: linux
+      env: ELECTRON_VERSION="8.1.1" ELECTRON_MOCHA=true
+    - os: linux
+      env: ELECTRON_VERSION="8.2.5" ELECTRON_MOCHA=true
 before_install:
   - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
   - if [[ $ELECTRON_VERSION ]]; then
