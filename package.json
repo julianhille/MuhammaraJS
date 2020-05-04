@@ -30,7 +30,7 @@
     "PDFWStreamForBuffer.js"
   ],
   "dependencies": {
-    "node-pre-gyp": "^0.10.0"
+    "node-pre-gyp": "^0.14.0"
   },
   "bundledDependencies": [
     "node-pre-gyp"
