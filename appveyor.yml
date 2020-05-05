@@ -51,16 +51,18 @@ platform:
 install:
   - scripts\build-appveyor.bat
 
+artifacts:
+  - path: 'build\stage\*.gz'
+
 build: OFF
 test: OFF
 deploy:
   description: $(APPVEYOR_REPO_TAG_NAME)
   provider: GitHub
   auth_token:
-    secure: vnkvX42UeMmuBusEVcqjxmIsxuH8fQ0rJTbKo5OuRzaNeZuUJ99IeUSBSTev1SL7
-  artifact: build/stage/.*\.gz/            # upload all NuGet packages to release assets
+    secure: l0ICngcMXBN6Zb6Mu+r1CyseqTkMdo/KIJdQkpw7mS/GALPYumZ5FUXKZjSB3l2g
+  artifact: /.*\.gz/
   draft: false
   prerelease: true
   on:
     APPVEYOR_REPO_TAG: true        # deploy on tag push only
-    #branch: master                 # release from master branch only
