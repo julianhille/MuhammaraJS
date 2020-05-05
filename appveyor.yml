@@ -1,8 +1,4 @@
 environment:
-  node_pre_gyp_accessKeyId:
-    secure: J0Bhc089DjlB2VE7Y4SiR5yex1cYeYscC6sXc5+wUMg=
-  node_pre_gyp_secretAccessKey:
-    secure: RJGlxPP+hUt/pVbY4vBUWW21uGInC8pbyiQ6wz+8cS20k3cQtpnxs9HNFUI4KfBS
   matrix:
     - nodejs_version: 6
     - nodejs_version: 7
@@ -57,4 +53,14 @@ install:
 
 build: OFF
 test: OFF
-deploy: OFF
+deploy:
+  description: $(APPVEYOR_REPO_TAG_NAME)
+  provider: GitHub
+  auth_token:
+    secure: vnkvX42UeMmuBusEVcqjxmIsxuH8fQ0rJTbKo5OuRzaNeZuUJ99IeUSBSTev1SL7
+  artifact: build/stage/.*\.gz/            # upload all NuGet packages to release assets
+  draft: false
+  prerelease: true
+  on:
+    APPVEYOR_REPO_TAG: true        # deploy on tag push only
+    #branch: master                 # release from master branch only
