@@ -16,7 +16,7 @@ with the following changes.
 
 * Store releases @github
 * Listen for tags instead of a commit message
-* Added node v13, electron 6.1, 7.1, 8.0, 8.1, 8.2
+* Added node v13, v14, electron 6.1, 7.1, 7.2, 8.0, 8.1, 8.2
 
 ### Fixed
 
