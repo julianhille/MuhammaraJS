@@ -1,9 +1,9 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 var assert = require('chai').assert;
 
 describe('ImageTypeTest', function() {
 	it('should complete without error and read fields correctly', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/DummyEmptyFile.pdf',{version:hummus.ePDFVersion14});
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/DummyEmptyFile.pdf',{version:muhammara.ePDFVersion14});
 		
 		// just using it for the pdfWriter instance. now check different image types
 		assert.equal(pdfWriter.getImageType(__dirname + '/TestMaterials/images/otherStage.JPG'), 'JPEG', 'jpg image type');

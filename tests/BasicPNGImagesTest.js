@@ -1,6 +1,6 @@
 describe('BasicPNGImagesTest', function() {
     it('should complete without error', function() {
-        var pdfWriter = require('../hummus').createWriter(__dirname + '/output/BasicPNGImagesTest.pdf',{log:__dirname + '/output/BasicPNGImagesTest.log'});
+        var pdfWriter = require('../muhammara').createWriter(__dirname + '/output/BasicPNGImagesTest.pdf',{log:__dirname + '/output/BasicPNGImagesTest.log'});
 
         var pathFillOptions = {color:0xFF0000, colorspace:'rgb', type:'fill'};
         var imageOptions = {transformation:[0.5,0,0,0.5,0,0]}

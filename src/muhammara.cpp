@@ -1,5 +1,5 @@
 /*
- Source File : Hummus
+ Source File : Muhammara
  
  
  Copyright 2013 Gal Kahana HummusJS
@@ -161,7 +161,7 @@ METHOD_RETURN_TYPE CreateWriter(const ARGS_TYPE& args)
 }
 
 /*
-    hummus.recrypt(
+    muhammara.recrypt(
         inOriginalPath/inOriginalStream,
         inNewPath/inNewStream,
         [options])
@@ -532,7 +532,7 @@ METHOD_RETURN_TYPE GetTypeLabel(const ARGS_TYPE& args)
     SET_FUNCTION_RETURN_VALUE(result)
 }
 
-DEF_INIT(HummusInit) {
+DEF_INIT(MuhammaraInit) {
 	CREATE_ISOLATE_CONTEXT;
     
     DECLARE_EXTERNAL(ConstructorsHolder)   
@@ -646,4 +646,4 @@ DEF_INIT(HummusInit) {
     EXPORTS_SET(exports,NEW_SYMBOL("EInfoTrappedUnknown"),NEW_NUMBER(EInfoTrappedUnknown))
 }
 
-NODES_MODULE(hummus, HummusInit)
+NODES_MODULE(muhammara, MuhammaraInit)

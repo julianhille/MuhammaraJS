@@ -1,11 +1,11 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 describe('BasicModificationWithStreams', function() {
 	it('should complete without error', function() {
-		var inStream = new hummus.PDFRStreamForFile(__dirname + '/TestMaterials/MultipleChange.pdf');
-		var outStream = new hummus.PDFWStreamForFile(__dirname + '/output/BasicModificationWithStreams.pdf');
-		var pdfWriter = hummus.createWriterToModify(inStream,outStream);
-		var pageModifier = new hummus.PDFPageModifier(pdfWriter, 0);
+		var inStream = new muhammara.PDFRStreamForFile(__dirname + '/TestMaterials/MultipleChange.pdf');
+		var outStream = new muhammara.PDFWStreamForFile(__dirname + '/output/BasicModificationWithStreams.pdf');
+		var pdfWriter = muhammara.createWriterToModify(inStream,outStream);
+		var pageModifier = new muhammara.PDFPageModifier(pdfWriter, 0);
 
 		pageModifier.startContext().getContext().writeText('Some added Text', 75, 805, {
 			font: pdfWriter.getFontForFile(__dirname + '/TestMaterials/fonts/Couri.ttf'),

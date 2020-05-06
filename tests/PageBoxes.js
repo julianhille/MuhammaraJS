@@ -1,9 +1,9 @@
-var hummus = require('../hummus'),
+var muhammara = require('../muhammara'),
 	assert = require('chai').assert;
 
 describe('PagesBoxes', function() {
 	it('should complete without error', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/PageBoxes.pdf',{version:hummus.ePDFVersion14});
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/PageBoxes.pdf',{version:muhammara.ePDFVersion14});
 		var page = pdfWriter.createPage();
 
 		page.mediaBox = [0,0,595,842];

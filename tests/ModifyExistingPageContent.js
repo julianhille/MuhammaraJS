@@ -1,12 +1,12 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 describe('ModifyExistingPageContent', function() {
 	it('should complete without error', function() {
-		var pdfWriter = hummus.createWriterToModify(__dirname + '/TestMaterials/BasicJPGImagesTest.PDF', {
+		var pdfWriter = muhammara.createWriterToModify(__dirname + '/TestMaterials/BasicJPGImagesTest.PDF', {
 			modifiedFilePath: __dirname + '/output/BasicJPGImagesTestPageModified.pdf'
 		});
 
-		var pageModifier = new hummus.PDFPageModifier(pdfWriter,0);
+		var pageModifier = new muhammara.PDFPageModifier(pdfWriter,0);
 		pageModifier.startContext().getContext().writeText(
 			'Test Text',
 			75, 805,

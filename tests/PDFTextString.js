@@ -1,4 +1,4 @@
-var PDFTextString = require('../hummus').PDFTextString;
+var PDFTextString = require('../muhammara').PDFTextString;
 var assert = require('chai').assert;
 
 describe('PDFTextString', function() {

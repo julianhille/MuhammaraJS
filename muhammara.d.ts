@@ -1,4 +1,4 @@
-declare module 'hummus' {
+declare module 'muhammara' {
   export type PosX = number;
   export type PosY = number;
   export type Width = number;

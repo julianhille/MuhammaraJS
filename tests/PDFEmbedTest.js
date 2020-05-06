@@ -1,9 +1,9 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 describe('PDFEmbedTest', function() {
 	it('should complete without error', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/PDFEmbedTest.pdf');
-		var formIDs = pdfWriter.createFormXObjectsFromPDF(__dirname + '/TestMaterials/XObjectContent.PDF',hummus.ePDFPageBoxMediaBox);
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/PDFEmbedTest.pdf');
+		var formIDs = pdfWriter.createFormXObjectsFromPDF(__dirname + '/TestMaterials/XObjectContent.PDF',muhammara.ePDFPageBoxMediaBox);
 		var page = pdfWriter.createPage(0,0,595,842);
 
 		pdfWriter.startPageContentContext(page)

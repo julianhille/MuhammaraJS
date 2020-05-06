@@ -1,8 +1,8 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 describe('FormXObjectTest', function() {
 	it('should complete without error', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/XObjectContent.pdf');
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/XObjectContent.pdf');
 		var page = pdfWriter.createPage(0,0,595,842);
 		var pageContent = pdfWriter.startPageContentContext(page);
 

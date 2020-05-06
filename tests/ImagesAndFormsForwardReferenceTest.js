@@ -1,8 +1,8 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 describe('ImagesAndFormsForwardReferenceTest', function() {
 	it('should complete without error', function() {
-		var pdfWriter = hummus.createWriter(__dirname+'/output/ImagesAndFormsForwardReferenceTest.PDF');
+		var pdfWriter = muhammara.createWriter(__dirname+'/output/ImagesAndFormsForwardReferenceTest.PDF');
 		var page = pdfWriter.createPage(0,0,595,840);
 		var pageContentContext = pdfWriter.startPageContentContext(page);
 
@@ -13,9 +13,9 @@ describe('ImagesAndFormsForwardReferenceTest', function() {
 		pageContentContext.doXObject(page.getResourcesDictionary().addImageXObjectMapping(imageXObjectID));
 
 		// add required PDF procsets for image
-		page.getResourcesDictionary().addProcsetResource(hummus.KProcsetImageB);
-		page.getResourcesDictionary().addProcsetResource(hummus.KProcsetImageC);
-		page.getResourcesDictionary().addProcsetResource(hummus.KProcsetImageI);
+		page.getResourcesDictionary().addProcsetResource(muhammara.KProcsetImageB);
+		page.getResourcesDictionary().addProcsetResource(muhammara.KProcsetImageC);
+		page.getResourcesDictionary().addProcsetResource(muhammara.KProcsetImageI);
 
 		pageContentContext.Q().q().cm(1,0,0,1,0,400);
 

@@ -1,4 +1,4 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 // [look...not gonna write it 100% right...you JS experts can probably write this better]
 // PDFComment object
@@ -53,7 +53,7 @@ PDFCommentWriter.prototype._writeCommentsTree = function(inComment) {
 
 	objectsContext.startArray();
 	inComment.color.forEach(function(element,index,array){objectsContext.writeNumber(element/255);});
-	objectsContext.endArray(hummus.eTokenSeparatorEndLine);
+	objectsContext.endArray(muhammara.eTokenSeparatorEndLine);
 
 	dictionaryContext
 		.writeKey('T')
@@ -119,7 +119,7 @@ describe('ModifyingExistingFileContent', function() {
 	var inPDFWriter;
 
 	before(function() {
-		inPDFWriter = hummus.createWriterToModify(__dirname + '/TestMaterials/AddedPage.pdf',
+		inPDFWriter = muhammara.createWriterToModify(__dirname + '/TestMaterials/AddedPage.pdf',
 			{modifiedFilePath:__dirname + '/output/ModifyingExistingFileContent.pdf'});
 	});
 	describe('page size modification', function() {

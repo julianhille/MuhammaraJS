@@ -5,9 +5,9 @@ var app = express();
 app.get('/', function(req, res){
         res.writeHead(200, {'Content-Type': 'application/pdf'});
         
-        var hummus = require('hummus');
+        var muhammara = require('muhammara');
         
-        var pdfWriter = hummus.createWriter(new hummus.PDFStreamForResponse(res));
+        var pdfWriter = muhammara.createWriter(new muhammara.PDFStreamForResponse(res));
         var page = pdfWriter.createPage(0,0,595,842);
         pdfWriter.startPageContentContext(page).writeText('Hello ' + (req.query.id ? req.query.id : 'World'),
                                                           0,400,

@@ -1,10 +1,10 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 var assert = require('chai').assert;
 var fs = require('fs');
 
 describe('ParseInfo', function() {
 	it('should read fields correctly', function() {
-		var pdfReader = hummus.createReader(__dirname + '/TestMaterials/SettingInfoValues.pdf');
+		var pdfReader = muhammara.createReader(__dirname + '/TestMaterials/SettingInfoValues.pdf');
 		var info = pdfReader.queryDictionaryObject(pdfReader.getTrailer(), "Info").toJSObject();
 
 		assert.equal(info.Author.value, 'Gal Kahana', 'author value');

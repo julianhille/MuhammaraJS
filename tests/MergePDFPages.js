@@ -1,15 +1,15 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 describe('MergePDFPages', function() {
 
 	describe('OnlyMerge', function() {
 		it('should complete without error', function() {
-			var pdfWriter = hummus.createWriter(__dirname + '/output/TestOnlyMerge.pdf');
+			var pdfWriter = muhammara.createWriter(__dirname + '/output/TestOnlyMerge.pdf');
 			var page = pdfWriter.createPage(0,0,595,842);
 
 			pdfWriter.mergePDFPagesToPage(page,
 				__dirname + '/TestMaterials/BasicTIFFImagesTest.PDF',
-				{type:hummus.eRangeTypeSpecific,specificRanges:[[0,0]]})
+				{type:muhammara.eRangeTypeSpecific,specificRanges:[[0,0]]})
 
 			pdfWriter.writePage(page).end();
 		});
@@ -17,7 +17,7 @@ describe('MergePDFPages', function() {
 
 	describe('PrefixGraphicsMerge', function() {
 		it('should complete without error', function() {
-			var pdfWriter = hummus.createWriter(__dirname + '/output/TestPrefixGraphicsMerge.pdf');
+			var pdfWriter = muhammara.createWriter(__dirname + '/output/TestPrefixGraphicsMerge.pdf');
 			var page = pdfWriter.createPage(0,0,595,842);
 
 			pdfWriter.startPageContentContext(page)
@@ -31,7 +31,7 @@ describe('MergePDFPages', function() {
 
 			pdfWriter.mergePDFPagesToPage(page,
 				__dirname + '/TestMaterials/BasicTIFFImagesTest.PDF',
-				{type:hummus.eRangeTypeSpecific,specificRanges:[[0,0]]});
+				{type:muhammara.eRangeTypeSpecific,specificRanges:[[0,0]]});
 
 			pdfWriter.writePage(page).end();
 		});
@@ -39,12 +39,12 @@ describe('MergePDFPages', function() {
 
 	describe('SuffixGraphicsMerge', function() {
 		it('should complete without error', function() {
-			var pdfWriter = hummus.createWriter(__dirname + '/output/TestSuffixGraphicsMerge.pdf');
+			var pdfWriter = muhammara.createWriter(__dirname + '/output/TestSuffixGraphicsMerge.pdf');
 			var page = pdfWriter.createPage(0,0,595,842);
 
 			pdfWriter.mergePDFPagesToPage(page,
 				__dirname + '/TestMaterials/BasicTIFFImagesTest.PDF',
-				{type:hummus.eRangeTypeSpecific,specificRanges:[[0,0]]});
+				{type:muhammara.eRangeTypeSpecific,specificRanges:[[0,0]]});
 
 			pdfWriter.startPageContentContext(page)
 				.BT()
@@ -61,7 +61,7 @@ describe('MergePDFPages', function() {
 
 	describe('BothGraphicsMerge', function() {
 		it('should complete without error', function() {
-			var pdfWriter = hummus.createWriter(__dirname + '/output/TestBothGraphicsMerge.pdf');
+			var pdfWriter = muhammara.createWriter(__dirname + '/output/TestBothGraphicsMerge.pdf');
 			var page = pdfWriter.createPage(0,0,595,842);
 
 			var contentContext = pdfWriter.startPageContentContext(page)
@@ -76,7 +76,7 @@ describe('MergePDFPages', function() {
 
 			pdfWriter.mergePDFPagesToPage(page,
 				__dirname + '/TestMaterials/BasicTIFFImagesTest.PDF',
-				{type:hummus.eRangeTypeSpecific,specificRanges:[[0,0]]});
+				{type:muhammara.eRangeTypeSpecific,specificRanges:[[0,0]]});
 
 			contentContext
 				.Q()
@@ -93,19 +93,19 @@ describe('MergePDFPages', function() {
 
 	describe('TwoPageInSeparatePhases', function() {
 		it('should complete without error', function() {
-			var pdfWriter = hummus.createWriter(__dirname + '/output/MergeTwoPageInSeparatePhases.pdf');
+			var pdfWriter = muhammara.createWriter(__dirname + '/output/MergeTwoPageInSeparatePhases.pdf');
 			var page = pdfWriter.createPage(0,0,595,842);
 			var contentContext = pdfWriter.startPageContentContext(page).q().cm(0.5,0,0,0.5,0,0);
 
 			pdfWriter.mergePDFPagesToPage(page,
 				__dirname + '/TestMaterials/BasicTIFFImagesTest.PDF',
-				{type: hummus.eRangeTypeSpecific,specificRanges:[[0,0]]});
+				{type: muhammara.eRangeTypeSpecific,specificRanges:[[0,0]]});
 
 			contentContext.Q().q().cm(0.5,0,0,0.5,0,421);
 
 			pdfWriter.mergePDFPagesToPage(page,
 				__dirname + '/TestMaterials/BasicTIFFImagesTest.PDF',
-				{type: hummus.eRangeTypeSpecific,specificRanges:[[1,1]]});
+				{type: muhammara.eRangeTypeSpecific,specificRanges:[[1,1]]});
 
 			contentContext.Q();
 
@@ -115,14 +115,14 @@ describe('MergePDFPages', function() {
 
 	describe('TwoPageWithCallback', function() {
 		it('should complete without error', function() {
-			var pdfWriter = hummus.createWriter(__dirname + '/output/MergeTwoPageWithCallback.pdf');
+			var pdfWriter = muhammara.createWriter(__dirname + '/output/MergeTwoPageWithCallback.pdf');
 			var page = pdfWriter.createPage(0,0,595,842);
 			var contentContext = pdfWriter.startPageContentContext(page).q().cm(0.5,0,0,0.5,0,0);
 
 			var pageIndex = 0;
 			pdfWriter.mergePDFPagesToPage(page,
 				__dirname + '/TestMaterials/BasicTIFFImagesTest.PDF',
-				{type: hummus.eRangeTypeSpecific,specificRanges:[[0,1]]},
+				{type: muhammara.eRangeTypeSpecific,specificRanges:[[0,1]]},
 				function() {
 					if (0 == pageIndex) {
 						contentContext
@@ -140,9 +140,9 @@ describe('MergePDFPages', function() {
 
 	describe('PagesUsingCopyingContext', function() {
 		it('should complete without error', function() {
-			var pdfWriter = hummus.createWriter(__dirname + '/output/MergePagesUsingCopyingContext.pdf');
+			var pdfWriter = muhammara.createWriter(__dirname + '/output/MergePagesUsingCopyingContext.pdf');
 			var copyingContext = pdfWriter.createPDFCopyingContext(__dirname + '/TestMaterials/BasicTIFFImagesTest.PDF');
-			var formObjectId = copyingContext.createFormXObjectFromPDFPage(0,hummus.ePDFPageBoxMediaBox);
+			var formObjectId = copyingContext.createFormXObjectFromPDFPage(0,muhammara.ePDFPageBoxMediaBox);
 
 			var page = pdfWriter.createPage(0,0,595,842);
 
@@ -174,14 +174,14 @@ describe('MergePDFPages', function() {
 		
 	describe('MergeFromStream', function() {
 		it('should complete without error', function() {
-			var pdfWriter = hummus.createWriter(__dirname + '/output/TestStreamMerge.pdf');
+			var pdfWriter = muhammara.createWriter(__dirname + '/output/TestStreamMerge.pdf');
 			var page = pdfWriter.createPage(0,0,595,842);
 			
-			var inStream = new hummus.PDFRStreamForFile(__dirname + '/TestMaterials/AddedPage.pdf');
+			var inStream = new muhammara.PDFRStreamForFile(__dirname + '/TestMaterials/AddedPage.pdf');
 
 			pdfWriter.mergePDFPagesToPage(page,
 				inStream,
-				{type:hummus.eRangeTypeSpecific,specificRanges:[[0,0]]})
+				{type:muhammara.eRangeTypeSpecific,specificRanges:[[0,0]]})
 
 			pdfWriter.writePage(page).end();
 		});
