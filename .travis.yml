@@ -70,11 +70,6 @@ before_install:
     export npm_config_disturl=https://atom.io/download/electron;
     export npm_config_runtime=electron;
     fi
-  - COMMIT_MESSAGE=$(git show -s --format=%B $TRAVIS_COMMIT | tr -d '\n')
-  - PUBLISH_BINARY=false
-  - if test "${COMMIT_MESSAGE#*'[publish binary]'}" != "$COMMIT_MESSAGE" && test "${TRAVIS_BRANCH}"
-    == "master" && test "${TRAVIS_PULL_REQUEST}" == "false"; then PUBLISH_BINARY=true;
-    fi;
   - if [[ $MUSL ]]; then
     EXTRA_NODE_PRE_GYP_FLAGS="--target_libc=musl";
     fi;
@@ -82,7 +77,6 @@ before_install:
   - NODE_NVM_VERSION="${NODE_NVM_VERSION:=11.2.0}"
   - nvm install $NODE_NVM_VERSION
   - nvm use $NODE_NVM_VERSION
-  - echo $PUBLISH_BINARY
   - node --version
   - npm --version
   - $CXX --version
@@ -101,17 +95,6 @@ script:
     scripts/electron-mocha-test.sh ./node_modules/.bin/node-pre-gyp package testpackage $EXTRA_NODE_PRE_GYP_FLAGS;
     else
     ./node_modules/.bin/node-pre-gyp package testpackage $EXTRA_NODE_PRE_GYP_FLAGS;
-    npm test;
-    fi
-  - if [[ "${PUBLISH_BINARY}" == "true" ]]; then
-    ./node_modules/.bin/node-pre-gyp unpublish publish $EXTRA_NODE_PRE_GYP_FLAGS;
-    rm -rf {build,binding};
-    fi
-  - if [[ "${PUBLISH_BINARY}" == "true" && "{$MUSL}" == "true" ]]; then
-    ./scripts/alpine-test.sh ./node_modules/.bin/node-pre-gyp install $EXTRA_NODE_PRE_GYP_FLAGS;
-    fi
-  - if [[ "{PUBLISH_BINARY}" == "true" && "${MUSL}" != "true" ]]; then
-    ./node_modules/.bin/node-pre-gyp install $EXTRA_NODE_PRE_GYP_FLAGS;
     npm test;
     fi
 before_deploy:

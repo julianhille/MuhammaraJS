@@ -124,10 +124,6 @@ IF %ERRORLEVEL% NEQ 0 GOTO ERROR
 :NPM_TEST_FINISHED
 ECHO packaging for node-gyp
 CALL node_modules\.bin\node-pre-gyp package %TOOLSET_ARGS%
-::make commit message env var shorter
-SET CM=%APPVEYOR_REPO_COMMIT_MESSAGE%
-IF NOT "%CM%" == "%CM:[publish binary]=%" (ECHO publishing && CALL node_modules\.bin\node-pre-gyp --msvs_version=%msvs_version% unpublish publish %TOOLSET_ARGS%) ELSE (ECHO not publishing)
-IF %ERRORLEVEL% NEQ 0 GOTO ERROR
 
 GOTO DONE
 
