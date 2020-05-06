@@ -25,6 +25,7 @@ env:
     - NODE_NVM_VERSION="11.2.0"
     - NODE_NVM_VERSION="12.0.0"
     - NODE_NVM_VERSION="13.0.0"
+    - NODE_NVM_VERSION="14.0.0"
     - ELECTRON_VERSION="2.0.7" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="3.0.10" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="3.1.11" ELECTRON_MOCHA=true
@@ -35,6 +36,7 @@ env:
     - ELECTRON_VERSION="6.0.2" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="6.1.10" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="7.1.14" ELECTRON_MOCHA=true
+    - ELECTRON_VERSION="7.2.4" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="8.0.3" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="8.1.1" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="8.2.5" ELECTRON_MOCHA=true
@@ -43,6 +45,7 @@ env:
     - MUSL=true NODE_NVM_VERSION="11.2.0"
     - MUSL=true NODE_NVM_VERSION="12.0.0"
     - MUSL=true NODE_NVM_VERSION="13.0.0"
+    - MUSL=true NODE_NVM_VERSION="14.0.0"
 matrix:
   exclude:
     - os: osx
@@ -51,26 +54,14 @@ matrix:
       env: MUSL=true NODE_NVM_VERSION="10.8.0"
     - os: osx
       env: MUSL=true NODE_NVM_VERSION="11.2.0"
+    - os: osx
+      env: MUSL=true NODE_NVM_VERSION="12.0.0"
+    - os: osx
+      env: MUSL=true NODE_NVM_VERSION="13.0.0"
+    - os: osx
+      env: MUSL=true NODE_NVM_VERSION="14.0.0"
     - os: linux
       env: ELECTRON_VERSION="2.0.7" ELECTRON_MOCHA=true
-    - os: linux
-      env: ELECTRON_VERSION="3.0.10" ELECTRON_MOCHA=true
-    - os: linux
-      env: ELECTRON_VERSION="4.1.5" ELECTRON_MOCHA=true
-    - os: linux
-      env: ELECTRON_VERSION="5.0.0" ELECTRON_MOCHA=true
-    - os: linux
-      env: ELECTRON_VERSION="6.0.2" ELECTRON_MOCHA=true
-    - os: linux
-      env: ELECTRON_VERSION="6.1.10" ELECTRON_MOCHA=true
-    - os: linux
-      env: ELECTRON_VERSION="7.1.14" ELECTRON_MOCHA=true
-    - os: linux
-      env: ELECTRON_VERSION="8.0.3" ELECTRON_MOCHA=true
-    - os: linux
-      env: ELECTRON_VERSION="8.1.1" ELECTRON_MOCHA=true
-    - os: linux
-      env: ELECTRON_VERSION="8.2.5" ELECTRON_MOCHA=true
 before_install:
   - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
   - if [[ $ELECTRON_VERSION ]]; then
@@ -79,11 +70,6 @@ before_install:
     export npm_config_disturl=https://atom.io/download/electron;
     export npm_config_runtime=electron;
     fi
-  - COMMIT_MESSAGE=$(git show -s --format=%B $TRAVIS_COMMIT | tr -d '\n')
-  - PUBLISH_BINARY=false
-  - if test "${COMMIT_MESSAGE#*'[publish binary]'}" != "$COMMIT_MESSAGE" && test "${TRAVIS_BRANCH}"
-    == "master" && test "${TRAVIS_PULL_REQUEST}" == "false"; then PUBLISH_BINARY=true;
-    fi;
   - if [[ $MUSL ]]; then
     EXTRA_NODE_PRE_GYP_FLAGS="--target_libc=musl";
     fi;
@@ -91,7 +77,6 @@ before_install:
   - NODE_NVM_VERSION="${NODE_NVM_VERSION:=11.2.0}"
   - nvm install $NODE_NVM_VERSION
   - nvm use $NODE_NVM_VERSION
-  - echo $PUBLISH_BINARY
   - node --version
   - npm --version
   - $CXX --version
@@ -112,23 +97,12 @@ script:
     ./node_modules/.bin/node-pre-gyp package testpackage $EXTRA_NODE_PRE_GYP_FLAGS;
     npm test;
     fi
-  - if [[ "${PUBLISH_BINARY}" == "true" ]]; then
-    ./node_modules/.bin/node-pre-gyp unpublish publish $EXTRA_NODE_PRE_GYP_FLAGS;
-    rm -rf {build,binding};
-    fi
-  - if [[ "${PUBLISH_BINARY}" == "true" && "{$MUSL}" == "true" ]]; then
-    ./scripts/alpine-test.sh ./node_modules/.bin/node-pre-gyp install $EXTRA_NODE_PRE_GYP_FLAGS;
-    fi
-  - if [[ "{PUBLISH_BINARY}" == "true" && "${MUSL}" != "true" ]]; then
-    ./node_modules/.bin/node-pre-gyp install $EXTRA_NODE_PRE_GYP_FLAGS;
-    npm test;
-    fi
 before_deploy:
   - npm run package --verbose
 deploy:
   provider: releases
   api_key:
-    secure: PR6eMT6UtZrUpR5ygOXmmiMmae7KUf2ndoFaD/SgsvhXS2FQds8DqByi9ElO8cTZ5I7ZHWQOeq2nx/kcdtkmuca5S4J8wPdRgmgfYNWZg7ew4C/qS0e9CawLgk1nbYDZYTxiZoSdXIrnkJNNbuWfNEmmBYe12RcBLnJLWCb+cJPJMK2eVJFlOLJsnZ0xnSQckAfKdxHvUamBpA0CQUuVk6p0cMW70W6rraexpoHM2wMgdLgH9vfhrXdfeFcw0fplxf+yDZLXcTJgwarHV65Ysh53/4a7NL8PB7Ek/sd+DjyYQhU8Zw/UgZ9QIsgviH4GvmnF8NmLSiSUHMqBPvkRsqGZxULvxKVgw3tx0TB0/gSDE8eq9fI9h6SnecrVOWtYy5OqnzDJpdAyv5lVKzPhqql2NBlNt4nNo5XwoDI3xuJ3WCmGCiuCn3Zieznk3iDsjjG7WtPszWRhyTDo0wmJfYReIoKnRJwUqYdZR77UmL7/qQSvrMAk2cUtBBDvUAIbh5pq017oDrrSurcnqTtOaq4mRU/JuyS+APjUp1/JqdZs6IP840hVg8LI9/NiidxOJ0e5RGy9NgM965EgwX1jOt4cHjoB1TsOZpREHNjL0IeB2wuYySUieqtMUqNRmkN0SJ2Gy4Fqodh3+FxETzq8pyz/tuUMocWsjqYi0B5w48Q=
+    secure: X+W8B96JKhIcCrOvVCo0k9ZRcgMYJ+3bSWp5weAzLXp3InENXQMh0VlgKmMWJJtneu4x0XdJLdpjwXmYoKiKr5YBC5nqekySF0SNfa3gebQpXNpyCTfofIVKlzlqFQMTmn6bmcfg+cfZMNII/BExxc1+CRPq9vxotN7Dl+gJHvE3uTLO2VDtmo2LmdRUmVsryR5XVjcj8V9mNRIidE+CAZ18E7ZJa8QChLwua/RzgMiXJz0kA+yVPw+01MymmlcoEn92z1KN033W3JVDkkBjNi/jUeMq87tlBVBdKbKq2sUhKdUG7mKLielbLm0fgg9gnNdzHqL2wcV2IYkdJZZwxM4CMdbAvUoZqNzwc3vk0sjQ3jYbO2SCvY42nGEXif2YwkqhDPCRYx85vv4ONB7d464fafE7mF5jpDOzMvtfH/s2PF98Aw5UVirwMg1nWvUDuxBzqAebjrAbF17lLlMNJ1ZCsxe0WA7O79N3k1n3/91J3yonDluGbiP2qh/6YHVLH0AEuJyAYU8HGSLtnRrN91h70S65YNnPrZkxZ0vrK/QfarE89KhIBHIQlNfXlYf7cS4LaurGZjQmVf8Eb1LNupTmk/9U8T0jIb79/L01fRegrvHXnx3wwRaXGjjiqNMPkHhxpzmQY12wD3jT1F+Kc7efnoGQ9/GQCHSOVXf9YDg=
   file: $TRAVIS_BUILD_DIR/build/stage/*.gz
   file_glob: 'true'
   on:

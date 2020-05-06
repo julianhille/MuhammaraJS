@@ -8,7 +8,12 @@ environment:
     - nodejs_version: 11
     - nodejs_version: 12
     - nodejs_version: 13
+    - nodejs_version: 14
     # electron
+    - nodejs_version: 12
+      NODE_RUNTIME: electron
+      NODE_RUNTIME_VERSION: 8.2.5
+      TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
     - nodejs_version: 12
       NODE_RUNTIME: electron
       NODE_RUNTIME_VERSION: 8.1.1
@@ -16,6 +21,10 @@ environment:
     - nodejs_version: 12
       NODE_RUNTIME: electron
       NODE_RUNTIME_VERSION: 8.0.3
+      TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
+    - nodejs_version: 12
+      NODE_RUNTIME: electron
+      NODE_RUNTIME_VERSION: 7.2.4
       TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
     - nodejs_version: 12
       NODE_RUNTIME: electron
