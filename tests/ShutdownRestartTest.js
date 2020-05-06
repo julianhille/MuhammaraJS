@@ -1,8 +1,8 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 describe('ShutDownRestartState', function() {
 	it('should complete without error', function() {
-		var pdfWriterA = hummus.createWriter(__dirname + '/output/SimpleContentShutdownRestart.PDF');
+		var pdfWriterA = muhammara.createWriter(__dirname + '/output/SimpleContentShutdownRestart.PDF');
 		var page = pdfWriterA.createPage(0,0,595,842);
 		var font = pdfWriterA.getFontForFile(__dirname + '/TestMaterials/fonts/arial.ttf');
 
@@ -35,7 +35,7 @@ describe('ShutDownRestartState', function() {
 
 		// ---
 
-		var pdfWriterB = hummus.createWriterToContinue(
+		var pdfWriterB = muhammara.createWriterToContinue(
 			__dirname + '/output/SimpleContentShutdownRestart.PDF',
 			__dirname + '/output/ShutDownRestartState.txt'
 		);

@@ -2,7 +2,7 @@ var assert = require('chai').assert;
 
 describe('WriterEvents', function() {
 	it('should complete without error', function() {
-		var pdfWriter = require('../hummus').createWriter(__dirname + '/output/WriterEvents.pdf');
+		var pdfWriter = require('../muhammara').createWriter(__dirname + '/output/WriterEvents.pdf');
         var onCatalogWriteCalled = 0;
         var onPageWriteCalled = 0;
 

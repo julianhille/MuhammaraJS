@@ -133,6 +133,6 @@ deploy:
   file_glob: 'true'
   on:
     tags: true
-    repo: julianhille/HummusJS
+    repo: julianhille/MuhammaraJS
     branch: feature/github-deployments
   skip_cleanup: 'true'

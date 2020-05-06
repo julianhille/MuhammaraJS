@@ -1,4 +1,4 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 function addPageForTiff(inPDFWriter,inTiffPath) {
 	var page = inPDFWriter.createPage(0,0,595,842);
@@ -13,7 +13,7 @@ function addPageForTiff(inPDFWriter,inTiffPath) {
 
 describe('TiffImageTest', function() {
 	it('should complete without error', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/TiffImageTest.PDF');
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/TiffImageTest.PDF');
 
 		for(var i=1;i<9;++i) {
 			addPageForTiff(pdfWriter, __dirname + '/TestMaterials/images/tiff/CCITT_' + i + '.TIF');

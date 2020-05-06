@@ -12,7 +12,7 @@ describe('TiffSpecialsTest', function() {
 			inPDFWriter.writePage(page);
 		}
 
-		var pdfWriter = require('../hummus').createWriter(__dirname + '/output/TiffSpecialsTest.pdf');
+		var pdfWriter = require('../muhammara').createWriter(__dirname + '/output/TiffSpecialsTest.pdf');
 		var pageCount = pdfWriter.getImagePagesCount(__dirname + '/TestMaterials/images/tiff/multipage.tif');
 		assert.equal(pageCount, 4, 'expected number of pages')
 

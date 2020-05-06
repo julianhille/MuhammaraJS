@@ -1,4 +1,4 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 var assert = require('assert');
 
 function testBasicFileModification(inFileName, throws) {
@@ -7,7 +7,7 @@ function testBasicFileModification(inFileName, throws) {
 			var wrapper = throws ? assert.throws : function(fn) { fn(); };
 
 			wrapper(function() {
-				var pdfWriter = hummus.createWriterToModify(__dirname + '/TestMaterials/' + inFileName + '.pdf', {
+				var pdfWriter = muhammara.createWriterToModify(__dirname + '/TestMaterials/' + inFileName + '.pdf', {
 					modifiedFilePath: __dirname+'/output/Modified' + inFileName + '.pdf'
 				});
 

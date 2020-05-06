@@ -1,6 +1,6 @@
 describe('DFontTest', function() {
 	it('should complete without error', function() {
-		var pdfWriter = require('../hummus').createWriter(__dirname + '/output/DFontTest.pdf');
+		var pdfWriter = require('../muhammara').createWriter(__dirname + '/output/DFontTest.pdf');
 		var page = pdfWriter.createPage(0,0,595,842);
 		var contentContext = pdfWriter.startPageContentContext(page);
 

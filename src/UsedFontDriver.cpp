@@ -131,7 +131,7 @@ METHOD_RETURN_TYPE UsedFontDriver::CalculateTextDimensions(const ARGS_TYPE& args
 {
     // completly copied of the freetype toturial.... :)
     // this will calculate the dimensions of a string. it uses mainly the "advance"
-    // of the glyphs, which is what the plain text placement of hummus does...so it should be
+    // of the glyphs, which is what the plain text placement of muhammara does...so it should be
     // alligned with it. right now there's no kerning calculations, simply because there's no kerning right now.
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;

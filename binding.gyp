@@ -1,7 +1,7 @@
 {
     'targets': [
     {
-            'target_name': 'hummus',
+            'target_name': 'muhammara',
             'type': 'loadable_module',
 			'product_extension': 'node',
             'dependencies': [
@@ -58,7 +58,7 @@
                 './src/ObjectByteWriter.cpp',
                 './src/ObjectByteWriterWithPosition.cpp',
                 './src/PDFObjectParserDriver.cpp',
-                './src/hummus.cpp'
+                './src/muhammara.cpp'
             ]
 
 	   },
@@ -69,7 +69,7 @@
 			'copies': [
 				{
 					'files': [
-						'<(PRODUCT_DIR)/hummus.node'
+						'<(PRODUCT_DIR)/muhammara.node'
 					],
 					'destination': '<(module_path)'
 				}

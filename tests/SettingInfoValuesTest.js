@@ -1,8 +1,8 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 describe('SettingInfoValues', function() {
 	it('should complete without error', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/SettingInfoValues.pdf',{version:hummus.ePDFVersion14});
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/SettingInfoValues.pdf',{version:muhammara.ePDFVersion14});
 
 		// set the document author, title, subject, creator, creation date, additional info
 		var infoDictionary = pdfWriter.getDocumentContext().getInfoDictionary();

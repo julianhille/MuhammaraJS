@@ -1,4 +1,4 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 var fs = require('fs');
 
 function testInPlaceFileModification(inFileName) {
@@ -8,7 +8,7 @@ function testInPlaceFileModification(inFileName) {
 			var rs = fs.createReadStream(__dirname + '/TestMaterials/' + inFileName + '.pdf');
 
 			ws.on('close', function() {
-				var pdfWriter = hummus.createWriterToModify(__dirname + '/output/InPlaceModified' + inFileName + '.pdf');
+				var pdfWriter = muhammara.createWriterToModify(__dirname + '/output/InPlaceModified' + inFileName + '.pdf');
 				var page = pdfWriter.createPage(0,0,595,842);
 
 				pdfWriter.startPageContentContext(page)

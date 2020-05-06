@@ -1,16 +1,16 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 var emptyFileName = __dirname + '/output/sampleEmptyFileForCopying.pdf';
 
 describe('CopyingAndMergingEmptyPage', function() {
 	before(function() {
 		// prepares sample empty pdf
-		var pdfWriter = hummus.createWriter(emptyFileName);
+		var pdfWriter = muhammara.createWriter(emptyFileName);
 		pdfWriter.writePage(pdfWriter.createPage(0,0,595,842)).end();
 	});
 
 	it('should be able to create from from empty page', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/CreateFormFromEmptyPage.pdf');
-		var formIDs = pdfWriter.createFormXObjectsFromPDF(emptyFileName,hummus.ePDFPageBoxMediaBox);
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/CreateFormFromEmptyPage.pdf');
+		var formIDs = pdfWriter.createFormXObjectsFromPDF(emptyFileName,muhammara.ePDFPageBoxMediaBox);
 		var page = pdfWriter.createPage(0,0,595,842);
 
 		pdfWriter.startPageContentContext(page)
@@ -27,14 +27,14 @@ describe('CopyingAndMergingEmptyPage', function() {
 	});
 
 	it('should be able to create page from empty page', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/CreatePageFromEmptyPage.pdf');
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/CreatePageFromEmptyPage.pdf');
 		pdfWriter.appendPDFPagesFromPDF(emptyFileName);
 		pdfWriter.appendPDFPagesFromPDF(__dirname + '/TestMaterials/XObjectContent.PDF');
 		pdfWriter.end();
 	});
 
 	it('should be able to merge empty page to page', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/MergeEmptyPageToPage.pdf');
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/MergeEmptyPageToPage.pdf');
 		var page = pdfWriter.createPage(0,0,595,842);
 		var font = pdfWriter.getFontForFile(__dirname + '/TestMaterials/fonts/arial.ttf');
 
@@ -48,7 +48,7 @@ describe('CopyingAndMergingEmptyPage', function() {
 			.q()
 			.cm(0.5,0,0,0.5,0,0);
 
-		pdfWriter.mergePDFPagesToPage(page,emptyFileName,{type:hummus.eRangeTypeSpecific,specificRanges:[[0,0]]});
+		pdfWriter.mergePDFPagesToPage(page,emptyFileName,{type:muhammara.eRangeTypeSpecific,specificRanges:[[0,0]]});
 
 		contentContext.Q()
 			.q()
@@ -62,7 +62,7 @@ describe('CopyingAndMergingEmptyPage', function() {
 	});
 
 	it('should be able to merge empty page to form', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/MergeEmptyPageToForm.pdf');
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/MergeEmptyPageToForm.pdf');
 		var page = pdfWriter.createPage(0,0,595,842);
 		var copyingContext = pdfWriter.createPDFCopyingContext(emptyFileName);
 		var aForm = pdfWriter.createFormXObject(0,0,297.5,842);

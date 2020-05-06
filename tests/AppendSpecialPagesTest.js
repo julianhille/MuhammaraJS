@@ -2,7 +2,7 @@ var assert = require('assert');
 
 describe('AppendSpecialPagesTest', function() {
 	it('should complete without error', function() {
-		var pdfWriter = require('../hummus').createWriter(__dirname + '/output/AppendSpecialPagesTest.pdf');
+		var pdfWriter = require('../muhammara').createWriter(__dirname + '/output/AppendSpecialPagesTest.pdf');
 
 		assert.throws(function(){pdfWriter.appendPDFPagesFromPDF('./TestMaterials/Protected.pdf')});
 		pdfWriter.appendPDFPagesFromPDF(__dirname + '/TestMaterials/ObjectStreamsModified.pdf');

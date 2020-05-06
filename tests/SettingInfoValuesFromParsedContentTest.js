@@ -1,11 +1,11 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 var assert = require('chai').assert;
 var fs = require('fs');
 
 describe('SettingInfoValuesFromParsedContent', function() {
 	it('should complete without error', function() {
-		var outStream = new hummus.PDFWStreamForFile(__dirname + '/output/SettingInfoValuesFromParsedContent.pdf');
-		var pdfWriter = hummus.createWriter(outStream);
+		var outStream = new muhammara.PDFWStreamForFile(__dirname + '/output/SettingInfoValuesFromParsedContent.pdf');
+		var pdfWriter = muhammara.createWriter(outStream);
 
 		var copyCtx = pdfWriter.createPDFCopyingContext(__dirname + '/TestMaterials/SettingInfoValues.pdf');
 

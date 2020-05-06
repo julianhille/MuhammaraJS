@@ -1,9 +1,9 @@
-var hummus = require('../hummus');
+var muhammara = require('../muhammara');
 
 describe('SimpleContentPageTest', function() {
 	it('should complete without error', function() {
-		var pdfWriter = hummus.createWriter(__dirname + '/output/SimpleContentPageTest.pdf');
-		var page = new hummus.PDFPage(0,0,595,842);
+		var pdfWriter = muhammara.createWriter(__dirname + '/output/SimpleContentPageTest.pdf');
+		var page = new muhammara.PDFPage(0,0,595,842);
 		var pageContent = pdfWriter.startPageContentContext(page);
 
 		// draw a 100X100 points cyan square
