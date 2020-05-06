@@ -29,5 +29,5 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/julianhille/MuhammaraJS/tree/v1.0.0
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/julianhille/MuhammaraJS/tree/1.0.0
