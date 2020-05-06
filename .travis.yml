@@ -60,6 +60,8 @@ matrix:
       env: MUSL=true NODE_NVM_VERSION="13.0.0"
     - os: osx
       env: MUSL=true NODE_NVM_VERSION="14.0.0"
+    - os: linux
+      env: ELECTRON_VERSION="2.0.7" ELECTRON_MOCHA=true
 before_install:
   - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
   - if [[ $ELECTRON_VERSION ]]; then
