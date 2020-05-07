@@ -1,6 +1,6 @@
 {
   "name": "muhammara",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Create, read and modify PDF files and streams",
   "homepage": "https://github.com/julianhille/Muhammarajs",
   "license": "Apache-2.0",
@@ -37,7 +37,6 @@
     "node-pre-gyp"
   ],
   "devDependencies": {
-    "aws-sdk": "~2.0.0-rc.15",
     "chai": "^3.4.0",
     "mocha": "^2.3.3",
     "npm": "^5.8.0"
@@ -45,8 +44,8 @@
   "binary": {
     "module_name": "muhammara",
     "module_path": "./binding",
-    "remote_path": "./",
-    "host": "https://github.com/julianhille/muhammarajs/",
+    "remote_path": "julianhille/MuhammaraJS/releases/download/{version}",
+    "host": "https://github.com",
     "package_name": "{node_abi}-{platform}-{arch}-{libc}.tar.gz"
   },
   "publishConfig": {

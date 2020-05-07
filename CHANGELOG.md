@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## 1.0.0 - 2020-05-07
+## [1.0.1] - 2020-05-08
+
+### Fixed
+
+* Fixed readme to include infos about muhammaraJS and hummus
+* Fixed node-pre-gyp binary download links
+
+### Removed
+
+* Unecessary dependency on aws-sdk
+
+## [1.0.0] - 2020-05-07
 
 Basically this is [HummusJS v1.0.108](https://github.com/galkahana/HummusJS/commit/772bd561f02433bf1a602135f53c7c17f8072450)
 with the following changes.
@@ -29,5 +40,6 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.0.1...HEAD
+[1.0.1]: https://github.com/julianhille/MuhammaraJS/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/julianhille/MuhammaraJS/tree/1.0.0
