@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * Added infos about being hummusjs drop in replacement
 * Added electron v9.0.0
 
+### Fixed
+
+* Updated dependencies and dev dependencies
+
 ## [1.0.1] - 2020-05-08
 
 ### Fixed
