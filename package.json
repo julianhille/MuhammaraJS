@@ -39,7 +39,7 @@
     "node-pre-gyp"
   ],
   "devDependencies": {
-    "chai": "^3.4.0",
+    "chai": "^4.2.0",
     "mocha": "^2.3.3",
     "npm": "^5.8.0"
   },
