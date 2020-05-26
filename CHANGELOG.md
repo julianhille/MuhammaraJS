@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+* Added infos about being hummusjs drop in replacement
+
 ## [1.0.1] - 2020-05-08
 
 ### Fixed

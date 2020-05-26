@@ -1,7 +1,7 @@
 {
   "name": "muhammara",
   "version": "1.0.1",
-  "description": "Create, read and modify PDF files and streams",
+  "description": "Create, read and modify PDF files and streams. A drop in replacement for hummujs PDF library",
   "homepage": "https://github.com/julianhille/Muhammarajs",
   "license": "Apache-2.0",
   "author": "Julian <j.hille484@gmail.com>",
@@ -18,7 +18,9 @@
   "keywords": [
     "pdf",
     "pdfhummus",
-    "muhammarajs"
+    "muhammarajs",
+    "hummusjs",
+    "hummus"
   ],
   "files": [
     "src",
