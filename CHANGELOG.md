@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.1.0] - 2020-05-27
+
 ### Added
 
 * Added infos about being hummusjs drop in replacement
@@ -49,6 +51,7 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.0.1...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/julianhille/MuhammaraJS/compare/1.0.1...1.1.0
 [1.0.1]: https://github.com/julianhille/MuhammaraJS/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/julianhille/MuhammaraJS/tree/1.0.0
