@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 * Updated freetype to 2.10.0
+* Updated libpng dependency to 1.6.37
 
 ## [1.1.0] - 2020-05-27
 
