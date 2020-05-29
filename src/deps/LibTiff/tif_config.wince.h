@@ -1,8 +1,17 @@
+/* $Id: tif_config.wince.h,v 1.1.2.1 2010-06-08 18:50:41 bfriesen Exp $ */
+
+/*
+ * TIFF library configuration header for Windows CE platform.
+ */
+#ifndef _WIN32_WCE
+# error This version of tif_config.h header is dedicated for Windows CE platform!
+#endif
+
 /* Define to 1 if you have the <assert.h> header file. */
 #define HAVE_ASSERT_H 1
 
 /* Define to 1 if you have the <fcntl.h> header file. */
-#define HAVE_FCNTL_H 1
+#define  HAVE_FCNTL_H 1
 
 /* Define as 0 or 1 according to the floating point format suported by the
    machine */
@@ -15,12 +24,10 @@
 #define HAVE_STRING_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#define HAVE_SYS_TYPES_H 1
+#undef HAVE_SYS_TYPES_H
 
 /* Define to 1 if you have the <io.h> header file. */
-#if (defined(_WIN32) || defined(WIN32))
 #define HAVE_IO_H 1
-#endif
 
 /* Define to 1 if you have the <search.h> header file. */
 #define HAVE_SEARCH_H 1
@@ -28,17 +35,19 @@
 /* Define to 1 if you have the `setmode' function. */
 #define HAVE_SETMODE 1
 
+/* Define to 1 if you have the `bsearch' function. */
+#define HAVE_BSEARCH 1
+#define bsearch wceex_bsearch
+
+/* Define to 1 if you have the `lfind' function. */
+#define HAVE_LFIND 1
+#define lfind wceex_lfind
+
 /* The size of a `int', as computed by sizeof. */
 #define SIZEOF_INT 4
 
 /* The size of a `long', as computed by sizeof. */
 #define SIZEOF_LONG 4
-
-/* Signed 64-bit type */
-#define TIFF_INT64_T signed long long
-
-/* Unsigned 64-bit type */
-#define TIFF_UINT64_T unsigned long long
 
 /* Set the native cpu bit order */
 #define HOST_FILLORDER FILLORDER_LSB2MSB
@@ -55,9 +64,7 @@
 # endif
 #endif
 
-#if (defined(_WIN32) || defined(WIN32))
-#define lfind _lfind
-#endif
+
 /*
  * Local Variables:
  * mode: c
