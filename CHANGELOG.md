@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 * Updated libpng dependency to 1.6.37
 * Updated libaesgm dependency
 * Update libjpeg dependency to 9d
+* Updated libtiff dependency to 3.9.7
 
 ## [1.1.0] - 2020-05-27
 

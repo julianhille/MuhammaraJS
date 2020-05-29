@@ -1,4 +1,4 @@
-/* $Id: tif_getimage.c,v 1.63.2.4 2010-06-08 18:50:42 bfriesen Exp $ */
+/* $Id: tif_getimage.c,v 1.63.2.7 2012-04-06 16:47:42 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler
@@ -673,18 +673,24 @@ gtTileSeparate(TIFFRGBAImage* img, uint32* raster, uint32 w, uint32 h)
 	unsigned char* p2;
 	unsigned char* pa;
 	tsize_t tilesize;
+	tsize_t bufsize;
 	int32 fromskew, toskew;
 	int alpha = img->alpha;
 	uint32 nrow;
 	int ret = 1, flip;
 
 	tilesize = TIFFTileSize(tif);
-	buf = (unsigned char*) _TIFFmalloc((alpha?4:3)*tilesize);
+	bufsize = TIFFSafeMultiply(tsize_t,alpha?4:3,tilesize);
+	if (bufsize == 0) {
+		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "Integer overflow in %s", "gtTileSeparate");
+		return (0);
+	}
+	buf = (unsigned char*) _TIFFmalloc(bufsize);
 	if (buf == 0) {
 		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "No space for tile buffer");
 		return (0);
 	}
-	_TIFFmemset(buf, 0, (alpha?4:3)*tilesize);
+	_TIFFmemset(buf, 0, bufsize);
 	p0 = buf;
 	p1 = p0 + tilesize;
 	p2 = p1 + tilesize;
@@ -880,17 +886,23 @@ gtStripSeparate(TIFFRGBAImage* img, uint32* raster, uint32 w, uint32 h)
 	uint32 rowsperstrip, offset_row;
 	uint32 imagewidth = img->width;
 	tsize_t stripsize;
+	tsize_t bufsize;
 	int32 fromskew, toskew;
 	int alpha = img->alpha;
 	int ret = 1, flip;
 
 	stripsize = TIFFStripSize(tif);
-	p0 = buf = (unsigned char *)_TIFFmalloc((alpha?4:3)*stripsize);
+	bufsize = TIFFSafeMultiply(tsize_t,alpha?4:3,stripsize);
+	if (bufsize == 0) {
+		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "Integer overflow in %s", "gtStripSeparate");
+		return (0);
+	}
+	p0 = buf = (unsigned char *)_TIFFmalloc(bufsize);
 	if (buf == 0) {
 		TIFFErrorExt(tif->tif_clientdata, TIFFFileName(tif), "No space for tile buffer");
 		return (0);
 	}
-	_TIFFmemset(buf, 0, (alpha?4:3)*stripsize);
+	_TIFFmemset(buf, 0, bufsize);
 	p1 = p0 + stripsize;
 	p2 = p1 + stripsize;
 	pa = (alpha?(p2+stripsize):NULL);
@@ -1846,6 +1858,7 @@ DECLAREContigPutFunc(putcontig8bitYCbCr41tile)
 DECLAREContigPutFunc(putcontig8bitYCbCr22tile)
 {
 	uint32* cp2;
+	int32 incr = 2*toskew+w;
 	(void) y;
 	fromskew = (fromskew / 2) * 6;
 	cp2 = cp+w+toskew;
@@ -1872,8 +1885,8 @@ DECLAREContigPutFunc(putcontig8bitYCbCr22tile)
 			cp2 ++ ;
 			pp += 6;
 		}
-		cp += toskew*2+w;
-		cp2 += toskew*2+w;
+		cp += incr;
+		cp2 += incr;
 		pp += fromskew;
 		h-=2;
 	}
@@ -1939,6 +1952,7 @@ DECLAREContigPutFunc(putcontig8bitYCbCr21tile)
 DECLAREContigPutFunc(putcontig8bitYCbCr12tile)
 {
 	uint32* cp2;
+	int32 incr = 2*toskew+w;
 	(void) y;
 	fromskew = (fromskew / 2) * 4;
 	cp2 = cp+w+toskew;
@@ -1953,8 +1967,8 @@ DECLAREContigPutFunc(putcontig8bitYCbCr12tile)
 			cp2 ++;
 			pp += 4;
 		} while (--x);
-		cp += toskew*2+w;
-		cp2 += toskew*2+w;
+		cp += incr;
+		cp2 += incr;
 		pp += fromskew;
 		h-=2;
 	}
@@ -2397,7 +2411,7 @@ PickContigCase(TIFFRGBAImage* img)
 			}
 			break;
 		case PHOTOMETRIC_YCBCR:
-			if (img->bitspersample == 8)
+			if ((img->bitspersample==8) && (img->samplesperpixel==3))
 			{
 				if (initYCbCrConversion(img)!=0)
 				{
