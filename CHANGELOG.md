@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+* Updated freetype to 2.10.0
+
 ## [1.1.0] - 2020-05-27
 
 ### Added

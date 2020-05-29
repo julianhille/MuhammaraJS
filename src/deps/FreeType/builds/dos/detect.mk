@@ -3,7 +3,7 @@
 #
 
 
-# Copyright 1996-2000, 2003, 2004, 2006 by
+# Copyright (C) 1996-2019 by
 # David Turner, Robert Wilhelm, and Werner Lemberg.
 #
 # This file is part of the FreeType project, and may only be used, modified,
@@ -45,12 +45,12 @@ ifeq ($(PLATFORM),ansi)
       endif
 
       # We also try to recognize Dos 7.x without Windows 9X launched.
-      # See builds/win32/detect.mk for explanations about the logic.
+      # See builds/windows/detect.mk for explanations about the logic.
       #
       ifeq ($(is_dos),)
         ifdef winbootdir
 #ifneq ($(OS),Windows_NT)
-          # If win32 is available, do not trigger this test.
+          # If windows is available, do not trigger this test.
           ifndef windir
             is_dos := $(findstring Windows,$(strip $(shell ver)))
           endif
@@ -80,36 +80,46 @@ ifeq ($(PLATFORM),dos)
   ifneq ($(findstring emx,$(MAKECMDGOALS)),)        # EMX gcc
     CONFIG_FILE := dos-emx.mk
     CC          := gcc
-    emx: setup
+
     .PHONY: emx
+    emx: setup
+	    @cd .
   endif
 
   ifneq ($(findstring turboc,$(MAKECMDGOALS)),)     # Turbo C
     CONFIG_FILE := dos-tcc.mk
     CC          := tcc
-    turboc: setup
+
     .PHONY: turboc
+    turboc: setup
+	    @cd .
   endif
 
   ifneq ($(findstring watcom,$(MAKECMDGOALS)),)     # Watcom C/C++
     CONFIG_FILE := dos-wat.mk
     CC          := wcc386
-    watcom: setup
+
     .PHONY: watcom
+    watcom: setup
+	    @cd .
   endif
 
   ifneq ($(findstring borlandc,$(MAKECMDGOALS)),)   # Borland C/C++ 32-bit
     CONFIG_FILE := dos-bcc.mk
     CC          := bcc32
-    borlandc: setup
+
     .PHONY: borlandc
+    borlandc: setup
+	    @cd .
   endif
 
   ifneq ($(findstring borlandc16,$(MAKECMDGOALS)),) # Borland C/C++ 16-bit
     CONFIG_FILE := dos-bcc.mk
     CC          := bcc
-    borlandc16: setup
+
     .PHONY: borlandc16
+    borlandc16: setup
+	    @cd .
   endif
 
   ifneq ($(findstring bash,$(SHELL)),)              # check for bash
@@ -124,7 +134,7 @@ ifeq ($(PLATFORM),dos)
     CAT    := type
 
     # Setting COPY is a bit trickier.  We can be running DJGPP on some
-    # Windows NT derivatives, like XP.  See builds/win32/detect.mk for
+    # Windows NT derivatives, like XP.  See builds/windows/detect.mk for
     # explanations why we need hacking here.
     #
     ifeq ($(OS),Windows_NT)
@@ -133,7 +143,7 @@ ifeq ($(PLATFORM),dos)
       COPY := copy
     endif  # test NT
 
-    setup: dos_setup
+    setup: std_setup
   endif
 
 endif     # test PLATFORM dos

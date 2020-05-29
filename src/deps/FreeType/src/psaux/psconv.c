@@ -1,19 +1,19 @@
-/***************************************************************************/
-/*                                                                         */
-/*  psconv.c                                                               */
-/*                                                                         */
-/*    Some convenience conversions (body).                                 */
-/*                                                                         */
-/*  Copyright 2006, 2008, 2009, 2012 by                                    */
-/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
-/*                                                                         */
-/*  This file is part of the FreeType project, and may only be used,       */
-/*  modified, and distributed under the terms of the FreeType project      */
-/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
-/*  this file you indicate that you have read the license and              */
-/*  understand and accept it fully.                                        */
-/*                                                                         */
-/***************************************************************************/
+/****************************************************************************
+ *
+ * psconv.c
+ *
+ *   Some convenience conversions (body).
+ *
+ * Copyright (C) 2006-2019 by
+ * David Turner, Robert Wilhelm, and Werner Lemberg.
+ *
+ * This file is part of the FreeType project, and may only be used,
+ * modified, and distributed under the terms of the FreeType project
+ * license, LICENSE.TXT.  By continuing to use, modify, or distribute
+ * this file you indicate that you have read the license and
+ * understand and accept it fully.
+ *
+ */
 
 
 #include <ft2build.h>
@@ -24,14 +24,14 @@
 #include "psauxerr.h"
 
 
-  /*************************************************************************/
-  /*                                                                       */
-  /* The macro FT_COMPONENT is used in trace mode.  It is an implicit      */
-  /* parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log  */
-  /* messages during execution.                                            */
-  /*                                                                       */
+  /**************************************************************************
+   *
+   * The macro FT_COMPONENT is used in trace mode.  It is an implicit
+   * parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log
+   * messages during execution.
+   */
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_psconv
+#define FT_COMPONENT  psconv
 
 
   /* The following array is used by various functions to quickly convert */
@@ -111,6 +111,10 @@
       p++;
       if ( p == limit )
         goto Bad;
+
+      /* only a single sign is allowed */
+      if ( *p == '-' || *p == '+' )
+        return 0;
     }
 
     num_limit = 0x7FFFFFFFL / base;
@@ -124,7 +128,7 @@
       if ( IS_PS_SPACE( *p ) || *p OP 0x80 )
         break;
 
-      c = ft_char_table[*p & 0x7f];
+      c = ft_char_table[*p & 0x7F];
 
       if ( c < 0 || c >= base )
         break;
@@ -215,6 +219,10 @@
       p++;
       if ( p == limit )
         goto Bad;
+
+      /* only a single sign is allowed */
+      if ( *p == '-' || *p == '+' )
+        return 0;
     }
 
     /* read the integer part */
@@ -229,7 +237,7 @@
       if ( integral > 0x7FFF )
         have_overflow = 1;
       else
-        integral <<= 16;
+        integral = (FT_Fixed)( (FT_UInt32)integral << 16 );
     }
 
     /* read the decimal part */
@@ -245,12 +253,13 @@
         if ( IS_PS_SPACE( *p ) || *p OP 0x80 )
           break;
 
-        c = ft_char_table[*p & 0x7f];
+        c = ft_char_table[*p & 0x7F];
 
         if ( c < 0 || c >= 10 )
           break;
 
-        if ( decimal < 0xCCCCCCCL )
+        /* only add digit if we don't overflow */
+        if ( divider < 0xCCCCCCCL && decimal < 0xCCCCCCCL )
         {
           decimal = decimal * 10 + c;
 
@@ -488,8 +497,8 @@
       if ( c OP 0x80 )
         break;
 
-      c = ft_char_table[c & 0x7F];
-      if ( (unsigned)c >= 16 )
+      c = (FT_UInt)ft_char_table[c & 0x7F];
+      if ( c >= 16 )
         break;
 
       pad = ( pad << 4 ) | c;
@@ -520,7 +529,7 @@
       if ( *p OP 0x80 )
         break;
 
-      c = ft_char_table[*p & 0x7f];
+      c = ft_char_table[*p & 0x7F];
 
       if ( (unsigned)c >= 16 )
         break;

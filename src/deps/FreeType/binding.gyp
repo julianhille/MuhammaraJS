@@ -25,7 +25,6 @@
                 './src/base/ftsynth.c',
                 './src/base/fttype1.c',
                 './src/base/ftwinfnt.c',
-                './src/base/ftxf86.c',
                 './src/pcf/pcf.c',
                 './src/pfr/pfr.c',
                 './src/psaux/psaux.c',
