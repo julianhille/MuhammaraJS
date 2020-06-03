@@ -109,5 +109,4 @@ deploy:
   on:
     tags: true
     repo: julianhille/MuhammaraJS
-    branch: feature/github-deployments
   skip_cleanup: 'true'
