@@ -77,7 +77,7 @@ install:
   - scripts\build-appveyor.bat
 
 artifacts:
-  - path: 'build\stage\*.gz'
+  - path: 'build\stage\julianhille\MuhammaraJS\releases\download\**\*.gz'
 
 build: OFF
 test: OFF
