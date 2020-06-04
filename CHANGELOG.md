@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.2.0] - 2020-06-01
+
+### Fixed
+
+* Updated freetype to 2.10.0
+* Updated libpng dependency to 1.6.37
+* Updated libaesgm dependency
+* Update libjpeg dependency to 9d
+* Updated libtiff dependency to 3.9.7
+
 ## [1.1.0] - 2020-05-27
 
 ### Added
@@ -51,7 +61,8 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/julianhille/MuhammaraJS/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/julianhille/MuhammaraJS/compare/1.0.1...1.1.0
 [1.0.1]: https://github.com/julianhille/MuhammaraJS/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/julianhille/MuhammaraJS/tree/1.0.0

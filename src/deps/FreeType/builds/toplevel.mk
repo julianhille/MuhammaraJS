@@ -3,7 +3,7 @@
 #
 
 
-# Copyright 1996-2001, 2003, 2006, 2008-2010, 2012 by
+# Copyright (C) 1996-2019 by
 # David Turner, Robert Wilhelm, and Werner Lemberg.
 #
 # This file is part of the FreeType project, and may only be used, modified,
@@ -112,10 +112,10 @@ ifdef check_platform
 
   include $(TOP_DIR)/builds/detect.mk
 
-  # This rule makes sense for Unix only to remove files created by a run
-  # of the configure script which hasn't been successful (so that no
+  # This rule makes sense for Unix only to remove files created by a run of
+  # the configure script which hasn't been successful (so that no
   # `config.mk' has been created).  It uses the built-in $(RM) command of
-  # GNU make.  Similarly, `nul' is created if e.g. `make setup win32' has
+  # GNU make.  Similarly, `nul' is created if e.g. `make setup windows' has
   # been erroneously used.
   #
   # Note: This test is duplicated in `builds/unix/detect.mk'.
@@ -169,22 +169,41 @@ modules:
 include $(TOP_DIR)/builds/modules.mk
 
 
+# get FreeType version string, using a
+# poor man's `sed' emulation with make's built-in string functions
+#
+work := $(strip $(shell $(CAT) \
+                  $(subst /,$(SEP),$(TOP_DIR)/include/freetype/freetype.h)))
+work := $(subst |,x,$(work))
+work := $(subst $(space),|,$(work))
+work := $(subst \#define|FREETYPE_MAJOR|,$(space),$(work))
+work := $(word 2,$(work))
+major := $(subst |,$(space),$(work))
+major := $(firstword $(major))
+
+work := $(subst \#define|FREETYPE_MINOR|,$(space),$(work))
+work := $(word 2,$(work))
+minor := $(subst |,$(space),$(work))
+minor := $(firstword $(minor))
+
+work := $(subst \#define|FREETYPE_PATCH|,$(space),$(work))
+work := $(word 2,$(work))
+patch := $(subst |,$(space),$(work))
+patch := $(firstword $(patch))
+
+# ifneq ($(findstring x0x,x$(patch)x),)
+#   version := $(major).$(minor)
+#   winversion := $(major)$(minor)
+# else
+  version := $(major).$(minor).$(patch)
+  winversion := $(major)$(minor)$(patch)
+# endif
+
+
 # This target builds the tarballs.
 #
 # Not to be run by a normal user -- there are no attempts to make it
 # generic.
-
-# we check for `dist', not `distclean'
-ifneq ($(findstring distx,$(MAKECMDGOALS)x),)
-  FT_H := include/freetype/freetype.h
-
-  major := $(shell sed -n 's/.*FREETYPE_MAJOR[^0-9]*\([0-9]\+\)/\1/p' < $(FT_H))
-  minor := $(shell sed -n 's/.*FREETYPE_MINOR[^0-9]*\([0-9]\+\)/\1/p' < $(FT_H))
-  patch := $(shell sed -n 's/.*FREETYPE_PATCH[^0-9]*\([0-9]\+\)/\1/p' < $(FT_H))
-
-  version    := $(major).$(minor).$(patch)
-  winversion := $(major)$(minor)$(patch)
-endif
 
 dist:
 	-rm -rf tmp
@@ -207,22 +226,15 @@ dist:
 	  ln -s $$currdir/$$f tmp/$$f ; \
 	done
 
-	@# Prevent generation of .pyc files.  Python follows (soft) links if
-	@# the link's directory is write protected, so we have temporarily
-	@# disable write access here too.
-	chmod -w src/tools/docmaker
-
 	cd tmp ; \
 	$(MAKE) devel ; \
 	$(MAKE) do-dist
 
-	chmod +w src/tools/docmaker
-
 	mv tmp freetype-$(version)
 
-	tar cfh - freetype-$(version) \
+	tar -H ustar -chf - freetype-$(version) \
 	| gzip -9 -c > freetype-$(version).tar.gz
-	tar cfh - freetype-$(version) \
+	tar -H ustar -chf - freetype-$(version) \
 	| bzip2 -c > freetype-$(version).tar.bz2
 
 	@# Use CR/LF for zip files.
@@ -254,5 +266,9 @@ do-dist: distclean refdoc
 
 	cp $(CONFIG_GUESS) builds/unix
 	cp $(CONFIG_SUB) builds/unix
+
+	@# Remove intermediate files created by the `refdoc' target.
+	rm -rf docs/reference/markdown
+	rm -f docs/reference/mkdocs.yml
 
 # EOF

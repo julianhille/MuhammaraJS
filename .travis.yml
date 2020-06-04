@@ -104,8 +104,8 @@ deploy:
   provider: releases
   api_key:
     secure: X+W8B96JKhIcCrOvVCo0k9ZRcgMYJ+3bSWp5weAzLXp3InENXQMh0VlgKmMWJJtneu4x0XdJLdpjwXmYoKiKr5YBC5nqekySF0SNfa3gebQpXNpyCTfofIVKlzlqFQMTmn6bmcfg+cfZMNII/BExxc1+CRPq9vxotN7Dl+gJHvE3uTLO2VDtmo2LmdRUmVsryR5XVjcj8V9mNRIidE+CAZ18E7ZJa8QChLwua/RzgMiXJz0kA+yVPw+01MymmlcoEn92z1KN033W3JVDkkBjNi/jUeMq87tlBVBdKbKq2sUhKdUG7mKLielbLm0fgg9gnNdzHqL2wcV2IYkdJZZwxM4CMdbAvUoZqNzwc3vk0sjQ3jYbO2SCvY42nGEXif2YwkqhDPCRYx85vv4ONB7d464fafE7mF5jpDOzMvtfH/s2PF98Aw5UVirwMg1nWvUDuxBzqAebjrAbF17lLlMNJ1ZCsxe0WA7O79N3k1n3/91J3yonDluGbiP2qh/6YHVLH0AEuJyAYU8HGSLtnRrN91h70S65YNnPrZkxZ0vrK/QfarE89KhIBHIQlNfXlYf7cS4LaurGZjQmVf8Eb1LNupTmk/9U8T0jIb79/L01fRegrvHXnx3wwRaXGjjiqNMPkHhxpzmQY12wD3jT1F+Kc7efnoGQ9/GQCHSOVXf9YDg=
-  file: $TRAVIS_BUILD_DIR/build/stage/*.gz
-  file_glob: 'true'
+  file: $TRAVIS_BUILD_DIR/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
+  file_glob: true
   on:
     tags: true
     repo: julianhille/MuhammaraJS

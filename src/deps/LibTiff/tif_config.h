@@ -35,10 +35,10 @@
 #define SIZEOF_LONG 4
 
 /* Signed 64-bit type */
-//#define TIFF_INT64_T signed long long
+#define TIFF_INT64_T signed long long
 
 /* Unsigned 64-bit type */
-//#define TIFF_UINT64_T unsigned long long
+#define TIFF_UINT64_T unsigned long long
 
 /* Set the native cpu bit order */
 #define HOST_FILLORDER FILLORDER_LSB2MSB

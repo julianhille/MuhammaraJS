@@ -1,4 +1,4 @@
-/* $Id: tif_strip.c,v 1.19.2.1 2010-06-08 18:50:43 bfriesen Exp $ */
+/* $Id: tif_strip.c,v 1.19.2.4 2012-06-15 21:45:04 tgl Exp $ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler
@@ -107,6 +107,7 @@ tsize_t
 TIFFVStripSize(TIFF* tif, uint32 nrows)
 {
 	TIFFDirectory *td = &tif->tif_dir;
+	uint32 stripsize;
 
 	if (nrows == (uint32) -1)
 		nrows = td->td_imagelength;
@@ -122,11 +123,11 @@ TIFFVStripSize(TIFF* tif, uint32 nrows)
 		 * YCbCr data for the extended image.
 		 */
 		uint16 ycbcrsubsampling[2];
-		tsize_t w, scanline, samplingarea;
+		uint32 w, scanline, samplingarea;
 
-		TIFFGetField( tif, TIFFTAG_YCBCRSUBSAMPLING,
-			      ycbcrsubsampling + 0,
-			      ycbcrsubsampling + 1 );
+		TIFFGetFieldDefaulted(tif, TIFFTAG_YCBCRSUBSAMPLING,
+				      ycbcrsubsampling + 0,
+				      ycbcrsubsampling + 1);
 
 		samplingarea = ycbcrsubsampling[0]*ycbcrsubsampling[1];
 		if (samplingarea == 0) {
@@ -141,13 +142,27 @@ TIFFVStripSize(TIFF* tif, uint32 nrows)
 		nrows = TIFFroundup(nrows, ycbcrsubsampling[1]);
 		/* NB: don't need TIFFhowmany here 'cuz everything is rounded */
 		scanline = multiply(tif, nrows, scanline, "TIFFVStripSize");
-		return ((tsize_t)
-		    summarize(tif, scanline,
-			      multiply(tif, 2, scanline / samplingarea,
-				       "TIFFVStripSize"), "TIFFVStripSize"));
+		/* a zero anywhere in here means overflow, must return zero */
+		if (scanline > 0) {
+			uint32 extra =
+			    multiply(tif, 2, scanline / samplingarea,
+				     "TIFFVStripSize");
+			if (extra > 0)
+				stripsize = summarize(tif, scanline, extra,
+						      "TIFFVStripSize");
+			else
+				stripsize = 0;
+		} else
+			stripsize = 0;
 	} else
-		return ((tsize_t) multiply(tif, nrows, TIFFScanlineSize(tif),
-					   "TIFFVStripSize"));
+		stripsize = multiply(tif, nrows, TIFFScanlineSize(tif),
+				     "TIFFVStripSize");
+	/* Because tsize_t is signed, we might have conversion overflow */
+	if (((tsize_t) stripsize) < 0) {
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "Integer overflow in %s", "TIFFVStripSize");
+		stripsize = 0;
+	}
+	return (tsize_t) stripsize;
 }
 
 
@@ -234,27 +249,23 @@ TIFFScanlineSize(TIFF* tif)
 		    && !isUpSampled(tif)) {
 			uint16 ycbcrsubsampling[2];
 
-			TIFFGetField(tif, TIFFTAG_YCBCRSUBSAMPLING,
-				     ycbcrsubsampling + 0,
-				     ycbcrsubsampling + 1);
+			TIFFGetFieldDefaulted(tif, TIFFTAG_YCBCRSUBSAMPLING,
+					      ycbcrsubsampling + 0,
+					      ycbcrsubsampling + 1);
 
-			if (ycbcrsubsampling[0] == 0) {
+			if (ycbcrsubsampling[0]*ycbcrsubsampling[1] == 0) {
 				TIFFErrorExt(tif->tif_clientdata, tif->tif_name,
 					     "Invalid YCbCr subsampling");
 				return 0;
 			}
 
-			scanline = TIFFroundup(td->td_imagewidth,
+			/* number of sample clumps per line */
+			scanline = TIFFhowmany(td->td_imagewidth,
 					       ycbcrsubsampling[0]);
-			scanline = TIFFhowmany8(multiply(tif, scanline,
-							 td->td_bitspersample,
-							 "TIFFScanlineSize"));
-			return ((tsize_t)
-				summarize(tif, scanline,
-					  multiply(tif, 2,
-						scanline / ycbcrsubsampling[0],
-						"TIFFVStripSize"),
-					  "TIFFVStripSize"));
+			/* number of samples per line */
+			scanline = multiply(tif, scanline,
+					    ycbcrsubsampling[0]*ycbcrsubsampling[1] + 2,
+					    "TIFFScanlineSize");
 		} else {
 			scanline = multiply(tif, td->td_imagewidth,
 					    td->td_samplesperpixel,
@@ -308,9 +319,9 @@ TIFFNewScanlineSize(TIFF* tif)
 		    && !isUpSampled(tif)) {
 			uint16 ycbcrsubsampling[2];
 
-			TIFFGetField(tif, TIFFTAG_YCBCRSUBSAMPLING,
-				     ycbcrsubsampling + 0,
-				     ycbcrsubsampling + 1);
+			TIFFGetFieldDefaulted(tif, TIFFTAG_YCBCRSUBSAMPLING,
+					      ycbcrsubsampling + 0,
+					      ycbcrsubsampling + 1);
 
 			if (ycbcrsubsampling[0]*ycbcrsubsampling[1] == 0) {
 				TIFFErrorExt(tif->tif_clientdata, tif->tif_name,

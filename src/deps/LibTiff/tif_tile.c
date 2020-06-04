@@ -1,4 +1,4 @@
-/* $Id: tif_tile.c,v 1.12.2.1 2010-06-08 18:50:43 bfriesen Exp $ */
+/* $Id: tif_tile.c,v 1.12.2.2 2012-06-15 21:45:04 tgl Exp $ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler
@@ -174,7 +174,7 @@ tsize_t
 TIFFTileRowSize(TIFF* tif)
 {
 	TIFFDirectory *td = &tif->tif_dir;
-	tsize_t rowsize;
+	uint32 rowsize;
 	
 	if (td->td_tilelength == 0 || td->td_tilewidth == 0)
 		return ((tsize_t) 0);
@@ -193,7 +193,7 @@ tsize_t
 TIFFVTileSize(TIFF* tif, uint32 nrows)
 {
 	TIFFDirectory *td = &tif->tif_dir;
-	tsize_t tilesize;
+	uint32 tilesize;
 
 	if (td->td_tilelength == 0 || td->td_tilewidth == 0 ||
 	    td->td_tiledepth == 0)
@@ -209,12 +209,12 @@ TIFFVTileSize(TIFF* tif, uint32 nrows)
 		 * horizontal/vertical subsampling area include
 		 * YCbCr data for the extended image.
 		 */
-		tsize_t w =
+		uint32 w =
 		    TIFFroundup(td->td_tilewidth, td->td_ycbcrsubsampling[0]);
-		tsize_t rowsize =
+		uint32 rowsize =
 		    TIFFhowmany8(multiply(tif, w, td->td_bitspersample,
 					  "TIFFVTileSize"));
-		tsize_t samplingarea =
+		uint32 samplingarea =
 		    td->td_ycbcrsubsampling[0]*td->td_ycbcrsubsampling[1];
 		if (samplingarea == 0) {
 			TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "Invalid YCbCr subsampling");
@@ -223,15 +223,27 @@ TIFFVTileSize(TIFF* tif, uint32 nrows)
 		nrows = TIFFroundup(nrows, td->td_ycbcrsubsampling[1]);
 		/* NB: don't need TIFFhowmany here 'cuz everything is rounded */
 		tilesize = multiply(tif, nrows, rowsize, "TIFFVTileSize");
-		tilesize = summarize(tif, tilesize,
-				     multiply(tif, 2, tilesize / samplingarea,
-					      "TIFFVTileSize"),
+		/* a zero anywhere in here means overflow, must return zero */
+		if (tilesize > 0) {
+			uint32 extra =
+			    multiply(tif, 2, tilesize / samplingarea,
 				     "TIFFVTileSize");
+			if (extra > 0)
+				tilesize = summarize(tif, tilesize, extra,
+						     "TIFFVTileSize");
+			else
+				tilesize = 0;
+		}
 	} else
 		tilesize = multiply(tif, nrows, TIFFTileRowSize(tif),
 				    "TIFFVTileSize");
-	return ((tsize_t)
-	    multiply(tif, tilesize, td->td_tiledepth, "TIFFVTileSize"));
+	tilesize = multiply(tif, tilesize, td->td_tiledepth, "TIFFVTileSize");
+	/* Because tsize_t is signed, we might have conversion overflow */
+	if (((tsize_t) tilesize) < 0) {
+		TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "Integer overflow in %s", "TIFFVTileSize");
+		tilesize = 0;
+	}
+	return (tsize_t) tilesize;
 }
 
 /*
