@@ -46,8 +46,8 @@
   "binary": {
     "module_name": "muhammara",
     "module_path": "./binding",
-    "remote_path": "./",
-    "host": "https://github.com/julianhille/MuhammaraJS/releases/download/{version}",
+    "remote_path": "julianhille/MuhammaraJS/releases/download/{version}",
+    "host": "https://github.com",
     "package_name": "{node_abi}-{platform}-{arch}-{libc}.tar.gz"
   },
   "publishConfig": {
