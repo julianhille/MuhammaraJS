@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+* Added special electron 4.0.0
+
+
+### Removed
+
+* Dropped electron versions with the same abi versions
+
 ## [1.2.0] - 2020-06-01
 
 ### Fixed
