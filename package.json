@@ -6,6 +6,7 @@
   "license": "Apache-2.0",
   "author": "Julian <j.hille484@gmail.com>",
   "main": "./muhammara.js",
+  "types": "./muhammara.d.ts",
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build $EXTRA_NODE_PRE_GYP_FLAGS",
     "test": "mocha -R tap ./tests/*.js --timeout 15000",
@@ -25,6 +26,7 @@
   "files": [
     "src",
     "muhammara.js",
+    "muhammara.d.ts",
     "binding.gyp",
     "PDFRStreamForFile.js",
     "PDFStreamForResponse.js",
