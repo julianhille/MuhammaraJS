@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+* Add electron-9.1 pre built
+
 ### Fixed
 
 * Add missing typescript declaration files to published packages
