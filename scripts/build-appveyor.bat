@@ -133,6 +133,6 @@ GOTO DONE
 ECHO ~~~~~~~~~~~~~~~~~~~~~~ ERROR %~f0 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ECHO ERRORLEVEL^: %ERRORLEVEL%
 SET EL=%ERRORLEVEL%
-
+EXIT /B %EL%
 :DONE
 ECHO ~~~~~~~~~~~~~~~~~~~~~~ DONE %~f0 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
