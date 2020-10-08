@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 * Return code fixed for builds on app veyor.
 * Winwdows builds successfully with electron 10.x
+* NPM version on app veyor fixed to build electron 2.x again
 
 ### Added
 
