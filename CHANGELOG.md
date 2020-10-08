@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 * Return code fixed for builds on app veyor.
+* Winwdows builds successfully with electron 10.x
 
 ## [1.4.2] - 2020-08-27
 

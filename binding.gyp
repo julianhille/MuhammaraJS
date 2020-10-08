@@ -12,6 +12,19 @@
                 './src/deps/PDFWriter',
                 './src/deps/FreeType/include'
             ],
+            'conditions': [
+          ['OS=="win"', {
+            'defines!': [
+              'V8_DEPRECATION_WARNINGS=1',
+              'V8_DEPRECATION_WARNINGS',
+              'V8_IMMINENT_DEPRECATION_WARNINGS',
+              'V8_IMMINENT_DEPRECATION_WARNINGS=1'
+            ],
+          }, { # OS != "win",
+            'defines': [
+            ],
+          }]
+        ],
            'sources': [
                 './src/ConstructorsHolder.cpp',
                 './src/PDFStreamDriver.cpp',
