@@ -20,6 +20,10 @@ environment:
       TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
     - nodejs_version: 12
       NODE_RUNTIME: electron
+      NODE_RUNTIME_VERSION: 9.3.2
+      TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
+    - nodejs_version: 12
+      NODE_RUNTIME: electron
       NODE_RUNTIME_VERSION: 9.2.0
       TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
     - nodejs_version: 12
@@ -32,6 +36,18 @@ environment:
       TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
     - nodejs_version: 12
       NODE_RUNTIME: electron
+      NODE_RUNTIME_VERSION: 8.5.2
+      TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
+    - nodejs_version: 12
+      NODE_RUNTIME: electron
+      NODE_RUNTIME_VERSION: 8.4.1
+      TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
+    - nodejs_version: 12
+      NODE_RUNTIME: electron
+      NODE_RUNTIME_VERSION: 8.3.4
+      TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
+    - nodejs_version: 12
+      NODE_RUNTIME: electron
       NODE_RUNTIME_VERSION: 8.2.5
       TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
     - nodejs_version: 12
@@ -41,6 +57,10 @@ environment:
     - nodejs_version: 12
       NODE_RUNTIME: electron
       NODE_RUNTIME_VERSION: 8.0.3
+      TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
+    - nodejs_version: 12
+      NODE_RUNTIME: electron
+      NODE_RUNTIME_VERSION: 7.3.3
       TOOLSET_ARGS: --dist-url=https://atom.io/download/electron
     - nodejs_version: 12
       NODE_RUNTIME: electron
