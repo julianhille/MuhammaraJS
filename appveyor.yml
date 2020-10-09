@@ -90,6 +90,7 @@ platform:
   - x86
 
 install:
+  - npm -g install npm@^6.14.5
   - scripts\build-appveyor.bat
 
 artifacts:
