@@ -25,6 +25,11 @@ BuildLog.htm
 
 _.swp
 
+
+# Ignore build logs#
+########################
+*.tlog
+
 #Visual Studio unwanted#
 ########################
 *.user
