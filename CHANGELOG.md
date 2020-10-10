@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+* Electron 7.3, 8.3, 8.4, 8.5 and 9.3
+
 ## [1.4.3] - 2020-10-09
 
 ### Fixed
