@@ -10,7 +10,6 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - g++-4.8
       - libgconf-2-4
 services:
   - docker
@@ -73,7 +72,6 @@ matrix:
     - os: linux
       env: ELECTRON_VERSION="2.0.7" ELECTRON_MOCHA=true MOCHA_RUNTIME_VERSION="8"
 before_install:
-  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
   - if [[ $ELECTRON_VERSION ]]; then
     export npm_config_target=$ELECTRON_VERSION;
     export npm_config_target_arch=x64;
