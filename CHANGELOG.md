@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [1.5.1] - 2020-10-10
 
+### Added
+
+* Added manual workflow to reduce release errors
+
 ### Fixed
 
 * Huge package size as npm publish does not use .gitignore or .npmignore locally
