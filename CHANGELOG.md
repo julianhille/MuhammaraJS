@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 * Update the g++ compiler from 4.8 to 5.4 (default on xenial) for linux builds
 
+### Added
+
+* Electron 11 beta 11
+
 ## [1.5.1] - 2020-10-10
 
 ### Added
