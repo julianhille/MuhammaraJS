@@ -25,6 +25,7 @@ env:
     - NODE_NVM_VERSION="12.0.0"
     - NODE_NVM_VERSION="13.0.0"
     - NODE_NVM_VERSION="14.0.0"
+    - NODE_NVM_VERSION="15.0.0"
     - ELECTRON_VERSION="2.0.7" ELECTRON_MOCHA=true MOCHA_RUNTIME_VERSION="8"
     - ELECTRON_VERSION="3.0.10" ELECTRON_MOCHA=true
     - ELECTRON_VERSION="3.1.11" ELECTRON_MOCHA=true
@@ -56,6 +57,7 @@ env:
     - MUSL=true NODE_NVM_VERSION="12.0.0"
     - MUSL=true NODE_NVM_VERSION="13.0.0"
     - MUSL=true NODE_NVM_VERSION="14.0.0"
+    - MUSL=true NODE_NVM_VERSION="15.0.0"
 matrix:
   exclude:
     - os: osx
@@ -70,6 +72,8 @@ matrix:
       env: MUSL=true NODE_NVM_VERSION="13.0.0"
     - os: osx
       env: MUSL=true NODE_NVM_VERSION="14.0.0"
+    - os: osx
+      env: MUSL=true NODE_NVM_VERSION="15.0.0"
     - os: linux
       env: ELECTRON_VERSION="2.0.7" ELECTRON_MOCHA=true MOCHA_RUNTIME_VERSION="8"
 before_install:
