@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-* Electron 11 beta 11
+* Electron 11
 
 ## [1.5.1] - 2020-10-10
 
