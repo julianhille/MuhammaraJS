@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 * Electron 11
+* Electron 12-beta
 
 ## [1.5.1] - 2020-10-10
 
