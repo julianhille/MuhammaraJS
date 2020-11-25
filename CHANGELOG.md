@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 * Update the g++ compiler from 4.8 to 5.4 (default on xenial) for linux builds
+* Changed builds from travis and app veyor to github
 
 ### Added
 
 * Electron 11
+* Added Node 15
 
 ## [1.5.1] - 2020-10-10
 

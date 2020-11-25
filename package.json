@@ -10,6 +10,7 @@
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build $EXTRA_NODE_PRE_GYP_FLAGS",
     "test": "mocha -R tap ./tests/*.js --timeout 15000",
+    "test:electron": "electron-mocha -R tap ./tests/*.js --timeout 15000",
     "package": "node-pre-gyp package"
   },
   "repository": {
@@ -35,7 +36,7 @@
     "PDFWStreamForBuffer.js"
   ],
   "dependencies": {
-    "node-pre-gyp": "^0.14.0"
+    "node-pre-gyp": "^0.17.0"
   },
   "bundledDependencies": [
     "node-pre-gyp"

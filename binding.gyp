@@ -13,6 +13,11 @@
                 './src/deps/FreeType/include'
             ],
             'conditions': [
+['OS=="mac"', {
+          'xcode_settings': {
+            'CLANG_CXX_LIBRARY': 'libc++'
+          }
+        }],
           ['OS=="win"', {
             'defines!': [
               'V8_DEPRECATION_WARNINGS=1',
