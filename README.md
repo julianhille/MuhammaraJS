@@ -1,7 +1,6 @@
 # Welcome to MuhammaraJS
 [![NPM version](http://img.shields.io/npm/v/muhammara.svg?style=flat)](https://www.npmjs.org/package/muhammara)
-[![Build Status](https://travis-ci.com/julianhille/MuhammaraJS.svg)](https://travis-ci.com/julianhille/MuhammaraJS)
-[![Build status](https://ci.appveyor.com/api/projects/status/3mktbrxyi385827o?svg=true)](https://ci.appveyor.com/project/julianhille82467/muhammarajs)
+[![Build status](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml)
 
 This is a drop in replacement for hummusJS originally made by Galkahana.
 He did an awesome job, but discontinued hummusjs.
