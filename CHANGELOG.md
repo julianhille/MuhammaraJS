@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+###
+
+* Electron 12 beta
+
+## [1.6.0] - 2021-02-17
+
 ### Fixed
 
 * Update the g++ compiler from 4.8 to 5.4 (default on xenial) for linux builds
@@ -132,7 +138,8 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.5.1...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.6.0...HEAD
+[1.6.0]: https://github.com/julianhille/MuhammaraJS/compare/1.5.1...1.6.0
 [1.5.1]: https://github.com/julianhille/MuhammaraJS/compare/1.5.0...1.5.1
 [1.5.0]: https://github.com/julianhille/MuhammaraJS/compare/1.4.3...1.5.0
 [1.4.3]: https://github.com/julianhille/MuhammaraJS/compare/1.4.2...1.4.3
