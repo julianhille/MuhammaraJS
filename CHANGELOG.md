@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 * More electron 11.x releases
+* Add electron 12.0.0
 
 ## [1.6.0] - 2021-02-17
 
