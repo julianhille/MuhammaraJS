@@ -10,6 +10,7 @@ declare module 'muhammara' {
   export let PDFWStreamForFile: PDFWStreamForFile;
   export let PDFRStreamForFile: PDFRStreamForFile;
   export let PDFRStreamForBuffer: PDFRStreamForBuffer;
+  export let PDFWStreamForBuffer: PDFWStreamForBuffer;
   export let PDFStreamForResponse: PDFStreamForResponse;
 
   export function createWriter(
@@ -215,6 +216,11 @@ declare module 'muhammara' {
 
   export interface PDFStreamForResponse extends WriteStream {
     new (res: any): PDFStreamForResponse;
+  }
+	
+  export interface PDFWStreamForBuffer extends WriteStream {
+    new (): PDFWStreamForBuffer;
+    buffer: Promise<any>;
   }
 
   export interface PDFReaderOptions {
