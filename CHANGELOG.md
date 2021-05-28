@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add Electron 13.0
 - Add missing typescript declaration of the PDFWStreamForBuffer
 - Add Electron 11.4
+- Add electron 10.4
 
 ## [1.7.0] - 2021-03-08
 
