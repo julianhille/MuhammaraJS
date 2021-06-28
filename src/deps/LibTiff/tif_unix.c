@@ -38,6 +38,10 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#ifdef __APPLE__
+#define HAVE_UNISTD_H
+#endif
+
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
