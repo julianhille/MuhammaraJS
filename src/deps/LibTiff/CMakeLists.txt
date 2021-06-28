@@ -23,7 +23,6 @@ add_definitions(
 -DCCITT_SUPPORT=1
 -DTIF_PLATFORM_CONSOLE=1
 -DFILLODER_LSB2MSB=1)
--DHAVE_UNISTD_H=1
 
 add_library (LibTiff_OBJLIB OBJECT 
 #sources

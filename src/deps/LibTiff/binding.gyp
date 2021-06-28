@@ -22,8 +22,7 @@
                 'PACKBITS_SUPPORT=1',
                 'CCITT_SUPPORT=1',
                 'TIF_PLATFORM_CONSOLE=1',
-                'FILLODER_LSB2MSB=1',
-                'HAVE_UNISTD_H',
+                'FILLODER_LSB2MSB=1'
             ],
              'include_dirs': [
               '<(module_root_dir)/src/deps/ZLib',
