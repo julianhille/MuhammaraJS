@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 * Yarn v2 incompatibiliy
+* Build issues on mac OS big sur
 
 ## [1.8.0] - 2021-05-28
 
