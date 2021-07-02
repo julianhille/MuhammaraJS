@@ -7,6 +7,8 @@ on:
     branches:
   pull_request:
   workflow_dispatch:
+env:
+  npm_version: 6.14.5
 
 jobs:
   build-musl:
@@ -28,7 +30,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm config set unsafe-perm true
-      - run: npm -g install npm@^6.14.5
+      - run: npm -g install npm@^${{ env.npm_version }} --force
       - run: node --version
       - run: npm --version
       - run: npm install node-gyp@5.1.1 --global
@@ -151,7 +153,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - run: npm -g install npm@6.14.5
+      - run: npm -g install npm@^${{ env.npm_version }} --force
       - run: node --version
       - run: npm --version
       - run: npm install node-gyp@5.1.1 --global
@@ -216,7 +218,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - run: npm -g install npm@^6.14.5
+      - run: npm -g install npm@^${{ env.npm_version }} --force
       - run: node --version
       - run: npm --version
       - run: npm install node-gyp@5.1.1 --global
