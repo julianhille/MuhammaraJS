@@ -132,7 +132,7 @@ jobs:
             xcversion: 11.2.1
             architecture: x64
           - architecture: arm
-            architecture_node: arm64
+            architecture_node: x64
             xcversion: 12.4
         exclude:
           - os: macos-10.15
