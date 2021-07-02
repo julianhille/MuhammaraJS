@@ -46,7 +46,7 @@ jobs:
           if-no-files-found: error
   build-electron:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-18.04, macos-10.15, windows-2019]
         architecture: [x64, ia32, arm]
@@ -118,7 +118,7 @@ jobs:
           if-no-files-found: error
   build-node:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-18.04, macos-10.15, windows-2019]
         node: [14.0.0, 15.7.0]
