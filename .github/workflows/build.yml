@@ -52,6 +52,7 @@ jobs:
         include:
           - os: macos-11
             architecture: arm
+            architecture_node: arm64
           - electron_mocha_version: ^10
           - electron_mocha_version: ^8
             electron: 3.0.9
