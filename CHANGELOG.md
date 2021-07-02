@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.9.0] - 2021-06-30
+
 ### Fixed
 
 * Yarn v2 incompatibiliy
@@ -157,7 +159,8 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.8.0...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.9.0...HEAD
+[1.9.0]: https://github.com/julianhille/MuhammaraJS/compare/1.8.0...1.9.0
 [1.8.0]: https://github.com/julianhille/MuhammaraJS/compare/1.7.0...1.8.0
 [1.7.0]: https://github.com/julianhille/MuhammaraJS/compare/1.6.0...1.7.0
 [1.6.0]: https://github.com/julianhille/MuhammaraJS/compare/1.5.1...1.6.0
