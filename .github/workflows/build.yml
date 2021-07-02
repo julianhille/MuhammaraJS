@@ -184,7 +184,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-18.04, macos-10.15, windows-2019]
+        os: [ubuntu-18.04, macos-10.15, windows-2019, macos-11.0]
         node: [6.14.1, 7.10.1, 8.11.0, 9.11.1, 10.8.0, 11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0]
         architecture: [x64, ia32]
         include:
@@ -192,9 +192,16 @@ jobs:
             architecture_node: x86
           - architecture: x64
             architecture_node: x64
+          - os: macos-11.0
+            architecture: arm
+            architecture_node: arm64
         exclude:
           - os: macos-10.15
             architecture: ia32
+          - os: macos-11.0
+            architecture: ia32
+          - os: macos-11.0
+            architecture: x64
           - os: ubuntu-18.04
             architecture: ia32
           - os: macos-10.15
