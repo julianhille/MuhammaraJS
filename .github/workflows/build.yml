@@ -14,8 +14,8 @@ jobs:
       fail-fast: true
       matrix:
         node: [6.14.1, 7.10.1, 8.11.0, 9.11.1, 10.8.0, 11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.2.0]
-        python: python
         include:
+          - python: python
           - node: 16.2.0
             python: python2
     runs-on: ubuntu-latest
