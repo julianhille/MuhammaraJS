@@ -41,6 +41,9 @@ jobs:
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
       - run: ls -lah /
       - run: ls -lah /__w/
+      - run: ls -lah /__w/MuhammaraJS/
+      - run: ls -lah /__w/MuhammaraJS/MuhammaraJS
+      - run: ls -lah /__w/MuhammaraJS/MuhammaraJS/tests/
       - run: ls -lah /__w/MuhammaraJS/MuhammaraJS/tests/output/
       - run: whoami
       - run: npm run test
