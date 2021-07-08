@@ -39,6 +39,9 @@ jobs:
       - run: npm install --build-from-source
         env:
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
+      - run: ls -lah /
+      - run: ls -lah /__w/
+      - run: ls -lah /__w/MuhammaraJS/MuhammaraJS/tests/output/
       - run: npm run test
       - run: ./node_modules/.bin/node-pre-gyp package testpackage --target_libc=musl
       - uses: actions/upload-artifact@v2
