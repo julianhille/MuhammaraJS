@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: apk update
-      - run: apk add --no-cache make gcc jq g++ python tar
+      - run: apk add --no-cache make gcc jq g++ python2 tar
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
