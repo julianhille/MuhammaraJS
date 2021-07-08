@@ -46,6 +46,7 @@ jobs:
       - run: ls -lah /__w/MuhammaraJS/MuhammaraJS/tests/
       - run: ls -lah /__w/MuhammaraJS/MuhammaraJS/tests/output/
       - run: whoami
+      - run: - run: node -e "console.log(process.env['USER'])"
       - run: npm run test
       - run: ./node_modules/.bin/node-pre-gyp package testpackage --target_libc=musl
       - uses: actions/upload-artifact@v2
