@@ -172,7 +172,7 @@ jobs:
         id: cache
         with:
           path: .cache/
-          key: ${{ runner.os }}-${{ matrix.electron_mocha_version }}-$S{{ matrix.electron }}
+          key: ${{ runner.os }}-${{ matrix.electron_mocha_version }}-${{ matrix.electron }}
       - run: npm install -g electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
       - name: Run test
         uses: GabrielBB/xvfb-action@v1
