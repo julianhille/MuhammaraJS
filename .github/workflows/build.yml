@@ -145,6 +145,7 @@ jobs:
     steps:
       - name: make cache dir
         run: mkdir -p "${ELECTRON_CACHE}" "${ELECTRON_BUILDER_CACHE}"
+        shell: bash
       - uses: actions/checkout@v2
       - run: xcversion select 11.2.1 --symlink
         if: ${{ runner.os == 'macOS' }}
