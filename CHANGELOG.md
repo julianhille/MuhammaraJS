@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.10.0] - 2021-07-12
+
 ### Added
 
 - Add Electron 13.1
+- Disable NEON on arm builds
 
 ## [1.9.0] - 2021-06-30
 
@@ -163,7 +166,8 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.9.0...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.10.0...HEAD
+[1.10.0]: https://github.com/julianhille/MuhammaraJS/compare/1.9.0...1.10.0
 [1.9.0]: https://github.com/julianhille/MuhammaraJS/compare/1.8.0...1.9.0
 [1.8.0]: https://github.com/julianhille/MuhammaraJS/compare/1.7.0...1.8.0
 [1.7.0]: https://github.com/julianhille/MuhammaraJS/compare/1.6.0...1.7.0
