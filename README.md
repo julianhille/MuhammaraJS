@@ -37,3 +37,7 @@ With:
 ```
 let muhammara = require('muhammara')
 ```
+
+# Documentation
+
+You can find samples and documentation [here](./docs/Home.md)
