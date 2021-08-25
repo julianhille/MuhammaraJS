@@ -1,6 +1,6 @@
 var fs = require('fs');
 var path = require('path');
-var pregyp = require('node-pre-gyp');
+var pregyp = require('@map-box/node-pre-gyp');
 var binding_path = pregyp.find(path.resolve(path.join(__dirname,'./package.json')));
 var muhammara = module.exports = require(binding_path);
 var EventEmitter = require('events').EventEmitter;

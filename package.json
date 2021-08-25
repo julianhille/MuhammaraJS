@@ -36,15 +36,15 @@
     "PDFWStreamForBuffer.js"
   ],
   "dependencies": {
-    "node-pre-gyp": "^0.17.0"
+    "@mapbox/node-pre-gyp": "^1.0.5"
   },
   "bundledDependencies": [
-    "node-pre-gyp"
+    "@mapbox/node-pre-gyp"
   ],
   "devDependencies": {
     "chai": "^4.2.0",
     "mocha": "^6.2.3",
-    "npm": "^6.14.5"
+    "npm": "^6.14.15"
   },
   "binary": {
     "module_name": "muhammara",
