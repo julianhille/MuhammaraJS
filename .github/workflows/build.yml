@@ -61,6 +61,8 @@ jobs:
             architecture_node: x64
           - architecture: x64
             node: 14.17.0
+          - electron: 15.0.0
+            node: 16.5.0
           - electron: 13.1.0
             node: 14.17.0
           - electron: 13.0.0
