@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Documentation (copy of  the wiki)
+- Add node 16.9.1
 
 ## [1.10.0] - 2021-07-12
 
