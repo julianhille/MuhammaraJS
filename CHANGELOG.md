@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Documentation (copy of  the wiki)
 - Add Electron 13.2.3
 - Add Electron 13.5.0
+- Add Electron 14.0.1
 
 ## [1.10.0] - 2021-07-12
 
