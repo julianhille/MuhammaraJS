@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add Electron 14.1.0
 - Add Electron 15.0.0
 - Add Electron 15.1.2
+- Add Node 16.11.1
 
 ## [1.10.0] - 2021-07-12
 
