@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Electron 2.0.7
+- Node 6.14.1 and 7.10.1
+
 ### Added
 
 - Add Electron 13.3.0
@@ -18,6 +23,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add Electron 15.0.0
 - Add Electron 15.1.2
 - Add Node 16.11.1
+
+### Fixed
+
+- Dependency to node-pre-gyp moved from deprecated to scoped package
 
 ## [1.10.0] - 2021-07-12
 

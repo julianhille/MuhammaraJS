@@ -7,6 +7,9 @@
   "author": "Julian <j.hille484@gmail.com>",
   "main": "./muhammara.js",
   "types": "./muhammara.d.ts",
+  "engines": {
+     "node": ">=8"
+  },
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build ${EXTRA_NODE_PRE_GYP_FLAGS:-\"\"}",
     "test": "mocha -R tap ./tests/*.js --timeout 15000",
@@ -36,10 +39,10 @@
     "PDFWStreamForBuffer.js"
   ],
   "dependencies": {
-    "node-pre-gyp": "^0.17.0"
+    "@mapbox/node-pre-gyp": "^1.0.5"
   },
   "bundledDependencies": [
-    "node-pre-gyp"
+    "@mapbox/node-pre-gyp"
   ],
   "devDependencies": {
     "chai": "^4.2.0",
