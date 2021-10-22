@@ -17,6 +17,11 @@ Project site is [here](http://www.pdfhummus.com).
 
 If you are looking for a C++ Library go [here](https://github.com/galkahana/PDF-Writer).
 
+# Caution
+
+Version 2.0 will be incompatible with some older node and
+electron versions because we needed to upgrade node-pre-gyp.
+
 # Installation
 
 ```
