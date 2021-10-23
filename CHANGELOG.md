@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.0.0] - 2021-10-22
+
 ### Removed
 
 - Electron 2.0.7
@@ -187,7 +189,8 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/1.10.0...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/julianhille/MuhammaraJS/compare/1.10.0...2.0.0
 [1.10.0]: https://github.com/julianhille/MuhammaraJS/compare/1.9.0...1.10.0
 [1.9.0]: https://github.com/julianhille/MuhammaraJS/compare/1.8.0...1.9.0
 [1.8.0]: https://github.com/julianhille/MuhammaraJS/compare/1.7.0...1.8.0
