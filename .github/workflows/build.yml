@@ -187,7 +187,11 @@ jobs:
           npm_config_target: ${{ matrix.electron }}
           npm_config_disturl: https://atom.io/download/electron
           npm_config_runtime: electron
-      - run: npm install -g electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
+      - uses: Wandalen/wretry.action@v1.0.11
+        with:
+          command: npm install -g electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
+          attempt_limit: 3
+          attempt_delay: 10000
       - name: Run test
         uses: GabrielBB/xvfb-action@v1
         with:
