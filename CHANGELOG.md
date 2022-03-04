@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Electron version: 17.0, 17.1
+- NodeJs 17.6.0
 
 ## [2.1.0] - 2021-12-03
 
