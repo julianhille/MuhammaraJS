@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Update PDFWriter dependency to the newest available versoin
+
 ### Added
 
 - Electron version: 17.0, 17.1
