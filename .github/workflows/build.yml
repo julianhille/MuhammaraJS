@@ -14,10 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [8.11.0, 9.11.1, 10.8.0, 11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1]
+        node: [8.11.0, 9.11.1, 10.8.0, 11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1, 17.6.0]
         include:
           - python_version: 3
             node: 16.11.1
+          - python_version: 3
+            node: 17.6.0
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node }}-alpine
@@ -215,7 +217,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-18.04, macos-10.15, windows-2019]
-        node: [8.11.0, 9.11.1, 10.8.0, 11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1]
+        node: [8.11.0, 9.11.1, 10.8.0, 11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1, 17.6.0]
         architecture: [x64, ia32]
         include:
           - architecture: ia32
