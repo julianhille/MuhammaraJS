@@ -216,28 +216,34 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, macos-10.15, windows-2019]
+        os: [ubuntu-18.04, macos-11, windows-2019]
         node: [8.11.0, 9.11.1, 10.8.0, 11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1, 17.6.0]
-        architecture: [x64, ia32]
+        architecture: [x64, ia32, arm64]
         include:
           - architecture: ia32
             architecture_node: x86
+            target_architecture: ia32
           - architecture: x64
             architecture_node: x64
+            target_architecture: x64
+          - architecture: arm64
+            architecture_node: x64
+            target_architecture: arm64
+            extra_compile_flags: -arch arm64
         exclude:
-          - os: macos-10.15
+          - os: ubuntu-18.04
+            architecture: arm64
+          - os: windows-2019
+            architecture: arm64
+          - os: macos-11
             architecture: ia32
           - os: ubuntu-18.04
             architecture: ia32
-          - os: macos-10.15
+          - os: macos-11
             node: 6.14.1
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - run: xcversion select 11.2.1 --symlink
-        if: ${{ runner.os == 'macOS' }}
-      - run: xcversion install-cli-tools
-        if: ${{ runner.os == 'macOS' }}
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
@@ -251,8 +257,13 @@ jobs:
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
-          npm_config_target_arch: ${{ matrix.architecture }}
+          npm_config_target_arch: ${{ matrix.target_architecture }}
+          CFLAGS: ${{ matrix.extra_compile_flags }}
+          CPPFLAGS: ${{ matrix.extra_compile_flags }}
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
+        if: ${{ matrix.target_architecture != 'arm64' }}
+      - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}
+        if: ${{ matrix.target_architecture == 'arm64' }}
       - uses: actions/upload-artifact@v2
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
