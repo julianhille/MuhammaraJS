@@ -25,7 +25,7 @@ electron versions because we needed to upgrade node-pre-gyp.
 # Installation
 
 ```
-npm install
+npm install muhammara
 
 ```
 
@@ -34,7 +34,7 @@ npm install
 Replace:
 
 ```
-let hummus = require('humms')
+let hummus = require('hummus')
 ```
 
 With:
