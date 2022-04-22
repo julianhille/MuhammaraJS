@@ -156,7 +156,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CreateFormXObjectFromPDFPage(co
     
     if(result.first != eSuccess)
     {
-		THROW_EXCEPTION("Unable to create form xobject from PDF page, parhaps the page index does not fit the total pages count");
+		THROW_EXCEPTION("Unable to create form xobject from PDF page, perhaps the page index does not fit the total pages count");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
@@ -191,7 +191,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::MergePDFPageToPage(const ARGS_T
                                                                                   TO_UINT32(args[1])->Value());
     
     if(status != eSuccess)
-		THROW_EXCEPTION("Unable to merge page index to page. parhaps the page index is wrong");
+		THROW_EXCEPTION("Unable to merge page index to page. Perhaps the page index is wrong");
     SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
 }
@@ -220,7 +220,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::AppendPDFPageFromPDF(const ARGS
     
     if(result.first != eSuccess)
     {
-		THROW_EXCEPTION("Unable to append page. parhaps the page index is wrong");
+		THROW_EXCEPTION("Unable to append page. Perhaps the page index is wrong");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
@@ -255,7 +255,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::MergePDFPageToFormXObject(const
                                                                                   TO_UINT32(args[1])->Value());
     
     if(status != eSuccess)
-		THROW_EXCEPTION("Unable to merge page index to form. parhaps the page index is wrong");
+		THROW_EXCEPTION("Unable to merge page index to form. Perhaps the page index is wrong");
     SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
 }
@@ -293,7 +293,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyDirectObjectAsIs(const ARGS
     
     EStatusCode status = copyingContextDriver->CopyingContext->CopyDirectObjectAsIs(ObjectWrap::Unwrap<PDFObjectDriver>(args[0]->TO_OBJECT())->GetObject());
     if(status != eSuccess)
-		THROW_EXCEPTION("Unable to merge page index to form. parhaps the page index is wrong");
+		THROW_EXCEPTION("Unable to merge page index to form. Perhaps the page index is wrong");
     SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     
 }
@@ -347,7 +347,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyDirectObjectWithDeepCopy(co
     
     EStatusCodeAndObjectIDTypeList result = copyingContextDriver->CopyingContext->CopyDirectObjectWithDeepCopy(ObjectWrap::Unwrap<PDFObjectDriver>(args[0]->TO_OBJECT())->GetObject());
     if(result.first != eSuccess)
-		THROW_EXCEPTION("Unable to copy object, parhaps the object id is wrong");
+		THROW_EXCEPTION("Unable to copy object, perhaps the object id is wrong");
 
     Local<Array> resultObjectIDs = NEW_ARRAY((unsigned int)result.second.size());
     unsigned int index = 0;
