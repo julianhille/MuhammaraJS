@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Builds for node and electron with arm64 on darwin (Apple M1)
+- Add electron 18
 
 ## [2.2.0] - 2022-03-05
 
