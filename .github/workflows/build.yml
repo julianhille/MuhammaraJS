@@ -49,6 +49,34 @@ jobs:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
           if-no-files-found: error
+  build-aws-node:
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [10, 12, 14, 16]
+    runs-on: ubuntu-latest
+    container:
+      image: amazon/aws-lambda-nodejs:${{ matrix.node }}
+      credentials:
+        username: "${{ secrets.DOCKER_USERNAME }}"
+        password: "${{ secrets.DOCKER_PASSWORD }}"
+    steps:
+      - run: yum -y update
+      - run: yum -y install gcc-c++ make
+      - run: yum -y install tar gzip
+      - uses: actions/checkout@v2
+
+      - run: npm -g install npm@6.14.5
+      - run: npm install node-gyp@5.1.1 --global
+      - run: npm install --build-from-source
+      - run: npx node-pre-gyp rebuild
+      - run: npm run test
+      - run: npx node-pre-gyp package testpackage --target_platform=amz-lambda-linux
+      - uses: actions/upload-artifact@v2
+        with:
+          path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
+          name: bindings
+          if-no-files-found: error
   build-electron:
     strategy:
       fail-fast: false
