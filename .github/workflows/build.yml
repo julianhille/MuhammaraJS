@@ -20,6 +20,8 @@ jobs:
             node: 16.11.1
           - python_version: 3
             node: 17.6.0
+          - python_version: 3
+            node: 18.2.0
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node }}-alpine
