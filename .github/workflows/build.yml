@@ -18,6 +18,9 @@ jobs:
         node: [16.11.1, 17.6.0, 18.2.0]
         architecture: [x64, ia32, arm64]
         include:
+          - architecture: x64
+            architecture_node: x64
+            target_architecture: x64
           - os: ubuntu-20.04
             node: 18.2.0
             architecture: x64
