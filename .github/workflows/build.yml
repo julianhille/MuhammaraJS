@@ -68,7 +68,7 @@ jobs:
           name: bindings
           if-no-files-found: error
   publish:
-    needs: [build-musl, build-electron, build-node]
+    needs: [build-node]
     runs-on: ubuntu-latest
     if:  startsWith(github.ref, 'refs/tags/')
     steps:
