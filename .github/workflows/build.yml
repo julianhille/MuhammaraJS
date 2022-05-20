@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04]
-        node: [16.11.1, 17.6.0]
+        node: [16.11.1, 17.6.0, 18.2.0]
         architecture: [x64, ia32, arm64]
         include:
           - architecture: ia32
