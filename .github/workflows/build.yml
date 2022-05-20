@@ -29,13 +29,13 @@ jobs:
             target_architecture: arm64
             extra_compile_flags: -arch arm64
         exclude:
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             architecture: arm64
           - os: windows-2019
             architecture: arm64
           - os: macos-11
             architecture: ia32
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             architecture: ia32
           - os: macos-11
             node: 6.14.1
