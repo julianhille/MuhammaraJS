@@ -30,6 +30,8 @@ jobs:
             extra_compile_flags: -arch arm64
           - os: ubuntu-20.04
             node: 18.2.0
+            architecture: x64
+            architecture_node: x64
         exclude:
           - os: ubuntu-18.04
             node: 18.2.0
