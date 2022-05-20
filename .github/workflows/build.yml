@@ -323,6 +323,9 @@ jobs:
             architecture: ia32
           - os: macos-11
             node: 6.14.1
+          - os: windows-2019
+            architecture: ia32
+            node: 18.2.0
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
