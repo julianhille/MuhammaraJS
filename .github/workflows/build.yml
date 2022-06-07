@@ -267,7 +267,7 @@ jobs:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           npm_config_target: ${{ matrix.electron }}
-          npm_config_disturl: https://atom.io/download/electron
+          npm_config_disturl: https://artifacts.electronjs.org/headers/dist
           npm_config_runtime: electron
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
