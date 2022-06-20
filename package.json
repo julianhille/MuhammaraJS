@@ -8,7 +8,7 @@
   "main": "./muhammara.js",
   "types": "./muhammara.d.ts",
   "engines": {
-     "node": ">=8"
+    "node": ">=8"
   },
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build ${EXTRA_NODE_PRE_GYP_FLAGS:-\"\"}",
@@ -45,6 +45,7 @@
     "@mapbox/node-pre-gyp"
   ],
   "devDependencies": {
+    "@types/node": "^18.0.0",
     "chai": "^4.2.0",
     "mocha": "^6.2.3",
     "npm": "^6.14.5"
