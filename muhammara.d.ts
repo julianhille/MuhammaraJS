@@ -289,18 +289,17 @@ declare module 'muhammara' {
   }
 
   export interface ResourcesDictionary {
-    addFormXObjectMapping(formXObject: FormXObject): any;
-    /*
-    SET_PROTOTYPE_METHOD(t, "addImageXObjectMapping", AddImageXObjectMapping);
-    SET_PROTOTYPE_METHOD(t, "addProcsetResource", AddProcsetResource);
-    SET_PROTOTYPE_METHOD(t, "addExtGStateMapping", AddExtGStateMapping);
-    SET_PROTOTYPE_METHOD(t, "addFontMapping", AddFontMapping);
-    SET_PROTOTYPE_METHOD(t, "addColorSpaceMapping", AddColorSpaceMapping);
-    SET_PROTOTYPE_METHOD(t, "addPatternMapping", AddPatternMapping);
-    SET_PROTOTYPE_METHOD(t, "addPropertyMapping", AddPropertyMapping);
-    SET_PROTOTYPE_METHOD(t, "addXObjectMapping", AddXObjectMapping);
-    SET_PROTOTYPE_METHOD(t, "addShadingMapping", AddShadingMapping);
-    */
+    addFormXObjectMapping(formXObject: FormXObject): string;
+    addImageXObjectMapping(imageXObject: ImageXObject|number): string;
+    addProcsetResource(procSetName: string): void;
+    addExtGStateMapping(stateObjectId: number): string;
+    addFontMapping(fontObjectId: number): string;
+    addColorSpaceMapping(colorSpaceId: number): string;
+    addPatternMapping(colorSpaceId: number): string;
+    addPatternMapping(patternObjectId: number): string;
+    addPropertyMapping(propertyObjectId: number): string;
+    addXObjectMapping(xObjectId: number): string;
+    addShadingMapping(xObjectId: number): string;
   }
 
   export type PDFBox = [PosX, PosY, Width, Height];
@@ -374,20 +373,17 @@ declare module 'muhammara' {
   SET_PROTOTYPE_METHOD(t, "queryArrayObject", QueryArrayObject);
   */
     parseNewObject(objectId: number): PDFObject;
-    /*
-    SET_PROTOTYPE_METHOD(t, "getPageObjectID", GetPageObjectID);
-    SET_PROTOTYPE_METHOD(t, "parsePageDictionary", ParsePageDictionary);
-    */
+    getPageObjectID(objectId: number): number;
+    parsePageDictionary(objectId: number): PDFDictionary;
     parsePage(page: number): PDFPageInput;
-    /*
-    SET_PROTOTYPE_METHOD(t, "getObjectsCount", GetObjectsCount);
-    SET_PROTOTYPE_METHOD(t, "isEncrypted", IsEncrypted);
-    SET_PROTOTYPE_METHOD(t, "getXrefSize", GetXrefSize);
-    SET_PROTOTYPE_METHOD(t, "getXrefEntry", GetXrefEntry);
-    SET_PROTOTYPE_METHOD(t, "getXrefPosition", GetXrefPosition);
-    SET_PROTOTYPE_METHOD(t, "startReadingFromStream", StartReadingFromStream);
-    SET_PROTOTYPE_METHOD(t, "getParserStream", GetParserStream);
-      */
+    getObjectsCount(): number;
+    isEncrypted(): boolean;
+    getXrefSize(): number;
+    getXrefEntry(objectId: number): any;
+    getXrefSize(): number;
+    getXrefPosition(objectId: number): number;
+    startReadingFromStream(inputStream: PDFStreamInput): ByteReader;
+    getParserStream(): ByteReaderWithPosition;
   }
 
   export interface PDFStream {
@@ -395,15 +391,11 @@ declare module 'muhammara' {
   }
 
   export interface PDFNull extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: void;
   }
 
   export interface PDFName extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: string;
   }
 
   export interface PDFLiteralString extends PDFObject {
@@ -412,9 +404,7 @@ declare module 'muhammara' {
   }
 
   export interface PDFInteger extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: number;
   }
 
   export interface PDFIndirectObjectReference extends PDFObject {
@@ -423,9 +413,7 @@ declare module 'muhammara' {
   }
 
   export interface PDFHexString extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: string;
   }
 
   export interface PDFDictionary extends PDFObject {
@@ -435,24 +423,18 @@ declare module 'muhammara' {
   }
 
   export interface PDFDate {
-    /*
-        SET_PROTOTYPE_METHOD(t, "toString", ToString);
-        SET_PROTOTYPE_METHOD(t, "setToCurrentTime", SetToCurrentTime);
-        */
+    toString(): string;
+    setToCurrentTime(): PDFDate;
   }
 
   export interface PDFBoolean extends PDFObject {
-    /*
-	SET_ACCESSOR_METHOD(t, "value", GetValue);
-    */
+    value: boolean;
   }
 
   export interface PDFArray extends PDFObject {
-    /*
-	SET_PROTOTYPE_METHOD(t, "toJSArray", ToJSArray);
-	SET_PROTOTYPE_METHOD(t, "queryObject", QueryObject);
-	SET_PROTOTYPE_METHOD(t, "getLength", GetLength);
-    */
+    toJSArray(): Array<any>;
+    queryObject(index: number): any;
+    getLength(): number;
   }
 
   export interface OutputFile {
@@ -516,41 +498,35 @@ declare module 'muhammara' {
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
     appendPDFPageFromPDF(sourcePageNumber: number): number; // stream start bytes?
     mergePDFPageToFormXObject(sourcePage: PDFPage, targetPageNumber: number): any;
-    /*
-    SET_PROTOTYPE_METHOD(t, "getSourceDocumentParser", GetSourceDocumentParser);
-    SET_PROTOTYPE_METHOD(t, "copyDirectObjectAsIs", CopyDirectObjectAsIs);
-    SET_PROTOTYPE_METHOD(t, "copyObject", CopyObject);
-    SET_PROTOTYPE_METHOD(t, "copyDirectObjectWithDeepCopy", CopyDirectObjectWithDeepCopy);
-    SET_PROTOTYPE_METHOD(t, "copyNewObjectsForDirectObject", CopyNewObjectsForDirectObject);
-    SET_PROTOTYPE_METHOD(t, "getCopiedObjectID", GetCopiedObjectID);
-    SET_PROTOTYPE_METHOD(t, "getCopiedObjects", GetCopiedObjects);
-    SET_PROTOTYPE_METHOD(t, "replaceSourceObjects", ReplaceSourceObjects);
-    SET_PROTOTYPE_METHOD(t, "getSourceDocumentStream", GetSourceDocumentStream);
-      */
+    getSourceDocumentParser(input: FilePath | ReadStream, options?: PDFReaderOptions): PDFReader;
+    copyDirectObjectAsIs(objectToCopy: PDFObject): void;
+    copyObject(objectId: number): number;
+    copyDirectObjectWithDeepCopy(objectToCopy: PDFObject): Array<number>;
+    copyNewObjectsForDirectObject(objectIds: Array<number>): void;
+    getCopiedObjectID(objectId: number): number;
+    getCopiedObjects(): {[key: string]: number};
+    replaceSourceObjects(replaceMap: {[key: string]: number}): void;
+    getSourceDocumentStream(): ByteReaderWithPosition;
   }
 
   export interface DocumentContext {
-    /*
-	SET_PROTOTYPE_METHOD(t, "getInfoDictionary", GetInfoDictionary);
-    */
+    getInfoDictionary(): InfoDictionary;
   }
 
   export interface DictionaryContext {
-    /*
-        SET_PROTOTYPE_METHOD(t, "writeKey", WriteKey);
-        SET_PROTOTYPE_METHOD(t, "writeNameValue", WriteNameValue);
-        SET_PROTOTYPE_METHOD(t, "writeRectangleValue", WriteRectangleValue);
-        SET_PROTOTYPE_METHOD(t, "writeLiteralStringValue", WriteLiteralStringValue);
-        SET_PROTOTYPE_METHOD(t, "writeBooleanValue", WriteBooleanValue);
-        SET_PROTOTYPE_METHOD(t, "writeObjectReferenceValue", WriteObjectReferenceValue);
-        */
+    writeKey(): DictionaryContext;
+    writeNameValue(nameValue: string): DictionaryContext;
+    writeRectangleValue(values: Array<number>): DictionaryContext;
+    writeRectangleValue(a: number, b: number, c: number, d: number): DictionaryContext;
+    writeLiteralStringValue(literal: Array<number>|string): DictionaryContext;
+    writeBooleanValue(boolValue: boolean): DictionaryContext;
+    writeObjectReferenceValue(objectId: number): DictionaryContext;
+    /* Every DictionaryContext is a `this` */
   }
 
   export interface ByteWriterWithPosition {
-    /*
-        SET_PROTOTYPE_METHOD(t, "write", Write);
-        SET_PROTOTYPE_METHOD(t, "getCurrentPosition", GetCurrentPosition);
-        */
+    write(bytes: Array<number>):  number;
+    getCurrentPosition(): number;
   }
 
   export interface ObjectsContext {
