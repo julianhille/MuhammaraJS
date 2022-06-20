@@ -103,7 +103,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CreateFormXObjectFromPDFPage(co
        (!args[1]->IsNumber() && !args[1]->IsArray()) ||
        (args.Length() == 3 && !args[2]->IsArray()))
     {
-		THROW_EXCEPTION("Wrong arguments. provide 2 or 3 arugments, where the first is a 0 based page index, and the second is a EPDFPageBox enumeration value or a 4 numbers array defining an box. a 3rd parameter may be provided to deisgnate the result form matrix");
+		THROW_EXCEPTION("Wrong arguments. provide 2 or 3 arguments, where the first is a 0 based page index, and the second is a EPDFPageBox enumeration value or a 4 numbers array defining an box. a 3rd parameter may be provided to deisgnate the result form matrix");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
  
@@ -182,7 +182,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::MergePDFPageToPage(const ARGS_T
        !copyingContextDriver->holder->IsPDFPageInstance(args[0]) ||
        !args[1]->IsNumber())
     {
-		THROW_EXCEPTION("Wrong arguments. provide 2 arugments, where the first is a page, and the second is a page index to merge");
+		THROW_EXCEPTION("Wrong arguments. provide 2 arguments, where the first is a page, and the second is a page index to merge");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
@@ -246,7 +246,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::MergePDFPageToFormXObject(const
        !copyingContextDriver->holder->IsFormXObjectInstance(args[0]) ||
        !args[1]->IsNumber())
     {
-		THROW_EXCEPTION("Wrong arguments. provide 2 arugments, where the first is a form, and the second is a page index to merge");
+		THROW_EXCEPTION("Wrong arguments. provide 2 arguments, where the first is a form, and the second is a page index to merge");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
@@ -287,7 +287,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyDirectObjectAsIs(const ARGS
     
     if(args.Length() != 1) // need to sometimes check that this is a PDFObject
     {
-		THROW_EXCEPTION("Wrong arguments. provide 1 arugment, which is PDFObject to copy");
+		THROW_EXCEPTION("Wrong arguments. provide 1 argument, which is PDFObject to copy");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
@@ -314,7 +314,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyObject(const ARGS_TYPE& arg
     if(args.Length() != 1 ||
        !args[0]->IsNumber())
     {
-		THROW_EXCEPTION("Wrong arguments. provide 1 arugment, which is object ID of the object to copy");
+		THROW_EXCEPTION("Wrong arguments. provide 1 argument, which is object ID of the object to copy");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
@@ -341,7 +341,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyDirectObjectWithDeepCopy(co
     
     if(args.Length() != 1) // need to sometimes check that this is a PDFObject
     {
-		THROW_EXCEPTION("Wrong arguments. provide 1 arugment, which is PDFObject to copy");
+		THROW_EXCEPTION("Wrong arguments. provide 1 argument, which is PDFObject to copy");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
@@ -376,7 +376,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyNewObjectsForDirectObject(c
     if(args.Length() != 1 ||
        !args[0]->IsArray())
     {
-		THROW_EXCEPTION("Wrong arguments. provide 1 arugment, which is an array of object IDs");
+		THROW_EXCEPTION("Wrong arguments. provide 1 argument, which is an array of object IDs");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
@@ -413,7 +413,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::GetCopiedObjectID(const ARGS_TY
     if(args.Length() != 1 ||
        !args[0]->IsNumber())
     {
-		THROW_EXCEPTION("Wrong arguments. provide 1 arugment, an object ID to check");
+		THROW_EXCEPTION("Wrong arguments. provide 1 argument, an object ID to check");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
         
@@ -468,7 +468,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::ReplaceSourceObjects(const ARGS
     if(args.Length() != 1 ||
        !args[0]->IsObject())
     {
- 		THROW_EXCEPTION("Wrong arguments. provide 1 arugment, which is an object mapping source object ids to map to target object IDs");
+ 		THROW_EXCEPTION("Wrong arguments. provide 1 argument, which is an object mapping source object ids to map to target object IDs");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
