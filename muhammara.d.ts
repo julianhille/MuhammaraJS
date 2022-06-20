@@ -347,21 +347,17 @@ declare module 'muhammara' {
   }
 
   export interface ByteReader {
-    /*
-	SET_PROTOTYPE_METHOD(t, "read", Read);
-	SET_PROTOTYPE_METHOD(t, "notEnded", NotEnded);
-    */
+    read(length: number): Array<number>;
+    notEnded(): boolean;
   }
 
   export interface ByteReaderWithPosition {
-    /*
-        SET_PROTOTYPE_METHOD(t, "read", Read);
-        SET_PROTOTYPE_METHOD(t, "notEnded", NotEnded);
-        SET_PROTOTYPE_METHOD(t, "setPosition", SetPosition);
-        SET_PROTOTYPE_METHOD(t, "getCurrentPosition", GetCurrentPosition);
-        SET_PROTOTYPE_METHOD(t, "setPositionFromEnd", SetPositionFromEnd);
-        SET_PROTOTYPE_METHOD(t, "skip", Skip);
-        */
+    read(length: number): Array<number>;
+    notEnded(): boolean;
+    getCurrentPosition(): number;
+    skip(length): ByteReaderWithPosition;
+    setPosition(position: number): ByteReaderWithPosition;
+    setPositionFromEnd(position: number): ByteReaderWithPosition;
   }
 
   export interface PDFReader {
@@ -369,9 +365,7 @@ declare module 'muhammara' {
     getPagesCount(): number;
     getTrailer(): PDFDictionary;
     queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
-    /*
-  SET_PROTOTYPE_METHOD(t, "queryArrayObject", QueryArrayObject);
-  */
+    queryArrayObject(objectList: PDFArray, index: number): undefined|PDFObject;
     parseNewObject(objectId: number): PDFObject;
     getPageObjectID(objectId: number): number;
     parsePageDictionary(objectId: number): PDFDictionary;
@@ -438,56 +432,53 @@ declare module 'muhammara' {
   }
 
   export interface OutputFile {
-    /*
-	SET_PROTOTYPE_METHOD(t, "openFile", OpenFile);
-	SET_PROTOTYPE_METHOD(t, "closeFile", CloseFile);
-	SET_PROTOTYPE_METHOD(t, "getFilePath", GetFilePath);
-	SET_PROTOTYPE_METHOD(t, "getOutputStream", GetOutputStream);
-    */
+    openFile(filePath: string, append?: boolean): void;
+    closeFile(): void;
+    getFilePath(): string|undefined;
+    getOutputStream(): ByteWriterWithPosition|undefined;
   }
 
   export interface InputFile {
-    /*
-        SET_PROTOTYPE_METHOD(t, "openFile", OpenFile);
-        SET_PROTOTYPE_METHOD(t, "closeFile", CloseFile);
-        SET_PROTOTYPE_METHOD(t, "getFilePath", GetFilePath);
-        SET_PROTOTYPE_METHOD(t, "getFileSize", GetFileSize);
-        SET_PROTOTYPE_METHOD(t, "getInputStream", GetInputStream);
-    */
+    openFile(filePath: string): void;
+    closeFile(): void;
+    getFilePath(): string|undefined;
+    getFileSize(): number|undefined;
+    getInputStream(): ByteReaderWithPosition|undefined;
   }
 
+    export enum EInfoTrapped {
+      EInfoTrappedTrue,
+      EInfoTrappedFalse,
+      EInfoTrappedUnknown
+    }
+
   export interface InfoDictionary {
-    /*
-	SET_PROTOTYPE_METHOD(t, "addAdditionalInfoEntry", AddAdditionalInfoEntry);
-	SET_PROTOTYPE_METHOD(t, "removeAdditionalInfoEntry", RemoveAdditionalInfoEntry);
-	SET_PROTOTYPE_METHOD(t, "clearAdditionalInfoEntries", ClearAdditionalInfoEntries);
-	SET_PROTOTYPE_METHOD(t, "getAdditionalInfoEntry", GetAdditionalInfoEntry);
-	SET_PROTOTYPE_METHOD(t, "getAdditionalInfoEntries", GetAdditionalInfoEntries);
-	SET_PROTOTYPE_METHOD(t, "setCreationDate", SetCreationDate);
-	SET_PROTOTYPE_METHOD(t, "setModDate", SetModDate);
-	SET_ACCESSOR_METHODS(t, "title", GetTitle, SetTitle);
-	SET_ACCESSOR_METHODS(t, "author", GetAuthor, SetAuthor);
-	SET_ACCESSOR_METHODS(t, "subject", GetSubject, SetSubject);
-	SET_ACCESSOR_METHODS(t, "keywords", GetKeywords, SetKeywords);
-	SET_ACCESSOR_METHODS(t, "creator", GetCreator, SetCreator);
-	SET_ACCESSOR_METHODS(t, "producer", GetProducer, SetProducer);
-	SET_ACCESSOR_METHODS(t, "trapped", GetTrapped, SetTrapped);
-    */
+    addAdditionalInfoEntry(key: string, value: string): void;
+    removeAdditionalInfoEntry(key: string): void;
+    clearAdditionalInfoEntries(): void;
+    getAdditionalInfoEntry(key: string): string;
+    getAdditionalInfoEntries(key: string): {[key: string]: string}
+    setCreationDate(date: string | Date): void;
+    setModDate(date: string | Date): void;
+
+    title: string;
+    author: string;
+    subject: string;
+    keywords: string;
+    creator: string;
+    producer: string;
+    trapped: EInfoTrapped;
   }
 
   export interface ImageXObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "id", GetID);
-        */
+    id: number;
   }
 
   export interface FormObject {
-    /*
-        SET_ACCESSOR_METHOD(t,"id", GetID);
-        SET_PROTOTYPE_METHOD(t, "getContentContext", GetContentContext);
-        SET_PROTOTYPE_METHOD(t, "getResourcesDictinary", GetResourcesDictionary);
-        SET_PROTOTYPE_METHOD(t, "getContentStream", GetContentStream);
-        */
+    id: number;
+    getContentContext(): XObjectContentContext;
+    getResourcesDictinary(): ResourcesDictionary;
+    getContentStream(): PDFStream;
   }
 
   export interface DocumentCopyingContext {
@@ -577,30 +568,22 @@ SET_PROTOTYPE_METHOD(t, "allocateNewObjectID", AllocateNewObjectID);
   }
 
   export interface PDFReal extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: number;
   }
 
   export interface PDFSymbol extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: string;
   }
 
   export interface PDFStreamInput extends PDFObject {
-    /*
-	SET_PROTOTYPE_METHOD(t, "getDictionary", GetDictionary);
-	SET_PROTOTYPE_METHOD(t, "getStreamContentStart", GetStreamContentStart);
-    */
+    getDictionary(): PDFDictionary;
+    getStreamContentStart(): number;
   }
 
   export interface PDFTextString {
-    /*
-    SET_PROTOTYPE_METHOD(t, "toBytesArray", ToBytesArray);
-	SET_PROTOTYPE_METHOD(t, "toString", ToString);
-	SET_PROTOTYPE_METHOD(t, "fromString", FromString);
-    */
+    toBytesArray(): Array<number>;
+    toString(): string;
+    fromString(value: string): void;
   }
 
   export interface PageContentContext extends AbstractContentContext {
