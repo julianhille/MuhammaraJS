@@ -82,6 +82,12 @@ jobs:
             node: 16.13.2
           - electron: 18.0.0
             node: 16.13.2
+          - electron: 17.4.0
+            node: 16.13.0
+          - electron: 17.3.0
+            node: 16.13.0
+          - electron: 17.2.0
+            node: 16.13.0
           - electron: 17.1.0
             node: 16.13.0
           - electron: 17.0.0
