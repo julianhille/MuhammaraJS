@@ -320,16 +320,6 @@ declare module 'muhammara' {
     artBox?: PDFBox;
     rotate?: number;
     getResourcesDictionary(): ResourcesDictionary;
-
-    /*
-    SET_ACCESSOR_METHODS(t, "mediaBox", GetMediaBox, SetMediaBox);
-	SET_ACCESSOR_METHODS(t, "cropBox", GetCropBox, SetCropBox);
-	SET_ACCESSOR_METHODS(t, "bleedBox", GetBleedBox, SetBleedBox);
-	SET_ACCESSOR_METHODS(t, "trimBox", GetTrimBox, SetTrimBox);
-	SET_ACCESSOR_METHODS(t, "artBox", GetArtBox, SetArtBox);
-    SET_ACCESSOR_METHODS(t, "rotate",GetRotate, SetRotate);
-	SET_PROTOTYPE_METHOD(t, "getResourcesDictionary", GetResourcesDictionary);
-    */
   }
 
   export interface TextDimension {
@@ -528,33 +518,42 @@ declare module 'muhammara' {
     getCurrentPosition(): number;
   }
 
+  export type eTokenSeparatorSpace = 0;
+  export type eTokenSeparatorEndLine = 1;
+  export type eTokenSepratorNone = 2;
+
+  enum ETokenSeparator {
+    eTokenSeparatorSpace,
+    eTokenSeparatorEndLine,
+    eTokenSepratorNone
+  }
+
   export interface ObjectsContext {
-    /*
-SET_PROTOTYPE_METHOD(t, "allocateNewObjectID", AllocateNewObjectID);
-	SET_PROTOTYPE_METHOD(t, "startDictionary", StartDictionary);
-	SET_PROTOTYPE_METHOD(t, "startArray", StartArray);
-	SET_PROTOTYPE_METHOD(t, "writeNumber", WriteNumber);
-	SET_PROTOTYPE_METHOD(t, "endArray", EndArray);
-	SET_PROTOTYPE_METHOD(t, "endLine", EndLine);
-	SET_PROTOTYPE_METHOD(t, "endDictionary", EndDictionary);
-	SET_PROTOTYPE_METHOD(t, "endIndirectObject", EndIndirectObject);
-	SET_PROTOTYPE_METHOD(t, "writeIndirectObjectReference", WriteIndirectObjectReference);
-	SET_PROTOTYPE_METHOD(t, "startNewIndirectObject", StartNewIndirectObject);
-	SET_PROTOTYPE_METHOD(t, "startModifiedIndirectObject", StartModifiedIndirectObject);
-	SET_PROTOTYPE_METHOD(t, "deleteObject", DeleteObject);
-	SET_PROTOTYPE_METHOD(t, "writeName", WriteName);
-	SET_PROTOTYPE_METHOD(t, "writeLiteralString", WriteLiteralString);
-	SET_PROTOTYPE_METHOD(t, "writeHexString", WriteHexString);
-	SET_PROTOTYPE_METHOD(t, "writeBoolean", WriteBoolean);
-	SET_PROTOTYPE_METHOD(t, "writeKeyword", WriteKeyword);
-	SET_PROTOTYPE_METHOD(t, "writeComment", WriteComment);
-	SET_PROTOTYPE_METHOD(t, "setCompressStreams", SetCompressStreams);
-	SET_PROTOTYPE_METHOD(t, "startPDFStream", StartPDFStream);
-	SET_PROTOTYPE_METHOD(t, "startUnfilteredPDFStream", StartUnfilteredPDFStream);
-	SET_PROTOTYPE_METHOD(t, "endPDFStream", EndPDFStream);
-	SET_PROTOTYPE_METHOD(t, "startFreeContext", StartFreeContext);
-	SET_PROTOTYPE_METHOD(t, "endFreeContext", EndFreeContext);
-    */
+    allocateNewObjectID(): FormXObjectId;
+    startDictionary(): DictionaryContext;
+    startArray(): this;
+    writeNumber(value: number): this;
+    endArray(endType?: ETokenSeparator): this;
+    endLine(): this;
+    endDictionary(dictionary: DictionaryContext): this;
+    endIndirectObject(): this;
+    writeIndirectObjectReference(objectId: FormXObjectId, generationNumber?: number): this;
+    startNewIndirectObject(objectId: FormXObjectId): this;
+    startNewIndirectObject(): FormXObjectId;
+    startModifiedIndirectObject(objectId: FormXObjectId): this;
+    deleteObject(objectId: FormXObjectId): this;
+    writeName(name: string): this;
+    writeLiteralString(literal: string | number[]): this;
+    writeHexString(hex: string | number[]): this;
+    writeBoolean(bool: boolean): this;
+    writeKeyword(keyword: string): this;
+    writeComment(comment: string): this;
+    setCompressStreams(compress: true): this;
+    startPDFStream(dictionaryContext: DictionaryContext): PDFStream;
+    startUnfilteredPDFStream(stream: DictionaryContext): PDFStream;
+    endPDFStream(stream: PDFStream): this;
+    startFreeContext(): ByteWriterWithPosition;
+    endFreeContext(): this;
   }
 
   export interface PDFObject {
