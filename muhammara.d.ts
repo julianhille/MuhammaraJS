@@ -363,9 +363,9 @@ declare module 'muhammara' {
     read(length: number): Array<number>;
     notEnded(): boolean;
     getCurrentPosition(): number;
-    skip(length): ByteReaderWithPosition;
-    setPosition(position: number): ByteReaderWithPosition;
-    setPositionFromEnd(position: number): ByteReaderWithPosition;
+    skip(length): this;
+    setPosition(position: number): this;
+    setPositionFromEnd(position: number): this;
   }
 
   export interface PDFReader {
@@ -426,7 +426,7 @@ declare module 'muhammara' {
 
   export interface PDFDate {
     toString(): string;
-    setToCurrentTime(): PDFDate;
+    setToCurrentTime(): this;
   }
 
   export interface PDFBoolean extends PDFObject {
@@ -515,13 +515,12 @@ declare module 'muhammara' {
 
   export interface DictionaryContext {
     writeKey(): DictionaryContext;
-    writeNameValue(nameValue: string): DictionaryContext;
-    writeRectangleValue(values: Array<number>): DictionaryContext;
-    writeRectangleValue(a: number, b: number, c: number, d: number): DictionaryContext;
-    writeLiteralStringValue(literal: Array<number>|string): DictionaryContext;
-    writeBooleanValue(boolValue: boolean): DictionaryContext;
-    writeObjectReferenceValue(objectId: number): DictionaryContext;
-    /* Every DictionaryContext is a `this` */
+    writeNameValue(nameValue: string): this;
+    writeRectangleValue(values: Array<number>): this;
+    writeRectangleValue(a: number, b: number, c: number, d: number): this;
+    writeLiteralStringValue(literal: Array<number>|string): this;
+    writeBooleanValue(boolValue: boolean): this;
+    writeObjectReferenceValue(objectId: number): this;
   }
 
   export interface ByteWriterWithPosition {
