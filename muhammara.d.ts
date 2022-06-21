@@ -87,6 +87,8 @@ declare module 'muhammara' {
     writePage(): this;
   }
 
+  export type PDFImageType = 'JPG' | 'PNG' | 'PDF' | 'PNG' | 'TIFF'
+
   export interface PDFRStreamForFile extends ReadStream {
     new (inPath: string): PDFRStreamForFile;
     close(inCallback?: () => void): void;
@@ -106,6 +108,8 @@ declare module 'muhammara' {
     width?: number;
     close?: boolean;
   }
+  export type TransformationMatrix = [a: number, b: number, c: number, d: number, e: number, f: number]
+
 
   export interface AbstractContentContext {
     b(): this;
@@ -132,7 +136,7 @@ declare module 'muhammara' {
      * c d 0
      * e f 1
      */
-    cm(a: number, b: number, c: number, d: number, e: number, f: number): this;
+    cm(...TransformationMatrix): this;
     w(lineWidth: number): this;
     J(lineCapStyle: number): this;
     j(lineJoinStyle: number): this;
@@ -271,6 +275,10 @@ declare module 'muhammara' {
   export const ePDFPageBoxTrimBox = 3;
   export const ePDFPageBoxArtBox = 4;
   export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
+
+  export const eRangeTypeAll = 0;
+  export const eRangeTypeSpecific = 1;
+  export type eRangeType = 0 | 1;
 
   export interface PDFWriterOptions {
     version?: EPDFVersion;
@@ -485,6 +493,7 @@ declare module 'muhammara' {
     createFormXObjectFromPDFPage(
       sourcePageIndex: number,
       ePDFPageBox: PDFPageBoxType | PDFBox,
+      transformation?: TransformationMatrix
     ): number;
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
     appendPDFPageFromPDF(sourcePageNumber: number): number; // stream start bytes?
@@ -591,21 +600,47 @@ SET_PROTOTYPE_METHOD(t, "allocateNewObjectID", AllocateNewObjectID);
     getAssociatedPage(): PDFPage;
   }
 
+  export interface JPEGInformation {
+    samplesWidth: number;
+    samplesHeight: number;
+    colorComponentsCount: number;
+    JFIFInformationExists: boolean;
+    JFIFUnit?: number;
+    JFIFXDensity?: number;
+    JFIFYDensity?: number;
+    ExifInformationExists: boolean;
+    ExifUnit?: number;
+    ExifXDensity?: number;
+    ExifYDensity?: number;
+    PhotoshopInformationExists: boolean;
+    PhotoshopXDensity?: number;
+    PhotoshopYDensity?: number;
+  }
+
+  export type PDFRectangle = [lowerLeftX: number, lowerLeftY: number, upperRightX: number, upperRightY: number];
+
+  export interface MergeOptions {
+    specificRanges?: number,
+    password?: string;
+    type?: eRangeType;
+    specificRanges?: [[number, number]]
+  }
+
+  export type inInterPagesCallback = () => {}
+
+
   export interface PDFWriter {
     end(): PDFWriter;
-    createPage(x: number, y: number, width: number, height: number): PDFPage;
+    createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
     writePage(page: PDFPage): this;
     writePageAndReturnID(page: PDFPage): number;
     startPageContentContext(page: PDFPage): PageContentContext;
     pausePageContentContext(pageContextContext: PageContentContext): this;
-    /*
-    createFormXObject();
-    endFormXObject();
-    createFormXObjectFromJPG();
-    */
-    // TODO: test streamas
-    createFormXObjectFromPNG(filePath: FilePath | PDFRStreamForFile): FormXObject;
+    createFormXObject(x: PosX, y: PosY, width: Width, height: Height, objectId?: FormXObjectId): FormXObject;
+    endFormXObject(formXObject: FormXObject): this;
+    createFormXObjectFromJPG(file: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): FormXObject;
+    createFormXObjectFromPNG(filePath: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): FormXObject;
 
     getFontForFile(inFontFilePath: FilePath, index?: number): UsedFont;
     getFontForFile(
@@ -613,34 +648,27 @@ SET_PROTOTYPE_METHOD(t, "allocateNewObjectID", AllocateNewObjectID);
       inOptionalMetricsFile?: string,
       index?: number,
     ): UsedFont;
-    /*
-    attachURLLinktoCurrentPage();
-    shutdown();
-    createFormXObjectFromTIFF();
-    createImageXObjectFromJPG();
-    retrieveJPGImageInformation();
-    getObjectsContext();
-    getDocumentContext();
-    */
+    attachURLLinktoCurrentPage(url: string, x: PosX, y: PosY, width: Width, height: Height): this;
+    shutdown(outputFilePath: FilePath): this;
+    createFormXObjectFromTIFF(filePath: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): FormXObject;
+    retrieveJPGImageInformation(filePath: FilePath): JPEGInformation;
+    getObjectsContext(): ObjectsContext;
+    getDocumentContext(): DocumentContext;
     appendPDFPagesFromPDF(source: FilePath | ReadStream): number[];
-    /*
-    mergePDFPagesToPage();
-    */
+    mergePDFPagesToPage(page: PDFPage, file: FilePath | PDFRStreamForFile, options?: MergeOptions, callback?: inInterPagesCallback): this;
+    mergePDFPagesToPage(page: PDFPage, file: FilePath | PDFRStreamForFile, callback?: inInterPagesCallback) : this;
     createPDFCopyingContext(source: FilePath | ReadStream): DocumentCopyingContext;
-    /*
-    createFormXObjectsFromPDF();
-    createPDFCopyingContextForModifiedFile();
-    createPDFTextString();
-    createPDFDate();
-    */
+    createFormXObjectsFromPDF(file: FilePath, box?: PDFBox |  PDFPageBoxType, options?: MergeOptions, transformation?: TransformationMatrix, objectIds?: FormXObjectId[]): FormXObjectId[];
+    createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
+    createPDFTextString(): PDFTextString;
+    createPDFDate(): PDFDate;
     getImageDimensions(inFontFilePath: FilePath | ReadStream): RectangleDimension;
-    /*
-    getImagePagesCount();
-    getImageType();
-    getModifiedFileParser();
-    getModifiedInputFile();
-    getOutputFile();
-    registerAnnotationReferenceForNextPageWrite();
-    */
+    getImagePagesCount(imagePath: FilePath, options?: {password?: string}): number;
+    getImageType(imagePath: FilePath): PDFImageType | undefined;
+    getModifiedFileParser(): PDFReader;
+    getModifiedInputFile(): InputFile;
+    getOutputFile(): OutputFile;
+    registerAnnotationReferenceForNextPageWrite(annotationId: number): this;
+    requireCatalogUpdate(): void;
   }
 }
