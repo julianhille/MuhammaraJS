@@ -90,7 +90,7 @@ declare module 'muhammara' {
   export type PDFImageType = 'JPG' | 'PNG' | 'PDF' | 'PNG' | 'TIFF'
 
   export interface PDFRStreamForFile extends ReadStream {
-    new (inPath: string): PDFRStreamForFile;
+    new (inPath: FilePath): PDFRStreamForFile;
     close(inCallback?: () => void): void;
   }
 
@@ -430,14 +430,14 @@ declare module 'muhammara' {
   }
 
   export interface OutputFile {
-    openFile(filePath: string, append?: boolean): void;
+    openFile(filePath: FilePath, append?: boolean): void;
     closeFile(): void;
     getFilePath(): string|undefined;
     getOutputStream(): ByteWriterWithPosition|undefined;
   }
 
   export interface InputFile {
-    openFile(filePath: string): void;
+    openFile(filePath: FilePath): void;
     closeFile(): void;
     getFilePath(): string|undefined;
     getFileSize(): number|undefined;
