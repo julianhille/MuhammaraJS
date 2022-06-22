@@ -87,8 +87,10 @@ declare module 'muhammara' {
     writePage(): this;
   }
 
+  export type PDFImageType = 'JPG' | 'PNG' | 'PDF' | 'PNG' | 'TIFF'
+
   export interface PDFRStreamForFile extends ReadStream {
-    new (inPath: string): PDFRStreamForFile;
+    new (inPath: FilePath): PDFRStreamForFile;
     close(inCallback?: () => void): void;
   }
 
@@ -106,6 +108,8 @@ declare module 'muhammara' {
     width?: number;
     close?: boolean;
   }
+  export type TransformationMatrix = [a: number, b: number, c: number, d: number, e: number, f: number]
+
 
   export interface AbstractContentContext {
     b(): this;
@@ -132,7 +136,7 @@ declare module 'muhammara' {
      * c d 0
      * e f 1
      */
-    cm(a: number, b: number, c: number, d: number, e: number, f: number): this;
+    cm(...TransformationMatrix): this;
     w(lineWidth: number): this;
     J(lineCapStyle: number): this;
     j(lineJoinStyle: number): this;
@@ -272,6 +276,10 @@ declare module 'muhammara' {
   export const ePDFPageBoxArtBox = 4;
   export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
 
+  export const eRangeTypeAll = 0;
+  export const eRangeTypeSpecific = 1;
+  export type eRangeType = 0 | 1;
+
   export interface PDFWriterOptions {
     version?: EPDFVersion;
     log?: string;
@@ -289,18 +297,17 @@ declare module 'muhammara' {
   }
 
   export interface ResourcesDictionary {
-    addFormXObjectMapping(formXObject: FormXObject): any;
-    /*
-    SET_PROTOTYPE_METHOD(t, "addImageXObjectMapping", AddImageXObjectMapping);
-    SET_PROTOTYPE_METHOD(t, "addProcsetResource", AddProcsetResource);
-    SET_PROTOTYPE_METHOD(t, "addExtGStateMapping", AddExtGStateMapping);
-    SET_PROTOTYPE_METHOD(t, "addFontMapping", AddFontMapping);
-    SET_PROTOTYPE_METHOD(t, "addColorSpaceMapping", AddColorSpaceMapping);
-    SET_PROTOTYPE_METHOD(t, "addPatternMapping", AddPatternMapping);
-    SET_PROTOTYPE_METHOD(t, "addPropertyMapping", AddPropertyMapping);
-    SET_PROTOTYPE_METHOD(t, "addXObjectMapping", AddXObjectMapping);
-    SET_PROTOTYPE_METHOD(t, "addShadingMapping", AddShadingMapping);
-    */
+    addFormXObjectMapping(formXObject: FormXObject): string;
+    addImageXObjectMapping(imageXObject: ImageXObject|number): string;
+    addProcsetResource(procSetName: string): void;
+    addExtGStateMapping(stateObjectId: number): string;
+    addFontMapping(fontObjectId: number): string;
+    addColorSpaceMapping(colorSpaceId: number): string;
+    addPatternMapping(colorSpaceId: number): string;
+    addPatternMapping(patternObjectId: number): string;
+    addPropertyMapping(propertyObjectId: number): string;
+    addXObjectMapping(xObjectId: number): string;
+    addShadingMapping(xObjectId: number): string;
   }
 
   export type PDFBox = [PosX, PosY, Width, Height];
@@ -313,16 +320,6 @@ declare module 'muhammara' {
     artBox?: PDFBox;
     rotate?: number;
     getResourcesDictionary(): ResourcesDictionary;
-
-    /*
-    SET_ACCESSOR_METHODS(t, "mediaBox", GetMediaBox, SetMediaBox);
-	SET_ACCESSOR_METHODS(t, "cropBox", GetCropBox, SetCropBox);
-	SET_ACCESSOR_METHODS(t, "bleedBox", GetBleedBox, SetBleedBox);
-	SET_ACCESSOR_METHODS(t, "trimBox", GetTrimBox, SetTrimBox);
-	SET_ACCESSOR_METHODS(t, "artBox", GetArtBox, SetArtBox);
-    SET_ACCESSOR_METHODS(t, "rotate",GetRotate, SetRotate);
-	SET_PROTOTYPE_METHOD(t, "getResourcesDictionary", GetResourcesDictionary);
-    */
   }
 
   export interface TextDimension {
@@ -348,21 +345,17 @@ declare module 'muhammara' {
   }
 
   export interface ByteReader {
-    /*
-	SET_PROTOTYPE_METHOD(t, "read", Read);
-	SET_PROTOTYPE_METHOD(t, "notEnded", NotEnded);
-    */
+    read(length: number): Array<number>;
+    notEnded(): boolean;
   }
 
   export interface ByteReaderWithPosition {
-    /*
-        SET_PROTOTYPE_METHOD(t, "read", Read);
-        SET_PROTOTYPE_METHOD(t, "notEnded", NotEnded);
-        SET_PROTOTYPE_METHOD(t, "setPosition", SetPosition);
-        SET_PROTOTYPE_METHOD(t, "getCurrentPosition", GetCurrentPosition);
-        SET_PROTOTYPE_METHOD(t, "setPositionFromEnd", SetPositionFromEnd);
-        SET_PROTOTYPE_METHOD(t, "skip", Skip);
-        */
+    read(length: number): Array<number>;
+    notEnded(): boolean;
+    getCurrentPosition(): number;
+    skip(length): this;
+    setPosition(position: number): this;
+    setPositionFromEnd(position: number): this;
   }
 
   export interface PDFReader {
@@ -370,24 +363,19 @@ declare module 'muhammara' {
     getPagesCount(): number;
     getTrailer(): PDFDictionary;
     queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
-    /*
-  SET_PROTOTYPE_METHOD(t, "queryArrayObject", QueryArrayObject);
-  */
+    queryArrayObject(objectList: PDFArray, index: number): undefined|PDFObject;
     parseNewObject(objectId: number): PDFObject;
-    /*
-    SET_PROTOTYPE_METHOD(t, "getPageObjectID", GetPageObjectID);
-    SET_PROTOTYPE_METHOD(t, "parsePageDictionary", ParsePageDictionary);
-    */
+    getPageObjectID(objectId: number): number;
+    parsePageDictionary(objectId: number): PDFDictionary;
     parsePage(page: number): PDFPageInput;
-    /*
-    SET_PROTOTYPE_METHOD(t, "getObjectsCount", GetObjectsCount);
-    SET_PROTOTYPE_METHOD(t, "isEncrypted", IsEncrypted);
-    SET_PROTOTYPE_METHOD(t, "getXrefSize", GetXrefSize);
-    SET_PROTOTYPE_METHOD(t, "getXrefEntry", GetXrefEntry);
-    SET_PROTOTYPE_METHOD(t, "getXrefPosition", GetXrefPosition);
-    SET_PROTOTYPE_METHOD(t, "startReadingFromStream", StartReadingFromStream);
-    SET_PROTOTYPE_METHOD(t, "getParserStream", GetParserStream);
-      */
+    getObjectsCount(): number;
+    isEncrypted(): boolean;
+    getXrefSize(): number;
+    getXrefEntry(objectId: number): any;
+    getXrefSize(): number;
+    getXrefPosition(objectId: number): number;
+    startReadingFromStream(inputStream: PDFStreamInput): ByteReader;
+    getParserStream(): ByteReaderWithPosition;
   }
 
   export interface PDFStream {
@@ -395,15 +383,11 @@ declare module 'muhammara' {
   }
 
   export interface PDFNull extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: void;
   }
 
   export interface PDFName extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: string;
   }
 
   export interface PDFLiteralString extends PDFObject {
@@ -412,9 +396,7 @@ declare module 'muhammara' {
   }
 
   export interface PDFInteger extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: number;
   }
 
   export interface PDFIndirectObjectReference extends PDFObject {
@@ -423,9 +405,7 @@ declare module 'muhammara' {
   }
 
   export interface PDFHexString extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: string;
   }
 
   export interface PDFDictionary extends PDFObject {
@@ -435,151 +415,145 @@ declare module 'muhammara' {
   }
 
   export interface PDFDate {
-    /*
-        SET_PROTOTYPE_METHOD(t, "toString", ToString);
-        SET_PROTOTYPE_METHOD(t, "setToCurrentTime", SetToCurrentTime);
-        */
+    toString(): string;
+    setToCurrentTime(): this;
   }
 
   export interface PDFBoolean extends PDFObject {
-    /*
-	SET_ACCESSOR_METHOD(t, "value", GetValue);
-    */
+    value: boolean;
   }
 
   export interface PDFArray extends PDFObject {
-    /*
-	SET_PROTOTYPE_METHOD(t, "toJSArray", ToJSArray);
-	SET_PROTOTYPE_METHOD(t, "queryObject", QueryObject);
-	SET_PROTOTYPE_METHOD(t, "getLength", GetLength);
-    */
+    toJSArray(): Array<any>;
+    queryObject(index: number): any;
+    getLength(): number;
   }
 
   export interface OutputFile {
-    /*
-	SET_PROTOTYPE_METHOD(t, "openFile", OpenFile);
-	SET_PROTOTYPE_METHOD(t, "closeFile", CloseFile);
-	SET_PROTOTYPE_METHOD(t, "getFilePath", GetFilePath);
-	SET_PROTOTYPE_METHOD(t, "getOutputStream", GetOutputStream);
-    */
+    openFile(filePath: FilePath, append?: boolean): void;
+    closeFile(): void;
+    getFilePath(): string|undefined;
+    getOutputStream(): ByteWriterWithPosition|undefined;
   }
 
   export interface InputFile {
-    /*
-        SET_PROTOTYPE_METHOD(t, "openFile", OpenFile);
-        SET_PROTOTYPE_METHOD(t, "closeFile", CloseFile);
-        SET_PROTOTYPE_METHOD(t, "getFilePath", GetFilePath);
-        SET_PROTOTYPE_METHOD(t, "getFileSize", GetFileSize);
-        SET_PROTOTYPE_METHOD(t, "getInputStream", GetInputStream);
-    */
+    openFile(filePath: FilePath): void;
+    closeFile(): void;
+    getFilePath(): string|undefined;
+    getFileSize(): number|undefined;
+    getInputStream(): ByteReaderWithPosition|undefined;
   }
 
+    export enum EInfoTrapped {
+      EInfoTrappedTrue,
+      EInfoTrappedFalse,
+      EInfoTrappedUnknown
+    }
+
   export interface InfoDictionary {
-    /*
-	SET_PROTOTYPE_METHOD(t, "addAdditionalInfoEntry", AddAdditionalInfoEntry);
-	SET_PROTOTYPE_METHOD(t, "removeAdditionalInfoEntry", RemoveAdditionalInfoEntry);
-	SET_PROTOTYPE_METHOD(t, "clearAdditionalInfoEntries", ClearAdditionalInfoEntries);
-	SET_PROTOTYPE_METHOD(t, "getAdditionalInfoEntry", GetAdditionalInfoEntry);
-	SET_PROTOTYPE_METHOD(t, "getAdditionalInfoEntries", GetAdditionalInfoEntries);
-	SET_PROTOTYPE_METHOD(t, "setCreationDate", SetCreationDate);
-	SET_PROTOTYPE_METHOD(t, "setModDate", SetModDate);
-	SET_ACCESSOR_METHODS(t, "title", GetTitle, SetTitle);
-	SET_ACCESSOR_METHODS(t, "author", GetAuthor, SetAuthor);
-	SET_ACCESSOR_METHODS(t, "subject", GetSubject, SetSubject);
-	SET_ACCESSOR_METHODS(t, "keywords", GetKeywords, SetKeywords);
-	SET_ACCESSOR_METHODS(t, "creator", GetCreator, SetCreator);
-	SET_ACCESSOR_METHODS(t, "producer", GetProducer, SetProducer);
-	SET_ACCESSOR_METHODS(t, "trapped", GetTrapped, SetTrapped);
-    */
+    addAdditionalInfoEntry(key: string, value: string): void;
+    removeAdditionalInfoEntry(key: string): void;
+    clearAdditionalInfoEntries(): void;
+    getAdditionalInfoEntry(key: string): string;
+    getAdditionalInfoEntries(key: string): {[key: string]: string}
+    setCreationDate(date: string | Date): void;
+    setModDate(date: string | Date): void;
+
+    title: string;
+    author: string;
+    subject: string;
+    keywords: string;
+    creator: string;
+    producer: string;
+    trapped: EInfoTrapped;
   }
 
   export interface ImageXObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "id", GetID);
-        */
+    id: number;
   }
 
   export interface FormObject {
-    /*
-        SET_ACCESSOR_METHOD(t,"id", GetID);
-        SET_PROTOTYPE_METHOD(t, "getContentContext", GetContentContext);
-        SET_PROTOTYPE_METHOD(t, "getResourcesDictinary", GetResourcesDictionary);
-        SET_PROTOTYPE_METHOD(t, "getContentStream", GetContentStream);
-        */
+    id: number;
+    getContentContext(): XObjectContentContext;
+    getResourcesDictinary(): ResourcesDictionary;
+    getContentStream(): PDFStream;
   }
 
   export interface DocumentCopyingContext {
     createFormXObjectFromPDFPage(
       sourcePageIndex: number,
       ePDFPageBox: PDFPageBoxType | PDFBox,
+      transformation?: TransformationMatrix
     ): number;
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
     appendPDFPageFromPDF(sourcePageNumber: number): number; // stream start bytes?
     mergePDFPageToFormXObject(sourcePage: PDFPage, targetPageNumber: number): any;
-    /*
-    SET_PROTOTYPE_METHOD(t, "getSourceDocumentParser", GetSourceDocumentParser);
-    SET_PROTOTYPE_METHOD(t, "copyDirectObjectAsIs", CopyDirectObjectAsIs);
-    SET_PROTOTYPE_METHOD(t, "copyObject", CopyObject);
-    SET_PROTOTYPE_METHOD(t, "copyDirectObjectWithDeepCopy", CopyDirectObjectWithDeepCopy);
-    SET_PROTOTYPE_METHOD(t, "copyNewObjectsForDirectObject", CopyNewObjectsForDirectObject);
-    SET_PROTOTYPE_METHOD(t, "getCopiedObjectID", GetCopiedObjectID);
-    SET_PROTOTYPE_METHOD(t, "getCopiedObjects", GetCopiedObjects);
-    SET_PROTOTYPE_METHOD(t, "replaceSourceObjects", ReplaceSourceObjects);
-    SET_PROTOTYPE_METHOD(t, "getSourceDocumentStream", GetSourceDocumentStream);
-      */
+    getSourceDocumentParser(input: FilePath | ReadStream, options?: PDFReaderOptions): PDFReader;
+    copyDirectObjectAsIs(objectToCopy: PDFObject): void;
+    copyObject(objectId: number): number;
+    copyDirectObjectWithDeepCopy(objectToCopy: PDFObject): Array<number>;
+    copyNewObjectsForDirectObject(objectIds: Array<number>): void;
+    getCopiedObjectID(objectId: number): number;
+    getCopiedObjects(): {[key: string]: number};
+    replaceSourceObjects(replaceMap: {[key: string]: number}): void;
+    getSourceDocumentStream(): ByteReaderWithPosition;
   }
 
   export interface DocumentContext {
-    /*
-	SET_PROTOTYPE_METHOD(t, "getInfoDictionary", GetInfoDictionary);
-    */
+    getInfoDictionary(): InfoDictionary;
   }
 
   export interface DictionaryContext {
-    /*
-        SET_PROTOTYPE_METHOD(t, "writeKey", WriteKey);
-        SET_PROTOTYPE_METHOD(t, "writeNameValue", WriteNameValue);
-        SET_PROTOTYPE_METHOD(t, "writeRectangleValue", WriteRectangleValue);
-        SET_PROTOTYPE_METHOD(t, "writeLiteralStringValue", WriteLiteralStringValue);
-        SET_PROTOTYPE_METHOD(t, "writeBooleanValue", WriteBooleanValue);
-        SET_PROTOTYPE_METHOD(t, "writeObjectReferenceValue", WriteObjectReferenceValue);
-        */
+    writeKey(): DictionaryContext;
+    writeNameValue(nameValue: string): this;
+    writeRectangleValue(values: Array<number>): this;
+    writeRectangleValue(a: number, b: number, c: number, d: number): this;
+    writeLiteralStringValue(literal: Array<number>|string): this;
+    writeBooleanValue(boolValue: boolean): this;
+    writeObjectReferenceValue(objectId: number): this;
   }
 
   export interface ByteWriterWithPosition {
-    /*
-        SET_PROTOTYPE_METHOD(t, "write", Write);
-        SET_PROTOTYPE_METHOD(t, "getCurrentPosition", GetCurrentPosition);
-        */
+    write(bytes: Array<number>):  number;
+    getCurrentPosition(): number;
+  }
+
+  export type eTokenSeparatorSpace = 0;
+  export type eTokenSeparatorEndLine = 1;
+  export type eTokenSepratorNone = 2;
+
+  enum ETokenSeparator {
+    eTokenSeparatorSpace,
+    eTokenSeparatorEndLine,
+    eTokenSepratorNone
   }
 
   export interface ObjectsContext {
-    /*
-SET_PROTOTYPE_METHOD(t, "allocateNewObjectID", AllocateNewObjectID);
-	SET_PROTOTYPE_METHOD(t, "startDictionary", StartDictionary);
-	SET_PROTOTYPE_METHOD(t, "startArray", StartArray);
-	SET_PROTOTYPE_METHOD(t, "writeNumber", WriteNumber);
-	SET_PROTOTYPE_METHOD(t, "endArray", EndArray);
-	SET_PROTOTYPE_METHOD(t, "endLine", EndLine);
-	SET_PROTOTYPE_METHOD(t, "endDictionary", EndDictionary);
-	SET_PROTOTYPE_METHOD(t, "endIndirectObject", EndIndirectObject);
-	SET_PROTOTYPE_METHOD(t, "writeIndirectObjectReference", WriteIndirectObjectReference);
-	SET_PROTOTYPE_METHOD(t, "startNewIndirectObject", StartNewIndirectObject);
-	SET_PROTOTYPE_METHOD(t, "startModifiedIndirectObject", StartModifiedIndirectObject);
-	SET_PROTOTYPE_METHOD(t, "deleteObject", DeleteObject);
-	SET_PROTOTYPE_METHOD(t, "writeName", WriteName);
-	SET_PROTOTYPE_METHOD(t, "writeLiteralString", WriteLiteralString);
-	SET_PROTOTYPE_METHOD(t, "writeHexString", WriteHexString);
-	SET_PROTOTYPE_METHOD(t, "writeBoolean", WriteBoolean);
-	SET_PROTOTYPE_METHOD(t, "writeKeyword", WriteKeyword);
-	SET_PROTOTYPE_METHOD(t, "writeComment", WriteComment);
-	SET_PROTOTYPE_METHOD(t, "setCompressStreams", SetCompressStreams);
-	SET_PROTOTYPE_METHOD(t, "startPDFStream", StartPDFStream);
-	SET_PROTOTYPE_METHOD(t, "startUnfilteredPDFStream", StartUnfilteredPDFStream);
-	SET_PROTOTYPE_METHOD(t, "endPDFStream", EndPDFStream);
-	SET_PROTOTYPE_METHOD(t, "startFreeContext", StartFreeContext);
-	SET_PROTOTYPE_METHOD(t, "endFreeContext", EndFreeContext);
-    */
+    allocateNewObjectID(): FormXObjectId;
+    startDictionary(): DictionaryContext;
+    startArray(): this;
+    writeNumber(value: number): this;
+    endArray(endType?: ETokenSeparator): this;
+    endLine(): this;
+    endDictionary(dictionary: DictionaryContext): this;
+    endIndirectObject(): this;
+    writeIndirectObjectReference(objectId: FormXObjectId, generationNumber?: number): this;
+    startNewIndirectObject(objectId: FormXObjectId): this;
+    startNewIndirectObject(): FormXObjectId;
+    startModifiedIndirectObject(objectId: FormXObjectId): this;
+    deleteObject(objectId: FormXObjectId): this;
+    writeName(name: string): this;
+    writeLiteralString(literal: string | number[]): this;
+    writeHexString(hex: string | number[]): this;
+    writeBoolean(bool: boolean): this;
+    writeKeyword(keyword: string): this;
+    writeComment(comment: string): this;
+    setCompressStreams(compress: true): this;
+    startPDFStream(dictionaryContext: DictionaryContext): PDFStream;
+    startUnfilteredPDFStream(stream: DictionaryContext): PDFStream;
+    endPDFStream(stream: PDFStream): this;
+    startFreeContext(): ByteWriterWithPosition;
+    endFreeContext(): this;
   }
 
   export interface PDFObject {
@@ -601,30 +575,22 @@ SET_PROTOTYPE_METHOD(t, "allocateNewObjectID", AllocateNewObjectID);
   }
 
   export interface PDFReal extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: number;
   }
 
   export interface PDFSymbol extends PDFObject {
-    /*
-        SET_ACCESSOR_METHOD(t, "value", GetValue);
-        */
+    value: string;
   }
 
   export interface PDFStreamInput extends PDFObject {
-    /*
-	SET_PROTOTYPE_METHOD(t, "getDictionary", GetDictionary);
-	SET_PROTOTYPE_METHOD(t, "getStreamContentStart", GetStreamContentStart);
-    */
+    getDictionary(): PDFDictionary;
+    getStreamContentStart(): number;
   }
 
   export interface PDFTextString {
-    /*
-    SET_PROTOTYPE_METHOD(t, "toBytesArray", ToBytesArray);
-	SET_PROTOTYPE_METHOD(t, "toString", ToString);
-	SET_PROTOTYPE_METHOD(t, "fromString", FromString);
-    */
+    toBytesArray(): Array<number>;
+    toString(): string;
+    fromString(value: string): void;
   }
 
   export interface PageContentContext extends AbstractContentContext {
@@ -632,21 +598,47 @@ SET_PROTOTYPE_METHOD(t, "allocateNewObjectID", AllocateNewObjectID);
     getAssociatedPage(): PDFPage;
   }
 
+  export interface JPEGInformation {
+    samplesWidth: number;
+    samplesHeight: number;
+    colorComponentsCount: number;
+    JFIFInformationExists: boolean;
+    JFIFUnit?: number;
+    JFIFXDensity?: number;
+    JFIFYDensity?: number;
+    ExifInformationExists: boolean;
+    ExifUnit?: number;
+    ExifXDensity?: number;
+    ExifYDensity?: number;
+    PhotoshopInformationExists: boolean;
+    PhotoshopXDensity?: number;
+    PhotoshopYDensity?: number;
+  }
+
+  export type PDFRectangle = [lowerLeftX: number, lowerLeftY: number, upperRightX: number, upperRightY: number];
+
+  export interface MergeOptions {
+    specificRanges?: number,
+    password?: string;
+    type?: eRangeType;
+    specificRanges?: [[number, number]]
+  }
+
+  export type inInterPagesCallback = () => {}
+
+
   export interface PDFWriter {
     end(): PDFWriter;
-    createPage(x: number, y: number, width: number, height: number): PDFPage;
+    createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
     writePage(page: PDFPage): this;
     writePageAndReturnID(page: PDFPage): number;
     startPageContentContext(page: PDFPage): PageContentContext;
     pausePageContentContext(pageContextContext: PageContentContext): this;
-    /*
-    createFormXObject();
-    endFormXObject();
-    createFormXObjectFromJPG();
-    */
-    // TODO: test streamas
-    createFormXObjectFromPNG(filePath: FilePath | PDFRStreamForFile): FormXObject;
+    createFormXObject(x: PosX, y: PosY, width: Width, height: Height, objectId?: FormXObjectId): FormXObject;
+    endFormXObject(formXObject: FormXObject): this;
+    createFormXObjectFromJPG(file: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): FormXObject;
+    createFormXObjectFromPNG(filePath: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): FormXObject;
 
     getFontForFile(inFontFilePath: FilePath, index?: number): UsedFont;
     getFontForFile(
@@ -654,34 +646,27 @@ SET_PROTOTYPE_METHOD(t, "allocateNewObjectID", AllocateNewObjectID);
       inOptionalMetricsFile?: string,
       index?: number,
     ): UsedFont;
-    /*
-    attachURLLinktoCurrentPage();
-    shutdown();
-    createFormXObjectFromTIFF();
-    createImageXObjectFromJPG();
-    retrieveJPGImageInformation();
-    getObjectsContext();
-    getDocumentContext();
-    */
+    attachURLLinktoCurrentPage(url: string, x: PosX, y: PosY, width: Width, height: Height): this;
+    shutdown(outputFilePath: FilePath): this;
+    createFormXObjectFromTIFF(filePath: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): FormXObject;
+    retrieveJPGImageInformation(filePath: FilePath): JPEGInformation;
+    getObjectsContext(): ObjectsContext;
+    getDocumentContext(): DocumentContext;
     appendPDFPagesFromPDF(source: FilePath | ReadStream): number[];
-    /*
-    mergePDFPagesToPage();
-    */
+    mergePDFPagesToPage(page: PDFPage, file: FilePath | PDFRStreamForFile, options?: MergeOptions, callback?: inInterPagesCallback): this;
+    mergePDFPagesToPage(page: PDFPage, file: FilePath | PDFRStreamForFile, callback?: inInterPagesCallback) : this;
     createPDFCopyingContext(source: FilePath | ReadStream): DocumentCopyingContext;
-    /*
-    createFormXObjectsFromPDF();
-    createPDFCopyingContextForModifiedFile();
-    createPDFTextString();
-    createPDFDate();
-    */
+    createFormXObjectsFromPDF(file: FilePath, box?: PDFBox |  PDFPageBoxType, options?: MergeOptions, transformation?: TransformationMatrix, objectIds?: FormXObjectId[]): FormXObjectId[];
+    createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
+    createPDFTextString(): PDFTextString;
+    createPDFDate(): PDFDate;
     getImageDimensions(inFontFilePath: FilePath | ReadStream): RectangleDimension;
-    /*
-    getImagePagesCount();
-    getImageType();
-    getModifiedFileParser();
-    getModifiedInputFile();
-    getOutputFile();
-    registerAnnotationReferenceForNextPageWrite();
-    */
+    getImagePagesCount(imagePath: FilePath, options?: {password?: string}): number;
+    getImageType(imagePath: FilePath): PDFImageType | undefined;
+    getModifiedFileParser(): PDFReader;
+    getModifiedInputFile(): InputFile;
+    getOutputFile(): OutputFile;
+    registerAnnotationReferenceForNextPageWrite(annotationId: number): this;
+    requireCatalogUpdate(): void;
   }
 }

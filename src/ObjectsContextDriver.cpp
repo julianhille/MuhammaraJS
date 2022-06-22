@@ -179,7 +179,7 @@ METHOD_RETURN_TYPE ObjectsContextDriver::EndArray(const ARGS_TYPE& args)
     if((args.Length() != 0 && args.Length() != 1) ||
         (args.Length() == 1 && !args[0]->IsNumber()))
     {
-		THROW_EXCEPTION("wrong arguments, pass 1 optional argument that defiened the array ending");
+		THROW_EXCEPTION("wrong arguments, pass 1 optional argument that defined the array ending");
 		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
         
     }
