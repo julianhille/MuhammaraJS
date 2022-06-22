@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Electron 17.2.0, 17.3, 17.4
 - Typescript definitions
+- Add test for recrypt with streams
 
 ## [2.4.0] - 2022-06-08
 
