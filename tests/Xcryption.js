@@ -12,6 +12,24 @@ describe('Xcryption', function() {
 		});
 	});
 
+	describe('Encrypt PDF With a Password as stream from Buffer', function() {
+		it('should complete without error', function() {
+			var fs = require('fs')
+			var result = fs.readFileSync(__dirname +  '/TestMaterials/PDFWithPassword.PDF')
+			var source = new muhammara.PDFRStreamForBuffer(result);
+			var target = new muhammara.PDFWStreamForFile(__dirname + '/output/RecryptPDFOriginalToPasswordProtectedBuffer.PDF');
+			muhammara.recrypt(
+				source,
+				target,
+				{
+					password:'user',
+					userPassword: 'user1',
+					ownerPassword: 'owner1',
+					userProtectionFlag: 4
+				});
+		});
+	});
+
 	describe('Encrypt PDF With a Password as stream', function() {
 		it('should complete without error', function() {
 			var source = new muhammara.PDFRStreamForFile(__dirname +  '/TestMaterials/PDFWithPassword.PDF');
