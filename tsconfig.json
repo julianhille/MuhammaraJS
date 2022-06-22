@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true
   },
   "exclude": [
     "node_modules"
