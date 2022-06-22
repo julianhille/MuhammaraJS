@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Electron 17.2.0, 17.3, 17.4
+- Typescript definitions
 
 ## [2.4.0] - 2022-06-08
 
