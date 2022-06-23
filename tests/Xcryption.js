@@ -12,6 +12,40 @@ describe('Xcryption', function() {
 		});
 	});
 
+	describe('Encrypt PDF With a Password as stream from Buffer', function() {
+		it('should complete without error', function() {
+			var fs = require('fs')
+			var result = fs.readFileSync(__dirname +  '/TestMaterials/PDFWithPassword.PDF')
+			var source = new muhammara.PDFRStreamForBuffer(result);
+			var target = new muhammara.PDFWStreamForFile(__dirname + '/output/RecryptPDFOriginalToPasswordProtectedBuffer.PDF');
+			muhammara.recrypt(
+				source,
+				target,
+				{
+					password:'user',
+					userPassword: 'user1',
+					ownerPassword: 'owner1',
+					userProtectionFlag: 4
+				});
+		});
+	});
+
+	describe('Encrypt PDF With a Password as stream', function() {
+		it('should complete without error', function() {
+			var source = new muhammara.PDFRStreamForFile(__dirname +  '/TestMaterials/PDFWithPassword.PDF');
+			var target = new muhammara.PDFWStreamForFile(__dirname + '/output/RecryptPDFOriginalToPasswordProtectedStream.PDF');
+			muhammara.recrypt(
+				source,
+				target,
+				{
+					password:'user',
+					userPassword: 'user1',
+					ownerPassword: 'owner1',
+					userProtectionFlag: 4
+				});
+		});
+	});
+
 	describe('Encrypt PDF With a Different Password', function() {
 		it('should complete without error', function() {
 			muhammara.recrypt(
@@ -21,7 +55,7 @@ describe('Xcryption', function() {
 					password:'user',
 					userPassword: 'user1',
 					ownerPassword: 'owner1',
-					userProtectionFlag: 4					
+					userProtectionFlag: 4
 				});
 		});
 	});
@@ -34,10 +68,10 @@ describe('Xcryption', function() {
 				{
 					userPassword: 'user1',
 					ownerPassword: 'owner1',
-					userProtectionFlag: 4					
+					userProtectionFlag: 4
 				});
 		});
-	});	
+	});
 
 	describe('Create a PDF With a Password', function() {
 		it('should complete without error', function() {
@@ -46,7 +80,7 @@ describe('Xcryption', function() {
 				{
 					userPassword: 'user',
 					ownerPassword: 'owner',
-					userProtectionFlag: 4					
+					userProtectionFlag: 4
 				});
 			var page = pdfWriter.createPage(0,0,595,842);
 
@@ -60,9 +94,9 @@ describe('Xcryption', function() {
 				});
 
 			pdfWriter.writePage(page);
-			pdfWriter.end();			
+			pdfWriter.end();
 		});
-	});	
+	});
 
 	describe('Create a PDF With a Password, encrypted with AES', function() {
 		it('should complete without error', function() {
@@ -72,7 +106,7 @@ describe('Xcryption', function() {
 					userPassword: 'user',
 					ownerPassword: 'owner',
 					userProtectionFlag: 4,
-					version: muhammara.ePDFVersion16				
+					version: muhammara.ePDFVersion16
 				});
 			var page = pdfWriter.createPage(0,0,595,842);
 
@@ -86,9 +120,9 @@ describe('Xcryption', function() {
 				});
 
 			pdfWriter.writePage(page);
-			pdfWriter.end();			
+			pdfWriter.end();
 		});
-	});	
+	});
 
 	describe('Decrypt PDF via Appending Pages to New PDF',function() {
 		it('should complete without error', function() {
@@ -98,7 +132,7 @@ describe('Xcryption', function() {
 				copyingContext.appendPDFPageFromPDF(i);
 			}
 			pdfWriter.end();
-		});		
+		});
 	});
 
 	describe('Modify encrypted document', function() {
@@ -128,6 +162,5 @@ describe('Xcryption', function() {
 
 			pdfWriter.end();
 		});
-	});	
-
+	});
 });

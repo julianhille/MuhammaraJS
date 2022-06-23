@@ -15,7 +15,7 @@ muhammara.PDFWriter.prototype.getEvents = function() {
     return this.events;
 }
 
-muhammara.PDFWriter.prototype.triggerDocumentExtensionEvent = function(eventName,eventParams) {
+muhammara.PDFWriter.prototype.triggerDocumentExtensionEvent = function(eventName, eventParams) {
     eventParams.writer = this;
     this.getEvents().emit(eventName,eventParams);
 }
