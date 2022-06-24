@@ -61,7 +61,7 @@ End a dictionary with `objCxt.endDictionary(dict)`
 
 # Writing arrays
 
-you start writing an array by calling the object context `startArray()` method. The write as many objects as you want, and then `endArray()`. You can optionally provide a parameter to `endArray` noting what you would like to be done afterwords. Pass `hummus.eTokenSeparatorSpace` to write a space. Pass `hummus.eTokenSeparatorEndLine` to add a newline. Pass `hummus.eTokenSepratorNone` to do nothing.
+you start writing an array by calling the object context `startArray()` method. The write as many objects as you want, and then `endArray()`. You can optionally provide a parameter to `endArray` noting what you would like to be done afterwords. Pass `hummus.eTokenSeparatorSpace` to write a space. Pass `hummus.eTokenSeparatorEndLine` to add a newline. Pass `hummus.eTokenSeparatorNone` to do nothing.
 
 # PDF Streams
 
