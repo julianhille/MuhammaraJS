@@ -816,20 +816,34 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::SCN(const ARGS_TYPE& args)
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
-	if (args.Length() == 0 ||
-        (args.Length() == 1 && !args[0]->IsNumber()))
+	if (
+	    args.Length() == 0 ||
+        (args.Length() == 1 && !(args[0]->IsNumber() || args[0]->IsArray())) ||
+        (args.Length() > 1 && !(args[args.Length()-1]->IsNumber() || args[args.Length()-1]->IsArray() || args[args.Length()-1]->IsString() ))
+
+        )
     {
-		THROW_EXCEPTION("Wrong Arguments, please provide at least one color component");
+		THROW_EXCEPTION("Wrong Arguments, please provide at least one color component or a list of color components and optional a pattern name");
 		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 	}
-    
+
+    double* components;
+    int componentsLength = 0;
     bool hasPatternArgument = args[args.Length()-1]->IsString();
-    int componentsLength = hasPatternArgument ? args.Length() - 1 : args.Length();
-    
-    double* components = new double[componentsLength];
-    for(int i = 0; i < componentsLength; ++i)
-        components[i] = TO_NUMBER(args[i])->Value();
-    
+    if (!args[0]->IsArray()) {
+        componentsLength = hasPatternArgument ? args.Length() - 1 : args.Length();
+        components = new double[componentsLength];
+        for(int i = 0; i < componentsLength; ++i)
+            components[i] = TO_NUMBER(args[i])->Value();
+    } else {
+        Local<Object> arr = args[0]->TO_OBJECT();
+        componentsLength = TO_INT32(arr->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
+        components = new double[componentsLength];
+        for(int i = 0; i < componentsLength; ++i) {
+           components[i] = TO_NUMBER(arr->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked())->Value();
+       }
+    }
+
     if(hasPatternArgument)
         contentContext->GetContext()->SCN(components,componentsLength,*UTF_8_VALUE(args[args.Length()-1]->TO_STRING()));
     else
@@ -880,20 +894,34 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::scn(const ARGS_TYPE& args)
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
-	if (args.Length() == 0 ||
-        (args.Length() == 1 && !args[0]->IsNumber()))
+    if (
+        args.Length() == 0 ||
+        (args.Length() == 1 && !(args[0]->IsNumber() || args[0]->IsArray())) ||
+        (args.Length() > 1 && !(args[args.Length()-1]->IsNumber() || args[args.Length()-1]->IsArray() || args[args.Length()-1]->IsString() ))
+
+        )
     {
-		THROW_EXCEPTION("Wrong Arguments, please provide at least one color component");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
+        THROW_EXCEPTION("Wrong Arguments, please provide at least one color component or a list of color components and optional a pattern name");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    double* components;
+    int componentsLength = 0;
     bool hasPatternArgument = args[args.Length()-1]->IsString();
-    int componentsLength = hasPatternArgument ? args.Length() - 1 : args.Length();
-    
-    double* components = new double[componentsLength];
-    for(int i = 0; i < componentsLength; ++i)
-        components[i] = TO_NUMBER(args[i])->Value();
-    
+    if (!args[0]->IsArray()) {
+        componentsLength = hasPatternArgument ? args.Length() - 1 : args.Length();
+        components = new double[componentsLength];
+        for(int i = 0; i < componentsLength; ++i)
+            components[i] = TO_NUMBER(args[i])->Value();
+    } else {
+        Local<Object> arr = args[0]->TO_OBJECT();
+        componentsLength = TO_INT32(arr->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
+        components = new double[componentsLength];
+        for(int i = 0; i < componentsLength; ++i) {
+           components[i] = TO_NUMBER(arr->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked())->Value();
+       }
+    }
+
     if(hasPatternArgument)
         contentContext->GetContext()->scn(components,componentsLength,*UTF_8_VALUE(args[args.Length()-1]->TO_STRING()));
     else
