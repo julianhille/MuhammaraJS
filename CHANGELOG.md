@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- drawPath can now be used differently and this new way can be described with ts.
+The old style is `drawPath(x1, y1, x2, y2..., options)` we now allow `drawPath([[x1, y1], [x2, y2]...], options)` too
+
 ### Changed
 
 - Bump dev dependency versions

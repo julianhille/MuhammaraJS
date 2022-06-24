@@ -51,7 +51,7 @@ First 3 parameters are the center coordinates, and the radius. The 4th optional 
 
 To draw any polygonal path, use the `drawPath` method:
 ```javascript
-cxt.drawPath(x1,y1,x2,y2.....,[{options}])
+cxt.drawPath([[x1,y1],[x2,y2].....],[{options}])
 ``` 
 
 You can provide a variable length list of pairs of coordinates, each time passing the X and Y of it. The last optional parameter is a style parameter, with the same options as explained for rectangles, with One additional option - `close`. Pass true as the `close` property value, to automatically close the path. If you are using `fill` type, the path will automatically be close regardless of y'r request.

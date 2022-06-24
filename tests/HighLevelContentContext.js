@@ -16,7 +16,7 @@ describe('HighLevelContentContext', function() {
 		var pathStrokeOptions = {color:'DarkMagenta', width:4};
 
 		// drawPath
-		cxt.drawPath(75,640,149,800,225,640,pathFillOptions)
+		cxt.drawPath([[75,640],[149,800],[225,640]],pathFillOptions)
 			.drawPath(75,540,110,440,149,540,188,440,223,540,pathStrokeOptions);
 
 		// drawSquare
