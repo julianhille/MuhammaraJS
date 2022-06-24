@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Fixes missing buffer information for recrypt typescript definition
+
 ## [2.5.0] - 2022-06-23
 
 ### Added

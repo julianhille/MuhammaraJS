@@ -40,8 +40,8 @@ declare module 'muhammara' {
     options?: PDFRecryptOptions,
   ): void;
   export function recrypt(
-    originalPdfStream: PDFRStreamForFile,
-    newPdfStream: PDFWStreamForFile,
+    originalPdfStream: PDFRStreamForFile | PDFRStreamForBuffer,
+    newPdfStream: PDFWStreamForFile | PDFWStreamForBuffer,
     options?: PDFRecryptOptions,
   ): void;
 
