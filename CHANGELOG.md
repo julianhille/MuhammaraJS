@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Links in docs
 
+### Changed
+
+- Bump dev dependency versions s
+
 ### Breaking
 
 - Node < 11 and Electron < 11 removed
