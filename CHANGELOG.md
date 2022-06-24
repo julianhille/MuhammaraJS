@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking
 
-- Renamed typo exported value from eTokenSeparator to eTokenSeparator
+- Renamed typo exported value from eTokenSeprator to eTokenSeparator
 
 ## [2.5.0] - 2022-06-23
 
