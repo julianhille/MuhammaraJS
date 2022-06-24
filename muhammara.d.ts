@@ -179,9 +179,11 @@ declare module 'muhammara' {
     SC(...colorComponents: number[]): this;
     SCN(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////SCN(...colorComponents: number[], patternName?: string): this;
+    SCN(colorComponents: number[], patternName?: string): this;
     sc(...colorComponents: number[]): this;
     scn(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////scn(...colorComponents: number[], patternName?: string): this;
+    scn(colorComponents: number[], patternName?: string): this;
     G(gray: number): this;
     g(gray: number): this;
     RG(r: number, g: number, b: number): this;
