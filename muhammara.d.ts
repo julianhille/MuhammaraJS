@@ -549,12 +549,12 @@ declare module 'muhammara' {
 
   export type eTokenSeparatorSpace = 0;
   export type eTokenSeparatorEndLine = 1;
-  export type eTokenSepratorNone = 2;
+  export type eTokenSeparatorNone = 2;
 
   enum ETokenSeparator {
     eTokenSeparatorSpace,
     eTokenSeparatorEndLine,
-    eTokenSepratorNone
+    eTokenSeparatorNone
   }
 
   export interface ObjectsContext {
