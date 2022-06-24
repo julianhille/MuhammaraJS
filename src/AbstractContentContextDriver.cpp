@@ -1757,6 +1757,7 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::WriteFreeCode(const ARGS_TYPE& 
 }
 
 /* context.drawPath(x1,y1,x2,y2,x3,y3...{type:stroke, color:#FF00FF, width:3, close:true})
+/* context.drawPath([[x1,y1],[x2,y2].....]...{type:stroke, color:#FF00FF, width:3, close:true})
  */
 METHOD_RETURN_TYPE AbstractContentContextDriver::DrawPath(const ARGS_TYPE& args)
 {
@@ -1769,24 +1770,64 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::DrawPath(const ARGS_TYPE& args)
         THROW_EXCEPTION("Null content context. Please create a context");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
-    
-    if(args.Length() < 2)
+
+    if(
+        (args.Length() == 1 && !args[0]->IsArray()) ||
+        args.Length() < 2
+    )
     {
-		THROW_EXCEPTION("Wrong Arguments, please provide path coordinates and an optional options object");
+		THROW_EXCEPTION("Wrong Arguments, please provide path coordinates as numbers (x1, y1, x2, y2 etc) or as list of coordinates and an optional options object");
 		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
-    
-    contentContext->SetupColorAndLineWidth(args[args.Length() - 1]);
-    
-    contentContext->GetContext()->m(TO_NUMBER(args[0])->Value(),TO_NUMBER(args[1])->Value());
-    for(int i=2;i<args.Length()-1;i+=2)
+    if (!args[0]->IsArray())
     {
-        if(!args[i]->IsNumber()) // options object, stop
-            break;
-        contentContext->GetContext()->l(TO_NUMBER(args[i])->Value(),TO_NUMBER(args[i+1])->Value());
+        contentContext->SetupColorAndLineWidth(args[args.Length() - 1]);
+        contentContext->GetContext()->m(TO_NUMBER(args[0])->Value(),TO_NUMBER(args[1])->Value());
+        for(int i=2;i<args.Length()-1;i+=2)
+        {
+            if(!args[i]->IsNumber()) // options object, stop
+                break;
+            contentContext->GetContext()->l(TO_NUMBER(args[i])->Value(),TO_NUMBER(args[i+1])->Value());
+        }
+
+        contentContext->FinishPath(args[args.Length() - 1]);
     }
-    
-    contentContext->FinishPath(args[args.Length() - 1]);
+    else
+    {
+        Local<Object> outer = args[0]->TO_OBJECT();
+        int arrayLength =TO_INT32(outer->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
+        if(arrayLength <= 1) {
+            THROW_EXCEPTION("Wrong arguments. Coordinate list must have at least one point");
+            SET_FUNCTION_RETURN_VALUE(UNDEFINED);
+        }
+        Local<Object> inner;
+        contentContext->SetupColorAndLineWidth(args[args.Length() - 1]);
+        for(int i=0;i<arrayLength;++i) {
+            inner = outer->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->TO_OBJECT();
+
+            if (!inner->IsArray() || TO_INT32(inner->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value() != 2)
+            {
+               THROW_EXCEPTION("Wrong arguments. Coordinate list must have exactly one x and one y value");
+               SET_FUNCTION_RETURN_VALUE(UNDEFINED);
+               break;
+            }
+            if (i == 0)
+            {
+                contentContext->GetContext()->m(
+                    TO_NUMBER(inner->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked())->Value(),
+                    TO_NUMBER(inner->Get(GET_CURRENT_CONTEXT, 1).ToLocalChecked())->Value()
+                );
+            }
+            else
+            {
+                contentContext->GetContext()->l(
+                    TO_NUMBER(inner->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked())->Value(),
+                    TO_NUMBER(inner->Get(GET_CURRENT_CONTEXT, 1).ToLocalChecked())->Value()
+                );
+            }
+        }
+        contentContext->FinishPath(args[args.Length() - 1]);
+    }
     SET_FUNCTION_RETURN_VALUE(args.This())
 }
 
