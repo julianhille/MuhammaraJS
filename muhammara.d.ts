@@ -212,6 +212,7 @@ declare module 'muhammara' {
     TJ(value: string | Glyph, options?: TextRenderOptions): this;
     writeFreeCode(freeCode: string): this;
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
+    ////drawPath(...xyPairs: number[], options: GraphicOptions): this;
     drawPath(xyPairs:  Array<[number, number]>, options: GraphicOptions): this;
     drawCircle(x: PosX, y: PosY, r: number, options: GraphicOptions): this;
     drawSquare(x: PosX, y: PosY, l: number, options: GraphicOptions): this;
