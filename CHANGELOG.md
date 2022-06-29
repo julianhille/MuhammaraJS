@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Fixes hard crash to exception when creating a stream with null object and calling createWriter with it
 - Fixes missing buffer information for recrypt typescript definition
 
 ## [2.5.0] - 2022-06-23
