@@ -24,6 +24,6 @@ describe('BasicModificationWithStreams', function() {
 		var res = new muhammara.PDFStreamForResponse(null)
 		chai.expect(
 			muhammara.createWriter.bind(undefined, res)
-		).to.throw('Cannot read properties of null')
+		).to.throw(/Cannot read propert.*(write)?.* of null/)
 	})
 });
