@@ -1,4 +1,5 @@
 var muhammara = require('../muhammara');
+const chai = require('chai');
 
 describe('BasicModificationWithStreams', function() {
 	it('should complete without error', function() {
@@ -14,9 +15,15 @@ describe('BasicModificationWithStreams', function() {
 			color:0x00
 		});
 		pageModifier.endContext().writePage();
-
 		pdfWriter.end();
 		outStream.close();
 		inStream.close();
 	});
+
+	it('null for stream should throw an error and not crash', function () {
+		var res = new muhammara.PDFStreamForResponse(null)
+		chai.expect(
+			muhammara.createWriter.bind(undefined, res)
+		).to.throw(/Cannot read propert.*(write)?.* of null/)
+	})
 });
