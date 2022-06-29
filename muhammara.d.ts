@@ -652,6 +652,8 @@ declare module 'muhammara' {
     specificRanges?: [[number, number]];
   }
 
+  export interface AppendOptions extends MergeOptions {}
+
   export type inInterPagesCallback = () => {}
 
 
@@ -680,7 +682,7 @@ declare module 'muhammara' {
     retrieveJPGImageInformation(filePath: FilePath): JPEGInformation;
     getObjectsContext(): ObjectsContext;
     getDocumentContext(): DocumentContext;
-    appendPDFPagesFromPDF(source: FilePath | ReadStream): number[];
+    appendPDFPagesFromPDF(source: FilePath | ReadStream, options?: AppendOptions): number[];
     mergePDFPagesToPage(page: PDFPage, file: FilePath | PDFRStreamForFile, options?: MergeOptions, callback?: inInterPagesCallback): this;
     mergePDFPagesToPage(page: PDFPage, file: FilePath | PDFRStreamForFile, callback?: inInterPagesCallback) : this;
     createPDFCopyingContext(source: FilePath | ReadStream): DocumentCopyingContext;
