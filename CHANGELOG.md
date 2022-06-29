@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Fixes missing buffer information for recrypt typescript definition
+- Fixes missing options for append pdf pages
 
 ## [2.5.0] - 2022-06-23
 
