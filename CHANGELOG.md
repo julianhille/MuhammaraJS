@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixes hard crash to exception when creating a stream with null object and calling createWriter with it
 - Fixes missing buffer information for recrypt typescript definition
 - Fixes missing options for append pdf pages
+- Fixes NPE when stream is not readable in write stream object (PDFDocumentHandler)
 
 ## [2.5.0] - 2022-06-23
 
