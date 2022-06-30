@@ -2032,6 +2032,10 @@ EStatusCode PDFDocumentHandler::WriteStreamObject(PDFStreamInput* inStream, IObj
 	if(!readingDecrypted) {
 		streamReader = mParser->StartReadingFromStreamForPlainCopying(inStream);
 	}
+
+	if (streamReader == NULL) {
+               status = PDFHummus::eFailure;
+	}
 	
 	while (it.MoveNext() && PDFHummus::eSuccess == status)
 	{
