@@ -1,4 +1,4 @@
-Once a Page is created you can use its content context to add images, text and primitives. This passage explains about the high level methods available for drawing primitives. Note that in addition to what's described here there are methods to draw primitives using all the PDF operators, explained in [[Use the PDF drawing operators]]
+Once a Page is created you can use its content context to add images, text and primitives. This passage explains about the high level methods available for drawing primitives. Note that in addition to what's described here there are methods to draw primitives using all the PDF operators, explained in [Use the PDF drawing operators](./Use-the-pdf-drawing-operators.md).
 
 A code sample for using the methods explained here is available in [here](../tests/HighLevelContentContext.js).
 
@@ -58,4 +58,4 @@ You can provide a variable length list of pairs of coordinates, each time passin
 
 
 
-That's all folks. You can obviously draw a lot more, like images and text, or just use any PDF command to manipulate the drawing (for instance, rotate and scale using the `cm` PDF commands). More about these commands in [[Use the PDF drawing operators]]
+That's all folks. You can obviously draw a lot more, like images and text, or just use any PDF command to manipulate the drawing (for instance, rotate and scale using the `cm` PDF commands). More about these commands in [Use the PDF drawing operators](./Use-the-pdf-drawing-operators.md)

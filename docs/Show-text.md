@@ -37,7 +37,7 @@ now keep that font object. you'll need it for the next passage :)
 
 One thing of note for the heavy typographers amongst you - kerning is not supported by the module. If you want kerning, for now you'll have to do it yourself, getting the info somehow and using multiple calls or the advanced PDF commands, to place the text according to the fetched kerning.
 
-In addition, you should know that using the advanced PDF operators there are some more options around placing characters. you'll be able to pass a text string, and it will treat it as unicode, but you can also pass an array of glyph codes, in case you are unhappy with the default encoding. All about this happiness in [[Use the PDF drawing operators]].  
+In addition, you should know that using the advanced PDF operators there are some more options around placing characters. you'll be able to pass a text string, and it will treat it as unicode, but you can also pass an array of glyph codes, in case you are unhappy with the default encoding. All about this happiness in [Use the PDF drawing operators](./Use-the-pdf-drawing-operators.md).  
 
 # Measuring Text
 

@@ -19,8 +19,8 @@ The module has the following set of features:
 10. You can also read JPGs, TIFFS, PDFs from custom streams implementations. natively the library supports files, but you don't have to stick just to that (unfortunately, fonts, at this point must still be files).
 11. In addition to the high level features the module provides powerful access to the low level building blocks of the PDF in both reading and writing, so essentially you can do anything PDF.
 
-Getting Started - [[How to serve dynamically created pdf]].   
-Feature documentation and Reference - [[Features]].  
+Getting Started - [How to serve dynamically created pdf](./How-to-serve-dynamically-created-pdf.md).   
+Feature documentation and Reference - [Features](./Features.md).  
 
 
 Muhammara is also very fast, using a unique model of one-off writing.  
@@ -32,17 +32,17 @@ Any suggestions for additions are welcome. Contributions are also welcome (both 
 
 # Index
 
-[Basic pdf creation](./Basic-pdf-creation.md)
-[Custom streams](./Custom-streams.md)
-[Embedding pdf](./Embedding-pdf.md)
-[Extensibility](./Extensibility.md)
-[Features](./Features.md)
-[How to serve dynamically created pdf](How-to-serve-dynamically-created-pdf.md)
-[Modification](./Modification.md)
-[Parsing](./Parsing.md)
-[Reusable forms](Reusable-forms.md)
-[Show images](./Show-images.md)
-[Show primitives](Show-primitives.md)
-[Show text](./Show-text.md)
-[Streams](./Streams.md)
-[Use the pdf drawing operators](./Use-the-pdf-drawing-operators.md)
+- [Basic pdf creation](./Basic-pdf-creation.md)
+- [Custom streams](./Custom-streams.md)
+- [Embedding pdf](./Embedding-pdf.md)
+- [Extensibility](./Extensibility.md)
+- [Features](./Features.md)
+- [How to serve dynamically created pdf](How-to-serve-dynamically-created-pdf.md)
+- [Modification](./Modification.md)
+- [Parsing](./Parsing.md)
+- [Reusable forms](Reusable-forms.md)
+- [Show images](./Show-images.md)
+- [Show primitives](Show-primitives.md)
+- [Show text](./Show-text.md)
+- [Streams](./Streams.md)
+- [Use the pdf drawing operators](./Use-the-pdf-drawing-operators.md)

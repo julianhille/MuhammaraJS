@@ -55,7 +55,7 @@ The returned jpgDimensions has two members - `width` and `height` with the image
 
 # Advanced options
 
-Each image type, provides some special methods, that allow you to do more advanced things with it. JPG and TIFF images options will be explained here. As for PDF embedding, it is explained in [[Embedding PDF]]. Note that the advanced options around images, require a little bit of PDF operators usage...i'll explained everything that i use here :), worry not.
+Each image type, provides some special methods, that allow you to do more advanced things with it. JPG and TIFF images options will be explained here. As for PDF embedding, it is explained in [Embedding PDF](./Embedding-pdf.md). Note that the advanced options around images, require a little bit of PDF operators usage...i'll explained everything that i use here :), worry not.
 
 ## JPG
 

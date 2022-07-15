@@ -1,6 +1,6 @@
 The PDFHummus c++ library, and so also The Hummus NodeJS PDF module include a lot work around custom streams. Hummus allows input and output from and to custom streams that you can implement, for any purpose that you have in mind.
 
-This is kind of good, because the native file usage of PDFHummus, is the regular OS files usage with some buffering and decent decoding...but still it's not the nodeJS nice non-blocking IO. Where makes sense (especially with writing...not so with reading), implementing custom streams can help resolve this problem. But not just. You may have various sources for images that are not in files (say...in the DB), or your target may not necessarily be a PDF file, but rather the response object, as is shown in [[How to serve dynamically created pdf]].
+This is kind of good, because the native file usage of PDFHummus, is the regular OS files usage with some buffering and decent decoding...but still it's not the nodeJS nice non-blocking IO. Where makes sense (especially with writing...not so with reading), implementing custom streams can help resolve this problem. But not just. You may have various sources for images that are not in files (say...in the DB), or your target may not necessarily be a PDF file, but rather the response object, as is shown in [How to serve dynamically created pdf](./How-to-serve-dynamically-created-pdf.md).
 
 This section describes how to create custom streams. For writing to, and then for reading from.
 

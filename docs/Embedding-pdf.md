@@ -6,7 +6,7 @@ The basic methods are provided as *PDFWriter* methods, the more complex ones req
 
 If you simply want to take pages from an original PDF and put them in the target PDF use `pdfWriter. appendPDFPagesFromPDF(inSourcePDFFilePath || inSourcePDFFileStream, [{PageRange}])`
 
-The first parameter to the method is either a path to a source PDF file or a PDF file stream object. To read about stream objects go to [[Custom streams]].
+The first parameter to the method is either a path to a source PDF file or a PDF file stream object. To read about stream objects go to [Custom streams](./Custom-streams.md).
 
 The second parameter is optional and provide information about the range of pages to include. If not provided all the source PDF pages are appended to the PDF file. If it is provided it has the following properties:
 * `type` - enumerator. either `hummus.eRangeTypeAll` or `hummus.eRangeTypeSpecific`. If you bother with this object than you will want to use `hummus.eRangeTypeSpecific`. The other option is kind of irrelevant (and the default).
@@ -103,9 +103,9 @@ cpyCxt.getSourceDocumentParser()
 cpyCxt.getSourceDocumentStream()
 ```
 
-you can get access to the source document reader/parser using `cpyCxt.getSourceDocumentParser`. The parser is quite useful in providing you some basic high level information and access to the low level building blocks of the source PDF. For example, to get the number of pages, go `cpyCxt.getSourceDocumentParser().getPagesCount()`. For more info about what you can do with a parser go to [[Parsing]].
+you can get access to the source document reader/parser using `cpyCxt.getSourceDocumentParser`. The parser is quite useful in providing you some basic high level information and access to the low level building blocks of the source PDF. For example, to get the number of pages, go `cpyCxt.getSourceDocumentParser().getPagesCount()`. For more info about what you can do with a parser go to [Parsing](./Parsing.md).
 
-If you really must, you can even get access to the source document stream. This is done using `cpyCxt.getSourceDocumentStream()`. Reading bytes from a stream is really simple and explained in [[Streams]], so i wont bother with this here.
+If you really must, you can even get access to the source document stream. This is done using `cpyCxt.getSourceDocumentStream()`. Reading bytes from a stream is really simple and explained in [Streams](./Streams.md), so i wont bother with this here.
 
 ## Low levels
 

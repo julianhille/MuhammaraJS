@@ -92,4 +92,4 @@ the `writePage` command finishes a page, which means you don't get to write to i
 
 Done. We got a dynamically created PDF served directly to the response. Neat.
 
-Learn about more feature of the module in [[Features]]
+Learn about more feature of the module in [Features](./Features.md).

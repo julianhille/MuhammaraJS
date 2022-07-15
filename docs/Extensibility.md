@@ -4,7 +4,7 @@ Unfortunately, I didn't implement all (contribs are welcome :)), fortunately, yo
 
 The hummus module provide simple methods to create PDF objects such as dictionaries, strings, numbers, streams (encoded or not), arrays etc. Using these methods you should be able to implement any type of objects. Hummus also lets you hook these objects to the existing structures in the PDF. You can do this in two ways - if you are looking to add annotations, you can create them and link them to pages. Or you can listen on page and catalog writes and add object references (or direct objects) there. These are normally the main areas where you will want to extend. However, The PDFHummus library, that hummus uses as back-end, allows for many more "hooks" into the PDF structures. So, If you want me to add hooks to existing structures, it's probably already done in PDFHummus, so i just have to expose it via the module - let me know and i will. 
 
-Note that for modification scenarios (explained in [[Modification]]) you can modify existing objects, so no problem hooking to whatever you want.
+Note that for modification scenarios (explained in [Modification](./Modification.md)) you can modify existing objects, so no problem hooking to whatever you want.
 
 K. let's get to being familiar with the hummus module basic building blocks building functionality.
 
@@ -68,7 +68,7 @@ you start writing an array by calling the object context `startArray()` method. 
 Most of the really complex objects writing (like 3d objects, fonts etc.) require writing streams. No problem for Hummus.
 
 To start writing a stream call `var streamCxt = objCxt.startPDFStream()`. The returned object is a PDF stream object (not to be confused with the other streams in hummus) that you can use for writing the stream data to.
-This object has a single method called `getWriteStream()`, which returns a ByteWriter stream object. You can read about how to use streams in [[Streams]] or just read here that it has a single method `write`, to which you can pass an array of byte values, in which case it'll write the bytes, encoding them to flate, or whatever it used for encoding, and return the number of elements of the array that it wrote (normally it'll write all of them, unless an error happens). You can also used the objects context to write commands and values, for cases like writing a content stream, or anything else that needs the same primitive writing caps as what PDF does. it will work perfectly.
+This object has a single method called `getWriteStream()`, which returns a ByteWriter stream object. You can read about how to use streams in [Streams](./Streams.md) or just read here that it has a single method `write`, to which you can pass an array of byte values, in which case it'll write the bytes, encoding them to flate, or whatever it used for encoding, and return the number of elements of the array that it wrote (normally it'll write all of them, unless an error happens). You can also used the objects context to write commands and values, for cases like writing a content stream, or anything else that needs the same primitive writing caps as what PDF does. it will work perfectly.
 
 To end stream writing call the object context `endPDFStream(inStream)`, passing the stream object that you received initially from `startPDFStream()`. The ending command will take care of writing the length key, so don't worry about it.
 
@@ -80,7 +80,7 @@ Now. 99% of the use cases would require that you write your own keys into the st
 
 # Oh I really need to do my own thing
 
-If you are NOT happy with how hummus writes things, and you want to write directly to the stream, you can do that. Use the objects context `startFreeContext` like this - `var writeStream = objCxt.startFreeContext()`. It will return a `ByteWriterWithPosition` stream object that you can use (read about streams in [[Streams]]). It has the same `write(inBytesArray)` method as `ByteWriter`, and also another method - `getCurrentPosition()` that returns the current byte position. Good luck :).
+If you are NOT happy with how hummus writes things, and you want to write directly to the stream, you can do that. Use the objects context `startFreeContext` like this - `var writeStream = objCxt.startFreeContext()`. It will return a `ByteWriterWithPosition` stream object that you can use (read about streams in [Streams](./Streams.md)). It has the same `write(inBytesArray)` method as `ByteWriter`, and also another method - `getCurrentPosition()` that returns the current byte position. Good luck :).
 To finish a free writing context, call `objCxt.endFreeContext()`, to set control back to hummus.
 
 # listening on events
