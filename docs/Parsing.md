@@ -177,4 +177,4 @@ while(readStream.notEnded()
 }
 ```
 
-the PDFReader `startReadingFromStream` receives a PDFStreamInput object as a parameter and returns a ByteReader stream that you can read from. Although it's fairly clear from the example how reading works, you can still read more about it if you are not satisfied in [[Streams]].
+the PDFReader `startReadingFromStream` receives a PDFStreamInput object as a parameter and returns a ByteReader stream that you can read from. Although it's fairly clear from the example how reading works, you can still read more about it if you are not satisfied in [Streams](./Streams.md).

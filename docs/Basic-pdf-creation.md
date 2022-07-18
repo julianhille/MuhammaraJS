@@ -15,7 +15,7 @@ createWriter(inStreamObject,[inOptions]);
 The method returns a PDFWriter object that you can now use to add pages and content.
 
 The method has possible first parameters. You can either choose to write to a file, in which case you'll pass a string leading to this file path (it is utf8 encoded, like all strings used in the module).  
-You can alternatively pass a stream object, which is simply an object implementing two methods (write and getCurrentPosition). The Hummus module comes with `Hummus.PDFStreamForResponse` which is a class implementing such a stream object, that can be used for writing directly to the response stream for a server. For more information about custom streams, visit [[Custom streams]];   
+You can alternatively pass a stream object, which is simply an object implementing two methods (write and getCurrentPosition). The Hummus module comes with `Hummus.PDFStreamForResponse` which is a class implementing such a stream object, that can be used for writing directly to the response stream for a server. For more information about custom streams, visit [Custom streams](./Custom-streams.md);   
 
 The second, optional, object provide options for the PDF file creation. It may have the following members:
 
