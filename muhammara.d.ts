@@ -179,9 +179,11 @@ declare module 'muhammara' {
     SC(...colorComponents: number[]): this;
     SCN(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////SCN(...colorComponents: number[], patternName?: string): this;
+    SCN(colorComponents: number[], patternName?: string): this;
     sc(...colorComponents: number[]): this;
     scn(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////scn(...colorComponents: number[], patternName?: string): this;
+    scn(colorComponents: number[], patternName?: string): this;
     G(gray: number): this;
     g(gray: number): this;
     RG(r: number, g: number, b: number): this;
@@ -211,6 +213,7 @@ declare module 'muhammara' {
     writeFreeCode(freeCode: string): this;
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////drawPath(...xyPairs: number[], options: GraphicOptions): this;
+    drawPath(xyPairs:  Array<[number, number]>, options: GraphicOptions): this;
     drawCircle(x: PosX, y: PosY, r: number, options: GraphicOptions): this;
     drawSquare(x: PosX, y: PosY, l: number, options: GraphicOptions): this;
     drawRectangle(x: PosX, y: PosY, w: number, h: number, options: GraphicOptions): this;
@@ -549,12 +552,12 @@ declare module 'muhammara' {
 
   export type eTokenSeparatorSpace = 0;
   export type eTokenSeparatorEndLine = 1;
-  export type eTokenSepratorNone = 2;
+  export type eTokenSeparatorNone = 2;
 
   enum ETokenSeparator {
     eTokenSeparatorSpace,
     eTokenSeparatorEndLine,
-    eTokenSepratorNone
+    eTokenSeparatorNone
   }
 
   export interface ObjectsContext {

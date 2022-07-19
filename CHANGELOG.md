@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Links in docs
 
+### Added
+
+- drawPath can now be used differently and this new way can be described with ts.
+The old style is `drawPath(x1, y1, x2, y2..., options)` we now allow `drawPath([[x1, y1], [x2, y2]...], options)` too
+- scn and SCN can now be used differently and this new way can be described with ts.
+  The old style is `scn(c1, c2, c3, c4, ..., 'patternName')` we now allow `scn([[c1, c2, c3, c4, ...],  'patternName')` too
+
+### Changed
+
+- Bump dev dependency versions s
+
+### Breaking
+
+- Node < 11 and Electron < 11 removed
+- Renamed typo exported value from eTokenSeprator to eTokenSeparator
+
 ## [2.6.0] - 2022-06-30
 
 ### Changed

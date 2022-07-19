@@ -70,9 +70,11 @@ Now, for the list:
 	SC(c1,c2,c3...); // variable number, according to desirable color component count
 	SCN(c1,c2,c3...);
 	SCN(c1,c2,c3....,inPatternName);
+	SCN([c1,c2,c3....],inPatternName);
 	sc(c1,c2,c3...);
 	scn(c1,c2,c3...);
 	scn(c1,c2,c3...,inPatternName);
+	scn([c1,c2,c3...],inPatternName);
 	G(inGray);
 	g(inGray);
 	RG(inR,inG,inB);
