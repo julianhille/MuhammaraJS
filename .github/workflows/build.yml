@@ -5,6 +5,7 @@ on:
     tags:
       - '1.*'
       - '2.*'
+      - '3.*'
     branches:
   pull_request:
   workflow_dispatch:
