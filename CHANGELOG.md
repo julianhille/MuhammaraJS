@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.0.0] - 2022-07-19
+
 ### Fixed
 
 - Links in docs
@@ -261,7 +263,8 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/2.6.0...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.0.0...HEAD
+[3.0.0]: https://github.com/julianhille/MuhammaraJS/compare/2.6.0...3.0.0
 [2.6.0]: https://github.com/julianhille/MuhammaraJS/compare/2.5.0...2.6.0
 [2.5.0]: https://github.com/julianhille/MuhammaraJS/compare/2.4.0...2.5.0
 [2.4.0]: https://github.com/julianhille/MuhammaraJS/compare/2.3.0...2.4.0

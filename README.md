@@ -22,6 +22,13 @@ If you are looking for a C++ Library go [here](https://github.com/galkahana/PDF-
 Version 2.0 will be incompatible with some older node and
 electron versions because we needed to upgrade node-pre-gyp.
 
+Version 3.x has breaking changes:
+
+- Node < 11 and Electron < 11 removed the prebuilts
+- Renamed typo exported value from eTokenSeprator to eTokenSeparator
+
+This wont affect alot of you but still.
+
 # Installation
 
 ```
