@@ -251,7 +251,7 @@ declare module 'muhammara' {
   }
 
   export interface PDFStreamForResponse extends WriteStream {
-    new (res: PDFRStreamForFile): PDFStreamForResponse;
+    new (res: NodeJS.WritableStream): PDFStreamForResponse;
   }
 	
   export interface PDFWStreamForBuffer extends WriteStream {
