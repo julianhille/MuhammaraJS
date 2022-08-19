@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Update TypeScript declaration for `PDFStreamForResponse` to accept any writable stream as an argument, not just `PDFRStreamForFile`
+
 ## [3.0.0] - 2022-07-19
 
 ### Fixed
