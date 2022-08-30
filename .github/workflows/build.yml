@@ -158,10 +158,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - run: npm -g install npm@6.14.5
       - run: node --version
       - run: npm --version
-      - run: npm install node-gyp@8.4.1 --global
       - run: npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
         if: ${{ runner.os == 'Windows' }}
       - run: npm install --build-from-source
