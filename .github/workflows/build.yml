@@ -16,13 +16,6 @@ jobs:
       fail-fast: false
       matrix:
         node: [11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1, 17.6.0, 18.8.0]
-        include:
-          - python_version: 3
-            node: 16.11.1
-          - python_version: 3
-            node: 17.6.0
-          - python_version: 3
-            node: 18.8.0
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node }}-alpine
@@ -32,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: apk update
-      - run: apk add --no-cache make gcc jq g++ python${{ matrix.python_version }} tar
+      - run: apk add --no-cache make gcc jq g++ python3 tar
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
@@ -40,7 +33,7 @@ jobs:
       - run: npm -g install npm@^6.14.5
       - run: node --version
       - run: npm --version
-      - run: npm install node-gyp@5.1.1 --global
+      - run: npm install node-gyp@8.4.1 --global
       - run: chmod 0777 tests/output/
       - run: npm install --build-from-source
         env:
@@ -168,7 +161,7 @@ jobs:
       - run: npm -g install npm@6.14.5
       - run: node --version
       - run: npm --version
-      - run: npm install node-gyp@5.1.1 --global
+      - run: npm install node-gyp@8.4.1 --global
       - run: npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
         if: ${{ runner.os == 'Windows' }}
       - run: npm install --build-from-source
@@ -243,7 +236,7 @@ jobs:
       - run: npm -g install npm@^6.14.5
       - run: node --version
       - run: npm --version
-      - run: npm install node-gyp@5.1.1 --global
+      - run: npm install node-gyp@8.4.1 --global
       - run: npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
         if: ${{ runner.os == 'Windows' }}
       - run: npm install --build-from-source
@@ -298,7 +291,7 @@ jobs:
       - run: npm -g install npm@^6.14.5
       - run: node --version
       - run: npm --version
-      - run: npm install node-gyp@5.1.1 --global
+      - run: npm install node-gyp@8.4.1 --global
       - run: npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
         if: ${{ runner.os == 'Windows' }}
       - run: npm install --build-from-source
