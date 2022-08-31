@@ -16,6 +16,13 @@ jobs:
       fail-fast: false
       matrix:
         node: [11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1, 17.6.0, 18.8.0]
+        include:
+          - python_version: 3
+            node: 16.11.1
+          - python_version: 3
+            node: 17.6.0
+          - python_version: 3
+            node: 18.8.0
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node }}-alpine
@@ -25,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: apk update
-      - run: apk add --no-cache make gcc jq g++ python3 tar
+      - run: apk add --no-cache make gcc jq g++ python${{ matrix.python_version }} tar
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
