@@ -13,6 +13,7 @@
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build ${EXTRA_NODE_PRE_GYP_FLAGS:-\"\"}",
     "test": "mocha -R tap ./tests/*.js --timeout 15000",
+    "test:codestyle": "npx prettier -c ./",
     "test:electron": "electron-mocha -R tap ./tests/*.js --timeout 15000",
     "package": "node-pre-gyp package"
   },
@@ -41,14 +42,12 @@
   "dependencies": {
     "@mapbox/node-pre-gyp": "^1.0.5"
   },
-  "bundledDependencies": [
-    "@mapbox/node-pre-gyp"
-  ],
   "devDependencies": {
     "@types/node": "^18.0.0",
     "chai": "^4.3.6",
     "mocha": "^8.4.0",
-    "npm": "^6.14.5"
+    "npm": "^6.14.5",
+    "prettier": "^2.7.1"
   },
   "binary": {
     "module_name": "muhammara",
@@ -59,5 +58,8 @@
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
-  }
+  },
+  "bundleDependencies": [
+    "@mapbox/node-pre-gyp"
+  ]
 }
