@@ -1,4 +1,5 @@
 # Welcome to MuhammaraJS
+
 [![NPM version](http://img.shields.io/npm/v/muhammara.svg?style=flat)](https://www.npmjs.org/package/muhammara)
 [![Build status](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml)
 
@@ -10,7 +11,6 @@ hummusJS github wiki: available [here](https://github.com/galkahana/HummusJS/wik
 
 Welcome to HummusJS.
 A Fast NodeJS Module for Creating, Parsing an Manipulating PDF Files and Streams.
-
 
 Original Project
 Project site is [here](http://www.pdfhummus.com).
