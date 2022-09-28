@@ -3,9 +3,9 @@ name: Build
 on:
   push:
     tags:
-      - '1.*'
-      - '2.*'
-      - '3.*'
+      - "1.*"
+      - "2.*"
+      - "3.*"
     branches:
   pull_request:
   workflow_dispatch:
@@ -56,7 +56,42 @@ jobs:
       matrix:
         os: [ubuntu-18.04, macos-11, windows-2019]
         architecture: [x64, ia32, arm64]
-        electron: [20.1.0, 20.0.3, 19.0.0, 18.3.0, 18.2.0, 18.1.0, 18.0.0, 17.4.0, 17.3.0, 17.2.0, 17.1.0, 17.0.0, 16.0.1, 15.3.0, 15.2.0, 15.1.2, 15.0.0, 14.2.0, 14.1.0, 14.0.1, 13.6.0, 13.5.0, 13.4.0, 13.3.0, 13.2.3, 13.1.0, 13.0.0, 12.0.0, 11.4.7, 11.3.0, 11.2.0, 11.1.0, 11.0.0]
+        electron:
+          [
+            20.1.0,
+            20.0.3,
+            19.0.0,
+            18.3.0,
+            18.2.0,
+            18.1.0,
+            18.0.0,
+            17.4.0,
+            17.3.0,
+            17.2.0,
+            17.1.0,
+            17.0.0,
+            16.0.1,
+            15.3.0,
+            15.2.0,
+            15.1.2,
+            15.0.0,
+            14.2.0,
+            14.1.0,
+            14.0.1,
+            13.6.0,
+            13.5.0,
+            13.4.0,
+            13.3.0,
+            13.2.3,
+            13.1.0,
+            13.0.0,
+            12.0.0,
+            11.4.7,
+            11.3.0,
+            11.2.0,
+            11.1.0,
+            11.0.0,
+          ]
         include:
           - electron_mocha_version: ^10
           - architecture: arm64
@@ -206,9 +241,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-20.04, macos-11, windows-2019 ]
-        node: [ 18.8.0 ]
-        architecture: [ x64, ia32, arm64 ]
+        os: [ubuntu-20.04, macos-11, windows-2019]
+        node: [18.8.0]
+        architecture: [x64, ia32, arm64]
         include:
           - architecture: ia32
             architecture_node: x86
@@ -311,7 +346,7 @@ jobs:
   publish:
     needs: [build-musl, build-electron, build-node, build-node-old]
     runs-on: ubuntu-latest
-    if:  startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
@@ -341,7 +376,7 @@ jobs:
           prerelease: steps.semver_parser.outputs.prerelease != []
       - uses: AButler/upload-release-assets@v2.0
         with:
-          files: 'builds/bindings/**/*'
+          files: "builds/bindings/**/*"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           release-tag: ${{ steps.semver_parser.outputs.fullversion }}
       - run: npm install

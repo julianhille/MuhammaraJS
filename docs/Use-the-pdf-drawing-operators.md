@@ -1,4 +1,4 @@
-Sometimes you will to display content on a page which is beyond what the existing module operations around images, text and primitives provide. No worries. You can add PDF operators to the page content directly and draw whatever you want. Just create a content context to a page, using the regular method  - `var cxt = pdfWriter.startPageContentContext(page)` - and you can make calls to it with function names fitting operators in PDF.     
+Sometimes you will to display content on a page which is beyond what the existing module operations around images, text and primitives provide. No worries. You can add PDF operators to the page content directly and draw whatever you want. Just create a content context to a page, using the regular method - `var cxt = pdfWriter.startPageContentContext(page)` - and you can make calls to it with function names fitting operators in PDF.  
 Note that in PDF modification scenarios, you will need alternative method to create content contexts for page. read [here](./Modification.md#adding-content-to-existing-pages) for info.
 
 for the full list of PDF operators check out the PDF reference. You can grab it from my stash [here](https://www.box.com/s/vz6lewz3eitovlvsshgr).
@@ -11,10 +11,11 @@ For example, you would normally want to draw graphics using a certain transforma
 
 ```javascript
 var cxt = pdfWriter.startPageContentContext(page);
-cxt.q()
-   .cm(2,0,0,2,0,0)
-/* draw something */
-   .Q();
+cxt
+  .q()
+  .cm(2, 0, 0, 2, 0, 0)
+  /* draw something */
+  .Q();
 ```
 
 The above code calls `q` to save the current graphic context. Then `cm` with a simple scaling matrix for 2X2. Then will follow some drawing operators, and then a final `Q` to restore the state.
@@ -40,7 +41,7 @@ Now, for the list:
 	f();
 	F();
 	fStar(); // equivalent of f*
-	n();  
+	n();
 
 	// path construction (all parameters are "double" numbers)
 	m(inX,inY);
@@ -53,7 +54,7 @@ Now, for the list:
 
 	// graphic state
 	q();
-	Q(); 
+	Q();
 	cm(inA,inB,inC,inD,inE,inF);
 	w(inLineWidth);
 	J(inLineCapStyle);
@@ -87,7 +88,7 @@ Now, for the list:
 	WStar(); // equivalent to W*
 
 	// XObject usage
-	doXObject(inXObjectName || inXObjectForm || inXObjectImage); 
+	doXObject(inXObjectName || inXObjectForm || inXObjectImage);
 
 	// Text state operators
 	Tc(inCharacterSpace);
@@ -112,11 +113,10 @@ Now, for the list:
 	Tj(inText || inArray,[{options}]);
         Quote(inText || inArray,[{options}]); // equivalent to '
 	DoubleQuote(inWordSpacing, inCharacterSpacing,inText || inArray,[{options}]); // equivalent to ''
-	TJ(inTextAndSpacing || inGlyphsAndSpacing); 
+	TJ(inTextAndSpacing || inGlyphsAndSpacing);
 ```
 
 # Notable operators
-
 
 ## doXObject
 
@@ -124,7 +124,7 @@ The most notable operators deal with xobjects and texts.
 
 the `doXObject` operator accepts either a string or form or image. You can see examples of using it with form and image with the advanced tiff and jpg options in [here](./Show-images.md#advanced-options).
 
-The option to pass string has to do with this being a resource name, that is found in the object (page or form) resources dictionary. You can get new names to forms and image and procsets by getting the resource dictionary for the object (page or form) and calling its register*** methods. But what i currently implement is only for images or forms registerting, so why bother. just pass them directly to the `doXObject` operator and it will do it for you. PDFHummus supports more than that (also registering graphic states, for instance), i'll expose it sometimes.
+The option to pass string has to do with this being a resource name, that is found in the object (page or form) resources dictionary. You can get new names to forms and image and procsets by getting the resource dictionary for the object (page or form) and calling its register\*\*\* methods. But what i currently implement is only for images or forms registerting, so why bother. just pass them directly to the `doXObject` operator and it will do it for you. PDFHummus supports more than that (also registering graphic states, for instance), i'll expose it sometimes.
 
 ## BT and ET
 
@@ -132,7 +132,7 @@ The option to pass string has to do with this being a resource name, that is fou
 
 ## Tm
 
-When placing text you can set a font matrix, to determine the font size, rotation and such. The method accepts  6 numbers which are the transformation matrix
+When placing text you can set a font matrix, to determine the font size, rotation and such. The method accepts 6 numbers which are the transformation matrix
 
 ## Tf
 
@@ -142,7 +142,7 @@ The Tf operator receives a font object ,created with `pdfWriter.getFontForFile` 
 
 Simplest text showing operator. provide either a text or an array of glyph IDs+unicode values to place as text. if you are providing a text as a parameter than you may (optionally!) also add a 2nd parameter which is an options object.
 
-if you don't provide an object, the text provided is considered to be a UTF8 text string that should be encoded to glyphs and then to PDF char codes. the library does that for you. worry not. If you are by some reason not happy with the glyphs encoding, you can place the glyphs directly by using glyphs index - which is when you'll provide an array of glyphs+unicode values. 
+if you don't provide an object, the text provided is considered to be a UTF8 text string that should be encoded to glyphs and then to PDF char codes. the library does that for you. worry not. If you are by some reason not happy with the glyphs encoding, you can place the glyphs directly by using glyphs index - which is when you'll provide an array of glyphs+unicode values.
 
 The way the array of glyphs+unicode values is formatted is this - it's an array of arrays. each sub-array represents a glyph and its unicode value. it's unicode value may be more than one number, hence the need for multiple numbers array. So it's an array of arrays, where each subarray's first element is the glyph id, and the rest of the numbers form the unicode number (normally one, for them low-order high-order unicodes, provide 2 numbers or more where needed)
 
