@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Electron 21.0
 - Node 18
 - Electron 20.0, 20.1, 20.2
 - Prettier as dev dependency and basics
