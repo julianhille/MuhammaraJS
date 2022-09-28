@@ -11,7 +11,19 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    env:
+      node_version: 18.8.0
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.node_version }}
+      - run: npm install --only=dev
+      - run: npm run test:codestyle
   build-musl:
+    needs: [lint]
     strategy:
       fail-fast: false
       matrix:
@@ -51,6 +63,7 @@ jobs:
           name: bindings
           if-no-files-found: error
   build-electron:
+    needs: [lint]
     strategy:
       fail-fast: false
       matrix:
@@ -238,6 +251,7 @@ jobs:
           name: bindings
           if-no-files-found: error
   build-node:
+    needs: [lint]
     strategy:
       fail-fast: false
       matrix:
@@ -291,6 +305,7 @@ jobs:
           name: bindings
           if-no-files-found: error
   build-node-old:
+    needs: [lint]
     strategy:
       fail-fast: false
       matrix:
