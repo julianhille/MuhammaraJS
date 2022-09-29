@@ -123,7 +123,7 @@ jobs:
             11.0.0,
           ]
         include:
-          - electron_mocha_version: ^10
+          - electron_mocha_version: ^11
             python_version: "3.10"
           - architecture: arm64
             architecture_node: x64
