@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.node_version }}
-      - run: npm install --only=dev
+      - run: npm install prettier
       - run: npm run test:codestyle
   build-musl:
     needs: [lint]
