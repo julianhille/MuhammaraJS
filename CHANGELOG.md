@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.1.0] - 2022-09-30
+
 ### Changed
 
 - Update TypeScript declaration for `PDFStreamForResponse` to accept any writable stream as an argument, not just `PDFRStreamForFile`
@@ -272,7 +274,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.0.0...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.1.0...HEAD
+[3.1.0]: https://github.com/julianhille/MuhammaraJS/compare/3.0.0...3.1.0
 [3.0.0]: https://github.com/julianhille/MuhammaraJS/compare/2.6.0...3.0.0
 [2.6.0]: https://github.com/julianhille/MuhammaraJS/compare/2.5.0...2.6.0
 [2.5.0]: https://github.com/julianhille/MuhammaraJS/compare/2.4.0...2.5.0
