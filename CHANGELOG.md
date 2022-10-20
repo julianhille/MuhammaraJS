@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Ignore extra data above the header and below the footer in PDF Parser
+
 ## [3.1.0] - 2022-09-30
 
 ### Changed

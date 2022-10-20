@@ -129,3 +129,18 @@ void ObjectByteReaderWithPosition::Skip(LongBufferSizeType inSkipSize)
     args[0] = NEW_NUMBER(inSkipSize);
 	func->Call(GET_CURRENT_CONTEXT, OBJECT_FROM_PERSISTENT(mObject), 1, args).ToLocalChecked();
 }
+
+void ObjectByteReaderWithPosition::MoveStartPosition(LongFilePositionType inStartPosition)
+{
+	CREATE_ISOLATE_CONTEXT;
+	CREATE_ESCAPABLE_SCOPE;
+
+	Local<Value> value = OBJECT_FROM_PERSISTENT(mObject)->Get(GET_CURRENT_CONTEXT, NEW_STRING("moveStartPosition")).ToLocalChecked();
+		if(value->IsUndefined())
+				return;
+		Local<Function> func = Local<Function>::Cast(value);
+
+		Local<Value> args[1];
+		args[0] = NEW_NUMBER(inStartPosition);
+	func->Call(GET_CURRENT_CONTEXT, OBJECT_FROM_PERSISTENT(mObject), 1, args).ToLocalChecked();
+}

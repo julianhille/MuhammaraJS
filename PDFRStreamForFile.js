@@ -8,6 +8,7 @@ function PDFRStreamForFile(inPath) {
   this.path = inPath;
   this.rposition = 0;
   this.fileSize = fs.statSync(inPath)["size"];
+  this.mStartPosition = 0;
 }
 
 PDFRStreamForFile.prototype.read = function (inAmount) {
@@ -25,7 +26,7 @@ PDFRStreamForFile.prototype.notEnded = function () {
 };
 
 PDFRStreamForFile.prototype.setPosition = function (inPosition) {
-  this.rposition = inPosition;
+  this.rposition = this.mStartPosition + inPosition;
 };
 
 PDFRStreamForFile.prototype.setPositionFromEnd = function (inPosition) {
@@ -37,7 +38,11 @@ PDFRStreamForFile.prototype.skip = function (inAmount) {
 };
 
 PDFRStreamForFile.prototype.getCurrentPosition = function () {
-  return this.rposition;
+  return this.rposition - this.mStartPosition;
+};
+
+PDFRStreamForFile.prototype.moveStartPosition = function (inPosition) {
+  this.mStartPosition = inPosition;
 };
 
 function noop() {}
