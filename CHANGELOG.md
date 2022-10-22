@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- NPE in parser when file ends before it really starts
+
 ## [3.1.0] - 2022-09-30
 
 ### Changed
