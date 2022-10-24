@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Ignore extra data above the header and below the footer in PDF Parser
 
+## [3.1.1] - 2022-10-23
+
+### Fixed
+
+- NPE in parser when file ends before it really starts
+
 ## [3.1.0] - 2022-09-30
 
 ### Changed
@@ -45,6 +51,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Node < 11 and Electron < 11 removed
 - Renamed typo exported value from eTokenSeprator to eTokenSeparator
+
+## [2.6.1] - 2022-10-23
+
+### Fixed
+
+- Backport: NPE in parser when file ends before it really starts
 
 ## [2.6.0] - 2022-06-30
 
@@ -278,9 +290,11 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.1.0...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.1.1...HEAD
+[3.1.1]: https://github.com/julianhille/MuhammaraJS/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/julianhille/MuhammaraJS/compare/3.0.0...3.1.0
-[3.0.0]: https://github.com/julianhille/MuhammaraJS/compare/2.6.0...3.0.0
+[3.0.0]: https://github.com/julianhille/MuhammaraJS/compare/2.6.1...3.0.0
+[2.6.1]: https://github.com/julianhille/MuhammaraJS/compare/2.6.0...2.6.1
 [2.6.0]: https://github.com/julianhille/MuhammaraJS/compare/2.5.0...2.6.0
 [2.5.0]: https://github.com/julianhille/MuhammaraJS/compare/2.4.0...2.5.0
 [2.4.0]: https://github.com/julianhille/MuhammaraJS/compare/2.3.0...2.4.0
