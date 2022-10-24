@@ -8,6 +8,7 @@ function PDFRStreamForBuffer(buffer) {
   this.innerArray = Array.prototype.slice.call(buffer, 0);
   this.rposition = 0;
   this.fileSize = this.innerArray.length;
+  this.mStartPosition = 0;
 }
 
 PDFRStreamForBuffer.prototype.read = function (inAmount) {
@@ -25,7 +26,7 @@ PDFRStreamForBuffer.prototype.notEnded = function () {
 };
 
 PDFRStreamForBuffer.prototype.setPosition = function (inPosition) {
-  this.rposition = inPosition;
+  this.rposition = this.mStartPosition + inPosition;
 };
 
 PDFRStreamForBuffer.prototype.setPositionFromEnd = function (inPosition) {
@@ -37,7 +38,11 @@ PDFRStreamForBuffer.prototype.skip = function (inAmount) {
 };
 
 PDFRStreamForBuffer.prototype.getCurrentPosition = function () {
-  return this.rposition;
+  return this.rposition - this.mStartPosition;
+};
+
+PDFRStreamForBuffer.prototype.moveStartPosition = function (inPosition) {
+  this.mStartPosition = inPosition;
 };
 
 module.exports = PDFRStreamForBuffer;

@@ -83,4 +83,15 @@ describe("PDFParser", function () {
     iterateObjectTypes(catalog, pdfReader);
     fs.closeSync(outputFile);
   });
+
+  it("should complete without error for document with pre-header and post-footer data", function () {
+    var pdfReader;
+    assert.doesNotThrow(function () {
+      pdfReader = muhammara.createReader(
+        __dirname + "/TestMaterials/XObjectContentWithExtra.PDF"
+      );
+    });
+    assert.equal(pdfReader.getPDFLevel(), 1.3, "getPDFLevel");
+    assert.equal(pdfReader.getPagesCount(), 2, "getPagesCount");
+  });
 });
