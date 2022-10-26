@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Add electron 20.3.3
 - Ignore extra data above the header and below the footer in PDF Parser
+- Add node 19.0.0
 
 ## [3.1.1] - 2022-10-23
 
