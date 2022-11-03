@@ -14,6 +14,16 @@
              './include/freetype/internal',
              './include/freetype/internal/services'
             ],
+           'msvs_settings':
+			{
+				'VCCLCompilerTool':
+				{
+					'AdditionalOptions':
+						[
+						'/std:c++17',
+						]
+				}
+			},
             'sources': [
                 './src/base/ftbbox.c',
                 './src/base/ftgxval.c',
