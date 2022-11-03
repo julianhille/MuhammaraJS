@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Updated github actions to get rid of some deprecation warnings in gha ci
 - Pin python 3 version for builds
 
 ## [3.2.0] - 2022-10-26
