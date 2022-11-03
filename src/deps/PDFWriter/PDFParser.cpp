@@ -396,6 +396,12 @@ EStatusCode PDFParser::ParseLastXrefPosition()
 			while(!foundStartXref && mStream->NotEnded())
 			{
 				PDFObjectCastPtr<PDFSymbol> startxRef(mObjectParser.ParseNewObject());
+				if(!startxRef)
+				{
+					status = PDFHummus::eFailure;
+				    TRACE_LOG("PDFParser::ParseXrefPosition, syntax error in reading xref position");
+				    break;
+				}
 				foundStartXref = startxRef.GetPtr() && (startxRef->GetValue() == scStartxref);
 			}
 
