@@ -16,7 +16,7 @@ jobs:
     env:
       node_version: 18.8.0
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.node_version }}
@@ -55,7 +55,7 @@ jobs:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: apk update
       - run: apk add --no-cache make gcc jq g++ python${{ matrix.python_version }} tar
       - uses: actions/setup-node@v2
@@ -234,7 +234,7 @@ jobs:
             electron: 11.0.0
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
@@ -309,7 +309,7 @@ jobs:
             architecture: ia32
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
@@ -368,7 +368,7 @@ jobs:
             architecture: ia32
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
@@ -398,7 +398,7 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v1
         with:
           node-version: 10
