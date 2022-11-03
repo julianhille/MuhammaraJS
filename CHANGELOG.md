@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Typescript definition of member buffer of PDFWStreamForBuffer fixed
+
 ### Changed
 
 - Pin python 3 version for builds
