@@ -123,6 +123,7 @@ jobs:
           ]
         include:
           - electron_mocha_version: ^10
+            python_version: "3.10"
           - architecture: arm64
             architecture_node: x64
             target_architecture: arm64
@@ -199,14 +200,19 @@ jobs:
             node: 14.16.0
           - electron: 11.4.7
             node: 12
+            python_version: "2"
           - electron: 11.3.0
             node: 12
+            python_version: "2"
           - electron: 11.2.0
             node: 12
+            python_version: "2"
           - electron: 11.1.0
             node: 12
+            python_version: "2"
           - electron: 11.0.0
             node: 12
+            python_version: "2"
         exclude:
           - os: macos-11
             architecture: ia32
@@ -244,6 +250,7 @@ jobs:
           npm_config_target: ${{ matrix.electron }}
           npm_config_disturl: https://artifacts.electronjs.org/headers/dist
           npm_config_runtime: electron
+          npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
       - uses: Wandalen/wretry.action@v1.0.11
