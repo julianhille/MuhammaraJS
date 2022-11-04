@@ -335,6 +335,11 @@ jobs:
         node: [11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1, 17.6.0]
         architecture: [x64, ia32, arm64]
         include:
+          - python_version: "3.10"
+          - python_version: "2"
+            node: 11.2.0
+          - python_version: "2"
+            node: 12.0.0
           - architecture: ia32
             architecture_node: x86
             target_architecture: ia32
@@ -368,6 +373,7 @@ jobs:
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
+          npm_config_python: python${{ matrix.python_version }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
