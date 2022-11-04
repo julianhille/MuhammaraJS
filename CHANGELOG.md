@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Pin python 3 version for builds
+
 ## [3.2.0] - 2022-10-26
 
 ### Added
