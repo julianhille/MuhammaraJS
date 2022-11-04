@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Electron 21.0.0
+- Electron 21.0.0, 21.1.0 and 21.2.0
 
 ## [3.2.0] - 2022-10-26
 
