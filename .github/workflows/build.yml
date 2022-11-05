@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.node_version }}
-      - run: npm install --only=dev
+      - run: npm install prettier
       - run: npm run test:codestyle
   build-musl:
     needs: [lint]
@@ -84,6 +84,9 @@ jobs:
         architecture: [x64, ia32, arm64]
         electron:
           [
+            21.2.0,
+            21.1.0,
+            21.0.0,
             20.3.3,
             20.2.0,
             20.1.0,
@@ -122,7 +125,7 @@ jobs:
             11.0.0,
           ]
         include:
-          - electron_mocha_version: ^10
+          - electron_mocha_version: ^11
             python_version: "3.10"
           - architecture: arm64
             architecture_node: x64
@@ -136,6 +139,12 @@ jobs:
             target_architecture: x64
           - architecture: x64
             node: 16.13.2
+          - electron: 21.2.0
+            node: 16.16.0
+          - electron: 21.1.0
+            node: 16.16.0
+          - electron: 21.0.0
+            node: 16.16.0
           - electron: 20.3.3
             node: 16.15.0
           - electron: 20.2.0

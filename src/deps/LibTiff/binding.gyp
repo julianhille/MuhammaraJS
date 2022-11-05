@@ -27,6 +27,16 @@
              'include_dirs': [
               '<(module_root_dir)/src/deps/ZLib',
             ],
+           'msvs_settings':
+			{
+				'VCCLCompilerTool':
+				{
+					'AdditionalOptions':
+						[
+						'/std:c++17',
+						]
+				}
+			},
            'sources': [
                 'tif_aux.c',
                 'tif_close.c',

@@ -3,6 +3,16 @@
         {
             'target_name': 'libaesgm',
             'type': 'static_library',
+           'msvs_settings':
+			{
+				'VCCLCompilerTool':
+				{
+					'AdditionalOptions':
+						[
+						'/std:c++17',
+						]
+				}
+			},
             'sources': [
                 'aescrypt.c',
                 'aeskey.c',
