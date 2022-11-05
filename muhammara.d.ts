@@ -278,7 +278,7 @@ declare module "muhammara" {
 
   export interface PDFWStreamForBuffer extends WriteStream {
     new (): PDFWStreamForBuffer;
-    buffer: Promise<any>;
+    buffer: Buffer;
   }
 
   export interface PDFReaderOptions {
