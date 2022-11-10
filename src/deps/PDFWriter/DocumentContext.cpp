@@ -2176,7 +2176,7 @@ EStatusCode DocumentContext::SetupModifiedFile(PDFParser* inModifiedFileParser)
     if(idArray.GetPtr() && idArray->GetLength() == 2)
     {
         PDFObjectCastPtr<PDFHexString> firstID = idArray->QueryObject(0);
-        if(firstID.GetPtr())
+        if(firstID != NULL && firstID.GetPtr())
             mModifiedDocumentID = firstID->GetValue();
     }
 
