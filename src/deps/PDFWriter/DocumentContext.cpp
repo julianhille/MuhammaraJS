@@ -2398,8 +2398,11 @@ bool DocumentContext::DocumentHasNewPages()
         hasLeafs = pageTreeRoot->IsLeafParent();
         if(pageTreeRoot->GetNodesCount() == 0)
             break;
-        else
+        else {
             pageTreeRoot = pageTreeRoot->GetPageTreeChild(0);
+            if (!pageTreeRoot)
+                break;
+        }
     }
 
     return hasLeafs;
