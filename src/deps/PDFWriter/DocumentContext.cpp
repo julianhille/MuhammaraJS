@@ -2300,6 +2300,10 @@ EStatusCode	DocumentContext::FinalizeModifiedPDF(PDFParser* inModifiedFileParser
         {
 			// use an extender to copy original catalog elements and update version if required
 			PDFDocumentCopyingContext* copyingContext = CreatePDFCopyingContext(inModifiedFileParser);
+			if(!copyingContext) {
+			    status = eFailure;
+			    break;
+			}
 			ModifiedDocCatalogWriterExtension catalogUpdate(copyingContext,requiresVersionUpdate,inModifiedPDFVersion);
             status = WriteCatalogObject(finalPageRoot,&catalogUpdate);
 			delete copyingContext;
@@ -2311,8 +2315,9 @@ EStatusCode	DocumentContext::FinalizeModifiedPDF(PDFParser* inModifiedFileParser
 		WriteInfoDictionary();
 
 		// write encryption dictionary, if encrypting
-		CopyEncryptionDictionary(inModifiedFileParser);
-
+		status = CopyEncryptionDictionary(inModifiedFileParser);
+        if(status != eSuccess)
+            break;
         if(RequiresXrefStream(inModifiedFileParser))
         {
             status = WriteXrefStream(xrefTablePosition);
@@ -2529,12 +2534,12 @@ bool DocumentContext::DoExtendersRequireCatalogUpdate(PDFParser* inModifiedFileP
     return isUpdateRequired;
 }
 
-void DocumentContext::CopyEncryptionDictionary(PDFParser* inModifiedFileParser)
+EStatusCode DocumentContext::CopyEncryptionDictionary(PDFParser* inModifiedFileParser)
 {
 	// Reuse original encryption dict for new modified trailer. for sake of simplicity (with trailer using ref for encrypt), make it indirect if not already
 	RefCountPtr<PDFObject> encrypt(inModifiedFileParser->GetTrailer()->QueryDirectObject("Encrypt"));
 	if (encrypt.GetPtr() == NULL)
-		return;
+		return eSuccess;
 
 	if (encrypt->GetType() == PDFObject::ePDFObjectIndirectObjectReference)
 	{
@@ -2543,11 +2548,15 @@ void DocumentContext::CopyEncryptionDictionary(PDFParser* inModifiedFileParser)
 	}
 	else
 	{
+		// copying context, write as is
+		PDFDocumentCopyingContext* copyingContext = CreatePDFCopyingContext(inModifiedFileParser);
+		if(!copyingContext) {
+			return eFailure;
+		}
 		// copy to indirect object and set refrence
 		mEncryptionHelper.PauseEncryption();
 		ObjectIDType encryptionDictionaryID = mObjectsContext->StartNewIndirectObject();
-		// copying context, write as is
-		PDFDocumentCopyingContext* copyingContext = CreatePDFCopyingContext(inModifiedFileParser);
+
 		copyingContext->CopyDirectObjectAsIs(encrypt.GetPtr());
 		delete copyingContext;
 		mObjectsContext->EndIndirectObject();
@@ -2555,6 +2564,7 @@ void DocumentContext::CopyEncryptionDictionary(PDFParser* inModifiedFileParser)
 
 		mTrailerInformation.SetEncrypt(encryptionDictionaryID);
 	}
+	return eSuccess;
 }
 
 bool DocumentContext::RequiresXrefStream(PDFParser* inModifiedFileParser)
