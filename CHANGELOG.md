@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.6.2] - 2022-11-23
+
 ### Fixed
 
 - Several cases of NPE under different circumstances
@@ -251,7 +253,8 @@ with the following changes.
 
 * Initial release
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/2.6.1...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/2.6.2...HEAD
+[2.6.2]: https://github.com/julianhille/MuhammaraJS/compare/2.6.1...2.6.2
 [2.6.1]: https://github.com/julianhille/MuhammaraJS/compare/2.6.0...2.6.1
 [2.6.0]: https://github.com/julianhille/MuhammaraJS/compare/2.5.0...2.6.0
 [2.5.0]: https://github.com/julianhille/MuhammaraJS/compare/2.4.0...2.5.0
