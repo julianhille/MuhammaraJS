@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Electron 21.3.x
 
+### Fixed
+
+- Several cases of NPE under different circumstances
+
 ## [3.3.0] - 2022-11-05
 
 ### Fixed
