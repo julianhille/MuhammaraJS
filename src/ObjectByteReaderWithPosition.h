@@ -38,6 +38,7 @@ public:
 	virtual void SetPositionFromEnd(LongFilePositionType inOffsetFromEnd);
 	virtual LongFilePositionType GetCurrentPosition();
 	virtual void Skip(LongBufferSizeType inSkipSize);
+	virtual void MoveStartPosition(LongFilePositionType inStartPosition);
 
     
 private:

@@ -3,23 +3,51 @@ name: Build
 on:
   push:
     tags:
-      - '1.*'
-      - '2.*'
+      - "1.*"
+      - "2.*"
+      - "3.*"
     branches:
   pull_request:
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    env:
+      node_version: 18.8.0
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.node_version }}
+      - run: npm install prettier
+      - run: npm run test:codestyle
   build-musl:
+    needs: [lint]
     strategy:
       fail-fast: false
       matrix:
-        node: [8.11.0, 9.11.1, 10.8.0, 11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1, 17.6.0]
+        node:
+          [
+            11.2.0,
+            12.0.0,
+            13.14.0,
+            14.0.0,
+            15.7.0,
+            16.11.1,
+            17.6.0,
+            18.8.0,
+            19.0.0,
+          ]
         include:
           - python_version: 3
             node: 16.11.1
           - python_version: 3
             node: 17.6.0
+          - python_version: 3
+            node: 18.8.0
+          - python_version: 3
+            node: 19.0.0
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node }}-alpine
@@ -27,39 +55,79 @@ jobs:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: apk update
       - run: apk add --no-cache make gcc jq g++ python${{ matrix.python_version }} tar
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
       - run: npm config set unsafe-perm true
-      - run: npm -g install npm@^6.14.5
       - run: node --version
       - run: npm --version
-      - run: npm install node-gyp@5.1.1 --global
       - run: chmod 0777 tests/output/
       - run: npm install --build-from-source
         env:
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
       - run: npm run test
       - run: ./node_modules/.bin/node-pre-gyp package testpackage --target_libc=musl
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
           if-no-files-found: error
   build-electron:
+    needs: [lint]
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-18.04, macos-11, windows-2019]
         architecture: [x64, ia32, arm64]
-        electron: [19.0.0, 18.3.0, 18.2.0, 18.1.0, 18.0.0, 17.4.0, 17.3.0, 17.2.0, 17.1.0, 17.0.0, 16.0.1, 15.3.0, 15.2.0, 15.1.2, 15.0.0, 14.2.0, 14.1.0, 14.0.1, 13.6.0, 13.5.0, 13.4.0, 13.3.0, 13.2.3, 13.1.0, 13.0.0, 12.0.0, 11.4.7, 11.3.0, 11.2.0, 11.1.0, 11.0.0, 10.4.7, 10.3.2, 10.2.0, 10.1.3, 10.0.0, 9.4.4, 9.3.5, 9.2.0, 9.1.2, 9.0.0, 8.5.2, 8.4.1, 8.3.4, 8.2.5, 8.1.1, 8.0.3, 7.3.3, 7.2.4, 7.1.14, 6.1.10, 6.0.2, 5.0.9, 4.2.8, 4.1.5, 4.0.8, 3.0.9]
+        electron:
+          [
+            21.3.0,
+            21.2.0,
+            21.1.0,
+            21.0.0,
+            20.3.3,
+            20.2.0,
+            20.1.0,
+            20.0.3,
+            19.1.0,
+            19.0.0,
+            18.3.0,
+            18.2.0,
+            18.1.0,
+            18.0.0,
+            17.4.0,
+            17.3.0,
+            17.2.0,
+            17.1.0,
+            17.0.0,
+            16.0.1,
+            15.3.0,
+            15.2.0,
+            15.1.2,
+            15.0.0,
+            14.2.0,
+            14.1.0,
+            14.0.1,
+            13.6.0,
+            13.5.0,
+            13.4.0,
+            13.3.0,
+            13.2.3,
+            13.1.0,
+            13.0.0,
+            12.0.0,
+            11.4.7,
+            11.3.0,
+            11.2.0,
+            11.1.0,
+            11.0.0,
+          ]
         include:
-          - electron_mocha_version: ^10
-          - electron_mocha_version: ^8
-            electron: 3.0.9
+          - electron_mocha_version: ^11
+            python_version: "3.10"
           - architecture: arm64
             architecture_node: x64
             target_architecture: arm64
@@ -72,6 +140,24 @@ jobs:
             target_architecture: x64
           - architecture: x64
             node: 16.13.2
+          - electron: 21.3.0
+            node: 16.16.0
+          - electron: 21.2.0
+            node: 16.16.0
+          - electron: 21.1.0
+            node: 16.16.0
+          - electron: 21.0.0
+            node: 16.16.0
+          - electron: 20.3.3
+            node: 16.15.0
+          - electron: 20.2.0
+            node: 16.15.0
+          - electron: 20.1.0
+            node: 16.15.0
+          - electron: 20.0.3
+            node: 16.15.0
+          - electron: 19.1.0
+            node: 16.14.2
           - electron: 19.0.0
             node: 16.14.2
           - electron: 18.3.0
@@ -126,66 +212,19 @@ jobs:
             node: 14.16.0
           - electron: 11.4.7
             node: 12
+            python_version: "2"
           - electron: 11.3.0
             node: 12
+            python_version: "2"
           - electron: 11.2.0
             node: 12
+            python_version: "2"
           - electron: 11.1.0
             node: 12
+            python_version: "2"
           - electron: 11.0.0
             node: 12
-          - electron: 10.4.7
-            node: 12
-          - electron: 10.3.2
-            node: 12
-          - electron: 10.2.0
-            node: 12
-          - electron: 10.1.3
-            node: 12
-          - electron: 10.0.0
-            node: 12
-          - electron: 9.4.4
-            node: 12
-          - electron: 9.3.5
-            node: 12
-          - electron: 9.2.0
-            node: 12
-          - electron: 9.1.2
-            node: 12
-          - electron: 9.0.0
-            node: 12
-          - electron: 8.5.2
-            node: 12
-          - electron: 8.4.1
-            node: 12
-          - electron: 8.3.4
-            node: 12
-          - electron: 8.2.5
-            node: 12
-          - electron: 8.1.1
-            node: 12
-          - electron: 8.0.3
-            node: 12
-          - electron: 7.3.3
-            node: 12
-          - electron: 7.2.4
-            node: 12
-          - electron: 7.1.14
-            node: 12
-          - electron: 6.1.10
-            node: 12
-          - electron: 6.0.2
-            node: 12
-          - electron: 5.0.9
-            node: 10
-          - electron: 4.2.8
-            node: 10
-          - electron: 4.1.5
-            node: 10
-          - electron: 4.0.8
-            node: 10
-          - electron: 3.0.9
-            node: 8
+            python_version: "2"
         exclude:
           - os: macos-11
             architecture: ia32
@@ -205,69 +244,15 @@ jobs:
             electron: 11.1.0
           - architecture: arm64
             electron: 11.0.0
-          - architecture: arm64
-            electron: 10.4.7
-          - architecture: arm64
-            electron: 10.3.2
-          - architecture: arm64
-            electron: 10.2.0
-          - architecture: arm64
-            electron: 10.1.3
-          - architecture: arm64
-            electron: 10.0.0
-          - architecture: arm64
-            electron: 9.4.4
-          - architecture: arm64
-            electron: 9.3.5
-          - architecture: arm64
-            electron: 9.2.0
-          - architecture: arm64
-            electron: 9.1.2
-          - architecture: arm64
-            electron: 9.0.0
-          - architecture: arm64
-            electron: 8.5.2
-          - architecture: arm64
-            electron: 8.4.1
-          - architecture: arm64
-            electron: 8.3.4
-          - architecture: arm64
-            electron: 8.2.5
-          - architecture: arm64
-            electron: 8.1.1
-          - architecture: arm64
-            electron: 8.0.3
-          - architecture: arm64
-            electron: 7.3.3
-          - architecture: arm64
-            electron: 7.2.4
-          - architecture: arm64
-            electron: 7.1.14
-          - architecture: arm64
-            electron: 6.1.10
-          - architecture: arm64
-            electron: 6.0.2
-          - architecture: arm64
-            electron: 5.0.9
-          - architecture: arm64
-            electron: 4.2.8
-          - architecture: arm64
-            electron: 4.1.5
-          - architecture: arm64
-            electron: 4.0.8
-          - architecture: arm64
-            electron: 3.0.9
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - run: npm -g install npm@6.14.5
       - run: node --version
       - run: npm --version
-      - run: npm install node-gyp@5.1.1 --global
       - run: npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
         if: ${{ runner.os == 'Windows' }}
       - run: npm install --build-from-source
@@ -277,6 +262,7 @@ jobs:
           npm_config_target: ${{ matrix.electron }}
           npm_config_disturl: https://artifacts.electronjs.org/headers/dist
           npm_config_runtime: electron
+          npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
       - uses: Wandalen/wretry.action@v1.0.11
@@ -300,20 +286,79 @@ jobs:
         env:
           npm_config_runtime: electron
           npm_config_target: ${{ matrix.electron }}
-
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
           if-no-files-found: error
   build-node:
+    needs: [lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, macos-11, windows-2019]
+        node: [18.8.0, 19.0.0]
+        architecture: [x64, ia32, arm64]
+        include:
+          - architecture: ia32
+            architecture_node: x86
+            target_architecture: ia32
+          - architecture: x64
+            architecture_node: x64
+            target_architecture: x64
+          - architecture: arm64
+            architecture_node: x64
+            target_architecture: arm64
+            extra_compile_flags: -arch arm64
+        exclude:
+          - os: ubuntu-20.04
+            architecture: arm64
+          - os: windows-2019
+            architecture: arm64
+          - os: macos-11
+            architecture: ia32
+          - os: ubuntu-20.04
+            architecture: ia32
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          architecture: ${{ matrix.architecture_node }}
+      - run: node --version
+      - run: npm --version
+      - run: npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
+        if: ${{ runner.os == 'Windows' }}
+      - run: npm install --build-from-source
+        env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_target_arch: ${{ matrix.target_architecture }}
+          CFLAGS: ${{ matrix.extra_compile_flags }}
+          CPPFLAGS: ${{ matrix.extra_compile_flags }}
+      - run: ./node_modules/.bin/node-pre-gyp package testpackage
+        if: ${{ matrix.target_architecture != 'arm64' }}
+      - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}
+        if: ${{ matrix.target_architecture == 'arm64' }}
+      - uses: actions/upload-artifact@v3
+        with:
+          path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
+          name: bindings
+          if-no-files-found: error
+  build-node-old:
+    needs: [lint]
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-18.04, macos-11, windows-2019]
-        node: [8.11.0, 9.11.1, 10.8.0, 11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1, 17.6.0]
+        node: [11.2.0, 12.0.0, 13.14.0, 14.0.0, 15.7.0, 16.11.1, 17.6.0]
         architecture: [x64, ia32, arm64]
         include:
+          - python_version: "3.10"
+          - python_version: "2"
+            node: 11.2.0
+          - python_version: "2"
+            node: 12.0.0
           - architecture: ia32
             architecture_node: x86
             target_architecture: ia32
@@ -333,24 +378,21 @@ jobs:
             architecture: ia32
           - os: ubuntu-18.04
             architecture: ia32
-          - os: macos-11
-            node: 6.14.1
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - run: npm -g install npm@^6.14.5
       - run: node --version
       - run: npm --version
-      - run: npm install node-gyp@5.1.1 --global
       - run: npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
         if: ${{ runner.os == 'Windows' }}
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
+          npm_config_python: python${{ matrix.python_version }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
@@ -358,21 +400,21 @@ jobs:
         if: ${{ matrix.target_architecture != 'arm64' }}
       - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}
         if: ${{ matrix.target_architecture == 'arm64' }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
           if-no-files-found: error
   publish:
-    needs: [build-musl, build-electron, build-node]
+    needs: [build-musl, build-electron, build-node, build-node-old]
     runs-on: ubuntu-latest
-    if:  startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 10
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: bindings
           path: builds/bindings
@@ -396,7 +438,7 @@ jobs:
           prerelease: steps.semver_parser.outputs.prerelease != []
       - uses: AButler/upload-release-assets@v2.0
         with:
-          files: 'builds/bindings/**/*'
+          files: "builds/bindings/**/*"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           release-tag: ${{ steps.semver_parser.outputs.fullversion }}
       - run: npm install

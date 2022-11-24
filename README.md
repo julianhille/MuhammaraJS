@@ -1,4 +1,5 @@
 # Welcome to MuhammaraJS
+
 [![NPM version](http://img.shields.io/npm/v/muhammara.svg?style=flat)](https://www.npmjs.org/package/muhammara)
 [![Build status](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml)
 
@@ -11,7 +12,6 @@ hummusJS github wiki: available [here](https://github.com/galkahana/HummusJS/wik
 Welcome to HummusJS.
 A Fast NodeJS Module for Creating, Parsing an Manipulating PDF Files and Streams.
 
-
 Original Project
 Project site is [here](http://www.pdfhummus.com).
 
@@ -21,6 +21,13 @@ If you are looking for a C++ Library go [here](https://github.com/galkahana/PDF-
 
 Version 2.0 will be incompatible with some older node and
 electron versions because we needed to upgrade node-pre-gyp.
+
+Version 3.x has breaking changes:
+
+- Node < 11 and Electron < 11 removed the prebuilts
+- Renamed typo exported value from eTokenSeprator to eTokenSeparator
+
+This wont affect alot of you but still.
 
 # Installation
 

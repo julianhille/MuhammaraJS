@@ -1,27 +1,27 @@
-var express = require('express');
+var express = require("express");
 var app = express();
 
+app.get("/", function (req, res) {
+  res.writeHead(200, { "Content-Type": "application/pdf" });
 
-app.get('/', function(req, res){
-        res.writeHead(200, {'Content-Type': 'application/pdf'});
-        
-        var muhammara = require('muhammara');
-        
-        var pdfWriter = muhammara.createWriter(new muhammara.PDFStreamForResponse(res));
-        var page = pdfWriter.createPage(0,0,595,842);
-        pdfWriter.startPageContentContext(page).writeText('Hello ' + (req.query.id ? req.query.id : 'World'),
-                                                          0,400,
-                                                          {
-                                                            font:pdfWriter.getFontForFile('../tests/TestMaterials/fonts/arial.ttf'),
-                                                            size:50,
-                                                            colorspace:'gray',
-                                                            color:0x00
-                                                          });
-        pdfWriter.writePage(page);
-        pdfWriter.end();
+  var muhammara = require("muhammara");
 
-        res.end();
-        
-        });
+  var pdfWriter = muhammara.createWriter(
+    new muhammara.PDFStreamForResponse(res)
+  );
+  var page = pdfWriter.createPage(0, 0, 595, 842);
+  pdfWriter
+    .startPageContentContext(page)
+    .writeText("Hello " + (req.query.id ? req.query.id : "World"), 0, 400, {
+      font: pdfWriter.getFontForFile("../tests/TestMaterials/fonts/arial.ttf"),
+      size: 50,
+      colorspace: "gray",
+      color: 0x00,
+    });
+  pdfWriter.writePage(page);
+  pdfWriter.end();
+
+  res.end();
+});
 
 app.listen(3000);

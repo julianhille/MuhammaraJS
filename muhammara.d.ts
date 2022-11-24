@@ -1,4 +1,4 @@
-declare module 'muhammara' {
+declare module "muhammara" {
   import EventEmitter = require("events");
   export type PosX = number;
   export type PosY = number;
@@ -16,33 +16,36 @@ declare module 'muhammara' {
 
   export function createWriter(
     input: FilePath | WriteStream,
-    options?: PDFWriterOptions,
+    options?: PDFWriterOptions
   ): PDFWriter;
   export function createWriterToModify(
     inFile: FilePath,
-    options?: PDFWriterToModifyOptions,
+    options?: PDFWriterToModifyOptions
   ): PDFWriter;
   export function createWriterToModify(
     inStream: ReadStream,
     outStream: WriteStream,
-    options?: PDFWriterToModifyOptions,
+    options?: PDFWriterToModifyOptions
   ): PDFWriter;
 
   export function createWriterToContinue(
     restartFile: string,
     restartStateFile: string,
-    options?: PDFWriterToContinueOptions,
+    options?: PDFWriterToContinueOptions
   ): PDFWriter;
-  export function createReader(input: FilePath | ReadStream, options?: PDFReaderOptions): PDFReader;
+  export function createReader(
+    input: FilePath | ReadStream,
+    options?: PDFReaderOptions
+  ): PDFReader;
   export function recrypt(
     originalPdfPath: FilePath,
     newPdfPath: FilePath,
-    options?: PDFRecryptOptions,
+    options?: PDFRecryptOptions
   ): void;
   export function recrypt(
     originalPdfStream: PDFRStreamForFile | PDFRStreamForBuffer,
     newPdfStream: PDFWStreamForFile | PDFWStreamForBuffer,
-    options?: PDFRecryptOptions,
+    options?: PDFRecryptOptions
   ): void;
 
   export interface WriteStream {
@@ -73,7 +76,7 @@ declare module 'muhammara' {
     new (
       writer: PDFWriter,
       pageIndex?: number,
-      ensureContentEncapsulation?: boolean,
+      ensureContentEncapsulation?: boolean
     ): PDFPageModifier;
     startContext(): this;
     getContext(): XObjectContentContext;
@@ -83,12 +86,12 @@ declare module 'muhammara' {
       left: number,
       bottom: number,
       right: number,
-      top: number,
+      top: number
     ): this;
     writePage(): this;
   }
 
-  export type PDFImageType = 'JPG' | 'PDF' | 'PNG' | 'TIFF'
+  export type PDFImageType = "JPG" | "PDF" | "PNG" | "TIFF";
 
   export interface PDFRStreamForFile extends ReadStream {
     new (inPath: FilePath): PDFRStreamForFile;
@@ -105,40 +108,44 @@ declare module 'muhammara' {
   }
 
   export interface GraphicOptions extends ColorOptions {
-    type?: 'stroke' | 'fill' | 'clip';
+    type?: "stroke" | "fill" | "clip";
     width?: number;
     close?: boolean;
   }
-  export type TransformationMatrix = [a: number, b: number, c: number, d: number, e: number, f: number]
-
+  export type TransformationMatrix = [
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number
+  ];
 
   enum LineJoinStyle {
     LINEJOIN_ROUND,
     LINEJOIN_BEVEL,
     LINEJOIN_MITER_VARIABLE,
-    LINEJOIN_MITER          = 2,
-    LINEJOIN_MITER_FIXED    = 3
+    LINEJOIN_MITER = 2,
+    LINEJOIN_MITER_FIXED = 3,
   }
 
-  enum EEncoding
-  {
-    EEncodingText = 'text',
-    EEncodingCode = 'code',
-    EEncodingHex = 'hex'
+  enum EEncoding {
+    EEncodingText = "text",
+    EEncodingCode = "code",
+    EEncodingHex = "hex",
   }
 
   enum LineCapStyle {
     LINECAP_BUTT = 0,
     LINECAP_ROUND,
-    LINECAP_SQUARE
+    LINECAP_SQUARE,
   }
 
   export interface TextRenderOptions {
-    encoding?: EEncoding
+    encoding?: EEncoding;
   }
 
   export type Glyph = Array<[number, number]>;
-
 
   export interface AbstractContentContext {
     b(): this;
@@ -179,9 +186,11 @@ declare module 'muhammara' {
     SC(...colorComponents: number[]): this;
     SCN(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////SCN(...colorComponents: number[], patternName?: string): this;
+    SCN(colorComponents: number[], patternName?: string): this;
     sc(...colorComponents: number[]): this;
     scn(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////scn(...colorComponents: number[], patternName?: string): this;
+    scn(colorComponents: number[], patternName?: string): this;
     G(gray: number): this;
     g(gray: number): this;
     RG(r: number, g: number, b: number): this;
@@ -206,23 +215,39 @@ declare module 'muhammara' {
     Tf(fontReferenced: UsedFont | string, fontSize: number): this;
     Tj(text: string | Glyph): this;
     Quote(text: string | Glyph): this;
-    DoubleQuote(wordSpacing: number, characterString: number, text: string | Glyph): this;
+    DoubleQuote(
+      wordSpacing: number,
+      characterString: number,
+      text: string | Glyph
+    ): this;
     TJ(value: string | Glyph, options?: TextRenderOptions): this;
     writeFreeCode(freeCode: string): this;
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////drawPath(...xyPairs: number[], options: GraphicOptions): this;
+    drawPath(xyPairs: Array<[number, number]>, options: GraphicOptions): this;
     drawCircle(x: PosX, y: PosY, r: number, options: GraphicOptions): this;
     drawSquare(x: PosX, y: PosY, l: number, options: GraphicOptions): this;
-    drawRectangle(x: PosX, y: PosY, w: number, h: number, options: GraphicOptions): this;
+    drawRectangle(
+      x: PosX,
+      y: PosY,
+      w: number,
+      h: number,
+      options: GraphicOptions
+    ): this;
     writeText(text: string, x: PosX, y: PosY, options?: WriteTextOptions): this;
-    drawImage(x: PosX, y: PosY, imagePath: string, options?: ImageOptions): this;
+    drawImage(
+      x: PosX,
+      y: PosY,
+      imagePath: string,
+      options?: ImageOptions
+    ): this;
   }
 
   export interface TransformationObject {
     width: number;
     height: number;
     proportional?: boolean;
-    fit?: 'always' | 'overflow';
+    fit?: "always" | "overflow";
   }
 
   export interface ImageOptions {
@@ -248,12 +273,12 @@ declare module 'muhammara' {
   }
 
   export interface PDFStreamForResponse extends WriteStream {
-    new (res: PDFRStreamForFile): PDFStreamForResponse;
+    new (res: NodeJS.WritableStream): PDFStreamForResponse;
   }
-	
+
   export interface PDFWStreamForBuffer extends WriteStream {
     new (): PDFWStreamForBuffer;
-    buffer: Promise<any>;
+    buffer: Buffer;
   }
 
   export interface PDFReaderOptions {
@@ -327,7 +352,7 @@ declare module 'muhammara' {
 
   export interface ResourcesDictionary {
     addFormXObjectMapping(formXObject: FormXObject): string;
-    addImageXObjectMapping(imageXObject: ImageXObject|number): string;
+    addImageXObjectMapping(imageXObject: ImageXObject | number): string;
     addProcsetResource(procSetName: string): void;
     addExtGStateMapping(stateObjectId: number): string;
     addFontMapping(fontObjectId: number): string;
@@ -366,7 +391,10 @@ declare module 'muhammara' {
   }
 
   export interface UsedFont {
-    calculateTextDimensions(text: string | any, fontSize: number): TextDimension;
+    calculateTextDimensions(
+      text: string | any,
+      fontSize: number
+    ): TextDimension;
   }
 
   export interface ByteWriter {
@@ -392,7 +420,10 @@ declare module 'muhammara' {
     getPagesCount(): number;
     getTrailer(): PDFDictionary;
     queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
-    queryArrayObject(objectList: PDFArray, index: number): undefined|PDFObject;
+    queryArrayObject(
+      objectList: PDFArray,
+      index: number
+    ): undefined | PDFObject;
     parseNewObject(objectId: number): PDFObject;
     getPageObjectID(objectId: number): number;
     parsePageDictionary(objectId: number): PDFDictionary;
@@ -400,7 +431,11 @@ declare module 'muhammara' {
     getObjectsCount(): number;
     isEncrypted(): boolean;
     getXrefSize(): number;
-    getXrefEntry(objectId: number): { objectPosition: number, revision: number, type: number };
+    getXrefEntry(objectId: number): {
+      objectPosition: number;
+      revision: number;
+      type: number;
+    };
     getXrefSize(): number;
     getXrefPosition(objectId: number): number;
     startReadingFromStream(inputStream: PDFStreamInput): ByteReader;
@@ -461,30 +496,30 @@ declare module 'muhammara' {
   export interface OutputFile {
     openFile(filePath: FilePath, append?: boolean): void;
     closeFile(): void;
-    getFilePath(): string|undefined;
-    getOutputStream(): ByteWriterWithPosition|undefined;
+    getFilePath(): string | undefined;
+    getOutputStream(): ByteWriterWithPosition | undefined;
   }
 
   export interface InputFile {
     openFile(filePath: FilePath): void;
     closeFile(): void;
-    getFilePath(): string|undefined;
-    getFileSize(): number|undefined;
-    getInputStream(): ByteReaderWithPosition|undefined;
+    getFilePath(): string | undefined;
+    getFileSize(): number | undefined;
+    getInputStream(): ByteReaderWithPosition | undefined;
   }
 
-    export enum EInfoTrapped {
-      EInfoTrappedTrue,
-      EInfoTrappedFalse,
-      EInfoTrappedUnknown
-    }
+  export enum EInfoTrapped {
+    EInfoTrappedTrue,
+    EInfoTrappedFalse,
+    EInfoTrappedUnknown,
+  }
 
   export interface InfoDictionary {
     addAdditionalInfoEntry(key: string, value: string): void;
     removeAdditionalInfoEntry(key: string): void;
     clearAdditionalInfoEntries(): void;
     getAdditionalInfoEntry(key: string): string;
-    getAdditionalInfoEntries(key: string): {[key: string]: string}
+    getAdditionalInfoEntries(key: string): { [key: string]: string };
     setCreationDate(date: string | Date): void;
     setModDate(date: string | Date): void;
 
@@ -516,15 +551,21 @@ declare module 'muhammara' {
     ): number;
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
     appendPDFPageFromPDF(sourcePageNumber: number): number; // stream start bytes?
-    mergePDFPageToFormXObject(sourcePage: PDFPage, targetPageNumber: number): void;
-    getSourceDocumentParser(input: FilePath | ReadStream, options?: PDFReaderOptions): PDFReader;
+    mergePDFPageToFormXObject(
+      sourcePage: PDFPage,
+      targetPageNumber: number
+    ): void;
+    getSourceDocumentParser(
+      input: FilePath | ReadStream,
+      options?: PDFReaderOptions
+    ): PDFReader;
     copyDirectObjectAsIs(objectToCopy: PDFObject): void;
     copyObject(objectId: number): number;
     copyDirectObjectWithDeepCopy(objectToCopy: PDFObject): Array<number>;
     copyNewObjectsForDirectObject(objectIds: Array<number>): void;
     getCopiedObjectID(objectId: number): number;
-    getCopiedObjects(): {[key: string]: number};
-    replaceSourceObjects(replaceMap: {[key: string]: number}): void;
+    getCopiedObjects(): { [key: string]: number };
+    replaceSourceObjects(replaceMap: { [key: string]: number }): void;
     getSourceDocumentStream(): ByteReaderWithPosition;
   }
 
@@ -537,24 +578,24 @@ declare module 'muhammara' {
     writeNameValue(nameValue: string): this;
     writeRectangleValue(values: Array<number>): this;
     writeRectangleValue(a: number, b: number, c: number, d: number): this;
-    writeLiteralStringValue(literal: Array<number>|string): this;
+    writeLiteralStringValue(literal: Array<number> | string): this;
     writeBooleanValue(boolValue: boolean): this;
     writeObjectReferenceValue(objectId: number): this;
   }
 
   export interface ByteWriterWithPosition {
-    write(bytes: Array<number>):  number;
+    write(bytes: Array<number>): number;
     getCurrentPosition(): number;
   }
 
   export type eTokenSeparatorSpace = 0;
   export type eTokenSeparatorEndLine = 1;
-  export type eTokenSepratorNone = 2;
+  export type eTokenSeparatorNone = 2;
 
   enum ETokenSeparator {
     eTokenSeparatorSpace,
     eTokenSeparatorEndLine,
-    eTokenSepratorNone
+    eTokenSeparatorNone,
   }
 
   export interface ObjectsContext {
@@ -566,7 +607,10 @@ declare module 'muhammara' {
     endLine(): this;
     endDictionary(dictionary: DictionaryContext): this;
     endIndirectObject(): this;
-    writeIndirectObjectReference(objectId: FormXObjectId, generationNumber?: number): this;
+    writeIndirectObjectReference(
+      objectId: FormXObjectId,
+      generationNumber?: number
+    ): this;
     startNewIndirectObject(objectId: FormXObjectId): this;
     startNewIndirectObject(): FormXObjectId;
     startModifiedIndirectObject(objectId: FormXObjectId): this;
@@ -644,7 +688,12 @@ declare module 'muhammara' {
     PhotoshopYDensity?: number;
   }
 
-  export type PDFRectangle = [lowerLeftX: number, lowerLeftY: number, upperRightX: number, upperRightY: number];
+  export type PDFRectangle = [
+    lowerLeftX: number,
+    lowerLeftY: number,
+    upperRightX: number,
+    upperRightY: number
+  ];
 
   export interface MergeOptions {
     password?: string;
@@ -654,8 +703,7 @@ declare module 'muhammara' {
 
   export interface AppendOptions extends MergeOptions {}
 
-  export type inInterPagesCallback = () => {}
-
+  export type inInterPagesCallback = () => {};
 
   export interface PDFWriter {
     end(): PDFWriter;
@@ -665,33 +713,82 @@ declare module 'muhammara' {
     writePageAndReturnID(page: PDFPage): number;
     startPageContentContext(page: PDFPage): PageContentContext;
     pausePageContentContext(pageContextContext: PageContentContext): this;
-    createFormXObject(x: PosX, y: PosY, width: Width, height: Height, objectId?: FormXObjectId): FormXObject;
+    createFormXObject(
+      x: PosX,
+      y: PosY,
+      width: Width,
+      height: Height,
+      objectId?: FormXObjectId
+    ): FormXObject;
     endFormXObject(formXObject: FormXObject): this;
-    createFormXObjectFromJPG(file: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): FormXObject;
+    createFormXObjectFromJPG(
+      file: FilePath | PDFRStreamForFile,
+      objectId?: FormXObjectId
+    ): FormXObject;
     getFontForFile(inFontFilePath: FilePath, index?: number): UsedFont;
     getFontForFile(
       inFontFilePath: FilePath,
       inOptionalMetricsFile?: string,
-      index?: number,
+      index?: number
     ): UsedFont;
-    attachURLLinktoCurrentPage(url: string, x: PosX, y: PosY, width: Width, height: Height): this;
+    attachURLLinktoCurrentPage(
+      url: string,
+      x: PosX,
+      y: PosY,
+      width: Width,
+      height: Height
+    ): this;
     shutdown(outputFilePath: FilePath): this;
-    createFormXObjectFromTIFF(filePath: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): FormXObject;
-    createImageXObjectFromJPG(filePath: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): ImageXObject;
-    createFormXObjectFromPNG(filePath: FilePath | PDFRStreamForFile, objectId?: FormXObjectId): FormXObject;
+    createFormXObjectFromTIFF(
+      filePath: FilePath | PDFRStreamForFile,
+      objectId?: FormXObjectId
+    ): FormXObject;
+    createImageXObjectFromJPG(
+      filePath: FilePath | PDFRStreamForFile,
+      objectId?: FormXObjectId
+    ): ImageXObject;
+    createFormXObjectFromPNG(
+      filePath: FilePath | PDFRStreamForFile,
+      objectId?: FormXObjectId
+    ): FormXObject;
     retrieveJPGImageInformation(filePath: FilePath): JPEGInformation;
     getObjectsContext(): ObjectsContext;
     getDocumentContext(): DocumentContext;
-    appendPDFPagesFromPDF(source: FilePath | ReadStream, options?: AppendOptions): number[];
-    mergePDFPagesToPage(page: PDFPage, file: FilePath | PDFRStreamForFile, options?: MergeOptions, callback?: inInterPagesCallback): this;
-    mergePDFPagesToPage(page: PDFPage, file: FilePath | PDFRStreamForFile, callback?: inInterPagesCallback) : this;
-    createPDFCopyingContext(source: FilePath | ReadStream): DocumentCopyingContext;
-    createFormXObjectsFromPDF(file: FilePath, box?: PDFBox |  PDFPageBoxType, options?: MergeOptions, transformation?: TransformationMatrix, objectIds?: FormXObjectId[]): FormXObjectId[];
+    appendPDFPagesFromPDF(
+      source: FilePath | ReadStream,
+      options?: AppendOptions
+    ): number[];
+    mergePDFPagesToPage(
+      page: PDFPage,
+      file: FilePath | PDFRStreamForFile,
+      options?: MergeOptions,
+      callback?: inInterPagesCallback
+    ): this;
+    mergePDFPagesToPage(
+      page: PDFPage,
+      file: FilePath | PDFRStreamForFile,
+      callback?: inInterPagesCallback
+    ): this;
+    createPDFCopyingContext(
+      source: FilePath | ReadStream
+    ): DocumentCopyingContext;
+    createFormXObjectsFromPDF(
+      file: FilePath,
+      box?: PDFBox | PDFPageBoxType,
+      options?: MergeOptions,
+      transformation?: TransformationMatrix,
+      objectIds?: FormXObjectId[]
+    ): FormXObjectId[];
     createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
     createPDFTextString(): PDFTextString;
     createPDFDate(): PDFDate;
-    getImageDimensions(inFontFilePath: FilePath | ReadStream): RectangleDimension;
-    getImagePagesCount(imagePath: FilePath, options?: {password?: string}): number;
+    getImageDimensions(
+      inFontFilePath: FilePath | ReadStream
+    ): RectangleDimension;
+    getImagePagesCount(
+      imagePath: FilePath,
+      options?: { password?: string }
+    ): number;
     getImageType(imagePath: FilePath): PDFImageType | undefined;
     getModifiedFileParser(): PDFReader;
     getModifiedInputFile(): InputFile;
@@ -701,6 +798,9 @@ declare module 'muhammara' {
 
     /* Js Extensions (in muhammara.js) */
     getEvents(): EventEmitter;
-    triggerDocumentExtensionEvent(eventName: string | symbol, eventParams: any): void;
+    triggerDocumentExtensionEvent(
+      eventName: string | symbol,
+      eventParams: any
+    ): void;
   }
 }
