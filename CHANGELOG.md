@@ -80,6 +80,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Node < 11 and Electron < 11 removed
 - Renamed typo exported value from eTokenSeprator to eTokenSeparator
 
+## [2.6.2] - 2022-11-23
+
+### Fixed
+
+- Several cases of NPE under different circumstances
+
 ## [2.6.1] - 2022-10-23
 
 ### Fixed
@@ -323,7 +329,8 @@ with the following changes.
 [3.2.0]: https://github.com/julianhille/MuhammaraJS/compare/3.1.1...3.2.0
 [3.1.1]: https://github.com/julianhille/MuhammaraJS/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/julianhille/MuhammaraJS/compare/3.0.0...3.1.0
-[3.0.0]: https://github.com/julianhille/MuhammaraJS/compare/2.6.1...3.0.0
+[3.0.0]: https://github.com/julianhille/MuhammaraJS/compare/2.6.2...3.0.0
+[2.6.2]: https://github.com/julianhille/MuhammaraJS/compare/2.6.1...2.6.2
 [2.6.1]: https://github.com/julianhille/MuhammaraJS/compare/2.6.0...2.6.1
 [2.6.0]: https://github.com/julianhille/MuhammaraJS/compare/2.5.0...2.6.0
 [2.5.0]: https://github.com/julianhille/MuhammaraJS/compare/2.4.0...2.5.0
