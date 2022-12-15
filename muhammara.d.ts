@@ -804,56 +804,55 @@ declare module "muhammara" {
     ): void;
   }
 
-
   namespace Recipe {
     type CommentOptionsFlag =
-        | "invisible"
-        | "hidden"
-        | "print"
-        | "nozoom"
-        | "norotate"
-        | "noview"
-        | "readonly"
-        | "locked"
-        | "togglenoview";
+      | "invisible"
+      | "hidden"
+      | "print"
+      | "nozoom"
+      | "norotate"
+      | "noview"
+      | "readonly"
+      | "locked"
+      | "togglenoview";
 
     type AnnotSubtype =
-        | "Text"
-        | "FreeText"
-        | "Line"
-        | "Square"
-        | "Circle"
-        | "Polygon"
-        | "PolyLine"
-        | "Highlight"
-        | "Underline"
-        | "Squiggly"
-        | "StrikeOut"
-        | "Stamp"
-        | "Caret"
-        | "Ink"
-        | "FileAttachment"
-        | "Sound";
+      | "Text"
+      | "FreeText"
+      | "Line"
+      | "Square"
+      | "Circle"
+      | "Polygon"
+      | "PolyLine"
+      | "Highlight"
+      | "Underline"
+      | "Squiggly"
+      | "StrikeOut"
+      | "Stamp"
+      | "Caret"
+      | "Ink"
+      | "FileAttachment"
+      | "Sound";
 
     type AnnotOptionsFlag =
-        | "invisible"
-        | "hidden"
-        | "print"
-        | "nozoom"
-        | "norotate"
-        | "noview"
-        | "readonly"
-        | "locked"
-        | "togglenoview";
+      | "invisible"
+      | "hidden"
+      | "print"
+      | "nozoom"
+      | "norotate"
+      | "noview"
+      | "readonly"
+      | "locked"
+      | "togglenoview";
 
     type AnnotOptionsIcon =
-        | "Comment"
-        | "Key"
-        | "Note"
-        | "Help"
-        | "NewParagraph"
-        | "Paragraph"
-        | "Insert";
+      | "Comment"
+      | "Key"
+      | "Note"
+      | "Help"
+      | "NewParagraph"
+      | "Paragraph"
+      | "Insert";
 
     interface RecipeOptions {
       version?: number;
@@ -999,17 +998,17 @@ declare module "muhammara" {
     constructor(buffer: Buffer, options?: Recipe.RecipeOptions);
 
     comment(
-        text: string,
-        x: number,
-        y: number,
-        options?: Recipe.CommentOptions
+      text: string,
+      x: number,
+      y: number,
+      options?: Recipe.CommentOptions
     ): Recipe;
 
     annot(
-        x: number,
-        y: number,
-        subtype: Recipe.AnnotSubtype,
-        options?: Recipe.AnnotOptions
+      x: number,
+      y: number,
+      subtype: Recipe.AnnotSubtype,
+      options?: Recipe.AnnotOptions
     ): Recipe;
 
     appendPage(pdfSrc: string, pages: number | number[]): Recipe;
@@ -1019,10 +1018,10 @@ declare module "muhammara" {
     registerFont(fontName: string, fontSrcPath: string): Recipe;
 
     image(
-        imgSrc: string,
-        x: number,
-        y: number,
-        options?: Recipe.ImageOptions
+      imgSrc: string,
+      x: number,
+      y: number,
+      options?: Recipe.ImageOptions
     ): Recipe;
 
     info(options?: Recipe.InfoOptions): Recipe;
@@ -1030,16 +1029,16 @@ declare module "muhammara" {
     custom(key?: string, value?: string): Recipe;
 
     insertPage(
-        afterPageNumber: number,
-        pdfSrc: string,
-        srcPageNumber: number
+      afterPageNumber: number,
+      pdfSrc: string,
+      srcPageNumber: number
     ): Recipe;
 
     overlay(
-        pdfSrc: string,
-        x: number,
-        y: number,
-        options?: Recipe.OverlayOptions
+      pdfSrc: string,
+      x: number,
+      y: number,
+      options?: Recipe.OverlayOptions
     ): Recipe;
 
     createPage(pageWidth: number, pageHeight: number): Recipe;
@@ -1053,10 +1052,10 @@ declare module "muhammara" {
     split(outputDir: string, prefix: string): Recipe;
 
     text(
-        text: string,
-        x: number,
-        y: number,
-        options?: Recipe.TextOptions
+      text: string,
+      x: number,
+      y: number,
+      options?: Recipe.TextOptions
     ): Recipe;
 
     moveTo(x: number, y: number): Recipe;
@@ -1068,18 +1067,18 @@ declare module "muhammara" {
     polygon(coordinates: number[][], options?: Recipe.PolygonOptions): Recipe;
 
     circle(
-        x: number,
-        y: number,
-        radius: number,
-        options?: Recipe.CircleOptions
+      x: number,
+      y: number,
+      radius: number,
+      options?: Recipe.CircleOptions
     ): Recipe;
 
     rectangle(
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        options?: Recipe.RectangleOptions
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+      options?: Recipe.RectangleOptions
     ): Recipe;
 
     endPDF(callback?: Recipe.EndPDFCallback): Recipe;
