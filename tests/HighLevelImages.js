@@ -1,6 +1,6 @@
 describe("HighLevelImages", function () {
   it("should complete without error", function () {
-    var pdfWriter = require("../muhammara").createWriter(
+    var pdfWriter = require("../lib/muhammara").createWriter(
       __dirname + "/output/HighLevelImages.pdf"
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);

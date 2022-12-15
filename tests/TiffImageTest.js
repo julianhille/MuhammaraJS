@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara");
+var muhammara = require("../lib/muhammara");
 
 function addPageForTiff(inPDFWriter, inTiffPath) {
   var page = inPDFWriter.createPage(0, 0, 595, 842);

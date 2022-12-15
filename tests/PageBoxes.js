@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara"),
+var muhammara = require("../lib/muhammara"),
   assert = require("chai").assert;
 
 describe("PagesBoxes", function () {

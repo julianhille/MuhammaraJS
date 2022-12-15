@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara");
+var muhammara = require("../lib/muhammara");
 
 describe("Xcryption", function () {
   describe("Strip PDF From Password", function () {

@@ -5,8 +5,8 @@
   "homepage": "https://github.com/julianhille/Muhammarajs",
   "license": "Apache-2.0",
   "author": "Julian <j.hille484@gmail.com>",
-  "main": "./muhammara.js",
-  "types": "./muhammara.d.ts",
+  "main": "./lib/muhammara.js",
+  "types": "./lib/muhammara.d.ts",
   "engines": {
     "node": ">=11"
   },
@@ -30,14 +30,8 @@
   ],
   "files": [
     "src",
-    "muhammara.js",
-    "muhammara.d.ts",
-    "binding.gyp",
-    "PDFRStreamForFile.js",
-    "PDFStreamForResponse.js",
-    "PDFWStreamForFile.js",
-    "PDFRStreamForBuffer.js",
-    "PDFWStreamForBuffer.js"
+    "lib",
+    "binding.gyp"
   ],
   "dependencies": {
     "@mapbox/node-pre-gyp": "^1.0.5"

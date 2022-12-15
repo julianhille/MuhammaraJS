@@ -1,4 +1,4 @@
-const muhammara = require("../muhammara");
+const muhammara = require("../lib/muhammara");
 const expect = require("chai").expect;
 
 describe("AppendPagesTest", function () {

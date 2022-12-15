@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara");
+var muhammara = require("../lib/muhammara");
 
 describe("MergePDFPages", function () {
   describe("OnlyMerge", function () {
