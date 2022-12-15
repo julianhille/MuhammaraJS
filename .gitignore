@@ -2,6 +2,7 @@ muhammarajs
 build
 .DS_Store
 tests/output
+tests/**/output
 binding
 node_modules
 aws.json
