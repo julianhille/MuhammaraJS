@@ -12,7 +12,7 @@ describe("Annotation: Coordinate", () => {
       );
       const output = path.join(
         __dirname,
-        `output/annotation-rotation-${rotation}.pdf`
+        `../output/annotation-rotation-${rotation}.pdf`
       );
       const recipe = new HummusRecipe(src, output);
       recipe
