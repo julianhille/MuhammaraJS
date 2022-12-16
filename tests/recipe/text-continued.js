@@ -3,7 +3,7 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Text - Continued", () => {
   it("Simple text segmentation", (done) => {
-    const output = path.join(__dirname, "output/continued-text.pdf");
+    const output = path.join(__dirname, "../output/continued-text.pdf");
     const recipe = new HummusRecipe("new", output);
     const lorem =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. \

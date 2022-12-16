@@ -5,7 +5,7 @@ const muhammara = require("../../lib/muhammara");
 describe("Color", () => {
   it("basic", (done) => {
     // Showing hummus colorspace (Gray, RGB, CMYK) ability upon which hummus-recipe is built
-    const output = path.join(__dirname, "output/hummus-new.pdf");
+    const output = path.join(__dirname, "../output/hummus-new.pdf");
     const pdfWriter = muhammara.createWriter(output);
     const page = pdfWriter.createPage(0, 0, 595, 842);
     const pageContext = pdfWriter.startPageContentContext(page);
@@ -43,7 +43,7 @@ describe("Color", () => {
   // Tests the explicit setting of the global default RGB colorspace
 
   it("RGB explicit, global setting", (done) => {
-    const output = path.join(__dirname, "output/color-rgb.pdf");
+    const output = path.join(__dirname, "../output/color-rgb.pdf");
     const recipe = new HummusRecipe("new", output, {
       colorspace: "rgb",
     });
@@ -68,7 +68,7 @@ describe("Color", () => {
   // Tests the implicit setting of the RGB colorspace via size of color specification
 
   it("RGB implicit", (done) => {
-    const input = path.join(__dirname, "output/color-rgb.pdf");
+    const input = path.join(__dirname, "../output/color-rgb.pdf");
     const recipe = new HummusRecipe(input);
     recipe
       .editPage(1)
@@ -111,7 +111,7 @@ describe("Color", () => {
   // Tests the explicit setting of the global default CMYK colorspace
 
   it("CMYK explicit, global setting", (done) => {
-    const output = path.join(__dirname, "output/color-cmyk.pdf");
+    const output = path.join(__dirname, "../output/color-cmyk.pdf");
     const recipe = new HummusRecipe("new", output, {
       colorspace: "cmyk",
     });
@@ -136,7 +136,7 @@ describe("Color", () => {
   // Tests the implicit setting of the CMYK colorspace via size of color specification
 
   it("CMYK implicit", (done) => {
-    const input = path.join(__dirname, "output/color-cmyk.pdf");
+    const input = path.join(__dirname, "../output/color-cmyk.pdf");
     const recipe = new HummusRecipe(input);
     recipe
       .editPage(1)
@@ -179,7 +179,7 @@ describe("Color", () => {
   // Tests the explicit setting of the global default Gray colorspace
 
   it("Gray explicit, global setting", (done) => {
-    const output = path.join(__dirname, "output/color-gray.pdf");
+    const output = path.join(__dirname, "../output/color-gray.pdf");
     const recipe = new HummusRecipe("new", output, {
       colorspace: "gray",
     });
@@ -204,7 +204,7 @@ describe("Color", () => {
   // Tests the implicit setting of the Gray colorspace via size of color specification
 
   it("Gray implicit", (done) => {
-    const input = path.join(__dirname, "output/color-gray.pdf");
+    const input = path.join(__dirname, "../output/color-gray.pdf");
     const recipe = new HummusRecipe(input);
     recipe
       .editPage(1)
@@ -248,7 +248,7 @@ describe("Color", () => {
   });
 
   it("All color spaces", (done) => {
-    const output = path.join(__dirname, "output/color-all.pdf");
+    const output = path.join(__dirname, "../output/color-all.pdf");
     const recipe = new HummusRecipe("new", output);
     let font = "Courier New";
     let title = 30;

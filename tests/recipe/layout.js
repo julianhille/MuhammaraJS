@@ -3,7 +3,7 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Layout", () => {
   it(`Flow text into column layouts (OS:${process.platform})`, (done) => {
-    const output = path.join(__dirname, "output/paper.pdf");
+    const output = path.join(__dirname, "../output/paper.pdf");
     const times = "times";
     const courier = "courier new";
     let fontDir = "",

@@ -4,12 +4,12 @@ const HummusRecipe = require("../../lib").Recipe;
 describe("Append Pages", () => {
   const taskAP = "Append pages from other pdf";
   it(taskAP, (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const longPDF = path.join(
       __dirname,
-      "materials/compressed.tracemonkey-pldi-09.pdf"
+      "../TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf"
     );
-    const output = path.join(__dirname, `output/${taskAP}.pdf`);
+    const output = path.join(__dirname, `../output/${taskAP}.pdf`);
     const recipe = new HummusRecipe(src, output);
     recipe
       .appendPage(longPDF, 10)

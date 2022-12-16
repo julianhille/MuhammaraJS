@@ -3,10 +3,10 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Modify", () => {
   it("Add something to an existing pdf", (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const output = path.join(
       __dirname,
-      "output/Add something to an existing.pdf"
+      "../output/Add something to an existing.pdf"
     );
     const recipe = new HummusRecipe(src, output);
     recipe
@@ -37,10 +37,10 @@ describe("Modify", () => {
   });
 
   it("Add something to an existing pdf", (done) => {
-    const src = path.join(__dirname, "materials/test2.pdf");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
     const output = path.join(
       __dirname,
-      "output/Add something to an existing (with annots).pdf"
+      "../output/Add something to an existing (with annots).pdf"
     );
     const recipe = new HummusRecipe(src, output);
     recipe

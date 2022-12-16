@@ -44,7 +44,7 @@ describe("Graphic Object Positioning", () => {
   // Tests the explicit setting of the global default RGB colorspace
 
   it("Location, location...", (done) => {
-    const output = path.join(__dirname, "output/positioning.pdf");
+    const output = path.join(__dirname, "../output/positioning.pdf");
     const recipe = new HummusRecipe("new", output, {
       colorspace: "rgb",
     });
@@ -161,7 +161,7 @@ describe("Graphic Object Positioning", () => {
   });
 
   it("Rotation", (done) => {
-    const output = path.join(__dirname, "output/objectRotation.pdf");
+    const output = path.join(__dirname, "../output/objectRotation.pdf");
     const recipe = new HummusRecipe("new", output, {
       colorspace: "rgb",
     });

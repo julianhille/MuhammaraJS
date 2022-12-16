@@ -3,8 +3,8 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Text Rotation", () => {
   it("Add text with rotation", (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
-    const output = path.join(__dirname, "output/Add text - rotation1.pdf");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    const output = path.join(__dirname, "../output/Add text - rotation1.pdf");
     const recipe = new HummusRecipe(src, output);
 
     const pages = recipe.metadata.pages;

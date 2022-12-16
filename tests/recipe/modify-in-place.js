@@ -4,10 +4,10 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Modify in Place", () => {
   it("Add something to an existing pdf and overwrite it.", (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const output = path.join(
       __dirname,
-      "output/Add something to an existing and overwrite it.pdf"
+      "../output/Add something to an existing and overwrite it.pdf"
     );
     const rs = fs.createReadStream(src);
     const cp = fs.createWriteStream(output);

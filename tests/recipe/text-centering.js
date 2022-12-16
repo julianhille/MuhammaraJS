@@ -3,7 +3,7 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Text - Centering", () => {
   it("should horizontally center the text correctly with multiple font sizes", (done) => {
-    const output = path.join(__dirname, "output/Center Text.pdf");
+    const output = path.join(__dirname, "../output/Center Text.pdf");
     const recipe = new HummusRecipe("new", output);
 
     recipe

@@ -4,8 +4,8 @@ const HummusRecipe = require("../../lib").Recipe;
 describe("Encryption", () => {
   const taskAVP = "Add view password";
   it(taskAVP, (done) => {
-    const src = path.join(__dirname, "materials/test2.pdf");
-    const output = path.join(__dirname, `output/${taskAVP}.pdf`);
+    const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const output = path.join(__dirname, `../output/${taskAVP}.pdf`);
     const recipe = new HummusRecipe(src, output);
     recipe
       .encrypt({
@@ -16,9 +16,9 @@ describe("Encryption", () => {
 
   const taskAEP = "Add edit password";
   it(taskAEP, (done) => {
-    const src = path.join(__dirname, "materials/test2.pdf");
-    // const overlayPDF = path.join(__dirname, 'materials/test3.pdf');
-    const output = path.join(__dirname, `output/${taskAEP}.pdf`);
+    const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    // const overlayPDF = path.join(__dirname, '../TestMaterials/recipe/test3.pdf');
+    const output = path.join(__dirname, `../output/${taskAEP}.pdf`);
 
     const recipe = new HummusRecipe(src, output);
     recipe
@@ -30,9 +30,9 @@ describe("Encryption", () => {
 
   const taskAPP = "Add permission password";
   it(taskAPP, (done) => {
-    const src = path.join(__dirname, "materials/test2.pdf");
-    // const overlayPDF = path.join(__dirname, 'materials/test3.pdf');
-    const output = path.join(__dirname, `output/${taskAPP}.pdf`);
+    const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    // const overlayPDF = path.join(__dirname, '../TestMaterials/recipe/test3.pdf');
+    const output = path.join(__dirname, `../output/${taskAPP}.pdf`);
 
     const recipe = new HummusRecipe(src, output);
     recipe
@@ -44,7 +44,7 @@ describe("Encryption", () => {
 
   const taskCPF = "New file with view password";
   it(taskCPF, (done) => {
-    const output = path.join(__dirname, `output/${taskCPF}.pdf`);
+    const output = path.join(__dirname, `../output/${taskCPF}.pdf`);
     const recipe = new HummusRecipe("new", output, { userPassword: "123" });
     recipe
       .createPage("letter-size")
@@ -56,7 +56,7 @@ describe("Encryption", () => {
 
   const taskCPP = "New file with permission password";
   it(taskCPP, (done) => {
-    const output = path.join(__dirname, `output/${taskCPP}.pdf`);
+    const output = path.join(__dirname, `../output/${taskCPP}.pdf`);
     const recipe = new HummusRecipe("new", output, { password: "123" });
     recipe
       .createPage("letter-size")
@@ -72,7 +72,7 @@ describe("Encryption", () => {
 
   const taskCPE = "New file with edit password";
   it(taskCPE, (done) => {
-    const output = path.join(__dirname, `output/${taskCPE}.pdf`);
+    const output = path.join(__dirname, `../output/${taskCPE}.pdf`);
     const recipe = new HummusRecipe("new", output, {
       ownerPassword: "123",
       userProtectionFlag: 3900,
@@ -92,8 +92,8 @@ describe("Encryption", () => {
   // TODO: this seems to be broken
   // const taskMPF = 'Modify file with view password';
   // it(taskMPF, (done) => {
-  //     const input = path.join(__dirname, `output/${taskCPF}.pdf`);
-  //     const output = path.join(__dirname, `output/${taskMPF}.pdf`);
+  //     const input = path.join(__dirname, `../output/${taskCPF}.pdf`);
+  //     const output = path.join(__dirname, `../output/${taskMPF}.pdf`);
   //     const recipe = new HummusRecipe(input, output, { userPassword: '123' });
 
   //     recipe

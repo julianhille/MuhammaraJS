@@ -4,10 +4,10 @@ const HummusRecipe = require("../../lib").Recipe;
 describe("Modify", () => {
   const taskAI = "Add images";
   it(taskAI, (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
-    const output = path.join(__dirname, `output/${taskAI}.pdf`);
-    const myCats = path.join(__dirname, "materials/myCats.jpg");
-    const wiki = path.join(__dirname, "materials/wiki.png");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    const output = path.join(__dirname, `../output/${taskAI}.pdf`);
+    const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
+    const wiki = path.join(__dirname, "../TestMaterials/recipe/wiki.png");
 
     const recipe = new HummusRecipe(src, output);
     recipe
@@ -60,9 +60,9 @@ describe("Modify", () => {
 
   const taskATP = "Add transparent png";
   it(taskATP, (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
-    const output = path.join(__dirname, `output/${taskATP}.pdf`);
-    const wikiPng = path.join(__dirname, "materials/wiki.png");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    const output = path.join(__dirname, `../output/${taskATP}.pdf`);
+    const wikiPng = path.join(__dirname, "../TestMaterials/recipe/wiki.png");
 
     const recipe = new HummusRecipe(src, output);
     recipe

@@ -3,9 +3,9 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Modify", () => {
   it("Add many images", (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
-    const output = path.join(__dirname, "output/Add many images.pdf");
-    const myCats = path.join(__dirname, "materials/myCats.jpg");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    const output = path.join(__dirname, "../output/Add many images.pdf");
+    const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
 
     const recipe = new HummusRecipe(src, output);
     recipe.editPage(1);

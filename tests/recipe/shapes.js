@@ -3,7 +3,7 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Regular Polygons, Stars, Arrows", () => {
   it("Add N sided regular polygons", (done) => {
-    const output = path.join(__dirname, "output/Add N-gons.pdf");
+    const output = path.join(__dirname, "../output/Add N-gons.pdf");
     const recipe = new HummusRecipe("new", output);
     const rota = { stroke: "#ff0000", opacity: 0.3, rotation: 45, debug: 1 };
     const nops = { stroke: "#ff0000", opacity: 0.3, rotation: 0, debug: 1 };
@@ -29,7 +29,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
   });
 
   it("Add N pointed stars", (done) => {
-    const input = path.join(__dirname, "output/Add N-gons.pdf");
+    const input = path.join(__dirname, "../output/Add N-gons.pdf");
     const output = input;
     const recipe = new HummusRecipe(input, output);
     recipe
@@ -47,7 +47,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
   });
 
   it("Add arrows", (done) => {
-    const output = path.join(__dirname, "output/arrowAnatomy.pdf");
+    const output = path.join(__dirname, "../output/arrowAnatomy.pdf");
     const recipe = new HummusRecipe("new", output);
 
     recipe

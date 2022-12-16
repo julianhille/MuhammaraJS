@@ -24,8 +24,8 @@ function hilight(text, record) {
 
 describe("Text - Columns", () => {
   it("Table", (done) => {
-    const output = path.join(__dirname, "output/table.pdf");
-    const pplFile = path.join(__dirname, "materials/people.json");
+    const output = path.join(__dirname, "../output/table.pdf");
+    const pplFile = path.join(__dirname, "../TestMaterials/recipe/people.json");
     const recipe = new HummusRecipe("new", output);
     const peeps = fs.readFileSync(pplFile, "utf8");
     const people = JSON.parse(peeps);

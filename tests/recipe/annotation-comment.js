@@ -3,7 +3,7 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Annotation: Comment", () => {
   it("Add comment", (done) => {
-    const output = path.join(__dirname, "output/Add comment.pdf");
+    const output = path.join(__dirname, "../output/Add comment.pdf");
     const recipe = new HummusRecipe("new", output);
     recipe
       // 1st Page
@@ -25,10 +25,10 @@ describe("Annotation: Comment", () => {
       .endPDF(done);
   });
   it("Add rich text comment", (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const output = path.join(
       __dirname,
-      "output/Add comment with rich text.pdf"
+      "../output/Add comment with rich text.pdf"
     );
     const recipe = new HummusRecipe(src, output);
     const textContent = [
@@ -57,7 +57,7 @@ describe("Annotation: Comment", () => {
       .endPDF(done);
   });
   it("Add FreeText", (done) => {
-    const output = path.join(__dirname, "output/Add FreeText.pdf");
+    const output = path.join(__dirname, "../output/Add FreeText.pdf");
     const recipe = new HummusRecipe("new", output);
     recipe
       // 1st Page
@@ -75,7 +75,7 @@ describe("Annotation: Comment", () => {
   });
   // Ticket #20, need to link annotation to text
   it("Add highlight", (done) => {
-    const output = path.join(__dirname, "output/Add highlight.pdf");
+    const output = path.join(__dirname, "../output/Add highlight.pdf");
     const recipe = new HummusRecipe("new", output);
     recipe
       // 1st Page

@@ -204,7 +204,7 @@ function pie(x, y, radius, chart) {
 
 describe("Arc test", () => {
   it("Simple Arcs", (done) => {
-    const output = path.join(__dirname, "output/arcs.pdf");
+    const output = path.join(__dirname, "../output/arcs.pdf");
     const recipe = new HummusRecipe("new", output);
     let x = 120;
     let y = 120;
@@ -257,7 +257,7 @@ describe("Arc test", () => {
   });
 
   it("Pie Charts", (done) => {
-    const output = path.join(__dirname, "output/arcs.pdf");
+    const output = path.join(__dirname, "../output/arcs.pdf");
     const recipe = new HummusRecipe(output, output);
 
     const movies = [

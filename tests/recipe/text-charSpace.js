@@ -3,7 +3,7 @@ const path = require("path");
 
 describe("Text", () => {
   it("Simple text", (done) => {
-    const output = path.join(__dirname, "output/text-charSpace.pdf");
+    const output = path.join(__dirname, "../output/text-charSpace.pdf");
     const recipe = new HummusRecipe("new", output);
     const lorem =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. \

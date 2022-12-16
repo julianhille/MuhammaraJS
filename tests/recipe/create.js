@@ -3,7 +3,7 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Create", () => {
   it("blank pdf", (done) => {
-    const output = path.join(__dirname, "output/blank.pdf");
+    const output = path.join(__dirname, "../output/blank.pdf");
     const recipe = new HummusRecipe("new", output, {
       version: 1.6,
       author: "someone",
@@ -21,9 +21,9 @@ describe("Create", () => {
   });
 
   it("new pdf", (done) => {
-    const output = path.join(__dirname, "output/new.pdf");
+    const output = path.join(__dirname, "../output/new.pdf");
     const recipe = new HummusRecipe("new", output);
-    const myCats = path.join(__dirname, "materials/myCats.jpg");
+    const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
     recipe
       // 1st Page
       .createPage("letter-size")

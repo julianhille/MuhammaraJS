@@ -5,8 +5,8 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Modify", () => {
   it("Create Writer With buffer", (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
-    const myCats = path.join(__dirname, "materials/myCats.jpg");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
     const buffer = fs.readFileSync(src);
     const recipe = new HummusRecipe(buffer);
     recipe
@@ -29,7 +29,7 @@ describe("Modify", () => {
       .endPDF((outBuffer) => {
         assert(outBuffer instanceof Buffer);
         fs.writeFileSync(
-          path.join(__dirname, "output/createWithBuffer.pdf"),
+          path.join(__dirname, "../output/createWithBuffer.pdf"),
           outBuffer
         );
         done();
@@ -37,12 +37,12 @@ describe("Modify", () => {
   });
 
   it("Create Writer With buffer and file output", (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const output = path.join(
       __dirname,
-      "output/createWithBufferAndFileOutput.pdf"
+      "../output/createWithBufferAndFileOutput.pdf"
     );
-    const myCats = path.join(__dirname, "materials/myCats.jpg");
+    const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
     const buffer = fs.readFileSync(src);
     const recipe = new HummusRecipe(buffer, output);
     recipe

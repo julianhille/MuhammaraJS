@@ -3,8 +3,8 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Vector", () => {
   it("Add vectors", (done) => {
-    const src = path.join(__dirname, "materials/test.pdf");
-    const output = path.join(__dirname, "output/Add vectors.pdf");
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    const output = path.join(__dirname, "../output/Add vectors.pdf");
     const recipe = new HummusRecipe(src, output);
     const { width, height } = recipe.pageInfo(1);
     recipe

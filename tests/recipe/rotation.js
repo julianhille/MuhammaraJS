@@ -38,8 +38,8 @@ describe("Rotation", () => {
   ];
   pdfs.forEach((pdf) => {
     it(pdf.title, (done) => {
-      const src = path.join(__dirname, `materials/${pdf.filename}`);
-      const output = path.join(__dirname, `output/${pdf.filename}`);
+      const src = path.join(__dirname, `../TestMaterials/recipe/${pdf.filename}`);
+      const output = path.join(__dirname, `../output/${pdf.filename}`);
       const recipe = new HummusRecipe(src, output);
       const { width, height } = recipe.pageInfo(1);
       recipe

@@ -3,7 +3,7 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Annotation: Square", () => {
   it("Add a simple square.", (done) => {
-    const output = path.join(__dirname, "output/annotation-square.pdf");
+    const output = path.join(__dirname, "../output/annotation-square.pdf");
     const recipe = new HummusRecipe("new", output);
     recipe
       .createPage("letter-size")

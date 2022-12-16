@@ -36,7 +36,7 @@ describe("PDF Generator", () => {
   };
 
   it("Create a pdf", (done) => {
-    const output = path.join(__dirname, `output/${pdf.filename}.pdf`);
+    const output = path.join(__dirname, `../output/${pdf.filename}.pdf`);
     const recipe = new HummusRecipe("new", output);
     recipe.info(pdf.info);
 

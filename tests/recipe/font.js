@@ -4,15 +4,15 @@ const HummusRecipe = require("../../lib").Recipe;
 
 describe("Font", () => {
   before(() => {
-    fs.ensureDirSync(path.join(__dirname, "materials/fonts"));
+    fs.ensureDirSync(path.join(__dirname, "../TestMaterials/recipe/fonts"));
   });
   it("Add text with custom fonts", (done) => {
     const output = path.join(
       __dirname,
-      "output/Add text with custom fonts.pdf"
+      "../output/Add text with custom fonts.pdf"
     );
     const recipe = new HummusRecipe("new", output, {
-      fontSrcPath: path.join(__dirname, "materials/fonts"),
+      fontSrcPath: path.join(__dirname, "../TestMaterials/recipe/fonts"),
     });
     recipe
       .createPage("letter-size")
