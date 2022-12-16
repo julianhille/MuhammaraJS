@@ -4,7 +4,10 @@ const HummusRecipe = require("../../lib").Recipe;
 describe("Modify", () => {
   it("Add Overlay from other PDF", (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test3.pdf");
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test3.pdf"
+    );
     const output = path.join(__dirname, "../output/Add overlay.pdf");
 
     const recipe = new HummusRecipe(src, output);
@@ -12,8 +15,14 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - position", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
     const output = path.join(
       __dirname,
       "../output/Add overlay (#28) - position.pdf"
@@ -29,9 +38,18 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - scale", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
-    const output = path.join(__dirname, "../output/Add overlay (#28) - scale.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
+    const output = path.join(
+      __dirname,
+      "../output/Add overlay (#28) - scale.pdf"
+    );
 
     const recipe = new HummusRecipe(src, output);
     const options = {
@@ -42,8 +60,14 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - fitWidth", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
     const output = path.join(
       __dirname,
       "../output/Add overlay (#28) - fitWidth.pdf"
@@ -58,8 +82,14 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - fitHeight", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
     const output = path.join(
       __dirname,
       "../output/Add overlay (#28) - fitHeight.pdf"
@@ -74,8 +104,14 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - stretch to fit", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
     const output = path.join(
       __dirname,
       "../output/Add overlay (#28) - stretch.pdf"
@@ -91,7 +127,10 @@ describe("Modify", () => {
 
   it("Add Overlay from other PDF w/ page_index", (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test3.pdf");
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test3.pdf"
+    );
     const output = path.join(__dirname, "../output/Add overlay with page.pdf");
 
     const recipe = new HummusRecipe(src, output);
@@ -99,8 +138,14 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - position w/ page_index", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
     const output = path.join(
       __dirname,
       "../output/Add overlay (#28) with page - position.pdf"
@@ -116,8 +161,14 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - scale w/ page_index", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
     const output = path.join(
       __dirname,
       "../output/Add overlay (#28) with page - scale.pdf"
@@ -133,8 +184,14 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - fitWidth w/ page_index", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
     const output = path.join(
       __dirname,
       "../output/Add overlay (#28) with page - fitWidth.pdf"
@@ -150,8 +207,14 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - fitHeight w/ page_index", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
     const output = path.join(
       __dirname,
       "../output/Add overlay (#28) with page - fitHeight.pdf"
@@ -167,8 +230,14 @@ describe("Modify", () => {
   });
 
   it("Add Overlay from other PDF - stretch to fit  w/ page_index", (done) => {
-    const src = path.join(__dirname, "../TestMaterials/recipe/issue-28-input.pdf");
-    const overlayPDF = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const src = path.join(
+      __dirname,
+      "../TestMaterials/recipe/issue-28-input.pdf"
+    );
+    const overlayPDF = path.join(
+      __dirname,
+      "../TestMaterials/recipe/test2.pdf"
+    );
     const output = path.join(
       __dirname,
       "../output/Add overlay (#28) with page - stretch.pdf"

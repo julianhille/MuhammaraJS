@@ -6,7 +6,10 @@ describe("Annotation: Coordinate", () => {
 
   rotations.forEach((rotation) => {
     it(`${rotation} degree rotation.`, (done) => {
-      const src = path.join(__dirname, `../TestMaterials/recipe/test-L-${rotation}.pdf`);
+      const src = path.join(
+        __dirname,
+        `../TestMaterials/recipe/test-L-${rotation}.pdf`
+      );
       const output = path.join(
         __dirname,
         `output/annotation-rotation-${rotation}.pdf`

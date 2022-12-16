@@ -29,7 +29,10 @@ describe("Coloring", () => {
 
   it("Adding Names", (done) => {
     const output = path.join(__dirname, "../output/color-special.pdf");
-    const rgbColors = path.join(__dirname, "../TestMaterials/recipe/rgb-colors.json");
+    const rgbColors = path.join(
+      __dirname,
+      "../TestMaterials/recipe/rgb-colors.json"
+    );
     const lineOpt = { lineWidth: 0.5 };
     const recipe = new HummusRecipe(output, output, {
       colorspace: "rgb",

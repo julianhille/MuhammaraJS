@@ -45,6 +45,8 @@ describe("Modify", () => {
     const src = path.join(__dirname, `../TestMaterials/recipe/${file}.pdf`);
     const output = path.join(__dirname, `../output/${file}.pdf`);
     const recipe = new HummusRecipe(src, output);
-    recipe.structure(path.join(__dirname, `../output/${file}.txt`)).endPDF(done);
+    recipe
+      .structure(path.join(__dirname, `../output/${file}.txt`))
+      .endPDF(done);
   });
 });

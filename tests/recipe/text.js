@@ -86,7 +86,10 @@ describe("Text", () => {
 
   it("Add text with html codes", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
-    const output = path.join(__dirname, "../output/Add text with html codes.pdf");
+    const output = path.join(
+      __dirname,
+      "../output/Add text with html codes.pdf"
+    );
     const recipe = new HummusRecipe(src, output);
     recipe
       .createPage("letter")
@@ -126,7 +129,10 @@ describe("Text", () => {
 
   it("Add text inside textbox", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
-    const output = path.join(__dirname, "../output/Add text inside textbox.pdf");
+    const output = path.join(
+      __dirname,
+      "../output/Add text inside textbox.pdf"
+    );
     const recipe = new HummusRecipe(src, output);
     const textContent =
       `${Date.now()} Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum. ` +
