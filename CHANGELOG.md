@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Pre builts for arm64 / musl architecture (M1 using alpine)
 
+### Fixed
+
+- Memory leak in ByteReaderWithPositionDriver when reading PDF files
+
 ## [3.5.0] - 2022-12-07
 
 ### Added

@@ -111,6 +111,8 @@ METHOD_RETURN_TYPE ByteReaderWithPositionDriver::Read(const ARGS_TYPE& args)
     for(LongBufferSizeType i=0;i<bufferSize;++i)
         outBuffer->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(i),NEW_NUMBER(buffer[i]));
     
+    delete[] buffer;
+
     SET_FUNCTION_RETURN_VALUE(outBuffer)
 }
 
