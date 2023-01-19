@@ -3,7 +3,6 @@
 [![NPM version](http://img.shields.io/npm/v/muhammara.svg?style=flat)](https://www.npmjs.org/package/muhammara)
 [![Build status](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml)
 
-
 Welcome to MuhammaraJS.
 A Fast NodeJS Module for Creating, Parsing an Manipulating PDF Files and Streams.
 
@@ -13,6 +12,7 @@ Project site is [here](http://www.pdfhummus.com).
 If you are looking for a C++ Library go [here](https://github.com/galkahana/PDF-Writer).
 
 ## Hummus JS is the base
+
 This is a drop in replacement for hummusJS originally made by Galkahana.
 He did an awesome job, but discontinued hummusjs.
 
@@ -20,6 +20,7 @@ The documentation for MuhammaraJS / HummusJS is still located at the
 hummusJS github wiki: available [here](https://github.com/galkahana/HummusJS/wiki)
 
 ## muhammara-recipe '(formerly known as hummus-recipe) as been added
+
 Muhammara-recipe and hummus-recipe has been integrated, dependencies updated
 and is now shipped along with muhammara itself.
 
@@ -62,8 +63,7 @@ let muhammara = require('muhammara')
 
 Replace:
 
-```const HummusRecipe = require('hummus-recipe');```
-
+`const HummusRecipe = require('hummus-recipe');`
 
 With:
 
@@ -74,9 +74,11 @@ const HummusRecipe = require('muhammara').Receipe;
 # Documentation
 
 ## Muhammara
+
 You can find samples and documentation [here](./docs/Home.md)
 
 ### Muhammara Recipe:
+
 To generate the documentation you could clone this repo and execute:
 
-```npm run recipe-jsdoc```
+`npm run recipe-jsdoc`
