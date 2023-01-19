@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Pre builts for arm64 / musl architecture (M1 using alpine)
+- Hummus-recipe / Muhammara-recipe as part of this lib
 
 ### Fixed
 
