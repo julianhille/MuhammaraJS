@@ -15,7 +15,8 @@
     "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
     "test:codestyle": "npx prettier -c ./",
     "test:electron": "electron-mocha -R tap ./tests/*.js --timeout 15000",
-    "package": "node-pre-gyp package"
+    "package": "node-pre-gyp package",
+    "recipe-jsdoc": "./node_modules/.bin/jsdoc -c jsdoc.conf"
   },
   "repository": {
     "type": "git",
