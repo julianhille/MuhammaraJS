@@ -1,6 +1,6 @@
 describe("MergeToPDFForm", function () {
   it("should complete without error", function () {
-    var pdfWriter = require("../muhammara.js").createWriter(
+    var pdfWriter = require("../lib/muhammara.js").createWriter(
       __dirname + "/output/MergeToPDFForm.pdf"
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);

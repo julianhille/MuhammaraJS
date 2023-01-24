@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara");
+var muhammara = require("../lib/muhammara");
 
 describe("SimpleTextUsageTest", function () {
   it("should complete without error", function () {

@@ -17,7 +17,7 @@ The `write` function should write the byte in the input array of bytes. It shoul
 
 The `getCurrentPosition()` function should return the current writing position. If you've been good kids, it's ok to simply sum up the number of bytes written from all the `write` calls so far, and you should be fine.
 
-To see an example implementation see what i did for the response stream [here](../PDFStreamForResponse.js).
+To see an example implementation see what i did for the response stream [here](../lib/PDFStreamForResponse.js).
 
 # Reading streams
 

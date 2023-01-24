@@ -13,7 +13,7 @@ describe("TiffSpecialsTest", function () {
       inPDFWriter.writePage(page);
     }
 
-    var pdfWriter = require("../muhammara").createWriter(
+    var pdfWriter = require("../lib/muhammara").createWriter(
       __dirname + "/output/TiffSpecialsTest.pdf"
     );
     var pageCount = pdfWriter.getImagePagesCount(

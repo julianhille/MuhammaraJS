@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara");
+var muhammara = require("../lib/muhammara");
 
 describe("EmptyWriter", function () {
   it("should complete without error", function () {

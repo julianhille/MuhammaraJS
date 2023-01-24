@@ -1,4 +1,4 @@
-var PDFTextString = require("../muhammara").PDFTextString;
+var PDFTextString = require("../lib/muhammara").PDFTextString;
 var assert = require("chai").assert;
 
 describe("PDFTextString", function () {

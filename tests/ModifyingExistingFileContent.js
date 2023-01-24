@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara");
+var muhammara = require("../lib/muhammara");
 
 // [look...not gonna write it 100% right...you JS experts can probably write this better]
 // PDFComment object

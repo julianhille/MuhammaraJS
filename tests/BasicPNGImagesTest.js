@@ -1,6 +1,6 @@
 describe("BasicPNGImagesTest", function () {
   it("should complete without error", function () {
-    var pdfWriter = require("../muhammara").createWriter(
+    var pdfWriter = require("../lib/muhammara").createWriter(
       __dirname + "/output/BasicPNGImagesTest.pdf",
       { log: __dirname + "/output/BasicPNGImagesTest.log" }
     );

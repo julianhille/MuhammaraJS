@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara");
+var muhammara = require("../lib/muhammara");
 var assert = require("assert");
 
 function testBasicFileModification(inFileName, throws) {

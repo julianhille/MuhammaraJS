@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara");
+var muhammara = require("../lib/muhammara");
 var emptyFileName = __dirname + "/output/sampleEmptyFileForCopying.pdf";
 
 describe("CopyingAndMergingEmptyPage", function () {

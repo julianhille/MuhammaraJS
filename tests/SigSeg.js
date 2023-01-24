@@ -1,4 +1,4 @@
-var muhammara = require("../muhammara");
+var muhammara = require("../lib/muhammara");
 const { expect } = require("chai");
 
 describe("SigSegv test", function () {
