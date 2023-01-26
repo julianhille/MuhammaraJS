@@ -68,7 +68,7 @@ Replace:
 With:
 
 ```
-const HummusRecipe = require('muhammara').Receipe;
+const HummusRecipe = require('muhammara').Recipe;
 ```
 
 # Documentation
