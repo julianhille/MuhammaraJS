@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Update xmldom to new 0.8.6 and fix security issues
+- Fix arm64 on mac builds ac)
 
 ## [3.6.0] - 2023-01-24
 
