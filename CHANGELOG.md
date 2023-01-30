@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.6.0] - 2023-01-24
+
 ### Added
 
 - Pre builts for arm64 / musl architecture (M1 using alpine)
@@ -341,7 +343,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.5.0...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.6.0...HEAD
+[3.6.0]: https://github.com/julianhille/MuhammaraJS/compare/3.5.0...3.6.0
 [3.5.0]: https://github.com/julianhille/MuhammaraJS/compare/3.4.0...3.5.0
 [3.4.0]: https://github.com/julianhille/MuhammaraJS/compare/3.3.0...3.4.0
 [3.3.0]: https://github.com/julianhille/MuhammaraJS/compare/3.2.0...3.3.0
