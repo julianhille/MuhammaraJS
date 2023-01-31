@@ -41,7 +41,7 @@
     "memory-streams": "^0.1.3",
     "static-eval": "^2.1.0",
     "static-module": "^3.0.4",
-    "xmldom": "^0.6.0"
+    "@xmldom/xmldom": "^0.8.6"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
