@@ -59,12 +59,12 @@ jobs:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
     steps:
-      - uses: actions/checkout@v3
-      - run: apt-get install -y python${{ matrix.python_version }}
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
+      - run: apt-get install -y python${{ matrix.python_version }}
       - run: npm config set unsafe-perm true
       - run: node --version
       - run: npm --version
@@ -78,7 +78,7 @@ jobs:
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
       # - run: npm run test, this is not an arm64 machine so we can not test.
       - run: ./node_modules/.bin/node-pre-gyp package --target_libc=musl  --target_arch=${{ matrix.target_architecture }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v2
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
@@ -116,12 +116,9 @@ jobs:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
       - run: apk update
       - run: apk add --no-cache make gcc jq g++ python${{ matrix.python_version }} tar
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node }}
       - run: npm config set unsafe-perm true
       - run: node --version
       - run: npm --version
@@ -131,7 +128,7 @@ jobs:
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
       - run: npm run test
       - run: ./node_modules/.bin/node-pre-gyp package testpackage --target_libc=musl
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v2
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
