@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [3.7.0] - 2023-02-07
+
 ### Added
 
 - Electron 21.4, 22.1 and 22.2
@@ -352,7 +354,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.6.0...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.7.0...HEAD
+[3.7.0]: https://github.com/julianhille/MuhammaraJS/compare/3.6.0...3.7.0
 [3.6.0]: https://github.com/julianhille/MuhammaraJS/compare/3.5.0...3.6.0
 [3.5.0]: https://github.com/julianhille/MuhammaraJS/compare/3.4.0...3.5.0
 [3.4.0]: https://github.com/julianhille/MuhammaraJS/compare/3.3.0...3.4.0
