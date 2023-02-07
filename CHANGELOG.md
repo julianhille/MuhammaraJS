@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Electron 21.4, 22.1 and 22.2
+
 ### Fixed
 
 - Update xmldom to new 0.8.6 and fix security issues
