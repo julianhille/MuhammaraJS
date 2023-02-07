@@ -407,6 +407,7 @@ jobs:
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
+          EXTRA_NODE_PRE_GYP_FLAGS: ${{ matrix.EXTRA_NODE_PRE_GYP_FLAGS }}
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
         if: ${{ matrix.target_architecture != 'arm64' }}
       - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}
@@ -468,6 +469,7 @@ jobs:
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
+          EXTRA_NODE_PRE_GYP_FLAGS: ${{ matrix.EXTRA_NODE_PRE_GYP_FLAGS }}
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
         if: ${{ matrix.target_architecture != 'arm64' }}
       - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}
