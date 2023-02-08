@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update xmldom to new 0.8.6 and fix security issues
 - Fix arm64 on mac builds
 
+### Removed
+
+- Pre-builts for macos on arm for node < 15 (eg 14, 12, 10 etc)
+
 ## [3.6.0] - 2023-01-24
 
 ### Added
