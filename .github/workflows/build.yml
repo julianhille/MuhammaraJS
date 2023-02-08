@@ -15,15 +15,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, macos-11, windows-2019]
+        os: [macos-11]
         node: [14.0.0, 15.7.0]
         architecture: [x64, ia32, arm64]
         include:
           - python_version: "3.10"
-          - python_version: "2"
-            node: 11.2.0
-          - python_version: "2"
-            node: 12.0.0
           - architecture: ia32
             architecture_node: x86
             target_architecture: ia32
@@ -36,13 +32,7 @@ jobs:
             extra_compile_flags: -arch arm64
             EXTRA_NODE_PRE_GYP_FLAGS: --target_arch=arm64
         exclude:
-          - os: ubuntu-18.04
-            architecture: arm64
-          - os: windows-2019
-            architecture: arm64
           - os: macos-11
-            architecture: ia32
-          - os: ubuntu-18.04
             architecture: ia32
     runs-on: ${{ matrix.os }}
     steps:
