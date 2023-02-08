@@ -15,14 +15,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-11]
         node: [14.0.0, 15.7.0]
-        architecture: [x64, ia32, arm64]
+        architecture: [x64, arm64]
         include:
           - python_version: "3.10"
-          - architecture: ia32
-            architecture_node: x86
-            target_architecture: ia32
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
@@ -31,10 +27,7 @@ jobs:
             target_architecture: arm64
             extra_compile_flags: -arch arm64
             EXTRA_NODE_PRE_GYP_FLAGS: --target_arch=arm64
-        exclude:
-          - os: macos-11
-            architecture: ia32
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
