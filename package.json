@@ -33,7 +33,8 @@
     "src",
     "lib",
     "fonts",
-    "binding.gyp"
+    "binding.gyp",
+    "muhammara.d.ts"
   ],
   "dependencies": {
     "@mapbox/node-pre-gyp": "^1.0.5",
