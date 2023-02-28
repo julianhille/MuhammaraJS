@@ -134,17 +134,13 @@ jobs:
           name: bindings
           if-no-files-found: error
   build-electron:
-    needs: [ lint ]
+    needs: [lint]
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-20.04, macos-11, windows-2019 ]
-        architecture: [ x64, ia32, arm64 ]
-        electron:
-          [
-            23.1.0,
-            23.0.0,
-          ]
+        os: [ubuntu-20.04, macos-11, windows-2019]
+        architecture: [x64, ia32, arm64]
+        electron: [23.1.0, 23.0.0]
         include:
           - electron_mocha_version: ^11
             python_version: "3.10"
@@ -585,7 +581,14 @@ jobs:
           if-no-files-found: error
   publish:
     needs:
-      [build-musl, build-musl-arm, build-electron, build-electron-old, build-node, build-node-old]
+      [
+        build-musl,
+        build-musl-arm,
+        build-electron,
+        build-electron-old,
+        build-node,
+        build-node-old,
+      ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
