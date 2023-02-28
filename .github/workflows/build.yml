@@ -286,10 +286,6 @@ jobs:
             target_architecture: x64
           - architecture: x64
             node: 16.13.2
-          - electron: 23.1.0
-            node: 18.12.1
-          - electron: 23.0.0
-            node: 18.12.1
           - electron: 22.3.0
             node: 16.17.1
           - electron: 22.2.0
