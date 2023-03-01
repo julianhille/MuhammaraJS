@@ -933,8 +933,8 @@ declare module "muhammara" {
       charSpace?: number;
       color?: string | number[];
       flow?: boolean;
-      overflow?: () => void
-      layout?: number|string;
+      overflow?: () => void;
+      layout?: number | string;
       opacity?: number;
       rotation?: number;
       rotationOrigin?: [number, number];
@@ -944,10 +944,12 @@ declare module "muhammara" {
       highlight?: boolean;
       underline?: boolean;
       strikeOut?: boolean;
-      hilite?: boolean|{
-        color?: string|number[];
-        opacity?: number;
-      };
+      hilite?:
+        | boolean
+        | {
+            color?: string | number[];
+            opacity?: number;
+          };
       textBox?: TextBox;
     }
 
@@ -1057,10 +1059,10 @@ declare module "muhammara" {
     editPage(pageNumber: number): Recipe;
 
     pageInfo(pageNumber: number): {
-      width: number
-      height: number
-      rotate: number
-      pageNumber: number
+      width: number;
+      height: number;
+      rotate: number;
+      pageNumber: number;
     };
 
     split(outputDir: string, prefix: string): Recipe;
