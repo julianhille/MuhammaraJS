@@ -1002,7 +1002,7 @@ declare module "muhammara" {
   }
 
   export class Recipe {
-    constructor(src: string, output: string, options?: Recipe.RecipeOptions);
+    constructor(src: string, output?: string, options?: Recipe.RecipeOptions);
 
     constructor(buffer: Buffer, options?: Recipe.RecipeOptions);
 
