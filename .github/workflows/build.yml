@@ -138,10 +138,94 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-20.04, macos-11, windows-2019]
+        architecture: [x64, ia32, arm64]
+        electron: [23.1.0, 23.0.0]
+        include:
+          - electron_mocha_version: ^11
+            python_version: "3.10"
+          - architecture: arm64
+            architecture_node: x64
+            target_architecture: arm64
+            extra_compile_flags: -arch arm64
+          - architecture: ia32
+            architecture_node: x86
+            target_architecture: ia32
+          - architecture: x64
+            architecture_node: x64
+            target_architecture: x64
+          - architecture: x64
+            node: 16.13.2
+          - electron: 23.1.0
+            node: 18.12.1
+          - electron: 23.0.0
+            node: 18.12.1
+        exclude:
+          - os: macos-11
+            architecture: ia32
+          - os: ubuntu-20.04
+            architecture: arm64
+          - os: windows-2019
+            architecture: arm64
+          - os: ubuntu-20.04
+            architecture: ia32
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          architecture: ${{ matrix.architecture_node }}
+      - run: node --version
+      - run: npm --version
+      - run: npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
+        if: ${{ runner.os == 'Windows' }}
+      - run: npm install --build-from-source
+        env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_target_arch: ${{ matrix.target_architecture }}
+          npm_config_target: ${{ matrix.electron }}
+          npm_config_disturl: https://artifacts.electronjs.org/headers/dist
+          npm_config_runtime: electron
+          npm_config_python: python${{ matrix.python_version }}
+          CFLAGS: ${{ matrix.extra_compile_flags }}
+          CPPFLAGS: ${{ matrix.extra_compile_flags }}
+      - uses: Wandalen/wretry.action@v1.0.11
+        with:
+          command: npm install -g electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
+          attempt_limit: 3
+          attempt_delay: 10000
+      - name: Run test
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          working-directory: ./ #optional
+          run: npm run test:electron
+        if: ${{ matrix.target_architecture != 'arm64' }}
+      - run: ./node_modules/.bin/node-pre-gyp package testpackage
+        env:
+          npm_config_runtime: electron
+          npm_config_target: ${{ matrix.electron }}
+        if: ${{ matrix.target_architecture != 'arm64' }}
+      - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}
+        if: ${{ matrix.target_architecture == 'arm64' }}
+        env:
+          npm_config_runtime: electron
+          npm_config_target: ${{ matrix.electron }}
+      - uses: actions/upload-artifact@v3
+        with:
+          path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
+          name: bindings
+          if-no-files-found: error
+  build-electron-old:
+    needs: [lint]
+    strategy:
+      fail-fast: false
+      matrix:
         os: [ubuntu-18.04, macos-11, windows-2019]
         architecture: [x64, ia32, arm64]
         electron:
           [
+            22.3.0,
             22.2.0,
             22.1.0,
             22.0.0,
@@ -202,6 +286,8 @@ jobs:
             target_architecture: x64
           - architecture: x64
             node: 16.13.2
+          - electron: 22.3.0
+            node: 16.17.1
           - electron: 22.2.0
             node: 16.17.1
           - electron: 22.1.0
@@ -491,7 +577,14 @@ jobs:
           if-no-files-found: error
   publish:
     needs:
-      [build-musl, build-musl-arm, build-electron, build-node, build-node-old]
+      [
+        build-musl,
+        build-musl-arm,
+        build-electron,
+        build-electron-old,
+        build-node,
+        build-node-old,
+      ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
