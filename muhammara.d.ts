@@ -943,6 +943,10 @@ declare module "muhammara" {
       highlight?: boolean;
       underline?: boolean;
       strikeOut?: boolean;
+      hilite?: boolean|{
+        color?: string|number[];
+        opacity?: number;
+      };
       textBox?: TextBox;
     }
 
