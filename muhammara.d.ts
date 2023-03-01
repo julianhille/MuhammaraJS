@@ -937,7 +937,7 @@ declare module "muhammara" {
       layout?: number|string;
       opacity?: number;
       rotation?: number;
-      rotationOrigin?: number[];
+      rotationOrigin?: [number, number];
       font?: string;
       size?: number;
       align?: string;
