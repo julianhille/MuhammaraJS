@@ -929,6 +929,7 @@ declare module "muhammara" {
     }
 
     interface TextOptions {
+      charSpace?: number;
       color?: string | number[];
       opacity?: number;
       rotation?: number;
