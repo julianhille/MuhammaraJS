@@ -904,6 +904,7 @@ declare module "muhammara" {
     }
 
     interface OverlayOptions {
+      page?: number;
       scale?: number;
       keepAspectRatio?: boolean;
       fitWidth?: boolean;
