@@ -932,6 +932,7 @@ declare module "muhammara" {
       charSpace?: number;
       color?: string | number[];
       flow?: boolean;
+      layout?: number|string;
       opacity?: number;
       rotation?: number;
       rotationOrigin?: number[];
