@@ -904,6 +904,7 @@ declare module "muhammara" {
     }
 
     interface OverlayOptions {
+      page?: number;
       scale?: number;
       keepAspectRatio?: boolean;
       fitWidth?: boolean;
@@ -929,16 +930,26 @@ declare module "muhammara" {
     }
 
     interface TextOptions {
+      charSpace?: number;
       color?: string | number[];
+      flow?: boolean;
+      overflow?: () => void;
+      layout?: number | string;
       opacity?: number;
       rotation?: number;
-      rotationOrigin?: number[];
+      rotationOrigin?: [number, number];
       font?: string;
       size?: number;
       align?: string;
       highlight?: boolean;
       underline?: boolean;
       strikeOut?: boolean;
+      hilite?:
+        | boolean
+        | {
+            color?: string | number[];
+            opacity?: number;
+          };
       textBox?: TextBox;
     }
 
@@ -993,7 +1004,7 @@ declare module "muhammara" {
   }
 
   export class Recipe {
-    constructor(src: string, output: string, options?: Recipe.RecipeOptions);
+    constructor(src: string, output?: string, options?: Recipe.RecipeOptions);
 
     constructor(buffer: Buffer, options?: Recipe.RecipeOptions);
 
@@ -1047,7 +1058,12 @@ declare module "muhammara" {
 
     editPage(pageNumber: number): Recipe;
 
-    pageInfo(pageNumber: number): Recipe;
+    pageInfo(pageNumber: number): {
+      width: number;
+      height: number;
+      rotate: number;
+      pageNumber: number;
+    };
 
     split(outputDir: string, prefix: string): Recipe;
 

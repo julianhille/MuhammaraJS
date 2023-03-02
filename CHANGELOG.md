@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Recipe type / arg documentation
+
 ## [3.8.0] - 2023-03-01
 
 ### Added
