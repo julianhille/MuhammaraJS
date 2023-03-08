@@ -263,6 +263,7 @@ declare module "muhammara" {
 
   export interface WriteTextOptions extends FontOptions, ColorOptions {
     underline?: boolean;
+    lineWidth?: number;
   }
 
   export interface XObjectContentContext extends AbstractContentContext {}
