@@ -883,6 +883,7 @@ declare module "muhammara" {
     interface EncryptOptions {
       password?: string;
       ownerPassword?: string;
+      userPassword?: string;
       userProtectionFlag?: number;
     }
 
