@@ -1,13 +1,13 @@
-So, let's see how to use Hummus to build a PDF, and write it directly to the stream.
-The example shows basics of using Hummus, creating a PDF stream, adding a page to it, and some text.
+So, let's see how to use muhammara to build a PDF, and write it directly to the stream.
+The example shows basics of using Muhammara, creating a PDF stream, adding a page to it, and some text.
 
 The full code listing is in [here](../samples/PDFServer.js).
 
 We'll start by creating a new script file, name it PDFServer.js.  
-use npm install to get express and hummus:
+use npm install to get express and Muhammara:
 
     npm install express
-    npm install hummus
+    npm install muhammara
 
 Now let's write some basic server code using express. This parts is plain express, so just grab it as is:
 
@@ -28,14 +28,14 @@ This code simply creates a server that listens to port 3000. Note that the respo
 
 Now, we'll write some PDF code. The following should be placed where the comment is.
 
-start by fetching the hummus module and create a PDF writer:
+start by fetching the muhammara module and create a PDF writer:
 
 ```javascript
-var hummus = require("hummus");
-var pdfWriter = hummus.createWriter(new hummus.PDFStreamForResponse(res));
+var muhammara = require("muhammara");
+var pdfWriter = muhammara.createWriter(new muhammara.PDFStreamForResponse(res));
 ```
 
-The code uses `hummus.createWriter` method to create a PDF file writer. This method can receive either a string denoting a file path, or an object. The object, if provided, is a custom stream object. In this case it's an instance of `PDFStreamForResponse` class, which is an implementation of a custom stream writing to the server response object.
+The code uses `muhammara.createWriter` method to create a PDF file writer. This method can receive either a string denoting a file path, or an object. The object, if provided, is a custom stream object. In this case it's an instance of `PDFStreamForResponse` class, which is an implementation of a custom stream writing to the server response object.
 
 Next, we'll start a page:
 
