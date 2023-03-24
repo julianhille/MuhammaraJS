@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Recipe infos to readme
 
+### Removed
+
+- Dependency to static-eval and static-module as they are not used directly
+
 ## [3.8.0] - 2023-03-01
 
 ### Added
