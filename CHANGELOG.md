@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add electron 23.2.
 - Recipe infos to readme
 
 ## [3.8.0] - 2023-03-01
