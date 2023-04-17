@@ -973,6 +973,7 @@ declare module "muhammara" {
       highlight?: boolean;
       underline?: boolean;
       strikeOut?: boolean;
+      html?: boolean;
       hilite?:
         | boolean
         | {
