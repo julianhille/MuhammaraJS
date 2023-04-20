@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Dependency to static-eval and static-module as they are not used directly
 
+### Changed
+
+- Older node ubuntu 18.04 builds are now building on docker, as github actions removed 18.04
+
 ## [3.8.0] - 2023-03-01
 
 ### Added
