@@ -185,7 +185,7 @@ jobs:
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
-          npm_config_msbuild_path: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
+          npm_config_msbuild_path: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
           npm_config_target_arch: ${{ matrix.target_architecture }}
           npm_config_target: ${{ matrix.electron }}
           npm_config_disturl: https://artifacts.electronjs.org/headers/dist
