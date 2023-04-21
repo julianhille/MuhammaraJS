@@ -625,6 +625,7 @@ jobs:
         build-electron-old,
         build-node,
         build-node-old,
+        build-node-old-linux,
       ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
