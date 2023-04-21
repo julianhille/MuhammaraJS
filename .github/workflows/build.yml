@@ -140,7 +140,7 @@ jobs:
       matrix:
         os: [ubuntu-20.04, macos-11, windows-2019]
         architecture: [x64, ia32, arm64]
-        electron: [23.2.0, 23.1.0, 23.0.0]
+        electron: [24.0.0, 23.2.0, 23.1.0, 23.0.0]
         include:
           - electron_mocha_version: ^11
             python_version: "3.10"
@@ -156,6 +156,8 @@ jobs:
             target_architecture: x64
           - architecture: x64
             node: 16.13.2
+          - electron: 24.0.0
+            node: 18.12.1
           - electron: 23.2.0
             node: 18.12.1
           - electron: 23.1.0
