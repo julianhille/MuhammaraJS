@@ -224,7 +224,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, macos-11, windows-2019]
+        os: [macos-11, windows-2019]
         architecture: [x64, ia32, arm64]
         electron:
           [
@@ -391,8 +391,6 @@ jobs:
             architecture: arm64
           - os: windows-2019
             architecture: arm64
-          - os: ubuntu-18.04
-            architecture: ia32
           - architecture: arm64
             electron: 11.4.7
           - architecture: arm64
