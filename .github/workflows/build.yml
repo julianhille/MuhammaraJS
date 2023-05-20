@@ -197,7 +197,7 @@ jobs:
         uses: coactions/setup-xvfb@v1
         with:
           working-directory: ./ #optional
-          run: npm run test:electron -- --no-sandbox --disable-dev-shm-usage
+          run: env && npm run test:electron -- --no-sandbox --disable-dev-shm-usage
         if: ${{ matrix.target_architecture != 'arm64' }}
         env:
           DISPLAY: ":99:0"
