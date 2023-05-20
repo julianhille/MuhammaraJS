@@ -200,7 +200,7 @@ jobs:
           run: npm run test:electron -- --no-sandbox --disable-dev-shm-usage
         if: ${{ matrix.target_architecture != 'arm64' }}
         env:
-          DISPLAY: ":99"
+          DISPLAY: ":99:0"
           APP_DATA_PATH: /tmp/${_deviceId}/
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
         env:
