@@ -197,10 +197,11 @@ jobs:
         uses: coactions/setup-xvfb@v1
         with:
           working-directory: ./ #optional
-          run: npm run test:electron -- --no-sandbox
+          run: npm run test:electron -- --no-sandbox --disable-dev-shm-usage
         if: ${{ matrix.target_architecture != 'arm64' }}
         env:
-          DISPLAY: ":0"
+          DISPLAY: ":99"
+          APP_DATA_PATH: /tmp/${_deviceId}/
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
         env:
           npm_config_runtime: electron
