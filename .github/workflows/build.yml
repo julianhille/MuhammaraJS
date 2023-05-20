@@ -194,7 +194,7 @@ jobs:
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
       - run: npm install -g electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
       - name: Run test
-        uses: GabrielBB/xvfb-action@v1
+        uses: coactions/setup-xvfb@v1
         with:
           working-directory: ./ #optional
           run: npm run test:electron -- --no-sandbox
