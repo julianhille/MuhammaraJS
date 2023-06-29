@@ -5,7 +5,6 @@ const htmlCodes = fs.readFileSync(
   path.join(__dirname, "../TestMaterials/recipe/text.html"),
   "utf8"
 );
-const muhammara = require("../../lib/muhammara");
 
 describe("Text", () => {
   it("Add watermark", (done) => {
