@@ -5,6 +5,7 @@ const htmlCodes = fs.readFileSync(
   path.join(__dirname, "../TestMaterials/recipe/text.html"),
   "utf8"
 );
+const muhammara = require("../../lib/muhammara");
 
 describe("Text", () => {
   it("Add watermark", (done) => {
@@ -247,8 +248,9 @@ describe("Text", () => {
             opacity: 0.3,
           },
         },
-        // html: true,
+        html: true,
         font: "Helvetica",
+        size: 14,
         color: "#813b00",
         align: "center bottom",
       })
@@ -326,7 +328,7 @@ describe("Text", () => {
         opacity: 0.4,
       })
       .text(textContent, "center", 400, {
-        // html: true,
+        html: true,
         textBox: {
           width: 500,
           lineHeight: 16,
@@ -341,6 +343,7 @@ describe("Text", () => {
           },
         },
         font: "Helvetica",
+        size: 14,
         color: "#813b00",
         align: "center bottom",
       })
@@ -350,7 +353,7 @@ describe("Text", () => {
         opacity: 0.4,
       })
       .text(textContent, 500, 550, {
-        // html: true,
+        html: true,
         textBox: {
           width: 400,
           lineHeight: 30,
@@ -366,6 +369,7 @@ describe("Text", () => {
           },
         },
         font: "Roboto",
+        size: 12,
         color: "#000000",
         align: "right",
       })
@@ -416,7 +420,7 @@ describe("Text", () => {
         opacity: 0.4,
       })
       .text(textContent, "center", 400, {
-        // html: true,
+        html: true,
         textBox: {
           width: 500,
           lineHeight: 16,
@@ -431,6 +435,7 @@ describe("Text", () => {
           },
         },
         font: "Helvetica",
+        size: 14,
         color: "#813b00",
         align: "center bottom",
       })
@@ -440,7 +445,7 @@ describe("Text", () => {
         opacity: 0.4,
       })
       .text(textContent, 500, 550, {
-        // html: true,
+        html: true,
         textBox: {
           width: 400,
           lineHeight: 30,
@@ -456,6 +461,7 @@ describe("Text", () => {
           },
         },
         font: "Roboto",
+        size: 12,
         color: "#000000",
         align: "right",
       })
