@@ -491,5 +491,4 @@ describe("Text", () => {
       .endPage()
       .endPDF(done);
   });
-
 });
