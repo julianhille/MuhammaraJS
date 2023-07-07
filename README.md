@@ -36,7 +36,7 @@ Version 3.x has breaking changes:
 - Node < 11 and Electron < 11 removed the prebuilts
 - Renamed typo exported value from eTokenSeprator to eTokenSeparator
 
-This wont affect alot of you but still.
+This won't affect alot of you but still.
 
 # Installation
 
