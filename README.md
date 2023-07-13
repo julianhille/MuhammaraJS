@@ -28,15 +28,26 @@ It serves as a drop in replacement.
 
 # Caution
 
-Version 2.0 will be incompatible with some older node and
+## Breaking changes
+
+### Version 2.0 
+
+will be incompatible with some older node and
 electron versions because we needed to upgrade node-pre-gyp.
 
-Version 3.x has breaking changes:
+### Version 3.x
 
 - Node < 11 and Electron < 11 removed the prebuilts
 - Renamed typo exported value from eTokenSeprator to eTokenSeparator
 
-This won't affect alot of you but still.
+This won't affect a lot of you but still.
+
+### Version 4.x
+
+- Node < 15 and electron < 15 pre-builts have been removed
+- Ubuntu 18.04 has been removed from github actions and so it is unable to build on 18.04.
+  This means the glibc has been raised to 2.31 which might break pre-builts for you.
+  It is still possible to build for older glibc version.
 
 # Installation
 

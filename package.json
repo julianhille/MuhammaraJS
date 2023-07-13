@@ -1,6 +1,6 @@
 {
   "name": "muhammara",
-  "version": "3.8.0",
+  "version": "4.0.0",
   "description": "Create, read and modify PDF files and streams. A drop in replacement for hummusjs PDF library",
   "homepage": "https://github.com/julianhille/Muhammarajs",
   "license": "Apache-2.0",
@@ -8,7 +8,7 @@
   "main": "./lib/index.js",
   "types": "./muhammara.d.ts",
   "engines": {
-    "node": ">=11"
+    "node": ">=15"
   },
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build ${EXTRA_NODE_PRE_GYP_FLAGS:-\"\"}",
@@ -37,7 +37,7 @@
     "muhammara.d.ts"
   ],
   "dependencies": {
-    "@mapbox/node-pre-gyp": "^1.0.5",
+    "@mapbox/node-pre-gyp": "^1.0.10",
     "linebreak": "^1.1.0",
     "memory-streams": "^0.1.3",
     "@xmldom/xmldom": "^0.8.6"
