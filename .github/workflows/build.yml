@@ -121,6 +121,7 @@ jobs:
         electron:
           [
             24.0.0,
+            23.3.0,
             23.2.0,
             23.1.0,
             23.0.0,
@@ -170,6 +171,8 @@ jobs:
           - architecture: x64
             node: 16.13.2
           - electron: 24.0.0
+            node: 18.14.0
+          - electron: 23.3.0
             node: 18.12.1
           - electron: 23.2.0
             node: 18.12.1
