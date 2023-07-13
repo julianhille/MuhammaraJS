@@ -30,7 +30,7 @@ It serves as a drop in replacement.
 
 ## Breaking changes
 
-### Version 2.0 
+### Version 2.x
 
 will be incompatible with some older node and
 electron versions because we needed to upgrade node-pre-gyp.
