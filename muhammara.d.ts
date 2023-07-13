@@ -880,6 +880,11 @@ declare module "muhammara" {
       icon?: AnnotOptionsIcon;
       width?: number;
       height?: number;
+      replies?: Array<AnnotReply>;
+    }
+
+    interface AnnotReply {
+      text: string;
     }
 
     interface EncryptOptions {
