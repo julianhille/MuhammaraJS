@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Strikethrough implementation in text object
 - Add electron 23.2., 23.3
 - Recipe infos to readme
-- Electron v24.0.0
+- Electron v24.1, 24.2, 24.3, 24.4, 24.5, 24.6
 
 ### Removed
 
