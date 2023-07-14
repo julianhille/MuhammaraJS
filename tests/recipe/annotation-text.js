@@ -110,33 +110,28 @@ describe("Annotation: Text Annotations", () => {
     const recipe = new HummusRecipe("new", output);
 
     const replies1 = [{
-        id: 1,
-        type: 'text',
+        type: 'Text',
         text: 'first reply to annotation 1',
-        createdAt: 'some date time string',
+        date: '2023-07-07T06:36:28.090Z',
       }, {
-        id: 2,
-        type: 'text',
+        type: 'Text',
         text: 'second reply to annotation 1',
-        createdAt: 'some date time string',
+        date: '2023-07-07T06:40:48.090Z',
       }, {
-        id: 3,
-        type: 'text',
+        type: 'Text',
         text: 'third reply to annotation 1',
-        createdAt: 'some date time string',
+        date: '2023-07-07T06:42:21.090Z',
       }];
 
     
     const replies2 = [{
-        id: 10,
-        type: 'text',
+        type: 'Text',
         text: 'first reply to annotation 2',
-        createdAt: 'some date time string',
+        date: '2023-07-10T08:44:32.090Z',
       }, {
-        id: 11,
-        type: 'text',
+        type: 'Text',
         text: 'second reply to annotation 2',
-        createdAt: 'some date time string',
+        date: '2023-07-10T08:50:12.090Z',
       }];
 
 
@@ -148,6 +143,7 @@ describe("Annotation: Text Annotations", () => {
         height: 30,
         border: 10,
         color: [255, 128, 128],
+        date: '2023-07-07T04:14:30.090Z',
         replies: replies1,
       })
       .text("This text should be highlighted.", 50, 100)
@@ -155,6 +151,7 @@ describe("Annotation: Text Annotations", () => {
         text: "Yes, it is. Annotation 2",
         width: 200,
         height: 18,
+        date: '2023-07-09T18:36:50.090Z',
         replies: replies2,
       })
       .circle(50, 150, 2, { stroke: "#3b7721" })
