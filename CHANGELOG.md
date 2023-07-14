@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [4.0.0] - 2023-07-14
+
 ### Fixed
 
 - Underline in text object
@@ -391,7 +393,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/3.8.0...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/4.0.0...HEAD
+[4.0.0]: https://github.com/julianhille/MuhammaraJS/compare/3.8.0...4.0.0
 [3.8.0]: https://github.com/julianhille/MuhammaraJS/compare/3.7.0...3.8.0
 [3.7.0]: https://github.com/julianhille/MuhammaraJS/compare/3.6.0...3.7.0
 [3.6.0]: https://github.com/julianhille/MuhammaraJS/compare/3.5.0...3.6.0
