@@ -27,10 +27,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 
 - Dependency to static-eval and static-module as they are not used directly
+- Node versions: 11.x - 14.x
+- Electron versions: 11.x - 14.2
 
 ### Changed
 
+- Updated node-gyp version to 1.0.10
 - Older node ubuntu 18.04 builds are now building on docker, as github actions removed 18.04
+- CI linux builds use ubuntu 20.04 instead of 18.04 -> glibc Update, see readme for breaking changes in v4
 
 ## [3.8.0] - 2023-03-01
 
