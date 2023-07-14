@@ -820,6 +820,7 @@ declare module "muhammara" {
 
     type AnnotSubtype =
       | "Text"
+      | "Link"
       | "FreeText"
       | "Line"
       | "Square"
@@ -830,11 +831,22 @@ declare module "muhammara" {
       | "Underline"
       | "Squiggly"
       | "StrikeOut"
-      | "Stamp"
       | "Caret"
+      | "Stamp"
       | "Ink"
+      | "Popup"
       | "FileAttachment"
-      | "Sound";
+      | "Sound"
+      | "Movie"
+      | "Screen"
+      | "Widget"
+      | "PrinterMark"
+      | "TrapNet"
+      | "Watermark"
+      | "3D"
+      | "Redact"
+      | "Projection"
+      | "RichMedia";
 
     type AnnotOptionsFlag =
       | "invisible"
@@ -880,10 +892,13 @@ declare module "muhammara" {
       icon?: AnnotOptionsIcon;
       width?: number;
       height?: number;
+      date?: string;
       replies?: Array<AnnotReply>;
     }
 
     interface AnnotReply {
+      type?: AnnotSubtype;
+      date?: string;
       text: string;
     }
 
