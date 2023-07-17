@@ -158,6 +158,7 @@ describe("Annotation: Text Annotations", () => {
       .text("This text should be highlighted as well.", 50, 150, {
         highlight: true,
         size: 8,
+        date: '2023-07-10T05:15:32.090Z',
       })
       .text("This text should be highlighted with custom value.", 50, 200, {
         highlight: {
@@ -165,6 +166,7 @@ describe("Annotation: Text Annotations", () => {
           text: "Is this a green highlight?",
         },
         size: 20,
+        date: '2023-07-11T06:28:42.090Z',
       })
       .text("This text should be underlined with custom value.", 50, 250, {
         underline: {
@@ -172,6 +174,7 @@ describe("Annotation: Text Annotations", () => {
           text: "Underline!",
         },
         size: 30,
+        date: '2023-07-12T07:14:45.090Z',
       })
       .text(
         "This text should be Squiggly underlined with custom value.",
@@ -182,18 +185,20 @@ describe("Annotation: Text Annotations", () => {
             color: [100, 0, 255],
             text: "Squiggly!",
           },
+          date: '2023-07-13T08:39:21.090Z',
         }
       )
       .text("This text should be striked out with custom value.", 50, 350, {
         strikeOut: {
           color: [77, 77, 77],
-          text: "StriketOut!",
+          text: "StrikedOut!",
         },
+        date: '2023-07-14T09:49:52.090Z',
       })
-      .text("This text should be striked out and highlighted.", 50, 400, {
+      .text("This text should be striked out and highlighted. Does not have date", 50, 400, {
         strikeOut: {
           color: [77, 77, 77],
-          text: "StriketOut!",
+          text: "StrikedOut!",
         },
         highlight: {
           color: [255, 0, 0],

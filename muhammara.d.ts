@@ -974,6 +974,7 @@ declare module "muhammara" {
             opacity?: number;
           };
       textBox?: TextBox;
+      date?: string;
     }
 
     interface LineToOptions {
