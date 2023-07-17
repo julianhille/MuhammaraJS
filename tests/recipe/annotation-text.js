@@ -70,7 +70,7 @@ describe("Annotation: Text Annotations", () => {
       .endPDF(done);
   });
 
-  it("Add a hightlight with text box.", (done) => {
+  it("Add a highlight with text box.", (done) => {
     const output = path.join(
       __dirname,
       "../output/annotation-with-textbox.pdf"
@@ -110,26 +110,26 @@ describe("Annotation: Text Annotations", () => {
     const recipe = new HummusRecipe("new", output);
 
     const replies1 = [{
-        type: 'Text',
+        subtype: 'Text',
         text: 'first reply to annotation 1',
         date: '2023-07-07T06:36:28.090Z',
       }, {
-        type: 'Text',
+        subtype: 'Text',
         text: 'second reply to annotation 1',
         date: '2023-07-07T06:40:48.090Z',
       }, {
-        type: 'Text',
+        subtype: 'Text',
         text: 'third reply to annotation 1',
         date: '2023-07-07T06:42:21.090Z',
       }];
 
     
     const replies2 = [{
-        type: 'Text',
+        subtype: 'Text',
         text: 'first reply to annotation 2',
         date: '2023-07-10T08:44:32.090Z',
       }, {
-        type: 'Text',
+        subtype: 'Text',
         text: 'second reply to annotation 2',
         date: '2023-07-10T08:50:12.090Z',
       }];

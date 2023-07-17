@@ -897,7 +897,7 @@ declare module "muhammara" {
     }
 
     interface AnnotReply {
-      type?: AnnotSubtype;
+      subtype?: AnnotSubtype;
       date?: string;
       text: string;
     }
