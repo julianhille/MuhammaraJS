@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Tests for underline, strikethrough, and highlights in textboxes
+- Tests for bold, italic, underline, strikethrough, and highlights in textboxes
 
 ## [4.1.0] - 2023-12-13
 
