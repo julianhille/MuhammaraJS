@@ -981,10 +981,13 @@ declare module "muhammara" {
             opacity?: number;
           };
       textBox?: TextBox;
-      date?: string;
       title?: string;
+      open?: boolean;
+      richText?: boolean;
+      flag?: AnnotOptionsFlag;
+      icon?: AnnotOptionsIcon;
+      date?: string;
       subject?: string;
-      name?: string;
     }
 
     interface LineToOptions {
