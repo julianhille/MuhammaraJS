@@ -112,26 +112,56 @@ describe("Annotation: Text Annotations", () => {
     const replies1 = [{
         subtype: 'Text',
         text: 'first reply to annotation 1',
-        date: '2023-07-07T06:36:28.090Z',
+        title: 'Linus Torvalds',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'Comment',
+        date: '2023-07-07T13:37:00.000Z',
+        subject: 'A subject 1',
       }, {
         subtype: 'Text',
         text: 'second reply to annotation 1',
+        title: 'Greg Kroah-Hartman',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'Key',
         date: '2023-07-07T06:40:48.090Z',
+        subject: 'A subject 2',
       }, {
         subtype: 'Text',
         text: 'third reply to annotation 1',
+        title: 'Dirk Hohndel',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'Note',
         date: '2023-07-07T06:42:21.090Z',
+        subject: 'A subject 3',
       }];
 
     
     const replies2 = [{
         subtype: 'Text',
         text: 'first reply to annotation 2',
+        title: 'Junio C Hamano',
+        open: true,
+        richText: false,
+        flag: '',
+        // icon: 'Help',
         date: '2023-07-10T08:44:32.090Z',
+        subject: 'A subject 10',
       }, {
         subtype: 'Text',
         text: 'second reply to annotation 2',
+        title: 'Tejun Heo',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'NewParagraph',
         date: '2023-07-10T08:50:12.090Z',
+        subject: 'A subject 11',
       }];
 
 
@@ -143,7 +173,13 @@ describe("Annotation: Text Annotations", () => {
         height: 30,
         border: 10,
         color: [255, 128, 128],
+        title: 'Ken Thompson',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'Paragraph',
         date: '2023-07-07T04:14:30.090Z',
+        subject: 'A subject 20',
         replies: replies1,
       })
       .text("This text should be highlighted.", 50, 100)
@@ -151,14 +187,26 @@ describe("Annotation: Text Annotations", () => {
         text: "Yes, it is. Annotation 2",
         width: 200,
         height: 18,
+        title: 'Dennis Ritchie',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'Insert',
         date: '2023-07-09T18:36:50.090Z',
+        subject: 'A subject 21',
         replies: replies2,
       })
       .circle(50, 150, 2, { stroke: "#3b7721" })
       .text("This text should be highlighted as well.", 50, 150, {
         highlight: true,
         size: 8,
+        title: 'Brian Kernighan',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'Comment',
         date: '2023-07-10T05:15:32.090Z',
+        subject: 'A subject 22',
       })
       .text("This text should be highlighted with custom value.", 50, 200, {
         highlight: {
@@ -166,7 +214,13 @@ describe("Annotation: Text Annotations", () => {
           text: "Is this a green highlight?",
         },
         size: 20,
+        title: 'Bjarne Stroustrup',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'Comment',
         date: '2023-07-11T06:28:42.090Z',
+        subject: 'A subject 23',
       })
       .text("This text should be underlined with custom value.", 50, 250, {
         underline: {
@@ -174,7 +228,13 @@ describe("Annotation: Text Annotations", () => {
           text: "Underline!",
         },
         size: 30,
+        title: 'Guido van Rossum',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'Comment',
         date: '2023-07-12T07:14:45.090Z',
+        subject: 'A subject 24',
       })
       .text(
         "This text should be Squiggly underlined with custom value.",
@@ -185,7 +245,13 @@ describe("Annotation: Text Annotations", () => {
             color: [100, 0, 255],
             text: "Squiggly!",
           },
+          title: 'Richard Stallman',
+          // open: true,
+          // richText: false,
+          // flag: '',
+          // icon: 'Comment',
           date: '2023-07-13T08:39:21.090Z',
+          subject: 'A subject 25',
         }
       )
       .text("This text should be striked out with custom value.", 50, 350, {
@@ -193,7 +259,13 @@ describe("Annotation: Text Annotations", () => {
           color: [77, 77, 77],
           text: "StrikedOut!",
         },
+        title: 'Gabe Newell',
+        // open: false,
+        // richText: false,
+        // flag: '',
+        // icon: 'Comment',
         date: '2023-07-14T09:49:52.090Z',
+        subject: 'A subject 26',
       })
       .text("This text should be striked out and highlighted. Does not have date", 50, 400, {
         strikeOut: {
@@ -204,6 +276,13 @@ describe("Annotation: Text Annotations", () => {
           color: [255, 0, 0],
         },
         size: 25,
+        title: 'Evan You',
+        // open: true,
+        // richText: false,
+        // flag: '',
+        // icon: 'Comment',
+        // date: '2023-07-15T21:42:12.090Z',
+        subject: 'A subject 27',
       })
       .endPage()
       .endPDF(done);

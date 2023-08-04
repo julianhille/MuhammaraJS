@@ -893,13 +893,20 @@ declare module "muhammara" {
       width?: number;
       height?: number;
       date?: string;
+      subject?: string;
       replies?: Array<AnnotReply>;
     }
 
     interface AnnotReply {
       subtype?: AnnotSubtype;
-      date?: string;
       text: string;
+      title?: string;
+      open?: boolean;
+      richText?: boolean;
+      flag?: AnnotOptionsFlag;
+      icon?: AnnotOptionsIcon;
+      date?: string;
+      subject?: string;
     }
 
     interface EncryptOptions {
@@ -975,6 +982,9 @@ declare module "muhammara" {
           };
       textBox?: TextBox;
       date?: string;
+      title?: string;
+      subject?: string;
+      name?: string;
     }
 
     interface LineToOptions {
