@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- definitions: appendPage optionnal parameter
+
 ## [4.0.0] - 2023-07-14
 
 ### Fixed
