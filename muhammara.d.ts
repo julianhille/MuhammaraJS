@@ -857,7 +857,8 @@ declare module "muhammara" {
       | "noview"
       | "readonly"
       | "locked"
-      | "togglenoview";
+      | "togglenoview"
+      | "lockedcontents";
 
     type AnnotOptionsIcon =
       | "Comment"
@@ -901,10 +902,8 @@ declare module "muhammara" {
       subtype?: AnnotSubtype;
       text: string;
       title?: string;
-      open?: boolean;
       richText?: boolean;
       flag?: AnnotOptionsFlag;
-      icon?: AnnotOptionsIcon;
       date?: string;
       subject?: string;
     }
