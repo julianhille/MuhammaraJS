@@ -169,7 +169,7 @@ describe("Annotation: Text Annotations", () => {
         flag: "",
         date: "2023-09-07T11:45:32.090Z",
         subject: "Another subject",
-      }
+      },
     ];
 
     const richText = [
