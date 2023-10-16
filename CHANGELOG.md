@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Electron v24.1, 24.2, 24.3, 24.4, 24.5, 24.6
 - Add node 20.x
 - Add electron v25.0, 25.1, 25.2, 25.3
+- Option to add annotation replies to annotations
+- Textboxes now show title and date as annotations in pdfs
 
 ### Removed
 

@@ -820,6 +820,7 @@ declare module "muhammara" {
 
     type AnnotSubtype =
       | "Text"
+      | "Link"
       | "FreeText"
       | "Line"
       | "Square"
@@ -830,11 +831,22 @@ declare module "muhammara" {
       | "Underline"
       | "Squiggly"
       | "StrikeOut"
-      | "Stamp"
       | "Caret"
+      | "Stamp"
       | "Ink"
+      | "Popup"
       | "FileAttachment"
-      | "Sound";
+      | "Sound"
+      | "Movie"
+      | "Screen"
+      | "Widget"
+      | "PrinterMark"
+      | "TrapNet"
+      | "Watermark"
+      | "3D"
+      | "Redact"
+      | "Projection"
+      | "RichMedia";
 
     type AnnotOptionsFlag =
       | "invisible"
@@ -845,7 +857,8 @@ declare module "muhammara" {
       | "noview"
       | "readonly"
       | "locked"
-      | "togglenoview";
+      | "togglenoview"
+      | "lockedcontents";
 
     type AnnotOptionsIcon =
       | "Comment"
@@ -880,6 +893,19 @@ declare module "muhammara" {
       icon?: AnnotOptionsIcon;
       width?: number;
       height?: number;
+      date?: string;
+      subject?: string;
+      replies?: Array<AnnotReply>;
+    }
+
+    interface AnnotReply {
+      subtype?: AnnotSubtype;
+      text: string;
+      title?: string;
+      richText?: boolean;
+      flag?: AnnotOptionsFlag;
+      date?: string;
+      subject?: string;
     }
 
     interface EncryptOptions {
@@ -954,6 +980,13 @@ declare module "muhammara" {
             opacity?: number;
           };
       textBox?: TextBox;
+      title?: string;
+      open?: boolean;
+      richText?: boolean;
+      flag?: AnnotOptionsFlag;
+      icon?: AnnotOptionsIcon;
+      date?: string;
+      subject?: string;
     }
 
     interface LineToOptions {
