@@ -1040,9 +1040,8 @@ declare module "muhammara" {
   }
 
   export class Recipe {
-    constructor(src: string, output?: string, options?: Recipe.RecipeOptions);
-
-    constructor(buffer: Buffer, options?: Recipe.RecipeOptions);
+    constructor(src: string, output?: string | null, options?: Recipe.RecipeOptions);
+    constructor(buffer: Buffer, output?: string | null, options?: Recipe.RecipeOptions);
 
     comment(
       text: string,
