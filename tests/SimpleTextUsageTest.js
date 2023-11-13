@@ -3,14 +3,14 @@ var muhammara = require("../lib/muhammara");
 describe("SimpleTextUsageTest", function () {
   it("should complete without error", function () {
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/SimpleTextUsageCFF.pdf"
+      __dirname + "/output/SimpleTextUsageCFF.pdf",
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
     var font = pdfWriter.getFontForFile(
-      __dirname + "/TestMaterials/fonts/BrushScriptStd.otf"
+      __dirname + "/TestMaterials/fonts/BrushScriptStd.otf",
     );
     var fontK = pdfWriter.getFontForFile(
-      __dirname + "/TestMaterials/fonts/KozGoPro-Regular.otf"
+      __dirname + "/TestMaterials/fonts/KozGoPro-Regular.otf",
     );
     pdfWriter
       .startPageContentContext(page)
@@ -31,12 +31,12 @@ describe("SimpleTextUsageTest", function () {
     // ---
 
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/SimpleTextUsageTTF.pdf"
+      __dirname + "/output/SimpleTextUsageTTF.pdf",
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
 
     var font = pdfWriter.getFontForFile(
-      __dirname + "/TestMaterials/fonts/arial.ttf"
+      __dirname + "/TestMaterials/fonts/arial.ttf",
     );
     pdfWriter
       .startPageContentContext(page)
@@ -52,12 +52,12 @@ describe("SimpleTextUsageTest", function () {
     // ---
 
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/SimpleTextUsageType1.pdf"
+      __dirname + "/output/SimpleTextUsageType1.pdf",
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
     var font = pdfWriter.getFontForFile(
       __dirname + "/TestMaterials/fonts/HLB_____.PFB",
-      __dirname + "/TestMaterials/fonts/HLB_____.PFM"
+      __dirname + "/TestMaterials/fonts/HLB_____.PFM",
     );
     pdfWriter
       .startPageContentContext(page)
@@ -74,12 +74,12 @@ describe("SimpleTextUsageTest", function () {
 
     // this one is about creating a font object, but not really using it. make sure no crash happens
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/SimpleTextUsageType1Empty.pdf"
+      __dirname + "/output/SimpleTextUsageType1Empty.pdf",
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
     var font = pdfWriter.getFontForFile(
       __dirname + "/TestMaterials/fonts/HLB_____.PFB",
-      __dirname + "/TestMaterials/fonts/HLB_____.PFM"
+      __dirname + "/TestMaterials/fonts/HLB_____.PFM",
     );
     pdfWriter
       .startPageContentContext(page)
@@ -95,11 +95,11 @@ describe("SimpleTextUsageTest", function () {
 
     // this one adds text using the GlyphIds
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/SimpleTextUsageGlyphs.pdf"
+      __dirname + "/output/SimpleTextUsageGlyphs.pdf",
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
     var font = pdfWriter.getFontForFile(
-      __dirname + "/TestMaterials/fonts/arial.ttf"
+      __dirname + "/TestMaterials/fonts/arial.ttf",
     );
     pdfWriter
       .startPageContentContext(page)

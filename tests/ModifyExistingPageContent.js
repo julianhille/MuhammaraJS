@@ -7,7 +7,7 @@ describe("ModifyExistingPageContent", function () {
       {
         modifiedFilePath:
           __dirname + "/output/BasicJPGImagesTestPageModified.pdf",
-      }
+      },
     );
 
     var pageModifier = new muhammara.PDFPageModifier(pdfWriter, 0);
@@ -16,7 +16,7 @@ describe("ModifyExistingPageContent", function () {
       .getContext()
       .writeText("Test Text", 75, 805, {
         font: pdfWriter.getFontForFile(
-          __dirname + "/TestMaterials/fonts/Couri.ttf"
+          __dirname + "/TestMaterials/fonts/Couri.ttf",
         ),
         size: 14,
         colorspace: "gray",

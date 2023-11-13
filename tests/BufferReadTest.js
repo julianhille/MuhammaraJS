@@ -9,17 +9,17 @@ describe("BufferRead", function () {
     var stream = new muhammara.PDFRStreamForBuffer(buffer);
     assert.equal(
       stream.read(originalString.length * 10).length,
-      originalString.length
+      originalString.length,
     );
   });
 
   it("should be able to use buffer reader correctly to modify files", function () {
     var data = fs.readFileSync(
-      __dirname + "/TestMaterials/BasicJPGImagesTest.PDF"
+      __dirname + "/TestMaterials/BasicJPGImagesTest.PDF",
     );
     var source = new muhammara.PDFRStreamForBuffer(data);
     var target = new muhammara.PDFWStreamForFile(
-      __dirname + "/output/ModifiedFromBufferSource.pdf"
+      __dirname + "/output/ModifiedFromBufferSource.pdf",
     );
 
     var pdfWriter = muhammara.createWriterToModify(source, target);
@@ -29,7 +29,7 @@ describe("BufferRead", function () {
       .getContext()
       .writeText("Test Text", 75, 805, {
         font: pdfWriter.getFontForFile(
-          __dirname + "/TestMaterials/fonts/Couri.ttf"
+          __dirname + "/TestMaterials/fonts/Couri.ttf",
         ),
         size: 14,
         colorspace: "gray",

@@ -21,7 +21,7 @@ describe("Coloring", () => {
           [80, 430],
           [100, 430],
         ],
-        { lineWidth: 0.5 }
+        { lineWidth: 0.5 },
       )
       .endPage()
       .endPDF(done);
@@ -31,7 +31,7 @@ describe("Coloring", () => {
     const output = path.join(__dirname, "../output/color-special.pdf");
     const rgbColors = path.join(
       __dirname,
-      "../TestMaterials/recipe/rgb-colors.json"
+      "../TestMaterials/recipe/rgb-colors.json",
     );
     const lineOpt = { lineWidth: 0.5 };
     const recipe = new HummusRecipe(output, output, {
@@ -55,7 +55,7 @@ describe("Coloring", () => {
           [80, 70],
           [100, 70],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Purple", 100, 100, { bold: true, size: 20, color: "purple" })
       .line(
@@ -63,7 +63,7 @@ describe("Coloring", () => {
           [80, 100],
           [100, 100],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Yellow", 100, 130, { bold: true, size: 20, color: "yellow" })
       .line(
@@ -71,7 +71,7 @@ describe("Coloring", () => {
           [80, 130],
           [100, 130],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Fucia", 100, 160, { bold: true, size: 20, color: "fucia" })
       .line(
@@ -79,7 +79,7 @@ describe("Coloring", () => {
           [80, 160],
           [100, 160],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Magenta", 100, 190, {
         bold: true,
@@ -92,7 +92,7 @@ describe("Coloring", () => {
           [80, 190],
           [100, 190],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Defining Gold Here", 100, 220, {
         bold: true,
@@ -105,7 +105,7 @@ describe("Coloring", () => {
           [80, 220],
           [100, 220],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Using Gold Here", 100, 250, {
         bold: true,
@@ -117,7 +117,7 @@ describe("Coloring", () => {
           [80, 250],
           [100, 250],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Undefined color returns default color", 100, 280, {
         bold: true,
@@ -129,7 +129,7 @@ describe("Coloring", () => {
           [80, 280],
           [100, 280],
         ],
-        lineOpt
+        lineOpt,
       )
       .chroma("!load", rgbColors)
       .text("Burlywood from file load", 100, 310, {
@@ -142,7 +142,7 @@ describe("Coloring", () => {
           [80, 310],
           [100, 310],
         ],
-        lineOpt
+        lineOpt,
       )
       .endPage()
       .endPDF(done);
@@ -167,7 +167,7 @@ describe("Coloring", () => {
           [80, 460],
           [100, 460],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Separation color orange", 100, 490, {
         bold: true,
@@ -180,7 +180,7 @@ describe("Coloring", () => {
           [80, 490],
           [100, 490],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Pantone 1505 C, RGB", 100, 520, {
         bold: true,
@@ -193,7 +193,7 @@ describe("Coloring", () => {
           [80, 520],
           [100, 520],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Pantone 1505 C, CMYK", 100, 550, {
         bold: true,
@@ -206,7 +206,7 @@ describe("Coloring", () => {
           [80, 550],
           [100, 550],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("CMYK Direct", 100, 580, {
         bold: true,
@@ -219,7 +219,7 @@ describe("Coloring", () => {
           [80, 580],
           [100, 580],
         ],
-        lineOpt
+        lineOpt,
       )
       .text("Nan, a great PDF collaborator!", 100, 360, {
         bold: true,

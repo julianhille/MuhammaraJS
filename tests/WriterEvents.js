@@ -3,7 +3,7 @@ var assert = require("chai").assert;
 describe("WriterEvents", function () {
   it("should complete without error", function () {
     var pdfWriter = require("../lib/muhammara").createWriter(
-      __dirname + "/output/WriterEvents.pdf"
+      __dirname + "/output/WriterEvents.pdf",
     );
     var onCatalogWriteCalled = 0;
     var onPageWriteCalled = 0;
@@ -12,7 +12,7 @@ describe("WriterEvents", function () {
       assert.equal(
         !!eventParams.catalogDictionaryContext,
         true,
-        "catalogDictionaryContext exists"
+        "catalogDictionaryContext exists",
       );
       ++onCatalogWriteCalled;
     });
@@ -22,7 +22,7 @@ describe("WriterEvents", function () {
       assert.equal(
         !!eventParams.pageDictionaryContext,
         true,
-        "pageDictionaryContext exists"
+        "pageDictionaryContext exists",
       );
       ++onPageWriteCalled;
     });
@@ -32,7 +32,7 @@ describe("WriterEvents", function () {
 
     var textOptions = {
       font: pdfWriter.getFontForFile(
-        __dirname + "/TestMaterials/fonts/arial.ttf"
+        __dirname + "/TestMaterials/fonts/arial.ttf",
       ),
       size: 14,
       colorspace: "gray",
@@ -60,7 +60,7 @@ describe("WriterEvents", function () {
         440,
         223,
         540,
-        pathStrokeOptions
+        pathStrokeOptions,
       );
 
     pdfWriter.writePage(page);

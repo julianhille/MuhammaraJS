@@ -3,7 +3,7 @@ var muhammara = require("../lib/muhammara");
 describe("SimpleContentPageTest", function () {
   it("should complete without error", function () {
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/SimpleContentPageTest.pdf"
+      __dirname + "/output/SimpleContentPageTest.pdf",
     );
     var page = new muhammara.PDFPage(0, 0, 595, 842);
     var pageContent = pdfWriter.startPageContentContext(page);

@@ -3,11 +3,11 @@ var muhammara = require("../lib/muhammara");
 describe("PDFEmbedTest", function () {
   it("should complete without error", function () {
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/PDFEmbedTest.pdf"
+      __dirname + "/output/PDFEmbedTest.pdf",
     );
     var formIDs = pdfWriter.createFormXObjectsFromPDF(
       __dirname + "/TestMaterials/XObjectContent.PDF",
-      muhammara.ePDFPageBoxMediaBox
+      muhammara.ePDFPageBoxMediaBox,
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
 
@@ -16,7 +16,7 @@ describe("PDFEmbedTest", function () {
       .q()
       .cm(0.5, 0, 0, 0.5, 0, 421)
       .doXObject(
-        page.getResourcesDictionary().addFormXObjectMapping(formIDs[0])
+        page.getResourcesDictionary().addFormXObjectMapping(formIDs[0]),
       )
       .Q()
       .G(0)
@@ -26,7 +26,7 @@ describe("PDFEmbedTest", function () {
       .q()
       .cm(0.5, 0, 0, 0.5, 297.5, 0)
       .doXObject(
-        page.getResourcesDictionary().addFormXObjectMapping(formIDs[1])
+        page.getResourcesDictionary().addFormXObjectMapping(formIDs[1]),
       )
       .Q()
       .G(0)
