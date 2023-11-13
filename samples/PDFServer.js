@@ -7,7 +7,7 @@ app.get("/", function (req, res) {
   var muhammara = require("muhammara");
 
   var pdfWriter = muhammara.createWriter(
-    new muhammara.PDFStreamForResponse(res)
+    new muhammara.PDFStreamForResponse(res),
   );
   var page = pdfWriter.createPage(0, 0, 595, 842);
   pdfWriter

@@ -3,7 +3,7 @@ var muhammara = require("../lib/muhammara");
 describe("ImagesAndFormsForwardReferenceTest", function () {
   it("should complete without error", function () {
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/ImagesAndFormsForwardReferenceTest.PDF"
+      __dirname + "/output/ImagesAndFormsForwardReferenceTest.PDF",
     );
     var page = pdfWriter.createPage(0, 0, 595, 840);
     var pageContentContext = pdfWriter.startPageContentContext(page);
@@ -13,7 +13,7 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
     // allocate an id for an image, to be used later
     var imageXObjectID = pdfWriter.getObjectsContext().allocateNewObjectID();
     pageContentContext.doXObject(
-      page.getResourcesDictionary().addImageXObjectMapping(imageXObjectID)
+      page.getResourcesDictionary().addImageXObjectMapping(imageXObjectID),
     );
 
     // add required PDF procsets for image
@@ -26,7 +26,7 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
     var formXObjectID = pdfWriter.getObjectsContext().allocateNewObjectID();
     pageContentContext
       .doXObject(
-        page.getResourcesDictionary().addFormXObjectMapping(formXObjectID)
+        page.getResourcesDictionary().addFormXObjectMapping(formXObjectID),
       )
       .Q()
       .q();
@@ -34,7 +34,7 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
     var tiffFormXObjectID = pdfWriter.getObjectsContext().allocateNewObjectID();
     pageContentContext
       .doXObject(
-        page.getResourcesDictionary().addFormXObjectMapping(tiffFormXObjectID)
+        page.getResourcesDictionary().addFormXObjectMapping(tiffFormXObjectID),
       )
       .Q()
       .q()
@@ -44,7 +44,7 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
       .getObjectsContext()
       .allocateNewObjectID();
     pageContentContext.doXObject(
-      page.getResourcesDictionary().addFormXObjectMapping(simpleFormXObjectID)
+      page.getResourcesDictionary().addFormXObjectMapping(simpleFormXObjectID),
     );
 
     pageContentContext.Q();
@@ -54,15 +54,15 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
     // now create all the xobjects
     pdfWriter.createImageXObjectFromJPG(
       __dirname + "/TestMaterials/images/otherStage.JPG",
-      imageXObjectID
+      imageXObjectID,
     );
     pdfWriter.createFormXObjectFromJPG(
       __dirname + "/TestMaterials/images/otherStage.JPG",
-      formXObjectID
+      formXObjectID,
     );
     pdfWriter.createFormXObjectFromTIFF(
       __dirname + "/TestMaterials/images/tiff/jim___ah.tif",
-      tiffFormXObjectID
+      tiffFormXObjectID,
     );
 
     var xobjectForm = pdfWriter.createFormXObject(
@@ -70,7 +70,7 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
       0,
       200,
       100,
-      simpleFormXObjectID
+      simpleFormXObjectID,
     );
     xobjectForm
       .getContentContext()

@@ -16,36 +16,36 @@ declare module "muhammara" {
 
   export function createWriter(
     input: FilePath | WriteStream,
-    options?: PDFWriterOptions
+    options?: PDFWriterOptions,
   ): PDFWriter;
   export function createWriterToModify(
     inFile: FilePath,
-    options?: PDFWriterToModifyOptions
+    options?: PDFWriterToModifyOptions,
   ): PDFWriter;
   export function createWriterToModify(
     inStream: ReadStream,
     outStream: WriteStream,
-    options?: PDFWriterToModifyOptions
+    options?: PDFWriterToModifyOptions,
   ): PDFWriter;
 
   export function createWriterToContinue(
     restartFile: string,
     restartStateFile: string,
-    options?: PDFWriterToContinueOptions
+    options?: PDFWriterToContinueOptions,
   ): PDFWriter;
   export function createReader(
     input: FilePath | ReadStream,
-    options?: PDFReaderOptions
+    options?: PDFReaderOptions,
   ): PDFReader;
   export function recrypt(
     originalPdfPath: FilePath,
     newPdfPath: FilePath,
-    options?: PDFRecryptOptions
+    options?: PDFRecryptOptions,
   ): void;
   export function recrypt(
     originalPdfStream: PDFRStreamForFile | PDFRStreamForBuffer,
     newPdfStream: PDFWStreamForFile | PDFWStreamForBuffer,
-    options?: PDFRecryptOptions
+    options?: PDFRecryptOptions,
   ): void;
 
   export interface WriteStream {
@@ -76,7 +76,7 @@ declare module "muhammara" {
     new (
       writer: PDFWriter,
       pageIndex?: number,
-      ensureContentEncapsulation?: boolean
+      ensureContentEncapsulation?: boolean,
     ): PDFPageModifier;
     startContext(): this;
     getContext(): XObjectContentContext;
@@ -86,7 +86,7 @@ declare module "muhammara" {
       left: number,
       bottom: number,
       right: number,
-      top: number
+      top: number,
     ): this;
     writePage(): this;
   }
@@ -118,7 +118,7 @@ declare module "muhammara" {
     c: number,
     d: number,
     e: number,
-    f: number
+    f: number,
   ];
 
   enum LineJoinStyle {
@@ -218,7 +218,7 @@ declare module "muhammara" {
     DoubleQuote(
       wordSpacing: number,
       characterString: number,
-      text: string | Glyph
+      text: string | Glyph,
     ): this;
     TJ(value: string | Glyph, options?: TextRenderOptions): this;
     writeFreeCode(freeCode: string): this;
@@ -232,14 +232,14 @@ declare module "muhammara" {
       y: PosY,
       w: number,
       h: number,
-      options: GraphicOptions
+      options: GraphicOptions,
     ): this;
     writeText(text: string, x: PosX, y: PosY, options?: WriteTextOptions): this;
     drawImage(
       x: PosX,
       y: PosY,
       imagePath: string,
-      options?: ImageOptions
+      options?: ImageOptions,
     ): this;
   }
 
@@ -395,7 +395,7 @@ declare module "muhammara" {
   export interface UsedFont {
     calculateTextDimensions(
       text: string | any,
-      fontSize: number
+      fontSize: number,
     ): TextDimension;
   }
 
@@ -424,7 +424,7 @@ declare module "muhammara" {
     queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
     queryArrayObject(
       objectList: PDFArray,
-      index: number
+      index: number,
     ): undefined | PDFObject;
     parseNewObject(objectId: number): PDFObject;
     getPageObjectID(objectId: number): number;
@@ -549,17 +549,17 @@ declare module "muhammara" {
     createFormXObjectFromPDFPage(
       sourcePageIndex: number,
       ePDFPageBox: PDFPageBoxType | PDFBox,
-      transformation?: TransformationMatrix
+      transformation?: TransformationMatrix,
     ): number;
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
     appendPDFPageFromPDF(sourcePageNumber: number): number; // stream start bytes?
     mergePDFPageToFormXObject(
       sourcePage: PDFPage,
-      targetPageNumber: number
+      targetPageNumber: number,
     ): void;
     getSourceDocumentParser(
       input: FilePath | ReadStream,
-      options?: PDFReaderOptions
+      options?: PDFReaderOptions,
     ): PDFReader;
     copyDirectObjectAsIs(objectToCopy: PDFObject): void;
     copyObject(objectId: number): number;
@@ -611,7 +611,7 @@ declare module "muhammara" {
     endIndirectObject(): this;
     writeIndirectObjectReference(
       objectId: FormXObjectId,
-      generationNumber?: number
+      generationNumber?: number,
     ): this;
     startNewIndirectObject(objectId: FormXObjectId): this;
     startNewIndirectObject(): FormXObjectId;
@@ -694,7 +694,7 @@ declare module "muhammara" {
     lowerLeftX: number,
     lowerLeftY: number,
     upperRightX: number,
-    upperRightY: number
+    upperRightY: number,
   ];
 
   export interface MergeOptions {
@@ -720,76 +720,76 @@ declare module "muhammara" {
       y: PosY,
       width: Width,
       height: Height,
-      objectId?: FormXObjectId
+      objectId?: FormXObjectId,
     ): FormXObject;
     endFormXObject(formXObject: FormXObject): this;
     createFormXObjectFromJPG(
       file: FilePath | PDFRStreamForFile,
-      objectId?: FormXObjectId
+      objectId?: FormXObjectId,
     ): FormXObject;
     getFontForFile(inFontFilePath: FilePath, index?: number): UsedFont;
     getFontForFile(
       inFontFilePath: FilePath,
       inOptionalMetricsFile?: string,
-      index?: number
+      index?: number,
     ): UsedFont;
     attachURLLinktoCurrentPage(
       url: string,
       x: PosX,
       y: PosY,
       width: Width,
-      height: Height
+      height: Height,
     ): this;
     shutdown(outputFilePath: FilePath): this;
     createFormXObjectFromTIFF(
       filePath: FilePath | PDFRStreamForFile,
-      objectId?: FormXObjectId
+      objectId?: FormXObjectId,
     ): FormXObject;
     createImageXObjectFromJPG(
       filePath: FilePath | PDFRStreamForFile,
-      objectId?: FormXObjectId
+      objectId?: FormXObjectId,
     ): ImageXObject;
     createFormXObjectFromPNG(
       filePath: FilePath | PDFRStreamForFile,
-      objectId?: FormXObjectId
+      objectId?: FormXObjectId,
     ): FormXObject;
     retrieveJPGImageInformation(filePath: FilePath): JPEGInformation;
     getObjectsContext(): ObjectsContext;
     getDocumentContext(): DocumentContext;
     appendPDFPagesFromPDF(
       source: FilePath | ReadStream,
-      options?: AppendOptions
+      options?: AppendOptions,
     ): number[];
     mergePDFPagesToPage(
       page: PDFPage,
       file: FilePath | PDFRStreamForFile,
       options?: MergeOptions,
-      callback?: inInterPagesCallback
+      callback?: inInterPagesCallback,
     ): this;
     mergePDFPagesToPage(
       page: PDFPage,
       file: FilePath | PDFRStreamForFile,
-      callback?: inInterPagesCallback
+      callback?: inInterPagesCallback,
     ): this;
     createPDFCopyingContext(
-      source: FilePath | ReadStream
+      source: FilePath | ReadStream,
     ): DocumentCopyingContext;
     createFormXObjectsFromPDF(
       file: FilePath,
       box?: PDFBox | PDFPageBoxType,
       options?: MergeOptions,
       transformation?: TransformationMatrix,
-      objectIds?: FormXObjectId[]
+      objectIds?: FormXObjectId[],
     ): FormXObjectId[];
     createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
     createPDFTextString(): PDFTextString;
     createPDFDate(): PDFDate;
     getImageDimensions(
-      inFontFilePath: FilePath | ReadStream
+      inFontFilePath: FilePath | ReadStream,
     ): RectangleDimension;
     getImagePagesCount(
       imagePath: FilePath,
-      options?: { password?: string }
+      options?: { password?: string },
     ): number;
     getImageType(imagePath: FilePath): PDFImageType | undefined;
     getModifiedFileParser(): PDFReader;
@@ -802,7 +802,7 @@ declare module "muhammara" {
     getEvents(): EventEmitter;
     triggerDocumentExtensionEvent(
       eventName: string | symbol,
-      eventParams: any
+      eventParams: any,
     ): void;
   }
 
@@ -1040,22 +1040,30 @@ declare module "muhammara" {
   }
 
   export class Recipe {
-    constructor(src: string, output?: string | null, options?: Recipe.RecipeOptions);
+    constructor(
+      src: string,
+      output?: string | null,
+      options?: Recipe.RecipeOptions,
+    );
 
-    constructor(buffer: Buffer, output?: string | null, options?: Recipe.RecipeOptions);
+    constructor(
+      buffer: Buffer,
+      output?: string | null,
+      options?: Recipe.RecipeOptions,
+    );
 
     comment(
       text: string,
       x: number,
       y: number,
-      options?: Recipe.CommentOptions
+      options?: Recipe.CommentOptions,
     ): Recipe;
 
     annot(
       x: number,
       y: number,
       subtype: Recipe.AnnotSubtype,
-      options?: Recipe.AnnotOptions
+      options?: Recipe.AnnotOptions,
     ): Recipe;
 
     appendPage(pdfSrc: string, pages?: number | number[]): Recipe;
@@ -1068,7 +1076,7 @@ declare module "muhammara" {
       imgSrc: string,
       x: number,
       y: number,
-      options?: Recipe.ImageOptions
+      options?: Recipe.ImageOptions,
     ): Recipe;
 
     info(options?: Recipe.InfoOptions): Recipe;
@@ -1078,14 +1086,14 @@ declare module "muhammara" {
     insertPage(
       afterPageNumber: number,
       pdfSrc: string,
-      srcPageNumber: number
+      srcPageNumber: number,
     ): Recipe;
 
     overlay(
       pdfSrc: string,
       x: number,
       y: number,
-      options?: Recipe.OverlayOptions
+      options?: Recipe.OverlayOptions,
     ): Recipe;
 
     createPage(pageWidth: number, pageHeight: number): Recipe;
@@ -1107,7 +1115,7 @@ declare module "muhammara" {
       text: string,
       x: number,
       y: number,
-      options?: Recipe.TextOptions
+      options?: Recipe.TextOptions,
     ): Recipe;
 
     moveTo(x: number, y: number): Recipe;
@@ -1122,7 +1130,7 @@ declare module "muhammara" {
       x: number,
       y: number,
       radius: number,
-      options?: Recipe.CircleOptions
+      options?: Recipe.CircleOptions,
     ): Recipe;
 
     rectangle(
@@ -1130,7 +1138,7 @@ declare module "muhammara" {
       y: number,
       width: number,
       height: number,
-      options?: Recipe.RectangleOptions
+      options?: Recipe.RectangleOptions,
     ): Recipe;
 
     endPDF(callback?: Recipe.EndPDFCallback): Recipe;

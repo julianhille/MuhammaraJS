@@ -3,7 +3,7 @@ var muhammara = require("../lib/muhammara");
 describe("InputFileTest", function () {
   it("should complete without error", function () {
     var inputFile = new muhammara.InputFile(
-      __dirname + "/TestMaterials/fonts/LucidaGrande.ttc"
+      __dirname + "/TestMaterials/fonts/LucidaGrande.ttc",
     );
     if (
       inputFile.getFilePath() !=

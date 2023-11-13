@@ -1,10 +1,10 @@
 describe("PDFCopyingContextTest", function () {
   it("should complete without error", function () {
     var pdfWriter = require("../lib/muhammara").createWriter(
-      __dirname + "/output/PDFCopyingContextTest.PDF"
+      __dirname + "/output/PDFCopyingContextTest.PDF",
     );
     var copyingContext = pdfWriter.createPDFCopyingContext(
-      __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF"
+      __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
     );
     copyingContext.appendPDFPageFromPDF(1);
     copyingContext.appendPDFPageFromPDF(18);

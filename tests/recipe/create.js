@@ -43,7 +43,7 @@ describe("Create", () => {
           stroke: [0, 0, 140],
           fill: [153, 143, 32],
           opacity: 0.2,
-        }
+        },
       )
       .image(myCats, "center", 450, {
         width: 250,

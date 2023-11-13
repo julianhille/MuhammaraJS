@@ -89,7 +89,7 @@ describe("Text - Centering", () => {
       .text(
         "<-- Text with line height applied\n            (1.16% font size).",
         340,
-        490
+        490,
       )
       .text("A\nAAA\nOOO\nVVV\n|", 30, 400, {
         color: "#000000",
@@ -113,7 +113,7 @@ describe("Text - Centering", () => {
           [180, 25],
           [180, 425],
         ],
-        { stroke: "#ff00ff", lineWidth: 0.5 }
+        { stroke: "#ff00ff", lineWidth: 0.5 },
       );
 
     let x = 450;
@@ -168,7 +168,7 @@ describe("Text - Centering", () => {
           [x - 5, y + p],
           [x + w + 5, y + p],
         ],
-        { lineWidth: 0.5, stroke: "red", lineCap: "butt" }
+        { lineWidth: 0.5, stroke: "red", lineCap: "butt" },
       )
       .circle(x, y, 2, { stroke: "red" });
 
@@ -193,7 +193,7 @@ describe("Text - Centering", () => {
           [x - 5, y + h],
           [x + w + 5, y + h],
         ],
-        { lineWidth: 0.5, stroke: "red", lineCap: "butt" }
+        { lineWidth: 0.5, stroke: "red", lineCap: "butt" },
       )
       .circle(x, y, 2, { stroke: "red" });
 
@@ -219,7 +219,7 @@ describe("Text - Centering", () => {
           [x + w - p, y - 5],
           [x + w - p, y + h + 5],
         ],
-        { lineWidth: 0.5, stroke: "red", lineCap: "butt" }
+        { lineWidth: 0.5, stroke: "red", lineCap: "butt" },
       )
       .circle(x, y, 2, { stroke: "red" });
 
@@ -244,7 +244,7 @@ describe("Text - Centering", () => {
           [x + p, y - 5],
           [x + p, y + h + 5],
         ],
-        { lineWidth: 0.5, stroke: "red", lineCap: "butt" }
+        { lineWidth: 0.5, stroke: "red", lineCap: "butt" },
       )
       .circle(x, y, 2, { stroke: "red" });
 
@@ -263,7 +263,7 @@ describe("Text - Centering", () => {
               lineWidth: 0.5,
             },
           },
-        }
+        },
       )
 
       .text(
@@ -280,7 +280,7 @@ describe("Text - Centering", () => {
               lineWidth: 0.5,
             },
           },
-        }
+        },
       )
 
       .text(
@@ -298,7 +298,7 @@ describe("Text - Centering", () => {
               lineWidth: 0.5,
             },
           },
-        }
+        },
       )
 
       .text(
@@ -313,7 +313,7 @@ describe("Text - Centering", () => {
             height: 70,
             textAlign: "justify",
           },
-        }
+        },
       );
 
     h = 70;
@@ -333,7 +333,7 @@ describe("Text - Centering", () => {
               lineWidth: 0.5,
             },
           },
-        }
+        },
       )
       .circle(150, 625, 2, { stroke: "red" })
       .circle(150, 625 + h, 2, { stroke: "red" })
@@ -352,7 +352,7 @@ describe("Text - Centering", () => {
               lineWidth: 0.5,
             },
           },
-        }
+        },
       )
       .text("text at\ncenter center", 265, 625, {
         color: "#000000",
@@ -406,7 +406,7 @@ describe("Text - Centering", () => {
               lineWidth: 0.5,
             },
           },
-        }
+        },
       )
       .text("Using height and supplying textAlign: center center", 180, 725, {
         color: "#000000",
@@ -448,7 +448,7 @@ describe("Text - Centering", () => {
               lineWidth: 0.5,
             },
           },
-        }
+        },
       );
 
     recipe.endPage();
