@@ -5,19 +5,19 @@ var fs = require("fs");
 describe("SettingInfoValuesFromParsedContent", function () {
   it("should complete without error", function () {
     var outStream = new muhammara.PDFWStreamForFile(
-      __dirname + "/output/SettingInfoValuesFromParsedContent.pdf",
+      __dirname + "/output/SettingInfoValuesFromParsedContent.pdf"
     );
     var pdfWriter = muhammara.createWriter(outStream);
 
     var copyCtx = pdfWriter.createPDFCopyingContext(
-      __dirname + "/TestMaterials/SettingInfoValues.pdf",
+      __dirname + "/TestMaterials/SettingInfoValues.pdf"
     );
 
     var info = copyCtx
       .getSourceDocumentParser()
       .queryDictionaryObject(
         copyCtx.getSourceDocumentParser().getTrailer(),
-        "Info",
+        "Info"
       )
       .toJSObject();
 
@@ -36,7 +36,7 @@ describe("SettingInfoValuesFromParsedContent", function () {
     assert.equal(
       info.CreationDate.value,
       "D:20140720204655+03'00'",
-      "creation date encoded",
+      "creation date encoded"
     );
 
     var page = pdfWriter.createPage();

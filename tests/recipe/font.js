@@ -9,7 +9,7 @@ describe("Font", () => {
   it("Add text with custom fonts", (done) => {
     const output = path.join(
       __dirname,
-      "../output/Add text with custom fonts.pdf",
+      "../output/Add text with custom fonts.pdf"
     );
     const recipe = new HummusRecipe("new", output, {
       fontSrcPath: path.join(__dirname, "../output/recipe/fonts"),

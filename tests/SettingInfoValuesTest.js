@@ -4,7 +4,7 @@ describe("SettingInfoValues", function () {
   it("should complete without error", function () {
     var pdfWriter = muhammara.createWriter(
       __dirname + "/output/SettingInfoValues.pdf",
-      { version: muhammara.ePDFVersion14 },
+      { version: muhammara.ePDFVersion14 }
     );
 
     // set the document author, title, subject, creator, creation date, additional info

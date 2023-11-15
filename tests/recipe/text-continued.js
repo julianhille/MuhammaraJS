@@ -28,14 +28,14 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
           [540, 10],
           [540, 300],
         ],
-        { lineWidth: 0.5 },
+        { lineWidth: 0.5 }
       )
       .line(
         [
           [72, 72],
           [560, 72],
         ],
-        { lineWidth: 0.5 },
+        { lineWidth: 0.5 }
       )
       .text(lorem.slice(0, 500), {
         rotation: 0,
@@ -49,7 +49,7 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
         "Simple Text Flow, 3 segments, showing color change and hilite",
         x,
         y,
-        { color: "#000000" },
+        { color: "#000000" }
       );
 
     x = 72;
@@ -70,15 +70,15 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       .text("Did a movedown(2) to get ", { color: "blue", hilite: true })
       .text(
         'text to this spot in box. Notice the text hiliting, which is different from "fill" for the text box. ',
-        { color: "green", size: 14 },
+        { color: "green", size: 14 }
       )
       .text(
-        "It can have different colors, with yellow being the default at opacity .5. See blue higlight below",
+        "It can have different colors, with yellow being the default at opacity .5. See blue higlight below"
       )
       .movedown(2)
       .text(
         "Box was constructed with multiple text statements without specifying any x,y coordinates. ",
-        { color: "blue", hilite: { color: "#81e6ff" } },
+        { color: "blue", hilite: { color: "#81e6ff" } }
       )
       .movedown()
       .text("Notice, here is a change in font size. ", {

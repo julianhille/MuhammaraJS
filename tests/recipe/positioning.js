@@ -11,28 +11,28 @@ function frame(recipe, left, top, width, height) {
       [left - cut, top],
       [right + cut, top],
     ],
-    options,
+    options
   ); // top
   recipe.line(
     [
       [left - cut, bottom],
       [right + cut, bottom],
     ],
-    options,
+    options
   ); // bottom
   recipe.line(
     [
       [left, top - cut],
       [left, bottom + cut],
     ],
-    options,
+    options
   ); // left
   recipe.line(
     [
       [right, top - cut],
       [right, bottom + cut],
     ],
-    options,
+    options
   ); // right
 }
 
@@ -101,28 +101,28 @@ describe("Graphic Object Positioning", () => {
           [col[1], row[4]],
           [col[1] + wid[0], row[4] + hgt[0]],
         ],
-        { width: 1 },
+        { width: 1 }
       )
       .line(
         [
           [col[2], row[4]],
           [col[2] + wid[0], row[4] + hgt[0]],
         ],
-        { width: 2 },
+        { width: 2 }
       )
       .line(
         [
           [col[3], row[4]],
           [col[3] + wid[0], row[4] + hgt[0]],
         ],
-        { width: 3 },
+        { width: 3 }
       )
       .line(
         [
           [col[4], row[4]],
           [col[4] + wid[0], row[4] + hgt[0]],
         ],
-        { width: 5 },
+        { width: 5 }
       )
 
       .ellipse(
@@ -130,20 +130,20 @@ describe("Graphic Object Positioning", () => {
         row[5] + hgt[0] / 2,
         wid[1] / 2,
         hgt[0] / 2,
-        { width: 1 },
+        { width: 1 }
       )
       .ellipse(
         col[3] + wid[1] / 2,
         row[5] + hgt[0] / 2,
         wid[1] / 2,
         hgt[0] / 2,
-        { width: 5 },
+        { width: 5 }
       )
 
       .text(
         "Note, object growth outside cut frames with increasing line widths",
         100,
-        40,
+        40
       )
       .text("*", 80, 40, { color: "ff0000", fontSize: 32 })
 
@@ -266,14 +266,14 @@ describe("Graphic Object Positioning", () => {
         row[3] + hgt[0] / 2,
         wid[1] / 2,
         hgt[0] / 2,
-        { width: 1, rotation: 10, stroke: defOrigColor },
+        { width: 1, rotation: 10, stroke: defOrigColor }
       )
       .ellipse(
         col[3] + wid[1] / 2,
         row[3] + hgt[0] / 2,
         wid[1] / 2,
         hgt[0] / 2,
-        { width: 1, rotation: 10, rotationOrigin: [lft(col[3]), btm(row[3])] },
+        { width: 1, rotation: 10, rotationOrigin: [lft(col[3]), btm(row[3])] }
       )
       .ellipse(
         col[1] + wid[1] / 2,
@@ -284,14 +284,14 @@ describe("Graphic Object Positioning", () => {
           width: 1,
           rotation: 10,
           rotationOrigin: [rht(col[1], wid[1]), top(row[4])],
-        },
+        }
       )
       .ellipse(
         col[3] + wid[1] / 2,
         row[4] + hgt[0] / 2,
         wid[1] / 2,
         hgt[0] / 2,
-        { width: 1, rotation: 10, rotationOrigin: [lft(col[3]), top(row[4])] },
+        { width: 1, rotation: 10, rotationOrigin: [lft(col[3]), top(row[4])] }
       )
       .ellipse(
         col[1] + wid[1] / 2,
@@ -302,7 +302,7 @@ describe("Graphic Object Positioning", () => {
           width: 1,
           rotation: 10,
           rotationOrigin: [rht(col[1], wid[1]), btm(row[5])],
-        },
+        }
       );
 
     markOrigin(recipe, col[1] + wid[1] / 2, row[3] + hgt[0] / 2);

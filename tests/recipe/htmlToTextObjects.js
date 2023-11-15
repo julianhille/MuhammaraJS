@@ -4,7 +4,7 @@ const assert = require("chai").assert;
 const { htmlToTextObjects } = require("../../lib/recipe/htmlToTextObjects");
 const htmlCodes = fs.readFileSync(
   path.join(__dirname, "../TestMaterials/recipe/text.html"),
-  "utf8",
+  "utf8"
 );
 describe("HTML to TextObjects", () => {
   it("parse HTML", (done) => {

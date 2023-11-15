@@ -167,7 +167,7 @@ pdfDoc
       stroke: [0, 0, 140],
       fill: [153, 143, 32],
       lineWidth: 5,
-    },
+    }
   )
   .rectangle(240, 400, 50, 50, {
     stroke: "#3b7721",

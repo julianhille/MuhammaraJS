@@ -6,10 +6,10 @@ describe("LinksTest", function () {
     var page = pdfWriter.createPage(0, 0, 595, 842);
 
     var soundCloudLogo = pdfWriter.createFormXObjectFromJPG(
-      __dirname + "/TestMaterials/images/soundcloud_logo.jpg",
+      __dirname + "/TestMaterials/images/soundcloud_logo.jpg"
     );
     var font = pdfWriter.getFontForFile(
-      __dirname + "/TestMaterials/fonts/arial.ttf",
+      __dirname + "/TestMaterials/fonts/arial.ttf"
     );
 
     var contentContext = pdfWriter
@@ -33,14 +33,14 @@ describe("LinksTest", function () {
         87.75,
         694.56,
         198.76,
-        720,
+        720
       )
       .attachURLLinktoCurrentPage(
         "http://www.soundcloud.com",
         90.024,
         200,
         367.524,
-        375,
+        375
       )
       .writePage(page)
       .end();

@@ -13,7 +13,7 @@ describe("Annotation: Comment", () => {
         "Except for the background rectangle exposing it, the annotation above would normally be invisible because no color option was given to it.",
         175,
         150,
-        { textBox: { width: 280, textAlign: "center" } },
+        { textBox: { width: 280, textAlign: "center" } }
       )
       .rectangle(290, 90, 50, 50, { fill: "red", opacity: 0.2 })
       .comment("Feel free to open issues to help us!", "center", 100, {
@@ -28,7 +28,7 @@ describe("Annotation: Comment", () => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const output = path.join(
       __dirname,
-      "../output/Add comment with rich text.pdf",
+      "../output/Add comment with rich text.pdf"
     );
     const recipe = new HummusRecipe(src, output);
     const textContent = [
@@ -83,7 +83,7 @@ describe("Annotation: Comment", () => {
       .text(
         "Trace-based Just-in-Time Type Specialization for Dynamic Languages",
         100,
-        "center",
+        "center"
       )
       .annot(100, "center", "Highlight", {
         text: "Oh~la",

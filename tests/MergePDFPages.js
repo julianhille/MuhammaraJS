@@ -4,14 +4,14 @@ describe("MergePDFPages", function () {
   describe("OnlyMerge", function () {
     it("should complete without error", function () {
       var pdfWriter = muhammara.createWriter(
-        __dirname + "/output/TestOnlyMerge.pdf",
+        __dirname + "/output/TestOnlyMerge.pdf"
       );
       var page = pdfWriter.createPage(0, 0, 595, 842);
 
       pdfWriter.mergePDFPagesToPage(
         page,
         __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
-        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] },
+        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] }
       );
 
       pdfWriter.writePage(page).end();
@@ -21,7 +21,7 @@ describe("MergePDFPages", function () {
   describe("PrefixGraphicsMerge", function () {
     it("should complete without error", function () {
       var pdfWriter = muhammara.createWriter(
-        __dirname + "/output/TestPrefixGraphicsMerge.pdf",
+        __dirname + "/output/TestPrefixGraphicsMerge.pdf"
       );
       var page = pdfWriter.createPage(0, 0, 595, 842);
 
@@ -31,9 +31,9 @@ describe("MergePDFPages", function () {
         .k(0, 0, 0, 1)
         .Tf(
           pdfWriter.getFontForFile(
-            __dirname + "/TestMaterials/fonts/arial.ttf",
+            __dirname + "/TestMaterials/fonts/arial.ttf"
           ),
-          30,
+          30
         )
         .Tm(1, 0, 0, 1, 10, 600)
         .Tj("Testing file merge")
@@ -43,7 +43,7 @@ describe("MergePDFPages", function () {
       pdfWriter.mergePDFPagesToPage(
         page,
         __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
-        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] },
+        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] }
       );
 
       pdfWriter.writePage(page).end();
@@ -53,14 +53,14 @@ describe("MergePDFPages", function () {
   describe("SuffixGraphicsMerge", function () {
     it("should complete without error", function () {
       var pdfWriter = muhammara.createWriter(
-        __dirname + "/output/TestSuffixGraphicsMerge.pdf",
+        __dirname + "/output/TestSuffixGraphicsMerge.pdf"
       );
       var page = pdfWriter.createPage(0, 0, 595, 842);
 
       pdfWriter.mergePDFPagesToPage(
         page,
         __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
-        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] },
+        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] }
       );
 
       pdfWriter
@@ -69,9 +69,9 @@ describe("MergePDFPages", function () {
         .k(0, 0, 0, 1)
         .Tf(
           pdfWriter.getFontForFile(
-            __dirname + "/TestMaterials/fonts/arial.ttf",
+            __dirname + "/TestMaterials/fonts/arial.ttf"
           ),
-          30,
+          30
         )
         .Tm(1, 0, 0, 1, 10, 600)
         .Tj("Testing file merge")
@@ -85,7 +85,7 @@ describe("MergePDFPages", function () {
   describe("BothGraphicsMerge", function () {
     it("should complete without error", function () {
       var pdfWriter = muhammara.createWriter(
-        __dirname + "/output/TestBothGraphicsMerge.pdf",
+        __dirname + "/output/TestBothGraphicsMerge.pdf"
       );
       var page = pdfWriter.createPage(0, 0, 595, 842);
 
@@ -95,9 +95,9 @@ describe("MergePDFPages", function () {
         .k(0, 0, 0, 1)
         .Tf(
           pdfWriter.getFontForFile(
-            __dirname + "/TestMaterials/fonts/arial.ttf",
+            __dirname + "/TestMaterials/fonts/arial.ttf"
           ),
-          30,
+          30
         )
         .Tm(1, 0, 0, 1, 10, 600)
         .Tj("Testing file merge")
@@ -108,7 +108,7 @@ describe("MergePDFPages", function () {
       pdfWriter.mergePDFPagesToPage(
         page,
         __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
-        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] },
+        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] }
       );
 
       contentContext
@@ -127,7 +127,7 @@ describe("MergePDFPages", function () {
   describe("TwoPageInSeparatePhases", function () {
     it("should complete without error", function () {
       var pdfWriter = muhammara.createWriter(
-        __dirname + "/output/MergeTwoPageInSeparatePhases.pdf",
+        __dirname + "/output/MergeTwoPageInSeparatePhases.pdf"
       );
       var page = pdfWriter.createPage(0, 0, 595, 842);
       var contentContext = pdfWriter
@@ -138,7 +138,7 @@ describe("MergePDFPages", function () {
       pdfWriter.mergePDFPagesToPage(
         page,
         __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
-        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] },
+        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 0]] }
       );
 
       contentContext.Q().q().cm(0.5, 0, 0, 0.5, 0, 421);
@@ -146,7 +146,7 @@ describe("MergePDFPages", function () {
       pdfWriter.mergePDFPagesToPage(
         page,
         __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
-        { type: muhammara.eRangeTypeSpecific, specificRanges: [[1, 1]] },
+        { type: muhammara.eRangeTypeSpecific, specificRanges: [[1, 1]] }
       );
 
       contentContext.Q();
@@ -158,7 +158,7 @@ describe("MergePDFPages", function () {
   describe("TwoPageWithCallback", function () {
     it("should complete without error", function () {
       var pdfWriter = muhammara.createWriter(
-        __dirname + "/output/MergeTwoPageWithCallback.pdf",
+        __dirname + "/output/MergeTwoPageWithCallback.pdf"
       );
       var page = pdfWriter.createPage(0, 0, 595, 842);
       var contentContext = pdfWriter
@@ -176,7 +176,7 @@ describe("MergePDFPages", function () {
             contentContext.Q().q().cm(0.5, 0, 0, 0.5, 0, 421);
           }
           ++pageIndex;
-        },
+        }
       );
 
       contentContext.Q();
@@ -187,14 +187,14 @@ describe("MergePDFPages", function () {
   describe("PagesUsingCopyingContext", function () {
     it("should complete without error", function () {
       var pdfWriter = muhammara.createWriter(
-        __dirname + "/output/MergePagesUsingCopyingContext.pdf",
+        __dirname + "/output/MergePagesUsingCopyingContext.pdf"
       );
       var copyingContext = pdfWriter.createPDFCopyingContext(
-        __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+        __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF"
       );
       var formObjectId = copyingContext.createFormXObjectFromPDFPage(
         0,
-        muhammara.ePDFPageBoxMediaBox,
+        muhammara.ePDFPageBoxMediaBox
       );
 
       var page = pdfWriter.createPage(0, 0, 595, 842);
@@ -210,7 +210,7 @@ describe("MergePDFPages", function () {
         .q()
         .cm(0.5, 0, 0, 0.5, 297.5, 421)
         .doXObject(
-          page.getResourcesDictionary().addFormXObjectMapping(formObjectId),
+          page.getResourcesDictionary().addFormXObjectMapping(formObjectId)
         )
         .Q();
 
@@ -228,7 +228,7 @@ describe("MergePDFPages", function () {
         .q()
         .cm(0.5, 0, 0, 0.5, 297.5, 421)
         .doXObject(
-          page.getResourcesDictionary().addFormXObjectMapping(formObjectId),
+          page.getResourcesDictionary().addFormXObjectMapping(formObjectId)
         )
         .Q();
 
@@ -239,12 +239,12 @@ describe("MergePDFPages", function () {
   describe("MergeFromStream", function () {
     it("should complete without error", function () {
       var pdfWriter = muhammara.createWriter(
-        __dirname + "/output/TestStreamMerge.pdf",
+        __dirname + "/output/TestStreamMerge.pdf"
       );
       var page = pdfWriter.createPage(0, 0, 595, 842);
 
       var inStream = new muhammara.PDFRStreamForFile(
-        __dirname + "/TestMaterials/AddedPage.pdf",
+        __dirname + "/TestMaterials/AddedPage.pdf"
       );
 
       pdfWriter.mergePDFPagesToPage(page, inStream, {

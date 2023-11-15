@@ -4,10 +4,10 @@ const chai = require("chai");
 describe("BasicModificationWithStreams", function () {
   it("should complete without error", function () {
     var inStream = new muhammara.PDFRStreamForFile(
-      __dirname + "/TestMaterials/MultipleChange.pdf",
+      __dirname + "/TestMaterials/MultipleChange.pdf"
     );
     var outStream = new muhammara.PDFWStreamForFile(
-      __dirname + "/output/BasicModificationWithStreams.pdf",
+      __dirname + "/output/BasicModificationWithStreams.pdf"
     );
     var pdfWriter = muhammara.createWriterToModify(inStream, outStream);
     var pageModifier = new muhammara.PDFPageModifier(pdfWriter, 0);
@@ -17,7 +17,7 @@ describe("BasicModificationWithStreams", function () {
       .getContext()
       .writeText("Some added Text", 75, 805, {
         font: pdfWriter.getFontForFile(
-          __dirname + "/TestMaterials/fonts/Couri.ttf",
+          __dirname + "/TestMaterials/fonts/Couri.ttf"
         ),
         size: 14,
         colorspace: "gray",

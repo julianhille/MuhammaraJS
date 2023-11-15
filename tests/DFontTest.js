@@ -1,7 +1,7 @@
 describe("DFontTest", function () {
   it("should complete without error", function () {
     var pdfWriter = require("../lib/muhammara").createWriter(
-      __dirname + "/output/DFontTest.pdf",
+      __dirname + "/output/DFontTest.pdf"
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
     var contentContext = pdfWriter.startPageContentContext(page);
@@ -9,19 +9,19 @@ describe("DFontTest", function () {
     [
       pdfWriter.getFontForFile(
         __dirname + "/TestMaterials/fonts/Courier.dfont",
-        0,
+        0
       ),
       pdfWriter.getFontForFile(
         __dirname + "/TestMaterials/fonts/Courier.dfont",
-        1,
+        1
       ),
       pdfWriter.getFontForFile(
         __dirname + "/TestMaterials/fonts/Courier.dfont",
-        2,
+        2
       ),
       pdfWriter.getFontForFile(
         __dirname + "/TestMaterials/fonts/Courier.dfont",
-        3,
+        3
       ),
     ].forEach(function (element, index, array) {
       contentContext

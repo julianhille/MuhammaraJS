@@ -8,11 +8,11 @@ describe("Insert Pages", () => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const longPDF = path.join(
       __dirname,
-      "../TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf",
+      "../TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf"
     );
     const output = path.join(
       __dirname,
-      "../output/Insert page from other pdf.pdf",
+      "../output/Insert page from other pdf.pdf"
     );
     const recipe = new HummusRecipe(src, output);
     recipe
@@ -28,12 +28,12 @@ describe("Insert Pages", () => {
   it("Insert page from other pdf (revert)", (done) => {
     const primary = path.join(
       __dirname,
-      "../TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf",
+      "../TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf"
     );
     const insertSrc = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const output = path.join(
       __dirname,
-      "../output/Insert page from other pdf (revert).pdf",
+      "../output/Insert page from other pdf (revert).pdf"
     );
     const recipe = new HummusRecipe(primary, output);
     for (let page = 1; page <= 14; page++) {

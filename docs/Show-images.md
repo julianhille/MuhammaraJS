@@ -56,7 +56,7 @@ Usually you'd like to draw frames around images, or fit them. For this you'll ne
 
 ```javascript
 var jpgDimensions = pdfWriter.getImageDimensions(
-  "./TestMaterials/Images/soundcloud_logo.jpg",
+  "./TestMaterials/Images/soundcloud_logo.jpg"
 );
 ```
 
@@ -76,7 +76,7 @@ To create and use a PDF image object from a JPG do the following:
 
 ```javascript
 var imageXObject = pdfWriter.createImageXObjectFromJPG(
-  "./TestMaterials/images/otherStage.JPG",
+  "./TestMaterials/images/otherStage.JPG"
 );
 var cxt = pdfWriter.startPageContentContext(page);
 cxt.q().cm(500, 0, 0, 400, 0, 0).doXObject(imageXObject).Q();
@@ -96,7 +96,7 @@ If you don't wish to have an image object, but would rather a form object, that 
 
 ```javascript
 var formXObject = pdfWriter.createFormXObjectFromJPG(
-  "./TestMaterials/images/otherStage.JPG",
+  "./TestMaterials/images/otherStage.JPG"
 );
 ```
 

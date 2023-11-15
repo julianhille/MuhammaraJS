@@ -1,7 +1,7 @@
 describe("BasicJPGImagesTest", function () {
   it("should complete without error", function () {
     var pdfWriter = require("../lib/muhammara").createWriter(
-      __dirname + "/output/BasicJPGImagesTest.PDF",
+      __dirname + "/output/BasicJPGImagesTest.PDF"
     );
 
     var page = pdfWriter.createPage(0, 0, 595, 842);
@@ -16,7 +16,7 @@ describe("BasicJPGImagesTest", function () {
     pdfWriter.pausePageContentContext(contentContext);
 
     var imageXObject = pdfWriter.createImageXObjectFromJPG(
-      __dirname + "/TestMaterials/images/otherStage.JPG",
+      __dirname + "/TestMaterials/images/otherStage.JPG"
     );
 
     // now continue with page content placement
@@ -26,7 +26,7 @@ describe("BasicJPGImagesTest", function () {
     pdfWriter.pausePageContentContext(contentContext);
 
     var formXObject = pdfWriter.createFormXObjectFromJPG(
-      __dirname + "/TestMaterials/images/otherStage.JPG",
+      __dirname + "/TestMaterials/images/otherStage.JPG"
     );
     contentContext.q().cm(1, 0, 0, 1, 0, 400).doXObject(formXObject).Q();
 

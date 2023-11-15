@@ -7,11 +7,11 @@ describe("Split", () => {
     const outputDir = path.join(__dirname, "../output/");
     const originalSrc = path.join(
       __dirname,
-      "../TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf",
+      "../TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf"
     );
     const src = path.join(
       outputDir,
-      "split.compressed.tracemonkey-pldi-09.pdf",
+      "split.compressed.tracemonkey-pldi-09.pdf"
     );
     fs.copyFileSync(originalSrc, src);
     const recipe = new HummusRecipe(src);

@@ -1,12 +1,12 @@
 describe("TextMeasurementsTest", function () {
   it("should complete without error", function () {
     var pdfWriter = require("../lib/muhammara").createWriter(
-      __dirname + "/output/TextMeasurementsTest.pdf",
+      __dirname + "/output/TextMeasurementsTest.pdf"
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
     var cxt = pdfWriter.startPageContentContext(page);
     var arialFont = pdfWriter.getFontForFile(
-      __dirname + "/TestMaterials/fonts/arial.ttf",
+      __dirname + "/TestMaterials/fonts/arial.ttf"
     );
     var pathStrokeOptions = { color: "DarkMagenta", width: 4 };
 
@@ -26,14 +26,14 @@ describe("TextMeasurementsTest", function () {
         98 + textDimensions.yMin,
         10 + textDimensions.xMax,
         98 + textDimensions.yMin,
-        pathStrokeOptions,
+        pathStrokeOptions
       )
       .drawPath(
         10 + textDimensions.xMin,
         102 + textDimensions.yMax,
         10 + textDimensions.xMax,
         102 + textDimensions.yMax,
-        pathStrokeOptions,
+        pathStrokeOptions
       );
 
     pdfWriter.writePage(page);

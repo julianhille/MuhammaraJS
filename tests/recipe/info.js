@@ -31,7 +31,7 @@ describe("Modify", () => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test-info.pdf");
     const output = path.join(
       __dirname,
-      "../output/change info with IndirectObjectReference.pdf",
+      "../output/change info with IndirectObjectReference.pdf"
     );
     const recipe = new HummusRecipe(src, output);
     recipe

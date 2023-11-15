@@ -3,7 +3,7 @@ const path = require("path");
 const HummusRecipe = require("../../lib").Recipe;
 const htmlCodes = fs.readFileSync(
   path.join(__dirname, "../TestMaterials/recipe/text.html"),
-  "utf8",
+  "utf8"
 );
 
 describe("Text", () => {
@@ -78,7 +78,7 @@ describe("Text", () => {
           font: "Roboto",
           size: 20,
           color: "#ff0000",
-        },
+        }
       )
       .endPage()
       .endPDF(done);
@@ -88,7 +88,7 @@ describe("Text", () => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
     const output = path.join(
       __dirname,
-      "../output/Add text with html codes.pdf",
+      "../output/Add text with html codes.pdf"
     );
     const recipe = new HummusRecipe(src, output);
     recipe
@@ -103,7 +103,7 @@ describe("Text", () => {
   it("Add text with html codes inside textbox", (done) => {
     const output = path.join(
       __dirname,
-      "../output/Add text with html codes inside textbox.pdf",
+      "../output/Add text with html codes inside textbox.pdf"
     );
     const recipe = new HummusRecipe("new", output);
     recipe
@@ -131,7 +131,7 @@ describe("Text", () => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
     const output = path.join(
       __dirname,
-      "../output/Add text inside textbox.pdf",
+      "../output/Add text inside textbox.pdf"
     );
     const recipe = new HummusRecipe(src, output);
     const textContent =

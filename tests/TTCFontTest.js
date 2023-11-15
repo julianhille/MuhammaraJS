@@ -1,17 +1,17 @@
 describe("TTCFontTest", function () {
   it("should complete without error", function () {
     var pdfWriter = require("../lib/muhammara").createWriter(
-      __dirname + "/output/TTCTestLucidaGrande.PDF",
+      __dirname + "/output/TTCTestLucidaGrande.PDF"
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
 
     var fontLucidaGrande0 = pdfWriter.getFontForFile(
       __dirname + "/TestMaterials/fonts/LucidaGrande.ttc",
-      0,
+      0
     );
     var fontLucidaGrande1 = pdfWriter.getFontForFile(
       __dirname + "/TestMaterials/fonts/LucidaGrande.ttc",
-      1,
+      1
     );
 
     pdfWriter

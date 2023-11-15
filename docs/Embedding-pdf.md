@@ -43,7 +43,7 @@ The method call looks like this:
 pdfWriter.createFormXObjectsFromPDF(
   inSourceFilePath,
   [inFormBox || inSourcePageBoxEnum],
-  [inPageRangeObject],
+  [inPageRangeObject]
 );
 ```
 
@@ -72,7 +72,7 @@ You create a copying context for a source PDF using the following PDFWriter meth
 
 ```javascript
 var cpyCxt = pdfWriter.createPDFCopyingContext(
-  inSourceFilePDF || inSourceFileStream,
+  inSourceFilePDF || inSourceFileStream
 );
 ```
 
@@ -90,7 +90,7 @@ The following methods are available for these purposes:
 cpyCxt.appendPDFPageFromPDF(inSourcePageIndex);
 cpyCxt.createFormXObjectFromPDFPage(
   inSourcePageIndex,
-  inFormBox || inPageBoxEnum,
+  inFormBox || inPageBoxEnum
 );
 cpyCxt.mergePDFPageToPage(inTargetPage, inSourcePageIndex);
 cpyCxt.mergePDFPageToFormXObject(inTargetForm, inSourcePageIndex);

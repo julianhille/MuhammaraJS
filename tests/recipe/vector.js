@@ -97,7 +97,7 @@ describe("Vector", () => {
           fill: "#000000",
           stroke: "#00ff00",
           opacity: 0.2,
-        },
+        }
       )
       .polygon(
         [
@@ -109,7 +109,7 @@ describe("Vector", () => {
           fill: "#ff0000",
           stroke: "#ff0000",
           opacity: 0.5,
-        },
+        }
       )
       .polygon(
         [
@@ -122,7 +122,7 @@ describe("Vector", () => {
           stroke: "#033002",
           opacity: 0.35,
           dash: [12, 12],
-        },
+        }
       )
       .polygon(
         [
@@ -134,7 +134,7 @@ describe("Vector", () => {
           fill: "#0000ff",
           stroke: "#0000ff",
           opacity: 0,
-        },
+        }
       )
       .polygon(
         [
@@ -145,7 +145,7 @@ describe("Vector", () => {
         {
           stroke: "#ff0000",
           skewY: 20,
-        },
+        }
       )
       .polygon(
         [
@@ -160,7 +160,7 @@ describe("Vector", () => {
           fill: "#0000ff",
           stroke: "#0000ff",
           opacity: 0.75,
-        },
+        }
       )
       .line(
         [
@@ -174,7 +174,7 @@ describe("Vector", () => {
         {
           lineWidth: 10,
           dash: [0, 0],
-        },
+        }
       );
     let x = 175;
     let y = 11;
@@ -186,7 +186,7 @@ describe("Vector", () => {
           [x, y],
           [x + 20, y],
         ],
-        { lineWidth: 10, lineCap: "butt" },
+        { lineWidth: 10, lineCap: "butt" }
       )
       .text("butt", x + 30, 5, { color: "red" })
       .line(
@@ -194,7 +194,7 @@ describe("Vector", () => {
           [x, y + 20],
           [x + 20, y + 20],
         ],
-        { lineWidth: 10, lineCap: "round" },
+        { lineWidth: 10, lineCap: "round" }
       ) // default
       .text("round", x + 30, 5 + h, { color: "green" })
       .line(
@@ -202,7 +202,7 @@ describe("Vector", () => {
           [x, y + 40],
           [x + 20, y + 40],
         ],
-        { lineWidth: 10, lineCap: "square" },
+        { lineWidth: 10, lineCap: "square" }
       )
       .text("square", x + 30, 5 + 2 * h, { color: "red" });
 
@@ -215,7 +215,7 @@ describe("Vector", () => {
           [x + 20, y + 30],
           [x, y + 50],
         ],
-        { lineWidth: 8, lineJoin: "miter", miterLimit: 3 },
+        { lineWidth: 8, lineJoin: "miter", miterLimit: 3 }
       )
       .text("miter", x - 3, 70, { rotation: -45, color: "red" })
       .polygon(
@@ -224,7 +224,7 @@ describe("Vector", () => {
           [x + 60, y + 30],
           [x + 40, y + 50],
         ],
-        { lineWidth: 8, lineJoin: "round" },
+        { lineWidth: 8, lineJoin: "round" }
       ) // default
       .text("round", x + 37, 70, { rotation: -45, color: "green" })
       .polygon(
@@ -233,7 +233,7 @@ describe("Vector", () => {
           [x + 100, y + 30],
           [x + 80, y + 50],
         ],
-        { lineWidth: 8, lineJoin: "bevel" },
+        { lineWidth: 8, lineJoin: "bevel" }
       )
       .text("bevel", x + 77, 70, { rotation: -45, color: "red" })
       .text(":lineJoins", 415, 33)

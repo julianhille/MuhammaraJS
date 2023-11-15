@@ -6,7 +6,7 @@ describe("EmptyWriter", function () {
       __dirname + "/output/EmptyWriter.pdf",
       {
         version: muhammara.ePDFVersion14,
-      },
+      }
     );
     pdfWriter.end();
   });

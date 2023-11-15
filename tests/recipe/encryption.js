@@ -63,7 +63,7 @@ describe("Encryption", () => {
       .text(
         "When creating file, an empty viewing password (userPassword)",
         150,
-        300,
+        300
       )
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
@@ -82,7 +82,7 @@ describe("Encryption", () => {
       .text(
         "When creating file, an empty viewing password (userPassword)",
         150,
-        300,
+        300
       )
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()

@@ -4,19 +4,19 @@ var fs = require("fs");
 describe("StreamCopyingContext", function () {
   it("should complete without error", function () {
     var inStreamA = new muhammara.PDFRStreamForFile(
-      __dirname + "/TestMaterials/BasicJPGImagesTest.PDF",
+      __dirname + "/TestMaterials/BasicJPGImagesTest.PDF"
     );
     var inStreamB = new muhammara.PDFRStreamForFile(
-      __dirname + "/TestMaterials/AddedPage.pdf",
+      __dirname + "/TestMaterials/AddedPage.pdf"
     );
     var outStream = new muhammara.PDFWStreamForFile(
-      __dirname + "/output/StreamCopyingContext.pdf",
+      __dirname + "/output/StreamCopyingContext.pdf"
     );
 
     var pdfWriter = muhammara.createWriterToModify(inStreamB, outStream);
 
     var copyCtx = pdfWriter.createPDFCopyingContext(
-      __dirname + "/TestMaterials/BasicJPGImagesTest.PDF",
+      __dirname + "/TestMaterials/BasicJPGImagesTest.PDF"
     );
     copyCtx.appendPDFPageFromPDF(0);
 

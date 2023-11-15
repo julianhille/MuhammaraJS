@@ -48,7 +48,7 @@ describe("Annotation: Text Annotations", () => {
             color: [100, 0, 255],
             text: "Squiggly!",
           },
-        },
+        }
       )
       .text("This text should be striked out with custom value.", 50, 350, {
         strikeOut: {
@@ -73,7 +73,7 @@ describe("Annotation: Text Annotations", () => {
   it("Add a highlight with text box.", (done) => {
     const output = path.join(
       __dirname,
-      "../output/annotation-with-textbox.pdf",
+      "../output/annotation-with-textbox.pdf"
     );
     const recipe = new HummusRecipe("new", output);
     const textContent =
@@ -251,7 +251,7 @@ describe("Annotation: Text Annotations", () => {
           title: "Richard Stallman",
           date: "2023-07-13T08:39:21.090Z",
           subject: "A subject 25",
-        },
+        }
       )
       .text("This text should be striked out with custom value.", 50, 350, {
         strikeOut: {
@@ -277,7 +277,7 @@ describe("Annotation: Text Annotations", () => {
           size: 25,
           title: "Evan You",
           subject: "A subject 27",
-        },
+        }
       )
       .annot(50, 500, "Text", {
         text: richText,

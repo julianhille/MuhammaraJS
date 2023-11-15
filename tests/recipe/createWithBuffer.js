@@ -30,7 +30,7 @@ describe("Modify", () => {
         assert(outBuffer instanceof Buffer);
         fs.writeFileSync(
           path.join(__dirname, "../output/createWithBuffer.pdf"),
-          outBuffer,
+          outBuffer
         );
         done();
       });
@@ -40,7 +40,7 @@ describe("Modify", () => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const output = path.join(
       __dirname,
-      "../output/createWithBufferAndFileOutput.pdf",
+      "../output/createWithBufferAndFileOutput.pdf"
     );
     const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
     const buffer = fs.readFileSync(src);

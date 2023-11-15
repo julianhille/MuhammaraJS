@@ -75,28 +75,28 @@ describe("Regular Polygons, Stars, Arrows", () => {
           [cx - sl + 5, cy],
           [cx, cy],
         ],
-        { color: "red", width: 1, dash: [10, 3] },
+        { color: "red", width: 1, dash: [10, 3] }
       )
       .line(
         [
           [cx, cy - sw / 2],
           [cx, cy + sw / 2],
         ],
-        { color: "red", width: 1, dash: [10, 3] },
+        { color: "red", width: 1, dash: [10, 3] }
       )
       .line(
         [
           [cx - 5, cy],
           [cx + 5, cy],
         ],
-        { width: 1.5, lineCap: "butt", color: "#000000" },
+        { width: 1.5, lineCap: "butt", color: "#000000" }
       )
       .line(
         [
           [cx, cy - 5],
           [cx, cy + 5],
         ],
-        { width: 1.5, lineCap: "butt", color: "#000000" },
+        { width: 1.5, lineCap: "butt", color: "#000000" }
       )
       .text("shaft", cx - 60, cy - sw / 2 - 15, { color: "#ff00ff" })
       .text("arrowhead", cx + 15, cy - 5)
@@ -108,7 +108,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
           [cx - 125, cy + 50],
           [cx - 120, cy + 50],
         ],
-        { width: 0.5, lineCap: "butt", color: "#ff00ff" },
+        { width: 0.5, lineCap: "butt", color: "#ff00ff" }
       )
 
       .line(
@@ -118,14 +118,14 @@ describe("Regular Polygons, Stars, Arrows", () => {
           [cx - 130, cy + sw],
           [cx - 120, cy + sw],
         ],
-        { width: 0.5, lineCap: "butt" },
+        { width: 0.5, lineCap: "butt" }
       )
       .line(
         [
           [cx - 115, cy - sw],
           [cx - 5, cy - sw],
         ],
-        { width: 0.5, lineCap: "butt", dash: [4], dashPhase: 6 },
+        { width: 0.5, lineCap: "butt", dash: [4], dashPhase: 6 }
       )
 
       // length description
@@ -137,7 +137,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
           [cx, cy + sw + 20],
           [cx, cy + sw + 10],
         ],
-        { width: 0.5, lineCap: "butt", color: "#ff00ff" },
+        { width: 0.5, lineCap: "butt", color: "#ff00ff" }
       )
       .line(
         [
@@ -145,7 +145,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
           [cx + sl, cy + sw + 20],
           [cx + sl, cy + sw + 10],
         ],
-        { width: 0.5, lineCap: "butt" },
+        { width: 0.5, lineCap: "butt" }
       )
 
       // tail marker
@@ -154,7 +154,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
           [cx - sw, cy - 5],
           [cx - sw, cy + 5],
         ],
-        { width: 2, lineCap: "butt", color: "#ffffff" },
+        { width: 2, lineCap: "butt", color: "#ffffff" }
       )
       .circle(cx - sw, cy, 3, { color: "red" })
       .arrow(cx - sw - 4, cy + 5, {
@@ -189,43 +189,43 @@ describe("Regular Polygons, Stars, Arrows", () => {
         "{number} x - x coordinate at center of the arrow which is also its rotation point",
         ux + 10,
         uh + 15,
-        uop,
+        uop
       )
       .text(
         "{number} y - y coordinate at center of the arrow which is also its rotation point",
         ux + 10,
         uh + 30,
-        uop,
+        uop
       )
       .text(
         "{number|number[ ]} [options.head=[10,10,0] - length, width and baseoffset of head of arrow.",
         ux + 10,
         uh + 45,
-        uop,
+        uop
       )
       .text(
         "{number|number[ ]} [options.shaft=10] - length & width of shaft of arrow.",
         ux + 10,
         uh + 60,
-        uop,
+        uop
       )
       .text(
         '{string} [options.at] - position and/or rotate at "head" or "tail" of arrow',
         ux + 10,
         uh + 75,
-        uop,
+        uop
       )
       .text(
         "{boolean} [options.double=false] - indicate double headed arrow production",
         ux + 10,
         uh + 90,
-        uop,
+        uop
       )
       .text(
         "Note that the circumscribed circle is for illustrative purposes and only naturally occurs when the shaft length is equal to arrowhead length, which is a property of the default arrow.",
         ux + 100,
         uh + 115,
-        { color: "#961d17", textBox: { width: 300, textAlign: "justify" } },
+        { color: "#961d17", textBox: { width: 300, textAlign: "justify" } }
       )
 
       // Examples
@@ -353,20 +353,20 @@ describe("Regular Polygons, Stars, Arrows", () => {
           [x - 50, y - 3],
           [x - 50, y - 16],
         ],
-        { width: 0.3, color: "red" },
+        { width: 0.3, color: "red" }
       )
       .line(
         [
           [x + 50, y - 3],
           [x + 50, y - 16],
         ],
-        { width: 0.3, color: "red" },
+        { width: 0.3, color: "red" }
       )
       .text(
         "center differs between single & double headed arrows",
         50,
         y - 60,
-        { size: 9, textBox: { width: 100, textAlign: "center" } },
+        { size: 9, textBox: { width: 100, textAlign: "center" } }
       );
 
     x = 306;

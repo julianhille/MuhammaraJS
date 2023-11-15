@@ -7,7 +7,7 @@ describe("Append Pages", () => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const longPDF = path.join(
       __dirname,
-      "../TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf",
+      "../TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf"
     );
     const output = path.join(__dirname, `../output/${taskAP}.pdf`);
     const recipe = new HummusRecipe(src, output);

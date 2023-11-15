@@ -15,14 +15,14 @@ describe("Triangles", () => {
           [50, y],
           [550, y],
         ],
-        { color: "#aa", width: 0.5, opacity: 0.5 },
+        { color: "#aa", width: 0.5, opacity: 0.5 }
       )
       .line(
         [
           [x, 50],
           [x, 700],
         ],
-        { color: "#aa", width: 0.5, opacity: 0.5 },
+        { color: "#aa", width: 0.5, opacity: 0.5 }
       )
 
       .triangle(x, y, [90, 60, 80], { width: 0.5, color: "blue", debug: true })
@@ -59,7 +59,7 @@ describe("Triangles", () => {
           [50, y],
           [550, y],
         ],
-        { color: "#aa", width: 0.5, opacity: 0.5 },
+        { color: "#aa", width: 0.5, opacity: 0.5 }
       )
       .triangle(x, y, sas, {
         traitID: "sas",
@@ -102,7 +102,7 @@ describe("Triangles", () => {
           [50, y],
           [550, y],
         ],
-        { color: "#aa", width: 0.5, opacity: 0.5 },
+        { color: "#aa", width: 0.5, opacity: 0.5 }
       )
       .triangle(x, y, asa, {
         traitID: "asa",
@@ -145,7 +145,7 @@ describe("Triangles", () => {
           [50, y],
           [550, y],
         ],
-        { color: "#aa", width: 0.5, opacity: 0.5 },
+        { color: "#aa", width: 0.5, opacity: 0.5 }
       )
       .triangle(x, y, [40, 40, 40], {
         traitID: "sas",
@@ -203,7 +203,7 @@ describe("Triangles", () => {
           [50, y],
           [550, y],
         ],
-        { color: "#aa", width: 0.5, opacity: 0.5 },
+        { color: "#aa", width: 0.5, opacity: 0.5 }
       )
       .rectangle(x, y - 59, 51, 59, {
         width: 1,
@@ -224,7 +224,7 @@ describe("Triangles", () => {
         "NOTE: When no position point specified\nrotation occurs around bounding box center,\nnot at the given x,y coordinate.",
         x + 80,
         y - 50,
-        { color: "red" },
+        { color: "red" }
       )
       .text("rotation: 15", x, y + 21, txtOps)
       .endPage()
