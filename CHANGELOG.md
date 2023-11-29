@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - definitions: appendPage optionnal parameter
 - Build musl/musl-arm with node 20
+- Support negative rotation in recipe page changes
 
 ## [4.0.0] - 2023-07-14
 
