@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0]
+        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.0.0]
         include:
           - architecture: arm64
             architecture_node: x64
@@ -44,6 +44,8 @@ jobs:
             node: 19.0.0
           - python_version: 3
             node: 20.0.0
+          - python_version: 3
+            node: 21.0.0
     runs-on: ubuntu-latest
     container:
       image: dockcross/linux-arm64-musl
@@ -80,7 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0]
+        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.0.0]
         include:
           - python_version: 3
             node: 16.11.1
@@ -92,6 +94,8 @@ jobs:
             node: 19.0.0
           - python_version: 3
             node: 20.0.0
+          - python_version: 3
+            node: 21.0.0
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node }}-alpine
