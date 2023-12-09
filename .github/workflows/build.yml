@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0]
+        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.0.0]
         include:
           - architecture: arm64
             architecture_node: x64
@@ -44,6 +44,8 @@ jobs:
             node: 19.0.0
           - python_version: 3
             node: 20.0.0
+          - python_version: 3
+            node: 21.0.0
     runs-on: ubuntu-latest
     container:
       image: dockcross/linux-arm64-musl
@@ -57,7 +59,6 @@ jobs:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
       - run: apt-get install -y python${{ matrix.python_version }}
-      - run: npm config set unsafe-perm true
       - run: node --version
       - run: npm --version
       - run: chmod 0777 tests/output/
@@ -68,6 +69,7 @@ jobs:
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
+          npm_config_unsafe_perm: true
       # - run: npm run test, this is not an arm64 machine so we can not test.
       - run: ./node_modules/.bin/node-pre-gyp package --target_libc=musl  --target_arch=${{ matrix.target_architecture }}
       - uses: actions/upload-artifact@v2
@@ -80,7 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0]
+        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.0.0]
         include:
           - python_version: 3
             node: 16.11.1
@@ -92,6 +94,8 @@ jobs:
             node: 19.0.0
           - python_version: 3
             node: 20.0.0
+          - python_version: 3
+            node: 21.0.0
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node }}-alpine
@@ -102,13 +106,13 @@ jobs:
       - uses: actions/checkout@v2
       - run: apk update
       - run: apk add --no-cache make gcc jq g++ python${{ matrix.python_version }} tar
-      - run: npm config set unsafe-perm true
       - run: node --version
       - run: npm --version
       - run: chmod 0777 tests/output/
       - run: npm install --build-from-source
         env:
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
+          npm_config_unsafe_perm: true
       - run: npm run test
       - run: ./node_modules/.bin/node-pre-gyp package testpackage --target_libc=musl
       - uses: actions/upload-artifact@v2
