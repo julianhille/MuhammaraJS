@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [4.1.0] - 2023-12-13
+
 ### Fixed
 
 - definitions: appendPage optionnal parameter
@@ -410,7 +412,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/4.0.0...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/4.1.0...HEAD
+[4.1.0]: https://github.com/julianhille/MuhammaraJS/compare/4.0.0...4.1.0
 [4.0.0]: https://github.com/julianhille/MuhammaraJS/compare/3.8.0...4.0.0
 [3.8.0]: https://github.com/julianhille/MuhammaraJS/compare/3.7.0...3.8.0
 [3.7.0]: https://github.com/julianhille/MuhammaraJS/compare/3.6.0...3.7.0
