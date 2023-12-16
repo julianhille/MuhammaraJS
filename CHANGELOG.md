@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Add nodejs v21.0.0
 
+### Added
+
+- Add nodejs v21.0.0
+- Add electron 24.7 and 24.8
+- Add electron 25.4, 25.5, 25.6, 25.7, 25.8 and 25.9
+
 ## [4.0.0] - 2023-07-14
 
 ### Fixed
