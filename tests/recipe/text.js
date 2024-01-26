@@ -215,7 +215,7 @@ describe("Text", () => {
       .endPDF(done);
   });
 
-  it("Add text with bolded text inside textbox", (done) => {
+  it("Add text with bolded format inside textbox", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
     const output = path.join(
       __dirname,
@@ -310,7 +310,7 @@ describe("Text", () => {
       .endPDF(done);
   });
 
-  it("Add text with italic text inside textbox", (done) => {
+  it("Add text with italic format inside textbox", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
     const output = path.join(
       __dirname,
