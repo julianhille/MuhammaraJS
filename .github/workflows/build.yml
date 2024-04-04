@@ -7,7 +7,6 @@ on:
       - "2.*"
       - "3.*"
       - "4.*"
-    branches:
   pull_request:
   workflow_dispatch:
 
