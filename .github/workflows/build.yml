@@ -34,19 +34,19 @@ jobs:
             architecture_node: x64
             target_architecture: arm64
             extra_compile_flags: -march=armv8-a
-          - python_version: 2
+          - python_version: 2.7
             node: 15.7.0
-          - python_version: 3
+          - python_version: 3.10
             node: 16.11.1
-          - python_version: 3
+          - python_version: 3.10
             node: 17.6.0
-          - python_version: 3
+          - python_version: 3.10
             node: 18.8.0
-          - python_version: 3
+          - python_version: 3.10
             node: 19.0.0
-          - python_version: 3
+          - python_version: 3.10
             node: 20.0.0
-          - python_version: 3
+          - python_version: 3.10
             node: 21.0.0
     runs-on: ubuntu-latest
     container:
