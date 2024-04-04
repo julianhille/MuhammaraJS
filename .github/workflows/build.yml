@@ -60,7 +60,9 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - run: apt-get install -y python${{ matrix.python_version }}
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python_version }}
       - run: node --version
       - run: npm --version
       - run: chmod 0777 tests/output/
