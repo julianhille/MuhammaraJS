@@ -139,7 +139,6 @@ jobs:
             23.2.0,
             23.1.0,
             23.0.0,
-            22.3.0,
           ]
         include:
           - electron_mocha_version: ^11
