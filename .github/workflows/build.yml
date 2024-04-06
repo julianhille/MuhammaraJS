@@ -7,7 +7,6 @@ on:
       - "2.*"
       - "3.*"
       - "4.*"
-    branches:
   pull_request:
   workflow_dispatch:
 
@@ -28,14 +27,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.0.0]
+        node: [17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.0.0]
         include:
           - architecture: arm64
             architecture_node: x64
             target_architecture: arm64
             extra_compile_flags: -march=armv8-a
-          - python_version: 3
-            node: 16.11.1
           - python_version: 3
             node: 17.6.0
           - python_version: 3
@@ -82,10 +79,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.0.0]
+        node: [17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.0.0]
         include:
-          - python_version: 3
-            node: 16.11.1
           - python_version: 3
             node: 17.6.0
           - python_version: 3
@@ -144,35 +139,6 @@ jobs:
             23.2.0,
             23.1.0,
             23.0.0,
-            22.3.0,
-            22.2.0,
-            22.1.0,
-            22.0.0,
-            21.4.0,
-            21.3.0,
-            21.2.0,
-            21.1.0,
-            21.0.0,
-            20.3.3,
-            20.2.0,
-            20.1.0,
-            20.0.3,
-            19.1.0,
-            19.0.0,
-            18.3.0,
-            18.2.0,
-            18.1.0,
-            18.0.0,
-            17.4.0,
-            17.3.0,
-            17.2.0,
-            17.1.0,
-            17.0.0,
-            16.0.1,
-            15.3.0,
-            15.2.0,
-            15.1.2,
-            15.0.0,
           ]
         include:
           - electron_mocha_version: ^11
@@ -187,8 +153,6 @@ jobs:
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
-          - architecture: x64
-            node: 16.13.2
           - electron: 25.3.0
             node: 18.15.0
           - electron: 25.2.0
@@ -219,64 +183,6 @@ jobs:
             node: 18.12.1
           - electron: 23.0.0
             node: 18.12.1
-          - electron: 22.3.0
-            node: 16.17.1
-          - electron: 22.2.0
-            node: 16.17.1
-          - electron: 22.1.0
-            node: 16.17.1
-          - electron: 22.0.0
-            node: 16.17.1
-          - electron: 21.4.0
-            node: 16.16.0
-          - electron: 21.3.0
-            node: 16.16.0
-          - electron: 21.2.0
-            node: 16.16.0
-          - electron: 21.1.0
-            node: 16.16.0
-          - electron: 21.0.0
-            node: 16.16.0
-          - electron: 20.3.3
-            node: 16.15.0
-          - electron: 20.2.0
-            node: 16.15.0
-          - electron: 20.1.0
-            node: 16.15.0
-          - electron: 20.0.3
-            node: 16.15.0
-          - electron: 19.1.0
-            node: 16.14.2
-          - electron: 19.0.0
-            node: 16.14.2
-          - electron: 18.3.0
-            node: 16.13.2
-          - electron: 18.2.0
-            node: 16.13.2
-          - electron: 18.1.0
-            node: 16.13.2
-          - electron: 18.0.0
-            node: 16.13.2
-          - electron: 17.4.0
-            node: 16.13.0
-          - electron: 17.3.0
-            node: 16.13.0
-          - electron: 17.2.0
-            node: 16.13.0
-          - electron: 17.1.0
-            node: 16.13.0
-          - electron: 17.0.0
-            node: 16.13.0
-          - electron: 16.0.1
-            node: 16.9.1
-          - electron: 15.3.0
-            node: 16.5.0
-          - electron: 15.2.0
-            node: 16.5.0
-          - electron: 15.1.2
-            node: 16.5.0
-          - electron: 15.0.0
-            node: 16.5.0
         exclude:
           - os: macos-11
             architecture: ia32
@@ -341,14 +247,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-11, windows-2019]
-        node: [15.7.0, 16.11.1, 17.6.0, 18.8.0, 19.0.0, 20.0.0]
+        node: [17.6.0, 18.8.0, 19.0.0, 20.0.0]
         architecture: [x64, ia32, arm64]
         include:
           - python_version: "3.10"
-          - node: 15.7.0
-            python_version: "3.6"
-          - node: 16.11.1
-            python_version: "3.6"
           - architecture: ia32
             architecture_node: x86
             target_architecture: ia32

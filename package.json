@@ -8,7 +8,7 @@
   "main": "./lib/index.js",
   "types": "./muhammara.d.ts",
   "engines": {
-    "node": ">=15"
+    "node": ">=17"
   },
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build ${EXTRA_NODE_PRE_GYP_FLAGS:-\"\"}",
