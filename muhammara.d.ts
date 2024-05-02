@@ -1066,7 +1066,10 @@ declare module "muhammara" {
       options?: Recipe.AnnotOptions
     ): Recipe;
 
-    appendPage(pdfSrc: string, pages?: number | number[]): Recipe;
+    appendPage(
+      pdfSrc: string,
+      pages?: number | (number | [number, number])[]
+    ): Recipe;
 
     encrypt(options: Recipe.EncryptOptions): Recipe;
 
