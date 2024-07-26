@@ -34,6 +34,7 @@
     "lib",
     "fonts",
     "binding.gyp",
+    "binding",
     "muhammara.d.ts"
   ],
   "dependencies": {
