@@ -3,16 +3,6 @@
         {
             'target_name': 'libjpeg',
             'type': 'static_library',
-           'msvs_settings':
-			{
-				'VCCLCompilerTool':
-				{
-					'AdditionalOptions':
-						[
-						'/std:c++17',
-						]
-				}
-			},
             'sources': [
                 'jaricom.c',
                 'jcapimin.c',

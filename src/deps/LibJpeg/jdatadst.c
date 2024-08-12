@@ -2,7 +2,7 @@
  * jdatadst.c
  *
  * Copyright (C) 1994-1996, Thomas G. Lane.
- * Modified 2009-2019 by Guido Vollbeding.
+ * Modified 2009-2012 by Guido Vollbeding.
  * This file is part of the Independent JPEG Group's software.
  * For conditions of distribution and use, see the accompanying README file.
  *
@@ -46,7 +46,7 @@ typedef struct {
   struct jpeg_destination_mgr pub; /* public fields */
 
   unsigned char ** outbuffer;	/* target buffer */
-  size_t * outsize;
+  unsigned long * outsize;
   unsigned char * newbuffer;	/* newly allocated buffer */
   JOCTET * buffer;		/* start of buffer */
   size_t bufsize;
@@ -66,8 +66,9 @@ init_destination (j_compress_ptr cinfo)
   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
 
   /* Allocate the output buffer --- it will be released when done with image */
-  dest->buffer = (JOCTET *) (*cinfo->mem->alloc_small)
-    ((j_common_ptr) cinfo, JPOOL_IMAGE, OUTPUT_BUF_SIZE * SIZEOF(JOCTET));
+  dest->buffer = (JOCTET *)
+      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+				  OUTPUT_BUF_SIZE * SIZEOF(JOCTET));
 
   dest->pub.next_output_byte = dest->buffer;
   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
@@ -130,7 +131,7 @@ empty_mem_output_buffer (j_compress_ptr cinfo)
   nextbuffer = (JOCTET *) malloc(nextsize);
 
   if (nextbuffer == NULL)
-    ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 11);
+    ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
 
   MEMCOPY(nextbuffer, dest->buffer, dest->bufsize);
 
@@ -169,9 +170,9 @@ term_destination (j_compress_ptr cinfo)
     if (JFWRITE(dest->outfile, dest->buffer, datacount) != datacount)
       ERREXIT(cinfo, JERR_FILE_WRITE);
   }
-  JFFLUSH(dest->outfile);
+  fflush(dest->outfile);
   /* Make sure we wrote the output file OK */
-  if (JFERROR(dest->outfile))
+  if (ferror(dest->outfile))
     ERREXIT(cinfo, JERR_FILE_WRITE);
 }
 
@@ -203,8 +204,9 @@ jpeg_stdio_dest (j_compress_ptr cinfo, FILE * outfile)
    * sizes may be different.  Caveat programmer.
    */
   if (cinfo->dest == NULL) {	/* first time for this JPEG object? */
-    cinfo->dest = (struct jpeg_destination_mgr *) (*cinfo->mem->alloc_small)
-      ((j_common_ptr) cinfo, JPOOL_PERMANENT, SIZEOF(my_destination_mgr));
+    cinfo->dest = (struct jpeg_destination_mgr *)
+      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+				  SIZEOF(my_destination_mgr));
   }
 
   dest = (my_dest_ptr) cinfo->dest;
@@ -224,14 +226,11 @@ jpeg_stdio_dest (j_compress_ptr cinfo, FILE * outfile)
  * larger memory, so the buffer is available to the application after
  * finishing compression, and then the application is responsible for
  * freeing the requested memory.
- * Note:  An initial buffer supplied by the caller is expected to be
- * managed by the application.  The library does not free such buffer
- * when allocating a larger buffer.
  */
 
 GLOBAL(void)
 jpeg_mem_dest (j_compress_ptr cinfo,
-	       unsigned char ** outbuffer, size_t * outsize)
+	       unsigned char ** outbuffer, unsigned long * outsize)
 {
   my_mem_dest_ptr dest;
 
@@ -242,8 +241,9 @@ jpeg_mem_dest (j_compress_ptr cinfo,
    * can be written to the same buffer without re-executing jpeg_mem_dest.
    */
   if (cinfo->dest == NULL) {	/* first time for this JPEG object? */
-    cinfo->dest = (struct jpeg_destination_mgr *) (*cinfo->mem->alloc_small)
-      ((j_common_ptr) cinfo, JPOOL_PERMANENT, SIZEOF(my_mem_destination_mgr));
+    cinfo->dest = (struct jpeg_destination_mgr *)
+      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+				  SIZEOF(my_mem_destination_mgr));
   }
 
   dest = (my_mem_dest_ptr) cinfo->dest;

@@ -23,12 +23,6 @@
 #ifndef __RPCNDR_H__		/* don't conflict if rpcndr.h already read */
 typedef unsigned char boolean;
 #endif
-#ifndef FALSE			/* in case these macros already exist */
-#define FALSE	0		/* values of boolean */
-#endif
-#ifndef TRUE
-#define TRUE	1
-#endif
 #define HAVE_BOOLEAN		/* prevent jmorecfg.h from redefining it */
 
 
@@ -81,14 +75,6 @@ typedef unsigned char boolean;
 #ifndef __RPCNDR_H__		/* don't conflict if rpcndr.h already read */
 typedef unsigned char boolean;
 #endif
-
-#ifndef FALSE			/* in case these macros already exist */
-#define FALSE	0		/* values of boolean */
-#endif
-#ifndef TRUE
-#define TRUE	1
-#endif
-
 #define HAVE_BOOLEAN		/* prevent jmorecfg.h from redefining it */
 #endif
 

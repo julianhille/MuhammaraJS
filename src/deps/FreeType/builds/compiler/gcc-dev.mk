@@ -77,6 +77,7 @@ ifndef CFLAGS
             -Wwrite-strings \
             -Wredundant-decls \
             -Wno-long-long \
+            -Wno-unused-variable \
             $(nested_externs) \
             $(strict_prototypes)
 endif
