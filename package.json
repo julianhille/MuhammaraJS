@@ -37,20 +37,20 @@
     "muhammara.d.ts"
   ],
   "dependencies": {
-    "@mapbox/node-pre-gyp": "^1.0.10",
+    "@mapbox/node-pre-gyp": "^1.0.11",
     "linebreak": "^1.1.0",
     "memory-streams": "^0.1.3",
-    "@xmldom/xmldom": "^0.8.6"
+    "@xmldom/xmldom": "^0.8.10"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
     "chai": "^4.3.6",
     "mocha": "^10.2.0",
-    "npm": "^6.14.5",
-    "prettier": "^2.7.1",
-    "docdash": "^2.0.1",
-    "fs-extra": "^9.1.0",
-    "jsdoc": "^3.6.4"
+    "npm": "^10.8.2",
+    "prettier": "^3.3.3",
+    "docdash": "^2.0.2",
+    "fs-extra": "^11.2.0",
+    "jsdoc": "^4.0.3"
   },
   "binary": {
     "module_name": "muhammara",
