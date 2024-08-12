@@ -43,7 +43,7 @@
     "@xmldom/xmldom": "^0.8.6"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.2.0",
     "chai": "^4.5.0",
     "mocha": "^10.7.3",
     "npm": "^10.8.2",
