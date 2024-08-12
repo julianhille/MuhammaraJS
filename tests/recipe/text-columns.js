@@ -37,7 +37,7 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
         'Multiple columns with auto text fill using single "layout".',
         x,
         y - 20,
-        { color: "red" }
+        { color: "red" },
       )
       .layout(id, x, y, 500, 200, { columns: 3, gap: 10 })
       .text(lorem, {

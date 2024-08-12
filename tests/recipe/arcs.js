@@ -111,7 +111,7 @@ function pie(x, y, radius, chart) {
       radius,
       startAt,
       endAt,
-      Object.assign({}, options, sectorOpts)
+      Object.assign({}, options, sectorOpts),
     );
 
     // Implant percentages inside sectors where possible
@@ -243,7 +243,7 @@ describe("Arc test", () => {
         "sector: true\ncloses arc\nto centerpoint",
         x + 215,
         y + r + 21,
-        txtOps
+        txtOps,
       )
       .arc(x + 360, y, r, 45, -270, { rotation: 0, fill: "def", sector: true })
       .arc(x + 363, y + 7, r, 45, 90, {

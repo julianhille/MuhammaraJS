@@ -40,7 +40,7 @@ describe("Rotation", () => {
     it(pdf.title, (done) => {
       const src = path.join(
         __dirname,
-        `../TestMaterials/recipe/${pdf.filename}`
+        `../TestMaterials/recipe/${pdf.filename}`,
       );
       const output = path.join(__dirname, `../output/${pdf.filename}`);
       const recipe = new HummusRecipe(src, output);

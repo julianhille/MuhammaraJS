@@ -4,7 +4,7 @@ describe("EmptyPagesTest", function () {
   it("should complete without error", function () {
     var pdfWriter = muhammara.createWriter(
       __dirname + "/output/EmptyPages.pdf",
-      { version: muhammara.ePDFVersion14 }
+      { version: muhammara.ePDFVersion14 },
     );
     var page = pdfWriter.createPage();
 

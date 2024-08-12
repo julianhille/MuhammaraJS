@@ -5,7 +5,7 @@ var fs = require("fs");
 describe("ParseInfo", function () {
   it("should read fields correctly", function () {
     var pdfReader = muhammara.createReader(
-      __dirname + "/TestMaterials/SettingInfoValues.pdf"
+      __dirname + "/TestMaterials/SettingInfoValues.pdf",
     );
     var info = pdfReader
       .queryDictionaryObject(pdfReader.getTrailer(), "Info")
@@ -18,7 +18,7 @@ describe("ParseInfo", function () {
     assert.equal(
       info.CreationDate.value,
       "D:20140720204655+03'00'",
-      "creation date value"
+      "creation date value",
     );
   });
 });

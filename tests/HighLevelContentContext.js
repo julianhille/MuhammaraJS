@@ -1,14 +1,14 @@
 describe("HighLevelContentContext", function () {
   it("should complete without error", function () {
     var pdfWriter = require("../lib/muhammara").createWriter(
-      __dirname + "/output/HighLevelContentContext.pdf"
+      __dirname + "/output/HighLevelContentContext.pdf",
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
     var cxt = pdfWriter.startPageContentContext(page);
 
     var textOptions = {
       font: pdfWriter.getFontForFile(
-        __dirname + "/TestMaterials/fonts/arial.ttf"
+        __dirname + "/TestMaterials/fonts/arial.ttf",
       ),
       size: 14,
       colorspace: "gray",
@@ -31,7 +31,7 @@ describe("HighLevelContentContext", function () {
           [149, 800],
           [225, 640],
         ],
-        pathFillOptions
+        pathFillOptions,
       )
       .drawPath(
         75,
@@ -44,7 +44,7 @@ describe("HighLevelContentContext", function () {
         440,
         223,
         540,
-        pathStrokeOptions
+        pathStrokeOptions,
       );
 
     // drawSquare

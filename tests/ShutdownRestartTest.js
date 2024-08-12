@@ -3,11 +3,11 @@ var muhammara = require("../lib/muhammara");
 describe("ShutDownRestartState", function () {
   it("should complete without error", function () {
     var pdfWriterA = muhammara.createWriter(
-      __dirname + "/output/SimpleContentShutdownRestart.PDF"
+      __dirname + "/output/SimpleContentShutdownRestart.PDF",
     );
     var page = pdfWriterA.createPage(0, 0, 595, 842);
     var font = pdfWriterA.getFontForFile(
-      __dirname + "/TestMaterials/fonts/arial.ttf"
+      __dirname + "/TestMaterials/fonts/arial.ttf",
     );
 
     pdfWriterA
@@ -44,7 +44,7 @@ describe("ShutDownRestartState", function () {
 
     var pdfWriterB = muhammara.createWriterToContinue(
       __dirname + "/output/SimpleContentShutdownRestart.PDF",
-      __dirname + "/output/ShutDownRestartState.txt"
+      __dirname + "/output/ShutDownRestartState.txt",
     );
     var page = pdfWriterB.createPage(0, 0, 595, 842);
 

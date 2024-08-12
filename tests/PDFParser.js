@@ -52,14 +52,12 @@ describe("PDFParser", function () {
         ++mTabLevel;
         var aDictionary = inObject.toPDFDictionary().toJSObject();
 
-        Object.getOwnPropertyNames(aDictionary).forEach(function (
-          element,
-          index,
-          array
-        ) {
-          logToFile(element);
-          iterateObjectTypes(aDictionary[element], inReader);
-        });
+        Object.getOwnPropertyNames(aDictionary).forEach(
+          function (element, index, array) {
+            logToFile(element);
+            iterateObjectTypes(aDictionary[element], inReader);
+          },
+        );
         --mTabLevel;
       } else if (inObject.getType() == muhammara.ePDFObjectStream) {
         output += "Stream . iterating stream dictionary:";
@@ -72,13 +70,13 @@ describe("PDFParser", function () {
     }
 
     var pdfReader = muhammara.createReader(
-      __dirname + "/TestMaterials/XObjectContent.PDF"
+      __dirname + "/TestMaterials/XObjectContent.PDF",
     );
     assert.equal(pdfReader.getPDFLevel(), 1.3, "getPDFLevel");
     assert.equal(pdfReader.getPagesCount(), 2, "getPagesCount");
     var catalog = pdfReader.queryDictionaryObject(
       pdfReader.getTrailer(),
-      "Root"
+      "Root",
     );
     iterateObjectTypes(catalog, pdfReader);
     fs.closeSync(outputFile);
@@ -88,7 +86,7 @@ describe("PDFParser", function () {
     var pdfReader;
     assert.doesNotThrow(function () {
       pdfReader = muhammara.createReader(
-        __dirname + "/TestMaterials/XObjectContentWithExtra.PDF"
+        __dirname + "/TestMaterials/XObjectContentWithExtra.PDF",
       );
     });
     assert.equal(pdfReader.getPDFLevel(), 1.3, "getPDFLevel");

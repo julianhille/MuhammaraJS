@@ -4,14 +4,14 @@ const expect = require("chai").expect;
 describe("AppendPagesTest", function () {
   it("should complete without error", function () {
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/AppendPagesTest.pdf"
+      __dirname + "/output/AppendPagesTest.pdf",
     );
     pdfWriter.appendPDFPagesFromPDF(__dirname + "/TestMaterials/Original.pdf");
     pdfWriter.appendPDFPagesFromPDF(
-      __dirname + "/TestMaterials/XObjectContent.PDF"
+      __dirname + "/TestMaterials/XObjectContent.PDF",
     );
     pdfWriter.appendPDFPagesFromPDF(
-      __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF"
+      __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
     );
 
     pdfWriter.end();
@@ -22,8 +22,8 @@ describe("AppendPagesTest", function () {
     var pdfWriter = muhammara.createWriter(writerBuffer);
     expect(() =>
       pdfWriter.appendPDFPagesFromPDF(
-        __dirname + "/TestMaterials/appendbreaks.pdf"
-      )
+        __dirname + "/TestMaterials/appendbreaks.pdf",
+      ),
     ).to.throw("unable to append");
   });
 });

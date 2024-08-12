@@ -168,7 +168,7 @@ describe("Text - Columns", () => {
         'Tables showing new position when "overflow" encountered.',
         80,
         y + 200,
-        { color: "#000000" }
+        { color: "#000000" },
       )
       .text("Note data driven property (color) assignment", 130, y + 220, {
         size: 12,
@@ -188,7 +188,7 @@ describe("Text - Columns", () => {
         "Table continued onto subsequent pages (overflow encountered)",
         x,
         y - 30,
-        { color: "#000000" }
+        { color: "#000000" },
       )
       .table(x - 20, y, people.sort(compare), {
         columns: pcols,
