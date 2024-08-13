@@ -2,7 +2,7 @@ describe("BasicPNGImagesTest", function () {
   it("should complete without error", function () {
     var pdfWriter = require("../lib/muhammara").createWriter(
       __dirname + "/output/BasicPNGImagesTest.pdf",
-      { log: __dirname + "/output/BasicPNGImagesTest.log" }
+      { log: __dirname + "/output/BasicPNGImagesTest.log" },
     );
 
     var pathFillOptions = { color: 0xff0000, colorspace: "rgb", type: "fill" };
@@ -16,7 +16,7 @@ describe("BasicPNGImagesTest", function () {
         10,
         200,
         __dirname + "/TestMaterials/images/png/original.png",
-        imageOptions
+        imageOptions,
       );
     pdfWriter.writePage(page);
 
@@ -28,7 +28,7 @@ describe("BasicPNGImagesTest", function () {
         10,
         200,
         __dirname + "/TestMaterials/images/png/original_transparent.png",
-        imageOptions
+        imageOptions,
       );
     pdfWriter.writePage(page);
 
@@ -40,7 +40,7 @@ describe("BasicPNGImagesTest", function () {
         10,
         200,
         __dirname + "/TestMaterials/images/png/pnglogo-grr.png",
-        imageOptions
+        imageOptions,
       );
     pdfWriter.writePage(page);
 
@@ -52,7 +52,7 @@ describe("BasicPNGImagesTest", function () {
         10,
         200,
         __dirname + "/TestMaterials/images/png/gray-alpha-8-linear.png",
-        imageOptions
+        imageOptions,
       );
     pdfWriter.writePage(page);
 
@@ -64,7 +64,7 @@ describe("BasicPNGImagesTest", function () {
         10,
         200,
         __dirname + "/TestMaterials/images/png/gray-16-linear.png",
-        imageOptions
+        imageOptions,
       );
     pdfWriter.writePage(page);
 

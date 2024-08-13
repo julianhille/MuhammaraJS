@@ -218,7 +218,7 @@ to lists, requires prior specific permission and/or a fee.";
       })
       .text(
         "D.3.4 [Programming Languages]: Processors — Incremental compilers, code generation.",
-        { bold: false }
+        { bold: false },
       )
       .movedown(1.5)
       .text("General Terms ", { bold: true, italic: true })

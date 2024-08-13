@@ -16,7 +16,7 @@ function testBasicFileModification(inFileName, throws) {
           {
             modifiedFilePath:
               __dirname + "/output/Modified" + inFileName + ".pdf",
-          }
+          },
         );
 
         var page = pdfWriter.createPage(0, 0, 595, 842);
@@ -27,9 +27,9 @@ function testBasicFileModification(inFileName, throws) {
           .Tf(
             pdfWriter.getFontForFile(
               __dirname + "/TestMaterials/fonts/Courier.dfont",
-              0
+              0,
             ),
-            1
+            1,
           )
           .Tm(30, 0, 0, 30, 78.4252, 662.8997)
           .Tj("about")

@@ -14,17 +14,17 @@ describe("TiffSpecialsTest", function () {
     }
 
     var pdfWriter = require("../lib/muhammara").createWriter(
-      __dirname + "/output/TiffSpecialsTest.pdf"
+      __dirname + "/output/TiffSpecialsTest.pdf",
     );
     var pageCount = pdfWriter.getImagePagesCount(
-      __dirname + "/TestMaterials/images/tiff/multipage.tif"
+      __dirname + "/TestMaterials/images/tiff/multipage.tif",
     );
     assert.equal(pageCount, 4, "expected number of pages");
 
     for (var i = 0; i < 4; ++i) {
       var imageForm = pdfWriter.createFormXObjectFromTIFF(
         __dirname + "/TestMaterials/images/tiff/multipage.tif",
-        { pageIndex: i }
+        { pageIndex: i },
       );
       createPageFormImage(pdfWriter, imageForm);
     }
@@ -73,7 +73,7 @@ describe("TiffSpecialsTest", function () {
           oneColor: [255, 255, 0, 0],
           zeroColor: [0, 0, 0, 0],
         },
-      }
+      },
     );
     var imageGrayScaleGreenVSRed = pdfWriter.createFormXObjectFromTIFF(
       imagePath,
@@ -83,7 +83,7 @@ describe("TiffSpecialsTest", function () {
           oneColor: [0, 255, 0],
           zeroColor: [255, 0, 0],
         },
-      }
+      },
     );
     var imageGrayScaleCyanVSMagenta = pdfWriter.createFormXObjectFromTIFF(
       imagePath,
@@ -93,7 +93,7 @@ describe("TiffSpecialsTest", function () {
           oneColor: [255, 0, 0, 0],
           zeroColor: [0, 255, 0, 0],
         },
-      }
+      },
     );
 
     var page = pdfWriter.createPage(0, 0, 595, 842);

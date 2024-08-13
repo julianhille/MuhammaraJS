@@ -8,7 +8,7 @@ function PDFComment(
   inPosition,
   inColor,
   flag,
-  inReplyTo
+  inReplyTo,
 ) {
   this.time = new Date();
   this.text = inText;
@@ -56,7 +56,7 @@ PDFCommentWriter.prototype._writeCommentsTree = function (inComment) {
     .writeRectangleValue(inComment.position) // when implementing allow also 4 numbers input
     .writeKey("Contents")
     .writeLiteralStringValue(
-      this.pdfWriter.createPDFTextString(inComment.text).toBytesArray()
+      this.pdfWriter.createPDFTextString(inComment.text).toBytesArray(),
     )
     .writeKey("C");
 
@@ -69,11 +69,11 @@ PDFCommentWriter.prototype._writeCommentsTree = function (inComment) {
   dictionaryContext
     .writeKey("T")
     .writeLiteralStringValue(
-      this.pdfWriter.createPDFTextString(inComment.commentator).toBytesArray()
+      this.pdfWriter.createPDFTextString(inComment.commentator).toBytesArray(),
     )
     .writeKey("M")
     .writeLiteralStringValue(
-      this.pdfWriter.createPDFDate(inComment.time).toString()
+      this.pdfWriter.createPDFDate(inComment.time).toString(),
     );
 
   if (inComment.replyTo) {
@@ -137,7 +137,7 @@ describe("ModifyingExistingFileContent", function () {
       {
         modifiedFilePath:
           __dirname + "/output/ModifyingExistingFileContent.pdf",
-      }
+      },
     );
   });
   describe("page size modification", function () {
@@ -158,16 +158,14 @@ describe("ModifyingExistingFileContent", function () {
         .getObjectsContext()
         .startDictionary();
 
-      Object.getOwnPropertyNames(thirdPageObject).forEach(function (
-        element,
-        index,
-        array
-      ) {
-        if (element != "MediaBox") {
-          modifiedPageObject.writeKey(element);
-          copyingContext.copyDirectObjectAsIs(thirdPageObject[element]);
-        }
-      });
+      Object.getOwnPropertyNames(thirdPageObject).forEach(
+        function (element, index, array) {
+          if (element != "MediaBox") {
+            modifiedPageObject.writeKey(element);
+            copyingContext.copyDirectObjectAsIs(thirdPageObject[element]);
+          }
+        },
+      );
       modifiedPageObject.writeKey("MediaBox");
       objectsContext
         .startArray()
@@ -189,7 +187,7 @@ describe("ModifyingExistingFileContent", function () {
         "someone",
         [100, 500, 200, 600],
         [255, 0, 0],
-        "noview"
+        "noview",
       );
       commentWriter.writeCommentTree(aComment);
       var bComment = new PDFComment(
@@ -197,7 +195,7 @@ describe("ModifyingExistingFileContent", function () {
         "someone",
         [100, 100, 200, 200],
         [255, 0, 0],
-        "readOnly"
+        "readOnly",
       );
       var cComment = new PDFComment(
         "yeah. me too. it's just perfect",
@@ -205,7 +203,7 @@ describe("ModifyingExistingFileContent", function () {
         [150, 150, 250, 250],
         [0, 255, 0],
         "nozoom",
-        bComment
+        bComment,
       );
       commentWriter.writeCommentTree(cComment);
 
@@ -226,16 +224,14 @@ describe("ModifyingExistingFileContent", function () {
         .getObjectsContext()
         .startDictionary();
 
-      Object.getOwnPropertyNames(fourthPageObject).forEach(function (
-        element,
-        index,
-        array
-      ) {
-        if (element != "Annots") {
-          modifiedPageObject.writeKey(element);
-          copyingContext.copyDirectObjectAsIs(fourthPageObject[element]);
-        }
-      });
+      Object.getOwnPropertyNames(fourthPageObject).forEach(
+        function (element, index, array) {
+          if (element != "Annots") {
+            modifiedPageObject.writeKey(element);
+            copyingContext.copyDirectObjectAsIs(fourthPageObject[element]);
+          }
+        },
+      );
 
       modifiedPageObject.writeKey("Annots");
       objectsContext.startArray();

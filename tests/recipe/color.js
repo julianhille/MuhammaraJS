@@ -79,14 +79,14 @@ describe("Color", () => {
           [490, 100],
           [510, 100],
         ],
-        { stroke: [200, 0, 0], lineWidth: 5 }
+        { stroke: [200, 0, 0], lineWidth: 5 },
       )
       .line(
         [
           [500, 90],
           [500, 110],
         ],
-        { stroke: [200, 0, 0], lineWidth: 5 }
+        { stroke: [200, 0, 0], lineWidth: 5 },
       )
       .text("3 corner yellow polygon, outline red", 360, 630)
       .polygon(
@@ -95,7 +95,7 @@ describe("Color", () => {
           [550, 600],
           [450, 600],
         ],
-        { fill: [255, 255, 0], stroke: [255, 0, 0] }
+        { fill: [255, 255, 0], stroke: [255, 0, 0] },
       )
       .text("ellipse with red dash border, violet fill", 40, 675)
       .ellipse(150, 625, 75, 25, {
@@ -147,14 +147,14 @@ describe("Color", () => {
           [490, 100],
           [510, 100],
         ],
-        { stroke: [255, 0, 255, 0], lineWidth: 5 }
+        { stroke: [255, 0, 255, 0], lineWidth: 5 },
       )
       .line(
         [
           [500, 90],
           [500, 110],
         ],
-        { stroke: [255, 0, 255, 0], lineWidth: 5 }
+        { stroke: [255, 0, 255, 0], lineWidth: 5 },
       )
       .text("3 corner yellow polygon, outline black", 360, 630)
       .polygon(
@@ -163,7 +163,7 @@ describe("Color", () => {
           [550, 600],
           [450, 600],
         ],
-        { fill: [0, 0, 255, 0], stroke: [0, 0, 0, 255] }
+        { fill: [0, 0, 255, 0], stroke: [0, 0, 0, 255] },
       )
       .text("ellipse with cyan dash border, pale green fill", 40, 675)
       .ellipse(150, 625, 75, 25, {
@@ -216,14 +216,14 @@ describe("Color", () => {
           [490, 100],
           [510, 100],
         ],
-        { stroke: [255], lineWidth: 5 }
+        { stroke: [255], lineWidth: 5 },
       )
       .line(
         [
           [500, 90],
           [500, 110],
         ],
-        { stroke: [255], lineWidth: 5 }
+        { stroke: [255], lineWidth: 5 },
       )
       .text("3 corner gray polygon, outline black", 360, 630, { color: [0] })
       .polygon(
@@ -232,7 +232,7 @@ describe("Color", () => {
           [550, 600],
           [450, 600],
         ],
-        { fill: [235], stroke: [0] }
+        { fill: [235], stroke: [0] },
       )
       .text("ellipse with black dash border, gray fill", 40, 675, {
         color: [0],
@@ -291,7 +291,7 @@ describe("Color", () => {
       .text(
         "IMPLICIT Colorspace (via input color specification)",
         col,
-        line(++i)
+        line(++i),
       )
 
       .text("Gray, DecimalColor: [200]", para, line(++i), { color: [200] })
@@ -344,66 +344,66 @@ describe("Color", () => {
         " --------------------------------------------------------------------",
         para,
         line(++i),
-        { font: font, size: 12 }
+        { font: font, size: 12 },
       )
       .text(
         "| Color | HexColor   | DecimalColor                   | PercentColor |",
         para,
         line(++i),
-        { font: font, size: 12 }
+        { font: font, size: 12 },
       )
       .text(
         "| Space | (string)   | (array)                        | (string)     |",
         para,
         line(++i),
-        { font: font, size: 12 }
+        { font: font, size: 12 },
       )
       .text(
         "|-------+------------+--------------------------------+--------------|",
         para,
         line(++i),
-        { font: font, size: 12 }
+        { font: font, size: 12 },
       )
       .text(
         "| Gray  | #GG        | [gray]                         | %G           |",
         para,
         line(++i),
-        { font: font, size: 12 }
+        { font: font, size: 12 },
       )
       .text(
         "| RGB   | #rrggbb    | [red, green, blue]             | %r,g,b       |",
         para,
         line(++i),
-        { font: font, size: 12 }
+        { font: font, size: 12 },
       )
       .text(
         "| CMYK  | #ccmmyykk  | [cyan, magenta, yellow, black] | %c,m,y,k     |",
         para,
         line(++i),
-        { font: font, size: 12 }
+        { font: font, size: 12 },
       )
       .text(
         " --------------------------------------------------------------------",
         para,
         line(++i),
-        { font: font, size: 12 }
+        { font: font, size: 12 },
       );
     i += 1;
     recipe
       .text(
         "HexColor component values (two hex digits) range from 00 to FF.",
         para,
-        line(++i)
+        line(++i),
       )
       .text(
         "DecimalColor component values range from 0 to 255.",
         para,
-        line(++i)
+        line(++i),
       )
       .text(
         "PercentColor component values range from 0 to 100.",
         para,
-        line(++i)
+        line(++i),
       )
 
       // testing simple drawing of shapes with no color specifications.

@@ -10,11 +10,11 @@ describe("CopyingAndMergingEmptyPage", function () {
 
   it("should be able to create from from empty page", function () {
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/CreateFormFromEmptyPage.pdf"
+      __dirname + "/output/CreateFormFromEmptyPage.pdf",
     );
     var formIDs = pdfWriter.createFormXObjectsFromPDF(
       emptyFileName,
-      muhammara.ePDFPageBoxMediaBox
+      muhammara.ePDFPageBoxMediaBox,
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
 
@@ -23,7 +23,7 @@ describe("CopyingAndMergingEmptyPage", function () {
       .q()
       .cm(0.5, 0, 0, 0.5, 0, 421)
       .doXObject(
-        page.getResourcesDictionary().addFormXObjectMapping(formIDs[0])
+        page.getResourcesDictionary().addFormXObjectMapping(formIDs[0]),
       )
       .Q()
       .G(0)
@@ -36,22 +36,22 @@ describe("CopyingAndMergingEmptyPage", function () {
 
   it("should be able to create page from empty page", function () {
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/CreatePageFromEmptyPage.pdf"
+      __dirname + "/output/CreatePageFromEmptyPage.pdf",
     );
     pdfWriter.appendPDFPagesFromPDF(emptyFileName);
     pdfWriter.appendPDFPagesFromPDF(
-      __dirname + "/TestMaterials/XObjectContent.PDF"
+      __dirname + "/TestMaterials/XObjectContent.PDF",
     );
     pdfWriter.end();
   });
 
   it("should be able to merge empty page to page", function () {
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/MergeEmptyPageToPage.pdf"
+      __dirname + "/output/MergeEmptyPageToPage.pdf",
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
     var font = pdfWriter.getFontForFile(
-      __dirname + "/TestMaterials/fonts/arial.ttf"
+      __dirname + "/TestMaterials/fonts/arial.ttf",
     );
 
     var contentContext = pdfWriter
@@ -84,7 +84,7 @@ describe("CopyingAndMergingEmptyPage", function () {
 
   it("should be able to merge empty page to form", function () {
     var pdfWriter = muhammara.createWriter(
-      __dirname + "/output/MergeEmptyPageToForm.pdf"
+      __dirname + "/output/MergeEmptyPageToForm.pdf",
     );
     var page = pdfWriter.createPage(0, 0, 595, 842);
     var copyingContext = pdfWriter.createPDFCopyingContext(emptyFileName);

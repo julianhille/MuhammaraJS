@@ -8,11 +8,11 @@ describe("Annotation: Coordinate", () => {
     it(`${rotation} degree rotation.`, (done) => {
       const src = path.join(
         __dirname,
-        `../TestMaterials/recipe/test-L-${rotation}.pdf`
+        `../TestMaterials/recipe/test-L-${rotation}.pdf`,
       );
       const output = path.join(
         __dirname,
-        `../output/annotation-rotation-${rotation}.pdf`
+        `../output/annotation-rotation-${rotation}.pdf`,
       );
       const recipe = new HummusRecipe(src, output);
       recipe
