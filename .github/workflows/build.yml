@@ -215,7 +215,7 @@ jobs:
           npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
-      - uses: Wandalen/wretry.action@v1.0.11
+      - uses: Wandalen/wretry.action@v3
         with:
           command: npm install -g electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
           attempt_limit: 3
