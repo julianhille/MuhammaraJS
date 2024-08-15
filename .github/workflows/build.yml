@@ -69,7 +69,7 @@ jobs:
           npm_config_unsafe_perm: true
       # - run: npm run test, this is not an arm64 machine so we can not test.
       - run: ./node_modules/.bin/node-pre-gyp package --target_libc=musl  --target_arch=${{ matrix.target_architecture }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
@@ -110,7 +110,7 @@ jobs:
           npm_config_unsafe_perm: true
       - run: npm run test
       - run: ./node_modules/.bin/node-pre-gyp package testpackage --target_libc=musl
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
@@ -236,7 +236,7 @@ jobs:
         env:
           npm_config_runtime: electron
           npm_config_target: ${{ matrix.electron }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
@@ -295,7 +295,7 @@ jobs:
         if: ${{ matrix.target_architecture != 'arm64' }}
       - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}
         if: ${{ matrix.target_architecture == 'arm64' }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings
