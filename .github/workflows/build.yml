@@ -59,6 +59,14 @@ jobs:
       - run: node --version
       - run: npm --version
       - run: chmod 0777 tests/output/
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-musl-arm-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
@@ -104,6 +112,14 @@ jobs:
       - run: node --version
       - run: npm --version
       - run: chmod 0777 tests/output/
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-musl-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
       - run: npm install --build-from-source
         env:
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
@@ -204,6 +220,14 @@ jobs:
           architecture: ${{ matrix.architecture_node }}
       - run: node --version
       - run: npm --version
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
@@ -283,6 +307,14 @@ jobs:
           architecture: ${{ matrix.architecture_node }}
       - run: node --version
       - run: npm --version
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
