@@ -221,7 +221,7 @@ jobs:
           attempt_limit: 3
           attempt_delay: 10000
       - name: Run test
-        uses: coactions/setup-xvfb@v1
+        uses: coactions/setup-xvfb@90473c3ebc69533a1a6e0505c36511b69c8c3135
         with:
           run: npm run test:electron
         if: ${{ matrix.target_architecture != 'arm64' }}
