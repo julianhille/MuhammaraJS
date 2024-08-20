@@ -118,7 +118,13 @@ jobs:
       matrix:
         os: [ubuntu-20.04, macos-13, windows-2019]
         architecture: [x64, ia32, arm64]
-        electron: [
+        electron:
+          [
+            29.0.0,
+            29.1.0,
+            29.2.0,
+            29.3.0,
+            29.4.0,
             28.0.0,
             28.1.0,
             28.2.0,
@@ -171,6 +177,16 @@ jobs:
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
+          - electron: 29.4.0
+            node: 20.9.0
+          - electron: 29.3.0
+            node: 20.9.0
+          - electron: 29.2.0
+            node: 20.9.0
+          - electron: 29.1.0
+            node: 20.9.0
+          - electron: 29.0.0
+            node: 20.9.0
           - electron: 28.3.0
             node: 18.18.2
           - electron: 28.2.0
