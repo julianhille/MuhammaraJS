@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add electron 32.0
 - Add node v22.0.0
 
+### Remove
+
+- Outdated electron 23.x versions
+
 ## [4.1.0] - 2023-12-13
 
 ### Fixed
