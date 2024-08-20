@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add electron 27.0, 27.1, 27.2 and 27.3
 - Add electron 28.0, 28.1, 28.2 and 28.3
 - Add electron 29.0, 29.1, 29.2, 29.3 and 29.4
+- Add electron 30.0, 30.1, 30.2, 30.3 and 30.4
 - Add node v22.0.0
 
 ## [4.1.0] - 2023-12-13
