@@ -193,6 +193,12 @@ jobs:
             architecture: ia32
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v1
+        with:
+          version: 13
+          platform: ${{matrix.architecture}}
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -384,6 +390,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v1
+        with:
+          version: 13
+          platform: ${{matrix.architecture}}
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
@@ -469,6 +481,12 @@ jobs:
             architecture: ia32
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v1
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        with:
+          version: 13
+          platform: ${{matrix.architecture}}
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
