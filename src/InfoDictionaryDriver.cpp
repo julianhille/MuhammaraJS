@@ -72,7 +72,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::New(const ARGS_TYPE& args)
 	SET_FUNCTION_RETURN_VALUE(args.This())
 }
 
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetTitle(Local<String> property, const PROPERTY_TYPE &info)
+METHOD_RETURN_TYPE InfoDictionaryDriver::GetTitle(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
@@ -88,7 +88,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetTitle(Local<String> property, const 
 	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Title.ToUTF8String().c_str()))
 }
 
-void InfoDictionaryDriver::SetTitle(Local<String> property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
+void InfoDictionaryDriver::SetTitle(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
 	
@@ -100,7 +100,7 @@ void InfoDictionaryDriver::SetTitle(Local<String> property, Local<Value> value, 
     infoDictionaryDriver->InfoDictionaryInstance->Title.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
 }
 
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetAuthor(Local<String> property, const PROPERTY_TYPE &info)
+METHOD_RETURN_TYPE InfoDictionaryDriver::GetAuthor(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
@@ -116,7 +116,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetAuthor(Local<String> property, const
 	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Author.ToUTF8String().c_str()))
 }
 
-void InfoDictionaryDriver::SetAuthor(Local<String> property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
+void InfoDictionaryDriver::SetAuthor(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
 	
@@ -128,7 +128,7 @@ void InfoDictionaryDriver::SetAuthor(Local<String> property, Local<Value> value,
     infoDictionaryDriver->InfoDictionaryInstance->Author.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
 }
 
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetSubject(Local<String> property, const PROPERTY_TYPE &info)
+METHOD_RETURN_TYPE InfoDictionaryDriver::GetSubject(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
@@ -144,7 +144,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetSubject(Local<String> property, cons
 	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Subject.ToUTF8String().c_str()))
 }
 
-void InfoDictionaryDriver::SetSubject(Local<String> property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
+void InfoDictionaryDriver::SetSubject(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
 	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
@@ -155,7 +155,7 @@ void InfoDictionaryDriver::SetSubject(Local<String> property, Local<Value> value
     infoDictionaryDriver->InfoDictionaryInstance->Subject.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
 }
 
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetKeywords(Local<String> property, const PROPERTY_TYPE &info)
+METHOD_RETURN_TYPE InfoDictionaryDriver::GetKeywords(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
@@ -171,7 +171,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetKeywords(Local<String> property, con
 	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Keywords.ToUTF8String().c_str()))
 }
 
-void InfoDictionaryDriver::SetKeywords(Local<String> property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
+void InfoDictionaryDriver::SetKeywords(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
 	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
@@ -182,7 +182,7 @@ void InfoDictionaryDriver::SetKeywords(Local<String> property, Local<Value> valu
     infoDictionaryDriver->InfoDictionaryInstance->Keywords.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
 }
 
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetCreator(Local<String> property, const PROPERTY_TYPE &info)
+METHOD_RETURN_TYPE InfoDictionaryDriver::GetCreator(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
@@ -198,7 +198,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetCreator(Local<String> property, cons
 	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Creator.ToUTF8String().c_str()))
 }
 
-void InfoDictionaryDriver::SetCreator(Local<String> property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
+void InfoDictionaryDriver::SetCreator(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
 	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
@@ -209,7 +209,7 @@ void InfoDictionaryDriver::SetCreator(Local<String> property, Local<Value> value
     infoDictionaryDriver->InfoDictionaryInstance->Creator.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
 }
 
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetProducer(Local<String> property, const PROPERTY_TYPE &info)
+METHOD_RETURN_TYPE InfoDictionaryDriver::GetProducer(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
@@ -225,7 +225,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetProducer(Local<String> property, con
 	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Producer.ToUTF8String().c_str()))
 }
 
-void InfoDictionaryDriver::SetProducer(Local<String> property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
+void InfoDictionaryDriver::SetProducer(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
 	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
@@ -236,7 +236,7 @@ void InfoDictionaryDriver::SetProducer(Local<String> property, Local<Value> valu
     infoDictionaryDriver->InfoDictionaryInstance->Producer.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
 }
 
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetTrapped(Local<String> property, const PROPERTY_TYPE &info)
+METHOD_RETURN_TYPE InfoDictionaryDriver::GetTrapped(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
@@ -252,7 +252,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetTrapped(Local<String> property, cons
 	SET_ACCESSOR_RETURN_VALUE(NEW_NUMBER(infoDictionaryDriver->InfoDictionaryInstance->Trapped))
 }
 
-void InfoDictionaryDriver::SetTrapped(Local<String> property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
+void InfoDictionaryDriver::SetTrapped(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
 	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
