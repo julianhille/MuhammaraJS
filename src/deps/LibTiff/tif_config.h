@@ -20,6 +20,8 @@
 /* Define to 1 if you have the <io.h> header file. */
 #if (defined(_WIN32) || defined(WIN32))
 #define HAVE_IO_H 1
+#else
+#define HAVE_UNISTD_H
 #endif
 
 /* Define to 1 if you have the <search.h> header file. */

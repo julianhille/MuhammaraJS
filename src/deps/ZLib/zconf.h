@@ -531,4 +531,10 @@ typedef uLong FAR uLongf;
   #pragma map(inflate_copyright,"INCOPY")
 #endif
 
+#if defined(_WIN32)
+  #include <io.h>
+#else
+  #include <unistd.h>         /* for SEEK_*, off_t, and _LFS64_LARGEFILE */
+#endif
+
 #endif /* ZCONF_H */
