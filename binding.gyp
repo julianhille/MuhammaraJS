@@ -7,8 +7,8 @@
             'dependencies': [
                './src/deps/PDFWriter/binding.gyp:pdfwriter'
             ],
-            "cflags_cc": [ "-std=c++17" ],
-            "cflags": [ "-std=c++17" ],
+            "cflags_cc": [ "-std=c++20" ],
+            "cflags": [ "-std=c++20" ],
             'include_dirs': [
                 './src',
                 './src/deps/PDFWriter',
@@ -20,7 +20,7 @@
 				{
 					'AdditionalOptions':
 						[
-						'/std:c++17',
+						'/std:c++20',
 						]
 				}
 			},
@@ -28,7 +28,7 @@
 ['OS=="mac"', {
           'xcode_settings': {
             'CLANG_CXX_LIBRARY': 'libc++',
-             "OTHER_CFLAGS": [ "-std=c++17"]
+             "OTHER_CFLAGS": [ "-std=c++20"]
           }
         }],
           ['OS=="win"', {

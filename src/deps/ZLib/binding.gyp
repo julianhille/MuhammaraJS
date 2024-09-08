@@ -1,15 +1,15 @@
 {
     'targets': [
         {
-            'target_name': 'zlib',
-            'type': 'static_library',
+           'target_name': 'zlib',
+           'type': 'static_library',
            'msvs_settings':
 			{
 				'VCCLCompilerTool':
 				{
 					'AdditionalOptions':
 						[
-						'/std:c++17',
+						'/std:c++20',
 						]
 				}
 			},
