@@ -5,7 +5,6 @@
             'type': 'static_library',
             'defines': [
                 'FT2_BUILD_LIBRARY=1'
-                'Z_PREFIX=1',
             ],
             'include_dirs': [
              './include',
