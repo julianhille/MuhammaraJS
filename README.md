@@ -4,12 +4,12 @@
 [![Build status](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml)
 
 Welcome to MuhammaraJS.
-A Fast NodeJS Module for Creating, Parsing an Manipulating PDF Files and Streams.
+A Fast NodeJS Module for creating, parsing and manipulating PDF files and streams.
 
 Original Project (CPP base version)
 Project site is [here](http://www.pdfhummus.com).
 
-If you are looking for a C++ Library go [here](https://github.com/galkahana/PDF-Writer).
+If you are looking for a C++ library go [here](https://github.com/galkahana/PDF-Writer).
 
 ## Hummus JS is the base
 
@@ -19,7 +19,7 @@ He did an awesome job, but discontinued hummusjs.
 The documentation for MuhammaraJS / HummusJS is still located at the
 hummusJS github wiki: available [here](https://github.com/galkahana/HummusJS/wiki)
 
-## muhammara-recipe '(formerly known as hummus-recipe) as been added
+## muhammara-recipe (formerly known as hummus-recipe) as been added
 
 Muhammara-recipe and hummus-recipe has been integrated, dependencies updated
 and is now shipped along with muhammara itself.
@@ -48,6 +48,12 @@ This won't affect a lot of you but still.
 - Ubuntu 18.04 has been removed from github actions and so it is unable to build on 18.04.
   This means the glibc has been raised to 2.31 which might break pre-builts for you.
   It is still possible to build for older glibc version.
+
+### Version 5.x
+
+- Node <= 16 pre-builts have been removed
+- Electron <= 23 pre-builts have been removed
+- GCC 13 needed / std ++ 20 (only needed if you compile yourself)
 
 # Installation
 

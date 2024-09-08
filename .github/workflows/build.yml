@@ -2,11 +2,6 @@ name: Build
 
 on:
   push:
-    tags:
-      - "1.*"
-      - "2.*"
-      - "3.*"
-      - "4.*"
   pull_request:
   workflow_dispatch:
 

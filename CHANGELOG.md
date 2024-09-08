@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [5.0.0] - 2024-09-08
+
 ### Added
 
 - Add electron 24.7 and 24.8
@@ -23,6 +25,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Remove
 
 - Outdated electron 23.x versions
+- Node version <= 16
+
+### Update
+
+- Update dependencies
+  - Including tar which removes a security vulnerability
+- new Buffer to Buffer.from
 
 ## [4.1.0] - 2023-12-13
 
@@ -429,7 +438,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/4.1.0...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/5.0.0...HEAD
+[5.0.0]: https://github.com/julianhille/MuhammaraJS/compare/4.1.0...5.0.0
 [4.1.0]: https://github.com/julianhille/MuhammaraJS/compare/4.0.0...4.1.0
 [4.0.0]: https://github.com/julianhille/MuhammaraJS/compare/3.8.0...4.0.0
 [3.8.0]: https://github.com/julianhille/MuhammaraJS/compare/3.7.0...3.8.0
