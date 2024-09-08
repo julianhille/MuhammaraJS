@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Remove
 
 - Outdated electron 23.x versions
+- Node version <= 16
 
 ### Update
 
