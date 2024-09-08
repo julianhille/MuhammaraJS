@@ -1,18 +1,26 @@
 {
     'targets': [
         {
-           'target_name': 'zlib',
-           'type': 'static_library',
-           'msvs_settings':
-			{
-				'VCCLCompilerTool':
-				{
-					'AdditionalOptions':
-						[
-						'/std:c++20',
-						]
-				}
-			},
+            'target_name': 'zlib',
+            'type': 'static_library',
+            'conditions': [
+                ['OS == "win"', {            
+                }, {
+                    "defines": [
+                        'HAVE_UNISTD_H=1'
+                    ]
+                }]
+            ],
+            'msvs_settings':
+            {
+                'VCCLCompilerTool':
+                {
+                    'AdditionalOptions':
+                        [
+                        '/std:c++20',
+                        ]
+                }
+            },
             'sources': [
                 'adler32.c',
                 'compress.c',
