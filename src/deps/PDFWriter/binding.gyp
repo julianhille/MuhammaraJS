@@ -5,6 +5,9 @@
             'type': 'static_library',
             'cflags!': [ '-fno-exceptions' ],
             'cflags_cc!': [ '-fno-exceptions' ],
+            'defines': [
+                'USE_BUNDLED=TRUE'
+            ],
             'conditions': [
                 ['OS=="mac"', {
                    'xcode_settings': {

@@ -4,7 +4,8 @@
             'target_name': 'freetype',
             'type': 'static_library',
             'defines': [
-                'FT2_BUILD_LIBRARY=1'
+                'FT2_BUILD_LIBRARY=1',
+                'USE_BUNDLED=TRUE'
             ],
             'dependencies': [
                 '<(module_root_dir)/src/deps/Zlib/binding.gyp:zlib'
