@@ -6,6 +6,9 @@
             'defines': [
                 'FT2_BUILD_LIBRARY=1'
             ],
+            'dependencies': [
+                '<(module_root_dir)/src/deps/Zlib/binding.gyp:zlib'
+            ],
             'include_dirs': [
              './include',
              './include',
@@ -13,6 +16,7 @@
              './include/src',
              './include/freetype/internal',
              './include/freetype/internal/services'
+             '<(module_root_dir)/src/deps/Zlib',
             ],
            'msvs_settings':
 			{
