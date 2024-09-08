@@ -51,8 +51,8 @@ This won't affect a lot of you but still.
 
 ### Version 5.x
 
-- Node < 16 and electron <= 16 pre-builts have been removed
-- Electron <= 23 
+- Node <= 16 pre-builts have been removed
+- Electron <= 23 pre-builts have been removed
 - GCC 13 needed / std ++ 20 (only needed if you compile yourself)
 
 # Installation
