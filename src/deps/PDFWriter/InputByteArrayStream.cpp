@@ -20,6 +20,7 @@
 */
 #include "InputByteArrayStream.h"
 #include <memory.h>
+#include <algorithm>
 
 InputByteArrayStream::InputByteArrayStream()
 {
@@ -31,7 +32,6 @@ InputByteArrayStream::InputByteArrayStream(Byte* inByteArray,LongFilePositionTyp
 	mByteArray = inByteArray;
 	mArrayLength = inArrayLength;
 	mCurrentPosition = 0;
-	mStartPosition = 0;
 }
 
 InputByteArrayStream::~InputByteArrayStream(void)
@@ -43,7 +43,6 @@ void InputByteArrayStream::Assign(IOBasicTypes::Byte* inByteArray,IOBasicTypes::
 	mByteArray = inByteArray;
 	mArrayLength = inArrayLength;
 	mCurrentPosition = 0;
-	mStartPosition = 0;
 }
 
 LongBufferSizeType InputByteArrayStream::Read(IOBasicTypes::Byte* inBuffer,IOBasicTypes::LongBufferSizeType inBufferSize)
@@ -68,27 +67,29 @@ bool InputByteArrayStream::NotEnded()
 
 }
 
+#define LONG_FILES_POSITION_TYPE_0 (LongFilePositionType)0
+
+template <typename T>
+T clip(const T& n, const T& lower, const T& upper) {
+  return std::max(lower, std::min(n, upper));
+}
+
 void InputByteArrayStream::Skip(LongBufferSizeType inSkipSize)
 {
-	mCurrentPosition+= inSkipSize < (LongBufferSizeType)mArrayLength-mCurrentPosition ? inSkipSize : mArrayLength-mCurrentPosition;
+	mCurrentPosition+= clip(inSkipSize, (LongBufferSizeType)0, (LongBufferSizeType)(mArrayLength-mCurrentPosition));
 }
 
 void InputByteArrayStream::SetPosition(LongFilePositionType inOffsetFromStart)
 {
-	mCurrentPosition = inOffsetFromStart > mArrayLength - mStartPosition ? mArrayLength : (mStartPosition + inOffsetFromStart);
+	mCurrentPosition = clip(inOffsetFromStart, LONG_FILES_POSITION_TYPE_0, mArrayLength);
 }
 
 void InputByteArrayStream::SetPositionFromEnd(LongFilePositionType inOffsetFromEnd)
 {
-	mCurrentPosition = inOffsetFromEnd > mArrayLength ? 0:(mArrayLength-inOffsetFromEnd);
+	mCurrentPosition = clip(mArrayLength - inOffsetFromEnd, LONG_FILES_POSITION_TYPE_0, mArrayLength);
 }
 
 LongFilePositionType InputByteArrayStream::GetCurrentPosition()
 {
-	return mCurrentPosition - mStartPosition;
-}
-
-void InputByteArrayStream::MoveStartPosition(LongFilePositionType inStartPosition)
-{
-	mStartPosition = inStartPosition;
+	return mCurrentPosition;
 }
