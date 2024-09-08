@@ -31,7 +31,17 @@
                         'HAVE_UNISTD_H=1'
                     ]
                 }]
-            ],     
+            ],
+           'msvs_settings':
+            {
+                'VCCLCompilerTool':
+                {
+                    'AdditionalOptions':
+                        [
+                        '/std:c++17',
+                        ]
+                }
+            },
             'include_dirs': [
               '<(module_root_dir)/src/deps/Zlib',
             ],
