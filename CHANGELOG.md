@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Updated
+
+- Update PDRWriter to 4.6.7 (#410)
+
 ## [5.0.0] - 2024-09-08
 
 ### Added
