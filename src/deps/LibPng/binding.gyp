@@ -9,6 +9,9 @@
             'include_dirs': [
               '<(module_root_dir)/src/deps/Zlib',
             ],
+            'defines': [
+                'USE_BUNDLED=TRUE'
+            ],
            'msvs_settings':
 			{
 				'VCCLCompilerTool':

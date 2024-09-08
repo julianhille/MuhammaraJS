@@ -3,6 +3,9 @@
         {
             'target_name': 'libaesgm',
             'type': 'static_library',
+            'defines': [
+                'USE_BUNDLED=TRUE'
+            ],
            'msvs_settings':
 			{
 				'VCCLCompilerTool':
