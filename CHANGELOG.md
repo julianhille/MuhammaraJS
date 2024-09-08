@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Outdated electron 23.x versions
 
+### Update
+
+- Update dependencies
+  - Including tar which removes a security vulnerability
+- new Buffer to Buffer.from
+
 ## [4.1.0] - 2023-12-13
 
 ### Fixed
