@@ -49,6 +49,12 @@ This won't affect a lot of you but still.
   This means the glibc has been raised to 2.31 which might break pre-builts for you.
   It is still possible to build for older glibc version.
 
+### Version 5.x
+
+- Node < 16 and electron <= 16 pre-builts have been removed
+- Electron <= 23 
+- GCC 13 needed / std ++ 20 (only needed if you compile yourself)
+
 # Installation
 
 ```
