@@ -63,6 +63,7 @@ jobs:
           key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
       - run: npm install --build-from-source
         env:
+          V: 1
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           npm_config_python: python${{ matrix.python_version }}
