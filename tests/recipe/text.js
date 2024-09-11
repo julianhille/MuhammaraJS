@@ -219,7 +219,7 @@ describe("Text", () => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
     const output = path.join(
       __dirname,
-      "../output/Add text with bolded format inside textbox.pdf"
+      "../output/Add text with bolded format inside textbox.pdf",
     );
     const recipe = new HummusRecipe(src, output);
     const textContent =
@@ -314,7 +314,7 @@ describe("Text", () => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
     const output = path.join(
       __dirname,
-      "../output/Add text with italic format inside textbox.pdf"
+      "../output/Add text with italic format inside textbox.pdf",
     );
     const recipe = new HummusRecipe(src, output);
     const textContent =
@@ -409,7 +409,7 @@ describe("Text", () => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
     const output = path.join(
       __dirname,
-      "../output/Add text with underline inside textbox.pdf"
+      "../output/Add text with underline inside textbox.pdf",
     );
     const recipe = new HummusRecipe(src, output);
     const textContent =
@@ -504,7 +504,7 @@ describe("Text", () => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
     const output = path.join(
       __dirname,
-      "../output/Add text with strikethrough effect inside textbox.pdf"
+      "../output/Add text with strikethrough effect inside textbox.pdf",
     );
     const recipe = new HummusRecipe(src, output);
     const textContent =
@@ -596,7 +596,7 @@ describe("Text", () => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
     const output = path.join(
       __dirname,
-      "../output/Add text with highlight inside textbox.pdf"
+      "../output/Add text with highlight inside textbox.pdf",
     );
     const recipe = new HummusRecipe(src, output);
     const textContent =
