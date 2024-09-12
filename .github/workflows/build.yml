@@ -9,13 +9,13 @@ jobs:
   lint:
     runs-on: ubuntu-22.04
     env:
-      node_version: 18.8.0
+      node_version: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.node_version }}
-      - run: npm install prettier
+      - run: npm install prettier@^3.3.3
       - run: npm run test:codestyle
   build-musl-arm:
     needs: [lint]
