@@ -5,19 +5,15 @@
             'type': 'static_library',
             'defines': [
                 'FT2_BUILD_LIBRARY=1',
-                'USE_BUNDLED=TRUE'
-            ],
-            'dependencies': [
-                '<(module_root_dir)/src/deps/Zlib/binding.gyp:zlib'
+                'FT_CONFIG_OPTION_SYSTEM_ZLIB=1'
             ],
             'include_dirs': [
              './include',
-             './include',
+             './include/freetype',
              './include/freetype/config',
              './include/src',
              './include/freetype/internal',
              './include/freetype/internal/services'
-             '<(module_root_dir)/src/deps/Zlib',
             ],
            'msvs_settings':
 			{
