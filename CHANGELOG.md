@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Tests for bold, italic, underline, strikethrough, and highlights in textboxes
+
 ## [5.0.0] - 2024-09-08
 
 ### Added
@@ -50,15 +54,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Underline in text object
 - Recipe type / arg documentation
 - Add missing type `userPassword` to `EncryptOptions`
+- Underline in text object
 
 ### Added
 
-- Strikethrough implementation in text object
 - Add electron 23.2., 23.3
 - Recipe infos to readme
+- Strikethrough implementation in text object
 - Electron v24.1, 24.2, 24.3, 24.4, 24.5, 24.6
 - Add node 20.x
 - Add electron v25.0, 25.1, 25.2, 25.3
