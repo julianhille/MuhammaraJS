@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [5.0.1] - 2024-09-28
+
 ### Added
 
 - Tests for bold, italic, underline, strikethrough, and highlights in textboxes
@@ -443,7 +445,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/5.0.0...HEAD
+:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/5.0.1...HEAD
+[5.0.1]: https://github.com/julianhille/MuhammaraJS/compare/5.0.0...5.0.1
 [5.0.0]: https://github.com/julianhille/MuhammaraJS/compare/4.1.0...5.0.0
 [4.1.0]: https://github.com/julianhille/MuhammaraJS/compare/4.0.0...4.1.0
 [4.0.0]: https://github.com/julianhille/MuhammaraJS/compare/3.8.0...4.0.0
