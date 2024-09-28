@@ -7,9 +7,6 @@
             'dependencies': [
                './src/deps/PDFWriter/binding.gyp:pdfwriter'
             ],
-            "defines": [
-            'USE_BUNDLED=TRUE'
-            ],
             "cflags_cc": [ "-std=c++20" ],
             "cflags": [ "-std=c++20" ],
             'include_dirs': [
