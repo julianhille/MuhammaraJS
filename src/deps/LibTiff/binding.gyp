@@ -50,9 +50,6 @@
             'include_dirs': [
               '<(module_root_dir)/src/deps/Zlib',
             ],
-            'defines': [
-                'USE_BUNDLED=TRUE'
-            ],
            'sources': [
                 'tif_aux.c',
                 'tif_close.c',
