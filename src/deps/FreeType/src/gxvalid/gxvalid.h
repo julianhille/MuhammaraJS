@@ -4,7 +4,7 @@
  *
  *   TrueTypeGX/AAT table validation (specification only).
  *
- * Copyright (C) 2005-2023 by
+ * Copyright (C) 2005-2019 by
  * suzuki toshiya, Masatake YAMATO, Red Hat K.K.,
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
@@ -28,12 +28,13 @@
 #ifndef GXVALID_H_
 #define GXVALID_H_
 
-#include <freetype/freetype.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
-#include "gxverror.h"                     /* must come before `ftvalid.h' */
+#include "gxverror.h"          /* must come before FT_INTERNAL_VALIDATE_H */
 
-#include <freetype/internal/ftvalid.h>
-#include <freetype/internal/ftstream.h>
+#include FT_INTERNAL_VALIDATE_H
+#include FT_INTERNAL_STREAM_H
 
 
 FT_BEGIN_HEADER

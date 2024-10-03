@@ -4,7 +4,7 @@
  *
  *   OpenType Glyph Loader (specification).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,8 +20,9 @@
 #define CFFGLOAD_H_
 
 
-#include <freetype/freetype.h>
-#include <freetype/internal/cffotypes.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_INTERNAL_CFF_OBJECTS_TYPES_H
 
 
 FT_BEGIN_HEADER

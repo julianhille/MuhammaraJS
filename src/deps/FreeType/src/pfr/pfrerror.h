@@ -4,7 +4,7 @@
  *
  *   PFR error codes (specification only).
  *
- * Copyright (C) 2002-2023 by
+ * Copyright (C) 2002-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -25,7 +25,7 @@
 #ifndef PFRERROR_H_
 #define PFRERROR_H_
 
-#include <freetype/ftmoderr.h>
+#include FT_MODULE_ERRORS_H
 
 #undef FTERRORS_H_
 
@@ -33,7 +33,7 @@
 #define FT_ERR_PREFIX  PFR_Err_
 #define FT_ERR_BASE    FT_Mod_Err_PFR
 
-#include <freetype/fterrors.h>
+#include FT_ERRORS_H
 
 #endif /* PFRERROR_H_ */
 

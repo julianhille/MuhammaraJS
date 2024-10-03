@@ -25,7 +25,7 @@
 #ifndef PCFERROR_H_
 #define PCFERROR_H_
 
-#include <freetype/ftmoderr.h>
+#include FT_MODULE_ERRORS_H
 
 #undef FTERRORS_H_
 
@@ -33,7 +33,7 @@
 #define FT_ERR_PREFIX  PCF_Err_
 #define FT_ERR_BASE    FT_Mod_Err_PCF
 
-#include <freetype/fterrors.h>
+#include FT_ERRORS_H
 
 #endif /* PCFERROR_H_ */
 

@@ -66,8 +66,6 @@ EStatusCode CFFDescendentFontWriter::WriteFont(	ObjectIDType inDecendentObjectID
 		return PDFHummus::eFailure;
 	}
 
-	unsigned int subsetFontSize = inEncodedGlyphs.size();
-
 	if (inEmbedFont)
 	{
 		CFFEmbeddedFontWriter embeddedFontWriter;
@@ -98,21 +96,11 @@ EStatusCode CFFDescendentFontWriter::WriteFont(	ObjectIDType inDecendentObjectID
 			mEmbeddedFontFileObjectID);
 		if (status != PDFHummus::eSuccess)
 			return status;
-
-		subsetFontSize = embeddedFontWriter.GetSubsetFontGlyphsCount();
 	}
 
 	DescendentFontWriter descendentFontWriter;
 
-	return descendentFontWriter.WriteFont(
-		inDecendentObjectID,
-		inFontName,
-		inFontInfo,
-		inEncodedGlyphs,
-		inObjectsContext,
-		this,
-		subsetFontSize // the font program includes the glyphs 0...glyps.size using cid=sid. so cidset should be the same. 0..size.
-	);
+	return descendentFontWriter.WriteFont(inDecendentObjectID,inFontName,inFontInfo,inEncodedGlyphs,inObjectsContext,this);
 }
 
 static const std::string scCIDFontType0 = "CIDFontType0";

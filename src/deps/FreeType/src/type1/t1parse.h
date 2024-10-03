@@ -4,7 +4,7 @@
  *
  *   Type 1 parser (specification).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,8 +20,9 @@
 #define T1PARSE_H_
 
 
-#include <freetype/internal/t1types.h>
-#include <freetype/internal/ftstream.h>
+#include <ft2build.h>
+#include FT_INTERNAL_TYPE1_TYPES_H
+#include FT_INTERNAL_STREAM_H
 
 
 FT_BEGIN_HEADER

@@ -4,7 +4,7 @@
  *
  *   Type 1 character map support (body).
  *
- * Copyright (C) 2002-2023 by
+ * Copyright (C) 2002-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -18,7 +18,7 @@
 
 #include "t1cmap.h"
 
-#include <freetype/internal/ftdebug.h>
+#include FT_INTERNAL_DEBUG_H
 
 #include "psauxerr.h"
 

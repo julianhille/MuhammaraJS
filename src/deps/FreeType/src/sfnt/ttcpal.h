@@ -4,7 +4,7 @@
  *
  *   TrueType and OpenType color palette support (specification).
  *
- * Copyright (C) 2018-2023 by
+ * Copyright (C) 2018-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * Originally written by Shao Yu Zhang <shaozhang@fb.com>.
@@ -22,6 +22,7 @@
 #define __TTCPAL_H__
 
 
+#include <ft2build.h>
 #include "ttload.h"
 
 

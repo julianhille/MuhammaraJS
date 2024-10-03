@@ -8,7 +8,7 @@
  * be used to parse compressed PCF fonts, as found with many X11 server
  * distributions.
  *
- * Copyright (C) 2004-2023 by
+ * Copyright (C) 2004-2019 by
  * Albert Chin-A-Young.
  *
  * based on code in `src/gzip/ftgzip.c'
@@ -21,14 +21,15 @@
  *
  */
 
-#include <freetype/internal/ftmemory.h>
-#include <freetype/internal/ftstream.h>
-#include <freetype/internal/ftdebug.h>
-#include <freetype/ftlzw.h>
+#include <ft2build.h>
+#include FT_INTERNAL_MEMORY_H
+#include FT_INTERNAL_STREAM_H
+#include FT_INTERNAL_DEBUG_H
+#include FT_LZW_H
 #include FT_CONFIG_STANDARD_LIBRARY_H
 
 
-#include <freetype/ftmoderr.h>
+#include FT_MODULE_ERRORS_H
 
 #undef FTERRORS_H_
 
@@ -36,7 +37,7 @@
 #define FT_ERR_PREFIX  LZW_Err_
 #define FT_ERR_BASE    FT_Mod_Err_LZW
 
-#include <freetype/fterrors.h>
+#include FT_ERRORS_H
 
 
 #ifdef FT_CONFIG_OPTION_USE_LZW
@@ -369,7 +370,7 @@
     FT_ZERO( stream );
     stream->memory = memory;
 
-    if ( !FT_QNEW( zip ) )
+    if ( !FT_NEW( zip ) )
     {
       error = ft_lzw_file_init( zip, stream, source );
       if ( error )
@@ -383,7 +384,7 @@
 
     stream->size  = 0x7FFFFFFFL;  /* don't know the real size! */
     stream->pos   = 0;
-    stream->base  = NULL;
+    stream->base  = 0;
     stream->read  = ft_lzw_stream_io;
     stream->close = ft_lzw_stream_close;
 

@@ -30,9 +30,10 @@
  * Based on bdf.h,v 1.16 2000/03/16 20:08:51 mleisher
  */
 
-#include <freetype/internal/ftobjs.h>
-#include <freetype/internal/ftstream.h>
-#include <freetype/internal/fthash.h>
+#include <ft2build.h>
+#include FT_INTERNAL_OBJECTS_H
+#include FT_INTERNAL_STREAM_H
+#include FT_INTERNAL_HASH_H
 
 
 FT_BEGIN_HEADER
@@ -108,9 +109,9 @@ FT_BEGIN_HEADER
   /* There are a set of defaults and each font has their own.   */
   typedef struct  bdf_property_t_
   {
-    const char*  name;         /* Name of the property.   */
-    int          format;       /* Format of the property. */
-    int          builtin;      /* A builtin property.     */
+    char*  name;         /* Name of the property.   */
+    int    format;       /* Format of the property. */
+    int    builtin;      /* A builtin property.     */
     union
     {
       char*          atom;

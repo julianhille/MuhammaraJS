@@ -36,10 +36,9 @@
 
 using namespace PDFHummus;
 
-AbstractWrittenFont::AbstractWrittenFont(ObjectsContext* inObjectsContext, FreeTypeFaceWrapper* inFontInfo)
+AbstractWrittenFont::AbstractWrittenFont(ObjectsContext* inObjectsContext)
 {
 	mObjectsContext = inObjectsContext;
-	mFontInfo = inFontInfo;
 	mCIDRepresentation = NULL;
 	mANSIRepresentation = NULL;
 }

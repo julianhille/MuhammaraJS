@@ -4,7 +4,7 @@
  *
  *   Load the metrics tables common to TTF and OTF fonts (specification).
  *
- * Copyright (C) 2006-2023 by
+ * Copyright (C) 2006-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,8 +20,9 @@
 #define TTMTX_H_
 
 
-#include <freetype/internal/ftstream.h>
-#include <freetype/internal/tttypes.h>
+#include <ft2build.h>
+#include FT_INTERNAL_STREAM_H
+#include FT_INTERNAL_TRUETYPE_TYPES_H
 
 
 FT_BEGIN_HEADER

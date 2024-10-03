@@ -63,11 +63,3 @@ bool PDFRectangle::operator!=(const PDFRectangle& inOther) const
             UpperRightX != inOther.UpperRightX ||
             UpperRightY != inOther.UpperRightY;   
 }
-
-double PDFRectangle::GetWidth() {
-    return UpperRightX - LowerLeftX;
-}
-
-double PDFRectangle::GetHeight() {
-    return UpperRightY - LowerLeftY;
-}

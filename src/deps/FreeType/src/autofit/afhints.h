@@ -4,7 +4,7 @@
  *
  *   Auto-fitter hinting routines (specification).
  *
- * Copyright (C) 2003-2023 by
+ * Copyright (C) 2003-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,6 +20,8 @@
 #define AFHINTS_H_
 
 #include "aftypes.h"
+
+#define xxAF_SORT_SEGMENTS
 
 FT_BEGIN_HEADER
 
@@ -308,12 +310,15 @@ FT_BEGIN_HEADER
 
   typedef struct  AF_AxisHintsRec_
   {
-    FT_UInt       num_segments; /* number of used segments      */
-    FT_UInt       max_segments; /* number of allocated segments */
+    FT_Int        num_segments; /* number of used segments      */
+    FT_Int        max_segments; /* number of allocated segments */
     AF_Segment    segments;     /* segments array               */
+#ifdef AF_SORT_SEGMENTS
+    FT_Int        mid_segments;
+#endif
 
-    FT_UInt       num_edges;    /* number of used edges      */
-    FT_UInt       max_edges;    /* number of allocated edges */
+    FT_Int        num_edges;    /* number of used edges      */
+    FT_Int        max_edges;    /* number of allocated edges */
     AF_Edge       edges;        /* edges array               */
 
     AF_Direction  major_dir;    /* either vertical or horizontal */
@@ -357,6 +362,9 @@ FT_BEGIN_HEADER
                                     /* implementations         */
     AF_StyleMetrics  metrics;
 
+    FT_Pos           xmin_delta;    /* used for warping */
+    FT_Pos           xmax_delta;
+
     /* Two arrays to avoid allocation penalty.            */
     /* The `embedded' structure must be the last element! */
     struct
@@ -375,14 +383,14 @@ FT_BEGIN_HEADER
 #ifdef FT_DEBUG_AUTOFIT
 
 #define AF_HINTS_DO_HORIZONTAL( h )                                     \
-          ( !af_debug_disable_horz_hints_                            && \
+          ( !_af_debug_disable_horz_hints                            && \
             !AF_HINTS_TEST_SCALER( h, AF_SCALER_FLAG_NO_HORIZONTAL ) )
 
 #define AF_HINTS_DO_VERTICAL( h )                                     \
-          ( !af_debug_disable_vert_hints_                          && \
+          ( !_af_debug_disable_vert_hints                          && \
             !AF_HINTS_TEST_SCALER( h, AF_SCALER_FLAG_NO_VERTICAL ) )
 
-#define AF_HINTS_DO_BLUES( h )  ( !af_debug_disable_blue_hints_ )
+#define AF_HINTS_DO_BLUES( h )  ( !_af_debug_disable_blue_hints )
 
 #else /* !FT_DEBUG_AUTOFIT */
 
@@ -399,6 +407,10 @@ FT_BEGIN_HEADER
 
 #define AF_HINTS_DO_ADVANCE( h )                                \
           !AF_HINTS_TEST_SCALER( h, AF_SCALER_FLAG_NO_ADVANCE )
+
+#define AF_HINTS_DO_WARP( h )                                  \
+          !AF_HINTS_TEST_SCALER( h, AF_SCALER_FLAG_NO_WARPER )
+
 
 
   FT_LOCAL( AF_Direction )
@@ -446,6 +458,14 @@ FT_BEGIN_HEADER
   FT_LOCAL( void )
   af_glyph_hints_align_weak_points( AF_GlyphHints  hints,
                                     AF_Dimension   dim );
+
+#ifdef AF_CONFIG_OPTION_USE_WARPER
+  FT_LOCAL( void )
+  af_glyph_hints_scale_dim( AF_GlyphHints  hints,
+                            AF_Dimension   dim,
+                            FT_Fixed       scale,
+                            FT_Pos         delta );
+#endif
 
   FT_LOCAL( void )
   af_glyph_hints_done( AF_GlyphHints  hints );

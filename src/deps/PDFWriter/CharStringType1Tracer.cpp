@@ -34,6 +34,7 @@ CharStringType1Tracer::~CharStringType1Tracer(void)
 {
 }
 
+/*
 EStatusCode CharStringType1Tracer::TraceGlyphProgram(Byte inGlyphIndex, Type1Input* inType1Input, IByteWriter* inWriter)
 {
 	CharStringType1Interpreter interpreter;
@@ -50,7 +51,7 @@ EStatusCode CharStringType1Tracer::TraceGlyphProgram(Byte inGlyphIndex, Type1Inp
 	}
 
 	return interpreter.Intepret(*charString,this);
-}
+}*/
 
 EStatusCode CharStringType1Tracer::TraceGlyphProgram(const std::string& inGlyphName, Type1Input* inType1Input, IByteWriter* inWriter)
 {

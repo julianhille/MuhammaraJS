@@ -39,8 +39,9 @@
    */
 
 
-#include <freetype/internal/fthash.h>
-#include <freetype/internal/ftmemory.h>
+#include <ft2build.h>
+#include FT_INTERNAL_HASH_H
+#include FT_INTERNAL_MEMORY_H
 
 
 #define INITIAL_HT_SIZE  241
@@ -243,7 +244,7 @@
     nn = *bp;
     if ( !nn )
     {
-      if ( FT_QNEW( nn ) )
+      if ( FT_NEW( nn ) )
         goto Exit;
       *bp = nn;
 

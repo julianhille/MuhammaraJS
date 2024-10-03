@@ -4,7 +4,7 @@
  *
  *   FreeType 2 build and setup macros.
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -18,14 +18,16 @@
 
   /**************************************************************************
    *
-   * This is the 'entry point' for FreeType header file inclusions, to be
-   * loaded before all other header files.
+   * This is the 'entry point' for FreeType header file inclusions.  It is
+   * the only header file which should be included directly; all other
+   * FreeType header files should be accessed with macro names (after
+   * including `ft2build.h`).
    *
    * A typical example is
    *
    * ```
    *   #include <ft2build.h>
-   *   #include <freetype/freetype.h>
+   *   #include FT_FREETYPE_H
    * ```
    *
    */

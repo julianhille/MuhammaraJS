@@ -78,7 +78,6 @@ private:
 	IPDFParserExtender* mParserExtender;
 	DecryptionHelper* mDecryptionHelper;
 	bool mOwnsStream;
-	int mDepth;
 
 	bool GetNextToken(std::string& outToken);
 	void SaveTokenToBuffer(std::string& inToken);
@@ -113,7 +112,5 @@ private:
 
 	std::string MaybeDecryptString(const std::string& inString);
 
-	PDFHummus::EStatusCode IncreaseAndCheckDepth();
-	PDFHummus::EStatusCode DecreaseAndCheckDepth();
 
 };

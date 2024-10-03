@@ -4,7 +4,7 @@
  *
  *   Quick computation of advance widths (body).
  *
- * Copyright (C) 2008-2023 by
+ * Copyright (C) 2008-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,14 +16,15 @@
  */
 
 
-#include <freetype/internal/ftdebug.h>
+#include <ft2build.h>
+#include FT_INTERNAL_DEBUG_H
 
-#include <freetype/ftadvanc.h>
-#include <freetype/internal/ftobjs.h>
+#include FT_ADVANCES_H
+#include FT_INTERNAL_OBJECTS_H
 
 
   static FT_Error
-  ft_face_scale_advances_( FT_Face    face,
+  _ft_face_scale_advances( FT_Face    face,
                            FT_Fixed*  advances,
                            FT_UInt    count,
                            FT_Int32   flags )
@@ -96,7 +97,7 @@
 
       error = func( face, gindex, 1, flags, padvance );
       if ( !error )
-        return ft_face_scale_advances_( face, padvance, 1, flags );
+        return _ft_face_scale_advances( face, padvance, 1, flags );
 
       if ( FT_ERR_NEQ( error, Unimplemented_Feature ) )
         return error;
@@ -142,7 +143,7 @@
     {
       error = func( face, start, count, flags, padvances );
       if ( !error )
-        return ft_face_scale_advances_( face, padvances, count, flags );
+        return _ft_face_scale_advances( face, padvances, count, flags );
 
       if ( FT_ERR_NEQ( error, Unimplemented_Feature ) )
         return error;

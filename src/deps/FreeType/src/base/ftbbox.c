@@ -4,7 +4,7 @@
  *
  *   FreeType bbox computation (body).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used
@@ -24,13 +24,14 @@
    */
 
 
-#include <freetype/internal/ftdebug.h>
+#include <ft2build.h>
+#include FT_INTERNAL_DEBUG_H
 
-#include <freetype/ftbbox.h>
-#include <freetype/ftimage.h>
-#include <freetype/ftoutln.h>
-#include <freetype/internal/ftcalc.h>
-#include <freetype/internal/ftobjs.h>
+#include FT_BBOX_H
+#include FT_IMAGE_H
+#include FT_OUTLINE_H
+#include FT_INTERNAL_CALC_H
+#include FT_INTERNAL_OBJECTS_H
 
 
   typedef struct  TBBox_Rec_
@@ -293,10 +294,10 @@
       if ( shift > 2 )
         shift = 2;
 
-      q1 *= 1 << shift;
-      q2 *= 1 << shift;
-      q3 *= 1 << shift;
-      q4 *= 1 << shift;
+      q1 <<=  shift;
+      q2 <<=  shift;
+      q3 <<=  shift;
+      q4 <<=  shift;
     }
     else
     {
@@ -318,9 +319,9 @@
         q2 = q2 + q1;
         q4 = q4 + q3;
         q3 = q3 + q2;
-        q4 = ( q4 + q3 ) >> 3;
-        q3 = q3 >> 2;
-        q2 = q2 >> 1;
+        q4 = ( q4 + q3 ) / 8;
+        q3 = q3 / 4;
+        q2 = q2 / 2;
       }
       else                     /* second half */
       {
@@ -329,9 +330,9 @@
         q3 = q3 + q4;
         q1 = q1 + q2;
         q2 = q2 + q3;
-        q1 = ( q1 + q2 ) >> 3;
-        q2 = q2 >> 2;
-        q3 = q3 >> 1;
+        q1 = ( q1 + q2 ) / 8;
+        q2 = q2 / 4;
+        q3 = q3 / 2;
       }
 
       /* check whether either end reached the maximum */

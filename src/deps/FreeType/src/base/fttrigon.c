@@ -4,7 +4,7 @@
  *
  *   FreeType trigonometric functions (body).
  *
- * Copyright (C) 2001-2023 by
+ * Copyright (C) 2001-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -29,9 +29,10 @@
    *
    */
 
-#include <freetype/internal/ftobjs.h>
-#include <freetype/internal/ftcalc.h>
-#include <freetype/fttrigon.h>
+#include <ft2build.h>
+#include FT_INTERNAL_OBJECTS_H
+#include FT_INTERNAL_CALC_H
+#include FT_TRIGONOMETRY_H
 
 
   /* the Cordic shrink factor 0.858785336480436 * 2^32 */
@@ -53,7 +54,7 @@
   };
 
 
-#ifdef FT_INT64
+#ifdef FT_LONG64
 
   /* multiply a given value by the CORDIC shrink factor */
   static FT_Fixed
@@ -76,7 +77,7 @@
     return s < 0 ? -val : val;
   }
 
-#else /* !FT_INT64 */
+#else /* !FT_LONG64 */
 
   /* multiply a given value by the CORDIC shrink factor */
   static FT_Fixed
@@ -125,7 +126,7 @@
     return s < 0 ? -val : val;
   }
 
-#endif /* !FT_INT64 */
+#endif /* !FT_LONG64 */
 
 
   /* undefined and never called for zero vector */

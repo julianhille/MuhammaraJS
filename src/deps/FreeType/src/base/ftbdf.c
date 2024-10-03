@@ -4,7 +4,7 @@
  *
  *   FreeType API for accessing BDF-specific strings (body).
  *
- * Copyright (C) 2002-2023 by
+ * Copyright (C) 2002-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,10 +16,11 @@
  */
 
 
-#include <freetype/internal/ftdebug.h>
+#include <ft2build.h>
+#include FT_INTERNAL_DEBUG_H
 
-#include <freetype/internal/ftobjs.h>
-#include <freetype/internal/services/svbdf.h>
+#include FT_INTERNAL_OBJECTS_H
+#include FT_SERVICE_BDF_H
 
 
   /* documentation is in ftbdf.h */

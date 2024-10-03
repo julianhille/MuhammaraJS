@@ -4,7 +4,7 @@
  *
  *   The FreeType basic cache interface (body).
  *
- * Copyright (C) 2003-2023 by
+ * Copyright (C) 2003-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,9 +16,10 @@
  */
 
 
-#include <freetype/internal/ftobjs.h>
-#include <freetype/internal/ftdebug.h>
-#include <freetype/ftcache.h>
+#include <ft2build.h>
+#include FT_INTERNAL_OBJECTS_H
+#include FT_INTERNAL_DEBUG_H
+#include FT_CACHE_H
 #include "ftcglyph.h"
 #include "ftcimage.h"
 #include "ftcsbits.h"
@@ -26,7 +27,6 @@
 #include "ftccback.h"
 #include "ftcerror.h"
 
-#undef  FT_COMPONENT
 #define FT_COMPONENT  cache
 
 
@@ -109,18 +109,13 @@
     if ( error || !face )
       return result;
 
-#ifdef FT_DEBUG_LEVEL_TRACE
     if ( (FT_ULong)face->num_glyphs > FT_UINT_MAX || 0 > face->num_glyphs )
-    {
       FT_TRACE1(( "ftc_basic_family_get_count:"
-                  " the number of glyphs in this face is %ld,\n",
+                  " too large number of glyphs in this face, truncated\n",
                   face->num_glyphs ));
-      FT_TRACE1(( "                           "
-                  " which is too much and thus truncated\n" ));
-    }
-#endif
 
-    result = (FT_UInt)face->num_glyphs;
+    if ( !error )
+      result = (FT_UInt)face->num_glyphs;
 
     return result;
   }
@@ -182,8 +177,7 @@
       if ( !error )
       {
         if ( face->glyph->format == FT_GLYPH_FORMAT_BITMAP  ||
-             face->glyph->format == FT_GLYPH_FORMAT_OUTLINE ||
-             face->glyph->format == FT_GLYPH_FORMAT_SVG     )
+             face->glyph->format == FT_GLYPH_FORMAT_OUTLINE )
         {
           /* ok, copy it */
           FT_Glyph  glyph;
@@ -319,7 +313,7 @@
 #if 0xFFFFFFFFUL > FT_UINT_MAX
     if ( (type->flags & (FT_ULong)FT_UINT_MAX) )
       FT_TRACE1(( "FTC_ImageCache_Lookup:"
-                  " higher bits in load_flags 0x%lx are dropped\n",
+                  " higher bits in load_flags 0x%x are dropped\n",
                   (FT_ULong)type->flags & ~((FT_ULong)FT_UINT_MAX) ));
 #endif
 
@@ -400,7 +394,7 @@
 #if FT_ULONG_MAX > FT_UINT_MAX
     if ( load_flags > FT_UINT_MAX )
       FT_TRACE1(( "FTC_ImageCache_LookupScaler:"
-                  " higher bits in load_flags 0x%lx are dropped\n",
+                  " higher bits in load_flags 0x%x are dropped\n",
                   load_flags & ~((FT_ULong)FT_UINT_MAX) ));
 #endif
 
@@ -517,7 +511,7 @@
 #if 0xFFFFFFFFUL > FT_UINT_MAX
     if ( (type->flags & (FT_ULong)FT_UINT_MAX) )
       FT_TRACE1(( "FTC_ImageCache_Lookup:"
-                  " higher bits in load_flags 0x%lx are dropped\n",
+                  " higher bits in load_flags 0x%x are dropped\n",
                   (FT_ULong)type->flags & ~((FT_ULong)FT_UINT_MAX) ));
 #endif
 
@@ -600,7 +594,7 @@
 #if FT_ULONG_MAX > FT_UINT_MAX
     if ( load_flags > FT_UINT_MAX )
       FT_TRACE1(( "FTC_ImageCache_LookupScaler:"
-                  " higher bits in load_flags 0x%lx are dropped\n",
+                  " higher bits in load_flags 0x%x are dropped\n",
                   load_flags & ~((FT_ULong)FT_UINT_MAX) ));
 #endif
 

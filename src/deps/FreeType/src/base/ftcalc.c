@@ -4,7 +4,7 @@
  *
  *   Arithmetic computations (body).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -32,11 +32,12 @@
    */
 
 
-#include <freetype/ftglyph.h>
-#include <freetype/fttrigon.h>
-#include <freetype/internal/ftcalc.h>
-#include <freetype/internal/ftdebug.h>
-#include <freetype/internal/ftobjs.h>
+#include <ft2build.h>
+#include FT_GLYPH_H
+#include FT_TRIGONOMETRY_H
+#include FT_INTERNAL_CALC_H
+#include FT_INTERNAL_DEBUG_H
+#include FT_INTERNAL_OBJECTS_H
 
 
 #ifdef FT_MULFIX_ASSEMBLER
@@ -45,7 +46,7 @@
 
 /* we need to emulate a 64-bit data type if a real one isn't available */
 
-#ifndef FT_INT64
+#ifndef FT_LONG64
 
   typedef struct  FT_Int64_
   {
@@ -54,7 +55,7 @@
 
   } FT_Int64;
 
-#endif /* !FT_INT64 */
+#endif /* !FT_LONG64 */
 
 
   /**************************************************************************
@@ -79,7 +80,7 @@
   FT_END_STMNT
 
   /* The following three functions are available regardless of whether */
-  /* FT_INT64 is defined.                                              */
+  /* FT_LONG64 is defined.                                             */
 
   /* documentation is in freetype.h */
 
@@ -109,7 +110,7 @@
 
 #ifndef FT_MSB
 
-  FT_BASE_DEF( FT_Int )
+  FT_BASE_DEF ( FT_Int )
   FT_MSB( FT_UInt32 z )
   {
     FT_Int  shift = 0;
@@ -164,7 +165,7 @@
   }
 
 
-#ifdef FT_INT64
+#ifdef FT_LONG64
 
 
   /* documentation is in freetype.h */
@@ -272,7 +273,7 @@
   }
 
 
-#else /* !FT_INT64 */
+#else /* !FT_LONG64 */
 
 
   static void
@@ -651,7 +652,7 @@
   }
 
 
-#endif /* !FT_INT64 */
+#endif /* !FT_LONG64 */
 
 
   /* documentation is in ftglyph.h */
@@ -985,7 +986,7 @@
     /* we silently ignore overflow errors since such large values */
     /* lead to even more (harmless) rendering errors later on     */
 
-#ifdef FT_INT64
+#ifdef FT_LONG64
 
     FT_Int64  delta = SUB_INT64( MUL_INT64( in_x, out_y ),
                                  MUL_INT64( in_y, out_x ) );
@@ -1082,73 +1083,6 @@
     /*   d_in + d_out < 17/16 d_hypot     */
 
     return ( d_in + d_out - d_hypot ) < ( d_hypot >> 4 );
-  }
-
-
-  FT_BASE_DEF( FT_Int32 )
-  FT_MulAddFix( FT_Fixed*  s,
-                FT_Int32*  f,
-                FT_UInt    count )
-  {
-    FT_UInt   i;
-    FT_Int64  temp;
-#ifndef FT_INT64
-    FT_Int64  halfUnit;
-#endif
-
-
-#ifdef FT_INT64
-    temp = 0;
-
-    for ( i = 0; i < count; ++i )
-      temp += (FT_Int64)s[i] * f[i];
-
-    return ( temp + 0x8000 ) >> 16;
-#else
-    temp.hi = 0;
-    temp.lo = 0;
-
-    for ( i = 0; i < count; ++i )
-    {
-      FT_Int64  multResult;
-
-      FT_Int     sign  = 1;
-      FT_UInt32  carry = 0;
-
-      FT_UInt32  scalar;
-      FT_UInt32  factor;
-
-
-      scalar = (FT_UInt32)s[i];
-      factor = (FT_UInt32)f[i];
-
-      FT_MOVE_SIGN( s[i], scalar, sign );
-      FT_MOVE_SIGN( f[i], factor, sign );
-
-      ft_multo64( scalar, factor, &multResult );
-
-      if ( sign < 0 )
-      {
-        /* Emulated `FT_Int64` negation. */
-        carry = ( multResult.lo == 0 );
-
-        multResult.lo = ~multResult.lo + 1;
-        multResult.hi = ~multResult.hi + carry;
-      }
-
-      FT_Add64( &temp, &multResult, &temp );
-    }
-
-    /* Round value. */
-    halfUnit.hi = 0;
-    halfUnit.lo = 0x8000;
-    FT_Add64( &temp, &halfUnit, &temp );
-
-    return (FT_Int32)( ( (FT_Int32)( temp.hi & 0xFFFF ) << 16 ) |
-                                   ( temp.lo >> 16 )            );
-
-#endif /* !FT_INT64 */
-
   }
 
 

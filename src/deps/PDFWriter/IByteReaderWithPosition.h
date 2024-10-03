@@ -51,4 +51,10 @@ public:
 		skip position (like setting from current)
 	*/
 	virtual void Skip(LongBufferSizeType inSkipSize) = 0;
+
+	/*
+		Move the start position
+	*/
+	virtual void MoveStartPosition(LongFilePositionType inStartPosition) = 0;
+
 };

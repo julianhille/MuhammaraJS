@@ -4,7 +4,7 @@
  *
  *   CID-keyed Type1 parser (body).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,9 +16,10 @@
  */
 
 
-#include <freetype/internal/ftdebug.h>
-#include <freetype/internal/ftobjs.h>
-#include <freetype/internal/ftstream.h>
+#include <ft2build.h>
+#include FT_INTERNAL_DEBUG_H
+#include FT_INTERNAL_OBJECTS_H
+#include FT_INTERNAL_STREAM_H
 
 #include "cidparse.h"
 
@@ -73,11 +74,7 @@
 
     /* first of all, check the font format in the header */
     if ( FT_FRAME_ENTER( 31 ) )
-    {
-      FT_TRACE2(( "  not a CID-keyed font\n" ));
-      error = FT_THROW( Unknown_File_Format );
       goto Exit;
-    }
 
     if ( ft_strncmp( (char *)stream->cursor,
                      "%!PS-Adobe-3.0 Resource-CIDFont", 31 ) )
@@ -185,7 +182,7 @@
     parser->root.base      = parser->postscript;
     parser->root.cursor    = parser->postscript;
     parser->root.limit     = parser->root.cursor + ps_len;
-    parser->num_dict       = FT_UINT_MAX;
+    parser->num_dict       = -1;
 
     /* Finally, we check whether `StartData' or `/sfnts' was real --  */
     /* it could be in a comment or string.  We also get the arguments */

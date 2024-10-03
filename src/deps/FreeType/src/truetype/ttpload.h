@@ -4,7 +4,7 @@
  *
  *   TrueType-specific tables loader (specification).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,7 +20,8 @@
 #define TTPLOAD_H_
 
 
-#include <freetype/internal/tttypes.h>
+#include <ft2build.h>
+#include FT_INTERNAL_TRUETYPE_TYPES_H
 
 
 FT_BEGIN_HEADER

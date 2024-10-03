@@ -4,7 +4,7 @@
  *
  *   FreeType simple types definitions (specification only).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -22,8 +22,8 @@
 
 #include <ft2build.h>
 #include FT_CONFIG_CONFIG_H
-#include <freetype/ftsystem.h>
-#include <freetype/ftimage.h>
+#include FT_SYSTEM_H
+#include FT_IMAGE_H
 
 #include <stddef.h>
 
@@ -45,10 +45,7 @@ FT_BEGIN_HEADER
    * @description:
    *   This section contains the basic data types defined by FreeType~2,
    *   ranging from simple scalar types to bitmap descriptors.  More
-   *   font-specific structures are defined in a different section.  Note
-   *   that FreeType does not use floating-point data types.  Fractional
-   *   values are represented by fixed-point integers, with lower bits
-   *   storing the fractional part.
+   *   font-specific structures are defined in a different section.
    *
    * @order:
    *   FT_Byte
@@ -416,7 +413,7 @@ FT_BEGIN_HEADER
   typedef struct  FT_Data_
   {
     const FT_Byte*  pointer;
-    FT_UInt         length;
+    FT_Int          length;
 
   } FT_Data;
 
@@ -482,17 +479,18 @@ FT_BEGIN_HEADER
    *
    * @description:
    *   This macro converts four-letter tags that are used to label TrueType
-   *   tables into an `FT_Tag` type, to be used within FreeType.
+   *   tables into an unsigned long, to be used within FreeType.
    *
    * @note:
    *   The produced values **must** be 32-bit integers.  Don't redefine this
    *   macro.
    */
-#define FT_MAKE_TAG( _x1, _x2, _x3, _x4 )                  \
-          ( ( FT_STATIC_BYTE_CAST( FT_Tag, _x1 ) << 24 ) | \
-            ( FT_STATIC_BYTE_CAST( FT_Tag, _x2 ) << 16 ) | \
-            ( FT_STATIC_BYTE_CAST( FT_Tag, _x3 ) <<  8 ) | \
-              FT_STATIC_BYTE_CAST( FT_Tag, _x4 )         )
+#define FT_MAKE_TAG( _x1, _x2, _x3, _x4 ) \
+          (FT_Tag)                        \
+          ( ( (FT_ULong)_x1 << 24 ) |     \
+            ( (FT_ULong)_x2 << 16 ) |     \
+            ( (FT_ULong)_x3 <<  8 ) |     \
+              (FT_ULong)_x4         )
 
 
   /*************************************************************************/
@@ -590,7 +588,7 @@ FT_BEGIN_HEADER
 
 
 #define FT_IS_EMPTY( list )  ( (list).head == 0 )
-#define FT_BOOL( x )         FT_STATIC_CAST( FT_Bool, (x) != 0 )
+#define FT_BOOL( x )  ( (FT_Bool)( (x) != 0 ) )
 
   /* concatenate C tokens */
 #define FT_ERR_XCAT( x, y )  x ## y

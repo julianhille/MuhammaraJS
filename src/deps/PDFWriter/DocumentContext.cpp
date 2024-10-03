@@ -50,7 +50,6 @@
 #include "IPageEndWritingTask.h"
 #include "ITiledPatternEndWritingTask.h"
 #include "PDFPageInput.h"
-#include "IObjectEndWritingTask.h"
 
 
 using namespace PDFHummus;
@@ -79,7 +78,6 @@ void DocumentContext::SetObjectsContext(ObjectsContext* inObjectsContext)
 #ifndef PDFHUMMUS_NO_PNG
 	mPNGImageHandler.SetOperationsContexts(this, mObjectsContext);
 #endif
-	mExtGStateRegistry.SetObjectsContext(mObjectsContext);
 }
 
 void DocumentContext::SetEmbedFonts(bool inEmbedFonts) {
@@ -173,12 +171,12 @@ void DocumentContext::WriteHeaderComment(EPDFVersion inPDFVersion)
 	}
 }
 
-static const IOBasicTypes::Byte scBinaryBytesArray[] = {'%',0xBD,0xBE,0xBC,0xB5,'\r','\n'}; // might imply that i need a newline writer here....an underlying primitives-token context
+static const IOBasicTypes::Byte scBinaryBytesArray[] = {'%',0xBD,0xBE,0xBC,'\r','\n'}; // might imply that i need a newline writer here....an underlying primitives-token context
 
 void DocumentContext::Write4BinaryBytes()
 {
 	IByteWriterWithPosition *freeContextOutput = mObjectsContext->StartFreeContext();
-	freeContextOutput->Write(scBinaryBytesArray,7);
+	freeContextOutput->Write(scBinaryBytesArray,6);
 	mObjectsContext->EndFreeContext();
 }
 
@@ -760,46 +758,22 @@ EStatusCodeAndObjectIDType DocumentContext::WritePage(PDFPage* inPage)
 		}
 		mObjectsContext->EndIndirectObject();
 
+        // now write writing tasks
+        PDFPageToIPageEndWritingTaskListMap::iterator itPageTasks= mPageEndTasks.find(inPage);
 
         result.first = eSuccess;
+        if(itPageTasks != mPageEndTasks.end())
+        {
+            IPageEndWritingTaskList::iterator itTasks = itPageTasks->second.begin();
 
-        // now write writing tasks
-		{
-			PDFPageToIPageEndWritingTaskListMap::iterator itPageTasks= mPageEndTasks.find(inPage);
-			if(itPageTasks != mPageEndTasks.end())
-			{
-				IPageEndWritingTaskList::iterator itTasks = itPageTasks->second.begin();
+            for(; itTasks != itPageTasks->second.end() && eSuccess == result.first; ++itTasks)
+                result.first = (*itTasks)->Write(inPage,mObjectsContext,this);
 
-				for(; itTasks != itPageTasks->second.end() && eSuccess == result.first; ++itTasks)
-					result.first = (*itTasks)->Write(inPage,mObjectsContext,this);
-
-				// one time, so delete
-				for(itTasks = itPageTasks->second.begin(); itTasks != itPageTasks->second.end(); ++itTasks)
-					delete (*itTasks);
-				mPageEndTasks.erase(itPageTasks);
-			}
-
-		}
-		if(result.first != eSuccess)
-			break;
-
-		// more writing tasks
-		{
-			PDFPageToIObjectEndWritingTaskListMap::iterator itPageTasks= mMorePageEndTasks.find(inPage);
-			if(itPageTasks != mMorePageEndTasks.end())
-			{
-				IObjectEndWritingTaskList::iterator itTasks = itPageTasks->second.begin();
-
-				for(; itTasks != itPageTasks->second.end() && eSuccess == result.first; ++itTasks)
-					result.first = (*itTasks)->Write(mObjectsContext,this);
-
-				// one time, so delete
-				for(itTasks = itPageTasks->second.begin(); itTasks != itPageTasks->second.end(); ++itTasks)
-					delete (*itTasks);
-				mMorePageEndTasks.erase(itPageTasks);
-			}
-
-		}
+            // one time, so delete
+            for(itTasks = itPageTasks->second.begin(); itTasks != itPageTasks->second.end(); ++itTasks)
+                delete (*itTasks);
+            mPageEndTasks.erase(itPageTasks);
+        }
 
 	}while(false);
 
@@ -1016,11 +990,11 @@ PDFFormXObject* DocumentContext::StartFormXObject(const PDFRectangle& inBounding
 			mObjectsContext->EndArray(eTokenSeparatorEndLine);
 		}
         if (inUseTransparencyGroup) {
-	        xobjectContext->WriteKey(scGroup);
-			DictionaryContext* groupContext = mObjectsContext->StartDictionary();
-			groupContext->WriteKey(scS);
-			groupContext->WriteNameValue(scTransparency);
-			mObjectsContext->EndDictionary(groupContext);
+          xobjectContext->WriteKey(scGroup);
+	  DictionaryContext* groupContext = mObjectsContext->StartDictionary();
+	  groupContext->WriteKey(scS);
+	  groupContext->WriteNameValue(scTransparency);
+	  mObjectsContext->EndDictionary(groupContext);
         }
 
 		// Resource dict
@@ -1066,47 +1040,22 @@ EStatusCode DocumentContext::EndFormXObjectNoRelease(PDFFormXObject* inFormXObje
 	WriteResourcesDictionary(inFormXObject->GetResourcesDictionary());
 	mObjectsContext->EndIndirectObject();
 
-	EStatusCode status = eSuccess;
-
     // now write writing tasks
-	{
-		PDFFormXObjectToIFormEndWritingTaskListMap::iterator it= mFormEndTasks.find(inFormXObject);
+    PDFFormXObjectToIFormEndWritingTaskListMap::iterator it= mFormEndTasks.find(inFormXObject);
 
-		if(it != mFormEndTasks.end())
-		{
-			IFormEndWritingTaskList::iterator itTasks = it->second.begin();
+    EStatusCode status = eSuccess;
+    if(it != mFormEndTasks.end())
+    {
+        IFormEndWritingTaskList::iterator itTasks = it->second.begin();
 
-			for(; itTasks != it->second.end() && eSuccess == status; ++itTasks)
-				status = (*itTasks)->Write(inFormXObject,mObjectsContext,this);
+        for(; itTasks != it->second.end() && eSuccess == status; ++itTasks)
+            status = (*itTasks)->Write(inFormXObject,mObjectsContext,this);
 
-			// one time, so delete
-			for(itTasks = it->second.begin(); itTasks != it->second.end(); ++itTasks)
-				delete (*itTasks);
-			mFormEndTasks.erase(it);
-		}
-
-	}
-	if(status != eSuccess)
-		return status;
-
-
-	// and more writing tasks
-	{
-		PDFFormXObjectToIObjectEndWritingTaskListMap::iterator it= mMoreFormEndTasks.find(inFormXObject);
-
-		if(it != mMoreFormEndTasks.end())
-		{
-			IObjectEndWritingTaskList::iterator itTasks = it->second.begin();
-
-			for(; itTasks != it->second.end() && eSuccess == status; ++itTasks)
-				status = (*itTasks)->Write(mObjectsContext,this);
-
-			// one time, so delete
-			for(itTasks = it->second.begin(); itTasks != it->second.end(); ++itTasks)
-				delete (*itTasks);
-			mMoreFormEndTasks.erase(it);
-		}		
-	}
+        // one time, so delete
+        for(itTasks = it->second.begin(); itTasks != it->second.end(); ++itTasks)
+            delete (*itTasks);
+        mFormEndTasks.erase(it);
+    }
 
 	return status;
 }
@@ -1120,46 +1069,22 @@ EStatusCode DocumentContext::EndTiledPattern(PDFTiledPattern* inTiledPattern)
 	WriteResourcesDictionary(inTiledPattern->GetResourcesDictionary());
 	mObjectsContext->EndIndirectObject();
 
-	EStatusCode status = eSuccess;
-
 	// now write writing tasks
+	PDFTiledPatternToITiledPatternEndWritingTaskListMap::iterator it = mTiledPatternEndTasks.find(inTiledPattern);
+
+	EStatusCode status = eSuccess;
+	if (it != mTiledPatternEndTasks.end())
 	{
-		PDFTiledPatternToITiledPatternEndWritingTaskListMap::iterator it = mTiledPatternEndTasks.find(inTiledPattern);
+		ITiledPatternEndWritingTaskList::iterator itTasks = it->second.begin();
 
-		if (it != mTiledPatternEndTasks.end())
-		{
-			ITiledPatternEndWritingTaskList::iterator itTasks = it->second.begin();
+		for (; itTasks != it->second.end() && eSuccess == status; ++itTasks)
+			status = (*itTasks)->Write(inTiledPattern, mObjectsContext, this);
 
-			for (; itTasks != it->second.end() && eSuccess == status; ++itTasks)
-				status = (*itTasks)->Write(inTiledPattern, mObjectsContext, this);
-
-			// one time, so delete
-			for (itTasks = it->second.begin(); itTasks != it->second.end(); ++itTasks)
-				delete (*itTasks);
-			mTiledPatternEndTasks.erase(it);
-		}
+		// one time, so delete
+		for (itTasks = it->second.begin(); itTasks != it->second.end(); ++itTasks)
+			delete (*itTasks);
+		mTiledPatternEndTasks.erase(it);
 	}
-	if(status != eSuccess)
-		return status;
-
-	// and more writing tasks
-	{
-		PDFTiledPatternToIObjectEndWritingTaskListMap::iterator it= mMoreTiledPatternEndTasks.find(inTiledPattern);
-
-		if(it != mMoreTiledPatternEndTasks.end())
-		{
-			IObjectEndWritingTaskList::iterator itTasks = it->second.begin();
-
-			for(; itTasks != it->second.end() && eSuccess == status; ++itTasks)
-				status = (*itTasks)->Write(mObjectsContext,this);
-
-			// one time, so delete
-			for(itTasks = it->second.begin(); itTasks != it->second.end(); ++itTasks)
-				delete (*itTasks);
-			mMoreTiledPatternEndTasks.erase(it);
-		}		
-	}		
-
 
 	return status;
 }
@@ -2155,7 +2080,6 @@ void DocumentContext::Cleanup()
 	mTIFFImageHandler.Reset();
 #endif
 	mUsedFontsRepository.Reset();
-	mExtGStateRegistry.Reset();
 	mOutputFilePath.clear();
 	mExtenders.clear();
 	mAnnotations.clear();
@@ -2176,84 +2100,39 @@ void DocumentContext::Cleanup()
 
     mResourcesTasks.clear();
 
+    PDFFormXObjectToIFormEndWritingTaskListMap::iterator itFormEnd = mFormEndTasks.begin();
+
+    for(; itFormEnd != mFormEndTasks.end();++itFormEnd)
+    {
+        IFormEndWritingTaskList::iterator itEndWritingTasks = itFormEnd->second.begin();
+        for(; itEndWritingTasks != itFormEnd->second.end(); ++itEndWritingTasks)
+            delete *itEndWritingTasks;
+
+    }
+    mFormEndTasks.clear();
+
+    PDFPageToIPageEndWritingTaskListMap::iterator itPageEnd = mPageEndTasks.begin();
+
+    for(; itPageEnd != mPageEndTasks.end();++itPageEnd)
+    {
+        IPageEndWritingTaskList::iterator itPageEndWritingTasks = itPageEnd->second.begin();
+        for(; itPageEndWritingTasks != itPageEnd->second.end(); ++itPageEndWritingTasks)
+            delete *itPageEndWritingTasks;
+
+    }
+    mPageEndTasks.clear();
+
+
+	PDFTiledPatternToITiledPatternEndWritingTaskListMap::iterator itPatternEnd = mTiledPatternEndTasks.begin();
+
+	for (; itPatternEnd != mTiledPatternEndTasks.end(); ++itPatternEnd)
 	{
-		PDFFormXObjectToIFormEndWritingTaskListMap::iterator itFormEnd = mFormEndTasks.begin();
+		ITiledPatternEndWritingTaskList::iterator itTiledPatternEndWritingTasks = itPatternEnd->second.begin();
+		for (; itTiledPatternEndWritingTasks != itPatternEnd->second.end(); ++itTiledPatternEndWritingTasks)
+			delete *itTiledPatternEndWritingTasks;
 
-		for(; itFormEnd != mFormEndTasks.end();++itFormEnd)
-		{
-			IFormEndWritingTaskList::iterator itEndWritingTasks = itFormEnd->second.begin();
-			for(; itEndWritingTasks != itFormEnd->second.end(); ++itEndWritingTasks)
-				delete *itEndWritingTasks;
-
-		}
-		mFormEndTasks.clear();
 	}
-
-	{
-		PDFFormXObjectToIObjectEndWritingTaskListMap::iterator itEnd = mMoreFormEndTasks.begin();
-
-		for(; itEnd != mMoreFormEndTasks.end();++itEnd)
-		{
-			IObjectEndWritingTaskList::iterator itEndWritingTasks = itEnd->second.begin();
-			for(; itEndWritingTasks != itEnd->second.end(); ++itEndWritingTasks)
-				delete *itEndWritingTasks;
-
-		}
-		mMoreFormEndTasks.clear();
-	}
-
-	{
-		PDFPageToIPageEndWritingTaskListMap::iterator itPageEnd = mPageEndTasks.begin();
-
-		for(; itPageEnd != mPageEndTasks.end();++itPageEnd)
-		{
-			IPageEndWritingTaskList::iterator itPageEndWritingTasks = itPageEnd->second.begin();
-			for(; itPageEndWritingTasks != itPageEnd->second.end(); ++itPageEndWritingTasks)
-				delete *itPageEndWritingTasks;
-
-		}
-		mPageEndTasks.clear();
-	}
-
-	{
-		PDFPageToIObjectEndWritingTaskListMap::iterator itEnd = mMorePageEndTasks.begin();
-
-		for(; itEnd != mMorePageEndTasks.end();++itEnd)
-		{
-			IObjectEndWritingTaskList::iterator itEndWritingTasks = itEnd->second.begin();
-			for(; itEndWritingTasks != itEnd->second.end(); ++itEndWritingTasks)
-				delete *itEndWritingTasks;
-
-		}
-		mMoreFormEndTasks.clear();		
-	}
-
-
-	{
-		PDFTiledPatternToITiledPatternEndWritingTaskListMap::iterator itPatternEnd = mTiledPatternEndTasks.begin();
-
-		for (; itPatternEnd != mTiledPatternEndTasks.end(); ++itPatternEnd)
-		{
-			ITiledPatternEndWritingTaskList::iterator itTiledPatternEndWritingTasks = itPatternEnd->second.begin();
-			for (; itTiledPatternEndWritingTasks != itPatternEnd->second.end(); ++itTiledPatternEndWritingTasks)
-				delete *itTiledPatternEndWritingTasks;
-
-		}
-		mTiledPatternEndTasks.clear();
-	}
-
-	{
-		PDFTiledPatternToIObjectEndWritingTaskListMap::iterator itEnd = mMoreTiledPatternEndTasks.begin();
-
-		for(; itEnd != mMoreTiledPatternEndTasks.end();++itEnd)
-		{
-			IObjectEndWritingTaskList::iterator itEndWritingTasks = itEnd->second.begin();
-			for(; itEndWritingTasks != itEnd->second.end(); ++itEndWritingTasks)
-				delete *itEndWritingTasks;
-
-		}
-		mMoreTiledPatternEndTasks.clear();		
-	}	
+	mTiledPatternEndTasks.clear();
 }
 
 void DocumentContext::SetParserExtender(IPDFParserExtender* inParserExtender)
@@ -2830,19 +2709,6 @@ void DocumentContext::RegisterFormEndWritingTask(PDFFormXObject* inFormXObject,I
     it->second.push_back(inWritingTask);
 }
 
-void DocumentContext::RegisterFormEndWritingTask(PDFFormXObject* inFormXObject,IObjectEndWritingTask* inWritingTask)
-{
-    PDFFormXObjectToIObjectEndWritingTaskListMap::iterator it =
-    mMoreFormEndTasks.find(inFormXObject);
-
-    if(it == mMoreFormEndTasks.end())
-    {
-        it = mMoreFormEndTasks.insert(PDFFormXObjectToIObjectEndWritingTaskListMap::value_type(inFormXObject,IObjectEndWritingTaskList())).first;
-    }
-
-    it->second.push_back(inWritingTask);
-}
-
 void DocumentContext::RegisterPageEndWritingTask(PDFPage* inPage,IPageEndWritingTask* inWritingTask)
 {
     PDFPageToIPageEndWritingTaskListMap::iterator it =
@@ -2851,19 +2717,6 @@ void DocumentContext::RegisterPageEndWritingTask(PDFPage* inPage,IPageEndWriting
     if(it == mPageEndTasks.end())
     {
         it =mPageEndTasks.insert(PDFPageToIPageEndWritingTaskListMap::value_type(inPage,IPageEndWritingTaskList())).first;
-    }
-
-    it->second.push_back(inWritingTask);
-}
-
-void DocumentContext::RegisterPageEndWritingTask(PDFPage* inPage,IObjectEndWritingTask* inWritingTask)
-{
-    PDFPageToIObjectEndWritingTaskListMap::iterator it =
-    mMorePageEndTasks.find(inPage);
-
-    if(it == mMorePageEndTasks.end())
-    {
-        it = mMorePageEndTasks.insert(PDFPageToIObjectEndWritingTaskListMap::value_type(inPage,IObjectEndWritingTaskList())).first;
     }
 
     it->second.push_back(inWritingTask);
@@ -2880,19 +2733,6 @@ void DocumentContext::RegisterTiledPatternEndWritingTask(PDFTiledPattern* inPatt
 	}
 
 	it->second.push_back(inWritingTask);
-}
-
-void DocumentContext::RegisterTiledPatternEndWritingTask(PDFTiledPattern* inPattern, IObjectEndWritingTask* inWritingTask)
-{
-    PDFTiledPatternToIObjectEndWritingTaskListMap::iterator it =
-    mMoreTiledPatternEndTasks.find(inPattern);
-
-    if(it == mMoreTiledPatternEndTasks.end())
-    {
-        it = mMoreTiledPatternEndTasks.insert(PDFTiledPatternToIObjectEndWritingTaskListMap::value_type(inPattern,IObjectEndWritingTaskList())).first;
-    }
-
-    it->second.push_back(inWritingTask);
 }
 
 DoubleAndDoublePair DocumentContext::GetImageDimensions(
@@ -2919,8 +2759,8 @@ DoubleAndDoublePair DocumentContext::GetImageDimensions(
 
       PDFPageInput helper(&pdfParser,pdfParser.ParsePage(inImageIndex));
 
-      imageWidth = helper.GetMediaBox().GetWidth();
-      imageHeight = helper.GetMediaBox().GetHeight();
+      imageWidth = helper.GetMediaBox().UpperRightX - helper.GetMediaBox().LowerLeftX;
+      imageHeight = helper.GetMediaBox().UpperRightY - helper.GetMediaBox().LowerLeftY;
 
       break;
     }
@@ -3002,8 +2842,8 @@ DoubleAndDoublePair DocumentContext::GetImageDimensions(
 
 				PDFPageInput helper(&pdfParser,pdfParser.ParsePage(inImageIndex));
 
-				imageWidth = helper.GetMediaBox().GetHeight();
-				imageHeight = helper.GetMediaBox().GetWidth();
+				imageWidth = helper.GetMediaBox().UpperRightX - helper.GetMediaBox().LowerLeftX;
+				imageHeight = helper.GetMediaBox().UpperRightY - helper.GetMediaBox().LowerLeftY;
 
 				break;
 			}
@@ -3310,13 +3150,4 @@ ObjectIDTypeAndBool DocumentContext::RegisterImageForDrawing(const std::string& 
         firstTime = false;
 
     return ObjectIDTypeAndBool(imageInformation.writtenObjectID,firstTime);
-}
-
-
-ExtGStateRegistry& DocumentContext::GetExtGStateRegistry() {
-	return mExtGStateRegistry;
-}
-
-ObjectsContext* DocumentContext::GetObjectsContext() {
-	return mObjectsContext;
 }

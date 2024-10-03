@@ -6,7 +6,7 @@
  *   recorders (specification only).  These are used to support native
  *   T1/T2 hints in the 'type1', 'cid', and 'cff' font drivers.
  *
- * Copyright (C) 2001-2023 by
+ * Copyright (C) 2001-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -22,8 +22,9 @@
 #define PSHINTS_H_
 
 
-#include <freetype/freetype.h>
-#include <freetype/t1tables.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_TYPE1_TABLES_H
 
 
 FT_BEGIN_HEADER
@@ -294,7 +295,7 @@ FT_BEGIN_HEADER
    *
    * @note:
    *   On input, all points within the outline are in font coordinates. On
-   *   output, they are in 1/64 of pixels.
+   *   output, they are in 1/64th of pixels.
    *
    *   The scaling transformation is taken from the 'globals' object which
    *   must correspond to the same font as the glyph.
@@ -607,7 +608,7 @@ FT_BEGIN_HEADER
    *
    * @note:
    *   On input, all points within the outline are in font coordinates. On
-   *   output, they are in 1/64 of pixels.
+   *   output, they are in 1/64th of pixels.
    *
    *   The scaling transformation is taken from the 'globals' object which
    *   must correspond to the same font than the glyph.

@@ -4,7 +4,7 @@
  *
  *   FreeType API for color filtering of subpixel bitmap glyphs (body).
  *
- * Copyright (C) 2006-2023 by
+ * Copyright (C) 2006-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,11 +16,12 @@
  */
 
 
-#include <freetype/internal/ftdebug.h>
+#include <ft2build.h>
+#include FT_INTERNAL_DEBUG_H
 
-#include <freetype/ftlcdfil.h>
-#include <freetype/ftimage.h>
-#include <freetype/internal/ftobjs.h>
+#include FT_LCD_FILTER_H
+#include FT_IMAGE_H
+#include FT_INTERNAL_OBJECTS_H
 
 
 #ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
@@ -32,7 +33,7 @@
 
 
   /* add padding according to filter weights */
-  FT_BASE_DEF( void )
+  FT_BASE_DEF (void)
   ft_lcd_padding( FT_BBox*        cbox,
                   FT_GlyphSlot    slot,
                   FT_Render_Mode  mode )
@@ -76,13 +77,13 @@
   /* FIR filter used by the default and light filters */
   FT_BASE_DEF( void )
   ft_lcd_filter_fir( FT_Bitmap*           bitmap,
+                     FT_Render_Mode       mode,
                      FT_LcdFiveTapFilter  weights )
   {
     FT_UInt   width  = (FT_UInt)bitmap->width;
     FT_UInt   height = (FT_UInt)bitmap->rows;
     FT_Int    pitch  = bitmap->pitch;
     FT_Byte*  origin = bitmap->buffer;
-    FT_Byte   mode   = bitmap->pixel_mode;
 
 
     /* take care of bitmap flow */
@@ -90,7 +91,7 @@
       origin += pitch * (FT_Int)( height - 1 );
 
     /* horizontal in-place FIR filter */
-    if ( mode == FT_PIXEL_MODE_LCD && width >= 2 )
+    if ( mode == FT_RENDER_MODE_LCD && width >= 2 )
     {
       FT_Byte*  line = origin;
 
@@ -133,7 +134,7 @@
     }
 
     /* vertical in-place FIR filter */
-    else if ( mode == FT_PIXEL_MODE_LCD_V && height >= 2 )
+    else if ( mode == FT_RENDER_MODE_LCD_V && height >= 2 )
     {
       FT_Byte*  column = origin;
 
@@ -182,13 +183,13 @@
   /* intra-pixel filter used by the legacy filter */
   static void
   _ft_lcd_filter_legacy( FT_Bitmap*      bitmap,
+                         FT_Render_Mode  mode,
                          FT_Byte*        weights )
   {
     FT_UInt   width  = (FT_UInt)bitmap->width;
     FT_UInt   height = (FT_UInt)bitmap->rows;
     FT_Int    pitch  = bitmap->pitch;
     FT_Byte*  origin = bitmap->buffer;
-    FT_Byte   mode   = bitmap->pixel_mode;
 
     static const unsigned int  filters[3][3] =
     {
@@ -205,7 +206,7 @@
       origin += pitch * (FT_Int)( height - 1 );
 
     /* horizontal in-place intra-pixel filter */
-    if ( mode == FT_PIXEL_MODE_LCD && width >= 3 )
+    if ( mode == FT_RENDER_MODE_LCD && width >= 3 )
     {
       FT_Byte*  line = origin;
 
@@ -242,7 +243,7 @@
         }
       }
     }
-    else if ( mode == FT_PIXEL_MODE_LCD_V && height >= 3 )
+    else if ( mode == FT_RENDER_MODE_LCD_V && height >= 3 )
     {
       FT_Byte*  column = origin;
 
@@ -357,7 +358,7 @@
 
   FT_EXPORT_DEF( FT_Error )
   FT_Library_SetLcdGeometry( FT_Library  library,
-                             FT_Vector   sub[3] )
+                             FT_Vector*  sub )
   {
     FT_UNUSED( library );
     FT_UNUSED( sub );
@@ -368,7 +369,7 @@
 #else /* !FT_CONFIG_OPTION_SUBPIXEL_RENDERING */
 
   /* add padding to accommodate outline shifts */
-  FT_BASE_DEF( void )
+  FT_BASE_DEF (void)
   ft_lcd_padding( FT_BBox*        cbox,
                   FT_GlyphSlot    slot,
                   FT_Render_Mode  mode )
@@ -428,7 +429,7 @@
 
     ft_memcpy( library->lcd_geometry, sub, 3 * sizeof( FT_Vector ) );
 
-    return FT_Err_Ok;
+    return FT_THROW( Unimplemented_Feature );
   }
 
 #endif /* !FT_CONFIG_OPTION_SUBPIXEL_RENDERING */

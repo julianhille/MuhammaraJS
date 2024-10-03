@@ -4,7 +4,7 @@
  *
  *   Auto-fitter module implementation (body).
  *
- * Copyright (C) 2003-2023 by
+ * Copyright (C) 2003-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -43,20 +43,20 @@
 
 #endif
 
-  int  af_debug_disable_horz_hints_;
-  int  af_debug_disable_vert_hints_;
-  int  af_debug_disable_blue_hints_;
+  int  _af_debug_disable_horz_hints;
+  int  _af_debug_disable_vert_hints;
+  int  _af_debug_disable_blue_hints;
 
   /* we use a global object instead of a local one for debugging */
-  static AF_GlyphHintsRec  af_debug_hints_rec_[1];
+  AF_GlyphHintsRec  _af_debug_hints_rec[1];
 
-  void*  af_debug_hints_ = af_debug_hints_rec_;
+  void*  _af_debug_hints = _af_debug_hints_rec;
 #endif
 
-#include <freetype/internal/ftobjs.h>
-#include <freetype/internal/ftdebug.h>
-#include <freetype/ftdriver.h>
-#include <freetype/internal/services/svprop.h>
+#include FT_INTERNAL_OBJECTS_H
+#include FT_INTERNAL_DEBUG_H
+#include FT_DRIVER_H
+#include FT_SERVICE_PROPERTIES_H
 
 
   /**************************************************************************
@@ -119,8 +119,8 @@
 
     if ( !ft_strcmp( property_name, "fallback-script" ) )
     {
-      AF_Script*  fallback_script;
-      FT_UInt     ss;
+      FT_UInt*  fallback_script;
+      FT_UInt   ss;
 
 
 #ifdef FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
@@ -128,7 +128,7 @@
         return FT_THROW( Invalid_Argument );
 #endif
 
-      fallback_script = (AF_Script*)value;
+      fallback_script = (FT_UInt*)value;
 
       /* We translate the fallback script to a fallback style that uses */
       /* `fallback-script' as its script and `AF_COVERAGE_NONE' as its  */
@@ -138,8 +138,8 @@
         AF_StyleClass  style_class = af_style_classes[ss];
 
 
-        if ( style_class->script   == *fallback_script    &&
-             style_class->coverage == AF_COVERAGE_DEFAULT )
+        if ( (FT_UInt)style_class->script == *fallback_script &&
+             style_class->coverage == AF_COVERAGE_DEFAULT     )
         {
           module->fallback_style = ss;
           break;
@@ -148,8 +148,8 @@
 
       if ( !af_style_classes[ss] )
       {
-        FT_TRACE2(( "af_property_set: Invalid value %d for property `%s'\n",
-                    *fallback_script, property_name ));
+        FT_TRACE0(( "af_property_set: Invalid value %d for property `%s'\n",
+                    fallback_script, property_name ));
         return FT_THROW( Invalid_Argument );
       }
 
@@ -157,7 +157,7 @@
     }
     else if ( !ft_strcmp( property_name, "default-script" ) )
     {
-      AF_Script*  default_script;
+      FT_UInt*  default_script;
 
 
 #ifdef FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
@@ -165,7 +165,7 @@
         return FT_THROW( Invalid_Argument );
 #endif
 
-      default_script = (AF_Script*)value;
+      default_script = (FT_UInt*)value;
 
       module->default_script = *default_script;
 
@@ -190,6 +190,35 @@
 
       return error;
     }
+#ifdef AF_CONFIG_OPTION_USE_WARPER
+    else if ( !ft_strcmp( property_name, "warping" ) )
+    {
+#ifdef FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
+      if ( value_is_string )
+      {
+        const char*  s = (const char*)value;
+        long         w = ft_strtol( s, NULL, 10 );
+
+
+        if ( w == 0 )
+          module->warping = 0;
+        else if ( w == 1 )
+          module->warping = 1;
+        else
+          return FT_THROW( Invalid_Argument );
+      }
+      else
+#endif
+      {
+        FT_Bool*  warping = (FT_Bool*)value;
+
+
+        module->warping = *warping;
+      }
+
+      return error;
+    }
+#endif /* AF_CONFIG_OPTION_USE_WARPER */
     else if ( !ft_strcmp( property_name, "darkening-parameters" ) )
     {
       FT_Int*  darken_params;
@@ -278,7 +307,7 @@
       return error;
     }
 
-    FT_TRACE2(( "af_property_set: missing property `%s'\n",
+    FT_TRACE0(( "af_property_set: missing property `%s'\n",
                 property_name ));
     return FT_THROW( Missing_Property );
   }
@@ -291,6 +320,11 @@
   {
     FT_Error   error          = FT_Err_Ok;
     AF_Module  module         = (AF_Module)ft_module;
+    FT_UInt    fallback_style = module->fallback_style;
+    FT_UInt    default_script = module->default_script;
+#ifdef AF_CONFIG_OPTION_USE_WARPER
+    FT_Bool    warping        = module->warping;
+#endif
 
 
     if ( !ft_strcmp( property_name, "glyph-to-script-map" ) )
@@ -307,9 +341,9 @@
     }
     else if ( !ft_strcmp( property_name, "fallback-script" ) )
     {
-      AF_Script*  val = (AF_Script*)value;
+      FT_UInt*  val = (FT_UInt*)value;
 
-      AF_StyleClass  style_class = af_style_classes[module->fallback_style];
+      AF_StyleClass  style_class = af_style_classes[fallback_style];
 
 
       *val = style_class->script;
@@ -318,10 +352,10 @@
     }
     else if ( !ft_strcmp( property_name, "default-script" ) )
     {
-      AF_Script*  val = (AF_Script*)value;
+      FT_UInt*  val = (FT_UInt*)value;
 
 
-      *val = module->default_script;
+      *val = default_script;
 
       return error;
     }
@@ -337,6 +371,17 @@
 
       return error;
     }
+#ifdef AF_CONFIG_OPTION_USE_WARPER
+    else if ( !ft_strcmp( property_name, "warping" ) )
+    {
+      FT_Bool*  val = (FT_Bool*)value;
+
+
+      *val = warping;
+
+      return error;
+    }
+#endif /* AF_CONFIG_OPTION_USE_WARPER */
     else if ( !ft_strcmp( property_name, "darkening-parameters" ) )
     {
       FT_Int*  darken_params = module->darken_params;
@@ -365,7 +410,7 @@
       return error;
     }
 
-    FT_TRACE2(( "af_property_get: missing property `%s'\n",
+    FT_TRACE0(( "af_property_get: missing property `%s'\n",
                 property_name ));
     return FT_THROW( Missing_Property );
   }
@@ -402,6 +447,9 @@
 
     module->fallback_style    = AF_STYLE_FALLBACK;
     module->default_script    = AF_SCRIPT_DEFAULT;
+#ifdef AF_CONFIG_OPTION_USE_WARPER
+    module->warping           = 0;
+#endif
     module->no_stem_darkening = TRUE;
 
     module->darken_params[0]  = CFF_CONFIG_OPTION_DARKENING_PARAMETER_X1;
@@ -423,8 +471,8 @@
     FT_UNUSED( ft_module );
 
 #ifdef FT_DEBUG_AUTOFIT
-    if ( af_debug_hints_rec_->memory )
-      af_glyph_hints_done( af_debug_hints_rec_ );
+    if ( _af_debug_hints_rec->memory )
+      af_glyph_hints_done( _af_debug_hints_rec );
 #endif
   }
 
@@ -443,7 +491,7 @@
 
     /* in debug mode, we use a global object that survives this routine */
 
-    AF_GlyphHints  hints = af_debug_hints_rec_;
+    AF_GlyphHints  hints = _af_debug_hints_rec;
     AF_LoaderRec   loader[1];
 
     FT_UNUSED( size );
@@ -502,8 +550,8 @@
     NULL,                                                    /* reset_face */
     NULL,                                              /* get_global_hints */
     NULL,                                             /* done_global_hints */
-    (FT_AutoHinter_GlyphLoadFunc)af_autofitter_load_glyph    /* load_glyph */
-  )
+    (FT_AutoHinter_GlyphLoadFunc)af_autofitter_load_glyph )  /* load_glyph */
+
 
   FT_DEFINE_MODULE(
     autofit_module_class,

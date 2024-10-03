@@ -4,13 +4,10 @@
             'target_name': 'libpng',
             'type': 'static_library',
             'dependencies': [
-                '<(module_root_dir)/src/deps/Zlib/binding.gyp:zlib'
+                '<(module_root_dir)/src/deps/ZLib/binding.gyp:zlib'
             ],    
             'include_dirs': [
-              '<(module_root_dir)/src/deps/Zlib',
-            ],
-            'defines': [
-                'USE_BUNDLED=TRUE'
+              '<(module_root_dir)/src/deps/ZLib',
             ],
            'msvs_settings':
 			{

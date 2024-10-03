@@ -4,7 +4,7 @@
  *
  *   FreeType PFR object methods (body).
  *
- * Copyright (C) 2002-2023 by
+ * Copyright (C) 2002-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -21,10 +21,10 @@
 #include "pfrgload.h"
 #include "pfrcmap.h"
 #include "pfrsbit.h"
-#include <freetype/ftoutln.h>
-#include <freetype/internal/ftdebug.h>
-#include <freetype/internal/ftcalc.h>
-#include <freetype/ttnameid.h>
+#include FT_OUTLINE_H
+#include FT_INTERNAL_DEBUG_H
+#include FT_INTERNAL_CALC_H
+#include FT_TRUETYPE_IDS_H
 
 #include "pfrerror.h"
 
@@ -83,11 +83,7 @@
     /* load the header and check it */
     error = pfr_header_load( &face->header, stream );
     if ( error )
-    {
-      FT_TRACE2(( "  not a PFR font\n" ));
-      error = FT_THROW( Unknown_File_Format );
       goto Exit;
-    }
 
     if ( !pfr_header_check( &face->header ) )
     {
@@ -130,14 +126,14 @@
     if ( error )
       goto Exit;
 
-    /* load the physical font descriptor */
+    /* now load the physical font descriptor */
     error = pfr_phy_font_load( &face->phy_font, stream,
                                face->log_font.phys_offset,
                                face->log_font.phys_size );
     if ( error )
       goto Exit;
 
-    /* set up all root face fields */
+    /* now set up all root face fields */
     {
       PFR_PhyFont  phy_font = &face->phy_font;
 
@@ -160,7 +156,7 @@
         if ( nn == phy_font->num_chars )
         {
           if ( phy_font->num_strikes > 0 )
-            pfrface->face_flags &= ~FT_FACE_FLAG_SCALABLE;
+            pfrface->face_flags = 0;        /* not scalable */
           else
           {
             FT_ERROR(( "pfr_face_init: font doesn't contain glyphs\n" ));
@@ -170,7 +166,7 @@
         }
       }
 
-      if ( !( phy_font->flags & PFR_PHY_PROPORTIONAL ) )
+      if ( ( phy_font->flags & PFR_PHY_PROPORTIONAL ) == 0 )
         pfrface->face_flags |= FT_FACE_FLAG_FIXED_WIDTH;
 
       if ( phy_font->flags & PFR_PHY_VERTICAL )
@@ -207,7 +203,7 @@
 
       pfrface->height = (FT_Short)( ( pfrface->units_per_EM * 12 ) / 10 );
       if ( pfrface->height < pfrface->ascender - pfrface->descender )
-        pfrface->height = (FT_Short)( pfrface->ascender - pfrface->descender );
+        pfrface->height = (FT_Short)(pfrface->ascender - pfrface->descender);
 
       if ( phy_font->num_strikes > 0 )
       {
@@ -217,7 +213,7 @@
         FT_Memory        memory = pfrface->stream->memory;
 
 
-        if ( FT_QNEW_ARRAY( pfrface->available_sizes, count ) )
+        if ( FT_NEW_ARRAY( pfrface->available_sizes, count ) )
           goto Exit;
 
         size   = pfrface->available_sizes;
@@ -338,7 +334,7 @@
     }
 
     /* try to load an embedded bitmap */
-    if ( !( load_flags & ( FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP ) ) )
+    if ( ( load_flags & ( FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP ) ) == 0 )
     {
       error = pfr_slot_load_bitmap(
                 slot,
@@ -382,7 +378,7 @@
       outline->flags &= ~FT_OUTLINE_OWNER;
       outline->flags |= FT_OUTLINE_REVERSE_FILL;
 
-      if ( pfrsize->metrics.y_ppem < 24 )
+      if ( size && pfrsize->metrics.y_ppem < 24 )
         outline->flags |= FT_OUTLINE_HIGH_PRECISION;
 
       /* compute the advance vector */
@@ -486,16 +482,17 @@
     kerning->x = 0;
     kerning->y = 0;
 
-    /* PFR indexing skips .notdef, which becomes UINT_MAX */
-    glyph1--;
-    glyph2--;
+    if ( glyph1 > 0 )
+      glyph1--;
 
-    /* check the array bounds, .notdef is automatically out */
-    if ( glyph1 >= phy_font->num_chars ||
-         glyph2 >= phy_font->num_chars )
-      goto Exit;
+    if ( glyph2 > 0 )
+      glyph2--;
 
     /* convert glyph indices to character codes */
+    if ( glyph1 > phy_font->num_chars ||
+         glyph2 > phy_font->num_chars )
+      goto Exit;
+
     code1 = phy_font->chars[glyph1].char_code;
     code2 = phy_font->chars[glyph2].char_code;
     pair  = PFR_KERN_INDEX( code1, code2 );

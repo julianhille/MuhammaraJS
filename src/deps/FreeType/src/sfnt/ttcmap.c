@@ -4,7 +4,7 @@
  *
  *   TrueType character mapping table (cmap) support (body).
  *
- * Copyright (C) 2002-2023 by
+ * Copyright (C) 2002-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,13 +16,14 @@
  */
 
 
-#include <freetype/internal/ftdebug.h>
+#include <ft2build.h>
+#include FT_INTERNAL_DEBUG_H
 
-#include "sferrors.h"                      /* must come before `ftvalid.h' */
+#include "sferrors.h"           /* must come before FT_INTERNAL_VALIDATE_H */
 
-#include <freetype/internal/ftvalid.h>
-#include <freetype/internal/ftstream.h>
-#include <freetype/internal/services/svpscmap.h>
+#include FT_INTERNAL_VALIDATE_H
+#include FT_INTERNAL_STREAM_H
+#include FT_SERVICE_POSTSCRIPT_CMAPS_H
 #include "ttload.h"
 #include "ttcmap.h"
 #include "ttpost.h"
@@ -465,7 +466,7 @@
     if ( subheader )
     {
       FT_Byte*  p   = subheader;
-      FT_UInt   idx = (FT_UInt)( char_code & 0xFF );
+      FT_UInt   idx = (FT_UInt)(char_code & 0xFF);
       FT_UInt   start, count;
       FT_Int    delta;
       FT_UInt   offset;
@@ -912,16 +913,6 @@
     {
       if ( valid->level >= FT_VALIDATE_TIGHT )
         FT_INVALID_TOO_SHORT;
-
-      length = (FT_UInt)( valid->limit - table );
-    }
-
-    /* it also happens that the `length' field is too small; */
-    /* this is easy to correct                               */
-    if ( length < (FT_UInt)( valid->limit - table ) )
-    {
-      if ( valid->level >= FT_VALIDATE_PARANOID )
-        FT_INVALID_DATA;
 
       length = (FT_UInt)( valid->limit - table );
     }
@@ -2377,7 +2368,10 @@
         /* if `gindex' is invalid, the remaining values */
         /* in this group are invalid, too               */
         if ( gindex >= (FT_UInt)face->num_glyphs )
+        {
+          gindex = 0;
           continue;
+        }
 
         cmap->cur_charcode = char_code;
         cmap->cur_gindex   = gindex;
@@ -3667,7 +3661,7 @@
   tt_get_glyph_name( TT_Face  face,
                      FT_UInt  idx )
   {
-    FT_String*  PSname = NULL;
+    FT_String*  PSname;
 
 
     tt_face_get_ps_name( face, idx, &PSname );
@@ -3761,7 +3755,6 @@
 
   static const TT_CMap_Class  tt_cmap_classes[] =
   {
-#undef  TTCMAPCITEM
 #define TTCMAPCITEM( a )  &a,
 #include "ttcmapc.h"
     NULL,
@@ -3774,33 +3767,29 @@
   FT_LOCAL_DEF( FT_Error )
   tt_face_build_cmaps( TT_Face  face )
   {
-    FT_Byte* const     table   = face->cmap_table;
-    FT_Byte*           limit;
+    FT_Byte*           table = face->cmap_table;
+    FT_Byte*           limit = table + face->cmap_size;
     FT_UInt volatile   num_cmaps;
-    FT_Byte* volatile  p       = table;
+    FT_Byte* volatile  p     = table;
     FT_Library         library = FT_FACE_LIBRARY( face );
 
     FT_UNUSED( library );
 
 
-    if ( !p || face->cmap_size < 4 )
+    if ( !p || p + 4 > limit )
       return FT_THROW( Invalid_Table );
 
-    /* Version 1.8.3 of the OpenType specification contains the following */
-    /* (https://docs.microsoft.com/en-us/typography/opentype/spec/cmap):  */
-    /*                                                                    */
-    /*   The 'cmap' table version number remains at 0x0000 for fonts that */
-    /*   make use of the newer subtable formats.                          */
-    /*                                                                    */
-    /* This essentially means that a version format test is useless.      */
-
-    /* ignore format */
-    p += 2;
+    /* only recognize format 0 */
+    if ( TT_NEXT_USHORT( p ) != 0 )
+    {
+      FT_ERROR(( "tt_face_build_cmaps:"
+                 " unsupported `cmap' table format = %d\n",
+                 TT_PEEK_USHORT( p - 2 ) ));
+      return FT_THROW( Invalid_Table );
+    }
 
     num_cmaps = TT_NEXT_USHORT( p );
-    FT_TRACE4(( "tt_face_build_cmaps: %d cmaps\n", num_cmaps ));
 
-    limit = table + face->cmap_size;
     for ( ; num_cmaps > 0 && p + 8 <= limit; num_cmaps-- )
     {
       FT_CharMapRec  charmap;
@@ -3879,13 +3868,12 @@
   }
 
 
-  FT_LOCAL_DEF( FT_Error )
+  FT_LOCAL( FT_Error )
   tt_get_cmap_info( FT_CharMap    charmap,
                     TT_CMapInfo  *cmap_info )
   {
     FT_CMap        cmap  = (FT_CMap)charmap;
     TT_CMap_Class  clazz = (TT_CMap_Class)cmap->clazz;
-
 
     if ( clazz->get_cmap_info )
       return clazz->get_cmap_info( charmap, cmap_info );

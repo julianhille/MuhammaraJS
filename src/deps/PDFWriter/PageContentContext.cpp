@@ -122,8 +122,3 @@ void PageContentContext::ScheduleImageWrite(const std::string& inImagePath,unsig
                                                  new PageImageWritingTask(inImagePath,inImageIndex,inObjectID,inParsingOptions));
 
 }
-
-void PageContentContext::ScheduleObjectEndWriteTask(IObjectEndWritingTask* inObjectEndWritingTask) 
-{
-    mDocumentContext->RegisterPageEndWritingTask(GetAssociatedPage(), inObjectEndWritingTask);
-}

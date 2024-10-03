@@ -45,16 +45,12 @@
 
 using namespace PDFHummus;
 
-#define MAX_OBJECT_DEPTH 100 // While PDF does not explicitly define arrays and dicts depth...we do, due to call stack depth limit...and to avoid potential malarky.
-
-
 PDFObjectParser::PDFObjectParser(void)
 {
 	mParserExtender = NULL;
 	mDecryptionHelper = NULL;
 	mOwnsStream = false;
 	mStream = NULL;
-	mDepth = 0;
 }
 
 PDFObjectParser::~PDFObjectParser(void)
@@ -82,7 +78,6 @@ void PDFObjectParser::ResetReadState()
 {
 	mTokenBuffer.clear();
 	mTokenizer.ResetReadState();
-	mDepth = 0;
 }
 
 void PDFObjectParser::ResetReadState(const PDFParserTokenizer& inExternalTokenizer)
@@ -280,7 +275,7 @@ PDFObject* PDFObjectParser::ParseBoolean(const std::string& inToken)
 static const char scLeftParanthesis = '(';
 bool PDFObjectParser::IsLiteralString(const std::string& inToken)
 {
-	return inToken.size() > 0 && inToken.at(0) == scLeftParanthesis;
+	return inToken.at(0) == scLeftParanthesis;
 }
 
 static const char scRightParanthesis = ')';
@@ -393,7 +388,7 @@ static const char scLeftAngle = '<';
 bool PDFObjectParser::IsHexadecimalString(const std::string& inToken)
 {
 	// first char should be left angle brackets, and the one next must not (otherwise it's a dictionary start)
-	return inToken.size() > 0 && (inToken.at(0) == scLeftAngle) && (inToken.size() < 2 || inToken.at(1) != scLeftAngle);
+	return (inToken.at(0) == scLeftAngle) && (inToken.size() < 2 || inToken.at(1) != scLeftAngle);
 }
 
 
@@ -455,7 +450,7 @@ bool PDFObjectParser::IsNull(const std::string& inToken)
 static const char scSlash = '/';
 bool PDFObjectParser::IsName(const std::string& inToken)
 {
-	return inToken.size() > 0 && inToken.at(0) == scSlash;
+	return inToken.at(0) == scSlash;
 }
 
 static const char scSharp = '#';
@@ -524,11 +519,9 @@ static const char scZero = '0';
 static const char scDot = '.';
 bool PDFObjectParser::IsNumber(const std::string& inToken)
 {
-	if(inToken.size() < 1)
-		return false;
-
 	// it's a number if the first char is either a sign or digit, or an initial decimal dot, and the rest is 
 	// digits, with the exception of a dot which can appear just once.
+
 	if(inToken.at(0) != scPlus && inToken.at(0) != scMinus && inToken.at(0) != scDot && (inToken.at(0) > scNine || inToken.at(0) < scZero))
 		return false;
 
@@ -559,27 +552,13 @@ bool PDFObjectParser::IsNumber(const std::string& inToken)
 
 typedef BoxingBaseWithRW<long long> LongLong;
 
-// maximum allowed PDF int value = 2^31 − 1.
-#define MAX_PDF_INT 2147483647L 
-// minimum allowed PDF int value = -2^31
-#define MIN_PDF_INT ((-MAX_PDF_INT)-1) 
-
 PDFObject* PDFObjectParser::ParseNumber(const std::string& inToken)
 {
 	// once we know this is a number, then parsing is easy. just determine if it's a real or integer, so as to separate classes for better accuracy
-	if(inToken.find(scDot) != inToken.npos) {
+	if(inToken.find(scDot) != inToken.npos)
 		return new PDFReal(Double(inToken));
-	} else {
-		long long integerValue = LongLong(inToken);
-
-		// validate int value according to PDF limits. ignore if outside of range
-		if((integerValue > MAX_PDF_INT) || (integerValue < MIN_PDF_INT)) {
-			TRACE_LOG3("PDFObjectParser::ParseNumber, parsed integer %lld is outside of the allowed range for PDF integers - %ld to %ld", integerValue, MIN_PDF_INT, MAX_PDF_INT);
-			return NULL;
-		}
-
-		return new PDFInteger(integerValue);
-	}
+	else
+		return new PDFInteger(LongLong(inToken));
 }
 
 static const std::string scLeftSquare = "[";
@@ -588,39 +567,13 @@ bool PDFObjectParser::IsArray(const std::string& inToken)
 	return scLeftSquare == inToken;
 }
 
-EStatusCode PDFObjectParser::IncreaseAndCheckDepth() {
-	++mDepth;
-	if(mDepth > MAX_OBJECT_DEPTH) {
-		TRACE_LOG1("PDFObjectParser::IncreaseAndCeckDepth, reached maximum allowed depth of %d", MAX_OBJECT_DEPTH);
-		return eFailure;
-	}
-
-	return eSuccess;
-}
-
-EStatusCode PDFObjectParser::DecreaseAndCheckDepth() {
-	--mDepth;
-	if(mDepth < 0) {
-		TRACE_LOG("PDFObjectParser::DecreaseAndCheckDepth, anomaly. managed to get to negative depth");
-		return eFailure;
-	}
-
-	return eSuccess;
-}
-
-
 static const std::string scRightSquare = "]";
 PDFObject* PDFObjectParser::ParseArray()
 {
-	PDFArray* anArray;
+	PDFArray* anArray = new PDFArray();
 	bool arrayEndEncountered = false;
 	std::string token;
 	EStatusCode status = PDFHummus::eSuccess;
-
-	if(IncreaseAndCheckDepth() != eSuccess)
-		return NULL;
-
-	anArray = new PDFArray();
 
 	// easy one. just loop till you get to a closing bracket token and recurse
 	while(GetNextToken(token) && PDFHummus::eSuccess == status)
@@ -641,9 +594,6 @@ PDFObject* PDFObjectParser::ParseArray()
 			anArray->AppendObject(anObject.GetPtr());
 		}
 	}
-
-	if(DecreaseAndCheckDepth() != eSuccess)
-		status = eFailure;
 
 	if(arrayEndEncountered && PDFHummus::eSuccess == status)
 	{
@@ -676,15 +626,10 @@ bool PDFObjectParser::IsDictionary(const std::string& inToken)
 static const std::string scDoubleRightAngle = ">>";
 PDFObject* PDFObjectParser::ParseDictionary()
 {
-	PDFDictionary* aDictionary;
+	PDFDictionary* aDictionary = new PDFDictionary();
 	bool dictionaryEndEncountered = false;
 	std::string token;
 	EStatusCode status = PDFHummus::eSuccess;
-
-	if(IncreaseAndCheckDepth() != eSuccess)
-		return NULL;
-
-	aDictionary = new PDFDictionary();
 
 	while(GetNextToken(token) && PDFHummus::eSuccess == status)
 	{
@@ -719,9 +664,6 @@ PDFObject* PDFObjectParser::ParseDictionary()
 			aDictionary->Insert(aKey.GetPtr(),aValue.GetPtr());
 	}
 
-	if(DecreaseAndCheckDepth() != eSuccess)
-		status = eFailure;
-		
 	if(dictionaryEndEncountered && PDFHummus::eSuccess == status)
 	{
 		return aDictionary;
@@ -737,7 +679,7 @@ PDFObject* PDFObjectParser::ParseDictionary()
 static const char scCommentStart = '%';
 bool PDFObjectParser::IsComment(const std::string& inToken)
 {
-	return inToken.size() > 0 && inToken.at(0) == scCommentStart;
+	return inToken.at(0) == scCommentStart;
 }
 
 BoolAndByte PDFObjectParser::GetHexValue(Byte inValue)

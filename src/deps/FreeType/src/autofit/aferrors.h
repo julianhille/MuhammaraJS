@@ -4,7 +4,7 @@
  *
  *   Autofitter error codes (specification only).
  *
- * Copyright (C) 2005-2023 by
+ * Copyright (C) 2005-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -26,7 +26,7 @@
 #ifndef AFERRORS_H_
 #define AFERRORS_H_
 
-#include <freetype/ftmoderr.h>
+#include FT_MODULE_ERRORS_H
 
 #undef FTERRORS_H_
 
@@ -34,7 +34,7 @@
 #define FT_ERR_PREFIX  AF_Err_
 #define FT_ERR_BASE    FT_Mod_Err_Autofit
 
-#include <freetype/fterrors.h>
+#include FT_ERRORS_H
 
 #endif /* AFERRORS_H_ */
 

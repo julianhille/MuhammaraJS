@@ -31,9 +31,6 @@ public:
     
     bool operator==(const PDFRectangle& inOther) const;
     bool operator!=(const PDFRectangle& inOther) const;
-
-    double GetWidth();
-    double GetHeight();
     
 	double LowerLeftX;
 	double LowerLeftY;

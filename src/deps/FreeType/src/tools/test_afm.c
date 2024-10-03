@@ -2,9 +2,10 @@
  * gcc -DFT2_BUILD_LIBRARY -I../../include -o test_afm test_afm.c \
  *     -L../../objs/.libs -lfreetype -lz -static
  */
-#include <freetype/freetype.h>
-#include <freetype/internal/ftstream.h>
-#include <freetype/internal/psaux.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_INTERNAL_STREAM_H
+#include FT_INTERNAL_POSTSCRIPT_AUX_H
 
   void dump_fontinfo( AFM_FontInfo  fi )
   {

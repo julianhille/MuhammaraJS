@@ -26,8 +26,6 @@
 #include "PDFName.h"
 #include "ParsedPrimitiveHelper.h"
 
-using namespace PDFHummus;
-
 PDFPageInput::PDFPageInput(PDFParser* inParser,PDFObject* inPageObject):mPageObject(inPageObject)
 {
     mParser = inParser;
@@ -106,11 +104,16 @@ PDFRectangle PDFPageInput::GetMediaBox()
     PDFRectangle result;
     
     PDFObjectCastPtr<PDFArray> mediaBox(QueryInheritedValue(mPageObject.GetPtr(),"MediaBox"));
-    if(SetPDFRectangleFromPDFArray(mediaBox.GetPtr(),result) != eSuccess)
+    if(!mediaBox || mediaBox->GetLength() != 4)
     {
         TRACE_LOG("PDFPageInput::GetMediaBox, Exception, pdf page does not have correct media box. defaulting to A4");
         result = PDFRectangle(0,0,595,842);
     }
+    else
+    {
+        SetPDFRectangleFromPDFArray(mediaBox.GetPtr(),result);
+    }  
+    
     return result;
 }
 
@@ -119,8 +122,10 @@ PDFRectangle PDFPageInput::GetCropBox()
     PDFRectangle result;
     PDFObjectCastPtr<PDFArray> cropBox(QueryInheritedValue(mPageObject.GetPtr(),"CropBox"));
     
-    if(SetPDFRectangleFromPDFArray(cropBox.GetPtr(),result) != eSuccess)
+    if(!cropBox || cropBox->GetLength() != 4)
         result = GetMediaBox();
+    else
+        SetPDFRectangleFromPDFArray(cropBox.GetPtr(),result);
     return result;
 }
 
@@ -134,8 +139,10 @@ PDFRectangle PDFPageInput::GetBoxAndDefaultWithCrop(const std::string& inBoxName
     PDFRectangle result;
     PDFObjectCastPtr<PDFArray> aBox(QueryInheritedValue(mPageObject.GetPtr(),inBoxName));
     
-    if(SetPDFRectangleFromPDFArray(aBox.GetPtr(),result) != eSuccess)
+    if(!aBox || aBox->GetLength() != 4)
         result = GetCropBox();
+    else
+        SetPDFRectangleFromPDFArray(aBox.GetPtr(),result);
     return result;        
 }
 
@@ -168,25 +175,21 @@ PDFObject* PDFPageInput::QueryInheritedValue(PDFDictionary* inDictionary,const s
 		return NULL;
 }
 
-EStatusCode PDFPageInput::SetPDFRectangleFromPDFArray(PDFArray* inPDFArray,PDFRectangle& outPDFRectangle)
+void PDFPageInput::SetPDFRectangleFromPDFArray(PDFArray* inPDFArray,PDFRectangle& outPDFRectangle)
 {
-    if(!inPDFArray || inPDFArray->GetLength() != 4) {
-        return eFailure;
-    }
-
 	RefCountPtr<PDFObject> lowerLeftX(inPDFArray->QueryObject(0));
 	RefCountPtr<PDFObject> lowerLeftY(inPDFArray->QueryObject(1));
 	RefCountPtr<PDFObject> upperRightX(inPDFArray->QueryObject(2));
 	RefCountPtr<PDFObject> upperRightY(inPDFArray->QueryObject(3));
 	if (!lowerLeftX || !lowerLeftY || !upperRightX || !upperRightY)
 	{
+		// not sure if just a return is a good idea here.
+		// Things wont jus work and might go unnoticed
 		TRACE_LOG("Could not apply pdf rectangle as values are NULL");
-		return eFailure;
+		return;
 	}
 	outPDFRectangle.LowerLeftX = ParsedPrimitiveHelper(lowerLeftX.GetPtr()).GetAsDouble();
 	outPDFRectangle.LowerLeftY = ParsedPrimitiveHelper(lowerLeftY.GetPtr()).GetAsDouble();
 	outPDFRectangle.UpperRightX = ParsedPrimitiveHelper(upperRightX.GetPtr()).GetAsDouble();
 	outPDFRectangle.UpperRightY = ParsedPrimitiveHelper(upperRightY.GetPtr()).GetAsDouble();
-
-    return eSuccess;
 }

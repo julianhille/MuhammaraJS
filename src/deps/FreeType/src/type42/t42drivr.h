@@ -4,7 +4,7 @@
  *
  *   High-level Type 42 driver interface (specification).
  *
- * Copyright (C) 2002-2023 by
+ * Copyright (C) 2002-2019 by
  * Roberto Alameda.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,7 +20,8 @@
 #define T42DRIVR_H_
 
 
-#include <freetype/internal/ftdrv.h>
+#include <ft2build.h>
+#include FT_INTERNAL_DRIVER_H
 
 
 FT_BEGIN_HEADER

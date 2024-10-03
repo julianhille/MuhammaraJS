@@ -4,7 +4,7 @@
  *
  *   The FreeType Windows FNT/FONT service (specification).
  *
- * Copyright (C) 2003-2023 by
+ * Copyright (C) 2003-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -19,8 +19,8 @@
 #ifndef SVWINFNT_H_
 #define SVWINFNT_H_
 
-#include <freetype/internal/ftserv.h>
-#include <freetype/ftwinfnt.h>
+#include FT_INTERNAL_SERVICE_H
+#include FT_WINFONTS_H
 
 
 FT_BEGIN_HEADER

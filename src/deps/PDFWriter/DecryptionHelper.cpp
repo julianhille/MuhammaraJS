@@ -38,7 +38,6 @@ limitations under the License.
 #include "Trace.h"
 #include "Deletable.h"
 #include <memory>
-#include <algorithm>
 
 using namespace std;
 using namespace PDFHummus;
@@ -74,11 +73,10 @@ void DecryptionHelper::Reset() {
 	Release();
 }
 
-unsigned int ComputeByteLength(PDFObject* inLengthObject) {
-	// The bit length of the file encryption key shall be a multiple of 8 in the range of 40 to 256 bits. This function returns the length in bytes.
+unsigned int ComputeLength(PDFObject* inLengthObject) {
 	ParsedPrimitiveHelper lengthHelper(inLengthObject);
 	unsigned int value = lengthHelper.IsNumber() ? (unsigned int)lengthHelper.GetAsInteger() : 40;
-	return value < 40 ? std::max(value, (unsigned int)5) : value / 8; // this small check here is based on some errors i saw, where the length was given in bytes instead of bits
+	return value < 40 ? value : (value / 8); // this small check here is based on some errors i saw, where the length was given in bytes instead of bits
 }
 
 XCryptionCommon* GetFilterForName(const StringToXCryptionCommonMap& inXcryptions, const string& inName) {
@@ -196,7 +194,7 @@ EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPasswor
 			mLength = 40 / 8;
 		}
 		else {
-			mLength = ComputeByteLength(length.GetPtr());
+			mLength = ComputeLength(length.GetPtr());
 		}
 
 		// Setup crypt filters, or a default filter
@@ -217,7 +215,7 @@ EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPasswor
 					if (!!cryptFilter) {
 						PDFObjectCastPtr<PDFName> cfmName(inParser->QueryDictionaryObject(cryptFilter.GetPtr(), "CFM"));
 						RefCountPtr<PDFObject> lengthObject(inParser->QueryDictionaryObject(cryptFilter.GetPtr(), "Length"));
-						unsigned int length = !lengthObject ? mLength : ComputeByteLength(lengthObject.GetPtr());
+						unsigned int length = !lengthObject ? mLength : ComputeLength(lengthObject.GetPtr());
 
 						XCryptionCommon* encryption = new XCryptionCommon();
 						encryption->Setup(cfmName->GetValue() == "AESV2"); // singe xcryptions are always RC4

@@ -4,7 +4,7 @@
  *
  *   Auto-fitter hinting routines for Indic writing system (body).
  *
- * Copyright (C) 2007-2023 by
+ * Copyright (C) 2007-2019 by
  * Rahul Bhalerao <rahul.bhalerao@redhat.com>, <b.rahul.pm@gmail.com>.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -25,6 +25,11 @@
 
 #include "afindic.h"
 #include "aferrors.h"
+
+
+#ifdef AF_CONFIG_OPTION_USE_WARPER
+#include "afwarp.h"
+#endif
 
 
   static FT_Error
@@ -49,7 +54,8 @@
       af_cjk_metrics_check_digits( metrics, face );
     }
 
-    face->charmap = oldmap;
+    FT_Set_Charmap( face, oldmap );
+
     return FT_Err_Ok;
   }
 

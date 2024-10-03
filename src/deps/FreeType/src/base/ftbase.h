@@ -4,7 +4,7 @@
  *
  *   Private functions used in the `base' module (specification).
  *
- * Copyright (C) 2008-2023 by
+ * Copyright (C) 2008-2019 by
  * David Turner, Robert Wilhelm, Werner Lemberg, and suzuki toshiya.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,15 +20,11 @@
 #define FTBASE_H_
 
 
-#include <freetype/internal/ftobjs.h>
+#include <ft2build.h>
+#include FT_INTERNAL_OBJECTS_H
 
 
 FT_BEGIN_HEADER
-
-
-  FT_DECLARE_GLYPH( ft_bitmap_glyph_class )
-  FT_DECLARE_GLYPH( ft_outline_glyph_class )
-  FT_DECLARE_GLYPH( ft_svg_glyph_class )
 
 
 #ifdef FT_CONFIG_OPTION_MAC_FONTS

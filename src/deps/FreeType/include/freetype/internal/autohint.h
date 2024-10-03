@@ -4,7 +4,7 @@
  *
  *   High-level 'autohint' module-specific interface (specification).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -70,7 +70,8 @@
    */
 
 
-#include <freetype/freetype.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 
 FT_BEGIN_HEADER
@@ -206,9 +207,6 @@ FT_BEGIN_HEADER
 
   } FT_AutoHinter_InterfaceRec, *FT_AutoHinter_Interface;
 
-
-#define FT_DECLARE_AUTOHINTER_INTERFACE( class_ )            \
-  FT_CALLBACK_TABLE const FT_AutoHinter_InterfaceRec  class_;
 
 #define FT_DEFINE_AUTOHINTER_INTERFACE(       \
           class_,                             \

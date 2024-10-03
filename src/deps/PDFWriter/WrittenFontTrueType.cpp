@@ -29,33 +29,11 @@
 #include "PDFObjectCast.h"
 #include "PDFParser.h"
 #include "PDFDictionary.h"
-#include "FreeTypeFaceWrapper.h"
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
 
 using namespace PDFHummus;
 
-bool FontHasCmapsForWinAnsiEncoding(FT_Face font) {
-	// See PDF Reference 5.5.5 Character Encoding, Encodings for TrueType Fonts. When is mapping from glyph name is possible, and so non CID encoding can be built - only if font contains either of 
-	// two possible cmaps: win unicode bmp or macintosh roman. so check if got either of those.
-	for(FT_Int i = 0; i < font->num_charmaps; ++i) {
-		FT_CharMap charmap = font->charmaps[i];
-
-		if (charmap->platform_id == 3 && charmap->encoding_id == 1)
-			return true; // Windows Unicode BMP
-
-		if (charmap->platform_id == 1 && charmap->encoding_id == 0)
-			return true; // Macintosh Roman
-
-	}
-
-	return false;
-}
-
-WrittenFontTrueType::WrittenFontTrueType(ObjectsContext* inObjectsContext, FreeTypeFaceWrapper* inFontInfo):AbstractWrittenFont(inObjectsContext, inFontInfo)
+WrittenFontTrueType::WrittenFontTrueType(ObjectsContext* inObjectsContext):AbstractWrittenFont(inObjectsContext)
 {
-	fontSupportsWinAnsiEncoding = FontHasCmapsForWinAnsiEncoding(*inFontInfo);
 }
 
 WrittenFontTrueType::~WrittenFontTrueType(void)
@@ -65,19 +43,18 @@ WrittenFontTrueType::~WrittenFontTrueType(void)
 /*
 here's what i'm deciding on:
 1. Can encoding if/f all text codes are available through WinAnsiEncoding.  
-[maybe should also make sure that the font has the relevant cmaps?! Or maybe I'm just assuming that...] [That's what FontHasCmapsForWinAnsiEncoding and fontSupportsWinAnsiEncoding are for]
+[maybe should also make sure that the font has the relevant cmaps?! Or maybe I'm just assuming that...]
 2. While encoding use WinAnsiEncoding values, of course. This will necasserily work
 3. While writing the font description simply write the WinAnsiEncoding glyph name, and pray.*/
 
-bool WrittenFontTrueType::AddANSICandidates(const GlyphUnicodeMappingList& inGlyphsList, UShortList& ioCandidates) {
-	if(!fontSupportsWinAnsiEncoding) {
-		return false;
-	}
-
+bool WrittenFontTrueType::AddToANSIRepresentation(	const GlyphUnicodeMappingList& inGlyphsList,
+													UShortList& outEncodedCharacters)
+{
 	// i'm totally relying on the text here, which is fine till i'll do ligatures, in which case
 	// i'll need to make something different out of the text.
 	// as you can see this has little to do with glyphs (mainly cause i can't use FreeType to map the glyphs
 	// back to the rleevant unicode values...but no need anyways...that's why i carry the text).
+	UShortList candidates;
 	BoolAndByte encodingResult(true,0);
 	WinAnsiEncoding winAnsiEncoding;
 	GlyphUnicodeMappingList::const_iterator it = inGlyphsList.begin(); 
@@ -104,20 +81,11 @@ bool WrittenFontTrueType::AddANSICandidates(const GlyphUnicodeMappingList& inGly
 		{
 			encodingResult = winAnsiEncoding.Encode(it->mUnicodeValues.front());
 			if(encodingResult.first)
-				ioCandidates.push_back(encodingResult.second);
+				candidates.push_back(encodingResult.second);
 		}
 	}
 
-	return encodingResult.first;
-}
-
-bool WrittenFontTrueType::AddToANSIRepresentation(const GlyphUnicodeMappingList& inGlyphsList, UShortList& outEncodedCharacters)
-{
-	UShortList candidates;
-
-	bool result = AddANSICandidates(inGlyphsList, candidates);
-
-	if(result)
+	if(encodingResult.first)
 	{
 		// for the first time, add also 0,0 mapping
 		if(mANSIRepresentation->mGlyphIDToEncodedChar.size() == 0)
@@ -136,11 +104,11 @@ bool WrittenFontTrueType::AddToANSIRepresentation(const GlyphUnicodeMappingList&
 		outEncodedCharacters = candidates;
 	}
 
-	return result;
+	return encodingResult.first;
 }
 
 
-EStatusCode WrittenFontTrueType::WriteFontDefinition(bool inEmbedFont)
+EStatusCode WrittenFontTrueType::WriteFontDefinition(FreeTypeFaceWrapper& inFontInfo,bool inEmbedFont)
 {
 	EStatusCode status = PDFHummus::eSuccess;
 	do
@@ -149,7 +117,7 @@ EStatusCode WrittenFontTrueType::WriteFontDefinition(bool inEmbedFont)
 		{
 			TrueTypeANSIFontWriter fontWriter;
 
-			status = fontWriter.WriteFont(*mFontInfo, mANSIRepresentation, mObjectsContext, inEmbedFont);
+			status = fontWriter.WriteFont(inFontInfo, mANSIRepresentation, mObjectsContext, inEmbedFont);
 			if(status != PDFHummus::eSuccess)
 			{
 				TRACE_LOG("WrittenFontTrueType::WriteFontDefinition, Failed to write Ansi font definition");
@@ -163,7 +131,7 @@ EStatusCode WrittenFontTrueType::WriteFontDefinition(bool inEmbedFont)
 			CIDFontWriter fontWriter;
 			TrueTypeDescendentFontWriter descendentFontWriter;
 
-			status = fontWriter.WriteFont(*mFontInfo, mCIDRepresentation, mObjectsContext, &descendentFontWriter, inEmbedFont);
+			status = fontWriter.WriteFont(inFontInfo, mCIDRepresentation, mObjectsContext, &descendentFontWriter, inEmbedFont);
 			if(status != PDFHummus::eSuccess)
 			{
 				TRACE_LOG("WrittenFontTrueType::WriteFontDefinition, Failed to write CID font definition");
@@ -182,20 +150,46 @@ bool WrittenFontTrueType::AddToANSIRepresentation(	const GlyphUnicodeMappingList
 	UShortListList candidatesList;
 	UShortList candidates;
 	BoolAndByte encodingResult(true,0);
+	WinAnsiEncoding winAnsiEncoding;
 	GlyphUnicodeMappingListList::const_iterator itList = inGlyphsList.begin(); 
-	bool result = true;
+	GlyphUnicodeMappingList::const_iterator it; 
 
-	for(; itList != inGlyphsList.end() && result; ++itList)
+	for(; itList != inGlyphsList.end() && encodingResult.first; ++itList)
 	{
-		result = AddANSICandidates(*itList, candidates);
-		if(result)
+		it = itList->begin();
+		for(; it != itList->end() && encodingResult.first; ++it)
+		{
+			// don't bother with characters of more or less than one unicode
+			if(it->mUnicodeValues.size() != 1)
+			{
+				encodingResult.first = false;
+			}
+			else if(0x2022 == it->mUnicodeValues.front())
+			{
+				// From the reference:
+				// In WinAnsiEncoding, all unused codes greater than 40 map to the bullet character. 
+				// However, only code 225 is specifically assigned to the bullet character; other codes are subject to future reassignment.
+
+				// now i don't know if it's related or not...but acrobat isn't happy when i'm using winansi with bullet. and text coming after that bullet may be
+				// corrupted.
+				// so i'm forcing CID if i hit bullet till i know better.
+				encodingResult.first = false;
+			}
+			else
+			{
+				encodingResult = winAnsiEncoding.Encode(it->mUnicodeValues.front());
+				if(encodingResult.first)
+					candidates.push_back(encodingResult.second);
+			}
+		}
+		if(encodingResult.first)
 		{
 			candidatesList.push_back(candidates);
 			candidates.clear();
 		}
 	}
 
-	if(result)
+	if(encodingResult.first)
 	{
 		// for the first time, add also 0,0 mapping
 		if(mANSIRepresentation->mGlyphIDToEncodedChar.size() == 0)
@@ -222,7 +216,7 @@ bool WrittenFontTrueType::AddToANSIRepresentation(	const GlyphUnicodeMappingList
 		outEncodedCharacters = candidatesList;
 	}
 
-	return result;	
+	return encodingResult.first;	
 }
 
 EStatusCode WrittenFontTrueType::WriteState(ObjectsContext* inStateWriter,ObjectIDType inObjectID)

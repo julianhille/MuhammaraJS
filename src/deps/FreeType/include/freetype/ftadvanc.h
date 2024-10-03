@@ -4,7 +4,7 @@
  *
  *   Quick computation of advance widths (specification only).
  *
- * Copyright (C) 2008-2023 by
+ * Copyright (C) 2008-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,7 +20,8 @@
 #define FTADVANC_H_
 
 
-#include <freetype/freetype.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 #ifdef FREETYPE_H
 #error "freetype.h of FreeType 1 has been loaded!"
@@ -95,7 +96,6 @@ FT_BEGIN_HEADER
    *   load_flags ::
    *     A set of bit flags similar to those used when calling
    *     @FT_Load_Glyph, used to determine what kind of advances you need.
-   *
    * @output:
    *   padvance ::
    *     The advance value.  If scaling is performed (based on the value of

@@ -4,7 +4,7 @@
  *
  *   FreeType Multiple Master font interface (specification).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,7 +20,8 @@
 #define FTMM_H_
 
 
-#include <freetype/t1tables.h>
+#include <ft2build.h>
+#include FT_TYPE1_TABLES_H
 
 
 FT_BEGIN_HEADER
@@ -46,9 +47,6 @@ FT_BEGIN_HEADER
    *   OpenType variation fonts.  Some of the routines only work with Adobe
    *   MM fonts, others will work with all three types.  They are similar
    *   enough that a consistent interface makes sense.
-   *
-   *   For Adobe MM fonts, macro @FT_IS_SFNT returns false.  For GX and
-   *   OpenType variation fonts, it returns true.
    *
    */
 
@@ -398,10 +396,6 @@ FT_BEGIN_HEADER
    *   FreeType error code.  0~means success.
    *
    * @note:
-   *   The design coordinates are 16.16 fractional values for TrueType GX and
-   *   OpenType variation fonts.  For Adobe MM fonts, the values are
-   *   integers.
-   *
    *   [Since 2.8.1] To reset all axes to the default values, call the
    *   function with `num_coords` set to zero and `coords` set to `NULL`.
    *   [Since 2.9] 'Default values' means the currently selected named
@@ -444,11 +438,6 @@ FT_BEGIN_HEADER
    * @return:
    *   FreeType error code.  0~means success.
    *
-   * @note:
-   *   The design coordinates are 16.16 fractional values for TrueType GX and
-   *   OpenType variation fonts.  For Adobe MM fonts, the values are
-   *   integers.
-   *
    * @since:
    *   2.7.1
    */
@@ -480,9 +469,9 @@ FT_BEGIN_HEADER
    *     the number of axes, use default values for the remaining axes.
    *
    *   coords ::
-   *     The design coordinates array.  Each element is a 16.16 fractional
-   *     value and must be between 0 and 1.0 for Adobe MM fonts, and between
-   *     -1.0 and 1.0 for TrueType GX and OpenType variation fonts.
+   *     The design coordinates array (each element must be between 0 and 1.0
+   *     for Adobe MM fonts, and between -1.0 and 1.0 for TrueType GX and
+   *     OpenType variation fonts).
    *
    * @return:
    *   FreeType error code.  0~means success.
@@ -527,7 +516,7 @@ FT_BEGIN_HEADER
    *
    * @output:
    *   coords ::
-   *     The normalized blend coordinates array (as 16.16 fractional values).
+   *     The normalized blend coordinates array.
    *
    * @return:
    *   FreeType error code.  0~means success.

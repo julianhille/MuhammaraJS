@@ -8,7 +8,7 @@
  * parse compressed PCF fonts, as found with many X11 server
  * distributions.
  *
- * Copyright (C) 2010-2023 by
+ * Copyright (C) 2010-2019 by
  * Joel Klinghed.
  *
  * based on `src/gzip/ftgzip.c'
@@ -22,14 +22,15 @@
  */
 
 
-#include <freetype/internal/ftmemory.h>
-#include <freetype/internal/ftstream.h>
-#include <freetype/internal/ftdebug.h>
-#include <freetype/ftbzip2.h>
+#include <ft2build.h>
+#include FT_INTERNAL_MEMORY_H
+#include FT_INTERNAL_STREAM_H
+#include FT_INTERNAL_DEBUG_H
+#include FT_BZIP2_H
 #include FT_CONFIG_STANDARD_LIBRARY_H
 
 
-#include <freetype/ftmoderr.h>
+#include FT_MODULE_ERRORS_H
 
 #undef FTERRORS_H_
 
@@ -37,7 +38,7 @@
 #define FT_ERR_PREFIX  Bzip2_Err_
 #define FT_ERR_BASE    FT_Mod_Err_Bzip2
 
-#include <freetype/fterrors.h>
+#include FT_ERRORS_H
 
 
 #ifdef FT_CONFIG_OPTION_USE_BZIP2
@@ -57,9 +58,8 @@
   /* it is better to use FreeType memory routines instead of raw
      'malloc/free' */
 
-  typedef void* (*alloc_func)( void*, int, int );
-  typedef void  (*free_func) ( void*, void* );
-
+  typedef void *(* alloc_func)(void*, int, int);
+  typedef void (* free_func)(void*, void*);
 
   static void*
   ft_bzip2_alloc( FT_Memory  memory,
@@ -71,7 +71,7 @@
     FT_Pointer  p  = NULL;
 
 
-    FT_MEM_QALLOC( p, sz );
+    (void)FT_ALLOC( p, sz );
     return p;
   }
 
@@ -103,11 +103,10 @@
 
     FT_Byte    input[FT_BZIP2_BUFFER_SIZE];  /* input read buffer  */
 
-    FT_Byte    buffer[FT_BZIP2_BUFFER_SIZE]; /* output buffer          */
-    FT_ULong   pos;                          /* position in output     */
+    FT_Byte    buffer[FT_BZIP2_BUFFER_SIZE]; /* output buffer      */
+    FT_ULong   pos;                          /* position in output */
     FT_Byte*   cursor;
     FT_Byte*   limit;
-    FT_Bool    reset;                        /* reset before next read */
 
   } FT_BZip2FileRec, *FT_BZip2File;
 
@@ -155,7 +154,6 @@
     zip->limit  = zip->buffer + FT_BZIP2_BUFFER_SIZE;
     zip->cursor = zip->limit;
     zip->pos    = 0;
-    zip->reset  = 0;
 
     /* check .bz2 header */
     {
@@ -231,7 +229,6 @@
       zip->limit  = zip->buffer + FT_BZIP2_BUFFER_SIZE;
       zip->cursor = zip->limit;
       zip->pos    = 0;
-      zip->reset  = 0;
 
       BZ2_bzDecompressInit( bzstream, 0, 0 );
     }
@@ -306,23 +303,18 @@
 
       err = BZ2_bzDecompress( bzstream );
 
-      if ( err != BZ_OK )
+      if ( err == BZ_STREAM_END )
       {
-        zip->reset = 1;
-
-        if ( err == BZ_STREAM_END )
-        {
-          zip->limit = (FT_Byte*)bzstream->next_out;
-          if ( zip->limit == zip->cursor )
-            error = FT_THROW( Invalid_Stream_Operation );
-          break;
-        }
-        else
-        {
-          zip->limit = zip->cursor;
-          error      = FT_THROW( Invalid_Stream_Operation );
-          break;
-        }
+        zip->limit = (FT_Byte*)bzstream->next_out;
+        if ( zip->limit == zip->cursor )
+          error = FT_THROW( Invalid_Stream_Operation );
+        break;
+      }
+      else if ( err != BZ_OK )
+      {
+        zip->limit = zip->cursor;
+        error      = FT_THROW( Invalid_Stream_Operation );
+        break;
       }
     }
 
@@ -336,13 +328,12 @@
                              FT_ULong      count )
   {
     FT_Error  error = FT_Err_Ok;
+    FT_ULong  delta;
 
 
     for (;;)
     {
-      FT_ULong  delta = (FT_ULong)( zip->limit - zip->cursor );
-
-
+      delta = (FT_ULong)( zip->limit - zip->cursor );
       if ( delta >= count )
         delta = count;
 
@@ -372,9 +363,9 @@
     FT_Error  error;
 
 
-    /* Reset inflate stream if seeking backwards or bzip reported an error. */
-    /* Yes, that is not too efficient, but it saves memory :-)              */
-    if ( pos < zip->pos || zip->reset )
+    /* Reset inflate stream if we're seeking backwards.        */
+    /* Yes, that is not too efficient, but it saves memory :-) */
+    if ( pos < zip->pos )
     {
       error = ft_bzip2_file_reset( zip );
       if ( error )
@@ -504,7 +495,7 @@
 
     stream->size  = 0x7FFFFFFFL;  /* don't know the real size! */
     stream->pos   = 0;
-    stream->base  = NULL;
+    stream->base  = 0;
     stream->read  = ft_bzip2_stream_io;
     stream->close = ft_bzip2_stream_close;
 

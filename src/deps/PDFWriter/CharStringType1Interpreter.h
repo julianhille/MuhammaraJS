@@ -37,7 +37,6 @@ private:
 	IType1InterpreterImplementation* mImplementationHelper;
 	bool mGotEndChar;
 	LongList mPostScriptOperandStack;
-	unsigned short mSubrsNesting;
 
 	PDFHummus::EStatusCode ProcessCharString(InputCharStringDecodeStream* inCharStringToIntepret);
 	bool IsOperator(Byte inBuffer);

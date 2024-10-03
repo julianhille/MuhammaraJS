@@ -33,7 +33,6 @@
 #include "PDFRectangle.h"
 #include "PDFObjectCast.h"
 #include "PDFDictionary.h"
-#include "EStatusCode.h"
 
 #include <string>
 
@@ -71,7 +70,7 @@ private:
     PDFObjectCastPtr<PDFDictionary> mPageObject;
     
 	PDFObject* QueryInheritedValue(PDFDictionary* inDictionary,const std::string& inName);
-    PDFHummus::EStatusCode SetPDFRectangleFromPDFArray(PDFArray* inPDFArray,PDFRectangle& outPDFRectangle);
+    void SetPDFRectangleFromPDFArray(PDFArray* inPDFArray,PDFRectangle& outPDFRectangle);
     
     void AssertPageObjectValid();
     PDFRectangle GetBoxAndDefaultWithCrop(const std::string& inBoxName);

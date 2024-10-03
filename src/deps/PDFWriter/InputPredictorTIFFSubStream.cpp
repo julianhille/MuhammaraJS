@@ -98,8 +98,7 @@ void InputPredictorTIFFSubStream::Assign(IByteReader* inSourceStream,
 	mColumns = inColumns;
 	
 	delete mRowBuffer;
-	IOBasicTypes::LongBufferSizeType bufferSize = (inColumns*inColors*inBitsPerComponent)/8;
-	mRowBuffer = new Byte[bufferSize];
+	mRowBuffer = new Byte[(inColumns*inColors*inBitsPerComponent)/8];
 
 	mReadColorsCount = inColumns * inColors;
 	mReadColors = new unsigned short[mReadColorsCount];

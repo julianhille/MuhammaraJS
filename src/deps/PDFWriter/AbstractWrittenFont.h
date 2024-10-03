@@ -32,7 +32,7 @@ class PDFParser;
 class AbstractWrittenFont : public IWrittenFont
 {
 public:
-	AbstractWrittenFont(ObjectsContext* inObjectsContext, FreeTypeFaceWrapper* inFontInfo);
+	AbstractWrittenFont(ObjectsContext* inObjectsContext);
 	virtual ~AbstractWrittenFont(void);
 
 	virtual void AppendGlyphs(const GlyphUnicodeMappingList& inGlyphsList,
@@ -47,7 +47,6 @@ protected:
 	WrittenFontRepresentation* mCIDRepresentation;
 	WrittenFontRepresentation* mANSIRepresentation;
 	ObjectsContext* mObjectsContext;
-	FreeTypeFaceWrapper* mFontInfo;
 
 	PDFHummus::EStatusCode WriteStateInDictionary(ObjectsContext* inStateWriter,DictionaryContext* inDerivedObjectDictionary);
 	PDFHummus::EStatusCode WriteStateAfterDictionary(ObjectsContext* inStateWriter);

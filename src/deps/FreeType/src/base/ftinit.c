@@ -4,7 +4,7 @@
  *
  *   FreeType initialization layer (body).
  *
- * Copyright (C) 1996-2023 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -39,9 +39,9 @@
 
 #include <ft2build.h>
 #include FT_CONFIG_CONFIG_H
-#include <freetype/internal/ftobjs.h>
-#include <freetype/internal/ftdebug.h>
-#include <freetype/ftmodapi.h>
+#include FT_INTERNAL_OBJECTS_H
+#include FT_INTERNAL_DEBUG_H
+#include FT_MODULE_H
 
 
   /**************************************************************************
@@ -176,9 +176,6 @@
                               module_name,
                               property_name,
                               property_value );
-
-      if ( !*p )
-        break;
     }
   }
 
@@ -201,10 +198,6 @@
     FT_Error   error;
     FT_Memory  memory;
 
-
-#ifdef FT_DEBUG_LOGGING
-    ft_logging_init();
-#endif
 
     /* check of `alibrary' delayed to `FT_New_Library' */
 
@@ -251,10 +244,6 @@
 
     /* discard memory manager */
     FT_Done_Memory( memory );
-
-#ifdef FT_DEBUG_LOGGING
-    ft_logging_deinit();
-#endif
 
     return FT_Err_Ok;
   }
