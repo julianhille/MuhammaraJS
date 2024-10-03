@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Tests for bold, italic, underline, strikethrough, and highlights in textboxes
 - Add missing node v21 and v22 to the build matrix (#417)
+- Update PDRWriter to 4.6.7 (#410)
 
 ## [5.0.0] - 2024-09-08
 
