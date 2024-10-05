@@ -62,7 +62,6 @@ public:
 	virtual void SetPosition(LongFilePositionType inOffsetFromStart);
 	virtual void SetPositionFromEnd(LongFilePositionType inOffsetFromEnd);
 	virtual LongFilePositionType GetCurrentPosition();
-	virtual void MoveStartPosition(LongFilePositionType inStartPosition);
 
 	IByteReaderWithPosition* GetSourceStream();
 
@@ -72,7 +71,6 @@ private:
 	IOBasicTypes::Byte* mCurrentBufferIndex;
 	IOBasicTypes::Byte* mLastAvailableIndex;
 	IByteReaderWithPosition* mSourceStream;
-	LongFilePositionType mStartPosition;
 
 	void Initiate(IByteReaderWithPosition* inSourceReader,IOBasicTypes::LongBufferSizeType inBufferSize);
 

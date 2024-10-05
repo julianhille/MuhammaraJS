@@ -1,4 +1,0 @@
-LIBTIFF_3.9 {
-  global:
-    *;
-};
