@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  gcc-13-bookworm:
+    image: gcc:13-bookworm
+    container_name: gcc-13-bookworm
+    command: ["sleep", "infinity"]
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    environment:
+      - CXX=g++-13
