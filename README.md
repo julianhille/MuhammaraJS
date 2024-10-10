@@ -51,9 +51,11 @@ This won't affect a lot of you but still.
 
 ### Version 5.x
 
-- You may need to update your base linux distro where you use this as muhammara now needs GLIBCXX_3.4.31
-  Github removed ubuntu 18.04 runners and so we build on 20.04 now.
-  Ubuntu 20.04 comes with newer libstdc++6 and this brings newer glibc with it.
+- ~You may need to update your base linux distro where you use this as muhammara now needs GLIBCXX_3.4.31
+  Github removed ubuntu 18.04 runners and so we build on 20.04 now.~
+  ~Ubuntu 20.04 comes with newer libstdc++6 and this brings newer glibc with it.~
+  This has been tackled by building inside of docker using a gcc bookworm build.
+  That means it lowers the needed glibc version to GLIBCXX_3.4.30 and so official node:20 docker should work again.
 - Node <= 16 pre-builts have been removed
 - Electron <= 23 pre-builts have been removed
 - GCC 13 needed / std ++ 20 (only needed if you compile yourself)
