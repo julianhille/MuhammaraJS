@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Update PDRWriter to 4.6.7 (#410)
 
+### Update
+
+- Build linux on docker -> downgrade glibc for linux builds (#423)
+
 ## [5.0.1] - 2024-09-28
 
 ### Added
