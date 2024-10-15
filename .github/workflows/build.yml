@@ -193,7 +193,7 @@ jobs:
       - name: Set up GCC
         uses: egor-tensin/setup-gcc@v1
         with:
-          version: 12
+          version: 11
           platform: ${{matrix.architecture}}
         if: ${{ matrix.os == 'ubuntu-20.04' }}
       - uses: actions/checkout@v4
@@ -390,7 +390,7 @@ jobs:
       - name: Set up GCC
         uses: egor-tensin/setup-gcc@v1
         with:
-          version: 12
+          version: 11
           platform: ${{matrix.architecture}}
         if: ${{ matrix.os == 'ubuntu-20.04' }}
       - uses: actions/setup-python@v5
@@ -450,7 +450,7 @@ jobs:
     needs: [lint]
     runs-on: ubuntu-20.04
     container:
-      image: gcc:12-bullseye
+      image: gcc:11-bullseye
       credentials:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
