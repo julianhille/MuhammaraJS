@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Downgrade to gcc11 to lower needed glibc version
 
-
 ## [5.0.2] - 2024-10-10
 
 ### Added
