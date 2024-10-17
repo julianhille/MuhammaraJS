@@ -522,6 +522,9 @@ jobs:
             architecture: arm64
           - os: macos-13
             architecture: ia32
+          - os: windows-2019
+            architecture: ia32
+            node: 23.0.0
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
