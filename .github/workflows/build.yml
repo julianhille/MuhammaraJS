@@ -117,17 +117,23 @@ jobs:
         architecture: [x64, ia32, arm64]
         electron:
           [
+            33.0.0,
             32.0.0,
+            32.1.0,
+            32.2.0,
             31.0.0,
             31.1.0,
             31.2.0,
             31.3.0,
             31.4.0,
+            31.5.0,
+            31.6.0,
             30.0.0,
             30.1.0,
             30.2.0,
             30.3.0,
             30.4.0,
+            30.5.0,
             29.0.0,
             29.1.0,
             29.2.0,
@@ -147,7 +153,17 @@ jobs:
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
+          - electron: 33.0.0
+            node: 20.18.0
+          - electron: 32.2.0
+            node: 20.16.0
+          - electron: 32.1.0
+            node: 20.16.0
           - electron: 32.0.0
+            node: 20.16.0
+          - electron: 31.6.0
+            node: 20.16.0
+          - electron: 31.5.0
             node: 20.16.0
           - electron: 31.4.0
             node: 20.16.0
@@ -159,6 +175,8 @@ jobs:
             node: 20.16.0
           - electron: 31.0.0
             node: 20.16.0
+          - electron: 30.5.0
+            node: 20.15.1
           - electron: 30.4.0
             node: 20.15.1
           - electron: 30.3.0
