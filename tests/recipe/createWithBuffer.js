@@ -68,4 +68,24 @@ describe("Modify", () => {
         done();
       });
   });
+
+  it("Create new Writer With new buffer and file output", (done) => {
+    const pdfDoc = new HummusRecipe(Buffer.from("new"), null, {
+      version: 1.6,
+      author: "John Doe",
+      title: "Hummus Recipe",
+      subject: "A brand new PDF",
+    });
+    const pdfBuffer = pdfDoc
+      .createPage("letter-size")
+      .endPage()
+      .endPDF((outBuffer) => {
+        assert(outBuffer instanceof Buffer);
+        fs.writeFileSync(
+          path.join(__dirname, "../output/createWithNewBuffer.pdf"),
+          outBuffer,
+        );
+        done();
+      });
+  });
 });
