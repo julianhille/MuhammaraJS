@@ -156,13 +156,13 @@ jobs:
           - electron: 33.0.0
             node: 20.18.0
           - electron: 32.2.0
-            node: 20.16.0
+            node: 20.18.0
           - electron: 32.1.0
-            node: 20.16.0
+            node: 20.17.0
           - electron: 32.0.0
             node: 20.16.0
           - electron: 31.6.0
-            node: 20.16.0
+            node: 20.17.0
           - electron: 31.5.0
             node: 20.16.0
           - electron: 31.4.0
