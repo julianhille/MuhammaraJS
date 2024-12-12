@@ -15,7 +15,7 @@ describe("Font", () => {
       fontSrcPath: path.join(__dirname, "../output/recipe/fonts"),
     });
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .text("http://www.fontpalace.com/font-details/PMingLiU/", 20, 60)
       .text("世界你好 繁體字", "center", 80, {
         font: "PMingLiU",

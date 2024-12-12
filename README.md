@@ -152,7 +152,7 @@ const pdfDoc = new Recipe("new", "output.pdf", {
   subject: "A brand new PDF",
 });
 
-pdfDoc.createPage("letter-size").endPage().endPDF();
+pdfDoc.createPage("letter").endPage().endPDF();
 ```
 
 ```javascript
@@ -161,7 +161,7 @@ const pdfDoc = new Recipe("new", "output.pdf");
 
 pdfDoc
   // 1st Page
-  .createPage("letter-size")
+  .createPage("letter")
   .circle("center", 100, 30, { stroke: "#3b7721", fill: "#eee000" })
   .polygon(
     [
@@ -243,7 +243,7 @@ const pdfDoc = new Recipe(Buffer.from("new"), null, {
   subject: "A brand new PDF",
 });
 
-const pdfBuffer = pdfDoc.createPage("letter-size").endPage().endPDF();
+const pdfBuffer = pdfDoc.createPage("letter").endPage().endPDF();
 ```
 
 ### Modify an existing PDF

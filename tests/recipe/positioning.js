@@ -60,7 +60,7 @@ describe("Graphic Object Positioning", () => {
       ];
     };
 
-    recipe.createPage("letter-size");
+    recipe.createPage("letter");
 
     for (let i = 1; i <= 4; i++) {
       frame(recipe, col[1], row[i], wid[0], hgt[0]);
@@ -178,7 +178,7 @@ describe("Graphic Object Positioning", () => {
       ];
     };
 
-    recipe.createPage("letter-size");
+    recipe.createPage("letter");
 
     for (let i = 1; i <= 2; i++) {
       frame(recipe, col[1], row[i], wid[0], hgt[0]);

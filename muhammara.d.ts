@@ -1100,8 +1100,8 @@ declare module "muhammara" {
       options?: Recipe.OverlayOptions,
     ): Recipe;
 
-    createPage(pageWidth: number, pageHeight: number): Recipe;
-
+    createPage(pageWidth?: number, pageHeight?: number): Recipe;
+    createPage(pageType: string, rotation?: number): Recipe;
     endPage(): Recipe;
 
     editPage(pageNumber: number): Recipe;

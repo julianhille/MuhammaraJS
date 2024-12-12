@@ -6,7 +6,7 @@ describe("Annotation: Square", () => {
     const output = path.join(__dirname, "../output/annotation-square.pdf");
     const recipe = new HummusRecipe("new", output);
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .annot("center", "center", "Square", {
         text: "yo, I am a square",
         width: 200,

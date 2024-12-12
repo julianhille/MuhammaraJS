@@ -47,7 +47,7 @@ describe("Encryption", () => {
     const output = path.join(__dirname, `../output/${taskCPF}.pdf`);
     const recipe = new HummusRecipe("new", output, { userPassword: "123" });
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .text("When creating file, the viewing password (userPassword)", 150, 300)
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
@@ -59,7 +59,7 @@ describe("Encryption", () => {
     const output = path.join(__dirname, `../output/${taskCPP}.pdf`);
     const recipe = new HummusRecipe("new", output, { password: "123" });
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .text(
         "When creating file, an empty viewing password (userPassword)",
         150,
@@ -78,7 +78,7 @@ describe("Encryption", () => {
       userProtectionFlag: 3900,
     });
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .text(
         "When creating file, an empty viewing password (userPassword)",
         150,

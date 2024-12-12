@@ -8,7 +8,7 @@ describe("Coloring", () => {
       colorspace: "rgb",
     });
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .chroma("magenta", [0, 255, 0, 0], "separation")
       .text("Separation color magenta", 100, 430, {
         bold: true,

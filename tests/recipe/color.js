@@ -48,7 +48,7 @@ describe("Color", () => {
       colorspace: "rgb",
     });
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .text("WATERMARK", "center", "center", {
         bold: true,
         size: 60,
@@ -116,7 +116,7 @@ describe("Color", () => {
       colorspace: "cmyk",
     });
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .text("WATERMARK", "center", "center", {
         bold: true,
         size: 60,
@@ -184,7 +184,7 @@ describe("Color", () => {
       colorspace: "gray",
     });
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .text("WATERMARK", "center", "center", {
         bold: true,
         size: 60,
@@ -264,7 +264,7 @@ describe("Color", () => {
     };
     let i = 2;
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .text("Gray,", ts, line(i), { size: title, color: "#44" })
       .text("R", gsize, line(i), { size: title, color: [255, 0, 0] })
       .text("G", gsize + cwid - 1, line(i), { size: title, color: [0, 255, 0] })

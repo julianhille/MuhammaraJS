@@ -8,7 +8,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
     const rota = { stroke: "#ff0000", opacity: 0.3, rotation: 45, debug: 1 };
     const nops = { stroke: "#ff0000", opacity: 0.3, rotation: 0, debug: 1 };
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .n_gon(200, 100, 50, 3, nops)
       .n_gon(200, 100, 50, 3, rota)
       .n_gon(300, 100, 50, 4, nops)
@@ -51,7 +51,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
     const recipe = new HummusRecipe("new", output);
 
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .text("Anatomy of an Arrow", 250, 20, { size: 20, bold: true })
       .arrow(72, 100)
       .text("arrow( x, y )", 54, 60, { color: "#000000", bold: true })
