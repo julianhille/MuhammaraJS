@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Fix recipe with new buffers #372
+- Fix recipe with new buffers [#372](https://github.com/julianhille/MuhammaraJS/issues/372)
 - Wrong node versions for 2.2, 32.1 and 31.6 [#439](https://github.com/julianhille/MuhammaraJS/issues/439)
 
 ## [5.2.0] - 2024-10-20
