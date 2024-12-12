@@ -7,7 +7,7 @@ describe("Text - Centering", () => {
     const recipe = new HummusRecipe("new", output);
 
     recipe
-      .createPage("letter-size")
+      .createPage("letter")
       .circle(30, 220, 2, { stroke: "red" })
       .text("NO_Space_Breaks_And_Wrap=false_gives_Ellipsis", 350, 27, {
         color: "red",

@@ -7,7 +7,7 @@ describe("Annotation: Comment", () => {
     const recipe = new HummusRecipe("new", output);
     recipe
       // 1st Page
-      .createPage("letter-size")
+      .createPage("letter")
       .text("Click\nbelow", 298, 60)
       .text(
         "Except for the background rectangle exposing it, the annotation above would normally be invisible because no color option was given to it.",
@@ -61,7 +61,7 @@ describe("Annotation: Comment", () => {
     const recipe = new HummusRecipe("new", output);
     recipe
       // 1st Page
-      .createPage("letter-size")
+      .createPage("letter")
       .annot(300, 300, "FreeText", {
         text: "Yo yo yo",
       })
@@ -79,7 +79,7 @@ describe("Annotation: Comment", () => {
     const recipe = new HummusRecipe("new", output);
     recipe
       // 1st Page
-      .createPage("letter-size")
+      .createPage("letter")
       .text(
         "Trace-based Just-in-Time Type Specialization for Dynamic Languages",
         100,

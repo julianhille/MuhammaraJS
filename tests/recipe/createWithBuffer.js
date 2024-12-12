@@ -77,7 +77,7 @@ describe("Modify", () => {
       subject: "A brand new PDF",
     });
     const pdfBuffer = pdfDoc
-      .createPage("letter-size")
+      .createPage("letter")
       .endPage()
       .endPDF((outBuffer) => {
         assert(outBuffer instanceof Buffer);

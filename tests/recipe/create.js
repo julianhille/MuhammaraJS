@@ -26,7 +26,7 @@ describe("Create", () => {
     const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
     recipe
       // 1st Page
-      .createPage("letter-size")
+      .createPage("letter")
       .circle("center", 100, 30, { stroke: "#3b7721", fill: "#eee000" })
       .polygon(
         [
