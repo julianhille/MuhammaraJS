@@ -115,7 +115,8 @@ jobs:
       matrix:
         os: [ubuntu-20.04, macos-13, windows-2019]
         architecture: [x64, ia32, arm64]
-        electron: [
+        electron:
+          [
             33.3.0
             33.2.0,
             33.1.0,
