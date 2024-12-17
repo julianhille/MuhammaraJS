@@ -36,4 +36,20 @@ describe("Font", () => {
       .endPage()
       .endPDF(done);
   });
+
+  it("Override the default font family", (done) => {
+    const output = path.join(
+        __dirname,
+        "../output/Override the default font family.pdf",
+    );
+    const recipe = new HummusRecipe("new", output, {
+      defaultFontFamily: 'arial',
+      defaultFontSize: 20,
+    });
+    recipe
+        .createPage("letter")
+        .text("This is Arial", 0, 0)
+        .endPage()
+        .endPDF(done);
+  });
 });
