@@ -876,9 +876,15 @@ declare module "muhammara" {
       author?: string;
       title?: string;
       subject?: string;
-      colorspace?: 'rbg' | 'cmyk' | 'gray' | 'separation';
+      colorspace?: "rbg" | "cmyk" | "gray" | "separation";
       defaultFontSize?: number;
-      defaultFontFamily?: 'arial' | 'courier new' | 'georgia' | 'helvetica' | 'roboto' | string;
+      defaultFontFamily?:
+        | "arial"
+        | "courier new"
+        | "georgia"
+        | "helvetica"
+        | "roboto"
+        | string;
       fontSrcPath?: string;
       keywords?: string[];
     }
