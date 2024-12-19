@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [5.3.0] - 2024-12-14
+
 ### Added
 
 - Add electron 31.7.0, 33.1.0, 33.2.0, 33.3.0 [#439](https://github.com/julianhille/MuhammaraJS/issues/439)
@@ -482,7 +484,8 @@ with the following changes.
 
 - Initial release
 
-:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/5.2.0...HEAD
+:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/5.3.0...HEAD
+[5.3.0]: https://github.com/julianhille/MuhammaraJS/compare/5.2.0...5.3.0
 [5.2.0]: https://github.com/julianhille/MuhammaraJS/compare/5.1.0...5.2.0
 [5.1.0]: https://github.com/julianhille/MuhammaraJS/compare/5.0.2...5.1.0
 [5.0.2]: https://github.com/julianhille/MuhammaraJS/compare/5.0.1...5.0.2
