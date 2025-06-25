@@ -475,20 +475,27 @@ jobs:
           if-no-files-found: error
   build-node-linux:
     needs: [lint]
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-22.04-arm]
+        node: [17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.7.3, 22.9.0, 23.0.0]
+        include:
+          - os: ubuntu-22.04
+            architecture: x64
+            architecture_node: x64
+            target_architecture: x64
+          - os: ubuntu-22.04-arm
+            architecture: arm64
+            architecture_node: arm64
+            target_architecture: arm64
+            extra_compile_flags: -march=armv8-a
+    runs-on: ${{ matrix.os }}
     container:
       image: gcc:11-bullseye
       credentials:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
-    strategy:
-      fail-fast: false
-      matrix:
-        node: [17.6.0, 18.8.0, 19.0.0, 20.0.0, 21.7.3, 22.9.0, 23.0.0]
-        include:
-          - architecture: x64
-            architecture_node: x64
-            target_architecture: x64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
