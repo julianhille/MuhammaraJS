@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [5.4.0] - 2025-09-21
+
 ### Added
 
 - Add node v24.0.0
@@ -488,7 +490,8 @@ with the following changes.
 
 - Initial release
 
-:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/5.3.0...HEAD
+:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/5.4.0...HEAD
+[5.4.0]: https://github.com/julianhille/MuhammaraJS/compare/5.3.0...5.4.0
 [5.3.0]: https://github.com/julianhille/MuhammaraJS/compare/5.2.0...5.3.0
 [5.2.0]: https://github.com/julianhille/MuhammaraJS/compare/5.1.0...5.2.0
 [5.1.0]: https://github.com/julianhille/MuhammaraJS/compare/5.0.2...5.1.0
