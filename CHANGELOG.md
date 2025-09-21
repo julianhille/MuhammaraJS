@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Outdated and EOL versions of nodejs (17, 18)
+
 ## [5.4.0] - 2025-09-21
 
 ### Added
