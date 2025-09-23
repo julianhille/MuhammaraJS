@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Outdated and EOL versions of nodejs (17, 18)
 
+### Fixed
+
+- Update node-pre-gyp and brace to remove security concerns
+- Update npm version to support newer node-pre-gyp
+
 ## [5.4.0] - 2025-09-21
 
 ### Added
