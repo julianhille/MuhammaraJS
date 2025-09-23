@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Added current supported electron versions (36.x, 37.x, 38.x)
+
 ### Removed
 
 - Outdated and EOL versions of nodejs (17, 18)
+- All electron versions current supported editions (<36.x>)
 
 ### Fixed
 
