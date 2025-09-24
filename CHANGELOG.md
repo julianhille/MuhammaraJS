@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-- Added current supported electron versions (36.x, 37.x, 38.x)
+## [6.0.0] - 2025-09-23
+
+### Added
+
+- Current supported electron versions (36.x, 37.x, 38.x)
 
 ### Removed
 
@@ -502,7 +506,8 @@ with the following changes.
 
 - Initial release
 
-:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/5.4.0...HEAD
+:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.0...HEAD
+[6.0.0]: https://github.com/julianhille/MuhammaraJS/compare/5.4.0...6.0.0
 [5.4.0]: https://github.com/julianhille/MuhammaraJS/compare/5.3.0...5.4.0
 [5.3.0]: https://github.com/julianhille/MuhammaraJS/compare/5.2.0...5.3.0
 [5.2.0]: https://github.com/julianhille/MuhammaraJS/compare/5.1.0...5.2.0
