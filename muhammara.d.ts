@@ -709,6 +709,12 @@ declare module "muhammara" {
 
   export interface PDFWriter {
     end(): PDFWriter;
+    /**
+     * Explicitly releases all internal resources held by the PDFWriter.
+     * Call this after end() to immediately free memory without waiting for garbage collection.
+     * Useful in high-throughput scenarios where many PDFs are processed in a loop.
+     */
+    reset(): PDFWriter;
     createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
     writePage(page: PDFPage): this;
