@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Update macOS runner from macos-13 to macos-14
 
+### Removed
+
+- node version 18
+- node version 19
+
 ## [6.0.0] - 2025-09-23
 
 ### Added
