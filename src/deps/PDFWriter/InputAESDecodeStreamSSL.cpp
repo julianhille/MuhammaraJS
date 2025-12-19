@@ -1,8 +1,8 @@
 /*
-Source File : InputAESDecodeStream.h
+Source File : InputAESDecodeStreamSSL.cpp
 
 
-Copyright 2016 Gal Kahana PDFWriter
+Copyright 2025 Gal Kahana PDFWriter
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,22 +17,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include "InputAESDecodeStream.h"
+#include "InputAESDecodeStreamSSL.h"
 
 #include <algorithm>
 #include <string.h>
+#include <openssl/evp.h>
 
 using namespace IOBasicTypes;
 
-
-InputAESDecodeStream::InputAESDecodeStream()
+InputAESDecodeStreamSSL::InputAESDecodeStreamSSL()
 {
 	mSourceStream = NULL;
+	mDecryptCtx = NULL;
+	mKey = NULL;
 }
 
-
-InputAESDecodeStream::InputAESDecodeStream(
-	IByteReader* inSourceReader, 
+InputAESDecodeStreamSSL::InputAESDecodeStreamSSL(
+	IByteReader* inSourceReader,
 	const ByteList& inKey)
 {
 	mSourceStream = inSourceReader;
@@ -44,48 +45,67 @@ InputAESDecodeStream::InputAESDecodeStream(
 	size_t i = 0;
 	for (; it != inKey.end(); ++i, ++it)
 		mKey[i] = *it;
-	mDecrypt.key(mKey, mKeyLength);
+
+	// Create and initialize OpenSSL context
+	mDecryptCtx = EVP_CIPHER_CTX_new();
 	mIsInit = false; // first read flag. for reading initial IV and first block for decrypting
-	mOutLength = AES_BLOCK_SIZE; // initially, the length is constant AES_BLOCK_SIZE. when the underlying stream uses padding for the final block, this will be reduced by the padding length
-	mOutIndex = mOut + mOutLength; // mOutIndex placed at end of mOut to mark that there's no aviailable decrypted data yet
+	mOutLength = AES_BLOCK_SIZE_BYTES; // initially, the length is constant AES block size. when the underlying stream uses padding for the final block, this will be reduced by the padding length
+	mOutIndex = mOut + mOutLength; // mOutIndex placed at end of mOut to mark that there's no available decrypted data yet
 	mHitEnd = false;
 }
 
-InputAESDecodeStream::~InputAESDecodeStream(void)
+InputAESDecodeStreamSSL::~InputAESDecodeStreamSSL(void)
 {
 	if (mSourceStream)
 		delete mSourceStream;
 
 	if (mKey)
 		delete[] mKey;
+
+	if (mDecryptCtx)
+		EVP_CIPHER_CTX_free(mDecryptCtx);
 }
 
-bool InputAESDecodeStream::NotEnded()
+bool InputAESDecodeStreamSSL::NotEnded()
 {
 	return (mSourceStream && mSourceStream->NotEnded()) || !mHitEnd || ((mOutIndex - mOut) < mOutLength);
 }
 
-LongBufferSizeType InputAESDecodeStream::Read(IOBasicTypes::Byte* inBuffer, LongBufferSizeType inSize)
+LongBufferSizeType InputAESDecodeStreamSSL::Read(IOBasicTypes::Byte* inBuffer, LongBufferSizeType inSize)
 {
 	if (!mSourceStream)
 		return 0;
 
-	
 	// first read, this is special case where IV need to be read, followed by an initial block read
 	if (!mIsInit) {
 		mIsInit = true; // let's get the state change out of the way
 
-		// read iv 
-		LongBufferSizeType ivRead = mSourceStream->Read(mIV, AES_BLOCK_SIZE);
-		if (ivRead < AES_BLOCK_SIZE)
+		// read iv
+		LongBufferSizeType ivRead = mSourceStream->Read(mIV, AES_BLOCK_SIZE_BYTES);
+		if (ivRead < AES_BLOCK_SIZE_BYTES)
 			return 0;
 
 		// read first block for decryption
-		LongBufferSizeType firstBlockLength = mSourceStream->Read(mInNext, AES_BLOCK_SIZE);
-		if (firstBlockLength < AES_BLOCK_SIZE)
+		LongBufferSizeType firstBlockLength = mSourceStream->Read(mInNext, AES_BLOCK_SIZE_BYTES);
+		if (firstBlockLength < AES_BLOCK_SIZE_BYTES)
 			return 0;
-	}
 
+		// Initialize OpenSSL decryption context with appropriate cipher based on key length
+		const EVP_CIPHER* cipher;
+		if (mKeyLength == 16) {
+			cipher = EVP_aes_128_cbc();
+		} else if (mKeyLength == 32) {
+			cipher = EVP_aes_256_cbc();
+		} else {
+			return 0; // Unsupported key length
+		}
+
+		if (EVP_DecryptInit_ex(mDecryptCtx, cipher, NULL, mKey, mIV) != 1)
+			return 0;
+
+		// Disable padding as we handle it manually like the original
+		EVP_CIPHER_CTX_set_padding(mDecryptCtx, 0);
+	}
 
 	IOBasicTypes::LongBufferSizeType left = inSize;
 	IOBasicTypes::LongBufferSizeType remainderRead;
@@ -118,29 +138,33 @@ LongBufferSizeType InputAESDecodeStream::Read(IOBasicTypes::Byte* inBuffer, Long
 	return inSize - left;
 }
 
-bool InputAESDecodeStream::DecryptNextBlockAndRefillNext()
+bool InputAESDecodeStreamSSL::DecryptNextBlockAndRefillNext()
 {
 	// decrypt next block
-	memcpy(mIn, mInNext, AES_BLOCK_SIZE);
-	if (mDecrypt.cbc_decrypt(mIn, mOut, AES_BLOCK_SIZE, mIV) != EXIT_SUCCESS)
+	memcpy(mIn, mInNext, AES_BLOCK_SIZE_BYTES);
+
+	int outlen;
+	if (EVP_DecryptUpdate(mDecryptCtx, mOut, &outlen, mIn, AES_BLOCK_SIZE_BYTES) != 1)
 		return false;
-	
+
+	if (outlen != AES_BLOCK_SIZE_BYTES)
+		return false; // Should always be AES block size bytes with padding disabled
+
 	// reset available output index
 	mOutIndex = mOut;
-	
+
 	// Read next source buffer into next block.
-	// this is done now to support padding requirements, so that if we hit the end, we can determine how many bytes are avialable
+	// this is done now to support padding requirements, so that if we hit the end, we can determine how many bytes are available
 	// already in the just decrypted mOut based on read padding size
-	LongBufferSizeType totalRead = mSourceStream->Read(mInNext, AES_BLOCK_SIZE);
-	if (totalRead < AES_BLOCK_SIZE) { 
-		// totalRead should be 0 or AES_BLOCK_SIZE. So this means we hit the end of the stream, and the just decrypted block is the final block.
-		mHitEnd = true; 
+	LongBufferSizeType totalRead = mSourceStream->Read(mInNext, AES_BLOCK_SIZE_BYTES);
+	if (totalRead < AES_BLOCK_SIZE_BYTES) {
+		// totalRead should be 0 or 16. So this means we hit the end of the stream, and the just decrypted block is the final block.
+		mHitEnd = true;
 
 		// dealing with padding of final block - Determine how much of the decrypted block is actual data by reading the last byte, which should have the padding length.
-		size_t paddingLength = std::min<size_t>(mOut[AES_BLOCK_SIZE - 1], AES_BLOCK_SIZE);
-		mOutLength = AES_BLOCK_SIZE - paddingLength;
-	}	
-
+		size_t paddingLength = std::min<size_t>(mOut[AES_BLOCK_SIZE_BYTES - 1], (size_t)AES_BLOCK_SIZE_BYTES);
+		mOutLength = AES_BLOCK_SIZE_BYTES - paddingLength;
+	}
 
 	return true;
-}	
+}

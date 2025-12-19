@@ -1,8 +1,8 @@
 /*
-Source File : OutputRC4XcodeStream.h
+Source File : OutputAESEncodeStreamSSL.h
 
 
-Copyright 2016 Gal Kahana PDFWriter
+Copyright 2025 Gal Kahana PDFWriter
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,17 +20,23 @@ limitations under the License.
 */
 #pragma once
 #include "IByteWriterWithPosition.h"
-#include "RC4.h"
+#include "IOBasicTypes.h"
+#include "AESConstants.h"
 #include "ByteList.h"
 
+#include <openssl/evp.h>
 
-class OutputRC4XcodeStream : public IByteWriterWithPosition
+
+class OutputAESEncodeStreamSSL : public IByteWriterWithPosition
 {
 public:
-	OutputRC4XcodeStream(void);
-	virtual ~OutputRC4XcodeStream(void);
+	OutputAESEncodeStreamSSL(void);
+	virtual ~OutputAESEncodeStreamSSL(void);
 
-	OutputRC4XcodeStream(IByteWriterWithPosition* inTargetStream, const ByteList& inEncryptionKey,bool inOwnsStream);
+	OutputAESEncodeStreamSSL(
+		IByteWriterWithPosition* inTargetStream,
+		const ByteList& inEncryptionKey,
+		bool inOwnsStream);
 
 	virtual IOBasicTypes::LongBufferSizeType Write(const IOBasicTypes::Byte* inBuffer, IOBasicTypes::LongBufferSizeType inSize);
 	virtual IOBasicTypes::LongFilePositionType GetCurrentPosition();
@@ -38,5 +44,18 @@ public:
 private:
 	bool mOwnsStream;
 	IByteWriterWithPosition* mTargetStream;
-	RC4 mRC4;
+
+	bool mWroteIV;
+
+	// inEncryptionKey in array form, for OpenSSL EVP
+	unsigned char* mEncryptionKey;
+	std::size_t  mEncryptionKeyLength;
+	unsigned char mIV[AES_BLOCK_SIZE_BYTES];
+	unsigned char mIn[AES_BLOCK_SIZE_BYTES];
+	unsigned char mOut[AES_BLOCK_SIZE_BYTES];
+	unsigned char *mInIndex;
+
+	EVP_CIPHER_CTX *mEncryptCtx;
+
+	void Flush();
 };

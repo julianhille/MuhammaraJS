@@ -1,8 +1,8 @@
 /*
-   Source File : InputAESDecodeStream.h
+   Source File : InputAESDecodeStreamSSL.h
 
 
-   Copyright 2011 Gal Kahana PDFWriter
+   Copyright 2025 Gal Kahana PDFWriter
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -16,24 +16,27 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-   
+
 */
 #pragma once
 
 #include "EStatusCode.h"
 #include "IByteReader.h"
-#include "aescpp.h"
+#include "IOBasicTypes.h"
+#include "AESConstants.h"
 #include "ByteList.h"
 
-class InputAESDecodeStream : public IByteReader
+#include <openssl/evp.h>
+
+class InputAESDecodeStreamSSL : public IByteReader
 {
 public:
-	InputAESDecodeStream(void);
-	~InputAESDecodeStream(void);
+	InputAESDecodeStreamSSL(void);
+	~InputAESDecodeStreamSSL(void);
 
-	// InputAESDecodeStream owns inSourceReader and will delete it on destruction.
-	InputAESDecodeStream(
-		IByteReader* inSourceReader, 
+	// InputAESDecodeStreamSSL owns inSourceReader and will delete it on destruction.
+	InputAESDecodeStreamSSL(
+		IByteReader* inSourceReader,
 		const ByteList& inKey); // inKey list length can be anything the underlying AES implemenetaion supports, specifically AES-128, AES-256, etc.
 
 	// IByteReader implementation. note that "inBufferSize" determines how many
@@ -45,24 +48,20 @@ public:
 
 private:
 
-	// inEncryptionKey in array form, for aes
+	// inEncryptionKey in array form, for OpenSSL EVP
 	unsigned char* mKey;
 	std::size_t  mKeyLength;
-	unsigned char mIV[AES_BLOCK_SIZE];
-	unsigned char mIn[AES_BLOCK_SIZE];
-	unsigned char mInNext[AES_BLOCK_SIZE];
-	unsigned char mOut[AES_BLOCK_SIZE];
+	unsigned char mIV[AES_BLOCK_SIZE_BYTES];
+	unsigned char mIn[AES_BLOCK_SIZE_BYTES];
+	unsigned char mInNext[AES_BLOCK_SIZE_BYTES];
+	unsigned char mOut[AES_BLOCK_SIZE_BYTES];
 	unsigned char *mOutIndex;
 	unsigned char mOutLength;
 	bool mIsInit;
 	bool mHitEnd;
 
-
 	IByteReader *mSourceStream;
-	AESdecrypt mDecrypt;
-
+	EVP_CIPHER_CTX *mDecryptCtx;
 
 	bool DecryptNextBlockAndRefillNext();
-
-
 };
