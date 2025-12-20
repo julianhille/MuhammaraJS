@@ -50,7 +50,7 @@ jobs:
       - name: Get npm cache directory
         id: npm-cache-dir
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-arm-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
@@ -64,7 +64,7 @@ jobs:
           npm_config_unsafe_perm: true
       # - run: npm run test, this is not an arm64 machine so we can not test.
       - run: ./node_modules/.bin/node-pre-gyp package --target_libc=musl  --target_arch=${{ matrix.target_architecture }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-node-musl-arm-${{ matrix.node }}
@@ -93,7 +93,7 @@ jobs:
       - name: Get npm cache directory
         id: npm-cache-dir
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
@@ -103,7 +103,7 @@ jobs:
           npm_config_unsafe_perm: true
       - run: npm run test
       - run: ./node_modules/.bin/node-pre-gyp package testpackage --target_libc=musl
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-node-musl-${{ matrix.node }}
@@ -214,7 +214,7 @@ jobs:
         id: npm-cache-dir
         shell: bash
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
@@ -249,7 +249,7 @@ jobs:
         env:
           npm_config_runtime: electron
           npm_config_target: ${{ matrix.electron }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.electron}}
@@ -289,7 +289,7 @@ jobs:
         id: npm-cache-dir
         shell: bash
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
@@ -300,7 +300,7 @@ jobs:
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.node}}
@@ -353,7 +353,7 @@ jobs:
         id: npm-cache-dir
         shell: bash
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
@@ -369,7 +369,7 @@ jobs:
         if: ${{ matrix.target_architecture != 'arm64' }}
       - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}
         if: ${{ matrix.target_architecture == 'arm64' }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.node}}
@@ -397,7 +397,7 @@ jobs:
           version_extractor_regex: 'tags\/(.*)$'
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
