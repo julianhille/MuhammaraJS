@@ -332,6 +332,9 @@ jobs:
           - os: windows-2022
             architecture: ia32
             node: 24.0.0
+          - os: windows-2022
+            architecture: ia32
+            node: 25.0.0
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
