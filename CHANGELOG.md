@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Set version of setup-node action to v6
-- Set version of checkout action to v6 
-- Set versoin of cache action to v5 
+- Set version of checkout action to v6
+- Set versoin of cache action to v5
 
 ## [6.0.0] - 2025-09-23
 
