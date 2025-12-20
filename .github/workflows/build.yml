@@ -113,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, windows-2022]
+        os: [ubuntu-22.04, macos-14, windows-2022]
         architecture: [x64, ia32, arm64]
         electron:
           - 36.0.0
@@ -184,7 +184,7 @@ jobs:
           - electron: 38.1.0
             node: 22.19.0
         exclude:
-          - os: macos-13
+          - os: macos-14
             architecture: ia32
           - os: ubuntu-22.04
             architecture: arm64
@@ -218,7 +218,9 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install --build-from-source
+      - run: |
+          npm install --cpu=${{ matrix.architecture }}  --build-from-source
+          npm install --cpu=${{ matrix.architecture }} electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
         env:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
@@ -229,11 +231,6 @@ jobs:
           npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
-      - uses: Wandalen/wretry.action@v3
-        with:
-          command: npm install -g electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
-          attempt_limit: 3
-          attempt_delay: 10000
       - name: Run test
         uses: coactions/setup-xvfb@90473c3ebc69533a1a6e0505c36511b69c8c3135
         with:
@@ -254,6 +251,7 @@ jobs:
           path: build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.electron}}
           if-no-files-found: error
+
   build-node-linux:
     needs: [lint]
     strategy:
@@ -310,7 +308,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13, windows-2022]
+        os: [macos-14, windows-2022]
         node: [17.6.0, 19.0.0, 20.0.0, 21.7.3, 22.9.0, 23.0.0, 24.0.0]
         architecture: [x64, ia32, arm64]
         include:
@@ -329,7 +327,7 @@ jobs:
         exclude:
           - os: windows-2022
             architecture: arm64
-          - os: macos-13
+          - os: macos-14
             architecture: ia32
           - os: windows-2022
             architecture: ia32
