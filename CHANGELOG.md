@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Set version of setup-node action to v6
+- Set version of checkout action to v6
+- Set versoin of cache action to v5
+
+### Fixed
+
+- Update macOS runner from macos-13 to macos-14
+
 ## [6.0.0] - 2025-09-23
 
 ### Added
