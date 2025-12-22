@@ -258,7 +258,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, ubuntu-22.04-arm]
-        node: [20.0.0, 22.9.0, 24.0.0, 25.0.0]
+        node: [20.0.0, 22.9.0, 24.0.0, 25.2.0]
         include:
           - os: ubuntu-22.04
             architecture: x64
@@ -309,7 +309,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-14, windows-2022]
-        node: [20.0.0, 22.9.0, 24.0.0, 25.0.0]
+        node: [20.0.0, 22.9.0, 24.0.0, 25.2.0]
         architecture: [x64, ia32, arm64]
         include:
           - python_version: "3.10"
@@ -334,7 +334,7 @@ jobs:
             node: 24.0.0
           - os: windows-2022
             architecture: ia32
-            node: 25.0.0
+            node: 25.2.0
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
