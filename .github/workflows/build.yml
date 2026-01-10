@@ -308,7 +308,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, windows-2022]
+        os: [macos-15, windows-2022]
         node: [20.0.0, 22.9.0, 24.0.0, 25.2.0]
         architecture: [x64, ia32, arm64]
         include:
@@ -327,7 +327,7 @@ jobs:
         exclude:
           - os: windows-2022
             architecture: arm64
-          - os: macos-14
+          - os: macos-15
             architecture: ia32
           - os: windows-2022
             architecture: ia32
