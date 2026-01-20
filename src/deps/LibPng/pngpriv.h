@@ -517,6 +517,13 @@
     */
 #  include <float.h>
 
+
+#ifdef __clang__
+    #if __clang_major__ >= 16
+        #  include <math.h>
+    #endif
+#endif
+
 #  if (defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \
     defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC)
    /* We need to check that <math.h> hasn't already been included earlier
