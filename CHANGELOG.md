@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Set version of setup-node action to v6
 - Set version of checkout action to v6
 - Set versoin of cache action to v5
+- Add missing type definitions for PDFReader methods and PDFObjectParser interface [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
 
 ### Fixed
 
 - Update macOS runner from macos-13 to macos-14
+- Fix DictionaryContext.writeKey() signature to include required key parameter [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
 - Memory leak, by improper addition of document context extender instead of removal
 
 ### Removed
