@@ -43,7 +43,7 @@
     "@xmldom/xmldom": "^0.8.6"
   },
   "overrides": {
-    "tar": ">=7.5.3"
+    "tar": ">=7.5.4"
   },
   "devDependencies": {
     "@types/node": "^22.2.0",
