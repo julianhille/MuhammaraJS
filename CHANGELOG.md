@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Update macOS runner from macos-13 to macos-14
+- Memory leak, by improper addition of document context extender instead of removal
 
 ### Removed
 
