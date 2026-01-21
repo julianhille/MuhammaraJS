@@ -113,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, windows-2022]
+        os: [ubuntu-22.04, macos-14, windows-2022]
         architecture: [x64, ia32, arm64]
         electron:
           - 36.0.0
@@ -184,7 +184,7 @@ jobs:
           - electron: 38.1.0
             node: 22.19.0
         exclude:
-          - os: macos-13
+          - os: macos-14
             architecture: ia32
           - os: ubuntu-22.04
             architecture: arm64
@@ -310,7 +310,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13, windows-2022]
+        os: [macos-14, windows-2022]
         node: [17.6.0, 19.0.0, 20.0.0, 21.7.3, 22.9.0, 23.0.0, 24.0.0]
         architecture: [x64, ia32, arm64]
         include:
@@ -329,7 +329,7 @@ jobs:
         exclude:
           - os: windows-2022
             architecture: arm64
-          - os: macos-13
+          - os: macos-14
             architecture: ia32
           - os: windows-2022
             architecture: ia32
