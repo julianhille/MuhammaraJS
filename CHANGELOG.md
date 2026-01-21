@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Force tar to >=7.5.3 to fix security vulnaribility by removing
+- Force tar to >=7.5.4 to fix security vulnaribility by removing
   npm dependency and updating node-pre-gyp to compatible version
 
 ## [6.0.0] - 2025-09-23
