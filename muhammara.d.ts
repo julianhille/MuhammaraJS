@@ -441,7 +441,16 @@ declare module "muhammara" {
     getXrefSize(): number;
     getXrefPosition(objectId: number): number;
     startReadingFromStream(inputStream: PDFStreamInput): ByteReader;
+    startReadingFromStreamForPlainCopying(
+      inputStream: PDFStreamInput,
+    ): ByteReader;
+    startReadingObjectsFromStream(stream: PDFStreamInput): PDFObjectParser;
+    startReadingObjectsFromStreams(streams: PDFArray): PDFObjectParser;
     getParserStream(): ByteReaderWithPosition;
+  }
+
+  export interface PDFObjectParser {
+    parseNewObject(): PDFObject | undefined;
   }
 
   export interface PDFStream {
@@ -576,7 +585,7 @@ declare module "muhammara" {
   }
 
   export interface DictionaryContext {
-    writeKey(): DictionaryContext;
+    writeKey(key: string): DictionaryContext;
     writeNameValue(nameValue: string): this;
     writeRectangleValue(values: Array<number>): this;
     writeRectangleValue(a: number, b: number, c: number, d: number): this;
