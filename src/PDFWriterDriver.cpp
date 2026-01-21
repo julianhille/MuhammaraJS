@@ -141,7 +141,7 @@ METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
         status = pdfWriter->mPDFWriter.EndPDF();
 
     // now remove event listener
-    pdfWriter->mPDFWriter.GetDocumentContext().AddDocumentContextExtender(pdfWriter);
+    pdfWriter->mPDFWriter.GetDocumentContext().RemoveDocumentContextExtender(pdfWriter);
 
 
     if(status != PDFHummus::eSuccess)
