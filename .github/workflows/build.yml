@@ -218,7 +218,9 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install --build-from-source
+      - run: |
+          npm install --cpu=${{ matrix.architecture }} --build-from-source
+          npm install --cpu=${{ matrix.architecture }} electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
         env:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
@@ -229,11 +231,6 @@ jobs:
           npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ matrix.extra_compile_flags }}
-      - uses: Wandalen/wretry.action@v3
-        with:
-          command: npm install -g electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
-          attempt_limit: 3
-          attempt_delay: 10000
       - name: Run test
         uses: coactions/setup-xvfb@90473c3ebc69533a1a6e0505c36511b69c8c3135
         with:
