@@ -576,7 +576,7 @@ declare module "muhammara" {
   }
 
   export interface DictionaryContext {
-    writeKey(): DictionaryContext;
+    writeKey(key: string): DictionaryContext;
     writeNameValue(nameValue: string): this;
     writeRectangleValue(values: Array<number>): this;
     writeRectangleValue(a: number, b: number, c: number, d: number): this;
