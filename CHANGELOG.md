@@ -31,6 +31,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - node version 25
 
+## [6.0.2] - 2026-01-22
+
+### Fixed
+
+- Missing package update to the tar overrides to finally fix the vulnaribility.
+
+## [6.0.1] - 2026-01-21
+
+DEPRECATED.
+
+This version does not fix the tar vulnaribility as it misses
+the package-lock.json update and so will be replaced with 6.0.2
+
+### Fixed
+
+- Force tar to >=7.5.4 to fix security vulnaribility by removing
+  npm dependency and updating node-pre-gyp to compatible version
+
 ## [6.0.0] - 2025-09-23
 
 ### Added
@@ -530,7 +548,9 @@ with the following changes.
 
 - Initial release
 
-:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.0...HEAD
+:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.2...HEAD
+[6.0.2]: https://github.com/julianhille/MuhammaraJS/compare/6.0.1...6.0.2
+[6.0.1]: https://github.com/julianhille/MuhammaraJS/compare/6.0.0...6.0.1
 [6.0.0]: https://github.com/julianhille/MuhammaraJS/compare/5.4.0...6.0.0
 [5.4.0]: https://github.com/julianhille/MuhammaraJS/compare/5.3.0...5.4.0
 [5.3.0]: https://github.com/julianhille/MuhammaraJS/compare/5.2.0...5.3.0

@@ -219,7 +219,7 @@ jobs:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
       - run: |
-          npm install --cpu=${{ matrix.architecture }}  --build-from-source
+          npm install --cpu=${{ matrix.architecture }} --build-from-source
           npm install --cpu=${{ matrix.architecture }} electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
         env:
           npm_config_arch: ${{ matrix.architecture }}
