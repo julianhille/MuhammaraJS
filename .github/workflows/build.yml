@@ -59,7 +59,7 @@ jobs:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
-          CPPFLAGS: ${{ matrix.extra_compile_flags }}
+          CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
           npm_config_unsafe_perm: true
       # - run: npm run test, this is not an arm64 machine so we can not test.
@@ -113,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-14, windows-2022]
+        os: [ubuntu-22.04, macos-15, windows-2022]
         architecture: [x64, ia32, arm64]
         electron:
           - 36.0.0
@@ -184,7 +184,7 @@ jobs:
           - electron: 38.1.0
             node: 22.19.0
         exclude:
-          - os: macos-14
+          - os: macos-15
             architecture: ia32
           - os: ubuntu-22.04
             architecture: arm64
@@ -210,6 +210,29 @@ jobs:
           architecture: ${{ matrix.architecture_node }}
       - run: node --version
       - run: npm --version
+      - name: Configure OpenSSL (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: powershell
+        run: |
+          $opensslRoot = 'C:\Program Files\OpenSSL'
+          if (-not (Test-Path $opensslRoot -PathType Container)) {
+            Write-Error "Expected OpenSSL folder at $opensslRoot"
+            exit 1
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$opensslRoot"
+      - name: Configure OpenSSL (macOS)
+        if: ${{ matrix.os == 'macos-15' }}
+        run: |
+          OPENSSL_PREFIX=$(brew --prefix openssl@3 2>/dev/null || true)
+          if [ -z "$OPENSSL_PREFIX" ] || [ ! -d "$OPENSSL_PREFIX" ]; then
+            echo "::error ::Expected openssl@3 to be preinstalled on the runner." >&2
+            exit 1
+          fi
+          echo "LDFLAGS=-L$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+          echo "OPENSSL_DIR=$OPENSSL_PREFIX" >> $GITHUB_ENV
+          echo "OPENSSL_INCLUDE_DIR=$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+          echo "OPENSSL_LIB_DIR=$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
       - name: Get npm cache directory
         id: npm-cache-dir
         shell: bash
@@ -220,6 +243,18 @@ jobs:
           key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
       - run: |
           npm install --cpu=${{ matrix.architecture }} --build-from-source
+        env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
+          npm_config_target_arch: ${{ matrix.target_architecture }}
+          npm_config_target: ${{ matrix.electron }}
+          npm_config_disturl: https://artifacts.electronjs.org/headers/dist
+          npm_config_runtime: electron
+          npm_config_python: python${{ matrix.python_version }}
+          CFLAGS: ${{ matrix.extra_compile_flags }}
+          CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
+      - name: Install electron
+        run: |
           npm install --cpu=${{ matrix.architecture }} electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
         env:
           npm_config_arch: ${{ matrix.architecture }}
@@ -230,7 +265,7 @@ jobs:
           npm_config_runtime: electron
           npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
-          CPPFLAGS: ${{ matrix.extra_compile_flags }}
+          CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
       - name: Run test
         uses: coactions/setup-xvfb@90473c3ebc69533a1a6e0505c36511b69c8c3135
         with:
@@ -296,7 +331,7 @@ jobs:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
-          CPPFLAGS: ${{ matrix.extra_compile_flags }}
+          CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
       - uses: actions/upload-artifact@v6
         with:
@@ -347,6 +382,29 @@ jobs:
           architecture: ${{ matrix.architecture_node }}
       - run: node --version
       - run: npm --version
+      - name: Configure OpenSSL (macOS)
+        if: ${{ matrix.os == 'macos-15' }}
+        run: |
+          OPENSSL_PREFIX=$(brew --prefix openssl@3 2>/dev/null || true)
+          if [ -z "$OPENSSL_PREFIX" ] || [ ! -d "$OPENSSL_PREFIX" ]; then
+            echo "::error ::Expected openssl@3 to be preinstalled on the runner." >&2
+            exit 1
+          fi
+          echo "LDFLAGS=-L$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+          echo "OPENSSL_DIR=$OPENSSL_PREFIX" >> $GITHUB_ENV
+          echo "OPENSSL_INCLUDE_DIR=$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+          echo "OPENSSL_LIB_DIR=$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+      - name: Configure OpenSSL (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: powershell
+        run: |
+          $opensslRoot = 'C:\Program Files\OpenSSL'
+          if (-not (Test-Path $opensslRoot -PathType Container)) {
+            Write-Error "Expected OpenSSL folder at $opensslRoot"
+            exit 1
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$opensslRoot"
       - name: Get npm cache directory
         id: npm-cache-dir
         shell: bash
@@ -362,7 +420,7 @@ jobs:
           npm_config_python: python${{ matrix.python_version }}
           npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
           CFLAGS: ${{ matrix.extra_compile_flags }}
-          CPPFLAGS: ${{ matrix.extra_compile_flags }}
+          CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
         if: ${{ matrix.target_architecture != 'arm64' }}
       - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}

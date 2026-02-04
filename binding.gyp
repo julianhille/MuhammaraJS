@@ -28,24 +28,35 @@
 				}
 			},
             'conditions': [
-['OS=="mac"', {
-          'xcode_settings': {
-            'CLANG_CXX_LIBRARY': 'libc++',
-             "OTHER_CFLAGS": [ "-std=c++20"]
-          }
-        }],
-          ['OS=="win"', {
-            'defines!': [
-              'V8_DEPRECATION_WARNINGS=1',
-              'V8_DEPRECATION_WARNINGS',
-              'V8_IMMINENT_DEPRECATION_WARNINGS',
-              'V8_IMMINENT_DEPRECATION_WARNINGS=1'
+                ['OS=="mac"', {
+                    'xcode_settings': {
+                        'CLANG_CXX_LIBRARY': 'libc++',
+                        "OTHER_CFLAGS": [ "-std=c++20" ]
+                    }
+                }],
+                ['OS=="win"', {
+                    'defines!': [
+                        'V8_DEPRECATION_WARNINGS=1',
+                        'V8_DEPRECATION_WARNINGS',
+                        'V8_IMMINENT_DEPRECATION_WARNINGS',
+                        'V8_IMMINENT_DEPRECATION_WARNINGS=1'
+                    ],
+                    'msvs_settings': {
+                        'VCCLCompilerTool': {
+                            'AdditionalIncludeDirectories': [
+                                '<!(echo %OPENSSL_DIR%)/include/'
+                            ]
+                        },
+                        'VCLinkerTool': {
+                            'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/'],
+                            'AdditionalDependencies': [
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libcrypto.lib',
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libssl.lib'
+                            ]
+                        }
+                    }
+                }]
             ],
-          }, { # OS != "win",
-            'defines': [
-            ],
-          }]
-        ],
            'sources': [
                 './src/ConstructorsHolder.cpp',
                 './src/PDFStreamDriver.cpp',
