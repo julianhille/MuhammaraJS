@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [6.0.4] - 2026-02-25
+
+### Fixed
+
+- Raise node-tar override to 7.5.9 for the recurring security vulnerability fix.
+
 ## [6.0.3] - 2026-01-29
 
 ### Fixed
@@ -530,7 +536,8 @@ with the following changes.
 
 - Initial release
 
-:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.3...HEAD
+:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.4...HEAD
+[6.0.4]: https://github.com/julianhille/MuhammaraJS/compare/6.0.3...6.0.4
 [6.0.3]: https://github.com/julianhille/MuhammaraJS/compare/6.0.2...6.0.3
 [6.0.2]: https://github.com/julianhille/MuhammaraJS/compare/6.0.1...6.0.2
 [6.0.1]: https://github.com/julianhille/MuhammaraJS/compare/6.0.0...6.0.1
