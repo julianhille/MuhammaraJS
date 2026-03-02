@@ -67,6 +67,12 @@ npm install muhammara
 
 ```
 
+> Note: If you are using pnpm 10 or above, lifecycle scripts of dependencies are not
+> executed during installation by default (see the [pnpm 10 discussion post](https://github.com/orgs/pnpm/discussions/8945#discussion-7793415)). This means that MuhammaraJS will be unable to
+> build its native code modules. To fix this, you must add `muhammara` to
+> `pnpm.onlyBuiltDependencies` in the `package.json`, or use `pnpm approve-builds` and
+> select `muhammara` as a dependency approved to run lifecycle scripts.
+
 # Replace hummusJS with MuhammaraJS for hummus
 
 Replace:
