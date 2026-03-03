@@ -13,18 +13,40 @@
                    'xcode_settings': {
                        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
                    }
+                }],
+                ['OS=="win" and target_arch=="x64"', {
+                    'msvs_settings': {
+                        'VCLinkerTool': {
+                            'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/'],
+                            'AdditionalDependencies': [
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libcrypto.lib',
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libssl.lib'
+                            ]
+                        }
+                    }
+                }],
+                ['OS=="win" and target_arch=="ia32"', {
+                    'msvs_settings': {
+                        'VCLinkerTool': {
+                            'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/'],
+                            'AdditionalDependencies': [
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/libcrypto.lib',
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/libssl.lib'
+                            ]
+                        }
+                    }
                 }]
             ],
-           'msvs_settings':
-			{
-				'VCCLCompilerTool':
-				{
-					'AdditionalOptions':
-						[
-						'/std:c++20',
-						]
-				}
-			},
+            'msvs_settings': {
+                'VCCLCompilerTool': {
+                    'AdditionalIncludeDirectories': [
+                        '<!(echo %OPENSSL_DIR%)/include/'
+                    ],
+                    'AdditionalOptions': [
+                        '/std:c++20'
+                    ]
+                }
+            },
             'dependencies': [
                '<(module_root_dir)/src/deps/LibAesgm/binding.gyp:libaesgm',
                '<(module_root_dir)/src/deps/FreeType/binding.gyp:freetype',
