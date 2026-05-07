@@ -1,6 +1,6 @@
 {
   "name": "muhammara",
-  "version": "6.0.3",
+  "version": "6.0.5",
   "description": "Create, read and modify PDF files and streams. A drop in replacement for hummusjs PDF library",
   "homepage": "https://github.com/julianhille/Muhammarajs",
   "license": "Apache-2.0",
@@ -45,14 +45,14 @@
   "devDependencies": {
     "@types/node": "^22.2.0",
     "chai": "^4.5.0",
-    "mocha": "^11.0.0",
+    "mocha": "^11.3.0",
     "prettier": "^3.3.3",
     "docdash": "^2.0.1",
     "fs-extra": "^11.2.0",
     "jsdoc": "^4.0.3"
   },
   "overrides": {
-    "tar": ">=7.5.7"
+    "tar": ">=7.5.14"
   },
   "binary": {
     "module_name": "muhammara",
