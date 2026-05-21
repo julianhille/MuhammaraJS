@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update xmldom to 0.9.10 to address cve issue
 - Update node-tar to 7.5.15 to address cve issue
 - Update minimatch to 9.0.9 to address cve issue
+- Fix GHSA-fhp4-pr5j-46m5 DOS issue in PDF Writer
 
 ## [6.0.3] - 2026-01-29
 
