@@ -545,7 +545,8 @@ with the following changes.
 
 - Initial release
 
-:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.4...HEAD
+:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.5...HEAD
+[6.0.5]: https://github.com/julianhille/MuhammaraJS/compare/6.0.4...6.0.5
 [6.0.4]: https://github.com/julianhille/MuhammaraJS/compare/6.0.3...6.0.4
 [6.0.3]: https://github.com/julianhille/MuhammaraJS/compare/6.0.2...6.0.3
 [6.0.2]: https://github.com/julianhille/MuhammaraJS/compare/6.0.1...6.0.2
