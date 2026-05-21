@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Update xmldom to 0.9.10 to address cve issue
+- Update node-tar to 7.5.15 to address cve issue
 
 ## [6.0.3] - 2026-01-29
 
