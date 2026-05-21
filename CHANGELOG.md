@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Raise node-tar override to 7.5.9 for the recurring security vulnerability fix.
 
+## [6.0.4] - 2026-05-21
+
+### Fixed
+
+- Update xmldom to 0.9.10 to address cve issue
+
 ## [6.0.3] - 2026-01-29
 
 ### Fixed
