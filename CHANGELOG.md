@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix DictionaryContext.writeKey() signature to include required key parameter [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
 - Memory leak, by improper addition of document context extender instead of removal
 - Update dependencies
+- Fix `ParseExistingInDirectStreamObject` misreading an object stored at a non-first index of a compressed object stream (`/ObjStm`), which could surface as `unable to append to page, make sure source file exists` when merging or embedding a page whose indirect `/Length` resolved to such an object
 
 ### Removed
 

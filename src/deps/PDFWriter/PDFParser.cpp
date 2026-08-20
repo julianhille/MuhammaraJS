@@ -1798,11 +1798,45 @@ PDFObject* PDFParser::ParseExistingInDirectStreamObject(ObjectIDType inObjectId)
 			break;
 		}
 
-		// when parsing the header, should be at position already..so don't skip if already there [using GetCurrentPosition to see if parsed some]
-		if(mXrefTable[inObjectId].mRivision != 0 || skipperStream.GetCurrentPosition() == 0)
+		// The comment this replaced read: "when parsing the header, should be at position
+		// already..so don't skip if already there [using GetCurrentPosition to see if parsed
+		// some]". That assumption -- and the SkipTo() call in the other branch -- both trusted
+		// skipperStream's current position without checking whether it was actually still
+		// correct. Both break because the header above is parsed through the generic tokenizer
+		// (mObjectParser), which does its own internal buffered reads from the underlying stream
+		// and can pull more raw bytes than the logical header size requires. skipperStream's
+		// GetCurrentPosition()/mAmountRead counts every byte physically read from the source, not
+		// how much the tokenizer logically "consumed", so it can end up reporting a position past
+		// the byte offset of the object actually being requested here. When that happens,
+		// SkipTo() can only move forward (see CanSkipTo below) and silently no-ops instead of
+		// seeking -- so the parser goes on to read unrelated bytes at the wrong offset and
+		// misparses them as this object. In our case that surfaced as PDFWriter failing to
+		// resolve an indirect /Length pointing at a non-first object in a compressed object
+		// stream, with "unable to append to page, make sure source file exists" further
+		// upstream, but the same misread can happen for any object fetched from this stream by a
+		// non-zero revision (or, previously, even revision 0 when the header parse overshot).
+		//
+		// Fix: explicitly check whether the target is still reachable by a forward skip from the
+		// current position (CanSkipTo) before trusting it, rather than assuming either "we must
+		// already be there" or "SkipTo will get us there". In the common case -- position still
+		// at or before the target, which includes every case the original optimization was
+		// written for -- this costs nothing extra: SkipTo on the already-open stream, same as
+		// before. Only when the header parse's overshoot has actually carried us past the target
+		// do we pay for reopening a fresh reader (whose position is a known 0, so the seek is
+		// then guaranteed reachable) instead of silently misreading.
 		{
 			LongFilePositionType objectPositionInStream = objectStreamHeader[mXrefTable[inObjectId].mRivision].mObjectOffset +
 														  firstStreamObjectPosition->GetValue();
+
+			if (!skipperStream.CanSkipTo(objectPositionInStream))
+			{
+				delete objectSource;
+				objectSource = CreateInputStreamReader(objectStream.GetPtr());
+				skipperStream.Assign(objectSource);
+				MovePositionInStream(objectStream->GetStreamContentStart());
+				mObjectParser.SetReadStream(&skipperStream,&skipperStream);
+			}
+
 			skipperStream.SkipTo(objectPositionInStream);
 			mObjectParser.ResetReadState();
 		}
