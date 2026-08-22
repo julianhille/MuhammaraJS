@@ -15,6 +15,8 @@
 - [x] Fail the Windows build when either required DLL is missing.
 - [x] Run the Windows Node test suite after copying the DLLs and before packaging the prebuild.
 - [x] Retain the existing Electron install/build ordering unless a reproducible failure requires changing it.
+- [x] Ensure a Windows source build copies the matching OpenSSL DLLs from `OPENSSL_DIR/bin` into `binding/` after compilation, so users do not need OpenSSL installed at runtime.
+- [x] Update the README to distinguish the Windows source-build OpenSSL prerequisite from prebuilt runtime use, which must not require a system OpenSSL installation.
 
 ## 3. Exclude experimental remote changes
 
