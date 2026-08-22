@@ -7,13 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [6.0.4] - 2026-02-25
-
-### Fixed
-
-- Raise node-tar override to 7.5.9 for the recurring security vulnerability fix.
-
-## [6.0.4] - 2026-05-21
+## [6.0.5] - 2026-05-21
 
 ### Fixed
 
@@ -21,6 +15,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update node-tar to 7.5.15 to address cve issue
 - Update minimatch to 9.0.9 to address cve issue
 - Fix GHSA-fhp4-pr5j-46m5 DOS issue in PDF Writer
+
+## [6.0.4] - 2026-02-25
+
+### Fixed
+
+- Raise node-tar override to 7.5.9 for the recurring security vulnerability fix.
 
 ## [6.0.3] - 2026-01-29
 
