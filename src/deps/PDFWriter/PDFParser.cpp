@@ -2102,7 +2102,10 @@ EStatusCodeAndIByteReader PDFParser::CreateFilterForStream(IByteReader* inStream
 			if (inDecodeParams)
 			{
 				PDFObjectCastPtr<PDFInteger> earlyObj(QueryDictionaryObject(inDecodeParams, "EarlyChange"));
-				early = earlyObj->GetValue();
+				if (earlyObj.GetPtr())
+				{
+					early = earlyObj->GetValue();
+				}
 			}
 			lzwStream = new InputLZWDecodeStream(early);
 			lzwStream->Assign(inStream);
