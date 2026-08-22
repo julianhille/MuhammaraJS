@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update markdown-it to 14.3.0 for security vulnerability fixes.
 - Update picomatch to 2.3.2 for security vulnerability fixes.
 - Update underscore to 1.13.8 for security vulnerability fixes.
+- Default missing Crypt filter parameters to Identity to fix GHSA-ch7g-v45m-q27g and GHSA-7xrh-8x56-r797.
 
 ## [6.0.5] - 2026-05-21
 
