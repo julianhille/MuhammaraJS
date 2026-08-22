@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update lodash to 4.18.1 for security vulnerability fixes.
 - Update markdown-it to 14.3.0 for security vulnerability fixes.
 - Update picomatch to 2.3.2 for security vulnerability fixes.
+- Update underscore to 1.13.8 for security vulnerability fixes.
 
 ## [6.0.5] - 2026-05-21
 
