@@ -51,14 +51,18 @@ This won't affect a lot of you but still.
 
 ### Version 5.x
 
-- ~You may need to update your base linux distro where you use this as muhammara now needs GLIBCXX_3.4.31
-  Github removed ubuntu 18.04 runners and so we build on 20.04 now.~
-  ~Ubuntu 20.04 comes with newer libstdc++6 and this brings newer glibc with it.~
+- ~~You may need to update your base linux distro where you use this as muhammara now needs GLIBCXX_3.4.31
+  Github removed ubuntu 18.04 runners and so we build on 20.04 now.~~
+  ~~Ubuntu 20.04 comes with newer libstdc++6 and this brings newer glibc with it.~~
   This has been tackled by building inside of docker using a gcc bookworm build.
   That means it lowers the needed glibc version to GLIBCXX_3.4.30 and so official node:20 docker should work again.
 - Node <= 16 pre-builts have been removed
 - Electron <= 23 pre-builts have been removed
 - GCC 13 needed / std ++ 20 (only needed if you compile yourself)
+
+### Version 7.x
+
+- Windows win32 (32-bit) pre-builts and build tooling have been removed; only x64/arm64 variants are provided going forward
 
 # Installation
 
@@ -72,6 +76,17 @@ npm install muhammara
 > build its native code modules. To fix this, you must add `muhammara` to
 > `pnpm.onlyBuiltDependencies` in the `package.json`, or use `pnpm approve-builds` and
 > select `muhammara` as a dependency approved to run lifecycle scripts.
+
+## Building from source
+
+Official Windows prebuilds include the required OpenSSL DLLs, so they do not
+require a system OpenSSL installation at runtime.
+
+Building from source requires OpenSSL 3 headers and libraries to be reachable by
+the compiler and linker. On macOS, install `openssl@3` with Homebrew. On Windows,
+set `OPENSSL_DIR` to the OpenSSL installation directory during `npm install`; the
+install step copies its matching runtime DLLs beside the native addon. Linux builds
+use the OpenSSL headers and libraries provided with the target Node.js headers.
 
 # Replace hummusJS with MuhammaraJS for hummus
 

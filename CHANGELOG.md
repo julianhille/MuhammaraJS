@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - node version 19
 - node version 21
 - node version 23
+- Windows win32 (32-bit) build system and binaries; we no longer publish 32-bit artifacts
 
 ## [6.0.6] - 2026-08-22
 

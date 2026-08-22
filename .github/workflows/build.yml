@@ -118,7 +118,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, macos-15, windows-2022]
-        architecture: [x64, ia32, arm64]
+        architecture: [x64, arm64]
         electron:
           - 36.0.0
           - 36.1.0
@@ -145,9 +145,6 @@ jobs:
             architecture_node: x64
             target_architecture: arm64
             extra_compile_flags: -arch arm64
-          - architecture: ia32
-            architecture_node: x86
-            target_architecture: ia32
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
@@ -188,14 +185,10 @@ jobs:
           - electron: 38.1.0
             node: 22.19.0
         exclude:
-          - os: macos-15
-            architecture: ia32
           - os: ubuntu-22.04
             architecture: arm64
           - os: windows-2022
             architecture: arm64
-          - os: ubuntu-22.04
-            architecture: ia32
     runs-on: ${{ matrix.os }}
     steps:
       - name: Set up GCC
@@ -270,6 +263,28 @@ jobs:
           npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
+      - name: Bundle OpenSSL DLLs (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: pwsh
+        run: |
+          $binPath = Join-Path $env:OPENSSL_DIR 'bin'
+          $cryptoDll = @(Get-ChildItem -Path $binPath -Filter 'libcrypto-3*.dll' -File)
+          $sslDll = @(Get-ChildItem -Path $binPath -Filter 'libssl-3*.dll' -File)
+          if ($cryptoDll.Count -ne 1 -or $sslDll.Count -ne 1) {
+            throw "Expected one libcrypto-3*.dll and one libssl-3*.dll in $binPath"
+          }
+          $openssl = Join-Path $binPath 'openssl.exe'
+          $opensslVersion = if (Test-Path $openssl -PathType Leaf) {
+            & $openssl version
+          } else {
+            $cryptoDll.VersionInfo.ProductVersion
+          }
+          if ([string]::IsNullOrWhiteSpace($opensslVersion)) {
+            throw 'Unable to determine the bundled OpenSSL version'
+          }
+          Copy-Item $cryptoDll.FullName, $sslDll.FullName -Destination binding -Force
+          Copy-Item THIRD_PARTY_NOTICES.md -Destination binding -Force
+          Set-Content -Path binding/OPENSSL_VERSION.txt -Value $opensslVersion
       - name: Run test
         uses: coactions/setup-xvfb@90473c3ebc69533a1a6e0505c36511b69c8c3135
         with:
@@ -349,12 +364,9 @@ jobs:
       matrix:
         os: [macos-15, windows-2022]
         node: [20.9.0, 22.9.0, 24.0.0, 25.2.0]
-        architecture: [x64, ia32, arm64]
+        architecture: [x64, arm64]
         include:
           - python_version: "3.10"
-          - architecture: ia32
-            architecture_node: x86
-            target_architecture: ia32
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
@@ -366,14 +378,6 @@ jobs:
         exclude:
           - os: windows-2022
             architecture: arm64
-          - os: macos-15
-            architecture: ia32
-          - os: windows-2022
-            architecture: ia32
-            node: 24.0.0
-          - os: windows-2022
-            architecture: ia32
-            node: 25.2.0
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -425,6 +429,30 @@ jobs:
           npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
+      - name: Bundle OpenSSL DLLs (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: pwsh
+        run: |
+          $binPath = Join-Path $env:OPENSSL_DIR 'bin'
+          $cryptoDll = @(Get-ChildItem -Path $binPath -Filter 'libcrypto-3*.dll' -File)
+          $sslDll = @(Get-ChildItem -Path $binPath -Filter 'libssl-3*.dll' -File)
+          if ($cryptoDll.Count -ne 1 -or $sslDll.Count -ne 1) {
+            throw "Expected one libcrypto-3*.dll and one libssl-3*.dll in $binPath"
+          }
+          $openssl = Join-Path $binPath 'openssl.exe'
+          $opensslVersion = if (Test-Path $openssl -PathType Leaf) {
+            & $openssl version
+          } else {
+            $cryptoDll.VersionInfo.ProductVersion
+          }
+          if ([string]::IsNullOrWhiteSpace($opensslVersion)) {
+            throw 'Unable to determine the bundled OpenSSL version'
+          }
+          Copy-Item $cryptoDll.FullName, $sslDll.FullName -Destination binding -Force
+          Copy-Item THIRD_PARTY_NOTICES.md -Destination binding -Force
+          Set-Content -Path binding/OPENSSL_VERSION.txt -Value $opensslVersion
+      - run: npm run test
+        if: ${{ matrix.target_architecture != 'arm64' }}
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
         if: ${{ matrix.target_architecture != 'arm64' }}
       - run: ./node_modules/.bin/node-pre-gyp package --target_arch=${{ matrix.target_architecture }}
