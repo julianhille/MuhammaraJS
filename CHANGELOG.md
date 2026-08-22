@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update brace-expansion to 2.1.4 for security vulnerability fixes.
 - Update diff to 5.2.2 for security vulnerability fixes.
 - Update js-yaml to 4.3.1 for security vulnerability fixes.
+- Update linkify-it to 5.0.2 for security vulnerability fixes.
 
 ## [6.0.5] - 2026-05-21
 
