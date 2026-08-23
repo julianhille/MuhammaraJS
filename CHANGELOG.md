@@ -32,13 +32,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - node version 25
 
-## [6.0.4] - 2026-02-25
+## [6.0.6] - 2026-08-22
 
 ### Fixed
 
-- Raise node-tar override to 7.5.9 for the recurring security vulnerability fix.
+- Update the tar override to 7.5.22 for security vulnerability fixes.
+- Use the lockfile's Prettier version in the CI lint job.
+- Update brace-expansion to 2.1.4 for security vulnerability fixes.
+- Update diff to 5.2.2 for security vulnerability fixes.
+- Update js-yaml to 4.3.1 for security vulnerability fixes.
+- Update linkify-it to 5.0.2 for security vulnerability fixes.
+- Update lodash to 4.18.1 for security vulnerability fixes.
+- Update markdown-it to 14.3.0 for security vulnerability fixes.
+- Update picomatch to 2.3.2 for security vulnerability fixes.
+- Update underscore to 1.13.8 for security vulnerability fixes.
+- Default missing Crypt filter parameters to Identity to fix GHSA-ch7g-v45m-q27g and GHSA-7xrh-8x56-r797.
 
-## [6.0.4] - 2026-05-21
+## [6.0.5] - 2026-05-21
 
 ### Fixed
 
@@ -46,6 +56,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update node-tar to 7.5.15 to address cve issue
 - Update minimatch to 9.0.9 to address cve issue
 - Fix GHSA-fhp4-pr5j-46m5 DOS issue in PDF Writer
+
+## [6.0.4] - 2026-02-25
+
+### Fixed
+
+- Raise node-tar override to 7.5.9 for the recurring security vulnerability fix.
 
 ## [6.0.3] - 2026-01-29
 
@@ -570,7 +586,8 @@ with the following changes.
 
 - Initial release
 
-:[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.5...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...HEAD
+[6.0.6]: https://github.com/julianhille/MuhammaraJS/compare/6.0.5...6.0.6
 [6.0.5]: https://github.com/julianhille/MuhammaraJS/compare/6.0.4...6.0.5
 [6.0.4]: https://github.com/julianhille/MuhammaraJS/compare/6.0.3...6.0.4
 [6.0.3]: https://github.com/julianhille/MuhammaraJS/compare/6.0.2...6.0.3
