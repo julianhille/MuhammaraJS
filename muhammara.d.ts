@@ -181,6 +181,7 @@ declare module "muhammara" {
     ri(renderingIntentName: string): this;
     i(flatness: number): this;
     gs(graphicStateName: string): this;
+    setOpacity(opacity: number): this;
     CS(colorSpaceName: string): this;
     cs(colorSpaceName: string): this;
     SC(...colorComponents: number[]): this;

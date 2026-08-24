@@ -111,6 +111,7 @@ private:
     static METHOD_RETURN_TYPE ri(const ARGS_TYPE& args);
     static METHOD_RETURN_TYPE i(const ARGS_TYPE& args);
     static METHOD_RETURN_TYPE gs(const ARGS_TYPE& args);
+    static METHOD_RETURN_TYPE SetOpacity(const ARGS_TYPE& args);
 
     // color operators
     static METHOD_RETURN_TYPE CS(const ARGS_TYPE& args);

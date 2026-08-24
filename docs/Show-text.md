@@ -35,6 +35,16 @@ var textOptions = {
 cxt.writeText("Paths", 75, 805, textOptions);
 ```
 
+## Transparency
+
+Use `setOpacity` to apply fill and stroke opacity to the current graphics state. Opacity is a value from `0` (fully transparent) to `1` (fully opaque). Save and restore the graphics state with `q` and `Q` to limit the effect to a specific text operation:
+
+```javascript
+cxt.q().setOpacity(0.5).writeText("Watermark", 100, 500, textOptions).Q();
+```
+
+Opacity is not part of the `color` value. The color value contains only RGB, CMYK, or gray components.
+
 `getFontForFile` simply receives a path to a file for a font. Hummus supports ttf,otf,pfb/pfm,dfont and ttc.
 for type 1 (pfb/pfm), pass two paths. first the pfb, then the other one (pfm, normally).
 dfont and ttc are font collections, so you can pass a 2nd parameter that will be the font index (if not, it'll take the first font in the colletion).
