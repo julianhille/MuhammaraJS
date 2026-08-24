@@ -419,6 +419,7 @@ declare module "muhammara" {
   }
 
   export interface PDFReader {
+    end(): PDFReader;
     getPDFLevel(): number;
     getPagesCount(): number;
     getTrailer(): PDFDictionary;

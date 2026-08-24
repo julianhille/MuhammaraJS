@@ -14,6 +14,9 @@ OK. First, you can get a PDFReader object (that's the proper name of the parser 
 ```javascript
 var muhammara = require("muhammara");
 var pdfReader = muhammara.createReader("./TestMaterials/XObjectContent.PDF");
+
+// Use the reader here, then release its file handle.
+pdfReader.end();
 ```
 
 the `createReader` method returns a parser object, provided that the PDF is ok. well, at least what parts it needs initially to read.
@@ -32,6 +35,7 @@ The reader object can provide the following high levels:
 - `getXrefEntry(inObjectID)` - get an xref entry. returns an object with `objectPosition`, `revision` and `type`, for an input object ID. type can be hummus.eXrefEntryExisting, hummus.eXrefEntryDelete or hummus.eXrefEntryStreamObject, according to the possible xref values.
 - `getXrefPosition()` - get the file position of the xref table (the last one, for modified files)
 - `getParserStream()` - get the read stream for the parser. It is of type ByteReaderStreamWithPosition. If you wish to read from it directly, check [this](./Streams.md#bytereaderwithposition) for details.
+- `end()` - release the reader's resources after all parsed objects and streams are no longer needed.
 
 # Page info objects
 

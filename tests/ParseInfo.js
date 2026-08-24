@@ -20,5 +20,6 @@ describe("ParseInfo", function () {
       "D:20140720204655+03'00'",
       "creation date value",
     );
+    pdfReader.end();
   });
 });

@@ -62,6 +62,7 @@ DEF_SUBORDINATE_INIT(PDFReaderDriver::Init)
 	t->InstanceTemplate()->SetInternalFieldCount(1);
 
 	SET_PROTOTYPE_METHOD(t, "getPDFLevel", GetPDFLevel);
+	SET_PROTOTYPE_METHOD(t, "end", End);
 	SET_PROTOTYPE_METHOD(t, "getPagesCount", GetPagesCount);
 	SET_PROTOTYPE_METHOD(t, "getTrailer", GetTrailer);
 	SET_PROTOTYPE_METHOD(t, "queryDictionaryObject", QueryDictionaryObject);
@@ -99,6 +100,26 @@ METHOD_RETURN_TYPE PDFReaderDriver::New(const ARGS_TYPE& args)
     reader->Wrap(args.This());
     
 	SET_FUNCTION_RETURN_VALUE(args.This())
+}
+
+METHOD_RETURN_TYPE PDFReaderDriver::End(const ARGS_TYPE& args)
+{
+    CREATE_ISOLATE_CONTEXT;
+    CREATE_ESCAPABLE_SCOPE;
+
+    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+
+    delete reader->mReadStreamProxy;
+    reader->mReadStreamProxy = NULL;
+    if(reader->mOwnsParser)
+    {
+        delete reader->mPDFReader;
+        reader->mPDFReader = NULL;
+        reader->mOwnsParser = false;
+    }
+    reader->mPDFFile.CloseFile();
+
+    SET_FUNCTION_RETURN_VALUE(args.This())
 }
 
 METHOD_RETURN_TYPE PDFReaderDriver::GetPDFLevel(const ARGS_TYPE& args)
