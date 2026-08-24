@@ -160,6 +160,7 @@ describe("Xcryption", function () {
       ) {
         copyingContext.appendPDFPageFromPDF(i);
       }
+      copyingContext.end();
       pdfWriter.end();
     });
   });

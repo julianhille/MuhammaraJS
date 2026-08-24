@@ -19,9 +19,11 @@ describe("StreamCopyingContext", function () {
       __dirname + "/TestMaterials/BasicJPGImagesTest.PDF",
     );
     copyCtx.appendPDFPageFromPDF(0);
+    copyCtx.end();
 
     var copyCtx = pdfWriter.createPDFCopyingContext(inStreamA);
     copyCtx.appendPDFPageFromPDF(0);
+    copyCtx.end();
 
     pdfWriter.end();
     outStream.close();

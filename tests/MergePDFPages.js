@@ -232,7 +232,9 @@ describe("MergePDFPages", function () {
         )
         .Q();
 
-      pdfWriter.writePage(page).end();
+      pdfWriter.writePage(page);
+      copyingContext.end();
+      pdfWriter.end();
     });
   });
 

@@ -556,6 +556,7 @@ declare module "muhammara" {
   }
 
   export interface DocumentCopyingContext {
+    end(): DocumentCopyingContext;
     createFormXObjectFromPDFPage(
       sourcePageIndex: number,
       ePDFPageBox: PDFPageBoxType | PDFBox,

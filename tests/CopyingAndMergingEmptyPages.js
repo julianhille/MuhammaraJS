@@ -94,6 +94,7 @@ describe("CopyingAndMergingEmptyPage", function () {
     copyingContext.mergePDFPageToFormXObject(aForm, 0);
     aForm.getContentContext().Q();
     pdfWriter.endFormXObject(aForm);
+    copyingContext.end();
 
     var formName = page
       .getResourcesDictionary()

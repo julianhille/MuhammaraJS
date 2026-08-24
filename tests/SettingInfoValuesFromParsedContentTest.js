@@ -43,6 +43,7 @@ describe("SettingInfoValuesFromParsedContent", function () {
     page.mediaBox = [0, 0, 595, 842];
     pdfWriter.writePage(page);
 
+    copyCtx.end();
     pdfWriter.end();
     outStream.close();
   });
