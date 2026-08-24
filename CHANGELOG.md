@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Prevent a segmentation fault when `endPDF()` is called more than once.
 - Update macOS runner from macos-13 to macos-14
 - Fix DictionaryContext.writeKey() signature to include required key parameter [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
 - Memory leak, by improper addition of document context extender instead of removal
