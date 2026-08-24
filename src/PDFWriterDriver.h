@@ -227,7 +227,8 @@ private:
     PDFHummus::EStatusCode triggerEvent(const std::string& inEventName, v8::Local<v8::Object> inParams);
     
     bool mStartedWithStream;
-	bool mIsCatalogUpdateRequired;    
+	bool mIsCatalogUpdateRequired;
+	bool mIsStarted;    
     PDFWriter mPDFWriter;
     ObjectByteWriterWithPosition* mWriteStreamProxy;
     ObjectByteReaderWithPosition* mReadStreamProxy;

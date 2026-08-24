@@ -55,6 +55,7 @@ PDFWriterDriver::PDFWriterDriver()
     mReadStreamProxy = NULL;
     mStartedWithStream = false;
     mIsCatalogUpdateRequired = false;
+    mIsStarted = false;
 }
 
 PDFWriterDriver::~PDFWriterDriver()
@@ -133,6 +134,10 @@ METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
 
     PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
 
+    if(!pdfWriter->mIsStarted) {
+        SET_FUNCTION_RETURN_VALUE(args.This())
+    }
+
     EStatusCode status;
 
     if(pdfWriter->mStartedWithStream)
@@ -161,6 +166,8 @@ METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
         delete pdfWriter->mReadStreamProxy;
         pdfWriter->mReadStreamProxy = NULL;
     }
+
+    pdfWriter->mIsStarted = false;
 
     SET_FUNCTION_RETURN_VALUE(args.This())
 }
@@ -1694,7 +1701,9 @@ bool PDFWriterDriver::IsCatalogUpdateRequiredForModifiedFile(PDFParser* inModifi
 }
 
 PDFHummus::EStatusCode PDFWriterDriver::setupListenerIfOK(PDFHummus::EStatusCode inCode) {
-    if(inCode == PDFHummus::eSuccess)
+    if(inCode == PDFHummus::eSuccess) {
         mPDFWriter.GetDocumentContext().AddDocumentContextExtender(this);
+        mIsStarted = true;
+    }
     return inCode;
 }
