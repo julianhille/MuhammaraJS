@@ -53,8 +53,10 @@ IOBasicTypes::LongBufferSizeType ObjectByteReader::Read(IOBasicTypes::Byte* inBu
         return 0;
     
     IOBasicTypes::LongBufferSizeType bufferLength = result->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, v8::NEW_STRING("length")).ToLocalChecked()->TO_UINT32Value();
+    if(bufferLength > inBufferSize)
+        bufferLength = inBufferSize;
     for(IOBasicTypes::LongBufferSizeType i=0;i < bufferLength;++i)
-        inBuffer[i] = (IOBasicTypes::Byte)(TO_UINT32(value->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, (uint32_t)i).ToLocalChecked())->Value());
+        inBuffer[i] = (IOBasicTypes::Byte)(TO_UINT32(result->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, (uint32_t)i).ToLocalChecked())->Value());
     
     return bufferLength;
 }
