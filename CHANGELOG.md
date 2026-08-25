@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Set version of checkout action to v6
 - Set versoin of cache action to v5
 - Add missing type definitions for PDFReader methods and PDFObjectParser interface [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
+- node version 25
 - Add context opacity support for transparent text [#496](https://github.com/julianhille/MuhammaraJS/issues/496)
 
 ### Fixed
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Memory leak, by improper addition of document context extender instead of removal
 - Update dependencies
 - Prevent JS stream readers from overflowing native buffers [#518](https://github.com/julianhille/MuhammaraJS/issues/518)
+- Replace deprecated node-pre-gyp URL APIs to remove Node.js 24 warnings by updating node-pre-gyp [#508](https://github.com/julianhille/MuhammaraJS/issues/508)
 
 ### Removed
 
@@ -30,10 +32,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - node version 19
 - node version 21
 - node version 23
-
-### Added
-
-- node version 25
 
 ## [6.0.6] - 2026-08-22
 
