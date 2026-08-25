@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Set version of checkout action to v6
 - Set versoin of cache action to v5
 - Add missing type definitions for PDFReader methods and PDFObjectParser interface [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
+- Add context opacity support for transparent text [#496](https://github.com/julianhille/MuhammaraJS/issues/496)
 
 ### Fixed
 

@@ -123,6 +123,7 @@ void AbstractContentContextDriver::Init(Local<FunctionTemplate>& ioDriverTemplat
 	SET_PROTOTYPE_METHOD(ioDriverTemplate, "ri", ri);
 	SET_PROTOTYPE_METHOD(ioDriverTemplate, "i", i);
 	SET_PROTOTYPE_METHOD(ioDriverTemplate, "gs", gs);
+	SET_PROTOTYPE_METHOD(ioDriverTemplate, "setOpacity", SetOpacity);
 	SET_PROTOTYPE_METHOD(ioDriverTemplate, "CS", CS);
 	SET_PROTOTYPE_METHOD(ioDriverTemplate, "cs", cs);
 	SET_PROTOTYPE_METHOD(ioDriverTemplate, "SC", SC);
@@ -726,6 +727,30 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::gs(const ARGS_TYPE& args)
     
     contentContext->GetContext()->gs(*UTF_8_VALUE(args[0]->TO_STRING()));
     
+    SET_FUNCTION_RETURN_VALUE(args.This())
+}
+
+METHOD_RETURN_TYPE AbstractContentContextDriver::SetOpacity(const ARGS_TYPE& args)
+{
+	CREATE_ISOLATE_CONTEXT;
+	CREATE_ESCAPABLE_SCOPE;
+
+    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
+    if(!contentContext->GetContext())
+    {
+        THROW_EXCEPTION("Null content context. Please create a context using pdfWriter.startPageContentContext(page)");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    double opacity = args.Length() == 1 && args[0]->IsNumber() ? TO_NUMBER(args[0])->Value() : -1;
+    if(opacity < 0 || opacity > 1 || opacity != opacity)
+    {
+        THROW_EXCEPTION("Wrong Argument, please provide 1 opacity value between 0 and 1");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    contentContext->GetContext()->SetOpacity(opacity);
+
     SET_FUNCTION_RETURN_VALUE(args.This())
 }
 
