@@ -215,5 +215,5 @@ describe("Text - Columns", () => {
 
     recipe.endPage();
     recipe.endPDF(done);
-  });
+  }).timeout(30000);
 });

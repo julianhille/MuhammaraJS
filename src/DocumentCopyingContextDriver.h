@@ -42,6 +42,7 @@ private:
     DocumentCopyingContextDriver();
     
 	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
+	static METHOD_RETURN_TYPE End(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE CreateFormXObjectFromPDFPage(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE MergePDFPageToPage(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE AppendPDFPageFromPDF(const ARGS_TYPE& args);

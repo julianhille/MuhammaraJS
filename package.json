@@ -13,6 +13,7 @@
   "scripts": {
     "preinstall": "node scripts/patch-node-pre-gyp.js",
     "install": "node-pre-gyp install --fallback-to-build ${EXTRA_NODE_PRE_GYP_FLAGS:-\"\"}",
+    "postinstall": "node scripts/copy-openssl-dlls.js",
     "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
     "test:codestyle": "npx prettier -c ./",
     "test:electron": "electron-mocha -R tap ./tests/*.js --timeout 15000",
@@ -33,11 +34,13 @@
   ],
   "files": [
     "src",
+    "scripts",
     "lib",
     "fonts",
     "scripts",
     "binding.gyp",
-    "muhammara.d.ts"
+    "muhammara.d.ts",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "dependencies": {
     "@mapbox/node-pre-gyp": "^2.0.3",

@@ -13,6 +13,7 @@ describe("MergeToPDFForm", function () {
     copyingContext.mergePDFPageToFormXObject(form, 1);
     form.getContentContext().Q();
     pdfWriter.endFormXObject(form);
+    copyingContext.end();
 
     var formName = page.getResourcesDictionary().addFormXObjectMapping(form.id);
     pdfWriter

@@ -80,6 +80,7 @@ describe("PDFParser", function () {
     );
     iterateObjectTypes(catalog, pdfReader);
     fs.closeSync(outputFile);
+    pdfReader.end();
   });
 
   it("should complete without error for document with pre-header and post-footer data", function () {
@@ -91,5 +92,6 @@ describe("PDFParser", function () {
     });
     assert.equal(pdfReader.getPDFLevel(), 1.3, "getPDFLevel");
     assert.equal(pdfReader.getPagesCount(), 2, "getPagesCount");
+    pdfReader.end();
   });
 });

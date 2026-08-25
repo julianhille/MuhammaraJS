@@ -53,6 +53,7 @@ DEF_SUBORDINATE_INIT(DocumentCopyingContextDriver::Init)
 	t->InstanceTemplate()->SetInternalFieldCount(1);
 
 	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromPDFPage", CreateFormXObjectFromPDFPage);
+	SET_PROTOTYPE_METHOD(t, "end", End);
 	SET_PROTOTYPE_METHOD(t, "mergePDFPageToPage", MergePDFPageToPage);
 	SET_PROTOTYPE_METHOD(t, "appendPDFPageFromPDF", AppendPDFPageFromPDF);
 	SET_PROTOTYPE_METHOD(t, "mergePDFPageToFormXObject", MergePDFPageToFormXObject);
@@ -82,6 +83,21 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::New(const ARGS_TYPE& args)
     copyingContext->Wrap(args.This());
     
 	SET_FUNCTION_RETURN_VALUE(args.This())
+}
+
+METHOD_RETURN_TYPE DocumentCopyingContextDriver::End(const ARGS_TYPE& args)
+{
+    CREATE_ISOLATE_CONTEXT;
+    CREATE_ESCAPABLE_SCOPE;
+
+    DocumentCopyingContextDriver* copyingContext = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
+
+    delete copyingContext->CopyingContext;
+    copyingContext->CopyingContext = NULL;
+    delete copyingContext->ReadStreamProxy;
+    copyingContext->ReadStreamProxy = NULL;
+
+    SET_FUNCTION_RETURN_VALUE(args.This())
 }
 
 METHOD_RETURN_TYPE DocumentCopyingContextDriver::CreateFormXObjectFromPDFPage(const ARGS_TYPE& args)
@@ -514,5 +530,4 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::GetSourceDocumentStream(const A
     
     SET_FUNCTION_RETURN_VALUE(resultDriver)
 }
-
 

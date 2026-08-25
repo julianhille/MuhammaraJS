@@ -59,6 +59,7 @@ describe("GHSA-ch7g-v45m-q27g", function () {
         reader.startReadingFromStream(stream);
       });
     } finally {
+      reader.end();
       fs.unlinkSync(target);
     }
   });

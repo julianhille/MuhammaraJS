@@ -9,6 +9,7 @@ describe("PDFCopyingContextTest", function () {
     copyingContext.appendPDFPageFromPDF(1);
     copyingContext.appendPDFPageFromPDF(18);
     copyingContext.appendPDFPageFromPDF(4);
+    copyingContext.end();
     pdfWriter.end();
   });
 });

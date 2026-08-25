@@ -59,6 +59,7 @@ describe("GHSA-7xrh-8x56-r797", function () {
         reader.startReadingFromStream(stream);
       });
     } finally {
+      reader.end();
       fs.unlinkSync(target);
     }
   });

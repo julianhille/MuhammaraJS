@@ -177,6 +177,7 @@ describe("ModifyingExistingFileContent", function () {
         .endLine()
         .endDictionary(modifiedPageObject)
         .endIndirectObject();
+      copyingContext.end();
     });
   });
   describe("adding comments", function () {
@@ -243,6 +244,7 @@ describe("ModifyingExistingFileContent", function () {
         .endLine()
         .endDictionary(modifiedPageObject)
         .endIndirectObject();
+      copyingContext.end();
     });
   });
 

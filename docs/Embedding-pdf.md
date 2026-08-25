@@ -96,6 +96,8 @@ cpyCxt.mergePDFPageToPage(inTargetPage, inSourcePageIndex);
 cpyCxt.mergePDFPageToFormXObject(inTargetForm, inSourcePageIndex);
 ```
 
+Call `cpyCxt.end()` after the final copy operation. For form merging, wait until the target form has been ended before releasing the copying context.
+
 `appendPDFPageFromPDF` accepts a single parameter which is the source page index.
 `createFormXObjectFromPDFPage` accepts the source page index, and either an array of 4 numbers forming a form box, or an enum specifying which source page box to use as the form box (same enum values as the PDFWriter equivalent). it returns a form XObject that you ca now place.
 `mergePDFPageToPage` accepts a traget page object, and a source page index, and merges the source page content to the target page content.

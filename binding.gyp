@@ -21,31 +21,59 @@
 			{
 				'VCCLCompilerTool':
 				{
-					'AdditionalOptions':
-						[
-						'/std:c++20',
-						]
+					'AdditionalIncludeDirectories': [
+						'<!(echo %OPENSSL_DIR%)/include/'
+					],
+					'AdditionalOptions': [
+						'/std:c++20'
+					]
 				}
 			},
             'conditions': [
-['OS=="mac"', {
-          'xcode_settings': {
-            'CLANG_CXX_LIBRARY': 'libc++',
-             "OTHER_CFLAGS": [ "-std=c++20"]
-          }
-        }],
-          ['OS=="win"', {
-            'defines!': [
-              'V8_DEPRECATION_WARNINGS=1',
-              'V8_DEPRECATION_WARNINGS',
-              'V8_IMMINENT_DEPRECATION_WARNINGS',
-              'V8_IMMINENT_DEPRECATION_WARNINGS=1'
+                ['OS=="mac"', {
+                    'xcode_settings': {
+                        'CLANG_CXX_LIBRARY': 'libc++',
+                        "OTHER_CFLAGS": [ "-std=c++20" ]
+                    }
+                }],
+                ['OS=="win" and target_arch=="x64"', {
+                    'msvs_settings': {
+                        'VCLinkerTool': {
+                            'AdditionalLibraryDirectories': [
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/'
+                            ],
+                            'AdditionalDependencies': [
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libcrypto.lib',
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libssl.lib'
+                            ]
+                        }
+                    }
+                }],
+                ['OS=="win" and target_arch=="ia32"', {
+                    'msvs_settings': {
+                        'VCLinkerTool': {
+                            'AdditionalLibraryDirectories': [
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/'
+                            ],
+                            'AdditionalDependencies': [
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/libcrypto.lib',
+                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/libssl.lib'
+                            ]
+                        }
+                    }
+                }],
+                 ['OS=="win"', {
+                    'defines!': [
+                    'V8_DEPRECATION_WARNINGS=1',
+                    'V8_DEPRECATION_WARNINGS',
+                    'V8_IMMINENT_DEPRECATION_WARNINGS',
+                    'V8_IMMINENT_DEPRECATION_WARNINGS=1'
+                    ],
+                }, { # OS != "win",
+                    'defines': [
+                    ],
+                }]
             ],
-          }, { # OS != "win",
-            'defines': [
-            ],
-          }]
-        ],
            'sources': [
                 './src/ConstructorsHolder.cpp',
                 './src/PDFStreamDriver.cpp',
