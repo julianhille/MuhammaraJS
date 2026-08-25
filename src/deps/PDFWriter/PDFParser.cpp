@@ -25,9 +25,8 @@
 #include "PDFInteger.h"
 #include "PDFObject.h"
 #include "PDFSymbol.h"
-#include "BoxingBase.h"
 #include "PDFDictionary.h"
-#include "BoxingBase.h"
+#include "SafeParse.h"
 #include "PDFIndirectObjectReference.h"
 #include "PDFName.h"
 #include "PDFArray.h"
@@ -47,6 +46,8 @@
 #include "ArrayOfInputStreamsStream.h"
 
 #include  <algorithm>
+#include <cerrno>
+#include <cstdlib>
 using namespace PDFHummus;
 
 #define MAX_XREF_SIZE 9999999999LL
@@ -174,7 +175,12 @@ EStatusCode PDFParser::ParseHeaderLine()
 	{
 		if(tokenizerResult.second.compare(0,scPDFMagic.size(),scPDFMagic) == 0)
 		{
-			mPDFLevel = Double(tokenizerResult.second.substr(scPDFMagic.size()));
+			std::string versionToken = tokenizerResult.second.substr(scPDFMagic.size());
+			if(!PDFHummus::TryParse(versionToken, mPDFLevel))
+			{
+				TRACE_LOG1("PDFParser::ParseHeaderLine, PDF version token '%s' is not a valid number.", versionToken.c_str());
+				return PDFHummus::eFailure;
+			}
 			mStream.SetOffset(mStream.GetCurrentPosition() - tokenizerResult.second.size() - 1);
 			return PDFHummus::eSuccess;
 		}
@@ -550,9 +556,22 @@ EStatusCode PDFParser::InitializeXref()
 	return PDFHummus::eSuccess;
 }
 
-typedef BoxingBaseWithRW<ObjectIDType> ObjectIDTypeBox;
-typedef BoxingBaseWithRW<unsigned long> ULong;
-typedef BoxingBaseWithRW<LongFilePositionType> LongFilePositionTypeBox;
+static const ObjectIDType scMaxObjectIDType = (ObjectIDType)(-1);
+
+static bool ParseObjectIDTypeToken(const std::string& inToken, ObjectIDType& outValue)
+{
+	errno = 0;
+	char* endPtr = NULL;
+	unsigned long parsedValue = std::strtoul(inToken.c_str(), &endPtr, 10);
+	if (errno == ERANGE || endPtr == inToken.c_str() || *endPtr != 0)
+		return false;
+
+	if (parsedValue > (unsigned long)scMaxObjectIDType)
+		return false;
+
+	outValue = (ObjectIDType)parsedValue;
+	return true;
+}
 
 
 EStatusCode PDFParser::ExtendXrefToSize(XrefEntryInputVector& inXrefTable, ObjectIDType inXrefSize) {
@@ -621,7 +640,13 @@ EStatusCode PDFParser::ParseXrefFromXrefTable(XrefEntryInputVector& inXrefTable,
 				break;
 
 			// parse segment start
-			ObjectIDType segmentStart = ObjectIDTypeBox(token.second);
+			ObjectIDType segmentStart;
+			if(!ParseObjectIDTypeToken(token.second, segmentStart))
+			{
+				TRACE_LOG1("PDFParser::ParseXref, invalid section start token while reading xref: %s", token.second.substr(0, MAX_TRACE_SIZE - 200).c_str());
+				status = PDFHummus::eFailure;
+				break;
+			}
 			
 			// for first xref (one with no Prev), first object must be 0. some files incorrectly start at 1.
 			// this should take care of this, adding extra measure of safety when reading the first xref
@@ -636,9 +661,26 @@ EStatusCode PDFParser::ParseXrefFromXrefTable(XrefEntryInputVector& inXrefTable,
 				break;
 			}
 			// parse segment size
-			if(ObjectIDTypeBox(token.second) == 0)
+			ObjectIDType segmentSize;
+			if(!ParseObjectIDTypeToken(token.second, segmentSize))
+			{
+				TRACE_LOG1("PDFParser::ParseXref, invalid section size token while reading xref: %s", token.second.substr(0, MAX_TRACE_SIZE - 200).c_str());
+				status = PDFHummus::eFailure;
+				break;
+			}
+			if(segmentSize == 0)
 				continue; // probably will never happen
-			firstNonSectionObject = currentObject + ObjectIDTypeBox(token.second);
+
+			// guard against overflow when computing the segment end. ObjectIDType is
+			// unsigned, so a wrap would yield a small firstNonSectionObject and either
+			// skip the entry-reading loop entirely or read into the wrong object slots.
+			if(segmentSize > scMaxObjectIDType - currentObject)
+			{
+				TRACE_LOG2("PDFParser::ParseXref, xref segment overflows object id space (start=%lu size=%lu)", (unsigned long)currentObject, (unsigned long)segmentSize);
+				status = PDFHummus::eFailure;
+				break;
+			}
+			firstNonSectionObject = currentObject + segmentSize;
 
             // if the segment declared objects above the xref size, consult policy on what to do
             if(firstNonSectionObject > inXrefSize && mAllowExtendingSegments)
@@ -661,8 +703,20 @@ EStatusCode PDFParser::ParseXrefFromXrefTable(XrefEntryInputVector& inXrefTable,
 					if (status != eSuccess)
 						break;
 
-					inXrefTable[currentObject].mObjectPosition = LongFilePositionTypeBox(std::string((const char*)entry, 10));
-					inXrefTable[currentObject].mRivision = ULong(std::string((const char*)(entry + 11), 5));
+					std::string positionToken((const char*)entry, 10);
+					std::string revisionToken((const char*)(entry + 11), 5);
+					if(!PDFHummus::TryParse(positionToken, inXrefTable[currentObject].mObjectPosition))
+					{
+						TRACE_LOG1("PDFParser::ParseXrefFromXrefTable, xref entry offset '%s' is not numeric.", positionToken.c_str());
+						status = PDFHummus::eFailure;
+						break;
+					}
+					if(!PDFHummus::TryParse(revisionToken, inXrefTable[currentObject].mRivision))
+					{
+						TRACE_LOG1("PDFParser::ParseXrefFromXrefTable, xref entry revision '%s' is not numeric.", revisionToken.c_str());
+						status = PDFHummus::eFailure;
+						break;
+					}
 					inXrefTable[currentObject].mType = entry[17] == 'n' ? eXrefEntryExisting:eXrefEntryDelete;
 				}
 				++currentObject;
@@ -880,7 +934,22 @@ EStatusCode PDFParser::ParsePagesObjectIDs()
 			break;
 		}
 
-		mPagesCount = (unsigned long)totalPagesCount->GetValue();
+		long long pagesCountValue = totalPagesCount->GetValue();
+		// reject negative counts and counts larger than the actual xref table can hold.
+		// every leaf page is an indirect object that must have an xref entry, so the
+		// declared /Count cannot legitimately exceed the number of entries we read.
+		// note: do NOT compare against mXrefSize directly - that is the trailer /Size
+		// value (attacker-controlled). GetXrefSize() clamps it to mXrefTable.size().
+		ObjectIDType actualXrefSize = GetXrefSize();
+		if(pagesCountValue < 0 || (unsigned long long)pagesCountValue > actualXrefSize)
+		{
+			TRACE_LOG2("PDFParser::ParsePagesObjectIDs, invalid pages count %lld (actual xref size %lu)", pagesCountValue, actualXrefSize);
+			status = PDFHummus::eFailure;
+			break;
+		}
+
+		// safe: bounded above by actualXrefSize (an ObjectIDType) by the check above
+		mPagesCount = (unsigned long)pagesCountValue;
 		mPagesObjectIDs = new ObjectIDType[mPagesCount];
 
 		// now iterate through pages objects, and fill up the IDs [don't really need the object ID for the root pages tree...but whatever
@@ -1068,6 +1137,71 @@ PDFObject* PDFParser::QueryDictionaryObject(PDFDictionary* inDictionary,const st
 		anObject->AddRef(); // adding ref to increase owners
 		return anObject.GetPtr();
 	}
+}
+
+static const std::string scParent = "Parent";
+static const int scMaxInheritedLookupDepth = 100;
+
+PDFObject* PDFParser::QueryInheritedDictionaryEntry(PDFDictionary* inDictionary,const std::string& inName,
+                                                    PDFParsingPath* ioParsingPath,int inCurrentDepth)
+{
+	if(!inDictionary)
+		return NULL;
+
+	if(inCurrentDepth >= scMaxInheritedLookupDepth)
+	{
+		TRACE_LOG2("PDFParser::QueryInheritedDictionaryEntry, reached maximum inherited lookup depth of %d while searching for %s",
+			scMaxInheritedLookupDepth, inName.substr(0, 100).c_str());
+		return NULL;
+	}
+
+	if(inDictionary->Exists(inName))
+	{
+		return QueryDictionaryObject(inDictionary, inName);
+	}
+
+	if(inDictionary->Exists(scParent))
+	{
+		// Get parent as direct object first to detect indirect references
+		RefCountPtr<PDFObject> parentDirect(inDictionary->QueryDirectObject(scParent));
+		if(!parentDirect)
+			return NULL;
+
+		// Extract parent ID if it's an indirect reference
+		ObjectIDType parentID = 0;
+		bool isIndirectRef = (parentDirect->GetType() == PDFObject::ePDFObjectIndirectObjectReference);
+		if(isIndirectRef)
+		{
+			parentID = ((PDFIndirectObjectReference*)parentDirect.GetPtr())->mObjectID;
+			if(ioParsingPath->EnterObject(parentID) != PDFHummus::eSuccess)
+			{
+				TRACE_LOG2("PDFParser::QueryInheritedDictionaryEntry, cycle detected in Parent chain at object %lu while searching for %s",
+					parentID, inName.substr(0, 100).c_str());
+				return NULL;
+			}
+		}
+
+		PDFObjectCastPtr<PDFDictionary> parent(QueryDictionaryObject(inDictionary, scParent));
+
+		PDFObject* result = NULL;
+		if(!!parent)
+		{
+			result = QueryInheritedDictionaryEntry(parent.GetPtr(), inName, ioParsingPath, inCurrentDepth + 1);
+		}
+
+		if(isIndirectRef)
+			ioParsingPath->ExitObject(parentID);
+
+		return result;
+	}
+
+	return NULL;
+}
+
+PDFObject* PDFParser::QueryInheritedDictionaryEntry(PDFDictionary* inDictionary,const std::string& inName)
+{
+	PDFParsingPath parsingPath;
+	return QueryInheritedDictionaryEntry(inDictionary, inName, &parsingPath, 0);
 }
 
 PDFObject* PDFParser::QueryArrayObject(PDFArray* inArray,unsigned long inIndex)
@@ -2102,13 +2236,27 @@ EStatusCodeAndIByteReader PDFParser::CreateFilterForStream(IByteReader* inStream
 			if (inDecodeParams)
 			{
 				PDFObjectCastPtr<PDFInteger> earlyObj(QueryDictionaryObject(inDecodeParams, "EarlyChange"));
-				if (earlyObj.GetPtr())
+				if (!earlyObj)
 				{
-					early = earlyObj->GetValue();
+					TRACE_LOG("PDFParser::CreateFilterForStream, missing or invalid EarlyChange in LZW DecodeParams, defaulting to 1");
+				}
+				else
+				{
+					// per PDF spec, EarlyChange must be 0 or 1. clamp anything else
+					// back to the default rather than narrow a crafted long long into
+					// the int field used by InputLZWDecodeStream.
+					long long earlyValue = earlyObj->GetValue();
+					if (earlyValue == 0 || earlyValue == 1)
+					{
+						early = (int)earlyValue;
+					}
+					else
+					{
+						TRACE_LOG1("PDFParser::CreateFilterForStream, EarlyChange in LZW DecodeParams is out of range (%lld), expected 0 or 1, defaulting to 1", earlyValue);
+					}
 				}
 			}
-			lzwStream = new InputLZWDecodeStream(early);
-			lzwStream->Assign(inStream);
+			lzwStream = new InputLZWDecodeStream(inStream, early);
 			result = lzwStream;
 			EStatusCodeAndIByteReader createStatus = WrapWithPredictorStream(result, inDecodeParams);
 			if(createStatus.first == eFailure) {
@@ -2137,15 +2285,23 @@ EStatusCodeAndIByteReader PDFParser::CreateFilterForStream(IByteReader* inStream
 #endif
 		else if (inFilterName->GetValue() == "Crypt")
 		{
-			std::string cryptFilterName = "Identity";
+			// per PDF spec, when DecodeParms or Name is missing, the default crypt
+			// filter name is "Identity" (i.e. no decryption applied)
+			std::string cryptName = "Identity";
 			if (inDecodeParams)
 			{
-				PDFObjectCastPtr<PDFName> cryptFilterNameObject(QueryDictionaryObject(inDecodeParams, "Name"));
-				if (cryptFilterNameObject.GetPtr())
-					cryptFilterName = cryptFilterNameObject->GetValue();
+				PDFObjectCastPtr<PDFName> cryptFilterName(QueryDictionaryObject(inDecodeParams, "Name"));
+				if (!cryptFilterName)
+				{
+					TRACE_LOG("PDFParser::CreateFilterForStream, missing or invalid Name in Crypt DecodeParms, defaulting to Identity");
+				}
+				else
+				{
+					cryptName = cryptFilterName->GetValue();
+				}
 			}
 
-			result = mDecryptionHelper.CreateDecryptionFilterForStream(inPDFStream, inStream, cryptFilterName);
+			result = mDecryptionHelper.CreateDecryptionFilterForStream(inPDFStream, inStream, cryptName);
 		}
 		else if(mParserExtender)
 		{
@@ -2312,6 +2468,7 @@ IByteReaderWithPosition* PDFParser::GetParserStream()
 {
     return &mStream;
 }
+
 
 
 
