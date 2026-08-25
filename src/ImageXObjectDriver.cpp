@@ -66,7 +66,7 @@ METHOD_RETURN_TYPE ImageXObjectDriver::GetID(SET_ACCESSOR_METHOD_NAME_TYPE prope
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    ImageXObjectDriver* image = ObjectWrap::Unwrap<ImageXObjectDriver>(info.Holder());
+    ImageXObjectDriver* image = ObjectWrap::Unwrap<ImageXObjectDriver>(PROPERTY_HOLDER(info));
     
     if(!image->ImageXObject)
     {

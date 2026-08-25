@@ -63,7 +63,6 @@ METHOD_RETURN_TYPE PDFRealDriver::GetValue(SET_ACCESSOR_METHOD_NAME_TYPE propert
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-	SET_ACCESSOR_RETURN_VALUE(NEW_NUMBER(ObjectWrap::Unwrap<PDFRealDriver>(info.Holder())->TheObject->GetValue()))
+	SET_ACCESSOR_RETURN_VALUE(NEW_NUMBER(ObjectWrap::Unwrap<PDFRealDriver>(PROPERTY_HOLDER(info))->TheObject->GetValue()))
 }
-
 
