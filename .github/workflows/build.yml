@@ -12,6 +12,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  verify-napi-metadata:
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [24.0.0, 24.1.0]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci --ignore-scripts
+      - run: node scripts/patch-node-pre-gyp.js
+      - run: node scripts/verify-node-pre-gyp-napi-metadata.js
   lint:
     runs-on: ubuntu-22.04
     env:
@@ -24,7 +38,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run test:codestyle
   build-musl-arm:
-    needs: [lint]
+    needs: [lint, verify-napi-metadata]
     strategy:
       fail-fast: false
       matrix:
@@ -66,6 +80,7 @@ jobs:
           CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
           npm_config_unsafe_perm: true
+      - run: node scripts/verify-node-pre-gyp-napi-metadata.js
       # - run: npm run test, this is not an arm64 machine so we can not test.
       - run: ./node_modules/.bin/node-pre-gyp package --target_libc=musl  --target_arch=${{ matrix.target_architecture }}
       - uses: actions/upload-artifact@v6
@@ -74,7 +89,7 @@ jobs:
           name: bindings-node-musl-arm-${{ matrix.node }}
           if-no-files-found: error
   build-musl:
-    needs: [lint]
+    needs: [lint, verify-napi-metadata]
     strategy:
       fail-fast: false
       matrix:
@@ -105,6 +120,7 @@ jobs:
         env:
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
           npm_config_unsafe_perm: true
+      - run: node scripts/verify-node-pre-gyp-napi-metadata.js
       - run: npm run test
       - run: ./node_modules/.bin/node-pre-gyp package testpackage --target_libc=musl
       - uses: actions/upload-artifact@v6
@@ -113,7 +129,7 @@ jobs:
           name: bindings-node-musl-${{ matrix.node }}
           if-no-files-found: error
   build-electron:
-    needs: [lint]
+    needs: [lint, verify-napi-metadata]
     strategy:
       fail-fast: false
       matrix:
@@ -263,6 +279,7 @@ jobs:
           npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
+      - run: node scripts/verify-node-pre-gyp-napi-metadata.js
       - name: Bundle OpenSSL DLLs (Windows)
         if: ${{ matrix.os == 'windows-2022' }}
         shell: pwsh
@@ -307,7 +324,7 @@ jobs:
           if-no-files-found: error
 
   build-node-linux:
-    needs: [lint]
+    needs: [lint, verify-napi-metadata]
     strategy:
       fail-fast: false
       matrix:
@@ -351,6 +368,7 @@ jobs:
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
+      - run: node scripts/verify-node-pre-gyp-napi-metadata.js
       - run: ./node_modules/.bin/node-pre-gyp package testpackage
       - uses: actions/upload-artifact@v6
         with:
@@ -358,7 +376,7 @@ jobs:
           name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.node}}
           if-no-files-found: error
   build-node:
-    needs: [lint]
+    needs: [lint, verify-napi-metadata]
     strategy:
       fail-fast: false
       matrix:
@@ -436,6 +454,7 @@ jobs:
           npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
+      - run: node scripts/verify-node-pre-gyp-napi-metadata.js
       - name: Bundle OpenSSL DLLs (Windows)
         if: ${{ matrix.os == 'windows-2022' }}
         shell: pwsh
