@@ -126,22 +126,7 @@ vector<string> PDFModifiedPage::WriteNewResourcesDictionary(ObjectsContext& inOb
 }
 
 PDFObject* PDFModifiedPage::findInheritedResources(PDFParser* inParser,PDFDictionary* inDictionary) {
-	if(inDictionary->Exists("Resources")) {
-		return inParser->QueryDictionaryObject(inDictionary, "Resources");
-	}
-	else {
-		PDFObjectCastPtr<PDFDictionary> parentDict(
-			inDictionary->Exists("Parent") ? 
-				inParser->QueryDictionaryObject(inDictionary, "Parent"): 
-				NULL);
-		if(!parentDict) {
-			return NULL;
-		}
-		else {
-			return findInheritedResources(inParser,parentDict.GetPtr());
-		}
-		
-	}
+	return inParser->QueryInheritedDictionaryEntry(inDictionary, "Resources");
 }
 
 PDFHummus::EStatusCode PDFModifiedPage::WritePage()

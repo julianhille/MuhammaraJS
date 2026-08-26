@@ -413,6 +413,13 @@ jobs:
             exit 1
           }
           Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$opensslRoot"
+      - name: Disable Node.js LTO (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: powershell
+        run: |
+          # Node 26's ThinLTO settings target clang-cl and lld, not MSVC.
+          Add-Content -Path $env:GITHUB_ENV -Value "npm_config_enable_thin_lto=false"
+          Add-Content -Path $env:GITHUB_ENV -Value "npm_config_enable_lto=false"
       - name: Get npm cache directory
         id: npm-cache-dir
         shell: bash

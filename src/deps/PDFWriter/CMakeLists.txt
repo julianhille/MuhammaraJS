@@ -164,8 +164,10 @@ TrailerInformation.cpp
 TrueTypeANSIFontWriter.cpp
 TrueTypeDescendentFontWriter.cpp
 TrueTypeEmbeddedFontWriter.cpp
+TrueTypeGlyphDependencies.cpp
 TrueTypePrimitiveWriter.cpp
 Type1Input.cpp
+Type1PSTokens.cpp
 Type1ToCFFEmbeddedFontWriter.cpp
 Type1ToType2Converter.cpp
 Type2CharStringWriter.cpp
@@ -356,6 +358,7 @@ RefCountObject.h
 RefCountPtr.h
 ResourcesDictionary.h
 SafeBufferMacrosDefs.h
+SafeParse.h
 SimpleGlyphsDrawingContext.h
 SimpleStringTokenizer.h
 Singleton.h
@@ -374,8 +377,10 @@ TrailerInformation.h
 TrueTypeANSIFontWriter.h
 TrueTypeDescendentFontWriter.h
 TrueTypeEmbeddedFontWriter.h
+TrueTypeGlyphDependencies.h
 TrueTypePrimitiveWriter.h
 Type1Input.h
+Type1PSTokens.h
 Type1ToCFFEmbeddedFontWriter.h
 Type1ToType2Converter.h
 Type2CharStringWriter.h
