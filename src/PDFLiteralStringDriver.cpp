@@ -70,7 +70,7 @@ METHOD_RETURN_TYPE PDFLiteralStringDriver::GetValue(SET_ACCESSOR_METHOD_NAME_TYP
 	CREATE_ESCAPABLE_SCOPE;
     
     
-    Local<String> result = NEW_STRING(ObjectWrap::Unwrap<PDFLiteralStringDriver>(info.Holder())->TheObject->GetValue().c_str());
+    Local<String> result = NEW_STRING(ObjectWrap::Unwrap<PDFLiteralStringDriver>(PROPERTY_HOLDER(info))->TheObject->GetValue().c_str());
     SET_ACCESSOR_RETURN_VALUE(result)
 }
 

@@ -96,7 +96,7 @@ METHOD_RETURN_TYPE PDFPageDriver::GetMediaBox(SET_ACCESSOR_METHOD_NAME_TYPE prop
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
     
     Local<Array> mediaBox = NEW_ARRAY(4);
     
@@ -113,7 +113,7 @@ METHOD_RETURN_TYPE PDFPageDriver::GetCropBox(SET_ACCESSOR_METHOD_NAME_TYPE prope
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
     
     BoolAndPDFRectangle cropBox = pageDriver->mPDFPage->GetCropBox();
     
@@ -139,7 +139,7 @@ METHOD_RETURN_TYPE PDFPageDriver::GetBleedBox(SET_ACCESSOR_METHOD_NAME_TYPE prop
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
     
     BoolAndPDFRectangle bleedBox = pageDriver->mPDFPage->GetBleedBox();
     
@@ -165,7 +165,7 @@ METHOD_RETURN_TYPE PDFPageDriver::GetTrimBox(SET_ACCESSOR_METHOD_NAME_TYPE prope
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
     
     BoolAndPDFRectangle trimBox = pageDriver->mPDFPage->GetTrimBox();
     
@@ -191,7 +191,7 @@ METHOD_RETURN_TYPE PDFPageDriver::GetArtBox(SET_ACCESSOR_METHOD_NAME_TYPE proper
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
     
     BoolAndPDFRectangle artBox = pageDriver->mPDFPage->GetArtBox();
     
@@ -217,7 +217,7 @@ void PDFPageDriver::SetMediaBox(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Va
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
 
     if(!value->IsArray())
         THROW_EXCEPTION("Media box is set to a value which is not a 4 numbers array");
@@ -237,7 +237,7 @@ METHOD_RETURN_TYPE PDFPageDriver::GetRotate(SET_ACCESSOR_METHOD_NAME_TYPE proper
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
     
     BoolAndInt rotate = pageDriver->mPDFPage->GetRotate();
     
@@ -257,7 +257,7 @@ void PDFPageDriver::SetRotate(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Valu
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
 
     if(!value->IsNumber())
         THROW_EXCEPTION("Rotation is not set to a number");
@@ -272,7 +272,7 @@ void PDFPageDriver::SetCropBox(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Val
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
 
     if(!value->IsArray())
         THROW_EXCEPTION("Crop box is set to a value which is not a 4 numbers array");
@@ -292,7 +292,7 @@ void PDFPageDriver::SetBleedBox(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Va
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
 
     if(!value->IsArray())
         THROW_EXCEPTION("Bleed box is set to a value which is not a 4 numbers array");
@@ -312,7 +312,7 @@ void PDFPageDriver::SetTrimBox(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Val
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
 
     if(!value->IsArray())
         THROW_EXCEPTION("Trim box is set to a value which is not a 4 numbers array");
@@ -332,7 +332,7 @@ void PDFPageDriver::SetArtBox(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Valu
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(info.Holder());
+    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(PROPERTY_HOLDER(info));
 
     if(!value->IsArray())
         THROW_EXCEPTION("Art box is set to a value which is not a 4 numbers array");

@@ -64,8 +64,7 @@ METHOD_RETURN_TYPE PDFSymbolDriver::GetValue(SET_ACCESSOR_METHOD_NAME_TYPE prope
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    Local<String> result = NEW_STRING(ObjectWrap::Unwrap<PDFSymbolDriver>(info.Holder())->TheObject->GetValue().c_str());
+    Local<String> result = NEW_STRING(ObjectWrap::Unwrap<PDFSymbolDriver>(PROPERTY_HOLDER(info))->TheObject->GetValue().c_str());
     SET_ACCESSOR_RETURN_VALUE(result)
 }
-
 

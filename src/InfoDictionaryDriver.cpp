@@ -77,7 +77,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetTitle(SET_ACCESSOR_METHOD_NAME_TYPE 
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
     {
@@ -92,7 +92,7 @@ void InfoDictionaryDriver::SetTitle(SET_ACCESSOR_METHOD_NAME_TYPE property, Loca
 {
 	CREATE_ISOLATE_CONTEXT;
 	
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
 		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
@@ -105,7 +105,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetAuthor(SET_ACCESSOR_METHOD_NAME_TYPE
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
     {
@@ -120,7 +120,7 @@ void InfoDictionaryDriver::SetAuthor(SET_ACCESSOR_METHOD_NAME_TYPE property, Loc
 {
 	CREATE_ISOLATE_CONTEXT;
 	
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
 		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
@@ -133,7 +133,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetSubject(SET_ACCESSOR_METHOD_NAME_TYP
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
     {
@@ -147,7 +147,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetSubject(SET_ACCESSOR_METHOD_NAME_TYP
 void InfoDictionaryDriver::SetSubject(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
 		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
@@ -160,7 +160,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetKeywords(SET_ACCESSOR_METHOD_NAME_TY
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
     {
@@ -174,7 +174,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetKeywords(SET_ACCESSOR_METHOD_NAME_TY
 void InfoDictionaryDriver::SetKeywords(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
 		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
@@ -187,7 +187,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetCreator(SET_ACCESSOR_METHOD_NAME_TYP
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
     {
@@ -201,7 +201,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetCreator(SET_ACCESSOR_METHOD_NAME_TYP
 void InfoDictionaryDriver::SetCreator(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
 		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
@@ -214,7 +214,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetProducer(SET_ACCESSOR_METHOD_NAME_TY
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
    
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
     {
@@ -228,7 +228,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetProducer(SET_ACCESSOR_METHOD_NAME_TY
 void InfoDictionaryDriver::SetProducer(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
 		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
@@ -241,7 +241,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetTrapped(SET_ACCESSOR_METHOD_NAME_TYP
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
     {
@@ -255,7 +255,7 @@ METHOD_RETURN_TYPE InfoDictionaryDriver::GetTrapped(SET_ACCESSOR_METHOD_NAME_TYP
 void InfoDictionaryDriver::SetTrapped(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
 {
 	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(info.Holder());
+	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
     
     if(!infoDictionaryDriver->InfoDictionaryInstance)
 		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");

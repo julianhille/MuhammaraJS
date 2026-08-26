@@ -8,6 +8,7 @@
 #define NODE_10_0_0_MODULE_VERSION 64
 #define NODE_11_0_0_MODULE_VERSION 67
 #define NODE_21_0_0_MODULE_VERSION  120
+#define NODE_26_0_0_MODULE_VERSION 147
 #define NODE_CONTEXT_AWARE_VERSION NODE_10_0_0_MODULE_VERSION
 #define IS_CONTEXT_AWARE NODE_MODULE_VERSION >= NODE_CONTEXT_AWARE_VERSION
 #ifdef NODE_MODULE_INIT
@@ -30,6 +31,11 @@
 #define NEW_ARRAY(X) Array::New(isolate,X)
 #define NEW_BOOLEAN(X) Boolean::New(isolate,X)
 #define NEW_OBJECT Object::New(isolate)
+#if NODE_MODULE_VERSION >= NODE_26_0_0_MODULE_VERSION
+    #define PROPERTY_HOLDER(info) info.HolderV2()
+#else
+    #define PROPERTY_HOLDER(info) info.Holder()
+#endif
 #if NODE_MODULE_VERSION < NODE_21_0_0_MODULE_VERSION
     #define SET_ACCESSOR_METHOD(t,s,f) t->InstanceTemplate()->SetAccessor(NEW_STRING(s), f);
     #define SET_ACCESSOR_METHODS(t,s,f,g) t->InstanceTemplate()->SetAccessor(NEW_STRING(s), f, g);

@@ -77,7 +77,7 @@ METHOD_RETURN_TYPE FormXObjectDriver::GetID(SET_ACCESSOR_METHOD_NAME_TYPE proper
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    FormXObjectDriver* form = ObjectWrap::Unwrap<FormXObjectDriver>(info.Holder());
+    FormXObjectDriver* form = ObjectWrap::Unwrap<FormXObjectDriver>(PROPERTY_HOLDER(info));
     
     if(!form->FormXObject)
     {

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Set versoin of cache action to v5
 - Add missing type definitions for PDFReader methods and PDFObjectParser interface [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
 - node version 25
+- Add Node.js 26 support [#516](https://github.com/julianhille/MuhammaraJS/issues/516)
 - Add context opacity support for transparent text [#496](https://github.com/julianhille/MuhammaraJS/issues/496)
 - New version of PDF Writer 4.8.1
 - New version of PDF Writer 4.9.0 [#534](https://github.com/julianhille/MuhammaraJS/issues/534)
