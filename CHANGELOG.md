@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add context opacity support for transparent text [#496](https://github.com/julianhille/MuhammaraJS/issues/496)
 - New version of PDF Writer 4.8.1
 - New version of PDF Writer 4.9.0 [#534](https://github.com/julianhille/MuhammaraJS/issues/534)
+- Add Node-API metadata for Turbopack compatibility while retaining Node-ABI builds [#504](https://github.com/julianhille/MuhammaraJS/issues/504)
 
 ### Fixed
 
