@@ -1,5 +1,11 @@
 #pragma once
 
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
+// Electron's V8 headers use this Clang/GCC builtin for a stack marker.
+#define __builtin_frame_address(level) _AddressOfReturnAddress()
+#endif
+
 #include <node.h> 
 #include <node_object_wrap.h>
 
@@ -63,6 +69,14 @@
 #define THIS_HANDLE (this->handle())
 #define SET_CONSTRUCTOR_TEMPLATE(c,t) SET_PERSISTENT_OBJECT(c,FunctionTemplate,t)
 
+#if V8_MAJOR_VERSION > 14 || (V8_MAJOR_VERSION == 14 && V8_MINOR_VERSION >= 8)
+    #define EXTERNAL_VALUE(e) e->Value(kExternalPointerTypeTagDefault)
+    #define NEW_EXTERNAL(e) External::New(isolate, e, kExternalPointerTypeTagDefault)
+#else
+    #define EXTERNAL_VALUE(e) e->Value()
+    #define NEW_EXTERNAL(e) External::New(isolate, e)
+#endif
+
 // some conversions
 #if NODE_MODULE_VERSION > NODE_2_5_0_MODULE_VERSION
 
@@ -111,7 +125,7 @@
     #define DEC_SUBORDINATE_INIT(f) static void f(v8::Local<v8::Object> exports, v8::Local<v8::Context> context, v8::Local<v8::External> external);
     #define NEW_FUNCTION_TEMPLATE_EXTERNAL(X) FunctionTemplate::New(isolate, X, external)
 
-    #define EXPOSE_EXTERNAL(C, c, e) C* c = reinterpret_cast<C*>(e->Value());
+    #define EXPOSE_EXTERNAL(C, c, e) C* c = reinterpret_cast<C*>(EXTERNAL_VALUE(e));
     #define EXPOSE_EXTERNAL_FOR_INIT(C, c) EXPOSE_EXTERNAL(C, c, external)
     #define EXPOSE_EXTERNAL_ARGS(C, c) EXPOSE_EXTERNAL(C, c, args.Data().As<External>())
     #define DECLARE_EXTERNAL_DE_CON_STRUCTORS(C) v8::Persistent<v8::Object> mExports; \
@@ -132,7 +146,7 @@
         }
 
     // creates external instance on exports, when using externals
-    #define DECLARE_EXTERNAL(C) C* c1 = new C(isolate, exports); Local<External> external = External::New(isolate, c1); 
+    #define DECLARE_EXTERNAL(C) C* c1 = new C(isolate, exports); Local<External> external = NEW_EXTERNAL(c1);
 #else 
 	#define NODES_MODULE(m,f) NODE_MODULE(m, f)
     #define EXPORTS_SET(e,k,v) e->Set(k,v);

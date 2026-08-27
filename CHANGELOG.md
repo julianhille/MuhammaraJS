@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add native sanitizer coverage for lifecycle cleanup.
 - Release PDF readers in documentation tests to prevent Windows file-lock cleanup failures.
 - Remove the duplicate documentation example test from the documentation CI workflow.
+- Build current Electron versions with V8 external pointer tags [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
 - Prevent a segmentation fault when `endPDF()` is called more than once.
 - Update macOS runner from macos-13 to macos-14
 - Fix DictionaryContext.writeKey() signature to include required key parameter [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
