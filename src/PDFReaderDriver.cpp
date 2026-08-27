@@ -32,6 +32,7 @@
 #include "ByteReaderWithPositionDriver.h"
 #include "ObjectByteReaderWithPosition.h"
 #include "ConstructorsHolder.h"
+#include "text-extraction/PDFTextExtractor.h"
 
 using namespace v8;
 
@@ -71,6 +72,7 @@ DEF_SUBORDINATE_INIT(PDFReaderDriver::Init)
 	SET_PROTOTYPE_METHOD(t, "getPageObjectID", GetPageObjectID);
 	SET_PROTOTYPE_METHOD(t, "parsePageDictionary", ParsePageDictionary);
 	SET_PROTOTYPE_METHOD(t, "parsePage", ParsePage);
+	SET_PROTOTYPE_METHOD(t, "extractPageText", ExtractPageText);
 	SET_PROTOTYPE_METHOD(t, "getObjectsCount", GetObjectsCount);
 	SET_PROTOTYPE_METHOD(t, "isEncrypted", IsEncrypted);
 	SET_PROTOTYPE_METHOD(t, "getXrefSize", GetXrefSize);
@@ -357,6 +359,47 @@ METHOD_RETURN_TYPE PDFReaderDriver::ParsePage(const ARGS_TYPE& args)
         ObjectWrap::Unwrap<PDFPageInputDriver>(newInstance->TO_OBJECT())->PageInputDictionary = newObject.GetPtr();
         SET_FUNCTION_RETURN_VALUE(newInstance)
     }
+}
+
+METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageText(const ARGS_TYPE& args)
+{
+    CREATE_ISOLATE_CONTEXT;
+    CREATE_ESCAPABLE_SCOPE;
+
+    if(args.Length() != 1 || !args[0]->IsNumber())
+    {
+        THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(TO_UINT32(args[0])->Value()));
+    if(!page)
+    {
+        THROW_EXCEPTION("Unable to read page, page index is wrong or page is null");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    std::vector<PDFTextElement> elements;
+    if(!PDFTextExtractor().Extract(reader->mPDFReader, page.GetPtr(), elements))
+    {
+        THROW_EXCEPTION("Page content exceeds text extraction limits");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+    Local<Array> result = NEW_ARRAY(elements.size());
+    for(size_t i = 0; i < elements.size(); ++i)
+    {
+        Local<Object> element = NEW_OBJECT;
+        element->Set(GET_CURRENT_CONTEXT, NEW_STRING("content"), String::NewFromOneByte(isolate, reinterpret_cast<const uint8_t*>(elements[i].content.data()), v8::NewStringType::kNormal, static_cast<int>(elements[i].content.size())).ToLocalChecked());
+        element->Set(GET_CURRENT_CONTEXT, NEW_STRING("fontResource"), NEW_STRING(elements[i].fontResource.c_str()));
+        element->Set(GET_CURRENT_CONTEXT, NEW_STRING("fontSize"), NEW_NUMBER(elements[i].fontSize));
+        Local<Array> textMatrix = NEW_ARRAY(6);
+        for(size_t j = 0; j < 6; ++j)
+            textMatrix->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(j), NEW_NUMBER(elements[i].textMatrix[j]));
+        element->Set(GET_CURRENT_CONTEXT, NEW_STRING("textMatrix"), textMatrix);
+        result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(i), element);
+    }
+    SET_FUNCTION_RETURN_VALUE(result)
 }
 
 METHOD_RETURN_TYPE PDFReaderDriver::GetObjectsCount(const ARGS_TYPE& args)

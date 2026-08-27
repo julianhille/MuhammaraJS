@@ -120,6 +120,7 @@
                 './src/ObjectByteWriter.cpp',
                 './src/ObjectByteWriterWithPosition.cpp',
                 './src/PDFObjectParserDriver.cpp',
+                './src/text-extraction/PDFTextExtractor.cpp',
                 './src/muhammara.cpp'
             ]
 
