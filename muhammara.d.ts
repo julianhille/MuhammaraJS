@@ -978,6 +978,18 @@ declare module "muhammara" {
       opacity?: number;
     }
 
+    interface TextBoxClipResult {
+      remainder: string;
+      linesWritten: number;
+      clipped: true;
+      bounds: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      };
+    }
+
     interface TextBox {
       width?: number;
       height?: number;
@@ -985,6 +997,8 @@ declare module "muhammara" {
       padding?: number | number[];
       lineHeight?: number;
       textAlign?: string;
+      clipIfExceedsBox?: boolean;
+      onClip?: (recipe: Recipe, result: TextBoxClipResult) => void;
       style?: TextBoxStyle;
     }
 

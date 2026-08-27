@@ -252,6 +252,27 @@ pdfDoc
   });
 ```
 
+#### Clip text to a fixed-height box
+
+Set `clipIfExceedsBox` to render only complete lines that fit in a text box.
+`onClip` receives the remaining text and the active recipe for writing it elsewhere.
+Do not call `endPage()` or `endPDF()` from `onClip`; finish the page after `text()` returns.
+
+```javascript
+pdfDoc.text(longText, 50, 50, {
+  textBox: {
+    width: 240,
+    height: 100,
+    clipIfExceedsBox: true,
+    onClip(recipe, result) {
+      recipe.text(result.remainder, 320, 50, {
+        textBox: { width: 240, height: 100, clipIfExceedsBox: true },
+      });
+    },
+  },
+});
+```
+
 #### Create a new PDF as a Buffer
 
 ```javascript
