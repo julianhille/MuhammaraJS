@@ -21,7 +21,7 @@ You can alternatively pass a stream object, which is simply an object implementi
 
 The second, optional, object provide options for the PDF file creation. It may have the following members:
 
-- `version` - a number value stating the version of the desired PDF. default is 13 (PDF 1.3). Any number between 10 and 17 works. You can use `hummus. ePDFVersion10` to `hummus.ePDFVersion13` if you prefer nice symbols.
+- `version` - a number value stating the version of the desired PDF. Default is 13 (PDF 1.3). Supported values are 10 through 17 and 20 (PDF 2.0). Use `hummus.ePDFVersion10` through `hummus.ePDFVersion17`, or `hummus.ePDFVersion20`, if you prefer named constants.
 - `compress` - the PDF streams are normally compressed using flate compression. If you want to cancel this (maybe for debugging, or whatnot), set this member value to false.
 - `log` - For debugging purposes, if something goes wrong, use this option to allow the internal library to provide some log notes. log parameter should be set to a file path where the end result log should reside in.Note! when using the log the module/library is no longer thread safe. So unless for debugging, avoid.
 

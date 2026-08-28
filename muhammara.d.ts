@@ -310,7 +310,8 @@ declare module "muhammara" {
   export const ePDFVersion15 = 15;
   export const ePDFVersion16 = 16;
   export const ePDFVersion17 = 17;
-  export type EPDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
+  export const ePDFVersion20 = 20;
+  export type EPDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
 
   export const ePDFObjectBoolean = 0;
   export const ePDFObjectLiteralString = 1;
