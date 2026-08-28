@@ -37,7 +37,7 @@
 #define NEW_ARRAY(X) Array::New(isolate,X)
 #define NEW_BOOLEAN(X) Boolean::New(isolate,X)
 #define NEW_OBJECT Object::New(isolate)
-#if NODE_MODULE_VERSION >= NODE_26_0_0_MODULE_VERSION
+#if V8_MAJOR_VERSION >= 14
     #define PROPERTY_HOLDER(info) info.HolderV2()
 #else
     #define PROPERTY_HOLDER(info) info.Holder()
