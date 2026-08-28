@@ -389,6 +389,17 @@ declare module "muhammara" {
     height: number;
   }
 
+  /** A text-showing operation in a page content stream. */
+  export interface PDFTextElement {
+    /** Raw character codes from the content stream. Unicode decoding requires a font ToUnicode CMap. */
+    content: string;
+    /** The page resource name selected by the most recent Tf operation. */
+    fontResource: string;
+    fontSize: number;
+    /** The active PDF text matrix: [a, b, c, d, e, f]. */
+    textMatrix: [number, number, number, number, number, number];
+  }
+
   export interface RectangleDimension {
     width: Width;
     height: Height;
@@ -433,6 +444,13 @@ declare module "muhammara" {
     getPageObjectID(objectId: number): number;
     parsePageDictionary(objectId: number): PDFDictionary;
     parsePage(page: number): PDFPageInput;
+    /**
+     * Returns text-showing operations in PDF content-stream drawing order.
+     * Does not decode font character maps or calculate glyph bounds. For safety,
+     * extraction rejects pages with more than 1,000,000 content objects, 100,000 text
+     * operations, or 16 MiB of text.
+     */
+    extractPageText(pageIndex: number): PDFTextElement[];
     getObjectsCount(): number;
     isEncrypted(): boolean;
     getXrefSize(): number;
