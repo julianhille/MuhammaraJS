@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - New version of PDF Writer 4.8.1
 - New version of PDF Writer 4.9.0 [#534](https://github.com/julianhille/MuhammaraJS/issues/534)
 - Add `PDFReader.extractPageText()` for enumerating page content-stream text operations.
+- Add opt-in fixed-height clipping and an `onClip` callback to Recipe text boxes
 
 ### Fixed
 
