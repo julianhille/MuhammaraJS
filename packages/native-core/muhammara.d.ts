@@ -747,6 +747,15 @@ declare namespace muhammara {
   export type inInterPagesCallback = () => {};
 
   export interface PDFWriter {
+    /**
+     * Replace direct references to an object in a page dictionary.
+     * Available only when modifying an existing PDF.
+     */
+    replaceObject(
+      pageIndex: number,
+      sourceObjectId: number,
+      replacementObjectId: number,
+    ): this;
     end(): PDFWriter;
     createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
