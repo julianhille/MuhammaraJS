@@ -593,6 +593,7 @@ DEF_INIT(MuhammaraInit) {
     EXPORTS_SET(exports,NEW_SYMBOL("ePDFVersion15"),NEW_NUMBER(ePDFVersion15))
     EXPORTS_SET(exports,NEW_SYMBOL("ePDFVersion16"),NEW_NUMBER(ePDFVersion16))
     EXPORTS_SET(exports,NEW_SYMBOL("ePDFVersion17"),NEW_NUMBER(ePDFVersion17))
+    EXPORTS_SET(exports,NEW_SYMBOL("ePDFVersion20"),NEW_NUMBER(ePDFVersion20))
     EXPORTS_SET(exports,NEW_SYMBOL("ePDFVersionUndefined"),NEW_NUMBER(ePDFVersionUndefined))
     
     // procsets for resource inclusion
