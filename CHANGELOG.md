@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Bundle pinned OpenSSL 3.5.4 statically in official native prebuilts.
 - Speed up native source builds with parallel compilation and ccache-backed CI caches [#562](https://github.com/julianhille/MuhammaraJS/issues/562)
 - Add `PDFWriter.replaceObject()` for page-scoped indirect object replacement, with optional global scope [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
+- Add `Recipe.replaceText()` for replacing literal text in a page content stream [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
 
 ### Fixed
 
