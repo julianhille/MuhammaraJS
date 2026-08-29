@@ -14,6 +14,12 @@
             "defines": [
             'USE_BUNDLED=TRUE'
             ],
+            'defines!': [
+            'V8_DEPRECATION_WARNINGS=1',
+            'V8_DEPRECATION_WARNINGS',
+            'V8_IMMINENT_DEPRECATION_WARNINGS',
+            'V8_IMMINENT_DEPRECATION_WARNINGS=1'
+            ],
             "cflags_cc": [ "-std=c++20" ],
             "cflags": [ "-std=c++20" ],
             'include_dirs': [
@@ -66,17 +72,6 @@
                             ]
                         }
                     }
-                }],
-                 ['OS=="win"', {
-                    'defines!': [
-                    'V8_DEPRECATION_WARNINGS=1',
-                    'V8_DEPRECATION_WARNINGS',
-                    'V8_IMMINENT_DEPRECATION_WARNINGS',
-                    'V8_IMMINENT_DEPRECATION_WARNINGS=1'
-                    ],
-                }, { # OS != "win",
-                    'defines': [
-                    ],
                 }]
             ],
            'sources': [
