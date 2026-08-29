@@ -33,3 +33,9 @@ development.
 
 For current release history, read the
 [Changelog on GitHub](https://github.com/julianhille/MuhammaraJS/blob/develop/CHANGELOG.md).
+
+## Security And Dependencies
+
+Native dependencies are vendored with MuhammaraJS. See [Security and Vendored
+Dependencies](security.md) for their current upstream baselines, source links,
+and dependency update guidance.

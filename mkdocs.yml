@@ -94,6 +94,7 @@ nav:
       - Set Page Boxes: how-to/set-page-boxes.md
       - Requested Workflow Backlog: how-to/backlog.md
   - Project:
+      - Security and Vendored Dependencies: security.md
       - Breaking Changes: breaking-changes.md
       - Contributing Documentation: contributing.md
       - Documentation Sources: provenance.md
