@@ -14,6 +14,12 @@ struct PDFTextElement
   double textMatrix[6];
 };
 
+struct PDFPageContentItem
+{
+  std::string type;
+  std::string operation;
+};
+
 class PDFTextExtractor
 {
 public:
@@ -21,5 +27,10 @@ public:
     PDFParser* inParser,
     PDFDictionary* inPage,
     std::vector<PDFTextElement>& outElements
+  );
+  bool ExtractPageContentItems(
+    PDFParser* inParser,
+    PDFDictionary* inPage,
+    std::vector<PDFPageContentItem>& outItems
   );
 };

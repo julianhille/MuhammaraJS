@@ -36,6 +36,18 @@ bool IsTextString(PDFObject* inObject)
           inObject->GetType() == PDFObject::ePDFObjectHexString);
 }
 
+bool IsVisibleTextRenderingMode(int inRenderingMode)
+{
+  return inRenderingMode != 3 && inRenderingMode != 7;
+}
+
+bool IsPathPaintingOperation(const std::string& inOperation)
+{
+  return inOperation == "S" || inOperation == "s" || inOperation == "f" ||
+         inOperation == "F" || inOperation == "f*" || inOperation == "B" ||
+         inOperation == "B*" || inOperation == "b" || inOperation == "b*";
+}
+
 std::string GetTextString(PDFObject* inObject)
 {
   if (inObject->GetType() == PDFObject::ePDFObjectLiteralString)
@@ -53,6 +65,14 @@ std::string GetTextArray(PDFArray* inArray)
       result += GetTextString(item.GetPtr());
   }
   return result;
+}
+
+bool HasText(const std::vector<RefCountPtr<PDFObject> >& inOperands, const std::string& inOperation)
+{
+  if (inOperation == "TJ" && inOperands.size() == 1 && inOperands[0].GetPtr()->GetType() == PDFObject::ePDFObjectArray)
+    return !GetTextArray(static_cast<PDFArray*>(inOperands[0].GetPtr())).empty();
+  return !inOperands.empty() && IsTextString(inOperands.back().GetPtr()) &&
+         !GetTextString(inOperands.back().GetPtr()).empty();
 }
 
 void SetMatrix(double outMatrix[6], const std::vector<RefCountPtr<PDFObject> >& inOperands)
@@ -149,6 +169,99 @@ bool PDFTextExtractor::Extract(
         outElements.push_back(element);
         extractedTextBytes += content.size();
       }
+    }
+    operands.clear();
+  }
+
+  delete objectParser;
+  return withinLimits;
+}
+
+bool PDFTextExtractor::ExtractPageContentItems(
+  PDFParser* inParser,
+  PDFDictionary* inPage,
+  std::vector<PDFPageContentItem>& outItems
+)
+{
+  RefCountPtr<PDFObject> contents(inParser->QueryDictionaryObject(inPage, "Contents"));
+  if (!contents)
+    return true;
+
+  PDFObjectParser* objectParser = NULL;
+  if (contents->GetType() == PDFObject::ePDFObjectStream)
+    objectParser = inParser->StartReadingObjectsFromStream(static_cast<PDFStreamInput*>(contents.GetPtr()));
+  else if (contents->GetType() == PDFObject::ePDFObjectArray)
+    objectParser = inParser->StartReadingObjectsFromStreams(static_cast<PDFArray*>(contents.GetPtr()));
+  if (!objectParser)
+    return true;
+
+  bool inTextObject = false;
+  int textRenderingMode = 0;
+  std::vector<int> textRenderingModes;
+  std::vector<RefCountPtr<PDFObject> > operands;
+  PDFObject* object = NULL;
+  size_t parsedObjects = 0;
+  bool withinLimits = true;
+
+  while (withinLimits && (object = objectParser->ParseNewObject()) != NULL)
+  {
+    RefCountPtr<PDFObject> objectHolder(object);
+    if (++parsedObjects > kMaxParsedObjects)
+    {
+      withinLimits = false;
+      break;
+    }
+    if (object->GetType() != PDFObject::ePDFObjectSymbol)
+    {
+      if (operands.size() == kMaxOperands)
+      {
+        withinLimits = false;
+        break;
+      }
+      operands.push_back(objectHolder);
+      continue;
+    }
+
+    std::string operation = static_cast<PDFSymbol*>(object)->GetValue();
+    if (operation == "BT")
+      inTextObject = true;
+    else if (operation == "ET")
+      inTextObject = false;
+    else if (operation == "Tr" && operands.size() == 1)
+      textRenderingMode = static_cast<int>(GetNumber(operands[0].GetPtr()));
+    else if (operation == "q")
+      textRenderingModes.push_back(textRenderingMode);
+    else if (operation == "Q" && !textRenderingModes.empty())
+    {
+      textRenderingMode = textRenderingModes.back();
+      textRenderingModes.pop_back();
+    }
+
+    std::string type;
+    if (inTextObject && IsVisibleTextRenderingMode(textRenderingMode) &&
+        (operation == "Tj" || operation == "'" || operation == "\"" || operation == "TJ") &&
+        HasText(operands, operation))
+      type = "text";
+    else if (IsPathPaintingOperation(operation))
+      type = "path";
+    else if (operation == "Do" && operands.size() == 1 &&
+             operands[0].GetPtr()->GetType() == PDFObject::ePDFObjectName)
+      type = "xObject";
+    else if (operation == "sh" && operands.size() == 1 &&
+             operands[0].GetPtr()->GetType() == PDFObject::ePDFObjectName)
+      type = "shading";
+
+    if (!type.empty())
+    {
+      if (outItems.size() == kMaxExtractedElements)
+      {
+        withinLimits = false;
+        break;
+      }
+      PDFPageContentItem item;
+      item.type = type;
+      item.operation = operation;
+      outItems.push_back(item);
     }
     operands.clear();
   }

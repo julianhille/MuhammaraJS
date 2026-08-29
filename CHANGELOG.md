@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - New version of PDF Writer 4.9.0 [#534](https://github.com/julianhille/MuhammaraJS/issues/534)
 - Expose PDF 2.0 writer support [#551](https://github.com/julianhille/MuhammaraJS/issues/551)
 - Add `PDFReader.extractPageText()` for enumerating page content-stream text operations.
+- Add `PDFReader.extractPageContentItems()` for detecting page-marking content operations [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
 - Add opt-in fixed-height clipping and an `onClip` callback to Recipe text boxes
 - Bundle pinned OpenSSL 3.5.4 statically in official native prebuilts.
 - Speed up native source builds with parallel compilation and ccache-backed CI caches [#562](https://github.com/julianhille/MuhammaraJS/issues/562)

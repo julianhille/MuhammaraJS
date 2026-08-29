@@ -73,6 +73,7 @@ DEF_SUBORDINATE_INIT(PDFReaderDriver::Init)
 	SET_PROTOTYPE_METHOD(t, "parsePageDictionary", ParsePageDictionary);
 	SET_PROTOTYPE_METHOD(t, "parsePage", ParsePage);
 	SET_PROTOTYPE_METHOD(t, "extractPageText", ExtractPageText);
+	SET_PROTOTYPE_METHOD(t, "extractPageContentItems", ExtractPageContentItems);
 	SET_PROTOTYPE_METHOD(t, "getObjectsCount", GetObjectsCount);
 	SET_PROTOTYPE_METHOD(t, "isEncrypted", IsEncrypted);
 	SET_PROTOTYPE_METHOD(t, "getXrefSize", GetXrefSize);
@@ -398,6 +399,42 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageText(const ARGS_TYPE& args)
             textMatrix->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(j), NEW_NUMBER(elements[i].textMatrix[j]));
         element->Set(GET_CURRENT_CONTEXT, NEW_STRING("textMatrix"), textMatrix);
         result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(i), element);
+    }
+    SET_FUNCTION_RETURN_VALUE(result)
+}
+
+METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageContentItems(const ARGS_TYPE& args)
+{
+    CREATE_ISOLATE_CONTEXT;
+    CREATE_ESCAPABLE_SCOPE;
+
+    if(args.Length() != 1 || !args[0]->IsNumber())
+    {
+        THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(TO_UINT32(args[0])->Value()));
+    if(!page)
+    {
+        THROW_EXCEPTION("Unable to read page, page index is wrong or page is null");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    std::vector<PDFPageContentItem> items;
+    if(!PDFTextExtractor().ExtractPageContentItems(reader->mPDFReader, page.GetPtr(), items))
+    {
+        THROW_EXCEPTION("Page content exceeds item extraction limits");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+    Local<Array> result = NEW_ARRAY(items.size());
+    for(size_t i = 0; i < items.size(); ++i)
+    {
+        Local<Object> item = NEW_OBJECT;
+        item->Set(GET_CURRENT_CONTEXT, NEW_STRING("type"), NEW_STRING(items[i].type.c_str()));
+        item->Set(GET_CURRENT_CONTEXT, NEW_STRING("operation"), NEW_STRING(items[i].operation.c_str()));
+        result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(i), item);
     }
     SET_FUNCTION_RETURN_VALUE(result)
 }
