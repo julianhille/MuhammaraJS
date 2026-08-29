@@ -14,9 +14,17 @@ struct PDFTextElement
   double textMatrix[6];
 };
 
+enum EPDFPageContentItemType
+{
+  ePDFPageContentItemText,
+  ePDFPageContentItemPath,
+  ePDFPageContentItemXObject,
+  ePDFPageContentItemShading
+};
+
 struct PDFPageContentItem
 {
-  std::string type;
+  EPDFPageContentItemType type;
   std::string operation;
 };
 

@@ -327,6 +327,16 @@ declare namespace muhammara {
   export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   export function getTypeLabel(type: PDFObjectType): string;
 
+  export const ePDFPageContentItemText = 0;
+  export const ePDFPageContentItemPath = 1;
+  export const ePDFPageContentItemXObject = 2;
+  export const ePDFPageContentItemShading = 3;
+  export type PDFPageContentItemType =
+    | typeof ePDFPageContentItemText
+    | typeof ePDFPageContentItemPath
+    | typeof ePDFPageContentItemXObject
+    | typeof ePDFPageContentItemShading;
+
   export const ePDFPageBoxMediaBox = 0;
   export const ePDFPageBoxCropBox = 1;
   export const ePDFPageBoxBleedBox = 2;
@@ -402,7 +412,7 @@ declare namespace muhammara {
 
   /** A content-stream operation that produces a page mark. */
   export interface PDFPageContentItem {
-    type: "text" | "path" | "xObject" | "shading";
+    type: PDFPageContentItemType;
     operation: string;
   }
 
