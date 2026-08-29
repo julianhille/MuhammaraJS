@@ -1,0 +1,101 @@
+site_name: MuhammaraJS Documentation
+site_description: Documentation for the MuhammaraJS Node.js PDF library.
+site_url: https://muhammarajs.readthedocs.io/
+site_dir: site
+use_directory_urls: false
+repo_name: julianhille/MuhammaraJS
+repo_url: https://github.com/julianhille/MuhammaraJS
+edit_uri: edit/develop/docs/
+
+theme:
+  name: material
+  language: en
+  features:
+    - content.action.edit
+    - content.code.copy
+    - navigation.footer
+    - navigation.indexes
+    - navigation.tabs
+    - search.highlight
+    - search.suggest
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+validation:
+  links:
+    absolute_links: relative_to_docs
+    anchors: warn
+    unrecognized_links: warn
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Overview: getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Migrate from HummusJS: getting-started/migrate-from-hummusjs.md
+      - Migrate from Recipe Modules: getting-started/migrate-from-recipe-modules.md
+  - High-Level Recipe:
+      - Overview: recipe/index.md
+      - Invariants: recipe/invariants.md
+      - Create PDFs: recipe/create-pdfs.md
+      - Text and Fonts: recipe/text-and-fonts.md
+      - Colors, Shapes, and Vectors: recipe/colors-shapes-and-vectors.md
+      - Pages and Positioning: recipe/pages-and-positioning.md
+      - Metadata and Custom Data: recipe/metadata-and-custom-data.md
+      - Modify and Inspect PDFs: recipe/modify-and-inspect.md
+      - Compose PDFs: recipe/compose-pdfs.md
+      - Encrypt PDFs: recipe/encryption.md
+      - Generated API Reference: recipe/reference.md
+  - Low-Level API:
+      - Overview: low-level/index.md
+      - Invariants: low-level/invariants.md
+      - Create a PDF: low-level/create-a-pdf.md
+      - Draw Text: low-level/text.md
+      - Draw Primitives: low-level/drawing-primitives.md
+      - Draw Images: low-level/images.md
+      - Form XObjects: low-level/form-xobjects.md
+      - PDF Drawing Operators: low-level/pdf-operators.md
+      - Copy and Embed PDFs: low-level/copy-and-embed-pdfs.md
+      - Read PDFs: low-level/read-pdfs.md
+      - Modify PDFs: low-level/modify-pdfs.md
+      - Custom Streams: low-level/custom-streams.md
+      - Write PDF Objects: low-level/write-pdf-objects.md
+  - API Reference:
+      - Overview: api/index.md
+      - PDF Writer: api/writer.md
+      - PDF Reader and Objects: api/reader-and-objects.md
+      - Content Contexts: api/content-contexts.md
+      - Copying and Modification: api/copying-and-modification.md
+      - Stream Interfaces: api/streams.md
+      - Options and Constants: api/options-and-constants.md
+      - Type Declarations Reference: api/type-declarations.md
+  - How-To Guides:
+      - Overview: how-to/index.md
+      - Serve a PDF Response: how-to/serve-a-pdf-response.md
+      - Add Review Annotations: how-to/add-review-annotations.md
+      - Create Multi-Page Tables: how-to/create-tables.md
+      - Flow Text into Columns: how-to/flow-text-into-columns.md
+      - Watermark Every Page: how-to/watermark-pdfs.md
+      - Find Text Positions: how-to/find-text-positions.md
+      - Add Clickable URL Links: how-to/add-url-links.md
+      - Change PDF Passwords: how-to/change-pdf-passwords.md
+      - Add Content to Rotated Pages: how-to/add-content-to-rotated-pages.md
+      - Place and Transform Images: how-to/place-and-transform-images.md
+      - Set Page Boxes: how-to/set-page-boxes.md
+      - Requested Workflow Backlog: how-to/backlog.md
+  - Project:
+      - Security and Vendored Dependencies: security.md
+      - Breaking Changes: breaking-changes.md
+      - Contributing Documentation: contributing.md
+      - Documentation Sources: provenance.md
+      - Current Changelog: https://github.com/julianhille/MuhammaraJS/blob/develop/CHANGELOG.md
