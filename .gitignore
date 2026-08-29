@@ -8,6 +8,8 @@ node_modules
 aws.json
 etc
 recipe-docs/
+site/
+.docs-venv/
 
 #all the binaries
 # Compiled source #

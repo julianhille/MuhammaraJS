@@ -1,0 +1,33 @@
+name: Documentation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documentation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r docs/requirements.txt
+      - run: npm ci
+      - run: npm run test:docs
+      - run: npm run docs:check
+      - run: git diff --exit-code -- docs/recipe/reference.md docs/api/type-declarations.md
