@@ -237,21 +237,34 @@ bool PDFTextExtractor::ExtractPageContentItems(
       textRenderingModes.pop_back();
     }
 
-    std::string type;
+    EPDFPageContentItemType type;
+    bool hasItem = false;
     if (inTextObject && IsVisibleTextRenderingMode(textRenderingMode) &&
         (operation == "Tj" || operation == "'" || operation == "\"" || operation == "TJ") &&
         HasText(operands, operation))
-      type = "text";
+    {
+      type = ePDFPageContentItemText;
+      hasItem = true;
+    }
     else if (IsPathPaintingOperation(operation))
-      type = "path";
+    {
+      type = ePDFPageContentItemPath;
+      hasItem = true;
+    }
     else if (operation == "Do" && operands.size() == 1 &&
              operands[0].GetPtr()->GetType() == PDFObject::ePDFObjectName)
-      type = "xObject";
+    {
+      type = ePDFPageContentItemXObject;
+      hasItem = true;
+    }
     else if (operation == "sh" && operands.size() == 1 &&
              operands[0].GetPtr()->GetType() == PDFObject::ePDFObjectName)
-      type = "shading";
+    {
+      type = ePDFPageContentItemShading;
+      hasItem = true;
+    }
 
-    if (!type.empty())
+    if (hasItem)
     {
       if (outItems.size() == kMaxExtractedElements)
       {

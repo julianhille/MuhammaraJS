@@ -35,7 +35,11 @@ describe("PDFPageContentItems", function () {
     reader.end();
 
     assert.deepEqual(emptyItems, []);
-    assert.deepEqual(pathItems, [{ type: "path", operation: "f" }]);
-    assert.deepEqual(textItems, [{ type: "text", operation: "Tj" }]);
+    assert.deepEqual(pathItems, [
+      { type: muhammara.ePDFPageContentItemPath, operation: "f" },
+    ]);
+    assert.deepEqual(textItems, [
+      { type: muhammara.ePDFPageContentItemText, operation: "Tj" },
+    ]);
   });
 });

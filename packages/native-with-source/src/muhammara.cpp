@@ -66,6 +66,7 @@
 #include "PDFWriter.h"
 #include "PDFPageModifierDriver.h"
 #include "PDFObjectParserDriver.h"
+#include "text-extraction/PDFTextExtractor.h"
 #include "ConstructorsHolder.h"
 
 using namespace v8;
@@ -629,7 +630,13 @@ DEF_INIT(MuhammaraInit) {
     EXPORTS_SET(exports,NEW_SYMBOL("ePDFObjectSymbol"),NEW_NUMBER(PDFObject::ePDFObjectSymbol))
     // getter for string represenation of type enum
 	EXPORTS_SET(exports,NEW_SYMBOL("getTypeLabel"), NEW_FUNCTION_TEMPLATE(GetTypeLabel)->GetFunction(GET_CURRENT_CONTEXT).ToLocalChecked())
-    
+
+    // page content item types
+    EXPORTS_SET(exports,NEW_SYMBOL("ePDFPageContentItemText"),NEW_NUMBER(ePDFPageContentItemText))
+    EXPORTS_SET(exports,NEW_SYMBOL("ePDFPageContentItemPath"),NEW_NUMBER(ePDFPageContentItemPath))
+    EXPORTS_SET(exports,NEW_SYMBOL("ePDFPageContentItemXObject"),NEW_NUMBER(ePDFPageContentItemXObject))
+    EXPORTS_SET(exports,NEW_SYMBOL("ePDFPageContentItemShading"),NEW_NUMBER(ePDFPageContentItemShading))
+
     // ETokenSeparator
     EXPORTS_SET(exports,NEW_SYMBOL("eTokenSeparatorSpace"),NEW_NUMBER(eTokenSeparatorSpace))
     EXPORTS_SET(exports,NEW_SYMBOL("eTokenSeparatorEndLine"),NEW_NUMBER(eTokenSeparatorEndLine))

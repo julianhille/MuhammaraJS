@@ -432,7 +432,7 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageContentItems(const ARGS_TYPE& arg
     for(size_t i = 0; i < items.size(); ++i)
     {
         Local<Object> item = NEW_OBJECT;
-        item->Set(GET_CURRENT_CONTEXT, NEW_STRING("type"), NEW_STRING(items[i].type.c_str()));
+        item->Set(GET_CURRENT_CONTEXT, NEW_STRING("type"), NEW_NUMBER(items[i].type));
         item->Set(GET_CURRENT_CONTEXT, NEW_STRING("operation"), NEW_STRING(items[i].operation.c_str()));
         result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(i), item);
     }
