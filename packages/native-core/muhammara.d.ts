@@ -755,6 +755,7 @@ declare namespace muhammara {
       pageIndex: number,
       sourceObjectId: number,
       replacementObjectId: number,
+      options?: ObjectReplacementOptions,
     ): this;
     end(): PDFWriter;
     createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
@@ -852,6 +853,10 @@ declare namespace muhammara {
       eventName: string | symbol,
       eventParams: any,
     ): void;
+  }
+
+  export interface ObjectReplacementOptions {
+    scope?: "global";
   }
 
   namespace Recipe {

@@ -27,7 +27,19 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     pageIndex,
     sourceObjectId,
     replacementObjectId,
+    options,
   ) {
+    if (options && options.scope === "global") {
+      var copyingContext = this.createPDFCopyingContextForModifiedFile();
+      var pageCount = copyingContext.getSourceDocumentParser().getPagesCount();
+
+      copyingContext.end();
+      for (var index = 0; index < pageCount; ++index) {
+        this.replaceObject(index, sourceObjectId, replacementObjectId);
+      }
+      return this;
+    }
+
     var copyingContext = this.createPDFCopyingContextForModifiedFile();
     var parser = copyingContext.getSourceDocumentParser();
     var pageObjectId = parser.getPageObjectID(pageIndex);
