@@ -400,6 +400,12 @@ declare namespace muhammara {
     textMatrix: [number, number, number, number, number, number];
   }
 
+  /** A content-stream operation that produces a page mark. */
+  export interface PDFPageContentItem {
+    type: "text" | "path" | "xObject" | "shading";
+    operation: string;
+  }
+
   export interface RectangleDimension {
     width: Width;
     height: Height;
@@ -453,6 +459,11 @@ declare namespace muhammara {
      * operations, or 16 MiB of text.
      */
     extractPageText(pageIndex: number): PDFTextElement[];
+    /**
+     * Returns every direct content-stream operation that produces a page mark.
+     * White-on-white content is included; non-painting operations are excluded.
+     */
+    extractPageContentItems(pageIndex: number): PDFPageContentItem[];
     getObjectsCount(): number;
     isEncrypted(): boolean;
     getXrefSize(): number;
