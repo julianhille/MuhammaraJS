@@ -106,6 +106,7 @@ DEF_SUBORDINATE_INIT(PDFWriterDriver::Init)
 	SET_PROTOTYPE_METHOD(t, "getOutputFile", GetOutputFile);
 	SET_PROTOTYPE_METHOD(t, "registerAnnotationReferenceForNextPageWrite", RegisterAnnotationReferenceForNextPageWrite);
     SET_PROTOTYPE_METHOD(t, "requireCatalogUpdate", RequireCatalogUpdate);
+    SET_PROTOTYPE_METHOD(t, "reset", Reset);
     SET_CONSTRUCTOR_EXPORT("PDFWriter", t);
 
     // save in factory
@@ -1706,4 +1707,37 @@ PDFHummus::EStatusCode PDFWriterDriver::setupListenerIfOK(PDFHummus::EStatusCode
         mIsStarted = true;
     }
     return inCode;
+}
+
+METHOD_RETURN_TYPE PDFWriterDriver::Reset(const ARGS_TYPE& args)
+{
+    CREATE_ISOLATE_CONTEXT;
+    CREATE_ESCAPABLE_SCOPE;
+
+    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
+
+    // Remove event listener if registered
+    pdfWriter->mPDFWriter.GetDocumentContext().RemoveDocumentContextExtender(pdfWriter);
+
+    // Call Reset on the underlying PDFWriter to release all internal resources
+    pdfWriter->mPDFWriter.Reset();
+
+    // Clean up stream proxies
+    if(pdfWriter->mWriteStreamProxy)
+    {
+        delete pdfWriter->mWriteStreamProxy;
+        pdfWriter->mWriteStreamProxy = NULL;
+    }
+
+    if(pdfWriter->mReadStreamProxy)
+    {
+        delete pdfWriter->mReadStreamProxy;
+        pdfWriter->mReadStreamProxy = NULL;
+    }
+
+    // Reset state flags
+    pdfWriter->mStartedWithStream = false;
+    pdfWriter->mIsCatalogUpdateRequired = false;
+
+    SET_FUNCTION_RETURN_VALUE(args.This())
 }

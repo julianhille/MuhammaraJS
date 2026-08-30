@@ -219,6 +219,7 @@ private:
     static METHOD_RETURN_TYPE GetDocumentContext(const ARGS_TYPE& args);
     static METHOD_RETURN_TYPE RegisterAnnotationReferenceForNextPageWrite(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE RequireCatalogUpdate(const ARGS_TYPE& args);
+    static METHOD_RETURN_TYPE Reset(const ARGS_TYPE& args);
     
     static CMYKRGBColor colorFromArray(v8::Local<v8::Value> inArray);
     static PDFPageRange ObjectToPageRange(v8::Local<v8::Object> inObject);
