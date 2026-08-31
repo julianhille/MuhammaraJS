@@ -24,6 +24,7 @@ describe("Documentation examples", function () {
 
     var reader = muhammara.createReader(outputPath);
     assert.strictEqual(reader.getPagesCount(), 1);
+    reader.end();
   });
 
   it("creates a Recipe PDF", function (done) {
@@ -32,6 +33,7 @@ describe("Documentation examples", function () {
     createRecipePdf(outputPath, function () {
       var reader = muhammara.createReader(outputPath);
       assert.strictEqual(reader.getPagesCount(), 1);
+      reader.end();
       done();
     });
   });
