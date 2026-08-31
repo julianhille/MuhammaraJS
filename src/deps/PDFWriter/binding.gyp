@@ -17,10 +17,9 @@
                 ['OS=="win" and target_arch=="x64"', {
                     'msvs_settings': {
                         'VCLinkerTool': {
-                            'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/'],
+                             'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_LIB_DIR%)/'],
                             'AdditionalDependencies': [
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libcrypto.lib',
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libssl.lib'
+                                 '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib'
                             ]
                         }
                     }
@@ -28,10 +27,9 @@
                 ['OS=="win" and target_arch=="ia32"', {
                     'msvs_settings': {
                         'VCLinkerTool': {
-                            'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/'],
+                             'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_LIB_DIR%)/'],
                             'AdditionalDependencies': [
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/libcrypto.lib',
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/libssl.lib'
+                                 '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib'
                             ]
                         }
                     }
@@ -40,7 +38,7 @@
             'msvs_settings': {
                 'VCCLCompilerTool': {
                     'AdditionalIncludeDirectories': [
-                        '<!(echo %OPENSSL_DIR%)/include/'
+                        '<!(echo %OPENSSL_LIB_DIR%)/include/'
                     ],
                     'AdditionalOptions': [
                         '/std:c++20'

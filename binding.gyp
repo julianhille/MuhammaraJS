@@ -22,7 +22,7 @@
 				'VCCLCompilerTool':
 				{
 					'AdditionalIncludeDirectories': [
-						'<!(echo %OPENSSL_DIR%)/include/'
+						'<!(echo %OPENSSL_LIB_DIR%)/include/'
 					],
 					'AdditionalOptions': [
 						'/std:c++20'
@@ -30,7 +30,17 @@
 				}
 			},
             'conditions': [
+                ['OS=="linux"', {
+                    'libraries': [
+                        '<!(echo $OPENSSL_LIB_DIR)/libcrypto.a',
+                        '-ldl',
+                        '-pthread'
+                    ]
+                }],
                 ['OS=="mac"', {
+                    'libraries': [
+                        '<!(echo $OPENSSL_LIB_DIR)/libcrypto.a'
+                    ],
                     'xcode_settings': {
                         'CLANG_CXX_LIBRARY': 'libc++',
                         "OTHER_CFLAGS": [ "-std=c++20" ]
@@ -40,11 +50,15 @@
                     'msvs_settings': {
                         'VCLinkerTool': {
                             'AdditionalLibraryDirectories': [
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/'
+                                '<!(echo %OPENSSL_LIB_DIR%)/'
                             ],
                             'AdditionalDependencies': [
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libcrypto.lib',
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x64/MD/libssl.lib'
+                                '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib',
+                                'advapi32.lib',
+                                'crypt32.lib',
+                                'gdi32.lib',
+                                'user32.lib',
+                                'ws2_32.lib'
                             ]
                         }
                     }
@@ -53,11 +67,15 @@
                     'msvs_settings': {
                         'VCLinkerTool': {
                             'AdditionalLibraryDirectories': [
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/'
+                                '<!(echo %OPENSSL_LIB_DIR%)/'
                             ],
                             'AdditionalDependencies': [
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/libcrypto.lib',
-                                '<!(echo %OPENSSL_DIR%)/lib/VC/x86/MD/libssl.lib'
+                                '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib',
+                                'advapi32.lib',
+                                'crypt32.lib',
+                                'gdi32.lib',
+                                'user32.lib',
+                                'ws2_32.lib'
                             ]
                         }
                     }

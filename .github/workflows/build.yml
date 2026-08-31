@@ -11,6 +11,9 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  OPENSSL_VERSION: 3.5.4
+
 jobs:
   lint:
     runs-on: ubuntu-22.04
@@ -47,7 +50,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - run: apt-get install -y python${{ matrix.python_version }}
+      - run: apt-get install -y curl perl python${{ matrix.python_version }}
       - run: node --version
       - run: npm --version
       - run: chmod 0777 tests/output/
@@ -58,12 +61,22 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-arm-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/muhammara-openssl
+          key: openssl-${{ env.OPENSSL_VERSION }}
+      - name: Build OpenSSL for musl
+        run: sh scripts/build-openssl.sh
+        env:
+          CROSS_COMPILE: ""
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
+          LDFLAGS: ${{ env.LDFLAGS }}
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
           npm_config_unsafe_perm: true
       # - run: npm run test, this is not an arm64 machine so we can not test.
@@ -90,7 +103,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: apk update
-      - run: apk add --no-cache make gcc jq g++ python${{ matrix.python_version }} tar
+      - run: apk add --no-cache curl make gcc jq g++ linux-headers perl python${{ matrix.python_version }} tar
       - run: node --version
       - run: npm --version
       - run: chmod 0777 tests/output/
@@ -101,6 +114,14 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/muhammara-openssl
+          key: openssl-${{ env.OPENSSL_VERSION }}
+      - name: Build OpenSSL for musl
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: x64
       - run: npm install --build-from-source
         env:
           EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
@@ -189,6 +210,8 @@ jobs:
             architecture: arm64
           - os: windows-2022
             architecture: arm64
+          - os: macos-15
+            architecture: x64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Set up GCC
@@ -207,29 +230,9 @@ jobs:
           architecture: ${{ matrix.architecture_node }}
       - run: node --version
       - run: npm --version
-      - name: Configure OpenSSL (Windows)
-        if: ${{ matrix.os == 'windows-2022' }}
-        shell: powershell
-        run: |
-          $opensslRoot = 'C:\Program Files\OpenSSL'
-          if (-not (Test-Path $opensslRoot -PathType Container)) {
-            Write-Error "Expected OpenSSL folder at $opensslRoot"
-            exit 1
-          }
-          Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$opensslRoot"
-      - name: Configure OpenSSL (macOS)
-        if: ${{ matrix.os == 'macos-15' }}
-        run: |
-          OPENSSL_PREFIX=$(brew --prefix openssl@3 2>/dev/null || true)
-          if [ -z "$OPENSSL_PREFIX" ] || [ ! -d "$OPENSSL_PREFIX" ]; then
-            echo "::error ::Expected openssl@3 to be preinstalled on the runner." >&2
-            exit 1
-          fi
-          echo "LDFLAGS=-L$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$OPENSSL_PREFIX/include" >> $GITHUB_ENV
-          echo "OPENSSL_DIR=$OPENSSL_PREFIX" >> $GITHUB_ENV
-          echo "OPENSSL_INCLUDE_DIR=$OPENSSL_PREFIX/include" >> $GITHUB_ENV
-          echo "OPENSSL_LIB_DIR=$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+      - name: Install OpenSSL build tools (Linux)
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
+        run: sudo apt-get update && sudo apt-get install -y curl perl
       - name: Get npm cache directory
         id: npm-cache-dir
         shell: bash
@@ -238,6 +241,21 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/muhammara-openssl
+          key: openssl-${{ env.OPENSSL_VERSION }}
+      - name: Build OpenSSL (Unix)
+        if: ${{ matrix.os != 'windows-2022' }}
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
+      - name: Build OpenSSL (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: powershell
+        run: ./scripts/build-openssl.ps1
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - run: |
           npm install --cpu=${{ matrix.architecture }} --build-from-source
         env:
@@ -263,28 +281,6 @@ jobs:
           npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
-      - name: Bundle OpenSSL DLLs (Windows)
-        if: ${{ matrix.os == 'windows-2022' }}
-        shell: pwsh
-        run: |
-          $binPath = Join-Path $env:OPENSSL_DIR 'bin'
-          $cryptoDll = @(Get-ChildItem -Path $binPath -Filter 'libcrypto-3*.dll' -File)
-          $sslDll = @(Get-ChildItem -Path $binPath -Filter 'libssl-3*.dll' -File)
-          if ($cryptoDll.Count -ne 1 -or $sslDll.Count -ne 1) {
-            throw "Expected one libcrypto-3*.dll and one libssl-3*.dll in $binPath"
-          }
-          $openssl = Join-Path $binPath 'openssl.exe'
-          $opensslVersion = if (Test-Path $openssl -PathType Leaf) {
-            & $openssl version
-          } else {
-            $cryptoDll.VersionInfo.ProductVersion
-          }
-          if ([string]::IsNullOrWhiteSpace($opensslVersion)) {
-            throw 'Unable to determine the bundled OpenSSL version'
-          }
-          Copy-Item $cryptoDll.FullName, $sslDll.FullName -Destination binding -Force
-          Copy-Item THIRD_PARTY_NOTICES.md -Destination binding -Force
-          Set-Content -Path binding/OPENSSL_VERSION.txt -Value $opensslVersion
       - name: Run test
         uses: coactions/setup-xvfb@90473c3ebc69533a1a6e0505c36511b69c8c3135
         with:
@@ -345,6 +341,15 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
+      - run: apt-get update && apt-get install -y curl perl
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/muhammara-openssl
+          key: openssl-${{ env.OPENSSL_VERSION }}
+      - name: Build OpenSSL
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
@@ -378,6 +383,8 @@ jobs:
         exclude:
           - os: windows-2022
             architecture: arm64
+          - os: macos-15
+            architecture: x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -390,29 +397,6 @@ jobs:
           architecture: ${{ matrix.architecture_node }}
       - run: node --version
       - run: npm --version
-      - name: Configure OpenSSL (macOS)
-        if: ${{ matrix.os == 'macos-15' }}
-        run: |
-          OPENSSL_PREFIX=$(brew --prefix openssl@3 2>/dev/null || true)
-          if [ -z "$OPENSSL_PREFIX" ] || [ ! -d "$OPENSSL_PREFIX" ]; then
-            echo "::error ::Expected openssl@3 to be preinstalled on the runner." >&2
-            exit 1
-          fi
-          echo "LDFLAGS=-L$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I$OPENSSL_PREFIX/include" >> $GITHUB_ENV
-          echo "OPENSSL_DIR=$OPENSSL_PREFIX" >> $GITHUB_ENV
-          echo "OPENSSL_INCLUDE_DIR=$OPENSSL_PREFIX/include" >> $GITHUB_ENV
-          echo "OPENSSL_LIB_DIR=$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
-      - name: Configure OpenSSL (Windows)
-        if: ${{ matrix.os == 'windows-2022' }}
-        shell: powershell
-        run: |
-          $opensslRoot = 'C:\Program Files\OpenSSL'
-          if (-not (Test-Path $opensslRoot -PathType Container)) {
-            Write-Error "Expected OpenSSL folder at $opensslRoot"
-            exit 1
-          }
-          Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$opensslRoot"
       - name: Disable Node.js LTO (Windows)
         if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
@@ -428,6 +412,22 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
+      - uses: actions/cache@v5
+        if: ${{ matrix.os == 'macos-15' || matrix.os == 'windows-2022' }}
+        with:
+          path: ~/.cache/muhammara-openssl
+          key: openssl-${{ env.OPENSSL_VERSION }}
+      - name: Build OpenSSL (macOS)
+        if: ${{ matrix.os == 'macos-15' }}
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
+      - name: Build OpenSSL (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: powershell
+        run: ./scripts/build-openssl.ps1
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - run: npm install --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
@@ -436,28 +436,6 @@ jobs:
           npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
           CFLAGS: ${{ matrix.extra_compile_flags }}
           CPPFLAGS: ${{ env.CPPFLAGS }} ${{ matrix.extra_compile_flags }}
-      - name: Bundle OpenSSL DLLs (Windows)
-        if: ${{ matrix.os == 'windows-2022' }}
-        shell: pwsh
-        run: |
-          $binPath = Join-Path $env:OPENSSL_DIR 'bin'
-          $cryptoDll = @(Get-ChildItem -Path $binPath -Filter 'libcrypto-3*.dll' -File)
-          $sslDll = @(Get-ChildItem -Path $binPath -Filter 'libssl-3*.dll' -File)
-          if ($cryptoDll.Count -ne 1 -or $sslDll.Count -ne 1) {
-            throw "Expected one libcrypto-3*.dll and one libssl-3*.dll in $binPath"
-          }
-          $openssl = Join-Path $binPath 'openssl.exe'
-          $opensslVersion = if (Test-Path $openssl -PathType Leaf) {
-            & $openssl version
-          } else {
-            $cryptoDll.VersionInfo.ProductVersion
-          }
-          if ([string]::IsNullOrWhiteSpace($opensslVersion)) {
-            throw 'Unable to determine the bundled OpenSSL version'
-          }
-          Copy-Item $cryptoDll.FullName, $sslDll.FullName -Destination binding -Force
-          Copy-Item THIRD_PARTY_NOTICES.md -Destination binding -Force
-          Set-Content -Path binding/OPENSSL_VERSION.txt -Value $opensslVersion
       - run: npm run test
         if: ${{ matrix.target_architecture != 'arm64' }}
       - run: ./node_modules/.bin/node-pre-gyp package testpackage

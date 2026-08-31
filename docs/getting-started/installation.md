@@ -14,15 +14,12 @@ needs its install script to acquire or build its native addon. Add `muhammara` t
 
 ## Building From Source
 
-Official Windows prebuilds include the required OpenSSL DLLs and do not require
-a system OpenSSL installation at runtime.
+Official prebuilds statically link OpenSSL `libcrypto` and do not require a
+system OpenSSL installation at runtime.
 
-Building from source requires OpenSSL 3 headers and libraries accessible to the
-compiler and linker. On macOS, install Homebrew's `openssl@3`. On Windows, set
-`OPENSSL_DIR` to the OpenSSL installation directory during `npm install`; the
-install step copies the matching runtime DLLs beside the native addon. Linux
-builds use the OpenSSL headers and libraries supplied with the target Node.js
-headers.
+Building from source requires OpenSSL 3 headers and a static `libcrypto`
+library. Set `CPPFLAGS` and `OPENSSL_LIB_DIR` to the same OpenSSL build; on
+Windows, `OPENSSL_LIB_DIR` must contain `libcrypto.lib`.
 
 ## Prebuilt Support Matrix
 

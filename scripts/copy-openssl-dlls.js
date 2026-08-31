@@ -6,6 +6,13 @@ if (process.platform !== "win32") {
 }
 
 var bindingDirectory = path.join(__dirname, "..", "binding");
+
+function copyThirdPartyNotices() {
+  fs.copyFileSync(
+    path.join(__dirname, "..", "THIRD_PARTY_NOTICES.md"),
+    path.join(bindingDirectory, "THIRD_PARTY_NOTICES.md"),
+  );
+}
 var bundledCrypto = fs.existsSync(bindingDirectory)
   ? fs.readdirSync(bindingDirectory).filter(function (file) {
       return /^libcrypto-3.*\.dll$/i.test(file);
@@ -23,6 +30,11 @@ if (bundledCrypto.length === 1 && bundledSsl.length === 1) {
 
 if (bundledCrypto.length !== 0 || bundledSsl.length !== 0) {
   throw new Error("The Windows binding contains an incomplete OpenSSL DLL set");
+}
+
+if (process.env.OPENSSL_LIB_DIR) {
+  copyThirdPartyNotices();
+  process.exit(0);
 }
 
 if (!process.env.OPENSSL_DIR) {
@@ -59,7 +71,4 @@ requiredDlls.forEach(function (dll) {
   );
 });
 
-fs.copyFileSync(
-  path.join(__dirname, "..", "THIRD_PARTY_NOTICES.md"),
-  path.join(bindingDirectory, "THIRD_PARTY_NOTICES.md"),
-);
+copyThirdPartyNotices();

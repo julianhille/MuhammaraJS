@@ -5,6 +5,7 @@ tests/output
 tests/**/output
 binding
 node_modules
+src/deps/openssl/
 aws.json
 etc
 recipe-docs/
