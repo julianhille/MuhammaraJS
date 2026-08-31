@@ -30,5 +30,8 @@ The browser test starts a local server and uses Firefox. It expects
 tests share native test fixtures under `packages/native-with-source/tests/TestMaterials`.
 
 Wasm documentation sources are package-local and are not published in the npm
-package. Stage them for MkDocs with `npm run docs:stage`; that generated
-directory must not be edited or committed.
+package. The standalone WebAssembly documentation site is configured by
+`packages/wasm/.readthedocs.yaml`; configure its Read the Docs project to use
+that file. The native documentation site still stages these sources as part of
+its combined local build with `npm run docs:stage`; that generated directory
+must not be edited or committed.
