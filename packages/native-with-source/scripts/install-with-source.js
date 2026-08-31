@@ -10,13 +10,30 @@ var addonExisted = fs.existsSync(builtAddon);
 var extraFlags = process.env.EXTRA_NODE_PRE_GYP_FLAGS
   ? process.env.EXTRA_NODE_PRE_GYP_FLAGS.trim().split(/\s+/)
   : [];
+var buildFlags = ["--jobs=max"].concat(extraFlags);
+var ccache =
+  process.platform === "win32"
+    ? null
+    : childProcess.spawnSync("ccache", ["--version"], { stdio: "ignore" });
+
+if (
+  ccache &&
+  !ccache.error &&
+  ccache.status === 0 &&
+  !process.env.CC &&
+  !process.env.CXX
+) {
+  process.env.CC = "ccache cc";
+  process.env.CXX = "ccache c++";
+}
+
 var result = childProcess.spawnSync(
   process.execPath,
   [
     require.resolve("@mapbox/node-pre-gyp/bin/node-pre-gyp"),
     "install",
     "--fallback-to-build",
-  ].concat(extraFlags),
+  ].concat(buildFlags),
   { stdio: "inherit" },
 );
 

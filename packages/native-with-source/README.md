@@ -19,6 +19,11 @@ matching prebuilt binary when available and otherwise compiles its bundled
 `src/` tree with the local Node.js build toolchain. It is cached normally by
 npm; the small package does not download or cache source files.
 
+Source fallbacks use all available CPU cores. On Unix-like systems, installing
+`ccache` accelerates repeated rebuilds; the package uses it automatically when
+neither `CC` nor `CXX` is set. Set both variables to choose another compiler or
+cache wrapper.
+
 To prepare a release prebuild locally, run:
 
 ```sh
