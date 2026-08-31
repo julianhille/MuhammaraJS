@@ -12,11 +12,11 @@
   },
   "scripts": {
     "install": "node scripts/install-with-source.js",
-    "postinstall": "node -e \"require('@muhammara/native-core/scripts/copy-openssl-dlls')(process.cwd())\"",
+    "postinstall": "node scripts/prepare-binding.js",
     "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
     "test:codestyle": "npx prettier -c ./",
     "test:electron": "electron-mocha -R tap ./tests/*.js --timeout 15000",
-    "package": "node-pre-gyp package",
+    "package": "node scripts/prepare-binding.js && node-pre-gyp package",
     "clean:source": "node scripts/remove-source.js",
     "test:docs": "mocha tests/docs/**/*.js --timeout 15000"
   },
@@ -34,6 +34,7 @@
   "files": [
     "src",
     "scripts/install-with-source.js",
+    "scripts/prepare-binding.js",
     "scripts/remove-source.js",
     "binding.gyp",
     "index.js",

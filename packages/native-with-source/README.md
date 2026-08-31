@@ -19,6 +19,15 @@ matching prebuilt binary when available and otherwise compiles its bundled
 `src/` tree with the local Node.js build toolchain. It is cached normally by
 npm; the small package does not download or cache source files.
 
+To prepare a release prebuild locally, run:
+
+```sh
+npm run package --workspace=@muhammara/native-with-source
+```
+
+On Windows, this command copies the required OpenSSL DLLs, third-party notice,
+and OpenSSL version marker into the binding before creating the prebuild.
+
 For browsers, Web Workers, and byte-oriented PDF input/output, use
 [`@muhammara/wasm`](https://muhammarajs-wasm.readthedocs.io/). It needs no native
 Node.js addon and returns `Uint8Array` PDF data for browser APIs, uploads,

@@ -3,7 +3,7 @@ var path = require("path");
 
 module.exports = function copyOpenSslDlls(packageRoot) {
   if (process.platform !== "win32") {
-    return;
+    return null;
   }
 
   var bindingDirectory = path.join(packageRoot, "binding");
@@ -19,7 +19,11 @@ module.exports = function copyOpenSslDlls(packageRoot) {
     : [];
 
   if (bundledCrypto.length === 1 && bundledSsl.length === 1) {
-    return;
+    return {
+      bindingDirectory: bindingDirectory,
+      dlls: bundledCrypto.concat(bundledSsl),
+      opensslBinDirectory: null,
+    };
   }
 
   if (bundledCrypto.length !== 0 || bundledSsl.length !== 0) {
@@ -74,6 +78,12 @@ module.exports = function copyOpenSslDlls(packageRoot) {
     path.join(__dirname, "..", "THIRD_PARTY_NOTICES.md"),
     path.join(bindingDirectory, "THIRD_PARTY_NOTICES.md"),
   );
+
+  return {
+    bindingDirectory: bindingDirectory,
+    dlls: requiredDlls,
+    opensslBinDirectory: opensslBinDirectory,
+  };
 };
 
 if (require.main === module) {
