@@ -154,7 +154,7 @@ async function linksExample() {
       .n_gon(420, 330, 42, 8, { fill: "#dbeafe" })
       .link("https://github.com/julianhille/MuhammaraJS", 65, 100, 465, 120)
       .link("https://www.npmjs.com/package/@muhammara/wasm", 65, 255, 220, 150)
-      .link("https://muhammarajs.readthedocs.io/", 310, 255, 220, 150)
+      .link("https://muhammarajs-wasm.readthedocs.io/", 310, 255, 220, 150)
       .endPage();
     var bytes = recipe.endPDF();
     return {

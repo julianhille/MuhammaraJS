@@ -38,8 +38,8 @@ action. Read the Docs then clones and builds the pushed tag itself using
 
 ## Follow-Up Tasks
 
-- [ ] Create a separate `muhammara-wasm` Read the Docs project at
-      `https://muhammara-wasm.readthedocs.io/`. Add Wasm-specific Read the Docs
+- [ ] Create a separate `muhammarajs-wasm` Read the Docs project at
+      `https://muhammarajs-wasm.readthedocs.io/`. Add Wasm-specific Read the Docs
       and MkDocs configuration that builds only `packages/wasm/docs`, update the
       Wasm package metadata and documentation links to the new site, and
       configure the external Read the Docs project to use that config and

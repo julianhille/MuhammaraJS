@@ -4,6 +4,13 @@
 MuhammaraJS. It exposes a browser-safe, byte-first API instead of the native
 Node package's filesystem and stream API.
 
+## Node.js Native Addon
+
+For Node.js applications that need filesystem paths, Node streams, or the full
+native PDF API, use [`@muhammara/native`](https://muhammarajs.readthedocs.io/).
+Choose `@muhammara/native-with-source` when the addon must build locally or be
+rebuilt for Electron.
+
 Start with [Browser Setup](browser-setup.md). Use [Recipe](recipe.md) for
 high-level document work, or the [low-level API](low-level.md) for PDF writers,
 readers, and modifiers. The [How-To Guides](how-to/index.md) cover concrete

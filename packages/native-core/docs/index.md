@@ -6,6 +6,14 @@ creating, reading, and modifying PDF files and streams.
 tree for local Node.js and Electron builds. The unscoped `muhammara` package is
 deprecated and receives no further releases.
 
+## Browser And Worker Support
+
+For browsers, Web Workers, and byte-oriented PDF input and output, use
+[`@muhammara/wasm`](https://muhammarajs-wasm.readthedocs.io/). It runs without a
+native Node.js addon and returns `Uint8Array` PDF data suitable for browser APIs,
+uploads, downloads, and storage. Its API intentionally differs from this native
+package's filesystem and Node stream APIs.
+
 ## Choose An API
 
 - [High-Level Recipe](recipe/index.md) provides an approachable, chainable API
