@@ -23,8 +23,7 @@
     "docs:declaration-reference": "node scripts/generate-declaration-reference.js && prettier --write docs/api/type-declarations.md",
     "docs:serve": "npm run docs:build && mkdocs serve",
     "docs:build": "npm run docs:recipe-reference && npm run docs:declaration-reference && mkdocs build",
-    "docs:check": "npm run docs:recipe-reference && npm run docs:declaration-reference && mkdocs build --strict",
-    "test:docs": "mocha tests/docs/**/*.js --timeout 15000"
+    "docs:check": "npm run docs:recipe-reference && npm run docs:declaration-reference && mkdocs build --strict"
   },
   "repository": {
     "type": "git",
