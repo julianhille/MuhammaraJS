@@ -24,6 +24,8 @@ identical to that tag. The other version identifiers come from the vendored
 source headers; `LibAesgm` does not declare an upstream release version.
 OpenSSL is downloaded from its pinned release archive and cached by CI rather
 than committed, to avoid adding its 50 MiB source archive to this repository.
+Official native prebuilts statically link OpenSSL libcrypto and therefore do
+not require a system OpenSSL installation at runtime.
 
 ## Reporting A Defect
 
