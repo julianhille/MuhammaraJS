@@ -37,46 +37,6 @@ npm pack --workspace=@muhammara/native
 npm run test:docs
 ```
 
-## WebAssembly Package
-
-Docker is required for the Emscripten build. The generated JavaScript and Wasm
-files are written under `packages/wasm/dist/`.
-
-```sh
-# Build the Wasm package.
-npm run wasm:build
-
-# Verify that the generated module loads and writes a PDF.
-npm run wasm:verify
-
-# Run the Wasm test suite.
-npm run wasm:test
-
-# Check strict TypeScript declarations.
-npm run wasm:test:types
-
-# Reject stale internal module paths.
-npm run wasm:test:paths
-
-# Verify every JavaScript-called native ABI symbol is exported by Emscripten.
-npm run wasm:test:exports
-
-# Run browser and module Worker validation in Firefox.
-npm run wasm:test:browser
-
-# Start the interactive tabbed examples at http://127.0.0.1:8080/.
-npm run wasm:server:browser
-
-# Inspect the npm package contents without publishing.
-npm pack --workspace=@muhammara/wasm --dry-run --json
-```
-
-Set `FIREFOX_BIN` when Firefox is not installed at `/usr/bin/firefox`:
-
-```sh
-FIREFOX_BIN=/path/to/firefox npm run wasm:test:browser
-```
-
 ## Documentation
 
 Create a Python virtual environment and install MkDocs with the repository's
@@ -135,24 +95,17 @@ npm deprecate 'muhammara@*' 'Deprecated: use @muhammara/native for prebuilt bina
 ```
 
 ```sh
-# WebAssembly release example.
-git tag wasm-v0.1.0
-git push origin wasm-v0.1.0
-
 # Native release example.
 git tag native-v7.0.0
 git push origin native-v7.0.0
 ```
 
 After successful publication, the workflows automatically create matching
-`wasm-doc-v<version>` or `native-doc-v<version>` documentation tags. A later
+`native-doc-v<version>` documentation tag. A later
 documentation-only correction can be tagged without rebuilding or publishing a
 package:
 
 ```sh
-git tag wasm-doc-v0.1.0.1
-git push origin wasm-doc-v0.1.0.1
-
 git tag native-doc-v7.0.0.1
 git push origin native-doc-v7.0.0.1
 ```

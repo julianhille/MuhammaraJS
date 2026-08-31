@@ -17,10 +17,3 @@ fs.cpSync(
     recursive: true,
   },
 );
-fs.cpSync(
-  path.join(root, "packages/wasm/docs"),
-  path.join(stagingDirectory, "wasm"),
-  {
-    recursive: true,
-  },
-);
