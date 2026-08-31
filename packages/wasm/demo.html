@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Muhammara Wasm Demo</title>
+    <style>
+      :root {
+        color: #1c1917;
+        background: #f5f1e8;
+        font-family: Georgia, serif;
+      }
+      body {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 5vw, 4rem);
+      }
+      main {
+        display: grid;
+        grid-template-columns: minmax(250px, 0.8fr) minmax(0, 2fr);
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+      }
+      aside,
+      section {
+        border: 1px solid #1c1917;
+        background: #fffdf8;
+        padding: 1.25rem;
+      }
+      button {
+        width: 100%;
+        margin: 0.35rem 0;
+        padding: 0.75rem;
+        border: 1px solid #1c1917;
+        color: #fffdf8;
+        background: #1c1917;
+        cursor: pointer;
+        font: inherit;
+      }
+      button:hover,
+      button:focus-visible {
+        color: #1c1917;
+        background: #f0b429;
+      }
+      #status {
+        min-height: 1.5rem;
+        font-family: ui-monospace, monospace;
+      }
+      iframe {
+        width: 100%;
+        min-height: 680px;
+        border: 0;
+        background: #e7e5e4;
+      }
+      a[hidden] {
+        display: none;
+      }
+      @media (max-width: 700px) {
+        body {
+          padding: 1rem;
+        }
+        main {
+          grid-template-columns: 1fr;
+        }
+        iframe {
+          min-height: 500px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Muhammara Wasm</h1>
+      <p>PDF generation entirely in the browser.</p>
+    </header>
+    <main>
+      <aside>
+        <button id="basic" type="button">Build Shapes PDF</button>
+        <button id="text" type="button">Build Text PDF</button>
+        <button id="decorations" type="button">
+          Build Text Decorations PDF
+        </button>
+        <button id="test" type="button">Run API Test</button>
+        <a id="download" hidden>Download PDF</a>
+        <p id="status" role="status">Load a sample to begin.</p>
+      </aside>
+      <section>
+        <iframe id="preview" title="Generated PDF preview"></iframe>
+      </section>
+    </main>
+    <script type="module">
+      import { createRecipe } from "./index.js";
+
+      var recipePromise;
+      var currentUrl;
+      var preview = document.querySelector("#preview");
+      var status = document.querySelector("#status");
+      var download = document.querySelector("#download");
+      function setStatus(message) {
+        status.textContent = message;
+      }
+      async function getRecipe() {
+        if (!recipePromise) {
+          setStatus("Loading WebAssembly...");
+          recipePromise = createRecipe();
+        }
+        return recipePromise;
+      }
+      function showPdf(bytes, name) {
+        if (currentUrl) URL.revokeObjectURL(currentUrl);
+        currentUrl = URL.createObjectURL(
+          new Blob([bytes], { type: "application/pdf" }),
+        );
+        preview.src = currentUrl;
+        download.href = currentUrl;
+        download.download = name;
+        download.hidden = false;
+        download.textContent = `Download ${name} (${bytes.length.toLocaleString()} bytes)`;
+        setStatus(`Created ${name}.`);
+      }
+      document.querySelector("#basic").addEventListener("click", async () => {
+        try {
+          var Recipe = await getRecipe();
+          var bytes = new Recipe()
+            .info({ title: "Muhammara Wasm Shapes" })
+            .createPage(595, 842)
+            .rectangle(50, 50, 495, 742, { stroke: "#1c1917" })
+            .circle(150, 175, 65, { fill: "#f0b429" })
+            .star(300, 175, 70, { stroke: "#4f46e5", lineWidth: 3 })
+            .arrow(450, 175, { head: 35, shaft: [100, 16], fill: "#0f766e" })
+            .triangle(150, 370, [100, 100, 100], { fill: "#f43f5e" })
+            .ellipse(350, 370, 100, 45, { stroke: "#2563eb", lineWidth: 4 })
+            .endPage()
+            .endPDF();
+          showPdf(bytes, "muhammara-shapes.pdf");
+        } catch (error) {
+          setStatus(`Error: ${error.message}`);
+        }
+      });
+      document.querySelector("#text").addEventListener("click", async () => {
+        try {
+          var Recipe = await getRecipe();
+          setStatus("Loading sample font...");
+          var font = new Uint8Array(
+            await (
+              await fetch("../native/tests/TestMaterials/fonts/arial.ttf")
+            ).arrayBuffer(),
+          );
+          Recipe.registerFont("arial", font);
+          var bytes = new Recipe()
+            .info({ title: "Muhammara Wasm Text" })
+            .createPage(595, 842)
+            .text("Hello from WebAssembly", 70, 120, {
+              font: "arial",
+              fontSize: 30,
+              color: "#1c1917",
+            })
+            .text("No Node.js native addon required.", 70, 180, {
+              font: "arial",
+              fontSize: 18,
+              color: "#0f766e",
+            })
+            .endPage()
+            .endPDF();
+          showPdf(bytes, "muhammara-text.pdf");
+        } catch (error) {
+          setStatus(`Error: ${error.message}`);
+        }
+      });
+      document
+        .querySelector("#decorations")
+        .addEventListener("click", async () => {
+          try {
+            var Recipe = await getRecipe();
+            setStatus("Loading sample font...");
+            var font = new Uint8Array(
+              await (
+                await fetch("../native/tests/TestMaterials/fonts/arial.ttf")
+              ).arrayBuffer(),
+            );
+            Recipe.registerFont("arial", font);
+            var bytes = new Recipe()
+              .info({ title: "Muhammara Wasm Text Decorations" })
+              .createPage(595, 842)
+              .text("Highlighted text", 70, 130, {
+                font: "arial",
+                fontSize: 30,
+                highlight: { color: "#fde68a" },
+              })
+              .text("Underlined text", 70, 220, {
+                font: "arial",
+                fontSize: 30,
+                underline: true,
+                color: "#1d4ed8",
+              })
+              .text("Struck out text", 70, 310, {
+                font: "arial",
+                fontSize: 30,
+                strikeOut: true,
+                color: "#be123c",
+              })
+              .text("All three decorations", 70, 400, {
+                font: "arial",
+                fontSize: 30,
+                highlight: { color: "#bbf7d0" },
+                underline: true,
+                strikeOut: true,
+                color: "#166534",
+              })
+              .endPage()
+              .endPDF();
+            showPdf(bytes, "muhammara-text-decorations.pdf");
+          } catch (error) {
+            setStatus(`Error: ${error.message}`);
+          }
+        });
+      document.querySelector("#test").addEventListener("click", async () => {
+        try {
+          var Recipe = await getRecipe();
+          var bytes = new Recipe()
+            .createPage(100, 100)
+            .rectangle(10, 10, 80, 80, { fill: "#f0b429" })
+            .endPage()
+            .endPDF();
+          if (new TextDecoder().decode(bytes.slice(0, 8)) !== "%PDF-1.4")
+            throw new Error("PDF header assertion failed");
+          setStatus(`API test passed (${bytes.length} byte PDF).`);
+        } catch (error) {
+          setStatus(`Test failed: ${error.message}`);
+        }
+      });
+    </script>
+  </body>
+</html>

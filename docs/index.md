@@ -1,28 +1,15 @@
 # MuhammaraJS Documentation
 
-MuhammaraJS is a native Node.js library for creating, reading, and modifying
-PDF files and streams. It is the maintained successor and drop-in replacement
-for HummusJS.
+MuhammaraJS is available as two deliberately different packages:
 
-## Choose An API
+- [Native Node.js](native/index.md), published as `@muhammara/native` with
+  `muhammara` retained as a compatibility package, provides the Node/V8 binding
+  and its filesystem and stream APIs.
+- [WebAssembly](wasm/index.md), published as `@muhammara/wasm`, provides an
+  asynchronous, browser-safe API that reads and writes in-memory bytes.
 
-- [High-Level Recipe](recipe/index.md) provides an approachable, chainable API
-  for common PDF creation and editing tasks.
-- [Low-Level API](low-level/index.md) exposes PDF writers, readers, content
-  contexts, streams, forms, and PDF drawing operators.
-- [API Reference](api/index.md) provides curated reference material verified
-  against the current implementation and tests.
-
-## Guide Organization
-
-The [High-Level Recipe](recipe/index.md) section explains the `Recipe` API by
-capability: creating pages, drawing text and shapes, composing documents, and
-working with metadata. Use it when you are learning or choosing Recipe methods.
-
-[How-To Guides](how-to/index.md) are organized by the result you want to
-achieve, such as watermarking a document, creating a table, or adding a link.
-They may use Recipe, the low-level API, or both, and focus on the complete
-workflow rather than a single API surface.
+Choose the package that matches the runtime rather than mixing their examples.
+The navigation keeps their guides and references separate.
 
 ## Documentation Versions
 
@@ -34,8 +21,9 @@ development.
 For current release history, read the
 [Changelog on GitHub](https://github.com/julianhille/MuhammaraJS/blob/develop/CHANGELOG.md).
 
-## Security And Dependencies
+## Documentation Sources
 
-Native dependencies are vendored with MuhammaraJS. See [Security and Vendored
-Dependencies](security.md) for their current upstream baselines, source links,
-and dependency update guidance.
+Package documentation is maintained beside its implementation in
+`packages/native/docs/` and `packages/wasm/docs/`. The site stages those sources
+into an ignored `docs/.staging/` directory before MkDocs builds it; do not edit
+the staged files.

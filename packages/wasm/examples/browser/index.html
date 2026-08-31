@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Muhammara Wasm byte laboratory</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="masthead">
+      <p class="eyebrow">Executable browser example</p>
+      <h1>PDFs stay in your hands.</h1>
+      <p class="lede">
+        Create, inspect, modify, compose, preview, and download PDFs as
+        browser-owned bytes, on the page or across a module Worker boundary.
+      </p>
+    </header>
+    <nav class="example-nav" aria-label="Runnable PDF examples">
+      <div class="example-tabs" role="tablist" aria-label="Example type">
+        <button
+          type="button"
+          role="tab"
+          aria-selected="true"
+          tabindex="0"
+          data-example="complete"
+        >
+          Complete lab
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
+          data-example="annotations"
+        >
+          Annotations
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
+          data-example="links"
+        >
+          Links
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
+          data-example="page-boxes"
+        >
+          Page boxes
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
+          data-example="rotated-page"
+        >
+          Rotation
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
+          data-example="image-transform"
+        >
+          Images
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
+          data-example="table"
+        >
+          Tables
+        </button>
+      </div>
+    </nav>
+    <main>
+      <section
+        id="example-panel"
+        class="controls"
+        role="tabpanel"
+        aria-labelledby="controls-title"
+      >
+        <div>
+          <p class="section-number">01 / Input</p>
+          <h2 id="controls-title">Bring byte assets</h2>
+          <p id="example-description">
+            Run the original end-to-end low-level and Recipe workflow, with
+            optional font and image assets.
+          </p>
+          <p id="example-requirement" class="requirement" hidden></p>
+        </div>
+        <form id="example-form">
+          <div class="mode-switch">
+            <label
+              ><input type="radio" name="mode" value="worker" checked /> Module
+              Worker</label
+            >
+            <label
+              ><input type="radio" name="mode" value="page" /> Main
+              thread</label
+            >
+          </div>
+          <div class="file-grid">
+            <label data-asset="font"
+              >TTF / OTF font<input
+                name="font"
+                type="file"
+                accept=".ttf,.otf,font/ttf,font/otf"
+            /></label>
+            <label data-asset="jpeg"
+              >JPEG image<input
+                name="jpeg"
+                type="file"
+                accept=".jpg,.jpeg,image/jpeg"
+            /></label>
+            <label data-asset="png"
+              >PNG image<input name="png" type="file" accept=".png,image/png"
+            /></label>
+            <label data-asset="tiff"
+              >TIFF image<input
+                name="tiff"
+                type="file"
+                accept=".tif,.tiff,image/tiff"
+            /></label>
+          </div>
+          <div class="actions">
+            <button id="run" type="submit">Run complete workflow</button>
+            <button id="cancel" class="secondary" type="button" disabled>
+              Cancel
+            </button>
+          </div>
+        </form>
+        <div class="warning">
+          <strong>Use a Worker for untrusted documents.</strong> Parsing and
+          image decoding are synchronous and can consume significant CPU and
+          memory. Keep inputs and expected outputs bounded; this example is
+          intended for modest documents (for example, under 25 MB input and 50
+          MB output).
+        </div>
+      </section>
+      <section class="result" aria-labelledby="result-title">
+        <div class="result-head">
+          <div>
+            <p class="section-number">02 / Output</p>
+            <h2 id="result-title">Inspect the result</h2>
+          </div>
+          <label id="output-choice-label"
+            >Preview<select id="output-choice">
+              <option value="recipe">Recipe output</option>
+              <option value="low-level">Low-level composition</option>
+            </select></label
+          >
+        </div>
+        <progress id="progress" max="100" value="0"></progress>
+        <p id="status" role="status">Ready. No bytes leave this page.</p>
+        <a id="download" class="download" hidden>Download PDF</a>
+        <iframe id="preview" title="Generated PDF preview"></iframe>
+        <details>
+          <summary>Structured run report</summary>
+          <pre id="output">
+Run the workflow to see parse-back assertions and document summaries.</pre>
+        </details>
+      </section>
+      <aside class="limits">
+        <p class="section-number">03 / Boundaries</p>
+        <h2>Browser-safe is not Node-compatible</h2>
+        <p>
+          No filesystem paths, Node streams, continuation state files,
+          EventEmitter hooks, or OpenSSL encryption/decryption are available.
+          Inputs are bytes, <code>Blob</code>, or <code>File</code>; outputs are
+          <code>Uint8Array</code>.
+        </p>
+        <p>
+          Every reader, writer, modifier, copying context, and Recipe is ended
+          or disposed. Registered assets are unregistered, and replacing a
+          preview revokes its previous object URL.
+        </p>
+      </aside>
+    </main>
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>

@@ -149,12 +149,18 @@ PDFHummus::EStatusCode PDFModifiedPage::WritePage()
 
 		// create a copying context, so we can copy the page dictionary, and modify its contents + resources dict
 		copyingContext = mWriter->CreatePDFCopyingContextForModifiedFile();
+		if (!copyingContext) {
+			status = eFailure;
+			break;
+		}
 
 		// get the page object
 		ObjectIDType pageObjectID = copyingContext->GetSourceDocumentParser()->GetPageObjectID(mPageIndex);
 		PDFObjectCastPtr<PDFDictionary> pageDictionaryObject = copyingContext->GetSourceDocumentParser()->ParsePage(mPageIndex);
-		if (!pageDictionaryObject)
-		    return eFailure;
+		if (!pageDictionaryObject) {
+			status = eFailure;
+			break;
+		}
 		MapIterator<PDFNameToPDFObjectMap>  pageDictionaryObjectIt = pageDictionaryObject->GetIterator();
 
 		// create modified page object

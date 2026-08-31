@@ -1,0 +1,81 @@
+{
+  "name": "muhammara",
+  "version": "7.0.0",
+  "description": "Create, read and modify PDF files and streams. A drop in replacement for hummusjs PDF library",
+  "homepage": "https://github.com/julianhille/Muhammarajs",
+  "license": "Apache-2.0",
+  "author": "Julian <j.hille484@gmail.com>",
+  "main": "./lib/index.js",
+  "types": "./muhammara.d.ts",
+  "engines": {
+    "node": "20 || 22 || 24 || >=25"
+  },
+  "scripts": {
+    "install": "node scripts/prepare-source.js && node-pre-gyp install --fallback-to-build ${EXTRA_NODE_PRE_GYP_FLAGS:-\"\"}",
+    "postinstall": "node scripts/copy-openssl-dlls.js",
+    "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
+    "test:codestyle": "npx prettier -c ./",
+    "test:electron": "electron-mocha -R tap ./tests/*.js --timeout 15000",
+    "prepackage": "node scripts/prepare-source.js",
+    "package": "node-pre-gyp package",
+    "stage:pack": "node scripts/stage-package.js",
+    "recipe-jsdoc": "jsdoc -c jsdoc.conf",
+    "docs:recipe-reference": "node scripts/generate-recipe-reference.js && prettier --write docs/recipe/reference.md",
+    "docs:declaration-reference": "node scripts/generate-declaration-reference.js && prettier --write docs/api/type-declarations.md",
+    "docs:generate": "npm run docs:recipe-reference && npm run docs:declaration-reference",
+    "test:docs": "mocha tests/docs/**/*.js --timeout 15000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/julianhille/Muhammarajs.git"
+  },
+  "keywords": [
+    "pdf",
+    "pdfhummus",
+    "muhammarajs",
+    "hummusjs",
+    "hummus"
+  ],
+  "files": [
+    "src",
+    "scripts/prepare-source.js",
+    "scripts/copy-openssl-dlls.js",
+    "lib",
+    "fonts",
+    "binding.gyp",
+    "muhammara.d.ts",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "dependencies": {
+    "@mapbox/node-pre-gyp": "^2.0.3",
+    "@xmldom/xmldom": "^0.9.10",
+    "linebreak": "^1.1.0",
+    "memory-streams": "^0.1.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.2.0",
+    "chai": "^4.5.0",
+    "docdash": "^2.0.1",
+    "fs-extra": "^11.2.0",
+    "jsdoc": "^4.0.3",
+    "jsdoc-to-markdown": "^9.1.3",
+    "mocha": "^11.0.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "tar": "7.5.22"
+  },
+  "binary": {
+    "module_name": "muhammara",
+    "module_path": "./binding",
+    "remote_path": "julianhille/MuhammaraJS/releases/download/native-v{version}",
+    "host": "https://github.com",
+    "package_name": "{node_abi}-{platform}-{arch}-{libc}.tar.gz"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "bundleDependencies": []
+}
