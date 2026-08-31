@@ -19,9 +19,10 @@ For the C++ library, see <https://github.com/galkahana/PDF-Writer>.
 
 [Read the native Node.js documentation on Read the Docs](https://muhammarajs.readthedocs.io/).
 [Read the browser and Worker documentation on Read the Docs](https://muhammarajs-wasm.readthedocs.io/).
-Native documentation is in [packages/native-core/docs/](packages/native-core/docs/);
+Native documentation is in [packages/native/docs/](packages/native/docs/);
 Wasm documentation is in [packages/wasm/docs/](packages/wasm/docs/). Build the
-combined site with `npm run docs:build` after installing `docs/requirements.txt`.
+native site with `npm run docs:build` after installing
+`packages/native/docs/requirements.txt`.
 
 ## HummusJS Is The Base
 

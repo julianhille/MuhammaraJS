@@ -2,7 +2,10 @@ var fs = require("fs");
 var path = require("path");
 
 var declarationPath = path.join(__dirname, "../muhammara.d.ts");
-var outputPath = path.join(__dirname, "../docs/api/type-declarations.md");
+var outputPath = path.join(
+  __dirname,
+  "../../native/docs/api/type-declarations.md",
+);
 var lines = fs.readFileSync(declarationPath, "utf8").split("\n");
 var sections = [
   ["Module Entry Points", 3, 49],

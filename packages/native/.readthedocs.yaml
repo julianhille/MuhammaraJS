@@ -5,14 +5,11 @@ build:
   tools:
     python: "3.12"
     nodejs: "24"
-  jobs:
-    pre_build:
-      - node scripts/stage-docs.js
 
 mkdocs:
-  configuration: mkdocs.yml
+  configuration: packages/native/mkdocs.yml
   fail_on_warning: true
 
 python:
   install:
-    - requirements: docs/requirements.txt
+    - requirements: packages/native/docs/requirements.txt

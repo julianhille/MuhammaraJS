@@ -39,14 +39,14 @@ npm run test:docs
 
 ## Documentation
 
-Create a Python virtual environment and install MkDocs with the repository's
-pinned documentation dependencies:
+Create a Python virtual environment and install the native site's pinned
+documentation dependencies:
 
 ```sh
 python -m venv .docs-venv
 source .docs-venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r docs/requirements.txt
+python -m pip install -r packages/native/docs/requirements.txt
 ```
 
 On Windows PowerShell, activate the environment with:
@@ -55,14 +55,11 @@ On Windows PowerShell, activate the environment with:
 .docs-venv\Scripts\Activate.ps1
 ```
 
-Generate references, stage package-local documentation, and work with MkDocs:
+Generate references and work with the native MkDocs site:
 
 ```sh
 # Generate API reference pages.
 npm run docs:generate
-
-# Recreate the ignored docs/.staging source tree.
-npm run docs:stage
 
 # Build the site.
 npm run docs:build
@@ -74,7 +71,10 @@ npm run docs:check
 npm run docs:serve
 ```
 
-Never edit or commit `docs/.staging/` or `site/`; both are generated outputs.
+Never commit the generated `site/` output.
+
+The native Read the Docs project uses `packages/native/.readthedocs.yaml`.
+Configure the project to use that file rather than the repository root.
 
 ## Release Tags
 

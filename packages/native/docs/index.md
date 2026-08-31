@@ -24,8 +24,5 @@ For current release history, read the
 
 ## Documentation Sources
 
-Native documentation is maintained beside its implementation in
-`packages/native-core/docs/`. The site stages those sources into an ignored
-`docs/.staging/` directory before MkDocs builds it; do not edit the staged files.
-Wasm documentation is maintained and built independently from
-`packages/wasm/docs/`.
+Native documentation is maintained in `packages/native/docs/` and built
+independently from the Wasm site in `packages/wasm/docs/`.

@@ -3,8 +3,8 @@ var fs = require("fs");
 var os = require("os");
 var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
-var createLowLevelPdf = require("../../../native-core/docs/examples/create-low-level-pdf");
-var createRecipePdf = require("../../../native-core/docs/examples/create-recipe-pdf");
+var createLowLevelPdf = require("../../../native/docs/examples/create-low-level-pdf");
+var createRecipePdf = require("../../../native/docs/examples/create-recipe-pdf");
 
 describe("Documentation examples", function () {
   var outputDirectory;

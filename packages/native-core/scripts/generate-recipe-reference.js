@@ -2,7 +2,7 @@ var childProcess = require("child_process");
 var fs = require("fs");
 var path = require("path");
 
-var outputPath = path.join(__dirname, "../docs/recipe/reference.md");
+var outputPath = path.join(__dirname, "../../native/docs/recipe/reference.md");
 var sourceFiles = [
   "lib/Recipe.js",
   ...fs
@@ -24,7 +24,7 @@ var result = childProcess.spawnSync(
     "list",
     "--separators",
   ].concat(sourceFiles),
-  { encoding: "utf8" },
+  { cwd: path.join(__dirname, ".."), encoding: "utf8" },
 );
 
 if (result.status !== 0) {

@@ -12,10 +12,7 @@
   },
   "scripts": {
     "test:codestyle": "npx prettier -c ./",
-    "recipe-jsdoc": "jsdoc -c jsdoc.conf",
-    "docs:recipe-reference": "node scripts/generate-recipe-reference.js && prettier --write docs/recipe/reference.md",
-    "docs:declaration-reference": "node scripts/generate-declaration-reference.js && prettier --write docs/api/type-declarations.md",
-    "docs:generate": "npm run docs:recipe-reference && npm run docs:declaration-reference"
+    "recipe-jsdoc": "jsdoc -c jsdoc.conf"
   },
   "files": [
     "index.js",

@@ -18,11 +18,10 @@
     "wasm:serve:browser": "npm run serve:browser --workspace=@muhammara/wasm",
     "wasm:server:browser": "npm run server:browser --workspace=@muhammara/wasm",
     "wasm:test:browser": "npm run test:browser --workspace=@muhammara/wasm",
-    "docs:generate": "npm run docs:generate --workspace=@muhammara/native-core",
-    "docs:stage": "node scripts/stage-docs.js",
-    "docs:build": "npm run docs:generate && npm run docs:stage && mkdocs build",
-    "docs:check": "npm run docs:generate && npm run docs:stage && mkdocs build --strict",
-    "docs:serve": "npm run docs:generate && npm run docs:stage && mkdocs serve",
+    "docs:generate": "npm run docs:generate --workspace=@muhammara/native",
+    "docs:build": "npm run docs:generate && mkdocs build --config-file packages/native/mkdocs.yml",
+    "docs:check": "npm run docs:generate && mkdocs build --strict --config-file packages/native/mkdocs.yml",
+    "docs:serve": "npm run docs:generate && mkdocs serve --config-file packages/native/mkdocs.yml",
     "test:docs": "npm run test:docs --workspace=@muhammara/native-with-source"
   }
 }
