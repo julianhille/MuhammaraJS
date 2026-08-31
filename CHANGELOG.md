@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Expose PDF 2.0 writer support [#551](https://github.com/julianhille/MuhammaraJS/issues/551)
 - Add `PDFReader.extractPageText()` for enumerating page content-stream text operations.
 - Add opt-in fixed-height clipping and an `onClip` callback to Recipe text boxes
+- Bundle pinned OpenSSL 3.5.4 statically in official native prebuilts.
 
 ### Fixed
 
