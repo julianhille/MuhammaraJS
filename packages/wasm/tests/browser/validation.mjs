@@ -235,13 +235,15 @@ export async function runValidation() {
 
   var fontBytes = new Uint8Array(
     await (
-      await fetch("/packages/native/tests/TestMaterials/fonts/arial.ttf")
+      await fetch(
+        "/packages/native-with-source/tests/TestMaterials/fonts/arial.ttf",
+      )
     ).arrayBuffer(),
   );
   var imageBytes = new Uint8Array(
     await (
       await fetch(
-        "/packages/native/tests/TestMaterials/images/png/pnglogo-grr.png",
+        "/packages/native-with-source/tests/TestMaterials/images/png/pnglogo-grr.png",
       )
     ).arrayBuffer(),
   );
@@ -662,7 +664,7 @@ export async function runValidation() {
     jpeg: new Uint8Array(
       await (
         await fetch(
-          "/packages/native/tests/TestMaterials/images/soundcloud_logo.jpg",
+          "/packages/native-with-source/tests/TestMaterials/images/soundcloud_logo.jpg",
         )
       ).arrayBuffer(),
     ),
@@ -670,7 +672,7 @@ export async function runValidation() {
     tiff: new Uint8Array(
       await (
         await fetch(
-          "/packages/native/tests/TestMaterials/images/tiff/multipage.tif",
+          "/packages/native-with-source/tests/TestMaterials/images/tiff/multipage.tif",
         )
       ).arrayBuffer(),
     ),

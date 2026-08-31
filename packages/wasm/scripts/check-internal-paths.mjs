@@ -26,8 +26,8 @@ var textExtensions = new Set([
 var roots = [
   packageRoot,
   path.join(repositoryRoot, "docs"),
-  path.join(repositoryRoot, "packages/native/docs"),
-  path.join(repositoryRoot, "packages/native/README.md"),
+  path.join(repositoryRoot, "packages/native-core/docs"),
+  path.join(repositoryRoot, "packages/native-with-source/README.md"),
   path.join(repositoryRoot, ".github"),
   path.join(repositoryRoot, "README.md"),
   path.join(repositoryRoot, "package.json"),

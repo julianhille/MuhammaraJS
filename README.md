@@ -18,7 +18,7 @@ For the C++ library, see <https://github.com/galkahana/PDF-Writer>.
 ## Documentation
 
 [Read the full MuhammaraJS documentation on Read the Docs](https://muhammarajs.readthedocs.io/).
-Native Node.js documentation is in [packages/native/docs/](packages/native/docs/);
+Native Node.js documentation is in [packages/native-core/docs/](packages/native-core/docs/);
 browser and worker documentation is in
 [packages/wasm/docs/](packages/wasm/docs/). Build the combined site with
 `npm run docs:build` after installing `docs/requirements.txt`.

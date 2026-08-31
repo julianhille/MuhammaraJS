@@ -24,6 +24,6 @@ For current release history, read the
 ## Documentation Sources
 
 Package documentation is maintained beside its implementation in
-`packages/native/docs/` and `packages/wasm/docs/`. The site stages those sources
+`packages/native-core/docs/` and `packages/wasm/docs/`. The site stages those sources
 into an ignored `docs/.staging/` directory before MkDocs builds it; do not edit
 the staged files.

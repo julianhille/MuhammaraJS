@@ -27,7 +27,7 @@ npm run wasm:test:browser
 
 The browser test starts a local server and uses Firefox. It expects
 `/usr/bin/firefox` by default; set `FIREFOX_BIN` for another executable. Wasm
-tests share native test fixtures under `packages/native/tests/TestMaterials`.
+tests share native test fixtures under `packages/native-with-source/tests/TestMaterials`.
 
 Wasm documentation sources are package-local and are not published in the npm
 package. Stage them for MkDocs with `npm run docs:stage`; that generated

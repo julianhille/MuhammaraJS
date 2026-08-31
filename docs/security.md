@@ -1,6 +1,7 @@
 # Security And Vendored Dependencies
 
-MuhammaraJS compiles the native code under `src/deps/` into its addon. Every
+MuhammaraJS compiles the native code under
+`packages/native-with-source/src/deps/` into its addon. Every
 directory in that location is vendored source code; none is installed or kept
 current automatically by npm or another package manager. The versions below
 describe the source currently in this repository.
@@ -19,7 +20,7 @@ describe the source currently in this repository.
 | `Zlib`             | [1.2.11](https://github.com/madler/zlib/tree/v1.2.11)                    | [Source](https://github.com/madler/zlib) and [issues](https://github.com/madler/zlib/issues)                                                      |
 
 The PDFWriter tag is the vendored tree's upstream baseline. MuhammaraJS carries
-changes on top of it, so `src/deps/PDFWriter` is not necessarily byte-for-byte
+changes on top of it, so `packages/native-with-source/src/deps/PDFWriter` is not necessarily byte-for-byte
 identical to that tag. The other version identifiers come from the vendored
 source headers; `LibAesgm` does not declare an upstream release version.
 OpenSSL is downloaded from its pinned release archive and cached by CI rather

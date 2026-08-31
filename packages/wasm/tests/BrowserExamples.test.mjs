@@ -13,7 +13,7 @@ describe("Browser how-to examples", function () {
       font: new Uint8Array(
         await readFile(
           new URL(
-            "../../native/tests/TestMaterials/fonts/arial.ttf",
+            "../../native-with-source/tests/TestMaterials/fonts/arial.ttf",
             import.meta.url,
           ),
         ),
@@ -21,7 +21,7 @@ describe("Browser how-to examples", function () {
       png: new Uint8Array(
         await readFile(
           new URL(
-            "../../native/tests/TestMaterials/images/png/original.png",
+            "../../native-with-source/tests/TestMaterials/images/png/original.png",
             import.meta.url,
           ),
         ),

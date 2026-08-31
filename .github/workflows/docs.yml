@@ -33,4 +33,4 @@ jobs:
       - run: python -m pip install -r docs/requirements.txt
       - run: npm ci
       - run: npm run docs:check
-      - run: git diff --exit-code -- packages/native/docs/recipe/reference.md packages/native/docs/api/type-declarations.md
+      - run: git diff --exit-code -- packages/native-core/docs/recipe/reference.md packages/native-core/docs/api/type-declarations.md

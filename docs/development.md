@@ -20,7 +20,7 @@ must not run the native installation hook.
 npm test
 
 # Run one native test.
-npx mocha packages/native/tests/SimpleTextUsageTest.js --timeout 15000
+npx mocha packages/native-with-source/tests/SimpleTextUsageTest.js --timeout 15000
 
 # Check formatting.
 npm run test:codestyle
@@ -29,7 +29,9 @@ npm run test:codestyle
 npm run package
 
 # Produce slim and source-capable native publication tarballs.
-npm run stage:pack --workspace=@muhammara/native-with-source
+npm pack --workspace=@muhammara/native-core
+npm pack --workspace=@muhammara/native-with-source
+npm pack --workspace=@muhammara/native
 
 # Execute documentation examples.
 npm run test:docs

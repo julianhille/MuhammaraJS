@@ -13,7 +13,7 @@ var testRoot = fs.mkdtempSync(path.join(os.tmpdir(), "muhammara-wasm-tests-"));
 var testCwd = path.join(testRoot, "native");
 var materials = path.join(
   repositoryRoot,
-  "packages/native/tests/TestMaterials",
+  "packages/native-with-source/tests/TestMaterials",
 );
 fs.mkdirSync(path.join(testCwd, "tests"), { recursive: true });
 fs.symlinkSync(

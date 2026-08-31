@@ -4,6 +4,11 @@ This target compiles the reusable C++ `PDFWriter` core for browser, worker, and
 Node WebAssembly runtimes. It does not compile the Node/V8 binding, so its API
 is intentionally separate from `require("muhammara")`.
 
+For Node.js filesystem paths, streams, and the full native PDF API, use
+[`@muhammara/native`](https://muhammarajs.readthedocs.io/). Use
+`@muhammara/native-with-source` when the native addon needs a local or Electron
+build.
+
 ## Build
 
 The build requires Docker and pulls `emscripten/emsdk:3.1.74` on first use:
@@ -19,7 +24,7 @@ Within this repository, Wasm is the `@muhammara/wasm` npm workspace. Run its
 commands either through the root aliases, such as `npm run wasm:build`, or
 directly with `npm run build --workspace=@muhammara/wasm`. The workspace Mocha
 commands execute from the repository root so they can share the native fixture
-files under `packages/native/tests/TestMaterials`.
+files under `packages/native-with-source/tests/TestMaterials`.
 
 ## Use
 
@@ -501,7 +506,7 @@ structured result from both a page and module Worker. It requires
 runner uses only Node built-ins and does not add a browser automation dependency.
 Low-level
 tests are in `packages/wasm/tests/` and use names matching their closest
-`packages/native/tests/*.js`
+`packages/native-with-source/tests/*.js`
 counterparts. Recipe ports are grouped by Node Recipe category in
 `packages/wasm/tests/recipe/`; parser security regressions are in
 `packages/wasm/tests/security/`. The Recipe tests share one cached Wasm

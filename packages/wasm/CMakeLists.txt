@@ -16,13 +16,14 @@ set(PDFHummus_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 # OpenSSL-backed encryption is deliberately excluded from this target.
 set(PDFHUMMUS_NO_OPENSSL ON)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../src/deps/LibAesgm LibAesgm)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../src/deps/Zlib Zlib)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../src/deps/FreeType FreeType)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../src/deps/LibJpeg LibJpeg)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../src/deps/LibPng LibPng)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../src/deps/LibTiff LibTiff)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../src/deps/PDFWriter PDFWriter)
+set(MUHAMMARA_NATIVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../native-with-source/src)
+add_subdirectory(${MUHAMMARA_NATIVE_SOURCE_DIR}/deps/LibAesgm LibAesgm)
+add_subdirectory(${MUHAMMARA_NATIVE_SOURCE_DIR}/deps/Zlib Zlib)
+add_subdirectory(${MUHAMMARA_NATIVE_SOURCE_DIR}/deps/FreeType FreeType)
+add_subdirectory(${MUHAMMARA_NATIVE_SOURCE_DIR}/deps/LibJpeg LibJpeg)
+add_subdirectory(${MUHAMMARA_NATIVE_SOURCE_DIR}/deps/LibPng LibPng)
+add_subdirectory(${MUHAMMARA_NATIVE_SOURCE_DIR}/deps/LibTiff LibTiff)
+add_subdirectory(${MUHAMMARA_NATIVE_SOURCE_DIR}/deps/PDFWriter PDFWriter)
 
 add_executable(muhammara-wasm
   src/wasm_api.cpp

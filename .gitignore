@@ -1,11 +1,10 @@
 muhammarajs
 build
 .DS_Store
-packages/native/tests/output
-packages/native/tests/**/output
-packages/native/binding
-packages/native/build/
-packages/native/src
+packages/native-with-source/tests/output
+packages/native-with-source/tests/**/output
+packages/native-with-source/binding
+packages/native-with-source/build/
 packages/src
 node_modules
 src/deps/openssl/

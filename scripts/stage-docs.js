@@ -11,7 +11,7 @@ fs.mkdirSync(stagingDirectory, { recursive: true });
   fs.copyFileSync(path.join(docsRoot, file), path.join(stagingDirectory, file));
 });
 fs.cpSync(
-  path.join(root, "packages/native/docs"),
+  path.join(root, "packages/native-core/docs"),
   path.join(stagingDirectory, "native"),
   {
     recursive: true,

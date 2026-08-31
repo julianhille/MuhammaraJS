@@ -18,7 +18,7 @@
     "wasm:serve:browser": "npm run serve:browser --workspace=@muhammara/wasm",
     "wasm:server:browser": "npm run server:browser --workspace=@muhammara/wasm",
     "wasm:test:browser": "npm run test:browser --workspace=@muhammara/wasm",
-    "docs:generate": "npm run docs:generate --workspace=@muhammara/native-with-source",
+    "docs:generate": "npm run docs:generate --workspace=@muhammara/native-core",
     "docs:stage": "node scripts/stage-docs.js",
     "docs:build": "npm run docs:generate && npm run docs:stage && mkdocs build",
     "docs:check": "npm run docs:generate && npm run docs:stage && mkdocs build --strict",
