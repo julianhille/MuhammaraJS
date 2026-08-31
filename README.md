@@ -1,7 +1,7 @@
 # Welcome to MuhammaraJS
 
 [![NPM version](https://img.shields.io/npm/v/%40muhammara%2Fnative.svg?style=flat)](https://www.npmjs.org/package/@muhammara/native)
-[![Build status](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml)
+[![Native CI status](https://github.com/julianhille/MuhammaraJS/actions/workflows/ci-native.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/ci-native.yml)
 
 MuhammaraJS is a fast Node.js module for creating, parsing, and manipulating
 PDF files and streams.
@@ -17,11 +17,11 @@ For the C++ library, see <https://github.com/galkahana/PDF-Writer>.
 
 ## Documentation
 
-[Read the full MuhammaraJS documentation on Read the Docs](https://muhammarajs.readthedocs.io/).
-Native Node.js documentation is in [packages/native-core/docs/](packages/native-core/docs/);
-browser and worker documentation is in
-[packages/wasm/docs/](packages/wasm/docs/). Build the combined site with
-`npm run docs:build` after installing `docs/requirements.txt`.
+[Read the native Node.js documentation on Read the Docs](https://muhammarajs.readthedocs.io/).
+[Read the browser and Worker documentation on Read the Docs](https://muhammarajs-wasm.readthedocs.io/).
+Native documentation is in [packages/native-core/docs/](packages/native-core/docs/);
+Wasm documentation is in [packages/wasm/docs/](packages/wasm/docs/). Build the
+combined site with `npm run docs:build` after installing `docs/requirements.txt`.
 
 ## HummusJS Is The Base
 
