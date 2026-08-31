@@ -5,10 +5,10 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "npm run test --workspace=muhammara",
-    "test:codestyle": "npm run test:codestyle --workspace=muhammara",
-    "test:electron": "npm run test:electron --workspace=muhammara",
-    "package": "npm run package --workspace=muhammara",
+    "test": "npm run test --workspace=@muhammara/native-with-source",
+    "test:codestyle": "npm run test:codestyle --workspace=@muhammara/native-with-source",
+    "test:electron": "npm run test:electron --workspace=@muhammara/native-with-source",
+    "package": "npm run package --workspace=@muhammara/native-with-source",
     "wasm:build": "npm run build --workspace=@muhammara/wasm",
     "wasm:verify": "npm run verify --workspace=@muhammara/wasm",
     "wasm:test": "npm run test --workspace=@muhammara/wasm",
@@ -18,11 +18,11 @@
     "wasm:serve:browser": "npm run serve:browser --workspace=@muhammara/wasm",
     "wasm:server:browser": "npm run server:browser --workspace=@muhammara/wasm",
     "wasm:test:browser": "npm run test:browser --workspace=@muhammara/wasm",
-    "docs:generate": "npm run docs:generate --workspace=muhammara",
+    "docs:generate": "npm run docs:generate --workspace=@muhammara/native-with-source",
     "docs:stage": "node scripts/stage-docs.js",
     "docs:build": "npm run docs:generate && npm run docs:stage && mkdocs build",
     "docs:check": "npm run docs:generate && npm run docs:stage && mkdocs build --strict",
     "docs:serve": "npm run docs:generate && npm run docs:stage && mkdocs serve",
-    "test:docs": "npm run test:docs --workspace=muhammara"
+    "test:docs": "npm run test:docs --workspace=@muhammara/native-with-source"
   }
 }

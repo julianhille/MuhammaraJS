@@ -1,8 +1,9 @@
 # Migrate To `@muhammara/native`
 
-MuhammaraJS is moving its maintained packages under the `@muhammara`
-organization. The scoped native package and the compatibility package contain
-the same API, version, source, TypeScript declarations, and native binaries.
+MuhammaraJS maintains two scoped native packages with the same API, TypeScript
+declarations, and native binary metadata. `@muhammara/native` is prebuilt-only;
+`@muhammara/native-with-source` also contains the C++ source tree for local
+builds.
 
 Replace the dependency:
 
@@ -17,10 +18,23 @@ Then change the module name in imports:
 var muhammara = require("@muhammara/native");
 ```
 
-No PDF API changes are required. Lockfiles will change because npm treats the
-two names as distinct packages. Do not install both names in one application;
-that can install and initialize two copies of the same native addon.
+No PDF API changes are required. Use the source-capable package instead when a
+matching prebuild is unavailable or Electron must rebuild the addon:
 
-The unscoped `muhammara` package continues to receive matching releases during
-the transition so existing applications are not forced to migrate immediately.
-New applications and documentation examples use `@muhammara/native`.
+```sh
+npm install @muhammara/native-with-source
+```
+
+To keep the scoped import name while using the source-capable package, use an
+npm alias:
+
+```sh
+npm install @muhammara/native@npm:@muhammara/native-with-source@<version>
+```
+
+The unscoped package is deprecated and receives no further releases. Existing
+applications can temporarily preserve `require("muhammara")` with an alias:
+
+```sh
+npm install muhammara@npm:@muhammara/native@<version>
+```

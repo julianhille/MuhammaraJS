@@ -1,5 +1,5 @@
 {
-  "name": "muhammara",
+  "name": "@muhammara/native-with-source",
   "version": "7.0.0",
   "description": "Create, read and modify PDF files and streams. A drop in replacement for hummusjs PDF library",
   "homepage": "https://github.com/julianhille/Muhammarajs",
@@ -11,7 +11,7 @@
     "node": "20 || 22 || 24 || >=25"
   },
   "scripts": {
-    "install": "node scripts/prepare-source.js && node-pre-gyp install --fallback-to-build ${EXTRA_NODE_PRE_GYP_FLAGS:-\"\"}",
+    "install": "node scripts/install-with-source.js",
     "postinstall": "node scripts/copy-openssl-dlls.js",
     "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
     "test:codestyle": "npx prettier -c ./",
@@ -19,6 +19,7 @@
     "prepackage": "node scripts/prepare-source.js",
     "package": "node-pre-gyp package",
     "stage:pack": "node scripts/stage-package.js",
+    "clean:source": "node scripts/remove-source.js",
     "recipe-jsdoc": "jsdoc -c jsdoc.conf",
     "docs:recipe-reference": "node scripts/generate-recipe-reference.js && prettier --write docs/recipe/reference.md",
     "docs:declaration-reference": "node scripts/generate-declaration-reference.js && prettier --write docs/api/type-declarations.md",
@@ -39,7 +40,10 @@
   "files": [
     "src",
     "scripts/prepare-source.js",
+    "scripts/install-with-source.js",
     "scripts/copy-openssl-dlls.js",
+    "scripts/install-prebuilt.js",
+    "scripts/remove-source.js",
     "lib",
     "fonts",
     "binding.gyp",
@@ -76,6 +80,9 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "bin": {
+    "muhammara-clean-source": "scripts/remove-source.js"
   },
   "bundleDependencies": []
 }

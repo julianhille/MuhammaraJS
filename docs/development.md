@@ -28,8 +28,8 @@ npm run test:codestyle
 # Build a native prebuild with node-pre-gyp.
 npm run package
 
-# Produce the publication tarball with real source files.
-npm run stage:pack --workspace=muhammara
+# Produce slim and source-capable native publication tarballs.
+npm run stage:pack --workspace=@muhammara/native-with-source
 
 # Execute documentation examples.
 npm run test:docs
@@ -117,9 +117,20 @@ Never edit or commit `docs/.staging/` or `site/`; both are generated outputs.
 ## Release Tags
 
 Normal package tags trigger validation and publication. The package version must
-match the version in the tag. A native release builds its prebuilds once and
-publishes the same version and payload as both the recommended
-`@muhammara/native` package and the `muhammara` compatibility package.
+match the version in the tag. A native release builds its prebuilds once, then
+publishes `@muhammara/native-with-source` before the smaller prebuilt-only
+`@muhammara/native` package. Native packages use npm trusted publishing through
+GitHub Actions OIDC and do not require an npm token.
+
+Before the first native release, configure npm trusted publishers for both
+scoped native packages. Each publisher must trust this repository's native
+release workflow and its release environment. After the first successful
+replacement release, deprecate every published unscoped version without
+publishing another `muhammara` package:
+
+```sh
+npm deprecate 'muhammara@*' 'Deprecated: use @muhammara/native for prebuilt binaries or @muhammara/native-with-source for local builds.'
+```
 
 ```sh
 # WebAssembly release example.

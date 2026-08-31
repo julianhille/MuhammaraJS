@@ -6,9 +6,10 @@
 MuhammaraJS is a fast Node.js module for creating, parsing, and manipulating
 PDF files and streams.
 
-New native installations should use `npm install @muhammara/native`. The
-unscoped `muhammara` package remains available with matching releases during the
-transition to the `@muhammara` organization.
+Use `npm install @muhammara/native` for a small native package with matching
+prebuilt binaries. Use `npm install @muhammara/native-with-source` when a local
+source build or Electron rebuild is needed. The unscoped `muhammara` package is
+deprecated and receives no further releases.
 
 Original Project (C++ base version): <http://www.pdfhummus.com>
 

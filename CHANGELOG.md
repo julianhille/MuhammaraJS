@@ -9,8 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Publish the native addon as `@muhammara/native` while retaining `muhammara`
-  as a matching compatibility package during the scoped-package transition.
+- Publish prebuilt-only `@muhammara/native` and source-capable
+  `@muhammara/native-with-source` packages, with npm alias support for existing
+  imports.
+- Add `muhammara-clean-source` to remove bundled C++ sources after a successful
+  native build.
 - Set version of setup-node action to v6
 - Set version of checkout action to v6
 - Set versoin of cache action to v5
@@ -39,6 +42,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Removed
 
+- Future publication of the unscoped `muhammara` package; published versions
+  are deprecated in favor of the scoped native packages.
 - node version 18
 - node version 19
 - node version 21

@@ -1,9 +1,10 @@
 # MuhammaraJS Native Node.js
 
-The `@muhammara/native` package is the native Node.js library for creating,
-reading, and modifying PDF files and streams. It is the maintained successor and
-drop-in replacement for HummusJS. The unscoped `muhammara` package remains a
-compatibility name during the transition to the `@muhammara` organization.
+`@muhammara/native` is the small prebuilt-only native Node.js package for
+creating, reading, and modifying PDF files and streams.
+`@muhammara/native-with-source` exposes the same API and includes the C++ source
+tree for local Node.js and Electron builds. The unscoped `muhammara` package is
+deprecated and receives no further releases.
 
 ## Choose An API
 

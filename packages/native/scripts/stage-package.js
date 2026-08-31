@@ -18,7 +18,7 @@ var packageFiles = [
   "README.md",
 ];
 
-function stagePackage(name, directory) {
+function stagePackage(manifest, directory, includeSource) {
   fs.rmSync(directory, { force: true, recursive: true });
   fs.mkdirSync(directory, { recursive: true });
   packageFiles.forEach(function (file) {
@@ -26,19 +26,16 @@ function stagePackage(name, directory) {
       recursive: true,
     });
   });
-  fs.cpSync(path.join(repositoryRoot, "src"), path.join(directory, "src"), {
-    dereference: true,
-    recursive: true,
-  });
+  if (includeSource) {
+    fs.cpSync(path.join(repositoryRoot, "src"), path.join(directory, "src"), {
+      dereference: true,
+      recursive: true,
+    });
+  }
   fs.copyFileSync(
     path.join(repositoryRoot, "LICENSE"),
     path.join(directory, "LICENSE"),
   );
-  var manifest = { ...packageManifest, name };
-  if (name === "muhammara") {
-    manifest.description =
-      "Compatibility package for @muhammara/native; create, read, and modify PDF files and streams";
-  }
   fs.writeFileSync(
     path.join(directory, "package.json"),
     `${JSON.stringify(manifest, null, 2)}\n`,
@@ -56,13 +53,35 @@ childProcess.execFileSync("node", ["scripts/prepare-source.js"], {
   stdio: "inherit",
 });
 fs.readdirSync(buildRoot).forEach(function (filename) {
-  if (/^muhammara(?:-native)?-.+\.tgz$/.test(filename)) {
+  if (/^muhammara-native(?:-with-source)?-.+\.tgz$/.test(filename)) {
     fs.rmSync(path.join(buildRoot, filename), { force: true });
   }
 });
 
-stagePackage("muhammara", path.join(buildRoot, "release-package"));
 stagePackage(
-  "@muhammara/native",
-  path.join(buildRoot, "release-package-scoped"),
+  packageManifest,
+  path.join(buildRoot, "release-package-with-source"),
+  true,
 );
+
+var slimManifest = {
+  ...packageManifest,
+  name: "@muhammara/native",
+  description:
+    "Native prebuilt binaries for creating, reading, and modifying PDF files and streams",
+  files: [
+    "scripts/install-prebuilt.js",
+    "scripts/copy-openssl-dlls.js",
+    "lib",
+    "fonts",
+    "muhammara.d.ts",
+    "THIRD_PARTY_NOTICES.md",
+  ],
+  scripts: {
+    install: "node scripts/install-prebuilt.js",
+    postinstall: "node scripts/copy-openssl-dlls.js",
+  },
+  bin: undefined,
+};
+
+stagePackage(slimManifest, path.join(buildRoot, "release-package"), false);
