@@ -2115,6 +2115,7 @@ EStatusCode PDFDocumentHandler::WriteStreamObject(PDFStreamInput* inStream, IObj
 	if (status != PDFHummus::eSuccess)
 	{
 		TRACE_LOG("PDFDocumentHandler::WriteStreamObject, failed to write stream dictionary");
+		mObjectsContext->EndDictionary(newStreamDictionary);
 		delete streamReader;
 		return PDFHummus::eFailure;
 	}
