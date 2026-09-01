@@ -2724,6 +2724,8 @@ ObjectIDType DocumentContext::WriteCombinedPageTree(PDFParser* inModifiedFilePar
         if(status != eSuccess)
         {
             TRACE_LOG("DocumentContext::WriteCombinedPageTree, Unable to copy original page tree. this probably means that the original file is protected - and is therefore unsupported for such activity as adding pages");
+			mObjectsContext->EndDictionary(pagesTreeContext);
+			mObjectsContext->EndIndirectObject();
             break;
         }
 
