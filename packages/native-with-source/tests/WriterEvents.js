@@ -66,7 +66,7 @@ describe("WriterEvents", function () {
     pdfWriter.writePage(page);
 
     var page1 = pdfWriter.createPage(0, 0, 595, 842);
-    var cxt1 = pdfWriter.startPageContentContext(page);
+    var cxt1 = pdfWriter.startPageContentContext(page1);
 
     pdfWriter.writePage(page1);
 
