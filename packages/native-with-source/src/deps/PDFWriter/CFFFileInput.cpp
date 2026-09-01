@@ -179,7 +179,7 @@ void CFFFileInput::FreeData()
 	{
 		for(unsigned long i=0; i < mFontsCount; ++i)
 			delete[] mCharStrings[i].mCharStringsIndex;
-		delete mCharStrings;
+		delete[] mCharStrings;
 		mCharStrings = NULL;
 	}
 	delete[] mPrivateDicts;
@@ -1973,4 +1973,3 @@ unsigned short CFFFileInput::GetGlyphSID(unsigned short inFontIndex,unsigned sho
 		return sid;
 	}
 }
-
