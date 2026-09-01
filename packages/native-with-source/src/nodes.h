@@ -121,11 +121,9 @@
     #define DEFINE_EXTERNAL_DE_CON_STRUCTORS(C) \
         C::C(Isolate* isolate, Local<Object> exports) { \
             mExports.Reset(isolate, exports); \
-            mExports.SetWeak(this, DeleteMe, WeakCallbackType::kParameter); \
         } \
         C::~C() { \
             if (!mExports.IsEmpty()) { \
-                mExports.ClearWeak(); \
                 mExports.Reset(); \
             } \
         } \

@@ -536,6 +536,9 @@ DEF_INIT(MuhammaraInit) {
 	CREATE_ISOLATE_CONTEXT;
     
     DECLARE_EXTERNAL(ConstructorsHolder)   
+    node::AddEnvironmentCleanupHook(isolate, [](void* data) {
+        delete static_cast<ConstructorsHolder*>(data);
+    }, c1);
 
     CALL_INIT_WITH_EXPORTS(PDFWriterDriver::Init)
     CALL_INIT_WITH_EXPORTS(PDFPageDriver::Init)
