@@ -73,7 +73,7 @@ EStatusCode InputCharStringDecodeStream::ReadDecodedByte(Byte& outByte)
 Byte InputCharStringDecodeStream::DecodeByte(Byte inByteToDecode)
 {
 	Byte result = (Byte)(inByteToDecode ^ (mRandomizer >> 8));
-	mRandomizer = (unsigned short)(((inByteToDecode + mRandomizer)* CONSTANT_1 + CONSTANT_2) % RANDOMIZER_MODULU_VAL);
+	mRandomizer = (unsigned short)(((unsigned int)(inByteToDecode + mRandomizer) * CONSTANT_1 + CONSTANT_2) % RANDOMIZER_MODULU_VAL);
 	return result;
 }
 
@@ -97,5 +97,4 @@ bool InputCharStringDecodeStream::NotEnded()
 {
 	return mReadFrom->NotEnded();
 }
-
 
