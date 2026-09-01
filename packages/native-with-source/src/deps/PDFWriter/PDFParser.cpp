@@ -2086,7 +2086,7 @@ IByteReader* PDFParser::CreateInputStreamReader(PDFStreamInput* inStream)
 					createStatus = CreateFilterForStream(result,filterObjectItem.GetPtr(), !decodeParamsItem ? NULL: decodeParamsItem.GetPtr(), inStream);
 				}
 
-				if(createStatus.first != eSuccess)
+				if(createStatus.first != eSuccess || !createStatus.second)
 				{
 					status = PDFHummus::eFailure;
 					break;
@@ -2100,7 +2100,7 @@ IByteReader* PDFParser::CreateInputStreamReader(PDFStreamInput* inStream)
 			PDFObjectCastPtr<PDFDictionary> decodeParams(QueryDictionaryObject(streamDictionary.GetPtr(),"DecodeParms"));
 
 			EStatusCodeAndIByteReader createStatus = CreateFilterForStream(result,(PDFName*)filterObject.GetPtr(), !decodeParams ? NULL: decodeParams.GetPtr(), inStream);
-			if(createStatus.first != eSuccess)
+			if(createStatus.first != eSuccess || !createStatus.second)
 			{
 				status = PDFHummus::eFailure;
 				break;
@@ -2479,7 +2479,6 @@ IByteReaderWithPosition* PDFParser::GetParserStream()
 {
     return &mStream;
 }
-
 
 
 
