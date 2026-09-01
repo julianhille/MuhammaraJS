@@ -757,11 +757,11 @@ EStatusCode ObjectsContext::WriteXrefStream(DictionaryContext* inDictionaryConte
 
         }
         
-        if(status != eSuccess)
-            break;
-            
-        // end the stream and g'bye
-        status = EndPDFStream(aStream);
+        if(status == eSuccess)
+            status = EndPDFStream(aStream);
+        else
+            EndPDFStream(aStream);
+        delete aStream;
 
     } 
     while (false);
