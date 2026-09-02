@@ -7,17 +7,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [7.0.0-alpha.0] - 2026-09-02
+
 ### Breaking Changes
 
-- Replace the unscoped `muhammara` package with `@muhammara/native` and
-  `@muhammara/native-with-source`. `@muhammara/native` is prebuilt-only; use the
-  source-capable package when a local build is required.
+- Replace the unscoped `muhammara` package with `@muhammara/native` or
+  `@muhammara/native-with-source`. Existing `require("muhammara")` imports must
+  change, or the source-capable package must be installed with the documented npm
+  alias.
+- `@muhammara/native` is prebuilt-only. A missing compatible prebuilt now fails
+  installation instead of compiling locally; install
+  `@muhammara/native-with-source` for source and Electron builds.
+- Windows win32 (32-bit) prebuilds and build tooling are no longer supported.
 
 ### Added
 
-- Publish prebuilt-only `@muhammara/native` and source-capable
-  `@muhammara/native-with-source` packages, with npm alias support for existing
-  imports.
+- Publish the shared `@muhammara/native-core` runtime, prebuilt-only
+  `@muhammara/native`, and source-capable `@muhammara/native-with-source`
+  packages, with npm alias support for existing imports.
 - Add `muhammara-clean-source` to remove bundled C++ sources after a successful
   native build.
 - Set version of setup-node action to v6

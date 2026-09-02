@@ -57,3 +57,4 @@ nav:
       - Requested Workflow Backlog: how-to/backlog.md
   - Compatibility: differences.md
   - Project: development.md
+  - Breaking Changes: breaking-changes.md
