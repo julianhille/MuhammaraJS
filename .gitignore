@@ -1,9 +1,11 @@
 muhammarajs
 build
 .DS_Store
-tests/output
-tests/**/output
-binding
+packages/native-with-source/tests/output
+packages/native-with-source/tests/**/output
+packages/native-with-source/binding
+packages/native-with-source/build/
+packages/src
 node_modules
 src/deps/openssl/
 aws.json
@@ -11,6 +13,7 @@ etc
 recipe-docs/
 site/
 .docs-venv/
+docs/.staging/
 
 #all the binaries
 # Compiled source #
@@ -62,3 +65,6 @@ xcode/DerivedData
 
 #Visual code unwanted
 .vscode
+packages/wasm/build/
+packages/wasm/dist/
+*.tgz

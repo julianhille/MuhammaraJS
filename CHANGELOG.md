@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Publish prebuilt-only `@muhammara/native` and source-capable
+  `@muhammara/native-with-source` packages, with npm alias support for existing
+  imports.
+- Add `muhammara-clean-source` to remove bundled C++ sources after a successful
+  native build.
 - Set version of setup-node action to v6
 - Set version of checkout action to v6
 - Set versoin of cache action to v5
@@ -22,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `PDFReader.extractPageText()` for enumerating page content-stream text operations.
 - Add opt-in fixed-height clipping and an `onClip` callback to Recipe text boxes
 - Bundle pinned OpenSSL 3.5.4 statically in official native prebuilts.
+- Speed up native source builds with parallel compilation and ccache-backed CI caches [#562](https://github.com/julianhille/MuhammaraJS/issues/562)
 
 ### Fixed
 
@@ -37,6 +43,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Removed
 
+- Future publication of the unscoped `muhammara` package; published versions
+  are deprecated in favor of the scoped native packages.
 - node version 18
 - node version 19
 - node version 21

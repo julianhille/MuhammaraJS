@@ -1,79 +1,27 @@
 {
-  "name": "muhammara",
-  "version": "6.0.6",
-  "description": "Create, read and modify PDF files and streams. A drop in replacement for hummusjs PDF library",
-  "homepage": "https://github.com/julianhille/Muhammarajs",
-  "license": "Apache-2.0",
-  "author": "Julian <j.hille484@gmail.com>",
-  "main": "./lib/index.js",
-  "types": "./muhammara.d.ts",
-  "engines": {
-    "node": "20 || 22 || 24 || >=25"
-  },
+  "name": "muhammara-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "preinstall": "node scripts/patch-node-pre-gyp.js",
-    "install": "node-pre-gyp install --fallback-to-build ${EXTRA_NODE_PRE_GYP_FLAGS:-\"\"}",
-    "postinstall": "node scripts/copy-openssl-dlls.js",
-    "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
+    "test": "npm run test --workspace=@muhammara/native-with-source",
     "test:codestyle": "npx prettier -c ./",
-    "test:electron": "electron-mocha -R tap ./tests/*.js --timeout 15000",
-    "package": "node-pre-gyp package",
-    "prepack": "node scripts/patch-node-pre-gyp.js",
-    "docs:recipe-reference": "node scripts/generate-recipe-reference.js && prettier --write docs/recipe/reference.md",
-    "docs:declaration-reference": "node scripts/generate-declaration-reference.js && prettier --write docs/api/type-declarations.md",
-    "docs:serve": "npm run docs:build && mkdocs serve",
-    "docs:build": "npm run docs:recipe-reference && npm run docs:declaration-reference && mkdocs build",
-    "docs:check": "npm run docs:recipe-reference && npm run docs:declaration-reference && mkdocs build --strict"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/julianhille/Muhammarajs.git"
-  },
-  "keywords": [
-    "pdf",
-    "pdfhummus",
-    "muhammarajs",
-    "hummusjs",
-    "hummus"
-  ],
-  "files": [
-    "src",
-    "scripts",
-    "lib",
-    "fonts",
-    "scripts",
-    "binding.gyp",
-    "muhammara.d.ts",
-    "THIRD_PARTY_NOTICES.md"
-  ],
-  "dependencies": {
-    "@mapbox/node-pre-gyp": "^2.0.3",
-    "@xmldom/xmldom": "^0.9.10",
-    "linebreak": "^1.1.0",
-    "memory-streams": "^0.1.3"
-  },
-  "devDependencies": {
-    "@types/node": "^22.2.0",
-    "chai": "^4.5.0",
-    "fs-extra": "^11.2.0",
-    "jsdoc-to-markdown": "^9.1.3",
-    "mocha": "^11.0.0",
-    "prettier": "^3.3.3"
-  },
-  "overrides": {
-    "tar": "7.5.22"
-  },
-  "binary": {
-    "module_name": "muhammara",
-    "module_path": "./binding",
-    "remote_path": "julianhille/MuhammaraJS/releases/download/{version}",
-    "host": "https://github.com",
-    "package_name": "{node_abi}-{platform}-{arch}-{libc}.tar.gz"
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
-  },
-  "bundleDependencies": [
-    "@mapbox/node-pre-gyp"
-  ]
+    "test:electron": "npm run test:electron --workspace=@muhammara/native-with-source",
+    "package": "npm run package --workspace=@muhammara/native-with-source",
+    "wasm:build": "npm run build --workspace=@muhammara/wasm",
+    "wasm:verify": "npm run verify --workspace=@muhammara/wasm",
+    "wasm:test": "npm run test --workspace=@muhammara/wasm",
+    "wasm:test:paths": "npm run test:paths --workspace=@muhammara/wasm",
+    "wasm:test:exports": "npm run test:exports --workspace=@muhammara/wasm",
+    "wasm:test:types": "npm run test:types --workspace=@muhammara/wasm",
+    "wasm:serve:browser": "npm run serve:browser --workspace=@muhammara/wasm",
+    "wasm:server:browser": "npm run server:browser --workspace=@muhammara/wasm",
+    "wasm:test:browser": "npm run test:browser --workspace=@muhammara/wasm",
+    "docs:generate": "npm run docs:generate --workspace=@muhammara/native",
+    "docs:build": "npm run docs:generate && mkdocs build --config-file packages/native/mkdocs.yml",
+    "docs:check": "npm run docs:generate && mkdocs build --strict --config-file packages/native/mkdocs.yml",
+    "docs:serve": "npm run docs:generate && mkdocs serve --config-file packages/native/mkdocs.yml",
+    "test:docs": "npm run test:docs --workspace=@muhammara/native-with-source"
+  }
 }

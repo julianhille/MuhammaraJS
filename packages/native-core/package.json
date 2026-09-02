@@ -1,0 +1,36 @@
+{
+  "name": "@muhammara/native-core",
+  "version": "7.0.0-alpha.0",
+  "description": "Shared JavaScript API for MuhammaraJS native packages",
+  "homepage": "https://muhammarajs.readthedocs.io/",
+  "license": "Apache-2.0",
+  "author": "Julian <j.hille484@gmail.com>",
+  "main": "./index.js",
+  "types": "./muhammara.d.ts",
+  "engines": {
+    "node": "20 || 22 || 24 || >=25"
+  },
+  "scripts": {
+    "test:codestyle": "npx prettier -c ./",
+    "recipe-jsdoc": "jsdoc -c jsdoc.conf"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE",
+    "lib",
+    "fonts",
+    "scripts/copy-openssl-dlls.js",
+    "muhammara.d.ts",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.10",
+    "linebreak": "^1.1.0",
+    "memory-streams": "^0.1.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

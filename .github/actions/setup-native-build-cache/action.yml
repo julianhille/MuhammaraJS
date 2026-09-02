@@ -1,0 +1,38 @@
+name: Setup native build cache
+description: Configure parallel node-gyp builds and a bounded ccache cache.
+
+inputs:
+  key:
+    description: Cache key for the current compiler and target configuration.
+    required: true
+  restore-keys:
+    description: Cache-key prefixes to restore when the exact source revision is unavailable.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ inputs.key }}
+        restore-keys: ${{ inputs.restore-keys }}
+        max-size: 1G
+        append-timestamp: false
+    - name: Configure parallel builds
+      shell: sh
+      run: echo "JOBS=max" >> "$GITHUB_ENV"
+    - name: Configure ccache compiler wrapper (Unix)
+      if: runner.os != 'Windows'
+      shell: sh
+      run: |
+        echo "CC=ccache ${CC:-cc}" >> "$GITHUB_ENV"
+        echo "CXX=ccache ${CXX:-c++}" >> "$GITHUB_ENV"
+    - name: Configure ccache compiler wrapper (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: |
+        $wrapperDirectory = Join-Path $env:RUNNER_TEMP 'ccache-wrapper'
+        New-Item -ItemType Directory -Force -Path $wrapperDirectory | Out-Null
+        Copy-Item (Get-Command ccache.exe).Source (Join-Path $wrapperDirectory 'cl.exe') -Force
+        $env:PATH = "$wrapperDirectory;$env:PATH"
+        Add-Content -Path $env:GITHUB_PATH -Value $wrapperDirectory

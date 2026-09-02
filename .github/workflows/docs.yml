@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - develop
+    tags:
+      - "native-doc-v*"
+      - "wasm-doc-v*"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,6 +20,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    env:
+      OPENSSL_VERSION: 3.5.4
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
@@ -26,7 +32,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: python -m pip install --upgrade pip
-      - run: python -m pip install -r docs/requirements.txt
-      - run: npm ci
+      - run: python -m pip install -r packages/native/docs/requirements.txt
+      - run: sudo apt-get update && sudo apt-get install -y curl perl
+      - name: Build OpenSSL
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: x64
+      - run: npm ci --ignore-scripts
+      - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+      - run: npm run test:docs
       - run: npm run docs:check
-      - run: git diff --exit-code -- docs/recipe/reference.md docs/api/type-declarations.md
+      - run: git diff --exit-code -- packages/native/docs/recipe/reference.md packages/native/docs/api/type-declarations.md

@@ -1,0 +1,40 @@
+{
+  "name": "@muhammara/native",
+  "version": "7.0.0-alpha.0",
+  "description": "HummusJS-compatible native PDF addon with prebuilt binaries",
+  "homepage": "https://muhammarajs.readthedocs.io/",
+  "license": "Apache-2.0",
+  "author": "Julian <j.hille484@gmail.com>",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "engines": {
+    "node": "20 || 22 || 24 || >=25"
+  },
+  "scripts": {
+    "install": "node scripts/install-prebuilt.js",
+    "postinstall": "node -e \"require('@muhammara/native-core/scripts/copy-openssl-dlls')(process.cwd())\"",
+    "docs:generate": "node ../native-core/scripts/generate-recipe-reference.js && node ../native-core/scripts/generate-declaration-reference.js && prettier --write docs/recipe/reference.md docs/api/type-declarations.md"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE",
+    "scripts/install-prebuilt.js"
+  ],
+  "dependencies": {
+    "@mapbox/node-pre-gyp": "^2.0.3",
+    "@muhammara/native-core": "7.0.0-alpha.0"
+  },
+  "binary": {
+    "module_name": "muhammara",
+    "module_path": "./binding",
+    "remote_path": "julianhille/MuhammaraJS/releases/download/native-v{version}",
+    "host": "https://github.com",
+    "package_name": "{node_abi}-{platform}-{arch}-{libc}.tar.gz"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

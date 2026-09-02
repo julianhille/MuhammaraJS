@@ -1,0 +1,59 @@
+site_name: MuhammaraJS WebAssembly Documentation
+site_description: Documentation for the MuhammaraJS WebAssembly PDF package.
+site_url: https://muhammarajs-wasm.readthedocs.io/
+repo_name: julianhille/MuhammaraJS
+repo_url: https://github.com/julianhille/MuhammaraJS
+
+theme:
+  name: material
+  language: en
+  features:
+    - content.code.copy
+    - navigation.footer
+    - navigation.indexes
+    - navigation.tabs
+    - search.highlight
+    - search.suggest
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+validation:
+  links:
+    absolute_links: relative_to_docs
+    anchors: warn
+    unrecognized_links: warn
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Browser Setup: browser-setup.md
+      - Byte Assets, Blob, and File Input: byte-assets.md
+  - High-Level Recipe: recipe.md
+  - Low-Level API: low-level.md
+  - API Reference: reference.md
+  - How-To Guides:
+      - Overview: how-to/index.md
+      - Preview, Download, or Upload a PDF: how-to/serve-a-pdf-response.md
+      - Add Review Annotations: how-to/add-review-annotations.md
+      - Create Multi-Page Tables: how-to/create-tables.md
+      - Flow Text into Columns: how-to/flow-text-into-columns.md
+      - Watermark Every Page: how-to/watermark-pdfs.md
+      - Find Text Positions: how-to/find-text-positions.md
+      - Add Clickable URL Links: how-to/add-url-links.md
+      - Change PDF Passwords: how-to/change-pdf-passwords.md
+      - Add Content to Rotated Pages: how-to/add-content-to-rotated-pages.md
+      - Place and Transform Images: how-to/place-and-transform-images.md
+      - Set Page Boxes: how-to/set-page-boxes.md
+      - Requested Workflow Backlog: how-to/backlog.md
+  - Compatibility: differences.md
+  - Project: development.md

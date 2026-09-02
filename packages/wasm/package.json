@@ -1,0 +1,54 @@
+{
+  "name": "@muhammara/wasm",
+  "version": "1.0.0-alpha.0",
+  "description": "Browser-safe, byte-first WebAssembly API for Muhammara",
+  "license": "Apache-2.0",
+  "homepage": "https://muhammarajs-wasm.readthedocs.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julianhille/MuhammaraJS.git",
+    "directory": "packages/wasm"
+  },
+  "bugs": {
+    "url": "https://github.com/julianhille/MuhammaraJS/issues"
+  },
+  "type": "module",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "dist",
+    "examples/browser",
+    "README.md",
+    "DIFFERENCES.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "./build.sh",
+    "verify": "node ./scripts/run-mocha.mjs tests/EmptyPagesPDF.test.mjs",
+    "test": "node ./scripts/run-mocha.mjs 'tests/{*.test.mjs,**/*.test.mjs}'",
+    "test:paths": "node ./scripts/check-internal-paths.mjs",
+    "test:exports": "node ./scripts/check-exports.mjs",
+    "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types.test.ts",
+    "serve:browser": "node ./tests/browser/serve.mjs",
+    "server:browser": "npm run serve:browser",
+    "test:browser": "node ./tests/browser/run.mjs",
+    "prepack": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "mocha": "^11.0.0",
+    "puppeteer-core": "^25.9.0",
+    "typescript": "^5.9.3"
+  }
+}
