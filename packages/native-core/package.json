@@ -20,7 +20,6 @@
     "LICENSE",
     "lib",
     "fonts",
-    "scripts/copy-openssl-dlls.js",
     "muhammara.d.ts",
     "THIRD_PARTY_NOTICES.md"
   ],

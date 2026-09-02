@@ -5,6 +5,7 @@ packages/native-with-source/tests/output
 packages/native-with-source/tests/**/output
 packages/native-with-source/binding
 packages/native-with-source/build/
+packages/native-with-source/openssl-build/
 packages/src
 node_modules
 src/deps/openssl/

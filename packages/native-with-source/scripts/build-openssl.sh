@@ -3,8 +3,7 @@ set -eu
 
 package_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 archive="$package_root/src/deps/openssl-3.5.4.tar.gz"
-source_directory="$package_root/build/openssl"
-target_architecture=${OPENSSL_TARGET_ARCH:-${npm_config_target_arch:-${npm_config_arch:-}}}
+target_architecture=${1:-${OPENSSL_TARGET_ARCH:-${npm_config_target_arch:-${npm_config_arch:-}}}}
 
 if [ -z "$target_architecture" ]; then
   case "$(uname -m)" in
@@ -15,6 +14,13 @@ if [ -z "$target_architecture" ]; then
       exit 1
       ;;
   esac
+fi
+
+source_directory="$package_root/openssl-build/$target_architecture"
+
+# An explicit C compiler already contains any cross-compilation prefix.
+if [ -n "${CC:-}" ]; then
+  export CROSS_COMPILE=
 fi
 
 if [ ! -f "$archive" ]; then

@@ -12,7 +12,6 @@
   },
   "scripts": {
     "install": "node scripts/install-prebuilt.js",
-    "postinstall": "node -e \"require('@muhammara/native-core/scripts/copy-openssl-dlls')(process.cwd())\"",
     "docs:generate": "node ../native-core/scripts/generate-recipe-reference.js && node ../native-core/scripts/generate-declaration-reference.js && prettier --write docs/recipe/reference.md docs/api/type-declarations.md"
   },
   "files": [

@@ -1,23 +1,29 @@
+param(
+  [string]$TargetArchitecture
+)
+
 $ErrorActionPreference = "Stop"
 
 $packageRoot = Split-Path -Parent $PSScriptRoot
 $archive = Join-Path $packageRoot "src\deps\openssl-3.5.4.tar.gz"
-$sourceDirectory = Join-Path $packageRoot "build\openssl"
-$targetArchitecture = $env:OPENSSL_TARGET_ARCH
-if ([string]::IsNullOrWhiteSpace($targetArchitecture)) {
-  $targetArchitecture = $env:npm_config_target_arch
+if ([string]::IsNullOrWhiteSpace($TargetArchitecture)) {
+  $TargetArchitecture = $env:OPENSSL_TARGET_ARCH
 }
-if ([string]::IsNullOrWhiteSpace($targetArchitecture)) {
-  $targetArchitecture = $env:npm_config_arch
+if ([string]::IsNullOrWhiteSpace($TargetArchitecture)) {
+  $TargetArchitecture = $env:npm_config_target_arch
 }
-if ([string]::IsNullOrWhiteSpace($targetArchitecture)) {
-  $targetArchitecture = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) {
+if ([string]::IsNullOrWhiteSpace($TargetArchitecture)) {
+  $TargetArchitecture = $env:npm_config_arch
+}
+if ([string]::IsNullOrWhiteSpace($TargetArchitecture)) {
+  $TargetArchitecture = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) {
     "X64" { "x64" }
     "Arm64" { "arm64" }
     "X86" { "ia32" }
     default { throw "Unsupported OpenSSL build architecture" }
   }
 }
+$sourceDirectory = Join-Path $packageRoot "openssl-build\$TargetArchitecture"
 
 if (-not (Test-Path $archive -PathType Leaf)) {
   throw "Bundled OpenSSL source archive not found: $archive"
@@ -27,14 +33,14 @@ Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $sourceDirectory
 New-Item -ItemType Directory -Force -Path $sourceDirectory | Out-Null
 tar -xzf $archive --strip-components=1 -C $sourceDirectory
 
-$opensslTarget = switch ($targetArchitecture) {
+$opensslTarget = switch ($TargetArchitecture) {
   "x64" { "VC-WIN64A" }
   "ia32" { "VC-WIN32" }
   "arm64" { "VC-WIN64-ARM" }
-  default { throw "Unsupported OpenSSL build target: Windows-$targetArchitecture" }
+  default { throw "Unsupported OpenSSL build target: Windows-$TargetArchitecture" }
 }
 
-$visualStudioArchitecture = if ($targetArchitecture -eq "ia32") { "x86" } else { $targetArchitecture }
+$visualStudioArchitecture = if ($TargetArchitecture -eq "ia32") { "x86" } else { $TargetArchitecture }
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $visualStudioPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if ([string]::IsNullOrWhiteSpace($visualStudioPath)) {

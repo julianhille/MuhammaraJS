@@ -8,6 +8,7 @@
             'type': 'loadable_module',
 			'product_extension': 'node',
             'dependencies': [
+               'openssl.gyp:openssl',
                '<(muhammara_source_root)/deps/PDFWriter/binding.gyp:pdfwriter'
             ],
             "defines": [
@@ -25,7 +26,7 @@
 				'VCCLCompilerTool':
 				{
 					'AdditionalIncludeDirectories': [
-                        '<(module_root_dir)/build/openssl/include/'
+                        '<(module_root_dir)/openssl-build/<(target_arch)/include/'
 					],
 					'AdditionalOptions': [
 						'/std:c++20'
@@ -35,14 +36,14 @@
             'conditions': [
                 ['OS=="linux"', {
                     'libraries': [
-                        '<(module_root_dir)/build/openssl/libcrypto.a',
+                        '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.a',
                         '-ldl',
                         '-pthread'
                     ]
                 }],
                 ['OS=="mac"', {
                     'libraries': [
-                        '<(module_root_dir)/build/openssl/libcrypto.a'
+                        '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.a'
                     ],
                     'xcode_settings': {
                         'CLANG_CXX_LIBRARY': 'libc++',
@@ -53,10 +54,10 @@
                     'msvs_settings': {
                         'VCLinkerTool': {
                             'AdditionalLibraryDirectories': [
-                                '<(module_root_dir)/build/openssl/'
+                                '<(module_root_dir)/openssl-build/<(target_arch)/'
                             ],
                             'AdditionalDependencies': [
-                                '<(module_root_dir)/build/openssl/libcrypto.lib',
+                                '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.lib',
                                 'advapi32.lib',
                                 'crypt32.lib',
                                 'gdi32.lib',
