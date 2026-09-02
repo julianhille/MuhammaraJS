@@ -1472,6 +1472,9 @@ export function createWriterFactory({
           rg: function (...args) {
             return operator("rg", 26, args);
           },
+          g: function (value) {
+            return operator("g", 24, [value]);
+          },
           RG: function (...args) {
             return operator("RG", 27, args);
           },

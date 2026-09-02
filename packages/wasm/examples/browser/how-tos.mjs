@@ -27,6 +27,14 @@ export var HOW_TO_EXAMPLES = [
     assets: [],
   },
   {
+    id: "form-gray",
+    label: "Grayscale form",
+    title: "Draw a grayscale form XObject",
+    description:
+      "Create a reusable form XObject with a grayscale fill, then place it on a page.",
+    assets: [],
+  },
+  {
     id: "rotated-page",
     label: "Rotation",
     title: "Add content to a rotated page",
@@ -234,6 +242,40 @@ async function pageBoxesExample() {
   }
 }
 
+async function formGrayExample() {
+  var muhammara = await createMuhammaraWasm();
+  var writer = muhammara.createWriter({ compress: false });
+  try {
+    var form = writer.createFormXObject(0, 0, 240, 140);
+    form.getContentContext().drawRectangle(0, 0, 240, 140, {
+      color: 0x00000099,
+      colorspace: "gray",
+      type: "fill",
+    });
+    writer.endFormXObject(form);
+
+    var page = writer.createPage(0, 0, 595, 842);
+    writer
+      .startPageContentContext(page)
+      .q()
+      .cm(1, 0, 0, 1, 178, 351)
+      .doXObject(form)
+      .Q();
+    writer.writePage(page);
+    var bytes = writer.end();
+    return {
+      bytes,
+      filename: "muhammara-grayscale-form.pdf",
+      summary: await summarize(bytes, {
+        howTo: "Draw a grayscale form XObject",
+        colorspace: "gray",
+      }),
+    };
+  } finally {
+    muhammara.disposeAssets();
+  }
+}
+
 async function rotatedPageExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
@@ -418,6 +460,7 @@ var runners = {
   annotations: annotationsExample,
   links: linksExample,
   "page-boxes": pageBoxesExample,
+  "form-gray": formGrayExample,
   "rotated-page": rotatedPageExample,
   "image-transform": imageTransformExample,
   table: tableExample,

@@ -36,6 +36,7 @@ describe("Browser how-to examples", function () {
         "annotations",
         "links",
         "page-boxes",
+        "form-gray",
         "rotated-page",
         "image-transform",
         "table",
