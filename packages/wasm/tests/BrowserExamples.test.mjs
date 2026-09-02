@@ -43,7 +43,7 @@ describe("Browser how-to examples", function () {
     );
   });
 
-  for (var example of HOW_TO_EXAMPLES) {
+  for (const example of HOW_TO_EXAMPLES) {
     it(`generates the ${example.label} PDF`, async function () {
       var result = await runHowToExample(example.id, { assets });
       assert(result.bytes instanceof Uint8Array);

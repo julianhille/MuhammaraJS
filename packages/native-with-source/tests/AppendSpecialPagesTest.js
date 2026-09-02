@@ -7,7 +7,9 @@ describe("AppendSpecialPagesTest", function () {
     );
 
     assert.throws(function () {
-      pdfWriter.appendPDFPagesFromPDF("./TestMaterials/Protected.pdf");
+      pdfWriter.appendPDFPagesFromPDF(
+        __dirname + "/TestMaterials/Protected.pdf",
+      );
     });
     pdfWriter.appendPDFPagesFromPDF(
       __dirname + "/TestMaterials/ObjectStreamsModified.pdf",

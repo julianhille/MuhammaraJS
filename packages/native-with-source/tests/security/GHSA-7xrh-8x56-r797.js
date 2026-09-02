@@ -52,14 +52,15 @@ describe("GHSA-7xrh-8x56-r797", function () {
     var target = __dirname + "/../output/ghsa-7xrh-8x56-r797.pdf";
     fs.writeFileSync(target, buildCryptPDF());
 
+    var reader;
     try {
-      var reader = muhammara.createReader(target);
+      reader = muhammara.createReader(target);
       var stream = reader.parseNewObject(4);
       assert.doesNotThrow(function () {
         reader.startReadingFromStream(stream);
       });
     } finally {
-      reader.end();
+      if (reader) reader.end();
       fs.unlinkSync(target);
     }
   });

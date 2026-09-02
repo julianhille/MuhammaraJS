@@ -13,9 +13,9 @@
   "scripts": {
     "install": "node scripts/install-with-source.js",
     "postinstall": "node scripts/prepare-binding.js",
-    "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
+    "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --exclude ./tests/docs/**/*.js --timeout 15000",
     "test:codestyle": "npx prettier -c ./",
-    "test:electron": "electron-mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
+    "test:electron": "electron-mocha -R tap ./tests/*.js ./tests/**/*.js --exclude ./tests/docs/**/*.js --timeout 15000",
     "package": "node scripts/prepare-binding.js && node-pre-gyp package",
     "clean:source": "node scripts/remove-source.js",
     "test:docs": "mocha tests/docs/**/*.js --timeout 15000"

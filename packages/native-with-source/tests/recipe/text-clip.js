@@ -1,6 +1,6 @@
 const assert = require("assert");
 const path = require("path");
-const Recipe = require("../../lib").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Text box clipping", () => {
   it("clips complete lines and reports the remainder", (done) => {

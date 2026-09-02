@@ -126,6 +126,7 @@ describe("MemoryLifecycle", function () {
       objects.endDictionary(dictionary).endIndirectObject();
     }
     writer.dispose();
+    assert.throws(() => objects.startNewIndirectObject(), /writer/);
   });
 
   it("rejects finalization with an open indirect object", async function () {
@@ -142,13 +143,15 @@ describe("MemoryLifecycle", function () {
     abandoned.dispose();
   });
 
-  it("disposes an active raw stream without writing a second indirect-object end", async function () {
+  it("ends raw streams without writing a second indirect-object end", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter();
     var objects = writer.getObjectsContext();
     objects.startNewIndirectObject();
     var stream = objects.startPDFStream();
     stream.getWriteStream().write(new Uint8Array([37, 32, 114, 97, 119, 10]));
-    writer.dispose();
+    objects.endPDFStream(stream).endIndirectObject();
+    var output = new TextDecoder().decode(writer.end());
+    assert.equal((output.match(/endobj/g) || []).length, 3);
   });
 });

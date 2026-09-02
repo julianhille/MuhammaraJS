@@ -3,6 +3,7 @@ var fs = require("fs");
 var os = require("os");
 var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
+require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var createLowLevelPdf = require("../../../native/docs/examples/create-low-level-pdf");
 var createRecipePdf = require("../../../native/docs/examples/create-recipe-pdf");
 

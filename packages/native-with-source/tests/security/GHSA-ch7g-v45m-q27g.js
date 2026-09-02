@@ -52,14 +52,15 @@ describe("GHSA-ch7g-v45m-q27g", function () {
     var target = __dirname + "/../output/ghsa-ch7g-v45m-q27g.pdf";
     fs.writeFileSync(target, buildCryptPDF());
 
+    var reader;
     try {
-      var reader = muhammara.createReader(target);
+      reader = muhammara.createReader(target);
       var stream = reader.parseNewObject(4);
       assert.doesNotThrow(function () {
         reader.startReadingFromStream(stream);
       });
     } finally {
-      reader.end();
+      if (reader) reader.end();
       fs.unlinkSync(target);
     }
   });

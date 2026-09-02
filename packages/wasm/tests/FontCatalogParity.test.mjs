@@ -49,7 +49,7 @@ describe("FontCatalogParity", function () {
         .length,
       1,
     );
-    assert.ok(
+    assert.equal(
       (new TextDecoder().decode(output).match(/\/Type \/Catalog/g) || [])
         .length,
       2,

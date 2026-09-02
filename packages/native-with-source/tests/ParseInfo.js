@@ -13,8 +13,8 @@ describe("ParseInfo", function () {
 
     assert.equal(info.Author.value, "Gal Kahana", "author value");
     assert.equal(info.Author.toText(), "Gal Kahana", "author decoded");
-    assert.equal(info.Author.value, "Gal Kahana", "creator value");
-    assert.equal(info.Author.toText(), "Gal Kahana", "creator decoded");
+    assert.equal(info.Creator.value, "PDFHummus", "creator value");
+    assert.equal(info.Creator.toText(), "PDFHummus", "creator decoded");
     assert.equal(
       info.CreationDate.value,
       "D:20140720204655+03'00'",

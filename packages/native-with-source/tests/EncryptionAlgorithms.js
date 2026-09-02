@@ -2,7 +2,7 @@ var assert = require("chai").assert;
 var fs = require("fs");
 var os = require("os");
 var path = require("path");
-var muhammara = require("../lib/muhammara");
+var muhammara = require("@muhammara/native-with-source");
 
 function createEncryptedPdf(outputPath, version) {
   var writer = muhammara.createWriter(outputPath, {
