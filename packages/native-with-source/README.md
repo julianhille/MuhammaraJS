@@ -18,6 +18,10 @@ platform C/C++ toolchain, Perl, and `make` on Unix-like systems or Perl, NMake,
 and Visual Studio Build Tools on Windows; no separate OpenSSL installation is
 required.
 
+Windows builds use `OPENSSL_VS_INSTALL_PATH`, `GYP_MSVS_OVERRIDE_PATH`,
+`VSINSTALLDIR`, or `npm_config_msbuild_path` when set, then fall back to
+discovering Visual Studio with `vswhere`.
+
 Source fallbacks use all available CPU cores. On Unix-like systems, `ccache` can
 accelerate repeated rebuilds when configured through `CC` and `CXX`, but it is
 not required.

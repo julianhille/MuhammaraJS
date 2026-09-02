@@ -20,7 +20,7 @@
                             'action': [
                                 'node',
                                 '<(module_root_dir)/scripts/build-openssl-win.js',
-                                '<(target_arch)'
+                                '--target-architecture=<(target_arch)'
                             ]
                         }
                     ]

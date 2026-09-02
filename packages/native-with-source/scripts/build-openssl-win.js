@@ -4,8 +4,9 @@ var childProcess = require("child_process");
 var fs = require("fs");
 var path = require("path");
 
+var targetArchitectureArgument = process.argv[2] || "";
 var targetArchitecture =
-  process.argv[2] ||
+  targetArchitectureArgument.replace("--target-architecture=", "") ||
   process.env.OPENSSL_TARGET_ARCH ||
   process.env.npm_config_target_arch ||
   process.env.npm_config_arch ||
@@ -65,36 +66,54 @@ run("tar.exe", [
   sourceDirectory,
 ]);
 
-var vswhere = path.join(
-  process.env["ProgramFiles(x86)"],
-  "Microsoft Visual Studio",
-  "Installer",
-  "vswhere.exe",
-);
-var visualStudioResult = childProcess.spawnSync(
-  vswhere,
-  [
-    "-latest",
-    "-products",
-    "*",
-    "-requires",
-    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-    "-property",
-    "installationPath",
-  ],
-  { encoding: "utf8" },
-);
+var visualStudioPath =
+  process.env.OPENSSL_VS_INSTALL_PATH ||
+  process.env.GYP_MSVS_OVERRIDE_PATH ||
+  process.env.VSINSTALLDIR;
+var msbuildPath = process.env.npm_config_msbuild_path;
 
-if (visualStudioResult.error) {
-  throw visualStudioResult.error;
+if (!visualStudioPath && msbuildPath) {
+  visualStudioPath = path.resolve(path.dirname(msbuildPath), "..", "..", "..");
 }
 
-var visualStudioPath = visualStudioResult.stdout.trim();
-if (visualStudioResult.status !== 0 || !visualStudioPath) {
-  throw new Error("Visual Studio C++ build tools were not found");
+if (!visualStudioPath) {
+  var vswhere = path.join(
+    process.env["ProgramFiles(x86)"],
+    "Microsoft Visual Studio",
+    "Installer",
+    "vswhere.exe",
+  );
+  var visualStudioResult = childProcess.spawnSync(
+    vswhere,
+    [
+      "-latest",
+      "-products",
+      "*",
+      "-requires",
+      "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+      "-property",
+      "installationPath",
+    ],
+    { encoding: "utf8" },
+  );
+
+  if (visualStudioResult.error) {
+    throw visualStudioResult.error;
+  }
+
+  visualStudioPath = visualStudioResult.stdout.trim();
+  if (visualStudioResult.status !== 0 || !visualStudioPath) {
+    throw new Error("Visual Studio C++ build tools were not found");
+  }
 }
 
 var vsDevCmd = path.join(visualStudioPath, "Common7", "Tools", "VsDevCmd.bat");
+if (!fs.existsSync(vsDevCmd)) {
+  throw new Error(
+    "Visual Studio C++ build tools were not found at " + visualStudioPath,
+  );
+}
+
 var toolsetsDirectory = path.join(visualStudioPath, "VC", "Tools", "MSVC");
 var toolsets = fs
   .readdirSync(toolsetsDirectory, { withFileTypes: true })
