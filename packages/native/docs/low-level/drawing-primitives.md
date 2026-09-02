@@ -16,4 +16,4 @@ Use `drawPath` for a sequence of coordinate pairs. Set `close: true` to close a
 stroked path. For transformations, clipping, or operators not covered by these
 helpers, use the [PDF operators](pdf-operators.md) interface.
 
-See `tests/HighLevelContentContext.js` for exercised primitive options.
+See [`tests/HighLevelContentContext.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/HighLevelContentContext.js) for exercised primitive options.

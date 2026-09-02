@@ -16,5 +16,5 @@ box.
 `pdfWriter.getImageDimensions(path)` returns an object with `width` and
 `height`. Reusable JPG, PNG, and TIFF forms are covered in
 [Form XObjects](form-xobjects.md). Tested image placement examples are in
-`tests/HighLevelImages.js`, `tests/BasicJPGImagesTest.js`, and
-`tests/TiffImageTest.js`.
+[`tests/HighLevelImages.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/HighLevelImages.js), [`tests/BasicJPGImagesTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/BasicJPGImagesTest.js), and
+[`tests/TiffImageTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/TiffImageTest.js).

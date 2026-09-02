@@ -23,4 +23,4 @@ pdfDoc
 ```
 
 Use `keepAspectRatio` when fitting an image to explicit dimensions. See
-`tests/recipe/images.js` for tested JPG and PNG placement and transforms.
+[`tests/recipe/images.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/images.js) for tested JPG and PNG placement and transforms.

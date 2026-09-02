@@ -18,4 +18,4 @@ pdfWriter
 ```
 
 Finish a form with `endFormXObject` before placing it. The `id` property is its
-PDF object ID. See `tests/FormXObjectTest.js` for the full lifecycle.
+PDF object ID. See [`tests/FormXObjectTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/FormXObjectTest.js) for the full lifecycle.

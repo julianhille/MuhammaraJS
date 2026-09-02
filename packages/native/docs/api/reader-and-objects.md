@@ -20,7 +20,7 @@ and `toJSObject`; an array provides `getLength`, `queryObject`, and `toJSArray`.
 Use reader query helpers when an entry may be an indirect reference and must be
 resolved.
 
-`tests/PDFParser.js` covers reader creation, page inspection, trailer traversal,
+[`tests/PDFParser.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFParser.js) covers reader creation, page inspection, trailer traversal,
 and object conversion.
 
 For a complete reader workflow, see [Read PDFs](../low-level/read-pdfs.md).

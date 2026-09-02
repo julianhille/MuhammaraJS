@@ -16,5 +16,5 @@ pdfDoc.custom("ReportId", "Q1-2026").createPage().endPage().endPDF();
 
 For an existing document, `info()` without arguments reads current metadata;
 `info(options)` queues updates for finalization. `structure(path)` writes a
-debugging view of an opened source PDF. See `tests/recipe/info.js` and
-`tests/recipe/modify.js`.
+debugging view of an opened source PDF. See [`tests/recipe/info.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/info.js) and
+[`tests/recipe/modify.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/modify.js).

@@ -75,13 +75,14 @@ streams, plugins, and Node EventEmitter hooks are unsupported. The example uses
 `end()` or `dispose()` for owners, unregisters assets, calls `disposeAssets()`,
 terminates Workers, and revokes replaced/final object URLs.
 
-## Automated Firefox Validation
+## Automated Chrome Validation
 
 ```sh
 npm run wasm:test:browser
 ```
 
-The existing dependency-free Firefox BiDi runner imports `workflow.mjs`, injects
+The Chrome runner uses `puppeteer-core`, imports `workflow.mjs`, injects
 font/JPEG/PNG/TIFF fixtures as bytes, executes the complete workflow in both the
 page and module Worker validation contexts, asserts parse-back summaries, and
-checks object-URL replacement/disposal behavior.
+checks object-URL replacement/disposal behavior. Set `CHROME_BIN` when Chrome is
+not discoverable by the runner.

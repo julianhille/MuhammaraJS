@@ -15,5 +15,5 @@ it with `endPDFStream`. `endPDFStream` completes the surrounding object.
 
 `pdfWriter.getEvents()` provides writer events. The supported, tested events
 are `OnPageWrite` and `OnCatalogWrite`; their handlers can add entries to the
-respective dictionary contexts. See `tests/ModifyingExistingFileContent.js` and
-`tests/WriterEvents.js` for low-level object and event usage.
+respective dictionary contexts. See [`tests/ModifyingExistingFileContent.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/ModifyingExistingFileContent.js) and
+[`tests/WriterEvents.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/WriterEvents.js) for low-level object and event usage.

@@ -20,5 +20,5 @@ before calling `writePage`.
 `createWriter` accepts an optional options object, including `version`,
 `compress`, and `log`. Supported version values are `10` through `17` and `20`,
 or the corresponding `ePDFVersion10` through `ePDFVersion17` and
-`ePDFVersion20` constants. See `tests/EmptyPagesPDF.js` and
-`tests/PDFVersionTest.js` for exercised writer and page-creation variants.
+`ePDFVersion20` constants. See [`tests/EmptyPagesPDF.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/EmptyPagesPDF.js) and
+[`tests/PDFVersionTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFVersionTest.js) for exercised writer and page-creation variants.

@@ -27,6 +27,7 @@
     "dist",
     "examples/browser",
     "README.md",
+    "CHANGELOG.md",
     "DIFFERENCES.md",
     "LICENSE"
   ],

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Replace the unscoped `muhammara` package with `@muhammara/native` and
+  `@muhammara/native-with-source`. `@muhammara/native` is prebuilt-only; use the
+  source-capable package when a local build is required.
+
 ### Added
 
 - Publish prebuilt-only `@muhammara/native` and source-capable
@@ -16,7 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   native build.
 - Set version of setup-node action to v6
 - Set version of checkout action to v6
-- Set versoin of cache action to v5
+- Set version of cache action to v5
 - Add missing type definitions for PDFReader methods and PDFObjectParser interface [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
 - node version 25
 - Add Node.js 26 support [#516](https://github.com/julianhille/MuhammaraJS/issues/516)
@@ -31,6 +37,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Release xref streams and their Flate buffers after writing.
+- Release previous-xref trailers and filter readers on parser failure.
+- Close copied stream dictionaries and combined page-tree objects on failure.
+- Correct CFF array deallocation and harden Type 1 decoder arithmetic.
+- Release addon constructors deterministically during Node environment cleanup.
+- Add native sanitizer coverage for lifecycle cleanup.
 - Release PDF readers in documentation tests to prevent Windows file-lock cleanup failures.
 - Remove the duplicate documentation example test from the documentation CI workflow.
 - Prevent a segmentation fault when `endPDF()` is called more than once.

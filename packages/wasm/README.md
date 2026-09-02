@@ -2,12 +2,13 @@
 
 This target compiles the reusable C++ `PDFWriter` core for browser, worker, and
 Node WebAssembly runtimes. It does not compile the Node/V8 binding, so its API
-is intentionally separate from `require("muhammara")`.
+is intentionally separate from `require("@muhammara/native")`.
 
 For Node.js filesystem paths, streams, and the full native PDF API, use
 [`@muhammara/native`](https://muhammarajs.readthedocs.io/). Use
 `@muhammara/native-with-source` when the native addon needs a local or Electron
-build.
+build. It can also be installed as the `@muhammara/native` npm alias when an
+application must keep that import name.
 
 ## Build
 
@@ -499,11 +500,11 @@ V8 drivers.
 
 Run `npm run wasm:test` after building to run the Mocha Wasm suite and
 `npm run wasm:test:types` to type-check its executable low-level API coverage.
-`npm run wasm:test:browser` starts a local static server and a headless Firefox
-instance, drives its built-in WebDriver BiDi Remote Agent, and waits for a
-structured result from both a page and module Worker. It requires
-`/usr/bin/firefox` by default; set `FIREFOX_BIN` to use another executable. The
-runner uses only Node built-ins and does not add a browser automation dependency.
+`npm run wasm:test:browser` starts a local static server and headless Chrome,
+then waits for a structured result from both a page and module Worker. Set
+`CHROME_BIN` to the Chrome executable; CI provisions it with
+`browser-actions/setup-chrome`. The runner uses `puppeteer-core` for browser
+automation.
 Low-level
 tests are in `packages/wasm/tests/` and use names matching their closest
 `packages/native-with-source/tests/*.js`
@@ -517,10 +518,10 @@ exercise byte adapters plus byte-first writer, reader, generic Form XObject
 lifecycle/resources/content streams, and modifier operations; the page reports
 only after its Worker has completed the same assertions. The browser-side modules
 use browser ESM and no Node filesystem APIs. The GitHub Actions Wasm job runs
-the build, smoke, unit, declaration, and Firefox page/Worker commands.
+the build, smoke, unit, declaration, and Chrome page/Worker commands.
 
 ## Demo
 
-After `npm run wasm:build`, serve the repository root over HTTP and open
-`/packages/wasm/demo.html`. For example: `python3 -m http.server`. The text sample loads
-the repository's Arial test fixture; the shapes sample needs no external asset.
+After `npm run wasm:build`, run `npm run wasm:server:browser` and open
+`http://127.0.0.1:8080/`. The browser example uses a server that supplies the
+required Wasm MIME type and demonstrates both low-level and Recipe workflows.

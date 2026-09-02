@@ -22,4 +22,4 @@ call `structure` on the Recipe instance:
 pdfDoc.structure("pdf-structure.txt").endPDF();
 ```
 
-See `tests/recipe/modify.js` and `tests/recipe/info.js` for verified examples.
+See [`tests/recipe/modify.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/modify.js) and [`tests/recipe/info.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/info.js) for verified examples.

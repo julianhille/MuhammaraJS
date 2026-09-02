@@ -1,4 +1,4 @@
-var Recipe = require("@muhammara/native-with-source").Recipe;
+var Recipe = require("@muhammara/native").Recipe;
 
 function createRecipePdf(outputPath, callback) {
   new Recipe("new", outputPath).createPage("letter").endPage().endPDF(callback);

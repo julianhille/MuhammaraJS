@@ -15,7 +15,7 @@ and `getEvents` for page and catalog write events. `createFormXObject` starts a
 reusable drawing form; finish it with `endFormXObject` before placement. Image
 and form creation must not occur while a page content context is active.
 
-`tests/EmptyPagesPDF.js`, `tests/FormXObjectTest.js`, and
-`tests/WriterEvents.js` cover these lifecycles.
+[`tests/EmptyPagesPDF.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/EmptyPagesPDF.js), [`tests/FormXObjectTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/FormXObjectTest.js), and
+[`tests/WriterEvents.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/WriterEvents.js) cover these lifecycles.
 
 For task-focused usage, see the [Low-Level API](../low-level/index.md) section.

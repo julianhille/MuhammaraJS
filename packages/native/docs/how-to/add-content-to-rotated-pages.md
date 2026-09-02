@@ -16,5 +16,5 @@ pdfDoc
   .endPDF();
 ```
 
-See `tests/recipe/rotation.js` and `tests/recipe/annotation-coordinate.js` for
+See [`tests/recipe/rotation.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/rotation.js) and [`tests/recipe/annotation-coordinate.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/annotation-coordinate.js) for
 the tested rotation combinations.

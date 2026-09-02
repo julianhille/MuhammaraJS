@@ -37,9 +37,14 @@ approve it.
 Official prebuilds statically link OpenSSL `libcrypto` and do not require a
 system OpenSSL installation at runtime.
 
-Building from source requires `@muhammara/native-with-source`, OpenSSL 3 headers,
-and a static `libcrypto` library. Set `CPPFLAGS` and `OPENSSL_LIB_DIR` to the
-same OpenSSL build; on Windows, `OPENSSL_LIB_DIR` must contain `libcrypto.lib`.
+`@muhammara/native-with-source` builds its bundled OpenSSL 3 source automatically
+as part of the GYP build when a local native build is needed. Building requires the platform C/C++ toolchain,
+Perl and `make` on Unix-like systems or Perl, NMake, and Visual Studio Build
+Tools on Windows; no `OPENSSL_LIB_DIR`, `CPPFLAGS`, or separate OpenSSL
+installation is required.
+
+On Unix-like systems, optionally set `CC="ccache cc"` and `CXX="ccache c++"` to
+speed up repeated source builds when `ccache` is installed.
 
 After a successful source build, source-capable package users can remove the C++
 source tree before packaging their application:
@@ -82,8 +87,11 @@ rebuild tool runs `node-gyp` directly and needs the bundled source tree:
 
 ```sh
 npm install @muhammara/native@npm:@muhammara/native-with-source@<version>
-npx electron-rebuild -f -w @muhammara/native
+CC="ccache cc" CXX="ccache c++" npx electron-rebuild -f -w @muhammara/native
 ```
+
+The `CC` and `CXX` wrappers are optional; omit them when `ccache` is unavailable
+or a different compiler/cache wrapper is required.
 
 MuhammaraJS follows Electron's release cycle. Prebuilt Electron support is
 limited to current Electron versions in the release matrix. Each new MuhammaraJS

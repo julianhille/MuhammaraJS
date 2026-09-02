@@ -21,5 +21,5 @@ pdfDoc
 ```
 
 `layout()` and flowing-text forms are tested implementation behavior but are not
-fully declared in `muhammara.d.ts`. See `tests/recipe/text-columns.js` and
-`tests/recipe/text-continued.js`.
+fully declared in `muhammara.d.ts`. See [`tests/recipe/text-columns.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/text-columns.js) and
+[`tests/recipe/text-continued.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/text-continued.js).

@@ -24,8 +24,8 @@ pdfDoc
 Use `textBox` for wrapping, alignment, padding, and styling. `text` also accepts
 tested HTML input with `html: true`, but it is a limited markup parser rather
 than a browser layout engine. Font and text behavior is covered by
-`tests/recipe/font.js`, `tests/recipe/text.js`, and
-`tests/recipe/htmlToTextObjects.js`.
+[`tests/recipe/font.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/font.js), [`tests/recipe/text.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/text.js), and
+[`tests/recipe/htmlToTextObjects.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/htmlToTextObjects.js).
 
 Complex-script shaping and right-to-left layout do not have focused coverage and
 are not documented as supported behavior.
@@ -56,4 +56,4 @@ pdfDoc
 
 `onClip` is called only when clipping is enabled and leaves text unrendered. The
 library warns when `onClip` is configured without `clipIfExceedsBox`. See
-`tests/recipe/text-clip.js`.
+[`tests/recipe/text-clip.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/text-clip.js).

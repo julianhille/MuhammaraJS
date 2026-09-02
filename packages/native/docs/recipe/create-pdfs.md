@@ -36,5 +36,5 @@ pdfDoc
 ```
 
 `endPDF()` does not return the Buffer. Buffer mode is exercised in
-`tests/recipe/createWithBuffer.js`; general creation examples are in
-`tests/recipe/create.js`.
+[`tests/recipe/createWithBuffer.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/createWithBuffer.js); general creation examples are in
+[`tests/recipe/create.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/create.js).

@@ -5,6 +5,12 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
 
 ## Version 7.x
 
+- The unscoped `muhammara` package is deprecated and receives no further
+  releases. Install `@muhammara/native` instead, or use an npm alias when an
+  existing `require("muhammara")` import must remain unchanged.
+- `@muhammara/native` is prebuilt-only. When a matching prebuilt is unavailable,
+  installation fails instead of compiling locally; install
+  `@muhammara/native-with-source` for bundled source and fallback builds.
 - Windows win32 (32-bit) prebuilds and build tooling were removed. Windows x64
   is the current prebuilt target; Windows arm64 is not part of the prebuilt
   matrix.

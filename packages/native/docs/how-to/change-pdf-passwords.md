@@ -14,7 +14,7 @@ muhammara.recrypt("input.pdf", "output.pdf", {
 ```
 
 To remove encryption, provide the input `password` without new output password
-options. File and stream scenarios are exercised in `tests/Xcryption.js`.
+options. File and stream scenarios are exercised in [`tests/Xcryption.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/Xcryption.js).
 
 The tested workflows cover the library's current password and PDF-version
 options. The encryption algorithm is selected automatically from the PDF
@@ -28,5 +28,5 @@ options. The encryption algorithm is selected automatically from the PDF
 | 2.0             | AESV3 (AES-256)      | 256-bit  |
 
 PDF 2.0 encryption requires an OpenSSL-enabled build. The version ranges are
-verified by `tests/EncryptionAlgorithms.js`; password, stream, re-encryption,
-and encrypted-modification workflows are covered by `tests/Xcryption.js`.
+verified by [`tests/EncryptionAlgorithms.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/EncryptionAlgorithms.js); password, stream, re-encryption,
+and encrypted-modification workflows are covered by [`tests/Xcryption.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/Xcryption.js).
