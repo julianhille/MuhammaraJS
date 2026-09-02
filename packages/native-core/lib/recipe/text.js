@@ -193,7 +193,7 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @function
  * @todo support break words
  * @memberof Recipe
- * @param {string} text - The text content
+ * @param {string} [text=''] - The text content
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y
  * @param {Object} [options] - The options
@@ -233,7 +233,7 @@ exports._makeTextBox = function _makeTextBox(options) {
  * 'auto', 'clip', 'trim', 'ellipsis'. All the option values that are not equivalent to 'auto' dictate
  *  how the text which does not fit on a line is to be truncated. True is equivalent to 'auto'. False is equivalent to 'ellipsis'.
  * @param {string} [options.textBox.textAlign='left top'] - Alignment inside text box, specified as 'horizontal vertical',
- * where horizontal is one of: 'left', 'center', 'right', 'justify' and veritical is one of: 'top', 'center', 'bottom'.
+ * where horizontal is one of: 'left', 'center', 'right', 'justify' and vertical is one of: 'top', 'center', 'bottom'.
  * @param {boolean} [options.textBox.clipIfExceedsBox=false] - Render only complete lines that fit within the text box height.
  * @param {function} [options.textBox.onClip] - Called as onClip(recipe, result) when clipping leaves text unrendered.
  * Do not call endPage() or endPDF() in this callback because the text operation is still active.
@@ -247,12 +247,11 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {string} [options.title] - Title of annotation
  * @param {boolean} [options.open=false] - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'
  * @param {boolean} [options.richText] - Rich text in annotation
- * @param {AnnotOptionsFlag} [options.flag] - The flag property of annotation
- * @param {AnnotOptionsIcon} [options.icon='Note'] - The icon of annotation. Specific to text annotations. Default value: 'Note'
+ * @param {'invisible'|'hidden'|'print'|'nozoom'|'norotate'|'noview'|'readonly'|'locked'|'togglenoview'} [options.flag] - The annotation flag.
+ * @param {'Comment'|'Key'|'Note'|'Help'|'NewParagraph'|'Paragraph'|'Insert'} [options.icon='Note'] - The icon of annotation. Specific to text annotations.
  * @param {string} [options.date] - Date of text to show up on annotation
- * @param {string} [options.subject] - Subject of annotation
- * When true is given, the default radius size for all corners is 5. A four number array may be used to give specific sizees to each
- * corner. The numbering starts from the top, left corner, and goes clockwise around the text box.
+ * @param {string} [options.subject] - Subject of annotation.
+ * @returns {Recipe} The recipe instance.
  */
 exports.text = function text(text = "", x, y, options = {}) {
   if (!this.pageContext) {
@@ -991,6 +990,7 @@ function drawTextBox(self, nx, ny, textBox, pathOptions) {
 
 /**
  * Justify text in a line.
+ * @private
  * @param {number} left is position of left hand side of text box
  * @param {number} x is starting position for text placement
  * @param {Object[]} wto is a write object
@@ -1497,6 +1497,7 @@ function adjustcolumnPosition(columns, x, y) {
  * @param {number} [options.gap=18] - Defines the separation between layout columns, units in points.
  * @param {boolean} [options.reset] - True indicates that the a new layout should be produced for the given
  * layout id, so any previous layout associated with the given id will be lost.
+ * @returns {Recipe} The recipe instance.
  */
 exports.layout = function layout(id, x, y, width, height, options = {}) {
   this._layouts = this._layouts || {};

@@ -53,8 +53,26 @@ const Word = class Word {
   }
 };
 
+/**
+ * A word used by Recipe text layout.
+ * @name Word
+ * @class
+ * @memberof Recipe
+ * @param {string} word - The word value.
+ * @param {Object} pathOptions - The resolved text options.
+ */
 exports.Word = Word; // ... now export Word to the rest of the library.
 
+/**
+ * A line used by Recipe text layout.
+ * @name Line
+ * @class
+ * @memberof Recipe
+ * @param {number} width - The line width.
+ * @param {number} height - The line height.
+ * @param {number} size - The font size.
+ * @param {Object} pathOptions - The resolved text options.
+ */
 exports.Line = class Line {
   constructor(width, height, size, pathOptions) {
     this._width = width || 999999999;
@@ -164,6 +182,8 @@ exports.Line = class Line {
 };
 
 /**
+ * Get the offset for a text box.
+ * @private
  * @todo handle page margin and padding
  */
 exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
@@ -234,6 +254,19 @@ exports.textDimensions = function textDimensions(text, options = {}) {
   return dimensions;
 };
 
+/**
+ * A column used by Recipe text layouts.
+ * @name Column
+ * @class
+ * @memberof Recipe
+ * @param {number} x - The x coordinate.
+ * @param {number} y - The y coordinate.
+ * @param {number} width - The column width.
+ * @param {number} height - The column height.
+ * @param {string} [text=''] - The column heading.
+ * @param {string} [field=''] - The associated data field.
+ * @param {Object} [options] - The column options.
+ */
 exports.Column = class Column {
   constructor(x, y, width, height, text = "", field = "", options = {}) {
     this._x = x;

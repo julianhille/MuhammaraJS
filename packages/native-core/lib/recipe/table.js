@@ -95,15 +95,15 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
  * @param {string} [options.columns[].font=Helvetica] - The font. 'Arial', 'Helvetica'...
  * @param {number} [options.columns[].size=14] - The font size
  * @param {function} [options.columns[].renderer] - function to be called which can be used to modify the text options for a particular
- * table cell. The function is called with the parameters (text, data), where 'text' is the text to be written in the cell and
- * 'data' is an object holding all the text elements in the table row. The function returns an object with the text attributes that
+ * table cell. The function is called with `(text, data, field, row)`, where `text` is the text to be written in the cell,
+ * `data` holds the text elements in the table row, `field` is the column field, and `row` is the one-based row number. The function returns an object with the text attributes that
  * are to be modified for the table cell.
  * @param {object|boolean} [options.header=false] - When true, the column name associated with a column will
  * appear at the top of the column. When presented as an object it is the set of unique options to be applied to column headers.
  * All 'text' interface options can be used.
  * @param {object} [options.header.cell] - All textBox options from the 'text' interface can be used here.
  * @param {object} [options.border] - Used to define table and cell border characteristics
- * @param {number} [options.border.width=.5] - thickness of lines used in border.Array
+ * @param {number} [options.border.width=.5] - Thickness of lines used in the border.
  * @param {string|number[]} [options.border.stroke] - line color (HexColor, PercentColor or DecimalColor)
  * @param {function} [options.overflow] - Called when the next table entry is going to expand the table
  * beyond the given height or page boundary. Its parameters are (self, row) where 'self' is the recipe handle so
@@ -115,6 +115,7 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
  * @param {object} [options.row.cell] - All textBox options from the 'text' interface can be used here.
  * @param {string} [options.row.nth] - 'even|odd', indicating that the properties should be applied only to
  * 'even' or 'odd' rows.
+ * @returns {Recipe} The recipe instance.
  */
 exports.table = function table(x, y, contents, options = {}) {
   let tableBottom = options.height ? y + options.height : 0;

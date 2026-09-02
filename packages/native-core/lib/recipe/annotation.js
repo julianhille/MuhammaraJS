@@ -3,7 +3,7 @@
  * @name comment
  * @function
  * @memberof Recipe
- * @param {string} text - The text content
+ * @param {string} [text=''] - The text content
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y
  * @param {Object} [options] - The options
@@ -12,6 +12,7 @@
  * @param {boolean} [options.open=false] - Open the annotation by default?
  * @param {boolean} [options.richText] - Display with rich text format, text will be transformed automatically, or you may pass in your own rich text starts with "<?xml..."
  * @param {'invisible'|'hidden'|'print'|'nozoom'|'norotate'|'noview'|'readonly'|'locked'|'togglenoview'} [options.flag] - The flag property
+ * @returns {Recipe} The recipe instance.
  */
 exports.comment = function comment(text = "", x, y, options = {}) {
   this.annotationsToWrite.push({
@@ -33,6 +34,7 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  * @param {number} y - The coordinate y
  * @param {string} subtype - The markup annotation type 'Text'|'Link'|'FreeText'|'Line'|'Square'|'Circle'|'Polygon'|'PolyLine'|'Highlight'|'Underline'|'Squiggly'|'StrikeOut'|'Caret'|'Stamp'|'Ink'|'Popup'|'FileAttachment'|'Sound'|'Movie'|'Screen'|'Widget'|'PrinterMark'|'TrapNet'|'Watermark'|'3D'|'Redact'|'Projection'|'RichMedia'
  * @param {Object} [options] - The options
+ * @param {string} [options.text=''] - The annotation content.
  * @param {string} [options.title] - The title.
  * @param {boolean} [options.open=false] - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'
  * @param {boolean} [options.richText] - Rich text
@@ -43,6 +45,10 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  * @param {string} [options.date] - Date of annotation
  * @param {string} [options.subject] - The subject.
  * @param {Array} [options.replies] - Array of annotation replies
+ * @param {number} [options.border] - The border width.
+ * @param {string|number[]} [options.color] - The annotation color.
+ * @param {boolean} [options.followOriginalPageRotation=false] - Preserve the original page rotation when positioning the annotation.
+ * @returns {Recipe} The recipe instance.
  */
 exports.annot = function annot(
   x,
@@ -324,6 +330,7 @@ exports._getTextMarkupAnnotationSubtype =
 /**
  * Get Flag Bit by Name
  * @description 12.5.3 Annotation Flags
+ * @private
  * @param {string} name
  */
 function getFlagBitNumberByName(name) {
@@ -358,8 +365,8 @@ function getFlagBitNumberByName(name) {
  * Text Strings to Rich Text Strings
  * @todo Fix display issue for ol/ul in richText
  * @param {string} content
- * @description Support XHTML Elements:  '<p>' | '<span>' | '<b>' | '<i>'
- * @description Support CSS2 Style: 'text-align' | 'vertical-align' | 'font-size' | 'font-style' | 'font-weight' | 'font-family' | 'font' | 'color' | 'text-decoration' | 'font-stretch'
+ * @private
+ * @description Supports XHTML elements: '<p>' | '<span>' | '<b>' | '<i>'. Supports CSS2 styles: 'text-align' | 'vertical-align' | 'font-size' | 'font-style' | 'font-weight' | 'font-family' | 'font' | 'color' | 'text-decoration' | 'font-stretch'.
  */
 function contentToRC(content) {
   content = content.replace("&nbsp;", " ");

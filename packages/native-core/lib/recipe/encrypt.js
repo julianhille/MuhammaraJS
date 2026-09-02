@@ -10,8 +10,9 @@ const fs = require("fs");
  * @name permission
  * @function
  * @memberof Recipe
- * @param {string} flags from the list print, modify, copy, edit, fillform, extract, assemble, and printbest
+ * @param {string} [flags='print'] From the list print, modify, copy, edit, fillform, extract, assemble, and printbest.
  * More than one may be specified by using a comma to separate the names in the input string.
+ * @returns {number} The numeric user protection flag.
  */
 exports.permission = function permission(flags = "print") {
   // https://www.adobe.com/content/dam/acom/en/devnet/pdf/pdfs/PDF32000_2008.pdf
@@ -84,11 +85,12 @@ exports._getEncryptOptions = function _getEncryptOptions(
  * @name encrypt
  * @function
  * @memberof Recipe
- * @param {Object} options - The options
+ * @param {Object} [options] - The options
  * @param {string} [options.password] - The permission password.
  * @param {string} [options.ownerPassword] - The password for editing.
  * @param {string} [options.userPassword] - The password for viewing & encryption.
  * @param {number} [options.userProtectionFlag] - The flag for the security level.
+ * @returns {Recipe} The recipe instance.
  */
 exports.encrypt = function encrypt(options = {}) {
   this.needToEncrypt = true;

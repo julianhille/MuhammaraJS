@@ -54,7 +54,11 @@ this.knownColors = {
  * @memberof Recipe
  * @param {string} name - the name to be associated to given color value, or '!load'
  * @param {string|number[]} value - the color value (HexColor, DecimalColor, or PercentColor), or name of '!load' file
- * @param {string} colorspace - one of the followning: 'rgb', 'cmyk', 'gray', 'separation';
+ * @param {string} [colorspace=''] - One of: 'rgb', 'cmyk', 'gray', 'separation'.
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If a loaded color definition has an unrecognized colorspace.
+ * @throws {Error} If a color value has an invalid size.
+ * @throws {Error} If the colorspace is unknown.
  */
 exports.chroma = function chroma(name, value, colorspace = "") {
   if (name) {
@@ -225,10 +229,12 @@ function _defaultColor(colorspace = "rgb") {
  *
  * where r,g,b,c,m,y,k,gray are all numbers between 0 and 1
  *
+ * @private
+ * @param {Recipe} self The recipe instance.
  * @param {string} code the color encoding as HexColor
  * @param {string} colorspace the name of the colorspace of given color code
  * @param {string} colorName the name to be associated with given color code
- * @returns {any} the color model
+ * @returns {Object} The color model.
  */
 function toColorModel(self, code, colorspace, colorName) {
   const cmodel = {};
@@ -279,6 +285,7 @@ function toColorModel(self, code, colorspace, colorName) {
 /**
  * Convert percentage string into hex string (x / 100 * 255)
  *
+ * @private
  * @param {string} code numbers separated by commas with values ranging between 0-100.
  * @returns {string} massaged hexadecimal string that can be used as input to hexToArray.
  */
@@ -287,9 +294,10 @@ function percentToHex(code) {
 }
 
 /**
- * Transform color code into numeric value or colorModel
+ * Transform color code into a numeric value or color model.
  *
- * @param code color specification in form of HexColor (string, begins with '#'),
+ * @private
+ * @param {string|number[]} [code=''] Color specification in the form of HexColor (string beginning with '#'),
  *             DecimalColor (1, 3, or 4 element array with values between 0-255),
  *             PercentColor (string, begins with '%' followed by values separated
  *             by commas with values between 0-100)

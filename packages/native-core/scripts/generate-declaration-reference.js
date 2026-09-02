@@ -8,15 +8,29 @@ var outputPath = path.join(
 );
 var lines = fs.readFileSync(declarationPath, "utf8").split("\n");
 var sections = [
-  ["Module Entry Points", 3, 49],
-  ["Streams And Page Modification", 51, 103],
-  ["Content Contexts And Drawing Options", 105, 285],
-  ["Options And Constants", 287, 348],
-  ["Pages, Readers, And Document Objects", 350, 558],
-  ["Copying And Low-Level Object Writing", 559, 721],
-  ["PDF Writer", 722, 820],
-  ["Recipe", 821, lines.length - 1],
+  ["Module Entry Points", "export type PosX"],
+  ["Streams And Page Modification", "export interface WriteStream"],
+  ["Content Contexts And Drawing Options", "export interface ColorOptions"],
+  ["Options And Constants", "export interface PDFReaderOptions"],
+  ["Pages, Readers, And Document Objects", "type FormXObjectId"],
+  ["Copying And Low-Level Object Writing", "export interface ImageXObject"],
+  ["PDF Writer", "export type PDFRectangle"],
+  ["Recipe", "namespace Recipe"],
 ];
+
+function findDeclarationStart(declaration) {
+  var matches = lines.reduce(function (result, line, index) {
+    if (line.trimStart().startsWith(declaration)) result.push(index);
+    return result;
+  }, []);
+  if (matches.length !== 1)
+    throw new Error(`Expected one declaration start for ${declaration}`);
+  return matches[0];
+}
+
+var sectionStarts = sections.map(function (section) {
+  return findDeclarationStart(section[1]);
+});
 
 var output = [
   "# Type Declarations Reference",
@@ -28,10 +42,10 @@ var output = [
   "",
 ];
 
-sections.forEach(function (section) {
+sections.forEach(function (section, index) {
   var title = section[0];
-  var start = section[1] - 1;
-  var end = section[2];
+  var start = sectionStarts[index];
+  var end = sectionStarts[index + 1] || lines.length;
   var declaration = lines
     .slice(start, end)
     .map(function (line) {
@@ -43,4 +57,4 @@ sections.forEach(function (section) {
   output.push(`## ${title}`, "", "```typescript", declaration, "```", "");
 });
 
-fs.writeFileSync(outputPath, `${output.join("\n")}\n`);
+fs.writeFileSync(outputPath, output.join("\n"));

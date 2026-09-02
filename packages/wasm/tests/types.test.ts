@@ -62,6 +62,10 @@ async function usesLowLevelSurface() {
   form.end();
   formWriter.endFormXObject(form);
   formWriter.end();
+  var completedForm = formWriter.createFormXObjectFromJPGBytes("image");
+  completedForm.id;
+  // @ts-expect-error Image-derived forms cannot receive content.
+  completedForm.getContentContext();
   var mergeWriter = muhammara.createWriter();
   var mergePage = mergeWriter.createPage();
   mergeWriter.mergePDFPagesToPage(mergePage, source, () => {});
@@ -89,6 +93,16 @@ async function usesLowLevelSurface() {
     version: muhammara.ePDFVersion17,
     compress: false,
   });
+  muhammara
+    .createModifier(source)
+    .startPage(0)
+    .rectangle(0, 0, 1, 1, { fill: "#dbeafe" })
+    .circle(1, 1, 1, { stroke: "#000000" })
+    .line(0, 0, 1, 1, { lineWidth: 1 })
+    .text("text", 0, 0, { font: "font" })
+    .image("image", 0, 0, 1, 1)
+    .endPage()
+    .end();
   syncModifier.end();
   modifier.requireCatalogUpdate();
   modifier.getDocumentContext().getInfoDictionary().title = "modified";

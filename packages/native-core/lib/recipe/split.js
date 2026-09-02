@@ -7,8 +7,9 @@ const hummusUtils = require("./utils");
  * @name split
  * @function
  * @memberof Recipe
- * @param {string} outputDir - The path for the output pdfs.
- * @param {string} prefix - `${prefix}-${i+1}.pdf`.
+ * @param {string} [outputDir=''] - The path for the output PDFs.
+ * @param {string} [prefix] - The output filename prefix. Defaults to the source filename.
+ * @returns {Recipe} The recipe instance.
  */
 exports.split = function split(outputDir = "", prefix) {
   prefix = prefix || this.filename;

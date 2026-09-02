@@ -1,49 +1,3 @@
-# Classes
-
-<dl>
-<dt><a href="#Recipe">Recipe</a></dt>
-<dd></dd>
-</dl>
-
-# Functions
-
-<dl>
-<dt><a href="#getFlagBitNumberByName">getFlagBitNumberByName(name)</a></dt>
-<dd><p>12.5.3 Annotation Flags</p>
-</dd>
-<dt><a href="#contentToRC">contentToRC(content)</a></dt>
-<dd><p>Support CSS2 Style: &#39;text-align&#39; | &#39;vertical-align&#39; | &#39;font-size&#39; | &#39;font-style&#39; | &#39;font-weight&#39; | &#39;font-family&#39; | &#39;font&#39; | &#39;color&#39; | &#39;text-decoration&#39; | &#39;font-stretch&#39;</p>
-</dd>
-<dt><a href="#toColorModel">toColorModel(code, colorspace, colorName)</a> ⇒ <code>any</code></dt>
-<dd><p>Convert given color code int color model object</p>
-<p>ColorModel consists of: {
-  color: number,
-  colorspace: string {&#39;rgb&#39;, &#39;cmyk&#39;, &#39;gray&#39;},
-  (colorspace == &#39;rgb&#39;)  r, g, b
-  (colorspace == &#39;cmyk&#39;) c, m, y, k
-  (colorspace == &#39;gray&#39;) gray
-}</p>
-<p>where r,g,b,c,m,y,k,gray are all numbers between 0 and 1</p>
-</dd>
-<dt><a href="#percentToHex">percentToHex(code)</a> ⇒ <code>string</code></dt>
-<dd><p>Convert percentage string into hex string (x / 100 * 255)</p>
-</dd>
-<dt><a href="#_transformColor">_transformColor(code)</a></dt>
-<dd><p>Transform color code into numeric value or colorModel</p>
-</dd>
-<dt><a href="#_getTextBoxOffset">_getTextBoxOffset()</a></dt>
-<dd></dd>
-<dt><a href="#justify">justify(left, x, wto, textBox, [position])</a></dt>
-<dd><p>Justify text in a line.</p>
-</dd>
-<dt><a href="#appendPDFPageFromPDFWithAnnotations">appendPDFPageFromPDFWithAnnotations(pdfWriter, sourcePDFPath, pageNumber, [options])</a></dt>
-<dd><p>Append PDF Page with annotations.</p>
-</dd>
-<dt><a href="#appendPDFPagesFromPDFWithAnnotations">appendPDFPagesFromPDFWithAnnotations(pdfWriter, sourcePDFPath, [options])</a></dt>
-<dd><p>Append PDF Pages with annotations.</p>
-</dd>
-</dl>
-
 <a name="Recipe"></a>
 
 # Recipe
@@ -53,44 +7,61 @@
 - [Recipe](#Recipe)
   - [new Recipe(src, [output], [options])](#new_Recipe_new)
   - _instance_
-    - [.endPDF(callback)](#Recipe+endPDF)
-    - [.register(key, callback)](#Recipe+register)
+    - [.read([inSrc])](#Recipe+read) ⇒ <code>Object</code>
+    - [.endPDF([callback])](#Recipe+endPDF) ⇒ <code>\*</code>
+    - [.register(key, [callback])](#Recipe+register) ⇒ <code>void</code>
   - _static_
-    - `.comment(text, x, y, [options])`
-    - `.annot(x, y, subtype, [options])`
-    - `.appendPage(pdfSrc, pages)`
-    - `.chroma(name, value, colorspace)`
-    - `.permission(flags)`
-    - `.encrypt(options)`
-    - `.registerFont(fontName, fontSrcPath, [type])`
-    - `.image(imgSrc, x, y, [options])`
-    - `.info([options])`
-    - `.custom([key], [value])`
-    - `.insertPage(afterPageNumber, pdfSrc, srcPageNumber)`
-    - `.overlay(pdfSrc, x, y)`
-    - `.createPage([pageWidth], [pageHeight], [margins])`
-    - `.endPage()`
-    - `.editPage(pageNumber)`
-    - `.pageInfo(pageNumber)`
+    - `.Word`
+      - [new Word(word, pathOptions)](#new_recipe-Word_new)
+    - `.Line`
+      - [new Line(width, height, size, pathOptions)](#new_recipe-Line_new)
+    - `.Column`
+      - [new Column(x, y, width, height, [text], [field], [options])](#new_recipe-Column_new)
+    - `.comment([text], x, y, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.annot(x, y, subtype, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.appendPage(pdfSrc, [pages])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.chroma(name, value, [colorspace])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.permission([flags])` ⇒ <code>number</code>
+    - `.encrypt([options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.registerFont([fontName], [fontSrcPath], [type])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.htmlToTextObjects(htmlCodes, [options])` ⇒ <code>Array.&lt;Object&gt;</code>
+    - `.image(imgSrc, x, y, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.info([options])` ⇒ <code>Object</code> \| [<code>Recipe</code>](#Recipe)
+    - `.custom([key], [value])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.structure(output)` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.insertPage(afterPageNumber, pdfSrc, srcPageNumber)` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.overlay(pdfSrc, [x], [y], [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.createPage([pageWidth], [pageHeight], [margins])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.endPage()` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.editPage(pageNumber)` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.pageInfo(pageNumber)` ⇒ <code>Object</code>
+    - `.pauseContext()` ⇒ <code>void</code>
+    - `.resumeContext()` ⇒ <code>void</code>
+    - `.getPageInfo()` ⇒ <code>Object</code>
     - `.margins([left], [right], [top], [bottom])` ⇒ <code>object</code>
-    - `.n_gon(cx, cy, radius, [sides], [options])`
-    - `.star(cx, cy, [points], [options])`
-    - `.triangle(x, y, traits, [options])`
-    - `.arrow(x, y, [options])`
-    - `.split(outputDir, prefix)`
-    - `.table(x, y, contents, [options])`
+    - `.n_gon(cx, cy, radius, [sides], [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.star(cx, cy, radius, [points], [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.triangle(x, y, traits, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.arrow(x, y, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.split([outputDir], [prefix])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.table(x, y, contents, [options])` ⇒ [<code>Recipe</code>](#Recipe)
     - `.textDimensions(text, [options])` ⇒ <code>Object</code>
-    - `.text(text, x, y, [options])`
+    - `.text([text], x, y, [options])` ⇒ [<code>Recipe</code>](#Recipe)
     - `.movedown([lines], [returnCoords])` ⇒ <code>Object</code> \| <code>Array.&lt;number&gt;</code>
-    - `.layout(id, x, y, width, height, [options])`
-    - `.moveTo(x, y)`
-    - `.lineTo(x, y, [options])`
-    - `.line(coordinates, [options])`
-    - `.polygon(coordinates, [options])`
-    - `.circle(x, y, radius, [options])`
-    - `.rectangle(x, y, width, height, [options])`
-    - `.ellipse(cx, cy, rx, ry, options)`
-    - `.arc(x, y, radius, [startAngle], [endAngle], [options])`
+    - `.layout(id, x, y, width, height, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.moveTo(x, y)` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.lineTo(x, y, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.line(coordinates, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.polygon(coordinates, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.circle(x, y, radius, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.rectangle(x, y, width, height, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.ellipse(cx, cy, rx, ry, [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.arc(x, y, radius, [startAngle], [endAngle], [options])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.lineWidth(width)` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.fillOpacity(opacity)` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.fill([color])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.stroke([color])` ⇒ [<code>Recipe</code>](#Recipe)
+    - `.fillAndStroke()` ⇒ [<code>Recipe</code>](#Recipe)
 
 ---
 
@@ -102,7 +73,7 @@ Create a pdfDoc
 
 **Params**
 
-- src <code>string</code> - The file path or Buffer of the src file.
+- src <code>string</code> | <code>Buffer</code> - The file path or Buffer of the source file.
 - [output] <code>string</code> - The path of the output file uses src if its not a buffer.
 - [options] <code>Object</code> - The options for pdfDoc
   - [.version] <code>number</code> - The pdf version
@@ -119,44 +90,140 @@ Create a pdfDoc
 
 ---
 
+<a name="Recipe+read"></a>
+
+## recipe.read([inSrc]) ⇒ <code>Object</code>
+
+Read PDF metadata.
+
+**Kind**: instance method of [<code>Recipe</code>](#Recipe)
+**Returns**: <code>Object</code> - The PDF metadata.
+**Throws**:
+
+- <code>Error</code> If the PDF cannot be read.
+
+**Params**
+
+- [inSrc] <code>string</code> | <code>Buffer</code> - An optional PDF source to read instead of the recipe source.
+
+---
+
 <a name="Recipe+endPDF"></a>
 
-## recipe.endPDF(callback)
+## recipe.endPDF([callback]) ⇒ <code>\*</code>
 
 End the pdfDoc
 
 **Kind**: instance method of [<code>Recipe</code>](#Recipe)
+**Returns**: <code>\*</code> - The callback result, if a callback is provided.
 **Params**
 
-- callback <code>function</code> - The callback function.
+- [callback] <code>function</code> - The callback function.
 
 ---
 
 <a name="Recipe+register"></a>
 
-## recipe.register(key, callback)
+## recipe.register(key, [callback]) ⇒ <code>void</code>
 
-Register callback procedure with hummus-recipe.
+Register a callback procedure with MuhammaraJS.
 
 **Kind**: instance method of [<code>Recipe</code>](#Recipe)
+**Throws**:
+
+- <code>Error</code> If the callback function is unnamed when no key is provided.
+- <code>Error</code> If the key conflicts with an existing Recipe prototype member.
+- <code>Error</code> If the callback is not a function.
+
 **Params**
 
-- key <code>string</code> - name assigned to given callback. Note that if an actual function is being
+- key <code>string</code> | <code>function</code> - Name assigned to the callback. When a named function is
   registered, and its given name is what is to be used to access it, the key is unnecessary.
-- callback <code>function</code> - procedure that can be accessed through hummus-recipe
+- [callback] <code>function</code> - Callback procedure that can be accessed through MuhammaraJS.
+
+---
+
+<a name="recipe-Word"></a>
+
+## recipe-Word
+
+**Kind**: static class of [<code>Recipe</code>](#Recipe)
+
+---
+
+<a name="new_recipe-Word_new"></a>
+
+### new Word(word, pathOptions)
+
+A word used by Recipe text layout.
+
+**Params**
+
+- word <code>string</code> - The word value.
+- pathOptions <code>Object</code> - The resolved text options.
+
+---
+
+<a name="recipe-Line"></a>
+
+## recipe-Line
+
+**Kind**: static class of [<code>Recipe</code>](#Recipe)
+
+---
+
+<a name="new_recipe-Line_new"></a>
+
+### new Line(width, height, size, pathOptions)
+
+A line used by Recipe text layout.
+
+**Params**
+
+- width <code>number</code> - The line width.
+- height <code>number</code> - The line height.
+- size <code>number</code> - The font size.
+- pathOptions <code>Object</code> - The resolved text options.
+
+---
+
+<a name="recipe-Column"></a>
+
+## recipe-Column
+
+**Kind**: static class of [<code>Recipe</code>](#Recipe)
+
+---
+
+<a name="new_recipe-Column_new"></a>
+
+### new Column(x, y, width, height, [text], [field], [options])
+
+A column used by Recipe text layouts.
+
+**Params**
+
+- x <code>number</code> - The x coordinate.
+- y <code>number</code> - The y coordinate.
+- width <code>number</code> - The column width.
+- height <code>number</code> - The column height.
+- [text] <code>string</code> <code> = &quot;&#x27;&#x27;&quot;</code> - The column heading.
+- [field] <code>string</code> <code> = &quot;&#x27;&#x27;&quot;</code> - The associated data field.
+- [options] <code>Object</code> - The column options.
 
 ---
 
 <a name="recipe-comment"></a>
 
-## recipe-comment(text, x, y, [options])
+## recipe-comment([text], x, y, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Create a comment annotation
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
-- text <code>string</code> - The text content
+- [text] <code>string</code> <code> = &quot;&#x27;&#x27;&quot;</code> - The text content
 - x <code>number</code> - The coordinate x
 - y <code>number</code> - The coordinate y
 - [options] <code>Object</code> - The options
@@ -170,11 +237,12 @@ Create a comment annotation
 
 <a name="recipe-annot"></a>
 
-## recipe-annot(x, y, subtype, [options])
+## recipe-annot(x, y, subtype, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Create an annotation
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Todo**
 
 - [ ] support for rich text RC
@@ -186,6 +254,7 @@ Create an annotation
 - y <code>number</code> - The coordinate y
 - subtype <code>string</code> - The markup annotation type 'Text'|'Link'|'FreeText'|'Line'|'Square'|'Circle'|'Polygon'|'PolyLine'|'Highlight'|'Underline'|'Squiggly'|'StrikeOut'|'Caret'|'Stamp'|'Ink'|'Popup'|'FileAttachment'|'Sound'|'Movie'|'Screen'|'Widget'|'PrinterMark'|'TrapNet'|'Watermark'|'3D'|'Redact'|'Projection'|'RichMedia'
 - [options] <code>Object</code> - The options
+  - [.text] <code>string</code> <code> = &quot;&#x27;&#x27;&quot;</code> - The annotation content.
   - [.title] <code>string</code> - The title.
   - [.open] <code>boolean</code> <code> = false</code> - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'
   - [.richText] <code>boolean</code> - Rich text
@@ -196,26 +265,30 @@ Create an annotation
   - [.date] <code>string</code> - Date of annotation
   - [.subject] <code>string</code> - The subject.
   - [.replies] <code>Array</code> - Array of annotation replies
+  - [.border] <code>number</code> - The border width.
+  - [.color] <code>string</code> | <code>Array.&lt;number&gt;</code> - The annotation color.
+  - [.followOriginalPageRotation] <code>boolean</code> <code> = false</code> - Preserve the original page rotation when positioning the annotation.
 
 ---
 
 <a name="recipe-appendPage"></a>
 
-## recipe-appendPage(pdfSrc, pages)
+## recipe-appendPage(pdfSrc, [pages]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Append pages from the other pdf to the current pdf
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - pdfSrc <code>string</code> - The path for the other pdf.
-- pages <code>number</code> | <code>Array.&lt;number&gt;</code> - The page number or the array of page numbers to be appended.
+- [pages] <code>number</code> | <code>Array.&lt;number&gt;</code> <code> = []</code> - The page number or array of page numbers to append. Omitting it appends all pages.
 
 ---
 
 <a name="recipe-chroma"></a>
 
-## recipe-chroma(name, value, colorspace)
+## recipe-chroma(name, value, [colorspace]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Associate color values to names
 
@@ -238,17 +311,24 @@ For example,
 }
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
+**Throws**:
+
+- <code>Error</code> If a loaded color definition has an unrecognized colorspace.
+- <code>Error</code> If a color value has an invalid size.
+- <code>Error</code> If the colorspace is unknown.
+
 **Params**
 
 - name <code>string</code> - the name to be associated to given color value, or '!load'
 - value <code>string</code> | <code>Array.&lt;number&gt;</code> - the color value (HexColor, DecimalColor, or PercentColor), or name of '!load' file
-- colorspace <code>string</code> - one of the followning: 'rgb', 'cmyk', 'gray', 'separation';
+- [colorspace] <code>string</code> <code> = &quot;&#x27;&#x27;&quot;</code> - One of: 'rgb', 'cmyk', 'gray', 'separation'.
 
 ---
 
 <a name="recipe-permission"></a>
 
-## recipe-permission(flags)
+## recipe-permission([flags]) ⇒ <code>number</code>
 
 Encryption user access permissions
 
@@ -256,23 +336,25 @@ This function supplies the numeric value for the encrypt function's 'userProtect
 option. When no argument is given, the default 'print' value is used.
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: <code>number</code> - The numeric user protection flag.
 **Params**
 
-- flags <code>string</code> - from the list print, modify, copy, edit, fillform, extract, assemble, and printbest
+- [flags] <code>string</code> <code> = &quot;&#x27;print&#x27;&quot;</code> - From the list print, modify, copy, edit, fillform, extract, assemble, and printbest.
   More than one may be specified by using a comma to separate the names in the input string.
 
 ---
 
 <a name="recipe-encrypt"></a>
 
-## recipe-encrypt(options)
+## recipe-encrypt([options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Encrypt the pdf
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
-- options <code>Object</code> - The options
+- [options] <code>Object</code> - The options
   - [.password] <code>string</code> - The permission password.
   - [.ownerPassword] <code>string</code> - The password for editing.
   - [.userPassword] <code>string</code> - The password for viewing & encryption.
@@ -282,26 +364,43 @@ Encrypt the pdf
 
 <a name="recipe-registerFont"></a>
 
-## recipe-registerFont(fontName, fontSrcPath, [type])
+## recipe-registerFont([fontName], [fontSrcPath], [type]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Register a custom font
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
-- fontName <code>string</code> - The font name will be used in text
-- fontSrcPath <code>string</code> - The path to the font file.
+- [fontName] <code>string</code> <code> = &quot;&#x27;&#x27;&quot;</code> - The font name used in text.
+- [fontSrcPath] <code>string</code> <code> = &quot;&#x27;&#x27;&quot;</code> - The path to the font file.
 - [type] <code>string</code> <code> = &quot;&#x27;regular&#x27;&quot;</code> - The font type, one of 'bold', 'bold-italic', 'italic'
+
+---
+
+<a name="recipe-htmlToTextObjects"></a>
+
+## recipe-htmlToTextObjects(htmlCodes, [options]) ⇒ <code>Array.&lt;Object&gt;</code>
+
+Convert HTML into Recipe text layout objects.
+
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: <code>Array.&lt;Object&gt;</code> - The parsed text layout objects.
+**Params**
+
+- htmlCodes <code>string</code> - The HTML source.
+- [options] <code>Object</code> - Text options used to initialize the objects.
 
 ---
 
 <a name="recipe-image"></a>
 
-## recipe-image(imgSrc, x, y, [options])
+## recipe-image(imgSrc, x, y, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Place images to pdf
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - imgSrc <code>string</code> - The path for the image. [JPEG, PNG, TIFF]
@@ -319,11 +418,12 @@ Place images to pdf
 
 <a name="recipe-info"></a>
 
-## recipe-info([options])
+## recipe-info([options]) ⇒ <code>Object</code> \| [<code>Recipe</code>](#Recipe)
 
 Add new PDF information, or retrieve existing PDF information.
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: <code>Object</code> \| [<code>Recipe</code>](#Recipe) - The existing information dictionary when options are omitted, otherwise the recipe instance.
 **Params**
 
 - [options] <code>Object</code> - The options (when missing obtains existing PDF information)
@@ -337,11 +437,12 @@ Add new PDF information, or retrieve existing PDF information.
 
 <a name="recipe-custom"></a>
 
-## recipe-custom([key], [value])
+## recipe-custom([key], [value]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Add custom information to pdf
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - [key] <code>string</code> - The key
@@ -349,13 +450,32 @@ Add custom information to pdf
 
 ---
 
+<a name="recipe-structure"></a>
+
+## recipe-structure(output) ⇒ [<code>Recipe</code>](#Recipe)
+
+Write the PDF object structure to a file.
+
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
+**Params**
+
+- output <code>string</code> - The output file path.
+
+---
+
 <a name="recipe-insertPage"></a>
 
-## recipe-insertPage(afterPageNumber, pdfSrc, srcPageNumber)
+## recipe-insertPage(afterPageNumber, pdfSrc, srcPageNumber) ⇒ [<code>Recipe</code>](#Recipe)
 
 Insert a page from the other pdf
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
+**Throws**:
+
+- <code>Error</code> If afterPageNumber is not a number.
+
 **Params**
 
 - afterPageNumber <code>number</code> - The page number for insertion.
@@ -366,16 +486,18 @@ Insert a page from the other pdf
 
 <a name="recipe-overlay"></a>
 
-## recipe-overlay(pdfSrc, x, y)
+## recipe-overlay(pdfSrc, [x], [y], [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Overlay a pdf to the current pdf
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - pdfSrc <code>string</code> - The path for the overlay pdf
-- x <code>number</code> - The coordinate x
-- y <code>number</code> - The coordinate y
+- [x] <code>number</code> | <code>Object</code> <code> = 0</code> - The x coordinate, or options when using the two-argument form.
+- [y] <code>number</code> <code> = 0</code> - The y coordinate.
+- [options] <code>Object</code> - The options.
   - [.scale] <code>number</code> - Scale the overlay pdf, default is 1
   - [.page] <code>number</code> - Page of the overlay pdf, default is 1
   - [.keepAspectRatio] <code>boolean</code> - To keep the aspect ratio when scaling, default is true
@@ -386,13 +508,14 @@ Overlay a pdf to the current pdf
 
 <a name="recipe-createPage"></a>
 
-## recipe-createPage([pageWidth], [pageHeight], [margins])
+## recipe-createPage([pageWidth], [pageHeight], [margins]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Create a new page, specifying either actual width and height, or the name
 of a supported page size (eg. 'letter', 'letter-size')
 '-size' will be removed from string but is discouraged to use.
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - [pageWidth] <code>number</code> | <code>string</code> - The page width, or name of medium size.
@@ -408,21 +531,23 @@ of a supported page size (eg. 'letter', 'letter-size')
 
 <a name="recipe-endPage"></a>
 
-## recipe-endPage()
+## recipe-endPage() ⇒ [<code>Recipe</code>](#Recipe)
 
 Finish a page
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 
 ---
 
 <a name="recipe-editPage"></a>
 
-## recipe-editPage(pageNumber)
+## recipe-editPage(pageNumber) ⇒ [<code>Recipe</code>](#Recipe)
 
 Start editing a page
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - pageNumber <code>number</code> - The page number to be edited.
@@ -431,14 +556,46 @@ Start editing a page
 
 <a name="recipe-pageInfo"></a>
 
-## recipe-pageInfo(pageNumber)
+## recipe-pageInfo(pageNumber) ⇒ <code>Object</code>
 
 Get page information
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: <code>Object</code> - The page information.
 **Params**
 
 - pageNumber <code>number</code> - The page number.
+
+---
+
+<a name="recipe-pauseContext"></a>
+
+## recipe-pauseContext() ⇒ <code>void</code>
+
+Pause the current page content context.
+
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+
+---
+
+<a name="recipe-resumeContext"></a>
+
+## recipe-resumeContext() ⇒ <code>void</code>
+
+Resume the current page content context after it has been paused.
+
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+
+---
+
+<a name="recipe-getPageInfo"></a>
+
+## recipe-getPageInfo() ⇒ <code>Object</code>
+
+Get the document information dictionary.
+
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: <code>Object</code> - The document information dictionary.
 
 ---
 
@@ -463,11 +620,12 @@ parameters given, the return value is the current page margin object.
 
 <a name="recipe-n_gon"></a>
 
-## recipe-n\_gon(cx, cy, radius, [sides], [options])
+## recipe-n\_gon(cx, cy, radius, [sides], [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw an N-sided regular polygon
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - cx <code>number</code> - x-coordinate of center point of regular polygon
@@ -491,15 +649,17 @@ Draw an N-sided regular polygon
 
 <a name="recipe-star"></a>
 
-## recipe-star(cx, cy, [points], [options])
+## recipe-star(cx, cy, radius, [points], [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw an N pointed star
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - cx <code>number</code> - x-coordinate of center point of regular polygon
 - cy <code>number</code> - y-coordinate of center point of regular polygon
+- radius <code>number</code> - The radius, distance from the center to a star point.
 - [points] <code>number</code> <code> = 5</code> - number of points on star
 - [options] <code>Object</code> - The options
   - [.color] <code>string</code> | <code>Array.&lt;number&gt;</code> - HexColor or DecimalColor
@@ -517,11 +677,16 @@ Draw an N pointed star
 
 <a name="recipe-triangle"></a>
 
-## recipe-triangle(x, y, traits, [options])
+## recipe-triangle(x, y, traits, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw a triangle, by specifying three side lengths, two side lengths and one inclusive angle, one side length and two adjacent angles, or with a set of vertices.
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
+**Throws**:
+
+- <code>Error</code> If traits does not contain three values or does not define a valid triangle.
+
 **Params**
 
 - x <code>number</code> - x-coordinate used to position triangle, by default associated with left vertex of triangle base.
@@ -551,11 +716,12 @@ Draw a triangle, by specifying three side lengths, two side lengths and one incl
 
 <a name="recipe-arrow"></a>
 
-## recipe-arrow(x, y, [options])
+## recipe-arrow(x, y, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw an arrow
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - x <code>number</code> - x-coordinate position
@@ -573,25 +739,27 @@ Draw an arrow
 
 <a name="recipe-split"></a>
 
-## recipe-split(outputDir, prefix)
+## recipe-split([outputDir], [prefix]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Split the pdf
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
-- outputDir <code>string</code> - The path for the output pdfs.
-- prefix <code>string</code> - `${prefix}-${i+1}.pdf`.
+- [outputDir] <code>string</code> <code> = &quot;&#x27;&#x27;&quot;</code> - The path for the output PDFs.
+- [prefix] <code>string</code> - The output filename prefix. Defaults to the source filename.
 
 ---
 
 <a name="recipe-table"></a>
 
-## recipe-table(x, y, contents, [options])
+## recipe-table(x, y, contents, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Display text data in tabular form
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - x <code>number</code> - The coordinate x used to position table on page
@@ -614,15 +782,15 @@ Display text data in tabular form
     - [.font] <code>string</code> <code> = &quot;Helvetica&quot;</code> - The font. 'Arial', 'Helvetica'...
     - [.size] <code>number</code> <code> = 14</code> - The font size
     - [.renderer] <code>function</code> - function to be called which can be used to modify the text options for a particular
-      table cell. The function is called with the parameters (text, data), where 'text' is the text to be written in the cell and
-      'data' is an object holding all the text elements in the table row. The function returns an object with the text attributes that
+      table cell. The function is called with `(text, data, field, row)`, where `text` is the text to be written in the cell,
+      `data` holds the text elements in the table row, `field` is the column field, and `row` is the one-based row number. The function returns an object with the text attributes that
       are to be modified for the table cell.
   - [.header] <code>object</code> | <code>boolean</code> <code> = false</code> - When true, the column name associated with a column will
     appear at the top of the column. When presented as an object it is the set of unique options to be applied to column headers.
     All 'text' interface options can be used.
     - [.cell] <code>object</code> - All textBox options from the 'text' interface can be used here.
   - [.border] <code>object</code> - Used to define table and cell border characteristics
-    - [.width] <code>number</code> <code> = .5</code> - thickness of lines used in border.Array
+    - [.width] <code>number</code> <code> = .5</code> - Thickness of lines used in the border.
     - [.stroke] <code>string</code> | <code>Array.&lt;number&gt;</code> - line color (HexColor, PercentColor or DecimalColor)
   - [.overflow] <code>function</code> - Called when the next table entry is going to expand the table
     beyond the given height or page boundary. Its parameters are (self, row) where 'self' is the recipe handle so
@@ -657,18 +825,19 @@ Get text dimensions
 
 <a name="recipe-text"></a>
 
-## recipe-text(text, x, y, [options])
+## recipe-text([text], x, y, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Write text elements
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Todo**
 
 - [ ] support break words
 
 **Params**
 
-- text <code>string</code> - The text content
+- [text] <code>string</code> <code> = &quot;&#x27;&#x27;&quot;</code> - The text content
 - x <code>number</code> - The coordinate x
 - y <code>number</code> - The coordinate y
 - [options] <code>Object</code> - The options
@@ -708,7 +877,7 @@ Write text elements
       'auto', 'clip', 'trim', 'ellipsis'. All the option values that are not equivalent to 'auto' dictate
       how the text which does not fit on a line is to be truncated. True is equivalent to 'auto'. False is equivalent to 'ellipsis'.
     - [.textAlign] <code>string</code> <code> = &quot;&#x27;left top&#x27;&quot;</code> - Alignment inside text box, specified as 'horizontal vertical',
-      where horizontal is one of: 'left', 'center', 'right', 'justify' and veritical is one of: 'top', 'center', 'bottom'.
+      where horizontal is one of: 'left', 'center', 'right', 'justify' and vertical is one of: 'top', 'center', 'bottom'.
     - [.clipIfExceedsBox] <code>boolean</code> <code> = false</code> - Render only complete lines that fit within the text box height.
     - [.onClip] <code>function</code> - Called as onClip(recipe, result) when clipping leaves text unrendered.
       Do not call endPage() or endPDF() in this callback because the text operation is still active.
@@ -722,12 +891,10 @@ Write text elements
   - [.title] <code>string</code> - Title of annotation
   - [.open] <code>boolean</code> <code> = false</code> - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'
   - [.richText] <code>boolean</code> - Rich text in annotation
-  - [.flag] <code>AnnotOptionsFlag</code> - The flag property of annotation
-  - [.icon] <code>AnnotOptionsIcon</code> <code> = &#x27;Note&#x27;</code> - The icon of annotation. Specific to text annotations. Default value: 'Note'
+  - [.flag] <code>&#x27;invisible&#x27;</code> | <code>&#x27;hidden&#x27;</code> | <code>&#x27;print&#x27;</code> | <code>&#x27;nozoom&#x27;</code> | <code>&#x27;norotate&#x27;</code> | <code>&#x27;noview&#x27;</code> | <code>&#x27;readonly&#x27;</code> | <code>&#x27;locked&#x27;</code> | <code>&#x27;togglenoview&#x27;</code> - The annotation flag.
+  - [.icon] <code>&#x27;Comment&#x27;</code> | <code>&#x27;Key&#x27;</code> | <code>&#x27;Note&#x27;</code> | <code>&#x27;Help&#x27;</code> | <code>&#x27;NewParagraph&#x27;</code> | <code>&#x27;Paragraph&#x27;</code> | <code>&#x27;Insert&#x27;</code> <code> = &#x27;Note&#x27;</code> - The icon of annotation. Specific to text annotations.
   - [.date] <code>string</code> - Date of text to show up on annotation
-  - [.subject] <code>string</code> - Subject of annotation
-    When true is given, the default radius size for all corners is 5. A four number array may be used to give specific sizees to each
-    corner. The numbering starts from the top, left corner, and goes clockwise around the text box.
+  - [.subject] <code>string</code> - Subject of annotation.
 
 ---
 
@@ -748,11 +915,12 @@ Move text positioning down N lines in text box
 
 <a name="recipe-layout"></a>
 
-## recipe-layout(id, x, y, width, height, [options])
+## recipe-layout(id, x, y, width, height, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Define text column layout
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - id <code>number</code> | <code>string</code> - The identifier to be associated with the layout. (See 'text' layout option)
@@ -770,11 +938,12 @@ Define text column layout
 
 <a name="recipe-moveTo"></a>
 
-## recipe-moveTo(x, y)
+## recipe-moveTo(x, y) ⇒ [<code>Recipe</code>](#Recipe)
 
 move the current position to target position
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - x <code>number</code> - The coordinate x
@@ -784,11 +953,12 @@ move the current position to target position
 
 <a name="recipe-lineTo"></a>
 
-## recipe-lineTo(x, y, [options])
+## recipe-lineTo(x, y, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw a line from current position
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - x <code>number</code> - The coordinate x
@@ -808,11 +978,12 @@ Draw a line from current position
 
 <a name="recipe-line"></a>
 
-## recipe-line(coordinates, [options])
+## recipe-line(coordinates, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw a line
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - coordinates <code>Array.&lt;number&gt;</code> - The array of coordinate [[x,y], [m,n]]
@@ -831,11 +1002,12 @@ Draw a line
 
 <a name="recipe-polygon"></a>
 
-## recipe-polygon(coordinates, [options])
+## recipe-polygon(coordinates, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw a polygon
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - coordinates <code>Array.&lt;number&gt;</code> - The array of coordinate [[x,y], ... [m,n]]
@@ -857,11 +1029,12 @@ Draw a polygon
 
 <a name="recipe-circle"></a>
 
-## recipe-circle(x, y, radius, [options])
+## recipe-circle(x, y, radius, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw a circle
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - x <code>number</code> - The coordinate x
@@ -879,11 +1052,12 @@ Draw a circle
 
 <a name="recipe-rectangle"></a>
 
-## recipe-rectangle(x, y, width, height, [options])
+## recipe-rectangle(x, y, width, height, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw a rectangle
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - x <code>number</code> - The coordinate x
@@ -899,7 +1073,7 @@ Draw a rectangle
   - [.dash] <code>Array.&lt;number&gt;</code> - The dash style [number, number]
   - [.rotation] <code>number</code> - Accept: +/- 0 through 360. Default: 0
   - [.rotationOrigin] <code>Array.&lt;number&gt;</code> - [originX, originY] Default: x, y
-  - [.borderRadius] <code>number</code> | <code>Array.&lt;number&gt;</code> - radius size for rounded corners.Error
+  - [.borderRadius] <code>number</code> | <code>Array.&lt;number&gt;</code> - Radius size for rounded corners.
     When a one to four number array can be used to give specific sizees to each corner.
     The numbering starts from the top, left corner, and goes clockwise around the text box.
     Missing values in the array are filled in by opposite corner values.
@@ -908,18 +1082,19 @@ Draw a rectangle
 
 <a name="recipe-ellipse"></a>
 
-## recipe-ellipse(cx, cy, rx, ry, options)
+## recipe-ellipse(cx, cy, rx, ry, [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw an ellipse
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - cx <code>number</code> - x-coordinate of center point of ellipse
 - cy <code>number</code> - y-coordinate of center point of ellipse
 - rx <code>number</code> - radius length from the center point along x-axis
 - ry <code>number</code> - radius length from the center point along y-axis
-- options <code>Object</code>
+- [options] <code>Object</code>
   - [.color] <code>string</code> | <code>Array.&lt;number&gt;</code> - HexColor, PercentColor or DecimalColor
   - [.stroke] <code>string</code> | <code>Array.&lt;number&gt;</code> - HexColor, PercentColor or DecimalColor
   - [.fill] <code>string</code> | <code>Array.&lt;number&gt;</code> - HexColor, PercentColor or DecimalColor
@@ -933,11 +1108,12 @@ Draw an ellipse
 
 <a name="recipe-arc"></a>
 
-## recipe-arc(x, y, radius, [startAngle], [endAngle], [options])
+## recipe-arc(x, y, radius, [startAngle], [endAngle], [options]) ⇒ [<code>Recipe</code>](#Recipe)
 
 Draw an arc of a circle.
 
 **Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
 - x <code>number</code> - the x coordinate of the arc center point
@@ -957,147 +1133,79 @@ Draw an arc of a circle.
 
 ---
 
-<a name="getFlagBitNumberByName"></a>
+<a name="recipe-lineWidth"></a>
 
-# getFlagBitNumberByName(name)
+## recipe-lineWidth(width) ⇒ [<code>Recipe</code>](#Recipe)
 
-12.5.3 Annotation Flags
+Set the line width.
 
-**Kind**: global function
+This compatibility method currently has no effect.
+
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
-- name <code>string</code>
+- width <code>number</code> - The requested line width.
 
 ---
 
-<a name="contentToRC"></a>
+<a name="recipe-fillOpacity"></a>
 
-# contentToRC(content)
+## recipe-fillOpacity(opacity) ⇒ [<code>Recipe</code>](#Recipe)
 
-Support CSS2 Style: 'text-align' | 'vertical-align' | 'font-size' | 'font-style' | 'font-weight' | 'font-family' | 'font' | 'color' | 'text-decoration' | 'font-stretch'
+Set the fill opacity.
 
-**Kind**: global function
-**Todo**
+This compatibility method currently has no effect.
 
-- [ ] Fix display issue for ol/ul in richText
-
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
-- content <code>string</code>
+- opacity <code>number</code> - The requested fill opacity.
 
 ---
 
-<a name="toColorModel"></a>
+<a name="recipe-fill"></a>
 
-# toColorModel(code, colorspace, colorName) ⇒ <code>any</code>
+## recipe-fill([color]) ⇒ [<code>Recipe</code>](#Recipe)
 
-Convert given color code int color model object
+Fill the current path.
 
-ColorModel consists of: {
-color: number,
-colorspace: string {'rgb', 'cmyk', 'gray'},
-(colorspace == 'rgb') r, g, b
-(colorspace == 'cmyk') c, m, y, k
-(colorspace == 'gray') gray
-}
+This compatibility method currently has no effect.
 
-where r,g,b,c,m,y,k,gray are all numbers between 0 and 1
-
-**Kind**: global function
-**Returns**: <code>any</code> - the color model
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
-- code <code>string</code> - the color encoding as HexColor
-- colorspace <code>string</code> - the name of the colorspace of given color code
-- colorName <code>string</code> - the name to be associated with given color code
+- [color] <code>string</code> | <code>Array.&lt;number&gt;</code> - The requested fill color.
 
 ---
 
-<a name="percentToHex"></a>
+<a name="recipe-stroke"></a>
 
-# percentToHex(code) ⇒ <code>string</code>
+## recipe-stroke([color]) ⇒ [<code>Recipe</code>](#Recipe)
 
-Convert percentage string into hex string (x / 100 * 255)
+Stroke the current path.
 
-**Kind**: global function
-**Returns**: <code>string</code> - massaged hexadecimal string that can be used as input to hexToArray.
+This compatibility method currently has no effect.
+
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 **Params**
 
-- code <code>string</code> - numbers separated by commas with values ranging between 0-100.
+- [color] <code>string</code> | <code>Array.&lt;number&gt;</code> - The requested stroke color.
 
 ---
 
-<a name="_transformColor"></a>
+<a name="recipe-fillAndStroke"></a>
 
-# \_transformColor(code)
+## recipe-fillAndStroke() ⇒ [<code>Recipe</code>](#Recipe)
 
-Transform color code into numeric value or colorModel
+Fill and stroke the current path.
 
-**Kind**: global function
-**Params**
+This compatibility method currently has no effect.
 
-- code - color specification in form of HexColor (string, begins with '#'),
-  DecimalColor (1, 3, or 4 element array with values between 0-255),
-  PercentColor (string, begins with '%' followed by values separated
-  by commas with values between 0-100)
-
----
-
-<a name="_getTextBoxOffset"></a>
-
-# \_getTextBoxOffset()
-
-**Kind**: global function
-**Todo**
-
-- [ ] handle page margin and padding
-
----
-
-<a name="justify"></a>
-
-# justify(left, x, wto, textBox, [position])
-
-Justify text in a line.
-
-**Kind**: global function
-**Params**
-
-- left <code>number</code> - is position of left hand side of text box
-- x <code>number</code> - is starting position for text placement
-- wto <code>Array.&lt;Object&gt;</code> - is a write object
-- textBox <code>Object</code> - holds text box properties
-- [position] <code>function</code> - used to place given word at a postion on the line
-
----
-
-<a name="appendPDFPageFromPDFWithAnnotations"></a>
-
-# appendPDFPageFromPDFWithAnnotations(pdfWriter, sourcePDFPath, pageNumber, [options])
-
-Append PDF Page with annotations.
-
-**Kind**: global function
-**Params**
-
-- pdfWriter <code>any</code> - Hummus writer.
-- sourcePDFPath <code>string</code> | <code>any</code> - The path for the output pdfs or Reader stream.
-- pageNumber <code>number</code> - page number.
-- [options] <code>any</code> <code> = {}</code> - appendPDFPageFromPDF options
-
----
-
-<a name="appendPDFPagesFromPDFWithAnnotations"></a>
-
-# appendPDFPagesFromPDFWithAnnotations(pdfWriter, sourcePDFPath, [options])
-
-Append PDF Pages with annotations.
-
-**Kind**: global function
-**Params**
-
-- pdfWriter <code>any</code> - Hummus writer.
-- sourcePDFPath <code>string</code> | <code>any</code> - The path for the output pdfs or Reader stream.
-- [options] <code>any</code> <code> = {}</code> - appendPDFPagesFromPDF options
+**Kind**: static method of [<code>Recipe</code>](#Recipe)
+**Returns**: [<code>Recipe</code>](#Recipe) - The recipe instance.
 
 ---

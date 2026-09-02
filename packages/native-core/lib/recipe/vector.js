@@ -27,6 +27,7 @@
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
+ * @returns {Recipe} The recipe instance.
  */
 exports.circle = function circle(x, y, radius, options = {}) {
   const { nx, ny } = this._calibrateCoordinate(x, y);
@@ -108,10 +109,11 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * @param {number[]} [options.dash] - The dash style [number, number]
  * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
- * @param {number|number[]} [options.borderRadius] - radius size for rounded corners.Error
+ * @param {number|number[]} [options.borderRadius] - Radius size for rounded corners.
  * When a one to four number array can be used to give specific sizees to each corner.
  * The numbering starts from the top, left corner, and goes clockwise around the text box.
  * Missing values in the array are filled in by opposite corner values.
+ * @returns {Recipe} The recipe instance.
  */
 exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   const { nx, ny } = options.useGivenCoords
@@ -287,7 +289,7 @@ function drawRoundedRectangle(ctx, left, bottom, width, height, radii) {
  * @param {number} cy y-coordinate of center point of ellipse
  * @param {number} rx radius length from the center point along x-axis
  * @param {number} ry radius length from the center point along y-axis
- * @param {Object} options
+ * @param {Object} [options]
  * @param {string|number[]} [options.color] - HexColor, PercentColor or DecimalColor
  * @param {string|number[]} [options.stroke] - HexColor, PercentColor or DecimalColor
  * @param {string|number[]}[ options.fill] - HexColor, PercentColor or DecimalColor
@@ -296,6 +298,7 @@ function drawRoundedRectangle(ctx, left, bottom, width, height, radii) {
  * @param {number[]} [options.dash] - The dash style [number, number]
  * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
+ * @returns {Recipe} The recipe instance.
  */
 exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
   const { nx, ny } = this._calibrateCoordinate(cx, cy);
@@ -457,6 +460,7 @@ function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
  * @param {number[]} [options.dash] - The dash style [number, number]
  * @param {number} [options.rotation=0] - Accept: +/- 0 through 360.
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
+ * @returns {Recipe} The recipe instance.
  */
 exports.arc = function arc(
   x,
@@ -531,22 +535,71 @@ exports.arc = function arc(
   return this;
 };
 
+/**
+ * Set the line width.
+ *
+ * This compatibility method currently has no effect.
+ * @name lineWidth
+ * @function
+ * @memberof Recipe
+ * @param {number} width - The requested line width.
+ * @returns {Recipe} The recipe instance.
+ */
 exports.lineWidth = function lineWidth() {
   return this;
 };
 
+/**
+ * Set the fill opacity.
+ *
+ * This compatibility method currently has no effect.
+ * @name fillOpacity
+ * @function
+ * @memberof Recipe
+ * @param {number} opacity - The requested fill opacity.
+ * @returns {Recipe} The recipe instance.
+ */
 exports.fillOpacity = function fillOpacity() {
   return this;
 };
 
+/**
+ * Fill the current path.
+ *
+ * This compatibility method currently has no effect.
+ * @name fill
+ * @function
+ * @memberof Recipe
+ * @param {string|number[]} [color] - The requested fill color.
+ * @returns {Recipe} The recipe instance.
+ */
 exports.fill = function fill() {
   return this;
 };
 
+/**
+ * Stroke the current path.
+ *
+ * This compatibility method currently has no effect.
+ * @name stroke
+ * @function
+ * @memberof Recipe
+ * @param {string|number[]} [color] - The requested stroke color.
+ * @returns {Recipe} The recipe instance.
+ */
 exports.stroke = function stroke() {
   return this;
 };
 
+/**
+ * Fill and stroke the current path.
+ *
+ * This compatibility method currently has no effect.
+ * @name fillAndStroke
+ * @function
+ * @memberof Recipe
+ * @returns {Recipe} The recipe instance.
+ */
 exports.fillAndStroke = function fillAndStroke() {
   return this;
 };

@@ -6,9 +6,10 @@ export type PDFMatrix = [number, number, number, number, number, number];
 export type Glyph = [number, number];
 export type TextEncoding = "text" | "code" | "hex";
 export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
+export type PDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
 
 export interface WriterOptions {
-  version?: number;
+  version?: PDFVersion;
   /** Enables Flate compression for streams. Defaults to true. */
   compress?: boolean;
 }
@@ -147,6 +148,7 @@ export interface RecipeTextOptions extends RecipePathOptions {
   underline?: boolean;
   strikeOut?: boolean;
   textBox?: RecipeTextBox;
+  cell?: RecipeTextBox;
   overflow?: (
     recipe: Recipe,
   ) =>
@@ -158,8 +160,9 @@ export interface RecipeHtmlTextObject {
   value: string;
   styles: Partial<RecipeTextOptions>;
 }
-export interface RecipeTableColumn extends RecipeTextOptions {
+export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
   name: string;
+  font?: string;
   text?: string;
   width?: number;
   cell?: RecipeTextBox;
@@ -767,7 +770,14 @@ export interface ContentContext {
   scn(...componentsAndPattern: (number | string | number[])[]): this;
   doXObject(xObject: string | number | FormXObject | ImageXObject): this;
   drawPath(points: [number, number][], options?: DrawPathOptions): this;
-  drawPath(...coordinatesAndOptions: (number | DrawPathOptions)[]): this;
+  drawPath(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    options: DrawPathOptions,
+    ...coordinates: number[]
+  ): this;
   drawCircle(
     x: number,
     y: number,
@@ -807,6 +817,9 @@ export interface ContentContext {
   ): Promise<this>;
 }
 export interface ImageXObject {
+  readonly id: number;
+}
+export interface CompletedFormXObject {
   readonly id: number;
 }
 export interface FormXObject {
@@ -1067,24 +1080,30 @@ export interface PDFWriter {
     image: AsyncByteSource,
   ): Promise<JPGImageInformation>;
   createImageXObjectFromJPGBytes(name: string, objectId?: number): ImageXObject;
-  createFormXObjectFromJPGBytes(name: string, objectId?: number): FormXObject;
-  createFormXObjectFromPNGBytes(name: string, objectId?: number): FormXObject;
+  createFormXObjectFromJPGBytes(
+    name: string,
+    objectId?: number,
+  ): CompletedFormXObject;
+  createFormXObjectFromPNGBytes(
+    name: string,
+    objectId?: number,
+  ): CompletedFormXObject;
   createFormXObjectFromTIFF(
     image: string | ByteSource,
     options?: TIFFOptions,
-  ): FormXObject;
+  ): CompletedFormXObject;
   createFormXObjectFromTIFFBytes(
     image: string | ByteSource,
     options?: TIFFOptions,
-  ): FormXObject;
+  ): CompletedFormXObject;
   createFormXObjectFromTIFFAsync(
     image: AsyncByteSource,
     options?: TIFFOptions,
-  ): Promise<FormXObject>;
+  ): Promise<CompletedFormXObject>;
   createFormXObjectFromTIFFBytesAsync(
     image: AsyncByteSource,
     options?: TIFFOptions,
-  ): Promise<FormXObject>;
+  ): Promise<CompletedFormXObject>;
   createFormXObject(
     left: number,
     bottom: number,
@@ -1325,8 +1344,35 @@ export interface CompactModifier {
     y: number,
     width: number,
     height: number,
-    options?: DrawPathOptions,
+    options?: { color?: RecipeColor; fill?: RecipeColor; stroke?: RecipeColor },
   ): this;
+  circle(
+    x: number,
+    y: number,
+    radius: number,
+    options?: { color?: RecipeColor; fill?: RecipeColor; stroke?: RecipeColor },
+  ): this;
+  line(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    options?: { color?: RecipeColor; stroke?: RecipeColor; lineWidth?: number },
+  ): this;
+  text(
+    value: string,
+    x: number,
+    y: number,
+    options: { font: string; fontSize?: number; color?: RecipeColor },
+  ): this;
+  image(
+    name: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): this;
+  endPage(): this;
   end(): Uint8Array;
   dispose(): void;
 }
@@ -1353,8 +1399,8 @@ export interface MuhammaraWasm {
   createReaderAsync(source: AsyncByteSource): Promise<PDFReader>;
   createModifier(source: ByteSource): CompactModifier;
   createModifierAsync(source: AsyncByteSource): Promise<CompactModifier>;
-  registerFont(name: string, bytes: ByteSource): void;
-  registerFontAsync(name: string, bytes: AsyncByteSource): Promise<void>;
+  registerFont(name: string, bytes: ByteSource): string;
+  registerFontAsync(name: string, bytes: AsyncByteSource): Promise<string>;
   registerImage(name: string, bytes: ByteSource, extension: string): void;
   registerImageAsync(
     name: string,
@@ -1368,15 +1414,15 @@ export interface MuhammaraWasm {
   unregisterPdf(name: string): boolean;
   disposeAssets(): void;
   createBlankPdf(width: number, height: number): Uint8Array;
-  readonly ePDFVersionUndefined: number;
-  readonly ePDFVersion10: number;
-  readonly ePDFVersion11: number;
-  readonly ePDFVersion12: number;
-  readonly ePDFVersion13: number;
-  readonly ePDFVersion14: number;
-  readonly ePDFVersion15: number;
-  readonly ePDFVersion16: number;
-  readonly ePDFVersion17: number;
+  readonly ePDFVersionUndefined: 0;
+  readonly ePDFVersion10: 10;
+  readonly ePDFVersion11: 11;
+  readonly ePDFVersion12: 12;
+  readonly ePDFVersion13: 13;
+  readonly ePDFVersion14: 14;
+  readonly ePDFVersion15: 15;
+  readonly ePDFVersion16: 16;
+  readonly ePDFVersion17: 17;
   readonly ePDFVersion20: number;
   readonly KProcsetImageB: string;
   readonly KProcsetImageC: string;

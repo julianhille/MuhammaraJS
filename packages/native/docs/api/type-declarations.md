@@ -361,6 +361,7 @@ export interface PDFWriterOptions {
   userPassword?: string;
   ownerPassword?: string;
   userProtectionFlag?: number;
+}
 ```
 
 ## Pages, Readers, And Document Objects
@@ -424,10 +425,7 @@ export interface RectangleDimension {
 }
 
 export interface UsedFont {
-  calculateTextDimensions(
-    text: string | any,
-    fontSize: number,
-  ): TextDimension;
+  calculateTextDimensions(text: string | any, fontSize: number): TextDimension;
 }
 
 export interface ByteWriter {
@@ -454,10 +452,7 @@ export interface PDFReader {
   getPagesCount(): number;
   getTrailer(): PDFDictionary;
   queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
-  queryArrayObject(
-    objectList: PDFArray,
-    index: number,
-  ): undefined | PDFObject;
+  queryArrayObject(objectList: PDFArray, index: number): undefined | PDFObject;
   parseNewObject(objectId: number): PDFObject;
   getPageObjectID(objectId: number): number;
   parsePageDictionary(objectId: number): PDFDictionary;
@@ -574,19 +569,18 @@ export interface InfoDictionary {
   setModDate(date: string | Date): void;
 
   title: string;
-```
-
-## Copying And Low-Level Object Writing
-
-```typescript
-author: string;
+  author: string;
   subject: string;
   keywords: string;
   creator: string;
   producer: string;
   trapped: EInfoTrapped;
 }
+```
 
+## Copying And Low-Level Object Writing
+
+```typescript
 export interface ImageXObject {
   id: number;
 }
@@ -742,13 +736,12 @@ export interface JPEGInformation {
   PhotoshopInformationExists: boolean;
   PhotoshopXDensity?: number;
   PhotoshopYDensity?: number;
+}
 ```
 
 ## PDF Writer
 
 ```typescript
-}
-
 export type PDFRectangle = [
   lowerLeftX: number,
   lowerLeftY: number,
@@ -843,15 +836,8 @@ export interface PDFWriter {
   createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
   createPDFTextString(): PDFTextString;
   createPDFDate(): PDFDate;
-  getImageDimensions(
-    inFontFilePath: FilePath | ReadStream,
-  ): RectangleDimension;
-```
-
-## Recipe
-
-```typescript
-getImagePagesCount(
+  getImageDimensions(inFontFilePath: FilePath | ReadStream): RectangleDimension;
+  getImagePagesCount(
     imagePath: FilePath,
     options?: { password?: string },
   ): number;
@@ -869,7 +855,11 @@ getImagePagesCount(
     eventParams: any,
   ): void;
 }
+```
 
+## Recipe
+
+```typescript
 namespace Recipe {
   type CommentOptionsFlag =
     | "invisible"
