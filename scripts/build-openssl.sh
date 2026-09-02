@@ -3,21 +3,12 @@ set -eu
 
 openssl_version="${OPENSSL_VERSION:?OPENSSL_VERSION is required}"
 target_architecture="${OPENSSL_TARGET_ARCH:?OPENSSL_TARGET_ARCH is required}"
-cache_directory="${HOME}/.cache/muhammara-openssl"
-archive="${cache_directory}/openssl-${openssl_version}.tar.gz"
-source_directory="src/deps/openssl"
+archive="$PWD/packages/native-with-source/src/deps/openssl-${openssl_version}.tar.gz"
+source_directory="build/openssl"
 
-mkdir -p "$cache_directory"
 if [ ! -f "$archive" ]; then
-  url="https://www.openssl.org/source/openssl-${openssl_version}.tar.gz"
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$url" -o "$archive"
-  elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$archive" "$url"
-  else
-    echo "curl or wget is required to download OpenSSL" >&2
-    exit 1
-  fi
+  echo "Vendored OpenSSL source archive not found: $archive" >&2
+  exit 1
 fi
 
 rm -rf "$source_directory"

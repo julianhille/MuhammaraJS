@@ -6,13 +6,11 @@ if ([string]::IsNullOrWhiteSpace($opensslVersion) -or [string]::IsNullOrWhiteSpa
   throw "OPENSSL_VERSION and OPENSSL_TARGET_ARCH are required"
 }
 
-$cacheDirectory = Join-Path $env:USERPROFILE ".cache\muhammara-openssl"
-$archive = Join-Path $cacheDirectory "openssl-$opensslVersion.tar.gz"
-$sourceDirectory = Join-Path $PWD "src\deps\openssl"
+$archive = Join-Path $PWD "packages\native-with-source\src\deps\openssl-$opensslVersion.tar.gz"
+$sourceDirectory = Join-Path $PWD "build\openssl"
 
-New-Item -ItemType Directory -Force -Path $cacheDirectory | Out-Null
 if (-not (Test-Path $archive -PathType Leaf)) {
-  Invoke-WebRequest "https://www.openssl.org/source/openssl-$opensslVersion.tar.gz" -OutFile $archive
+  throw "Vendored OpenSSL source archive not found: $archive"
 }
 
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $sourceDirectory
@@ -31,21 +29,6 @@ $visualStudioArchitecture = switch ($targetArchitecture) {
   default { $targetArchitecture }
 }
 
-$nasm = Get-Command nasm -ErrorAction SilentlyContinue
-if ($null -eq $nasm) {
-  & choco install nasm --no-progress --yes
-  if ($LASTEXITCODE -ne 0) {
-    throw "Unable to install NASM"
-  }
-  $nasmPath = Join-Path $env:ProgramFiles "NASM\nasm.exe"
-  if (-not (Test-Path $nasmPath -PathType Leaf)) {
-    throw "NASM was not found after installation"
-  }
-  $nasmDirectory = Split-Path $nasmPath
-} else {
-  $nasmDirectory = Split-Path $nasm.Source
-}
-
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $visualStudioPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if ([string]::IsNullOrWhiteSpace($visualStudioPath)) {
@@ -59,7 +42,7 @@ if (-not (Test-Path $nmakePath -PathType Leaf)) {
   throw "NMake was not found in the Visual Studio C++ build tools"
 }
 
-$command = "call `"$vsDevCmd`" -arch=$visualStudioArchitecture -host_arch=x64 && set `"PATH=$nasmDirectory;!PATH!`" && cd /d `"$sourceDirectory`" && perl Configure $opensslTarget no-shared no-apps no-tests && call `"$nmakePath`" build_libs"
+$command = "call `"$vsDevCmd`" -arch=$visualStudioArchitecture -host_arch=x64 && cd /d `"$sourceDirectory`" && perl Configure $opensslTarget no-asm no-shared no-apps no-tests && call `"$nmakePath`" build_libs"
 & cmd.exe /v:on /d /s /c $command
 if ($LASTEXITCODE -ne 0) {
   throw "OpenSSL build failed"
