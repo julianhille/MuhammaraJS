@@ -19,11 +19,3 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 ## [1.0.0-alpha.0]
 
 Initial alpha release of `@muhammara/wasm`.
-
-### Breaking Changes
-
-- This is a separate browser-first package, not a drop-in replacement for the
-  unscoped `muhammara` or `@muhammara/native` Node.js packages. It accepts byte
-  assets rather than filesystem paths and returns `Uint8Array` PDF data.
-- Node.js streams, filesystem APIs, Electron rebuilds, and OpenSSL-backed PDF
-  encryption are unavailable in the Wasm runtime.
