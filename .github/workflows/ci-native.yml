@@ -11,8 +11,6 @@ on:
       - "packages/native-core/**"
       - "packages/native-with-source/**"
       - ".github/actions/setup-native-build-cache/**"
-      - "scripts/build-openssl.sh"
-      - "scripts/build-openssl.ps1"
       - "package.json"
       - "package-lock.json"
   workflow_dispatch:
@@ -23,9 +21,6 @@ concurrency:
 
 permissions:
   contents: read
-
-env:
-  OPENSSL_VERSION: 3.5.4
 
 jobs:
   packed-source-fallback:
@@ -41,7 +36,7 @@ jobs:
           restore-keys: native-source-
       - run: sudo apt-get update && sudo apt-get install -y perl
       - name: Build OpenSSL
-        run: sh scripts/build-openssl.sh
+        run: sh packages/native-with-source/scripts/build-openssl.sh
         env:
           OPENSSL_TARGET_ARCH: x64
       - run: npm ci --ignore-scripts
@@ -49,7 +44,7 @@ jobs:
       - run: npm run package --workspace=@muhammara/native-with-source
       - run: mkdir -p packages && npm pack --workspace=@muhammara/native-core --pack-destination packages && npm pack --workspace=@muhammara/native-with-source --pack-destination packages && npm pack --workspace=@muhammara/native --pack-destination packages
       - name: Verify source-capable package contents
-        run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
+        run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
       - name: Install packed package without prebuilds
         run: mkdir -p /tmp/muhammara-source-fallback && npm install --prefix /tmp/muhammara-source-fallback ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-with-source-*.tgz
         env:
@@ -103,7 +98,7 @@ jobs:
           restore-keys: native-sanitizer-
       - run: sudo apt-get update && sudo apt-get install -y perl
       - name: Build OpenSSL
-        run: sh scripts/build-openssl.sh
+        run: sh packages/native-with-source/scripts/build-openssl.sh
         env:
           OPENSSL_TARGET_ARCH: x64
       - run: npm ci --ignore-scripts
@@ -155,7 +150,7 @@ jobs:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-arm-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
       - name: Build OpenSSL for musl
-        run: sh scripts/build-openssl.sh
+        run: sh packages/native-with-source/scripts/build-openssl.sh
         env:
           CROSS_COMPILE: ""
           OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
@@ -205,7 +200,7 @@ jobs:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
       - name: Build OpenSSL for musl
-        run: sh scripts/build-openssl.sh
+        run: sh packages/native-with-source/scripts/build-openssl.sh
         env:
           OPENSSL_TARGET_ARCH: x64
       - run: npm install --workspace=@muhammara/native-with-source --build-from-source
@@ -322,13 +317,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y perl
       - name: Build OpenSSL (Unix)
         if: ${{ matrix.os != 'windows-2022' }}
-        run: sh scripts/build-openssl.sh
+        run: sh packages/native-with-source/scripts/build-openssl.sh
         env:
           OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - name: Build OpenSSL (Windows)
         if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
-        run: ./scripts/build-openssl.ps1
+        run: ./packages/native-with-source/scripts/build-openssl.ps1
         env:
           OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - name: Get npm cache directory
@@ -429,7 +424,7 @@ jobs:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
       - name: Build OpenSSL
-        run: sh scripts/build-openssl.sh
+        run: sh packages/native-with-source/scripts/build-openssl.sh
         env:
           OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - run: npm install --workspace=@muhammara/native-with-source --build-from-source
@@ -481,13 +476,13 @@ jobs:
       - run: npm --version
       - name: Build OpenSSL (macOS)
         if: ${{ matrix.os == 'macos-15' }}
-        run: sh scripts/build-openssl.sh
+        run: sh packages/native-with-source/scripts/build-openssl.sh
         env:
           OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - name: Build OpenSSL (Windows)
         if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
-        run: ./scripts/build-openssl.ps1
+        run: ./packages/native-with-source/scripts/build-openssl.ps1
         env:
           OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - name: Disable Node.js LTO (Windows)
@@ -553,7 +548,7 @@ jobs:
         id: upload-release-asset
       - run: ls -lah builds/bindings/
       - name: Verify package version
-        run: test "$(node -p \"require('./packages/native-core/package.json').version\")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p \"require('./packages/native/package.json').version\")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p \"require('./packages/native-with-source/package.json').version\")" = "${GITHUB_REF_NAME#native-v}"
+        run: test "$(node -p "require('./packages/native-core/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native-with-source/package.json').version")" = "${GITHUB_REF_NAME#native-v}"
       - name: Create release and upload prebuilds
         uses: softprops/action-gh-release@v2
         with:

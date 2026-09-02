@@ -56,6 +56,7 @@ jobs:
       - run: npm run wasm:verify
       - run: npm run wasm:test
       - run: npm run wasm:test:types
+      - run: npm run wasm:test:paths
       - run: npm run wasm:test:exports
       - name: Install Chrome for Testing
         id: chrome
@@ -98,7 +99,7 @@ jobs:
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
-      - run: test "$(node -p \"require('./packages/wasm/package.json').version\")" = "${GITHUB_REF_NAME#wasm-v}"
+      - run: test "$(node -p "require('./packages/wasm/package.json').version")" = "${GITHUB_REF_NAME#wasm-v}"
       - run: npm ci --ignore-scripts
       - uses: actions/download-artifact@v4
         with:
