@@ -1,3 +1,4 @@
+/** Standard page sizes in PDF points. */
 export var mediumSizes = {
   executive: [521.86, 756],
   folio: [612, 936],
@@ -50,6 +51,7 @@ export var mediumSizes = {
   sra4: [637.8, 907.09],
 };
 
+/** Normalizes a Recipe PDF version to a supported native version number. */
 export function recipeVersion(version) {
   if (typeof version === "number" && version >= 1 && version < 3) {
     version *= 10;
@@ -59,6 +61,7 @@ export function recipeVersion(version) {
     : 17;
 }
 
+/** Initializes mutable state for a newly created Recipe instance. */
 export function initializeRecipe(recipe, options) {
   recipe.options = options;
   recipe.default = {

@@ -1,5 +1,6 @@
 import { createChildLifecycle } from "./lifecycle.js";
 
+/** Creates shared support functions used by low-level PDF writers. */
 export function createWriterSupport({
   module,
   normalizeBytes,
@@ -343,6 +344,7 @@ export function createWriterSupport({
   };
 }
 
+/** Creates the low-level PDF writer factory. */
 export function createWriterFactory({
   module,
   constants,

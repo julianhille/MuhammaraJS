@@ -9,6 +9,12 @@ function fontStyle(options = {}) {
         : "r";
 }
 
+/**
+ * Registers a font path for a family and style.
+ *
+ * @returns {string|undefined} The previously registered path. The caller owns
+ * cleanup of that replaced path.
+ */
 export function registerFont(fonts, name, path, type = "regular") {
   if (typeof name !== "string" || !name) {
     throw new TypeError("Font names must be non-empty strings");
@@ -24,6 +30,7 @@ export function registerFont(fonts, name, path, type = "regular") {
   return previous;
 }
 
+/** Resolves the best registered font path for the requested style. */
 export function getFont(fonts, options = {}) {
   var family = fonts.get(String(options.font || "").toLowerCase());
   if (!family) throw new Error(`Unknown font: ${options.font || "(none)"}`);

@@ -1,3 +1,4 @@
+/** Creates Recipe polygon drawing methods. */
 export function createPolygonMethods(runtime) {
   return {
     polygon: function (coordinates, options = {}) {

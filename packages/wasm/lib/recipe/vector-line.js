@@ -1,3 +1,4 @@
+/** Creates Recipe line and path methods. */
 export function createLineMethods(runtime) {
   return {
     moveTo: function (x, y) {

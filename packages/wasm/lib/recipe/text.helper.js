@@ -1,8 +1,10 @@
+/** Calculates total character spacing for non-whitespace text. */
 export function charSpacing(text, charSpace = 0) {
   var trimmed = String(text).trim();
   return trimmed.length ? (trimmed.length - 1) * charSpace : 0;
 }
 
+/** A measurable text fragment used by Recipe layout. */
 export class Word {
   constructor(value, measure, options) {
     this.value = value;
@@ -17,6 +19,7 @@ export class Word {
   }
 }
 
+/** A width-constrained collection of measurable text fragments. */
 export class Line {
   constructor(width, measure, options) {
     this.width = width;
@@ -41,6 +44,7 @@ export class Line {
   }
 }
 
+/** A rectangular text column used by Recipe layout. */
 export class Column {
   constructor(x, y, width, height, text = "", field = "", options = {}) {
     Object.assign(this, {

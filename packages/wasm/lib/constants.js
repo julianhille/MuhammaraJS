@@ -1,3 +1,4 @@
+/** Native Muhammara constants exposed by the WASM bridge. */
 export var constants = {
   ePDFVersionUndefined: 0,
   ePDFVersion10: 10,

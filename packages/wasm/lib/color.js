@@ -1,3 +1,4 @@
+/** Converts a named, hexadecimal, RGB, or numeric color to a 24-bit integer. */
 export function colorValue(color) {
   if (typeof color === "number") {
     return color;

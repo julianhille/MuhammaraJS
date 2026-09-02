@@ -1,3 +1,4 @@
+/** Creates Recipe document-information methods. */
 export function createInfoMethods({ call, withString }) {
   function pdfDate(date) {
     var offset = -date.getTimezoneOffset();

@@ -1,3 +1,4 @@
+/** Creates a low-level context for writing raw PDF objects. */
 export function createRawObjectsContext({
   module,
   constants,

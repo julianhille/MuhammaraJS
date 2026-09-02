@@ -1,5 +1,7 @@
+/** UTF-8 encoder shared by WASM byte utilities. */
 export var encoder = new TextEncoder();
 
+/** Normalizes supported synchronous byte inputs into an owned Uint8Array copy. */
 export function normalizeBytes(value, label = "Bytes") {
   if (value instanceof PDFRStreamForBuffer) return new Uint8Array(value.buffer);
   if (value instanceof Uint8Array) return new Uint8Array(value);
@@ -12,6 +14,7 @@ export function normalizeBytes(value, label = "Bytes") {
   throw new TypeError(`${label} must be a Uint8Array or ArrayBuffer`);
 }
 
+/** Normalizes byte inputs, awaiting Blob and File data when necessary. */
 export async function normalizeBytesAsync(value, label) {
   if (typeof Blob !== "undefined" && value instanceof Blob) {
     return normalizeBytes(await value.arrayBuffer(), label);
@@ -116,7 +119,11 @@ export class PDFWStreamForBuffer {
   }
 }
 
+/** Compatibility byte reader. */
 export class ByteReader extends PDFRStreamForBuffer {}
+/** Compatibility positioned byte reader. */
 export class ByteReaderWithPosition extends PDFRStreamForBuffer {}
+/** Compatibility byte writer. */
 export class ByteWriter extends PDFWStreamForBuffer {}
+/** Compatibility positioned byte writer. */
 export class ByteWriterWithPosition extends PDFWStreamForBuffer {}

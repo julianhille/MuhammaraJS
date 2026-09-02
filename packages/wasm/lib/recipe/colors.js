@@ -1,3 +1,4 @@
+/** Built-in Recipe colors grouped by color space. */
 export var knownColors = {
   rgb: { red: "ff0000", green: "00ff00", blue: "0000ff" },
   cmyk: {
@@ -35,6 +36,7 @@ function hex(value) {
   return value.replace(/^#/, "");
 }
 
+/** Resolves a Recipe color value to a native color-space model. */
 export function colorModel(recipe, value, options = {}) {
   var colorspace = options.colorspace || recipe.options.colorspace || "";
   var name = "";
@@ -70,6 +72,7 @@ export function colorModel(recipe, value, options = {}) {
   };
 }
 
+/** Creates Recipe color registration methods. */
 export function createColorMethods() {
   return {
     chroma: function (name, value, colorspace = "") {

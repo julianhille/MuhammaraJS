@@ -1,3 +1,4 @@
+/** Creates a factory for low-level PDF modifiers. */
 export function createModifierFactory({
   module,
   constants,

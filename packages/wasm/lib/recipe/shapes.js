@@ -198,6 +198,7 @@ function debugTriangle(recipe, x, y, vertices, sides, position, options) {
   });
 }
 
+/** Creates Recipe methods for geometric shapes. */
 export function createShapeMethods() {
   return {
     n_gon: function (cx, cy, radius, sides = 3, options = {}) {

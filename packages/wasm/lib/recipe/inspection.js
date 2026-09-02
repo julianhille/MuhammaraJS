@@ -1,3 +1,4 @@
+/** Creates a function that inspects a registered PDF's metadata and pages. */
 export function createInspectPdf({ module, withString, pdfs }) {
   return function inspectPdf(name) {
     var path = pdfs.get(name);

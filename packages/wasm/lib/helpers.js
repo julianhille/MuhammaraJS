@@ -1,5 +1,6 @@
 import { normalizeBytes } from "./bytes.js";
 
+/** Creates memory-safe utility functions around a loaded WASM module. */
 export function createHelpers(module) {
   var nativeMalloc = module._malloc.bind(module);
   module._malloc = function (size) {
@@ -215,6 +216,14 @@ export function createHelpers(module) {
     );
   }
 
+  /**
+   * Marshals TJ items into temporary WASM buffers.
+   *
+   * @param {Array} items Text strings, spacing numbers, or glyph lists.
+   * @param {Function} callback Receives pointers in fixed order: types, numbers,
+   * string offsets, strings, glyph offsets, glyphs, then their four counts.
+   * @returns {*} The callback result before all temporary buffers are freed.
+   */
   function withTJItems(items, callback) {
     if (!items.length)
       throw new TypeError("TJ requires text, glyph lists, or numbers");

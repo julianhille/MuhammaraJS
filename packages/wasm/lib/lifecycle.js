@@ -1,3 +1,4 @@
+/** Creates a tracker that disposes owned child resources together. */
 export function createChildLifecycle() {
   var children = new Set();
   return {

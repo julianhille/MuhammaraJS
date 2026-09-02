@@ -1,3 +1,4 @@
+/** Creates a factory for low-level PDF readers. */
 export function createReaderFactory({
   module,
   constants,
@@ -7,6 +8,17 @@ export function createReaderFactory({
   allocatePdfPath,
   removeFile,
 }) {
+  /**
+   * Opens PDF bytes or wraps an existing native reader handle.
+   *
+   * @param {Uint8Array|ArrayBuffer} bytes PDF bytes when creating a reader.
+   * @param {number} readerHandle Existing native reader handle; ownership remains
+   * with its caller unless `destroyReader` is true.
+   * @param {Function} requireOwner Verifies the owner of a borrowed handle remains open.
+   * @param {number} copyingContext Borrowed native copying context for source streams.
+   * @param {boolean} destroyReader Whether `end()` destroys `readerHandle`.
+   * @returns {object} A reader whose `end()` releases owned resources.
+   */
   function createReader(
     bytes,
     readerHandle,

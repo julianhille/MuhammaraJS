@@ -1,4 +1,5 @@
 // Deliberately small, DOM-free HTML subset so Recipe also works in Workers.
+/** Converts supported HTML into styled Recipe text objects. */
 export function htmlToTextObjects(html, options = {}) {
   var objects = [];
   var styles = [];
