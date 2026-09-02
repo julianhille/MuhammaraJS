@@ -8,6 +8,7 @@
                     'actions': [
                         {
                             'action_name': 'build_openssl',
+                            'msvs_cygwin_shell': 0,
                             'inputs': [
                                 '<(module_root_dir)/src/deps/openssl-3.5.4.tar.gz',
                                 '<(module_root_dir)/scripts/build-openssl.ps1'
