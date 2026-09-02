@@ -1,0 +1,601 @@
+name: Native CI
+
+on:
+  push:
+    tags:
+      - "native-v*"
+  pull_request:
+    paths:
+      - ".github/workflows/ci-native.yml"
+      - "packages/native/**"
+      - "packages/native-core/**"
+      - "packages/native-with-source/**"
+      - ".github/actions/setup-native-build-cache/**"
+      - "scripts/build-openssl.sh"
+      - "scripts/build-openssl.ps1"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  OPENSSL_VERSION: 3.5.4
+
+jobs:
+  packed-source-fallback:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-source-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-source-
+      - run: sudo apt-get update && sudo apt-get install -y perl
+      - name: Build OpenSSL
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: x64
+      - run: npm ci --ignore-scripts
+      - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+      - run: npm run package --workspace=@muhammara/native-with-source
+      - run: mkdir -p packages && npm pack --workspace=@muhammara/native-core --pack-destination packages && npm pack --workspace=@muhammara/native-with-source --pack-destination packages && npm pack --workspace=@muhammara/native --pack-destination packages
+      - name: Verify source-capable package contents
+        run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
+      - name: Install packed package without prebuilds
+        run: mkdir -p /tmp/muhammara-source-fallback && npm install --prefix /tmp/muhammara-source-fallback ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-with-source-*.tgz
+        env:
+          EXTRA_NODE_PRE_GYP_FLAGS: --build-from-source
+      - run: node -e "require('/tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source')"
+      - name: Verify source cleanup preserves the addon
+        run: /tmp/muhammara-source-fallback/node_modules/.bin/muhammara-clean-source && test ! -d /tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source/src && node -e "require('/tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source')"
+      - name: Rebuild the source package through the native alias directory
+        run: |
+          mkdir -p /tmp/muhammara-electron-alias
+          npm install --ignore-scripts --prefix /tmp/muhammara-electron-alias ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-with-source-*.tgz
+          mv /tmp/muhammara-electron-alias/node_modules/@muhammara/native-with-source /tmp/muhammara-electron-alias/node_modules/@muhammara/native
+          node -e "var fs = require('fs'); var packagePath = '/tmp/muhammara-electron-alias/package.json'; var packageManifest = require(packagePath); var aliasPath = '/tmp/muhammara-electron-alias/node_modules/@muhammara/native/package.json'; var aliasManifest = require(aliasPath); packageManifest.dependencies = {'@muhammara/native': 'npm:@muhammara/native-with-source@' + aliasManifest.version}; fs.writeFileSync(packagePath, JSON.stringify(packageManifest, null, 2) + '\\n'); aliasManifest.name = '@muhammara/native'; fs.writeFileSync(aliasPath, JSON.stringify(aliasManifest, null, 2) + '\\n');"
+          npm exec --yes --prefix /tmp/muhammara-electron-alias --package=@electron/rebuild -- electron-rebuild -f -w @muhammara/native --version 38.1.0 --module-dir /tmp/muhammara-electron-alias
+          test -f /tmp/muhammara-electron-alias/node_modules/@muhammara/native/build/Release/muhammara.node
+      - name: Verify slim package excludes source-build inputs
+        run: mkdir -p /tmp/muhammara-slim-package && npm install --ignore-scripts --prefix /tmp/muhammara-slim-package ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-[0-9]*.tgz && test "$(node -p "require('/tmp/muhammara-slim-package/node_modules/@muhammara/native/package.json').name")" = "@muhammara/native" && test ! -d /tmp/muhammara-slim-package/node_modules/@muhammara/native/src && test ! -e /tmp/muhammara-slim-package/node_modules/@muhammara/native/binding.gyp
+      - name: Install slim package from a matching prebuild
+        run: |
+          python3 -m http.server 8080 --directory packages/native-with-source/build/stage >/tmp/muhammara-prebuild-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          mkdir -p /tmp/muhammara-slim-prebuilt
+          npm install --prefix /tmp/muhammara-slim-prebuilt ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-[0-9]*.tgz
+          node -e "require('/tmp/muhammara-slim-prebuilt/node_modules/@muhammara/native')"
+        env:
+          npm_config_muhammara_binary_host_mirror: http://127.0.0.1:8080
+      - name: Verify missing slim prebuild gives migration instructions
+        run: |
+          mkdir -p /tmp/muhammara-slim-no-prebuild
+          if npm install --prefix /tmp/muhammara-slim-no-prebuild ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-[0-9]*.tgz >/tmp/muhammara-slim-no-prebuild.log 2>&1; then
+            exit 1
+          fi
+          node -e "var output = require('fs').readFileSync('/tmp/muhammara-slim-no-prebuild.log', 'utf8'); if (!output.includes('@muhammara/native-with-source') || !output.includes('npm install @muhammara/native@npm:@muhammara/native-with-source@')) process.exit(1);"
+        env:
+          npm_config_muhammara_binary_host_mirror: http://127.0.0.1:9
+  sanitizer:
+    runs-on: ubuntu-22.04
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:strict_string_checks=1
+      LSAN_OPTIONS: print_suppressions=0
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-sanitizer-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-sanitizer-
+      - run: sudo apt-get update && sudo apt-get install -y perl
+      - name: Build OpenSSL
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: x64
+      - run: npm ci --ignore-scripts
+      - name: Build with sanitizers
+        run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+        env:
+          CFLAGS: -fsanitize=address,undefined -fno-omit-frame-pointer
+          CXXFLAGS: -fsanitize=address,undefined -fno-omit-frame-pointer
+          LDFLAGS: -fsanitize=address,undefined
+      - name: Run tests with the sanitizer runtime preloaded
+        working-directory: packages/native-with-source
+        run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/sanitizer-gc.js -R tap ./tests/*.js ./tests/**/*.js --timeout 15000
+  build-musl-arm:
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20.9.0, 22.19.0, 24.0.0, 25.0.0, 26.8.1]
+        include:
+          - architecture: arm64
+            architecture_node: x64
+            target_architecture: arm64
+            extra_compile_flags: -march=armv8-a
+          - python_version: 3
+    runs-on: ubuntu-latest
+    container:
+      image: dockcross/linux-arm64-musl
+      credentials:
+        username: "${{ secrets.DOCKER_USERNAME }}"
+        password: "${{ secrets.DOCKER_PASSWORD }}"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          architecture: ${{ matrix.architecture_node }}
+      - run: apt-get install -y ccache perl python${{ matrix.python_version }}
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-musl-arm-${{ matrix.node }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-musl-arm-${{ matrix.node }}-
+      - run: node --version
+      - run: npm --version
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - name: Restore npm download cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-musl-arm-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Build OpenSSL for musl
+        run: sh scripts/build-openssl.sh
+        env:
+          CROSS_COMPILE: ""
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
+      - run: npm install --workspace=@muhammara/native-with-source --build-from-source
+        env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_target_arch: ${{ matrix.target_architecture }}
+          CFLAGS: ${{ matrix.extra_compile_flags }}
+          EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
+          npm_config_unsafe_perm: true
+      # - run: npm run test, this is not an arm64 machine so we can not test.
+      - run: npm run package --workspace=@muhammara/native-with-source -- --target_libc=musl --target_arch=${{ matrix.target_architecture }}
+      - uses: actions/upload-artifact@v6
+        with:
+          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
+          name: bindings-node-musl-arm-${{ matrix.node }}
+          if-no-files-found: error
+  build-musl:
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20.9.0, 22.19.0, 24.0.0, 25.0.0, 26.8.1]
+        include:
+          - python_version: 3
+    runs-on: ubuntu-latest
+    container:
+      image: node:${{ matrix.node }}-alpine
+      credentials:
+        username: "${{ secrets.DOCKER_USERNAME }}"
+        password: "${{ secrets.DOCKER_PASSWORD }}"
+    steps:
+      - uses: actions/checkout@v6
+      - run: apk update
+      - run: apk add --no-cache ccache make gcc jq g++ linux-headers perl python${{ matrix.python_version }} tar
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-musl-${{ matrix.node }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-musl-${{ matrix.node }}-
+      - run: node --version
+      - run: npm --version
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - name: Restore npm download cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-musl-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Build OpenSSL for musl
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: x64
+      - run: npm install --workspace=@muhammara/native-with-source --build-from-source
+        env:
+          EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
+          npm_config_unsafe_perm: true
+      - run: npm run test
+      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage --target_libc=musl
+      - uses: actions/upload-artifact@v6
+        with:
+          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
+          name: bindings-node-musl-${{ matrix.node }}
+          if-no-files-found: error
+  build-electron:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15, windows-2022]
+        architecture: [x64, arm64]
+        electron:
+          - 36.0.0
+          - 36.1.0
+          - 36.2.0
+          - 36.3.0
+          - 36.4.0
+          - 36.5.0
+          - 36.6.0
+          - 36.7.0
+          - 36.8.0
+          - 36.9.0
+          - 37.0.0
+          - 37.1.0
+          - 37.2.0
+          - 37.3.0
+          - 37.4.0
+          - 37.5.0
+          - 38.0.0
+          - 38.1.0
+        include:
+          - electron_mocha_version: ^13
+            python_version: "3.10"
+          - architecture: arm64
+            architecture_node: x64
+            target_architecture: arm64
+            extra_compile_flags: -arch arm64
+          - architecture: x64
+            architecture_node: x64
+            target_architecture: x64
+          - electron: 36.0.0
+            node: 22.14.0
+          - electron: 36.1.0
+            node: 22.14.0
+          - electron: 36.2.0
+            node: 22.15.0
+          - electron: 36.3.0
+            node: 22.15.1
+          - electron: 36.4.0
+            node: 22.15.1
+          - electron: 36.5.0
+            node: 22.16.0
+          - electron: 36.6.0
+            node: 22.16.0
+          - electron: 36.7.0
+            node: 22.17.0
+          - electron: 36.8.0
+            node: 22.18.0
+          - electron: 36.9.0
+            node: 22.19.0
+          - electron: 37.0.0
+            node: 22.16.0
+          - electron: 37.1.0
+            node: 22.16.0
+          - electron: 37.2.0
+            node: 22.17.0
+          - electron: 37.3.0
+            node: 22.18.0
+          - electron: 37.4.0
+            node: 22.18.0
+          - electron: 37.5.0
+            node: 22.19.0
+          - electron: 38.0.0
+            node: 22.18.0
+          - electron: 38.1.0
+            node: 22.19.0
+        exclude:
+          - os: ubuntu-22.04
+            architecture: arm64
+          - os: windows-2022
+            architecture: arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v1
+        with:
+          version: 11
+          platform: ${{matrix.architecture}}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          architecture: ${{ matrix.architecture_node }}
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-electron-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.electron }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-electron-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.electron }}-
+      - run: node --version
+      - run: npm --version
+      - name: Install OpenSSL build tools (Linux)
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
+        run: sudo apt-get update && sudo apt-get install -y perl
+      - name: Build OpenSSL (Unix)
+        if: ${{ matrix.os != 'windows-2022' }}
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
+      - name: Build OpenSSL (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: powershell
+        run: ./scripts/build-openssl.ps1
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - name: Restore npm download cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
+      - run: |
+          npm install --workspace=@muhammara/native-with-source --cpu=${{ matrix.architecture }} --build-from-source
+        env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
+          npm_config_target_arch: ${{ matrix.target_architecture }}
+          npm_config_target: ${{ matrix.electron }}
+          npm_config_disturl: https://artifacts.electronjs.org/headers/dist
+          npm_config_runtime: electron
+          npm_config_python: python${{ matrix.python_version }}
+          CFLAGS: ${{ matrix.extra_compile_flags }}
+      - name: Install electron
+        run: |
+          npm install --workspace=@muhammara/native-with-source --no-save --cpu=${{ matrix.architecture }} electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
+        env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
+          npm_config_target_arch: ${{ matrix.target_architecture }}
+          npm_config_target: ${{ matrix.electron }}
+          npm_config_disturl: https://artifacts.electronjs.org/headers/dist
+          npm_config_runtime: electron
+          npm_config_python: python${{ matrix.python_version }}
+          CFLAGS: ${{ matrix.extra_compile_flags }}
+      - name: Run test
+        uses: coactions/setup-xvfb@90473c3ebc69533a1a6e0505c36511b69c8c3135
+        with:
+          run: npm run test:electron
+        if: ${{ matrix.target_architecture != 'arm64' }}
+      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
+        env:
+          npm_config_runtime: electron
+          npm_config_target: ${{ matrix.electron }}
+        if: ${{ matrix.target_architecture != 'arm64' }}
+      - run: npm run package --workspace=@muhammara/native-with-source -- --target_arch=${{ matrix.target_architecture }}
+        if: ${{ matrix.target_architecture == 'arm64' }}
+        env:
+          npm_config_runtime: electron
+          npm_config_target: ${{ matrix.electron }}
+      - uses: actions/upload-artifact@v6
+        with:
+          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
+          name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.electron}}
+          if-no-files-found: error
+
+  build-node-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-22.04-arm]
+        node: [20.9.0, 22.19.0, 24.0.0, 25.2.0, 26.8.1]
+        include:
+          - os: ubuntu-22.04
+            architecture: x64
+            architecture_node: x64
+            target_architecture: x64
+          - os: ubuntu-22.04-arm
+            architecture: arm64
+            architecture_node: arm64
+            target_architecture: arm64
+            extra_compile_flags: -march=armv8-a
+    runs-on: ${{ matrix.os }}
+    container:
+      image: gcc:11-bullseye
+      credentials:
+        username: "${{ secrets.DOCKER_USERNAME }}"
+        password: "${{ secrets.DOCKER_PASSWORD }}"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          architecture: ${{ matrix.architecture_node }}
+      - run: apt-get update && apt-get install -y ccache perl
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-node-linux-${{ matrix.target_architecture }}-${{ matrix.node }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-node-linux-${{ matrix.target_architecture }}-${{ matrix.node }}-
+      - run: node --version
+      - run: npm --version
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - name: Restore npm download cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
+      - name: Build OpenSSL
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
+      - run: npm install --workspace=@muhammara/native-with-source --build-from-source
+        env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_target_arch: ${{ matrix.target_architecture }}
+          CFLAGS: ${{ matrix.extra_compile_flags }}
+      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
+      - uses: actions/upload-artifact@v6
+        with:
+          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
+          name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.node}}
+          if-no-files-found: error
+  build-node:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, windows-2022]
+        node: [20.9.0, 22.19.0, 24.0.0, 25.2.0, 26.8.1]
+        architecture: [x64, arm64]
+        include:
+          - python_version: "3.10"
+          - architecture: x64
+            architecture_node: x64
+            target_architecture: x64
+          - architecture: arm64
+            architecture_node: x64
+            target_architecture: arm64
+            extra_compile_flags: -arch arm64
+            EXTRA_NODE_PRE_GYP_FLAGS: --target_arch=arm64
+        exclude:
+          - os: windows-2022
+            architecture: arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          architecture: ${{ matrix.architecture_node }}
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-node-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.node }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-node-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.node }}-
+      - run: node --version
+      - run: npm --version
+      - name: Build OpenSSL (macOS)
+        if: ${{ matrix.os == 'macos-15' }}
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
+      - name: Build OpenSSL (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: powershell
+        run: ./scripts/build-openssl.ps1
+        env:
+          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
+      - name: Disable Node.js LTO (Windows)
+        if: ${{ matrix.os == 'windows-2022' }}
+        shell: powershell
+        run: |
+          # Node 26's ThinLTO settings target clang-cl and lld, not MSVC.
+          Add-Content -Path $env:GITHUB_ENV -Value "npm_config_enable_thin_lto=false"
+          Add-Content -Path $env:GITHUB_ENV -Value "npm_config_enable_lto=false"
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      - name: Restore npm download cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install --workspace=@muhammara/native-with-source --build-from-source
+        env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_target_arch: ${{ matrix.target_architecture }}
+          npm_config_python: python${{ matrix.python_version }}
+          npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
+          CFLAGS: ${{ matrix.extra_compile_flags }}
+      - run: npm run test
+        if: ${{ matrix.target_architecture != 'arm64' }}
+      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
+        if: ${{ matrix.target_architecture != 'arm64' }}
+      - run: npm run package --workspace=@muhammara/native-with-source -- --target_arch=${{ matrix.target_architecture }}
+        if: ${{ matrix.target_architecture == 'arm64' }}
+      - uses: actions/upload-artifact@v6
+        with:
+          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
+          name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.node}}
+          if-no-files-found: error
+  publish:
+    needs:
+      [
+        packed-source-fallback,
+        sanitizer,
+        build-musl,
+        build-musl-arm,
+        build-electron,
+        build-node-linux,
+        build-node,
+      ]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/native-v')
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bindings-*
+          path: builds/bindings
+        id: upload-release-asset
+      - run: ls -lah builds/bindings/
+      - name: Verify package version
+        run: test "$(node -p \"require('./packages/native-core/package.json').version\")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p \"require('./packages/native/package.json').version\")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p \"require('./packages/native-with-source/package.json').version\")" = "${GITHUB_REF_NAME#native-v}"
+      - name: Create release and upload prebuilds
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "builds/bindings/**/*"
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+      - run: npm ci --ignore-scripts
+      - id: npm-tag
+        run: |
+          case "${GITHUB_REF_NAME#native-v}" in
+            *-alpha.*) echo "value=alpha" >> "$GITHUB_OUTPUT" ;;
+            *-beta.*) echo "value=beta" >> "$GITHUB_OUTPUT" ;;
+            *-rc.*) echo "value=rc" >> "$GITHUB_OUTPUT" ;;
+            *) echo "value=latest" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Publish native core package
+        run: npm publish --workspace=@muhammara/native-core --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
+      - name: Publish source-capable native package
+        run: npm publish --workspace=@muhammara/native-with-source --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
+      - name: Publish slim native package
+        run: npm publish --workspace=@muhammara/native --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
+  tag-docs:
+    needs: [publish]
+    if: startsWith(github.ref, 'refs/tags/native-v')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Create matching native documentation tag
+        run: |
+          DOC_TAG="native-doc-v${GITHUB_REF_NAME#native-v}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$DOC_TAG" >/dev/null 2>&1; then
+            git fetch --force origin "refs/tags/$DOC_TAG:refs/tags/$DOC_TAG"
+            test "$(git rev-list -n 1 "$DOC_TAG")" = "$GITHUB_SHA"
+          else
+            git tag "$DOC_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$DOC_TAG"
+          fi
+          gh workflow run docs.yml --ref "$DOC_TAG"
+        env:
+          GH_TOKEN: ${{ github.token }}

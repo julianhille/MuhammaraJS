@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - develop
+    tags:
+      - "native-doc-v*"
+      - "wasm-doc-v*"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -29,4 +33,4 @@ jobs:
       - run: python -m pip install -r docs/requirements.txt
       - run: npm ci
       - run: npm run docs:check
-      - run: git diff --exit-code -- docs/recipe/reference.md docs/api/type-declarations.md
+      - run: git diff --exit-code -- packages/native/docs/recipe/reference.md packages/native/docs/api/type-declarations.md

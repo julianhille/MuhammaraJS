@@ -6,6 +6,7 @@ packages/native/tests/**/output
 packages/native/binding
 packages/native/build/
 packages/native/src
+packages/src
 node_modules
 src/deps/openssl/
 aws.json

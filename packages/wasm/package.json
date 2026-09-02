@@ -1,9 +1,9 @@
 {
   "name": "@muhammara/wasm",
-  "version": "0.1.0",
+  "version": "1.0.0-alpha.0",
   "description": "Browser-safe, byte-first WebAssembly API for Muhammara",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/julianhille/MuhammaraJS/tree/main/packages/wasm",
+  "homepage": "https://muhammarajs-wasm.readthedocs.io/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/julianhille/MuhammaraJS.git",
@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "mocha": "^11.0.0",
+    "puppeteer-core": "^25.9.0",
     "typescript": "^5.9.3"
   }
 }

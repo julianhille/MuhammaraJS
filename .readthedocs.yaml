@@ -4,6 +4,10 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.12"
+    nodejs: "24"
+  jobs:
+    pre_build:
+      - node scripts/stage-docs.js
 
 mkdocs:
   configuration: mkdocs.yml

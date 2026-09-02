@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Publish the native addon as `@muhammara/native` while retaining `muhammara`
+  as a matching compatibility package during the scoped-package transition.
 - Set version of setup-node action to v6
 - Set version of checkout action to v6
 - Set versoin of cache action to v5

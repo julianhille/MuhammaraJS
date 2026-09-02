@@ -1,0 +1,145 @@
+name: Wasm CI
+
+on:
+  push:
+    tags:
+      - "wasm-v*"
+  pull_request:
+    paths:
+      - ".github/workflows/ci-wasm.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/native-with-source/src/**"
+      - "packages/wasm/**"
+  workflow_dispatch:
+
+concurrency:
+  group: wasm-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Node.js and restore npm cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run wasm:build
+      - run: npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: muhammara-wasm
+          path: packages/wasm/dist/
+          if-no-files-found: error
+  test:
+    needs: [build]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Node.js and restore npm cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: muhammara-wasm
+          path: packages/wasm/dist
+      - run: npm run wasm:verify
+      - run: npm run wasm:test
+      - run: npm run wasm:test:types
+      - run: npm run wasm:test:exports
+      - name: Install Chrome for Testing
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-dependencies: true
+      - run: npm run wasm:test:browser
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+  sanitizer:
+    needs: [build]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Node.js and restore npm cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Build with Emscripten LeakSanitizer
+        run: npm run wasm:build
+        env:
+          MUHAMMARA_WASM_SANITIZE: ON
+      - run: node ./scripts/run-mocha.mjs tests/MemoryLifecycle.test.mjs
+        working-directory: packages/wasm
+  publish:
+    needs: [test, sanitizer]
+    if: startsWith(github.ref, 'refs/tags/wasm-v')
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Node.js and restore npm cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: test "$(node -p \"require('./packages/wasm/package.json').version\")" = "${GITHUB_REF_NAME#wasm-v}"
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: muhammara-wasm
+          path: packages/wasm/dist
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: packages/wasm/dist/*
+      - id: npm-tag
+        run: |
+          case "${GITHUB_REF_NAME#wasm-v}" in
+            *-alpha.*) echo "value=alpha" >> "$GITHUB_OUTPUT" ;;
+            *-beta.*) echo "value=beta" >> "$GITHUB_OUTPUT" ;;
+            *-rc.*) echo "value=rc" >> "$GITHUB_OUTPUT" ;;
+            *) echo "value=latest" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - run: npm publish --workspace=@muhammara/wasm --ignore-scripts --provenance --tag ${{ steps.npm-tag.outputs.value }}
+  tag-docs:
+    needs: [publish]
+    if: startsWith(github.ref, 'refs/tags/wasm-v')
+    runs-on: ubuntu-22.04
+    permissions:
+      actions: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Create matching Wasm documentation tag
+        run: |
+          DOC_TAG="wasm-doc-v${GITHUB_REF_NAME#wasm-v}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$DOC_TAG" >/dev/null 2>&1; then
+            git fetch --force origin "refs/tags/$DOC_TAG:refs/tags/$DOC_TAG"
+            test "$(git rev-list -n 1 "$DOC_TAG")" = "$GITHUB_SHA"
+          else
+            git tag "$DOC_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$DOC_TAG"
+          fi
+          gh workflow run docs.yml --ref "$DOC_TAG"
+        env:
+          GH_TOKEN: ${{ github.token }}

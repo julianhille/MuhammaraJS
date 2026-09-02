@@ -1,10 +1,14 @@
 # Welcome to MuhammaraJS
 
-[![NPM version](http://img.shields.io/npm/v/muhammara.svg?style=flat)](https://www.npmjs.org/package/muhammara)
+[![NPM version](https://img.shields.io/npm/v/%40muhammara%2Fnative.svg?style=flat)](https://www.npmjs.org/package/@muhammara/native)
 [![Build status](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/build.yml)
 
 MuhammaraJS is a fast Node.js module for creating, parsing, and manipulating
 PDF files and streams.
+
+New native installations should use `npm install @muhammara/native`. The
+unscoped `muhammara` package remains available with matching releases during the
+transition to the `@muhammara` organization.
 
 Original Project (C++ base version): <http://www.pdfhummus.com>
 
@@ -13,8 +17,10 @@ For the C++ library, see <https://github.com/galkahana/PDF-Writer>.
 ## Documentation
 
 [Read the full MuhammaraJS documentation on Read the Docs](https://muhammarajs.readthedocs.io/).
-To read the Markdown source locally, browse the [docs/](docs/) directory.
-Start with the [Getting Started pages](docs/getting-started/).
+Native Node.js documentation is in [packages/native/docs/](packages/native/docs/);
+browser and worker documentation is in
+[packages/wasm/docs/](packages/wasm/docs/). Build the combined site with
+`npm run docs:build` after installing `docs/requirements.txt`.
 
 ## HummusJS Is The Base
 
@@ -24,5 +30,5 @@ HummusJS is discontinued.
 ## Recipe
 
 MuhammaraJS includes the high-level Recipe API, formerly available as
-hummus-recipe. Use `require("muhammara").Recipe`; its generated API reference
+hummus-recipe. Use `require("@muhammara/native").Recipe`; its generated API reference
 is included in the [Read the Docs site](https://muhammarajs.readthedocs.io/).
