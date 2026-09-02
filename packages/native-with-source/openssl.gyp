@@ -11,20 +11,15 @@
                             'msvs_cygwin_shell': 0,
                             'inputs': [
                                 '<(module_root_dir)/src/deps/openssl-3.5.4.tar.gz',
-                                '<(module_root_dir)/scripts/build-openssl.ps1'
+                                '<(module_root_dir)/scripts/build-openssl-win.js'
                             ],
                             'outputs': [
                                 '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.lib',
                                 '<(module_root_dir)/openssl-build/<(target_arch)/include/openssl/sha.h'
                             ],
                             'action': [
-                                'powershell.exe',
-                                '-NoProfile',
-                                '-ExecutionPolicy',
-                                'Bypass',
-                                '-File',
-                                '<(module_root_dir)/scripts/build-openssl.ps1',
-                                '-TargetArchitecture',
+                                'node',
+                                '<(module_root_dir)/scripts/build-openssl-win.js',
                                 '<(target_arch)'
                             ]
                         }

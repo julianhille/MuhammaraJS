@@ -33,7 +33,7 @@
   "files": [
     "src",
     "scripts/build-openssl.sh",
-    "scripts/build-openssl.ps1",
+    "scripts/build-openssl-win.js",
     "scripts/remove-source.js",
     "binding.gyp",
     "openssl.gyp",
