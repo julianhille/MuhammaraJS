@@ -47,7 +47,7 @@ int muhammara_wasm_recipe_end_page(WasmRecipe* recipe) {
     return 0;
   }
   invalidateContentStreams(recipe, nullptr);
-  // WritePageAndRelease deletes the transient page even when writing fails.
+  // WritePageReleaseAndReturnPageID deletes the transient page even on failure.
   EStatusCodeAndObjectIDType result =
       recipe->writer.WritePageReleaseAndReturnPageID(recipe->page);
   recipe->page = nullptr;

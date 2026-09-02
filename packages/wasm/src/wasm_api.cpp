@@ -25,7 +25,8 @@ unsigned char* muhammara_wasm_recipe_end_pdf(WasmRecipe* recipe,
  * Creates a one-page PDF in WebAssembly memory.
  *
  * The caller owns the returned buffer and must release it with
- * muhammara_wasm_free. Returns null and sets outputLength to zero on failure.
+ * muhammara_wasm_free. Returns null on failure. outputLength is zeroed after
+ * validating the output pointer and page dimensions.
  */
 unsigned char* muhammara_wasm_create_blank_pdf(double width, double height,
                                                 unsigned int* outputLength) {
