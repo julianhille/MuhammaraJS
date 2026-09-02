@@ -400,6 +400,8 @@ jobs:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
+      - run: npm run test
+        if: ${{ matrix.target_architecture != 'arm64' }}
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
       - uses: actions/upload-artifact@v6
         with:
@@ -497,6 +499,15 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci --ignore-scripts
+      - run: sudo apt-get update && sudo apt-get install -y perl
+      - run: python -m pip install -r packages/native/docs/requirements.txt
+      - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+      - run: npm run test:codestyle
+      - run: npm run docs:check
       - uses: actions/download-artifact@v4
         with:
           pattern: bindings-*
@@ -511,7 +522,6 @@ jobs:
           files: "builds/bindings/**/*"
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-      - run: npm ci --ignore-scripts
       - id: npm-tag
         run: |
           case "${GITHUB_REF_NAME#native-v}" in
