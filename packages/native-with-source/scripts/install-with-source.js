@@ -11,6 +11,10 @@ var extraFlags = process.env.EXTRA_NODE_PRE_GYP_FLAGS
   ? process.env.EXTRA_NODE_PRE_GYP_FLAGS.trim().split(/\s+/)
   : [];
 var buildFlags = ["--jobs=max"].concat(extraFlags);
+var nodePreGyp = require.resolve("@mapbox/node-pre-gyp/bin/node-pre-gyp");
+var forceSourceBuild =
+  extraFlags.includes("--build-from-source") ||
+  process.env.npm_config_build_from_source === "true";
 var ccache =
   process.platform === "win32"
     ? null
@@ -27,22 +31,45 @@ if (
   process.env.CXX = "ccache c++";
 }
 
-var result = childProcess.spawnSync(
-  process.execPath,
-  [
-    require.resolve("@mapbox/node-pre-gyp/bin/node-pre-gyp"),
-    "install",
-    "--fallback-to-build",
-  ].concat(buildFlags),
-  { stdio: "inherit" },
-);
+var result = forceSourceBuild
+  ? { status: 1 }
+  : childProcess.spawnSync(process.execPath, [nodePreGyp, "install"], {
+      stdio: "inherit",
+    });
 
 if (result.error) {
   throw result.error;
 }
 
 if (result.status !== 0) {
-  process.exit(result.status || 1);
+  var opensslBuilder = path.join(
+    __dirname,
+    process.platform === "win32" ? "build-openssl.ps1" : "build-openssl.sh",
+  );
+  var opensslResult = childProcess.spawnSync(
+    process.platform === "win32" ? "powershell.exe" : "sh",
+    process.platform === "win32"
+      ? ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", opensslBuilder]
+      : [opensslBuilder],
+    { stdio: "inherit" },
+  );
+  if (opensslResult.error) {
+    throw opensslResult.error;
+  }
+  if (opensslResult.status !== 0) {
+    process.exit(opensslResult.status || 1);
+  }
+  result = childProcess.spawnSync(
+    process.execPath,
+    [nodePreGyp, "install", "--fallback-to-build"].concat(buildFlags),
+    { stdio: "inherit" },
+  );
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    process.exit(result.status || 1);
+  }
 }
 
 if (!addonExisted && fs.existsSync(builtAddon)) {

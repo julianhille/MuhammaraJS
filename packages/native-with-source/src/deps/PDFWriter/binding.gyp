@@ -14,22 +14,12 @@
                        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
                    }
                 }],
-                ['OS=="win" and target_arch=="x64"', {
+                ['OS=="win"', {
                     'msvs_settings': {
                         'VCLinkerTool': {
-                             'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_LIB_DIR%)/'],
+                              'AdditionalLibraryDirectories': ['<(module_root_dir)/build/openssl/'],
                             'AdditionalDependencies': [
-                                 '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib'
-                            ]
-                        }
-                    }
-                }],
-                ['OS=="win" and target_arch=="ia32"', {
-                    'msvs_settings': {
-                        'VCLinkerTool': {
-                             'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_LIB_DIR%)/'],
-                            'AdditionalDependencies': [
-                                 '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib'
+                                  '<(module_root_dir)/build/openssl/libcrypto.lib'
                             ]
                         }
                     }
@@ -38,7 +28,7 @@
             'msvs_settings': {
                 'VCCLCompilerTool': {
                     'AdditionalIncludeDirectories': [
-                        '<!(echo %OPENSSL_LIB_DIR%)/include/'
+                        '<(module_root_dir)/build/openssl/include/'
                     ],
                     'AdditionalOptions': [
                         '/std:c++20'

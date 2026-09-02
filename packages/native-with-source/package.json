@@ -15,7 +15,7 @@
     "postinstall": "node scripts/prepare-binding.js",
     "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
     "test:codestyle": "npx prettier -c ./",
-    "test:electron": "electron-mocha -R tap ./tests/*.js --timeout 15000",
+    "test:electron": "electron-mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
     "package": "node scripts/prepare-binding.js && node-pre-gyp package",
     "clean:source": "node scripts/remove-source.js",
     "test:docs": "mocha tests/docs/**/*.js --timeout 15000"
@@ -34,12 +34,15 @@
   "files": [
     "src",
     "scripts/install-with-source.js",
+    "scripts/build-openssl.sh",
+    "scripts/build-openssl.ps1",
     "scripts/prepare-binding.js",
     "scripts/remove-source.js",
     "binding.gyp",
     "index.js",
     "index.d.ts",
     "README.md",
+    "THIRD_PARTY_NOTICES.md",
     "LICENSE"
   ],
   "dependencies": {

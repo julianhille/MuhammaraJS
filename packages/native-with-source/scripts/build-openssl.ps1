@@ -1,16 +1,26 @@
 $ErrorActionPreference = "Stop"
 
-$opensslVersion = $env:OPENSSL_VERSION
+$packageRoot = Split-Path -Parent $PSScriptRoot
+$archive = Join-Path $packageRoot "src\deps\openssl-3.5.4.tar.gz"
+$sourceDirectory = Join-Path $packageRoot "build\openssl"
 $targetArchitecture = $env:OPENSSL_TARGET_ARCH
-if ([string]::IsNullOrWhiteSpace($opensslVersion) -or [string]::IsNullOrWhiteSpace($targetArchitecture)) {
-  throw "OPENSSL_VERSION and OPENSSL_TARGET_ARCH are required"
+if ([string]::IsNullOrWhiteSpace($targetArchitecture)) {
+  $targetArchitecture = $env:npm_config_target_arch
+}
+if ([string]::IsNullOrWhiteSpace($targetArchitecture)) {
+  $targetArchitecture = $env:npm_config_arch
+}
+if ([string]::IsNullOrWhiteSpace($targetArchitecture)) {
+  $targetArchitecture = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) {
+    "X64" { "x64" }
+    "Arm64" { "arm64" }
+    "X86" { "ia32" }
+    default { throw "Unsupported OpenSSL build architecture" }
+  }
 }
 
-$archive = Join-Path $PWD "packages\native-with-source\src\deps\openssl-$opensslVersion.tar.gz"
-$sourceDirectory = Join-Path $PWD "build\openssl"
-
 if (-not (Test-Path $archive -PathType Leaf)) {
-  throw "Vendored OpenSSL source archive not found: $archive"
+  throw "Bundled OpenSSL source archive not found: $archive"
 }
 
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $sourceDirectory
@@ -24,11 +34,7 @@ $opensslTarget = switch ($targetArchitecture) {
   default { throw "Unsupported OpenSSL build target: Windows-$targetArchitecture" }
 }
 
-$visualStudioArchitecture = switch ($targetArchitecture) {
-  "ia32" { "x86" }
-  default { $targetArchitecture }
-}
-
+$visualStudioArchitecture = if ($targetArchitecture -eq "ia32") { "x86" } else { $targetArchitecture }
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $visualStudioPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if ([string]::IsNullOrWhiteSpace($visualStudioPath)) {
@@ -47,5 +53,3 @@ $command = "call `"$vsDevCmd`" -arch=$visualStudioArchitecture -host_arch=x64 &&
 if ($LASTEXITCODE -ne 0) {
   throw "OpenSSL build failed"
 }
-
-Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_LIB_DIR=$sourceDirectory"
