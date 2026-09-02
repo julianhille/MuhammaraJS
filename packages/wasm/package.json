@@ -38,6 +38,8 @@
     "test:paths": "node ./scripts/check-internal-paths.mjs",
     "test:exports": "node ./scripts/check-exports.mjs",
     "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types.test.ts",
+    "docs:generate": "node ./scripts/generate-reference.mjs && prettier --write docs/reference.md",
+    "docs:check": "npm run docs:generate && mkdocs build --strict --config-file mkdocs.yml",
     "serve:browser": "node ./tests/browser/serve.mjs",
     "server:browser": "npm run serve:browser",
     "test:browser": "node ./tests/browser/run.mjs",
@@ -50,6 +52,7 @@
   "devDependencies": {
     "mocha": "^11.0.0",
     "puppeteer-core": "^25.9.0",
+    "jsdoc-to-markdown": "^9.1.3",
     "typescript": "^5.9.3"
   }
 }

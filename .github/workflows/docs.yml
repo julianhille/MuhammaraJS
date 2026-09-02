@@ -36,5 +36,5 @@ jobs:
       - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
       - run: npm run test:docs
       - run: npm run docs:check
-      - run: mkdocs build --strict --config-file packages/wasm/mkdocs.yml
+      - run: npm run docs:check --workspace=@muhammara/wasm
       - run: git diff --exit-code -- packages/native/docs/recipe/reference.md packages/native/docs/api/type-declarations.md
