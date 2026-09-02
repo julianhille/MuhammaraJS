@@ -121,7 +121,7 @@ exports._getPathOptions = function _getPathOptions(
 
 exports._getDistance = function _getDistance(coordA, coordB) {
   const disX = Math.abs(coordB[0] - coordA[0]);
-  const disY = Math.abs(coordB[1] - coordB[1]);
+  const disY = Math.abs(coordB[1] - coordA[1]);
   const distance = Math.sqrt(disX * disX + disY * disY);
 
   return distance;
