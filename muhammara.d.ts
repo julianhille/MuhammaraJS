@@ -338,14 +338,16 @@ declare module "muhammara" {
   export const eRangeTypeSpecific = 1;
   export type eRangeType = 0 | 1;
 
-  export interface PDFWriterOptions {
-    version?: EPDFVersion;
-    log?: string;
-    compress?: boolean;
-
+  export interface EncryptionOptions {
     userPassword?: string;
     ownerPassword?: string;
     userProtectionFlag?: number;
+  }
+
+  export interface PDFWriterOptions extends EncryptionOptions {
+    version?: EPDFVersion;
+    log?: string;
+    compress?: boolean;
   }
 
   type FormXObjectId = number;
@@ -900,11 +902,21 @@ declare module "muhammara" {
       | "Paragraph"
       | "Insert";
 
-    interface RecipeOptions {
+    interface RecipeOptions extends EncryptionOptions {
       version?: number;
       author?: string;
       title?: string;
       subject?: string;
+      colorspace?: "rbg" | "cmyk" | "gray" | "separation";
+      defaultFontSize?: number;
+      defaultFontFamily?:
+        | "arial"
+        | "courier new"
+        | "georgia"
+        | "helvetica"
+        | "roboto"
+        | string;
+      fontSrcPath?: string;
       keywords?: string[];
     }
 
@@ -1162,8 +1174,8 @@ declare module "muhammara" {
 
     text(
       text: string,
-      x: number,
-      y: number,
+      x?: number,
+      y?: number,
       options?: Recipe.TextOptions,
     ): Recipe;
 
