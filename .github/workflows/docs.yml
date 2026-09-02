@@ -20,6 +20,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    env:
+      OPENSSL_VERSION: 3.5.4
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
@@ -31,6 +33,11 @@ jobs:
           cache: npm
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r packages/native/docs/requirements.txt
+      - run: sudo apt-get update && sudo apt-get install -y curl perl
+      - name: Build OpenSSL
+        run: sh scripts/build-openssl.sh
+        env:
+          OPENSSL_TARGET_ARCH: x64
       - run: npm ci --ignore-scripts
       - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
       - run: npm run test:docs

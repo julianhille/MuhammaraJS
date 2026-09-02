@@ -8,16 +8,16 @@ describe the source currently in this repository.
 
 ## Vendor Inventory
 
-| Vendored directory | Upstream baseline                                                        | Source and tracking                                                                                                                               |
-| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PDFWriter`        | [PDF-Writer v4.9.0](https://github.com/galkahana/PDF-Writer/tree/v4.9.0) | [Source](https://github.com/galkahana/PDF-Writer) and [issues](https://github.com/galkahana/PDF-Writer/issues)                                    |
-| `FreeType`         | [2.13.0](https://github.com/freetype/freetype/tree/VER-2-13-0)           | [Source](https://github.com/freetype/freetype) and [issues](https://gitlab.freedesktop.org/freetype/freetype/-/issues)                            |
-| `LibAesgm`         | Unversioned Brian Gladman AES snapshot (copyright 1998-2013)             | [Source](https://github.com/BrianGladman/AES)                                                                                                     |
-| `LibJpeg`          | [IJG JPEG 9d](https://ijg.org/files/jpegsrc.v9d.tar.gz)                  | [Source](https://ijg.org/)                                                                                                                        |
-| `LibPng`           | [1.6.37](https://github.com/pnggroup/libpng/tree/v1.6.37)                | [Source](https://github.com/pnggroup/libpng) and [issues](https://github.com/pnggroup/libpng/issues)                                              |
-| `LibTiff`          | [4.6.0](https://gitlab.com/libtiff/libtiff/-/tree/v4.6.0)                | [Source](https://gitlab.com/libtiff/libtiff) and [issues](https://gitlab.com/libtiff/libtiff/-/issues)                                            |
-| `OpenSSL`          | [3.5.4](https://github.com/openssl/openssl/releases/tag/openssl-3.5.4)   | Downloaded by native CI builds and extracted to ignored `src/deps/openssl/`, then statically linked; [source](https://github.com/openssl/openssl) |
-| `Zlib`             | [1.2.11](https://github.com/madler/zlib/tree/v1.2.11)                    | [Source](https://github.com/madler/zlib) and [issues](https://github.com/madler/zlib/issues)                                                      |
+| Vendored directory | Upstream baseline                                                        | Source and tracking                                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PDFWriter`        | [PDF-Writer v4.9.0](https://github.com/galkahana/PDF-Writer/tree/v4.9.0) | [Source](https://github.com/galkahana/PDF-Writer) and [issues](https://github.com/galkahana/PDF-Writer/issues)                                 |
+| `FreeType`         | [2.13.0](https://github.com/freetype/freetype/tree/VER-2-13-0)           | [Source](https://github.com/freetype/freetype) and [issues](https://gitlab.freedesktop.org/freetype/freetype/-/issues)                         |
+| `LibAesgm`         | Unversioned Brian Gladman AES snapshot (copyright 1998-2013)             | [Source](https://github.com/BrianGladman/AES)                                                                                                  |
+| `LibJpeg`          | [IJG JPEG 9d](https://ijg.org/files/jpegsrc.v9d.tar.gz)                  | [Source](https://ijg.org/)                                                                                                                     |
+| `LibPng`           | [1.6.37](https://github.com/pnggroup/libpng/tree/v1.6.37)                | [Source](https://github.com/pnggroup/libpng) and [issues](https://github.com/pnggroup/libpng/issues)                                           |
+| `LibTiff`          | [4.6.0](https://gitlab.com/libtiff/libtiff/-/tree/v4.6.0)                | [Source](https://gitlab.com/libtiff/libtiff) and [issues](https://gitlab.com/libtiff/libtiff/-/issues)                                         |
+| `OpenSSL`          | [3.5.4](https://github.com/openssl/openssl/releases/tag/openssl-3.5.4)   | Downloaded by native CI builds and extracted to ignored `build/openssl/`, then statically linked; [source](https://github.com/openssl/openssl) |
+| `Zlib`             | [1.2.11](https://github.com/madler/zlib/tree/v1.2.11)                    | [Source](https://github.com/madler/zlib) and [issues](https://github.com/madler/zlib/issues)                                                   |
 
 The PDFWriter tag is the vendored tree's upstream baseline. MuhammaraJS carries
 changes on top of it, so `packages/native-with-source/src/deps/PDFWriter` is not necessarily byte-for-byte

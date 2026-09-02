@@ -20,6 +20,6 @@ docker run --rm \
   --mount "type=bind,src=$dist,dst=/out" \
   -w /build \
   "$image" \
-  sh -c "emcmake cmake -S /src/packages/wasm -B /build -DCMAKE_BUILD_TYPE=Release -DMUHAMMARA_WASM_SANITIZE=$sanitize &&
+  sh -c "emcmake cmake -S /src/packages/wasm -B /build -DCMAKE_BUILD_TYPE=Release -DMUHAMMARA_WASM_SANITIZE=$sanitize -DPDFHUMMUS_NO_OPENSSL=ON &&
     cmake --build /build --target muhammara-wasm --parallel &&
     cp /build/muhammara-wasm.js /build/muhammara-wasm.wasm /out/"

@@ -33,10 +33,6 @@ module.exports = function copyOpenSslDlls(packageRoot) {
   }
 
   if (process.env.OPENSSL_LIB_DIR) {
-    fs.copyFileSync(
-      path.join(__dirname, "..", "THIRD_PARTY_NOTICES.md"),
-      path.join(bindingDirectory, "THIRD_PARTY_NOTICES.md"),
-    );
     return;
   }
 
@@ -73,11 +69,6 @@ module.exports = function copyOpenSslDlls(packageRoot) {
       path.join(bindingDirectory, dll),
     );
   });
-
-  fs.copyFileSync(
-    path.join(__dirname, "..", "THIRD_PARTY_NOTICES.md"),
-    path.join(bindingDirectory, "THIRD_PARTY_NOTICES.md"),
-  );
 
   return {
     bindingDirectory: bindingDirectory,
