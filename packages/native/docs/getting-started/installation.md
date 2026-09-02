@@ -18,6 +18,8 @@ Both packages contain the same API and native prebuild metadata.
 normally by npm. `@muhammara/native` intentionally does not fetch or cache a
 source fallback.
 
+## Install As An Npm Alias
+
 Keep an existing `require("@muhammara/native")` import while selecting the
 source-capable package with an npm alias:
 
