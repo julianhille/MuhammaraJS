@@ -45,12 +45,15 @@ function testBasicFileModification(inFileName, throws) {
       pdfWriter.end();
 
       var outputReader = muhammara.createReader(outputPath);
-      assert.equal(outputReader.getPagesCount(), sourcePageCount + 1);
-      assert.deepEqual(
-        outputReader.parsePage(sourcePageCount).getMediaBox(),
-        [0, 0, 595, 842],
-      );
-      outputReader.end();
+      try {
+        assert.equal(outputReader.getPagesCount(), sourcePageCount + 1);
+        assert.deepEqual(
+          outputReader.parsePage(sourcePageCount).getMediaBox(),
+          [0, 0, 595, 842],
+        );
+      } finally {
+        outputReader.end();
+      }
     });
   });
 }

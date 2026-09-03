@@ -3,9 +3,12 @@ var assert = require("assert");
 
 function assertRecryptedPdf(filePath, password, encrypted) {
   var reader = muhammara.createReader(filePath, password ? { password } : {});
-  assert.equal(reader.isEncrypted(), encrypted);
-  assert.ok(reader.getPagesCount() > 0);
-  reader.end();
+  try {
+    assert.equal(reader.isEncrypted(), encrypted);
+    assert.ok(reader.getPagesCount() > 0);
+  } finally {
+    reader.end();
+  }
 }
 
 describe("Xcryption", function () {

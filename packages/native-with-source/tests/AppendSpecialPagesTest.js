@@ -36,7 +36,10 @@ describe("AppendSpecialPagesTest", function () {
     pdfWriter.end();
 
     var reader = muhammara.createReader(outputPath);
-    assert.equal(reader.getPagesCount(), expectedPages);
-    reader.end();
+    try {
+      assert.equal(reader.getPagesCount(), expectedPages);
+    } finally {
+      reader.end();
+    }
   });
 });
