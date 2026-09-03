@@ -103,7 +103,7 @@ jobs:
           LDFLAGS: -fsanitize=address,undefined
       - name: Run tests with the sanitizer runtime preloaded
         working-directory: packages/native-with-source
-        run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/sanitizer-gc.js -R tap ./tests/*.js ./tests/**/*.js --timeout 15000
+        run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R tap --recursive ./tests --timeout 15000
   build-musl-arm:
     strategy:
       fail-fast: false

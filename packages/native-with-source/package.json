@@ -12,9 +12,9 @@
   },
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build --jobs=max",
-    "test": "mocha -R tap ./tests/*.js ./tests/recipe/*.js ./tests/security/*.js --timeout 15000",
+    "test": "node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R tap --recursive ./tests --timeout 15000",
     "test:codestyle": "npx prettier -c ./",
-    "test:electron": "electron-mocha -R tap ./tests/*.js ./tests/recipe/*.js ./tests/security/*.js --timeout 15000",
+    "test:electron": "electron-mocha -R tap --recursive ./tests --timeout 15000",
     "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types.test.ts",
     "package": "node-pre-gyp package",
     "clean:source": "node scripts/remove-source.js",

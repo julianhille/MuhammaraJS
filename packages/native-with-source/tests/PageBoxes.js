@@ -38,5 +38,15 @@ describe("PagesBoxes", function () {
 
     pdfWriter.writePage(page);
     pdfWriter.end();
+
+    var reader = muhammara.createReader(__dirname + "/output/PageBoxes.pdf");
+    var writtenPage = reader.parsePage(0);
+    assert.deepEqual(writtenPage.getMediaBox(), [0, 0, 595, 842]);
+    assert.deepEqual(writtenPage.getCropBox(), [1, 1, 594, 841]);
+    assert.deepEqual(writtenPage.getBleedBox(), [2, 2, 593, 840]);
+    assert.deepEqual(writtenPage.getTrimBox(), [3, 3, 592, 839]);
+    assert.deepEqual(writtenPage.getArtBox(), [4, 4, 591, 838]);
+    assert.equal(writtenPage.getRotate(), 90);
+    reader.end();
   });
 });

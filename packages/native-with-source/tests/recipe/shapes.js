@@ -29,11 +29,10 @@ describe("Regular Polygons, Stars, Arrows", () => {
   });
 
   it("Add N pointed stars", (done) => {
-    const input = path.join(__dirname, "../output/Add N-gons.pdf");
-    const output = input;
-    const recipe = new HummusRecipe(input, output);
+    const output = path.join(__dirname, "../output/Add N-pointed stars.pdf");
+    const recipe = new HummusRecipe("new", output);
     recipe
-      .editPage(1)
+      .createPage("letter")
       .star(300, 340, 50, { fill: "#0000ff" })
       .star(400, 340, 50, 6, { fill: "#0000ff", opacity: 0.3, rotation: 30 })
       .star(200, 450, 50, 7)

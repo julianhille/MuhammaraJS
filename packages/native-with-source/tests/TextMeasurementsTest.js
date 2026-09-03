@@ -1,5 +1,6 @@
 describe("TextMeasurementsTest", function () {
   it("should complete without error", function () {
+    var assert = require("assert");
     var pdfWriter = require("@muhammara/native-with-source").createWriter(
       __dirname + "/output/TextMeasurementsTest.pdf",
     );
@@ -19,6 +20,10 @@ describe("TextMeasurementsTest", function () {
 
     // write some text, with top and bottom lines, which position is based on the text dimensions
     var textDimensions = arialFont.calculateTextDimensions("Hello World", 14);
+    assert.ok(textDimensions.width > 0);
+    assert.ok(textDimensions.height > 0);
+    assert.ok(textDimensions.xMax > textDimensions.xMin);
+    assert.ok(textDimensions.yMax > textDimensions.yMin);
     cxt
       .writeText("Hello World", 10, 100, textOptions)
       .drawPath(

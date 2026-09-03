@@ -1,5 +1,14 @@
 const path = require("path");
+const assert = require("assert");
+const muhammara = require("@muhammara/native-with-source");
 const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+
+function assertEncryptedPdf(filePath, password) {
+  const reader = muhammara.createReader(filePath, { password });
+  assert.equal(reader.isEncrypted(), true);
+  assert.ok(reader.getPagesCount() > 0);
+  reader.end();
+}
 
 describe("Encryption", () => {
   const taskAVP = "Add view password";
@@ -11,7 +20,10 @@ describe("Encryption", () => {
       .encrypt({
         userPassword: "123",
       })
-      .endPDF(done);
+      .endPDF(() => {
+        assertEncryptedPdf(output, "123");
+        done();
+      });
   });
 
   const taskAEP = "Add edit password";
@@ -25,7 +37,10 @@ describe("Encryption", () => {
       .encrypt({
         ownerPassword: "123",
       })
-      .endPDF(done);
+      .endPDF(() => {
+        assertEncryptedPdf(output, "123");
+        done();
+      });
   });
 
   const taskAPP = "Add permission password";
@@ -39,7 +54,10 @@ describe("Encryption", () => {
       .encrypt({
         password: "123",
       })
-      .endPDF(done);
+      .endPDF(() => {
+        assertEncryptedPdf(output, "123");
+        done();
+      });
   });
 
   const taskCPF = "New file with view password";
@@ -51,7 +69,10 @@ describe("Encryption", () => {
       .text("When creating file, the viewing password (userPassword)", 150, 300)
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
-      .endPDF(done);
+      .endPDF(() => {
+        assertEncryptedPdf(output, "123");
+        done();
+      });
   });
 
   const taskCPP = "New file with permission password";
@@ -67,7 +88,10 @@ describe("Encryption", () => {
       )
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
-      .endPDF(done);
+      .endPDF(() => {
+        assertEncryptedPdf(output, "123");
+        done();
+      });
   });
 
   const taskCPE = "New file with edit password";
@@ -86,7 +110,10 @@ describe("Encryption", () => {
       )
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
-      .endPDF(done);
+      .endPDF(() => {
+        assertEncryptedPdf(output, "123");
+        done();
+      });
   });
 
   // TODO: this seems to be broken
