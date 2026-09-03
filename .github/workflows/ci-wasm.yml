@@ -83,7 +83,7 @@ jobs:
         run: npm run wasm:build
         env:
           MUHAMMARA_WASM_SANITIZE: ON
-      - run: node ./scripts/run-mocha.mjs tests/MemoryLifecycle.test.mjs
+      - run: node ./scripts/run-mocha.mjs tests/integration/MemoryLifecycle.test.mjs
         working-directory: packages/wasm
   publish:
     needs: [test, sanitizer]

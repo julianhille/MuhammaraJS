@@ -1,4 +1,4 @@
-import { createMuhammaraWasm } from "../index.js";
+import { createMuhammaraWasm } from "../../index.js";
 
 async function usesNodeCompatibleTypes() {
   var muhammara = await createMuhammaraWasm();

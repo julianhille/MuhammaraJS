@@ -33,11 +33,11 @@
   ],
   "scripts": {
     "build": "./build.sh",
-    "verify": "node ./scripts/run-mocha.mjs tests/EmptyPagesPDF.test.mjs",
+    "verify": "node ./scripts/run-mocha.mjs tests/integration/EmptyPagesPDF.test.mjs",
     "test": "node ./scripts/run-mocha.mjs 'tests/{*.test.mjs,**/*.test.mjs}'",
     "test:paths": "node ./scripts/check-internal-paths.mjs",
     "test:exports": "node ./scripts/check-exports.mjs",
-    "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types.test.ts && tsc --noEmit --strict --lib es2022 --module nodenext --moduleResolution nodenext tests/types-node.test.ts",
+    "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types/types.test.ts && tsc --noEmit --strict --lib es2022 --module nodenext --moduleResolution nodenext tests/types/types-node.test.ts",
     "docs:generate": "node ./scripts/generate-reference.mjs && prettier --write docs/reference.md",
     "docs:check": "npm run docs:generate && mkdocs build --strict --config-file mkdocs.yml",
     "serve:browser": "node ./tests/browser/serve.mjs",

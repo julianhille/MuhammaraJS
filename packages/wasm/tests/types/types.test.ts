@@ -1,5 +1,5 @@
-import { createMuhammaraWasm, createRecipe } from "../index.js";
-import { PDFPage } from "../index.js";
+import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import { PDFPage } from "../../index.js";
 
 // @ts-expect-error PDFPage is available only from a loaded runtime instance.
 void PDFPage;
