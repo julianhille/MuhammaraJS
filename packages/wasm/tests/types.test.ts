@@ -4,7 +4,10 @@ async function usesLowLevelSurface() {
   var muhammara = await createMuhammaraWasm();
   muhammara.registerFont("font", new Uint8Array());
   await muhammara.registerFontAsync("font-async", new Blob());
-  var writer = muhammara.createWriter({ compress: false });
+  var writer = muhammara.createWriter({
+    version: muhammara.ePDFVersion20,
+    compress: false,
+  });
   var page = writer.createPage();
   muhammara.KProcsetImageB;
   muhammara.KProcsetImageC;

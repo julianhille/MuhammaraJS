@@ -1423,7 +1423,7 @@ export interface MuhammaraWasm {
   readonly ePDFVersion15: 15;
   readonly ePDFVersion16: 16;
   readonly ePDFVersion17: 17;
-  readonly ePDFVersion20: number;
+  readonly ePDFVersion20: 20;
   readonly KProcsetImageB: string;
   readonly KProcsetImageC: string;
   readonly KProcsetImageI: string;
