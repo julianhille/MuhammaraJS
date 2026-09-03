@@ -29,6 +29,7 @@ async function usesLowLevelSurface() {
     .rg(1, 0, 0)
     .m(0, 0)
     .l(10, 10)
+    .drawPath(0, 0, 10, 10, 20, 20, { color: "#000000" })
     .S()
     .BT()
     .Tf(font, 12)

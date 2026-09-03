@@ -775,8 +775,7 @@ export interface ContentContext {
     y1: number,
     x2: number,
     y2: number,
-    options: DrawPathOptions,
-    ...coordinates: number[]
+    ...coordinatesAndOptions: [...number[], DrawPathOptions]
   ): this;
   drawCircle(
     x: number,
