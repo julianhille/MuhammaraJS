@@ -42,8 +42,8 @@ jobs:
         run: if readelf -d packages/native-with-source/binding/muhammara.node | grep -Eiq 'lib(crypto|ssl)'; then exit 1; fi
       - run: npm run package --workspace=@muhammara/native-with-source
       - run: mkdir -p packages && npm pack --workspace=@muhammara/native-core --pack-destination packages && npm pack --workspace=@muhammara/native-with-source --pack-destination packages && npm pack --workspace=@muhammara/native --pack-destination packages
-      - name: Verify source-capable package contents
-        run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
+      - name: Verify native package contents
+        run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-[0-9]*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
       - name: Install packed package without prebuilds
         run: mkdir -p /tmp/muhammara-source-fallback && npm install --build-from-source --prefix /tmp/muhammara-source-fallback ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-with-source-*.tgz
       - run: node -e "require('/tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source')"
@@ -400,7 +400,6 @@ jobs:
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
       - run: npm run test
-        if: ${{ matrix.target_architecture != 'arm64' }}
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
       - uses: actions/upload-artifact@v6
         with:
@@ -514,12 +513,6 @@ jobs:
       - run: ls -lah builds/bindings/
       - name: Verify package version
         run: test "$(node -p "require('./packages/native-core/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native-with-source/package.json').version")" = "${GITHUB_REF_NAME#native-v}"
-      - name: Create release and upload prebuilds
-        uses: softprops/action-gh-release@v2
-        with:
-          files: "builds/bindings/**/*"
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
       - id: npm-tag
         run: |
           case "${GITHUB_REF_NAME#native-v}" in
@@ -528,6 +521,14 @@ jobs:
             *-rc.*) echo "value=rc" >> "$GITHUB_OUTPUT" ;;
             *) echo "value=latest" >> "$GITHUB_OUTPUT" ;;
           esac
+      - name: Verify native package publish preflight
+        run: npm publish --workspace=@muhammara/native-core --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }} && npm publish --workspace=@muhammara/native-with-source --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }} && npm publish --workspace=@muhammara/native --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }}
+      - name: Create release and upload prebuilds
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "builds/bindings/**/*"
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
       - name: Publish native core package
         run: npm publish --workspace=@muhammara/native-core --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
       - name: Publish source-capable native package

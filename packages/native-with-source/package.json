@@ -22,7 +22,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/julianhille/Muhammarajs.git"
+    "url": "git+https://github.com/julianhille/MuhammaraJS.git",
+    "directory": "packages/native-with-source"
   },
   "keywords": [
     "pdf",

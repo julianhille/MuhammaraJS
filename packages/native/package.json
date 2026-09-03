@@ -5,6 +5,11 @@
   "homepage": "https://muhammarajs.readthedocs.io/",
   "license": "Apache-2.0",
   "author": "Julian <j.hille484@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julianhille/MuhammaraJS.git",
+    "directory": "packages/native"
+  },
   "main": "./index.js",
   "types": "./index.d.ts",
   "engines": {
@@ -19,6 +24,7 @@
     "index.js",
     "index.d.ts",
     "README.md",
+    "THIRD_PARTY_NOTICES.md",
     "LICENSE",
     "scripts/install-prebuilt.js"
   ],

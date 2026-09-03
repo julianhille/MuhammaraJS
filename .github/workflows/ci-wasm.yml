@@ -32,7 +32,8 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run wasm:build
-      - run: npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json
+      - name: Verify Wasm package contents
+        run: test -s packages/wasm/dist/muhammara-wasm.js && test -s packages/wasm/dist/muhammara-wasm.wasm && npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json | node -e "var pack = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0]; var files = pack.files.map(function(file) { return file.path; }); if (!files.includes('dist/muhammara-wasm.js') || !files.includes('dist/muhammara-wasm.wasm')) process.exit(1);"
       - uses: actions/upload-artifact@v6
         with:
           name: muhammara-wasm
@@ -106,11 +107,13 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: python -m pip install -r packages/wasm/docs/requirements.txt
       - run: npm run test:codestyle
-      - run: mkdocs build --strict --config-file packages/wasm/mkdocs.yml
+      - run: npm run docs:check --workspace=@muhammara/wasm
       - uses: actions/download-artifact@v4
         with:
           name: muhammara-wasm
           path: packages/wasm/dist
+      - name: Verify Wasm package contents
+        run: test -s packages/wasm/dist/muhammara-wasm.js && test -s packages/wasm/dist/muhammara-wasm.wasm && npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json | node -e "var pack = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0]; var files = pack.files.map(function(file) { return file.path; }); if (!files.includes('dist/muhammara-wasm.js') || !files.includes('dist/muhammara-wasm.wasm')) process.exit(1);"
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
