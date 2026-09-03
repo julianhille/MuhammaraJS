@@ -17,6 +17,7 @@ if [ -z "$target_architecture" ]; then
 fi
 
 source_directory="$package_root/openssl-build/$target_architecture"
+build_stamp="$source_directory/.build-stamp"
 
 # An explicit C compiler already contains any cross-compilation prefix.
 if [ -n "${CC:-}" ]; then
@@ -28,14 +29,14 @@ if [ ! -f "$archive" ]; then
   exit 1
 fi
 
-rm -rf "$source_directory"
-mkdir -p "$source_directory"
-tar -xzf "$archive" --strip-components=1 -C "$source_directory"
-
 case "$(uname -s)-$target_architecture" in
   Linux-x64) openssl_target=linux-x86_64 ;;
   Linux-arm64) openssl_target=linux-aarch64 ;;
-  Darwin-x64) openssl_target=darwin64-x86_64-cc ;;
+  Darwin-x64)
+    openssl_target=darwin64-x86_64-cc
+    export CFLAGS="${CFLAGS:-} -arch x86_64"
+    export LDFLAGS="${LDFLAGS:-} -arch x86_64"
+    ;;
   Darwin-arm64)
     openssl_target=darwin64-arm64-cc
     export CFLAGS="${CFLAGS:-} -arch arm64"
@@ -47,8 +48,21 @@ case "$(uname -s)-$target_architecture" in
     ;;
 esac
 
+expected_stamp=$(printf '%s\n' "$(shasum -a 256 "$archive" | cut -d ' ' -f 1)" "${CC:-}" "${CFLAGS:-}" "${LDFLAGS:-}" "$target_architecture" "$openssl_target" | shasum -a 256 | cut -d ' ' -f 1)
+
+if [ -f "$source_directory/libcrypto.a" ] && [ -f "$build_stamp" ] && [ "$(cat "$build_stamp")" = "$expected_stamp" ]; then
+  exit 0
+fi
+
+rm -rf "$source_directory"
+mkdir -p "$source_directory"
+tar -xzf "$archive" --strip-components=1 -C "$source_directory"
+
 (
   cd "$source_directory"
   ./Configure "$openssl_target" no-shared no-apps no-tests
   make -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)" build_libs
 )
+
+test -f "$source_directory/libcrypto.a"
+printf '%s\n' "$expected_stamp" > "$build_stamp"

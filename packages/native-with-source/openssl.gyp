@@ -14,8 +14,7 @@
                                 '<(module_root_dir)/scripts/build-openssl-win.js'
                             ],
                             'outputs': [
-                                '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.lib',
-                                '<(module_root_dir)/openssl-build/<(target_arch)/include/openssl/sha.h'
+                                '<(module_root_dir)/openssl-build/<(target_arch)/.build-stamp'
                             ],
                             'action': [
                                 'node',
@@ -33,8 +32,7 @@
                                 '<(module_root_dir)/scripts/build-openssl.sh'
                             ],
                             'outputs': [
-                                '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.a',
-                                '<(module_root_dir)/openssl-build/<(target_arch)/include/openssl/sha.h'
+                                '<(module_root_dir)/openssl-build/<(target_arch)/.build-stamp'
                             ],
                             'action': [
                                 'sh',

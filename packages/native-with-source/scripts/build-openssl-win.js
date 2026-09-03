@@ -1,6 +1,7 @@
 "use strict";
 
 var childProcess = require("child_process");
+var crypto = require("crypto");
 var fs = require("fs");
 var path = require("path");
 
@@ -51,20 +52,11 @@ var sourceDirectory = path.join(
   "openssl-build",
   targetArchitecture,
 );
+var buildStamp = path.join(sourceDirectory, ".build-stamp");
 
 if (!fs.existsSync(archive)) {
   throw new Error("Bundled OpenSSL source archive not found: " + archive);
 }
-
-fs.rmSync(sourceDirectory, { recursive: true, force: true });
-fs.mkdirSync(sourceDirectory, { recursive: true });
-run("tar.exe", [
-  "-xzf",
-  archive,
-  "--strip-components=1",
-  "-C",
-  sourceDirectory,
-]);
 
 var visualStudioPath =
   process.env.OPENSSL_VS_INSTALL_PATH ||
@@ -114,6 +106,34 @@ if (!fs.existsSync(vsDevCmd)) {
   );
 }
 
+var expectedStamp = crypto
+  .createHash("sha256")
+  .update(fs.readFileSync(archive))
+  .update("\0" + (process.env.CC || ""))
+  .update("\0" + (process.env.CFLAGS || ""))
+  .update("\0" + (process.env.LDFLAGS || ""))
+  .update("\0" + targetArchitecture)
+  .update("\0" + opensslTargets[targetArchitecture])
+  .digest("hex");
+
+if (
+  fs.existsSync(path.join(sourceDirectory, "libcrypto.lib")) &&
+  fs.existsSync(buildStamp) &&
+  fs.readFileSync(buildStamp, "utf8").trim() === expectedStamp
+) {
+  process.exit(0);
+}
+
+fs.rmSync(sourceDirectory, { recursive: true, force: true });
+fs.mkdirSync(sourceDirectory, { recursive: true });
+run("tar.exe", [
+  "-xzf",
+  archive,
+  "--strip-components=1",
+  "-C",
+  sourceDirectory,
+]);
+
 var command =
   'call "' +
   vsDevCmd +
@@ -130,3 +150,8 @@ run(
   ["/v:on", "/d", "/s", "/c", '"' + command + '"'],
   { windowsVerbatimArguments: true },
 );
+
+if (!fs.existsSync(path.join(sourceDirectory, "libcrypto.lib"))) {
+  throw new Error("OpenSSL build did not produce libcrypto.lib");
+}
+fs.writeFileSync(buildStamp, expectedStamp + "\n");
