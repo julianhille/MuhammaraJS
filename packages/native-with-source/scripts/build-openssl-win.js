@@ -114,30 +114,6 @@ if (!fs.existsSync(vsDevCmd)) {
   );
 }
 
-var toolsetsDirectory = path.join(visualStudioPath, "VC", "Tools", "MSVC");
-var toolsets = fs
-  .readdirSync(toolsetsDirectory, { withFileTypes: true })
-  .filter(function (entry) {
-    return entry.isDirectory();
-  })
-  .map(function (entry) {
-    return entry.name;
-  })
-  .sort()
-  .reverse();
-var nmake = path.join(
-  toolsetsDirectory,
-  toolsets[0] || "",
-  "bin",
-  "Hostx64",
-  "x64",
-  "nmake.exe",
-);
-
-if (!toolsets.length || !fs.existsSync(nmake)) {
-  throw new Error("NMake was not found in the Visual Studio C++ build tools");
-}
-
 var command =
   'call "' +
   vsDevCmd +
@@ -147,8 +123,10 @@ var command =
   sourceDirectory +
   '" && perl Configure ' +
   opensslTargets[targetArchitecture] +
-  ' no-asm no-shared no-apps no-tests && call "' +
-  nmake +
-  '" build_libs';
+  " no-asm no-shared no-apps no-tests && nmake build_libs";
 
-run("cmd.exe", ["/v:on", "/d", "/s", "/c", command]);
+run(
+  process.env.ComSpec || "cmd.exe",
+  ["/v:on", "/d", "/s", "/c", '"' + command + '"'],
+  { windowsVerbatimArguments: true },
+);

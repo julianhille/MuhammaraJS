@@ -8,7 +8,7 @@
             'type': 'loadable_module',
 			'product_extension': 'node',
             'dependencies': [
-               'openssl.gyp:openssl',
+               '<(module_root_dir)/openssl.gyp:openssl',
                '<(muhammara_source_root)/deps/PDFWriter/binding.gyp:pdfwriter'
             ],
             "defines": [
