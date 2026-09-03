@@ -2,44 +2,23 @@ const path = require("path");
 const HummusRecipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Layout", () => {
-  it(`Flow text into column layouts (OS:${process.platform})`, (done) => {
+  it(`Flow text into column layouts (OS:${process.platform})`, () => {
     const output = path.join(__dirname, "../output/paper.pdf");
     const times = "times";
     const courier = "courier new";
-    let fontDir = "",
-      timesPlain,
-      timesBold,
-      timesItalic,
-      timesBoldItalic;
+    const fontDir = path.join(__dirname, "../../../native-core/fonts");
+    const recipe = new HummusRecipe("new", output);
 
-    // Note, if font not found, default library font (Helvetica) will be used.
-    // The Times Roman font will fill one page. The Helvetica font will overflow onto second page.
-    switch (process.platform) {
-      case "win32":
-        fontDir = "/Windows/Fonts";
-        timesPlain = "times.ttf";
-        timesBold = "timesbd.ttf";
-        timesItalic = "timesi.ttf";
-        timesBoldItalic = "timesbi.ttf";
-        break;
-
-      case "darwin":
-      default:
-        fontDir = "/Library/Fonts";
-        timesPlain = "Times New Roman.ttf";
-        timesBold = "Times New Roman Bold.ttf";
-        timesItalic = "Times New Roman Italic.ttf";
-        timesBoldItalic = "Times New Roman Bold Italic.ttf";
-        break;
-    }
-
-    const fontHome = fontDir ? { fontSrcPath: [fontDir] } : undefined;
-    const recipe = new HummusRecipe("new", output, fontHome);
-
-    recipe.registerFont(times, path.join(fontDir, timesPlain));
-    recipe.registerFont(times, path.join(fontDir, timesBold), "b");
-    recipe.registerFont(times, path.join(fontDir, timesItalic), "i");
-    recipe.registerFont(times, path.join(fontDir, timesBoldItalic), "bi");
+    // Use checked-in fonts so rendering does not depend on the runner image.
+    recipe.registerFont(times, path.join(fontDir, "Helvetica.ttf"));
+    recipe.registerFont(times, path.join(fontDir, "Helvetica-bold.ttf"), "b");
+    recipe.registerFont(times, path.join(fontDir, "Helvetica-italic.ttf"), "i");
+    recipe.registerFont(
+      times,
+      path.join(fontDir, "Helvetica-bold-italic.ttf"),
+      "bi",
+    );
+    recipe.registerFont(courier, path.join(fontDir, "Courier New.ttf"));
 
     const title =
       "Trace-based Just-in-Time Type Specialization for Dynamic Languages";
@@ -250,6 +229,6 @@ to lists, requires prior specific permission and/or a fee.";
       .text("", { flow: false, textBox: { box } });
 
     recipe.endPage();
-    recipe.endPDF(done);
-  });
+    recipe.endPDF();
+  }).timeout(60000);
 });
