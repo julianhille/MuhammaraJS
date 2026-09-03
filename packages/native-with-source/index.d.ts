@@ -1,4 +1,3 @@
-import type { MuhammaraApi } from "@muhammara/native-core";
+import muhammara = require("@muhammara/native-core/muhammara");
 
-declare const muhammara: MuhammaraApi;
 export = muhammara;

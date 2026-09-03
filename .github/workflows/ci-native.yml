@@ -36,6 +36,7 @@ jobs:
           restore-keys: native-source-
       - run: sudo apt-get update && sudo apt-get install -y perl
       - run: npm ci --ignore-scripts
+      - run: npm run native:test:types && npm run native-with-source:test:types
       - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
       - name: Verify OpenSSL is statically linked
         run: if readelf -d packages/native-with-source/binding/muhammara.node | grep -Eiq 'lib(crypto|ssl)'; then exit 1; fi

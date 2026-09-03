@@ -1,4 +1,8 @@
 import { createMuhammaraWasm, createRecipe } from "../index.js";
+import { PDFPage } from "../index.js";
+
+// @ts-expect-error PDFPage is available only from a loaded runtime instance.
+void PDFPage;
 
 async function usesLowLevelSurface() {
   var muhammara = await createMuhammaraWasm();
@@ -243,7 +247,9 @@ async function usesLowLevelSurface() {
     .arc(10, 10, 5, 0, 90, { sector: true })
     .pie(10, 10, 5)
     .n_gon(10, 10, 5, 3, { rotationVertice: 1 })
+    .n_gon(10, 10, 5, { fill: "#000000" })
     .star(10, 10, 5, 5)
+    .star(10, 10, 5, { fill: "#000000" })
     .arrow(10, 10, {
       type: "kite",
       head: [5, 10, 0],

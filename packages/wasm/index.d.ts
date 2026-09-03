@@ -1,6 +1,9 @@
 /** Browser-only, byte-first WebAssembly API. It intentionally excludes Node paths and streams. */
 export type ByteSource = Uint8Array | ArrayBuffer;
-export type AsyncByteSource = ByteSource | Blob;
+export interface BlobLike {
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+export type AsyncByteSource = ByteSource | BlobLike;
 export type PDFRectangle = [number, number, number, number];
 export type PDFMatrix = [number, number, number, number, number, number];
 export type Glyph = [number, number];
@@ -128,7 +131,7 @@ export interface RecipeTextBoxClipResult {
   bounds: { x: number; y: number; width: number; height: number };
 }
 export interface RecipeTextOptions extends RecipePathOptions {
-  font: string;
+  font?: string;
   fontSize?: number;
   size?: number;
   bold?: boolean;
@@ -331,8 +334,20 @@ export interface Recipe {
     cx: number,
     cy: number,
     radius: number,
+    options?: RecipePathOptions & { rotationVertice?: number },
+  ): this;
+  n_gon(
+    cx: number,
+    cy: number,
+    radius: number,
     sides?: number,
     options?: RecipePathOptions & { rotationVertice?: number },
+  ): this;
+  star(
+    cx: number,
+    cy: number,
+    radius: number,
+    options?: RecipePathOptions,
   ): this;
   star(
     cx: number,
@@ -596,14 +611,14 @@ export class PDFWStreamForBuffer {
   getCurrentPosition(): number;
   toUint8Array(): Uint8Array;
   toArrayBuffer(): ArrayBuffer;
-  toBlob(type?: string): Blob;
+  toBlob(type?: string): BlobLike;
 }
 export class ByteReader extends PDFRStreamForBuffer {}
 export class ByteReaderWithPosition extends PDFRStreamForBuffer {}
 export class ByteWriter extends PDFWStreamForBuffer {}
 export class ByteWriterWithPosition extends PDFWStreamForBuffer {}
 
-export class PDFPage {
+declare class PDFPage {
   constructor(left?: number, bottom?: number, right?: number, top?: number);
   mediaBox: PDFRectangle;
   cropBox?: PDFRectangle;
@@ -613,17 +628,18 @@ export class PDFPage {
   rotate?: number;
   getResourcesDictionary(): ResourcesDictionary;
 }
-export class PDFTextString {
+declare class PDFTextString {
   constructor(value?: string | ByteSource | number[]);
   toBytesArray(): number[];
   toString(): string;
   fromString(value: string): this;
 }
-export class PDFDate {
+declare class PDFDate {
   constructor(value?: string | Date);
   toString(): string;
   setToCurrentTime(): this;
 }
+export type { PDFDate, PDFPage, PDFTextString };
 export interface PDFUsedFont {
   calculateTextDimensions(text: string, size?: number): TextDimensions;
   getFontMetrics(size?: number): FontMetrics;
