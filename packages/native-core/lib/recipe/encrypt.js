@@ -70,7 +70,7 @@ exports._getEncryptOptions = function _getEncryptOptions(
 
   // Only attach encryption mechanism when attributes
   // have been explicitly given in the incoming options.
-  if (Object.keys(encryptOptions) > 0 && !encryptOptions.userPassword) {
+  if (Object.keys(encryptOptions).length > 0 && !encryptOptions.userPassword) {
     encryptOptions.userPassword = "";
     if (!encryptOptions.userProtectionFlag) {
       encryptOptions.userProtectionFlag = this.permission();

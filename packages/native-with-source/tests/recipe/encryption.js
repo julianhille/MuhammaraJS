@@ -6,9 +6,22 @@ const HummusRecipe = require("@muhammara/native-with-source").Recipe;
 
 function assertPdfEncryption(filePath, password, encrypted) {
   const reader = muhammara.createReader(filePath, password ? { password } : {});
-  assert.equal(reader.isEncrypted(), encrypted);
-  assert.ok(reader.getPagesCount() > 0);
-  reader.end();
+  try {
+    assert.equal(reader.isEncrypted(), encrypted);
+    assert.ok(reader.getPagesCount() > 0);
+  } finally {
+    reader.end();
+  }
+}
+
+function assertPdfCannotBeReadWithoutPassword(filePath) {
+  const reader = muhammara.createReader(filePath);
+  try {
+    assert.equal(reader.isEncrypted(), true);
+    assert.equal(reader.getPagesCount(), 0);
+  } finally {
+    reader.end();
+  }
 }
 
 describe("Encryption", () => {
@@ -24,6 +37,7 @@ describe("Encryption", () => {
       })
       .endPDF(() => {
         assertPdfEncryption(output, "123", true);
+        assertPdfCannotBeReadWithoutPassword(output);
         done();
       });
   });
@@ -41,7 +55,7 @@ describe("Encryption", () => {
         ownerPassword: "123",
       })
       .endPDF(() => {
-        assertPdfEncryption(output, undefined, false);
+        assertPdfEncryption(output, undefined, true);
         done();
       });
   });
@@ -59,7 +73,7 @@ describe("Encryption", () => {
         password: "123",
       })
       .endPDF(() => {
-        assertPdfEncryption(output, undefined, false);
+        assertPdfEncryption(output, undefined, true);
         done();
       });
   });
@@ -95,7 +109,7 @@ describe("Encryption", () => {
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
       .endPDF(() => {
-        assertPdfEncryption(output, undefined, false);
+        assertPdfEncryption(output, undefined, true);
         done();
       });
   });
@@ -118,7 +132,7 @@ describe("Encryption", () => {
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
       .endPDF(() => {
-        assertPdfEncryption(output, undefined, false);
+        assertPdfEncryption(output, undefined, true);
         done();
       });
   });
