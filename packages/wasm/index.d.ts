@@ -1,8 +1,11 @@
 /** Browser-only, byte-first WebAssembly API. It intentionally excludes Node paths and streams. */
-export type ByteSource = Uint8Array | ArrayBuffer;
 export interface BlobLike {
+  readonly size: number;
+  readonly type: string;
   arrayBuffer(): Promise<ArrayBuffer>;
+  slice(start?: number, end?: number, contentType?: string): BlobLike;
 }
+export type ByteSource = Uint8Array | ArrayBuffer | PDFRStreamForBuffer;
 export type AsyncByteSource = ByteSource | BlobLike;
 export type PDFRectangle = [number, number, number, number];
 export type PDFMatrix = [number, number, number, number, number, number];
@@ -10,6 +13,23 @@ export type Glyph = [number, number];
 export type TextEncoding = "text" | "code" | "hex";
 export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
 export type PDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
+export type RecipePDFVersion =
+  | 1
+  | 1.1
+  | 1.2
+  | 1.3
+  | 1.4
+  | 1.5
+  | 1.6
+  | 1.7
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17;
 
 export interface WriterOptions {
   version?: PDFVersion;
@@ -26,8 +46,8 @@ export interface RecipeMargins {
   bottom?: number;
 }
 export interface RecipeOptions {
-  /** PDF version; canonical decimal levels 1.0 through 1.7 are accepted. Integer enums 10 through 17 are a byte-first extension. Invalid values, including 2.0, use 1.7. */
-  version?: number;
+  /** PDF version; canonical decimal levels 1.0 through 1.7 and integer enums 10 through 17 are accepted. */
+  version?: RecipePDFVersion;
   /** Enables stream compression. Defaults to true. */
   compress?: boolean;
   author?: string;
@@ -504,10 +524,10 @@ export interface RecipeConstructor {
 export interface TextOptions {
   encoding?: TextEncoding;
 }
-export interface PageRangeOptions {
-  type?: number;
-  specificRanges?: [number, number][];
-}
+export type PageRange = [start: number, end: number];
+export type PageRangeOptions =
+  | { type?: 0; specificRanges?: never }
+  | { type: 1; specificRanges: [PageRange, ...PageRange[]] };
 export interface ImageDimensions {
   width: number;
   height: number;
@@ -531,7 +551,8 @@ export interface AnnotationOptions {
   contents?: string;
   title?: string;
   name?: string;
-  color?: number[];
+  color?:
+    [] | [number] | [number, number, number] | [number, number, number, number];
   borderWidth?: number;
   borderDash?: number[];
   border?: { width?: number; dash?: number[] };
@@ -566,17 +587,20 @@ export interface DrawImageOptions {
 export interface TIFFOptions {
   pageIndex?: number;
   objectId?: number;
-  bwTreatment?: { asImageMask?: boolean; oneColor?: number[] };
+  bwTreatment?: {
+    asImageMask?: boolean;
+    oneColor?: [number, number, number] | [number, number, number, number];
+  };
   grayscaleTreatment?: {
     asColorMap?: boolean;
-    oneColor?: number[];
-    zeroColor?: number[];
+    oneColor?: [number, number, number] | [number, number, number, number];
+    zeroColor?: [number, number, number] | [number, number, number, number];
   };
 }
-export interface PDFFormOptions extends PageRangeOptions {
+export type PDFFormOptions = PageRangeOptions & {
   transformation?: PDFMatrix;
   additionalObjectIds?: number[];
-}
+};
 export interface JPGImageInformation {
   samplesWidth: number;
   samplesHeight: number;
@@ -766,15 +790,26 @@ export interface ContentContext {
   Tr(value: number): this;
   Ts(value: number): this;
   Tf(font: PDFUsedFont | string, size: number): this;
-  Tj(text: string | Glyph[], options?: TextOptions): this;
-  Quote(text: string | Glyph[], options?: TextOptions): this;
+  Tj(text: string, options?: TextOptions): this;
+  Tj(glyphs: Glyph[]): this;
+  Quote(text: string, options?: TextOptions): this;
+  Quote(glyphs: Glyph[]): this;
   DoubleQuote(
     wordSpace: number,
     characterSpace: number,
-    text: string | Glyph[],
+    text: string,
     options?: TextOptions,
   ): this;
-  TJ(...items: (string | number | Glyph[] | TextOptions)[]): this;
+  DoubleQuote(wordSpace: number, characterSpace: number, glyphs: Glyph[]): this;
+  TJ(
+    ...items:
+      | [string | number | Glyph[], ...(string | number | Glyph[])[]]
+      | [
+          string | number | Glyph[],
+          ...(string | number | Glyph[])[],
+          TextOptions,
+        ]
+  ): this;
   ri(name: string): this;
   i(value: number): this;
   gs(name: string): this;
@@ -971,6 +1006,8 @@ export interface PDFReader {
   startReadingFromStream(stream: PDFStreamInput): PDFByteReader;
   startReadingFromStreamForPlainCopying(stream: PDFStreamInput): PDFByteReader;
   getParserStream(): PositionedPDFByteReader;
+  /** Available on readers obtained from a document copying context. */
+  getSourceDocumentStream(): PositionedPDFByteReader;
   getPageInfo(index: number): {
     mediaBox: PDFRectangle;
     rotate: number;

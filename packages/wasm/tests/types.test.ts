@@ -39,9 +39,16 @@ async function usesLowLevelSurface() {
     .Tf(font, 12)
     .Tm(1, 0, 0, 1, 10, 10)
     .Tj("text", { encoding: "text" })
+    .Tj([[1, 65]])
     .TJ("more", -20, "text")
     .ET()
     .Q();
+  // @ts-expect-error Glyphs do not accept string encoding options.
+  context.Tj([[1, 65]], { encoding: "hex" });
+  // @ts-expect-error TJ requires at least one text or spacing item.
+  context.TJ();
+  // @ts-expect-error TJ options must be the final item.
+  context.TJ({ encoding: "text" }, "text");
   await context.drawImageAsync(0, 0, new Blob());
   var objects = writer.getObjectsContext();
   var objectId = objects.allocateNewObjectID();
@@ -60,9 +67,12 @@ async function usesLowLevelSurface() {
   textElement.textMatrix[5];
   reader.end();
   var sourceBlob = new Blob([source.buffer as ArrayBuffer]);
+  var input = new muhammara.PDFRStreamForBuffer(source);
   var output = new muhammara.PDFWStreamForBuffer();
   output.write(source);
   output.buffer;
+  muhammara.createReader(input);
+  output.toBlob().slice(0, 1).arrayBuffer();
   var formWriter = muhammara.createWriter();
   var form = formWriter.createFormXObject(0, 0, 1, 1);
   form.getResourcesDictinary();
@@ -125,9 +135,20 @@ async function usesLowLevelSurface() {
   modifier.pausePageContentContext(modifiedContext);
   modifier.attachURLLinktoCurrentPage("https://example.test", 0, 0, 1, 1);
   modifier.createAnnotation("Text", 0, 0, 1, 1);
+  modifier.createAnnotation("Text", 0, 0, 1, 1, { color: [0, 0, 0] });
+  // @ts-expect-error Annotation colors have one, three, or four components.
+  modifier.createAnnotation("Text", 0, 0, 1, 1, { color: [0, 0] });
   modifier.registerAnnotationReferenceForNextPageWrite(1);
   modifier.writePageAndReturnID(modifiedPage);
   modifier.appendPDFPagesFromPDF(source);
+  modifier.appendPDFPagesFromPDF(source, {
+    type: 1,
+    specificRanges: [[0, 0]],
+  });
+  // @ts-expect-error Specific page ranges cannot be empty.
+  modifier.appendPDFPagesFromPDF(source, { type: 1 });
+  // @ts-expect-error Only all-pages and specific-pages range types exist.
+  modifier.appendPDFPagesFromPDF(source, { type: 2 });
   await modifier.appendPDFPagesFromPDFAsync(
     new Blob([source.buffer as ArrayBuffer]),
   );
@@ -168,6 +189,10 @@ async function usesLowLevelSurface() {
     bwTreatment: { asImageMask: true, oneColor: [0, 0, 0] },
     grayscaleTreatment: { asColorMap: true, oneColor: [0, 0, 0, 0] },
   });
+  modifier.createFormXObjectFromTIFFBytes(source, {
+    // @ts-expect-error TIFF treatment colors have three or four components.
+    bwTreatment: { oneColor: [0, 0] },
+  });
   await modifier.createFormXObjectFromTIFFAsync(sourceBlob);
   await modifier.createFormXObjectFromTIFFBytesAsync(sourceBlob);
   modifier.mergePDFPagesToPage(modifiedPage, source, () => {});
@@ -184,6 +209,11 @@ async function usesLowLevelSurface() {
   pageInput.getDictionary().toJSObject();
   pageInput.getMediaBox();
   parser.getParserStream().setPosition(0).read(8);
+  mergeWriter
+    .createPDFCopyingContext(source)
+    .getSourceDocumentParser()
+    .getSourceDocumentStream()
+    .read(1);
   parser.getXrefEntry(parser.getPageObjectID(0));
   modifier.replaceObject(0, parser.getPageObjectID(0), 11);
   modifier.end();
@@ -198,6 +228,11 @@ async function usesLowLevelSurface() {
   Recipe.splitPdf("pdf", "part")[0].bytes;
   Recipe.permission("print, copy");
   var recipe = new Recipe({ version: 1.7, compress: false, title: "Byte PDF" });
+  new Recipe({ version: 17 });
+  // @ts-expect-error Recipe does not support PDF 2.0.
+  new Recipe({ version: 20 });
+  // @ts-expect-error Recipe versions stop at PDF 1.7.
+  new Recipe({ version: 1.8 });
   recipe.endPDF((bytes) => bytes.byteLength);
   recipe.registerFont("instance-font", new Uint8Array());
   await recipe.registerFontAsync("instance-font-async", new Blob());
