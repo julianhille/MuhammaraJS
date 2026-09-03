@@ -18,7 +18,7 @@
   "scripts": {
     "install": "node scripts/install-prebuilt.js",
     "docs:generate": "node ../native-core/scripts/generate-recipe-reference.js && node ../native-core/scripts/generate-declaration-reference.js && prettier --write docs/recipe/reference.md docs/api/type-declarations.md",
-    "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types.test.ts tests/types-global.test.ts"
+    "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types/types.test.ts tests/types/types-global.test.ts"
   },
   "files": [
     "index.js",

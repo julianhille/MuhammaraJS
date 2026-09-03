@@ -122,15 +122,16 @@ declare namespace muhammara {
     f: number,
   ];
 
-  export type LineJoinStyle = 0 | 1 | 2 | 3;
+  export type LineJoinStyle = 0 | 1 | 2;
 
   export type EEncoding = "text" | "code" | "hex";
 
-  enum LineCapStyle {
-    LINECAP_BUTT = 0,
-    LINECAP_ROUND,
-    LINECAP_SQUARE,
-  }
+  export const LineCapStyle: {
+    readonly LINECAP_BUTT: 0;
+    readonly LINECAP_ROUND: 1;
+    readonly LINECAP_SQUARE: 2;
+  };
+  export type LineCapStyle = (typeof LineCapStyle)[keyof typeof LineCapStyle];
 
   export interface TextRenderOptions {
     encoding?: EEncoding;
@@ -302,7 +303,14 @@ declare namespace muhammara {
   export const ePDFVersion16 = 16;
   export const ePDFVersion17 = 17;
   export const ePDFVersion20 = 20;
+  export const ePDFVersionUndefined = 0;
   export type EPDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
+
+  export const KProcsetImageB = "ImageB";
+  export const KProcsetImageC = "ImageC";
+  export const KProcsetImageI = "ImageI";
+  export const kProcsetPDF = "PDF";
+  export const kProcsetText = "Text";
 
   export const ePDFObjectBoolean = 0;
   export const ePDFObjectLiteralString = 1;
@@ -615,15 +623,21 @@ declare namespace muhammara {
     getCurrentPosition(): number;
   }
 
-  export type eTokenSeparatorSpace = 0;
-  export type eTokenSeparatorEndLine = 1;
-  export type eTokenSeparatorNone = 2;
+  export const eTokenSeparatorSpace = 0;
+  export const eTokenSeparatorEndLine = 1;
+  export const eTokenSeparatorNone = 2;
+  export const ETokenSeparator: {
+    readonly eTokenSeparatorSpace: 0;
+    readonly eTokenSeparatorEndLine: 1;
+    readonly eTokenSeparatorNone: 2;
+  };
+  export type ETokenSeparator =
+    (typeof ETokenSeparator)[keyof typeof ETokenSeparator];
 
-  enum ETokenSeparator {
-    eTokenSeparatorSpace,
-    eTokenSeparatorEndLine,
-    eTokenSeparatorNone,
-  }
+  export const eXrefEntryExisting = 0;
+  export const eXrefEntryDelete = 1;
+  export const eXrefEntryStreamObject = 2;
+  export const eXrefEntryUndefined = 3;
 
   export interface ObjectsContext {
     allocateNewObjectID(): FormXObjectId;
@@ -1172,7 +1186,7 @@ declare namespace muhammara {
       pageNumber: number;
     };
 
-    margins(): Recipe.RecipeMargins;
+    margins(): Required<Recipe.RecipeMargins>;
     margins(margins: Recipe.RecipeMargins): Recipe;
     margins(
       left?: number,
@@ -1180,7 +1194,7 @@ declare namespace muhammara {
       top?: number,
       bottom?: number,
     ): Recipe;
-    getPageInfo(): object;
+    getPageInfo(): InfoDictionary;
     pauseContext(): void;
     resumeContext(): void;
     split(outputDir?: string, prefix?: string): Recipe;
@@ -1191,9 +1205,10 @@ declare namespace muhammara {
       y: number,
       options?: Recipe.TextOptions,
     ): Recipe;
-    textDimensions(text: string, options?: Recipe.TextOptions): object;
+    textDimensions(text: string, options?: Recipe.TextOptions): TextDimension;
     movedown(lines?: number, returnCoords?: false): Recipe;
     movedown(lines: number, returnCoords: true): number[];
+    movedown(lines?: number, returnCoords?: boolean): Recipe | number[];
     layout(
       id: string | number,
       x?: number,
@@ -1270,7 +1285,7 @@ declare namespace muhammara {
     arrow(x: number, y: number, options?: Recipe.PolygonOptions): Recipe;
     chroma(name: string, value: string | number[], colorspace?: string): Recipe;
     permission(flags?: string): number;
-    structure(output?: string | { json?: boolean }): object | string;
+    structure(output: string): Recipe;
     htmlToTextObjects(
       htmlCodes: string,
       options?: Recipe.TextOptions,

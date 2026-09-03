@@ -28,6 +28,16 @@ exports.createMuhammara = function createMuhammara(muhammara) {
   muhammara.PDFRStreamForFile = require("./lib/PDFRStreamForFile");
   muhammara.PDFRStreamForBuffer = require("./lib/PDFRStreamForBuffer");
   muhammara.PDFWStreamForBuffer = require("./lib/PDFWStreamForBuffer");
+  muhammara.LineCapStyle = Object.freeze({
+    LINECAP_BUTT: 0,
+    LINECAP_ROUND: 1,
+    LINECAP_SQUARE: 2,
+  });
+  muhammara.ETokenSeparator = Object.freeze({
+    eTokenSeparatorSpace: muhammara.eTokenSeparatorSpace,
+    eTokenSeparatorEndLine: muhammara.eTokenSeparatorEndLine,
+    eTokenSeparatorNone: muhammara.eTokenSeparatorNone,
+  });
 
   Object.keys(require.cache).forEach(function (filename) {
     if (
