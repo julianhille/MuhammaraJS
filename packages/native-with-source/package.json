@@ -18,7 +18,7 @@
     "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types.test.ts",
     "package": "node-pre-gyp package",
     "clean:source": "node scripts/remove-source.js",
-    "test:docs": "mocha tests/docs/**/*.js --timeout 15000"
+    "test:docs": "mocha docs/tests/**/*.js --timeout 15000"
   },
   "repository": {
     "type": "git",
