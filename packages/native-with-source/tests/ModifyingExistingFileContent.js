@@ -1,4 +1,5 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("assert");
 
 // [look...not gonna write it 100% right...you JS experts can probably write this better]
 // PDFComment object
@@ -250,5 +251,18 @@ describe("ModifyingExistingFileContent", function () {
 
   after(function () {
     inPDFWriter.end();
+
+    var reader = muhammara.createReader(
+      __dirname + "/output/ModifyingExistingFileContent.pdf",
+    );
+    assert.equal(reader.getPagesCount(), 4);
+    assert.deepEqual(reader.parsePage(2).getMediaBox(), [0, 0, 500, 500]);
+    assert.equal(
+      reader
+        .queryDictionaryObject(reader.parsePage(3).getDictionary(), "Annots")
+        .getLength(),
+      3,
+    );
+    reader.end();
   });
 });

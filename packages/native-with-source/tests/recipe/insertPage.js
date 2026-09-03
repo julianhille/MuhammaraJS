@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const HummusRecipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Insert Pages", () => {
@@ -14,6 +15,7 @@ describe("Insert Pages", () => {
       __dirname,
       "../output/Insert page from other pdf.pdf",
     );
+    fs.rmSync(output, { force: true });
     const recipe = new HummusRecipe(src, output);
     recipe
       .insertPage(0, longPDF, 3)
@@ -35,6 +37,7 @@ describe("Insert Pages", () => {
       __dirname,
       "../output/Insert page from other pdf (revert).pdf",
     );
+    fs.rmSync(output, { force: true });
     const recipe = new HummusRecipe(primary, output);
     for (let page = 1; page <= 14; page++) {
       recipe.insertPage(page, insertSrc, 2);

@@ -56,9 +56,8 @@ describe("GHSA-ch7g-v45m-q27g", function () {
     try {
       reader = muhammara.createReader(target);
       var stream = reader.parseNewObject(4);
-      assert.doesNotThrow(function () {
-        reader.startReadingFromStream(stream);
-      });
+      assert.equal(reader.getPagesCount(), 1);
+      assert.ok(reader.startReadingFromStream(stream));
     } finally {
       if (reader) reader.end();
       fs.unlinkSync(target);

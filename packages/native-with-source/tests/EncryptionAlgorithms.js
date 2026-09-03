@@ -36,6 +36,11 @@ describe("Encryption algorithms", function () {
     expectedValues.forEach(function (value) {
       assert.include(pdf, value);
     });
+
+    var reader = muhammara.createReader(outputPath, { password: "user" });
+    assert.equal(reader.isEncrypted(), true);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
   }
 
   it("uses 40-bit RC4 for PDF 1.3", function () {

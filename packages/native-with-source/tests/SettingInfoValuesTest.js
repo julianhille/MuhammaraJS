@@ -1,4 +1,5 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("chai").assert;
 
 describe("SettingInfoValues", function () {
   it("should complete without error", function () {
@@ -24,5 +25,23 @@ describe("SettingInfoValues", function () {
     page.mediaBox = [0, 0, 595, 842];
     pdfWriter.writePage(page);
     pdfWriter.end();
+
+    var reader = muhammara.createReader(
+      __dirname + "/output/SettingInfoValues.pdf",
+    );
+    var info = reader
+      .queryDictionaryObject(reader.getTrailer(), "Info")
+      .toJSObject();
+    assert.equal(reader.getPagesCount(), 1);
+    assert.equal(info.Author.toText(), "Gal Kahana");
+    assert.equal(info.Title.toText(), "PDFHummus explained");
+    assert.equal(
+      info.Subject.toText(),
+      "On the wonders of one-pass PDF file generation, and how it can save the world",
+    );
+    assert.equal(info.Creator.toText(), "PDFHummus");
+    assert.equal(info.CreationDate.value, "D:20140720204655+03'00'");
+    assert.equal(info["words of praise"].toText(), "amazing");
+    reader.end();
   });
 });

@@ -1,11 +1,12 @@
 const path = require("path");
 const assert = require("assert");
+const fs = require("fs");
 const muhammara = require("@muhammara/native-with-source");
 const HummusRecipe = require("@muhammara/native-with-source").Recipe;
 
-function assertEncryptedPdf(filePath, password) {
-  const reader = muhammara.createReader(filePath, { password });
-  assert.equal(reader.isEncrypted(), true);
+function assertPdfEncryption(filePath, password, encrypted) {
+  const reader = muhammara.createReader(filePath, password ? { password } : {});
+  assert.equal(reader.isEncrypted(), encrypted);
   assert.ok(reader.getPagesCount() > 0);
   reader.end();
 }
@@ -15,13 +16,14 @@ describe("Encryption", () => {
   it(taskAVP, (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
     const output = path.join(__dirname, `../output/${taskAVP}.pdf`);
+    fs.rmSync(output, { force: true });
     const recipe = new HummusRecipe(src, output);
     recipe
       .encrypt({
         userPassword: "123",
       })
       .endPDF(() => {
-        assertEncryptedPdf(output, "123");
+        assertPdfEncryption(output, "123", true);
         done();
       });
   });
@@ -31,6 +33,7 @@ describe("Encryption", () => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
     // const overlayPDF = path.join(__dirname, '../TestMaterials/recipe/test3.pdf');
     const output = path.join(__dirname, `../output/${taskAEP}.pdf`);
+    fs.rmSync(output, { force: true });
 
     const recipe = new HummusRecipe(src, output);
     recipe
@@ -38,7 +41,7 @@ describe("Encryption", () => {
         ownerPassword: "123",
       })
       .endPDF(() => {
-        assertEncryptedPdf(output, "123");
+        assertPdfEncryption(output, undefined, false);
         done();
       });
   });
@@ -48,6 +51,7 @@ describe("Encryption", () => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
     // const overlayPDF = path.join(__dirname, '../TestMaterials/recipe/test3.pdf');
     const output = path.join(__dirname, `../output/${taskAPP}.pdf`);
+    fs.rmSync(output, { force: true });
 
     const recipe = new HummusRecipe(src, output);
     recipe
@@ -55,7 +59,7 @@ describe("Encryption", () => {
         password: "123",
       })
       .endPDF(() => {
-        assertEncryptedPdf(output, "123");
+        assertPdfEncryption(output, undefined, false);
         done();
       });
   });
@@ -63,6 +67,7 @@ describe("Encryption", () => {
   const taskCPF = "New file with view password";
   it(taskCPF, (done) => {
     const output = path.join(__dirname, `../output/${taskCPF}.pdf`);
+    fs.rmSync(output, { force: true });
     const recipe = new HummusRecipe("new", output, { userPassword: "123" });
     recipe
       .createPage("letter")
@@ -70,7 +75,7 @@ describe("Encryption", () => {
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
       .endPDF(() => {
-        assertEncryptedPdf(output, "123");
+        assertPdfEncryption(output, "123", true);
         done();
       });
   });
@@ -78,6 +83,7 @@ describe("Encryption", () => {
   const taskCPP = "New file with permission password";
   it(taskCPP, (done) => {
     const output = path.join(__dirname, `../output/${taskCPP}.pdf`);
+    fs.rmSync(output, { force: true });
     const recipe = new HummusRecipe("new", output, { password: "123" });
     recipe
       .createPage("letter")
@@ -89,7 +95,7 @@ describe("Encryption", () => {
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
       .endPDF(() => {
-        assertEncryptedPdf(output, "123");
+        assertPdfEncryption(output, undefined, false);
         done();
       });
   });
@@ -97,6 +103,7 @@ describe("Encryption", () => {
   const taskCPE = "New file with edit password";
   it(taskCPE, (done) => {
     const output = path.join(__dirname, `../output/${taskCPE}.pdf`);
+    fs.rmSync(output, { force: true });
     const recipe = new HummusRecipe("new", output, {
       ownerPassword: "123",
       userProtectionFlag: 3900,
@@ -111,7 +118,7 @@ describe("Encryption", () => {
       .text("is required for file encryption to occur.", 150, 350)
       .endPage()
       .endPDF(() => {
-        assertEncryptedPdf(output, "123");
+        assertPdfEncryption(output, undefined, false);
         done();
       });
   });
