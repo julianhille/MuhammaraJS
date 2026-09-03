@@ -25,7 +25,7 @@ Pass `Buffer.from("new")` as the input and omit the output path to receive the
 completed PDF through the `endPDF` callback.
 
 ```javascript
-var pdfDoc = new Recipe(Buffer.from("new"), null, { version: 1.6 });
+var pdfDoc = new Recipe(Buffer.from("new"));
 
 pdfDoc
   .createPage("letter")

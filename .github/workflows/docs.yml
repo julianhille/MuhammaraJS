@@ -37,4 +37,3 @@ jobs:
       - run: npm run test:docs
       - run: npm run docs:check
       - run: npm run docs:check --workspace=@muhammara/wasm
-      - run: git diff --exit-code -- packages/native/docs/recipe/reference.md packages/native/docs/api/type-declarations.md

@@ -2,7 +2,7 @@
  * Create a comment annotation
  * @name comment
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} [text=''] - The text content
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y
@@ -27,7 +27,7 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  * Create an annotation
  * @name annot
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @todo support for rich text RC
  * @todo support for opacity CA
  * @param {number} x - The coordinate x

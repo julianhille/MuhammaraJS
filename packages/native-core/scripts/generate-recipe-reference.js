@@ -33,7 +33,7 @@ if (result.status !== 0) {
 }
 
 var reference = result.stdout
-  .replace(/Recipe\.([A-Za-z]+)/g, "recipe-$1")
-  .replace(/^(\s*[*-]\s*)\[(.+)\]\(#recipe-[^)]+\)/gm, "$1`$2`")
+  .replace(/Recipe\+([A-Za-z_]+)/g, "recipe-$1")
+  .replace(/^([ \t]*[-*] )\[(.+)\]\(#recipe-[^)]+\)/gm, "$1`$2`")
   .replace(/ {2,}$/gm, "");
 fs.writeFileSync(outputPath, reference);

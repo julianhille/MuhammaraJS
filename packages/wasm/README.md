@@ -10,6 +10,12 @@ For Node.js filesystem paths, streams, and the full native PDF API, use
 build. It can also be installed as the `@muhammara/native` npm alias when an
 application must keep that import name.
 
+## Install
+
+```sh
+npm install @muhammara/wasm
+```
+
 ## Build
 
 The build requires Docker and pulls `emscripten/emsdk:3.1.74` on first use:

@@ -5,7 +5,7 @@ const hummusUtils = require("./utils");
  * Append pages from the other pdf to the current pdf
  * @name appendPage
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} pdfSrc - The path for the other pdf.
  * @param {number|number[]} [pages=[]] - The page number or array of page numbers to append. Omitting it appends all pages.
  * @returns {Recipe} The recipe instance.

@@ -4,6 +4,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-alpha.0] - 2026-09-02
+
 ### Added
 
 - Add browser-safe, byte-first PDF creation, reading, modification, and Recipe
@@ -16,6 +18,5 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Validate Wasm ABI exports, resource ownership, temporary-file cleanup, and
   bounded byte input/output handling.
 
-## [1.0.0-alpha.0]
-
-Initial alpha release of `@muhammara/wasm`.
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-alpha.0...HEAD
+[1.0.0-alpha.0]: https://github.com/julianhille/MuhammaraJS/releases/tag/wasm-v1.0.0-alpha.0

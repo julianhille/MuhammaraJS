@@ -192,7 +192,7 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @name text
  * @function
  * @todo support break words
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} [text=''] - The text content
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y
@@ -1454,7 +1454,7 @@ function markLineComplete(toWriteTextObjects, lines = null) {
 /** Move text positioning down N lines in text box
  * @name movedown
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} [lines=1] - the number of lines to reposition x and y coordinates
  * @param {Boolean} [returnCoords=false] - indicate whether or not to return [x,y] coordinates
  * @returns {Object|number[]} - when returnCoord false, the recipe object, when true, the new [x,y] coordinates.
@@ -1486,7 +1486,7 @@ function adjustcolumnPosition(columns, x, y) {
  * Define text column layout
  * @name layout
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number|string} id - The identifier to be associated with the layout. (See 'text' layout option)
  * @param {number} x - The coordinate x used to position text columns on page. When zero, left margin used.
  * @param {number} y - The coordinate y used to position text columns on page. When zero, top margin used.

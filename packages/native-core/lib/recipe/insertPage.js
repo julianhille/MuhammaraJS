@@ -5,7 +5,7 @@ const hummusUtils = require("./utils");
  * Insert a page from the other pdf
  * @name insertPage
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} afterPageNumber - The page number for insertion.
  * @param {string} pdfSrc - The path for the other pdf
  * @param {number} srcPageNumber - The page number to be insterted from the other pdf.

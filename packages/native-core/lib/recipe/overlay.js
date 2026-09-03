@@ -4,7 +4,7 @@ const { xObjectForm } = require("./xObjectForm");
  * Overlay a pdf to the current pdf
  * @name overlay
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} pdfSrc - The path for the overlay pdf
  * @param {number|Object} [x=0] - The x coordinate, or options when using the two-argument form.
  * @param {number} [y=0] - The y coordinate.

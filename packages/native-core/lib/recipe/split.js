@@ -6,7 +6,7 @@ const hummusUtils = require("./utils");
  * Split the pdf
  * @name split
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} [outputDir=''] - The path for the output PDFs.
  * @param {string} [prefix] - The output filename prefix. Defaults to the source filename.
  * @returns {Recipe} The recipe instance.

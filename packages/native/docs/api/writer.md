@@ -10,6 +10,13 @@ bottom-left coordinate system. Add content before `writePage`; the page context
 cannot be used to alter that page afterward. `writePageAndReturnID` returns the
 written page object ID.
 
+```javascript
+var writer = muhammara.createWriter("output.pdf");
+var page = writer.createPage(0, 0, 595, 842);
+writer.writePage(page);
+writer.end();
+```
+
 Use `getFontForFile` to load a font, `getImageDimensions` to inspect an image,
 and `getEvents` for page and catalog write events. `createFormXObject` starts a
 reusable drawing form; finish it with `endFormXObject` before placement. Image

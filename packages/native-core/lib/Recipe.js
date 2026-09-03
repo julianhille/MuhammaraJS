@@ -299,9 +299,9 @@ class Recipe {
    * @param {string|Function} key Name assigned to the callback. When a named function is
    * registered, and its given name is what is to be used to access it, the key is unnecessary.
    * @param {Function} [callback] Callback procedure that can be accessed through MuhammaraJS.
-   * @throws {Error} If the callback function is unnamed when no key is provided.
-   * @throws {Error} If the key conflicts with an existing Recipe prototype member.
-   * @throws {Error} If the callback is not a function.
+   * @throws {string} If the callback function is unnamed when no key is provided.
+   * @throws {string} If the key conflicts with an existing Recipe prototype member.
+   * @throws {string} If the callback is not a function.
    * @returns {void}
    */
   register(key, callback) {

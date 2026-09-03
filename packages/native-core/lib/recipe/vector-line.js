@@ -2,7 +2,7 @@
  * move the current position to target position
  * @name moveTo
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y
  * @returns {Recipe} The recipe instance.
@@ -20,7 +20,7 @@ exports.moveTo = function moveTo(x, y) {
  * Draw a line from current position
  * @name lineTo
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y
  * @param {Object} [options] - The options
@@ -65,7 +65,7 @@ exports.lineTo = function lineTo(x, y, options = {}) {
  * Draw a line
  * @name line
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number[]} coordinates - The array of coordinate [[x,y], [m,n]]
  * @param {Object} [options] - The options
  * @returns {Recipe} The recipe instance.

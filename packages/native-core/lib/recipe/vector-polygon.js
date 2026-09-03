@@ -16,7 +16,7 @@
  * Draw a polygon
  * @name polygon
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number[]} coordinates - The array of coordinate [[x,y], ... [m,n]]
  * @param {Object} [options] - The options
  * @returns {Recipe} The recipe instance.

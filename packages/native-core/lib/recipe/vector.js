@@ -16,7 +16,7 @@
  * Draw a circle
  * @name circle
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y
  * @param {number} radius - The radius
@@ -95,7 +95,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * Draw a rectangle
  * @name rectangle
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y
  * @param {number} width - The width
@@ -284,7 +284,7 @@ function drawRoundedRectangle(ctx, left, bottom, width, height, radii) {
  * Draw an ellipse
  * @name ellipse
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} cx x-coordinate of center point of ellipse
  * @param {number} cy y-coordinate of center point of ellipse
  * @param {number} rx radius length from the center point along x-axis
@@ -445,7 +445,7 @@ function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
  * Draw an arc of a circle.
  * @name arc
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x - the x coordinate of the arc center point
  * @param {number} y - the y coordinate of the arc center point
  * @param {number} radius - the distance from the given x,y coordinates from which to produce the arc
@@ -541,7 +541,7 @@ exports.arc = function arc(
  * This compatibility method currently has no effect.
  * @name lineWidth
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} width - The requested line width.
  * @returns {Recipe} The recipe instance.
  */
@@ -555,7 +555,7 @@ exports.lineWidth = function lineWidth() {
  * This compatibility method currently has no effect.
  * @name fillOpacity
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} opacity - The requested fill opacity.
  * @returns {Recipe} The recipe instance.
  */
@@ -569,7 +569,7 @@ exports.fillOpacity = function fillOpacity() {
  * This compatibility method currently has no effect.
  * @name fill
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string|number[]} [color] - The requested fill color.
  * @returns {Recipe} The recipe instance.
  */
@@ -583,7 +583,7 @@ exports.fill = function fill() {
  * This compatibility method currently has no effect.
  * @name stroke
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string|number[]} [color] - The requested stroke color.
  * @returns {Recipe} The recipe instance.
  */
@@ -597,7 +597,7 @@ exports.stroke = function stroke() {
  * This compatibility method currently has no effect.
  * @name fillAndStroke
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @returns {Recipe} The recipe instance.
  */
 exports.fillAndStroke = function fillAndStroke() {

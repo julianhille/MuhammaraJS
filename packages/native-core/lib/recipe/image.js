@@ -2,7 +2,7 @@
  * Place images to pdf
  * @name image
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} imgSrc - The path for the image. [JPEG, PNG, TIFF]
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y

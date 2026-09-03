@@ -23,7 +23,7 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
 
 - Node.js 16 and earlier prebuilds were removed.
 - Electron 23 and earlier prebuilds were removed.
-- Building from source requires GCC 13 and C++20 support.
+- Building from source requires a C++20-capable compiler. CI validates GCC 11.
 - Official Docker builds use a GCC Bookworm environment, lowering the required
   `GLIBCXX` version to 3.4.30.
 

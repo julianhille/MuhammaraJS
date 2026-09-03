@@ -51,7 +51,7 @@ this.knownColors = {
  *
  * @name chroma
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} name - the name to be associated to given color value, or '!load'
  * @param {string|number[]} value - the color value (HexColor, DecimalColor, or PercentColor), or name of '!load' file
  * @param {string} [colorspace=''] - One of: 'rgb', 'cmyk', 'gray', 'separation'.

@@ -74,7 +74,7 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
  * Display text data in tabular form
  * @name table
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x - The coordinate x used to position table on page
  * @param {number} y - The coordinate y used to position table on page
  * @param {object[]} contents - the data to be placed into the table
@@ -102,7 +102,7 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
  * appear at the top of the column. When presented as an object it is the set of unique options to be applied to column headers.
  * All 'text' interface options can be used.
  * @param {object} [options.header.cell] - All textBox options from the 'text' interface can be used here.
- * @param {object} [options.border] - Used to define table and cell border characteristics
+ * @param {object|boolean} [options.border] - Used to define table and cell border characteristics
  * @param {number} [options.border.width=.5] - Thickness of lines used in the border.
  * @param {string|number[]} [options.border.stroke] - line color (HexColor, PercentColor or DecimalColor)
  * @param {function} [options.overflow] - Called when the next table entry is going to expand the table

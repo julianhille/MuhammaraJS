@@ -35,10 +35,10 @@ streams, and buffers. Wasm is byte-first and uses values such as `Uint8Array`,
 
 ## Version 6
 
-MuhammaraJS v6 remains available under the unscoped package name `muhammara`.
-It is not the same package as `@muhammara/native` or another `@muhammara/*`
-package. The scoped packages are the new package line; existing v6 projects can
-continue to install `muhammara`.
+MuhammaraJS v6 remains available under the unscoped package name `muhammara`,
+but it receives no further releases. It is not the same package as
+`@muhammara/native` or another `@muhammara/*` package. Existing v6
+installations remain usable; new projects should use the scoped packages.
 
 ## Documentation
 

@@ -68,4 +68,7 @@ xcode/DerivedData
 .vscode
 packages/wasm/build/
 packages/wasm/dist/
+packages/wasm/docs/reference.md
+packages/native/docs/recipe/reference.md
+packages/native/docs/api/type-declarations.md
 *.tgz

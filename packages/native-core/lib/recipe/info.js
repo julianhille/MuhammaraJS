@@ -3,7 +3,7 @@ const muhammara = require("../muhammara");
 /**
  * @name info
  * @desc Add new PDF information, or retrieve existing PDF information.
- * @memberof Recipe
+ * @memberof Recipe#
  * @function
  * @param {Object} [options] - The options (when missing obtains existing PDF information)
  * @param {number} [options.version] - The pdf version
@@ -200,10 +200,10 @@ exports._writeInfo = function _writeInfo() {
 /**
  * @name custom
  * @desc Add custom information to pdf
- * @memberof Recipe
+ * @memberof Recipe#
  * @function
- * @param {string} [key] - The key
- * @param {string} [value] - The value
+ * @param {string} key - The key
+ * @param {string} value - The value
  * @returns {Recipe} The recipe instance.
  */
 exports.custom = function custom(key, value) {
@@ -216,7 +216,7 @@ exports.custom = function custom(key, value) {
  * Write the PDF object structure to a file.
  * @name structure
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} output - The output file path.
  * @returns {Recipe} The recipe instance.
  */

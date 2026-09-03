@@ -121,7 +121,7 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * Draw an N-sided regular polygon
  * @name n_gon
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} cx - x-coordinate of center point of regular polygon
  * @param {number} cy - y-coordinate of center point of regular polygon
  * @param {number} radius - The radius, distance from the center of the polygon to a vertice.
@@ -185,7 +185,7 @@ function _oddStar(ngon) {
  * Draw an N pointed star
  * @name star
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} cx - x-coordinate of center point of regular polygon
  * @param {number} cy - y-coordinate of center point of regular polygon
  * @param {number} radius - The radius, distance from the center to a star point.
@@ -344,7 +344,7 @@ function flipY(x, ngon) {
  * Draw a triangle, by specifying three side lengths, two side lengths and one inclusive angle, one side length and two adjacent angles, or with a set of vertices.
  * @name triangle
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x - x-coordinate used to position triangle, by default associated with left vertex of triangle base.
  * @param {number} y - y-coordinate used to position triangle, by default associated with left vertex of triangle base.
  * @param {number[]} traits - the data defining the triangle. Angles are specified as degrees, sides in units of points (1/72 in.).
@@ -749,7 +749,7 @@ const Triangle = class Triangle {
  * Draw an arrow
  * @name arrow
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x x-coordinate position
  * @param {number} y y-coordinate position
  * @param {Object} [options] arrow and polygon options

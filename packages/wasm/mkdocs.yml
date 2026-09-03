@@ -1,8 +1,12 @@
 site_name: MuhammaraJS WebAssembly Documentation
 site_description: Documentation for the MuhammaraJS WebAssembly PDF package.
 site_url: https://muhammarajs-wasm.readthedocs.io/
+use_directory_urls: false
+exclude_docs: |
+  /requirements.txt
 repo_name: julianhille/MuhammaraJS
 repo_url: https://github.com/julianhille/MuhammaraJS
+edit_uri: edit/develop/packages/wasm/docs/
 
 theme:
   name: material

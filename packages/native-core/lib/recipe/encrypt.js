@@ -9,7 +9,7 @@ const fs = require("fs");
  *
  * @name permission
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} [flags='print'] From the list print, modify, copy, edit, fillform, extract, assemble, and printbest.
  * More than one may be specified by using a comma to separate the names in the input string.
  * @returns {number} The numeric user protection flag.
@@ -84,7 +84,7 @@ exports._getEncryptOptions = function _getEncryptOptions(
  * Encrypt the pdf
  * @name encrypt
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {Object} [options] - The options
  * @param {string} [options.password] - The permission password.
  * @param {string} [options.ownerPassword] - The password for editing.

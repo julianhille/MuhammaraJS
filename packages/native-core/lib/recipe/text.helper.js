@@ -57,7 +57,7 @@ const Word = class Word {
  * A word used by Recipe text layout.
  * @name Word
  * @class
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} word - The word value.
  * @param {Object} pathOptions - The resolved text options.
  */
@@ -67,7 +67,7 @@ exports.Word = Word; // ... now export Word to the rest of the library.
  * A line used by Recipe text layout.
  * @name Line
  * @class
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} width - The line width.
  * @param {number} height - The line height.
  * @param {number} size - The font size.
@@ -229,7 +229,7 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
  * Get text dimensions
  * @name textDimensions
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} text - text to be measured
  * @param {Object} [options] - The options
  * @param {string} [options.font='helvetica'] - name of font from which measurements are to be taken
@@ -258,7 +258,7 @@ exports.textDimensions = function textDimensions(text, options = {}) {
  * A column used by Recipe text layouts.
  * @name Column
  * @class
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x - The x coordinate.
  * @param {number} y - The y coordinate.
  * @param {number} width - The column width.

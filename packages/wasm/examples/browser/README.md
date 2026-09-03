@@ -49,17 +49,19 @@ automated test injects existing repository fixtures into these byte parameters.
 
 The matching guides explain the focused examples:
 
-- [annotations](../../docs/how-to/add-review-annotations.md)
-- [links](../../docs/how-to/add-url-links.md)
-- [page boxes](../../docs/how-to/set-page-boxes.md)
-- [rotated pages](../../docs/how-to/add-content-to-rotated-pages.md)
-- [image transformations](../../docs/how-to/place-and-transform-images.md)
-- [tables](../../docs/how-to/create-tables.md)
+- [annotations](https://muhammarajs-wasm.readthedocs.io/how-to/add-review-annotations/)
+- [links](https://muhammarajs-wasm.readthedocs.io/how-to/add-url-links/)
+- [page boxes](https://muhammarajs-wasm.readthedocs.io/how-to/set-page-boxes/)
+- [rotated pages](https://muhammarajs-wasm.readthedocs.io/how-to/add-content-to-rotated-pages/)
+- [image transformations](https://muhammarajs-wasm.readthedocs.io/how-to/place-and-transform-images/)
+- [tables](https://muhammarajs-wasm.readthedocs.io/how-to/create-tables/)
 
-Focused documentation: [browser setup](../../docs/browser-setup.md), [byte and
-Blob/File assets](../../docs/byte-assets.md), [low-level API](../../docs/low-level.md),
-[Recipe](../../docs/recipe.md), [restrictions](../../docs/differences.md), and the
-[TypeScript reference](../../docs/reference.md).
+Focused documentation: [browser setup](https://muhammarajs-wasm.readthedocs.io/browser-setup/),
+[byte and Blob/File assets](https://muhammarajs-wasm.readthedocs.io/byte-assets/),
+[low-level API](https://muhammarajs-wasm.readthedocs.io/low-level/),
+[Recipe](https://muhammarajs-wasm.readthedocs.io/recipe/),
+[restrictions](https://muhammarajs-wasm.readthedocs.io/differences/), and the
+[TypeScript reference](https://muhammarajs-wasm.readthedocs.io/reference/).
 
 ## Resource And Trust Boundaries
 
