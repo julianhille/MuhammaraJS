@@ -13,7 +13,12 @@ describe("Replace text", function () {
     writer
       .startPageContentContext(page)
       .BT()
-      .Tf(writer.getFontForFile("../TestMaterials/fonts/arial.ttf"), 12)
+      .Tf(
+        writer.getFontForFile(
+          path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+        ),
+        12,
+      )
       .Tm(1, 0, 0, 1, 20, 30)
       .Tj("Before")
       .ET();
