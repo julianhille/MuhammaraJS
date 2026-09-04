@@ -15,11 +15,6 @@
 
 namespace
 {
-const size_t kMaxExtractedElements = 100000;
-const size_t kMaxOperands = 1024;
-const size_t kMaxExtractedTextBytes = 16 * 1024 * 1024;
-const size_t kMaxParsedObjects = 1000000;
-
 double GetNumber(PDFObject* inObject)
 {
   if (inObject->GetType() == PDFObject::ePDFObjectInteger)
@@ -84,12 +79,34 @@ void SetMatrix(double outMatrix[6], const std::vector<RefCountPtr<PDFObject> >& 
 }
 }
 
+namespace
+{
+size_t ClampLimit(size_t inRequested, size_t inCeiling)
+{
+  if (inRequested == 0 || inRequested > inCeiling)
+    return inCeiling;
+  return inRequested;
+}
+}
+
+void PDFExtractionLimits::Clamp()
+{
+  maxElements = ClampLimit(maxElements, kMaxExtractedElements);
+  maxOperands = ClampLimit(maxOperands, kMaxOperands);
+  maxTextBytes = ClampLimit(maxTextBytes, kMaxExtractedTextBytes);
+  maxParsedObjects = ClampLimit(maxParsedObjects, kMaxParsedObjects);
+}
+
 bool PDFTextExtractor::Extract(
   PDFParser* inParser,
   PDFDictionary* inPage,
-  std::vector<PDFTextElement>& outElements
+  std::vector<PDFTextElement>& outElements,
+  const PDFExtractionLimits& inLimits
 )
 {
+  PDFExtractionLimits limits(inLimits);
+  limits.Clamp();
+
   RefCountPtr<PDFObject> contents(inParser->QueryDictionaryObject(inPage, "Contents"));
   if (!contents)
     return true;
@@ -115,14 +132,14 @@ bool PDFTextExtractor::Extract(
   while (withinLimits && (object = objectParser->ParseNewObject()) != NULL)
   {
     RefCountPtr<PDFObject> objectHolder(object);
-    if (++parsedObjects > kMaxParsedObjects)
+    if (++parsedObjects > limits.maxParsedObjects)
     {
       withinLimits = false;
       break;
     }
     if (object->GetType() != PDFObject::ePDFObjectSymbol)
     {
-      if (operands.size() == kMaxOperands)
+      if (operands.size() == limits.maxOperands)
       {
         withinLimits = false;
         break;
@@ -154,8 +171,8 @@ bool PDFTextExtractor::Extract(
 
       if (!content.empty())
       {
-        if (outElements.size() == kMaxExtractedElements ||
-            content.size() > kMaxExtractedTextBytes - extractedTextBytes)
+        if (outElements.size() == limits.maxElements ||
+            content.size() > limits.maxTextBytes - extractedTextBytes)
         {
           withinLimits = false;
           break;
@@ -180,9 +197,13 @@ bool PDFTextExtractor::Extract(
 bool PDFTextExtractor::ExtractPageContentItems(
   PDFParser* inParser,
   PDFDictionary* inPage,
-  std::vector<PDFPageContentItem>& outItems
+  std::vector<PDFPageContentItem>& outItems,
+  const PDFExtractionLimits& inLimits
 )
 {
+  PDFExtractionLimits limits(inLimits);
+  limits.Clamp();
+
   RefCountPtr<PDFObject> contents(inParser->QueryDictionaryObject(inPage, "Contents"));
   if (!contents)
     return true;
@@ -206,14 +227,14 @@ bool PDFTextExtractor::ExtractPageContentItems(
   while (withinLimits && (object = objectParser->ParseNewObject()) != NULL)
   {
     RefCountPtr<PDFObject> objectHolder(object);
-    if (++parsedObjects > kMaxParsedObjects)
+    if (++parsedObjects > limits.maxParsedObjects)
     {
       withinLimits = false;
       break;
     }
     if (object->GetType() != PDFObject::ePDFObjectSymbol)
     {
-      if (operands.size() == kMaxOperands)
+      if (operands.size() == limits.maxOperands)
       {
         withinLimits = false;
         break;
@@ -266,7 +287,7 @@ bool PDFTextExtractor::ExtractPageContentItems(
 
     if (hasItem)
     {
-      if (outItems.size() == kMaxExtractedElements)
+      if (outItems.size() == limits.maxElements)
       {
         withinLimits = false;
         break;
