@@ -1,4 +1,4 @@
-var muhammara = require("../lib/muhammara");
+var muhammara = require("@muhammara/native-with-source");
 var assert = require("chai").assert;
 
 describe("PDFPageContentItems", function () {
