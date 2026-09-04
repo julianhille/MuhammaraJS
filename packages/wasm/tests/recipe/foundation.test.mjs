@@ -54,7 +54,7 @@ describe("Recipe foundation", function () {
     assert.strictEqual(recipe.endPDF(), bytes);
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(bytes);
-    assert.equal(reader.getPDFLevel(), 1.7);
+    assert.equal(reader.getPDFLevel(), 2);
     reader.end();
     assert.match(new TextDecoder().decode(bytes), /\/CreationDate \(D:/);
     assert.match(new TextDecoder().decode(bytes), /\/ModDate \(D:/);

@@ -120,7 +120,7 @@ export async function runValidation() {
   equal(recipe.endPDF(), recipeBytes, "recipe finalization cache");
   equal(
     (await createMuhammaraWasm()).createReader(recipeBytes).getPDFLevel(),
-    1.7,
+    2,
     "recipe version",
   );
   assertions += 2;

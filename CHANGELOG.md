@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add runnable `detect-blank-pages` and `find-text-positions` documentation
   examples, executed by the documentation test suite
   [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+- Accept PDF 2.0 in `Recipe` options for both the native and Wasm packages.
+  `version: 2.0` (and the `20` enum in the Wasm package) now writes a PDF 2.0
+  header instead of falling back to 1.7, the Wasm `RecipePDFVersion` type
+  includes it, and unsupported values still fall back to 1.7.
 
 ### Fixed
 
