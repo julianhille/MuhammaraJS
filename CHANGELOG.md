@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Generate native API reference pages during Read the Docs builds and cache the
+  native addon used to validate executable documentation examples [#566](https://github.com/julianhille/MuhammaraJS/issues/566)
+
+### Changed
+
+- Skip native package CI for documentation-only changes; Documentation CI
+  validates those updates.
+
 ## [7.0.0-alpha.0] - 2026-09-02
 
 ### Breaking Changes

@@ -4,6 +4,15 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Generate the API reference during Read the Docs builds [#566](https://github.com/julianhille/MuhammaraJS/issues/566)
+
+### Changed
+
+- Skip Wasm package CI for documentation-only changes; Documentation CI
+  validates those updates.
+
 ## [1.0.0-alpha.0] - 2026-09-02
 
 ### Added
