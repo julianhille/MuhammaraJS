@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Accept PDF 2.0 in `Recipe` options for both the native and Wasm packages.
+  `version: 2.0` (and the `20` enum in the Wasm package) now writes a PDF 2.0
+  header instead of falling back to 1.7, the Wasm `RecipePDFVersion` type
+  includes it, and unsupported values still fall back to 1.7.
+
 ### Fixed
 
 - Generate native API reference pages during Read the Docs builds and cache the

@@ -229,9 +229,9 @@ async function usesLowLevelSurface() {
   Recipe.permission("print, copy");
   var recipe = new Recipe({ version: 1.7, compress: false, title: "Byte PDF" });
   new Recipe({ version: 17 });
-  // @ts-expect-error Recipe does not support PDF 2.0.
+  new Recipe({ version: 2 });
   new Recipe({ version: 20 });
-  // @ts-expect-error Recipe versions stop at PDF 1.7.
+  // @ts-expect-error PDF 1.8 is not a real PDF version.
   new Recipe({ version: 1.8 });
   recipe.endPDF((bytes) => bytes.byteLength);
   recipe.registerFont("instance-font", new Uint8Array());

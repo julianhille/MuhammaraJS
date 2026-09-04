@@ -22,6 +22,7 @@ export type RecipePDFVersion =
   | 1.5
   | 1.6
   | 1.7
+  | 2
   | 10
   | 11
   | 12
@@ -29,7 +30,8 @@ export type RecipePDFVersion =
   | 14
   | 15
   | 16
-  | 17;
+  | 17
+  | 20;
 
 export interface WriterOptions {
   version?: PDFVersion;
@@ -46,7 +48,7 @@ export interface RecipeMargins {
   bottom?: number;
 }
 export interface RecipeOptions {
-  /** PDF version; canonical decimal levels 1.0 through 1.7 and integer enums 10 through 17 are accepted. */
+  /** PDF version; canonical decimal levels 1.0 through 1.7 and 2.0, and integer enums 10 through 17 and 20, are accepted. */
   version?: RecipePDFVersion;
   /** Enables stream compression. Defaults to true. */
   compress?: boolean;
