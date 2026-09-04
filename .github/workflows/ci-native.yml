@@ -495,7 +495,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
