@@ -5,6 +5,10 @@ build:
   tools:
     python: "3.12"
     nodejs: "24"
+  jobs:
+    pre_build:
+      - npm ci --ignore-scripts
+      - npm run docs:generate --workspace=@muhammara/native
 
 mkdocs:
   configuration: packages/native/mkdocs.yml
