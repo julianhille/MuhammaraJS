@@ -29,6 +29,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-docs-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-docs-
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r packages/native/docs/requirements.txt
       - run: sudo apt-get update && sudo apt-get install -y curl perl
