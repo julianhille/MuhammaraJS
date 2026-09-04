@@ -135,7 +135,9 @@ describe("ObjectReplacement", function () {
     var replacementId = objects.startNewIndirectObject();
     var replacement = objects.startPDFStream();
     objects.endPDFStream(replacement).endIndirectObject();
-    writer.replaceObject(0, firstContentsId, replacementId, { scope: "global" });
+    writer.replaceObject(0, firstContentsId, replacementId, {
+      scope: "global",
+    });
     var output = writer.end();
 
     var reader = muhammara.createReader(output);
