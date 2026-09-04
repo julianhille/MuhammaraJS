@@ -25,6 +25,7 @@ import { createInspectPdf } from "./recipe/inspection.js";
 import { createRegistrationMethods } from "./recipe/registration.js";
 import { createSecurityMethods, permission } from "./recipe/security.js";
 
+/** Creates the high-level Recipe PDF composition factory. */
 export function createRecipeFactory({
   module,
   encoder,

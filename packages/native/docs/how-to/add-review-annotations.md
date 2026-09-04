@@ -16,4 +16,4 @@ pdfDoc
 ```
 
 Set `richText: true` on a comment to use supported HTML formatting. See
-`tests/recipe/annotation-comment.js` and `tests/recipe/annotation-text.js`.
+[`tests/recipe/annotation-comment.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/annotation-comment.js) and [`tests/recipe/annotation-text.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/annotation-text.js).

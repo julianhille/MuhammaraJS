@@ -18,14 +18,11 @@ describe("Modify", () => {
         flag: "locked",
       })
       .endPage()
-      .endPDF(done);
-  });
-  it("Read document title", (done) => {
-    const src = path.join(__dirname, "../output/change info.pdf");
-    const recipe = new HummusRecipe(src);
-    const info = recipe.info();
-    assert.equal(info.title, "Hello World"); // This test depends on output from above.
-    recipe.endPDF(done);
+      .endPDF(() => {
+        const info = new HummusRecipe(output).info();
+        assert.equal(info.title, "Hello World");
+        done();
+      });
   });
   it("Change info pdf", (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test-info.pdf");

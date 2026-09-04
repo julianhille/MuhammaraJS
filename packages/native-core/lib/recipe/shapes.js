@@ -121,7 +121,7 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * Draw an N-sided regular polygon
  * @name n_gon
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} cx - x-coordinate of center point of regular polygon
  * @param {number} cy - y-coordinate of center point of regular polygon
  * @param {number} radius - The radius, distance from the center of the polygon to a vertice.
@@ -138,6 +138,7 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * @param {number} [options.rotationVertice] - the number of the vertice to be used as rotation origin
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.
+ * @returns {Recipe} The recipe instance.
  */
 exports.n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
   const MIN_SIDES = 3;
@@ -184,9 +185,10 @@ function _oddStar(ngon) {
  * Draw an N pointed star
  * @name star
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} cx - x-coordinate of center point of regular polygon
  * @param {number} cy - y-coordinate of center point of regular polygon
+ * @param {number} radius - The radius, distance from the center to a star point.
  * @param {number} [points=5] - number of points on star
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - HexColor or DecimalColor
@@ -199,6 +201,7 @@ function _oddStar(ngon) {
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.
+ * @returns {Recipe} The recipe instance.
  */
 exports.star = function star(cx, cy, radius, points = 5, options = {}) {
   let starPath = [];
@@ -341,7 +344,7 @@ function flipY(x, ngon) {
  * Draw a triangle, by specifying three side lengths, two side lengths and one inclusive angle, one side length and two adjacent angles, or with a set of vertices.
  * @name triangle
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x - x-coordinate used to position triangle, by default associated with left vertex of triangle base.
  * @param {number} y - y-coordinate used to position triangle, by default associated with left vertex of triangle base.
  * @param {number[]} traits - the data defining the triangle. Angles are specified as degrees, sides in units of points (1/72 in.).
@@ -363,7 +366,10 @@ function flipY(x, ngon) {
  * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @param {number} [options.skewX] - the angle skew off the x-axis
- * @param {number} [options.skewY] - the angle skew off the y-axis. */
+ * @param {number} [options.skewY] - the angle skew off the y-axis.
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If traits does not contain three values or does not define a valid triangle.
+ */
 
 exports.triangle = function triangle(x, y, traits, options = {}) {
   let traitID = options.traitID || options.traitsID || "sss";
@@ -743,7 +749,7 @@ const Triangle = class Triangle {
  * Draw an arrow
  * @name arrow
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} x x-coordinate position
  * @param {number} y y-coordinate position
  * @param {Object} [options] arrow and polygon options
@@ -754,6 +760,7 @@ const Triangle = class Triangle {
  * @param {number|number[]} [options.shaft=[10,10]] defines the length and width of the arrow shaft.
  * @param {Boolean} [options.double=false] indicate double headed arrow production.
  * @param {string} [options.at] position and/or rotate at "head" or "tail" of arrow instead of at center.
+ * @returns {Recipe} The recipe instance.
  */
 exports.arrow = function arrow(x, y, options = {}) {
   let defaultHeadLength = 10;

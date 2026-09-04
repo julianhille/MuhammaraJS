@@ -1,5 +1,14 @@
 const DOMParser = require("@xmldom/xmldom").DOMParser;
 
+/**
+ * Convert HTML into Recipe text layout objects.
+ * @name htmlToTextObjects
+ * @function
+ * @memberof Recipe#
+ * @param {string} htmlCodes - The HTML source.
+ * @param {Object} [options] - Text options used to initialize the objects.
+ * @returns {Object[]} The parsed text layout objects.
+ */
 exports.htmlToTextObjects = function (htmlCodes, options = {}) {
   htmlCodes = htmlCodes.replace(/<br\/?>/g, "<p>[@@DONOT_RENDER_THIS@@]</p>");
   const nodes = new DOMParser().parseFromString(

@@ -14,5 +14,5 @@ draw content, end the context, and write the page. Passing `true` as the third
 constructor argument isolates new graphics from the existing graphics state.
 
 Modification uses incremental PDF updates, but this documentation does not make
-signature-preservation guarantees. See `tests/BasicModification2.js`,
-`tests/ModifyExistingPageContent.js`, and `tests/BasicModificationWithStreams.js`.
+signature-preservation guarantees. See [`tests/BasicModification2.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/BasicModification2.js),
+[`tests/ModifyExistingPageContent.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/ModifyExistingPageContent.js), and [`tests/BasicModificationWithStreams.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/BasicModificationWithStreams.js).

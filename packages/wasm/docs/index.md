@@ -9,7 +9,8 @@ Node package's filesystem and stream API.
 For Node.js applications that need filesystem paths, Node streams, or the full
 native PDF API, use [`@muhammara/native`](https://muhammarajs.readthedocs.io/).
 Choose `@muhammara/native-with-source` when the addon must build locally or be
-rebuilt for Electron.
+rebuilt for Electron. It can be installed as an npm alias for
+`@muhammara/native` when that import name must remain unchanged.
 
 Start with [Browser Setup](browser-setup.md). Use [Recipe](recipe.md) for
 high-level document work, or the [low-level API](low-level.md) for PDF writers,
@@ -28,7 +29,8 @@ var pdfBytes = muhammara.createBlankPdf(595, 842);
 var pdf = new Blob([pdfBytes], { type: "application/pdf" });
 ```
 
-The native `muhammara` and `@muhammara/wasm` APIs are intentionally separate.
+The native `@muhammara/native` and `@muhammara/wasm` APIs are intentionally
+separate.
 Do not copy native examples that use paths, Node streams, callbacks, or
 `require()` into browser code. Review [Differences and
 Restrictions](differences.md) for unsupported encryption and persistence

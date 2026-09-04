@@ -1,3 +1,4 @@
+/** Creates Recipe image placement methods. */
 export function createImageMethods(runtime) {
   function placement(recipe, path, x, y, options) {
     var dimensions = recipe._imageDimensions(path);

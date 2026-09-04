@@ -4,15 +4,17 @@ const { xObjectForm } = require("./xObjectForm");
  * Overlay a pdf to the current pdf
  * @name overlay
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} pdfSrc - The path for the overlay pdf
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|Object} [x=0] - The x coordinate, or options when using the two-argument form.
+ * @param {number} [y=0] - The y coordinate.
+ * @param {Object} [options] - The options.
  * @param {number} [options.scale] - Scale the overlay pdf, default is 1
  * @param {number} [options.page] - Page of the overlay pdf, default is 1
  * @param {boolean} [options.keepAspectRatio] - To keep the aspect ratio when scaling, default is true
  * @param {boolean} [options.fitWidth] - To set the width to 100% (use with keepAspectRatio=true)
  * @param {boolean} [options.fitHeight] - To set the height to 100% (use with keepAspectRatio=true)
+ * @returns {Recipe} The recipe instance.
  */
 exports.overlay = function overlay(pdfSrc, x = 0, y = 0, options = {}) {
   // allow to have only 2 arguments input

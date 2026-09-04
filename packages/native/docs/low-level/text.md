@@ -21,4 +21,4 @@ such as `setOpacity(0.5)`.
 
 Use `font.calculateTextDimensions(text, size)` when positioning needs the text
 bounds. The text and measurement APIs are exercised in
-`tests/HighLevelContentContext.js` and `tests/TextMeasurementsTest.js`.
+[`tests/HighLevelContentContext.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/HighLevelContentContext.js) and [`tests/TextMeasurementsTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/TextMeasurementsTest.js).

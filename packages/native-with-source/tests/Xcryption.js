@@ -1,4 +1,15 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("assert");
+
+function assertRecryptedPdf(filePath, password, encrypted) {
+  var reader = muhammara.createReader(filePath, password ? { password } : {});
+  try {
+    assert.equal(reader.isEncrypted(), encrypted);
+    assert.ok(reader.getPagesCount() > 0);
+  } finally {
+    reader.end();
+  }
+}
 
 describe("Xcryption", function () {
   describe("Strip PDF From Password", function () {
@@ -10,11 +21,16 @@ describe("Xcryption", function () {
           password: "user",
         },
       );
+      assertRecryptedPdf(
+        __dirname + "/output/RecryptPDFWithPasswordToNothing.PDF",
+        undefined,
+        false,
+      );
     });
   });
 
   describe("Encrypt PDF With a Password as stream from Buffer", function () {
-    it("should complete without error", function () {
+    it("writes an encrypted readable PDF", function (done) {
       var fs = require("fs");
       var result = fs.readFileSync(
         __dirname + "/TestMaterials/PDFWithPassword.PDF",
@@ -29,11 +45,19 @@ describe("Xcryption", function () {
         ownerPassword: "owner1",
         userProtectionFlag: 4,
       });
+      target.close(function () {
+        assertRecryptedPdf(
+          __dirname + "/output/RecryptPDFOriginalToPasswordProtectedBuffer.PDF",
+          "user1",
+          true,
+        );
+        done();
+      });
     });
   });
 
   describe("Encrypt PDF With a Password as stream", function () {
-    it("should complete without error", function () {
+    it("writes an encrypted readable PDF", function (done) {
       var source = new muhammara.PDFRStreamForFile(
         __dirname + "/TestMaterials/PDFWithPassword.PDF",
       );
@@ -45,6 +69,14 @@ describe("Xcryption", function () {
         userPassword: "user1",
         ownerPassword: "owner1",
         userProtectionFlag: 4,
+      });
+      target.close(function () {
+        assertRecryptedPdf(
+          __dirname + "/output/RecryptPDFOriginalToPasswordProtectedStream.PDF",
+          "user1",
+          true,
+        );
+        done();
       });
     });
   });
@@ -61,6 +93,11 @@ describe("Xcryption", function () {
           userProtectionFlag: 4,
         },
       );
+      assertRecryptedPdf(
+        __dirname + "/output/RecryptPDFWithPasswordToNewPassword.PDF",
+        "user1",
+        true,
+      );
     });
   });
 
@@ -74,6 +111,11 @@ describe("Xcryption", function () {
           ownerPassword: "owner1",
           userProtectionFlag: 4,
         },
+      );
+      assertRecryptedPdf(
+        __dirname + "/output/RecryptPDFOriginalToPasswordProtected.PDF",
+        "user1",
+        true,
       );
     });
   });
@@ -108,6 +150,11 @@ describe("Xcryption", function () {
 
       pdfWriter.writePage(page);
       pdfWriter.end();
+      assertRecryptedPdf(
+        __dirname + "/output/PDFWithPassword.pdf",
+        "user",
+        true,
+      );
     });
   });
 
@@ -142,6 +189,11 @@ describe("Xcryption", function () {
 
       pdfWriter.writePage(page);
       pdfWriter.end();
+      assertRecryptedPdf(
+        __dirname + "/output/PDFWithPasswordAES.pdf",
+        "user",
+        true,
+      );
     });
   });
 
@@ -162,6 +214,11 @@ describe("Xcryption", function () {
       }
       copyingContext.end();
       pdfWriter.end();
+      assertRecryptedPdf(
+        __dirname + "/output/PDFWithPasswordDecrypted.pdf",
+        undefined,
+        false,
+      );
     });
   });
 
@@ -205,6 +262,11 @@ describe("Xcryption", function () {
       pdfWriter.writePage(page);
 
       pdfWriter.end();
+      assertRecryptedPdf(
+        __dirname + "/output/PDFWithPasswordModified.pdf",
+        "user",
+        true,
+      );
     });
   });
 });

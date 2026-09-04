@@ -16,6 +16,6 @@ Copying contexts can append individual pages, merge a source page into a page
 or form XObject, and expose a source reader. Form-creation APIs return object
 IDs that can be mapped for placement; do not assume they return form objects.
 
-See `tests/AppendPagesTest.js`, `tests/MergePDFPages.js`,
-`tests/PDFEmbedTest.js`, and `tests/PDFCopyingContextTest.js` for tested
+See [`tests/AppendPagesTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/AppendPagesTest.js), [`tests/MergePDFPages.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/MergePDFPages.js),
+[`tests/PDFEmbedTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFEmbedTest.js), and [`tests/PDFCopyingContextTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFCopyingContextTest.js) for tested
 workflows.

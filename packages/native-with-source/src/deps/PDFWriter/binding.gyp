@@ -13,39 +13,17 @@
                    'xcode_settings': {
                        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
                    }
-                }],
-                ['OS=="win" and target_arch=="x64"', {
-                    'msvs_settings': {
-                        'VCLinkerTool': {
-                             'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_LIB_DIR%)/'],
-                            'AdditionalDependencies': [
-                                 '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib'
-                            ]
-                        }
-                    }
-                }],
-                ['OS=="win" and target_arch=="ia32"', {
-                    'msvs_settings': {
-                        'VCLinkerTool': {
-                             'AdditionalLibraryDirectories': ['<!(echo %OPENSSL_LIB_DIR%)/'],
-                            'AdditionalDependencies': [
-                                 '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib'
-                            ]
-                        }
-                    }
                 }]
             ],
             'msvs_settings': {
                 'VCCLCompilerTool': {
-                    'AdditionalIncludeDirectories': [
-                        '<!(echo %OPENSSL_LIB_DIR%)/include/'
-                    ],
                     'AdditionalOptions': [
                         '/std:c++20'
                     ]
                 }
             },
             'dependencies': [
+               '<(module_root_dir)/openssl.gyp:openssl',
                '<(module_root_dir)/src/deps/LibAesgm/binding.gyp:libaesgm',
                '<(module_root_dir)/src/deps/FreeType/binding.gyp:freetype',
                '<(module_root_dir)/src/deps/LibJpeg/binding.gyp:libjpeg',
@@ -54,6 +32,7 @@
                '<(module_root_dir)/src/deps/LibPng/binding.gyp:libpng'
             ],
             'include_dirs': [
+                '<(module_root_dir)/openssl-build/<(target_arch)/include',
                 '<(module_root_dir)/src/deps/LibAesgm',
                 '<(module_root_dir)/src/deps/FreeType/include',
                 '<(module_root_dir)/src/deps/LibTiff',

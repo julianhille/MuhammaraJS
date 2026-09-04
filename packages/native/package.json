@@ -5,6 +5,11 @@
   "homepage": "https://muhammarajs.readthedocs.io/",
   "license": "Apache-2.0",
   "author": "Julian <j.hille484@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julianhille/MuhammaraJS.git",
+    "directory": "packages/native"
+  },
   "main": "./index.js",
   "types": "./index.d.ts",
   "engines": {
@@ -12,13 +17,14 @@
   },
   "scripts": {
     "install": "node scripts/install-prebuilt.js",
-    "postinstall": "node -e \"require('@muhammara/native-core/scripts/copy-openssl-dlls')(process.cwd())\"",
-    "docs:generate": "node ../native-core/scripts/generate-recipe-reference.js && node ../native-core/scripts/generate-declaration-reference.js && prettier --write docs/recipe/reference.md docs/api/type-declarations.md"
+    "docs:generate": "node ../native-core/scripts/generate-recipe-reference.js && node ../native-core/scripts/generate-declaration-reference.js && prettier --write docs/recipe/reference.md docs/api/type-declarations.md",
+    "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types/types.test.ts tests/types/types-global.test.ts"
   },
   "files": [
     "index.js",
     "index.d.ts",
     "README.md",
+    "THIRD_PARTY_NOTICES.md",
     "LICENSE",
     "scripts/install-prebuilt.js"
   ],

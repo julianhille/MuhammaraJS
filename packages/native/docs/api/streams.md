@@ -14,4 +14,9 @@ Reader inputs are synchronous and random access, so all input bytes must be
 available before the native operation begins. Writer `write(bytes)` methods must
 return the number of bytes written.
 
+```javascript
+var input = new muhammara.PDFRStreamForBuffer(pdfBuffer);
+var reader = muhammara.createReader(input);
+```
+
 See [Custom Streams](../low-level/custom-streams.md) for usage examples.

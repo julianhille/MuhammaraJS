@@ -29,6 +29,7 @@ function richText(value) {
   return `<?xml version="1.0"?><body xmlns="http://www.w3.org/1999/xhtml">${value.replace(/&nbsp;/g, " ").replace(/\r?\n|\r|\t/g, "")}</body>`;
 }
 
+/** Creates Recipe annotation methods. */
 export function createAnnotationMethods({
   module,
   withString,

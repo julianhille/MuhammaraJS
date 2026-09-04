@@ -31,5 +31,5 @@ surrounding operations to choose the intended occurrence.
 `content` contains raw character codes from the PDF content stream. The API does
 not decode font character maps or calculate glyph bounds, so it is not a general
 visual-text search API. Extraction rejects pages over its documented safety
-limits. See the `PDFTextElement` declaration and `tests/PDFTextExtractionTest.js`
+limits. See the `PDFTextElement` declaration and [`tests/PDFTextExtractionTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFTextExtractionTest.js)
 for the verified output shape.

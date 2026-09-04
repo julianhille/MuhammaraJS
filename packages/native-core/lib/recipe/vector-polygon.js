@@ -16,9 +16,10 @@
  * Draw a polygon
  * @name polygon
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number[]} coordinates - The array of coordinate [[x,y], ... [m,n]]
  * @param {Object} [options] - The options
+ * @returns {Recipe} The recipe instance.
  * @param {string|number[]} [options.color] - HexColor, PercentColor or DecimalColor
  * @param {string|number[]} [options.stroke] - HexColor, PercentColor or DecimalColor
  * @param {string|number[]} [options.fill] - HexColor, PercentColor or DecimalColor

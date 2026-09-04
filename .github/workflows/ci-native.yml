@@ -11,21 +11,16 @@ on:
       - "packages/native-core/**"
       - "packages/native-with-source/**"
       - ".github/actions/setup-native-build-cache/**"
-      - "scripts/build-openssl.sh"
-      - "scripts/build-openssl.ps1"
       - "package.json"
       - "package-lock.json"
   workflow_dispatch:
 
 concurrency:
   group: build-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 permissions:
   contents: read
-
-env:
-  OPENSSL_VERSION: 3.5.4
 
 jobs:
   packed-source-fallback:
@@ -40,23 +35,20 @@ jobs:
           key: native-source-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
           restore-keys: native-source-
       - run: sudo apt-get update && sudo apt-get install -y perl
-      - name: Build OpenSSL
-        run: sh scripts/build-openssl.sh
-        env:
-          OPENSSL_TARGET_ARCH: x64
       - run: npm ci --ignore-scripts
+      - run: npm run native:test:types && npm run native-with-source:test:types
       - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+      - name: Verify OpenSSL is statically linked
+        run: if readelf -d packages/native-with-source/binding/muhammara.node | grep -Eiq 'lib(crypto|ssl)'; then exit 1; fi
       - run: npm run package --workspace=@muhammara/native-with-source
       - run: mkdir -p packages && npm pack --workspace=@muhammara/native-core --pack-destination packages && npm pack --workspace=@muhammara/native-with-source --pack-destination packages && npm pack --workspace=@muhammara/native --pack-destination packages
-      - name: Verify source-capable package contents
-        run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
+      - name: Verify native package contents
+        run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-[0-9]*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
       - name: Install packed package without prebuilds
-        run: mkdir -p /tmp/muhammara-source-fallback && npm install --prefix /tmp/muhammara-source-fallback ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-with-source-*.tgz
-        env:
-          EXTRA_NODE_PRE_GYP_FLAGS: --build-from-source
+        run: mkdir -p /tmp/muhammara-source-fallback && npm install --build-from-source --prefix /tmp/muhammara-source-fallback ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-with-source-*.tgz
       - run: node -e "require('/tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source')"
       - name: Verify source cleanup preserves the addon
-        run: /tmp/muhammara-source-fallback/node_modules/.bin/muhammara-clean-source && test ! -d /tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source/src && node -e "require('/tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source')"
+        run: /tmp/muhammara-source-fallback/node_modules/.bin/muhammara-clean-source && test ! -d /tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source/src && test ! -d /tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source/openssl-build && node -e "require('/tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source')"
       - name: Rebuild the source package through the native alias directory
         run: |
           mkdir -p /tmp/muhammara-electron-alias
@@ -102,10 +94,6 @@ jobs:
           key: native-sanitizer-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
           restore-keys: native-sanitizer-
       - run: sudo apt-get update && sudo apt-get install -y perl
-      - name: Build OpenSSL
-        run: sh scripts/build-openssl.sh
-        env:
-          OPENSSL_TARGET_ARCH: x64
       - run: npm ci --ignore-scripts
       - name: Build with sanitizers
         run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
@@ -115,7 +103,7 @@ jobs:
           LDFLAGS: -fsanitize=address,undefined
       - name: Run tests with the sanitizer runtime preloaded
         working-directory: packages/native-with-source
-        run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/sanitizer-gc.js -R tap ./tests/*.js ./tests/**/*.js --timeout 15000
+        run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R tap --recursive ./tests --timeout 15000
   build-musl-arm:
     strategy:
       fail-fast: false
@@ -154,17 +142,12 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-arm-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
-      - name: Build OpenSSL for musl
-        run: sh scripts/build-openssl.sh
-        env:
-          CROSS_COMPILE: ""
-          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - run: npm install --workspace=@muhammara/native-with-source --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
-          EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
+          npm_config_target_libc: musl
           npm_config_unsafe_perm: true
       # - run: npm run test, this is not an arm64 machine so we can not test.
       - run: npm run package --workspace=@muhammara/native-with-source -- --target_libc=musl --target_arch=${{ matrix.target_architecture }}
@@ -204,13 +187,9 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
-      - name: Build OpenSSL for musl
-        run: sh scripts/build-openssl.sh
-        env:
-          OPENSSL_TARGET_ARCH: x64
       - run: npm install --workspace=@muhammara/native-with-source --build-from-source
         env:
-          EXTRA_NODE_PRE_GYP_FLAGS: --target_libc=musl
+          npm_config_target_libc: musl
           npm_config_unsafe_perm: true
       - run: npm run test
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage --target_libc=musl
@@ -320,17 +299,6 @@ jobs:
       - name: Install OpenSSL build tools (Linux)
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: sudo apt-get update && sudo apt-get install -y perl
-      - name: Build OpenSSL (Unix)
-        if: ${{ matrix.os != 'windows-2022' }}
-        run: sh scripts/build-openssl.sh
-        env:
-          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
-      - name: Build OpenSSL (Windows)
-        if: ${{ matrix.os == 'windows-2022' }}
-        shell: powershell
-        run: ./scripts/build-openssl.ps1
-        env:
-          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - name: Get npm cache directory
         id: npm-cache-dir
         shell: bash
@@ -344,7 +312,6 @@ jobs:
           npm install --workspace=@muhammara/native-with-source --cpu=${{ matrix.architecture }} --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
-          npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
           npm_config_target_arch: ${{ matrix.target_architecture }}
           npm_config_target: ${{ matrix.electron }}
           npm_config_disturl: https://artifacts.electronjs.org/headers/dist
@@ -356,7 +323,6 @@ jobs:
           npm install --workspace=@muhammara/native-with-source --no-save --cpu=${{ matrix.architecture }} electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
         env:
           npm_config_arch: ${{ matrix.architecture }}
-          npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
           npm_config_target_arch: ${{ matrix.target_architecture }}
           npm_config_target: ${{ matrix.electron }}
           npm_config_disturl: https://artifacts.electronjs.org/headers/dist
@@ -428,15 +394,12 @@ jobs:
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
-      - name: Build OpenSSL
-        run: sh scripts/build-openssl.sh
-        env:
-          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - run: npm install --workspace=@muhammara/native-with-source --build-from-source
         env:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
+      - run: npm run test
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
       - uses: actions/upload-artifact@v6
         with:
@@ -459,7 +422,6 @@ jobs:
             architecture_node: x64
             target_architecture: arm64
             extra_compile_flags: -arch arm64
-            EXTRA_NODE_PRE_GYP_FLAGS: --target_arch=arm64
         exclude:
           - os: windows-2022
             architecture: arm64
@@ -479,17 +441,6 @@ jobs:
           restore-keys: native-node-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.node }}-
       - run: node --version
       - run: npm --version
-      - name: Build OpenSSL (macOS)
-        if: ${{ matrix.os == 'macos-15' }}
-        run: sh scripts/build-openssl.sh
-        env:
-          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
-      - name: Build OpenSSL (Windows)
-        if: ${{ matrix.os == 'windows-2022' }}
-        shell: powershell
-        run: ./scripts/build-openssl.ps1
-        env:
-          OPENSSL_TARGET_ARCH: ${{ matrix.target_architecture }}
       - name: Disable Node.js LTO (Windows)
         if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
@@ -511,7 +462,6 @@ jobs:
           npm_config_arch: ${{ matrix.architecture }}
           npm_config_target_arch: ${{ matrix.target_architecture }}
           npm_config_python: python${{ matrix.python_version }}
-          npm_config_msbuild_path: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
           CFLAGS: ${{ matrix.extra_compile_flags }}
       - run: npm run test
         if: ${{ matrix.target_architecture != 'arm64' }}
@@ -546,6 +496,15 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci --ignore-scripts
+      - run: sudo apt-get update && sudo apt-get install -y perl
+      - run: python -m pip install -r packages/native/docs/requirements.txt
+      - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+      - run: npm run test:codestyle
+      - run: npm run docs:check
       - uses: actions/download-artifact@v4
         with:
           pattern: bindings-*
@@ -553,14 +512,7 @@ jobs:
         id: upload-release-asset
       - run: ls -lah builds/bindings/
       - name: Verify package version
-        run: test "$(node -p \"require('./packages/native-core/package.json').version\")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p \"require('./packages/native/package.json').version\")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p \"require('./packages/native-with-source/package.json').version\")" = "${GITHUB_REF_NAME#native-v}"
-      - name: Create release and upload prebuilds
-        uses: softprops/action-gh-release@v2
-        with:
-          files: "builds/bindings/**/*"
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-      - run: npm ci --ignore-scripts
+        run: test "$(node -p "require('./packages/native-core/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native-with-source/package.json').version")" = "${GITHUB_REF_NAME#native-v}"
       - id: npm-tag
         run: |
           case "${GITHUB_REF_NAME#native-v}" in
@@ -569,6 +521,14 @@ jobs:
             *-rc.*) echo "value=rc" >> "$GITHUB_OUTPUT" ;;
             *) echo "value=latest" >> "$GITHUB_OUTPUT" ;;
           esac
+      - name: Verify native package publish preflight
+        run: npm publish --workspace=@muhammara/native-core --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }} && npm publish --workspace=@muhammara/native-with-source --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }} && npm publish --workspace=@muhammara/native --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }}
+      - name: Create release and upload prebuilds
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "builds/bindings/**/*"
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
       - name: Publish native core package
         run: npm publish --workspace=@muhammara/native-core --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
       - name: Publish source-capable native package

@@ -22,4 +22,4 @@ for (var page = 1; page <= pdfDoc.metadata.pages; page++) {
 pdfDoc.endPDF();
 ```
 
-See `tests/recipe/text.js` for the verified workflow.
+See [`tests/recipe/text.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/text.js) for the verified workflow.

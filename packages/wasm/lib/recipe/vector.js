@@ -1,3 +1,4 @@
+/** Creates Recipe vector shape and path methods. */
 export function createVectorMethods(runtime) {
   function curve(recipe, x, y, radius, start, end) {
     var segments = Math.ceil(Math.abs(end - start) / (Math.PI / 2));

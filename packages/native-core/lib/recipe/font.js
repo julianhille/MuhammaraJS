@@ -4,10 +4,11 @@ const path = require("path");
  * Register a custom font
  * @name registerFont
  * @function
- * @memberof Recipe
- * @param {string} fontName - The font name will be used in text
- * @param {string} fontSrcPath - The path to the font file.
+ * @memberof Recipe#
+ * @param {string} [fontName=''] - The font name used in text.
+ * @param {string} [fontSrcPath=''] - The path to the font file.
  * @param {string} [type='regular'] - The font type, one of 'bold', 'bold-italic', 'italic'
+ * @returns {Recipe} The recipe instance.
  */
 exports.registerFont = function registerFont(
   fontName = "",

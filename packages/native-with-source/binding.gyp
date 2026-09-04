@@ -8,6 +8,7 @@
             'type': 'loadable_module',
 			'product_extension': 'node',
             'dependencies': [
+               '<(module_root_dir)/openssl.gyp:openssl',
                '<(muhammara_source_root)/deps/PDFWriter/binding.gyp:pdfwriter'
             ],
             "defines": [
@@ -25,7 +26,7 @@
 				'VCCLCompilerTool':
 				{
 					'AdditionalIncludeDirectories': [
-						'<!(echo %OPENSSL_LIB_DIR%)/include/'
+                        '<(module_root_dir)/openssl-build/<(target_arch)/include/'
 					],
 					'AdditionalOptions': [
 						'/std:c++20'
@@ -35,45 +36,28 @@
             'conditions': [
                 ['OS=="linux"', {
                     'libraries': [
-                        '<!(echo $OPENSSL_LIB_DIR)/libcrypto.a',
+                        '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.a',
                         '-ldl',
                         '-pthread'
                     ]
                 }],
                 ['OS=="mac"', {
                     'libraries': [
-                        '<!(echo $OPENSSL_LIB_DIR)/libcrypto.a'
+                        '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.a'
                     ],
                     'xcode_settings': {
                         'CLANG_CXX_LIBRARY': 'libc++',
                         "OTHER_CFLAGS": [ "-std=c++20" ]
                     }
                 }],
-                ['OS=="win" and target_arch=="x64"', {
+                ['OS=="win"', {
                     'msvs_settings': {
                         'VCLinkerTool': {
                             'AdditionalLibraryDirectories': [
-                                '<!(echo %OPENSSL_LIB_DIR%)/'
+                                '<(module_root_dir)/openssl-build/<(target_arch)/'
                             ],
                             'AdditionalDependencies': [
-                                '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib',
-                                'advapi32.lib',
-                                'crypt32.lib',
-                                'gdi32.lib',
-                                'user32.lib',
-                                'ws2_32.lib'
-                            ]
-                        }
-                    }
-                }],
-                ['OS=="win" and target_arch=="ia32"', {
-                    'msvs_settings': {
-                        'VCLinkerTool': {
-                            'AdditionalLibraryDirectories': [
-                                '<!(echo %OPENSSL_LIB_DIR%)/'
-                            ],
-                            'AdditionalDependencies': [
-                                '<!(echo %OPENSSL_LIB_DIR%)/libcrypto.lib',
+                                '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.lib',
                                 'advapi32.lib',
                                 'crypt32.lib',
                                 'gdi32.lib',

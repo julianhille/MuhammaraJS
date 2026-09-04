@@ -1,5 +1,6 @@
 import { colorModel } from "./colors.js";
 
+/** Creates shared Recipe vector drawing helpers. */
 export function createVectorHelpers(runtime) {
   function operator(recipe, code, ...values) {
     if (recipe._pageContext) {

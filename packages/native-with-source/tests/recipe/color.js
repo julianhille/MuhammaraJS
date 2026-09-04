@@ -68,10 +68,10 @@ describe("Color", () => {
   // Tests the implicit setting of the RGB colorspace via size of color specification
 
   it("RGB implicit", (done) => {
-    const input = path.join(__dirname, "../output/color-rgb.pdf");
-    const recipe = new HummusRecipe(input);
+    const output = path.join(__dirname, "../output/color-rgb-implicit.pdf");
+    const recipe = new HummusRecipe("new", output);
     recipe
-      .editPage(1)
+      .createPage("letter")
       .text("blue circle, red lines in center", 400, 200)
       .circle(500, 100, 50, { stroke: [0, 0, 255], lineWidth: 10 })
       .line(
@@ -136,10 +136,10 @@ describe("Color", () => {
   // Tests the implicit setting of the CMYK colorspace via size of color specification
 
   it("CMYK implicit", (done) => {
-    const input = path.join(__dirname, "../output/color-cmyk.pdf");
-    const recipe = new HummusRecipe(input);
+    const output = path.join(__dirname, "../output/color-cmyk-implicit.pdf");
+    const recipe = new HummusRecipe("new", output);
     recipe
-      .editPage(1)
+      .createPage("letter")
       .text("cyan circle, green lines in center", 400, 200)
       .circle(500, 100, 50, { stroke: [255, 0, 0, 0], lineWidth: 10 })
       .line(
@@ -204,10 +204,10 @@ describe("Color", () => {
   // Tests the implicit setting of the Gray colorspace via size of color specification
 
   it("Gray implicit", (done) => {
-    const input = path.join(__dirname, "../output/color-gray.pdf");
-    const recipe = new HummusRecipe(input);
+    const output = path.join(__dirname, "../output/color-gray-implicit.pdf");
+    const recipe = new HummusRecipe("new", output);
     recipe
-      .editPage(1)
+      .createPage("letter")
       .text("black circle, fill gray,", 450, 200, { color: [0] })
       .text("white lines in center", 450, 220, { color: [0] })
       .circle(500, 100, 50, { fill: [200], stroke: [0], lineWidth: 10 })

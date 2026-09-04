@@ -1,5 +1,6 @@
 import { constants } from "../constants.js";
 
+/** Creates Recipe methods for composing registered PDF files. */
 export function createCompositionMethods({
   module,
   pdfs,
@@ -163,6 +164,7 @@ export function createCompositionMethods({
   };
 }
 
+/** Creates Recipe's endPDF implementation, including deferred page insertions. */
 export function createEndPDF({
   endPDF,
   state,
@@ -211,6 +213,7 @@ export function createEndPDF({
   };
 }
 
+/** Creates a function that splits a registered PDF into one-page outputs. */
 export function createSplitPdf({
   module,
   pdfs,
@@ -252,6 +255,7 @@ export function createSplitPdf({
   };
 }
 
+/** Creates a function that reports basic structure for the finished PDF. */
 export function createStructure() {
   return function (format = "string") {
     var bytes = this.endPDF();

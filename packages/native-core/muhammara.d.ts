@@ -1,4 +1,4 @@
-declare namespace Muhammara {
+declare namespace muhammara {
   type EventEmitter = import("events").EventEmitter;
   export type PosX = number;
   export type PosY = number;
@@ -60,6 +60,7 @@ declare namespace Muhammara {
     setPositionFromEnd(inPosition: number): void;
     skip(inAmount: number): void;
     getCurrentPosition(): number;
+    moveStartPosition(inPosition: number): void;
   }
 
   export interface PDFPageInput {
@@ -121,25 +122,16 @@ declare namespace Muhammara {
     f: number,
   ];
 
-  enum LineJoinStyle {
-    LINEJOIN_ROUND,
-    LINEJOIN_BEVEL,
-    LINEJOIN_MITER_VARIABLE,
-    LINEJOIN_MITER = 2,
-    LINEJOIN_MITER_FIXED = 3,
-  }
+  export type LineJoinStyle = 0 | 1 | 2;
 
-  enum EEncoding {
-    EEncodingText = "text",
-    EEncodingCode = "code",
-    EEncodingHex = "hex",
-  }
+  export type EEncoding = "text" | "code" | "hex";
 
-  enum LineCapStyle {
-    LINECAP_BUTT = 0,
-    LINECAP_ROUND,
-    LINECAP_SQUARE,
-  }
+  export const LineCapStyle: {
+    readonly LINECAP_BUTT: 0;
+    readonly LINECAP_ROUND: 1;
+    readonly LINECAP_SQUARE: 2;
+  };
+  export type LineCapStyle = (typeof LineCapStyle)[keyof typeof LineCapStyle];
 
   export interface TextRenderOptions {
     encoding?: EEncoding;
@@ -160,7 +152,7 @@ declare namespace Muhammara {
     n(): this;
     m(x: PosX, y: PosY): this;
     l(x: PosX, y: PosY): this;
-    c(x1: PosX, y1: PosY, x2: PosX, y2: PosY, x3: PosX, y3: PosY): number;
+    c(x1: PosX, y1: PosY, x2: PosX, y2: PosY, x3: PosX, y3: PosY): this;
     v(x2: PosX, y2: PosY, x3: PosX, y3: PosY): this;
     y(x1: PosX, y1: PosY, x3: PosX, y3: PosY): this;
     h(): this;
@@ -226,14 +218,14 @@ declare namespace Muhammara {
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////drawPath(...xyPairs: number[], options: GraphicOptions): this;
     drawPath(xyPairs: Array<[number, number]>, options: GraphicOptions): this;
-    drawCircle(x: PosX, y: PosY, r: number, options: GraphicOptions): this;
-    drawSquare(x: PosX, y: PosY, l: number, options: GraphicOptions): this;
+    drawCircle(x: PosX, y: PosY, r: number, options?: GraphicOptions): this;
+    drawSquare(x: PosX, y: PosY, l: number, options?: GraphicOptions): this;
     drawRectangle(
       x: PosX,
       y: PosY,
       w: number,
       h: number,
-      options: GraphicOptions,
+      options?: GraphicOptions,
     ): this;
     writeText(text: string, x: PosX, y: PosY, options?: WriteTextOptions): this;
     drawImage(
@@ -281,11 +273,11 @@ declare namespace Muhammara {
 
   export interface PDFWStreamForBuffer extends WriteStream {
     new (): PDFWStreamForBuffer;
-    buffer: Buffer;
+    buffer: Buffer | null;
   }
 
   export interface PDFReaderOptions {
-    password: string;
+    password?: string;
   }
 
   export interface PDFWriterToModifyOptions extends PDFWriterOptions {
@@ -311,7 +303,14 @@ declare namespace Muhammara {
   export const ePDFVersion16 = 16;
   export const ePDFVersion17 = 17;
   export const ePDFVersion20 = 20;
+  export const ePDFVersionUndefined = 0;
   export type EPDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
+
+  export const KProcsetImageB = "ImageB";
+  export const KProcsetImageC = "ImageC";
+  export const KProcsetImageI = "ImageI";
+  export const kProcsetPDF = "PDF";
+  export const kProcsetText = "Text";
 
   export const ePDFObjectBoolean = 0;
   export const ePDFObjectLiteralString = 1;
@@ -326,6 +325,7 @@ declare namespace Muhammara {
   export const ePDFObjectStream = 10;
   export const ePDFObjectSymbol = 11;
   export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+  export function getTypeLabel(type: PDFObjectType): string;
 
   export const ePDFPageBoxMediaBox = 0;
   export const ePDFPageBoxCropBox = 1;
@@ -410,6 +410,7 @@ declare namespace Muhammara {
       text: string | any,
       fontSize: number,
     ): TextDimension;
+    getFontMetrics(fontSize?: number): object;
   }
 
   export interface ByteWriter {
@@ -427,6 +428,7 @@ declare namespace Muhammara {
     getCurrentPosition(): number;
     skip(length: number): this;
     setPosition(position: number): this;
+    moveStartPosition(position: number): this;
     setPositionFromEnd(position: number): this;
   }
 
@@ -459,8 +461,7 @@ declare namespace Muhammara {
       revision: number;
       type: number;
     };
-    getXrefSize(): number;
-    getXrefPosition(objectId: number): number;
+    getXrefPosition(): number;
     startReadingFromStream(inputStream: PDFStreamInput): ByteReader;
     startReadingFromStreamForPlainCopying(
       inputStream: PDFStreamInput,
@@ -540,11 +541,10 @@ declare namespace Muhammara {
     getInputStream(): ByteReaderWithPosition | undefined;
   }
 
-  export enum EInfoTrapped {
-    EInfoTrappedTrue,
-    EInfoTrappedFalse,
-    EInfoTrappedUnknown,
-  }
+  export type EInfoTrapped = 0 | 1 | 2;
+  export const EInfoTrappedTrue = 0;
+  export const EInfoTrappedFalse = 1;
+  export const EInfoTrappedUnknown = 2;
 
   export interface InfoDictionary {
     addAdditionalInfoEntry(key: string, value: string): void;
@@ -572,6 +572,7 @@ declare namespace Muhammara {
     id: number;
     getContentContext(): XObjectContentContext;
     getResourcesDictinary(): ResourcesDictionary;
+    getResourcesDictionary(): ResourcesDictionary;
     getContentStream(): PDFStream;
   }
 
@@ -613,6 +614,7 @@ declare namespace Muhammara {
     writeRectangleValue(a: number, b: number, c: number, d: number): this;
     writeLiteralStringValue(literal: Array<number> | string): this;
     writeBooleanValue(boolValue: boolean): this;
+    writeNumberValue(value: number): this;
     writeObjectReferenceValue(objectId: number): this;
   }
 
@@ -621,15 +623,21 @@ declare namespace Muhammara {
     getCurrentPosition(): number;
   }
 
-  export type eTokenSeparatorSpace = 0;
-  export type eTokenSeparatorEndLine = 1;
-  export type eTokenSeparatorNone = 2;
+  export const eTokenSeparatorSpace = 0;
+  export const eTokenSeparatorEndLine = 1;
+  export const eTokenSeparatorNone = 2;
+  export const ETokenSeparator: {
+    readonly eTokenSeparatorSpace: 0;
+    readonly eTokenSeparatorEndLine: 1;
+    readonly eTokenSeparatorNone: 2;
+  };
+  export type ETokenSeparator =
+    (typeof ETokenSeparator)[keyof typeof ETokenSeparator];
 
-  enum ETokenSeparator {
-    eTokenSeparatorSpace,
-    eTokenSeparatorEndLine,
-    eTokenSeparatorNone,
-  }
+  export const eXrefEntryExisting = 0;
+  export const eXrefEntryDelete = 1;
+  export const eXrefEntryStreamObject = 2;
+  export const eXrefEntryUndefined = 3;
 
   export interface ObjectsContext {
     allocateNewObjectID(): FormXObjectId;
@@ -654,7 +662,7 @@ declare namespace Muhammara {
     writeBoolean(bool: boolean): this;
     writeKeyword(keyword: string): this;
     writeComment(comment: string): this;
-    setCompressStreams(compress: true): this;
+    setCompressStreams(compress: boolean): this;
     startPDFStream(dictionaryContext: DictionaryContext): PDFStream;
     startUnfilteredPDFStream(stream: DictionaryContext): PDFStream;
     endPDFStream(stream: PDFStream): this;
@@ -731,7 +739,7 @@ declare namespace Muhammara {
   export interface MergeOptions {
     password?: string;
     type?: eRangeType;
-    specificRanges?: [[number, number]];
+    specificRanges?: [number, number][];
   }
 
   export interface AppendOptions extends MergeOptions {}
@@ -906,6 +914,13 @@ declare namespace Muhammara {
       title?: string;
       subject?: string;
       keywords?: string[];
+    }
+
+    interface RecipeMargins {
+      left?: number;
+      right?: number;
+      top?: number;
+      bottom?: number;
     }
 
     interface CommentOptions {
@@ -1092,6 +1107,11 @@ declare namespace Muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    readonly position: { x: number; y: number };
+    read(inSrc?: string | Buffer): { pages: number; [page: number]: object };
+    register(key: string, callback: Function): void;
+    register(callback: Function & { name: string }): void;
+
     constructor(
       buffer: Buffer,
       output?: string | null,
@@ -1117,7 +1137,7 @@ declare namespace Muhammara {
       pages?: number | (number | [number, number])[],
     ): Recipe;
 
-    encrypt(options: Recipe.EncryptOptions): Recipe;
+    encrypt(options?: Recipe.EncryptOptions): Recipe;
 
     registerFont(fontName: string, fontSrcPath: string): Recipe;
 
@@ -1130,7 +1150,7 @@ declare namespace Muhammara {
 
     info(options?: Recipe.InfoOptions): Recipe;
 
-    custom(key?: string, value?: string): Recipe;
+    custom(key: string, value: string): Recipe;
 
     insertPage(
       afterPageNumber: number,
@@ -1145,8 +1165,16 @@ declare namespace Muhammara {
       options?: Recipe.OverlayOptions,
     ): Recipe;
 
-    createPage(pageWidth?: number, pageHeight?: number): Recipe;
-    createPage(pageType: string, rotation?: number): Recipe;
+    createPage(
+      pageWidth?: number,
+      pageHeight?: number,
+      margins?: Recipe.RecipeMargins,
+    ): Recipe;
+    createPage(
+      pageType: string,
+      rotation?: number,
+      margins?: Recipe.RecipeMargins,
+    ): Recipe;
     endPage(): Recipe;
 
     editPage(pageNumber: number): Recipe;
@@ -1158,7 +1186,18 @@ declare namespace Muhammara {
       pageNumber: number;
     };
 
-    split(outputDir: string, prefix: string): Recipe;
+    margins(): Required<Recipe.RecipeMargins>;
+    margins(margins: Recipe.RecipeMargins): Recipe;
+    margins(
+      left?: number,
+      right?: number,
+      top?: number,
+      bottom?: number,
+    ): Recipe;
+    getPageInfo(): InfoDictionary;
+    pauseContext(): void;
+    resumeContext(): void;
+    split(outputDir?: string, prefix?: string): Recipe;
 
     text(
       text: string,
@@ -1166,6 +1205,19 @@ declare namespace Muhammara {
       y: number,
       options?: Recipe.TextOptions,
     ): Recipe;
+    textDimensions(text: string, options?: Recipe.TextOptions): TextDimension;
+    movedown(lines?: number, returnCoords?: false): Recipe;
+    movedown(lines: number, returnCoords: true): number[];
+    movedown(lines?: number, returnCoords?: boolean): Recipe | number[];
+    layout(
+      id: string | number,
+      x?: number,
+      y?: number,
+      width?: number,
+      height?: number,
+      options?: object,
+    ): Recipe;
+    table(x: number, y: number, contents: object[], options?: object): Recipe;
 
     moveTo(x: number, y: number): Recipe;
 
@@ -1190,21 +1242,58 @@ declare namespace Muhammara {
       options?: Recipe.RectangleOptions,
     ): Recipe;
 
-    endPDF(callback?: Recipe.EndPDFCallback): Recipe;
+    ellipse(
+      cx: number,
+      cy: number,
+      rx: number,
+      ry: number,
+      options?: Recipe.CircleOptions,
+    ): Recipe;
+    arc(
+      x: number,
+      y: number,
+      radius: number,
+      startAngle?: number,
+      endAngle?: number,
+      options?: Recipe.CircleOptions,
+    ): Recipe;
+    lineWidth(width: number): Recipe;
+    fillOpacity(opacity: number): Recipe;
+    fill(color?: string | number[]): Recipe;
+    stroke(color?: string | number[]): Recipe;
+    fillAndStroke(fill?: string | number[], stroke?: string | number[]): Recipe;
+    n_gon(
+      cx: number,
+      cy: number,
+      radius: number,
+      sides?: number | Recipe.PolygonOptions,
+      options?: Recipe.PolygonOptions,
+    ): Recipe;
+    star(
+      cx: number,
+      cy: number,
+      radius: number,
+      points?: number | Recipe.PolygonOptions,
+      options?: Recipe.PolygonOptions,
+    ): Recipe;
+    triangle(
+      x: number,
+      y: number,
+      traits: number[] | number[][],
+      options?: Recipe.PolygonOptions,
+    ): Recipe;
+    arrow(x: number, y: number, options?: Recipe.PolygonOptions): Recipe;
+    chroma(name: string, value: string | number[], colorspace?: string): Recipe;
+    permission(flags?: string): number;
+    structure(output: string): Recipe;
+    htmlToTextObjects(
+      htmlCodes: string,
+      options?: Recipe.TextOptions,
+    ): object[];
+
+    endPDF(): void;
+    endPDF<T>(callback: (output?: Buffer | string) => T): T;
   }
 }
 
-declare module "@muhammara/native-core" {
-  export type MuhammaraApi = typeof Muhammara;
-  export function createMuhammara(addon: object): MuhammaraApi;
-}
-
-declare module "@muhammara/native" {
-  const muhammara: typeof Muhammara;
-  export = muhammara;
-}
-
-declare module "@muhammara/native-with-source" {
-  const muhammara: typeof Muhammara;
-  export = muhammara;
-}
+export = muhammara;

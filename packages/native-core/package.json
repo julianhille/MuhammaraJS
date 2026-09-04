@@ -5,8 +5,13 @@
   "homepage": "https://muhammarajs.readthedocs.io/",
   "license": "Apache-2.0",
   "author": "Julian <j.hille484@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julianhille/MuhammaraJS.git",
+    "directory": "packages/native-core"
+  },
   "main": "./index.js",
-  "types": "./muhammara.d.ts",
+  "types": "./index.d.ts",
   "engines": {
     "node": "20 || 22 || 24 || >=25"
   },
@@ -18,9 +23,9 @@
     "index.js",
     "README.md",
     "LICENSE",
+    "index.d.ts",
     "lib",
     "fonts",
-    "scripts/copy-openssl-dlls.js",
     "muhammara.d.ts",
     "THIRD_PARTY_NOTICES.md"
   ],

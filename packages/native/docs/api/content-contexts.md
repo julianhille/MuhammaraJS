@@ -15,6 +15,13 @@ with `setOpacity`. Primitive options include fill or stroke type, color, and
 line width. Raw operators cover path construction and painting, graphics state,
 color, clipping, text, and XObject placement.
 
+```javascript
+var page = writer.createPage(0, 0, 595, 842);
+var context = writer.startPageContentContext(page);
+context.drawRectangle(72, 72, 144, 72, { color: 0x000000, type: "stroke" });
+writer.writePage(page);
+```
+
 See [Draw Text](../low-level/text.md),
 [Draw Primitives](../low-level/drawing-primitives.md), and
 [PDF Drawing Operators](../low-level/pdf-operators.md) for examples.

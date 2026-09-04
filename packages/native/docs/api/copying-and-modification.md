@@ -16,8 +16,14 @@ Page append and source-page indexes in the low-level copying API are zero-based.
 Always finish a copying context with `end()` after its final operation. Form
 creation from a source page returns an object ID, not a placeable form object.
 
-`tests/AppendPagesTest.js`, `tests/MergePDFPages.js`,
-`tests/PDFCopyingContextTest.js`, and `tests/BasicModificationWithStreams.js`
+```javascript
+var writer = muhammara.createWriter("combined.pdf");
+writer.appendPDFPagesFromPDF("source.pdf");
+writer.end();
+```
+
+[`tests/AppendPagesTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/AppendPagesTest.js), [`tests/MergePDFPages.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/MergePDFPages.js),
+[`tests/PDFCopyingContextTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFCopyingContextTest.js), and [`tests/BasicModificationWithStreams.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/BasicModificationWithStreams.js)
 cover these operations.
 
 See [Copy And Embed PDFs](../low-level/copy-and-embed-pdfs.md) and

@@ -1,3 +1,4 @@
+/** Converts comma-separated PDF permission names to a bitmask. */
 export function permission(flags = "print") {
   var bits = {
     print: 4,
@@ -19,6 +20,7 @@ export function permission(flags = "print") {
     }, 0);
 }
 
+/** Creates Recipe security methods, including unsupported-operation reporting. */
 export function createSecurityMethods() {
   return {
     permission,

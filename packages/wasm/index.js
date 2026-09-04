@@ -31,11 +31,7 @@ export {
   PDFWStreamForBuffer,
 };
 
-/**
- * Loads the Muhammara WebAssembly module.
- *
- * The WebAssembly build currently provides in-memory, one-page PDF creation.
- */
+/** Loads the Muhammara WebAssembly module and its byte-first PDF API. */
 async function createRuntime(options) {
   var limits = options?.limits || {};
   if (!limits || typeof limits !== "object" || Array.isArray(limits)) {
@@ -278,13 +274,26 @@ async function createRuntime(options) {
   };
 }
 
+/**
+ * Loads the browser-safe Muhammara API for reading, creating, modifying, and
+ * composing PDFs entirely from bytes.
+ *
+ * @param {object} [options] Emscripten module options and optional byte limits.
+ * @param {object} [options.limits] Limits for individual inputs and outputs.
+ * @param {number} [options.limits.maxInputBytes=268435456] Maximum input size.
+ * @param {number} [options.limits.maxOutputBytes=268435456] Maximum output size.
+ * @returns {Promise<object>} The initialized Muhammara API.
+ */
 export async function createMuhammaraWasm(options) {
   return (await createRuntime(options)).api;
 }
 
 /**
- * Loads a browser-native Recipe constructor. Inputs and outputs are bytes, not
- * Node paths or streams; callers supply fonts with registerFont.
+ * Loads the browser-native Recipe constructor. Inputs and outputs are bytes,
+ * not Node paths or streams; callers register fonts and other assets as bytes.
+ *
+ * @param {object} [options] Emscripten module options and optional byte limits.
+ * @returns {Promise<Function>} The initialized Recipe constructor.
  */
 export async function createRecipe(options) {
   var {

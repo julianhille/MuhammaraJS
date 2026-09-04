@@ -1,3 +1,4 @@
+/** Creates low-level helpers for copying objects between PDF documents. */
 export function createCopyingHelpers({ module, constants, withString }) {
   function copyingSourceParser(copying, requireCopying) {
     var parser =

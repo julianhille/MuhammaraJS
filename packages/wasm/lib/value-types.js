@@ -1,3 +1,4 @@
+/** Creates PDF value encoders and constructors backed by the WASM module. */
 export function createValueTypes({ module, withString, withBytes }) {
   var encoder = new TextEncoder();
   function textStringBytes(value) {

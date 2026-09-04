@@ -3,10 +3,10 @@ const { expect } = require("chai");
 
 describe("SigSegv test", function () {
   it("should read fields correctly", function () {
-    expect(() =>
+    expect(function () {
       muhammara.createReader(
         __dirname + "/TestMaterials/BrokenPdfBadHeader.txt",
-      ),
-    ).to.throw();
+      );
+    }).to.throw(Error, /Unable to start parsing PDF file/);
   });
 });

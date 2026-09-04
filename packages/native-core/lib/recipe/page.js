@@ -6,7 +6,7 @@ const muhammara = require("../muhammara");
  * '-size' will be removed from string but is discouraged to use.
  * @name createPage
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number|string} [pageWidth] - The page width, or name of medium size.
  * Known named medium sizes: executive, folio, legal, letter, ledger, tabloid, a0-a10, b0-b10, c0-c10, ra0-ra4, sra0-ara4
  * @param {number} [pageHeight] - The page height, or rotation (90) when page size name given.
@@ -15,6 +15,7 @@ const muhammara = require("../muhammara");
  * @param {number} [margins.right] - Right margin.
  * @param {number} [margins.top] - Top margin.
  * @param {number} [margins.bottom] - Bottom margin.
+ * @returns {Recipe} The recipe instance.
  */
 exports.createPage = function createPage(pageWidth, pageHeight, margins) {
   if (!pageWidth && !pageHeight) {
@@ -79,7 +80,8 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
  * Finish a page
  * @name endPage
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
+ * @returns {Recipe} The recipe instance.
  */
 exports.endPage = function endPage() {
   if (!this.page) {
@@ -103,8 +105,9 @@ exports.endPage = function endPage() {
  * Start editing a page
  * @name editPage
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} pageNumber - The page number to be edited.
+ * @returns {Recipe} The recipe instance.
  */
 exports.editPage = function editPage(pageNumber) {
   const pdfWriter = this.writer;
@@ -206,8 +209,9 @@ exports._resumePageRotation = function _resumePageRotation(
  * Get page information
  * @name pageInfo
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number} pageNumber - The page number.
+ * @returns {{width: number, height: number, rotate: number, pageNumber: number}} The page information.
  */
 exports.pageInfo = function pageInfo(pageNumber) {
   const pageInfo = this.metadata[pageNumber];
@@ -219,6 +223,13 @@ exports.pageInfo = function pageInfo(pageNumber) {
   };
 };
 
+/**
+ * Pause the current page content context.
+ * @name pauseContext
+ * @function
+ * @memberof Recipe#
+ * @returns {void}
+ */
 exports.pauseContext = function pauseContext() {
   if (this.page && this.page.endContext) {
     this.page.endContext();
@@ -228,6 +239,13 @@ exports.pauseContext = function pauseContext() {
   }
 };
 
+/**
+ * Resume the current page content context after it has been paused.
+ * @name resumeContext
+ * @function
+ * @memberof Recipe#
+ * @returns {void}
+ */
 exports.resumeContext = function resumeContext() {
   if (!this.isNewPDF && this.page) {
     this.pageContext = this.page.startContext().getContext();
@@ -235,6 +253,13 @@ exports.resumeContext = function resumeContext() {
   }
 };
 
+/**
+ * Get the document information dictionary.
+ * @name getPageInfo
+ * @function
+ * @memberof Recipe#
+ * @returns {Object} The document information dictionary.
+ */
 exports.getPageInfo = function getPageInfo() {
   const info = this.writer.getDocumentContext().getInfoDictionary();
   return info;
@@ -244,7 +269,7 @@ exports.getPageInfo = function getPageInfo() {
  * Set/Get current page margins.
  * @name margins
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {number|object} [left] - Left margin width or an object holding margin properties to be set.
  * Valid margin property names are: left, right, top, bottom.
  * @param {number} [right] - Right margin width.

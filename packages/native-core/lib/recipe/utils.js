@@ -6,7 +6,7 @@ const ANNOTATION_PREFIX = "Annots";
  * @param {any} pdfWriter - Hummus writer.
  * @param {string|any} sourcePDFPath - The path for the output pdfs or Reader stream.
  * @param {number} pageNumber - page number.
- * @param {any} [options={}] - appendPDFPageFromPDF options
+ * @private
  */
 function appendPDFPageFromPDFWithAnnotations(
   pdfWriter,
@@ -43,7 +43,7 @@ function appendPDFPageFromPDFWithAnnotations(
  *
  * @param {any} pdfWriter - Hummus writer.
  * @param {string|any} sourcePDFPath - The path for the output pdfs or Reader stream.
- * @param {any} [options={}] - appendPDFPagesFromPDF options
+ * @private
  */
 function appendPDFPagesFromPDFWithAnnotations(
   pdfWriter,

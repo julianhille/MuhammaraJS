@@ -15,6 +15,8 @@
     "wasm:test:paths": "npm run test:paths --workspace=@muhammara/wasm",
     "wasm:test:exports": "npm run test:exports --workspace=@muhammara/wasm",
     "wasm:test:types": "npm run test:types --workspace=@muhammara/wasm",
+    "native:test:types": "npm run test:types --workspace=@muhammara/native",
+    "native-with-source:test:types": "npm run test:types --workspace=@muhammara/native-with-source",
     "wasm:serve:browser": "npm run serve:browser --workspace=@muhammara/wasm",
     "wasm:server:browser": "npm run server:browser --workspace=@muhammara/wasm",
     "wasm:test:browser": "npm run test:browser --workspace=@muhammara/wasm",

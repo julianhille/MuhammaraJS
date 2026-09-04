@@ -3,7 +3,7 @@ const muhammara = require("../muhammara");
 /**
  * @name info
  * @desc Add new PDF information, or retrieve existing PDF information.
- * @memberof Recipe
+ * @memberof Recipe#
  * @function
  * @param {Object} [options] - The options (when missing obtains existing PDF information)
  * @param {number} [options.version] - The pdf version
@@ -11,6 +11,7 @@ const muhammara = require("../muhammara");
  * @param {string} [options.title] - The title
  * @param {string} [options.subject] - The subject
  * @param {string[]} [options.keywords] - The array of keywords
+ * @returns {Object|Recipe} The existing information dictionary when options are omitted, otherwise the recipe instance.
  */
 exports.info = function info(options) {
   let result;
@@ -199,10 +200,11 @@ exports._writeInfo = function _writeInfo() {
 /**
  * @name custom
  * @desc Add custom information to pdf
- * @memberof Recipe
+ * @memberof Recipe#
  * @function
- * @param {string} [key] - The key
- * @param {string} [value] - The value
+ * @param {string} key - The key
+ * @param {string} value - The value
+ * @returns {Recipe} The recipe instance.
  */
 exports.custom = function custom(key, value) {
   const infoDictionary = this.writer.getDocumentContext().getInfoDictionary();
@@ -210,6 +212,14 @@ exports.custom = function custom(key, value) {
   return this;
 };
 
+/**
+ * Write the PDF object structure to a file.
+ * @name structure
+ * @function
+ * @memberof Recipe#
+ * @param {string} output - The output file path.
+ * @returns {Recipe} The recipe instance.
+ */
 exports.structure = function structure(output) {
   // PDF file format http://lotabout.me/orgwiki/pdf.html
   // const outputFileType = path.extname(output);

@@ -5,6 +5,7 @@ packages/native-with-source/tests/output
 packages/native-with-source/tests/**/output
 packages/native-with-source/binding
 packages/native-with-source/build/
+packages/native-with-source/openssl-build/
 packages/src
 node_modules
 src/deps/openssl/
@@ -67,4 +68,7 @@ xcode/DerivedData
 .vscode
 packages/wasm/build/
 packages/wasm/dist/
+packages/wasm/docs/reference.md
+packages/native/docs/recipe/reference.md
+packages/native/docs/api/type-declarations.md
 *.tgz

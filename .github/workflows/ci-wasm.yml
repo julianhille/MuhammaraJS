@@ -15,7 +15,7 @@ on:
 
 concurrency:
   group: wasm-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 permissions:
   contents: read
@@ -32,7 +32,8 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run wasm:build
-      - run: npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json
+      - name: Verify Wasm package contents
+        run: test -s packages/wasm/dist/muhammara-wasm.js && test -s packages/wasm/dist/muhammara-wasm.wasm && npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json | node -e "var pack = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0]; var files = pack.files.map(function(file) { return file.path; }); if (!files.includes('dist/muhammara-wasm.js') || !files.includes('dist/muhammara-wasm.wasm')) process.exit(1);"
       - uses: actions/upload-artifact@v6
         with:
           name: muhammara-wasm
@@ -56,6 +57,7 @@ jobs:
       - run: npm run wasm:verify
       - run: npm run wasm:test
       - run: npm run wasm:test:types
+      - run: npm run wasm:test:paths
       - run: npm run wasm:test:exports
       - name: Install Chrome for Testing
         id: chrome
@@ -81,7 +83,7 @@ jobs:
         run: npm run wasm:build
         env:
           MUHAMMARA_WASM_SANITIZE: ON
-      - run: node ./scripts/run-mocha.mjs tests/MemoryLifecycle.test.mjs
+      - run: node ./scripts/run-mocha.mjs tests/integration/MemoryLifecycle.test.mjs
         working-directory: packages/wasm
   publish:
     needs: [test, sanitizer]
@@ -98,12 +100,20 @@ jobs:
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
-      - run: test "$(node -p \"require('./packages/wasm/package.json').version\")" = "${GITHUB_REF_NAME#wasm-v}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: test "$(node -p "require('./packages/wasm/package.json').version")" = "${GITHUB_REF_NAME#wasm-v}"
       - run: npm ci --ignore-scripts
+      - run: python -m pip install -r packages/wasm/docs/requirements.txt
+      - run: npm run test:codestyle
+      - run: npm run docs:check --workspace=@muhammara/wasm
       - uses: actions/download-artifact@v4
         with:
           name: muhammara-wasm
           path: packages/wasm/dist
+      - name: Verify Wasm package contents
+        run: test -s packages/wasm/dist/muhammara-wasm.js && test -s packages/wasm/dist/muhammara-wasm.wasm && npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json | node -e "var pack = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0]; var files = pack.files.map(function(file) { return file.path; }); if (!files.includes('dist/muhammara-wasm.js') || !files.includes('dist/muhammara-wasm.wasm')) process.exit(1);"
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:

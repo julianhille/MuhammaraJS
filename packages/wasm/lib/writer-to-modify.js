@@ -1,5 +1,6 @@
 import { createChildLifecycle } from "./lifecycle.js";
 
+/** Creates a factory for writers that modify an existing PDF. */
 export function createWriterToModifyFactory({
   module,
   constants,

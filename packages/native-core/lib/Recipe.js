@@ -8,7 +8,7 @@ const streams = require("memory-streams");
  * @desc Create a pdfDoc
  * @namespace
  * @constructor
- * @param {string} src - The file path or Buffer of the src file.
+ * @param {string|Buffer} src - The file path or Buffer of the source file.
  * @param {string} [output] - The path of the output file uses src if its not a buffer.
  * @param {Object} [options] - The options for pdfDoc
  * @param {number} [options.version] - The pdf version
@@ -141,6 +141,12 @@ class Recipe {
     };
   }
 
+  /**
+   * Read PDF metadata.
+   * @param {string|Buffer} [inSrc] - An optional PDF source to read instead of the recipe source.
+   * @returns {Object} The PDF metadata.
+   * @throws {Error} If the PDF cannot be read.
+   */
   read(inSrc) {
     const isForExternal = inSrc ? true : false;
     try {
@@ -213,7 +219,8 @@ class Recipe {
    * End the pdfDoc
    * @function
    * @memberof Recipe
-   * @param {function} callback - The callback function.
+   * @param {function} [callback] - The callback function.
+   * @returns {*} The callback result, if a callback is provided.
    */
   endPDF(callback) {
     this._writeInfo();
@@ -286,12 +293,16 @@ class Recipe {
   }
 
   /**
-   * Register callback procedure with hummus-recipe.
+   * Register a callback procedure with MuhammaraJS.
    * @function
    * @memberof Recipe
-   * @param {string} key name assigned to given callback. Note that if an actual function is being
+   * @param {string|Function} key Name assigned to the callback. When a named function is
    * registered, and its given name is what is to be used to access it, the key is unnecessary.
-   * @param {Function} callback procedure that can be accessed through hummus-recipe
+   * @param {Function} [callback] Callback procedure that can be accessed through MuhammaraJS.
+   * @throws {string} If the callback function is unnamed when no key is provided.
+   * @throws {string} If the key conflicts with an existing Recipe prototype member.
+   * @throws {string} If the callback is not a function.
+   * @returns {void}
    */
   register(key, callback) {
     // Assume simply registering a function which will have an embedded name

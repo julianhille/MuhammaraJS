@@ -1,3 +1,4 @@
+/** Creates Recipe asset registration and removal methods. */
 export function createRegistrationMethods({
   module,
   normalizeBytes,

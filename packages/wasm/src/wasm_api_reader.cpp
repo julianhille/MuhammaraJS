@@ -133,7 +133,7 @@ WASM_EXPORT WasmPageInput* muhammara_wasm_reader_parse_page(
   return page;
 }
 
-// status: 1 success, 2 missing/invalid page, 3 extraction safety limit.
+// status: 1 success, 2 invalid input or missing/invalid page, 3 extraction safety limit.
 WASM_EXPORT WasmTextExtraction* muhammara_wasm_reader_extract_page_text(
     WasmReader* reader, unsigned long index, unsigned int maxElements,
     unsigned int maxOperands, unsigned int maxTextBytes,

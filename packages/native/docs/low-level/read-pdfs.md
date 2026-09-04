@@ -18,4 +18,4 @@ such as `toPDFDictionary()` or `toPDFArray()`.
 `extractPageText(index)` enumerates text-showing operations with their text
 matrix and active font state. It does not provide general visual-text or
 image-extraction. See [Find Text Positions](../how-to/find-text-positions.md),
-`tests/PDFTextExtractionTest.js`, and `tests/PDFParser.js` for verified usage.
+[`tests/PDFTextExtractionTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFTextExtractionTest.js), and [`tests/PDFParser.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFParser.js) for verified usage.

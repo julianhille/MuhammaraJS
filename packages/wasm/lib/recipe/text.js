@@ -88,6 +88,7 @@ function clipEntries(entries, availableHeight, lineHeight) {
   };
 }
 
+/** Creates Recipe text measurement, layout, and drawing methods. */
 export function createTextMethods({ drawText, measure, module }) {
   function dimensions(recipe, value, options = {}) {
     var result = measure.call(recipe, String(value), options);

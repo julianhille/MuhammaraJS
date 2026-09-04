@@ -1,3 +1,4 @@
+/** Finalizes a Recipe and returns its cached PDF bytes on subsequent calls. */
 export function endPDF(recipe, module, assertOutputSize) {
   if (recipe._endedBytes) return recipe._endedBytes;
   recipe._writeCanonicalInfo();

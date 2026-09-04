@@ -1,4 +1,4 @@
-var muhammara = require("@muhammara/native-with-source");
+var muhammara = require("@muhammara/native");
 
 function createLowLevelPdf(outputPath) {
   var writer = muhammara.createWriter(outputPath);

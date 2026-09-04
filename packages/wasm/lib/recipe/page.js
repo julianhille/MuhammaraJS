@@ -1,6 +1,7 @@
 import { mediumSizes } from "./parameters.js";
 import { pageRecord } from "./page-record.js";
 
+/** Creates Recipe page creation, inspection, and editing methods. */
 export function createPageMethods(
   call,
   { createReader, createWriterToModify, module },
@@ -261,6 +262,7 @@ export function createPageMethods(
   };
 }
 
+/** Updates the active Recipe page metadata after changing its media box. */
 export function updateMediaBox(recipe, mediaBox) {
   var page = recipe._pages[recipe._pages.length - 1];
   if (!page) return;

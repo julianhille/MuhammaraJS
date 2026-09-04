@@ -16,5 +16,5 @@ size-dependent content to an existing page. Rectangles use a top-left anchor;
 circles and ellipses use center coordinates. `rotationOrigin` selects the point
 used for transformations.
 
-See `tests/recipe/create.js`, `tests/recipe/positioning.js`, and
-`tests/recipe/rotation.js`.
+See [`tests/recipe/create.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/create.js), [`tests/recipe/positioning.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/positioning.js), and
+[`tests/recipe/rotation.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/rotation.js).

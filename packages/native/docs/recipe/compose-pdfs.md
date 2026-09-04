@@ -31,5 +31,5 @@ preservation, and fit-to-width or fit-to-height behavior. To split a PDF, open
 it without an output file and call `split(outputDirectory, prefix)` before
 `endPDF()`.
 
-See `tests/recipe/appendPages.js`, `tests/recipe/insertPage.js`,
-`tests/recipe/overlay.js`, and `tests/recipe/split.js` for tested workflows.
+See [`tests/recipe/appendPages.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/appendPages.js), [`tests/recipe/insertPage.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/insertPage.js),
+[`tests/recipe/overlay.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/overlay.js), and [`tests/recipe/split.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/split.js) for tested workflows.

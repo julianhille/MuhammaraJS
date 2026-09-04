@@ -1,3 +1,4 @@
+/** Creates normalized Recipe metadata for a PDF page. */
 export function pageRecord(pageNumber, mediaBox, rotate = 0) {
   var side1 = Math.abs(mediaBox[2] - mediaBox[0]);
   var side2 = Math.abs(mediaBox[3] - mediaBox[1]);

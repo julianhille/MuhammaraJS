@@ -25,7 +25,7 @@ Pass `Buffer.from("new")` as the input and omit the output path to receive the
 completed PDF through the `endPDF` callback.
 
 ```javascript
-var pdfDoc = new Recipe(Buffer.from("new"), null, { version: 1.6 });
+var pdfDoc = new Recipe(Buffer.from("new"));
 
 pdfDoc
   .createPage("letter")
@@ -36,5 +36,5 @@ pdfDoc
 ```
 
 `endPDF()` does not return the Buffer. Buffer mode is exercised in
-`tests/recipe/createWithBuffer.js`; general creation examples are in
-`tests/recipe/create.js`.
+[`tests/recipe/createWithBuffer.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/createWithBuffer.js); general creation examples are in
+[`tests/recipe/create.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/create.js).

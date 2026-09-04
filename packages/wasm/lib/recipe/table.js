@@ -14,6 +14,7 @@ function cellOptions(options = {}, name = "cell") {
   }
   return result;
 }
+/** Creates Recipe table layout methods. */
 export function createTableMethods() {
   return {
     table(x, y, contents, options = {}) {

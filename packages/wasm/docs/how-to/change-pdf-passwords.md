@@ -12,8 +12,9 @@ encryption because the PDF object and security-handler integration would still
 be required.
 
 Process password-protected documents in a trusted server or native environment
-with the `muhammara` package. Do not send document passwords to an untrusted
-browser application or attempt to bypass encryption by manipulating PDF bytes.
+with `@muhammara/native`, or with `@muhammara/native-with-source` for a local
+or Electron build. Do not send document passwords to an untrusted browser
+application or attempt to bypass encryption by manipulating PDF bytes.
 
 See [Differences and Restrictions](../differences.md) for the complete platform
 boundary.

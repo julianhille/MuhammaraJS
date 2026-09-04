@@ -11,18 +11,19 @@
     "node": "20 || 22 || 24 || >=25"
   },
   "scripts": {
-    "install": "node scripts/install-with-source.js",
-    "postinstall": "node scripts/prepare-binding.js",
-    "test": "mocha -R tap ./tests/*.js ./tests/**/*.js --timeout 15000",
+    "install": "node-pre-gyp install --fallback-to-build --jobs=max",
+    "test": "node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R tap --recursive ./tests --timeout 15000",
     "test:codestyle": "npx prettier -c ./",
-    "test:electron": "electron-mocha -R tap ./tests/*.js --timeout 15000",
-    "package": "node scripts/prepare-binding.js && node-pre-gyp package",
+    "test:electron": "electron-mocha --js-flags=--expose-gc --require ./tests/hooks/sanitizer-gc.js -R tap --recursive ./tests --timeout 15000",
+    "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types/types.test.ts",
+    "package": "node-pre-gyp package",
     "clean:source": "node scripts/remove-source.js",
-    "test:docs": "mocha tests/docs/**/*.js --timeout 15000"
+    "test:docs": "mocha docs/tests/**/*.js --timeout 15000"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/julianhille/Muhammarajs.git"
+    "url": "git+https://github.com/julianhille/MuhammaraJS.git",
+    "directory": "packages/native-with-source"
   },
   "keywords": [
     "pdf",
@@ -33,13 +34,15 @@
   ],
   "files": [
     "src",
-    "scripts/install-with-source.js",
-    "scripts/prepare-binding.js",
+    "scripts/build-openssl.sh",
+    "scripts/build-openssl-win.js",
     "scripts/remove-source.js",
     "binding.gyp",
+    "openssl.gyp",
     "index.js",
     "index.d.ts",
     "README.md",
+    "THIRD_PARTY_NOTICES.md",
     "LICENSE"
   ],
   "dependencies": {

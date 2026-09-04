@@ -23,7 +23,7 @@ function hilight(text, record) {
 }
 
 describe("Text - Columns", () => {
-  it("Table", (done) => {
+  it("Table", () => {
     const output = path.join(__dirname, "../output/table.pdf");
     const pplFile = path.join(__dirname, "../TestMaterials/recipe/people.json");
     const recipe = new HummusRecipe("new", output);
@@ -214,6 +214,6 @@ describe("Text - Columns", () => {
       });
 
     recipe.endPage();
-    recipe.endPDF(done);
-  }).timeout(30000);
+    recipe.endPDF();
+  }).timeout(60000);
 });

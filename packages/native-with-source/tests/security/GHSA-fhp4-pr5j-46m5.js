@@ -50,6 +50,7 @@
  */
 
 const muhammara = require("@muhammara/native-with-source");
+const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
 
@@ -110,7 +111,7 @@ function buildMaliciousPDF() {
 }
 
 describe("Testing muhammara NULL Pointer Dereference PoC (GHSA-fhp4-pr5j-46m5)", function () {
-  it("should complete without error", function () {
+  it("parses and reads the crafted LZW stream without crashing", function () {
     const TARGET = __dirname + "/../output/poc_muhammara_lzw.pdf";
 
     // Write malicious PDF
@@ -122,10 +123,11 @@ describe("Testing muhammara NULL Pointer Dereference PoC (GHSA-fhp4-pr5j-46m5)",
     try {
       // Retrieve stream object (obj 4)
       const streamObj = reader.parseNewObject(4);
+      assert.equal(reader.getPagesCount(), 1);
 
       // Trigger: startReadingFromStream applies LZW filter
       // → CreateFilterForStream → earlyObj->GetValue() on NULL → ACCESS VIOLATION
-      reader.startReadingFromStream(streamObj);
+      assert.ok(reader.startReadingFromStream(streamObj));
     } finally {
       reader.end();
       fs.unlinkSync(TARGET);
