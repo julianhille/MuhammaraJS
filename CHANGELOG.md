@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [7.0.0-alpha.0] - 2026-09-02
+## [7.0.0-alpha.1] - 2026-09-04
 
 ### Breaking Changes
 
@@ -624,7 +624,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-alpha.1...HEAD
+[7.0.0-alpha.1]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...native-v7.0.0-alpha.1
 [6.0.6]: https://github.com/julianhille/MuhammaraJS/compare/6.0.5...6.0.6
 [6.0.5]: https://github.com/julianhille/MuhammaraJS/compare/6.0.4...6.0.5
 [6.0.4]: https://github.com/julianhille/MuhammaraJS/compare/6.0.3...6.0.4

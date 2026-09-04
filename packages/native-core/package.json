@@ -1,6 +1,6 @@
 {
   "name": "@muhammara/native-core",
-  "version": "7.0.0-alpha.0",
+  "version": "7.0.0-alpha.1",
   "description": "Shared JavaScript API for MuhammaraJS native packages",
   "homepage": "https://muhammarajs.readthedocs.io/",
   "license": "Apache-2.0",
