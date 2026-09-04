@@ -34,7 +34,57 @@
 #include "ConstructorsHolder.h"
 #include "text-extraction/PDFTextExtractor.h"
 
+#include <cmath>
+#include <string>
+
 using namespace v8;
+
+namespace
+{
+// Mirrors the Wasm reader's limits validation so both backends accept the same
+// object and reject the same values. Absent or undefined fields keep the
+// built-in ceiling; PDFExtractionLimits::Clamp() then caps anything higher.
+bool ReadExtractionLimits(Isolate* isolate, const ARGS_TYPE& args, int inIndex, PDFExtractionLimits& outLimits)
+{
+    if(args.Length() <= inIndex || args[inIndex]->IsUndefined())
+        return true;
+
+    if(!args[inIndex]->IsObject() || args[inIndex]->IsArray())
+    {
+        isolate->ThrowException(Exception::TypeError(NEW_STRING("Extraction limits must be an object")));
+        return false;
+    }
+
+    Local<Context> context = GET_CURRENT_CONTEXT;
+    Local<Object> limits = args[inIndex].As<Object>();
+
+    const char* names[] = {"maxElements", "maxOperands", "maxTextBytes", "maxParsedObjects"};
+    size_t* targets[] = {
+        &outLimits.maxElements,
+        &outLimits.maxOperands,
+        &outLimits.maxTextBytes,
+        &outLimits.maxParsedObjects
+    };
+
+    for(size_t i = 0; i < 4; ++i)
+    {
+        Local<Value> value;
+        if(!limits->Get(context, NEW_STRING(names[i])).ToLocal(&value) || value->IsUndefined())
+            continue;
+
+        double raw = 0;
+        if(!value->IsNumber() || !value->NumberValue(context).To(&raw) ||
+           raw != std::floor(raw) || raw <= 0 || raw > 4294967295.0)
+        {
+            std::string message = std::string(names[i]) + " must be a positive 32-bit integer";
+            isolate->ThrowException(Exception::RangeError(NEW_STRING(message.c_str())));
+            return false;
+        }
+        *targets[i] = static_cast<size_t>(raw);
+    }
+    return true;
+}
+}
 
 
 
@@ -367,9 +417,15 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageText(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
     CREATE_ESCAPABLE_SCOPE;
 
-    if(args.Length() != 1 || !args[0]->IsNumber())
+    if(args.Length() < 1 || args.Length() > 2 || !args[0]->IsNumber())
     {
-        THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        THROW_EXCEPTION("Wrong arguments. Provide a page index and optional extraction limits");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    PDFExtractionLimits limits;
+    if(!ReadExtractionLimits(isolate, args, 1, limits))
+    {
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
 
@@ -382,9 +438,9 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageText(const ARGS_TYPE& args)
     }
 
     std::vector<PDFTextElement> elements;
-    if(!PDFTextExtractor().Extract(reader->mPDFReader, page.GetPtr(), elements))
+    if(!PDFTextExtractor().Extract(reader->mPDFReader, page.GetPtr(), elements, limits))
     {
-        THROW_EXCEPTION("Page content exceeds text extraction limits");
+        isolate->ThrowException(Exception::Error(NEW_STRING("Page content exceeds text extraction limits")));
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     Local<Array> result = NEW_ARRAY(elements.size());
@@ -408,9 +464,15 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageContentItems(const ARGS_TYPE& arg
     CREATE_ISOLATE_CONTEXT;
     CREATE_ESCAPABLE_SCOPE;
 
-    if(args.Length() != 1 || !args[0]->IsNumber())
+    if(args.Length() < 1 || args.Length() > 2 || !args[0]->IsNumber())
     {
-        THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        THROW_EXCEPTION("Wrong arguments. Provide a page index and optional extraction limits");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    PDFExtractionLimits limits;
+    if(!ReadExtractionLimits(isolate, args, 1, limits))
+    {
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
 
@@ -423,9 +485,9 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageContentItems(const ARGS_TYPE& arg
     }
 
     std::vector<PDFPageContentItem> items;
-    if(!PDFTextExtractor().ExtractPageContentItems(reader->mPDFReader, page.GetPtr(), items))
+    if(!PDFTextExtractor().ExtractPageContentItems(reader->mPDFReader, page.GetPtr(), items, limits))
     {
-        THROW_EXCEPTION("Page content exceeds item extraction limits");
+        isolate->ThrowException(Exception::Error(NEW_STRING("Page content exceeds item extraction limits")));
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     Local<Array> result = NEW_ARRAY(items.size());

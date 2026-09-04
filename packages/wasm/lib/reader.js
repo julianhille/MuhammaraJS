@@ -449,6 +449,30 @@ export function createReaderFactory({
       return result;
     }
 
+    // Shared by extractPageText and extractPageContentItems so both accept the
+    // same object. Values are validated here and clamped to the built-in
+    // ceilings in the Wasm module, matching the Node reader.
+    function extractionLimits(pageIndex, limits) {
+      if (!Number.isInteger(pageIndex) || pageIndex < 0) {
+        throw new TypeError("Page index must be a non-negative integer");
+      }
+      if (!limits || typeof limits !== "object" || Array.isArray(limits)) {
+        throw new TypeError("Extraction limits must be an object");
+      }
+      var values = {
+        maxElements: limits.maxElements ?? 100000,
+        maxOperands: limits.maxOperands ?? 1024,
+        maxTextBytes: limits.maxTextBytes ?? 16 * 1024 * 1024,
+        maxParsedObjects: limits.maxParsedObjects ?? 1000000,
+      };
+      Object.entries(values).forEach(([name, value]) => {
+        if (!Number.isInteger(value) || value <= 0 || value > 0xffffffff) {
+          throw new RangeError(`${name} must be a positive 32-bit integer`);
+        }
+      });
+      return values;
+    }
+
     function extractedString(extraction, index, read) {
       var lengthPointer = module._malloc(4);
       try {
@@ -676,25 +700,10 @@ export function createReaderFactory({
           },
         };
       },
-      extractPageText: function (index, limits = {}) {
+      extractPageText: function (pageIndex, limits = {}) {
         requireReader();
-        if (!Number.isInteger(index) || index < 0) {
-          throw new TypeError("Page index must be a non-negative integer");
-        }
-        if (!limits || typeof limits !== "object" || Array.isArray(limits)) {
-          throw new TypeError("Text extraction limits must be an object");
-        }
-        var values = {
-          maxElements: limits.maxElements ?? 100000,
-          maxOperands: limits.maxOperands ?? 1024,
-          maxTextBytes: limits.maxTextBytes ?? 16 * 1024 * 1024,
-          maxParsedObjects: limits.maxParsedObjects ?? 1000000,
-        };
-        Object.entries(values).forEach(([name, value]) => {
-          if (!Number.isInteger(value) || value <= 0 || value > 0xffffffff) {
-            throw new RangeError(`${name} must be a positive 32-bit integer`);
-          }
-        });
+        var values = extractionLimits(pageIndex, limits);
+        var index = pageIndex;
         var statusPointer = module._malloc(4);
         try {
           module.HEAP32[statusPointer >>> 2] = 0;
@@ -742,6 +751,51 @@ export function createReaderFactory({
             }));
           } finally {
             module._muhammara_wasm_text_extraction_destroy(extraction);
+          }
+        } finally {
+          module._free(statusPointer);
+        }
+      },
+      extractPageContentItems: function (pageIndex, limits = {}) {
+        requireReader();
+        var values = extractionLimits(pageIndex, limits);
+        var index = pageIndex;
+        var statusPointer = module._malloc(4);
+        try {
+          module.HEAP32[statusPointer >>> 2] = 0;
+          var extraction =
+            module._muhammara_wasm_reader_extract_page_content_items(
+              reader,
+              index,
+              values.maxElements,
+              values.maxOperands,
+              values.maxTextBytes,
+              values.maxParsedObjects,
+              statusPointer,
+            );
+          var status = module.HEAP32[statusPointer >>> 2];
+          if (!extraction) {
+            if (status === 3) {
+              throw new Error("Page content exceeds item extraction limits");
+            }
+            throw new RangeError(`Unable to read page ${index}`);
+          }
+          try {
+            var count =
+              module._muhammara_wasm_page_content_items_get_count(extraction);
+            return Array.from({ length: count }, (_, itemIndex) => ({
+              type: module._muhammara_wasm_page_content_items_get_type(
+                extraction,
+                itemIndex,
+              ),
+              operation: extractedString(
+                extraction,
+                itemIndex,
+                module._muhammara_wasm_page_content_items_get_operation,
+              ),
+            }));
+          } finally {
+            module._muhammara_wasm_page_content_items_destroy(extraction);
           }
         } finally {
           module._free(statusPointer);

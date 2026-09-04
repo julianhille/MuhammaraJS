@@ -970,12 +970,39 @@ export interface PDFTextElement {
   fontSize: number;
   textMatrix: [number, number, number, number, number, number];
 }
-export interface PDFTextExtractionLimits {
+export const ePDFPageContentItemText = 0;
+export const ePDFPageContentItemPath = 1;
+export const ePDFPageContentItemXObject = 2;
+export const ePDFPageContentItemShading = 3;
+export type PDFPageContentItemType =
+  | typeof ePDFPageContentItemText
+  | typeof ePDFPageContentItemPath
+  | typeof ePDFPageContentItemXObject
+  | typeof ePDFPageContentItemShading;
+
+/** A content-stream operation that produces a page mark. */
+export interface PDFPageContentItem {
+  type: PDFPageContentItemType;
+  operation: string;
+}
+
+/**
+ * Per-call extraction budget. Every field is clamped to a built-in ceiling,
+ * so a caller may tighten a limit but never raise it above the default.
+ * Omitted fields keep the ceiling.
+ */
+export interface PDFExtractionLimits {
+  /** Extracted elements or items. Default and ceiling: 100000. */
   maxElements?: number;
+  /** Pending operands per operator. Default and ceiling: 1024. */
   maxOperands?: number;
+  /** Total extracted text. Default and ceiling: 16777216 (16 MiB). */
   maxTextBytes?: number;
+  /** Content-stream objects parsed. Default and ceiling: 1000000. */
   maxParsedObjects?: number;
 }
+/** @deprecated Renamed to PDFExtractionLimits, which both extractors share. */
+export type PDFTextExtractionLimits = PDFExtractionLimits;
 export interface PDFReader {
   getPagesCount(): number;
   getPageObjectID(index: number): number;
@@ -997,10 +1024,31 @@ export interface PDFReader {
   parseNewObject(id: number): PDFObject;
   parsePageDictionary(index: number): PDFDictionary;
   parsePage(index: number): PDFPageInput;
+  /**
+   * Returns text-showing operations in PDF content-stream drawing order.
+   * Does not decode font character maps or calculate glyph bounds.
+   *
+   * Throws when the page exceeds the extraction budget. `limits` may only
+   * tighten the defaults: higher values are clamped to the built-in ceilings
+   * of 1,000,000 content objects, 100,000 text operations, 1024 operands, and
+   * 16 MiB of text.
+   */
   extractPageText(
-    index: number,
-    limits?: PDFTextExtractionLimits,
+    pageIndex: number,
+    limits?: PDFExtractionLimits,
   ): PDFTextElement[];
+  /**
+   * Returns every direct content-stream operation that produces a page mark.
+   * White-on-white content is included; non-painting operations are excluded.
+   *
+   * Shares `extractPageText`'s budget and clamping. `limits.maxTextBytes` is
+   * accepted for signature parity but has no effect here, because items carry
+   * an operator name rather than extracted text.
+   */
+  extractPageContentItems(
+    pageIndex: number,
+    limits?: PDFExtractionLimits,
+  ): PDFPageContentItem[];
   startReadingObjectsFromStream(stream: PDFStreamInput): PDFObjectParser;
   startReadingObjectsFromStreams(streams: PDFArray): PDFObjectParser;
   startReadingFromStream(stream: PDFStreamInput): PDFByteReader;
@@ -1502,6 +1550,10 @@ export interface MuhammaraWasm {
   readonly ePDFObjectIndirectObjectReference: number;
   readonly ePDFObjectStream: number;
   readonly ePDFObjectSymbol: number;
+  readonly ePDFPageContentItemText: number;
+  readonly ePDFPageContentItemPath: number;
+  readonly ePDFPageContentItemXObject: number;
+  readonly ePDFPageContentItemShading: number;
   readonly eTokenSeparatorSpace: number;
   readonly eTokenSeparatorEndLine: number;
   readonly eTokenSeparatorNone: number;

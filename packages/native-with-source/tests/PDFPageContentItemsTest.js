@@ -42,4 +42,73 @@ describe("PDFPageContentItems", function () {
       { type: muhammara.ePDFPageContentItemText, operation: "Tj" },
     ]);
   });
+
+  it("enforces configurable extraction limits", function () {
+    var output = __dirname + "/output/PDFPageContentItemsLimits.pdf";
+    var writer = muhammara.createWriter(output);
+    var page = writer.createPage(0, 0, 100, 100);
+    writer
+      .startPageContentContext(page)
+      .re(10, 10, 20, 20)
+      .f()
+      .re(40, 40, 20, 20)
+      .f();
+    writer.writePage(page).end();
+
+    var reader = muhammara.createReader(output);
+    assert.lengthOf(reader.extractPageContentItems(0), 2);
+    assert.throws(function () {
+      reader.extractPageContentItems(0, { maxElements: 1 });
+    }, /extraction limits/);
+    assert.throws(function () {
+      reader.extractPageContentItems(0, { maxParsedObjects: 1 });
+    }, /extraction limits/);
+    reader.end();
+  });
+
+  it("clamps requested limits to the built-in ceilings", function () {
+    var output = __dirname + "/output/PDFPageContentItemsClamp.pdf";
+    var writer = muhammara.createWriter(output);
+    var page = writer.createPage(0, 0, 100, 100);
+    writer.startPageContentContext(page).re(10, 10, 20, 20).f();
+    writer.writePage(page).end();
+
+    var reader = muhammara.createReader(output);
+    var expected = [
+      { type: muhammara.ePDFPageContentItemPath, operation: "f" },
+    ];
+    // Above the ceiling is clamped down rather than honoured, so the security
+    // backstop cannot be raised by a caller.
+    assert.deepEqual(
+      reader.extractPageContentItems(0, { maxElements: 0xffffffff }),
+      expected,
+    );
+    assert.deepEqual(
+      reader.extractPageContentItems(0, { maxTextBytes: 0xffffffff }),
+      expected,
+    );
+    // Omitted and undefined limits keep the defaults.
+    assert.deepEqual(reader.extractPageContentItems(0, {}), expected);
+    assert.deepEqual(reader.extractPageContentItems(0, undefined), expected);
+    reader.end();
+  });
+
+  it("rejects malformed limits", function () {
+    var output = __dirname + "/output/PDFPageContentItemsInvalid.pdf";
+    var writer = muhammara.createWriter(output);
+    writer.writePage(writer.createPage(0, 0, 100, 100)).end();
+
+    var reader = muhammara.createReader(output);
+    [0, -1, 1.5, 0x100000000].forEach(function (value) {
+      assert.throws(function () {
+        reader.extractPageContentItems(0, { maxParsedObjects: value });
+      }, /positive 32-bit integer/);
+    });
+    ["x", []].forEach(function (value) {
+      assert.throws(function () {
+        reader.extractPageContentItems(0, value);
+      }, /Extraction limits must be an object/);
+    });
+    reader.end();
+  });
 });
