@@ -8,6 +8,9 @@ on:
     paths:
       - ".github/workflows/ci-native.yml"
       - "packages/native/**"
+      - "!packages/native/docs/**"
+      - "!packages/native/mkdocs.yml"
+      - "!packages/native/.readthedocs.yaml"
       - "packages/native-core/**"
       - "packages/native-with-source/**"
       - ".github/actions/setup-native-build-cache/**"

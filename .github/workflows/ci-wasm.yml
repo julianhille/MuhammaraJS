@@ -11,6 +11,9 @@ on:
       - "package-lock.json"
       - "packages/native-with-source/src/**"
       - "packages/wasm/**"
+      - "!packages/wasm/docs/**"
+      - "!packages/wasm/mkdocs.yml"
+      - "!packages/wasm/.readthedocs.yaml"
   workflow_dispatch:
 
 concurrency:
