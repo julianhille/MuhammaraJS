@@ -7,7 +7,7 @@ function escapePDFLiteralString(value) {
  *
  * @name replaceText
  * @function
- * @memberof Recipe
+ * @memberof Recipe#
  * @param {string} text Text to replace.
  * @param {string} replacement Replacement text.
  * @param {number} [pageNumber=1] One-based page number.
