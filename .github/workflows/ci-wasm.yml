@@ -2,6 +2,8 @@ name: Wasm CI
 
 on:
   push:
+    branches:
+      - develop
     tags:
       - "wasm-v*"
   pull_request:
@@ -18,7 +20,7 @@ on:
 
 concurrency:
   group: wasm-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
