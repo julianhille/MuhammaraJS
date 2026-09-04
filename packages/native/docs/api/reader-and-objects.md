@@ -8,10 +8,19 @@ The reader provides document information with `getPDFLevel`, `getPagesCount`,
 `parsePageDictionary`, and `getPageObjectID`; and object access with
 `parseNewObject`, `queryDictionaryObject`, and `queryArrayObject`.
 
-`extractPageText(pageIndex)` returns content-stream text operations in drawing
-order. Each `PDFTextElement` includes raw `content`, `fontResource`, `fontSize`,
-and a six-value `textMatrix`; it does not decode font character maps or compute
-glyph bounds.
+`extractPageText(pageIndex, limits?)` returns content-stream text operations in
+drawing order. Each `PDFTextElement` includes raw `content`, `fontResource`,
+`fontSize`, and a six-value `textMatrix`; it does not decode font character maps
+or compute glyph bounds.
+
+`extractPageContentItems(pageIndex, limits?)` returns every direct
+content-stream operation that puts a mark on the page as `{ type, operation }`,
+which answers "is this page blank?" without extracting text.
+
+Both accept the same optional `limits` object. Omitted fields keep the built-in
+default, and values above it are clamped down, so a caller can tighten the
+extraction budget but never raise it past the ceiling the extractor enforces.
+See [Find Text Positions](../how-to/find-text-positions.md) for the field table.
 
 Parsed `PDFObject` values expose `getType`, conversion methods such as
 `toPDFDictionary()` and `toPDFArray()`, and scalar conversion through

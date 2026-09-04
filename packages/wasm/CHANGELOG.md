@@ -11,6 +11,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `ePDFPageContentItemText`, `ePDFPageContentItemPath`,
   `ePDFPageContentItemXObject`, and `ePDFPageContentItemShading` constants
   [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+- Document the extraction budget and page-mark detection in the text-position
+  guide [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
 
 ### Changed
 
