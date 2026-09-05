@@ -17,9 +17,6 @@
  limitations under the License.
  
  */
-#include <node.h> 
-#include <v8.h>
-
 #include "nodes.h"
 #include "PDFWriterDriver.h"
 #include "PDFPageDriver.h"
