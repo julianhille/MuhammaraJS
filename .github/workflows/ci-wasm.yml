@@ -104,7 +104,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          registry-url: https://registry.npmjs.org
+      - run: npm install --global npm@11.5.1
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
