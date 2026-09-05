@@ -7,22 +7,26 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [7.0.0-beta.1] - 2026-09-05
+
 ### Added
 
 - Add `PDFWriter.replaceObject()` for page-scoped indirect object replacement, with optional global scope [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
 - Add `Recipe.replaceText()` for replacing literal text in a page content stream [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
+- Add Electron 38.x through 44.x build targets [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
 
 ### Fixed
 
 - Generate native API reference pages during Read the Docs builds and cache the
   native addon used to validate executable documentation examples [#566](https://github.com/julianhille/MuhammaraJS/issues/566)
+- Build current Electron versions with V8 external pointer tags [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
 
 ### Changed
 
 - Skip native package CI for documentation-only changes; Documentation CI
   validates those updates.
 
-## [7.0.0-alpha.0] - 2026-09-02
+## [7.0.0-alpha.1] - 2026-09-04
 
 ### Breaking Changes
 
@@ -56,7 +60,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add opt-in fixed-height clipping and an `onClip` callback to Recipe text boxes
 - Bundle pinned OpenSSL 3.5.4 statically in official native prebuilts.
 - Speed up native source builds with parallel compilation and ccache-backed CI caches [#562](https://github.com/julianhille/MuhammaraJS/issues/562)
-- Add Electron 38.x through 44.x build targets [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
 
 ### Fixed
 
@@ -68,7 +71,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add native sanitizer coverage for lifecycle cleanup.
 - Release PDF readers in documentation tests to prevent Windows file-lock cleanup failures.
 - Remove the duplicate documentation example test from the documentation CI workflow.
-- Build current Electron versions with V8 external pointer tags [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
 - Prevent a segmentation fault when `endPDF()` is called more than once.
 - Update macOS runner from macos-13 to macos-14
 - Fix DictionaryContext.writeKey() signature to include required key parameter [#479](https://github.com/julianhille/MuhammaraJS/issues/479)
@@ -641,7 +643,9 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.1...HEAD
+[7.0.0-beta.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-alpha.1...native-v7.0.0-beta.1
+[7.0.0-alpha.1]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...native-v7.0.0-alpha.1
 [6.0.6]: https://github.com/julianhille/MuhammaraJS/compare/6.0.5...6.0.6
 [6.0.5]: https://github.com/julianhille/MuhammaraJS/compare/6.0.4...6.0.5
 [6.0.4]: https://github.com/julianhille/MuhammaraJS/compare/6.0.3...6.0.4
