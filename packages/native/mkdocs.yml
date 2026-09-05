@@ -45,7 +45,7 @@ nav:
       - Getting Started:
           - Overview: getting-started/index.md
           - Installation: getting-started/installation.md
-          - Migrate to @muhammara/native: getting-started/migrate-to-scoped-package.md
+          - Migrate From v6 To v7: getting-started/migrate-from-v6.md
           - Migrate from HummusJS: getting-started/migrate-from-hummusjs.md
           - Migrate from Recipe Modules: getting-started/migrate-from-recipe-modules.md
       - High-Level Recipe:
