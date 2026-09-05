@@ -65,6 +65,18 @@ async function usesLowLevelSurface() {
   textElement.fontResource;
   textElement.fontSize;
   textElement.textMatrix[5];
+  var boundedText = reader.extractPageText(0, { maxElements: 10 })[0];
+  boundedText.content;
+  var contentItem = reader.extractPageContentItems(0)[0];
+  contentItem.type;
+  contentItem.operation;
+  var boundedItem = reader.extractPageContentItems(0, {
+    maxElements: 10,
+    maxOperands: 16,
+    maxTextBytes: 1024,
+    maxParsedObjects: 100,
+  })[0];
+  boundedItem.operation;
   reader.end();
   var sourceBlob = new Blob([source.buffer as ArrayBuffer]);
   var input = new muhammara.PDFRStreamForBuffer(source);

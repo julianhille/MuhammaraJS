@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Add `PDFWriter.replaceObject()` for page-scoped indirect object replacement, with optional global scope [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
 - Add `Recipe.replaceText()` for replacing literal text in a page content stream [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
+- Add `PDFReader.extractPageContentItems()` for detecting page-marking content operations [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+- Add an optional `limits` argument to `PDFReader.extractPageText()` and
+  `PDFReader.extractPageContentItems()`, matching the Wasm reader. Requests are
+  clamped to the built-in ceilings, so a caller can tighten the extraction
+  budget but never raise it [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+- Document the extraction budget and `PDFReader.extractPageContentItems()` in
+  the reader API, low-level reading, and text-position guides
+  [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+- Add runnable `detect-blank-pages` and `find-text-positions` documentation
+  examples, executed by the documentation test suite
+  [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
 
 ### Fixed
 
@@ -21,6 +32,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Skip native package CI for documentation-only changes; Documentation CI
   validates those updates.
+- `PDFReader.extractPageText()` now throws `Error` rather than `TypeError` when
+  a page exceeds the extraction budget, matching the Wasm reader.
+- Correct the `parsePageDictionary()` and `parsePage()` type declarations to
+  name their argument `pageIndex`; both have always taken a page index, not an
+  object id.
+- Correct the contributing guide's documentation-example test path, which named
+  a directory that does not exist.
 
 ## [7.0.0-alpha.0] - 2026-09-02
 

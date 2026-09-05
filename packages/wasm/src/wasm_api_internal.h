@@ -239,6 +239,24 @@ class WasmTextExtraction {
   std::vector<WasmTextElement> elements;
 };
 
+// Mirrors EPDFPageContentItemType in the Node driver's PDFTextExtractor.h.
+enum WasmPageContentItemType {
+  kWasmPageContentItemText = 0,
+  kWasmPageContentItemPath = 1,
+  kWasmPageContentItemXObject = 2,
+  kWasmPageContentItemShading = 3
+};
+
+struct WasmPageContentItem {
+  WasmPageContentItemType type;
+  std::string operation;
+};
+
+class WasmPageContentItems {
+ public:
+  std::vector<WasmPageContentItem> items;
+};
+
 // The reader owns these handles because PDFParser owns the underlying input
 // stream that they read from. A handle may be closed independently, but its
 // storage remains reader-owned until the reader is destroyed.
@@ -351,6 +369,18 @@ static double textObjectNumber(PDFObject* object) {
   return 0;
 }
 
+// Hard ceilings mirroring the Node driver's PDFTextExtractor.h. Callers may
+// request lower values, never higher ones.
+static const size_t kWasmMaxExtractedElements = 100000;
+static const size_t kWasmMaxOperands = 1024;
+static const size_t kWasmMaxExtractedTextBytes = 16 * 1024 * 1024;
+static const size_t kWasmMaxParsedObjects = 1000000;
+
+static size_t clampExtractionLimit(size_t requested, size_t ceiling) {
+  if (requested == 0 || requested > ceiling) return ceiling;
+  return requested;
+}
+
 static bool isTextString(PDFObject* object) {
   return object != nullptr &&
          (object->GetType() == PDFObject::ePDFObjectLiteralString ||
@@ -374,6 +404,28 @@ static bool textArray(PDFArray* array, size_t maxBytes, std::string& result) {
     }
   }
   return true;
+}
+
+static bool isVisibleTextRenderingMode(int renderingMode) {
+  return renderingMode != 3 && renderingMode != 7;
+}
+
+static bool isPathPaintingOperation(const std::string& operation) {
+  return operation == "S" || operation == "s" || operation == "f" ||
+         operation == "F" || operation == "f*" || operation == "B" ||
+         operation == "B*" || operation == "b" || operation == "b*";
+}
+
+static bool contentItemHasText(const std::vector<RefCountPtr<PDFObject> >& operands,
+                               const std::string& operation) {
+  if (operation == "TJ" && operands.size() == 1 &&
+      operands[0].GetPtr()->GetType() == PDFObject::ePDFObjectArray) {
+    std::string joined;
+    textArray(static_cast<PDFArray*>(operands[0].GetPtr()), kWasmMaxExtractedTextBytes, joined);
+    return !joined.empty();
+  }
+  return !operands.empty() && isTextString(operands.back().GetPtr()) &&
+         !textString(operands.back().GetPtr()).empty();
 }
 
 // This mirrors the Node driver's bounded PDFTextExtractor implementation.
@@ -462,6 +514,98 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
         elements.push_back(element);
         extractedTextBytes += content.size();
       }
+    }
+    operands.clear();
+  }
+  delete objectParser;
+  return withinLimits;
+}
+
+// This mirrors the Node driver's PDFTextExtractor::ExtractPageContentItems.
+// maxTextBytes has no effect here: items carry an operator name, not text.
+static bool extractPageContentItems(PDFParser* parser, PDFDictionary* page,
+                                    std::vector<WasmPageContentItem>& items,
+                                    size_t maxElements, size_t maxOperands,
+                                    size_t maxParsedObjects) {
+  RefCountPtr<PDFObject> contents(parser->QueryDictionaryObject(page, "Contents"));
+  if (!contents) return true;
+
+  PDFObjectParser* objectParser = nullptr;
+  if (contents->GetType() == PDFObject::ePDFObjectStream) {
+    objectParser = parser->StartReadingObjectsFromStream(
+        static_cast<PDFStreamInput*>(contents.GetPtr()));
+  } else if (contents->GetType() == PDFObject::ePDFObjectArray) {
+    objectParser = parser->StartReadingObjectsFromStreams(
+        static_cast<PDFArray*>(contents.GetPtr()));
+  }
+  if (!objectParser) return true;
+
+  bool inTextObject = false;
+  int textRenderingMode = 0;
+  std::vector<int> textRenderingModes;
+  std::vector<RefCountPtr<PDFObject> > operands;
+  size_t parsedObjects = 0;
+  bool withinLimits = true;
+  PDFObject* object = nullptr;
+  while (withinLimits && (object = objectParser->ParseNewObject()) != nullptr) {
+    RefCountPtr<PDFObject> objectHolder(object);
+    if (++parsedObjects > maxParsedObjects) {
+      withinLimits = false;
+      break;
+    }
+    if (object->GetType() != PDFObject::ePDFObjectSymbol) {
+      if (operands.size() == maxOperands) {
+        withinLimits = false;
+        break;
+      }
+      operands.push_back(objectHolder);
+      continue;
+    }
+
+    std::string operation = static_cast<PDFSymbol*>(object)->GetValue();
+    if (operation == "BT") {
+      inTextObject = true;
+    } else if (operation == "ET") {
+      inTextObject = false;
+    } else if (operation == "Tr" && operands.size() == 1) {
+      textRenderingMode = static_cast<int>(textObjectNumber(operands[0].GetPtr()));
+    } else if (operation == "q") {
+      textRenderingModes.push_back(textRenderingMode);
+    } else if (operation == "Q" && !textRenderingModes.empty()) {
+      textRenderingMode = textRenderingModes.back();
+      textRenderingModes.pop_back();
+    }
+
+    WasmPageContentItemType type = kWasmPageContentItemText;
+    bool hasItem = false;
+    if (inTextObject && isVisibleTextRenderingMode(textRenderingMode) &&
+        (operation == "Tj" || operation == "'" || operation == "\"" ||
+         operation == "TJ") &&
+        contentItemHasText(operands, operation)) {
+      type = kWasmPageContentItemText;
+      hasItem = true;
+    } else if (isPathPaintingOperation(operation)) {
+      type = kWasmPageContentItemPath;
+      hasItem = true;
+    } else if (operation == "Do" && operands.size() == 1 &&
+               operands[0].GetPtr()->GetType() == PDFObject::ePDFObjectName) {
+      type = kWasmPageContentItemXObject;
+      hasItem = true;
+    } else if (operation == "sh" && operands.size() == 1 &&
+               operands[0].GetPtr()->GetType() == PDFObject::ePDFObjectName) {
+      type = kWasmPageContentItemShading;
+      hasItem = true;
+    }
+
+    if (hasItem) {
+      if (items.size() == maxElements) {
+        withinLimits = false;
+        break;
+      }
+      WasmPageContentItem item;
+      item.type = type;
+      item.operation = operation;
+      items.push_back(item);
     }
     operands.clear();
   }

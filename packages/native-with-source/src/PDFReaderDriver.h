@@ -60,6 +60,7 @@ private:
 	static METHOD_RETURN_TYPE ParsePageDictionary(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE ParsePage(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE ExtractPageText(const ARGS_TYPE& args);
+	static METHOD_RETURN_TYPE ExtractPageContentItems(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE GetObjectsCount(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE IsEncrypted(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE GetXrefSize(const ARGS_TYPE& args);

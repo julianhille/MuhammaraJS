@@ -15,11 +15,6 @@
 
 namespace
 {
-const size_t kMaxExtractedElements = 100000;
-const size_t kMaxOperands = 1024;
-const size_t kMaxExtractedTextBytes = 16 * 1024 * 1024;
-const size_t kMaxParsedObjects = 1000000;
-
 double GetNumber(PDFObject* inObject)
 {
   if (inObject->GetType() == PDFObject::ePDFObjectInteger)
@@ -34,6 +29,18 @@ bool IsTextString(PDFObject* inObject)
   return inObject &&
          (inObject->GetType() == PDFObject::ePDFObjectLiteralString ||
           inObject->GetType() == PDFObject::ePDFObjectHexString);
+}
+
+bool IsVisibleTextRenderingMode(int inRenderingMode)
+{
+  return inRenderingMode != 3 && inRenderingMode != 7;
+}
+
+bool IsPathPaintingOperation(const std::string& inOperation)
+{
+  return inOperation == "S" || inOperation == "s" || inOperation == "f" ||
+         inOperation == "F" || inOperation == "f*" || inOperation == "B" ||
+         inOperation == "B*" || inOperation == "b" || inOperation == "b*";
 }
 
 std::string GetTextString(PDFObject* inObject)
@@ -55,6 +62,14 @@ std::string GetTextArray(PDFArray* inArray)
   return result;
 }
 
+bool HasText(const std::vector<RefCountPtr<PDFObject> >& inOperands, const std::string& inOperation)
+{
+  if (inOperation == "TJ" && inOperands.size() == 1 && inOperands[0].GetPtr()->GetType() == PDFObject::ePDFObjectArray)
+    return !GetTextArray(static_cast<PDFArray*>(inOperands[0].GetPtr())).empty();
+  return !inOperands.empty() && IsTextString(inOperands.back().GetPtr()) &&
+         !GetTextString(inOperands.back().GetPtr()).empty();
+}
+
 void SetMatrix(double outMatrix[6], const std::vector<RefCountPtr<PDFObject> >& inOperands)
 {
   if (inOperands.size() != 6)
@@ -64,12 +79,34 @@ void SetMatrix(double outMatrix[6], const std::vector<RefCountPtr<PDFObject> >& 
 }
 }
 
+namespace
+{
+size_t ClampLimit(size_t inRequested, size_t inCeiling)
+{
+  if (inRequested == 0 || inRequested > inCeiling)
+    return inCeiling;
+  return inRequested;
+}
+}
+
+void PDFExtractionLimits::Clamp()
+{
+  maxElements = ClampLimit(maxElements, kMaxExtractedElements);
+  maxOperands = ClampLimit(maxOperands, kMaxOperands);
+  maxTextBytes = ClampLimit(maxTextBytes, kMaxExtractedTextBytes);
+  maxParsedObjects = ClampLimit(maxParsedObjects, kMaxParsedObjects);
+}
+
 bool PDFTextExtractor::Extract(
   PDFParser* inParser,
   PDFDictionary* inPage,
-  std::vector<PDFTextElement>& outElements
+  std::vector<PDFTextElement>& outElements,
+  const PDFExtractionLimits& inLimits
 )
 {
+  PDFExtractionLimits limits(inLimits);
+  limits.Clamp();
+
   RefCountPtr<PDFObject> contents(inParser->QueryDictionaryObject(inPage, "Contents"));
   if (!contents)
     return true;
@@ -95,14 +132,14 @@ bool PDFTextExtractor::Extract(
   while (withinLimits && (object = objectParser->ParseNewObject()) != NULL)
   {
     RefCountPtr<PDFObject> objectHolder(object);
-    if (++parsedObjects > kMaxParsedObjects)
+    if (++parsedObjects > limits.maxParsedObjects)
     {
       withinLimits = false;
       break;
     }
     if (object->GetType() != PDFObject::ePDFObjectSymbol)
     {
-      if (operands.size() == kMaxOperands)
+      if (operands.size() == limits.maxOperands)
       {
         withinLimits = false;
         break;
@@ -134,8 +171,8 @@ bool PDFTextExtractor::Extract(
 
       if (!content.empty())
       {
-        if (outElements.size() == kMaxExtractedElements ||
-            content.size() > kMaxExtractedTextBytes - extractedTextBytes)
+        if (outElements.size() == limits.maxElements ||
+            content.size() > limits.maxTextBytes - extractedTextBytes)
         {
           withinLimits = false;
           break;
@@ -149,6 +186,116 @@ bool PDFTextExtractor::Extract(
         outElements.push_back(element);
         extractedTextBytes += content.size();
       }
+    }
+    operands.clear();
+  }
+
+  delete objectParser;
+  return withinLimits;
+}
+
+bool PDFTextExtractor::ExtractPageContentItems(
+  PDFParser* inParser,
+  PDFDictionary* inPage,
+  std::vector<PDFPageContentItem>& outItems,
+  const PDFExtractionLimits& inLimits
+)
+{
+  PDFExtractionLimits limits(inLimits);
+  limits.Clamp();
+
+  RefCountPtr<PDFObject> contents(inParser->QueryDictionaryObject(inPage, "Contents"));
+  if (!contents)
+    return true;
+
+  PDFObjectParser* objectParser = NULL;
+  if (contents->GetType() == PDFObject::ePDFObjectStream)
+    objectParser = inParser->StartReadingObjectsFromStream(static_cast<PDFStreamInput*>(contents.GetPtr()));
+  else if (contents->GetType() == PDFObject::ePDFObjectArray)
+    objectParser = inParser->StartReadingObjectsFromStreams(static_cast<PDFArray*>(contents.GetPtr()));
+  if (!objectParser)
+    return true;
+
+  bool inTextObject = false;
+  int textRenderingMode = 0;
+  std::vector<int> textRenderingModes;
+  std::vector<RefCountPtr<PDFObject> > operands;
+  PDFObject* object = NULL;
+  size_t parsedObjects = 0;
+  bool withinLimits = true;
+
+  while (withinLimits && (object = objectParser->ParseNewObject()) != NULL)
+  {
+    RefCountPtr<PDFObject> objectHolder(object);
+    if (++parsedObjects > limits.maxParsedObjects)
+    {
+      withinLimits = false;
+      break;
+    }
+    if (object->GetType() != PDFObject::ePDFObjectSymbol)
+    {
+      if (operands.size() == limits.maxOperands)
+      {
+        withinLimits = false;
+        break;
+      }
+      operands.push_back(objectHolder);
+      continue;
+    }
+
+    std::string operation = static_cast<PDFSymbol*>(object)->GetValue();
+    if (operation == "BT")
+      inTextObject = true;
+    else if (operation == "ET")
+      inTextObject = false;
+    else if (operation == "Tr" && operands.size() == 1)
+      textRenderingMode = static_cast<int>(GetNumber(operands[0].GetPtr()));
+    else if (operation == "q")
+      textRenderingModes.push_back(textRenderingMode);
+    else if (operation == "Q" && !textRenderingModes.empty())
+    {
+      textRenderingMode = textRenderingModes.back();
+      textRenderingModes.pop_back();
+    }
+
+    EPDFPageContentItemType type;
+    bool hasItem = false;
+    if (inTextObject && IsVisibleTextRenderingMode(textRenderingMode) &&
+        (operation == "Tj" || operation == "'" || operation == "\"" || operation == "TJ") &&
+        HasText(operands, operation))
+    {
+      type = ePDFPageContentItemText;
+      hasItem = true;
+    }
+    else if (IsPathPaintingOperation(operation))
+    {
+      type = ePDFPageContentItemPath;
+      hasItem = true;
+    }
+    else if (operation == "Do" && operands.size() == 1 &&
+             operands[0].GetPtr()->GetType() == PDFObject::ePDFObjectName)
+    {
+      type = ePDFPageContentItemXObject;
+      hasItem = true;
+    }
+    else if (operation == "sh" && operands.size() == 1 &&
+             operands[0].GetPtr()->GetType() == PDFObject::ePDFObjectName)
+    {
+      type = ePDFPageContentItemShading;
+      hasItem = true;
+    }
+
+    if (hasItem)
+    {
+      if (outItems.size() == limits.maxElements)
+      {
+        withinLimits = false;
+        break;
+      }
+      PDFPageContentItem item;
+      item.type = type;
+      item.operation = operation;
+      outItems.push_back(item);
     }
     operands.clear();
   }

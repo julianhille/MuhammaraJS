@@ -147,8 +147,10 @@ WASM_EXPORT WasmTextExtraction* muhammara_wasm_reader_extract_page_text(
   if (!page) return nullptr;
   WasmTextExtraction* extraction = new WasmTextExtraction();
   if (!extractPageText(&reader->GetParser(), page.GetPtr(), extraction->elements,
-                       maxElements, maxOperands, maxTextBytes,
-                       maxParsedObjects)) {
+                       clampExtractionLimit(maxElements, kWasmMaxExtractedElements),
+                       clampExtractionLimit(maxOperands, kWasmMaxOperands),
+                       clampExtractionLimit(maxTextBytes, kWasmMaxExtractedTextBytes),
+                       clampExtractionLimit(maxParsedObjects, kWasmMaxParsedObjects))) {
     delete extraction;
     *status = 3;
     return nullptr;
@@ -160,6 +162,56 @@ WASM_EXPORT WasmTextExtraction* muhammara_wasm_reader_extract_page_text(
 WASM_EXPORT void muhammara_wasm_text_extraction_destroy(
     WasmTextExtraction* extraction) {
   delete extraction;
+}
+
+// status: 1 success, 2 invalid input or missing/invalid page, 3 extraction safety limit.
+// maxTextBytes is accepted for signature parity with extract_page_text and the
+// Node reader; content items carry an operator name rather than text.
+WASM_EXPORT WasmPageContentItems* muhammara_wasm_reader_extract_page_content_items(
+    WasmReader* reader, unsigned long index, unsigned int maxElements,
+    unsigned int maxOperands, unsigned int maxTextBytes,
+    unsigned int maxParsedObjects, int* status) {
+  if (status == nullptr) return nullptr;
+  *status = 2;
+  if (reader == nullptr || maxElements == 0 || maxOperands == 0 ||
+      maxTextBytes == 0 || maxParsedObjects == 0 ||
+      index >= reader->GetParser().GetPagesCount()) return nullptr;
+  RefCountPtr<PDFDictionary> page(reader->GetParser().ParsePage(index));
+  if (!page) return nullptr;
+  WasmPageContentItems* extraction = new WasmPageContentItems();
+  if (!extractPageContentItems(
+          &reader->GetParser(), page.GetPtr(), extraction->items,
+          clampExtractionLimit(maxElements, kWasmMaxExtractedElements),
+          clampExtractionLimit(maxOperands, kWasmMaxOperands),
+          clampExtractionLimit(maxParsedObjects, kWasmMaxParsedObjects))) {
+    delete extraction;
+    *status = 3;
+    return nullptr;
+  }
+  *status = 1;
+  return extraction;
+}
+
+WASM_EXPORT void muhammara_wasm_page_content_items_destroy(
+    WasmPageContentItems* extraction) {
+  delete extraction;
+}
+
+WASM_EXPORT unsigned long muhammara_wasm_page_content_items_get_count(
+    WasmPageContentItems* extraction) {
+  return extraction == nullptr ? 0 : extraction->items.size();
+}
+
+WASM_EXPORT int muhammara_wasm_page_content_items_get_type(
+    WasmPageContentItems* extraction, unsigned long index) {
+  if (extraction == nullptr || index >= extraction->items.size()) return -1;
+  return static_cast<int>(extraction->items[index].type);
+}
+
+WASM_EXPORT unsigned char* muhammara_wasm_page_content_items_get_operation(
+    WasmPageContentItems* extraction, unsigned long index, unsigned int* length) {
+  if (extraction == nullptr || index >= extraction->items.size()) return nullptr;
+  return copyObjectString(extraction->items[index].operation, length);
 }
 
 WASM_EXPORT unsigned long muhammara_wasm_text_extraction_get_count(
