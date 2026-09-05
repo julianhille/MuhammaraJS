@@ -23,6 +23,51 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     eventParams.writer = this;
     this.getEvents().emit(eventName, eventParams);
   };
+  muhammara.PDFWriter.prototype.replaceObject = function (
+    pageIndex,
+    sourceObjectId,
+    replacementObjectId,
+    options,
+  ) {
+    if (options && options.scope === "global") {
+      var copyingContext = this.createPDFCopyingContextForModifiedFile();
+      var pageCount = copyingContext.getSourceDocumentParser().getPagesCount();
+
+      copyingContext.end();
+      for (var index = 0; index < pageCount; ++index) {
+        this.replaceObject(index, sourceObjectId, replacementObjectId);
+      }
+      return this;
+    }
+
+    var copyingContext = this.createPDFCopyingContextForModifiedFile();
+    var parser = copyingContext.getSourceDocumentParser();
+    var pageObjectId = parser.getPageObjectID(pageIndex);
+    var pageObject = parser.parsePage(pageIndex).getDictionary().toJSObject();
+    var objectsContext = this.getObjectsContext();
+    var pageDictionary;
+
+    objectsContext.startModifiedIndirectObject(pageObjectId);
+    pageDictionary = objectsContext.startDictionary();
+
+    Object.getOwnPropertyNames(pageObject).forEach(function (key) {
+      var value = pageObject[key];
+
+      pageDictionary.writeKey(key);
+      if (
+        value.getType() === muhammara.ePDFObjectIndirectObjectReference &&
+        value.toPDFIndirectObjectReference().getObjectID() === sourceObjectId
+      ) {
+        pageDictionary.writeObjectReferenceValue(replacementObjectId);
+      } else {
+        copyingContext.copyDirectObjectAsIs(value);
+      }
+    });
+
+    objectsContext.endDictionary(pageDictionary).endIndirectObject();
+    copyingContext.end();
+    return this;
+  };
   muhammara.PDFStreamForResponse = require("./lib/PDFStreamForResponse");
   muhammara.PDFWStreamForFile = require("./lib/PDFWStreamForFile");
   muhammara.PDFRStreamForFile = require("./lib/PDFRStreamForFile");

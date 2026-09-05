@@ -215,7 +215,7 @@ async function usesLowLevelSurface() {
     .getSourceDocumentStream()
     .read(1);
   parser.getXrefEntry(parser.getPageObjectID(0));
-  modifier.replaceObject(0, parser.getPageObjectID(0), 11);
+  modifier.replaceObject(0, parser.getPageObjectID(0), 11, { scope: "global" });
   modifier.end();
   var Recipe = await createRecipe();
   Recipe.registerFont("regular", new Uint8Array(), "regular");

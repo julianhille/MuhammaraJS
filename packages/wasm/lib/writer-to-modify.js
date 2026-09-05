@@ -2122,7 +2122,12 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to require catalog update");
         }
       },
-      replaceObject: function (pageIndex, sourceObjectId, replacementObjectId) {
+      replaceObject: function (
+        pageIndex,
+        sourceObjectId,
+        replacementObjectId,
+        options,
+      ) {
         requireOpen();
         if (
           ![pageIndex, sourceObjectId, replacementObjectId].every(
@@ -2135,6 +2140,16 @@ export function createWriterToModifyFactory({
           throw new RangeError(
             "Page index and object IDs must be unsigned 32-bit integers; object IDs must be positive",
           );
+        }
+        if (options && options.scope === "global") {
+          var parser = this.getModifiedFileParser();
+          var pageCount = parser.getPagesCount();
+
+          parser.end();
+          for (var index = 0; index < pageCount; ++index) {
+            this.replaceObject(index, sourceObjectId, replacementObjectId);
+          }
+          return this;
         }
         if (
           !module._muhammara_wasm_modifier_replace_object(

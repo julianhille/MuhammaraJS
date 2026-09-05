@@ -1263,12 +1263,14 @@ export interface PDFModifier {
   requireCatalogUpdate(): void;
   /**
    * Replaces matching direct references in one original page dictionary.
+   * Set `scope` to `global` to replace matching references on every page.
    * All IDs must be positive unsigned 32-bit IDs from this modified PDF.
    */
   replaceObject(
     pageIndex: number,
     sourceObjectId: number,
     replacementObjectId: number,
+    options?: { scope?: "global" },
   ): this;
   getObjectsContext(): ObjectsContext;
   getModifiedFileParser(): PDFReader;

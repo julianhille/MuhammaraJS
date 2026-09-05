@@ -747,6 +747,16 @@ declare namespace muhammara {
   export type inInterPagesCallback = () => {};
 
   export interface PDFWriter {
+    /**
+     * Replace direct references to an object in a page dictionary.
+     * Available only when modifying an existing PDF.
+     */
+    replaceObject(
+      pageIndex: number,
+      sourceObjectId: number,
+      replacementObjectId: number,
+      options?: ObjectReplacementOptions,
+    ): this;
     end(): PDFWriter;
     createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
@@ -843,6 +853,10 @@ declare namespace muhammara {
       eventName: string | symbol,
       eventParams: any,
     ): void;
+  }
+
+  export interface ObjectReplacementOptions {
+    scope?: "global";
   }
 
   namespace Recipe {
@@ -1178,6 +1192,8 @@ declare namespace muhammara {
     endPage(): Recipe;
 
     editPage(pageNumber: number): Recipe;
+
+    replaceText(text: string, replacement: string, pageNumber?: number): Recipe;
 
     pageInfo(pageNumber: number): {
       width: number;

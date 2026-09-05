@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Add `PDFWriter.replaceObject()` for page-scoped indirect object replacement, with optional global scope [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
+- Add `Recipe.replaceText()` for replacing literal text in a page content stream [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
+
 ### Fixed
 
 - Generate native API reference pages during Read the Docs builds and cache the

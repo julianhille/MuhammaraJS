@@ -25,6 +25,16 @@ page through `createPageModifier(index?, ensureContentEncapsulation?)`. Its
 `end()` returns a new `Uint8Array`. `createModifier(bytes)` is the compact
 drawing facade.
 
+A writer created with `createWriterToModify` also exposes
+`replaceObject(pageIndex, sourceObjectId, replacementObjectId, options?)`, which
+repoints every direct reference to `sourceObjectId` in the zero-based page's
+dictionary at `replacementObjectId`. Only that page is rewritten; pass
+`{ scope: "global" }` to apply the replacement across every page.
+
+```javascript
+writer.replaceObject(0, contentsId, replacementId, { scope: "global" });
+```
+
 `PDFRStreamForBuffer`, `PDFWStreamForBuffer`, and the `ByteReader`/`ByteWriter`
 aliases are byte adapters, not Node or Web streams. A writer adapter exposes
 `buffer`, `toUint8Array()`, `toArrayBuffer()`, and `toBlob()`.

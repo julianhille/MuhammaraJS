@@ -111,4 +111,38 @@ describe("ObjectReplacement", function () {
       /has ended/,
     );
   });
+
+  it("replaces matching page references globally when requested", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var sourceWriter = muhammara.createWriter();
+    for (var index = 0; index < 2; ++index) {
+      var page = sourceWriter.createPage(0, 0, 100, 100);
+      sourceWriter.startPageContentContext(page).q().Q();
+      sourceWriter.writePage(page);
+    }
+    var source = sourceWriter.end();
+    var sourceReader = muhammara.createReader(source);
+    var firstContentsId = getPageContentsID(sourceReader, 0);
+    var secondContentsId = getPageContentsID(sourceReader, 1);
+    sourceReader.end();
+
+    var sharingWriter = muhammara.createWriterToModify(source);
+    sharingWriter.replaceObject(1, secondContentsId, firstContentsId);
+    var shared = sharingWriter.end();
+
+    var writer = muhammara.createWriterToModify(shared);
+    var objects = writer.getObjectsContext();
+    var replacementId = objects.startNewIndirectObject();
+    var replacement = objects.startPDFStream();
+    objects.endPDFStream(replacement).endIndirectObject();
+    writer.replaceObject(0, firstContentsId, replacementId, {
+      scope: "global",
+    });
+    var output = writer.end();
+
+    var reader = muhammara.createReader(output);
+    assert.equal(getPageContentsID(reader, 0), replacementId);
+    assert.equal(getPageContentsID(reader, 1), replacementId);
+    reader.end();
+  });
 });
