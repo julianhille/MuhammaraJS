@@ -39,6 +39,38 @@ MuhammaraJS v6 remains available under the unscoped package name `muhammara`,
 but it receives no further releases. It is not the same package as
 `@muhammara/native` or another `@muhammara/*` package. Existing v6
 installations remain usable; new projects should use the scoped packages.
+See [Migrate From v6 To v7](#migrate-from-v6-to-v7).
+
+## Migrate From v6 To v7
+
+v7 replaces the unscoped `muhammara` package with organization-scoped packages.
+The PDF API is unchanged, so migrating is a dependency rename plus an import
+rename:
+
+```sh
+npm uninstall muhammara
+npm install @muhammara/native
+```
+
+```javascript
+// v6
+var muhammara = require("muhammara");
+
+// v7
+var muhammara = require("@muhammara/native");
+```
+
+Two things need attention beyond the rename:
+
+- `@muhammara/native` is prebuilt-only. Install
+  `@muhammara/native-with-source` when no prebuilt binary matches your platform
+  or when Electron must rebuild the addon. v6 compiled from source in that case;
+  v7 fails the install instead.
+- TypeScript code needs an explicit import. v6 shipped an ambient
+  `declare module "muhammara"` block; v7 declares types per package.
+
+The full guide, including npm aliases for a staged migration, is in
+[Migrate From v6 To v7](https://muhammarajs.readthedocs.io/en/latest/getting-started/migrate-from-v6.html).
 
 ## Documentation
 
