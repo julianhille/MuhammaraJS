@@ -100,6 +100,15 @@ current prebuilt matrix. The package `engines` field is the authoritative
 Node.js version policy; this table describes the release workflow's binary
 coverage.
 
+The binary is selected for the machine running the install, not for the machine
+that will run the application. Installing on Windows or macOS and deploying that
+`node_modules` directory to a Linux target such as AWS Lambda ships an
+unloadable binary. Set `npm_config_target`, `npm_config_target_platform`,
+`npm_config_target_arch`, and `npm_config_target_libc` to install a different
+Node.js version's or platform's published binary instead; see
+[Deploy To AWS Lambda](../how-to/deploy-to-aws-lambda.md) for the runtime
+mapping and the constraints that apply.
+
 ## Electron Support Policy
 
 Use the source-capable package before running `@electron/rebuild`, because the
