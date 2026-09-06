@@ -149,12 +149,14 @@ class Recipe {
    */
   read(inSrc) {
     const isForExternal = inSrc ? true : false;
+    let pdfReader = null;
+    let isAdopted = false;
     try {
       let src = isForExternal ? inSrc : this.src;
       if (this.isBufferSrc) {
         src = new muhammara.PDFRStreamForBuffer(this.src);
       }
-      const pdfReader = muhammara.createReader(src, this.encryptOptions);
+      pdfReader = muhammara.createReader(src, this.encryptOptions);
       const pages = pdfReader.getPagesCount();
       if (pages == 0) {
         // broken or modify password protected
@@ -206,13 +208,50 @@ class Recipe {
         metadata[page.pageNumber] = page;
       }
       if (!isForExternal) {
+        this._releaseReader();
         this.pdfReader = pdfReader;
         this.metadata = metadata;
+        isAdopted = true;
       }
       return metadata;
     } catch (err) {
       throw new Error(err);
+    } finally {
+      // Only the recipe source reader outlives read(); anything else would keep
+      // the file open until the process exits.
+      if (pdfReader && !isAdopted) {
+        pdfReader.end();
+      }
     }
+  }
+
+  /**
+   * Release the source reader and the file handle it holds.
+   * @private
+   * @returns {void}
+   */
+  _releaseReader() {
+    const pdfReader = this.pdfReader;
+    if (!pdfReader) {
+      return;
+    }
+    this.pdfReader = null;
+    pdfReader.end();
+  }
+
+  /**
+   * Get the source reader, which endPDF() releases.
+   * @private
+   * @returns {Object} The source PDF reader.
+   * @throws {Error} If the reader was already released by endPDF().
+   */
+  _getReader() {
+    if (!this.pdfReader) {
+      throw new Error(
+        "The source PDF reader has been released by endPDF(). Read the source before ending the document.",
+      );
+    }
+    return this.pdfReader;
   }
 
   /**
@@ -256,6 +295,12 @@ class Recipe {
       this._writeInfo();
       this.writer.end();
     }
+
+    // Every step above may still read the source; _insertPages() and _encrypt()
+    // below rename the output, which is the source itself when no separate
+    // output was given, and Windows refuses that while the reader holds it.
+    this._releaseReader();
+
     if (this.needToInsertPages) {
       if (this.isBufferSrc) {
         // eslint-disable-next-line no-console

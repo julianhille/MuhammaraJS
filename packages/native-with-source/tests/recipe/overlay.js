@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const HummusRecipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Modify", () => {
@@ -250,5 +251,25 @@ describe("Modify", () => {
       page: 2,
     };
     recipe.editPage(1).overlay(overlayPDF, options).endPage().endPDF(done);
+  });
+
+  it("releases the overlaid file once the PDF is written", () => {
+    const material = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    const source = path.join(__dirname, "../output/overlay-source.pdf");
+    const overlaid = path.join(__dirname, "../output/overlay-overlaid.pdf");
+    const output = path.join(__dirname, "../output/overlay-handles.pdf");
+    fs.copyFileSync(material, source);
+    fs.copyFileSync(material, overlaid);
+
+    new HummusRecipe(source, output)
+      .editPage(1)
+      .overlay(overlaid)
+      .endPage()
+      .endPDF();
+
+    // Both files stay locked on Windows while a reader still holds them: #381.
+    fs.unlinkSync(source);
+    fs.unlinkSync(overlaid);
+    fs.rmSync(output, { force: true });
   });
 });
