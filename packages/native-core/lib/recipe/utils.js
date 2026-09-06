@@ -14,28 +14,30 @@ function appendPDFPageFromPDFWithAnnotations(
   pageNumber,
 ) {
   const cpyCxt = pdfWriter.createPDFCopyingContext(sourcePDFPath);
-  const cpyCxtParser = cpyCxt.getSourceDocumentParser();
-  const pageDictionary = cpyCxtParser.parsePageDictionary(pageNumber);
+  try {
+    const cpyCxtParser = cpyCxt.getSourceDocumentParser();
+    const pageDictionary = cpyCxtParser.parsePageDictionary(pageNumber);
 
-  if (!pageDictionary.exists(ANNOTATION_PREFIX)) {
-    cpyCxt.appendPDFPageFromPDF(pageNumber);
-  } else {
-    let reffedObjects;
-    pdfWriter.getEvents().once("OnPageWrite", (params) => {
-      params.pageDictionaryContext.writeKey(ANNOTATION_PREFIX);
-      reffedObjects = cpyCxt.copyDirectObjectWithDeepCopy(
-        pageDictionary.queryObject(ANNOTATION_PREFIX),
-      );
-    });
+    if (!pageDictionary.exists(ANNOTATION_PREFIX)) {
+      cpyCxt.appendPDFPageFromPDF(pageNumber);
+    } else {
+      let reffedObjects;
+      pdfWriter.getEvents().once("OnPageWrite", (params) => {
+        params.pageDictionaryContext.writeKey(ANNOTATION_PREFIX);
+        reffedObjects = cpyCxt.copyDirectObjectWithDeepCopy(
+          pageDictionary.queryObject(ANNOTATION_PREFIX),
+        );
+      });
 
-    cpyCxt.appendPDFPageFromPDF(pageNumber);
+      cpyCxt.appendPDFPageFromPDF(pageNumber);
 
-    if (reffedObjects && reffedObjects.length > 0) {
-      cpyCxt.copyNewObjectsForDirectObject(reffedObjects);
+      if (reffedObjects && reffedObjects.length > 0) {
+        cpyCxt.copyNewObjectsForDirectObject(reffedObjects);
+      }
     }
+  } finally {
+    cpyCxt.end();
   }
-
-  cpyCxt.end();
 }
 
 /**
@@ -51,21 +53,23 @@ function appendPDFPagesFromPDFWithAnnotations(
   options = {},
 ) {
   const cpyCxt = pdfWriter.createPDFCopyingContext(sourcePDFPath);
-  const cpyCxtParser = cpyCxt.getSourceDocumentParser();
+  try {
+    const cpyCxtParser = cpyCxt.getSourceDocumentParser();
 
-  if (options.specificRanges && options.specificRanges.length) {
-    for (const [start, end] of options.specificRanges) {
-      for (let i = start; i <= end; ++i) {
+    if (options.specificRanges && options.specificRanges.length) {
+      for (const [start, end] of options.specificRanges) {
+        for (let i = start; i <= end; ++i) {
+          appendPDFPageFromPDFWithAnnotations(pdfWriter, sourcePDFPath, i);
+        }
+      }
+    } else {
+      for (let i = 0; i < cpyCxtParser.getPagesCount(); ++i) {
         appendPDFPageFromPDFWithAnnotations(pdfWriter, sourcePDFPath, i);
       }
     }
-  } else {
-    for (let i = 0; i < cpyCxtParser.getPagesCount(); ++i) {
-      appendPDFPageFromPDFWithAnnotations(pdfWriter, sourcePDFPath, i);
-    }
+  } finally {
+    cpyCxt.end();
   }
-
-  cpyCxt.end();
 }
 
 exports.ANNOTATION_PREFIX = ANNOTATION_PREFIX;
