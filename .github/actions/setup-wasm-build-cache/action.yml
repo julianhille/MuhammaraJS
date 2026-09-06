@@ -1,0 +1,28 @@
+name: Setup Wasm build cache
+description: Restore the bounded Emscripten compiler cache for one Wasm build configuration.
+
+inputs:
+  sanitize:
+    description: MUHAMMARA_WASM_SANITIZE value the job builds with; sanitizer and normal builds never share a cache.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve the compiler cache for this configuration
+      id: configuration
+      shell: sh
+      env:
+        MUHAMMARA_WASM_SANITIZE: ${{ inputs.sanitize }}
+      run: |
+        directory=$(./packages/wasm/build.sh --print-cache-directory)
+        digest=$(sed -n 's/^image=.*@sha256:\([0-9a-f]\{64\}\)$/\1/p' packages/wasm/build.sh)
+        test -n "$digest"
+        echo "directory=${directory#"$PWD/"}" >> "$GITHUB_OUTPUT"
+        echo "name=$(basename "$directory")" >> "$GITHUB_OUTPUT"
+        echo "digest=$digest" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v5
+      with:
+        path: ${{ steps.configuration.outputs.directory }}
+        key: wasm-${{ steps.configuration.outputs.name }}-${{ steps.configuration.outputs.digest }}-${{ hashFiles('packages/wasm/build.sh', 'packages/wasm/CMakeLists.txt', 'packages/wasm/src/**', 'packages/native-with-source/src/**') }}
+        restore-keys: wasm-${{ steps.configuration.outputs.name }}-${{ steps.configuration.outputs.digest }}-

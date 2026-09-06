@@ -15,6 +15,38 @@ the command; the build intentionally has no local-Emscripten fallback so release
 artifacts use the pinned image. Release CI builds `dist/` first and publishes the
 validated result with npm lifecycle scripts disabled.
 
+## Compiler Cache
+
+The pinned Emscripten image ships no `ccache`, so the build adds it in a thin
+layer on top of that image and tags the result with the pinned digest. The
+layer is built once per digest and reused afterwards; when it cannot be built,
+for example without network access, the build falls back to the pinned image
+and compiles without a cache.
+
+Compiled objects are kept in `packages/wasm/.ccache/<configuration>` and the
+CMake tree in `packages/wasm/build/<configuration>`, where the configuration
+is derived from the build type and the sanitizer setting
+(`release-sanitize-off`, `release-sanitize-on`). Sanitizer and normal builds
+therefore never share objects. Wasm CI restores the cache per configuration
+through `.github/actions/setup-wasm-build-cache`, keyed on the Emscripten image
+digest, the build script, `CMakeLists.txt`, and the Wasm and shared C++
+sources. Cached and uncached builds produce identical `dist/` bytes.
+
+These environment variables adjust the build:
+
+| Variable                        | Default                 | Effect                                                |
+| ------------------------------- | ----------------------- | ----------------------------------------------------- |
+| `MUHAMMARA_WASM_SANITIZE`       | `OFF`                   | Build with Emscripten LeakSanitizer.                  |
+| `MUHAMMARA_WASM_BUILD_TYPE`     | `Release`               | `CMAKE_BUILD_TYPE` for the build.                     |
+| `MUHAMMARA_WASM_CCACHE`         | `ON`                    | Set to `OFF` to build straight from the pinned image. |
+| `MUHAMMARA_WASM_CCACHE_DIR`     | `packages/wasm/.ccache` | Root directory holding the per-configuration caches.  |
+| `MUHAMMARA_WASM_CCACHE_MAXSIZE` | `1G`                    | Upper bound for one configuration's cache.            |
+
+`./packages/wasm/build.sh --print-cache-directory` and
+`--print-build-directory` report the directories for the current settings
+without touching Docker; CI uses the first one so the workflow never repeats
+the layout the script owns.
+
 After a build, run the focused checks:
 
 ```sh
