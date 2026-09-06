@@ -383,7 +383,21 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - run: apt-get update && apt-get install -y ccache perl
+      - name: Install build tools from the Debian archive
+        run: |
+          # Debian 11 LTS ended 2026-08-31. deb.debian.org is dropping bullseye
+          # pool files while its indexes still advertise them, so pin to the
+          # archive. bullseye-security is not on archive.debian.org yet, so drop
+          # it -- this container is an ephemeral builder and ships nothing
+          # (OpenSSL is built from source and statically linked).
+          # perl is not installed here: it ships with the image already and
+          # OpenSSL's build needs it. The musl and dockcross jobs still install
+          # it explicitly because their images do not carry it.
+          sed -i -e '/bullseye-security/d' \
+                 -e 's|deb.debian.org|archive.debian.org|g' \
+                 /etc/apt/sources.list
+          echo 'Acquire::Check-Valid-Until "0";' > /etc/apt/apt.conf.d/99no-check-valid-until
+          apt-get update && apt-get install -y ccache
       - uses: ./.github/actions/setup-native-build-cache
         with:
           key: native-node-linux-${{ matrix.target_architecture }}-${{ matrix.node }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
