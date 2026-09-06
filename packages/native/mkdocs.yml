@@ -86,6 +86,7 @@ nav:
       - How-To Guides:
           - Overview: how-to/index.md
           - Serve a PDF Response: how-to/serve-a-pdf-response.md
+          - Deploy to AWS Lambda: how-to/deploy-to-aws-lambda.md
           - Add Review Annotations: how-to/add-review-annotations.md
           - Create Multi-Page Tables: how-to/create-tables.md
           - Flow Text into Columns: how-to/flow-text-into-columns.md
