@@ -16,10 +16,19 @@ exports.appendPage = function appendPage(pdfSrc, pages = []) {
   }
   // Using stream so it can be closed to release reader resource (Issue #61)
   const instream = new muhammara.PDFRStreamForFile(pdfSrc);
-  const pdfReader = muhammara.createReader(instream);
-  const pageCount = pdfReader.getPagesCount();
-  pdfReader.end();
-  instream.close();
+  let pageCount;
+  try {
+    const pdfReader = muhammara.createReader(instream);
+    try {
+      pageCount = pdfReader.getPagesCount();
+    } finally {
+      pdfReader.end();
+    }
+  } finally {
+    // An unreadable source must not leave the file open, which would keep it
+    // locked on Windows for the life of the process.
+    instream.close();
+  }
 
   // prevent unmatched pagenumber
   const transformPageNumber = (pageNum) => {
