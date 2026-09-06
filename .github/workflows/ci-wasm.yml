@@ -9,6 +9,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/ci-wasm.yml"
+      - ".github/actions/setup-wasm-build-cache/**"
       - "package.json"
       - "package-lock.json"
       - "packages/native-with-source/src/**"
@@ -35,6 +36,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: ./.github/actions/setup-wasm-build-cache
+        with:
+          sanitize: "OFF"
       - run: npm ci --ignore-scripts
       - run: npm run wasm:build
       - name: Verify Wasm package contents
@@ -83,6 +87,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: ./.github/actions/setup-wasm-build-cache
+        with:
+          sanitize: "ON"
       - run: npm ci --ignore-scripts
       - name: Build with Emscripten LeakSanitizer
         run: npm run wasm:build

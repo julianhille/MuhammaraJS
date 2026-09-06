@@ -67,6 +67,7 @@ xcode/DerivedData
 #Visual code unwanted
 .vscode
 packages/wasm/build/
+packages/wasm/.ccache/
 packages/wasm/dist/
 packages/wasm/docs/reference.md
 packages/native/docs/recipe/reference.md

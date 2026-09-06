@@ -4,6 +4,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Cache Emscripten compiler output between builds and give each build
+  configuration its own build directory, so repeat builds reuse compiled
+  objects while sanitizer and normal builds stay separate
+  [#568](https://github.com/julianhille/MuhammaraJS/issues/568)
+
 ## [1.0.0-beta.1] - 2026-09-05
 
 ### Fixed
