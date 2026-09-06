@@ -190,11 +190,15 @@ function inspect(muhammara, bytes, expectedPages, rawId, annotationId) {
       parserStream.read(5).join(",") === "37,80,68,70,45",
       "PDF header bytes",
     );
+    // Page marks without reading text: an empty list means a blank page.
+    var contentItems = reader.extractPageContentItems(0);
+    assert(contentItems.length > 0, "page content items");
     return {
       pages: reader.getPagesCount(),
       level: reader.getPDFLevel(),
       objects: reader.getObjectsCount(),
       text: reader.extractPageText(0).map((entry) => entry.content),
+      contentItems: contentItems.length,
     };
   } finally {
     reader.end();
