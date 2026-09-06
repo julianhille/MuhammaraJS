@@ -45,6 +45,23 @@ Perl and `make` on Unix-like systems or Perl, NMake, and Visual Studio Build
 Tools on Windows; no `OPENSSL_LIB_DIR`, `CPPFLAGS`, or separate OpenSSL
 installation is required.
 
+RPM-based distributions such as Fedora, RHEL, and openSUSE split the Perl core
+library into separate packages, and OpenSSL's `./Configure` needs some of them.
+Install them alongside `perl`:
+
+```sh
+dnf install perl-FindBin perl-IPC-Cmd
+```
+
+Without them the build stops while configuring OpenSSL:
+
+```
+Can't locate FindBin.pm in @INC (you may need to install the FindBin module) at ./Configure line 15.
+```
+
+Debian and Ubuntu ship these modules with `perl` itself, so no extra packages
+are needed there.
+
 On Unix-like systems, optionally set `CC="ccache cc"` and `CXX="ccache c++"` to
 speed up repeated source builds when `ccache` is installed.
 

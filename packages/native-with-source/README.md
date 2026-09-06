@@ -18,6 +18,12 @@ platform C/C++ toolchain, Perl, and `make` on Unix-like systems or Perl, NMake,
 and Visual Studio Build Tools on Windows; no separate OpenSSL installation is
 required.
 
+RPM-based distributions such as Fedora, RHEL, and openSUSE split the Perl core
+library into separate packages, and OpenSSL's `./Configure` needs some of them.
+Install them alongside `perl` with `dnf install perl-FindBin perl-IPC-Cmd`.
+Without them the build stops while configuring OpenSSL with `Can't locate
+FindBin.pm in @INC`. Debian and Ubuntu ship these modules with `perl` itself.
+
 Windows builds use `OPENSSL_VS_INSTALL_PATH`, `GYP_MSVS_OVERRIDE_PATH`,
 `VSINSTALLDIR`, or `npm_config_msbuild_path` when set, then fall back to
 discovering Visual Studio with `vswhere`.
