@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const HummusRecipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Append Pages", () => {
@@ -20,5 +21,23 @@ describe("Append Pages", () => {
       ])
       .appendPage(longPDF)
       .endPDF(done);
+  });
+
+  it("releases the input files once the PDF is written", () => {
+    const source = path.join(__dirname, "../output/appendPages-source.pdf");
+    const appended = path.join(__dirname, "../output/appendPages-appended.pdf");
+    const output = path.join(__dirname, "../output/appendPages-handles.pdf");
+    const material = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    fs.copyFileSync(material, source);
+    fs.copyFileSync(material, appended);
+
+    new HummusRecipe(source, output).appendPage(appended).endPDF();
+
+    // Windows refuses the unlink with EBUSY while a reader still holds the
+    // file, which is what https://github.com/julianhille/MuhammaraJS/issues/381
+    // reported.
+    fs.unlinkSync(source);
+    fs.unlinkSync(appended);
+    fs.rmSync(output, { force: true });
   });
 });

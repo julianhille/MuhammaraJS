@@ -33,60 +33,63 @@ exports._readInfo = function _readInfo() {
       ? new muhammara.PDFRStreamForBuffer(this.src)
       : this.src;
     const copyCtx = this.writer.createPDFCopyingContext(copyFrom);
-    const infoDict = copyCtx
-      .getSourceDocumentParser()
-      .queryDictionaryObject(
-        copyCtx.getSourceDocumentParser().getTrailer(),
-        "Info",
-      );
+    try {
+      const infoDict = copyCtx
+        .getSourceDocumentParser()
+        .queryDictionaryObject(
+          copyCtx.getSourceDocumentParser().getTrailer(),
+          "Info",
+        );
 
-    const oldInfo =
-      infoDict && infoDict.toJSObject ? infoDict.toJSObject() : null;
+      const oldInfo =
+        infoDict && infoDict.toJSObject ? infoDict.toJSObject() : null;
 
-    if (oldInfo) {
-      this.infoDictionary = {};
-      Object.getOwnPropertyNames(oldInfo).forEach((key) => {
-        if (!oldInfo[key]) {
-          return;
-        }
-        const oldInforSrc = this._parseObjectByType(oldInfo[key]);
-        if (!oldInforSrc) {
-          return;
-        }
-        switch (key) {
-          case "Trapped":
-            if (oldInforSrc && oldInforSrc.value) {
-              this.infoDictionary.trapped = oldInforSrc.value;
-            }
-            break;
-          case "CreationDate":
-            if (oldInforSrc && oldInforSrc.value) {
-              this.infoDictionary.creationDate = oldInforSrc.value;
-            }
-            break;
-          case "ModDate":
-            if (oldInforSrc && oldInforSrc.value) {
-              this.infoDictionary.modDate = oldInforSrc.value;
-            }
-            break;
-          case "Creator":
-            if (oldInforSrc && oldInforSrc.toText) {
-              this.infoDictionary.creator = oldInforSrc.toText();
-            }
-            break;
-          case "Producer":
-            if (oldInforSrc && oldInforSrc.toText) {
-              this.infoDictionary.producer = oldInforSrc.toText();
-            }
-            break;
-          default:
-            if (oldInforSrc && oldInforSrc.toText) {
-              this.infoDictionary[key.toLowerCase()] = oldInforSrc.toText();
-            }
-        }
-      });
+      if (oldInfo) {
+        this.infoDictionary = {};
+        Object.getOwnPropertyNames(oldInfo).forEach((key) => {
+          if (!oldInfo[key]) {
+            return;
+          }
+          const oldInforSrc = this._parseObjectByType(oldInfo[key]);
+          if (!oldInforSrc) {
+            return;
+          }
+          switch (key) {
+            case "Trapped":
+              if (oldInforSrc && oldInforSrc.value) {
+                this.infoDictionary.trapped = oldInforSrc.value;
+              }
+              break;
+            case "CreationDate":
+              if (oldInforSrc && oldInforSrc.value) {
+                this.infoDictionary.creationDate = oldInforSrc.value;
+              }
+              break;
+            case "ModDate":
+              if (oldInforSrc && oldInforSrc.value) {
+                this.infoDictionary.modDate = oldInforSrc.value;
+              }
+              break;
+            case "Creator":
+              if (oldInforSrc && oldInforSrc.toText) {
+                this.infoDictionary.creator = oldInforSrc.toText();
+              }
+              break;
+            case "Producer":
+              if (oldInforSrc && oldInforSrc.toText) {
+                this.infoDictionary.producer = oldInforSrc.toText();
+              }
+              break;
+            default:
+              if (oldInforSrc && oldInforSrc.toText) {
+                this.infoDictionary[key.toLowerCase()] = oldInforSrc.toText();
+              }
+          }
+        });
+      }
+    } finally {
+      copyCtx.end();
     }
-    copyCtx.end();
   }
 
   return this.infoDictionary;
@@ -225,7 +228,7 @@ exports.structure = function structure(output) {
   // const outputFileType = path.extname(output);
   const outputFile = fs.openSync(output, "w");
   const muhammara = this.muhammara;
-  const pdfReader = this.pdfReader;
+  const pdfReader = this._getReader();
 
   const tabWidth = "  ";
   const structures = [
@@ -331,7 +334,7 @@ exports._parseObjectByType = function _parseObjectByType(inObject) {
     return;
   }
   const muhammara = this.muhammara;
-  const pdfReader = this.pdfReader;
+  const pdfReader = this._getReader();
   const type = inObject.getType();
   const label = muhammara.getTypeLabel(type);
   const saveToObject = this.pdfStructure || {};

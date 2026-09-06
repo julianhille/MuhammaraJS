@@ -18,7 +18,7 @@ exports.split = function split(outputDir = "", prefix) {
     const pdfWriter = muhammara.createWriter(newPdf);
     hummusUtils.appendPDFPageFromPDFWithAnnotations(
       pdfWriter,
-      this.pdfReader,
+      this._getReader(),
       i,
     );
     pdfWriter.end();
