@@ -17,6 +17,9 @@ on:
       - "!packages/wasm/docs/**"
       - "!packages/wasm/mkdocs.yml"
       - "!packages/wasm/.readthedocs.yaml"
+      - "!packages/wasm/README.md"
+      - "!packages/wasm/DIFFERENCES.md"
+      - "!packages/wasm/CHANGELOG.md"
   workflow_dispatch:
 
 concurrency:
@@ -27,7 +30,52 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.decide.outputs.build }}
+    steps:
+      - uses: actions/checkout@v6
+        if: ${{ github.event_name == 'push' && github.ref_type == 'branch' }}
+        with:
+          fetch-depth: 0
+      - name: Decide whether the build needs to run
+        id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # Releases run off tag pushes, and GitHub cannot diff a brand new ref,
+          # so a paths filter on the push trigger would silently skip publishing.
+          # Only a branch push is ever skipped here, and only when every file it
+          # touched is documentation.
+          if [ "$EVENT_NAME" != "push" ] || [ "$REF_TYPE" != "branch" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "${BEFORE:-}" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            echo "No usable base commit; building."
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED="$(git diff --name-only "$BEFORE" "$AFTER")"
+          echo "Changed files:"
+          echo "$CHANGED"
+          CODE="$(printf '%s\n' "$CHANGED" | grep -Ev '(^|/)[^/]*\.md$|(^|/)docs/|(^|/)mkdocs\.yml$|(^|/)\.readthedocs\.yaml$' || true)"
+          if [ -z "$CODE" ]; then
+            echo "Documentation-only push; skipping the build."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Build-relevant files changed:"
+            echo "$CODE"
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
   build:
+    needs: [changes]
+    if: ${{ needs.changes.outputs.build == 'true' }}
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
