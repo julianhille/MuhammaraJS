@@ -410,6 +410,36 @@ static bool isVisibleTextRenderingMode(int renderingMode) {
   return renderingMode != 3 && renderingMode != 7;
 }
 
+static bool isInlineImageWhitespace(IOBasicTypes::Byte byte) {
+  return byte == 0x00 || byte == 0x09 || byte == 0x0A || byte == 0x0C ||
+         byte == 0x0D || byte == 0x20;
+}
+
+// Consumes an inline image's binary payload, which the tokenizer cannot read:
+// the bytes are arbitrary and lex as operators, inventing page marks and
+// burning the parsed-object budget. Reads raw bytes up to the EI delimiter
+// instead. EI must be surrounded by whitespace, the same heuristic every PDF
+// consumer uses, since nothing records the payload length.
+static void skipInlineImageData(PDFObjectParser* objectParser) {
+  IByteReader* stream = objectParser->StartExternalRead();
+  if (stream != nullptr) {
+    // The byte before the payload was the whitespace that follows ID, so an
+    // empty image still matches on its very first EI.
+    IOBasicTypes::Byte window[3] = {0x20, 0x20, 0x20};
+    IOBasicTypes::Byte current = 0;
+    while (stream->NotEnded()) {
+      if (stream->Read(&current, 1) != 1) break;
+      if (isInlineImageWhitespace(window[0]) && window[1] == 'E' &&
+          window[2] == 'I' && isInlineImageWhitespace(current))
+        break;
+      window[0] = window[1];
+      window[1] = window[2];
+      window[2] = current;
+    }
+  }
+  objectParser->EndExternalRead();
+}
+
 static bool isPathPaintingOperation(const std::string& operation) {
   return operation == "S" || operation == "s" || operation == "f" ||
          operation == "F" || operation == "f*" || operation == "B" ||
@@ -574,11 +604,20 @@ static bool extractPageContentItems(PDFParser* parser, PDFDictionary* page,
     } else if (operation == "Q" && !textRenderingModes.empty()) {
       textRenderingMode = textRenderingModes.back();
       textRenderingModes.pop_back();
+    } else if (operation == "ID") {
+      skipInlineImageData(objectParser);
+      operands.clear();
+      continue;
     }
 
     WasmPageContentItemType type = kWasmPageContentItemText;
     bool hasItem = false;
-    if (inTextObject && isVisibleTextRenderingMode(textRenderingMode) &&
+    if (operation == "BI") {
+      // An inline image paints the page exactly as "Do" does; the operation
+      // name tells the two apart.
+      type = kWasmPageContentItemXObject;
+      hasItem = true;
+    } else if (inTextObject && isVisibleTextRenderingMode(textRenderingMode) &&
         (operation == "Tj" || operation == "'" || operation == "\"" ||
          operation == "TJ") &&
         contentItemHasText(operands, operation)) {

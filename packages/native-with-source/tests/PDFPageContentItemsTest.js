@@ -43,6 +43,77 @@ describe("PDFPageContentItems", function () {
     ]);
   });
 
+  it("classifies xobject, shading, and non-painting operations", function () {
+    var output = __dirname + "/output/PDFPageContentItemsKinds.pdf";
+    var writer = muhammara.createWriter(output);
+    var page = writer.createPage(0, 0, 200, 200);
+
+    // Names are not resolved against the resource dictionary, so the operators
+    // alone decide. "n" ends a path without painting and "W" only clips, so
+    // neither marks the page.
+    writer
+      .startPageContentContext(page)
+      .writeFreeCode(
+        "/Fx1 Do /Sh1 sh 10 10 20 20 re n 30 30 40 40 re W n 50 50 10 10 re f",
+      );
+    writer.writePage(page).end();
+
+    var reader = muhammara.createReader(output);
+    var items = reader.extractPageContentItems(0);
+    reader.end();
+
+    assert.deepEqual(items, [
+      { type: muhammara.ePDFPageContentItemXObject, operation: "Do" },
+      { type: muhammara.ePDFPageContentItemShading, operation: "sh" },
+      { type: muhammara.ePDFPageContentItemPath, operation: "f" },
+    ]);
+  });
+
+  it("reports an inline image and skips its binary payload", function () {
+    var output = __dirname + "/output/PDFPageContentItemsInlineImage.pdf";
+    var writer = muhammara.createWriter(output);
+    var page = writer.createPage(0, 0, 200, 200);
+
+    // The payload deliberately contains bytes that lex as painting operators
+    // ("f", "S") and an "EI" that is not delimited by whitespace. Neither may
+    // produce an item, and neither may end the image early.
+    writer
+      .startPageContentContext(page)
+      .writeFreeCode(
+        "BI /W 4 /H 1 /BPC 8 /CS /G ID \x66\x53xEIy\x42\x49 EI Q 10 10 20 20 re f",
+      );
+    writer.writePage(page).end();
+
+    var reader = muhammara.createReader(output);
+    var items = reader.extractPageContentItems(0);
+    reader.end();
+
+    assert.deepEqual(items, [
+      { type: muhammara.ePDFPageContentItemXObject, operation: "BI" },
+      { type: muhammara.ePDFPageContentItemPath, operation: "f" },
+    ]);
+  });
+
+  it("restores the text rendering mode saved by q and Q", function () {
+    var output = __dirname + "/output/PDFPageContentItemsGraphicsState.pdf";
+    var writer = muhammara.createWriter(output);
+    var page = writer.createPage(0, 0, 200, 200);
+
+    // Tr 3 inside q/Q must not leak past the Q that restores it.
+    writer
+      .startPageContentContext(page)
+      .writeFreeCode("BT /F1 12 Tf q 3 Tr (hidden) Tj Q (visible) Tj ET");
+    writer.writePage(page).end();
+
+    var reader = muhammara.createReader(output);
+    var items = reader.extractPageContentItems(0);
+    reader.end();
+
+    assert.deepEqual(items, [
+      { type: muhammara.ePDFPageContentItemText, operation: "Tj" },
+    ]);
+  });
+
   it("enforces configurable extraction limits", function () {
     var output = __dirname + "/output/PDFPageContentItemsLimits.pdf";
     var writer = muhammara.createWriter(output);

@@ -1,5 +1,6 @@
 #include "PDFTextExtractor.h"
 
+#include "IByteReader.h"
 #include "PDFArray.h"
 #include "PDFHexString.h"
 #include "PDFInteger.h"
@@ -34,6 +35,41 @@ bool IsTextString(PDFObject* inObject)
 bool IsVisibleTextRenderingMode(int inRenderingMode)
 {
   return inRenderingMode != 3 && inRenderingMode != 7;
+}
+
+bool IsInlineImageWhitespace(IOBasicTypes::Byte inByte)
+{
+  return inByte == 0x00 || inByte == 0x09 || inByte == 0x0A ||
+         inByte == 0x0C || inByte == 0x0D || inByte == 0x20;
+}
+
+// Consumes an inline image's binary payload, which the tokenizer cannot read:
+// the bytes are arbitrary and lex as operators, inventing page marks and
+// burning the parsed-object budget. Reads raw bytes up to the EI delimiter
+// instead. EI must be surrounded by whitespace, the same heuristic every PDF
+// consumer uses, since nothing records the payload length.
+void SkipInlineImageData(PDFObjectParser* inObjectParser)
+{
+  IByteReader* stream = inObjectParser->StartExternalRead();
+  if (stream != NULL)
+  {
+    // The byte before the payload was the whitespace that follows ID, so an
+    // empty image still matches on its very first EI.
+    IOBasicTypes::Byte window[3] = {0x20, 0x20, 0x20};
+    IOBasicTypes::Byte current = 0;
+    while (stream->NotEnded())
+    {
+      if (stream->Read(&current, 1) != 1)
+        break;
+      if (IsInlineImageWhitespace(window[0]) && window[1] == 'E' &&
+          window[2] == 'I' && IsInlineImageWhitespace(current))
+        break;
+      window[0] = window[1];
+      window[1] = window[2];
+      window[2] = current;
+    }
+  }
+  inObjectParser->EndExternalRead();
 }
 
 bool IsPathPaintingOperation(const std::string& inOperation)
@@ -257,10 +293,23 @@ bool PDFTextExtractor::ExtractPageContentItems(
       textRenderingMode = textRenderingModes.back();
       textRenderingModes.pop_back();
     }
+    else if (operation == "ID")
+    {
+      SkipInlineImageData(objectParser);
+      operands.clear();
+      continue;
+    }
 
-    EPDFPageContentItemType type;
+    EPDFPageContentItemType type = ePDFPageContentItemText;
     bool hasItem = false;
-    if (inTextObject && IsVisibleTextRenderingMode(textRenderingMode) &&
+    if (operation == "BI")
+    {
+      // An inline image paints the page exactly as "Do" does; the operation
+      // name tells the two apart.
+      type = ePDFPageContentItemXObject;
+      hasItem = true;
+    }
+    else if (inTextObject && IsVisibleTextRenderingMode(textRenderingMode) &&
         (operation == "Tj" || operation == "'" || operation == "\"" || operation == "TJ") &&
         HasText(operands, operation))
     {

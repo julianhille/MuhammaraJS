@@ -71,7 +71,9 @@ Each item is `{ type, operation }`, where `type` is one of
 `ePDFPageContentItemText`, `ePDFPageContentItemPath`,
 `ePDFPageContentItemXObject`, or `ePDFPageContentItemShading` — read from the
 loaded runtime, as in `muhammara.ePDFPageContentItemPath` — and `operation`
-is the PDF operator that produced it. Text drawn in an invisible rendering mode
+is the PDF operator that produced it. An inline image reports as
+`ePDFPageContentItemXObject` with operation `BI`; its binary payload is skipped
+rather than parsed, so the bytes cannot invent extra items. Text drawn in an invisible rendering mode
 (`Tr 3` or `Tr 7`) is excluded; white-on-white text is included, because it is
 still a page mark. `limits.maxTextBytes` is accepted for signature parity with
 `extractPageText` but has no effect here. See
