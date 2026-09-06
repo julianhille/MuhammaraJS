@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Build Linux prebuilds against the Debian archive now that Debian 11
+  bullseye is end of life [#577](https://github.com/julianhille/MuhammaraJS/issues/577)
+
 ## [7.0.0-beta.1] - 2026-09-05
 
 ### Added
