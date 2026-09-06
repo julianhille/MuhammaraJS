@@ -1,0 +1,15 @@
+# Every text file is stored and checked out with LF. Git decides what counts as
+# text; the exceptions below correct it where the heuristic is wrong or where
+# the bytes are not ours to rewrite.
+* text=auto eol=lf
+
+# Vendored PDFWriter sources keep the line endings they ship with upstream, so
+# that diffs against a new upstream drop stay readable.
+packages/native-with-source/src/deps/** -text
+
+# PDF fixtures are binary: an xref table stores byte offsets into the file, so
+# rewriting line endings corrupts the document. Git's heuristic misreads the
+# ones with no NUL byte near the start, so mark them explicitly. Fonts and
+# images are detected correctly and need no entry.
+*.pdf binary
+*.PDF binary

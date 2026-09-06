@@ -41,6 +41,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   object id.
 - Correct the contributing guide's documentation-example test path, which named
   a directory that does not exist.
+- Store every text file with LF line endings, enforced by `.gitattributes` and
+  checked in CI. Vendored PDFWriter sources and PDF fixtures keep their bytes
+  untouched.
 
 ## [7.0.0-beta.1] - 2026-09-05
 
