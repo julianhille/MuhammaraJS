@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Release the source PDF file handle that `Recipe` holds, so the source,
   appended, and overlaid files can be deleted right after `endPDF()` instead of
   failing with `EBUSY` on Windows [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
+- Release the file handles `Recipe#appendPage()` opens when the appended PDF
+  cannot be read or a page cannot be copied, instead of leaking them for the
+  life of the process [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
 
 ### Changed
 
