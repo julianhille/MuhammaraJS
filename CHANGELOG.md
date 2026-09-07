@@ -73,6 +73,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)`, replacing the
   inherited `Hummus-Recipe` value. PDFs edited with `Recipe` still record the
   source document's own creator as `source-Creator`.
+- Drop the Node.js compatibility fallbacks in `src/nodes.h` for versions below
+  the supported floor: the io.js 2.5 instance creation and numeric
+  conversions, the pre-Node-10 non-context-aware conversions, and the
+  non-context-aware module and `ConstructorsHolder` singleton path. The Node 20
+  accessor branch and the `HolderV2()` property-holder branch stay
+  [#553](https://github.com/julianhille/MuhammaraJS/issues/553)
 
 ## [7.0.0-beta.1] - 2026-09-05
 
