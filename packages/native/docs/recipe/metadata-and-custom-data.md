@@ -18,3 +18,6 @@ For an existing document, `info()` without arguments reads current metadata;
 `info(options)` queues updates for finalization. `structure(path)` writes a
 debugging view of an opened source PDF. See [`tests/recipe/info.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/info.js) and
 [`tests/recipe/modify.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/modify.js).
+
+To add metadata to a document that already exists, including dotted OID keys,
+see [Add Metadata to an Existing PDF](../how-to/add-metadata-to-existing-pdfs.md).

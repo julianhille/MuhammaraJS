@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Document watermarking a PDF in place and watermarking a `Buffer`, including
   the overwrite, incremental-update, and buffer-mode caveats
   [#297](https://github.com/julianhille/MuhammaraJS/issues/297)
+- Document adding standard and custom Info dictionary metadata, including
+  dotted OID keys, to an existing PDF, and the lower-cased read-back, dropped
+  custom entries, and stamped provenance that come with it
+  [#450](https://github.com/julianhille/MuhammaraJS/issues/450)
 - Add `PDFReader.extractPageContentItems()` for detecting page-marking content operations [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
 - Add an optional `limits` argument to `PDFReader.extractPageText()` and
   `PDFReader.extractPageContentItems()`, matching the Wasm reader. Requests are

@@ -9,6 +9,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Document watermarking in place with the byte-first Recipe, and how it
   differs from the native package's path-based overwrite
   [#297](https://github.com/julianhille/MuhammaraJS/issues/297)
+- Document adding standard and custom Info dictionary metadata, including
+  dotted OID keys, to an existing PDF, and the lower-cased read-back, dropped
+  custom entries, and stamped provenance that come with it
+  [#450](https://github.com/julianhille/MuhammaraJS/issues/450)
 - Add `PDFReader.extractPageContentItems(pageIndex, limits?)` for detecting
   page-marking content operations, matching the Node reader, along with the
   `ePDFPageContentItemText`, `ePDFPageContentItemPath`,
