@@ -1,6 +1,6 @@
 const muhammara = require("../muhammara");
 const path = require("path");
-const hummusUtils = require("./utils");
+const utils = require("./utils");
 
 /**
  * Split the pdf
@@ -16,11 +16,7 @@ exports.split = function split(outputDir = "", prefix) {
   for (let i = 0; i < this.metadata.pages; i++) {
     const newPdf = path.join(outputDir, `${prefix}-${i + 1}.pdf`);
     const pdfWriter = muhammara.createWriter(newPdf);
-    hummusUtils.appendPDFPageFromPDFWithAnnotations(
-      pdfWriter,
-      this._getReader(),
-      i,
-    );
+    utils.appendPDFPageFromPDFWithAnnotations(pdfWriter, this._getReader(), i);
     pdfWriter.end();
   }
   return this;

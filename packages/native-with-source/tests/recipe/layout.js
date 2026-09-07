@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Layout", () => {
   it(`Flow text into column layouts (OS:${process.platform})`, () => {
@@ -7,7 +7,7 @@ describe("Layout", () => {
     const times = "times";
     const courier = "courier new";
     const fontDir = path.join(__dirname, "../../../native-core/fonts");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
 
     // Use checked-in fonts so rendering does not depend on the runner image.
     recipe.registerFont(times, path.join(fontDir, "Helvetica.ttf"));

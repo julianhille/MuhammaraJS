@@ -1,10 +1,10 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Coloring", () => {
   it("Using Names", (done) => {
     const output = path.join(__dirname, "../output/color-special.pdf");
-    const recipe = new HummusRecipe("new", output, {
+    const recipe = new Recipe("new", output, {
       colorspace: "rgb",
     });
     recipe
@@ -34,7 +34,7 @@ describe("Coloring", () => {
       "../TestMaterials/recipe/rgb-colors.json",
     );
     const lineOpt = { lineWidth: 0.5 };
-    const recipe = new HummusRecipe(output, output, {
+    const recipe = new Recipe(output, output, {
       colorspace: "rgb",
     });
     recipe
@@ -151,7 +151,7 @@ describe("Coloring", () => {
   it("Special Color Space Names", (done) => {
     const output = path.join(__dirname, "../output/color-special.pdf");
     const lineOpt = { lineWidth: 0.5 };
-    const recipe = new HummusRecipe(output, output, {
+    const recipe = new Recipe(output, output, {
       colorspace: "separation",
     });
     recipe

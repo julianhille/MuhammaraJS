@@ -1,10 +1,10 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Regular Polygons, Stars, Arrows", () => {
   it("Add N sided regular polygons", (done) => {
     const output = path.join(__dirname, "../output/Add N-gons.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     const rota = { stroke: "#ff0000", opacity: 0.3, rotation: 45, debug: 1 };
     const nops = { stroke: "#ff0000", opacity: 0.3, rotation: 0, debug: 1 };
     recipe
@@ -30,7 +30,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
 
   it("Add N pointed stars", (done) => {
     const output = path.join(__dirname, "../output/Add N-pointed stars.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     recipe
       .createPage("letter")
       .star(300, 340, 50, { fill: "#0000ff" })
@@ -47,7 +47,7 @@ describe("Regular Polygons, Stars, Arrows", () => {
 
   it("Add arrows", (done) => {
     const output = path.join(__dirname, "../output/arrowAnatomy.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
 
     recipe
       .createPage("letter")

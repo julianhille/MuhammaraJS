@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 const fs = require("fs");
 
 describe("Split", () => {
@@ -14,7 +14,7 @@ describe("Split", () => {
       "split.compressed.tracemonkey-pldi-09.pdf",
     );
     fs.copyFileSync(originalSrc, src);
-    const recipe = new HummusRecipe(src);
+    const recipe = new Recipe(src);
     return recipe.split(outputDir).endPDF(done);
   });
 });

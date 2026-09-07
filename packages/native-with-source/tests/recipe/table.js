@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 const fs = require("fs");
 
 function compare(a, b) {
@@ -26,7 +26,7 @@ describe("Text - Columns", () => {
   it("Table", () => {
     const output = path.join(__dirname, "../output/table.pdf");
     const pplFile = path.join(__dirname, "../TestMaterials/recipe/people.json");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     const peeps = fs.readFileSync(pplFile, "utf8");
     const people = JSON.parse(peeps);
 

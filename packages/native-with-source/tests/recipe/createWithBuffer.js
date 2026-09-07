@@ -1,14 +1,14 @@
 const path = require("path");
 const fs = require("fs");
 const assert = require("chai").assert;
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Modify", () => {
   it("Create Writer With buffer", (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
     const buffer = fs.readFileSync(src);
-    const recipe = new HummusRecipe(buffer);
+    const recipe = new Recipe(buffer);
     recipe
       .editPage(1)
       .image(myCats, "center", "center", {
@@ -44,7 +44,7 @@ describe("Modify", () => {
     );
     const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
     const buffer = fs.readFileSync(src);
-    const recipe = new HummusRecipe(buffer, output);
+    const recipe = new Recipe(buffer, output);
     recipe
       .editPage(1)
       .image(myCats, "center", "center", {
@@ -70,10 +70,10 @@ describe("Modify", () => {
   });
 
   it("Create new Writer With new buffer and file output", (done) => {
-    const pdfDoc = new HummusRecipe(Buffer.from("new"), null, {
+    const pdfDoc = new Recipe(Buffer.from("new"), null, {
       version: 1.6,
       author: "John Doe",
-      title: "Hummus Recipe",
+      title: "Muhammara-Recipe",
       subject: "A brand new PDF",
     });
     const pdfBuffer = pdfDoc

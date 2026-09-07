@@ -1,10 +1,10 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Triangles", () => {
   it("SSS, SAS, ASA", (done) => {
     const output = path.join(__dirname, "../output/Add triangles.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     let x = 50;
     let y = 100;
     let txtOps = { color: "#000000", size: 10 };

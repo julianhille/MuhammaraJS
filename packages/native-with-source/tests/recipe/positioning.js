@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 function frame(recipe, left, top, width, height) {
   const cut = 8;
@@ -45,7 +45,7 @@ describe("Graphic Object Positioning", () => {
 
   it("Location, location...", (done) => {
     const output = path.join(__dirname, "../output/positioning.pdf");
-    const recipe = new HummusRecipe("new", output, {
+    const recipe = new Recipe("new", output, {
       colorspace: "rgb",
     });
     const col = [0, 90, 205, 320, 435];
@@ -162,7 +162,7 @@ describe("Graphic Object Positioning", () => {
 
   it("Rotation", (done) => {
     const output = path.join(__dirname, "../output/objectRotation.pdf");
-    const recipe = new HummusRecipe("new", output, {
+    const recipe = new Recipe("new", output, {
       colorspace: "rgb",
     });
     const defOrigColor = "#ff00ff";

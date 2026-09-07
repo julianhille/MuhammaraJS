@@ -1,12 +1,12 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 const assert = require("chai").assert;
 
 describe("Modify", () => {
   it("Change info pdf", (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/blank.pdf");
     const output = path.join(__dirname, "../output/change info.pdf");
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .info({
         author: "yo man" + new Date().toString(),
@@ -19,7 +19,7 @@ describe("Modify", () => {
       })
       .endPage()
       .endPDF(() => {
-        const info = new HummusRecipe(output).info();
+        const info = new Recipe(output).info();
         assert.equal(info.title, "Hello World");
         done();
       });
@@ -30,7 +30,7 @@ describe("Modify", () => {
       __dirname,
       "../output/change info with IndirectObjectReference.pdf",
     );
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .info({
         author: "Me",
@@ -41,7 +41,7 @@ describe("Modify", () => {
     const file = "test3";
     const src = path.join(__dirname, `../TestMaterials/recipe/${file}.pdf`);
     const output = path.join(__dirname, `../output/${file}.pdf`);
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .structure(path.join(__dirname, `../output/${file}.txt`))
       .endPDF(done);

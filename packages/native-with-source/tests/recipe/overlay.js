@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Modify", () => {
   it("Add Overlay from other PDF", (done) => {
@@ -11,7 +11,7 @@ describe("Modify", () => {
     );
     const output = path.join(__dirname, "../output/Add overlay.pdf");
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe.editPage(1).overlay(overlayPDF).endPage().endPDF(done);
   });
 
@@ -29,7 +29,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) - position.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = {};
     recipe
       .editPage(1)
@@ -52,7 +52,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) - scale.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = {
       keepAspectRatio: true,
       scale: 3,
@@ -74,7 +74,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) - fitWidth.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = {
       keepAspectRatio: true,
       fitWidth: true,
@@ -96,7 +96,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) - fitHeight.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = {
       keepAspectRatio: true,
       fitHeight: true,
@@ -118,7 +118,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) - stretch.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = {
       fitHeight: true,
       fitWidth: true,
@@ -134,7 +134,7 @@ describe("Modify", () => {
     );
     const output = path.join(__dirname, "../output/Add overlay with page.pdf");
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe.editPage(1).overlay(overlayPDF, { page: 1 }).endPage().endPDF(done);
   });
 
@@ -152,7 +152,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) with page - position.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = { page: 1 };
     recipe
       .editPage(1)
@@ -175,7 +175,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) with page - scale.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = {
       keepAspectRatio: true,
       scale: 3,
@@ -198,7 +198,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) with page - fitWidth.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = {
       keepAspectRatio: true,
       fitWidth: true,
@@ -221,7 +221,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) with page - fitHeight.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = {
       keepAspectRatio: true,
       fitHeight: true,
@@ -244,7 +244,7 @@ describe("Modify", () => {
       "../output/Add overlay (#28) with page - stretch.pdf",
     );
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const options = {
       fitHeight: true,
       fitWidth: true,
@@ -261,11 +261,7 @@ describe("Modify", () => {
     fs.copyFileSync(material, source);
     fs.copyFileSync(material, overlaid);
 
-    new HummusRecipe(source, output)
-      .editPage(1)
-      .overlay(overlaid)
-      .endPage()
-      .endPDF();
+    new Recipe(source, output).editPage(1).overlay(overlaid).endPage().endPDF();
 
     // Both files stay locked on Windows while a reader still holds them: #381.
     fs.unlinkSync(source);

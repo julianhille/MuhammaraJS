@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Insert Pages", () => {
   // https://github.com/galkahana/HummusJS/blob/d4aec0ea9200f702ccea9fcada5a3e955feef65e/src/PDFWriterDriver.cpp#L861
@@ -16,7 +16,7 @@ describe("Insert Pages", () => {
       "../output/Insert page from other pdf.pdf",
     );
     fs.rmSync(output, { force: true });
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .insertPage(0, longPDF, 3)
       .insertPage(2, longPDF, 3)
@@ -38,7 +38,7 @@ describe("Insert Pages", () => {
       "../output/Insert page from other pdf (revert).pdf",
     );
     fs.rmSync(output, { force: true });
-    const recipe = new HummusRecipe(primary, output);
+    const recipe = new Recipe(primary, output);
     for (let page = 1; page <= 14; page++) {
       recipe.insertPage(page, insertSrc, 2);
     }

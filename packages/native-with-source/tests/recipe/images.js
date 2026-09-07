@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Modify", () => {
   const taskAI = "Add images";
@@ -9,7 +9,7 @@ describe("Modify", () => {
     const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
     const wiki = path.join(__dirname, "../TestMaterials/recipe/wiki.png");
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .editPage(1)
       .image(myCats, "center", "center", {
@@ -64,7 +64,7 @@ describe("Modify", () => {
     const output = path.join(__dirname, `../output/${taskATP}.pdf`);
     const wikiPng = path.join(__dirname, "../TestMaterials/recipe/wiki.png");
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .editPage(1)
       .image(wikiPng, "center", 50, {

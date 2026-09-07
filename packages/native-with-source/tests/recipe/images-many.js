@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Modify", () => {
   it("Add many images", (done) => {
@@ -7,7 +7,7 @@ describe("Modify", () => {
     const output = path.join(__dirname, "../output/Add many images.pdf");
     const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe.editPage(1);
     const repeats = 300;
     for (let i = 0; i < repeats; i++) {

@@ -1,6 +1,6 @@
 const fs = require("fs-extra");
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Font", () => {
   before(() => {
@@ -11,7 +11,7 @@ describe("Font", () => {
       __dirname,
       "../output/Add text with custom fonts.pdf",
     );
-    const recipe = new HummusRecipe("new", output, {
+    const recipe = new Recipe("new", output, {
       fontSrcPath: path.join(__dirname, "../output/recipe/fonts"),
     });
     recipe

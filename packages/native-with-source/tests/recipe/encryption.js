@@ -2,7 +2,7 @@ const path = require("path");
 const assert = require("assert");
 const fs = require("fs");
 const muhammara = require("@muhammara/native-with-source");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 function assertPdfEncryption(filePath, password, encrypted) {
   const reader = muhammara.createReader(filePath, password ? { password } : {});
@@ -30,7 +30,7 @@ describe("Encryption", () => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
     const output = path.join(__dirname, `../output/${taskAVP}.pdf`);
     fs.rmSync(output, { force: true });
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .encrypt({
         userPassword: "123",
@@ -49,7 +49,7 @@ describe("Encryption", () => {
     const output = path.join(__dirname, `../output/${taskAEP}.pdf`);
     fs.rmSync(output, { force: true });
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .encrypt({
         ownerPassword: "123",
@@ -67,7 +67,7 @@ describe("Encryption", () => {
     const output = path.join(__dirname, `../output/${taskAPP}.pdf`);
     fs.rmSync(output, { force: true });
 
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .encrypt({
         password: "123",
@@ -82,7 +82,7 @@ describe("Encryption", () => {
   it(taskCPF, (done) => {
     const output = path.join(__dirname, `../output/${taskCPF}.pdf`);
     fs.rmSync(output, { force: true });
-    const recipe = new HummusRecipe("new", output, { userPassword: "123" });
+    const recipe = new Recipe("new", output, { userPassword: "123" });
     recipe
       .createPage("letter")
       .text("When creating file, the viewing password (userPassword)", 150, 300)
@@ -98,7 +98,7 @@ describe("Encryption", () => {
   it(taskCPP, (done) => {
     const output = path.join(__dirname, `../output/${taskCPP}.pdf`);
     fs.rmSync(output, { force: true });
-    const recipe = new HummusRecipe("new", output, { password: "123" });
+    const recipe = new Recipe("new", output, { password: "123" });
     recipe
       .createPage("letter")
       .text(
@@ -118,7 +118,7 @@ describe("Encryption", () => {
   it(taskCPE, (done) => {
     const output = path.join(__dirname, `../output/${taskCPE}.pdf`);
     fs.rmSync(output, { force: true });
-    const recipe = new HummusRecipe("new", output, {
+    const recipe = new Recipe("new", output, {
       ownerPassword: "123",
       userProtectionFlag: 3900,
     });
@@ -142,7 +142,7 @@ describe("Encryption", () => {
   // it(taskMPF, (done) => {
   //     const input = path.join(__dirname, `../output/${taskCPF}.pdf`);
   //     const output = path.join(__dirname, `../output/${taskMPF}.pdf`);
-  //     const recipe = new HummusRecipe(input, output, { userPassword: '123' });
+  //     const recipe = new Recipe(input, output, { userPassword: '123' });
 
   //     recipe
   //         .editPage(1)

@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 const muhammara = require("@muhammara/native-with-source");
 
 describe("Color", () => {
@@ -44,7 +44,7 @@ describe("Color", () => {
 
   it("RGB explicit, global setting", (done) => {
     const output = path.join(__dirname, "../output/color-rgb.pdf");
-    const recipe = new HummusRecipe("new", output, {
+    const recipe = new Recipe("new", output, {
       colorspace: "rgb",
     });
     recipe
@@ -69,7 +69,7 @@ describe("Color", () => {
 
   it("RGB implicit", (done) => {
     const output = path.join(__dirname, "../output/color-rgb-implicit.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     recipe
       .createPage("letter")
       .text("blue circle, red lines in center", 400, 200)
@@ -112,7 +112,7 @@ describe("Color", () => {
 
   it("CMYK explicit, global setting", (done) => {
     const output = path.join(__dirname, "../output/color-cmyk.pdf");
-    const recipe = new HummusRecipe("new", output, {
+    const recipe = new Recipe("new", output, {
       colorspace: "cmyk",
     });
     recipe
@@ -137,7 +137,7 @@ describe("Color", () => {
 
   it("CMYK implicit", (done) => {
     const output = path.join(__dirname, "../output/color-cmyk-implicit.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     recipe
       .createPage("letter")
       .text("cyan circle, green lines in center", 400, 200)
@@ -180,7 +180,7 @@ describe("Color", () => {
 
   it("Gray explicit, global setting", (done) => {
     const output = path.join(__dirname, "../output/color-gray.pdf");
-    const recipe = new HummusRecipe("new", output, {
+    const recipe = new Recipe("new", output, {
       colorspace: "gray",
     });
     recipe
@@ -205,7 +205,7 @@ describe("Color", () => {
 
   it("Gray implicit", (done) => {
     const output = path.join(__dirname, "../output/color-gray-implicit.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     recipe
       .createPage("letter")
       .text("black circle, fill gray,", 450, 200, { color: [0] })
@@ -249,7 +249,7 @@ describe("Color", () => {
 
   it("All color spaces", (done) => {
     const output = path.join(__dirname, "../output/color-all.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     let font = "Courier New";
     let title = 30;
     let ts = 190;

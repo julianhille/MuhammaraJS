@@ -1,5 +1,5 @@
 const muhammara = require("../muhammara");
-const hummusUtils = require("./utils");
+const utils = require("./utils");
 
 /**
  * Append pages from the other pdf to the current pdf
@@ -44,11 +44,11 @@ exports.appendPage = function appendPage(pdfSrc, pages = []) {
     }
   });
   if (pages.length > 0) {
-    hummusUtils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc, {
+    utils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc, {
       specificRanges: pages,
     });
   } else {
-    hummusUtils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc);
+    utils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc);
   }
   return this;
 };
