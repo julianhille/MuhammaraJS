@@ -4,6 +4,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta.1] - 2026-09-07
+
 ### Added
 
 - Document watermarking in place with the byte-first Recipe, and how it
@@ -25,9 +27,18 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   guide [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
 - Show `extractPageContentItems()` in the low-level browser example
   [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+- Accept PDF 2.0 in `Recipe` options. `version: 2` and the `20` enum now write
+  a PDF 2.0 header instead of falling back to 1.7, and `RecipePDFVersion`
+  includes both spellings; unsupported values still fall back to 1.7.
+
+### Fixed
+
+- Generate the API reference during Read the Docs builds [#566](https://github.com/julianhille/MuhammaraJS/issues/566)
 
 ### Changed
 
+- Skip Wasm package CI for documentation-only changes; Documentation CI
+  validates those updates.
 - Reject invalid page indices and object IDs in the reader's `getPageObjectID()`
   and `getXrefEntry()`, and reject values of 2^32 and above in every reader
   method that takes an index, so both ends fail the same way [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
@@ -46,17 +57,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)`, replacing the
   inherited `Hummus-Recipe` value. PDFs edited with `Recipe` still record the
   source document's own creator as `source-Creator`.
-
-## [1.0.0-beta.1] - 2026-09-05
-
-### Fixed
-
-- Generate the API reference during Read the Docs builds [#566](https://github.com/julianhille/MuhammaraJS/issues/566)
-
-### Changed
-
-- Skip Wasm package CI for documentation-only changes; Documentation CI
-  validates those updates.
 
 ## [1.0.0-alpha.1] - 2026-09-04
 
