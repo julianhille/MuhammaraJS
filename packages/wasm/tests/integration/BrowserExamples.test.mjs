@@ -45,6 +45,16 @@ describe("Browser how-to examples", function () {
     );
   });
 
+  it("renders a tab for every focused example", async function () {
+    var page = await readFile(
+      new URL("../../examples/browser/index.html", import.meta.url),
+      "utf8",
+    );
+    for (var example of HOW_TO_EXAMPLES) {
+      assert.match(page, new RegExp(`data-example="${example.id}"`));
+    }
+  });
+
   for (const example of HOW_TO_EXAMPLES) {
     it(`generates the ${example.label} PDF`, async function () {
       var result = await runHowToExample(example.id, { assets });

@@ -63,7 +63,7 @@ export var HOW_TO_EXAMPLES = [
   {
     id: "passwords",
     label: "Passwords",
-    title: "Add and change PDF passwords",
+    title: "Add and change PDF passwords (view: view, owner: edit)",
     description:
       "Encrypt a byte-first Recipe PDF, then decrypt a verification copy with recrypt.",
     assets: [],
