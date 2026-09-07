@@ -29,6 +29,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   extractors. The old name remains as a deprecated alias.
 - Reword the limits shape error to `Extraction limits must be an object` so both
   readers report it identically.
+- Set the `Creator` Info entry that `Recipe` writes to
+  `Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)`, replacing the
+  inherited `Hummus-Recipe` value. PDFs edited with `Recipe` still record the
+  source document's own creator as `source-Creator`.
 
 ## [1.0.0-beta.1] - 2026-09-05
 

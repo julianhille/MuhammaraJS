@@ -44,6 +44,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Store every text file with LF line endings, enforced by `.gitattributes` and
   checked in CI. Vendored PDFWriter sources and PDF fixtures keep their bytes
   untouched.
+- Set the `Creator` Info entry that `Recipe` writes to
+  `Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)`, replacing the
+  inherited `Hummus-Recipe` value. PDFs edited with `Recipe` still record the
+  source document's own creator as `source-Creator`.
 
 ## [7.0.0-beta.1] - 2026-09-05
 

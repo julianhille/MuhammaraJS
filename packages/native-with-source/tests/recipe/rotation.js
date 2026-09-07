@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Rotation", () => {
   const pdfs = [
@@ -43,7 +43,7 @@ describe("Rotation", () => {
         `../TestMaterials/recipe/${pdf.filename}`,
       );
       const output = path.join(__dirname, `../output/${pdf.filename}`);
-      const recipe = new HummusRecipe(src, output);
+      const recipe = new Recipe(src, output);
       const { width, height } = recipe.pageInfo(1);
       recipe
         .editPage(1)

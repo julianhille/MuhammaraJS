@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Modify", () => {
   it("Add something to an existing pdf", (done) => {
@@ -8,7 +8,7 @@ describe("Modify", () => {
       __dirname,
       "../output/Add something to an existing.pdf",
     );
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .info({
         author: "wahaha",
@@ -42,7 +42,7 @@ describe("Modify", () => {
       __dirname,
       "../output/Add something to an existing (with annots).pdf",
     );
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     recipe
       .info({
         author: "wahaha",

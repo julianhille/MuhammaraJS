@@ -1,10 +1,10 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Create", () => {
   it("blank pdf", (done) => {
     const output = path.join(__dirname, "../output/blank.pdf");
-    const recipe = new HummusRecipe("new", output, {
+    const recipe = new Recipe("new", output, {
       version: 1.6,
       author: "someone",
       title: "No title",
@@ -22,7 +22,7 @@ describe("Create", () => {
 
   it("new pdf", (done) => {
     const output = path.join(__dirname, "../output/new.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     const myCats = path.join(__dirname, "../TestMaterials/recipe/myCats.jpg");
     recipe
       // 1st Page
@@ -70,7 +70,7 @@ describe("Create", () => {
       .moveTo(200, 600)
       .lineTo("center", 650)
       .lineTo(412, 600)
-      .text("Welcome to Hummus-Recipe", "center", 250, {
+      .text("Welcome to Muhammara-Recipe", "center", 250, {
         color: "066099",
         fontSize: 30,
         bold: true,

@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Modify in Place", () => {
   it("Add something to an existing pdf and overwrite it.", (done) => {
@@ -13,7 +13,7 @@ describe("Modify in Place", () => {
     const cp = fs.createWriteStream(output);
     rs.pipe(cp);
     cp.on("finish", () => {
-      const recipe = new HummusRecipe(output);
+      const recipe = new Recipe(output);
       recipe
         .info({
           author: "wahaha",

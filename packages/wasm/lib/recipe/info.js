@@ -70,7 +70,7 @@ export function createInfoMethods({ call, withString }) {
         info.producer =
           "MuhammaraJS (https://github.com/julianhille/MuhammaraJS)";
         info.creator =
-          "Hummus-Recipe (https://github.com/chunyenHuang/hummusRecipe)";
+          "Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)";
         return this;
       }
       withString(pdfDate(now), (datePointer) => {
@@ -94,7 +94,7 @@ export function createInfoMethods({ call, withString }) {
         ],
         [
           "creator",
-          "Hummus-Recipe (https://github.com/chunyenHuang/hummusRecipe)",
+          "Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)",
         ],
       ].forEach(([key, value]) =>
         withString(key, (keyPointer) =>

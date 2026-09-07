@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 function getRandomColor() {
   var letters = "0123456789ABCDEF";
@@ -205,7 +205,7 @@ function pie(x, y, radius, chart) {
 describe("Arc test", () => {
   it("Simple Arcs", (done) => {
     const output = path.join(__dirname, "../output/arcs.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     let x = 120;
     let y = 120;
     let r = 50;
@@ -258,7 +258,7 @@ describe("Arc test", () => {
 
   it("Pie Charts", (done) => {
     const output = path.join(__dirname, "../output/arcs.pdf");
-    const recipe = new HummusRecipe(output, output);
+    const recipe = new Recipe(output, output);
 
     const movies = [
       { label: "Comedy", value: 8, fill: "red" },

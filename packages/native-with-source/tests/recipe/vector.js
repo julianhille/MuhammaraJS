@@ -1,11 +1,11 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Vector", () => {
   it("Add vectors", (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const output = path.join(__dirname, "../output/Add vectors.pdf");
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const { width, height } = recipe.pageInfo(1);
     recipe
       .editPage(1)

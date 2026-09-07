@@ -59,12 +59,15 @@ describe("Recipe foundation", function () {
     assert.match(new TextDecoder().decode(bytes), /\/CreationDate \(D:/);
     assert.match(new TextDecoder().decode(bytes), /\/ModDate \(D:/);
     assert.match(new TextDecoder().decode(bytes), /\/Producer \(MuhammaraJS/);
-    assert.match(new TextDecoder().decode(bytes), /\/Creator \(Hummus-Recipe/);
+    assert.match(
+      new TextDecoder().decode(bytes),
+      /\/Creator \(Muhammara-Recipe/,
+    );
 
     var modified = new Recipe(bytes).editPage(1).endPage().endPDF();
     var modifiedText = new TextDecoder().decode(modified);
     assert.match(modifiedText, /\/source-ModDate \(D:/);
-    assert.match(modifiedText, /\/source-Creator \(Hummus-Recipe/);
+    assert.match(modifiedText, /\/source-Creator \(Muhammara-Recipe/);
     assert.match(modifiedText, /\/source-Producer \(MuhammaraJS/);
   });
 

@@ -1,10 +1,10 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Annotation: Comment", () => {
   it("Add comment", (done) => {
     const output = path.join(__dirname, "../output/Add comment.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     recipe
       // 1st Page
       .createPage("letter")
@@ -30,7 +30,7 @@ describe("Annotation: Comment", () => {
       __dirname,
       "../output/Add comment with rich text.pdf",
     );
-    const recipe = new HummusRecipe(src, output);
+    const recipe = new Recipe(src, output);
     const textContent = [
       '<p style="text-align: center">Align Center</p>',
       '<span style="font-family: Helvetica">Plain Text</span>',
@@ -58,7 +58,7 @@ describe("Annotation: Comment", () => {
   });
   it("Add FreeText", (done) => {
     const output = path.join(__dirname, "../output/Add FreeText.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     recipe
       // 1st Page
       .createPage("letter")
@@ -76,7 +76,7 @@ describe("Annotation: Comment", () => {
   // Ticket #20, need to link annotation to text
   it("Add highlight", (done) => {
     const output = path.join(__dirname, "../output/Add highlight.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     recipe
       // 1st Page
       .createPage("letter")

@@ -1,10 +1,10 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Annotation: Square", () => {
   it("Add a simple square.", (done) => {
     const output = path.join(__dirname, "../output/annotation-square.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     recipe
       .createPage("letter")
       .annot("center", "center", "Square", {

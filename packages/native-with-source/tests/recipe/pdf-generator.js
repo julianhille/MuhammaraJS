@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("PDF Generator", () => {
   const pdf = {
@@ -37,7 +37,7 @@ describe("PDF Generator", () => {
 
   it("Create a pdf", (done) => {
     const output = path.join(__dirname, `../output/${pdf.filename}.pdf`);
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     recipe.info(pdf.info);
 
     pdf.pages.forEach((page, index) => {

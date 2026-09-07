@@ -1,6 +1,6 @@
 const muhammara = require("../muhammara");
 const fs = require("fs");
-const hummusUtils = require("./utils");
+const utils = require("./utils");
 /**
  * Insert a page from the other pdf
  * @name insertPage
@@ -53,7 +53,7 @@ exports._insertPages = function _insertPages() {
     const toAppendPage = pageNumber - 1;
     if (toAppendPage >= 0) {
       const specificRanges = [[lastInsertedOriginal, toAppendPage]];
-      hummusUtils.appendPDFPagesFromPDFWithAnnotations(pdfWriter, tmp, {
+      utils.appendPDFPagesFromPDFWithAnnotations(pdfWriter, tmp, {
         specificRanges,
       });
     }
@@ -65,11 +65,9 @@ exports._insertPages = function _insertPages() {
         const specificRanges = [
           [info.srcPageNumber - 1, info.srcPageNumber - 1],
         ];
-        hummusUtils.appendPDFPagesFromPDFWithAnnotations(
-          pdfWriter,
-          info.pdfSrc,
-          { specificRanges },
-        );
+        utils.appendPDFPagesFromPDFWithAnnotations(pdfWriter, info.pdfSrc, {
+          specificRanges,
+        });
       });
     }
   });

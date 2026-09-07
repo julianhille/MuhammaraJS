@@ -1,5 +1,5 @@
 const path = require("path");
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Annotation: Coordinate", () => {
   const rotations = [0, 90, 180, 270];
@@ -14,7 +14,7 @@ describe("Annotation: Coordinate", () => {
         __dirname,
         `../output/annotation-rotation-${rotation}.pdf`,
       );
-      const recipe = new HummusRecipe(src, output);
+      const recipe = new Recipe(src, output);
       recipe
         .editPage(1)
         .text("Should be printed horizontally", "center", "center", {

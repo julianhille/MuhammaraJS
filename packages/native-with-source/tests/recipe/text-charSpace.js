@@ -1,10 +1,10 @@
-const HummusRecipe = require("@muhammara/native-with-source").Recipe;
+const Recipe = require("@muhammara/native-with-source").Recipe;
 const path = require("path");
 
 describe("Text", () => {
   it("Simple text", (done) => {
     const output = path.join(__dirname, "../output/text-charSpace.pdf");
-    const recipe = new HummusRecipe("new", output);
+    const recipe = new Recipe("new", output);
     const lorem =
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. \
 Etiam in suscipit purus. Vestibulum ante ipsum primis in faucibus orci luctus \
