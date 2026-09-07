@@ -171,7 +171,7 @@ exports._writeInfo = function _writeInfo() {
   infoDictionary.producer =
     "MuhammaraJS (https://github.com/julianhille/MuhammaraJS)";
   infoDictionary.creator =
-    "Hummus-Recipe (https://github.com/chunyenHuang/hummusRecipe)";
+    "Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)";
 
   fields.forEach((item) => {
     let value = options[item.key];

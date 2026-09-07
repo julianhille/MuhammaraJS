@@ -303,7 +303,7 @@ by `text(..., { html: true })`. `read(bytes)` only inspects page metadata and
 does not replace the current PDF; construct with bytes to edit a source PDF.
 `endPDF(callback?)` is idempotent, returns the same cached `Uint8Array`, and
 passes that in-memory array to its optional callback. New PDFs receive creation
-and modification dates plus canonical MuhammaraJS Producer and Hummus-Recipe
+and modification dates plus canonical MuhammaraJS Producer and Muhammara-Recipe
 Creator values. Editing preserves source creation metadata and records source
 modification, producer, and creator values as `source-*` Info entries.
 
