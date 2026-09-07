@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- The native `PDFReader` methods that take a page index or object ID —
+  `parseNewObject()`, `getPageObjectID()`, `parsePageDictionary()`,
+  `parsePage()`, `extractPageText()`, `extractPageContentItems()`, and
+  `getXrefEntry()` — now throw a `TypeError` instead of coercing the argument.
+  `reader.parsePage(-1)`, which used to read page 4294967295, and
+  `reader.extractPageText(1.5)`, which used to read page 1, now fail with
+  `Page index must be a non-negative integer`; pass a non-negative integer below
+  2^32 [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
+
 ### Added
 
 - Add `PDFReader.extractPageContentItems()` for detecting page-marking content operations [#275](https://github.com/julianhille/MuhammaraJS/issues/275)

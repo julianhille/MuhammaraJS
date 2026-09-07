@@ -126,4 +126,60 @@ describe("PDFParser", function () {
     );
     copiedReader.end();
   });
+
+  it("rejects invalid page indices and object IDs", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var page = new muhammara.PDFPage(0, 0, 200, 200);
+    writer.startPageContentContext(page).re(10, 10, 20, 20).f();
+    writer.writePage(page);
+    var bytes = writer.end();
+
+    var reader = muhammara.createReader(bytes);
+    var methods = [
+      "getPageObjectID",
+      "parsePageDictionary",
+      "parsePage",
+      "extractPageText",
+      "extractPageContentItems",
+      "parseNewObject",
+      "getXrefEntry",
+    ];
+    var invalidIndices = [
+      -1,
+      1.5,
+      NaN,
+      Infinity,
+      4294967296,
+      "0",
+      null,
+      undefined,
+    ];
+
+    for (var method of methods) {
+      for (var index of invalidIndices) {
+        assert.throws(
+          () => reader[method](index),
+          /must be a non-negative integer/,
+          `${method}(${String(index)})`,
+        );
+      }
+    }
+
+    // Valid indices keep working, and out of range ones still report the read
+    // failure rather than being wrapped into another page.
+    var pageObjectID = reader.getPageObjectID(0);
+    assert.ok(pageObjectID > 0);
+    assert.ok(reader.parsePageDictionary(0));
+    assert.equal(reader.parsePage(0).getMediaBox().length, 4);
+    assert.ok(Array.isArray(reader.extractPageText(0)));
+    assert.ok(Array.isArray(reader.extractPageContentItems(0)));
+    assert.equal(
+      reader.parseNewObject(pageObjectID).getType(),
+      muhammara.ePDFObjectDictionary,
+    );
+    assert.ok(reader.getXrefEntry(pageObjectID).objectPosition >= 0);
+    assert.throws(() => reader.parsePage(1), /Unable to read page 1/);
+    reader.end();
+  });
 });

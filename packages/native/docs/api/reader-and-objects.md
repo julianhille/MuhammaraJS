@@ -22,6 +22,13 @@ default, and values above it are clamped down, so a caller can tighten the
 extraction budget but never raise it past the ceiling the extractor enforces.
 See [Find Text Positions](../how-to/find-text-positions.md) for the field table.
 
+Every method that takes a page index or object ID — `parsePage`,
+`parsePageDictionary`, `getPageObjectID`, `extractPageText`,
+`extractPageContentItems`, `parseNewObject`, and `getXrefEntry` — requires a
+non-negative integer below 2^32 and throws a `TypeError` otherwise. Negative and
+fractional values are rejected rather than coerced, so `parsePage(-1)` throws
+instead of reading a wildly out-of-range page.
+
 Parsed `PDFObject` values expose `getType`, conversion methods such as
 `toPDFDictionary()` and `toPDFArray()`, and scalar conversion through
 `toNumber()` and `toString()`. A dictionary provides `exists`, `queryObject`,

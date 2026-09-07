@@ -94,4 +94,63 @@ describe("PDFParser", function () {
     assert.equal(pdfReader.getPagesCount(), 2, "getPagesCount");
     pdfReader.end();
   });
+
+  it("should reject invalid page indices and object IDs", function () {
+    var pdfReader = muhammara.createReader(
+      __dirname + "/TestMaterials/XObjectContent.PDF",
+    );
+    var pageIndexMethods = [
+      "getPageObjectID",
+      "parsePageDictionary",
+      "parsePage",
+      "extractPageText",
+      "extractPageContentItems",
+    ];
+    var objectIDMethods = ["parseNewObject", "getXrefEntry"];
+    var invalidIndices = [
+      -1,
+      1.5,
+      NaN,
+      Infinity,
+      4294967296,
+      "0",
+      null,
+      undefined,
+    ];
+
+    pageIndexMethods.concat(objectIDMethods).forEach(function (method) {
+      invalidIndices.forEach(function (index) {
+        assert.throws(
+          function () {
+            pdfReader[method](index);
+          },
+          /must be a non-negative integer/,
+          undefined,
+          method + "(" + String(index) + ")",
+        );
+      });
+      assert.throws(function () {
+        pdfReader[method]();
+      }, /Wrong arguments/);
+    });
+
+    // Valid indices keep working, and out of range ones still report the read
+    // failure rather than being wrapped into another page.
+    var pageObjectID = pdfReader.getPageObjectID(0);
+    assert.isAbove(pageObjectID, 0);
+    assert.isObject(pdfReader.parsePageDictionary(0).toJSObject());
+    assert.lengthOf(pdfReader.parsePage(0).getMediaBox(), 4);
+    assert.isArray(pdfReader.extractPageText(0));
+    assert.isArray(pdfReader.extractPageContentItems(0));
+    assert.equal(
+      pdfReader.parseNewObject(pageObjectID).getType(),
+      muhammara.ePDFObjectDictionary,
+    );
+    assert.isNumber(pdfReader.getXrefEntry(pageObjectID).objectPosition);
+    assert.throws(function () {
+      pdfReader.parsePage(2);
+    }, /Unable to read page/);
+
+    pdfReader.end();
+  });
 });

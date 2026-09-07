@@ -41,6 +41,25 @@ using namespace v8;
 
 namespace
 {
+const char* scPageIndexError = "Page index must be a non-negative integer";
+const char* scObjectIDError = "Object ID must be a non-negative integer";
+
+// Page indices and object IDs are unsigned in PDFWriter. Accepting whatever a
+// v8 number can hold and coercing it with TO_UINT32 turns -1 into 4294967295
+// and 1.5 into 1, so validate the argument up front and let the caller throw.
+bool ReadIndexArgument(const Local<Value>& inValue, unsigned long& outIndex)
+{
+    if(!inValue->IsNumber())
+        return false;
+
+    double raw = inValue.As<Number>()->Value();
+    if(!(raw >= 0) || raw > 4294967295.0 || raw != std::floor(raw))
+        return false;
+
+    outIndex = static_cast<unsigned long>(raw);
+    return true;
+}
+
 // Mirrors the Wasm reader's limits validation so both backends accept the same
 // object and reject the same values. Absent or undefined fields keep the
 // built-in ceiling; PDFExtractionLimits::Clamp() then caps anything higher.
@@ -324,16 +343,22 @@ METHOD_RETURN_TYPE PDFReaderDriver::ParseNewObject(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-    if(args.Length() != 1 ||
-       !args[0]->IsNumber())
+    if(args.Length() != 1)
     {
- 		THROW_EXCEPTION("Wrong arguments. Provide an Object ID");
+        THROW_EXCEPTION("Wrong arguments. Provide an Object ID");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    unsigned long objectID;
+    if(!ReadIndexArgument(args[0], objectID))
+    {
+        THROW_EXCEPTION(scObjectIDError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
     PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
-    RefCountPtr<PDFObject> newObject = reader->mPDFReader->ParseNewObject(TO_UINT32(args[0])->Value());
+    RefCountPtr<PDFObject> newObject = reader->mPDFReader->ParseNewObject(objectID);
     
     if(!newObject)
     {
@@ -349,16 +374,22 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetPageObjectID(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    if(args.Length() != 1 ||
-       !args[0]->IsNumber())
+    if(args.Length() != 1)
     {
- 		THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    unsigned long index;
+    if(!ReadIndexArgument(args[0], index))
+    {
+        THROW_EXCEPTION(scPageIndexError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
     PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetPageObjectID(TO_UINT32(args[0])->Value())))
+    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetPageObjectID(index)))
 }
 
 
@@ -367,16 +398,22 @@ METHOD_RETURN_TYPE PDFReaderDriver::ParsePageDictionary(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    if(args.Length() != 1 ||
-       !args[0]->IsNumber())
+    if(args.Length() != 1)
     {
- 		THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    unsigned long index;
+    if(!ReadIndexArgument(args[0], index))
+    {
+        THROW_EXCEPTION(scPageIndexError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
     PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
-    RefCountPtr<PDFDictionary> newObject = reader->mPDFReader->ParsePage(TO_UINT32(args[0])->Value());
+    RefCountPtr<PDFDictionary> newObject = reader->mPDFReader->ParsePage(index);
     
     if(!newObject)
     {
@@ -393,16 +430,22 @@ METHOD_RETURN_TYPE PDFReaderDriver::ParsePage(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    if(args.Length() != 1 ||
-       !args[0]->IsNumber())
+    if(args.Length() != 1)
     {
- 		THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        THROW_EXCEPTION("Wrong arguments. Provide a page index");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    unsigned long index;
+    if(!ReadIndexArgument(args[0], index))
+    {
+        THROW_EXCEPTION(scPageIndexError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
     PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
-    RefCountPtr<PDFDictionary> newObject = reader->mPDFReader->ParsePage(TO_UINT32(args[0])->Value());
+    RefCountPtr<PDFDictionary> newObject = reader->mPDFReader->ParsePage(index);
     
     if(!newObject)
     {
@@ -422,9 +465,16 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageText(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
     CREATE_ESCAPABLE_SCOPE;
 
-    if(args.Length() < 1 || args.Length() > 2 || !args[0]->IsNumber())
+    if(args.Length() < 1 || args.Length() > 2)
     {
         THROW_EXCEPTION("Wrong arguments. Provide a page index and optional extraction limits");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    unsigned long index;
+    if(!ReadIndexArgument(args[0], index))
+    {
+        THROW_EXCEPTION(scPageIndexError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
 
@@ -435,7 +485,7 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageText(const ARGS_TYPE& args)
     }
 
     PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
-    RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(TO_UINT32(args[0])->Value()));
+    RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
     if(!page)
     {
         THROW_EXCEPTION("Unable to read page, page index is wrong or page is null");
@@ -469,9 +519,16 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageContentItems(const ARGS_TYPE& arg
     CREATE_ISOLATE_CONTEXT;
     CREATE_ESCAPABLE_SCOPE;
 
-    if(args.Length() < 1 || args.Length() > 2 || !args[0]->IsNumber())
+    if(args.Length() < 1 || args.Length() > 2)
     {
         THROW_EXCEPTION("Wrong arguments. Provide a page index and optional extraction limits");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    unsigned long index;
+    if(!ReadIndexArgument(args[0], index))
+    {
+        THROW_EXCEPTION(scPageIndexError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
 
@@ -482,7 +539,7 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageContentItems(const ARGS_TYPE& arg
     }
 
     PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
-    RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(TO_UINT32(args[0])->Value()));
+    RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
     if(!page)
     {
         THROW_EXCEPTION("Unable to read page, page index is wrong or page is null");
@@ -538,16 +595,22 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetXrefEntry(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    if(args.Length() != 1 ||
-       !args[0]->IsNumber())
+    if(args.Length() != 1)
     {
- 		THROW_EXCEPTION("Wrong arguments. Provide an Object ID");
+        THROW_EXCEPTION("Wrong arguments. Provide an Object ID");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
+
+    unsigned long objectID;
+    if(!ReadIndexArgument(args[0], objectID))
+    {
+        THROW_EXCEPTION(scObjectIDError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     
     PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
-    XrefEntryInput* xrefEntry = reader->mPDFReader->GetXrefEntry(TO_UINT32(args[0])->Value());
+    XrefEntryInput* xrefEntry = reader->mPDFReader->GetXrefEntry(objectID);
     if(!xrefEntry)
     {
  		THROW_EXCEPTION("Unable to read object xref entry, page index is wrong or page is null");
