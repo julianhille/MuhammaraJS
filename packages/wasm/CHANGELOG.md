@@ -4,12 +4,31 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Add `PDFReader.extractPageContentItems(pageIndex, limits?)` for detecting
+  page-marking content operations, matching the Node reader, along with the
+  `ePDFPageContentItemText`, `ePDFPageContentItemPath`,
+  `ePDFPageContentItemXObject`, and `ePDFPageContentItemShading` constants
+  [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+- Document the extraction budget and page-mark detection in the text-position
+  guide [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+- Show `extractPageContentItems()` in the low-level browser example
+  [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+
 ### Changed
 
 - Cache Emscripten compiler output between builds and give each build
   configuration its own build directory, so repeat builds reuse compiled
   objects while sanitizer and normal builds stay separate
   [#568](https://github.com/julianhille/MuhammaraJS/issues/568)
+- Clamp `extractPageText()` limits to the built-in ceilings. Callers can still
+  tighten the extraction budget, but can no longer raise it above the bound the
+  extractor enforces.
+- Rename `PDFTextExtractionLimits` to `PDFExtractionLimits`, now shared by both
+  extractors. The old name remains as a deprecated alias.
+- Reword the limits shape error to `Extraction limits must be an object` so both
+  readers report it identically.
 
 ## [1.0.0-beta.1] - 2026-09-05
 

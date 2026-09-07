@@ -327,6 +327,16 @@ declare namespace muhammara {
   export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   export function getTypeLabel(type: PDFObjectType): string;
 
+  export const ePDFPageContentItemText = 0;
+  export const ePDFPageContentItemPath = 1;
+  export const ePDFPageContentItemXObject = 2;
+  export const ePDFPageContentItemShading = 3;
+  export type PDFPageContentItemType =
+    | typeof ePDFPageContentItemText
+    | typeof ePDFPageContentItemPath
+    | typeof ePDFPageContentItemXObject
+    | typeof ePDFPageContentItemShading;
+
   export const ePDFPageBoxMediaBox = 0;
   export const ePDFPageBoxCropBox = 1;
   export const ePDFPageBoxBleedBox = 2;
@@ -400,6 +410,28 @@ declare namespace muhammara {
     textMatrix: [number, number, number, number, number, number];
   }
 
+  /** A content-stream operation that produces a page mark. */
+  export interface PDFPageContentItem {
+    type: PDFPageContentItemType;
+    operation: string;
+  }
+
+  /**
+   * Per-call extraction budget. Every field is clamped to a built-in ceiling,
+   * so a caller may tighten a limit but never raise it above the default.
+   * Omitted fields keep the ceiling.
+   */
+  export interface PDFExtractionLimits {
+    /** Extracted elements or items. Default and ceiling: 100000. */
+    maxElements?: number;
+    /** Pending operands per operator. Default and ceiling: 1024. */
+    maxOperands?: number;
+    /** Total extracted text. Default and ceiling: 16777216 (16 MiB). */
+    maxTextBytes?: number;
+    /** Content-stream objects parsed. Default and ceiling: 1000000. */
+    maxParsedObjects?: number;
+  }
+
   export interface RectangleDimension {
     width: Width;
     height: Height;
@@ -444,15 +476,33 @@ declare namespace muhammara {
     ): undefined | PDFObject;
     parseNewObject(objectId: number): PDFObject;
     getPageObjectID(objectId: number): number;
-    parsePageDictionary(objectId: number): PDFDictionary;
-    parsePage(page: number): PDFPageInput;
+    parsePageDictionary(pageIndex: number): PDFDictionary;
+    parsePage(pageIndex: number): PDFPageInput;
     /**
      * Returns text-showing operations in PDF content-stream drawing order.
-     * Does not decode font character maps or calculate glyph bounds. For safety,
-     * extraction rejects pages with more than 1,000,000 content objects, 100,000 text
-     * operations, or 16 MiB of text.
+     * Does not decode font character maps or calculate glyph bounds.
+     *
+     * Throws when the page exceeds the extraction budget. `limits` may only
+     * tighten the defaults: higher values are clamped to the built-in ceilings
+     * of 1,000,000 content objects, 100,000 text operations, 1024 operands, and
+     * 16 MiB of text.
      */
-    extractPageText(pageIndex: number): PDFTextElement[];
+    extractPageText(
+      pageIndex: number,
+      limits?: PDFExtractionLimits,
+    ): PDFTextElement[];
+    /**
+     * Returns every direct content-stream operation that produces a page mark.
+     * White-on-white content is included; non-painting operations are excluded.
+     *
+     * Shares `extractPageText`'s budget and clamping. `limits.maxTextBytes` is
+     * accepted for signature parity but has no effect here, because items carry
+     * an operator name rather than extracted text.
+     */
+    extractPageContentItems(
+      pageIndex: number,
+      limits?: PDFExtractionLimits,
+    ): PDFPageContentItem[];
     getObjectsCount(): number;
     isEncrypted(): boolean;
     getXrefSize(): number;

@@ -25,7 +25,7 @@ request.
 ## Examples
 
 Copyable native examples belong in `packages/native/docs/examples/`. A matching
-test under `packages/native-with-source/tests/docs/` must execute each example in a temporary
+test under `packages/native-with-source/docs/tests/` must execute each example in a temporary
 directory and verify its output. Do not document behavior based only on an
 untested snippet.
 

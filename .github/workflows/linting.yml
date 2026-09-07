@@ -19,3 +19,19 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run test:codestyle
+
+  line-endings:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      # Re-apply .gitattributes to the whole tree. Anything it would rewrite is
+      # a file committed with CRLF that should have been normalized to LF.
+      - name: Check committed line endings
+        run: |
+          git add --renormalize .
+          if ! git diff --cached --quiet; then
+            echo "These files are not stored with the line endings .gitattributes requires:"
+            git diff --cached --name-only
+            echo "Run 'git add --renormalize .' and commit the result."
+            exit 1
+          fi

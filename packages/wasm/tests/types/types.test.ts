@@ -1,4 +1,5 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import type { PDFPageContentItemType } from "../../index.js";
 import { PDFPage } from "../../index.js";
 
 // @ts-expect-error PDFPage is available only from a loaded runtime instance.
@@ -65,6 +66,23 @@ async function usesLowLevelSurface() {
   textElement.fontResource;
   textElement.fontSize;
   textElement.textMatrix[5];
+  var boundedText = reader.extractPageText(0, { maxElements: 10 })[0];
+  boundedText.content;
+  var contentItem = reader.extractPageContentItems(0)[0];
+  contentItem.type;
+  contentItem.operation;
+  var itemType: PDFPageContentItemType = muhammara.ePDFPageContentItemPath;
+  itemType = muhammara.ePDFPageContentItemText;
+  itemType = muhammara.ePDFPageContentItemXObject;
+  itemType = muhammara.ePDFPageContentItemShading;
+  contentItem.type === itemType;
+  var boundedItem = reader.extractPageContentItems(0, {
+    maxElements: 10,
+    maxOperands: 16,
+    maxTextBytes: 1024,
+    maxParsedObjects: 100,
+  })[0];
+  boundedItem.operation;
   reader.end();
   var sourceBlob = new Blob([source.buffer as ArrayBuffer]);
   var input = new muhammara.PDFRStreamForBuffer(source);
