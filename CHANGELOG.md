@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [7.0.0-beta.1] - 2026-09-07
+
 ### Breaking Changes
 
 - The native `PDFReader` methods that take a page index or object ID —
@@ -20,6 +22,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add `PDFWriter.replaceObject()` for page-scoped indirect object replacement, with optional global scope [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
+- Add `Recipe.replaceText()` for replacing literal text in a page content stream [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
+- Add Electron 38.x through 44.x build targets [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
 - Document watermarking a PDF in place and watermarking a `Buffer`, including
   the overwrite, incremental-update, and buffer-mode caveats
   [#297](https://github.com/julianhille/MuhammaraJS/issues/297)
@@ -48,6 +53,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Generate native API reference pages during Read the Docs builds and cache the
+  native addon used to validate executable documentation examples [#566](https://github.com/julianhille/MuhammaraJS/issues/566)
+- Build current Electron versions with V8 external pointer tags [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
 - Release the source PDF file handle that `Recipe` holds, so the source,
   appended, and overlaid files can be deleted right after `endPDF()` instead of
   failing with `EBUSY` on Windows [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
@@ -57,6 +65,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Skip native package CI for documentation-only changes; Documentation CI
+  validates those updates.
 - Build Linux prebuilds against the Debian archive now that Debian 11
   bullseye is end of life [#577](https://github.com/julianhille/MuhammaraJS/issues/577)
 - `PDFReader.extractPageText()` now throws `Error` rather than `TypeError` when
@@ -73,25 +83,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)`, replacing the
   inherited `Hummus-Recipe` value. PDFs edited with `Recipe` still record the
   source document's own creator as `source-Creator`.
-
-## [7.0.0-beta.1] - 2026-09-05
-
-### Added
-
-- Add `PDFWriter.replaceObject()` for page-scoped indirect object replacement, with optional global scope [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
-- Add `Recipe.replaceText()` for replacing literal text in a page content stream [#315](https://github.com/julianhille/MuhammaraJS/issues/315)
-- Add Electron 38.x through 44.x build targets [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
-
-### Fixed
-
-- Generate native API reference pages during Read the Docs builds and cache the
-  native addon used to validate executable documentation examples [#566](https://github.com/julianhille/MuhammaraJS/issues/566)
-- Build current Electron versions with V8 external pointer tags [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
-
-### Changed
-
-- Skip native package CI for documentation-only changes; Documentation CI
-  validates those updates.
 
 ## [7.0.0-alpha.1] - 2026-09-04
 
