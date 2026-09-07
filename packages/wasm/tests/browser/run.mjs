@@ -130,7 +130,21 @@ try {
     var delay = (milliseconds) =>
       new Promise((resolve) => setTimeout(resolve, milliseconds));
     var tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-    if (tabs.length !== 7) throw new Error("Expected seven example tabs");
+    var tabIds = tabs.map((tab) => tab.dataset.example);
+    var expectedTabIds = [
+      "complete",
+      "annotations",
+      "links",
+      "page-boxes",
+      "form-gray",
+      "rotated-page",
+      "image-transform",
+      "table",
+      "passwords",
+    ];
+    if (tabIds.join(",") !== expectedTabIds.join(",")) {
+      throw new Error(`Unexpected example tabs: ${tabIds.join(", ")}`);
+    }
     var annotations = document.querySelector('[data-example="annotations"]');
     for (var attempt = 0; attempt < 50; ++attempt) {
       annotations.click();
