@@ -52,6 +52,27 @@ var callbackResult: string = recipe.endPDF(function () {
   return "result";
 });
 
+var endedAsync: Promise<Buffer | string | undefined> = recipe.endPDFAsync();
+
+var recryptedPaths: Promise<void> = muhammara.recryptAsync(
+  "in.pdf",
+  "out.pdf",
+  {
+    password: "user",
+    userPassword: "user",
+    ownerPassword: "owner",
+    userProtectionFlag: 4,
+  },
+);
+var recryptedStreams: Promise<void> = muhammara.recryptAsync(
+  new muhammara.PDFRStreamForBuffer(Buffer.from([])),
+  new muhammara.PDFWStreamForFile("out.pdf"),
+  { version: muhammara.ePDFVersion16 },
+);
+
+void endedAsync;
+void recryptedPaths;
+void recryptedStreams;
 void callbackResult;
 void margins;
 void title;

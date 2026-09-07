@@ -68,6 +68,7 @@
 #include "PDFObjectParserDriver.h"
 #include "text-extraction/PDFTextExtractor.h"
 #include "ConstructorsHolder.h"
+#include "RecryptAsync.h"
 
 using namespace v8;
 using namespace node;
@@ -181,80 +182,15 @@ METHOD_RETURN_TYPE Recrypt(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-	if (args.Length() < 2 || args.Length() > 3) {
-		THROW_EXCEPTION("Wrong number of arguments, Provide one argument stating the location of the source file, a second one for the destination file, and an optional options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-	if (!args[0]->IsString() && !args[0]->IsObject()) {
-		THROW_EXCEPTION("Wrong arguments, please provide a path to a file as the first argument or a stream object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-	if (!args[1]->IsString() && !args[1]->IsObject()) {
-		THROW_EXCEPTION("Wrong arguments, please provide a path to a file as the second argument or a stream object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-    if((args[1]->IsString() && !args[0]->IsString()) || (args[1]->IsObject() && !args[0]->IsObject())) {
-		THROW_EXCEPTION("Wrong arguments, please either provide two paths or two stream objects for the first two arguments");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)        
-    }
-    
-
     EPDFVersion pdfVersion = ePDFVersionUndefined;
     PDFCreationSettings pdfCreationSettings(true,true);
     LogConfiguration logConfig = LogConfiguration::DefaultLogConfiguration();
     std::string originalPassword;
-    
-    if(args.Length() == 3 && args[2]->IsObject())
-    {
-        Local<Object> anObject = args[2]->TO_OBJECT();
-        if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("version")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("version")).ToLocalChecked()->IsNumber())
-        {
-            long pdfVersionValue = TO_INT32(anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("version")).ToLocalChecked())->Value();
-            
-            if(pdfVersionValue != ePDFVersionUndefined && (pdfVersionValue < ePDFVersion10 || ePDFVersionMax < pdfVersionValue))
-            {
-                THROW_EXCEPTION("Wrong argument for PDF version, please provide a valid PDF version");
-                SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-            }
-            pdfVersion = (EPDFVersion)pdfVersionValue;
-        }
-            
-        if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("compress")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("compress")).ToLocalChecked()->IsBoolean())
-            pdfCreationSettings.CompressStreams = anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("compress")).ToLocalChecked()->TO_BOOLEAN()->Value();
 
-        if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("log")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("log")).ToLocalChecked()->IsString())
-        {
-            logConfig.ShouldLog = true;
-            logConfig.LogFileLocation = *UTF_8_VALUE(anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("log")).ToLocalChecked()->TO_STRING());
-        }
-
-        if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("password")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->IsString())
-        {
-            originalPassword = *UTF_8_VALUE(anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->TO_STRING());
-        }
-
-        if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("userPassword")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("userPassword")).ToLocalChecked()->IsString())
-        {
-            pdfCreationSettings.DocumentEncryptionOptions.ShouldEncrypt = true;
-            pdfCreationSettings.DocumentEncryptionOptions.UserPassword = *UTF_8_VALUE(anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("userPassword")).ToLocalChecked()->TO_STRING());
-        }
-
-        if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("ownerPassword")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("ownerPassword")).ToLocalChecked()->IsString())
-        {
-            pdfCreationSettings.DocumentEncryptionOptions.OwnerPassword = *UTF_8_VALUE(anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("ownerPassword")).ToLocalChecked()->TO_STRING());
-        }
-
-        if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("userProtectionFlag")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("userProtectionFlag")).ToLocalChecked()->IsNumber())
-        {
-            pdfCreationSettings.DocumentEncryptionOptions.UserProtectionOptionsFlag = TO_INT32(anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("userProtectionFlag")).ToLocalChecked())->Value();
-        }
-        else // default to print only
-            pdfCreationSettings.DocumentEncryptionOptions.UserProtectionOptionsFlag = 4;
+    if (!ParseRecryptArguments(isolate, args, pdfVersion, pdfCreationSettings, logConfig, originalPassword)) {
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
-    
+
     EStatusCode status;
     
     if(args[0]->IsObject())
@@ -280,7 +216,7 @@ METHOD_RETURN_TYPE Recrypt(const ARGS_TYPE& args)
     
     if(status != PDFHummus::eSuccess)
     {
-		THROW_EXCEPTION("Unable to recrypt files, check that input and output files are clear and arguments are coool");
+		THROW_EXCEPTION(scRecryptFailureMessage);
 		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
     SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -584,6 +520,7 @@ DEF_INIT(MuhammaraInit) {
 	EXPORTS_SET(exports,NEW_SYMBOL("createWriterToModify"), NEW_FUNCTION_TEMPLATE_EXTERNAL(CreateWriterToModify)->GetFunction(GET_CURRENT_CONTEXT).ToLocalChecked())
 	EXPORTS_SET(exports,NEW_SYMBOL("createReader"), NEW_FUNCTION_TEMPLATE_EXTERNAL(CreateReader)->GetFunction(GET_CURRENT_CONTEXT).ToLocalChecked())
     EXPORTS_SET(exports,NEW_SYMBOL("recrypt"), NEW_FUNCTION_TEMPLATE(Recrypt)->GetFunction(GET_CURRENT_CONTEXT).ToLocalChecked())
+    EXPORTS_SET(exports,NEW_SYMBOL("recryptAsync"), NEW_FUNCTION_TEMPLATE(RecryptAsync)->GetFunction(GET_CURRENT_CONTEXT).ToLocalChecked())
     
     // define pdf versions enum
     EXPORTS_SET(exports,NEW_SYMBOL("ePDFVersion10"),NEW_NUMBER(ePDFVersion10))

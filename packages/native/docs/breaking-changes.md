@@ -5,6 +5,11 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
 
 ## Version 7.x
 
+- Native logging is thread-local rather than process-wide. Configuring a writer
+  on one thread no longer redirects logs from another thread. Pass `log` to
+  each writer or `recryptAsync()` call; async jobs clear their settings after
+  completion. See [concurrent recrypt](how-to/change-pdf-passwords.md#concurrency-and-limitations)
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98).
 - `PDFReader` methods that take a page index or object ID — `parseNewObject()`,
   `getPageObjectID()`, `parsePageDictionary()`, `parsePage()`,
   `extractPageText()`, `extractPageContentItems()`, and `getXrefEntry()` —

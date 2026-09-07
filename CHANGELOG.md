@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Native logging is thread-local rather than process-wide. A writer on another
+  thread no longer configures a job's log destination; pass `log` to each
+  `recryptAsync()` call or writer instead
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 - The native `PDFReader` methods that take a page index or object ID —
   `parseNewObject()`, `getPageObjectID()`, `parsePageDictionary()`,
   `parsePage()`, `extractPageText()`, `extractPageContentItems()`, and
@@ -20,6 +24,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- `recryptAsync()`, a promise-returning `recrypt` that runs independent
+  re-encryption jobs in parallel on libuv's thread pool without blocking the
+  event loop during PDF processing, and
+  `Recipe.endPDFAsync()` which uses it
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 - Document watermarking a PDF in place and watermarking a `Buffer`, including
   the overwrite, incremental-update, and buffer-mode caveats
   [#297](https://github.com/julianhille/MuhammaraJS/issues/297)
