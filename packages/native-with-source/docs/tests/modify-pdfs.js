@@ -6,6 +6,7 @@ var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var replacePageObject = require("../../../native/docs/examples/replace-page-object");
 var replaceRecipeText = require("../../../native/docs/examples/replace-recipe-text");
+var editAnnotation = require("../../../native/docs/examples/edit-annotation");
 
 var fontPath = path.join(
   __dirname,
@@ -34,6 +35,51 @@ function writeSourcePdf(sourcePath) {
     .ET();
   writer.writePage(page);
   writer.end();
+}
+
+function writeAnnotatedPdf(annotatedPath) {
+  var Recipe = muhammara.Recipe;
+
+  return new Promise(function (resolve) {
+    new Recipe("new", annotatedPath)
+      .createPage("letter")
+      .annot(100, 200, "FreeText", { text: "Keep me", width: 200, height: 60 })
+      .annot(100, 400, "FreeText", { text: "Edit me", width: 200, height: 60 })
+      .endPage()
+      .endPDF(resolve);
+  });
+}
+
+function readAnnotations(pdfPath) {
+  var reader = muhammara.createReader(pdfPath);
+
+  try {
+    var page = reader.parsePage(0).getDictionary();
+    var annotations = reader.queryDictionaryObject(page, "Annots");
+
+    if (!annotations) {
+      return [];
+    }
+
+    return annotations
+      .toPDFArray()
+      .toJSArray()
+      .map(function (annotation) {
+        var id = annotation.toPDFIndirectObjectReference().getObjectID();
+        var dictionary = reader
+          .parseNewObject(id)
+          .toPDFDictionary()
+          .toJSObject();
+
+        return {
+          id: id,
+          subtype: dictionary.Subtype.toString(),
+          contents: dictionary.Contents ? dictionary.Contents.toText() : "",
+        };
+      });
+  } finally {
+    reader.end();
+  }
 }
 
 describe("Documentation examples", function () {
@@ -77,5 +123,63 @@ describe("Documentation examples", function () {
     assert.strictEqual(text[0].content, "After");
     assert.deepStrictEqual(text[0].textMatrix, [1, 0, 0, 1, 20, 30]);
     reader.end();
+  });
+  it("edits an existing annotation without losing its other keys", async function () {
+    var annotatedPath = path.join(outputDirectory, "annotated.pdf");
+    var outputPath = path.join(outputDirectory, "edited-annotation.pdf");
+
+    await writeAnnotatedPdf(annotatedPath);
+
+    var annotationId = editAnnotation.findAnnotationId(
+      annotatedPath,
+      0,
+      "Edit me",
+    );
+
+    assert.isNumber(annotationId);
+    editAnnotation.editAnnotationContents(
+      annotatedPath,
+      outputPath,
+      annotationId,
+      "Edited",
+    );
+
+    var before = readAnnotations(annotatedPath);
+    var after = readAnnotations(outputPath);
+    var edited = after.find(function (annotation) {
+      return annotation.id === annotationId;
+    });
+
+    assert.strictEqual(after.length, before.length);
+    assert.strictEqual(edited.contents, "Edited");
+    assert.strictEqual(edited.subtype, "FreeText");
+    assert.deepStrictEqual(
+      after.map(function (annotation) {
+        return annotation.id;
+      }),
+      before.map(function (annotation) {
+        return annotation.id;
+      }),
+    );
+  });
+
+  it("removes an annotation from a page", async function () {
+    var annotatedPath = path.join(outputDirectory, "annotated.pdf");
+    var outputPath = path.join(outputDirectory, "removed-annotation.pdf");
+
+    await writeAnnotatedPdf(annotatedPath);
+
+    var annotationId = editAnnotation.findAnnotationId(
+      annotatedPath,
+      0,
+      "Edit me",
+    );
+
+    editAnnotation.removeAnnotation(annotatedPath, outputPath, 0, annotationId);
+
+    var remaining = readAnnotations(outputPath);
+
+    assert.strictEqual(remaining.length, 1);
+    assert.strictEqual(remaining[0].contents, "Keep me");
   });
 });
