@@ -161,7 +161,7 @@ describe("Recipe foundation", function () {
     recipe.endPDF();
   });
 
-  it("uses explicit async byte asset APIs and rejects paths and encryption", async function () {
+  it("uses explicit async byte asset APIs and rejects paths and encrypted sources", async function () {
     var Recipe = await createRecipe();
     var font = new Uint8Array(
       await readFile("tests/TestMaterials/fonts/arial.ttf"),
@@ -176,7 +176,7 @@ describe("Recipe foundation", function () {
       () => new Recipe(source, { password: "secret" }),
       /Password-protected/,
     );
-    assert.throws(() => new Recipe().encrypt({}), /excludes OpenSSL/);
+    assert.equal(new Recipe().encrypt({}).constructor, Recipe);
   });
 
   it("rejects extension names inherited from Recipe.prototype", async function () {

@@ -437,9 +437,10 @@ export async function runValidation() {
     .endPage();
   equal(annotationRecipe.permission("print, copy"), 20, "recipe permissions");
   assertions += 1;
-  assertThrows(
-    () => annotationRecipe.encrypt(),
-    "recipe encryption is unavailable",
+  equal(
+    annotationRecipe.encrypt({ password: "owner" }),
+    annotationRecipe,
+    "recipe encryption is available",
   );
   assertions += 1;
   var annotationBytes = annotationRecipe.endPDF();

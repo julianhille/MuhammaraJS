@@ -40,6 +40,7 @@ describe("Browser how-to examples", function () {
         "rotated-page",
         "image-transform",
         "table",
+        "passwords",
       ],
     );
   });

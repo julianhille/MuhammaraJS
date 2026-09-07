@@ -33,5 +33,4 @@ The native `@muhammara/native` and `@muhammara/wasm` APIs are intentionally
 separate.
 Do not copy native examples that use paths, Node streams, callbacks, or
 `require()` into browser code. Review [Differences and
-Restrictions](differences.md) for unsupported encryption and persistence
-features.
+Restrictions](differences.md) for password and persistence feature boundaries.

@@ -917,7 +917,7 @@ PDFHummus::EStatusCode PDFWriter::RecryptPDF(
 		pdfWriter.GetDocumentContext().GetTrailerInformation().SetRoot(copyCatalogResult.second);
 
 		// now just end the PDF
-		pdfWriter.EndPDF();
+		status = pdfWriter.EndPDFForStream();
 	} while (false);
 
 	delete copyingContext;

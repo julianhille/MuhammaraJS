@@ -172,6 +172,7 @@ export function createEndPDF({
   unregisterPdf,
   inspectPdf,
   createRecipe,
+  recrypt,
 }) {
   return function (callback) {
     if (callback !== undefined && typeof callback !== "function") {
@@ -180,6 +181,11 @@ export function createEndPDF({
     var bytes = endPDF(this);
     if (!this._insertions || this._rebuiltBytes) {
       bytes = this._rebuiltBytes || bytes;
+      if (this.encryption_ && Object.keys(this.encryption_).length) {
+        if (!this._encryptedBytes)
+          this._encryptedBytes = recrypt(bytes, this.encryption_);
+        bytes = this._encryptedBytes;
+      }
       if (callback) callback(bytes);
       return bytes;
     }
@@ -208,8 +214,12 @@ export function createEndPDF({
         (count, inserts) => count + inserts.length,
         0,
       );
-    if (callback) callback(this._rebuiltBytes);
-    return this._rebuiltBytes;
+    if (this.encryption_ && Object.keys(this.encryption_).length) {
+      this._encryptedBytes = recrypt(this._rebuiltBytes, this.encryption_);
+    }
+    bytes = this._encryptedBytes || this._rebuiltBytes;
+    if (callback) callback(bytes);
+    return bytes;
   };
 }
 

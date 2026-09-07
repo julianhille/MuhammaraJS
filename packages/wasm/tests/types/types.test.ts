@@ -60,6 +60,13 @@ async function usesLowLevelSurface() {
     .writeNameValue("Example");
   writer.writePage(page);
   var source = writer.end();
+  var encrypted = muhammara.recrypt(source, {
+    userPassword: "viewer",
+    ownerPassword: "owner",
+    userProtectionFlag: 4,
+    version: muhammara.ePDFVersion17,
+  });
+  muhammara.recrypt(encrypted, { password: "viewer", version: 0 });
   var reader = muhammara.createReader(source);
   var textElement = reader.extractPageText(0)[0];
   textElement.content;
