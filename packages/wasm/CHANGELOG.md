@@ -6,6 +6,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Document watermarking in place with the byte-first Recipe, and how it
+  differs from the native package's path-based overwrite
+  [#297](https://github.com/julianhille/MuhammaraJS/issues/297)
 - Add `PDFReader.extractPageContentItems(pageIndex, limits?)` for detecting
   page-marking content operations, matching the Node reader, along with the
   `ePDFPageContentItemText`, `ePDFPageContentItemPath`,
