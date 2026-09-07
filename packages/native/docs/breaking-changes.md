@@ -5,6 +5,17 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
 
 ## Version 7.x
 
+- `PDFReader` methods that take a page index or object ID — `parseNewObject()`,
+  `getPageObjectID()`, `parsePageDictionary()`, `parsePage()`,
+  `extractPageText()`, `extractPageContentItems()`, and `getXrefEntry()` —
+  reject anything that is not a non-negative integer below 2^32. Negative,
+  fractional, `NaN`, `Infinity`, and out-of-range arguments used to be coerced
+  silently, so `reader.parsePage(-1)` read page 4294967295 and
+  `reader.extractPageText(1.5)` read page 1; they now throw
+  `TypeError: Page index must be a non-negative integer` (or
+  `Object ID must be a non-negative integer`). Round or validate the value
+  before passing it, bounding page indices with `getPagesCount()` and object IDs
+  with `getObjectsCount()`.
 - The unscoped `muhammara` package is deprecated and receives no further
   releases. Install `@muhammara/native` instead, or use an npm alias when an
   existing `require("muhammara")` import must remain unchanged. See

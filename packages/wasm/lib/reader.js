@@ -1,3 +1,10 @@
+/** Rejects page indices and object IDs the native reader would silently wrap. */
+function requireIndex(value, label) {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
+    throw new TypeError(`${label} must be a non-negative integer`);
+  }
+}
+
 /** Creates a factory for low-level PDF readers. */
 export function createReaderFactory({
   module,
@@ -453,9 +460,7 @@ export function createReaderFactory({
     // same object. Values are validated here and clamped to the built-in
     // ceilings in the Wasm module, matching the Node reader.
     function extractionLimits(pageIndex, limits) {
-      if (!Number.isInteger(pageIndex) || pageIndex < 0) {
-        throw new TypeError("Page index must be a non-negative integer");
-      }
+      requireIndex(pageIndex, "Page index");
       if (!limits || typeof limits !== "object" || Array.isArray(limits)) {
         throw new TypeError("Extraction limits must be an object");
       }
@@ -500,6 +505,7 @@ export function createReaderFactory({
       },
       getPageObjectID: function (index) {
         requireReader();
+        requireIndex(index, "Page index");
         var id = module._muhammara_wasm_reader_get_page_object_id(
           reader,
           index,
@@ -531,6 +537,7 @@ export function createReaderFactory({
       },
       getXrefEntry: function (objectId) {
         requireReader();
+        requireIndex(objectId, "Object ID");
         var valuesPointer = module._malloc(24);
         try {
           if (
@@ -605,9 +612,7 @@ export function createReaderFactory({
       },
       parseNewObject: function (objectId) {
         requireReader();
-        if (!Number.isInteger(objectId) || objectId < 0) {
-          throw new TypeError("Object ID must be a non-negative integer");
-        }
+        requireIndex(objectId, "Object ID");
         var object = wrapObject(
           module._muhammara_wasm_reader_parse_object(reader, objectId),
         );
@@ -616,9 +621,7 @@ export function createReaderFactory({
       },
       parsePageDictionary: function (index) {
         requireReader();
-        if (!Number.isInteger(index) || index < 0) {
-          throw new TypeError("Page index must be a non-negative integer");
-        }
+        requireIndex(index, "Page index");
         var object = wrapObject(
           module._muhammara_wasm_reader_parse_page_dictionary(reader, index),
         );
@@ -627,9 +630,7 @@ export function createReaderFactory({
       },
       parsePage: function (index) {
         requireReader();
-        if (!Number.isInteger(index) || index < 0) {
-          throw new TypeError("Page index must be a non-negative integer");
-        }
+        requireIndex(index, "Page index");
         var page = module._muhammara_wasm_reader_parse_page(reader, index);
         if (!page) throw new RangeError(`Unable to read page ${index}`);
 

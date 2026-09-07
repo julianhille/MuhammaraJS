@@ -18,7 +18,11 @@ var pdfBytes = writer.end();
 `createReader(bytes)` exposes page counts, page information, PDF objects,
 streams, xref data, and raw content-string extraction. Call `end()` when the
 reader is no longer needed; parser and object handles are owned by it and become
-invalid afterwards.
+invalid afterwards. Every reader method that takes a page index or object ID —
+`parsePage`, `parsePageDictionary`, `getPageObjectID`, `extractPageText`,
+`extractPageContentItems`, `parseNewObject`, and `getXrefEntry` — requires a
+non-negative integer below 2^32 and throws a `TypeError` otherwise, exactly as
+the native reader does.
 
 `createWriterToModify(bytes, options?)` appends pages or changes an existing
 page through `createPageModifier(index?, ensureContentEncapsulation?)`. Its

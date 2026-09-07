@@ -21,6 +21,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Reject invalid page indices and object IDs in the reader's `getPageObjectID()`
+  and `getXrefEntry()`, and reject values of 2^32 and above in every reader
+  method that takes an index, so both ends fail the same way [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
 - Cache Emscripten compiler output between builds and give each build
   configuration its own build directory, so repeat builds reuse compiled
   objects while sanitizer and normal builds stay separate
