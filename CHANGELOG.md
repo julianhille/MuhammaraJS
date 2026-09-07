@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   dotted OID keys, to an existing PDF, and the lower-cased read-back, dropped
   custom entries, and stamped provenance that come with it
   [#450](https://github.com/julianhille/MuhammaraJS/issues/450)
+- Document editing and removing an annotation that already exists in a PDF,
+  with a runnable `edit-annotation` example executed by the documentation test
+  suite [#385](https://github.com/julianhille/MuhammaraJS/issues/385)
 - Add `PDFReader.extractPageContentItems()` for detecting page-marking content operations [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
 - Add an optional `limits` argument to `PDFReader.extractPageText()` and
   `PDFReader.extractPageContentItems()`, matching the Wasm reader. Requests are

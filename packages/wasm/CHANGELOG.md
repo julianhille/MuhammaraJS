@@ -13,6 +13,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   dotted OID keys, to an existing PDF, and the lower-cased read-back, dropped
   custom entries, and stamped provenance that come with it
   [#450](https://github.com/julianhille/MuhammaraJS/issues/450)
+- Document editing and removing an annotation that already exists in a PDF,
+  including ending the copying context before the writer
+  [#385](https://github.com/julianhille/MuhammaraJS/issues/385)
 - Add `PDFReader.extractPageContentItems(pageIndex, limits?)` for detecting
   page-marking content operations, matching the Node reader, along with the
   `ePDFPageContentItemText`, `ePDFPageContentItemPath`,

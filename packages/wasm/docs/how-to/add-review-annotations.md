@@ -40,3 +40,6 @@ is a Worker-safe XML subset, not arbitrary browser HTML.
 Editing a source page can add annotations. Appending or rebuilding a source page
 does not deep-copy its existing `/Annots` graph. The runnable implementation is
 the [Annotations browser example](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/examples/browser/how-tos.mjs).
+
+To change or remove an annotation that is already in a document, see
+[Edit or Remove an Existing Annotation](edit-existing-annotations.md).
