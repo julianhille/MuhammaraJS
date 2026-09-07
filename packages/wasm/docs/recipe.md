@@ -25,6 +25,22 @@ Recipe provides pages, text, shapes, images, tables, composition, annotations,
 metadata, and byte-safe splitting. `setPageBox()` uses PDF bottom-left
 coordinates even though the high-level drawing API uses top-left coordinates.
 
+## PDF Version
+
+`version` sets the PDF level written into the byte output. Recipe accepts the
+canonical decimal levels `1.0` through `1.7` and `2.0`, and the equivalent
+integer enums `10` through `17` and `20` (the `ePDFVersion*` constants on a
+loaded runtime). Any other value falls back to `1.7` without an error.
+
+```js
+var Recipe = await createRecipe();
+var bytes = new Recipe({ version: 2.0 })
+  .createPage(595, 842)
+  .endPage()
+  .endPDF();
+// bytes now start with %PDF-2.0; new Recipe({ version: 20 }) is equivalent
+```
+
 Read [Differences And Restrictions](differences.md) before relying on HTML,
 plugins, encryption, composition annotations, or Node Recipe behavior.
 

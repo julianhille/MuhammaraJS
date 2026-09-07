@@ -11,7 +11,7 @@ const streams = require("memory-streams");
  * @param {string|Buffer} src - The file path or Buffer of the source file.
  * @param {string} [output] - The path of the output file uses src if its not a buffer.
  * @param {Object} [options] - The options for pdfDoc
- * @param {number} [options.version] - The pdf version
+ * @param {number} [options.version] - The pdf version: 1.0 through 1.7 or 2.0, defaults to 1.7
  * @param {string} [options.author] - The author
  * @param {string} [options.title] - The title
  * @param {string} [options.subject] - The subject
@@ -121,7 +121,7 @@ class Recipe {
   }
 
   _getVersion(version) {
-    const supportedVersions = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7];
+    const supportedVersions = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0];
     if (!supportedVersions.includes(version)) {
       version = 1.7;
     }

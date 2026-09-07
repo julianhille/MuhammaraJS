@@ -56,7 +56,8 @@ export function recipeVersion(version) {
   if (typeof version === "number" && version >= 1 && version < 3) {
     version *= 10;
   }
-  return Number.isInteger(version) && version >= 10 && version <= 17
+  return Number.isInteger(version) &&
+    ((version >= 10 && version <= 17) || version === 20)
     ? version
     : 17;
 }

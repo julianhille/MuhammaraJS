@@ -19,6 +19,24 @@ Pages accept named sizes such as `letter` and `A4`. Within a page, use chainable
 methods such as `text`, `circle`, `polygon`, `rectangle`, `image`, and `comment`.
 Call `endPage()` before creating or editing another page.
 
+## PDF Version
+
+`version` sets the PDF level written into the file header. Recipe accepts the
+canonical decimal levels `1.0` through `1.7` and `2.0`. Any other value falls
+back to `1.7` without an error, so check the header when a specific level
+matters.
+
+```javascript
+var pdfDoc = new Recipe("new", "output.pdf", { version: 2.0 });
+
+pdfDoc.createPage("letter").endPage().endPDF();
+// output.pdf now starts with %PDF-2.0
+```
+
+The low-level `createWriter` API takes the integer enums instead; see
+[Create A PDF](../low-level/create-a-pdf.md). Version handling is exercised in
+[`tests/recipe/version.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/version.js).
+
 ## Buffer Output
 
 Pass `Buffer.from("new")` as the input and omit the output path to receive the
