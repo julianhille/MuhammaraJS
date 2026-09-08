@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Release the file handles `Recipe#appendPage()` opens when the appended PDF
   cannot be read or a page cannot be copied, instead of leaking them for the
   life of the process [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
+- Update `mkdocs-material` to 9.7.7 for the DOM XSS security vulnerability fix
+  in search suggestions, bringing the native documentation build back in line
+  with the Wasm one [#600](https://github.com/julianhille/MuhammaraJS/issues/600)
+- Override `serialize-javascript` to 7.1.1 for the remote code execution and
+  CPU exhaustion security vulnerability fixes, since Mocha still resolves the
+  6.x line [#600](https://github.com/julianhille/MuhammaraJS/issues/600)
 
 ### Changed
 

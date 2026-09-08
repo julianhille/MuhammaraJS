@@ -25,5 +25,8 @@
     "docs:check": "npm run docs:generate && mkdocs build --strict --config-file packages/native/mkdocs.yml",
     "docs:serve": "npm run docs:generate && mkdocs serve --config-file packages/native/mkdocs.yml",
     "test:docs": "npm run test:docs --workspace=@muhammara/native-with-source"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.5"
   }
 }
