@@ -9,12 +9,13 @@
 			'product_extension': 'node',
             'dependencies': [
                '<(module_root_dir)/openssl.gyp:openssl',
-               '<(muhammara_source_root)/deps/PDFWriter/binding.gyp:pdfwriter'
+               '<(muhammara_source_root)/build-overrides/pdfwriter.gyp:pdfwriter'
             ],
             "defines": [
             'USE_BUNDLED=TRUE'
             ],
             'defines!': [
+            '_HAS_EXCEPTIONS=0',
             'V8_DEPRECATION_WARNINGS=1',
             'V8_DEPRECATION_WARNINGS',
             'V8_IMMINENT_DEPRECATION_WARNINGS',
@@ -22,6 +23,11 @@
             ],
             "cflags_cc": [ "-std=c++20" ],
             "cflags": [ "-std=c++20" ],
+            'cflags!': [ '-fno-exceptions' ],
+            'cflags_cc!': [ '-fno-exceptions' ],
+            'include_dirs+': [
+                '<(module_root_dir)/openssl-build/<(target_arch)/include'
+            ],
             'include_dirs': [
                 '<(muhammara_source_root)',
                 '<(muhammara_source_root)/deps/PDFWriter',
@@ -31,6 +37,7 @@
 			{
 				'VCCLCompilerTool':
 				{
+					'ExceptionHandling': 1,
 					'AdditionalIncludeDirectories': [
                         '<(module_root_dir)/openssl-build/<(target_arch)/include/'
 					],
@@ -52,6 +59,7 @@
                         '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.a'
                     ],
                     'xcode_settings': {
+                        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
                         'CLANG_CXX_LIBRARY': 'libc++',
                         "OTHER_CFLAGS": [ "-std=c++20" ]
                     }
@@ -121,6 +129,7 @@
                  '<(muhammara_source_root)/ObjectByteWriterWithPosition.cpp',
                  '<(muhammara_source_root)/PDFObjectParserDriver.cpp',
                  '<(muhammara_source_root)/text-extraction/PDFTextExtractor.cpp',
+                 '<(muhammara_source_root)/RecryptAsync.cpp',
                  '<(muhammara_source_root)/muhammara.cpp'
             ]
 

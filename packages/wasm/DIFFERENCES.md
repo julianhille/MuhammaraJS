@@ -16,6 +16,13 @@ they never load Node modules, filesystem paths, or Recipe plugins.
 | Existing PDFs           | Construct with `new Recipe(bytes, options)` to edit in place; `read(bytes)` and `readAsync(blob)` inspect metadata only and do not replace Recipe output state. `editPage(pageNumber)` uses the byte-backed modifier; links, registered images, and text-box clipping use that active modifier context. Polygon-derived shapes are supported while editing. `createPage()` and registered-PDF `appendPage()` continue through that modifier after source construction. Page geometry, including 90/270-degree rotation and non-zero MediaBox origins, uses Recipe coordinates for all high-level drawing and annotations. `pauseContext()`/`resumeContext()` split an edit into appended content contexts. Paths, streams, and password-protected input are unavailable. |
 | Metadata and encryption | New and modified PDFs receive canonical Recipe dates and Producer/Creator fields; source modifications retain prior ModDate/Creator/Producer as `source-*` Info entries. `getPageInfo()` follows Node Recipe and returns document Info metadata. Use `pageInfo(pageNumber)` or `getCurrentPageInfo()` for page geometry. `info()` exposes Recipe-written metadata and `structure("json")` provides a browser-safe summary. Byte-first `recrypt` and Recipe `encrypt()` match native option names through PDF 1.7 using bundled RC4/AES-128. Paths, streams, log files, PDF 2.0/AES-256, and password-protected Recipe source editing are unavailable.                                                                                                                    |
 
+Native `recryptAsync()` and the encryption stage of native `Recipe.endPDFAsync()`
+run in libuv's thread pool with native-only concurrency build overrides. Wasm
+does not expose these APIs because encryption/recrypt is unsupported; existing
+encryption/recrypt entry points throw explicitly. Each Wasm runtime has its own
+module state, and these native thread-local logging changes do not alter Wasm
+logging. No browser example applies to native re-encryption.
+
 The current PDFWriter `AppendPDFPagesFromPDF` byte path does not deep-copy an
 existing page's `/Annots` graph. Recipe-created annotations are preserved in
 their own output, but appended or rebuilt source pages lose existing

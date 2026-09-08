@@ -255,13 +255,10 @@ class Recipe {
   }
 
   /**
-   * End the pdfDoc
-   * @function
-   * @memberof Recipe
-   * @param {function} [callback] - The callback function.
-   * @returns {*} The callback result, if a callback is provided.
+   * Everything endPDF() and endPDFAsync() do before the document is encrypted.
+   * @private
    */
-  endPDF(callback) {
+  _endPDFPrologue() {
     this._writeInfo();
     this.writer.end();
     // This is a temporary work around for copying context will overwrite the current one
@@ -311,13 +308,47 @@ class Recipe {
         this._insertPages();
       }
     }
-    if (this.needToEncrypt) {
-      if (this.isBufferSrc) {
-        // eslint-disable-next-line no-console
-        console.log("Feature: Encryption is not supported in Buffer Mode yet.");
-      } else {
-        this._encrypt();
-      }
+  }
+
+  /**
+   * Whether endPDF() still has to encrypt the output.
+   * @private
+   */
+  _needsEncryptStep() {
+    if (!this.needToEncrypt) {
+      return false;
+    }
+    if (this.isBufferSrc) {
+      // eslint-disable-next-line no-console
+      console.log("Feature: Encryption is not supported in Buffer Mode yet.");
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * The value endPDF() hands to its callback, and endPDFAsync() resolves with.
+   * @private
+   */
+  _endPDFResult() {
+    if (this.isBufferSrc) {
+      return this.output ? this.output : this.outStream.toBuffer();
+    }
+    return undefined;
+  }
+
+  /**
+   * End the pdfDoc
+   * @function
+   * @memberof Recipe
+   * @param {function} [callback] - The callback function.
+   * @returns {*} The callback result, if a callback is provided.
+   */
+  endPDF(callback) {
+    this._endPDFPrologue();
+
+    if (this._needsEncryptStep()) {
+      this._encrypt();
     }
 
     if (this.isBufferSrc && this.output) {
@@ -325,16 +356,31 @@ class Recipe {
     }
 
     if (callback) {
-      if (this.isBufferSrc) {
-        if (this.output) {
-          return callback(this.output);
-        } else {
-          return callback(this.outStream.toBuffer());
-        }
-      } else {
-        return callback();
-      }
+      return callback(this._endPDFResult());
     }
+  }
+
+  /**
+   * End the pdfDoc without blocking the event loop while it is encrypted.
+   * Only the encryption step runs off the main thread; writing the document
+   * and inserting pages stay synchronous.
+   * @function
+   * @memberof Recipe
+   * @returns {Promise<Buffer|string|undefined>} The output path or buffer in
+   * buffer mode, undefined otherwise.
+   */
+  async endPDFAsync() {
+    this._endPDFPrologue();
+
+    if (this._needsEncryptStep()) {
+      await this._encryptAsync();
+    }
+
+    if (this.isBufferSrc && this.output) {
+      await fs.promises.writeFile(this.output, this.outStream.toBuffer());
+    }
+
+    return this._endPDFResult();
   }
 
   /**

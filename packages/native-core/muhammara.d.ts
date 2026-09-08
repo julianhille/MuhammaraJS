@@ -48,6 +48,23 @@ declare namespace muhammara {
     options?: PDFRecryptOptions,
   ): void;
 
+  /**
+   * Promise-returning recrypt. The re-encryption runs on a background thread.
+   * Independent calls can run in parallel on libuv's shared thread pool.
+   * Use separate output paths/streams per job and pass log settings per call.
+   * Stream buffering and delivery still run on the calling thread.
+   */
+  export function recryptAsync(
+    originalPdfPath: FilePath,
+    newPdfPath: FilePath,
+    options?: PDFRecryptOptions,
+  ): Promise<void>;
+  export function recryptAsync(
+    originalPdfStream: PDFRStreamForFile | PDFRStreamForBuffer,
+    newPdfStream: PDFWStreamForFile | PDFWStreamForBuffer,
+    options?: PDFRecryptOptions,
+  ): Promise<void>;
+
   export interface WriteStream {
     write(inBytesArray: any[]): number;
     getCurrentPosition(): number;
@@ -1359,6 +1376,7 @@ declare namespace muhammara {
 
     endPDF(): void;
     endPDF<T>(callback: (output?: Buffer | string) => T): T;
+    endPDFAsync(): Promise<Buffer | string | undefined>;
   }
 }
 

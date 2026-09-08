@@ -110,3 +110,18 @@ exports._encrypt = function _encrypt() {
   muhammara.recrypt(tmp, this.output, this.encryption_);
   fs.unlinkSync(tmp);
 };
+
+// Same as _encrypt(), but keeps the event loop free while the document is
+// re-encrypted. Used by endPDFAsync().
+exports._encryptAsync = async function _encryptAsync() {
+  if (!this.encryption_) {
+    return;
+  }
+
+  var tmp = this.output + ".tmp.pdf";
+  await fs.promises.rename(this.output, tmp);
+  // Left in place when recryptAsync rejects, exactly like _encrypt does, so the
+  // untouched original is still recoverable from the .tmp.pdf file.
+  await muhammara.recryptAsync(tmp, this.output, this.encryption_);
+  await fs.promises.unlink(tmp);
+};
