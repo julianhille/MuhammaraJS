@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [6.0.7] - 2026-09-08
+
+### Fixed
+
+- Add a serialize-javascript override of 7.1.1 for security vulnerability fixes.
+
 ## [6.0.6] - 2026-08-22
 
 ### Fixed
@@ -561,7 +567,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/6.0.7...HEAD
+[6.0.7]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...6.0.7
 [6.0.6]: https://github.com/julianhille/MuhammaraJS/compare/6.0.5...6.0.6
 [6.0.5]: https://github.com/julianhille/MuhammaraJS/compare/6.0.4...6.0.5
 [6.0.4]: https://github.com/julianhille/MuhammaraJS/compare/6.0.3...6.0.4
