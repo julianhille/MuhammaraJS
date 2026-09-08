@@ -59,6 +59,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Build Linux prebuilds against the Debian archive now that Debian 11
   bullseye is end of life [#577](https://github.com/julianhille/MuhammaraJS/issues/577)
+- Force the packaged-source Electron rebuild check in CI to build from source.
+  Once a release carries matching prebuilds, `electron-rebuild` downloads one
+  and reports success without compiling, so the job stopped exercising the
+  source-build path it exists to cover
+  [#603](https://github.com/julianhille/MuhammaraJS/issues/603)
 - `PDFReader.extractPageText()` now throws `Error` rather than `TypeError` when
   a page exceeds the extraction budget, matching the Wasm reader.
 - Correct the `parsePageDictionary()` and `parsePage()` type declarations to
