@@ -492,8 +492,8 @@ available while a page context is active or after `end()`.
 ## Scope and Evaluation
 
 The target verifies the C++ writer and bundled zlib/FreeType/AES dependencies
-in a browser-safe configuration. OpenSSL encryption is disabled: encrypted
-writers, decryption, and `recrypt` are unavailable. Public APIs never accept
+in a browser-safe configuration. OpenSSL encryption is disabled, but bundled
+RC4 and AES-128 support byte-first `recrypt` and Recipe `encrypt()`. Public APIs never accept
 Node filesystem paths, `Buffer`, Node streams/callbacks, `InputFile`/`OutputFile`,
 EventEmitter extension hooks, or synchronous CommonJS loading; callers provide
 and retain bytes, while Emscripten FS is internal only. DFont inputs must include

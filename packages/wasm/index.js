@@ -21,6 +21,7 @@ import { createWriterFactory, createWriterSupport } from "./lib/writer.js";
 import { createModifierFactory } from "./lib/modifier.js";
 import { createWriterToModifyFactory } from "./lib/writer-to-modify.js";
 import { createRecipeFactory } from "./lib/recipe.js";
+import { createRecrypt } from "./lib/recrypt.js";
 
 export {
   ByteReader,
@@ -142,6 +143,7 @@ async function createRuntime(options) {
     ...dependencies,
     ...support,
   });
+  var recrypt = createRecrypt(dependencies);
 
   var api = {
     ...constants,
@@ -149,6 +151,7 @@ async function createRuntime(options) {
     PDFDate,
     PDFTextString,
     createWriter,
+    recrypt,
     ByteReader,
     ByteReaderWithPosition,
     ByteWriter,
@@ -320,6 +323,7 @@ export async function createRecipe(options) {
     normalizeBytesAsync,
     createReader: muhammara.createReader,
     createWriterToModify: muhammara.createWriterToModify,
+    recrypt: muhammara.recrypt,
     registerWriterFont: muhammara.registerFont.bind(muhammara),
     unregisterWriterFont: muhammara.unregisterFont.bind(muhammara),
     removeFile,

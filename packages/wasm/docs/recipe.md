@@ -42,7 +42,8 @@ var bytes = new Recipe({ version: 2.0 })
 ```
 
 Read [Differences And Restrictions](differences.md) before relying on HTML,
-plugins, encryption, composition annotations, or Node Recipe behavior.
+plugins, password-protected source editing, composition annotations, or Node
+Recipe behavior.
 
 Task-oriented Recipe guides:
 
@@ -52,4 +53,5 @@ Task-oriented Recipe guides:
 - [Watermark Every Page](how-to/watermark-pdfs.md)
 - [Add Clickable URL Links](how-to/add-url-links.md)
 - [Add Content To Rotated Pages](how-to/add-content-to-rotated-pages.md)
+- [Change PDF Passwords](how-to/change-pdf-passwords.md)
 - [Place And Transform Images](how-to/place-and-transform-images.md)

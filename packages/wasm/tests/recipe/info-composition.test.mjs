@@ -63,9 +63,9 @@ describe("Recipe byte metadata and composition", function () {
     });
   });
 
-  it("exposes permission bits and rejects unavailable encryption", async function () {
+  it("exposes permission bits and queues encryption", async function () {
     var Recipe = await getRecipe();
     assert.equal(Recipe.permission("print, copy"), 20);
-    assert.throws(() => new Recipe().encrypt(), /excludes OpenSSL/);
+    assert.equal(new Recipe().encrypt().constructor, Recipe);
   });
 });

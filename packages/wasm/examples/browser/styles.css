@@ -58,13 +58,12 @@ h2 {
 }
 .example-tabs {
   display: flex;
+  flex-wrap: wrap;
   max-width: 1180px;
   margin: 0 auto;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 .example-tabs button {
-  flex: 1 0 auto;
+  flex: 0 1 auto;
   min-width: 135px;
   padding: 1rem 1.2rem;
   border: 0;

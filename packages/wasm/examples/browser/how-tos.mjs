@@ -60,6 +60,14 @@ export var HOW_TO_EXAMPLES = [
     assets: ["font"],
     requirement: "Requires a TTF or OTF font upload.",
   },
+  {
+    id: "passwords",
+    label: "Passwords",
+    title: "Add and change PDF passwords (view: view, owner: edit)",
+    description:
+      "Encrypt a byte-first Recipe PDF, then decrypt a verification copy with recrypt.",
+    assets: [],
+  },
 ];
 
 function assertAsset(value, message) {
@@ -456,6 +464,46 @@ async function tableExample(assets) {
   }
 }
 
+async function passwordsExample() {
+  var Recipe = await createRecipe();
+  var recipe = new Recipe({ compress: false });
+  try {
+    recipe
+      .createPage(595, 300)
+      .rectangle(0, 0, 595, 300, { fill: "#eff6ff", useGivenCoords: true })
+      .rectangle(62, 78, 471, 144, {
+        fill: "#ffffff",
+        stroke: "#1d4ed8",
+        lineWidth: 2,
+        borderRadius: 12,
+      })
+      .endPage()
+      .encrypt({
+        userPassword: "view",
+        ownerPassword: "edit",
+        userProtectionFlag: 4,
+      });
+    var bytes = recipe.endPDF();
+    var muhammara = await createMuhammaraWasm();
+    try {
+      var verificationCopy = muhammara.recrypt(bytes, { password: "view" });
+      return {
+        bytes,
+        filename: "muhammara-passwords.pdf",
+        summary: await summarize(verificationCopy, {
+          howTo: "Add and change PDF passwords",
+          password: "view",
+        }),
+      };
+    } finally {
+      muhammara.disposeAssets();
+    }
+  } finally {
+    recipe.dispose();
+    Recipe.disposeAssets();
+  }
+}
+
 var runners = {
   annotations: annotationsExample,
   links: linksExample,
@@ -464,6 +512,7 @@ var runners = {
   "rotated-page": rotatedPageExample,
   "image-transform": imageTransformExample,
   table: tableExample,
+  passwords: passwordsExample,
 };
 
 export async function runHowToExample(id, options = {}) {

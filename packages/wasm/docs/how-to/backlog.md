@@ -3,8 +3,8 @@
 The following workflows need more implementation or focused verification before
 they can be presented as supported browser how-tos:
 
-- Opening, changing, or removing PDF passwords is unavailable because the Wasm
-  build excludes encryption support.
+- Password-protected Recipe source editing is unavailable. Use `recrypt()` to
+  decrypt the bytes, edit the result, then encrypt the final output if needed.
 - Persistent continuation-state files are unavailable because the public API is
   byte-first and does not expose Emscripten's internal filesystem.
 - Deep preservation of an existing page's annotation graph while rebuilding or

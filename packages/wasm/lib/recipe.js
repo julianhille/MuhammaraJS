@@ -34,6 +34,7 @@ export function createRecipeFactory({
   normalizeBytesAsync,
   createReader,
   createWriterToModify,
+  recrypt,
   registerWriterFont,
   unregisterWriterFont,
   removeFile,
@@ -75,6 +76,7 @@ export function createRecipeFactory({
       }
       var version = recipeVersion(options.version);
       initializeRecipe(this, options);
+      this.encryption_ = hasSource ? {} : this._getEncryptOptions(options);
       this._version = version;
       this._recipe = 0;
       if (!hasSource) {
@@ -467,6 +469,7 @@ export function createRecipeFactory({
         unregisterPdf: Recipe.unregisterPdf,
         inspectPdf,
         createRecipe: (options) => new Recipe(options),
+        recrypt,
       }),
       split: function (prefix = "page") {
         var name = `split-${state.nextPdf++}`;

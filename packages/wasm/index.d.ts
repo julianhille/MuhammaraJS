@@ -13,6 +13,7 @@ export type Glyph = [number, number];
 export type TextEncoding = "text" | "code" | "hex";
 export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
 export type PDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
+export type RecryptPDFVersion = 0 | PDFVersion;
 export type RecipePDFVersion =
   | 1
   | 1.1
@@ -38,6 +39,18 @@ export interface WriterOptions {
   /** Enables Flate compression for streams. Defaults to true. */
   compress?: boolean;
 }
+/** Options accepted by the byte-first equivalent of native `recrypt`. */
+export interface PDFRecryptOptions {
+  password?: string;
+  version?: RecryptPDFVersion;
+  /** Enables Flate compression for streams. Defaults to true. */
+  compress?: boolean;
+  /** Unsupported filesystem logging option. */
+  log?: string;
+  userPassword?: string;
+  ownerPassword?: string;
+  userProtectionFlag?: number;
+}
 export type RecipeFontStyle =
   "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
 export type RecipeCoordinate = number | "center";
@@ -57,6 +70,17 @@ export interface RecipeOptions {
   subject?: string;
   keywords?: string | string[];
   colorspace?: "rgb" | "gray" | "cmyk";
+  password?: string;
+  ownerPassword?: string;
+  userPassword?: string;
+  userProtectionFlag?: number;
+}
+export interface RecipeEncryptOptions {
+  [key: string]: unknown;
+  password?: string;
+  ownerPassword?: string;
+  userPassword?: string;
+  userProtectionFlag?: number;
 }
 export type RecipeColor = string | number[];
 export type RecipeKnownColors = Record<
@@ -486,7 +510,7 @@ export interface Recipe {
     format?: "string" | "json" | { json?: boolean },
   ): string | { pages: number; encrypted: boolean; objects: number };
   permission(flags?: string): number;
-  encrypt(options?: Record<string, unknown>): never;
+  encrypt(options?: RecipeEncryptOptions): this;
   endPDF(callback?: (bytes: Uint8Array) => void): Uint8Array;
   dispose(): void;
 }
@@ -1483,6 +1507,7 @@ export interface MuhammaraWasm {
   ByteWriter: typeof ByteWriter;
   ByteWriterWithPosition: typeof ByteWriterWithPosition;
   createWriter(options?: WriterOptions): PDFWriter;
+  recrypt(source: ByteSource, options?: PDFRecryptOptions): Uint8Array;
   createWriterToModify(
     source: ByteSource,
     options?: WriterOptions,

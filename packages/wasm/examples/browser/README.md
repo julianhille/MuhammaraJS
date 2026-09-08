@@ -71,7 +71,7 @@ run untrusted documents in a terminable Worker rather than the main thread.
 This sample suggests 25 MB input and 50 MB output as illustrative UI guidance,
 not library-enforced limits.
 
-OpenSSL encryption/decryption, continuation state files, filesystem paths, Node
+PDF 2.0/AES-256 encryption, continuation state files, filesystem paths, Node
 streams, plugins, and Node EventEmitter hooks are unsupported. The example uses
 `Uint8Array`, exact `ArrayBuffer` slices, `Blob`, and `File` inputs. It calls
 `end()` or `dispose()` for owners, unregisters assets, calls `disposeAssets()`,

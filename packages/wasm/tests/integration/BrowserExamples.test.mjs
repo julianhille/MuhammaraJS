@@ -40,8 +40,19 @@ describe("Browser how-to examples", function () {
         "rotated-page",
         "image-transform",
         "table",
+        "passwords",
       ],
     );
+  });
+
+  it("renders a tab for every focused example", async function () {
+    var page = await readFile(
+      new URL("../../examples/browser/index.html", import.meta.url),
+      "utf8",
+    );
+    for (var example of HOW_TO_EXAMPLES) {
+      assert.match(page, new RegExp(`data-example="${example.id}"`));
+    }
   });
 
   for (const example of HOW_TO_EXAMPLES) {

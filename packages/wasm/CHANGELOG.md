@@ -6,6 +6,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Add byte-first `recrypt()` and Recipe `encrypt()` with native-compatible
+  password options, plus the password-change browser example
+  [#595](https://github.com/julianhille/MuhammaraJS/issues/595)
 - Document watermarking in place with the byte-first Recipe, and how it
   differs from the native package's path-based overwrite
   [#297](https://github.com/julianhille/MuhammaraJS/issues/297)
