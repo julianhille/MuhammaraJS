@@ -1,5 +1,15 @@
 {
-    'includes': [ '../deps/LibAesgm/binding.gyp' ],
+    'targets': [ {
+        'target_name': 'libaesgm',
+        'type': 'static_library',
+        'defines': [ 'USE_BUNDLED=TRUE' ],
+        'msvs_settings': {
+            'VCCLCompilerTool': { 'AdditionalOptions': [ '/std:c++17' ] }
+        },
+        'sources': [
+            '<!@("<(python)" -c "import ast, shlex; print(shlex.join(\'../deps/LibAesgm/\' + p for p in ast.literal_eval(open(\'../deps/LibAesgm/binding.gyp\', encoding=\'utf-8\').read())[\'targets\'][0][\'sources\']))")'
+        ]
+    } ],
     'target_defaults': {
         'product_name': 'muhammara_aesgm',
         'dependencies': [ 'generate.gyp:native_build_overrides' ],
