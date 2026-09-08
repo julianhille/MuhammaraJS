@@ -28,6 +28,7 @@
 #include "Trace.h"
 
 #include <uv.h>
+#include <openssl/crypto.h>
 
 #include <cstring>
 #include <string>
@@ -303,6 +304,10 @@ static void RecryptWorkCallback(uv_work_t* inRequest)
         // Exceptions must not escape a libuv worker and terminate the server.
         work->status = PDFHummus::eFailure;
     }
+
+    // Pool threads can outlive OpenSSL's shutdown. Release this thread's RNG
+    // and error state now, after all PDF objects have been destroyed, not on JS.
+    OPENSSL_thread_stop();
 }
 
 static void RecryptAfterWorkCallback(uv_work_t* inRequest, int inStatus)

@@ -57,6 +57,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Release OpenSSL's per-thread resources after each `recryptAsync()` job so
+  pooled re-encryption does not leak at shutdown
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 - Fix Windows source and Electron build generation with the native concurrency
   overrides, without modifying vendored sources
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)

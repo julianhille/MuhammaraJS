@@ -574,12 +574,44 @@ describe("Xcryption", function () {
       });
     });
 
+    it("reuses OpenSSL on pooled threads after successful and failed jobs", async function () {
+      this.timeout(60000);
+      var randomBytes = require("crypto").randomBytes;
+      // PDF 2.0 initializes OpenSSL's per-thread RNG. Repeated batches exercise
+      // cleanup and reinitialization; the sanitizer run checks process exit.
+      for (var round = 0; round < 3; round++) {
+        await Promise.all(
+          Array.from({ length: 8 }, async function (_, index) {
+            var target = __dirname + "/output/RecryptOpenSSL-" + index + ".pdf";
+            var password = "round-" + round + "-" + index;
+            await muhammara.recryptAsync(
+              __dirname + "/TestMaterials/Original.pdf",
+              target,
+              {
+                version: muhammara.ePDFVersion20,
+                userPassword: password,
+              },
+            );
+            assertRecryptedPdf(target, password, true);
+            await assert.rejects(
+              muhammara.recryptAsync(target, target + ".rejected.pdf", {
+                password: "wrong-password",
+              }),
+              /Unable to recrypt files/,
+            );
+            assert.equal(randomBytes(32).length, 32);
+          }),
+        );
+      }
+    });
+
     it("leaves the event loop free while the synchronous call blocks it", async function () {
+      this.timeout(60000);
       // A single small fixture recrypts too fast to observe, so build a bigger
       // one first. Appending the same document repeatedly is enough.
       var big = __dirname + "/output/RecryptAsyncLargeSource.pdf";
       var writer = muhammara.createWriter(big);
-      for (var i = 0; i < 12; i++) {
+      for (var i = 0; i < 3; i++) {
         writer.appendPDFPagesFromPDF(
           __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
         );

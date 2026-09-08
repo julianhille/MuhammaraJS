@@ -25,6 +25,9 @@
             "cflags": [ "-std=c++20" ],
             'cflags!': [ '-fno-exceptions' ],
             'cflags_cc!': [ '-fno-exceptions' ],
+            'include_dirs+': [
+                '<(module_root_dir)/openssl-build/<(target_arch)/include'
+            ],
             'include_dirs': [
                 '<(muhammara_source_root)',
                 '<(muhammara_source_root)/deps/PDFWriter',
