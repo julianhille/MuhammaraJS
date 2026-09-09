@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Support native Recipe `annot()` opacity and `comment()` replies, including
+  TypeScript options, matching Wasm annotation dictionaries
+  [#606](https://github.com/julianhille/MuhammaraJS/issues/606)
 - Document watermarking a PDF in place and watermarking a `Buffer`, including
   the overwrite, incremental-update, and buffer-mode caveats
   [#297](https://github.com/julianhille/MuhammaraJS/issues/297)

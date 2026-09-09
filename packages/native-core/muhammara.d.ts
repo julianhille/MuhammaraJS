@@ -993,6 +993,8 @@ declare namespace muhammara {
       open?: boolean;
       richText?: boolean;
       flag?: CommentOptionsFlag;
+      /** Replies linked to this comment annotation. */
+      replies?: Array<AnnotReply>;
     }
 
     interface AnnotOptions {
@@ -1003,6 +1005,8 @@ declare namespace muhammara {
       icon?: AnnotOptionsIcon;
       width?: number;
       height?: number;
+      /** Annotation opacity from 0 (transparent) to 1 (opaque). Defaults to 1. */
+      opacity?: number;
       date?: string;
       subject?: string;
       replies?: Array<AnnotReply>;
