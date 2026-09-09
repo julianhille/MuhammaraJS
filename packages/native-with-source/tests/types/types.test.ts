@@ -20,3 +20,12 @@ recipe
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
 void textWidth;
+
+var info: muhammara.Recipe.InfoOptions = {
+  author: "A",
+  keywords: ["one", "two"],
+  ReportId: "X-123",
+  "2.16.76.1.4.2.2.1": "oid-professional",
+  Labels: ["one", "two"],
+};
+recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });

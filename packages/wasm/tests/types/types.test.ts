@@ -356,7 +356,15 @@ async function usesLowLevelSurface() {
     .annot(0, 0, "Square", { width: 10, height: 10, flag: "print" })
     .annot(100, 200, "Highlight", { width: 200, height: 14, opacity: 0.45 })
     .annot(100, 230, "Highlight", { width: 200, height: 14, opacity: 0 })
-    .info({ author: "author" })
+    .info({
+      author: "author",
+      keywords: ["one", "two"],
+      ReportId: "X-123",
+      "2.16.76.1.4.2.2.1": "oid-professional",
+      Labels: ["one", "two"],
+    })
+    .custom("ReportId", "X-456")
+    .info({ ReportId: "X-789" })
     .custom("custom", "value")
     .insertPage(0, "pdf", 1);
   recipe.knownColors.rgb.blue;

@@ -1039,6 +1039,8 @@ declare namespace muhammara {
     }
 
     interface InfoOptions {
+      /** Additional Info dictionary entries; arrays are joined with a comma and space. */
+      [key: string]: string | string[] | undefined;
       version?: string;
       author?: string;
       title?: string;

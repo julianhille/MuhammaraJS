@@ -1,8 +1,9 @@
 const fs = require("fs");
 const muhammara = require("../muhammara");
+var { recipeInfoKeys, standardInfoKeys } = require("../recipe-info");
 /**
  * @name info
- * @desc Add new PDF information, or retrieve existing PDF information.
+ * @desc Add standard and custom PDF information, or retrieve existing PDF information. Custom keys retain their spelling when written; array values are joined with a comma and space.
  * @memberof Recipe#
  * @function
  * @param {Object} [options] - The options (when missing obtains existing PDF information)
@@ -21,6 +22,14 @@ exports.info = function info(options) {
   } else {
     this.toWriteInfo_ = this.toWriteInfo_ || {};
     Object.assign(this.toWriteInfo_, options);
+    Object.entries(options).forEach(([key, value]) => {
+      if (!standardInfoKeys.includes(key)) {
+        this.custom(
+          key,
+          Array.isArray(value) ? value.join(", ") : String(value),
+        );
+      }
+    });
     result = this;
   }
 
@@ -105,24 +114,10 @@ exports._writeInfo = function _writeInfo() {
     */
 
   const infoDictionary = this.writer.getDocumentContext().getInfoDictionary();
-  const fields = [
-    {
-      key: "author",
-      type: "string",
-    },
-    {
-      key: "title",
-      type: "string",
-    },
-    {
-      key: "subject",
-      type: "string",
-    },
-    {
-      key: "keywords",
-      type: "array",
-    },
-  ];
+  var fields = standardInfoKeys.map((key) => ({
+    key,
+    type: key === recipeInfoKeys.keywords ? "array" : "string",
+  }));
   // const ignores = [
   //     'CreationDate', 'Creator', 'ModDate', 'Producer'
   // ];

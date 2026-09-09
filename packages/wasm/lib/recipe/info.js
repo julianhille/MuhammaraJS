@@ -1,3 +1,5 @@
+import { writableInfoKeys } from "../recipe-info.js";
+
 /** Creates Recipe document-information methods. */
 export function createInfoMethods({ call, withString }) {
   function pdfDate(date) {
@@ -14,16 +16,7 @@ export function createInfoMethods({ call, withString }) {
         var text = Array.isArray(value) ? value.join(", ") : String(value);
         if (this._sourceMode) {
           var info = this.writer.getDocumentContext().getInfoDictionary();
-          if (
-            [
-              "title",
-              "author",
-              "subject",
-              "keywords",
-              "creator",
-              "producer",
-            ].includes(key)
-          ) {
+          if (writableInfoKeys.includes(key)) {
             info[key] = text;
           } else {
             info.addAdditionalInfoEntry(key, text);

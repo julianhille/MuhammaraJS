@@ -1,8 +1,8 @@
 # Add Metadata To An Existing PDF
 
-Open the document bytes with Recipe, set standard fields with `info(options)`,
-and add your own Info dictionary keys with `custom(key, value)`. Both are written
-when `endPDF()` returns the finished document.
+Open the document bytes with Recipe and set standard fields and custom Info
+dictionary keys with `info(options)`, or use `custom(key, value)` for an explicit
+custom entry. Both are written when `endPDF()` returns the finished document.
 
 ```javascript
 import { createRecipe } from "@muhammara/wasm";
@@ -16,6 +16,7 @@ var outputBytes = pdf
     title: "Prescription",
     subject: "Issued 2026-03-01",
     keywords: ["prescription", "signed"],
+    ReportId: "X-123",
   })
   .custom("2.16.76.1.4.2.2.1", "oid-professional")
   .custom("2.16.76.1.4.2.2.2", "oid-uf-professional")
@@ -34,8 +35,13 @@ console.log(metadata["2.16.76.1.4.2.2.1"]); // "oid-professional"
 
 `info` covers `author`, `title`, `subject`, and `keywords`; an array of keywords
 is joined into a single Info value. Every other key is added as a custom Info
-entry, so `custom(key, value)` is shorthand for `info({ [key]: value })`. Any
-name the PDF Info dictionary accepts works, including dotted OID strings, so
+entry, so `custom(key, value)` is shorthand for `info({ [key]: value })`.
+As on native, `info({ ReportId: "X-123" })` and `custom("ReportId", "X-123")`
+write the same entry. Custom array values passed to `info` are joined with
+`", "`; other values are converted to strings. When both methods set the same
+custom key, the last call wins. Constructor options still only initialize
+standard metadata; pass custom keys to `info` or `custom`. Any name the PDF Info
+dictionary accepts works, including dotted OID strings, so
 identifiers such as `2.16.76.1.4.2.2.1` need no escaping.
 
 ## What The Round Trip Changes
@@ -49,8 +55,8 @@ unaffected because they contain no letters.
 
 **Custom entries do not survive the next modification.** Recipe carries the
 standard fields of a source document into its output, but not custom Info
-entries, so a second editing pass drops them. Re-apply every `custom` call each
-time you rewrite a document that must keep them.
+entries, so a second editing pass drops them. Re-apply custom entries with `info`
+or `custom` each time you rewrite a document that must keep them.
 
 **Recipe stamps its own provenance.** `Producer` and `Creator` are always set to
 MuhammaraJS values, and the source document's originals are preserved as
@@ -60,5 +66,5 @@ the time of the edit.
 These entries live in the document Info dictionary. Writing XMP metadata is a
 separate mechanism and is not exposed by Recipe.
 
-See [`tests/recipe/info-composition.test.mjs`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/tests/recipe/info-composition.test.mjs)
+See [`tests/recipe/info-custom-keys.test.mjs`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/tests/recipe/info-custom-keys.test.mjs)
 for the verified workflow.

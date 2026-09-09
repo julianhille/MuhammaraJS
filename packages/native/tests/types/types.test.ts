@@ -35,6 +35,14 @@ recipe
   })
   .annot(100, 200, "Highlight", { width: 200, height: 14, opacity: 0.45 })
   .annot(100, 230, "Highlight", { width: 200, height: 14, opacity: 0 });
+var info: muhammara.Recipe.InfoOptions = {
+  author: "A",
+  keywords: ["one", "two"],
+  ReportId: "X-123",
+  "2.16.76.1.4.2.2.1": "oid-professional",
+  Labels: ["one", "two"],
+};
+recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });
 recipe.register("example", function () {});
 recipe.createPage(595, 842, { left: 36 }).margins({ top: 36 });
 var margins: Required<muhammara.Recipe.RecipeMargins> = recipe.margins();

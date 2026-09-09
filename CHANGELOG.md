@@ -51,6 +51,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Preserve custom Info dictionary keys passed to native `Recipe.info(options)`,
+  matching Wasm, instead of silently discarding them; `custom(key, value)` remains
+  the explicit spelling [#607](https://github.com/julianhille/MuhammaraJS/issues/607)
 - Release the source PDF file handle that `Recipe` holds, so the source,
   appended, and overlaid files can be deleted right after `endPDF()` instead of
   failing with `EBUSY` on Windows [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
