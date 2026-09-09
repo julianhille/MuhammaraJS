@@ -92,11 +92,13 @@ any other platform, architecture, runtime, or libc combination, install
 | Node.js  | Any other combination | Any                               | Use source package |
 | Electron | 36.0 through 44.0     | Linux x64                         | Yes                |
 | Electron | 36.0 through 44.0     | macOS arm64                       | Yes                |
+| Electron | 36.0 through 38.1     | macOS x64                         | Yes                |
 | Electron | 36.0 through 44.0     | Windows x64                       | Yes                |
 | Electron | Any other combination | Any                               | Use source package |
 
-Windows arm64, Linux arm64, and macOS x64 Electron builds are not part of the
-current prebuilt matrix. The package `engines` field is the authoritative
+Windows arm64 and Linux arm64 Electron builds are not part of the current
+prebuilt matrix, and macOS x64 Electron builds cover only 36.0 through 38.1.
+The package `engines` field is the authoritative
 Node.js version policy; this table describes the release workflow's binary
 coverage.
 
