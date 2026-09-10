@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Link native package READMEs and previously orphaned executable examples to
   their documentation, and document pnpm 10 installation approval
   [#630](https://github.com/julianhille/MuhammaraJS/issues/630)
+- Add `Recipe.setPageBox()` with `ePDFPageBox*` constants and PDF bottom-left
+  coordinates [#619](https://github.com/julianhille/MuhammaraJS/issues/619)
 - Support native Recipe `annot()` opacity and `comment()` replies, including
   TypeScript options, matching Wasm annotation dictionaries
   [#606](https://github.com/julianhille/MuhammaraJS/issues/606)

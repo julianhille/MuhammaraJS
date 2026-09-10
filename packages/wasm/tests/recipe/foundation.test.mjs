@@ -30,14 +30,26 @@ describe("Recipe foundation", function () {
   it("normalizes center coordinates against the current media box", async function () {
     var Recipe = await createRecipe();
     var recipe = new Recipe().createPage(200, 300);
-    recipe.setPageBox("media", 10, 20, 210, 320);
+    recipe
+      .setPageBox("media", 10, 20, 210, 320)
+      .setPageBox("crop", 11, 21, 209, 319)
+      .setPageBox("bleed", 12, 22, 208, 318)
+      .setPageBox("trim", 13, 23, 207, 317)
+      .setPageBox("art", 14, 24, 206, 316);
     assert.deepEqual(recipe._calibrateCoordinate("center", "center"), {
       nx: 110,
       ny: 170,
     });
     assert.deepEqual(recipe._reverseCoordinate(110, 170), { ox: 100, oy: 150 });
     assert.deepEqual(recipe.pageInfo(1).mediaBox, [10, 20, 210, 320]);
-    recipe.endPage().endPDF();
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(recipe.endPage().endPDF());
+    assert.deepEqual(reader.getPageBox(0, "media"), [10, 20, 210, 320]);
+    assert.deepEqual(reader.getPageBox(0, "crop"), [11, 21, 209, 319]);
+    assert.deepEqual(reader.getPageBox(0, "bleed"), [12, 22, 208, 318]);
+    assert.deepEqual(reader.getPageBox(0, "trim"), [13, 23, 207, 317]);
+    assert.deepEqual(reader.getPageBox(0, "art"), [14, 24, 206, 316]);
+    reader.end();
   });
 
   it("uses canonical Recipe versions and retains completed callback bytes", async function () {

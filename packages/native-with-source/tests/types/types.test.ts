@@ -50,3 +50,8 @@ var info: muhammara.Recipe.InfoOptions = {
   Labels: ["one", "two"],
 };
 recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });
+
+var pageBox: muhammara.PageBox = "crop";
+recipe.setPageBox(pageBox, 10, 20, 585, 822);
+recipe.setPageBox("media", 0, 0, 595, 842);
+void pageBox;

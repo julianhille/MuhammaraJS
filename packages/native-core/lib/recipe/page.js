@@ -77,6 +77,47 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
 };
 
 /**
+ * Set a page box on the active new page.
+ * @name setPageBox
+ * @function
+ * @memberof Recipe#
+ * @param {'media'|'crop'|'bleed'|'trim'|'art'} box - The page box to set.
+ * @param {number} left - The PDF left coordinate.
+ * @param {number} bottom - The PDF bottom coordinate.
+ * @param {number} right - The PDF right coordinate.
+ * @param {number} top - The PDF top coordinate.
+ * @returns {Recipe} The recipe instance.
+ * @throws {RangeError} If the page box name is unknown.
+ */
+exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
+  const boxes = {
+    media: "mediaBox",
+    crop: "cropBox",
+    bleed: "bleedBox",
+    trim: "trimBox",
+    art: "artBox",
+  };
+  if (!(box in boxes)) {
+    throw new RangeError(`Unknown page box: ${box}`);
+  }
+
+  const pageBox = [left, bottom, right, top];
+  this.page[boxes[box]] = pageBox;
+  if (box === "media") {
+    const page = this.metadata[this.pageNumber];
+    const width = right - left;
+    const height = top - bottom;
+    Object.assign(page, {
+      mediaBox: pageBox,
+      width,
+      height,
+      layout: width > height ? "landscape" : "portrait",
+    });
+  }
+  return this;
+};
+
+/**
  * Finish a page
  * @name endPage
  * @function
