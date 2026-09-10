@@ -24,6 +24,7 @@ import { createInfoMethods } from "./recipe/info.js";
 import { createInspectPdf } from "./recipe/inspection.js";
 import { createRegistrationMethods } from "./recipe/registration.js";
 import { createSecurityMethods, permission } from "./recipe/security.js";
+import { standardInfoKeys } from "./recipe-info.js";
 
 /** Creates the high-level Recipe PDF composition factory. */
 export function createRecipeFactory({
@@ -93,7 +94,7 @@ export function createRecipeFactory({
         ]),
       );
       var info = {};
-      ["author", "title", "subject", "keywords"].forEach((key) => {
+      standardInfoKeys.forEach((key) => {
         if (options[key] !== undefined) info[key] = options[key];
       });
       if (hasSource) this._openSource(sourceOrOptions);

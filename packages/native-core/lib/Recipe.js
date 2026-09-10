@@ -2,6 +2,7 @@ const muhammara = require("./muhammara");
 const path = require("path");
 const fs = require("fs");
 const streams = require("memory-streams");
+var { standardInfoKeys } = require("./recipe-info");
 
 /**
  * @name Recipe
@@ -117,7 +118,11 @@ class Recipe {
       }
     }
 
-    this.info(this.options);
+    var info = {};
+    standardInfoKeys.forEach((key) => {
+      if (this.options[key] !== undefined) info[key] = this.options[key];
+    });
+    this.info(info);
   }
 
   _getVersion(version) {

@@ -1,7 +1,10 @@
 # Metadata And Custom Data
 
 Set standard metadata in the constructor or with `info`, and add custom Info
-dictionary values with `custom`.
+dictionary values with `info({ ReportId: "Q1-2026" })` or
+`custom("ReportId", "Q1-2026")`. Both custom-entry spellings match Wasm; the last
+call for a given custom key wins. Custom keys belong in method calls, not
+constructor options.
 
 ```javascript
 var pdfDoc = new Recipe("new", "output.pdf", {
