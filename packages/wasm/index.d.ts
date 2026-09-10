@@ -12,6 +12,7 @@ export type PDFMatrix = [number, number, number, number, number, number];
 export type Glyph = [number, number];
 export type TextEncoding = "text" | "code" | "hex";
 export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
+export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
 export type PDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
 export type RecryptPDFVersion = 0 | PDFVersion;
 export type RecipePDFVersion =
@@ -302,7 +303,7 @@ export interface Recipe {
   pauseContext(): this;
   resumeContext(): this;
   setPageBox(
-    box: PageBox,
+    box: PDFPageBoxType,
     left: number,
     bottom: number,
     right: number,
@@ -1555,11 +1556,11 @@ export interface MuhammaraWasm {
   readonly kProcsetText: string;
   readonly eRangeTypeAll: number;
   readonly eRangeTypeSpecific: number;
-  readonly ePDFPageBoxMediaBox: number;
-  readonly ePDFPageBoxCropBox: number;
-  readonly ePDFPageBoxBleedBox: number;
-  readonly ePDFPageBoxTrimBox: number;
-  readonly ePDFPageBoxArtBox: number;
+  readonly ePDFPageBoxMediaBox: 0;
+  readonly ePDFPageBoxCropBox: 1;
+  readonly ePDFPageBoxBleedBox: 2;
+  readonly ePDFPageBoxTrimBox: 3;
+  readonly ePDFPageBoxArtBox: 4;
   readonly ePDFObjectBoolean: number;
   readonly ePDFObjectLiteralString: number;
   readonly ePDFObjectHexString: number;

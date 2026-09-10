@@ -343,6 +343,7 @@ declare namespace muhammara {
   export const ePDFPageBoxTrimBox = 3;
   export const ePDFPageBoxArtBox = 4;
   export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
+  export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
 
   export const eRangeTypeAll = 0;
   export const eRangeTypeSpecific = 1;
@@ -1284,6 +1285,13 @@ declare namespace muhammara {
       margins?: Recipe.RecipeMargins,
     ): Recipe;
     endPage(): Recipe;
+    setPageBox(
+      box: PDFPageBoxType,
+      left: number,
+      bottom: number,
+      right: number,
+      top: number,
+    ): Recipe;
 
     editPage(pageNumber: number): Recipe;
 

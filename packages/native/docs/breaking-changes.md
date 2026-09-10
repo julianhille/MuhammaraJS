@@ -22,6 +22,9 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
   `Object ID must be a non-negative integer`). Round or validate the value
   before passing it, bounding page indices with `getPagesCount()` and object IDs
   with `getObjectsCount()`.
+- `Recipe.setPageBox()` now accepts `ePDFPageBox*` constants rather than string
+  names. `recipe.setPageBox("crop", ...)` now throws; replace the string with
+  `muhammara.ePDFPageBoxCropBox`. See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#7-update-recipe-page-boxes).
 - The unscoped `muhammara` package is deprecated and receives no further
   releases. Install `@muhammara/native` instead, or use an npm alias when an
   existing `require("muhammara")` import must remain unchanged. See

@@ -77,6 +77,47 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
 };
 
 /**
+ * Set a page box on the active new page.
+ * @name setPageBox
+ * @function
+ * @memberof Recipe#
+ * @param {number} box - An `ePDFPageBox*` constant.
+ * @param {number} left - The PDF left coordinate.
+ * @param {number} bottom - The PDF bottom coordinate.
+ * @param {number} right - The PDF right coordinate.
+ * @param {number} top - The PDF top coordinate.
+ * @returns {Recipe} The recipe instance.
+ * @throws {RangeError} If the page box constant is unknown.
+ */
+exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
+  const boxes = {
+    [muhammara.ePDFPageBoxMediaBox]: "mediaBox",
+    [muhammara.ePDFPageBoxCropBox]: "cropBox",
+    [muhammara.ePDFPageBoxBleedBox]: "bleedBox",
+    [muhammara.ePDFPageBoxTrimBox]: "trimBox",
+    [muhammara.ePDFPageBoxArtBox]: "artBox",
+  };
+  if (!(box in boxes)) {
+    throw new RangeError(`Unknown page box: ${box}`);
+  }
+
+  const pageBox = [left, bottom, right, top];
+  this.page[boxes[box]] = pageBox;
+  if (box === muhammara.ePDFPageBoxMediaBox) {
+    const page = this.metadata[this.pageNumber];
+    const width = right - left;
+    const height = top - bottom;
+    Object.assign(page, {
+      mediaBox: pageBox,
+      width,
+      height,
+      layout: width > height ? "landscape" : "portrait",
+    });
+  }
+  return this;
+};
+
+/**
  * Finish a page
  * @name endPage
  * @function

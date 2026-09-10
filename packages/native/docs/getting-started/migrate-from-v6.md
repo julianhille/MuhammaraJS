@@ -9,9 +9,9 @@ under the `@muhammara` organization on npm:
 | `@muhammara/native-with-source` | Native addon plus the C++ source tree for local and Electron builds   |
 | `@muhammara/native-core`        | Shared JavaScript layer; a dependency of both, never installed direct |
 
-The PDF API is unchanged between v6 and v7. For Node.js applications the
-migration is a dependency rename, an import rename, and a check that a prebuilt
-binary still exists for your platform.
+For Node.js applications the migration is a dependency rename, an import rename,
+a page-box constant update, and a check that a prebuilt binary still exists for
+your platform.
 
 ## 1. Choose The Replacement Package
 
@@ -116,9 +116,25 @@ Electron applications must install the source-capable package before running
 the bundled source tree. See the
 [Electron support policy](installation.md#electron-support-policy).
 
+## 7. Update Recipe Page Boxes
+
+`Recipe.setPageBox()` no longer accepts string box names. Replace each name with
+its matching `ePDFPageBox*` constant:
+
+```javascript
+// v6
+recipe.setPageBox("crop", 18, 18, 577, 824);
+
+// v7
+recipe.setPageBox(muhammara.ePDFPageBoxCropBox, 18, 18, 577, 824);
+```
+
+Use `ePDFPageBoxMediaBox`, `ePDFPageBoxCropBox`, `ePDFPageBoxBleedBox`,
+`ePDFPageBoxTrimBox`, or `ePDFPageBoxArtBox` for the respective page box.
+
 ## What Does Not Change
 
-- The low-level API and the Recipe API, including their TypeScript types.
+- The low-level API and all other Recipe APIs, including their TypeScript types.
 - Supported Node.js versions.
 - Native binary metadata and the `node-pre-gyp` install flow.
 

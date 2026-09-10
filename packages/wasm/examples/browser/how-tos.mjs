@@ -284,12 +284,13 @@ async function formGrayExample() {
 }
 
 async function rotatedPageExample() {
+  var muhammara = await createMuhammaraWasm();
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
   try {
     recipe
       .createPage(420, 600)
-      .setPageBox("media", 10, 20, 430, 620)
+      .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 430, 620)
       .rotate(90)
       .rectangle(0, 0, 600, 420, { fill: "#f0fdfa", useGivenCoords: true })
       .rectangle(35, 35, 250, 125, {

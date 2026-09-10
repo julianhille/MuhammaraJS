@@ -121,7 +121,7 @@ export async function runValidation() {
     "recipe centered y",
   );
   assertions += 2;
-  recipe.setPageBox("media", 10, 20, 210, 320);
+  recipe.setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 210, 320);
   equal(recipe._calibrateCoordinate(0, 0).nx, 10, "recipe media-box x offset");
   equal(recipe._calibrateCoordinate(0, 0).ny, 320, "recipe media-box y offset");
   assertions += 2;
@@ -223,7 +223,7 @@ export async function runValidation() {
 
   var rotatedSource = new Recipe({ compress: false })
     .createPage(200, 300)
-    .setPageBox("media", 10, 20, 210, 320)
+    .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 210, 320)
     .rotate(90)
     .endPage()
     .endPDF();
