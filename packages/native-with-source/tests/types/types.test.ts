@@ -13,3 +13,10 @@ recipe
   })
   .annot(100, 200, "Highlight", { width: 200, height: 14, opacity: 0.45 })
   .annot(100, 230, "Highlight", { width: 200, height: 14, opacity: 0 });
+
+recipe
+  .text("Default size", 72, 72)
+  .text("Explicit size", 72, 100, { size: 12 });
+var textWidth: number = recipe.textDimensions("text").width;
+recipe.textDimensions("text", { size: 12 }).width;
+void textWidth;

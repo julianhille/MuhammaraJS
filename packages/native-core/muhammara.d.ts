@@ -1096,6 +1096,7 @@ declare namespace muhammara {
       rotation?: number;
       rotationOrigin?: [number, number];
       font?: string;
+      /** Font size in points for text() and textDimensions(); defaults to 14. */
       size?: number;
       align?: string;
       highlight?: boolean;

@@ -25,6 +25,11 @@ Recipe provides pages, text, shapes, images, tables, composition, annotations,
 metadata, and byte-safe splitting. `setPageBox()` uses PDF bottom-left
 coordinates even though the high-level drawing API uses top-left coordinates.
 
+Recipe `text()` and `textDimensions()` default to 14 points when both `size`
+and `fontSize` are omitted, matching native Recipe. Pass `{ size: 12 }` (or
+`{ fontSize: 12 }`) to render and measure at 12 points instead; explicit sizes
+remain unchanged.
+
 ## PDF Version
 
 `version` sets the PDF level written into the byte output. Recipe accepts the

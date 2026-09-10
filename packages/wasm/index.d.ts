@@ -178,7 +178,9 @@ export interface RecipeTextBoxClipResult {
 }
 export interface RecipeTextOptions extends RecipePathOptions {
   font?: string;
+  /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. */
   fontSize?: number;
+  /** Alternative font size in points; defaults to 14 when both size and fontSize are omitted. */
   size?: number;
   bold?: boolean;
   italic?: boolean;
