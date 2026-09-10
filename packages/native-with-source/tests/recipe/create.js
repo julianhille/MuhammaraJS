@@ -114,13 +114,13 @@ describe("Create", () => {
   it("tracks current-page rotation for named and explicit sizes", () => {
     const namedOutput = path.join(__dirname, "../output/rotate-named.pdf");
     const named = new Recipe("new", namedOutput)
-      .createPage("letter", 90)
-      .rotate(180)
+      .createPage("letter")
+      .rotate(90)
       .endPage();
     assert.deepEqual(named.pageInfo(1), {
-      width: 792,
-      height: 612,
-      rotate: 180,
+      width: 612,
+      height: 792,
+      rotate: 90,
       pageNumber: 1,
     });
     named.endPDF();
@@ -142,7 +142,7 @@ describe("Create", () => {
     explicit.endPDF();
 
     [
-      [namedOutput, 180],
+      [namedOutput, 90],
       [explicitOutput, 90],
     ].forEach(([output, rotation]) => {
       const reader = muhammara.createReader(output);

@@ -58,19 +58,19 @@ describe("Recipe create", function () {
   });
 
   it("tracks current-page rotation for named and explicit sizes", function () {
-    var named = new Recipe().createPage("letter", 90).rotate(180);
+    var named = new Recipe().createPage("letter").rotate(90);
     assert.deepEqual(named.pageInfo(1), {
       pageNumber: 1,
-      mediaBox: [0, 0, 792, 612],
-      rotate: 180,
-      width: 792,
-      height: 612,
-      layout: "landscape",
+      mediaBox: [0, 0, 612, 792],
+      rotate: 90,
+      width: 612,
+      height: 792,
+      layout: "portrait",
       size: [612, 792],
       offsetX: 0,
       offsetY: 0,
     });
-    assert.equal(named.read(named.endPage().endPDF())[1].rotate, 180);
+    assert.equal(named.read(named.endPage().endPDF())[1].rotate, 90);
 
     var explicit = new Recipe().createPage(100, 200).rotate(90);
     assert.equal(explicit.getCurrentPageInfo().rotate, 90);
