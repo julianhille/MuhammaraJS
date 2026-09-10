@@ -18,9 +18,10 @@ writer.end();
 ```
 
 Use `getFontForFile` to load a font, `getImageDimensions` to inspect an image,
-and `getEvents` for page and catalog write events. `createFormXObject` starts a
-reusable drawing form; finish it with `endFormXObject` before placement. Image
-and form creation must not occur while a page content context is active.
+and `getEvents` for page and catalog write events. Writer events are native-only;
+the WebAssembly writer has no `getEvents()` equivalent. `createFormXObject`
+starts a reusable drawing form; finish it with `endFormXObject` before placement.
+Image and form creation must not occur while a page content context is active.
 
 [`tests/EmptyPagesPDF.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/EmptyPagesPDF.js), [`tests/FormXObjectTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/FormXObjectTest.js), and
 [`tests/WriterEvents.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/WriterEvents.js) cover these lifecycles.
