@@ -90,6 +90,21 @@ export async function runValidation() {
   reader.end();
 
   var Recipe = await createRecipe();
+  var defaultRecipe = new Recipe().createPage("letter");
+  var defaultBytes = defaultRecipe
+    .text("Zero setup", 72, 72)
+    .endPage()
+    .endPDF();
+  var defaultReader = muhammara.createReader(defaultBytes);
+  equal(
+    defaultReader.extractPageText(0)[0].content,
+    "Zero setup",
+    "bundled Recipe font",
+  );
+  assertions += 1;
+  defaultReader.end();
+  defaultRecipe.dispose();
+  Recipe.disposeAssets();
   var recipe = new Recipe({ version: 2.0, compress: false });
   recipe.createPage();
   equal(recipe.position.x, 0, "recipe initial cursor x");
@@ -666,7 +681,6 @@ export async function runValidation() {
   assertions += 2;
 
   var exampleAssets = {
-    font: fontBytes,
     jpeg: new Uint8Array(
       await (
         await fetch(

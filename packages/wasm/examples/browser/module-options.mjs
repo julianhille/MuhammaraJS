@@ -18,6 +18,6 @@ export function createMuhammaraWasm() {
   return loadMuhammaraWasm(moduleOptions());
 }
 
-export function createRecipe() {
-  return loadRecipe(moduleOptions());
+export function createRecipe(options = {}) {
+  return loadRecipe({ ...moduleOptions(), ...options });
 }

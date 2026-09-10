@@ -177,6 +177,7 @@ export interface RecipeTextBoxClipResult {
   bounds: { x: number; y: number; width: number; height: number };
 }
 export interface RecipeTextOptions extends RecipePathOptions {
+  /** Font family; uses createRecipe's default font when omitted (bundled Roboto unless configured). */
   font?: string;
   /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. */
   fontSize?: number;
@@ -1599,7 +1600,16 @@ export function createMuhammaraWasm(
   options?: MuhammaraWasmOptions,
 ): Promise<MuhammaraWasm>;
 
-/** Loads the separate browser Recipe constructor. Recipe accepts byte assets only. */
+export interface CreateRecipeOptions extends MuhammaraWasmOptions {
+  /**
+   * Omit to load bundled Roboto Regular. Supply font bytes/Blob/File to use a
+   * custom default (family "default"), or false to require named registered fonts.
+   * Custom bytes and false both skip importing the bundled font module.
+   */
+  defaultFont?: AsyncByteSource | false;
+}
+
+/** Loads the byte-first Recipe constructor and its optional default font. */
 export function createRecipe(
-  options?: MuhammaraWasmOptions,
+  options?: CreateRecipeOptions,
 ): Promise<RecipeConstructor>;

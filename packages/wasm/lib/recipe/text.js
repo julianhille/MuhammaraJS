@@ -98,6 +98,7 @@ export function createTextMethods({ drawText, measure, module }) {
   }
 
   return {
+    /** Measures text using the configured Recipe default unless a font is selected. */
     textDimensions(value, options = {}) {
       return dimensions(this, value, {
         ...options,
@@ -171,6 +172,7 @@ export function createTextMethods({ drawText, measure, module }) {
       return returnCoords ? [this._cursor.x, this._cursor.y] : this;
     },
 
+    /** Draws text using the configured Recipe default unless a font is selected. */
     text(value = "", x, y, options = {}) {
       if (typeof x === "object" || x === undefined) {
         options = x || {};

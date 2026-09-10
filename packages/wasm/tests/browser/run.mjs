@@ -3,6 +3,7 @@ import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
+import { validateFontLoading } from "./font-loading.mjs";
 
 var root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -109,6 +110,10 @@ try {
     executablePath: process.env.CHROME_BIN,
     headless: true,
   });
+  var fontLoading = await validateFontLoading(
+    browser,
+    `http://127.0.0.1:${server.port}`,
+  );
   var page = await browser.newPage();
   await page.goto(
     `http://127.0.0.1:${server.port}/packages/wasm/tests/browser/index.html`,
@@ -122,6 +127,7 @@ try {
   clearTimeout(timeout);
   if (!result.passed)
     throw new Error(result.error || "browser validation failed");
+  result.fontLoading = fontLoading;
   await page.goto(
     `http://127.0.0.1:${server.port}/packages/wasm/examples/browser/index.html`,
     { waitUntil: "load" },
@@ -145,16 +151,14 @@ try {
     if (tabIds.join(",") !== expectedTabIds.join(",")) {
       throw new Error(`Unexpected example tabs: ${tabIds.join(", ")}`);
     }
-    var annotations = document.querySelector('[data-example="annotations"]');
+    var table = document.querySelector('[data-example="table"]');
     for (var attempt = 0; attempt < 50; ++attempt) {
-      annotations.click();
-      if (annotations.getAttribute("aria-selected") === "true") break;
+      table.click();
+      if (table.getAttribute("aria-selected") === "true") break;
       await delay(50);
     }
-    if (annotations.getAttribute("aria-selected") !== "true")
-      throw new Error("Annotations tab did not activate");
-    if (!document.querySelector(".file-grid").hidden)
-      throw new Error("Annotation tab should not require assets");
+    if (table.getAttribute("aria-selected") !== "true")
+      throw new Error("Tables tab did not activate");
     document.querySelector('input[name="mode"][value="page"]').click();
     document.querySelector("#example-form").requestSubmit();
     for (var run = 0; run < 200; ++run) {
@@ -166,12 +170,12 @@ try {
     var preview = document.querySelector("#preview");
     var download = document.querySelector("#download");
     if (!document.querySelector("#status").textContent.startsWith("Complete."))
-      throw new Error("Annotation example timed out");
+      throw new Error("Zero-setup table example timed out");
     if (!preview.src.startsWith("blob:"))
       throw new Error("PDF preview did not receive a blob URL");
     if (download.hidden || !download.href.startsWith("blob:"))
       throw new Error("PDF download was not shown");
-    return { tabs: tabs.length, selected: "annotations", preview: true };
+    return { tabs: tabs.length, selected: "table", preview: true };
   });
   console.log(JSON.stringify(result));
 } catch (error) {

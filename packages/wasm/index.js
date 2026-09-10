@@ -293,12 +293,17 @@ export async function createMuhammaraWasm(options) {
 
 /**
  * Loads the browser-native Recipe constructor. Inputs and outputs are bytes,
- * not Node paths or streams; callers register fonts and other assets as bytes.
+ * not Node paths or streams. Loads bundled Roboto Regular for zero-setup text
+ * unless a custom default font or defaultFont: false is supplied.
  *
  * @param {object} [options] Emscripten module options and optional byte limits.
+ * @param {Uint8Array|ArrayBuffer|Blob|false} [options.defaultFont] Custom default
+ * font bytes (also accepts File), or false to require explicit registered fonts.
+ * Omitting this option dynamically imports bundled Roboto Regular.
  * @returns {Promise<Function>} The initialized Recipe constructor.
  */
 export async function createRecipe(options) {
+  var { defaultFont: fontSource, ...moduleOptions } = options || {};
   var {
     api: muhammara,
     module,
@@ -306,7 +311,15 @@ export async function createRecipe(options) {
     normalizeBytes,
     normalizeBytesAsync,
     assertOutputSize,
-  } = await createRuntime(options);
+  } = await createRuntime(moduleOptions);
+  var defaultFont;
+  if (fontSource === undefined) {
+    var { defaultFontBytes } = await import("./fonts/Roboto-Regular.js");
+    defaultFont = { name: "Roboto", loadBytes: defaultFontBytes };
+  } else if (fontSource !== false) {
+    var fontBytes = await normalizeBytesAsync(fontSource, "Default font bytes");
+    defaultFont = { name: "default", loadBytes: () => fontBytes };
+  }
   function removeFile(path) {
     if (!path) return;
     try {
@@ -316,6 +329,7 @@ export async function createRecipe(options) {
     }
   }
   return createRecipeFactory({
+    defaultFont,
     module,
     encoder,
     colorValue,

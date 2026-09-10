@@ -12,7 +12,9 @@ export async function runRecipeExample({
   progress = () => {},
 }) {
   progress("Loading Recipe and registering byte assets", 62);
-  var Recipe = await createRecipe();
+  var Recipe = await createRecipe({
+    defaultFont: assets.font ? false : undefined,
+  });
   var recipe;
   var editing;
   try {
@@ -54,48 +56,47 @@ export async function runRecipeExample({
       .star(505, 92, 28, 6, { fill: "#e85d3f", rotation: 15 })
       .lineStyle({ width: 2, dash: [5, 3] })
       .line(58, 155, 537, 155, { stroke: "#2c7a7b" });
-    if (assets.font) {
-      recipe
-        .text("A practical byte-first document", 62, 72, {
-          font: "example-font",
-          fontSize: 25,
-          color: "#102a43",
-          underline: true,
-        })
-        .layout("story", 62, 185, 471, 165, { columns: 2, gap: 24 })
-        .text(
-          "<b>Recipe</b> keeps layout expressive while every font, image, and PDF remains browser-owned bytes.<br>It runs unchanged in a module Worker.",
+    var font = assets.font ? "example-font" : undefined;
+    recipe
+      .text("A practical byte-first document", 62, 72, {
+        font,
+        fontSize: 25,
+        color: "#102a43",
+        underline: true,
+      })
+      .layout("story", 62, 185, 471, 165, { columns: 2, gap: 24 })
+      .text(
+        "<b>Recipe</b> includes Roboto for zero-setup text. Custom fonts, images, and PDFs use browser-owned bytes.<br>It runs unchanged in a module Worker.",
+        {
+          font,
+          fontSize: 11,
+          html: true,
+          layout: "story",
+          textBox: { padding: 6, style: { fill: "#ffffff" } },
+        },
+      )
+      .table(
+        62,
+        390,
+        [
           {
-            font: "example-font",
-            fontSize: 11,
-            html: true,
-            layout: "story",
-            textBox: { padding: 6, style: { fill: "#ffffff" } },
+            surface: "Input",
+            contract: "Uint8Array / ArrayBuffer / Blob / File",
           },
-        )
-        .table(
-          62,
-          390,
-          [
-            {
-              surface: "Input",
-              contract: "Uint8Array / ArrayBuffer / Blob / File",
-            },
-            { surface: "Output", contract: "owned Uint8Array" },
-            { surface: "Cleanup", contract: "end(), dispose(), unregister*()" },
+          { surface: "Output", contract: "owned Uint8Array" },
+          { surface: "Cleanup", contract: "end(), dispose(), unregister*()" },
+        ],
+        {
+          font,
+          fontSize: 9,
+          header: true,
+          border: true,
+          columns: [
+            { name: "surface", width: 110 },
+            { name: "contract", width: 345 },
           ],
-          {
-            font: "example-font",
-            fontSize: 9,
-            header: true,
-            border: true,
-            columns: [
-              { name: "surface", width: 110 },
-              { name: "contract", width: 345 },
-            ],
-          },
-        );
-    }
+        },
+      );
     if (assets.png)
       recipe.image("example-png", 405, 650, {
         width: 110,

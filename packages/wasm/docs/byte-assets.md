@@ -1,5 +1,12 @@
 # Byte Assets And Blob Input
 
+Recipe includes Roboto Regular for text and tables with no font setup. The
+registration examples below apply to custom Recipe fonts and to all low-level
+writer fonts; see [Default And Custom Fonts](recipe.md#default-and-custom-fonts).
+When supplying your own fonts, `createRecipe({ defaultFont: fontFile })` uses
+your file as the default without loading Roboto. Use
+`createRecipe({ defaultFont: false })` when registering named families instead.
+
 The synchronous Wasm contract is `Uint8Array | ArrayBuffer`. Register reusable
 fonts, images, and PDFs by name before using them:
 

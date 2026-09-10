@@ -24,11 +24,13 @@
     "index.js",
     "index.d.ts",
     "lib",
+    "fonts",
     "dist",
     "examples/browser",
     "README.md",
     "CHANGELOG.md",
     "DIFFERENCES.md",
+    "THIRD_PARTY_NOTICES.md",
     "LICENSE"
   ],
   "scripts": {

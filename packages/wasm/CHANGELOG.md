@@ -8,6 +8,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 - Add a MkDocs-validated guide index for browser examples
   [#627](https://github.com/julianhille/MuhammaraJS/issues/627)
+- Bundle Apache-2.0 Roboto Regular as Recipe's automatic default font, so text,
+  text measurement, and tables work without font registration in browsers and
+  Workers. Load it through a separate dynamic import; custom `defaultFont` bytes
+  or `defaultFont: false` skip the font download, as does the low-level API.
+  Make font uploads optional in the browser table example
+  [#613](https://github.com/julianhille/MuhammaraJS/issues/613)
 - Add byte-first `recrypt()` and Recipe `encrypt()` with native-compatible
   password options, plus the password-change browser example
   [#595](https://github.com/julianhille/MuhammaraJS/issues/595)

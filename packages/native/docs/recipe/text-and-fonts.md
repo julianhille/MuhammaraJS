@@ -1,8 +1,20 @@
 # Text And Fonts
 
-Register fonts under a family name, then select the appropriate variant through
-text options. Recipe coordinates use a top-left origin and accept `center` for
-either coordinate.
+Recipe ships fonts in `@muhammara/native-core/fonts` and loads them automatically.
+You can call `.createPage("letter").text("Hello", 72, 72)` without registering
+anything. The default family is **Helvetica**, with regular, bold, italic, and
+bold-italic faces. Arial, Courier New, Georgia, and Roboto Regular are also
+bundled; select one with `{ font: "Roboto" }`, for example.
+
+Wasm Recipe also provides zero-setup text, using openly licensed **Roboto
+Regular** rather than Helvetica. The default faces have different metrics and
+can wrap differently. Select Roboto explicitly on native, or register the same
+font on both ends, when you need matching font metrics. Wasm bundles only regular;
+register additional styles or glyph coverage as needed.
+
+For custom fonts, register a family name and select the appropriate variant
+through text options. Recipe coordinates use a top-left origin and accept
+`center` for either coordinate.
 
 Recipe `text()` and `textDimensions()` default to 14 points when `size` is
 omitted. Pass `{ size: 12 }` to render and measure at 12 points instead.
