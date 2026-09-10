@@ -89,6 +89,9 @@ recipe
   .fill()
   .stroke()
   .fillAndStroke();
+recipe.opacity(0.5);
+// @ts-expect-error Recipe.fillOpacity() was removed in v7.
+recipe.fillOpacity(0.5);
 recipe.htmlToTextObjects("<p>text</p>");
 recipe.endPDF();
 var callbackResult: string = recipe.endPDF(function () {

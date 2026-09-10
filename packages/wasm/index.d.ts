@@ -451,7 +451,6 @@ export interface Recipe {
   }): this;
   lineWidth(width: number): this;
   opacity(value: number): this;
-  fillOpacity(value: number): this;
   fill(): this;
   stroke(): this;
   fillAndStroke(): this;

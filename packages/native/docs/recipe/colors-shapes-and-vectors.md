@@ -30,3 +30,8 @@ arrays, and `circle`, `rectangle`, `ellipse`, `arc`, `n_gon`, `star`,
 rotation, rotation origin, skew, dash, and line properties. See
 [`tests/recipe/coloring.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/coloring.js), [`tests/recipe/vector.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/vector.js), [`tests/recipe/arcs.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/arcs.js),
 and [`tests/recipe/shapes.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/shapes.js).
+
+Use `opacity(value)` to set both fill and stroke alpha for subsequent drawing;
+`value` must be a finite number from `0` (transparent) through `1` (opaque).
+It remains active for later vector drawing; call `opacity(1)` to restore opaque
+output.

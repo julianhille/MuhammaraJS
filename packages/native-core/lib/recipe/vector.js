@@ -74,7 +74,8 @@ exports.circle = function circle(x, y, radius, options = {}) {
       diameter,
       diameter,
       pathOptions,
-      (ctx) => {
+      (ctx, xObject) => {
+        ctx.gs(xObject.getGsName(pathOptions.strokeGsId));
         ctx
           .d(pathOptions.dash, pathOptions.dashPhase)
           .drawCircle(
@@ -173,6 +174,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
       height,
       pathOptions,
       (ctx, xObject) => {
+        ctx.gs(xObject.getGsName(pathOptions.strokeGsId));
         // ... requires adjusting the internal drawing to accomodate line thickness.
         const margin = pathOptions.width;
         xObject.stroke(colorModel);
@@ -362,6 +364,7 @@ exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
       height,
       pathOptions,
       (ctx, xObject) => {
+        ctx.gs(xObject.getGsName(pathOptions.strokeGsId));
         const margin = pathOptions.width / 2;
         xObject.stroke(colorModel);
         ctx.w(pathOptions.width).d(pathOptions.dash, pathOptions.dashPhase);
@@ -518,6 +521,7 @@ exports.arc = function arc(
       diameter,
       pathOptions,
       (ctx, xObject) => {
+        ctx.gs(xObject.getGsName(pathOptions.strokeGsId));
         const margin = pathOptions.width / 2;
         xObject.stroke(colorModel);
         ctx.w(pathOptions.width).d(pathOptions.dash, pathOptions.dashPhase);
@@ -550,16 +554,19 @@ exports.lineWidth = function lineWidth() {
 };
 
 /**
- * Set the fill opacity.
+ * Set fill and stroke opacity.
  *
- * This compatibility method currently has no effect.
- * @name fillOpacity
+ * @name opacity
  * @function
  * @memberof Recipe#
- * @param {number} opacity - The requested fill opacity.
+ * @param {number} value - The requested opacity from 0 (transparent) to 1 (opaque).
  * @returns {Recipe} The recipe instance.
  */
-exports.fillOpacity = function fillOpacity() {
+exports.opacity = function opacity(value) {
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    throw new RangeError("Opacity must be a finite number between 0 and 1");
+  }
+  this.current.opacity = value;
   return this;
 };
 

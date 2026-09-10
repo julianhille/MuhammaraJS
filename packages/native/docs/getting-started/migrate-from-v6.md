@@ -132,6 +132,21 @@ recipe.setPageBox(muhammara.ePDFPageBoxCropBox, 18, 18, 577, 824);
 Use `ePDFPageBoxMediaBox`, `ePDFPageBoxCropBox`, `ePDFPageBoxBleedBox`,
 `ePDFPageBoxTrimBox`, or `ePDFPageBoxArtBox` for the respective page box.
 
+## 8. Replace `Recipe.fillOpacity()`
+
+`Recipe.fillOpacity()` was removed. Replace it with `Recipe.opacity()`, which
+sets both fill and stroke alpha:
+
+```javascript
+// v6
+recipe.fillOpacity(0.5);
+
+// v7
+recipe.opacity(0.5);
+// Restore opaque drawing after translucent content.
+recipe.opacity(1);
+```
+
 ## What Does Not Change
 
 - The low-level API and all other Recipe APIs, including their TypeScript types.

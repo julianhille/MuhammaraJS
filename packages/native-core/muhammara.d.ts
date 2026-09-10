@@ -1381,7 +1381,8 @@ declare namespace muhammara {
       options?: Recipe.CircleOptions,
     ): Recipe;
     lineWidth(width: number): Recipe;
-    fillOpacity(opacity: number): Recipe;
+    /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */
+    opacity(opacity: number): Recipe;
     fill(color?: string | number[]): Recipe;
     stroke(color?: string | number[]): Recipe;
     fillAndStroke(fill?: string | number[], stroke?: string | number[]): Recipe;

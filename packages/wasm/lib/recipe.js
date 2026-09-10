@@ -248,6 +248,11 @@ export function createRecipeFactory({
       if (!Number.isFinite(value) || value < 0 || value > 1) {
         throw new RangeError("Opacity must be a finite number between 0 and 1");
       }
+      this._opacity = value;
+      return this._setOpacity(value);
+    }
+
+    _setOpacity(value) {
       if (this._pageContext) this._pageContext.setOpacity(value);
       else call("_muhammara_wasm_recipe_set_opacity", this._recipe, value);
       return this;

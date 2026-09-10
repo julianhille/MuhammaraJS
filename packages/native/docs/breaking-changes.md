@@ -25,6 +25,10 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
 - `Recipe.setPageBox()` now accepts `ePDFPageBox*` constants rather than string
   names. `recipe.setPageBox("crop", ...)` now throws; replace the string with
   `muhammara.ePDFPageBoxCropBox`. See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#7-update-recipe-page-boxes).
+- `Recipe.fillOpacity()` was removed. Existing calls now throw because it is no
+  longer a Recipe method; use `Recipe.opacity()` to set both fill and stroke
+  alpha. Opacity persists for later vector drawing, so call `opacity(1)` to
+  restore opaque output. See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#8-replace-recipefillopacity).
 - The unscoped `muhammara` package is deprecated and receives no further
   releases. Install `@muhammara/native` instead, or use an npm alias when an
   existing `require("muhammara")` import must remain unchanged. See

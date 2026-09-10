@@ -35,7 +35,7 @@ export function createVectorHelpers(runtime) {
     _pathOptions: function (options = {}) {
       var opacity =
         options.opacity === undefined
-          ? 1
+          ? (this._opacity ?? 1)
           : Math.max(0, Math.min(1, Number(options.opacity)));
       if (!Number.isFinite(opacity)) opacity = 1;
       var dash =
@@ -82,7 +82,7 @@ export function createVectorHelpers(runtime) {
         dash: style.dash,
         dashPhase: style.phase,
       });
-      this.opacity(style.opacity);
+      this._setOpacity(style.opacity);
     },
     _finishPath: function (options = {}) {
       var fill = options.fill;

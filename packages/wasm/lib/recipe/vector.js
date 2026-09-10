@@ -144,9 +144,6 @@ export function createVectorMethods(runtime) {
     lineWidth: function (width) {
       return this.lineStyle({ width });
     },
-    fillOpacity: function (value) {
-      return this.opacity(value);
-    },
     fill: function () {
       return this;
     },
