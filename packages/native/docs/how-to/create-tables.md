@@ -3,6 +3,10 @@
 Pass records and column definitions to `table`. Define an `overflow` callback
 to start a new page when the table needs more space.
 
+Font registration is optional: native Recipe uses bundled Helvetica by default.
+Select `{ font: "Roboto" }` to use the same regular face bundled by Wasm Recipe.
+See [Text And Fonts](../recipe/text-and-fonts.md) for custom families and styles.
+
 ```javascript
 var columns = [
   { text: "Name", name: "name", width: 180 },

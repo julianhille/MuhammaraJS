@@ -272,14 +272,28 @@ byte assets instead of filesystem paths:
 import { createRecipe } from "@muhammara/wasm";
 
 var Recipe = await createRecipe();
-Recipe.registerFont("inter", new Uint8Array(await fontFile.arrayBuffer()));
 var bytes = new Recipe()
   .createPage(595, 842)
-  .text("Hello", 72, 720, { font: "inter", fontSize: 24 })
-  .rectangle(72, 680, 120, 24, { fill: "#dbeafe" })
+  .text("Hello", 72, 72)
+  .rectangle(72, 110, 120, 24, { fill: "#dbeafe" })
   .endPage()
   .endPDF();
 ```
+
+Recipe includes the full **Roboto Regular** face (Apache-2.0) as its automatic
+default: text, measurement, and tables need no font upload, registration, or
+font URL, in browsers and Workers alike. Only regular is bundled; register
+bold/italic faces or fonts with additional glyph coverage when needed. Native
+Recipe defaults to Helvetica, so metrics and wrapping can differ. See the
+[font guide](https://muhammarajs-wasm.readthedocs.io/recipe.html#default-and-custom-fonts)
+and [third-party notices](THIRD_PARTY_NOTICES.md).
+
+Roboto is a separate dynamic import, loaded only by the default `createRecipe()`
+initialization. Use `createRecipe({ defaultFont: fontBytes })` (also accepts
+`ArrayBuffer`, `Blob`, or `File`) to use your own default without loading Roboto,
+or `createRecipe({ defaultFont: false })` for named-font registration only.
+`createMuhammaraWasm()` never loads it. Keep dynamic-import code splitting enabled
+in your bundler to keep the font data out of the main bundle.
 
 Recipe foundation defaults to US Letter (`612 x 792`) with 72-point margins on
 all sides. `new Recipe({ version: 1.0 | ... | 1.7, compress?: boolean })` selects

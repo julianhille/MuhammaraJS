@@ -253,6 +253,23 @@ async function usesLowLevelSurface() {
   Recipe.splitPdf("pdf", "part")[0].bytes;
   Recipe.permission("print, copy");
   var recipe = new Recipe({ version: 1.7, compress: false, title: "Byte PDF" });
+  var defaultFontBytes: Uint8Array = new Recipe()
+    .createPage("letter")
+    .text("Hello", 72, 72)
+    .text("Roboto", { font: "Roboto" })
+    .endPage()
+    .endPDF();
+  recipe.textDimensions("Hello").width;
+  void defaultFontBytes;
+  await createRecipe({ defaultFont: new Uint8Array() });
+  await createRecipe({ defaultFont: new ArrayBuffer(0) });
+  await createRecipe({ defaultFont: new Blob() });
+  await createRecipe({ defaultFont: new File([], "body.ttf") });
+  await createRecipe({ defaultFont: false });
+  // @ts-expect-error A default font is byte data or false, not a path.
+  await createRecipe({ defaultFont: "body.ttf" });
+  // @ts-expect-error Omit the option to use bundled Roboto.
+  await createRecipe({ defaultFont: true });
   new Recipe({ version: 17 });
   new Recipe({ version: 2 });
   new Recipe({ version: 20 });

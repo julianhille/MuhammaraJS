@@ -28,6 +28,7 @@ import { standardInfoKeys } from "./recipe-info.js";
 
 /** Creates the high-level Recipe PDF composition factory. */
 export function createRecipeFactory({
+  defaultFont,
   module,
   encoder,
   colorValue,
@@ -47,6 +48,18 @@ export function createRecipeFactory({
   var images = new Map();
   var pdfs = new Map();
   var state = { nextFont: 0, nextImage: 0, nextPdf: 0 };
+
+  function resolveFont(options = {}) {
+    var name = options.font || defaultFont?.name;
+    if (
+      defaultFont &&
+      String(name).toLowerCase() === defaultFont.name.toLowerCase() &&
+      !fonts.has(defaultFont.name.toLowerCase())
+    ) {
+      Recipe.registerFont(defaultFont.name, defaultFont.loadBytes());
+    }
+    return getFont(fonts, { ...options, font: name });
+  }
 
   function call(name, ...args) {
     if (!module[name](...args)) {
@@ -268,7 +281,7 @@ export function createRecipeFactory({
     _drawText(value, x, y, options = {}) {
       var point = this._calibrateCoordinate(x, y);
       if (this._pageContext) {
-        var editFont = this.writer.getFontForBytes(getFont(fonts, options));
+        var editFont = this.writer.getFontForBytes(resolveFont(options));
         var editSize = options.fontSize || options.size || 14;
         this._pageContext
           .BT()
@@ -280,7 +293,7 @@ export function createRecipeFactory({
         this._cursor = { x, y: y + editSize };
         return this;
       }
-      var fontPath = getFont(fonts, options);
+      var fontPath = resolveFont(options);
       var fontSize = options.fontSize || options.size || 14;
       var dimensions = this.textDimensions(value, { ...options, fontSize });
       var transformed =
@@ -354,7 +367,7 @@ export function createRecipeFactory({
         return this._drawText(value, x, y, options);
       },
       measure: function (value, options) {
-        var fontPath = getFont(fonts, options);
+        var fontPath = resolveFont(options);
         if (this._sourceMode) {
           return this.writer
             .getFontForBytes(fontPath)

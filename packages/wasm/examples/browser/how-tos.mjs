@@ -56,9 +56,8 @@ export var HOW_TO_EXAMPLES = [
     label: "Tables",
     title: "Create a styled data table",
     description:
-      "Upload a TTF or OTF font, then render headers, wrapped cells, borders, and structured records.",
+      "Render headers, wrapped cells, borders, and structured records with bundled Roboto, or upload your own font.",
     assets: ["font"],
-    requirement: "Requires a TTF or OTF font upload.",
   },
   {
     id: "passwords",
@@ -397,14 +396,9 @@ async function imageTransformExample(assets) {
 }
 
 async function tableExample(assets) {
-  assertAsset(
-    assets.font,
-    "Choose a TTF or OTF font before running the table example",
-  );
-  var Recipe = await createRecipe();
+  var Recipe = await createRecipe({ defaultFont: assets.font });
   var recipe = new Recipe({ compress: false });
   try {
-    Recipe.registerFont("how-to-font", assets.font);
     recipe
       .createPage(595, 842)
       .rectangle(0, 0, 595, 842, { fill: "#fff7ed", useGivenCoords: true })
@@ -415,7 +409,6 @@ async function tableExample(assets) {
         borderRadius: 12,
       })
       .text("Browser-generated project table", 62, 72, {
-        font: "how-to-font",
         fontSize: 24,
         color: "#7c2d12",
       })
@@ -434,7 +427,6 @@ async function tableExample(assets) {
           },
         ],
         {
-          font: "how-to-font",
           fontSize: 11,
           header: true,
           border: { width: 1, color: "#c2410c" },
@@ -453,13 +445,13 @@ async function tableExample(assets) {
       filename: "muhammara-table.pdf",
       summary: await summarize(bytes, {
         howTo: "Create tables",
+        font: assets.font ? "Uploaded font" : "Roboto (bundled)",
         rows: 5,
         columns: 3,
       }),
     };
   } finally {
     recipe.dispose();
-    Recipe.unregisterFont("how-to-font");
     Recipe.disposeAssets();
   }
 }
