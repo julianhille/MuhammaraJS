@@ -77,6 +77,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Declare documented native Recipe metadata and call forms in TypeScript,
   including font styles, overlay shortcuts, flowing text, and centered text and
   images [#628](https://github.com/julianhille/MuhammaraJS/issues/628)
+- Correct native Recipe TypeScript declarations for text style and image transformation options [#625](https://github.com/julianhille/MuhammaraJS/issues/625)
 - Build Linux prebuilds against the Debian archive now that Debian 11
   bullseye is end of life [#577](https://github.com/julianhille/MuhammaraJS/issues/577)
 - Force the packaged-source Electron rebuild check in CI to build from source.

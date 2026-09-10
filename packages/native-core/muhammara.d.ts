@@ -1041,6 +1041,10 @@ declare namespace muhammara {
       keepAspectRatio?: boolean;
       opacity?: number;
       align?: string;
+      rotation?: number;
+      rotationOrigin?: [number, number];
+      skewX?: number;
+      skewY?: number;
     }
 
     interface InfoOptions {
@@ -1120,8 +1124,12 @@ declare namespace muhammara {
       rotation?: number;
       rotationOrigin?: [number, number];
       font?: string;
+      /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. */
+      fontSize?: number;
       /** Font size in points for text() and textDimensions(); defaults to 14. */
       size?: number;
+      bold?: boolean;
+      italic?: boolean;
       align?: string;
       highlight?: boolean;
       underline?: boolean;
