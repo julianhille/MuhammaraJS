@@ -397,17 +397,22 @@ export async function runValidation() {
   equal(overflowCalls, 1, "table overflow callback");
   equal(continuationHeaders.length, 2, "repeated table headers");
   assert(
-    continuationHeaders[0].textMatrix[5] >
-      overflowText.find((entry) => entry.content === "first row").textMatrix[5],
+    overflowText.every((entry) => entry.fontSize === 14),
+    "Recipe text and tables default to 14pt",
+  );
+  var firstRow = overflowText.find((entry) => entry.content === "first row");
+  var secondRow = overflowText.find((entry) => entry.content === "second");
+  assert(firstRow, "first wrapped row is present");
+  assert(secondRow, "continued row wraps at the 14pt default");
+  assert(
+    continuationHeaders[0].textMatrix[5] > firstRow.textMatrix[5],
     "first header precedes wrapped row",
   );
   assert(
-    continuationHeaders[1].textMatrix[5] >
-      overflowText.find((entry) => entry.content === "second row")
-        .textMatrix[5],
+    continuationHeaders[1].textMatrix[5] > secondRow.textMatrix[5],
     "continued header precedes wrapped row",
   );
-  assertions += 7;
+  assertions += 10;
 
   var sourceRecipe = new Recipe(overflowBytes, { compress: false });
   sourceRecipe

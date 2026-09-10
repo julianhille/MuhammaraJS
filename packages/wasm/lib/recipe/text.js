@@ -101,14 +101,14 @@ export function createTextMethods({ drawText, measure, module }) {
     textDimensions(value, options = {}) {
       return dimensions(this, value, {
         ...options,
-        fontSize: options.fontSize || options.size || 12,
+        fontSize: options.fontSize || options.size || 14,
       });
     },
 
     _measureTextBoxHeight(value, options = {}) {
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
-      var fontSize = options.fontSize || options.size || 12;
+      var fontSize = options.fontSize || options.size || 14;
       var width = box.width || 0;
       var lineHeight =
         box.lineHeight ||
@@ -188,7 +188,7 @@ export function createTextMethods({ drawText, measure, module }) {
         y = column.y;
         box = merge(box, { width: column.width, height: column.height });
       }
-      var fontSize = options.fontSize || options.size || 12;
+      var fontSize = options.fontSize || options.size || 14;
       var width =
         box.width ||
         (options.flow ? this._pageWidth - x - this._margin.right : 0);

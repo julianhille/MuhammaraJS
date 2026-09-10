@@ -40,6 +40,10 @@ recipe.createPage(595, 842, { left: 36 }).margins({ top: 36 });
 var margins: Required<muhammara.Recipe.RecipeMargins> = recipe.margins();
 var title: string = recipe.getPageInfo().title;
 var textWidth: number = recipe.textDimensions("text").width;
+recipe.textDimensions("text", { size: 12 }).width;
+recipe
+  .text("Default size", 72, 72)
+  .text("Explicit size", 72, 100, { size: 12 });
 var coordinates: muhammara.Recipe | number[] = recipe.movedown(1, Boolean(1));
 recipe.structure("structure.json").endPDF();
 recipe

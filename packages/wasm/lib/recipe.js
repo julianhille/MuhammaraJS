@@ -268,7 +268,7 @@ export function createRecipeFactory({
       var point = this._calibrateCoordinate(x, y);
       if (this._pageContext) {
         var editFont = this.writer.getFontForBytes(getFont(fonts, options));
-        var editSize = options.fontSize || options.size || 12;
+        var editSize = options.fontSize || options.size || 14;
         this._pageContext
           .BT()
           .Tf(editFont, editSize)
@@ -280,7 +280,7 @@ export function createRecipeFactory({
         return this;
       }
       var fontPath = getFont(fonts, options);
-      var fontSize = options.fontSize || options.size || 12;
+      var fontSize = options.fontSize || options.size || 14;
       var dimensions = this.textDimensions(value, { ...options, fontSize });
       var transformed =
         options.rotation ||
@@ -359,7 +359,7 @@ export function createRecipeFactory({
             .getFontForBytes(fontPath)
             .calculateTextDimensions(
               String(value),
-              options.fontSize || options.size || 12,
+              options.fontSize || options.size || 14,
             );
         }
         var resultPointer = module._malloc(48);
@@ -371,7 +371,7 @@ export function createRecipeFactory({
                 this._recipe,
                 textPointer,
                 fontPointer,
-                options.fontSize || options.size || 12,
+                options.fontSize || options.size || 14,
                 resultPointer,
               );
               var offset = resultPointer >>> 3;

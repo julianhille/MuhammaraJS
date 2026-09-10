@@ -29,6 +29,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Show `extractPageContentItems()` in the low-level browser example
   [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
 
+### Fixed
+
+- Align Recipe text, measurement, and layout defaults on 14 points to match
+  native, correcting the 12-point default in the alpha and beta releases
+  [#605](https://github.com/julianhille/MuhammaraJS/issues/605)
+
 ### Changed
 
 - Reject invalid page indices and object IDs in the reader's `getPageObjectID()`

@@ -267,6 +267,9 @@ async function usesLowLevelSurface() {
       return this;
     })
     .createPage("letter", 90, { left: 36 })
+    .text("Default size", 72, 72)
+    .text("Explicit size", 72, 100, { size: 12 })
+    .text("Explicit fontSize", 72, 128, { fontSize: 12 })
     .margins(36, 36, 72, 72)
     .save()
     .transform(1, 0, 0, 1, 10, 10)
@@ -358,6 +361,10 @@ async function usesLowLevelSurface() {
     .insertPage(0, "pdf", 1);
   recipe.knownColors.rgb.blue;
   recipe.margins().left;
+  var textWidth: number = recipe.textDimensions("text").width;
+  recipe.textDimensions("text", { size: 12 }).width;
+  recipe.textDimensions("text", { fontSize: 12 }).width;
+  void textWidth;
   recipe.pageInfo(1)?.mediaBox[3];
   recipe.endPage().endPDF();
   var byteRecipe = new Recipe(source, { compress: false });

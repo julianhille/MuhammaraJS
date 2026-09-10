@@ -4,6 +4,9 @@ Register fonts under a family name, then select the appropriate variant through
 text options. Recipe coordinates use a top-left origin and accept `center` for
 either coordinate.
 
+Recipe `text()` and `textDimensions()` default to 14 points when `size` is
+omitted. Pass `{ size: 12 }` to render and measure at 12 points instead.
+
 ```javascript
 var pdfDoc = new Recipe("new", "output.pdf", { fontSrcPath: ["./fonts"] });
 
