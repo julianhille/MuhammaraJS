@@ -14,10 +14,13 @@ The second argument for a named page is rotation. A 90- or 270-degree rotation
 swaps its width and height. `rotate(degrees)` sets the PDF `/Rotate` value on
 the current page, including a page created with an explicit width and height.
 When both are used on a named page, `rotate()` is the last rotation setting and
-wins; the named size's swapped dimensions remain unchanged. Use
-`pageInfo(pageNumber)` before adding size-dependent content to an existing
-page. Rectangles use a top-left anchor; circles and ellipses use center
-coordinates. `rotationOrigin` selects the point used for transformations.
+wins; the named size's swapped dimensions remain unchanged. `pageInfo(pageNumber)`
+returns page geometry for a specific one-based page. Inside a `createPage()` or
+`editPage()` block, `getCurrentPageInfo()` returns that same geometry for the
+active page, including after `endPage()`. Despite its similar name,
+`getPageInfo()` returns document Info metadata, not page geometry. Rectangles
+use a top-left anchor; circles and ellipses use center coordinates.
+`rotationOrigin` selects the point used for transformations.
 
 See [`tests/recipe/create.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/create.js), [`tests/recipe/positioning.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/positioning.js), and
 [`tests/recipe/rotation.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/rotation.js).

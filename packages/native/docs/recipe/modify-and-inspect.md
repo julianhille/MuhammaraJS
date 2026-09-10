@@ -15,8 +15,10 @@ pdfDoc
   .endPDF();
 ```
 
-Use `pageInfo(pageNumber)` to inspect a page. To write a textual PDF structure,
-call `structure` on the Recipe instance:
+Use `pageInfo(pageNumber)` to inspect page geometry, or
+`getCurrentPageInfo()` while editing the active page. `getPageInfo()` has a
+similar name but returns document Info metadata, not page geometry. To write a
+textual PDF structure, call `structure` on the Recipe instance:
 
 ```javascript
 pdfDoc.structure("pdf-structure.txt").endPDF();

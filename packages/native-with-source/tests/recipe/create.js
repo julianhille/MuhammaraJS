@@ -4,6 +4,29 @@ const muhammara = require("@muhammara/native-with-source");
 const assert = require("chai").assert;
 
 describe("Create", () => {
+  it("reports active page geometry", (done) => {
+    const output = path.join(__dirname, "../output/current-page-info.pdf");
+    const recipe = new Recipe("new", output);
+
+    assert.equal(recipe.getCurrentPageInfo(), null);
+    recipe.createPage("letter", 90);
+    assert.deepEqual(recipe.getCurrentPageInfo(), recipe.pageInfo(1));
+    recipe.endPage();
+    assert.deepEqual(recipe.getCurrentPageInfo(), recipe.pageInfo(1));
+    recipe.endPDF(() => {
+      const modifiedOutput = path.join(
+        __dirname,
+        "../output/current-page-info-modified.pdf",
+      );
+      const sourceRecipe = new Recipe(output, modifiedOutput);
+      assert.deepEqual(
+        sourceRecipe.getCurrentPageInfo(),
+        sourceRecipe.pageInfo(1),
+      );
+      sourceRecipe.endPDF(done);
+    });
+  });
+
   it("blank pdf", (done) => {
     const output = path.join(__dirname, "../output/blank.pdf");
     const recipe = new Recipe("new", output, {

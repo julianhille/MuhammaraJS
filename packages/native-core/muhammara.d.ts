@@ -910,6 +910,13 @@ declare namespace muhammara {
     scope?: "global";
   }
 
+  export interface RecipePageInfo {
+    width: number;
+    height: number;
+    rotate: number;
+    pageNumber: number;
+  }
+
   namespace Recipe {
     type CommentOptionsFlag =
       | "invisible"
@@ -1298,12 +1305,8 @@ declare namespace muhammara {
 
     replaceText(text: string, replacement: string, pageNumber: number): Recipe;
 
-    pageInfo(pageNumber: number): {
-      width: number;
-      height: number;
-      rotate: number;
-      pageNumber: number;
-    };
+    pageInfo(pageNumber: number): RecipePageInfo;
+    getCurrentPageInfo(): RecipePageInfo | null;
 
     margins(): Required<Recipe.RecipeMargins>;
     margins(margins: Recipe.RecipeMargins): Recipe;

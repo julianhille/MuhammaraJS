@@ -70,6 +70,7 @@ describe("Recipe prototype", function () {
       "fill",
       "fillAndStroke",
       "fillOpacity",
+      "getCurrentPageInfo",
       "getPageInfo",
       "htmlToTextObjects",
       "image",

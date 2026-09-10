@@ -42,6 +42,13 @@ var pages: number = recipe.metadata.pages;
 recipe.createPage(595, 842).rotate(90).endPage();
 void textWidth;
 void pages;
+var currentPageInfo = recipe.getCurrentPageInfo();
+var pageInfo: muhammara.RecipePageInfo = recipe.pageInfo(1);
+currentPageInfo?.width;
+currentPageInfo?.height;
+currentPageInfo?.rotate;
+currentPageInfo?.pageNumber;
+pageInfo.width;
 
 var info: muhammara.Recipe.InfoOptions = {
   author: "A",

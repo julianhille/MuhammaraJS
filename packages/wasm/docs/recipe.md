@@ -31,6 +31,10 @@ The rotation argument to `createPage("letter", 90)` swaps named-page dimensions;
 `rotate(degrees)` sets `/Rotate` on the current page, including explicitly sized
 pages. When both are used, `rotate()` is the last rotation setting and wins,
 while the named size's swapped dimensions remain unchanged.
+`pageInfo(pageNumber)` returns page geometry for a specific one-based page, and
+`getCurrentPageInfo()` returns the same geometry for the active page.
+`getPageInfo()` has a similar name but returns document Info metadata, not page
+geometry.
 
 Recipe `text()` and `textDimensions()` default to 14 points when both `size`
 and `fontSize` are omitted, matching native Recipe. Pass `{ size: 12 }` (or

@@ -78,4 +78,21 @@ describe("Recipe create", function () {
     assert.equal(explicit.pageInfo(1).height, 200);
     assert.equal(explicit.read(explicit.endPage().endPDF())[1].rotate, 90);
   });
+
+  it("reports active page geometry", function () {
+    var recipe = new Recipe();
+
+    assert.equal(recipe.getCurrentPageInfo(), null);
+    recipe.createPage("letter", 90);
+    assert.deepEqual(recipe.getCurrentPageInfo(), recipe.pageInfo(1));
+    recipe.endPage();
+    assert.deepEqual(recipe.getCurrentPageInfo(), recipe.pageInfo(1));
+    var bytes = recipe.endPDF();
+    var sourceRecipe = new Recipe(bytes);
+    assert.deepEqual(
+      sourceRecipe.getCurrentPageInfo(),
+      sourceRecipe.pageInfo(1),
+    );
+    sourceRecipe.endPDF();
+  });
 });
