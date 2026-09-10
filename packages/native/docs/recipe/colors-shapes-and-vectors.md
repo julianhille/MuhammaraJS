@@ -24,6 +24,9 @@ pdfDoc
   .endPDF();
 ```
 
+`lineWidth(width)` remains available as a shorthand for
+`lineStyle({ width })`.
+
 Use `moveTo` and `lineTo` for connected paths, `line` and `polygon` for point
 arrays, and `circle`, `rectangle`, `ellipse`, `arc`, `n_gon`, `star`,
 `triangle`, and `arrow` for shapes. Shape options support fill, stroke, opacity,
@@ -35,3 +38,27 @@ Use `opacity(value)` to set both fill and stroke alpha for subsequent drawing;
 `value` must be a finite number from `0` (transparent) through `1` (opaque).
 It remains active for later vector drawing; call `opacity(1)` to restore opaque
 output.
+
+Use `lineStyle()` to set the PDF stroke style for subsequent drawing on the
+current page context. It accepts `width` (or `lineWidth`), numeric PDF `cap`
+and `join` values, `miterLimit`, `dash`, and `dashPhase`. Omitted properties
+leave the existing style unchanged:
+
+```javascript
+pdfDoc
+  .createPage("letter")
+  .lineStyle({
+    width: 2,
+    cap: 1,
+    join: 2,
+    miterLimit: 5,
+    dash: [6, 3],
+    dashPhase: 1,
+  })
+  .line([
+    [72, 72],
+    [360, 72],
+  ])
+  .endPage()
+  .endPDF();
+```

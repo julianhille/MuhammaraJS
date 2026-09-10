@@ -540,17 +540,76 @@ exports.arc = function arc(
 };
 
 /**
+ * Set the line style for the current page content context.
+ * @name lineStyle
+ * @function
+ * @memberof Recipe#
+ * @param {Object} [options] - The line style options.
+ * @param {number} [options.width] - The line width.
+ * @param {number} [options.lineWidth] - Alias for width.
+ * @param {number} [options.cap] - The PDF line cap style.
+ * @param {number} [options.join] - The PDF line join style.
+ * @param {number} [options.miterLimit] - The miter limit.
+ * @param {number[]} [options.dash] - The dash pattern.
+ * @param {number} [options.dashPhase] - The dash pattern phase.
+ * @returns {Recipe} The recipe instance.
+ */
+exports.lineStyle = function lineStyle(options = {}) {
+  this.current = this.current || {};
+  this.current.lineStyle = this.current.lineStyle || {};
+
+  if (options.width !== undefined || options.lineWidth !== undefined) {
+    const width = options.width ?? options.lineWidth;
+    this.current.lineStyle.width = width;
+    this.pageContext.w(width);
+  }
+  if (options.cap !== undefined) {
+    this.current.lineStyle.cap = options.cap;
+    this.pageContext.J(options.cap);
+  }
+  if (options.join !== undefined) {
+    this.current.lineStyle.join = options.join;
+    this.pageContext.j(options.join);
+  }
+  if (options.miterLimit !== undefined) {
+    this.current.lineStyle.miterLimit = options.miterLimit;
+    this.pageContext.M(options.miterLimit);
+  }
+  if (options.dash !== undefined || options.dashPhase !== undefined) {
+    const dash = options.dash ?? this.current.lineStyle.dash ?? [];
+    const dashPhase =
+      options.dashPhase ?? this.current.lineStyle.dashPhase ?? 0;
+    this.current.lineStyle.dash = dash;
+    this.current.lineStyle.dashPhase = dashPhase;
+  }
+  return this._setLineStyle(options);
+};
+
+exports._setLineStyle = function _setLineStyle(options = {}) {
+  if (options.width !== undefined || options.lineWidth !== undefined)
+    this.pageContext.w(options.width ?? options.lineWidth);
+  if (options.cap !== undefined) this.pageContext.J(options.cap);
+  if (options.join !== undefined) this.pageContext.j(options.join);
+  if (options.miterLimit !== undefined) this.pageContext.M(options.miterLimit);
+  if (options.dash !== undefined || options.dashPhase !== undefined)
+    this.pageContext.d(
+      options.dash ?? this.current.lineStyle.dash ?? [],
+      options.dashPhase ?? this.current.lineStyle.dashPhase ?? 0,
+    );
+  return this;
+};
+
+/**
  * Set the line width.
  *
- * This compatibility method currently has no effect.
  * @name lineWidth
  * @function
  * @memberof Recipe#
- * @param {number} width - The requested line width.
+ * @param {number} width - The line width.
  * @returns {Recipe} The recipe instance.
  */
-exports.lineWidth = function lineWidth() {
-  return this;
+exports.lineWidth = function lineWidth(width) {
+  return this.lineStyle({ width });
 };
 
 /**

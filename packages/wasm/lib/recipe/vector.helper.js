@@ -33,26 +33,36 @@ export function createVectorHelpers(runtime) {
   }
   return {
     _pathOptions: function (options = {}) {
+      var lineStyle = this._lineStyle || {};
       var opacity =
         options.opacity === undefined
           ? (this._opacity ?? 1)
           : Math.max(0, Math.min(1, Number(options.opacity)));
       if (!Number.isFinite(opacity)) opacity = 1;
-      var dash =
-        Array.isArray(options.dash) && options.dash.every(Number.isFinite)
-          ? options.dash
-          : [];
+      var dash = Array.isArray(options.dash)
+        ? options.dash
+        : lineStyle.dash || [];
       if (dash[0] === 0 && dash[1] === 0) dash = [];
       return {
         width:
-          Number(options.lineWidth || options.width) > 0
-            ? Number(options.lineWidth || options.width)
+          Number(options.lineWidth ?? options.width ?? lineStyle.width) > 0
+            ? Number(options.lineWidth ?? options.width ?? lineStyle.width)
             : 2,
-        cap: ["butt", "round", "square"].indexOf(options.lineCap),
-        join: ["miter", "round", "bevel"].indexOf(options.lineJoin),
-        miter: Number.isFinite(options.miterLimit) ? options.miterLimit : 1.414,
+        cap:
+          options.lineCap === undefined
+            ? (lineStyle.cap ?? -1)
+            : ["butt", "round", "square"].indexOf(options.lineCap),
+        join:
+          options.lineJoin === undefined
+            ? (lineStyle.join ?? -1)
+            : ["miter", "round", "bevel"].indexOf(options.lineJoin),
+        miter: Number.isFinite(options.miterLimit)
+          ? options.miterLimit
+          : (lineStyle.miterLimit ?? 1.414),
         dash,
-        phase: Number.isFinite(options.dashPhase) ? options.dashPhase : 0,
+        phase: Number.isFinite(options.dashPhase)
+          ? options.dashPhase
+          : (lineStyle.dashPhase ?? 0),
         opacity,
       };
     },
@@ -74,7 +84,7 @@ export function createVectorHelpers(runtime) {
           0,
         );
       }
-      this.lineStyle({
+      this._setLineStyle({
         width: style.width,
         cap: style.cap < 0 ? 1 : style.cap,
         join: style.join < 0 ? 1 : style.join,

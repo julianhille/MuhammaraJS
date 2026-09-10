@@ -69,3 +69,12 @@ void pageBox;
 recipe.replaceText("Before", "After", 1);
 // @ts-expect-error replaceText requires a one-based page number.
 recipe.replaceText("Before", "After");
+recipe.lineStyle({
+  width: 1,
+  lineWidth: 2,
+  cap: 1,
+  join: 1,
+  miterLimit: 2,
+  dash: [1],
+  dashPhase: 1,
+});

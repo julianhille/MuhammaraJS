@@ -139,6 +139,22 @@ map to the source characters, is not replaced. Pages with more than one content
 stream are rejected with an error. When nothing matches, the page is left
 unchanged.
 
+Use `lineStyle({ width, lineWidth, cap, join, miterLimit, dash, dashPhase })`
+to set PDF stroke style operators for the current page context. `lineWidth` is
+an alias for `width`; omitted properties leave the existing style unchanged:
+
+```javascript
+pdfDoc
+  .createPage("letter")
+  .lineStyle({ width: 2, dash: [6, 3] })
+  .line([
+    [72, 72],
+    [360, 72],
+  ])
+  .endPage()
+  .endPDF();
+```
+
 ## PDF Version
 
 `version` sets the PDF level written into the byte output. Recipe accepts the
