@@ -1,6 +1,7 @@
 # Browser Example
 
 ## Run Locally
+
 This dependency-free application exercises the public byte-first package from a
 browser page or module Worker. It creates a low-level PDF, parses it, modifies
 it, copies/appends/merges/embeds pages, builds and edits a Recipe composition,
@@ -8,8 +9,9 @@ parses both final outputs, and exposes preview and download controls.
 
 The tabs keep that complete laboratory intact and add focused, runnable how-to
 examples for annotations, URL links, page boxes, rotated-page coordinates,
-image transformations, and tables. Each focused example generates and parses
-its own previewable PDF; only image transformations require an upload. The
+grayscale form XObjects, image transformations, and tables. Each focused example
+generates and parses its own previewable PDF; only image transformations require
+an upload. The
 Tables tab and complete Recipe workflow use bundled Roboto Regular when no
 custom font is uploaded. With an upload, they skip importing Roboto: Tables passes
 the uploaded bytes as `createRecipe({ defaultFont: assets.font })`, while the

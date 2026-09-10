@@ -18,6 +18,10 @@ xref entry types.
 `getTypeLabel(pdfObject.getType())` converts an `ePDFObject*` value into its
 readable label while inspecting raw PDF objects.
 
+Use the option descriptions on the corresponding guide pages rather than relying
+on declaration fields alone. Advanced TIFF options and Recipe APIs are described
+in their respective reference pages.
+
 ```javascript
 var writer = muhammara.createWriter("output.pdf", {
   version: muhammara.ePDFVersion17,

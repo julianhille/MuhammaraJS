@@ -151,9 +151,8 @@ longer uses. Use the overrides above instead.
 
 ## Verification Sources
 
-The overrides on this page were verified against
-`@muhammara/native@7.0.0-alpha.1` installed with npm 11.6.2 on Node.js 25,
-Linux x64. `target_platform=win32` produced a Windows PE32+ binary from
+The overrides on this page were verified on Linux x64. For example,
+`target_platform=win32` produced a Windows PE32+ binary from
 `node-v141-win32-x64-unknown.tar.gz`; `target=20.9.0` with `target_platform=linux`
 produced `node-v115-linux-x64-glibc.tar.gz`; and `target=22.19.0` with
 `target_arch=arm64` resolved through the crosswalk fallback to `node-v127` and

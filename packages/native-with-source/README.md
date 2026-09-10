@@ -13,6 +13,11 @@ matching prebuilt binary when available and otherwise compiles its bundled
 `src/` tree with the local Node.js build toolchain. It exposes the same API as
 `@muhammara/native`, which is the smaller prebuilt-only package.
 
+Read the [native documentation](https://muhammarajs.readthedocs.io/) for
+installation, API, Recipe, and how-to guidance. With pnpm 10 or later, add the
+selected native package to `pnpm.onlyBuiltDependencies` or approve it with
+`pnpm approve-builds` so its install script can acquire or build the addon.
+
 Source builds compile the bundled OpenSSL source through the addon build. They require the
 platform C/C++ toolchain, Perl, and `make` on Unix-like systems or Perl, NMake,
 and Visual Studio Build Tools on Windows; no separate OpenSSL installation is
