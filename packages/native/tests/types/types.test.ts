@@ -29,6 +29,7 @@ context.J(api.LineCapStyle.LINECAP_BUTT).j(2);
 objects.endArray(api.ETokenSeparator.eTokenSeparatorEndLine);
 recipe.read();
 recipe
+  .link("https://example.com", 100, 200, 160, 24)
   .comment("Please review.", 300, 100, {
     title: "Review",
     replies: [{ text: "Confirmed.", title: "Reviewer" }],

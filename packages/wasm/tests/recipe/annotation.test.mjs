@@ -15,6 +15,7 @@ describe("Recipe annotation", function () {
     var output = new TextDecoder().decode(pdf);
     assert.match(output, /A browser comment/);
     assert.match(output, /\/URI \(https:\/\/example.com\)/);
+    assert.match(output, /\/Rect \[\s*50 518 210 542\s*\]/);
     assert.match(output, /\/Subtype \/Square/);
   });
 });

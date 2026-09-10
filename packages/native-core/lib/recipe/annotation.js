@@ -26,6 +26,35 @@ exports.comment = function comment(text = "", x, y, options = {}) {
 };
 
 /**
+ * Add a clickable URL link to the current page.
+ * @name link
+ * @function
+ * @memberof Recipe#
+ * @param {string} url - The URL to open.
+ * @param {number} x - The top-left x coordinate.
+ * @param {number} y - The top-left y coordinate.
+ * @param {number} width - The link width.
+ * @param {number} height - The link height.
+ * @returns {Recipe} The recipe instance.
+ */
+exports.link = function link(url, x, y, width, height) {
+  const { nx, ny } = this._calibrateCoordinate(x, y, 0, -height);
+  this.pauseContext();
+  try {
+    this.writer.attachURLLinktoCurrentPage(
+      url,
+      nx,
+      ny,
+      nx + width,
+      ny + height,
+    );
+  } finally {
+    this.resumeContext();
+  }
+  return this;
+};
+
+/**
  * Create an annotation
  * @name annot
  * @function

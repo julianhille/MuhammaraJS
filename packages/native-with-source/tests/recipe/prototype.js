@@ -82,6 +82,7 @@ describe("Recipe prototype", function () {
       "lineStyle",
       "lineTo",
       "lineWidth",
+      "link",
       "margins",
       "mediumSizes",
       "moveTo",

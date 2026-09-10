@@ -1,5 +1,17 @@
 # Add Clickable URL Links
 
+Recipe adds a URL action to a rectangular region using top-left `x`, `y`,
+`width`, and `height` values:
+
+```javascript
+var recipe = new Recipe("new", "links.pdf")
+  .createPage(595, 842)
+  .rectangle(65, 100, 465, 120, { fill: "#dbeafe" })
+  .link("https://example.com", 65, 100, 465, 120)
+  .endPage()
+  .endPDF();
+```
+
 The low-level API attaches a URL to a rectangle on the current page. Pause the
 active content context before adding links, then write the page.
 

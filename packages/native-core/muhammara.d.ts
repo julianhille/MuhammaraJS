@@ -835,10 +835,10 @@ declare namespace muhammara {
     ): UsedFont;
     attachURLLinktoCurrentPage(
       url: string,
-      x: PosX,
-      y: PosY,
-      width: Width,
-      height: Height,
+      left: PosX,
+      bottom: PosY,
+      right: PosX,
+      top: PosY,
     ): this;
     shutdown(outputFilePath: FilePath): this;
     createFormXObjectFromTIFF(
@@ -1244,6 +1244,14 @@ declare namespace muhammara {
       x: number,
       y: number,
       options?: Recipe.CommentOptions,
+    ): Recipe;
+
+    link(
+      url: string,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
     ): Recipe;
 
     annot(

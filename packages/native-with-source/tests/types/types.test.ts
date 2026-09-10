@@ -7,6 +7,7 @@ writer.startPageContentContext(page).c(0, 0, 1, 1, 2, 2).S();
 
 declare const recipe: muhammara.Recipe;
 recipe
+  .link("https://example.com", 100, 200, 160, 24)
   .comment("Please review.", 300, 100, {
     title: "Review",
     replies: [{ text: "Confirmed.", title: "Reviewer" }],
