@@ -397,6 +397,7 @@ async function usesLowLevelSurface() {
   recipe.pageInfo(1)?.mediaBox[3];
   recipe.endPage().endPDF();
   var byteRecipe = new Recipe(source, { compress: false });
+  byteRecipe.replaceText("Before", "After");
   byteRecipe.getPageInfo();
   byteRecipe.getCurrentPageInfo()?.rotate;
   byteRecipe.editPage(1).pauseContext().resumeContext().endPage().endPDF();

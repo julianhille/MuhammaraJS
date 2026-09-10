@@ -24,6 +24,7 @@ import { createInfoMethods } from "./recipe/info.js";
 import { createInspectPdf } from "./recipe/inspection.js";
 import { createRegistrationMethods } from "./recipe/registration.js";
 import { createSecurityMethods, permission } from "./recipe/security.js";
+import { createReplaceTextMethods } from "./recipe/replace-text.js";
 import { standardInfoKeys } from "./recipe-info.js";
 
 /** Creates the high-level Recipe PDF composition factory. */
@@ -424,6 +425,7 @@ export function createRecipeFactory({
     createAnnotationMethods({ module, withString, withDoubles, colorValue }),
     createInfoMethods({ call, withString }),
     createSecurityMethods(),
+    createReplaceTextMethods(encoder),
   );
 
   // Composition modules receive closures rather than reaching into Recipe state.

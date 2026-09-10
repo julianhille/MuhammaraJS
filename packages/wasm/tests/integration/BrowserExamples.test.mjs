@@ -42,6 +42,7 @@ describe("Browser how-to examples", function () {
         "image-transform",
         "table",
         "passwords",
+        "replace-text",
       ],
     );
   });
