@@ -1284,6 +1284,7 @@ declare namespace muhammara {
       rotation?: number,
       margins?: Recipe.RecipeMargins,
     ): Recipe;
+    rotate(rotation: number): Recipe;
     endPage(): Recipe;
     setPageBox(
       box: PDFPageBoxType,

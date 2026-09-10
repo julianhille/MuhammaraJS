@@ -77,6 +77,20 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
 };
 
 /**
+ * Set the rotation of the current page.
+ * @name rotate
+ * @function
+ * @memberof Recipe#
+ * @param {number} rotation - The page rotation in degrees.
+ * @returns {Recipe} The recipe instance.
+ */
+exports.rotate = function rotate(rotation) {
+  this.page.rotate = rotation;
+  this.metadata[this.pageNumber].rotate = rotation;
+  return this;
+};
+
+/**
  * Set a page box on the active new page.
  * @name setPageBox
  * @function

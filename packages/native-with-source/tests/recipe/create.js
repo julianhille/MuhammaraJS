@@ -1,5 +1,7 @@
 const path = require("path");
 const Recipe = require("@muhammara/native-with-source").Recipe;
+const muhammara = require("@muhammara/native-with-source");
+const assert = require("chai").assert;
 
 describe("Create", () => {
   it("blank pdf", (done) => {
@@ -107,5 +109,48 @@ describe("Create", () => {
       })
       .endPage()
       .endPDF(done);
+  });
+
+  it("tracks current-page rotation for named and explicit sizes", () => {
+    const namedOutput = path.join(__dirname, "../output/rotate-named.pdf");
+    const named = new Recipe("new", namedOutput)
+      .createPage("letter", 90)
+      .rotate(180)
+      .endPage();
+    assert.deepEqual(named.pageInfo(1), {
+      width: 792,
+      height: 612,
+      rotate: 180,
+      pageNumber: 1,
+    });
+    named.endPDF();
+
+    const explicitOutput = path.join(
+      __dirname,
+      "../output/rotate-explicit.pdf",
+    );
+    const explicit = new Recipe("new", explicitOutput)
+      .createPage(100, 200)
+      .rotate(90)
+      .endPage();
+    assert.deepEqual(explicit.pageInfo(1), {
+      width: 100,
+      height: 200,
+      rotate: 90,
+      pageNumber: 1,
+    });
+    explicit.endPDF();
+
+    [
+      [namedOutput, 180],
+      [explicitOutput, 90],
+    ].forEach(([output, rotation]) => {
+      const reader = muhammara.createReader(output);
+      try {
+        assert.equal(reader.parsePage(0).getRotate(), rotation);
+      } finally {
+        reader.end();
+      }
+    });
   });
 });

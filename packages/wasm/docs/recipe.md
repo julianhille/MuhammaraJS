@@ -27,6 +27,10 @@ the Recipe output state. `endPDF()` is idempotent and returns the same cached
 Recipe provides pages, text, shapes, images, tables, composition, annotations,
 metadata, and byte-safe splitting. `setPageBox()` uses PDF bottom-left
 coordinates even though the high-level drawing API uses top-left coordinates.
+The rotation argument to `createPage("letter", 90)` swaps named-page dimensions;
+`rotate(degrees)` sets `/Rotate` on the current page, including explicitly sized
+pages. When both are used, `rotate()` is the last rotation setting and wins,
+while the named size's swapped dimensions remain unchanged.
 
 Recipe `text()` and `textDimensions()` default to 14 points when both `size`
 and `fontSize` are omitted, matching native Recipe. Pass `{ size: 12 }` (or
