@@ -5,6 +5,12 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
 
 ## Version 7.x
 
+- The undocumented native `Recipe` prototype members `ANNOTATION_PREFIX`,
+  `appendPDFPageFromPDFWithAnnotations()`, and
+  `appendPDFPagesFromPDFWithAnnotations()` were removed. Code that called them
+  now fails because they were internal helpers, not Recipe APIs; use
+  `appendPage()`, `insertPage()`, or `split()` for supported page-copying
+  operations.
 - `PDFReader` methods that take a page index or object ID — `parseNewObject()`,
   `getPageObjectID()`, `parsePageDictionary()`, `parsePage()`,
   `extractPageText()`, `extractPageContentItems()`, and `getXrefEntry()` —

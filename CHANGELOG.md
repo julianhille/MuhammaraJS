@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Remove the accidentally exposed native `Recipe` prototype members
+  `ANNOTATION_PREFIX`, `appendPDFPageFromPDFWithAnnotations()`, and
+  `appendPDFPagesFromPDFWithAnnotations()`. Code that called these undocumented
+  internal helpers now fails; use `appendPage()`, `insertPage()`, or `split()`
+  for supported page-copying operations [#623](https://github.com/julianhille/MuhammaraJS/issues/623)
 - The native `PDFReader` methods that take a page index or object ID —
   `parseNewObject()`, `getPageObjectID()`, `parsePageDictionary()`,
   `parsePage()`, `extractPageText()`, `extractPageContentItems()`, and
