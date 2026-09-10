@@ -32,6 +32,8 @@ arrays, and `circle`, `rectangle`, `ellipse`, `arc`, `pie`, `n_gon`, `star`,
 `triangle`, and `arrow` for shapes. `pie` closes an arc back to its center, so
 it can be filled as a wedge. Shape options support fill, stroke, opacity,
 rotation, rotation origin, skew, dash, and line properties. See
+[Create A Pie Chart](../how-to/create-pie-charts.md) for a filled-wedge chart
+example. See
 [`tests/recipe/coloring.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/coloring.js), [`tests/recipe/vector.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/vector.js), [`tests/recipe/arcs.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/arcs.js),
 and [`tests/recipe/shapes.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/shapes.js).
 
