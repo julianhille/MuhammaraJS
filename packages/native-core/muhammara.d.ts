@@ -1390,6 +1390,14 @@ declare namespace muhammara {
       endAngle?: number,
       options?: Recipe.CircleOptions,
     ): Recipe;
+    pie(
+      x: number,
+      y: number,
+      radius: number,
+      startAngle?: number,
+      endAngle?: number,
+      options?: Recipe.CircleOptions,
+    ): Recipe;
     lineStyle(options?: Recipe.LineStyleOptions): Recipe;
     lineWidth(width: number): Recipe;
     /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */

@@ -19,7 +19,8 @@ recipe.fillOpacity(0.5);
 
 recipe
   .text("Default size", 72, 72)
-  .text("Explicit size", 72, 100, { size: 12 });
+  .text("Explicit size", 72, 100, { size: 12 })
+  .pie(100, 100, 50, 20, 220, { fill: "#000000" });
 recipe
   .registerFont("body", "./fonts/body-bold.ttf", "bold")
   .editPage(1)

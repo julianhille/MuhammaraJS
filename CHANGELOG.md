@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `Recipe.rotate()` to set `/Rotate` on the current native Recipe page,
   including pages created with explicit dimensions, matching Wasm Recipe
   [#620](https://github.com/julianhille/MuhammaraJS/issues/620)
+- Add native Recipe `pie()` for closed, fillable arc wedges, matching Wasm
+  [#615](https://github.com/julianhille/MuhammaraJS/issues/615)
 - Add `Recipe.getCurrentPageInfo()` for the geometry of the active native
   Recipe page, matching the Wasm API
   [#621](https://github.com/julianhille/MuhammaraJS/issues/621)
