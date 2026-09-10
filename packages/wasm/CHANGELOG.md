@@ -16,6 +16,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#613](https://github.com/julianhille/MuhammaraJS/issues/613)
 - Add Recipe `replaceText()` for replacing literal text in a page content stream
   [#622](https://github.com/julianhille/MuhammaraJS/issues/622)
+- Document that Recipe `getPageInfo()` returns document Info metadata, while
+  `pageInfo()` and `getCurrentPageInfo()` return page geometry
+  [#621](https://github.com/julianhille/MuhammaraJS/issues/621)
 - Add byte-first `recrypt()` and Recipe `encrypt()` with native-compatible
   password options, plus the password-change browser example
   [#595](https://github.com/julianhille/MuhammaraJS/issues/595)

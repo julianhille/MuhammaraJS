@@ -1,5 +1,5 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
-import type { PDFPageContentItemType } from "../../index.js";
+import type { PDFPageContentItemType, RecipePageInfo } from "../../index.js";
 import { PDFPage } from "../../index.js";
 
 // @ts-expect-error PDFPage is available only from a loaded runtime instance.
@@ -395,6 +395,9 @@ async function usesLowLevelSurface() {
   recipe.textDimensions("text", { fontSize: 12 }).width;
   void textWidth;
   recipe.pageInfo(1)?.mediaBox[3];
+  var pageInfo: RecipePageInfo | null = recipe.pageInfo(1);
+  pageInfo?.width;
+  recipe.getCurrentPageInfo()?.mediaBox[3];
   recipe.endPage().endPDF();
   var byteRecipe = new Recipe(source, { compress: false });
   byteRecipe.replaceText("Before", "After", 1);

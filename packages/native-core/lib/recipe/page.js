@@ -266,7 +266,7 @@ exports._resumePageRotation = function _resumePageRotation(
  * @function
  * @memberof Recipe#
  * @param {number} pageNumber - The page number.
- * @returns {{width: number, height: number, rotate: number, pageNumber: number}} The page information.
+ * @returns {RecipePageInfo} The page information.
  */
 exports.pageInfo = function pageInfo(pageNumber) {
   const pageInfo = this.metadata[pageNumber];
@@ -276,6 +276,19 @@ exports.pageInfo = function pageInfo(pageNumber) {
     rotate: pageInfo.rotate,
     pageNumber,
   };
+};
+
+/**
+ * Get information about the current page.
+ * @name getCurrentPageInfo
+ * @function
+ * @memberof Recipe#
+ * @returns {RecipePageInfo|null} The current page information, or null when no page has been created or edited.
+ */
+exports.getCurrentPageInfo = function getCurrentPageInfo() {
+  const pageNumber =
+    this.pageNumber || this.metadata?.pageCount || this.metadata?.pages;
+  return pageNumber ? this.pageInfo(pageNumber) : null;
 };
 
 /**
