@@ -45,6 +45,9 @@ var pdfBytes = muhammara.createBlankPdf(595, 842);
 `pdfBytes` is a standalone `Uint8Array` and can be passed to `Blob`, downloaded,
 or uploaded without depending on Emscripten memory after the call returns.
 
+See the [executable browser examples](docs/browser-examples.md) for interactive
+PDF creation and modification in a page or module Worker.
+
 All byte-taking APIs synchronously accept `Uint8Array` and `ArrayBuffer`. When
 hosted by Node, `Buffer` is incidentally accepted as a `Uint8Array` subclass;
 it is not a browser API or separate Wasm input contract. `Blob` and `File`
