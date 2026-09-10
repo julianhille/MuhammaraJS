@@ -253,6 +253,10 @@ async function usesLowLevelSurface() {
   Recipe.splitPdf("pdf", "part")[0].bytes;
   Recipe.permission("print, copy");
   var recipe = new Recipe({ version: 1.7, compress: false, title: "Byte PDF" });
+  recipe
+    .createPage()
+    .setPageBox(muhammara.ePDFPageBoxCropBox, 18, 18, 594, 774)
+    .endPage();
   var defaultFontBytes: Uint8Array = new Recipe()
     .createPage("letter")
     .text("Hello", 72, 72)

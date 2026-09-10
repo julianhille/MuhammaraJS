@@ -50,6 +50,15 @@ describe("Recipe foundation", function () {
     assert.deepEqual(reader.getPageBox(0, "trim"), [13, 23, 207, 317]);
     assert.deepEqual(reader.getPageBox(0, "art"), [14, 24, 206, 316]);
     reader.end();
+
+    var numericRecipe = new Recipe()
+      .createPage(200, 300)
+      .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 210, 320);
+    var numericReader = muhammara.createReader(
+      numericRecipe.endPage().endPDF(),
+    );
+    assert.deepEqual(numericReader.getPageBox(0, "media"), [10, 20, 210, 320]);
+    numericReader.end();
   });
 
   it("uses canonical Recipe versions and retains completed callback bytes", async function () {

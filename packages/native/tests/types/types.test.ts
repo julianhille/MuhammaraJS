@@ -45,9 +45,9 @@ var info: muhammara.Recipe.InfoOptions = {
 recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });
 recipe.register("example", function () {});
 recipe.createPage(595, 842, { left: 36 }).margins({ top: 36 });
-var pageBox: muhammara.PageBox = "crop";
+var pageBox: muhammara.PDFPageBoxType = muhammara.ePDFPageBoxCropBox;
 recipe.setPageBox(pageBox, 10, 20, 585, 822);
-recipe.setPageBox("media", 0, 0, 595, 842);
+recipe.setPageBox(muhammara.ePDFPageBoxMediaBox, 0, 0, 595, 842);
 var margins: Required<muhammara.Recipe.RecipeMargins> = recipe.margins();
 var title: string = recipe.getPageInfo().title;
 var textWidth: number = recipe.textDimensions("text").width;

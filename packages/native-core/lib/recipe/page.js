@@ -81,21 +81,21 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
  * @name setPageBox
  * @function
  * @memberof Recipe#
- * @param {'media'|'crop'|'bleed'|'trim'|'art'} box - The page box to set.
+ * @param {number} box - An `ePDFPageBox*` constant.
  * @param {number} left - The PDF left coordinate.
  * @param {number} bottom - The PDF bottom coordinate.
  * @param {number} right - The PDF right coordinate.
  * @param {number} top - The PDF top coordinate.
  * @returns {Recipe} The recipe instance.
- * @throws {RangeError} If the page box name is unknown.
+ * @throws {RangeError} If the page box constant is unknown.
  */
 exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
   const boxes = {
-    media: "mediaBox",
-    crop: "cropBox",
-    bleed: "bleedBox",
-    trim: "trimBox",
-    art: "artBox",
+    [muhammara.ePDFPageBoxMediaBox]: "mediaBox",
+    [muhammara.ePDFPageBoxCropBox]: "cropBox",
+    [muhammara.ePDFPageBoxBleedBox]: "bleedBox",
+    [muhammara.ePDFPageBoxTrimBox]: "trimBox",
+    [muhammara.ePDFPageBoxArtBox]: "artBox",
   };
   if (!(box in boxes)) {
     throw new RangeError(`Unknown page box: ${box}`);
@@ -103,7 +103,7 @@ exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
 
   const pageBox = [left, bottom, right, top];
   this.page[boxes[box]] = pageBox;
-  if (box === "media") {
+  if (box === muhammara.ePDFPageBoxMediaBox) {
     const page = this.metadata[this.pageNumber];
     const width = right - left;
     const height = top - bottom;

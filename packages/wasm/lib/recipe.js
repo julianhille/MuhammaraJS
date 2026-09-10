@@ -37,6 +37,7 @@ export function createRecipeFactory({
   createReader,
   createWriterToModify,
   recrypt,
+  pageBoxes,
   registerWriterFont,
   unregisterWriterFont,
   removeFile,
@@ -148,20 +149,25 @@ export function createRecipeFactory({
     }
 
     setPageBox(box, left, bottom, right, top) {
-      var boxes = { media: 0, crop: 1, bleed: 2, trim: 3, art: 4 };
-      if (!(box in boxes)) {
-        throw new RangeError(`Unknown page box: ${box}`);
+      var requestedBox = box;
+      if (typeof box === "string") {
+        box = pageBoxes[box];
+      }
+      if (!Object.values(pageBoxes).includes(box)) {
+        throw new RangeError(`Unknown page box: ${requestedBox}`);
       }
       call(
         "_muhammara_wasm_recipe_set_page_box",
         this._recipe,
-        boxes[box],
+        box,
         left,
         bottom,
         right,
         top,
       );
-      if (box === "media") updateMediaBox(this, [left, bottom, right, top]);
+      if (box === pageBoxes.media) {
+        updateMediaBox(this, [left, bottom, right, top]);
+      }
       return this;
     }
 

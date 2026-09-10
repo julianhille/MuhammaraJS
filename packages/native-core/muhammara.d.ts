@@ -1286,7 +1286,7 @@ declare namespace muhammara {
     ): Recipe;
     endPage(): Recipe;
     setPageBox(
-      box: PageBox,
+      box: PDFPageBoxType,
       left: number,
       bottom: number,
       right: number,

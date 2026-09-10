@@ -338,6 +338,13 @@ export async function createRecipe(options) {
     createReader: muhammara.createReader,
     createWriterToModify: muhammara.createWriterToModify,
     recrypt: muhammara.recrypt,
+    pageBoxes: {
+      media: muhammara.ePDFPageBoxMediaBox,
+      crop: muhammara.ePDFPageBoxCropBox,
+      bleed: muhammara.ePDFPageBoxBleedBox,
+      trim: muhammara.ePDFPageBoxTrimBox,
+      art: muhammara.ePDFPageBoxArtBox,
+    },
     registerWriterFont: muhammara.registerFont.bind(muhammara),
     unregisterWriterFont: muhammara.unregisterFont.bind(muhammara),
     removeFile,

@@ -45,6 +45,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Accept `ePDFPageBox*` constants in `Recipe.setPageBox()` while retaining the
+  existing string names [#619](https://github.com/julianhille/MuhammaraJS/issues/619)
 - Document the native-only writer events and Wasm-only `dispose()` methods
   [#624](https://github.com/julianhille/MuhammaraJS/issues/624)
 - Document the browser example's grayscale form XObject tab

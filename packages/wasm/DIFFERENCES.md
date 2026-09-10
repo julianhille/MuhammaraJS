@@ -38,3 +38,6 @@ parity behavior.
 Wasm-only `writer.dispose()` and `Recipe.dispose()` release Emscripten heap
 allocations that JavaScript garbage collection cannot reclaim. Native objects
 use normal native lifetime management, so they have no corresponding methods.
+
+Wasm `Recipe.setPageBox()` retains its existing string box names in addition to
+the shared `ePDFPageBox*` constants. Native Recipe accepts the constants only.

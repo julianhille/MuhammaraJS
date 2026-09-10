@@ -51,7 +51,7 @@ var info: muhammara.Recipe.InfoOptions = {
 };
 recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });
 
-var pageBox: muhammara.PageBox = "crop";
+var pageBox: muhammara.PDFPageBoxType = muhammara.ePDFPageBoxCropBox;
 recipe.setPageBox(pageBox, 10, 20, 585, 822);
-recipe.setPageBox("media", 0, 0, 595, 842);
+recipe.setPageBox(muhammara.ePDFPageBoxMediaBox, 0, 0, 595, 842);
 void pageBox;
