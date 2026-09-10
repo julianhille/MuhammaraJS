@@ -33,7 +33,7 @@ describe("Recipe default font", function () {
     }
   }
 
-  it("bundles the complete, unmodified open Roboto face", async function () {
+  it("uses bundled Roboto for new and existing documents", async function () {
     assert.deepEqual(
       defaultFontBytes(),
       new Uint8Array(
@@ -105,7 +105,7 @@ describe("Recipe default font", function () {
     }
   });
 
-  it("preserves custom font selection and rejects unknown explicit names", async function () {
+  it("supports custom and overridden default fonts", async function () {
     Recipe.registerFont(
       "custom",
       new Uint8Array(await readFile("tests/TestMaterials/fonts/arial.ttf")),
@@ -128,8 +128,6 @@ describe("Recipe default font", function () {
     } finally {
       recipe.dispose();
     }
-  });
-
     // User registration takes precedence, but cleanup restores the bundled face.
     Recipe.registerFont(
       "Roboto",
@@ -155,8 +153,6 @@ describe("Recipe default font", function () {
         Recipe.disposeAssets();
       }
     }
-  });
-
     var bytes = new Uint8Array(
       await readFile("tests/TestMaterials/fonts/arial.ttf"),
     );
@@ -184,7 +180,7 @@ describe("Recipe default font", function () {
     }
   });
 
-  it("supports explicit registration when the default is disabled", async function () {
+  it("allows disabling and validates custom defaults", async function () {
     var NamedRecipe = await createRecipe({ defaultFont: false });
     var recipe = new NamedRecipe().createPage("letter");
     try {
@@ -210,7 +206,6 @@ describe("Recipe default font", function () {
       recipe.dispose();
       NamedRecipe.disposeAssets();
     }
-  });
 
     // Invalid custom defaults fail during asynchronous Recipe initialization.
     await assert.rejects(
