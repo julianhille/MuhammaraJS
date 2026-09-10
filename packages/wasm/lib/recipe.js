@@ -207,13 +207,33 @@ export function createRecipeFactory({
     }
 
     lineStyle(options = {}) {
+      this._lineStyle = this._lineStyle || {};
+      if (options.width !== undefined || options.lineWidth !== undefined)
+        this._lineStyle.width = options.width ?? options.lineWidth;
+      if (options.cap !== undefined) this._lineStyle.cap = options.cap;
+      if (options.join !== undefined) this._lineStyle.join = options.join;
+      if (options.miterLimit !== undefined)
+        this._lineStyle.miterLimit = options.miterLimit;
+      if (options.dash !== undefined || options.dashPhase !== undefined) {
+        this._lineStyle.dash = options.dash ?? this._lineStyle.dash ?? [];
+        this._lineStyle.dashPhase =
+          options.dashPhase ?? this._lineStyle.dashPhase ?? 0;
+      }
+
+      if (!this._pageContext) return this;
+      return this._setLineStyle(options);
+    }
+
+    _setLineStyle(options = {}) {
       if (this._pageContext) {
-        this._pageContext
-          .w(options.width || options.lineWidth || 1)
-          .J(options.cap || 0)
-          .j(options.join || 0)
-          .M(options.miterLimit || 10)
-          .d(options.dash || [], options.dashPhase || 0);
+        if (options.width !== undefined || options.lineWidth !== undefined)
+          this._pageContext.w(options.width ?? options.lineWidth);
+        if (options.cap !== undefined) this._pageContext.J(options.cap);
+        if (options.join !== undefined) this._pageContext.j(options.join);
+        if (options.miterLimit !== undefined)
+          this._pageContext.M(options.miterLimit);
+        if (options.dash !== undefined || options.dashPhase !== undefined)
+          this._pageContext.d(options.dash || [], options.dashPhase ?? 0);
         return this;
       }
       var dash = options.dash || [];
@@ -228,13 +248,13 @@ export function createRecipeFactory({
         call(
           "_muhammara_wasm_recipe_set_line_style",
           this._recipe,
-          options.width || options.lineWidth || 1,
-          options.cap || 0,
-          options.join || 0,
-          options.miterLimit || 10,
+          options.width ?? options.lineWidth ?? 1,
+          options.cap ?? 0,
+          options.join ?? 0,
+          options.miterLimit ?? 10,
           dashPointer,
           dash.length,
-          options.dashPhase || 0,
+          options.dashPhase ?? 0,
         );
         return this;
       } finally {

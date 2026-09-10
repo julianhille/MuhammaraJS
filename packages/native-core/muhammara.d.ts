@@ -1204,6 +1204,16 @@ declare namespace muhammara {
       rotationOrigin?: number[];
     }
 
+    interface LineStyleOptions {
+      width?: number;
+      lineWidth?: number;
+      cap?: number;
+      join?: number;
+      miterLimit?: number;
+      dash?: number[];
+      dashPhase?: number;
+    }
+
     type EndPDFCallback1 = () => any;
     type EndPDFCallback2 = (buffer: Buffer) => any;
     type EndPDFCallback = EndPDFCallback1 | EndPDFCallback2;
@@ -1380,6 +1390,7 @@ declare namespace muhammara {
       endAngle?: number,
       options?: Recipe.CircleOptions,
     ): Recipe;
+    lineStyle(options?: Recipe.LineStyleOptions): Recipe;
     lineWidth(width: number): Recipe;
     /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */
     opacity(opacity: number): Recipe;

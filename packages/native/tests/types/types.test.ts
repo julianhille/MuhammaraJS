@@ -43,6 +43,15 @@ var info: muhammara.Recipe.InfoOptions = {
   Labels: ["one", "two"],
 };
 recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });
+recipe.lineStyle({
+  width: 1,
+  lineWidth: 2,
+  cap: 1,
+  join: 1,
+  miterLimit: 2,
+  dash: [1],
+  dashPhase: 1,
+});
 recipe.register("example", function () {});
 recipe.createPage(595, 842, { left: 36 }).margins({ top: 36 });
 var pageBox: muhammara.PDFPageBoxType = muhammara.ePDFPageBoxCropBox;

@@ -30,6 +30,18 @@ exports._getPathOptions = function _getPathOptions(
     width: 2,
     align: options.align,
   };
+  const lineStyle = this.current.lineStyle || {};
+
+  if (lineStyle.width !== undefined) pathOptions.width = lineStyle.width;
+  if (lineStyle.cap !== undefined) pathOptions.lineCap = lineStyle.cap;
+  if (lineStyle.join !== undefined) pathOptions.lineJoin = lineStyle.join;
+  if (lineStyle.miterLimit !== undefined)
+    pathOptions.miterLimit = lineStyle.miterLimit;
+  if (lineStyle.dash !== undefined) pathOptions.dash = lineStyle.dash;
+  if (lineStyle.dashPhase !== undefined)
+    pathOptions.dashPhase = lineStyle.dashPhase;
+  if (pathOptions.dash === undefined) pathOptions.dash = [];
+  if (pathOptions.dashPhase === undefined) pathOptions.dashPhase = 0;
 
   if (options.opacity == void 0 || isNaN(options.opacity)) {
     options.opacity = this.current.opacity ?? 1;
@@ -95,8 +107,8 @@ exports._getPathOptions = function _getPathOptions(
   }
 
   // Page 127 of PDF 1.7 specification
-  pathOptions.dash = Array.isArray(options.dash) ? options.dash : [];
-  pathOptions.dashPhase = !isNaN(options.dashPhase) ? options.dashPhase : 0;
+  if (Array.isArray(options.dash)) pathOptions.dash = options.dash;
+  if (!isNaN(options.dashPhase)) pathOptions.dashPhase = options.dashPhase;
   if (pathOptions.dash[0] == 0 && pathOptions.dash[1] == 0) {
     pathOptions.dash = []; // no dash, solid unbroken line
     pathOptions.dashPhase = 0;

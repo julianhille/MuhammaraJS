@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#621](https://github.com/julianhille/MuhammaraJS/issues/621)
 - Add Recipe `opacity()` for fill and stroke alpha
   [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
+- Add native Recipe `lineStyle()` with Wasm-compatible width, cap, join, miter,
+  and dash options [#617](https://github.com/julianhille/MuhammaraJS/issues/617)
 - Support native Recipe `annot()` opacity and `comment()` replies, including
   TypeScript options, matching Wasm annotation dictionaries
   [#606](https://github.com/julianhille/MuhammaraJS/issues/606)
@@ -80,6 +82,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   includes it, and unsupported values still fall back to 1.7.
 
 ### Fixed
+
+- Fix native `Recipe.lineWidth()` to apply its width to subsequent lines,
+  matching Wasm [#617](https://github.com/julianhille/MuhammaraJS/issues/617)
 
 - Preserve custom Info dictionary keys passed to native `Recipe.info(options)`,
   matching Wasm, instead of silently discarding them; `custom(key, value)` remains
