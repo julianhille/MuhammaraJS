@@ -377,7 +377,7 @@ class Recipe {
 }
 
 function loadPrototypes() {
-  const ignores = ["xObjectForm.js"];
+  const ignores = ["utils.js", "xObjectForm.js"];
   fs.readdirSync(path.join(__dirname, "recipe"))
     .filter((file) => {
       return file[0] != "." && !ignores.includes(file);
