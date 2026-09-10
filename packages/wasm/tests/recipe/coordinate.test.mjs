@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
-import { createRecipe } from "../../index.js";
+import { createMuhammaraWasm, createRecipe } from "../../index.js";
 
 describe("Recipe coordinates", function () {
   it("uses canonical rotated source geometry and calibrated edit coordinates", async function () {
     var Recipe = await createRecipe();
+    var muhammara = await createMuhammaraWasm();
     var source = new Recipe({ compress: false })
       .createPage(200, 300)
-      .setPageBox("media", 10, 20, 210, 320)
+      .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 210, 320)
       .rotate(90)
       .endPage()
       .endPDF();

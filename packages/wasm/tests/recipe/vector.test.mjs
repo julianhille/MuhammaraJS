@@ -1,15 +1,17 @@
 // Ports vector behavior from tests/recipe/vector.js, shapes.js, arcs.js, and triangle.js.
 import assert from "node:assert/strict";
+import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
 
 describe("Recipe vector", function () {
   it("creates vector shapes, transforms, and images", async function () {
     var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
     var pdf = new Recipe()
       .info({ title: "Browser Recipe", author: "Muhammara" })
       .custom("TestKey", "TestValue")
       .createPage(595, 842)
-      .setPageBox("crop", 10, 10, 585, 832)
+      .setPageBox(muhammara.ePDFPageBoxCropBox, 10, 10, 585, 832)
       .rotate(90)
       .save()
       .rotateContent(15, 300, 200)

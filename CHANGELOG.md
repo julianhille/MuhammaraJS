@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `reader.extractPageText(1.5)`, which used to read page 1, now fail with
   `Page index must be a non-negative integer`; pass a non-negative integer below
   2^32 [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
+- Native `Recipe.setPageBox()` now requires an `ePDFPageBox*` constant instead
+  of a string box name. Calls such as `setPageBox("crop", ...)` now fail; pass
+  `muhammara.ePDFPageBoxCropBox` instead
+  [#619](https://github.com/julianhille/MuhammaraJS/issues/619)
 
 ### Added
 
@@ -31,8 +35,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Link native package READMEs and previously orphaned executable examples to
   their documentation, and document pnpm 10 installation approval
   [#630](https://github.com/julianhille/MuhammaraJS/issues/630)
-- Add `Recipe.setPageBox()` with `ePDFPageBox*` constants and PDF bottom-left
-  coordinates [#619](https://github.com/julianhille/MuhammaraJS/issues/619)
 - Support native Recipe `annot()` opacity and `comment()` replies, including
   TypeScript options, matching Wasm annotation dictionaries
   [#606](https://github.com/julianhille/MuhammaraJS/issues/606)

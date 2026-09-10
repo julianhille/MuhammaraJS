@@ -303,7 +303,7 @@ export interface Recipe {
   pauseContext(): this;
   resumeContext(): this;
   setPageBox(
-    box: PageBox | PDFPageBoxType,
+    box: PDFPageBoxType,
     left: number,
     bottom: number,
     right: number,

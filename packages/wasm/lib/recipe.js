@@ -149,12 +149,8 @@ export function createRecipeFactory({
     }
 
     setPageBox(box, left, bottom, right, top) {
-      var requestedBox = box;
-      if (typeof box === "string") {
-        box = pageBoxes[box];
-      }
       if (!Object.values(pageBoxes).includes(box)) {
-        throw new RangeError(`Unknown page box: ${requestedBox}`);
+        throw new RangeError(`Unknown page box: ${box}`);
       }
       call(
         "_muhammara_wasm_recipe_set_page_box",

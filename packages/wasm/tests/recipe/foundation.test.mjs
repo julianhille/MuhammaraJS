@@ -29,20 +29,20 @@ describe("Recipe foundation", function () {
 
   it("normalizes center coordinates against the current media box", async function () {
     var Recipe = await createRecipe();
+    var muhammara = await createMuhammaraWasm();
     var recipe = new Recipe().createPage(200, 300);
     recipe
-      .setPageBox("media", 10, 20, 210, 320)
-      .setPageBox("crop", 11, 21, 209, 319)
-      .setPageBox("bleed", 12, 22, 208, 318)
-      .setPageBox("trim", 13, 23, 207, 317)
-      .setPageBox("art", 14, 24, 206, 316);
+      .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 210, 320)
+      .setPageBox(muhammara.ePDFPageBoxCropBox, 11, 21, 209, 319)
+      .setPageBox(muhammara.ePDFPageBoxBleedBox, 12, 22, 208, 318)
+      .setPageBox(muhammara.ePDFPageBoxTrimBox, 13, 23, 207, 317)
+      .setPageBox(muhammara.ePDFPageBoxArtBox, 14, 24, 206, 316);
     assert.deepEqual(recipe._calibrateCoordinate("center", "center"), {
       nx: 110,
       ny: 170,
     });
     assert.deepEqual(recipe._reverseCoordinate(110, 170), { ox: 100, oy: 150 });
     assert.deepEqual(recipe.pageInfo(1).mediaBox, [10, 20, 210, 320]);
-    var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(recipe.endPage().endPDF());
     assert.deepEqual(reader.getPageBox(0, "media"), [10, 20, 210, 320]);
     assert.deepEqual(reader.getPageBox(0, "crop"), [11, 21, 209, 319]);

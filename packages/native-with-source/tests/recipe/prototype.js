@@ -97,6 +97,7 @@ describe("Recipe prototype", function () {
       "registerFont",
       "replaceText",
       "resumeContext",
+      "setPageBox",
       "split",
       "star",
       "stroke",
