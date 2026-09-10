@@ -17,9 +17,18 @@ recipe
 recipe
   .text("Default size", 72, 72)
   .text("Explicit size", 72, 100, { size: 12 });
+recipe
+  .registerFont("body", "./fonts/body-bold.ttf", "bold")
+  .editPage(1)
+  .overlay("overlay.pdf")
+  .text("Flowing text", { layout: "article", flow: false })
+  .text("Centered text", "center", "center")
+  .image("photo.jpg", "center", "center");
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
+var pages: number = recipe.metadata.pages;
 void textWidth;
+void pages;
 
 var info: muhammara.Recipe.InfoOptions = {
   author: "A",

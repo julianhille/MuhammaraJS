@@ -972,6 +972,11 @@ declare namespace muhammara {
       | "Paragraph"
       | "Insert";
 
+    type RecipeCoordinate = number | "center";
+
+    type RecipeFontStyle =
+      "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
+
     interface RecipeOptions {
       version?: number;
       author?: string;
@@ -1054,6 +1059,23 @@ declare namespace muhammara {
       keepAspectRatio?: boolean;
       fitWidth?: boolean;
       fitHeight?: boolean;
+    }
+
+    interface MetadataPage {
+      pageNumber: number;
+      mediaBox: number[];
+      layout: "portrait" | "landscape";
+      rotate: number;
+      width: number;
+      height: number;
+      size?: number[];
+      offsetX?: number;
+      offsetY?: number;
+    }
+
+    interface Metadata {
+      pages: number;
+      [page: number]: MetadataPage;
     }
 
     interface TextBoxStyle {
@@ -1179,6 +1201,8 @@ declare namespace muhammara {
     );
 
     readonly position: { x: number; y: number };
+    /** Metadata read from the source PDF, keyed by one-based page number. */
+    readonly metadata: Recipe.Metadata;
     read(inSrc?: string | Buffer): { pages: number; [page: number]: object };
     register(key: string, callback: Function): void;
     register(callback: Function & { name: string }): void;
@@ -1210,12 +1234,16 @@ declare namespace muhammara {
 
     encrypt(options?: Recipe.EncryptOptions): Recipe;
 
-    registerFont(fontName: string, fontSrcPath: string): Recipe;
+    registerFont(
+      fontName: string,
+      fontSrcPath: string,
+      type?: Recipe.RecipeFontStyle,
+    ): Recipe;
 
     image(
       imgSrc: string,
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       options?: Recipe.ImageOptions,
     ): Recipe;
 
@@ -1229,6 +1257,7 @@ declare namespace muhammara {
       srcPageNumber: number,
     ): Recipe;
 
+    overlay(pdfSrc: string, options?: Recipe.OverlayOptions): Recipe;
     overlay(
       pdfSrc: string,
       x: number,
@@ -1272,10 +1301,11 @@ declare namespace muhammara {
     resumeContext(): void;
     split(outputDir?: string, prefix?: string): Recipe;
 
+    text(text: string, options?: Recipe.TextOptions): Recipe;
     text(
       text: string,
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       options?: Recipe.TextOptions,
     ): Recipe;
     textDimensions(text: string, options?: Recipe.TextOptions): TextDimension;

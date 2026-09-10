@@ -52,6 +52,14 @@ recipe.textDimensions("text", { size: 12 }).width;
 recipe
   .text("Default size", 72, 72)
   .text("Explicit size", 72, 100, { size: 12 });
+recipe
+  .registerFont("body", "./fonts/body-bold.ttf", "bold")
+  .editPage(1)
+  .overlay("overlay.pdf")
+  .text("Flowing text", { layout: "article", flow: false })
+  .text("Centered text", "center", "center")
+  .image("photo.jpg", "center", "center");
+var pages: number = recipe.metadata.pages;
 var coordinates: muhammara.Recipe | number[] = recipe.movedown(1, Boolean(1));
 recipe.structure("structure.json").endPDF();
 recipe
@@ -75,4 +83,5 @@ void callbackResult;
 void margins;
 void title;
 void textWidth;
+void pages;
 void coordinates;
