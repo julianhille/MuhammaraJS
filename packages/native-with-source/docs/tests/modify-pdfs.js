@@ -4,8 +4,6 @@ var os = require("os");
 var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
-var replacePageObject = require("../../../native/docs/examples/replace-page-object");
-var replaceRecipeText = require("../../../native/docs/examples/replace-recipe-text");
 var editAnnotation = require("../../../native/docs/examples/edit-annotation");
 
 var fontPath = path.join(
@@ -102,7 +100,28 @@ describe("Documentation examples", function () {
     var sourceContentsId = getPageContentsId(sourceReader, 0);
 
     sourceReader.end();
-    replacePageObject(sourcePath, outputPath);
+
+    var reader = muhammara.createReader(sourcePath);
+    var contentsId = reader
+      .parsePage(0)
+      .getDictionary()
+      .queryObject("Contents")
+      .toPDFIndirectObjectReference()
+      .getObjectID();
+
+    reader.end();
+
+    var writer = muhammara.createWriterToModify(sourcePath, {
+      modifiedFilePath: outputPath,
+    });
+    var objectsContext = writer.getObjectsContext();
+    var replacementId = objectsContext.startNewIndirectObject();
+    var replacement = objectsContext.startPDFStream();
+
+    replacement.getWriteStream().write(Array.from(Buffer.from("BT ET")));
+    objectsContext.endPDFStream(replacement).endIndirectObject();
+    writer.replaceObject(0, contentsId, replacementId);
+    writer.end();
 
     var reader = muhammara.createReader(outputPath);
 
@@ -113,8 +132,9 @@ describe("Documentation examples", function () {
 
   it("replaces literal Recipe text", function () {
     var outputPath = path.join(outputDirectory, "replaced-text.pdf");
+    var Recipe = require("@muhammara/native").Recipe;
 
-    replaceRecipeText(sourcePath, outputPath);
+    new Recipe(sourcePath, outputPath).replaceText("Before", "After").endPDF();
 
     var reader = muhammara.createReader(outputPath);
     var text = reader.extractPageText(0);

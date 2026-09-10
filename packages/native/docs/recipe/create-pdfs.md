@@ -15,7 +15,8 @@ var pdfDoc = new Recipe("new", "output.pdf", {
 pdfDoc.createPage("letter").endPage().endPDF();
 ```
 
-Pages accept named sizes such as `letter` and `A4`. Within a page, use chainable
+Pass an options object to set the PDF version and metadata. Pages accept named
+sizes such as `letter` and `A4`. Within a page, use chainable
 methods such as `text`, `circle`, `polygon`, `rectangle`, `image`, and `comment`.
 Call `endPage()` before creating or editing another page.
 

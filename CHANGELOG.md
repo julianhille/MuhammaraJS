@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Document native writer encryption, reader passwords, continuation state, and
   previously undocumented public low-level exports
   [#629](https://github.com/julianhille/MuhammaraJS/issues/629)
+- Link native package READMEs and previously orphaned executable examples to
+  their documentation, and document pnpm 10 installation approval
+  [#630](https://github.com/julianhille/MuhammaraJS/issues/630)
 - Support native Recipe `annot()` opacity and `comment()` replies, including
   TypeScript options, matching Wasm annotation dictionaries
   [#606](https://github.com/julianhille/MuhammaraJS/issues/606)

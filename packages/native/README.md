@@ -11,3 +11,8 @@ When a compatible prebuilt binary is unavailable, install
 `@muhammara/native-with-source` to compile the addon locally or rebuild it for
 Electron. Both packages expose the same API through the shared
 `@muhammara/native-core` runtime.
+
+Read the [native documentation](https://muhammarajs.readthedocs.io/) for
+installation, API, Recipe, and how-to guidance. With pnpm 10 or later, add the
+selected native package to `pnpm.onlyBuiltDependencies` or approve it with
+`pnpm approve-builds` so its install script can acquire the addon.
