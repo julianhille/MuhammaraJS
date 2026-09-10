@@ -19,6 +19,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Document that Recipe `getPageInfo()` returns document Info metadata, while
   `pageInfo()` and `getCurrentPageInfo()` return page geometry
   [#621](https://github.com/julianhille/MuhammaraJS/issues/621)
+- Document Recipe `opacity()` as applying fill and stroke alpha
+  [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
 - Add byte-first `recrypt()` and Recipe `encrypt()` with native-compatible
   password options, plus the password-change browser example
   [#595](https://github.com/julianhille/MuhammaraJS/issues/595)

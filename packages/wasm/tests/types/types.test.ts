@@ -280,6 +280,8 @@ async function usesLowLevelSurface() {
   // @ts-expect-error PDF 1.8 is not a real PDF version.
   new Recipe({ version: 1.8 });
   recipe.endPDF((bytes) => bytes.byteLength);
+  // @ts-expect-error Recipe.fillOpacity() was removed in v7.
+  recipe.fillOpacity(0.5);
   recipe.registerFont("instance-font", new Uint8Array());
   await recipe.registerFontAsync("instance-font-async", new Blob());
   recipe.htmlToTextObjects("<b>text</b>")[0].styles.bold;
@@ -305,7 +307,6 @@ async function usesLowLevelSurface() {
     })
     .lineWidth(2)
     .opacity(0.5)
-    .fillOpacity(0.5)
     .restore()
     .chroma("brand", "#001122", "rgb")
     .line(0, 0, 10, 10, { lineCap: "round", lineJoin: "bevel" })

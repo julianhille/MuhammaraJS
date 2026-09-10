@@ -13,6 +13,9 @@ recipe
   })
   .annot(100, 200, "Highlight", { width: 200, height: 14, opacity: 0.45 })
   .annot(100, 230, "Highlight", { width: 200, height: 14, opacity: 0 });
+recipe.opacity(0.5);
+// @ts-expect-error Recipe.fillOpacity() was removed in v7.
+recipe.fillOpacity(0.5);
 
 recipe
   .text("Default size", 72, 72)

@@ -41,6 +41,11 @@ and `fontSize` are omitted, matching native Recipe. Pass `{ size: 12 }` (or
 `{ fontSize: 12 }`) to render and measure at 12 points instead; explicit sizes
 remain unchanged.
 
+Use `opacity(value)` to set both fill and stroke alpha for subsequent drawing.
+`value` must be a finite number from `0` (transparent) through `1` (opaque).
+It remains active for later vector drawing; call `opacity(1)` to restore opaque
+output.
+
 ## Default And Custom Fonts
 
 Omitting `font` selects `Roboto`; `{ font: "Roboto" }` selects it explicitly

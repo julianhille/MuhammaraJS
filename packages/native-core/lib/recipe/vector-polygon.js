@@ -122,6 +122,7 @@ exports.polygon = function polygon(coordinates = [], options = {}) {
       height,
       pathOptions,
       (ctx, xObject) => {
+        ctx.gs(xObject.getGsName(pathOptions.strokeGsId));
         ctx.w(pathOptions.width);
         setPathOptions(ctx);
         xObject.stroke(colorModel);

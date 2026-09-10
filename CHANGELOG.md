@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   of a string box name. Calls such as `setPageBox("crop", ...)` now fail; pass
   `muhammara.ePDFPageBoxCropBox` instead
   [#619](https://github.com/julianhille/MuhammaraJS/issues/619)
+- Remove native `Recipe.fillOpacity()`. Calls now fail; use `Recipe.opacity()`
+  to set both fill and stroke alpha. Opacity persists for later vector drawing,
+  so call `opacity(1)` to restore opaque output. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#8-replace-recipefillopacity)
+  [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
 
 ### Added
 
@@ -41,6 +45,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `Recipe.getCurrentPageInfo()` for the geometry of the active native
   Recipe page, matching the Wasm API
   [#621](https://github.com/julianhille/MuhammaraJS/issues/621)
+- Add Recipe `opacity()` for fill and stroke alpha
+  [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
 - Support native Recipe `annot()` opacity and `comment()` replies, including
   TypeScript options, matching Wasm annotation dictionaries
   [#606](https://github.com/julianhille/MuhammaraJS/issues/606)
