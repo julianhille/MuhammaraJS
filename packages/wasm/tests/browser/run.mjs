@@ -147,6 +147,7 @@ try {
       "image-transform",
       "table",
       "passwords",
+      "replace-text",
     ];
     if (tabIds.join(",") !== expectedTabIds.join(",")) {
       throw new Error(`Unexpected example tabs: ${tabIds.join(", ")}`);
