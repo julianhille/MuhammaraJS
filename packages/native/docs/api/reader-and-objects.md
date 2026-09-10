@@ -3,6 +3,16 @@
 `muhammara.createReader(input, options)` returns a `PDFReader` for a file path
 or compatible random-access read stream.
 
+Pass `{ password: "..." }` as the options argument to open an encrypted PDF.
+Either its user or owner password is accepted. Call `isEncrypted()` after
+creation when the input may be encrypted:
+
+```javascript
+var reader = muhammara.createReader("encrypted.pdf", {
+  password: "open-password",
+});
+```
+
 The reader provides document information with `getPDFLevel`, `getPagesCount`,
 `getTrailer`, and `isEncrypted`; page access with `parsePage`,
 `parsePageDictionary`, and `getPageObjectID`; and object access with
@@ -51,3 +61,10 @@ reader.end();
 and object conversion.
 
 For a complete reader workflow, see [Read PDFs](../low-level/read-pdfs.md).
+
+`getXrefSize`, `getXrefPosition`, `getParserStream`,
+`startReadingFromStream`, `startReadingFromStreamForPlainCopying`,
+`startReadingObjectsFromStream`, and `startReadingObjectsFromStreams` expose
+raw parser internals for specialized low-level processing. They are not stable
+general-purpose reading workflows; use the page and object methods above unless
+you need to build a PDF parser integration.
