@@ -544,7 +544,7 @@ exports.arc = function arc(
  * @name lineStyle
  * @function
  * @memberof Recipe#
- * @param {Object} [options] - The line style options.
+ * @param {Recipe.LineStyleOptions} [options] - The line style options.
  * @param {number} [options.width] - The line width.
  * @param {number} [options.lineWidth] - Alias for width.
  * @param {number} [options.cap] - The PDF line cap style.
