@@ -72,6 +72,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Document that native writer events have no WebAssembly equivalent
+  [#624](https://github.com/julianhille/MuhammaraJS/issues/624)
 - Build Linux prebuilds against the Debian archive now that Debian 11
   bullseye is end of life [#577](https://github.com/julianhille/MuhammaraJS/issues/577)
 - Force the packaged-source Electron rebuild check in CI to build from source.

@@ -37,6 +37,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Document the native-only writer events and Wasm-only `dispose()` methods
+  [#624](https://github.com/julianhille/MuhammaraJS/issues/624)
 - Reject invalid page indices and object IDs in the reader's `getPageObjectID()`
   and `getXrefEntry()`, and reject values of 2^32 and above in every reader
   method that takes an index, so both ends fail the same way [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
