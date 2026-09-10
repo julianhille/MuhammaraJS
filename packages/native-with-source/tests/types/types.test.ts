@@ -39,6 +39,7 @@ recipe
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
 var pages: number = recipe.metadata.pages;
+recipe.createPage(595, 842).rotate(90).endPage();
 void textWidth;
 void pages;
 
