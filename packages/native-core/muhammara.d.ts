@@ -1296,7 +1296,7 @@ declare namespace muhammara {
 
     editPage(pageNumber: number): Recipe;
 
-    replaceText(text: string, replacement: string, pageNumber?: number): Recipe;
+    replaceText(text: string, replacement: string, pageNumber: number): Recipe;
 
     pageInfo(pageNumber: number): {
       width: number;

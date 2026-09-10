@@ -56,3 +56,6 @@ var pageBox: muhammara.PDFPageBoxType = muhammara.ePDFPageBoxCropBox;
 recipe.setPageBox(pageBox, 10, 20, 585, 822);
 recipe.setPageBox(muhammara.ePDFPageBoxMediaBox, 0, 0, 595, 842);
 void pageBox;
+recipe.replaceText("Before", "After", 1);
+// @ts-expect-error replaceText requires a one-based page number.
+recipe.replaceText("Before", "After");

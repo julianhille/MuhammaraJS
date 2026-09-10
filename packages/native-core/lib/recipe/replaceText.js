@@ -10,13 +10,14 @@ function escapePDFLiteralString(value) {
  * @memberof Recipe#
  * @param {string} text Text to replace.
  * @param {string} replacement Replacement text.
- * @param {number} [pageNumber=1] One-based page number.
+ * @param {number} pageNumber One-based page number.
  */
 exports.replaceText = function replaceText(text, replacement, pageNumber) {
-  pageNumber = pageNumber || 1;
-
   if (typeof text !== "string" || typeof replacement !== "string") {
     throw new TypeError("replaceText expects text and replacement strings");
+  }
+  if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+    throw new TypeError("replaceText expects a positive integer page number");
   }
 
   var pageIndex = pageNumber - 1;

@@ -113,6 +113,23 @@ The separate module is fetched on demand with native ESM or a code-splitting
 bundler. Preserve dynamic-import splitting to keep its data out of your main
 JavaScript bundle.
 
+## Replace Literal Text
+
+`replaceText(text, replacement, pageNumber)` rewrites literal text-showing
+operands in an existing page's content stream, leaving the surrounding text
+position and font untouched. Construct Recipe with the source `Uint8Array`;
+`pageNumber` is a required one-based page number.
+
+```js
+var output = new Recipe(inputBytes).replaceText("Before", "After", 1).endPDF();
+```
+
+The match is on the literal string as it appears in the content stream, so text
+split across several show operations, or encoded through a font that does not
+map to the source characters, is not replaced. Pages with more than one content
+stream are rejected with an error. When nothing matches, the page is left
+unchanged.
+
 ## PDF Version
 
 `version` sets the PDF level written into the byte output. Recipe accepts the

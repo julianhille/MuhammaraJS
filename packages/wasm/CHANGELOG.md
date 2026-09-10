@@ -14,6 +14,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   or `defaultFont: false` skip the font download, as does the low-level API.
   Make font uploads optional in the browser table example
   [#613](https://github.com/julianhille/MuhammaraJS/issues/613)
+- Add Recipe `replaceText()` for replacing literal text in a page content stream
+  [#622](https://github.com/julianhille/MuhammaraJS/issues/622)
 - Add byte-first `recrypt()` and Recipe `encrypt()` with native-compatible
   password options, plus the password-change browser example
   [#595](https://github.com/julianhille/MuhammaraJS/issues/595)

@@ -67,6 +67,15 @@ export var HOW_TO_EXAMPLES = [
       "Encrypt a byte-first Recipe PDF, then decrypt a verification copy with recrypt.",
     assets: [],
   },
+  {
+    id: "replace-text",
+    label: "Replace text",
+    title: "Replace literal page text",
+    description:
+      "Create a source page, replace its literal text operand, and verify the original placement survives.",
+    assets: ["font"],
+    requirement: "Requires a TTF or OTF font upload.",
+  },
 ];
 
 function assertAsset(value, message) {
@@ -497,6 +506,48 @@ async function passwordsExample() {
   }
 }
 
+async function replaceTextExample(assets) {
+  assertAsset(
+    assets.font,
+    "Choose a TTF or OTF font before running the text replacement example",
+  );
+  var muhammara = await createMuhammaraWasm();
+  var Recipe = await createRecipe();
+  var recipe;
+  try {
+    muhammara.registerFont("replace-text-font", assets.font);
+    var writer = muhammara.createWriter({ compress: false });
+    var page = writer.createPage(0, 0, 595, 300);
+    writer
+      .startPageContentContext(page)
+      .BT()
+      .Tf(writer.getFontForBytes("replace-text-font"), 24)
+      .Tm(1, 0, 0, 1, 72, 180)
+      .Tj("Before")
+      .ET();
+    writer.writePage(page);
+    recipe = new Recipe(writer.end());
+    var bytes = recipe.replaceText("Before", "After", 1).endPDF();
+    var reader = muhammara.createReader(bytes);
+    var text = reader.extractPageText(0);
+    reader.end();
+    return {
+      bytes,
+      filename: "muhammara-replace-text.pdf",
+      summary: await summarize(bytes, {
+        howTo: "Replace literal page text",
+        replacement: text[0]?.content,
+        textMatrix: text[0]?.textMatrix,
+      }),
+    };
+  } finally {
+    recipe?.dispose();
+    muhammara.unregisterFont("replace-text-font");
+    muhammara.disposeAssets();
+    Recipe.disposeAssets();
+  }
+}
+
 var runners = {
   annotations: annotationsExample,
   links: linksExample,
@@ -506,6 +557,7 @@ var runners = {
   "image-transform": imageTransformExample,
   table: tableExample,
   passwords: passwordsExample,
+  "replace-text": replaceTextExample,
 };
 
 export async function runHowToExample(id, options = {}) {
