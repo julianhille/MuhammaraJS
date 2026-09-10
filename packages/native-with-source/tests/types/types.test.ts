@@ -24,6 +24,18 @@ recipe
   .text("Flowing text", { layout: "article", flow: false })
   .text("Centered text", "center", "center")
   .image("photo.jpg", "center", "center");
+recipe
+  .text("Explicit styled size", 72, 100, {
+    fontSize: 12,
+    bold: true,
+    italic: true,
+  })
+  .image("image.png", 72, 128, {
+    rotation: 45,
+    rotationOrigin: [72, 128],
+    skewX: 10,
+    skewY: 5,
+  });
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
 var pages: number = recipe.metadata.pages;
