@@ -42,6 +42,7 @@ nav:
   - Getting Started:
       - Browser Setup: browser-setup.md
       - Byte Assets, Blob, and File Input: byte-assets.md
+  - Browser Examples: browser-examples.md
   - High-Level Recipe: recipe.md
   - Low-Level API: low-level.md
   - API Reference: reference.md
