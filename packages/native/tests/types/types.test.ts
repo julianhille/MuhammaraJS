@@ -28,6 +28,13 @@ api.eXrefEntryUndefined;
 context.J(api.LineCapStyle.LINECAP_BUTT).j(2);
 objects.endArray(api.ETokenSeparator.eTokenSeparatorEndLine);
 recipe.read();
+recipe
+  .comment("Please review.", 300, 100, {
+    title: "Review",
+    replies: [{ text: "Confirmed.", title: "Reviewer" }],
+  })
+  .annot(100, 200, "Highlight", { width: 200, height: 14, opacity: 0.45 })
+  .annot(100, 230, "Highlight", { width: 200, height: 14, opacity: 0 });
 recipe.register("example", function () {});
 recipe.createPage(595, 842, { left: 36 }).margins({ top: 36 });
 var margins: Required<muhammara.Recipe.RecipeMargins> = recipe.margins();

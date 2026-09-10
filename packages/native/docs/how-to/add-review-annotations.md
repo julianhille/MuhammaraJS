@@ -9,11 +9,27 @@ var pdfDoc = new Recipe("input.pdf", "output.pdf");
 
 pdfDoc
   .editPage(1)
-  .comment("Please review this section.", 300, 100, { title: "Review" })
-  .annot(100, 200, "Highlight", { width: 200, height: 14 })
+  .comment("Please review this section.", 300, 100, {
+    title: "Review",
+    replies: [{ text: "Confirmed.", title: "Reviewer" }],
+  })
+  .annot(100, 200, "Highlight", {
+    width: 200,
+    height: 14,
+    color: "#ffff00",
+    opacity: 0.45,
+  })
   .endPage()
   .endPDF();
 ```
+
+Set `opacity` from `0` (transparent) to `1` (opaque, the default). Recipe writes
+the annotation's `/CA` value; the `color` option sets its RGB color separately.
+Both `comment()` and `annot()` accept `replies`, an array of objects with `text`
+and optional `title`, `date`, `subject`, `richText`, and `flag`. Each reply is a
+separate annotation linked to its parent through `/IRT` and `/RT /R`.
+The dictionary behavior is covered by
+[`tests/recipe/annotation-parity.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/annotation-parity.js).
 
 Set `richText: true` on a comment to use supported HTML formatting. See
 [`tests/recipe/annotation-comment.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/annotation-comment.js) and [`tests/recipe/annotation-text.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/annotation-text.js).

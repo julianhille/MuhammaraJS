@@ -11,6 +11,7 @@
  * @param {string} [options.date] - The date.
  * @param {boolean} [options.open=false] - Open the annotation by default?
  * @param {boolean} [options.richText] - Display with rich text format, text will be transformed automatically, or you may pass in your own rich text starts with "<?xml..."
+ * @param {Array} [options.replies] - Array of annotation replies, each with text and optional title, date, subject, richText, and flag.
  * @param {'invisible'|'hidden'|'print'|'nozoom'|'norotate'|'noview'|'readonly'|'locked'|'togglenoview'} [options.flag] - The flag property
  * @returns {Recipe} The recipe instance.
  */
@@ -19,6 +20,7 @@ exports.comment = function comment(text = "", x, y, options = {}) {
     subtype: "Text",
     pageNumber: this.pageNumber,
     args: { text, x, y, options: Object.assign({ icon: "Comment" }, options) },
+    replies: options.replies,
   });
   return this;
 };
@@ -29,7 +31,6 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  * @function
  * @memberof Recipe#
  * @todo support for rich text RC
- * @todo support for opacity CA
  * @param {number} x - The coordinate x
  * @param {number} y - The coordinate y
  * @param {string} subtype - The markup annotation type 'Text'|'Link'|'FreeText'|'Line'|'Square'|'Circle'|'Polygon'|'PolyLine'|'Highlight'|'Underline'|'Squiggly'|'StrikeOut'|'Caret'|'Stamp'|'Ink'|'Popup'|'FileAttachment'|'Sound'|'Movie'|'Screen'|'Widget'|'PrinterMark'|'TrapNet'|'Watermark'|'3D'|'Redact'|'Projection'|'RichMedia'
@@ -47,6 +48,7 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  * @param {Array} [options.replies] - Array of annotation replies
  * @param {number} [options.border] - The border width.
  * @param {string|number[]} [options.color] - The annotation color.
+ * @param {number} [options.opacity=1] - Annotation opacity from 0 (transparent) to 1 (opaque).
  * @param {boolean} [options.followOriginalPageRotation=false] - Preserve the original page rotation when positioning the annotation.
  * @returns {Recipe} The recipe instance.
  */
@@ -145,6 +147,11 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
     .writeBooleanValue(params.open)
     .writeKey("F")
     .writeNumberValue(getFlagBitNumberByName(params.flag));
+
+  var opacity = (reply || options).opacity ?? 1;
+  if (opacity !== 1) {
+    this.dictionaryContext.writeKey("CA").writeNumberValue(opacity);
+  }
 
   /**
    * Rich Text Strings

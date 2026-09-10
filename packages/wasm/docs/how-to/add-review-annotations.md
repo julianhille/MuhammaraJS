@@ -33,6 +33,12 @@ var outputBytes = pdf
   .endPDF();
 ```
 
+Set `opacity` from `0` (transparent) to `1` (opaque, the default). Recipe writes
+the annotation's `/CA` value; the `color` option sets its RGB color separately.
+On new pages, both `comment()` and `annot()` accept `replies`, an array of objects
+with `text` and optional `title`, `date`, `subject`, `richText`, and `flag`. Each
+reply is a separate annotation linked to its parent through `/IRT` and `/RT /R`.
+
 Annotations are queued until `endPage()`. Supported markup subtypes include
 `Highlight`, `Underline`, `StrikeOut`, and `Squiggly`. Recipe's rich-text form
 is a Worker-safe XML subset, not arbitrary browser HTML.
