@@ -12,6 +12,18 @@ console.log(reader.getPagesCount());
 reader.end();
 ```
 
+For an encrypted input, provide its user or owner password when creating the
+reader:
+
+```javascript
+var reader = muhammara.createReader("encrypted.pdf", {
+  password: "open-password",
+});
+```
+
+See [Change PDF Passwords](../how-to/change-pdf-passwords.md) to create,
+re-encrypt, or remove encryption.
+
 Call `end()` when the reader is no longer needed, after every object and stream
 parsed from it has been consumed. It closes the underlying file handle; skipping
 it leaves `input.pdf` locked on Windows, where the file then cannot be deleted

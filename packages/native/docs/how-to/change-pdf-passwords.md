@@ -16,6 +16,26 @@ muhammara.recrypt("input.pdf", "output.pdf", {
 To remove encryption, provide the input `password` without new output password
 options. File and stream scenarios are exercised in [`tests/Xcryption.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/Xcryption.js).
 
+## Encrypt A New PDF
+
+Pass `userPassword`, `ownerPassword`, and optionally `userProtectionFlag` to
+`createWriter` when creating an encrypted PDF. A user password opens the PDF;
+the owner password controls permission changes. `userProtectionFlag` is the PDF
+permission bit field passed to the encryption dictionary.
+
+```javascript
+var writer = muhammara.createWriter("encrypted.pdf", {
+  version: muhammara.ePDFVersion17,
+  userPassword: "open-password",
+  ownerPassword: "owner-password",
+  userProtectionFlag: 4,
+});
+```
+
+Use the same version rules below to choose the encryption algorithm. To open
+this document with a low-level reader, pass the user or owner password as the
+reader's `password` option.
+
 The tested workflows cover the library's current password and PDF-version
 options. The encryption algorithm is selected automatically from the PDF
 `version`; there is no separate algorithm option.
