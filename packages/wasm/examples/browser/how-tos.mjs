@@ -527,7 +527,7 @@ async function replaceTextExample(assets) {
       .ET();
     writer.writePage(page);
     recipe = new Recipe(writer.end());
-    var bytes = recipe.replaceText("Before", "After").endPDF();
+    var bytes = recipe.replaceText("Before", "After", 1).endPDF();
     var reader = muhammara.createReader(bytes);
     var text = reader.extractPageText(0);
     reader.end();

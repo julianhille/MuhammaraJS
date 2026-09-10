@@ -134,7 +134,9 @@ describe("Documentation examples", function () {
     var outputPath = path.join(outputDirectory, "replaced-text.pdf");
     var Recipe = require("@muhammara/native").Recipe;
 
-    new Recipe(sourcePath, outputPath).replaceText("Before", "After").endPDF();
+    new Recipe(sourcePath, outputPath)
+      .replaceText("Before", "After", 1)
+      .endPDF();
 
     var reader = muhammara.createReader(outputPath);
     var text = reader.extractPageText(0);

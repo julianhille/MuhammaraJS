@@ -118,10 +118,10 @@ JavaScript bundle.
 `replaceText(text, replacement, pageNumber)` rewrites literal text-showing
 operands in an existing page's content stream, leaving the surrounding text
 position and font untouched. Construct Recipe with the source `Uint8Array`;
-`pageNumber` is one-based and defaults to the first page.
+`pageNumber` is a required one-based page number.
 
 ```js
-var output = new Recipe(inputBytes).replaceText("Before", "After").endPDF();
+var output = new Recipe(inputBytes).replaceText("Before", "After", 1).endPDF();
 ```
 
 The match is on the literal string as it appears in the content stream, so text

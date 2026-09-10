@@ -301,7 +301,7 @@ export interface Recipe {
   /** Starts a prepend-safe editing context for an existing one-based page number. */
   editPage(pageNumber: number): this;
   /** Replaces literal `(...) Tj` operands in an existing page's single content stream. */
-  replaceText(text: string, replacement: string, pageNumber?: number): this;
+  replaceText(text: string, replacement: string, pageNumber: number): this;
   pauseContext(): this;
   resumeContext(): this;
   setPageBox(

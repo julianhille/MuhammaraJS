@@ -397,6 +397,8 @@ async function usesLowLevelSurface() {
   recipe.pageInfo(1)?.mediaBox[3];
   recipe.endPage().endPDF();
   var byteRecipe = new Recipe(source, { compress: false });
+  byteRecipe.replaceText("Before", "After", 1);
+  // @ts-expect-error replaceText requires a one-based page number.
   byteRecipe.replaceText("Before", "After");
   byteRecipe.getPageInfo();
   byteRecipe.getCurrentPageInfo()?.rotate;

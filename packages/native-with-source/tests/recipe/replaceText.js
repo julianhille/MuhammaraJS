@@ -25,7 +25,14 @@ describe("Replace text", function () {
     writer.writePage(page);
     writer.end();
 
-    new Recipe(source, output).replaceText("Before", "After").endPDF();
+    var recipe = new Recipe(source, output);
+    expect(() => recipe.replaceText("Before", "After")).to.throw(
+      "replaceText expects a positive integer page number",
+    );
+    expect(() => recipe.replaceText("Before", "After", 0)).to.throw(
+      "replaceText expects a positive integer page number",
+    );
+    recipe.replaceText("Before", "After", 1).endPDF();
 
     var reader = muhammara.createReader(output);
     var text = reader.extractPageText(0);

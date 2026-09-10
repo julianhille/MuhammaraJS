@@ -27,7 +27,7 @@ describe("Replace text", function () {
     var source = writer.end();
 
     var Recipe = await createRecipe();
-    var output = new Recipe(source).replaceText("Before", "After").endPDF();
+    var output = new Recipe(source).replaceText("Before", "After", 1).endPDF();
     var reader = muhammara.createReader(output);
     var text = reader.extractPageText(0);
 
@@ -46,9 +46,18 @@ describe("Replace text", function () {
       /replaceText expects text and replacement strings/,
     );
 
+    assert.throws(
+      () => new Recipe().replaceText("Before", "After"),
+      /replaceText expects a positive integer page number/,
+    );
+    assert.throws(
+      () => new Recipe().replaceText("Before", "After", 0),
+      /replaceText expects a positive integer page number/,
+    );
+
     var source = new Recipe().createPage(100, 100).endPage().endPDF();
     assert.throws(
-      () => new Recipe(source).replaceText("Before", "After"),
+      () => new Recipe(source).replaceText("Before", "After", 1),
       /replaceText supports pages with one content stream/,
     );
   });

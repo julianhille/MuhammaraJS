@@ -26,10 +26,12 @@ pdfDoc.structure("pdf-structure.txt").endPDF();
 
 `replaceText(text, replacement, pageNumber)` rewrites literal text-showing
 operands in a page's content stream, leaving the surrounding text position and
-font untouched. `pageNumber` is one-based and defaults to the first page.
+font untouched. `pageNumber` is a required one-based page number.
 
 ```javascript
-new Recipe("input.pdf", "output.pdf").replaceText("Before", "After").endPDF();
+new Recipe("input.pdf", "output.pdf")
+  .replaceText("Before", "After", 1)
+  .endPDF();
 ```
 
 The match is on the literal string as it appears in the content stream, so text
