@@ -177,19 +177,19 @@ export function createRecipeFactory({
       return this;
     }
 
-    save() {
+    _save() {
       if (this._pageContext) return this._pageContext.q() && this;
       call("_muhammara_wasm_recipe_save", this._recipe);
       return this;
     }
 
-    restore() {
+    _restore() {
       if (this._pageContext) return this._pageContext.Q() && this;
       call("_muhammara_wasm_recipe_restore", this._recipe);
       return this;
     }
 
-    transform(a, b, c, d, e, f) {
+    _transform(a, b, c, d, e, f) {
       if (this._pageContext)
         return this._pageContext.cm(a, b, c, d, e, f) && this;
       call("_muhammara_wasm_recipe_transform", this._recipe, a, b, c, d, e, f);
@@ -201,9 +201,9 @@ export function createRecipeFactory({
       var cosine = Math.cos(radians);
       var sine = Math.sin(radians);
       var point = this._calibrateCoordinate(x, y);
-      return this.transform(1, 0, 0, 1, point.nx, point.ny)
-        .transform(cosine, sine, -sine, cosine, 0, 0)
-        .transform(1, 0, 0, 1, -point.nx, -point.ny);
+      return this._transform(1, 0, 0, 1, point.nx, point.ny)
+        ._transform(cosine, sine, -sine, cosine, 0, 0)
+        ._transform(1, 0, 0, 1, -point.nx, -point.ny);
     }
 
     lineStyle(options = {}) {
@@ -330,13 +330,13 @@ export function createRecipeFactory({
         options.skewY ||
         options.opacity !== undefined;
       if (transformed) {
-        this.save();
+        this._save();
         if (options.opacity !== undefined) this.opacity(options.opacity);
         var origin = options.rotationOrigin || [x, y];
         if (options.rotation)
           this.rotateContent(options.rotation, origin[0], origin[1]);
         if (options.skewX || options.skewY) {
-          this.transform(
+          this._transform(
             1,
             Math.tan(((options.skewY || 0) * Math.PI) / 180),
             Math.tan(((options.skewX || 0) * Math.PI) / 180),
@@ -380,7 +380,7 @@ export function createRecipeFactory({
           stroke: options.color || "#000000",
         });
       }
-      if (transformed) this.restore();
+      if (transformed) this._restore();
       this._lastLineHeight = fontSize;
       this._cursor = { x, y: y + this._lastLineHeight };
       return this;

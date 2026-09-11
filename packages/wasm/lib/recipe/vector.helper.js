@@ -68,14 +68,14 @@ export function createVectorHelpers(runtime) {
     },
     _beginPath: function (options = {}, x = 0, y = 0) {
       var style = this._pathOptions(options);
-      this.save();
+      this._save();
       if (options.rotation)
         this.rotateContent(
           Number(options.rotation),
           ...(options.rotationOrigin || [x, y]),
         );
       if (options.skewX || options.skewY) {
-        this.transform(
+        this._transform(
           1,
           Math.tan(((Number(options.skewX) || 0) * Math.PI) / 180),
           Math.tan(((Number(options.skewY) || 0) * Math.PI) / 180),
@@ -106,7 +106,7 @@ export function createVectorHelpers(runtime) {
       )
         operator(this, 1);
       else operator(this, fill !== undefined ? 6 : 5);
-      this.restore();
+      this._restore();
       return this;
     },
   };

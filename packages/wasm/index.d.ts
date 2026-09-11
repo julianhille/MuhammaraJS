@@ -312,16 +312,6 @@ export interface Recipe {
     top: number,
   ): this;
   rotate(rotation: number): this;
-  save(): this;
-  restore(): this;
-  transform(
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-    f: number,
-  ): this;
   rotateContent(degrees: number, x?: number, y?: number): this;
   chroma(
     name: string,

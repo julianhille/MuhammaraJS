@@ -294,8 +294,6 @@ async function usesLowLevelSurface() {
     .text("Explicit size", 72, 100, { size: 12 })
     .text("Explicit fontSize", 72, 128, { fontSize: 12 })
     .margins(36, 36, 72, 72)
-    .save()
-    .transform(1, 0, 0, 1, 10, 10)
     .rotateContent(15, 10, 10)
     .lineStyle({
       width: 1,
@@ -307,7 +305,6 @@ async function usesLowLevelSurface() {
     })
     .lineWidth(2)
     .opacity(0.5)
-    .restore()
     .chroma("brand", "#001122", "rgb")
     .line(0, 0, 10, 10, { lineCap: "round", lineJoin: "bevel" })
     .line(
