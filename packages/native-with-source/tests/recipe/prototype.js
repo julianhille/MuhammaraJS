@@ -103,6 +103,7 @@ describe("Recipe prototype", function () {
       "replaceText",
       "resumeContext",
       "rotate",
+      "rotateContent",
       "setPageBox",
       "split",
       "star",

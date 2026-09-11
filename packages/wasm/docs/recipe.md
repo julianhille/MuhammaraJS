@@ -139,6 +139,9 @@ map to the source characters, is not replaced. Pages with more than one content
 stream are rejected with an error. When nothing matches, the page is left
 unchanged.
 
+`rotateContent(degrees, x, y)` rotates subsequent drawing around a point in
+Recipe's top-left coordinates.
+
 Use `lineStyle({ width, lineWidth, cap, join, miterLimit, dash, dashPhase })`
 to set PDF stroke style operators for the current page context. `lineWidth` is
 an alias for `width`; omitted properties leave the existing style unchanged:

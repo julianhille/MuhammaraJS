@@ -73,6 +73,7 @@ void pageBox;
 recipe.replaceText("Before", "After", 1);
 // @ts-expect-error replaceText requires a one-based page number.
 recipe.replaceText("Before", "After");
+recipe.rotateContent(45, 10, 20);
 recipe.lineStyle({
   width: 1,
   lineWidth: 2,
