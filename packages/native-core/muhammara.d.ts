@@ -1344,6 +1344,7 @@ declare namespace muhammara {
     getPageInfo(): InfoDictionary;
     pauseContext(): void;
     resumeContext(): void;
+    rotateContent(degrees: number, x?: number, y?: number): Recipe;
     split(outputDir?: string, prefix?: string): Recipe;
 
     text(text: string, options?: Recipe.TextOptions): Recipe;
