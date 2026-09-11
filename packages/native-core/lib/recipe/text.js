@@ -258,6 +258,8 @@ exports.text = function text(text = "", x, y, options = {}) {
     return this;
   }
   options = _initOptions(this, x, y, options);
+  const linkX = this.x;
+  const linkY = this.y;
 
   const targetAnnotations = options;
   const originCoord = this._calibrateCoordinate(
@@ -754,6 +756,16 @@ exports.text = function text(text = "", x, y, options = {}) {
     }
   }
 
+  const htmlLink = textObjects.find((item) => item.link)?.link;
+  if (!this._flow && (options.link || htmlLink)) {
+    this.link(
+      options.link || htmlLink,
+      linkX,
+      linkY,
+      textBox.width,
+      textBox.height || textBox.textHeight || textBox.firstLineHeight,
+    );
+  }
   return this;
 };
 

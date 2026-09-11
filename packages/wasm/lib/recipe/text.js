@@ -385,6 +385,16 @@ export function createTextMethods({ drawText, measure, module }) {
           drawText.call(this, entry.text, drawX, baseline, textOptions);
         }
         if (clipping) this._restore();
+        if (textOptions.link) {
+          var linkBounds = dimensions(this, entry.text, textOptions);
+          this.link(
+            textOptions.link,
+            drawX + linkBounds.xMin,
+            currentY,
+            linkBounds.xMax - linkBounds.xMin,
+            lineHeight,
+          );
+        }
         currentY += lineHeight;
         return false;
       });
