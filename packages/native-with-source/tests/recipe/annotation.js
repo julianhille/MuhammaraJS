@@ -32,11 +32,22 @@ describe("Recipe annotation", function () {
         path.join(__dirname, "../TestMaterials/images/png/pnglogo-grr.png"),
         50,
         275,
-        { width: 40, link: "https://image.example.com" },
+        {
+          width: 40,
+          height: 40,
+          keepAspectRatio: false,
+          align: "center center",
+          link: "https://image.example.com",
+        },
       )
       .rectangle(110, 300, 100, 24, {
         fill: "#dbeafe",
         link: "https://shape.example.com",
+      })
+      .rectangle(250, 100, 40, 40, {
+        fill: "#dbeafe",
+        useGivenCoords: true,
+        link: "https://pdf-coordinates.example.com",
       })
       .comment("A browser comment", 250, 300, { title: "Muhammara" })
       .annot(350, 300, "Square", {
@@ -101,9 +112,24 @@ describe("Recipe annotation", function () {
         "https://example.com",
         "https://html.example.com",
         "https://image.example.com",
+        "https://pdf-coordinates.example.com",
         "https://shape.example.com",
         "https://text.example.com",
       ],
+    );
+    const imageLink = annotations.find(function (annotation) {
+      return (
+        annotation.A.toPDFDictionary().toJSObject().URI.toText() ===
+        "https://image.example.com"
+      );
+    });
+    assert.deepEqual(
+      imageLink.Rect.toPDFArray()
+        .toJSArray()
+        .map(function (value) {
+          return value.toNumber();
+        }),
+      [30, 547, 70, 587],
     );
   });
 });

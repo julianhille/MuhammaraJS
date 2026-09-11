@@ -14,11 +14,19 @@ describe("Recipe annotation", function () {
       })
       .image("logo", 50, 275, {
         width: 40,
+        height: 40,
+        keepAspectRatio: false,
+        align: "center center",
         link: "https://image.example.com",
       })
       .rectangle(110, 300, 100, 24, {
         fill: "#dbeafe",
         link: "https://shape.example.com",
+      })
+      .rectangle(250, 100, 40, 40, {
+        fill: "#dbeafe",
+        useGivenCoords: true,
+        link: "https://pdf-coordinates.example.com",
       })
       .comment("A browser comment", 250, 300, { title: "Muhammara" })
       .annot(350, 300, "Square", { width: 60, height: 30, text: "A square" })
@@ -33,5 +41,8 @@ describe("Recipe annotation", function () {
     assert.match(output, /\/URI \(https:\/\/html\.example\.com\)/);
     assert.match(output, /\/URI \(https:\/\/image\.example\.com\)/);
     assert.match(output, /\/URI \(https:\/\/shape\.example\.com\)/);
+    assert.match(output, /\/URI \(https:\/\/pdf-coordinates\.example\.com\)/);
+    assert.match(output, /\/Rect \[\s*30 547 70 587\s*\]/);
+    assert.match(output, /\/Rect \[\s*250 100 290 140\s*\]/);
   });
 });

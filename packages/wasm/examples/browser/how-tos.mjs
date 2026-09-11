@@ -159,12 +159,33 @@ async function linksExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
   try {
+    Recipe.registerImage(
+      "link-image",
+      Uint8Array.from(
+        atob(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+        ),
+        (character) => character.charCodeAt(0),
+      ),
+      "png",
+    );
     recipe
       .createPage(595, 842)
       .rectangle(0, 0, 595, 842, { fill: "#eef2ff", useGivenCoords: true })
       .rectangle(65, 100, 465, 120, {
         fill: "#102a43",
         borderRadius: 16,
+        link: "https://github.com/julianhille/MuhammaraJS",
+      })
+      .text("Open MuhammaraJS", 95, 135, {
+        color: "#ffffff",
+        size: 22,
+        link: "https://github.com/julianhille/MuhammaraJS",
+      })
+      .image("link-image", 470, 130, {
+        width: 36,
+        height: 36,
+        keepAspectRatio: false,
         link: "https://github.com/julianhille/MuhammaraJS",
       })
       .rectangle(65, 255, 220, 150, {
