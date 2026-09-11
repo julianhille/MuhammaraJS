@@ -128,6 +128,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Make native Recipe `register()`, `pauseContext()`, and `resumeContext()`
   chainable, and track created-page and edited-page context transitions
   [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
+- Tighten native Recipe TypeScript declarations for extensions, layouts, tables,
+  metadata, HTML text objects, colorspaces, permissions, arrows, and triangles
+  [#654](https://github.com/julianhille/MuhammaraJS/issues/654)
 - Document that native writer events have no WebAssembly equivalent
   [#624](https://github.com/julianhille/MuhammaraJS/issues/624)
 - Declare documented native Recipe metadata and call forms in TypeScript,

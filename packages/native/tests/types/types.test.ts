@@ -111,6 +111,202 @@ var callbackResult: string = recipe.endPDF(function () {
   return "result";
 });
 
+var extension: muhammara.Recipe.ExtensionCallback<
+  [number, number],
+  muhammara.Recipe
+> = function (x, y) {
+  return this.moveTo(x, y).lineTo(x + 10, y + 10);
+};
+function registerExtension(
+  callback: muhammara.Recipe.ExtensionCallback<
+    [number, number],
+    muhammara.Recipe
+  >,
+): void {
+  recipe.register("drawMarker", callback);
+}
+registerExtension(extension);
+recipe.register(function drawNamedMarker(x: number, y: number) {
+  this.moveTo(x, y).lineTo(x + 10, y + 10);
+});
+
+type TableRecord = { name: string; score: number };
+var layoutOptions: muhammara.Recipe.LayoutOptions = {
+  columns: 2,
+  gap: 12,
+  reset: true,
+};
+function applyLayout(options: muhammara.Recipe.LayoutOptions): void {
+  recipe.layout("columns", 10, 10, 200, 100, options);
+}
+applyLayout(layoutOptions);
+var tableLayoutOptions: muhammara.Recipe.LayoutOptions<TableRecord> = {
+  columns: [
+    {
+      name: "score",
+      renderer: (text, record) => {
+        void text;
+        return { size: record.score };
+      },
+    },
+  ],
+};
+function applyTableLayout(
+  options: muhammara.Recipe.LayoutOptions<TableRecord>,
+): void {
+  recipe.layout("table-columns", 10, 10, 200, 100, options);
+}
+applyTableLayout(tableLayoutOptions);
+
+var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
+  order: ["name", "score"],
+  columns: [
+    {
+      name: "name",
+      text: "Name",
+      cell: { padding: 4 },
+      header: true,
+      renderer: (text, record, field, row) => {
+        void text;
+        var score: number = record.score;
+        void field;
+        void score;
+        return row % 2 ? { color: "blue" } : undefined;
+      },
+    },
+  ],
+  header: { alignToData: true, cell: { padding: 2 } },
+  border: { width: 0.5, lineCap: "butt" },
+  row: { nth: "odd", cell: { padding: 2 } },
+  overflow: (currentRecipe, row) => {
+    currentRecipe.createPage("letter");
+    return row > 10 ? true : { position: [10, 10] };
+  },
+};
+function applyTable(options: muhammara.Recipe.TableOptions<TableRecord>): void {
+  recipe.table(10, 120, [{ name: "Ada", score: 10 }], options);
+}
+applyTable(tableOptions);
+recipe.table(10, 120, [{ name: "Ada", score: 10 }], {
+  columns: [
+    {
+      name: "score",
+      renderer: (text, record, field) => {
+        var score: number = text;
+        var name: string = record.name;
+        var scoreField: "score" = field;
+        void name;
+        void score;
+        void scoreField;
+      },
+    },
+  ],
+});
+
+var metadata: muhammara.Recipe.Metadata = recipe.read();
+var metadataPage: muhammara.Recipe.MetadataPage = metadata[1];
+var htmlTextObject: muhammara.Recipe.HtmlTextObject =
+  recipe.htmlToTextObjects("<b>text</b>")[0];
+metadataPage.mediaBox;
+htmlTextObject.styles;
+htmlTextObject.childs;
+
+var deviceColorspace: muhammara.Recipe.DeviceColorspace = "cmyk";
+var colorspace: muhammara.Recipe.Colorspace = "separation";
+var recipeOptions: muhammara.Recipe.RecipeOptions = { colorspace: "rgb" };
+var dynamicColorspace: string = "gray";
+var optionalColorspace: string | undefined = dynamicColorspace;
+function applyColorspaces(
+  device: muhammara.Recipe.DeviceColorspace,
+  color: muhammara.Recipe.Colorspace,
+  dynamic: string,
+  optional: string | undefined,
+): void {
+  recipe.chroma("brand", "#ff0000", device);
+  recipe.chroma("spot", [0, 255, 0, 0], color);
+  recipe.chroma("dynamic", "#00", dynamic);
+  recipe.chroma("optional", "#00", optional);
+}
+function applyRecipeOptions(options: muhammara.Recipe.RecipeOptions): void {
+  new muhammara.Recipe("new", null, options);
+}
+applyColorspaces(
+  deviceColorspace,
+  colorspace,
+  dynamicColorspace,
+  optionalColorspace,
+);
+applyRecipeOptions(recipeOptions);
+// @ts-expect-error Unknown Recipe colorspace.
+recipe.chroma("invalid", "#ff0000", "lab");
+recipe.polygon(
+  [
+    [0, 0],
+    [10, 0],
+    [10, 10],
+  ],
+  { colorspace: "cmyk", fill: [0, 255, 0, 0] },
+);
+// @ts-expect-error Unknown Recipe colorspace.
+var invalidColorspace: muhammara.Recipe.Colorspace = "lab";
+
+var permissionName: muhammara.Recipe.PermissionName = "copy";
+var permissionList: muhammara.Recipe.PermissionList = " print,\n copy ";
+var dynamicPermissions: string = "print, copy";
+var optionalPermissions: string | undefined = dynamicPermissions;
+function applyPermissions(
+  name: muhammara.Recipe.PermissionName,
+  flags: muhammara.Recipe.PermissionList,
+  dynamic: string,
+  optional: string | undefined,
+): void {
+  recipe.permission(name);
+  recipe.permission(flags);
+  recipe.permission(dynamic);
+  recipe.permission(optional);
+}
+recipe.permission("\tprint,\r\n copy ");
+applyPermissions(
+  permissionName,
+  permissionList,
+  dynamicPermissions,
+  optionalPermissions,
+);
+// @ts-expect-error Unknown individual Recipe permission.
+var invalidPermission: muhammara.Recipe.PermissionName = "delete";
+
+var arrowOptions: muhammara.Recipe.ArrowOptions = {
+  type: "dart",
+  at: "head",
+  head: [10, 5],
+  shaft: 20,
+  double: true,
+};
+function drawArrow(options: muhammara.Recipe.ArrowOptions): void {
+  recipe.arrow(20, 20, options);
+}
+drawArrow(arrowOptions);
+recipe.arrow(20, 20, { type: 2 });
+// @ts-expect-error Unsupported arrow head type.
+recipe.arrow(20, 20, { type: "diamond" });
+
+var triangleOptions: muhammara.Recipe.TriangleOptions = {
+  traitID: "sss",
+  position: "centroid",
+  flipX: true,
+  flipY: false,
+};
+function drawTriangle(options: muhammara.Recipe.TriangleOptions): void {
+  recipe.triangle(20, 20, [30, 40, 50], options);
+}
+drawTriangle(triangleOptions);
+recipe.triangle(20, 20, [30, 40, 50], {
+  traitsID: "sas",
+  position: "B",
+});
+// @ts-expect-error Unsupported triangle trait encoding.
+recipe.triangle(20, 20, [30, 40, 50], { traitID: "ssa" });
+
 void callbackResult;
 void margins;
 void title;
@@ -118,3 +314,6 @@ void textWidth;
 void pages;
 void coordinates;
 void pageBox;
+void recipeOptions;
+void invalidColorspace;
+void invalidPermission;
