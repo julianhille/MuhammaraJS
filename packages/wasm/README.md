@@ -14,4 +14,7 @@ npm install @muhammara/wasm
 ```
 
 Read the [Wasm documentation](https://muhammarajs-wasm.readthedocs.io/) for
-installation, API, Recipe, browser example, and how-to guidance.
+installation and API guidance. The focused [Recipe topic
+guides](https://muhammarajs-wasm.readthedocs.io/latest/recipe/index.html)
+cover byte-first PDF creation, drawing, composition, modification, metadata,
+and encryption; browser examples and task-oriented how-to guides are included.
