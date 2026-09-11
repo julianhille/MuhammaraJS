@@ -1,8 +1,10 @@
 /** Creates Recipe vector shape and path methods. */
 export function createVectorMethods(runtime) {
   function addLink(recipe, options, x, y, width, height) {
-    if (options.link && !options.useGivenCoords)
-      recipe.link(options.link, x, y, width, height);
+    if (!options.link) return;
+    if (options.useGivenCoords)
+      recipe._linkPdf(options.link, x, y, width, height);
+    else recipe.link(options.link, x, y, width, height);
   }
 
   function curve(recipe, x, y, radius, start, end) {

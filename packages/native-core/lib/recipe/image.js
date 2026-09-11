@@ -59,7 +59,7 @@ exports.image = function image(imgSrc, x, y, options = {}) {
   });
 
   if (options.link) {
-    this.link(options.link, x + offsetX, y + offsetY + height, width, height);
+    this.link(options.link, x + offsetX, y - offsetY - height, width, height);
   }
 
   return this;

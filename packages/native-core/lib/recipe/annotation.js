@@ -39,14 +39,18 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  */
 exports.link = function link(url, x, y, width, height) {
   const { nx, ny } = this._calibrateCoordinate(x, y, 0, -height);
+  return this._linkPdf(url, nx, ny, width, height);
+};
+
+exports._linkPdf = function _linkPdf(url, left, bottom, width, height) {
   this.pauseContext();
   try {
     this.writer.attachURLLinktoCurrentPage(
       url,
-      nx,
-      ny,
-      nx + width,
-      ny + height,
+      left,
+      bottom,
+      left + width,
+      bottom + height,
     );
   } finally {
     this.resumeContext();

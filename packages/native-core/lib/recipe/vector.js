@@ -207,7 +207,11 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
       },
     );
   }
-  if (options.link) this.link(options.link, x, y, width, height);
+  if (options.link) {
+    if (options.useGivenCoords)
+      this._linkPdf(options.link, x, y, width, height);
+    else this.link(options.link, x, y, width, height);
+  }
 
   return this;
 };
