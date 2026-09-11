@@ -45,19 +45,47 @@ Perl and `make` on Unix-like systems or Perl, NMake, and Visual Studio Build
 Tools on Windows; no `OPENSSL_LIB_DIR`, `CPPFLAGS`, or separate OpenSSL
 installation is required.
 
+### Perl Packages On RPM Distributions
+
 RPM-based distributions such as Fedora, RHEL, and openSUSE split the Perl core
-library into separate packages, and OpenSSL's `./Configure` needs some of them.
+library into separate packages. OpenSSL's `./Configure` and the generated
+makefile need several of them, and `scripts/build-openssl.sh` needs one more.
 Install them alongside `perl`:
 
 ```sh
-dnf install perl-FindBin perl-IPC-Cmd
+dnf install perl-FindBin perl-lib perl-IPC-Cmd perl-File-Compare \
+  perl-File-Copy perl-Time-Piece perl-Digest-SHA
 ```
 
-Without them the build stops while configuring OpenSSL:
+| Package             | Needed by                                                |
+| ------------------- | -------------------------------------------------------- |
+| `perl-FindBin`      | OpenSSL `./Configure`                                    |
+| `perl-lib`          | OpenSSL `./Configure`                                    |
+| `perl-IPC-Cmd`      | OpenSSL `./Configure`                                    |
+| `perl-File-Compare` | OpenSSL configuration and build file generation          |
+| `perl-File-Copy`    | OpenSSL configuration and build file generation          |
+| `perl-Time-Piece`   | OpenSSL's generated `Makefile`                           |
+| `perl-Digest-SHA`   | `shasum`, used by `build-openssl.sh` for its build stamp |
+
+Every package in this list was verified as blocking on a clean Fedora 44
+container with only `perl-interpreter` installed: each was added in turn as the
+build reported it missing, and with all of them installed the bundled OpenSSL
+3.5.4 configures and builds `libcrypto.a` to completion.
+
+Install the whole list at once. OpenSSL's `./Configure` reports only the first
+module it cannot find, so a single error message is not the whole requirement
+and fixing one error simply reveals the next:
 
 ```
 Can't locate FindBin.pm in @INC (you may need to install the FindBin module) at ./Configure line 15.
 ```
+
+```
+Can't locate Time/Piece.pm in @INC (you may need to install the Time::Piece module) at Makefile.in line 37.
+```
+
+Missing `perl-Digest-SHA` fails differently, in `build-openssl.sh` rather than
+in OpenSSL, because the script calls `shasum` before it configures anything.
 
 Debian and Ubuntu ship these modules with `perl` itself, so no extra packages
 are needed there.

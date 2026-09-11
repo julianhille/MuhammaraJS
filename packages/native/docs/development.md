@@ -4,6 +4,18 @@ Run these commands from the repository root unless a section says otherwise.
 
 ## Repository Setup
 
+`npm ci` runs the native installation hook, which builds the bundled OpenSSL
+source when no prebuild matches. That build needs the platform C/C++ toolchain,
+Perl, and `make` on Unix-like systems, or Perl, NMake, and Visual Studio Build
+Tools on Windows.
+
+RPM-based distributions such as Fedora, RHEL, and openSUSE need several
+separate Perl core packages installed first, or `npm ci` fails while configuring
+OpenSSL. Install them before the first `npm ci`; see
+[Perl Packages On RPM Distributions](getting-started/installation.md#perl-packages-on-rpm-distributions)
+for the list and what each package is needed for. Debian and Ubuntu ship these
+modules with `perl` itself.
+
 Install the Node.js workspaces and build the native addon when needed:
 
 ```sh
