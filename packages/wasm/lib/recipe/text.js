@@ -332,7 +332,7 @@ export function createTextMethods({ drawText, measure, module }) {
             0,
             -lineHeight,
           );
-          this.save();
+          this._save();
           if (this._pageContext) {
             this._pageContext
               .re(clipPoint.nx, clipPoint.ny, width - left - right, lineHeight)
@@ -347,7 +347,7 @@ export function createTextMethods({ drawText, measure, module }) {
               lineHeight,
             )
           ) {
-            this.restore();
+            this._restore();
             throw new Error("Unable to clip text box");
           }
         }
@@ -384,7 +384,7 @@ export function createTextMethods({ drawText, measure, module }) {
         } else {
           drawText.call(this, entry.text, drawX, baseline, textOptions);
         }
-        if (clipping) this.restore();
+        if (clipping) this._restore();
         currentY += lineHeight;
         return false;
       });

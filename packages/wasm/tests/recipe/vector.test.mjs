@@ -22,12 +22,14 @@ describe("Recipe vector", function () {
       .createPage(595, 842)
       .setPageBox(muhammara.ePDFPageBoxCropBox, 10, 10, 585, 832)
       .rotate(90)
-      .save()
-      .rotateContent(15, 300, 200)
       .lineStyle({ width: 3, cap: 1, join: 1, dash: [6, 3] })
       .opacity(0.5)
-      .rectangle(260, 180, 80, 40, { stroke: "#dc2626" })
-      .restore()
+      .rectangle(260, 180, 80, 40, {
+        stroke: "#dc2626",
+        rotation: 15,
+        rotationOrigin: [300, 200],
+      })
+      .opacity(1)
       .rectangle(20, 20, 100, 50, { fill: "#dbeafe" })
       .rectangle(140, 20, 100, 50, { fill: "#fecaca", borderRadius: 12 })
       .circle(200, 100, 30, { stroke: "#2563eb" })
