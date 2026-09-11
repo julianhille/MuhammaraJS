@@ -22,11 +22,12 @@ Choose `@muhammara/native-with-source` when the addon must build locally or be
 rebuilt for Electron. It can be installed as an npm alias for
 `@muhammara/native` when that import name must remain unchanged.
 
-Start with [Browser Setup](browser-setup.md). Use [Recipe](recipe.md) for
-high-level document work, or the [low-level API](low-level.md) for PDF writers,
-readers, and modifiers. The [How-To Guides](how-to/index.md) cover concrete
-browser tasks such as annotations, links, tables, image transforms, page boxes,
-preview, and download.
+Start with [Browser Setup](browser-setup.md). Use the [Recipe topic
+guides](recipe/index.md) for high-level creation, drawing, composition,
+modification, metadata, and encryption, or the [low-level API](low-level.md) for
+PDF writers, readers, and modifiers. The [How-To Guides](how-to/index.md) cover
+concrete browser tasks such as annotations, links, tables, image transforms,
+page boxes, preview, and download.
 
 Every completed writer and Recipe operation returns an owned `Uint8Array`. Use
 it directly with `Blob`, uploads, downloads, or browser storage.

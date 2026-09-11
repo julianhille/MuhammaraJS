@@ -61,6 +61,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Replace the monolithic Wasm Recipe guide with focused, byte-first topic pages
+  parallel to the native documentation [#649](https://github.com/julianhille/MuhammaraJS/issues/649)
 - Document the native-only writer events and Wasm-only `dispose()` methods
   [#624](https://github.com/julianhille/MuhammaraJS/issues/624)
 - Document the browser example's grayscale form XObject tab

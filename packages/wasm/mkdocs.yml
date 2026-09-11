@@ -43,7 +43,17 @@ nav:
       - Browser Setup: browser-setup.md
       - Byte Assets, Blob, and File Input: byte-assets.md
   - Browser Examples: browser-examples.md
-  - High-Level Recipe: recipe.md
+  - High-Level Recipe:
+      - Overview: recipe/index.md
+      - Create PDFs: recipe/create-pdfs.md
+      - Pages And Positioning: recipe/pages-and-positioning.md
+      - Text And Fonts: recipe/text-and-fonts.md
+      - Colors, Shapes, And Vectors: recipe/colors-shapes-and-vectors.md
+      - Compose PDFs: recipe/compose-pdfs.md
+      - Modify And Inspect PDFs: recipe/modify-and-inspect.md
+      - Metadata And Custom Data: recipe/metadata-and-custom-data.md
+      - API Invariants: recipe/invariants.md
+      - Encryption: recipe/encryption.md
   - Low-Level API: low-level.md
   - API Reference: reference.md
   - How-To Guides:

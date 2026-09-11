@@ -46,5 +46,5 @@ To use your own face and skip loading Roboto, initialize with
 example stays the same. You can also use `defaultFont: false`, register it with
 `await Recipe.registerFontAsync("table-font", fontFile)` before layout, and set
 `font: "table-font"` in the table options. See
-[Default And Custom Fonts](../recipe.md#default-and-custom-fonts). The browser
+[Custom Fonts](../recipe/text-and-fonts.md#custom-fonts). The browser
 example's **Tables** tab runs with no uploads and accepts an optional custom font.

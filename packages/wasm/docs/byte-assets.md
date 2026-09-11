@@ -2,7 +2,7 @@
 
 Recipe includes Roboto Regular for text and tables with no font setup. The
 registration examples below apply to custom Recipe fonts and to all low-level
-writer fonts; see [Default And Custom Fonts](recipe.md#default-and-custom-fonts).
+writer fonts; see [Custom Fonts](recipe/text-and-fonts.md#custom-fonts).
 When supplying your own fonts, `createRecipe({ defaultFont: fontFile })` uses
 your file as the default without loading Roboto. Use
 `createRecipe({ defaultFont: false })` when registering named families instead.
