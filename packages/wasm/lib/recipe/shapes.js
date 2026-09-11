@@ -26,10 +26,26 @@ function ngon(sides, x, y, radius, options = {}) {
 
 function polygonOptions(options, x, y) {
   var result = { ...options };
+  delete result.link;
   // Native polygon bounding-box compensation makes the shape's true center the
   // default rotation origin. The direct Wasm path needs that origin explicitly.
   if (result.rotation && !result.rotationOrigin) result.rotationOrigin = [x, y];
   return result;
+}
+
+function addLink(recipe, options, points) {
+  if (!options.link) return;
+  var xs = points.map((point) => point[0]);
+  var ys = points.map((point) => point[1]);
+  var left = Math.min(...xs);
+  var top = Math.min(...ys);
+  recipe.link(
+    options.link,
+    left,
+    top,
+    Math.max(...xs) - left,
+    Math.max(...ys) - top,
+  );
 }
 
 function starPath(vertices) {
@@ -210,10 +226,18 @@ export function createShapeMethods() {
         drawOptions.rotationOrigin =
           vertices[(options.rotationVertice - 1) % sides];
       this.polygon(vertices, drawOptions);
+      addLink(this, options, [
+        [cx - radius, cy - radius],
+        [cx + radius, cy + radius],
+      ]);
       if (options.debug) {
         this.circle(cx, cy, radius, { width: 1, stroke: "#00ff00" });
         this.circle(cx, cy, 2, { fill: "#ff0000" });
       }
+      addLink(this, options, [
+        [cx - radius, cy - radius],
+        [cx + radius, cy + radius],
+      ]);
       return this;
     },
     star: function (cx, cy, radius, points = 5, options = {}) {
@@ -346,6 +370,7 @@ export function createShapeMethods() {
           ]
         : [tip, bottom, br, bl, tl, tr, top, tip];
       this.polygon(points, drawOptions);
+      addLink(this, options, points);
       if (options.debug) {
         this.circle(originalX, y, 2, { color: "red" });
         if (options.debug === 2) {
@@ -415,6 +440,7 @@ export function createShapeMethods() {
       )
         drawOptions.rotationOrigin = [x, y];
       this.polygon(vertices, drawOptions);
+      addLink(this, options, vertices);
       if (options.debug) {
         var debugVertices = rotated(
           vertices,

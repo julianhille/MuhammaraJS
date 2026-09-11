@@ -155,7 +155,10 @@ exports.n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
 
   const ngon = _n_gon(sides, cx, cy, radius, options);
 
-  this.polygon(ngon, options);
+  const drawOptions = Object.assign({}, options, { link: undefined });
+  this.polygon(ngon, drawOptions);
+  if (options.link)
+    this.link(options.link, cx - radius, cy - radius, radius * 2, radius * 2);
 
   if (options.rotationVertice) {
     delete options["rotationOrigin"]; // cleanup n-gon generated point
@@ -220,6 +223,7 @@ exports.star = function star(cx, cy, radius, points = 5, options = {}) {
   }
 
   const starOptions = Object.assign({}, options);
+  delete starOptions.link;
 
   if (odd(points)) {
     starPath = _oddStar(_n_gon(points, cx, cy, radius, options));
@@ -264,6 +268,9 @@ exports.star = function star(cx, cy, radius, points = 5, options = {}) {
   }
 
   this.polygon(starPath, starOptions);
+
+  if (options.link)
+    this.link(options.link, cx - radius, cy - radius, radius * 2, radius * 2);
 
   if (options.debug) {
     this.circle(cx, cy, radius, { width: 1, stroke: "#00ff00" });
@@ -375,6 +382,7 @@ exports.triangle = function triangle(x, y, traits, options = {}) {
   let traitID = options.traitID || options.traitsID || "sss";
   let position = options.position ? options.position.toLowerCase() : "default";
   let triopts = Object.assign({}, options);
+  delete triopts.link;
 
   if (traits.length !== 3) {
     throw new Error(
@@ -433,6 +441,19 @@ exports.triangle = function triangle(x, y, traits, options = {}) {
   }
 
   this.polygon(trigon, triopts);
+  if (options.link) {
+    const xs = trigon.map((point) => point[0]);
+    const ys = trigon.map((point) => point[1]);
+    const left = Math.min(...xs);
+    const top = Math.min(...ys);
+    this.link(
+      options.link,
+      left,
+      top,
+      Math.max(...xs) - left,
+      Math.max(...ys) - top,
+    );
+  }
 
   if (options.debug) {
     let angle = triopts.rotation || 0;
