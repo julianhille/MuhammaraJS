@@ -12,6 +12,8 @@
 //   DecimalColor component values range from 0 to 255.
 //   PercentColor component values range from 1 to 100.
 
+const { linkPdf } = require("./annotation");
+
 /**
  * Draw a circle
  * @name circle
@@ -209,7 +211,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   }
   if (options.link) {
     if (options.useGivenCoords)
-      this._linkPdf(options.link, x, y, width, height);
+      linkPdf(this, options.link, x, y, width, height);
     else this.link(options.link, x, y, width, height);
   }
 

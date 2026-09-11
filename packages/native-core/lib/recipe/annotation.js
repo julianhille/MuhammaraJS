@@ -39,13 +39,13 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  */
 exports.link = function link(url, x, y, width, height) {
   const { nx, ny } = this._calibrateCoordinate(x, y, 0, -height);
-  return this._linkPdf(url, nx, ny, width, height);
+  return linkPdf(this, url, nx, ny, width, height);
 };
 
-exports._linkPdf = function _linkPdf(url, left, bottom, width, height) {
-  this.pauseContext();
+function linkPdf(recipe, url, left, bottom, width, height) {
+  recipe.pauseContext();
   try {
-    this.writer.attachURLLinktoCurrentPage(
+    recipe.writer.attachURLLinktoCurrentPage(
       url,
       left,
       bottom,
@@ -53,10 +53,12 @@ exports._linkPdf = function _linkPdf(url, left, bottom, width, height) {
       bottom + height,
     );
   } finally {
-    this.resumeContext();
+    recipe.resumeContext();
   }
-  return this;
-};
+  return recipe;
+}
+
+Object.defineProperty(exports, "linkPdf", { value: linkPdf });
 
 /**
  * Create an annotation

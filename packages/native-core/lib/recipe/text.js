@@ -2,6 +2,7 @@ const LineBreaker = require("linebreak");
 const { Word, Line, Column } = require("./text.helper");
 const { htmlToTextObjects } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
+const { linkPdf } = require("./annotation");
 const muhammara = require("../muhammara");
 const { UsedFont } = require("../muhammara");
 
@@ -777,7 +778,8 @@ exports.text = function text(text = "", x, y, options = {}) {
   }
 
   linkAnnotations.forEach((annotation) => {
-    this._linkPdf(
+    linkPdf(
+      this,
       annotation.url,
       annotation.left,
       annotation.bottom,
