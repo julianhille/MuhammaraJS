@@ -58,6 +58,10 @@ exports.image = function image(imgSrc, x, y, options = {}) {
     ctx.gs(xObject.getGsName(gsId)).drawImage(0, 0, imgSrc, imgOptions);
   });
 
+  if (options.link) {
+    this.link(options.link, x + offsetX, y + offsetY + height, width, height);
+  }
+
   return this;
 };
 
