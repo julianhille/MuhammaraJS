@@ -23,6 +23,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
 - Document Recipe `lineStyle()` option compatibility with native
   [#617](https://github.com/julianhille/MuhammaraJS/issues/617)
+- Add third-party notices and security, provenance, and contribution guidance
+  for the WebAssembly package [#626](https://github.com/julianhille/MuhammaraJS/issues/626)
 - Add byte-first `recrypt()` and Recipe `encrypt()` with native-compatible
   password options, plus the password-change browser example
   [#595](https://github.com/julianhille/MuhammaraJS/issues/595)

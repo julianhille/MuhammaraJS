@@ -63,5 +63,9 @@ nav:
       - Place and Transform Images: how-to/place-and-transform-images.md
       - Set Page Boxes: how-to/set-page-boxes.md
   - Compatibility: differences.md
-  - Project: development.md
+  - Project:
+      - Development: development.md
+      - Security: security.md
+      - Documentation Sources: provenance.md
+      - Contributing Documentation: contributing.md
   - Breaking Changes: breaking-changes.md

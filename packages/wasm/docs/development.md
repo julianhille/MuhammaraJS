@@ -67,3 +67,57 @@ Wasm documentation sources are package-local and are not published in the npm
 package. The standalone WebAssembly documentation site is configured by
 `packages/wasm/.readthedocs.yaml`; configure its Read the Docs project to use
 that file. Native documentation is maintained separately in `packages/native/docs/`.
+
+## Documentation
+
+Create a Python virtual environment and install the WebAssembly site's pinned
+documentation dependencies:
+
+```sh
+python -m venv .docs-venv
+source .docs-venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r packages/wasm/docs/requirements.txt
+```
+
+Build the site strictly before opening a pull request:
+
+```sh
+npm run docs:check --workspace=@muhammara/wasm
+```
+
+Serve a local preview with:
+
+```sh
+mkdocs serve --config-file packages/wasm/mkdocs.yml
+```
+
+Never commit generated `packages/wasm/docs/reference.md` or `packages/wasm/site/`
+output.
+
+## Release Tags
+
+WebAssembly package tags trigger validation and publication. The package version
+must match the version in the tag. Wasm releases use npm trusted publishing
+through GitHub Actions OIDC and do not require an npm token.
+
+Before the first Wasm release, configure an npm trusted publisher for
+`@muhammara/wasm` that trusts this repository's Wasm release workflow and
+release environment.
+
+```sh
+# WebAssembly release example.
+git tag wasm-v1.0.0
+git push origin wasm-v1.0.0
+```
+
+After successful publication, the workflow automatically creates a matching
+`wasm-doc-v<version>` documentation tag. A later documentation-only correction
+can be tagged without rebuilding or publishing the package:
+
+```sh
+git tag wasm-doc-v1.0.0.1
+git push origin wasm-doc-v1.0.0.1
+```
+
+Documentation tags trigger only the documentation workflow.
