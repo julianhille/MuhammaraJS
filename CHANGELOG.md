@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add Recipe URL links for arbitrary areas, rendered text, images, and drawing
+  bounds [#614](https://github.com/julianhille/MuhammaraJS/issues/614)
 - Document native writer encryption, reader passwords, continuation state, and
   previously undocumented public low-level exports
   [#629](https://github.com/julianhille/MuhammaraJS/issues/629)
@@ -51,6 +53,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
 - Add native Recipe `lineStyle()` with Wasm-compatible width, cap, join, miter,
   and dash options [#617](https://github.com/julianhille/MuhammaraJS/issues/617)
+- Add native Recipe `link()` with the top-left coordinate signature already
+  available in Wasm [#614](https://github.com/julianhille/MuhammaraJS/issues/614)
 - Support native Recipe `annot()` opacity and `comment()` replies, including
   TypeScript options, matching Wasm annotation dictionaries
   [#606](https://github.com/julianhille/MuhammaraJS/issues/606)

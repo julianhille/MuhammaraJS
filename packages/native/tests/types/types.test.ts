@@ -29,6 +29,7 @@ context.J(api.LineCapStyle.LINECAP_BUTT).j(2);
 objects.endArray(api.ETokenSeparator.eTokenSeparatorEndLine);
 recipe.read();
 recipe
+  .link("https://example.com", 100, 200, 160, 24)
   .comment("Please review.", 300, 100, {
     title: "Review",
     replies: [{ text: "Confirmed.", title: "Reviewer" }],
@@ -63,7 +64,7 @@ var title: string = recipe.getPageInfo().title;
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
 recipe
-  .text("Default size", 72, 72)
+  .text("Default size", 72, 72, { link: "https://text.example.com" })
   .text("Explicit size", 72, 100, { size: 12 });
 recipe
   .registerFont("body", "./fonts/body-bold.ttf", "bold")
@@ -80,11 +81,13 @@ recipe
     italic: true,
   })
   .image("image.png", 72, 128, {
+    link: "https://image.example.com",
     rotation: 45,
     rotationOrigin: [72, 128],
     skewX: 10,
     skewY: 5,
-  });
+  })
+  .rectangle(72, 180, 100, 20, { link: "https://shape.example.com" });
 var coordinates: muhammara.Recipe | number[] = recipe.movedown(1, Boolean(1));
 recipe.structure("structure.json").endPDF();
 recipe

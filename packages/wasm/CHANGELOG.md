@@ -6,6 +6,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Add Recipe URL links for arbitrary areas, rendered text, images, and drawing
+  bounds [#614](https://github.com/julianhille/MuhammaraJS/issues/614)
 - Add a MkDocs-validated guide index for browser examples
   [#627](https://github.com/julianhille/MuhammaraJS/issues/627)
 - Bundle Apache-2.0 Roboto Regular as Recipe's automatic default font, so text,

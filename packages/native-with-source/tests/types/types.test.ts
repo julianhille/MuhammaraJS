@@ -7,6 +7,7 @@ writer.startPageContentContext(page).c(0, 0, 1, 1, 2, 2).S();
 
 declare const recipe: muhammara.Recipe;
 recipe
+  .link("https://example.com", 100, 200, 160, 24)
   .comment("Please review.", 300, 100, {
     title: "Review",
     replies: [{ text: "Confirmed.", title: "Reviewer" }],
@@ -18,7 +19,7 @@ recipe.opacity(0.5);
 recipe.fillOpacity(0.5);
 
 recipe
-  .text("Default size", 72, 72)
+  .text("Default size", 72, 72, { link: "https://text.example.com" })
   .text("Explicit size", 72, 100, { size: 12 })
   .pie(100, 100, 50, 20, 220, { fill: "#000000" });
 recipe
@@ -35,11 +36,13 @@ recipe
     italic: true,
   })
   .image("image.png", 72, 128, {
+    link: "https://image.example.com",
     rotation: 45,
     rotationOrigin: [72, 128],
     skewX: 10,
     skewY: 5,
-  });
+  })
+  .rectangle(72, 180, 100, 20, { link: "https://shape.example.com" });
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
 var pages: number = recipe.metadata.pages;

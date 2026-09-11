@@ -12,6 +12,8 @@
 //   DecimalColor component values range from 0 to 255.
 //   PercentColor component values range from 1 to 100.
 
+const { linkPdf } = require("./annotation");
+
 /**
  * Draw a circle
  * @name circle
@@ -89,6 +91,8 @@ exports.circle = function circle(x, y, radius, options = {}) {
       },
     );
   }
+  if (options.link)
+    this.link(options.link, x - radius, y - radius, diameter, diameter);
   return this;
 };
 
@@ -204,6 +208,11 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
         }
       },
     );
+  }
+  if (options.link) {
+    if (options.useGivenCoords)
+      linkPdf(this, options.link, x, y, width, height);
+    else this.link(options.link, x, y, width, height);
   }
 
   return this;
@@ -381,6 +390,7 @@ exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
       },
     );
   }
+  if (options.link) this.link(options.link, cx - rx, cy - ry, width, height);
   return this;
 };
 
@@ -536,6 +546,8 @@ exports.arc = function arc(
     );
   }
 
+  if (options.link)
+    this.link(options.link, x - radius, y - radius, diameter, diameter);
   return this;
 };
 

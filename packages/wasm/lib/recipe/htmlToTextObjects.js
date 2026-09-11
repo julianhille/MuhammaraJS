@@ -33,6 +33,8 @@ export function htmlToTextObjects(html, options = {}) {
     if (["i", "em"].includes(name)) style.italic = true;
     if (name === "u") style.underline = true;
     if (["s", "strike", "del"].includes(name)) style.strikeOut = true;
+    if (name === "a")
+      style.link = token.match(/href\s*=\s*["']?([^\s"'>]+)/i)?.[1];
     var color = token.match(/(?:color|data-color)\s*=\s*["']?([^\s"'>;]+)/i);
     if (color) style.color = color[1];
     var css = token.match(/style\s*=\s*["']([^"']*)/i)?.[1] || "";

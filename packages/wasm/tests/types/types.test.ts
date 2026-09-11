@@ -290,7 +290,7 @@ async function usesLowLevelSurface() {
       return this;
     })
     .createPage("letter", 90, { left: 36 })
-    .text("Default size", 72, 72)
+    .text("Default size", 72, 72, { link: "https://text.example.test" })
     .text("Explicit size", 72, 100, { size: 12 })
     .text("Explicit fontSize", 72, 128, { fontSize: 12 })
     .margins(36, 36, 72, 72)
@@ -323,7 +323,10 @@ async function usesLowLevelSurface() {
       ],
       { fill: "#000000" },
     )
-    .rectangle(0, 0, 10, 10, { borderRadius: [1, 2, 3, 4] })
+    .rectangle(0, 0, 10, 10, {
+      borderRadius: [1, 2, 3, 4],
+      link: "https://shape.example.test",
+    })
     .circle(10, 10, 5)
     .ellipse(10, 10, 5, 2)
     .arc(10, 10, 5, 0, 90, { sector: true })
@@ -359,7 +362,11 @@ async function usesLowLevelSurface() {
     .fill()
     .stroke()
     .fillAndStroke()
-    .image("image", 10, 10, { index: 1, align: "center center" })
+    .image("image", 10, 10, {
+      index: 1,
+      align: "center center",
+      link: "https://image.example.test",
+    })
     .appendPage("pdf", [1, [2, 3]])
     .overlay("pdf", { page: 1, fitWidth: true })
     .overlay("pdf", 10, 10, {

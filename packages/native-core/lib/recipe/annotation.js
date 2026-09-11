@@ -26,6 +26,41 @@ exports.comment = function comment(text = "", x, y, options = {}) {
 };
 
 /**
+ * Add a clickable URL link to the current page.
+ * @name link
+ * @function
+ * @memberof Recipe#
+ * @param {string} url - The URL to open.
+ * @param {number} x - The top-left x coordinate.
+ * @param {number} y - The top-left y coordinate.
+ * @param {number} width - The link width.
+ * @param {number} height - The link height.
+ * @returns {Recipe} The recipe instance.
+ */
+exports.link = function link(url, x, y, width, height) {
+  const { nx, ny } = this._calibrateCoordinate(x, y, 0, -height);
+  return linkPdf(this, url, nx, ny, width, height);
+};
+
+function linkPdf(recipe, url, left, bottom, width, height) {
+  recipe.pauseContext();
+  try {
+    recipe.writer.attachURLLinktoCurrentPage(
+      url,
+      left,
+      bottom,
+      left + width,
+      bottom + height,
+    );
+  } finally {
+    recipe.resumeContext();
+  }
+  return recipe;
+}
+
+Object.defineProperty(exports, "linkPdf", { value: linkPdf });
+
+/**
  * Create an annotation
  * @name annot
  * @function

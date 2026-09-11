@@ -835,10 +835,10 @@ declare namespace muhammara {
     ): UsedFont;
     attachURLLinktoCurrentPage(
       url: string,
-      x: PosX,
-      y: PosY,
-      width: Width,
-      height: Height,
+      left: PosX,
+      bottom: PosY,
+      right: PosX,
+      top: PosY,
     ): this;
     shutdown(outputFilePath: FilePath): this;
     createFormXObjectFromTIFF(
@@ -1043,6 +1043,8 @@ declare namespace muhammara {
     }
 
     interface ImageOptions {
+      /** Make the rendered image open this URL. */
+      link?: string;
       width?: number;
       height?: number;
       scale?: number;
@@ -1123,6 +1125,8 @@ declare namespace muhammara {
     }
 
     interface TextOptions {
+      /** Make the rendered text open this URL. */
+      link?: string;
       charSpace?: number;
       color?: string | number[];
       flow?: boolean;
@@ -1176,6 +1180,7 @@ declare namespace muhammara {
     }
 
     interface PolygonOptions {
+      link?: string;
       color?: string | number[];
       stroke?: string | number[];
       fill?: string | number[];
@@ -1185,6 +1190,7 @@ declare namespace muhammara {
     }
 
     interface CircleOptions {
+      link?: string;
       color?: string | number[];
       stroke?: string | number[];
       fill?: string | number[];
@@ -1194,6 +1200,7 @@ declare namespace muhammara {
     }
 
     interface RectangleOptions {
+      link?: string;
       color?: string | number[];
       stroke?: string | number[];
       fill?: string | number[];
@@ -1244,6 +1251,14 @@ declare namespace muhammara {
       x: number,
       y: number,
       options?: Recipe.CommentOptions,
+    ): Recipe;
+
+    link(
+      url: string,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
     ): Recipe;
 
     annot(

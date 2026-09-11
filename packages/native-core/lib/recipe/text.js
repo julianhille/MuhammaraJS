@@ -2,6 +2,7 @@ const LineBreaker = require("linebreak");
 const { Word, Line, Column } = require("./text.helper");
 const { htmlToTextObjects } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
+const { linkPdf } = require("./annotation");
 const muhammara = require("../muhammara");
 const { UsedFont } = require("../muhammara");
 
@@ -258,6 +259,8 @@ exports.text = function text(text = "", x, y, options = {}) {
     return this;
   }
   options = _initOptions(this, x, y, options);
+  const linkX = this.x;
+  const linkY = this.y;
 
   const targetAnnotations = options;
   const originCoord = this._calibrateCoordinate(
@@ -273,6 +276,7 @@ exports.text = function text(text = "", x, y, options = {}) {
     originCoord.ny,
   );
   pathOptions.html = options.html;
+  pathOptions.link = options.link;
   pathOptions.hilite = options.hilite;
 
   // save text state for continued text?
@@ -294,6 +298,7 @@ exports.text = function text(text = "", x, y, options = {}) {
     textBox,
     pathOptions,
   );
+  const linkAnnotations = [];
 
   if (!textBox.width) {
     textBox.width = toWriteTextObjects[0].lineWidth;
@@ -641,6 +646,15 @@ exports.text = function text(text = "", x, y, options = {}) {
           const x = next_x || getStartX(content.startX, content);
           const y = currentY;
           next_x = writeText(context, x, y, content);
+          if (content.writeOptions.link) {
+            linkAnnotations.push({
+              url: content.writeOptions.link,
+              left: x,
+              bottom: y,
+              width: next_x ? next_x - x : content.lineWidth,
+              height: content.lineHeight,
+            });
+          }
         });
         // The line offset from the last line in the
         // group determines Y positioning for next line.
@@ -739,6 +753,15 @@ exports.text = function text(text = "", x, y, options = {}) {
           const x = next_x || getStartX(content.startX, content);
           const y = currentY;
           next_x = writeText(context, x, y, content);
+          if (content.writeOptions.link) {
+            linkAnnotations.push({
+              url: content.writeOptions.link,
+              left: x,
+              bottom: y,
+              width: next_x ? next_x - x : content.lineWidth,
+              height: content.lineHeight,
+            });
+          }
         }
 
         // Flush any left over text objects.
@@ -754,6 +777,16 @@ exports.text = function text(text = "", x, y, options = {}) {
     }
   }
 
+  linkAnnotations.forEach((annotation) => {
+    linkPdf(
+      this,
+      annotation.url,
+      annotation.left,
+      annotation.bottom,
+      annotation.width,
+      annotation.height,
+    );
+  });
   return this;
 };
 
@@ -866,6 +899,7 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
           child.sizeRatios = [...textObject.sizeRatios, child.sizeRatio];
         }
         child.styles = Object.assign(child.styles, textObject.styles);
+        child.link = child.link || textObject.link;
 
         child.isBold = textObject.isBold ? textObject.isBold : child.isBold;
         child.isItalic = textObject.isItalic
@@ -1195,6 +1229,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
     ? textBox.textAlign.split(" ")
     : [];
   const writeOptions = Object.assign({}, pathOptions, {
+    link: textObject.link || pathOptions.link,
     color: textObject.styles.color,
     opacity: parseFloat(textObject.styles.opacity || pathOptions.opacity || 1),
     underline: textObject.underline || pathOptions.underline,

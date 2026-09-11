@@ -62,31 +62,33 @@ export function createImageMethods(runtime) {
           },
         );
         this._restore();
-        return this;
+      } else {
+        runtime.withString(path, (pointer) => {
+          var matrix = runtime.module._malloc(48);
+          try {
+            runtime.module.HEAPF64.set([1, 0, 0, 1, 0, 0], matrix >>> 3);
+            runtime.call(
+              "_muhammara_wasm_writer_draw_image",
+              this._recipe,
+              point.nx,
+              point.ny,
+              pointer,
+              options.index || 0,
+              1,
+              matrix,
+              box.width,
+              box.height,
+              options.keepAspectRatio === false ? 0 : 1,
+              0,
+            );
+          } finally {
+            runtime.module._free(matrix);
+          }
+        });
+        this._restore();
       }
-      runtime.withString(path, (pointer) => {
-        var matrix = runtime.module._malloc(48);
-        try {
-          runtime.module.HEAPF64.set([1, 0, 0, 1, 0, 0], matrix >>> 3);
-          runtime.call(
-            "_muhammara_wasm_writer_draw_image",
-            this._recipe,
-            point.nx,
-            point.ny,
-            pointer,
-            options.index || 0,
-            1,
-            matrix,
-            box.width,
-            box.height,
-            options.keepAspectRatio === false ? 0 : 1,
-            0,
-          );
-        } finally {
-          runtime.module._free(matrix);
-        }
-      });
-      this._restore();
+      if (options.link)
+        this.link(options.link, box.x, box.y, box.width, box.height);
       return this;
     },
     _imageDimensions: function (path) {

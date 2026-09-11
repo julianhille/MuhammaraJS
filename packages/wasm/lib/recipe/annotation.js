@@ -56,14 +56,17 @@ export function createAnnotationMethods({
   return {
     link: function (url, x, y, width, height) {
       var point = this._calibrateCoordinate(x, y, 0, -height);
+      return this._linkPdf(url, point.nx, point.ny, width, height);
+    },
+    _linkPdf: function (url, left, bottom, width, height) {
       if (this._sourceMode) {
         return (
           this.writer.attachURLLinktoCurrentPage(
             url,
-            point.nx,
-            point.ny,
-            point.nx + width,
-            point.ny + height,
+            left,
+            bottom,
+            left + width,
+            bottom + height,
           ) && this
         );
       }
@@ -72,8 +75,8 @@ export function createAnnotationMethods({
           !module._muhammara_wasm_recipe_link(
             this._recipe,
             urlPointer,
-            point.nx,
-            point.ny,
+            left,
+            bottom,
             width,
             height,
           )

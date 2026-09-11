@@ -324,6 +324,8 @@ export function createTextMethods({ drawText, measure, module }) {
               ? width - right - textWidth
               : 0);
         var baseline = currentY + lineHeight;
+        var linkX = drawX;
+        var linkWidth = textWidth;
         var clipping = wrap === "clip" && width;
         if (clipping) {
           var clipPoint = this._calibrateCoordinate(
@@ -381,10 +383,21 @@ export function createTextMethods({ drawText, measure, module }) {
             drawText.call(this, word, drawX, baseline, textOptions);
             drawX += dimensions(this, word, textOptions).width + gap;
           });
+          linkWidth = width - left - right;
         } else {
           drawText.call(this, entry.text, drawX, baseline, textOptions);
         }
         if (clipping) this._restore();
+        if (textOptions.link) {
+          var linkBounds = dimensions(this, entry.text, textOptions);
+          this.link(
+            textOptions.link,
+            linkX + linkBounds.xMin,
+            currentY,
+            linkWidth,
+            lineHeight,
+          );
+        }
         currentY += lineHeight;
         return false;
       });
