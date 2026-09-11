@@ -9,6 +9,24 @@ export function createCompositionMethods({
   inspectPdf,
 }) {
   return {
+    /**
+     * Appends selected pages from a registered PDF.
+     * Page numbers and inclusive range endpoints are one-based. Omit `pages`
+     * to append every page; out-of-bounds endpoints are clamped to the source.
+     * Appended pages immediately become part of the output and page metadata.
+     *
+     * @name appendPage
+     * @function
+     * @memberof Recipe#
+     * @param {string} name Registered PDF name.
+     * @param {RecipePageSelection} [pages=[]] A one-based page number or an
+     * array of page numbers and inclusive ranges. Ranges must be nested, so
+     * `[1, 3]` selects pages 1 and 3 while `[[1, 3]]` selects pages 1 through 3.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If no PDF is registered under `name` or appending fails.
+     * @throws {RangeError} If a selection is not an integer range in ascending
+     * order after endpoint clamping.
+     */
     appendPage: function (name, pages = []) {
       var path = pdfs.get(name);
       if (!path) throw new Error(`Unknown PDF: ${name}`);
@@ -78,6 +96,24 @@ export function createCompositionMethods({
       });
     },
 
+    /**
+     * Draws a page from a registered PDF over the active page.
+     * Coordinates use Recipe's top-left origin. The overlay is written into the
+     * active page content.
+     *
+     * @name overlay
+     * @function
+     * @memberof Recipe#
+     * @param {string} name Registered PDF name.
+     * @param {number|RecipeOverlayOptions} [x=0] Left coordinate in Recipe
+     * coordinates, or options for the two-argument form.
+     * @param {number|RecipeOverlayOptions} [y=0] Top coordinate in Recipe
+     * coordinates, or options when `x` is supplied.
+     * @param {RecipeOverlayOptions} [options={}] Source page, scale, aspect
+     * ratio, and page-fitting options. Source page numbers are one-based.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If no PDF is registered under `name` or drawing fails.
+     */
     overlay: function (name, x = 0, y = 0, options = {}) {
       if (typeof x === "object") {
         options = x;
@@ -144,6 +180,23 @@ export function createCompositionMethods({
       });
     },
 
+    /**
+     * Schedules a page from a registered PDF for insertion in the output.
+     * `afterPageNumber` is zero to insert before the first page, or a one-based
+     * output page number. `sourcePageNumber` is one-based. The insertion is
+     * deferred until `endPDF()` rebuilds the output.
+     *
+     * @name insertPage
+     * @function
+     * @memberof Recipe#
+     * @param {number} afterPageNumber Output position after which to insert.
+     * @param {string} name Registered source PDF name.
+     * @param {number} sourcePageNumber One-based source page number.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If `afterPageNumber` is not a non-negative integer.
+     * @throws {TypeError} If the PDF is not registered or the source page is
+     * not a positive integer.
+     */
     insertPage: function (afterPageNumber, name, sourcePageNumber) {
       if (!Number.isInteger(afterPageNumber) || afterPageNumber < 0)
         throw new Error("The afterPageNumber is inValid.");
@@ -174,6 +227,20 @@ export function createEndPDF({
   createRecipe,
   recrypt,
 }) {
+  /**
+   * Finishes the Recipe and returns its PDF bytes.
+   * Deferred page insertions rebuild the document and configured encryption is
+   * applied. Repeated calls return cached finished bytes.
+   *
+   * @name endPDF
+   * @function
+   * @memberof Recipe#
+   * @param {function(Uint8Array): void} [callback] Callback invoked with the
+   * same finished bytes that are returned.
+   * @returns {Uint8Array} Finished PDF bytes.
+   * @throws {TypeError} If `callback` is supplied but is not a function.
+   * @throws {Error} If a page is still active or a PDF operation fails.
+   */
   return function (callback) {
     if (callback !== undefined && typeof callback !== "function") {
       throw new TypeError("endPDF callback must be a function");
@@ -231,6 +298,21 @@ export function createSplitPdf({
   call,
   createRecipe,
 }) {
+  /**
+   * Splits a registered PDF into one-page PDF byte arrays.
+   * Output names and source page traversal use one-based page numbers.
+   * This does not modify an existing Recipe; each result is separately built
+   * and finished.
+   *
+   * @name splitPdf
+   * @function
+   * @memberof Recipe
+   * @param {string} name Registered PDF name.
+   * @param {string} [prefix="page"] Prefix used for each output filename.
+   * @returns {RecipeSplitResult[]} One result per source page, in page order.
+   * @throws {Error} If no PDF is registered under `name`, the PDF cannot be
+   * parsed, or an output PDF cannot be created.
+   */
   return function splitPdf(name, prefix = "page") {
     var path = pdfs.get(name);
     if (!path) throw new Error(`Unknown PDF: ${name}`);
@@ -267,6 +349,18 @@ export function createSplitPdf({
 
 /** Creates a function that reports basic structure for the finished PDF. */
 export function createStructure() {
+  /**
+   * Reports basic structure for the finished PDF.
+   * Calling this method finishes the Recipe via `endPDF()`.
+   *
+   * @name structure
+   * @function
+   * @memberof Recipe#
+   * @param {RecipeStructureFormat} [format="string"] Output format.
+   * @returns {string|RecipeStructure} A text summary, or structured page,
+   * encryption, and indirect-object counts for JSON output.
+   * @throws {Error} If the Recipe cannot be finished.
+   */
   return function (format = "string") {
     var bytes = this.endPDF();
     var text = new TextDecoder().decode(bytes);

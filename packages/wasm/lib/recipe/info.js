@@ -10,6 +10,19 @@ export function createInfoMethods({ call, withString }) {
   }
 
   return {
+    /**
+     * Gets the document information dictionary or sets information entries.
+     * Array values are written as comma-and-space-separated text; custom key
+     * spelling is preserved.
+     *
+     * @name info
+     * @function
+     * @memberof Recipe#
+     * @param {Record<string, unknown>} [options] Information entries to set.
+     * Omit this argument to return a copy of the current information.
+     * @returns {Recipe|Record<string, unknown>} The Recipe instance when
+     * setting entries, otherwise a copy of the current information.
+     */
     info: function (options = {}) {
       if (arguments.length === 0) return { ...this._info };
       Object.entries(options).forEach(([key, value]) => {
@@ -39,10 +52,28 @@ export function createInfoMethods({ call, withString }) {
       return this;
     },
 
+    /**
+     * Sets a custom document information entry.
+     *
+     * @name custom
+     * @function
+     * @memberof Recipe#
+     * @param {string} key Information dictionary key.
+     * @param {unknown} value Value converted to text for the PDF.
+     * @returns {Recipe} The Recipe instance.
+     */
     custom: function (key, value) {
       return this.info({ [key]: value });
     },
 
+    /**
+     * Writes canonical creation and modification information.
+     *
+     * @name _writeCanonicalInfo
+     * @function
+     * @memberof Recipe#
+     * @private
+     */
     _writeCanonicalInfo: function () {
       var info = this._sourceMode
         ? this.writer.getDocumentContext().getInfoDictionary()

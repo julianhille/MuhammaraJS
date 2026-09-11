@@ -26,6 +26,25 @@ export function createVectorMethods(runtime) {
     }
   }
   return {
+    /**
+     * Draws a rectangle.
+     *
+     * `(x, y)` is the top-left corner in Recipe coordinates. Set
+     * `useGivenCoords` to use native PDF bottom-left coordinates instead. An
+     * active page is required.
+     *
+     * @name rectangle
+     * @function
+     * @memberof Recipe#
+     * @param {number} x - The horizontal corner coordinate in points.
+     * @param {number} y - The vertical corner coordinate in points.
+     * @param {number} width - The rectangle width in points.
+     * @param {number} height - The rectangle height in points.
+     * @param {RecipeRectangleOptions} [options] - Rectangle path, rounded-corner, and transformation options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If no target page is available or an unsupported color is requested.
+     * @throws {TypeError} If the requested color space is unknown.
+     */
     rectangle: function (x, y, width, height, options = {}) {
       if (options.borderRadius)
         return this._roundedRectangle(x, y, width, height, options);
@@ -51,6 +70,10 @@ export function createVectorMethods(runtime) {
       addLink(this, options, x, y, width, height);
       return result;
     },
+    /**
+     * Draws a rectangle with normalized corner radii.
+     * @private
+     */
     _roundedRectangle: function (x, y, width, height, options) {
       var linkX = x;
       var linkY = y;
@@ -116,9 +139,42 @@ export function createVectorMethods(runtime) {
       addLink(this, options, linkX, linkY, width, height);
       return result;
     },
+    /**
+     * Draws a circle centered at `(x, y)` in Recipe's top-left coordinate system.
+     *
+     * An active page is required. A link option covers the circle's bounding box.
+     *
+     * @name circle
+     * @function
+     * @memberof Recipe#
+     * @param {number} x - The center X coordinate in points.
+     * @param {number} y - The center Y coordinate in points.
+     * @param {number} radius - The radius in points.
+     * @param {RecipePathOptions} [options] - Path painting and transformation options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If no target page is available or an unsupported color is requested.
+     * @throws {TypeError} If the requested color space is unknown.
+     */
     circle: function (x, y, radius, options = {}) {
       return this.ellipse(x, y, radius, radius, options);
     },
+    /**
+     * Draws an ellipse centered at `(cx, cy)` in Recipe's top-left coordinate system.
+     *
+     * An active page is required. A link option covers the ellipse's bounding box.
+     *
+     * @name ellipse
+     * @function
+     * @memberof Recipe#
+     * @param {number} cx - The center X coordinate in points.
+     * @param {number} cy - The center Y coordinate in points.
+     * @param {number} rx - The horizontal radius in points.
+     * @param {number} ry - The vertical radius in points.
+     * @param {RecipePathOptions} [options] - Path painting and transformation options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If no target page is available or an unsupported color is requested.
+     * @throws {TypeError} If the requested color space is unknown.
+     */
     ellipse: function (cx, cy, rx, ry, options = {}) {
       var point = this._calibrateCoordinate(cx, cy);
       var x = point.nx;
@@ -134,6 +190,25 @@ export function createVectorMethods(runtime) {
       addLink(this, options, cx - rx, cy - ry, rx * 2, ry * 2);
       return result;
     },
+    /**
+     * Draws a circular arc centered at `(x, y)`.
+     *
+     * Coordinates use Recipe's top-left origin. Angles are degrees measured
+     * clockwise; negative values run counterclockwise. An active page is required.
+     *
+     * @name arc
+     * @function
+     * @memberof Recipe#
+     * @param {number} x - The center X coordinate in points.
+     * @param {number} y - The center Y coordinate in points.
+     * @param {number} radius - The radius in points.
+     * @param {number} [startAngle=0] - The starting angle in degrees.
+     * @param {number} [endAngle=360] - The ending angle in degrees.
+     * @param {RecipeArcOptions} [options] - Arc path, sector, and transformation options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If no target page is available or an unsupported color is requested.
+     * @throws {TypeError} If the requested color space is unknown.
+     */
     arc: function (x, y, radius, startAngle = 0, endAngle = 360, options = {}) {
       this._beginPath(options, x, y);
       var point = this._calibrateCoordinate(x, y);
@@ -154,21 +229,76 @@ export function createVectorMethods(runtime) {
       addLink(this, options, x - radius, y - radius, radius * 2, radius * 2);
       return result;
     },
+    /**
+     * Draws a closed circular sector centered at `(x, y)`.
+     *
+     * Coordinates use Recipe's top-left origin. Angles are degrees measured
+     * clockwise; negative values run counterclockwise. An active page is required.
+     *
+     * @name pie
+     * @function
+     * @memberof Recipe#
+     * @param {number} x - The center X coordinate in points.
+     * @param {number} y - The center Y coordinate in points.
+     * @param {number} radius - The radius in points.
+     * @param {number} [startAngle=0] - The starting angle in degrees.
+     * @param {number} [endAngle=360] - The ending angle in degrees.
+     * @param {RecipePathOptions} [options] - Path painting and transformation options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If no target page is available or an unsupported color is requested.
+     * @throws {TypeError} If the requested color space is unknown.
+     */
     pie: function (x, y, radius, startAngle, endAngle, options = {}) {
       return this.arc(x, y, radius, startAngle, endAngle, {
         ...options,
         sector: true,
       });
     },
+    /**
+     * Sets the default line width for subsequent Recipe paths.
+     *
+     * This updates the stored graphics state and applies it immediately when a
+     * page context is active.
+     *
+     * @name lineWidth
+     * @function
+     * @memberof Recipe#
+     * @param {number} width - The line width in points.
+     * @returns {Recipe} The recipe instance.
+     */
     lineWidth: function (width) {
       return this.lineStyle({ width });
     },
+    /**
+     * Compatibility method for filling the current path; currently a no-op.
+     *
+     * @name fill
+     * @function
+     * @memberof Recipe#
+     * @returns {Recipe} The recipe instance.
+     */
     fill: function () {
       return this;
     },
+    /**
+     * Compatibility method for stroking the current path; currently a no-op.
+     *
+     * @name stroke
+     * @function
+     * @memberof Recipe#
+     * @returns {Recipe} The recipe instance.
+     */
     stroke: function () {
       return this;
     },
+    /**
+     * Compatibility method for filling and stroking the current path; currently a no-op.
+     *
+     * @name fillAndStroke
+     * @function
+     * @memberof Recipe#
+     * @returns {Recipe} The recipe instance.
+     */
     fillAndStroke: function () {
       return this;
     },

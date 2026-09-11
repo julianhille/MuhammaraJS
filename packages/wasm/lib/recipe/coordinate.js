@@ -1,5 +1,9 @@
 /** Recipe coordinate conversion methods. */
 export var coordinateMethods = {
+  /**
+   * Resolves centered Recipe coordinates against the target page.
+   * @private
+   */
   _centrify: function (x, y, pageNumber) {
     var page = this.pageInfo(
       pageNumber || this._activePageNumber || this._pages.length,
@@ -14,6 +18,7 @@ export var coordinateMethods = {
   /**
    * Converts top-left Recipe coordinates to bottom-left PDF coordinates.
    *
+   * @private
    * @returns {{nx: number, ny: number}} Coordinates with the Y axis flipped.
    * @throws {Error} When no target page is available.
    */
@@ -29,6 +34,10 @@ export var coordinateMethods = {
     };
   },
 
+  /**
+   * Converts bottom-left PDF coordinates to top-left Recipe coordinates.
+   * @private
+   */
   _reverseCoordinate: function (x, y, offsetX = 0, offsetY = 0, pageNumber) {
     var page = this.pageInfo(
       pageNumber || this._activePageNumber || this._pages.length,
@@ -40,6 +49,10 @@ export var coordinateMethods = {
     };
   },
 
+  /**
+   * Converts Recipe coordinates for annotations on rotated pages.
+   * @private
+   */
   _calibrateCoordinateForAnnots: function (
     x,
     y,

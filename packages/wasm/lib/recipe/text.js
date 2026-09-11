@@ -98,7 +98,20 @@ export function createTextMethods({ drawText, measure, module }) {
   }
 
   return {
-    /** Measures text using the configured Recipe default unless a font is selected. */
+    /**
+     * Measures text in PDF points using the selected font and character spacing.
+     * The configured Recipe font is used when `options.font` is omitted. This
+     * method does not draw text or change the cursor; returned bounds use font
+     * metric coordinates rather than Recipe page coordinates.
+     *
+     * @name textDimensions
+     * @function
+     * @memberof Recipe#
+     * @param {string} value - Text to measure.
+     * @param {RecipeTextOptions} [options] - Font and measurement options.
+     * @returns {TextDimensions} Text bounds and dimensions in PDF points.
+     * @throws {Error} If the requested font is not registered or cannot be loaded.
+     */
     textDimensions(value, options = {}) {
       return dimensions(this, value, {
         ...options,
@@ -106,6 +119,10 @@ export function createTextMethods({ drawText, measure, module }) {
       });
     },
 
+    /**
+     * Measures the height required by an internal text box.
+     * @private
+     */
     _measureTextBoxHeight(value, options = {}) {
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
@@ -130,6 +147,24 @@ export function createTextMethods({ drawText, measure, module }) {
       );
     },
 
+    /**
+     * Defines named columns for flowing text or table placement.
+     * Coordinates and dimensions are PDF points in Recipe's top-left coordinate
+     * system, where x increases rightward and y increases downward. Zero values
+     * use the corresponding page margin or available page extent. The layout is
+     * stored under `id`; `options.reset` discards columns previously stored there.
+     *
+     * @name layout
+     * @function
+     * @memberof Recipe#
+     * @param {string|number} id - Layout identifier used by text flow.
+     * @param {number} [x=0] - Left position; zero uses the left margin.
+     * @param {number} [y=0] - Top position; zero uses the top margin.
+     * @param {number} [width=0] - Layout width; zero uses the available width.
+     * @param {number} [height=0] - Layout height; zero uses the available height.
+     * @param {RecipeLayoutOptions} [options] - Column definitions and reset behavior.
+     * @returns {Recipe} The Recipe instance.
+     */
     layout(id, x = 0, y = 0, width = 0, height = 0, options = {}) {
       this._layouts ||= {};
       if (options.reset || !this._layouts[id]) this._layouts[id] = [];
@@ -166,13 +201,43 @@ export function createTextMethods({ drawText, measure, module }) {
       return this;
     },
 
+    /**
+     * Moves the text cursor downward by a number of line heights.
+     * Movement is in Recipe's top-left coordinate system and resets x to the
+     * current text box origin when one exists. The current line height defaults
+     * to 14 points until text has established another value.
+     *
+     * @name movedown
+     * @function
+     * @memberof Recipe#
+     * @param {number} [count=1] - Number of line heights to move.
+     * @param {boolean} [returnCoords=false] - Return the new coordinates instead of the Recipe instance.
+     * @returns {Recipe|RecipePosition} The Recipe instance, or the new `[x, y]` coordinates.
+     */
     movedown(count = 1, returnCoords = false) {
       this._cursor.x = this._textBoxOrigin?.x ?? this._cursor.x;
       this._cursor.y += count * (this._lastLineHeight || 14);
       return returnCoords ? [this._cursor.x, this._cursor.y] : this;
     },
 
-    /** Draws text using the configured Recipe default unless a font is selected. */
+    /**
+     * Draws text on the active page and advances the Recipe text cursor.
+     * Explicit x and y values are PDF points in Recipe's top-left coordinate
+     * system, where x increases rightward and y increases downward. When they
+     * are omitted, drawing starts at the cursor or margins. Text boxes, flow,
+     * HTML styling, links, highlighting, clipping, and named layouts are
+     * controlled by `RecipeTextOptions`.
+     *
+     * @name text
+     * @function
+     * @memberof Recipe#
+     * @param {string} [value=''] - Text or supported HTML source to draw.
+     * @param {number|RecipeTextOptions} [x] - Left coordinate, or options when coordinates are omitted.
+     * @param {number} [y] - Top coordinate.
+     * @param {RecipeTextOptions} [options] - Text and layout options.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
+     */
     text(value = "", x, y, options = {}) {
       if (typeof x === "object" || x === undefined) {
         options = x || {};
