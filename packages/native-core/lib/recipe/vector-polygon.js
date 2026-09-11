@@ -132,5 +132,15 @@ exports.polygon = function polygon(coordinates = [], options = {}) {
     );
   }
 
+  if (options.link) {
+    this.link(
+      options.link,
+      boundBox[0] - margin,
+      boundBox[1] - margin,
+      width,
+      height,
+    );
+  }
+
   return this;
 };

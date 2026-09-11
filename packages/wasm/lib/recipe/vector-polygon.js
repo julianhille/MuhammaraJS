@@ -9,7 +9,21 @@ export function createPolygonMethods(runtime) {
       coordinates.slice(1).forEach((point) => this.lineTo(...point));
       if (this._pageContext) this._pageContext.h();
       else runtime.call("_muhammara_wasm_recipe_close_path", this._recipe);
-      return this._finishPath(options);
+      var result = this._finishPath(options);
+      if (options.link) {
+        var xs = coordinates.map((point) => point[0]);
+        var ys = coordinates.map((point) => point[1]);
+        var left = Math.min(...xs);
+        var top = Math.min(...ys);
+        this.link(
+          options.link,
+          left,
+          top,
+          Math.max(...xs) - left,
+          Math.max(...ys) - top,
+        );
+      }
+      return result;
     },
   };
 }

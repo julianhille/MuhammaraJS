@@ -1,5 +1,10 @@
 /** Creates Recipe vector shape and path methods. */
 export function createVectorMethods(runtime) {
+  function addLink(recipe, options, x, y, width, height) {
+    if (options.link && !options.useGivenCoords)
+      recipe.link(options.link, x, y, width, height);
+  }
+
   function curve(recipe, x, y, radius, start, end) {
     var segments = Math.ceil(Math.abs(end - start) / (Math.PI / 2));
     var step = (end - start) / segments;
@@ -28,7 +33,9 @@ export function createVectorMethods(runtime) {
         : this._calibrateCoordinate(x, y, 0, -height);
       if (this._pageContext) {
         this._pageContext.re(point.nx, point.ny, width, height);
-        return this._finishPath(options);
+        var result = this._finishPath(options);
+        addLink(this, options, x, y, width, height);
+        return result;
       }
       runtime.call(
         "_muhammara_wasm_recipe_rectangle_path",
@@ -38,9 +45,13 @@ export function createVectorMethods(runtime) {
         width,
         height,
       );
-      return this._finishPath(options);
+      var result = this._finishPath(options);
+      addLink(this, options, x, y, width, height);
+      return result;
     },
     _roundedRectangle: function (x, y, width, height, options) {
+      var linkX = x;
+      var linkY = y;
       var source = Array.isArray(options.borderRadius)
         ? options.borderRadius
         : [options.borderRadius];
@@ -99,7 +110,9 @@ export function createVectorMethods(runtime) {
         );
       if (this._pageContext) this._pageContext.h();
       else runtime.call("_muhammara_wasm_recipe_close_path", this._recipe);
-      return this._finishPath(options);
+      var result = this._finishPath(options);
+      addLink(this, options, linkX, linkY, width, height);
+      return result;
     },
     circle: function (x, y, radius, options = {}) {
       return this.ellipse(x, y, radius, radius, options);
@@ -115,7 +128,9 @@ export function createVectorMethods(runtime) {
         ._curvePdf(x + rx * k, y - ry, x + rx, y - ry * k, x + rx, y)
         ._curvePdf(x + rx, y + ry * k, x + rx * k, y + ry, x, y + ry)
         ._curvePdf(x - rx * k, y + ry, x - rx, y + ry * k, x - rx, y);
-      return this._finishPath(options);
+      var result = this._finishPath(options);
+      addLink(this, options, cx - rx, cy - ry, rx * 2, ry * 2);
+      return result;
     },
     arc: function (x, y, radius, startAngle = 0, endAngle = 360, options = {}) {
       this._beginPath(options, x, y);
@@ -133,7 +148,9 @@ export function createVectorMethods(runtime) {
         if (this._pageContext) this._pageContext.h();
         else runtime.call("_muhammara_wasm_recipe_close_path", this._recipe);
       }
-      return this._finishPath(options);
+      var result = this._finishPath(options);
+      addLink(this, options, x - radius, y - radius, radius * 2, radius * 2);
+      return result;
     },
     pie: function (x, y, radius, startAngle, endAngle, options = {}) {
       return this.arc(x, y, radius, startAngle, endAngle, {

@@ -89,6 +89,8 @@ exports.circle = function circle(x, y, radius, options = {}) {
       },
     );
   }
+  if (options.link)
+    this.link(options.link, x - radius, y - radius, diameter, diameter);
   return this;
 };
 
@@ -205,6 +207,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
       },
     );
   }
+  if (options.link) this.link(options.link, x, y, width, height);
 
   return this;
 };
@@ -381,6 +384,7 @@ exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
       },
     );
   }
+  if (options.link) this.link(options.link, cx - rx, cy - ry, width, height);
   return this;
 };
 
@@ -536,6 +540,8 @@ exports.arc = function arc(
     );
   }
 
+  if (options.link)
+    this.link(options.link, x - radius, y - radius, diameter, diameter);
   return this;
 };
 
