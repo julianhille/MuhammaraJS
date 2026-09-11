@@ -66,6 +66,15 @@ var info: muhammara.Recipe.InfoOptions = {
 };
 recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });
 
+recipe
+  .register("drawMarker", function () {})
+  .pauseContext()
+  .resumeContext();
+recipe
+  .register(function drawNamedMarker() {})
+  .pauseContext()
+  .resumeContext();
+
 var pageBox: muhammara.PDFPageBoxType = muhammara.ePDFPageBoxCropBox;
 recipe.setPageBox(pageBox, 10, 20, 585, 822);
 recipe.setPageBox(muhammara.ePDFPageBoxMediaBox, 0, 0, 595, 842);

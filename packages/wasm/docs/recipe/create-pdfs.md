@@ -32,7 +32,9 @@ var response = new Response(pdfBytes, {
 
 Named sizes include `letter` and `A4`; `createPage(width, height)` accepts
 explicit point dimensions. Call `endPage()` before creating or editing another
-page. Repeated `endPDF()` calls return the same cached byte array. Call
+page. `pauseContext()` and `resumeContext()` split a page into separate content
+contexts and return the Recipe for valid transitions; unmatched calls throw.
+Repeated `endPDF()` calls return the same cached byte array. Call
 `recipe.dispose()` when a long-lived application no longer needs the Recipe's
 WebAssembly allocations.
 

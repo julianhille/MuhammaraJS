@@ -104,13 +104,13 @@ describe("Recipe foundation", function () {
     assert.equal(recipe.pageInfo(1), null);
     recipe = new Recipe(source, { compress: false });
     assert.deepEqual(recipe.pageInfo(1).mediaBox, [0, 0, 200, 300]);
-    recipe
-      .editPage(1)
-      .rectangle(30, 30, 20, 20, { fill: "#000000" })
-      .pauseContext()
-      .resumeContext()
-      .rectangle(60, 60, 20, 20, { fill: "#000000" })
-      .endPage();
+    recipe.editPage(1).rectangle(30, 30, 20, 20, { fill: "#000000" });
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
+    assert.equal(recipe.pauseContext(), recipe);
+    assert.throws(() => recipe.pauseContext(), /No active page/);
+    assert.equal(recipe.resumeContext(), recipe);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
+    recipe.rectangle(60, 60, 20, 20, { fill: "#000000" }).endPage();
     var bytes = recipe.endPDF();
     assert.ok(bytes instanceof Uint8Array);
     var reader = (await createMuhammaraWasm()).createReader(bytes);
@@ -150,6 +150,7 @@ describe("Recipe foundation", function () {
     assert.throws(() => recipe.read(new Blob()), /Async API/);
     assert.throws(() => recipe.editPage(1), /constructed from PDF bytes/);
     assert.throws(() => recipe.pauseContext(), /No active page/);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
     var source = new Recipe().createPage().endPage().endPDF();
     recipe = new Recipe(source);
     assert.throws(() => recipe.editPage(2), /pageNumber/);

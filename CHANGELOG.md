@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Native Recipe `pauseContext()` and `resumeContext()` now throw when there is
+  no matching active or paused page content context instead of silently doing
+  nothing. Call `pauseContext()` only after creating or editing a page, and call
+  `resumeContext()` exactly once after a successful pause
+  [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Remove the accidentally exposed native `Recipe` prototype members
   `ANNOTATION_PREFIX`, `appendPDFPageFromPDFWithAnnotations()`, and
   `appendPDFPagesFromPDFWithAnnotations()`. Code that called these undocumented
@@ -120,6 +125,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   to run `npm ci`, and the source-capable package README links to the
   installation page instead of repeating a list that had already drifted
   [#596](https://github.com/julianhille/MuhammaraJS/issues/596)
+- Make native Recipe `register()`, `pauseContext()`, and `resumeContext()`
+  chainable, and track created-page and edited-page context transitions
+  [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Document that native writer events have no WebAssembly equivalent
   [#624](https://github.com/julianhille/MuhammaraJS/issues/624)
 - Declare documented native Recipe metadata and call forms in TypeScript,

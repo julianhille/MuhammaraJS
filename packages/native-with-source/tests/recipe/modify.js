@@ -1,5 +1,6 @@
 const path = require("path");
 const Recipe = require("@muhammara/native-with-source").Recipe;
+const assert = require("chai").assert;
 
 describe("Modify", () => {
   it("Add something to an existing pdf", (done) => {
@@ -9,11 +10,16 @@ describe("Modify", () => {
       "../output/Add something to an existing.pdf",
     );
     const recipe = new Recipe(src, output);
+    recipe.info({
+      author: "wahaha",
+    });
+    recipe.editPage(1);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
+    assert.equal(recipe.pauseContext(), recipe);
+    assert.throws(() => recipe.pauseContext(), /No active page/);
+    assert.equal(recipe.resumeContext(), recipe);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
     recipe
-      .info({
-        author: "wahaha",
-      })
-      .editPage(1)
       .text("Add some texts to an existing pdf file", 150, 300)
       .circle("center", 100, 60, {
         stroke: "#3b7721",

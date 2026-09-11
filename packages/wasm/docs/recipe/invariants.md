@@ -10,6 +10,9 @@
   to mean before the first output page.
 - Call `endPage()` before selecting, creating, or editing another page and before
   `endPDF()`.
+- `pauseContext()` and `resumeContext()` are chainable for valid created-page
+  and edited-page transitions. They throw when there is no matching active or
+  paused page content context.
 - `endPDF()` returns an owned `Uint8Array`; repeated calls return the cached
   result. It never writes a path or stream.
 - `read()` and `readAsync()` inspect their argument without replacing Recipe's

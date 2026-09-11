@@ -352,7 +352,7 @@ class Recipe {
    * @throws {string} If the callback function is unnamed when no key is provided.
    * @throws {string} If the key conflicts with an existing Recipe prototype member.
    * @throws {string} If the callback is not a function.
-   * @returns {void}
+   * @returns {Recipe} The recipe instance.
    */
   register(key, callback) {
     // Assume simply registering a function which will have an embedded name
@@ -373,6 +373,7 @@ class Recipe {
     }
 
     this.__proto__[key] = callback;
+    return this;
   }
 }
 

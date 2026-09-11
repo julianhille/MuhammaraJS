@@ -19,16 +19,22 @@ describe("Recipe create", function () {
     dimensionsRecipe.endPDF();
 
     var extensionRecipe = new Recipe();
-    extensionRecipe.register("drawDot", function (x, y) {
-      return this.circle(x, y, 2, { fill: "#000000" });
-    });
+    assert.equal(
+      extensionRecipe.register("drawDot", function (x, y) {
+        return this.circle(x, y, 2, { fill: "#000000" });
+      }),
+      extensionRecipe,
+    );
     assert.equal(typeof extensionRecipe.drawDot, "function");
     extensionRecipe.createPage(100, 100).drawDot(50, 50).endPage().endPDF();
 
     var namedExtensionRecipe = new Recipe();
-    namedExtensionRecipe.register(function drawSquare(x, y) {
-      return this.rectangle(x, y, 2, 2, { fill: "#000000" });
-    });
+    assert.equal(
+      namedExtensionRecipe.register(function drawSquare(x, y) {
+        return this.rectangle(x, y, 2, 2, { fill: "#000000" });
+      }),
+      namedExtensionRecipe,
+    );
     assert.throws(
       () => namedExtensionRecipe.register("drawSquare", () => {}),
       /already exists/,
@@ -38,6 +44,21 @@ describe("Recipe create", function () {
       .drawSquare(50, 50)
       .endPage()
       .endPDF();
+  });
+
+  it("chains valid context transitions and rejects unmatched calls", function () {
+    var recipe = new Recipe();
+    assert.throws(() => recipe.pauseContext(), /No active page/);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
+    recipe.createPage().rectangle(10, 10, 20, 20);
+    assert.equal(recipe.pauseContext(), recipe);
+    assert.throws(() => recipe.pauseContext(), /No active page/);
+    assert.equal(recipe.resumeContext(), recipe);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
+    recipe.rectangle(40, 40, 20, 20).endPage();
+    assert.throws(() => recipe.pauseContext(), /No active page/);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
+    recipe.endPDF();
   });
 
   it("tracks named-page metadata, margins, and rotation", function () {

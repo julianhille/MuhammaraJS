@@ -67,6 +67,7 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
   this.pageNumber = pageNumber;
   this.pageContext = this.writer.startPageContentContext(this.page);
   this.editingPage = false;
+  this.contextState = "active-new";
 
   if (margins) {
     this.margins(margins);
@@ -144,14 +145,16 @@ exports.endPage = function endPage() {
   }
 
   if (this.page.endContext) {
-    this.page.endContext();
+    if (this.contextState === "active-edit") this.page.endContext();
     this.page.writePage();
   } else {
     this.writer.writePage(this.page);
   }
-  // this.page = null;
-  // this.pageContext = null;
-  // this.pageNumber = 0;
+  this.page = null;
+  this.pageContext = null;
+  this.pageNumber = 0;
+  this.editingPage = false;
+  this.contextState = "idle";
 
   return this;
 };
@@ -176,6 +179,7 @@ exports.editPage = function editPage(pageNumber) {
   this.pageNumber = pageNumber;
   this.pageContext = pageModifier.startContext().getContext();
   this.editingPage = true;
+  this.contextState = "active-edit";
 
   this._resumePageRotation(pageNumber);
 
@@ -296,15 +300,21 @@ exports.getCurrentPageInfo = function getCurrentPageInfo() {
  * @name pauseContext
  * @function
  * @memberof Recipe#
- * @returns {void}
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If there is no active page content context.
  */
 exports.pauseContext = function pauseContext() {
-  if (this.page && this.page.endContext) {
+  if (this.contextState === "active-edit") {
     this.page.endContext();
-    // this.writer.pausePageContentContext(this.pageContext);
-  } else if (this.pageContext) {
+    this.pageContext = null;
+    this.contextState = "paused-edit";
+  } else if (this.contextState === "active-new") {
     this.writer.pausePageContentContext(this.pageContext);
+    this.contextState = "paused-new";
+  } else {
+    throw new Error("No active page content context to pause");
   }
+  return this;
 };
 
 /**
@@ -312,13 +322,20 @@ exports.pauseContext = function pauseContext() {
  * @name resumeContext
  * @function
  * @memberof Recipe#
- * @returns {void}
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If there is no paused page content context.
  */
 exports.resumeContext = function resumeContext() {
-  if (!this.isNewPDF && this.page) {
+  if (this.contextState === "paused-edit") {
     this.pageContext = this.page.startContext().getContext();
     this._resumePageRotation();
+    this.contextState = "active-edit";
+  } else if (this.contextState === "paused-new") {
+    this.contextState = "active-new";
+  } else {
+    throw new Error("No paused page content context to resume");
   }
+  return this;
 };
 
 /**

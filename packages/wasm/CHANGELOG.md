@@ -6,6 +6,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Support chainable Recipe `pauseContext()` and `resumeContext()` transitions
+  on newly created pages while retaining errors for unmatched calls
+  [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Add Recipe URL links for arbitrary areas, rendered text, images, and drawing
   bounds [#614](https://github.com/julianhille/MuhammaraJS/issues/614)
 - Add generated behavioral API reference documentation from JSDoc on every

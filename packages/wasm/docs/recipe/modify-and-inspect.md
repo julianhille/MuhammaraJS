@@ -30,8 +30,9 @@ var outputBytes = recipe
 
 Editing uses a byte-backed modifier, including for rotated pages and pages with
 non-zero MediaBox origins. `pauseContext()` and `resumeContext()` split an edit
-into separate appended content contexts. Password-protected source editing is
-not available; decrypt first with the low-level byte-first `recrypt()` API.
+into separate appended content contexts. Both return the Recipe for valid
+transitions and throw for unmatched calls. Password-protected source editing
+is not available; decrypt first with the low-level byte-first `recrypt()` API.
 
 ## Inspect Without Replacing Output State
 
