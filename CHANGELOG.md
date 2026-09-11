@@ -112,6 +112,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Document the complete set of Perl packages RPM-based distributions need for a
+  source build. The list grew from `perl-FindBin` and `perl-IPC-Cmd` to also
+  cover `perl-lib`, `perl-File-Compare`, `perl-File-Copy`, `perl-Time-Piece`,
+  and `perl-Digest-SHA`, each verified as blocking on a clean Fedora container.
+  The development guide now states the prerequisites where it tells contributors
+  to run `npm ci`, and the source-capable package README links to the
+  installation page instead of repeating a list that had already drifted
+  [#596](https://github.com/julianhille/MuhammaraJS/issues/596)
 - Document that native writer events have no WebAssembly equivalent
   [#624](https://github.com/julianhille/MuhammaraJS/issues/624)
 - Declare documented native Recipe metadata and call forms in TypeScript,

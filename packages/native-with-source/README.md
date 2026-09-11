@@ -24,10 +24,9 @@ and Visual Studio Build Tools on Windows; no separate OpenSSL installation is
 required.
 
 RPM-based distributions such as Fedora, RHEL, and openSUSE split the Perl core
-library into separate packages, and OpenSSL's `./Configure` needs some of them.
-Install them alongside `perl` with `dnf install perl-FindBin perl-IPC-Cmd`.
-Without them the build stops while configuring OpenSSL with `Can't locate
-FindBin.pm in @INC`. Debian and Ubuntu ship these modules with `perl` itself.
+library into separate packages, and a source build needs several of them. See
+[Perl Packages On RPM Distributions](https://muhammarajs.readthedocs.io/en/latest/getting-started/installation.html#perl-packages-on-rpm-distributions)
+for the current list. Debian and Ubuntu ship these modules with `perl` itself.
 
 Windows builds use `OPENSSL_VS_INSTALL_PATH`, `GYP_MSVS_OVERRIDE_PATH`,
 `VSINSTALLDIR`, or `npm_config_msbuild_path` when set, then fall back to
