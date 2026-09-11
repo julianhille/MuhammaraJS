@@ -1,5 +1,13 @@
 const path = require("path");
+const assert = require("chai").assert;
+const zlib = require("zlib");
 const Recipe = require("@muhammara/native-with-source").Recipe;
+
+function getFirstContentStream(pdf) {
+  const start = pdf.indexOf("stream\r\n") + "stream\r\n".length;
+  const end = pdf.indexOf("\r\nendstream", start);
+  return zlib.inflateSync(pdf.subarray(start, end)).toString();
+}
 
 describe("Vector", () => {
   it("Add vectors", (done) => {
@@ -239,5 +247,16 @@ describe("Vector", () => {
       .text(":lineJoins", 415, 33)
       .endPage()
       .endPDF(done);
+  });
+
+  it("closes pie wedges", (done) => {
+    new Recipe(Buffer.from("new"))
+      .createPage(200, 200)
+      .pie(100, 100, 50, 20, 220, { stroke: "#000000" })
+      .endPage()
+      .endPDF((pdf) => {
+        assert.match(getFirstContentStream(pdf), /\r?\nh\r?\n[\s\S]*?S\r?\n/);
+        done();
+      });
   });
 });

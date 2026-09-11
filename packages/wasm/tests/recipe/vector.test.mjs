@@ -1,7 +1,16 @@
 // Ports vector behavior from tests/recipe/vector.js, shapes.js, arcs.js, and triangle.js.
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
+import { inflateSync } from "node:zlib";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+
+function getFirstContentStream(pdf) {
+  var bytes = Buffer.from(pdf);
+  var start = bytes.indexOf("stream\r\n") + "stream\r\n".length;
+  var end = bytes.indexOf("\r\nendstream", start);
+  return inflateSync(bytes.subarray(start, end)).toString();
+}
 
 describe("Recipe vector", function () {
   it("creates vector shapes, transforms, and images", async function () {
@@ -70,5 +79,16 @@ describe("Recipe vector", function () {
 
     assert.equal(new TextDecoder().decode(pdf.slice(0, 8)), "%PDF-1.7");
     assert.match(new TextDecoder().decode(pdf), /%%EOF/);
+  });
+
+  it("closes pie wedges", async function () {
+    var Recipe = await getRecipe();
+    var pdf = new Recipe()
+      .createPage(200, 200)
+      .pie(100, 100, 50, 20, 220, { stroke: "#000000" })
+      .endPage()
+      .endPDF();
+
+    assert.match(getFirstContentStream(pdf), /\r?\nh\r?\n[\s\S]*?S\r?\n/);
   });
 });

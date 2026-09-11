@@ -179,6 +179,7 @@ Task-oriented Recipe guides:
 
 - [Add Review Annotations](how-to/add-review-annotations.md)
 - [Create Multi-Page Tables](how-to/create-tables.md)
+- [Create A Pie Chart](how-to/create-pie-charts.md)
 - [Flow Text Into Columns](how-to/flow-text-into-columns.md)
 - [Watermark Every Page](how-to/watermark-pdfs.md)
 - [Add Clickable URL Links](how-to/add-url-links.md)

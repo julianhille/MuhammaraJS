@@ -19,7 +19,7 @@ function endPoint(x, y, l, angle) {
   return [x + l * Math.cos(radians), y + l * Math.sin(radians)];
 }
 
-function pie(x, y, radius, chart) {
+function pieChart(x, y, radius, chart) {
   let sectorColors = [];
   let startAt = -90;
   let sectorLineColor = "#00";
@@ -305,8 +305,8 @@ describe("Arc test", () => {
     let x = 200;
     let y = 550;
     let r = 80;
-    recipe.register(pie);
-    recipe.editPage(1).pie(x, y, r, chart);
+    recipe.register(pieChart);
+    recipe.editPage(1).pieChart(x, y, r, chart);
 
     x = 420;
     chart.data = grades;
@@ -315,6 +315,6 @@ describe("Arc test", () => {
     chart.title.color = "#000000";
     delete chart.title["underline"];
     chart.title.underline = { color: chart.title.color };
-    recipe.pie(x, y, r, chart).endPage().endPDF(done);
+    recipe.pieChart(x, y, r, chart).endPage().endPDF(done);
   });
 });

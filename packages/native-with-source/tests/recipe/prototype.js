@@ -92,6 +92,7 @@ describe("Recipe prototype", function () {
       "pageInfo",
       "pauseContext",
       "permission",
+      "pie",
       "polygon",
       "position",
       "read",

@@ -540,6 +540,26 @@ exports.arc = function arc(
 };
 
 /**
+ * Draw a closed sector of a circle.
+ * @name pie
+ * @function
+ * @memberof Recipe#
+ * @param {number} x - the x coordinate of the pie center point
+ * @param {number} y - the y coordinate of the pie center point
+ * @param {number} radius - the distance from the center point to the arc
+ * @param {number} [startAngle=0] - the start of the arc in degree units
+ * @param {number} [endAngle=360] - the end of the arc in degree units
+ * @param {Object} [options] - The path options.
+ * @returns {Recipe} The recipe instance.
+ */
+exports.pie = function pie(x, y, radius, startAngle, endAngle, options = {}) {
+  return this.arc(x, y, radius, startAngle, endAngle, {
+    ...options,
+    sector: true,
+  });
+};
+
+/**
  * Set the line style for the current page content context.
  * @name lineStyle
  * @function
