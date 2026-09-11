@@ -75,6 +75,24 @@ export function colorModel(recipe, value, options = {}) {
 /** Creates Recipe color registration methods. */
 export function createColorMethods() {
   return {
+    /**
+     * Registers a named color for later use by Recipe drawing methods.
+     *
+     * Array components use values from 0 through 255. Hex strings may start
+     * with `#`, and percentage strings may start with `%`. An empty name is a
+     * no-op. WebAssembly does not support loading color files or Separation
+     * color resources.
+     *
+     * @name chroma
+     * @function
+     * @memberof Recipe#
+     * @param {string} name - The name to register.
+     * @param {RecipeColor} value - A gray, RGB, or CMYK color value.
+     * @param {RecipeColorSpace} [colorspace] - The color space, inferred from the value when omitted.
+     * @returns {Recipe} The recipe instance.
+     * @throws {TypeError} If the color value has an invalid size or the color space is unknown.
+     * @throws {Error} If `name` is `!load` or the Separation color space is requested.
+     */
     chroma: function (name, value, colorspace = "") {
       if (!name) return this;
       if (name === "!load")

@@ -32,6 +32,10 @@ export function createVectorHelpers(runtime) {
     else operator(recipe, stroke ? 29 : 28, ...model.values);
   }
   return {
+    /**
+     * Normalizes path options against the current Recipe graphics state.
+     * @private
+     */
     _pathOptions: function (options = {}) {
       var lineStyle = this._lineStyle || {};
       var opacity =
@@ -66,6 +70,10 @@ export function createVectorHelpers(runtime) {
         opacity,
       };
     },
+    /**
+     * Saves graphics state and applies path styles and transformations.
+     * @private
+     */
     _beginPath: function (options = {}, x = 0, y = 0) {
       var style = this._pathOptions(options);
       this._save();
@@ -94,6 +102,10 @@ export function createVectorHelpers(runtime) {
       });
       this._setOpacity(style.opacity);
     },
+    /**
+     * Paints the current path and restores the saved graphics state.
+     * @private
+     */
     _finishPath: function (options = {}) {
       var fill = options.fill;
       var stroke = options.stroke || options.color || options.colour;

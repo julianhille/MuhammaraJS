@@ -54,10 +54,33 @@ export function createAnnotationMethods({
   }
 
   return {
+    /**
+     * Adds a clickable URL link rectangle to the active page.
+     * Coordinates use Recipe's top-left origin.
+     *
+     * @name link
+     * @function
+     * @memberof Recipe#
+     * @param {string} url URL to open.
+     * @param {number} x Left coordinate in Recipe coordinates.
+     * @param {number} y Top coordinate in Recipe coordinates.
+     * @param {number} width Link width.
+     * @param {number} height Link height.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the underlying PDF operation fails.
+     */
     link: function (url, x, y, width, height) {
       var point = this._calibrateCoordinate(x, y, 0, -height);
       return this._linkPdf(url, point.nx, point.ny, width, height);
     },
+    /**
+     * Adds a URL link using native PDF coordinates.
+     *
+     * @name _linkPdf
+     * @function
+     * @memberof Recipe#
+     * @private
+     */
     _linkPdf: function (url, left, bottom, width, height) {
       if (this._sourceMode) {
         return (
@@ -87,9 +110,40 @@ export function createAnnotationMethods({
         return this;
       });
     },
+    /**
+     * Queues a text comment annotation on the active page.
+     * Coordinates use Recipe's top-left origin.
+     *
+     * @name comment
+     * @function
+     * @memberof Recipe#
+     * @param {string} text Comment contents.
+     * @param {RecipeCoordinate} x Left coordinate in Recipe coordinates.
+     * @param {RecipeCoordinate} y Top coordinate in Recipe coordinates.
+     * @param {RecipeAnnotationOptions} [options={}] Annotation options. The
+     * `text` argument supplies the contents and the default icon is `Comment`.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If there is no active page.
+     */
     comment: function (text = "", x, y, options = {}) {
       return this.annot(x, y, "Text", { icon: "Comment", ...options, text });
     },
+    /**
+     * Queues an annotation on the active page.
+     * Coordinates use Recipe's top-left origin; `center` centers that axis.
+     *
+     * @name annot
+     * @function
+     * @memberof Recipe#
+     * @param {RecipeCoordinate} x Left coordinate in Recipe coordinates.
+     * @param {RecipeCoordinate} y Top coordinate in Recipe coordinates.
+     * @param {string} subtype PDF annotation subtype.
+     * @param {RecipeAnnotationOptions} [options={}] Annotation appearance,
+     * contents, replies, dimensions, flags, and rotation handling.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If there is no active page.
+     * @throws {TypeError} If `subtype` is not a non-empty string.
+     */
     annot: function (x, y, subtype, options = {}) {
       if (!this._pageHeight)
         throw new Error("Annotations require an active page");
@@ -98,6 +152,14 @@ export function createAnnotationMethods({
       this._annotations.push({ x, y, subtype, options: { ...options } });
       return this;
     },
+    /**
+     * Writes and clears annotations queued for the active page.
+     *
+     * @name _flushAnnotations
+     * @function
+     * @memberof Recipe#
+     * @private
+     */
     _flushAnnotations: function () {
       var annotations = this._annotations;
       this._annotations = [];

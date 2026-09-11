@@ -15,11 +15,18 @@ export function createReplaceTextMethods(encoder) {
   return {
     /**
      * Replaces literal text-showing operands in a page's single content stream.
+     * Matching content is replaced in the output; no match leaves it unchanged.
      *
+     * @name replaceText
+     * @function
+     * @memberof Recipe#
      * @param {string} text Text to replace.
      * @param {string} replacement Replacement text.
      * @param {number} pageNumber One-based page number.
-     * @returns {this}
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If text or replacement is not a string, or if the
+     * page number is not a positive integer.
+     * @throws {Error} If the page does not have one indirect content stream.
      */
     replaceText: function (text, replacement, pageNumber) {
       if (typeof text !== "string" || typeof replacement !== "string") {

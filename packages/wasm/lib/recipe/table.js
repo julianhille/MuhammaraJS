@@ -17,6 +17,24 @@ function cellOptions(options = {}, name = "cell") {
 /** Creates Recipe table layout methods. */
 export function createTableMethods() {
   return {
+    /**
+     * Draws records as a table on the active page.
+     * x and y are PDF points in Recipe's top-left coordinate system, where x
+     * increases rightward and y increases downward. Rows are measured before
+     * drawing, optional overflow handling can continue at another Recipe
+     * position, and the cursor finishes at the table's left edge and bottom.
+     * Empty contents leave the Recipe unchanged.
+     *
+     * @name table
+     * @function
+     * @memberof Recipe#
+     * @param {number} x - Left table coordinate.
+     * @param {number} y - Top table coordinate.
+     * @param {RecipeTableRow[]} contents - Records to render as rows.
+     * @param {RecipeTableOptions} [options] - Column, row, header, border, text, and overflow options.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If table text cannot be measured or drawn, including when a requested font cannot be loaded.
+     */
     table(x, y, contents, options = {}) {
       if (!Array.isArray(contents) || !contents.length) return this;
       var fields = options.order

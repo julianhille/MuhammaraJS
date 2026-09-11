@@ -1,5 +1,15 @@
 // Deliberately small, DOM-free HTML subset so Recipe also works in Workers.
-/** Converts supported HTML into styled Recipe text objects. */
+/**
+ * Converts supported HTML into styled objects consumed by Recipe text layout.
+ * This DOM-free parser recognizes basic emphasis, links, colors, and line-break
+ * elements. It does not draw or change Recipe state, and therefore does not
+ * interpret page coordinates.
+ *
+ * @private
+ * @param {string} html - HTML source to convert.
+ * @param {Partial<RecipeTextOptions>} [options] - Initial text options, including the inherited font.
+ * @returns {RecipeHtmlTextObject[]} Styled text fragments in source order.
+ */
 export function htmlToTextObjects(html, options = {}) {
   var objects = [];
   var styles = [];

@@ -1,4 +1,14 @@
-/** Converts comma-separated PDF permission names to a bitmask. */
+/**
+ * Converts comma-separated PDF permission names to a user-protection bitmask.
+ *
+ * @name permission
+ * @function
+ * @memberof Recipe
+ * @param {RecipePermission} [flags="print"] Permission names separated by
+ * commas.
+ * @returns {number} Numeric PDF user-protection flags.
+ * @throws {Error} If a permission name is unknown.
+ */
 export function permission(flags = "print") {
   var bits = {
     print: 4,
@@ -46,8 +56,40 @@ export function createSecurityMethods() {
     return encryptOptions;
   }
   return {
+    /**
+     * Converts comma-separated PDF permission names to a user-protection bitmask.
+     *
+     * @name permission
+     * @function
+     * @memberof Recipe#
+     * @param {RecipePermission} [flags="print"] Permission names separated by
+     * commas.
+     * @returns {number} Numeric PDF user-protection flags.
+     * @throws {Error} If a permission name is unknown.
+     */
     permission,
+    /**
+     * Normalizes Recipe encryption options.
+     *
+     * @name _getEncryptOptions
+     * @function
+     * @memberof Recipe#
+     * @private
+     */
     _getEncryptOptions: getEncryptOptions,
+    /**
+     * Configures encryption for the finished PDF.
+     *
+     * @name encrypt
+     * @function
+     * @memberof Recipe#
+     * @param {RecipeEncryptOptions} [options={}] Owner and user passwords and
+     * numeric user-protection flags. Supplying only an owner password permits
+     * printing by default.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If `options` is not a non-array object.
+     * @throws {Error} If the Recipe has already been finished.
+     */
     encrypt: function (options = {}) {
       if (!options || typeof options !== "object" || Array.isArray(options)) {
         throw new TypeError("encrypt options must be an object");

@@ -70,6 +70,17 @@ export function createRecipeFactory({
   }
 
   class Recipe {
+    /**
+     * Creates a byte-first high-level PDF Recipe.
+     * Pass PDF bytes as the first argument to modify an existing document, or
+     * pass only options to create a new document. For Blob or File input, await
+     * `arrayBuffer()` and pass the resulting bytes to the constructor.
+     *
+     * @param {ByteSource|RecipeOptions} [sourceOrOptions={}] Source PDF bytes or creation options.
+     * @param {RecipeOptions} [options={}] Options used when modifying source bytes.
+     * @throws {TypeError} If Recipe options are not an object.
+     * @throws {Error} If password-protected input is requested or the PDF cannot be created.
+     */
     constructor(sourceOrOptions = {}, options = {}) {
       var hasSource =
         sourceOrOptions instanceof Uint8Array ||
@@ -116,20 +127,57 @@ export function createRecipeFactory({
       if (Object.keys(info).length) this.info(info);
     }
 
+    /** The last high-level moveTo, lineTo, or text position in Recipe coordinates. */
     get position() {
       return { ...this._cursor };
     }
 
+    /**
+     * Asynchronously inspects PDF bytes without changing this Recipe's output.
+     * Blob and File inputs are accepted in addition to synchronous byte sources.
+     *
+     * @name readAsync
+     * @function
+     * @memberof Recipe#
+     * @param {AsyncByteSource} bytes - PDF bytes or a blob-like source.
+     * @returns {Promise<RecipeMetadata>} One-based page geometry and the page count.
+     * @throws {TypeError} If the source cannot be normalized to bytes.
+     * @throws {Error} If the bytes cannot be opened as a PDF.
+     */
     async readAsync(bytes) {
       return this.read(await normalizeBytesAsync(bytes, "PDF input"));
     }
 
+    /**
+     * Releases this Recipe's writer and native WebAssembly state.
+     * The instance must not be used after disposal. Registered static assets
+     * remain available until {@link Recipe.disposeAssets} is called.
+     *
+     * @name dispose
+     * @function
+     * @memberof Recipe#
+     * @returns {void}
+     */
     dispose() {
       if (this.writer?.dispose) this.writer.dispose();
       if (this._recipe) module._muhammara_wasm_recipe_destroy(this._recipe);
       this._recipe = 0;
     }
 
+    /**
+     * Adds a named extension method to all Recipe instances.
+     * The callback executes with the Recipe as `this`. Existing Recipe methods
+     * cannot be replaced through this API.
+     *
+     * @name register
+     * @function
+     * @memberof Recipe#
+     * @param {string|RecipeExtension} key - Method name, or a named callback.
+     * @param {RecipeExtension} [callback] - Extension implementation when a name is supplied.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If no method name or callback is available.
+     * @throws {Error} If the method name already exists.
+     */
     register(key, callback) {
       if (typeof key !== "string") {
         callback = key;
@@ -145,10 +193,37 @@ export function createRecipeFactory({
       return this;
     }
 
+    /**
+     * Converts supported DOM-free HTML into styled Recipe text fragments.
+     * This helper does not draw content or alter Recipe state.
+     *
+     * @name htmlToTextObjects
+     * @function
+     * @memberof Recipe#
+     * @param {string} html - HTML source to convert.
+     * @param {Partial<RecipeTextOptions>} [options] - Initial text options.
+     * @returns {RecipeHtmlTextObject[]} Styled fragments in source order.
+     */
     htmlToTextObjects(html, options = {}) {
       return htmlToTextObjects(html, options);
     }
 
+    /**
+     * Sets a page boundary using native PDF bottom-left coordinates.
+     * Changing the media box also updates active Recipe page dimensions.
+     *
+     * @name setPageBox
+     * @function
+     * @memberof Recipe#
+     * @param {PDFPageBoxType} box - Page-box constant.
+     * @param {number} left - Left PDF coordinate.
+     * @param {number} bottom - Bottom PDF coordinate.
+     * @param {number} right - Right PDF coordinate.
+     * @param {number} top - Top PDF coordinate.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {RangeError} If `box` is not a supported page-box constant.
+     * @throws {Error} If the underlying PDF operation fails.
+     */
     setPageBox(box, left, bottom, right, top) {
       if (!Object.values(pageBoxes).includes(box)) {
         throw new RangeError(`Unknown page box: ${box}`);
@@ -168,6 +243,18 @@ export function createRecipeFactory({
       return this;
     }
 
+    /**
+     * Sets the active page's rotation in degrees.
+     * The page metadata is updated so later Recipe-coordinate operations account
+     * for the rotation.
+     *
+     * @name rotate
+     * @function
+     * @memberof Recipe#
+     * @param {number} rotation - Page rotation in degrees.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the underlying PDF operation fails.
+     */
     rotate(rotation) {
       call("_muhammara_wasm_recipe_set_page_rotation", this._recipe, rotation);
       var page = this._pages[this._pages.length - 1];
@@ -177,18 +264,30 @@ export function createRecipeFactory({
       return this;
     }
 
+    /**
+     * Saves the active PDF graphics state.
+     * @private
+     */
     _save() {
       if (this._pageContext) return this._pageContext.q() && this;
       call("_muhammara_wasm_recipe_save", this._recipe);
       return this;
     }
 
+    /**
+     * Restores the active PDF graphics state.
+     * @private
+     */
     _restore() {
       if (this._pageContext) return this._pageContext.Q() && this;
       call("_muhammara_wasm_recipe_restore", this._recipe);
       return this;
     }
 
+    /**
+     * Applies a PDF transformation matrix to the active context.
+     * @private
+     */
     _transform(a, b, c, d, e, f) {
       if (this._pageContext)
         return this._pageContext.cm(a, b, c, d, e, f) && this;
@@ -196,6 +295,21 @@ export function createRecipeFactory({
       return this;
     }
 
+    /**
+     * Rotates subsequent content around a point in Recipe coordinates.
+     * Positive angles rotate clockwise because Recipe's y axis points downward.
+     * The transformation remains active until the current graphics state is
+     * restored or the page ends.
+     *
+     * @name rotateContent
+     * @function
+     * @memberof Recipe#
+     * @param {number} degrees - Rotation angle in degrees.
+     * @param {number} [x=0] - Horizontal rotation origin.
+     * @param {number} [y=0] - Vertical rotation origin.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If there is no active page or the PDF operation fails.
+     */
     rotateContent(degrees, x = 0, y = 0) {
       var radians = (degrees * Math.PI) / 180;
       var cosine = Math.cos(radians);
@@ -206,6 +320,19 @@ export function createRecipeFactory({
         ._transform(1, 0, 0, 1, -point.nx, -point.ny);
     }
 
+    /**
+     * Sets defaults for subsequent line and shape drawing.
+     * When a page context is active, supplied values are applied immediately;
+     * omitted values preserve the stored style.
+     *
+     * @name lineStyle
+     * @function
+     * @memberof Recipe#
+     * @param {RecipeLineStyleOptions} [options] - Width, cap, join, miter, and dash settings.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If a dash pattern containing non-finite values is applied to an active page context.
+     * @throws {Error} If the underlying PDF operation fails.
+     */
     lineStyle(options = {}) {
       this._lineStyle = this._lineStyle || {};
       if (options.width !== undefined || options.lineWidth !== undefined)
@@ -224,6 +351,10 @@ export function createRecipeFactory({
       return this._setLineStyle(options);
     }
 
+    /**
+     * Applies line style values to the active PDF context.
+     * @private
+     */
     _setLineStyle(options = {}) {
       if (this._pageContext) {
         if (options.width !== undefined || options.lineWidth !== undefined)
@@ -264,6 +395,17 @@ export function createRecipeFactory({
       }
     }
 
+    /**
+     * Sets fill and stroke opacity for subsequent drawing.
+     *
+     * @name opacity
+     * @function
+     * @memberof Recipe#
+     * @param {number} value - Opacity from 0 (transparent) through 1 (opaque).
+     * @returns {Recipe} The Recipe instance.
+     * @throws {RangeError} If the value is not finite or outside 0 through 1.
+     * @throws {Error} If the underlying PDF operation fails.
+     */
     opacity(value) {
       if (!Number.isFinite(value) || value < 0 || value > 1) {
         throw new RangeError("Opacity must be a finite number between 0 and 1");
@@ -272,24 +414,40 @@ export function createRecipeFactory({
       return this._setOpacity(value);
     }
 
+    /**
+     * Applies opacity to the active PDF context.
+     * @private
+     */
     _setOpacity(value) {
       if (this._pageContext) this._pageContext.setOpacity(value);
       else call("_muhammara_wasm_recipe_set_opacity", this._recipe, value);
       return this;
     }
 
+    /**
+     * Moves the active native PDF path.
+     * @private
+     */
     _movePdf(x, y) {
       if (this._pageContext) return this._pageContext.m(x, y) && this;
       call("_muhammara_wasm_recipe_move_to", this._recipe, x, y);
       return this;
     }
 
+    /**
+     * Adds a line to the active native PDF path.
+     * @private
+     */
     _linePdf(x, y) {
       if (this._pageContext) return this._pageContext.l(x, y) && this;
       call("_muhammara_wasm_recipe_line_to", this._recipe, x, y);
       return this;
     }
 
+    /**
+     * Adds a cubic curve to the active native PDF path.
+     * @private
+     */
     _curvePdf(x1, y1, x2, y2, x3, y3) {
       if (this._pageContext)
         return this._pageContext.c(x1, y1, x2, y2, x3, y3) && this;
@@ -306,6 +464,10 @@ export function createRecipeFactory({
       return this;
     }
 
+    /**
+     * Draws one text run after coordinate and style normalization.
+     * @private
+     */
     _drawText(value, x, y, options = {}) {
       var point = this._calibrateCoordinate(x, y);
       if (this._pageContext) {
@@ -480,10 +642,35 @@ export function createRecipeFactory({
     }),
   });
   Object.assign(Recipe.prototype, {
+    /**
+     * Registers font bytes globally and makes them available to this Recipe.
+     *
+     * @name registerFont
+     * @function
+     * @memberof Recipe#
+     * @param {string} name - Non-empty font family name.
+     * @param {ByteSource} bytes - Font bytes.
+     * @param {RecipeFontStyle} [type="regular"] - Font family style.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If the name or bytes are invalid.
+     */
     registerFont: function (name, bytes, type) {
       Recipe.registerFont(name, bytes, type);
       return this;
     },
+    /**
+     * Asynchronously registers font bytes and makes them available to this Recipe.
+     *
+     * @name registerFontAsync
+     * @function
+     * @memberof Recipe#
+     * @async
+     * @param {string} name - Non-empty font family name.
+     * @param {AsyncByteSource} bytes - Font bytes or a blob-like source.
+     * @param {RecipeFontStyle} [type="regular"] - Font family style.
+     * @returns {Promise<Recipe>} The Recipe instance after registration.
+     * @throws {TypeError} If the name or bytes are invalid.
+     */
     registerFontAsync: async function (name, bytes, type) {
       await Recipe.registerFontAsync(name, bytes, type);
       return this;
@@ -514,6 +701,17 @@ export function createRecipeFactory({
         createRecipe: (options) => new Recipe(options),
         recrypt,
       }),
+      /**
+       * Finishes this Recipe and splits it into one-page PDF byte arrays.
+       * Calling this method ends the Recipe; result names use one-based page numbers.
+       *
+       * @name split
+       * @function
+       * @memberof Recipe#
+       * @param {string} [prefix="page"] - Prefix for each output filename.
+       * @returns {RecipeSplitResult[]} One result per page in source order.
+       * @throws {Error} If the Recipe cannot be finished or split.
+       */
       split: function (prefix = "page") {
         var name = `split-${state.nextPdf++}`;
         Recipe.registerPdf(name, this.endPDF());

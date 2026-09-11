@@ -25,6 +25,24 @@ export function createImageMethods(runtime) {
     return { x, y, width, height };
   }
   return {
+    /**
+     * Places a previously registered image on the active page.
+     *
+     * `(x, y)` uses Recipe's top-left coordinate system. Width and height default
+     * to the source dimensions; specifying one dimension preserves aspect ratio,
+     * and specifying both fits within that box unless disabled. A link option
+     * covers the final image bounds.
+     *
+     * @name image
+     * @function
+     * @memberof Recipe#
+     * @param {string} name - The name used when the image bytes were registered.
+     * @param {number} x - The horizontal placement coordinate in points.
+     * @param {number} y - The vertical placement coordinate in points.
+     * @param {RecipeImageOptions} [options] - Image sizing, alignment, page-index, and transformation options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If the image name is unknown or no target page is available.
+     */
     image: function (name, x, y, options = {}) {
       var path = runtime.images.get(name);
       if (!path) throw new Error(`Unknown image: ${name}`);
@@ -91,6 +109,10 @@ export function createImageMethods(runtime) {
         this.link(options.link, box.x, box.y, box.width, box.height);
       return this;
     },
+    /**
+     * Reads the dimensions of an image in the virtual filesystem.
+     * @private
+     */
     _imageDimensions: function (path) {
       if (this._sourceMode) {
         return this.writer.getImageDimensions(runtime.module.FS.readFile(path));

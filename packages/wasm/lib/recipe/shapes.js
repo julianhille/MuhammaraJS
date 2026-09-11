@@ -217,6 +217,25 @@ function debugTriangle(recipe, x, y, vertices, sides, position, options) {
 /** Creates Recipe methods for geometric shapes. */
 export function createShapeMethods() {
   return {
+    /**
+     * Draws a regular polygon centered at `(cx, cy)`.
+     *
+     * Coordinates use Recipe's top-left origin and require an active page. The
+     * side count is clamped to at least three. Passing options in place of
+     * `sides` draws a triangle.
+     *
+     * @name n_gon
+     * @function
+     * @memberof Recipe#
+     * @param {number} cx - The center X coordinate in points.
+     * @param {number} cy - The center Y coordinate in points.
+     * @param {number} radius - The center-to-vertex radius in points.
+     * @param {number|RecipeNGonOptions} [sides=3] - The side count, or options for a triangle.
+     * @param {RecipeNGonOptions} [options] - Polygon and rotation-vertex options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If no target page is available or an unsupported color is requested.
+     * @throws {TypeError} If the requested color space is unknown.
+     */
     n_gon: function (cx, cy, radius, sides = 3, options = {}) {
       if (typeof sides === "object") [options, sides] = [sides, 3];
       sides = Math.max(3, Math.floor(sides));
@@ -240,6 +259,25 @@ export function createShapeMethods() {
       ]);
       return this;
     },
+    /**
+     * Draws a star centered at `(cx, cy)`.
+     *
+     * Coordinates use Recipe's top-left origin and require an active page. The
+     * point count is clamped to at least five. Passing options in place of
+     * `points` draws a five-pointed star.
+     *
+     * @name star
+     * @function
+     * @memberof Recipe#
+     * @param {number} cx - The center X coordinate in points.
+     * @param {number} cy - The center Y coordinate in points.
+     * @param {number} radius - The center-to-point radius in points.
+     * @param {number|RecipePathOptions} [points=5] - The point count, or path options for a five-pointed star.
+     * @param {RecipePathOptions} [options] - Path painting and transformation options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If no target page is available or an unsupported color is requested.
+     * @throws {TypeError} If the requested color space is unknown.
+     */
     star: function (cx, cy, radius, points = 5, options = {}) {
       if (typeof points === "object") [options, points] = [points, 5];
       points = Math.max(5, Math.floor(points));
@@ -297,6 +335,23 @@ export function createShapeMethods() {
       }
       return this;
     },
+    /**
+     * Draws an arrow positioned at `(x, y)`.
+     *
+     * Coordinates use Recipe's top-left origin and require an active page. By
+     * default the position identifies the arrow's center; `at` can anchor it at
+     * its head or tail. Rotation uses `(x, y)` as its origin when anchored.
+     *
+     * @name arrow
+     * @function
+     * @memberof Recipe#
+     * @param {number} x - The horizontal anchor coordinate in points.
+     * @param {number} y - The vertical anchor coordinate in points.
+     * @param {RecipeArrowOptions} [options] - Arrow geometry and path options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If no target page is available or an unsupported color is requested.
+     * @throws {TypeError} If the requested color space is unknown.
+     */
     arrow: function (x, y, options = {}) {
       var originalX = x;
       var headLength = 10,
@@ -404,6 +459,25 @@ export function createShapeMethods() {
       }
       return this;
     },
+    /**
+     * Draws a triangle from three defining traits.
+     *
+     * Coordinates use Recipe's top-left origin and require an active page.
+     * Traits can describe three sides, side-angle-side, angle-side-angle, or
+     * three vertices as selected by `traitID`. Angles are expressed in degrees.
+     *
+     * @name triangle
+     * @function
+     * @memberof Recipe#
+     * @param {number} x - The horizontal position coordinate in points.
+     * @param {number} y - The vertical position coordinate in points.
+     * @param {Array.<number>|Array.<Array.<number>>} traits - Three side/angle values or three coordinate pairs.
+     * @param {RecipeTriangleOptions} [options] - Triangle definition, positioning, and path options.
+     * @returns {Recipe} The recipe instance.
+     * @throws {Error} If traits do not contain three values or do not define a valid triangle.
+     * @throws {Error} If no target page is available or an unsupported color is requested.
+     * @throws {TypeError} If the requested color space is unknown.
+     */
     triangle: function (x, y, traits, options = {}) {
       if (!Array.isArray(traits) || traits.length !== 3)
         throw new Error(

@@ -1,5 +1,28 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
-import type { PDFPageContentItemType, RecipePageInfo } from "../../index.js";
+import type {
+  PDFPageContentItemType,
+  RecipeArcOptions,
+  RecipeArrowOptions,
+  RecipeColorSpace,
+  RecipeLayoutOptions,
+  RecipeLineStyleOptions,
+  RecipeMetadata,
+  RecipeNGonOptions,
+  RecipePageInfo,
+  RecipePageSelection,
+  RecipePdfInspection,
+  RecipePermission,
+  RecipePermissionName,
+  RecipePosition,
+  RecipeRectangleOptions,
+  RecipeSplitResult,
+  RecipeStructure,
+  RecipeStructureFormat,
+  RecipeTableRow,
+  RecipeTriangleOptions,
+  RecipeTrianglePosition,
+  RecipeTriangleTrait,
+} from "../../index.js";
 import { PDFPage } from "../../index.js";
 
 // @ts-expect-error PDFPage is available only from a loaded runtime instance.
@@ -249,9 +272,47 @@ async function usesLowLevelSurface() {
   await Recipe.registerImageAsync("image-async", new Blob(), "tiff");
   Recipe.registerPdf("pdf", source);
   await Recipe.registerPdfAsync("pdf-async", sourceBlob);
-  Recipe.inspectPdf("pdf")[1].offsetX;
-  Recipe.splitPdf("pdf", "part")[0].bytes;
-  Recipe.permission("print, copy");
+  var inspection: RecipePdfInspection = Recipe.inspectPdf("pdf");
+  inspection[1].offsetX;
+  var splitResults: RecipeSplitResult[] = Recipe.splitPdf("pdf", "part");
+  splitResults[0].bytes;
+  var permission: RecipePermission = "print, copy";
+  var permissionName: RecipePermissionName = "print";
+  var arbitraryPermissionList: string = "print, copy, edit";
+  Recipe.permission(permission);
+  Recipe.permission(arbitraryPermissionList);
+  var colorSpace: RecipeColorSpace = "rgb";
+  var pageSelection: RecipePageSelection = [1, [2, 3]];
+  var rectangleOptions: RecipeRectangleOptions = { borderRadius: [1, 2] };
+  var arcOptions: RecipeArcOptions = { sector: true };
+  var ngonOptions: RecipeNGonOptions = { rotationVertice: 1 };
+  var arrowOptions: RecipeArrowOptions = { type: "kite", at: "head" };
+  var triangleOptions: RecipeTriangleOptions = {
+    traitID: "sss",
+    position: "centroid",
+  };
+  var lineStyleOptions: RecipeLineStyleOptions = { dash: [1, 2] };
+  var layoutOptions: RecipeLayoutOptions = { columns: 2, gap: 18 };
+  var structureFormat: RecipeStructureFormat = { json: true };
+  var position: RecipePosition = [10, 20];
+  var row: RecipeTableRow = { name: "Ada" };
+  var triangleTrait: RecipeTriangleTrait = "sss";
+  var trianglePosition: RecipeTrianglePosition = "centroid";
+  void permissionName;
+  void colorSpace;
+  void pageSelection;
+  void rectangleOptions;
+  void arcOptions;
+  void ngonOptions;
+  void arrowOptions;
+  void triangleOptions;
+  void lineStyleOptions;
+  void layoutOptions;
+  void structureFormat;
+  void position;
+  void row;
+  void triangleTrait;
+  void trianglePosition;
   var recipe = new Recipe({ version: 1.7, compress: false, title: "Byte PDF" });
   recipe
     .createPage()
@@ -369,6 +430,7 @@ async function usesLowLevelSurface() {
     })
     .appendPage("pdf", [1, [2, 3]])
     .overlay("pdf", { page: 1, fitWidth: true })
+    .overlay("pdf", 10, { page: 1 })
     .overlay("pdf", 10, 10, {
       page: 1,
       fitHeight: true,
@@ -412,8 +474,14 @@ async function usesLowLevelSurface() {
   byteRecipe.getCurrentPageInfo()?.rotate;
   byteRecipe.editPage(1).pauseContext().resumeContext().endPage().endPDF();
   var asyncByteRecipe = new Recipe();
-  await asyncByteRecipe.readAsync(sourceBlob);
+  var metadata: RecipeMetadata = await asyncByteRecipe.readAsync(sourceBlob);
+  metadata[1].width;
   asyncByteRecipe.editPage(1).endPage().endPDF();
+  var structure = recipe.structure("json");
+  if (typeof structure !== "string") {
+    var typedStructure: RecipeStructure = structure;
+    typedStructure.objects;
+  }
 }
 
 void usesLowLevelSurface;

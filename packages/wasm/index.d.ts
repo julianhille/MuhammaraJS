@@ -55,6 +55,19 @@ export interface PDFRecryptOptions {
 export type RecipeFontStyle =
   "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
 export type RecipeCoordinate = number | "center";
+export type RecipePosition = [number, number];
+export type RecipeColorSpace = "rgb" | "gray" | "cmyk" | "separation";
+export type RecipePermissionName =
+  | "print"
+  | "modify"
+  | "copy"
+  | "edit"
+  | "fillform"
+  | "extract"
+  | "assemble"
+  | "printbest";
+/** Known permission names with string compatibility for composed flag lists. */
+export type RecipePermission = RecipePermissionName | (string & {});
 export interface RecipeMargins {
   left?: number;
   right?: number;
@@ -70,7 +83,7 @@ export interface RecipeOptions {
   title?: string;
   subject?: string;
   keywords?: string | string[];
-  colorspace?: "rgb" | "gray" | "cmyk";
+  colorspace?: Exclude<RecipeColorSpace, "separation">;
   password?: string;
   ownerPassword?: string;
   userPassword?: string;
@@ -85,7 +98,7 @@ export interface RecipeEncryptOptions {
 }
 export type RecipeColor = string | number[];
 export type RecipeKnownColors = Record<
-  "rgb" | "gray" | "cmyk" | "separation",
+  RecipeColorSpace,
   Record<string, string>
 >;
 export type RecipeExtension = (this: Recipe, ...args: any[]) => unknown;
@@ -96,7 +109,7 @@ export interface RecipePathOptions {
   colour?: RecipeColor;
   stroke?: RecipeColor;
   fill?: RecipeColor;
-  colorspace?: "rgb" | "gray" | "cmyk" | "separation";
+  colorspace?: RecipeColorSpace;
   colorName?: string;
   width?: number;
   lineWidth?: number;
@@ -122,6 +135,48 @@ export interface RecipeImageOptions extends RecipePathOptions {
   keepAspectRatio?: boolean;
   align?: string;
   index?: number;
+}
+export interface RecipeRectangleOptions extends RecipePathOptions {
+  borderRadius?:
+    | number
+    | [number]
+    | [number, number]
+    | [number, number, number]
+    | [number, number, number, number];
+}
+export interface RecipeArcOptions extends RecipePathOptions {
+  sector?: boolean;
+}
+export interface RecipeNGonOptions extends RecipePathOptions {
+  rotationVertice?: number;
+}
+export type RecipeArrowType = number | "triangle" | "dart" | "kite";
+export type RecipeArrowAnchor = "head" | "tail";
+export interface RecipeArrowOptions extends RecipePathOptions {
+  head?: number | number[];
+  shaft?: number | number[];
+  double?: boolean;
+  type?: RecipeArrowType;
+  at?: RecipeArrowAnchor;
+}
+export type RecipeTriangleTrait = "sss" | "sas" | "asa" | "vtx";
+export type RecipeTrianglePosition =
+  "a" | "b" | "c" | "A" | "B" | "C" | "centroid" | "circumcenter" | "incenter";
+export interface RecipeTriangleOptions extends RecipePathOptions {
+  traitID?: RecipeTriangleTrait;
+  traitsID?: RecipeTriangleTrait;
+  position?: RecipeTrianglePosition;
+  flipX?: boolean;
+  flipY?: boolean;
+}
+export interface RecipeLineStyleOptions {
+  width?: number;
+  lineWidth?: number;
+  cap?: number;
+  join?: number;
+  miterLimit?: number;
+  dash?: number[];
+  dashPhase?: number;
 }
 export interface RecipeAnnotationOptions {
   text?: string;
@@ -230,6 +285,7 @@ export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
     row: number,
   ) => RecipeTextOptions | void;
 }
+export type RecipeTableRow = Record<string, unknown>;
 export interface RecipeTableOptions extends Omit<
   RecipeTextOptions,
   "overflow"
@@ -248,6 +304,22 @@ export interface RecipeTableOptions extends Omit<
     row: number,
   ) => boolean | { position?: [number, number] } | void;
 }
+export interface RecipeLayoutOptions {
+  columns?: number | RecipeTableColumn[];
+  gap?: number;
+  reset?: boolean;
+}
+export type RecipePageSelection = number | (number | [number, number])[];
+export interface RecipeSplitResult {
+  name: string;
+  bytes: Uint8Array;
+}
+export interface RecipeStructure {
+  pages: number;
+  encrypted: boolean;
+  objects: number;
+}
+export type RecipeStructureFormat = "string" | "json" | { json?: boolean };
 export interface RecipePageInfo {
   pageNumber: number;
   mediaBox: PDFRectangle;
@@ -260,6 +332,16 @@ export interface RecipePageInfo {
   size: [number, number];
   offsetX: number;
   offsetY: number;
+}
+export interface RecipeMetadata {
+  pages: number;
+  [page: number]: RecipePageInfo;
+}
+export interface RecipePdfInspection {
+  pages: number;
+  level: number;
+  encrypted: boolean;
+  [page: number]: RecipePageInfo;
 }
 export interface Recipe {
   readonly options: RecipeOptions;
@@ -296,10 +378,8 @@ export interface Recipe {
   /** Returns geometry for the current Recipe page. */
   getCurrentPageInfo(): RecipePageInfo | null;
   /** Inspects PDF metadata without changing this Recipe's output state. Blob/File input requires readAsync. */
-  read(source: ByteSource): { pages: number; [page: number]: RecipePageInfo };
-  readAsync(
-    source: AsyncByteSource,
-  ): Promise<{ pages: number; [page: number]: RecipePageInfo }>;
+  read(source: ByteSource): RecipeMetadata;
+  readAsync(source: AsyncByteSource): Promise<RecipeMetadata>;
   /** Starts a prepend-safe editing context for an existing one-based page number. */
   editPage(pageNumber: number): this;
   /** Replaces literal `(...) Tj` operands in an existing page's single content stream. */
@@ -315,11 +395,7 @@ export interface Recipe {
   ): this;
   rotate(rotation: number): this;
   rotateContent(degrees: number, x?: number, y?: number): this;
-  chroma(
-    name: string,
-    value: RecipeColor,
-    colorspace?: "rgb" | "gray" | "cmyk" | "separation",
-  ): this;
+  chroma(name: string, value: RecipeColor, colorspace?: RecipeColorSpace): this;
   line(coordinates: [number, number][], options?: RecipePathOptions): this;
   line(
     startX: number,
@@ -336,14 +412,7 @@ export interface Recipe {
     y: number,
     width: number,
     height: number,
-    options?: RecipePathOptions & {
-      borderRadius?:
-        | number
-        | [number]
-        | [number, number]
-        | [number, number, number]
-        | [number, number, number, number];
-    },
+    options?: RecipeRectangleOptions,
   ): this;
   circle(
     x: number,
@@ -364,7 +433,7 @@ export interface Recipe {
     radius: number,
     startAngle?: number,
     endAngle?: number,
-    options?: RecipePathOptions & { sector?: boolean },
+    options?: RecipeArcOptions,
   ): this;
   pie(
     x: number,
@@ -378,14 +447,14 @@ export interface Recipe {
     cx: number,
     cy: number,
     radius: number,
-    options?: RecipePathOptions & { rotationVertice?: number },
+    options?: RecipeNGonOptions,
   ): this;
   n_gon(
     cx: number,
     cy: number,
     radius: number,
     sides?: number,
-    options?: RecipePathOptions & { rotationVertice?: number },
+    options?: RecipeNGonOptions,
   ): this;
   star(
     cx: number,
@@ -400,47 +469,14 @@ export interface Recipe {
     points?: number,
     options?: RecipePathOptions,
   ): this;
-  arrow(
-    x: number,
-    y: number,
-    options?: RecipePathOptions & {
-      head?: number | number[];
-      shaft?: number | number[];
-      double?: boolean;
-      type?: number | "triangle" | "dart" | "kite";
-      at?: "head" | "tail";
-    },
-  ): this;
+  arrow(x: number, y: number, options?: RecipeArrowOptions): this;
   triangle(
     x: number,
     y: number,
     traits: number[] | [number, number][],
-    options?: RecipePathOptions & {
-      traitID?: "sss" | "sas" | "asa" | "vtx";
-      traitsID?: "sss" | "sas" | "asa" | "vtx";
-      position?:
-        | "a"
-        | "b"
-        | "c"
-        | "A"
-        | "B"
-        | "C"
-        | "centroid"
-        | "circumcenter"
-        | "incenter";
-      flipX?: boolean;
-      flipY?: boolean;
-    },
+    options?: RecipeTriangleOptions,
   ): this;
-  lineStyle(options?: {
-    width?: number;
-    lineWidth?: number;
-    cap?: number;
-    join?: number;
-    miterLimit?: number;
-    dash?: number[];
-    dashPhase?: number;
-  }): this;
+  lineStyle(options?: RecipeLineStyleOptions): this;
   lineWidth(width: number): this;
   opacity(value: number): this;
   fill(): this;
@@ -450,31 +486,25 @@ export interface Recipe {
   text(value: string, x: number, y: number, options?: RecipeTextOptions): this;
   textDimensions(value: string, options?: RecipeTextOptions): TextDimensions;
   movedown(lines?: number, returnCoords?: false): this;
-  movedown(lines: number, returnCoords: true): [number, number];
+  movedown(lines: number, returnCoords: true): RecipePosition;
   layout(
     id: string | number,
     x?: number,
     y?: number,
     width?: number,
     height?: number,
-    options?: {
-      columns?: number | RecipeTableColumn[];
-      gap?: number;
-      reset?: boolean;
-    },
+    options?: RecipeLayoutOptions,
   ): this;
   table(
     x: number,
     y: number,
-    contents: Record<string, unknown>[],
+    contents: RecipeTableRow[],
     options?: RecipeTableOptions,
   ): this;
   image(name: string, x: number, y: number, options?: RecipeImageOptions): this;
-  appendPage(
-    name: string,
-    pages?: number | [number, number] | (number | [number, number])[],
-  ): this;
+  appendPage(name: string, pages?: RecipePageSelection): this;
   overlay(name: string, options?: RecipeOverlayOptions): this;
+  overlay(name: string, x: number, options?: RecipeOverlayOptions): this;
   overlay(
     name: string,
     x?: number,
@@ -502,11 +532,9 @@ export interface Recipe {
     name: string,
     sourcePageNumber: number,
   ): this;
-  split(prefix?: string): { name: string; bytes: Uint8Array }[];
-  structure(
-    format?: "string" | "json" | { json?: boolean },
-  ): string | { pages: number; encrypted: boolean; objects: number };
-  permission(flags?: string): number;
+  split(prefix?: string): RecipeSplitResult[];
+  structure(format?: RecipeStructureFormat): string | RecipeStructure;
+  permission(flags?: RecipePermission): number;
   encrypt(options?: RecipeEncryptOptions): this;
   endPDF(callback?: (bytes: Uint8Array) => void): Uint8Array;
   dispose(): void;
@@ -532,17 +560,9 @@ export interface RecipeConstructor {
   unregisterImage(name: string): boolean;
   unregisterPdf(name: string): boolean;
   disposeAssets(): void;
-  splitPdf(
-    name: string,
-    prefix?: string,
-  ): { name: string; bytes: Uint8Array }[];
-  inspectPdf(name: string): {
-    pages: number;
-    level: number;
-    encrypted: boolean;
-    [page: number]: RecipePageInfo;
-  };
-  permission(flags?: string): number;
+  splitPdf(name: string, prefix?: string): RecipeSplitResult[];
+  inspectPdf(name: string): RecipePdfInspection;
+  permission(flags?: RecipePermission): number;
 }
 export interface TextOptions {
   encoding?: TextEncoding;

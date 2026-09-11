@@ -1,5 +1,20 @@
 /** Creates a function that inspects a registered PDF's metadata and pages. */
 export function createInspectPdf({ module, withString, pdfs }) {
+  /**
+   * Inspects metadata and page geometry for a registered PDF.
+   * Numeric page records are keyed by one-based page numbers. Page dimensions
+   * use Recipe's top-left coordinate orientation and account for page rotation.
+   * Inspection does not change any Recipe output state.
+   *
+   * @name inspectPdf
+   * @function
+   * @memberof Recipe
+   * @param {string} name Registered PDF name.
+   * @returns {RecipePdfInspection} PDF level, encryption status, page count,
+   * and one-based page records.
+   * @throws {Error} If no PDF is registered under `name`, the PDF cannot be
+   * parsed, or page information cannot be read.
+   */
   return function inspectPdf(name) {
     var path = pdfs.get(name);
     if (!path) throw new Error(`Unknown PDF: ${name}`);

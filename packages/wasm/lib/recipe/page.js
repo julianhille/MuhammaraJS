@@ -7,6 +7,22 @@ export function createPageMethods(
   { createReader, createWriterToModify, module },
 ) {
   return {
+    /**
+     * Creates and activates a page, using dimensions in PDF points.
+     * Named sizes are case-insensitive and fall back to the configured default;
+     * a rotation not divisible by 180 swaps the named size's width and height.
+     * The new page uses Recipe's top-left coordinate system, with x increasing
+     * rightward and y increasing downward, and resets the cursor to `(0, 0)`.
+     *
+     * @name createPage
+     * @function
+     * @memberof Recipe#
+     * @param {number|string} [width] - Page width, or a named page size.
+     * @param {number} [height] - Page height, or rotation for a named size.
+     * @param {RecipeMargins} [margins] - Margins for the new page.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the PDF has already been ended.
+     */
     createPage: function (width, height, margins) {
       if (this._endedBytes)
         throw new Error("Cannot create a page after endPDF");
@@ -51,6 +67,16 @@ export function createPageMethods(
       return this;
     },
 
+    /**
+     * Finishes the active new or edited page and flushes its annotations.
+     * Calling this method without an active page has no effect. The active page
+     * dimensions are cleared, so page drawing must resume on another active page.
+     *
+     * @name endPage
+     * @function
+     * @memberof Recipe#
+     * @returns {Recipe} The Recipe instance.
+     */
     endPage: function () {
       if (this._editingPage) {
         this._flushAnnotations();
@@ -83,6 +109,20 @@ export function createPageMethods(
       return this;
     },
 
+    /**
+     * Gets or updates the margins used by implicit positioning and layout.
+     * Margins are measured inward in PDF points from the page edges in Recipe's
+     * top-left coordinate system. Omitted values retain their current settings.
+     *
+     * @name margins
+     * @function
+     * @memberof Recipe#
+     * @param {number|RecipeMargins} [left] - Left margin, or margins to update.
+     * @param {number} [right] - Right margin.
+     * @param {number} [top] - Top margin.
+     * @param {number} [bottom] - Bottom margin.
+     * @returns {Recipe|Required<RecipeMargins>} The Recipe instance when a margin changes; otherwise a copy of the current margins.
+     */
     margins: function (left, right, top, bottom) {
       if (left && typeof left === "object")
         ({ left, right, top, bottom } = left);
@@ -97,6 +137,17 @@ export function createPageMethods(
       return changed ? this : { ...this._margin };
     },
 
+    /**
+     * Returns geometry for a one-based page number without changing active state.
+     * Width and height follow Recipe's rotated, top-left coordinate space;
+     * `mediaBox` remains the page's native PDF rectangle.
+     *
+     * @name pageInfo
+     * @function
+     * @memberof Recipe#
+     * @param {number} pageNumber - One-based page number.
+     * @returns {RecipePageInfo|null} A defensive copy of the page geometry, or null when the page does not exist.
+     */
     pageInfo: function (pageNumber) {
       var page = this._pages[pageNumber - 1];
       return page
@@ -104,17 +155,40 @@ export function createPageMethods(
         : null;
     },
 
+    /**
+     * Returns the document information dictionary without changing page state.
+     * This method reports PDF metadata, not Recipe-coordinate page geometry;
+     * use {@link Recipe#pageInfo} or {@link Recipe#getCurrentPageInfo} for geometry.
+     *
+     * @name getPageInfo
+     * @function
+     * @memberof Recipe#
+     * @returns {Record<string, unknown>|InfoDictionary} The current document information dictionary.
+     */
     getPageInfo: function () {
       return this._sourceMode
         ? this.writer.getDocumentContext().getInfoDictionary()
         : this.info();
     },
 
-    /** Returns Recipe's page geometry for the active page, unlike getPageInfo(). */
+    /**
+     * Returns geometry for the active or most recently known Recipe page.
+     * Width and height follow Recipe's rotated, top-left coordinate space;
+     * `mediaBox` remains the page's native PDF rectangle. No state is changed.
+     *
+     * @name getCurrentPageInfo
+     * @function
+     * @memberof Recipe#
+     * @returns {RecipePageInfo|null} A defensive copy of the page geometry, or null when no page is known.
+     */
     getCurrentPageInfo: function () {
       return this.pageInfo(this._activePageNumber || this._pages.length);
     },
 
+    /**
+     * Inspects source bytes and closes the temporary reader.
+     * @private
+     */
     _inspectBytes: function (bytes) {
       var reader = createReader(bytes);
       var pages = [];
@@ -156,11 +230,27 @@ export function createPageMethods(
       return { pages, metadata, sourceInfo };
     },
 
+    /**
+     * Inspects a PDF without replacing or otherwise changing this Recipe's output state.
+     * Reported page width and height use Recipe's rotated, top-left coordinate
+     * space, while each `mediaBox` is the native PDF rectangle.
+     *
+     * @name read
+     * @function
+     * @memberof Recipe#
+     * @param {ByteSource} bytes - PDF bytes to inspect synchronously.
+     * @returns {RecipeMetadata} Page count and one-based page geometry records.
+     * @throws {Error} If the bytes cannot be opened as a PDF.
+     */
     read: function (bytes) {
       // Like Node Recipe.read(externalSource), inspection must not replace output state.
       return this._inspectBytes(bytes).metadata;
     },
 
+    /**
+     * Opens bytes as this Recipe's modification source and replaces output state.
+     * @private
+     */
     _openSource: function (bytes) {
       var { pages, metadata, sourceInfo } = this._inspectBytes(bytes);
       if (this._recipe) {
@@ -181,6 +271,20 @@ export function createPageMethods(
       return metadata;
     },
 
+    /**
+     * Starts a prepend-safe content context for an existing one-based page.
+     * Drawing uses Recipe's top-left coordinates, including the page's rotation;
+     * the cursor moves to the configured left and top margins. The edit remains
+     * active until {@link Recipe#endPage} is called.
+     *
+     * @name editPage
+     * @function
+     * @memberof Recipe#
+     * @param {number} pageNumber - One-based page number to edit.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the Recipe was not constructed from PDF bytes or another page is active.
+     * @throws {RangeError} If `pageNumber` does not identify an existing page.
+     */
     editPage: function (pageNumber) {
       if (!this._sourceMode) {
         throw new Error(
@@ -209,6 +313,17 @@ export function createPageMethods(
       return this;
     },
 
+    /**
+     * Writes and pauses the active edited-page content context.
+     * Page editing remains active, and a later resume restores the page's
+     * rotated, top-left Recipe coordinate transform.
+     *
+     * @name pauseContext
+     * @function
+     * @memberof Recipe#
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If there is no active edited-page content context.
+     */
     pauseContext: function () {
       if (!this._editingPage || !this._pageContext) {
         throw new Error("No active page content context to pause");
@@ -220,6 +335,17 @@ export function createPageMethods(
       return this;
     },
 
+    /**
+     * Resumes a paused edited-page content context.
+     * The page rotation transform is reapplied so subsequent drawing continues
+     * in Recipe's top-left coordinate system.
+     *
+     * @name resumeContext
+     * @function
+     * @memberof Recipe#
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If no edited page is paused, or its context is already active.
+     */
     resumeContext: function () {
       if (!this._editingPage || this._pageContext) {
         throw new Error("No paused page content context to resume");
@@ -233,6 +359,10 @@ export function createPageMethods(
       return this;
     },
 
+    /**
+     * Restores the active page's Recipe coordinate transform after resuming.
+     * @private
+     */
     _resumePageRotation: function () {
       var page = this.getCurrentPageInfo();
       if (!page || !page.rotate) return this;
