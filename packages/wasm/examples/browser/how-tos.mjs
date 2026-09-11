@@ -165,20 +165,20 @@ async function linksExample() {
       .rectangle(65, 100, 465, 120, {
         fill: "#102a43",
         borderRadius: 16,
+        link: "https://github.com/julianhille/MuhammaraJS",
       })
       .rectangle(65, 255, 220, 150, {
         fill: "#bd412d",
         borderRadius: 16,
+        link: "https://www.npmjs.com/package/@muhammara/wasm",
       })
       .rectangle(310, 255, 220, 150, {
         fill: "#2c7a7b",
         borderRadius: 16,
+        link: "https://muhammarajs-wasm.readthedocs.io/",
       })
       .star(175, 330, 40, 6, { fill: "#facf9b", rotation: 15 })
       .n_gon(420, 330, 42, 8, { fill: "#dbeafe" })
-      .link("https://github.com/julianhille/MuhammaraJS", 65, 100, 465, 120)
-      .link("https://www.npmjs.com/package/@muhammara/wasm", 65, 255, 220, 150)
-      .link("https://muhammarajs-wasm.readthedocs.io/", 310, 255, 220, 150)
       .endPage();
     var bytes = recipe.endPDF();
     return {

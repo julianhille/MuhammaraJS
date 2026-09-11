@@ -1,7 +1,7 @@
 # Add Clickable URL Links
 
-Recipe adds a URL action to a rectangular region using top-left `x`, `y`,
-`width`, and `height` values:
+Recipe adds URL actions using top-left coordinates. Use `link()` when the
+clickable region is independent of its content, such as a custom drawing:
 
 ```javascript
 var recipe = new Recipe("new", "links.pdf")
@@ -11,6 +11,30 @@ var recipe = new Recipe("new", "links.pdf")
   .endPage()
   .endPDF();
 ```
+
+Text, images, and supported shapes can instead calculate their clickable
+rectangle from their rendered bounds:
+
+```javascript
+recipe
+  .text("Visit our site", 65, 250, {
+    color: "#0563c1",
+    underline: true,
+    link: "https://example.com",
+  })
+  .image("logo.png", 65, 290, {
+    width: 120,
+    link: "https://example.com",
+  })
+  .rectangle(65, 450, 180, 48, {
+    fill: "#dbeafe",
+    link: "https://example.com",
+  });
+```
+
+With `html: true`, `<a href="https://example.com">Visit our site</a>` creates
+a link over the rendered text. PDF link annotations are rectangular; use
+`link()` to select the clickable region for complex drawings.
 
 The low-level API attaches a URL to a rectangle on the current page. Pause the
 active content context before adding links, then write the page.

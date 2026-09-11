@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add Recipe URL links for arbitrary areas, rendered text, images, and drawing
+  bounds [#614](https://github.com/julianhille/MuhammaraJS/issues/614)
 - Document native writer encryption, reader passwords, continuation state, and
   previously undocumented public low-level exports
   [#629](https://github.com/julianhille/MuhammaraJS/issues/629)
