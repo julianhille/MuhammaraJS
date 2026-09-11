@@ -90,6 +90,8 @@ export type RecipeKnownColors = Record<
 >;
 export type RecipeExtension = (this: Recipe, ...args: any[]) => unknown;
 export interface RecipePathOptions {
+  /** Make the rendered path's bounding rectangle open this URL. */
+  link?: string;
   color?: RecipeColor;
   colour?: RecipeColor;
   stroke?: RecipeColor;
