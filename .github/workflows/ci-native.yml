@@ -203,7 +203,7 @@ jobs:
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-node-musl-${{ matrix.node }}
           if-no-files-found: error
-  build-electron:
+  build-electron-legacy:
     strategy:
       fail-fast: false
       matrix:
@@ -280,7 +280,7 @@ jobs:
           - os: windows-2022
             architecture: arm64
     runs-on: ${{ matrix.os }}
-    steps:
+    steps: &build-electron-steps
       - name: Set up GCC
         uses: egor-tensin/setup-gcc@v1
         with:
@@ -354,6 +354,499 @@ jobs:
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.electron}}
           if-no-files-found: error
+
+  build-electron-38-39:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15, windows-2022]
+        architecture: [x64, arm64]
+        electron:
+          - 38.2.0
+          - 38.2.1
+          - 38.2.2
+          - 38.3.0
+          - 38.4.0
+          - 38.5.0
+          - 38.6.0
+          - 38.7.0
+          - 38.7.1
+          - 38.7.2
+          - 38.8.0
+          - 38.8.1
+          - 38.8.2
+          - 38.8.4
+          - 38.8.6
+          - 39.0.0
+          - 39.1.0
+          - 39.1.1
+          - 39.1.2
+          - 39.2.0
+          - 39.2.1
+          - 39.2.2
+          - 39.2.3
+          - 39.2.4
+          - 39.2.5
+          - 39.2.6
+          - 39.2.7
+          - 39.3.0
+          - 39.4.0
+          - 39.5.0
+          - 39.5.1
+          - 39.5.2
+          - 39.6.0
+          - 39.6.1
+          - 39.7.0
+          - 39.8.0
+          - 39.8.1
+          - 39.8.2
+          - 39.8.3
+          - 39.8.4
+          - 39.8.5
+          - 39.8.6
+          - 39.8.7
+          - 39.8.8
+          - 39.8.9
+          - 39.8.10
+        include:
+          - electron_mocha_version: ^13
+            python_version: "3.10"
+          - architecture: arm64
+            architecture_node: x64
+            target_architecture: arm64
+            extra_compile_flags: -arch arm64
+          - architecture: x64
+            architecture_node: x64
+            target_architecture: x64
+          - electron: 38.2.0
+            node: 22.19.0
+          - electron: 38.2.1
+            node: 22.19.0
+          - electron: 38.2.2
+            node: 22.19.0
+          - electron: 38.3.0
+            node: 22.20.0
+          - electron: 38.4.0
+            node: 22.20.0
+          - electron: 38.5.0
+            node: 22.20.0
+          - electron: 38.6.0
+            node: 22.21.1
+          - electron: 38.7.0
+            node: 22.21.1
+          - electron: 38.7.1
+            node: 22.21.1
+          - electron: 38.7.2
+            node: 22.21.1
+          - electron: 38.8.0
+            node: 22.22.0
+          - electron: 38.8.1
+            node: 22.22.0
+          - electron: 38.8.2
+            node: 22.22.0
+          - electron: 38.8.4
+            node: 22.22.0
+          - electron: 38.8.6
+            node: 22.22.0
+          - electron: 39.0.0
+            node: 22.20.0
+          - electron: 39.1.0
+            node: 22.21.1
+          - electron: 39.1.1
+            node: 22.21.1
+          - electron: 39.1.2
+            node: 22.21.1
+          - electron: 39.2.0
+            node: 22.21.1
+          - electron: 39.2.1
+            node: 22.21.1
+          - electron: 39.2.2
+            node: 22.21.1
+          - electron: 39.2.3
+            node: 22.21.1
+          - electron: 39.2.4
+            node: 22.21.1
+          - electron: 39.2.5
+            node: 22.21.1
+          - electron: 39.2.6
+            node: 22.21.1
+          - electron: 39.2.7
+            node: 22.21.1
+          - electron: 39.3.0
+            node: 22.21.1
+          - electron: 39.4.0
+            node: 22.22.0
+          - electron: 39.5.0
+            node: 22.22.0
+          - electron: 39.5.1
+            node: 22.22.0
+          - electron: 39.5.2
+            node: 22.22.0
+          - electron: 39.6.0
+            node: 22.22.0
+          - electron: 39.6.1
+            node: 22.22.0
+          - electron: 39.7.0
+            node: 22.22.0
+          - electron: 39.8.0
+            node: 22.22.0
+          - electron: 39.8.1
+            node: 22.22.1
+          - electron: 39.8.2
+            node: 22.22.1
+          - electron: 39.8.3
+            node: 22.22.1
+          - electron: 39.8.4
+            node: 22.22.1
+          - electron: 39.8.5
+            node: 22.22.1
+          - electron: 39.8.6
+            node: 22.22.1
+          - electron: 39.8.7
+            node: 22.22.1
+          - electron: 39.8.8
+            node: 22.22.1
+          - electron: 39.8.9
+            node: 22.22.1
+          - electron: 39.8.10
+            node: 22.22.1
+        exclude:
+          - os: ubuntu-22.04
+            architecture: arm64
+          - os: windows-2022
+            architecture: arm64
+          - os: macos-15
+            architecture: x64
+    runs-on: ${{ matrix.os }}
+    steps: *build-electron-steps
+  build-electron-40-41:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15, windows-2022]
+        architecture: [x64, arm64]
+        electron:
+          - 40.0.0
+          - 40.1.0
+          - 40.2.1
+          - 40.3.0
+          - 40.4.0
+          - 40.4.1
+          - 40.5.0
+          - 40.6.0
+          - 40.6.1
+          - 40.7.0
+          - 40.8.0
+          - 40.8.1
+          - 40.8.2
+          - 40.8.3
+          - 40.8.4
+          - 40.8.5
+          - 40.9.1
+          - 40.9.2
+          - 40.9.3
+          - 40.10.0
+          - 40.10.1
+          - 40.10.2
+          - 40.10.3
+          - 40.10.4
+          - 40.10.5
+          - 40.10.6
+          - 41.0.0
+          - 41.0.1
+          - 41.0.2
+          - 41.0.3
+          - 41.0.4
+          - 41.1.0
+          - 41.1.1
+          - 41.2.0
+          - 41.2.1
+          - 41.2.2
+          - 41.3.0
+          - 41.4.0
+          - 41.5.0
+          - 41.5.1
+          - 41.5.2
+          - 41.6.0
+          - 41.6.1
+          - 41.7.0
+          - 41.7.1
+          - 41.7.2
+          - 41.8.0
+          - 41.9.0
+          - 41.9.1
+          - 41.9.2
+          - 41.10.0
+          - 41.10.1
+          - 41.10.2
+          - 41.10.3
+          - 41.10.4
+          - 41.10.5
+          - 41.10.6
+          - 41.10.7
+        include:
+          - electron_mocha_version: ^13
+            python_version: "3.10"
+          - architecture: arm64
+            architecture_node: x64
+            target_architecture: arm64
+            extra_compile_flags: -arch arm64
+          - architecture: x64
+            architecture_node: x64
+            target_architecture: x64
+          - electron: 40.0.0
+            node: 24.11.1
+          - electron: 40.1.0
+            node: 24.11.1
+          - electron: 40.2.1
+            node: 24.11.1
+          - electron: 40.3.0
+            node: 24.13.0
+          - electron: 40.4.0
+            node: 24.13.0
+          - electron: 40.4.1
+            node: 24.13.0
+          - electron: 40.5.0
+            node: 24.13.1
+          - electron: 40.6.0
+            node: 24.13.1
+          - electron: 40.6.1
+            node: 24.13.1
+          - electron: 40.7.0
+            node: 24.14.0
+          - electron: 40.8.0
+            node: 24.14.0
+          - electron: 40.8.1
+            node: 24.14.0
+          - electron: 40.8.2
+            node: 24.14.0
+          - electron: 40.8.3
+            node: 24.14.0
+          - electron: 40.8.4
+            node: 24.14.0
+          - electron: 40.8.5
+            node: 24.14.0
+          - electron: 40.9.1
+            node: 24.14.1
+          - electron: 40.9.2
+            node: 24.14.1
+          - electron: 40.9.3
+            node: 24.14.1
+          - electron: 40.10.0
+            node: 24.15.0
+          - electron: 40.10.1
+            node: 24.15.0
+          - electron: 40.10.2
+            node: 24.15.0
+          - electron: 40.10.3
+            node: 24.15.0
+          - electron: 40.10.4
+            node: 24.15.0
+          - electron: 40.10.5
+            node: 24.15.0
+          - electron: 40.10.6
+            node: 24.15.0
+          - electron: 41.0.0
+            node: 24.14.0
+          - electron: 41.0.1
+            node: 24.14.0
+          - electron: 41.0.2
+            node: 24.14.0
+          - electron: 41.0.3
+            node: 24.14.0
+          - electron: 41.0.4
+            node: 24.14.0
+          - electron: 41.1.0
+            node: 24.14.0
+          - electron: 41.1.1
+            node: 24.14.0
+          - electron: 41.2.0
+            node: 24.14.0
+          - electron: 41.2.1
+            node: 24.14.1
+          - electron: 41.2.2
+            node: 24.14.1
+          - electron: 41.3.0
+            node: 24.15.0
+          - electron: 41.4.0
+            node: 24.15.0
+          - electron: 41.5.0
+            node: 24.15.0
+          - electron: 41.5.1
+            node: 24.15.0
+          - electron: 41.5.2
+            node: 24.15.0
+          - electron: 41.6.0
+            node: 24.15.0
+          - electron: 41.6.1
+            node: 24.15.0
+          - electron: 41.7.0
+            node: 24.15.0
+          - electron: 41.7.1
+            node: 24.15.0
+          - electron: 41.7.2
+            node: 24.15.0
+          - electron: 41.8.0
+            node: 24.16.0
+          - electron: 41.9.0
+            node: 24.17.0
+          - electron: 41.9.1
+            node: 24.17.0
+          - electron: 41.9.2
+            node: 24.17.0
+          - electron: 41.10.0
+            node: 24.18.0
+          - electron: 41.10.1
+            node: 24.18.0
+          - electron: 41.10.2
+            node: 24.18.0
+          - electron: 41.10.3
+            node: 24.18.0
+          - electron: 41.10.4
+            node: 24.18.0
+          - electron: 41.10.5
+            node: 24.18.0
+          - electron: 41.10.6
+            node: 24.18.0
+          - electron: 41.10.7
+            node: 24.18.0
+        exclude:
+          - os: ubuntu-22.04
+            architecture: arm64
+          - os: windows-2022
+            architecture: arm64
+          - os: macos-15
+            architecture: x64
+    runs-on: ${{ matrix.os }}
+    steps: *build-electron-steps
+  build-electron:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15, windows-2022]
+        architecture: [x64, arm64]
+        electron:
+          - 42.0.0
+          - 42.0.1
+          - 42.1.0
+          - 42.2.0
+          - 42.3.0
+          - 42.3.1
+          - 42.3.2
+          - 42.3.3
+          - 42.4.0
+          - 42.4.1
+          - 42.5.0
+          - 42.5.1
+          - 42.5.2
+          - 42.6.0
+          - 42.6.1
+          - 42.6.2
+          - 42.7.0
+          - 42.7.1
+          - 42.8.0
+          - 42.8.1
+          - 42.9.0
+          - 42.9.1
+          - 42.9.2
+          - 42.9.3
+          - 42.10.0
+          - 42.10.1
+          - 43.0.0
+          - 43.1.0
+          - 43.1.1
+          - 43.2.0
+          - 43.3.0
+          - 43.4.0
+          - 43.4.1
+          - 44.0.0
+        include:
+          - electron_mocha_version: ^13
+            python_version: "3.10"
+          - architecture: arm64
+            architecture_node: x64
+            target_architecture: arm64
+            extra_compile_flags: -arch arm64
+          - architecture: x64
+            architecture_node: x64
+            target_architecture: x64
+          - electron: 42.0.0
+            node: 24.15.0
+          - electron: 42.0.1
+            node: 24.15.0
+          - electron: 42.1.0
+            node: 24.15.0
+          - electron: 42.2.0
+            node: 24.15.0
+          - electron: 42.3.0
+            node: 24.15.0
+          - electron: 42.3.1
+            node: 24.15.0
+          - electron: 42.3.2
+            node: 24.15.0
+          - electron: 42.3.3
+            node: 24.15.0
+          - electron: 42.4.0
+            node: 24.16.0
+          - electron: 42.4.1
+            node: 24.16.0
+          - electron: 42.5.0
+            node: 24.17.0
+          - electron: 42.5.1
+            node: 24.17.0
+          - electron: 42.5.2
+            node: 24.17.0
+          - electron: 42.6.0
+            node: 24.18.0
+          - electron: 42.6.1
+            node: 24.18.0
+          - electron: 42.6.2
+            node: 24.18.0
+          - electron: 42.7.0
+            node: 24.18.0
+          - electron: 42.7.1
+            node: 24.18.0
+          - electron: 42.8.0
+            node: 24.18.0
+          - electron: 42.8.1
+            node: 24.18.1
+          - electron: 42.9.0
+            node: 24.18.1
+          - electron: 42.9.1
+            node: 24.18.1
+          - electron: 42.9.2
+            node: 24.18.1
+          - electron: 42.9.3
+            node: 24.18.1
+          - electron: 42.10.0
+            node: 24.18.1
+          - electron: 42.10.1
+            node: 24.18.1
+          - electron: 43.0.0
+            node: 24.17.0
+          - electron: 43.1.0
+            node: 24.18.0
+          - electron: 43.1.1
+            node: 24.18.0
+          - electron: 43.2.0
+            node: 24.18.0
+          - electron: 43.3.0
+            node: 24.18.1
+          - electron: 43.4.0
+            node: 24.18.1
+          - electron: 43.4.1
+            node: 24.18.1
+          - electron: 44.0.0
+            node: 24.18.1
+        exclude:
+          - os: ubuntu-22.04
+            architecture: arm64
+          - os: windows-2022
+            architecture: arm64
+          - os: macos-15
+            architecture: x64
+    runs-on: ${{ matrix.os }}
+    steps: *build-electron-steps
 
   build-node-linux:
     strategy:
@@ -500,6 +993,9 @@ jobs:
         sanitizer,
         build-musl,
         build-musl-arm,
+        build-electron-legacy,
+        build-electron-38-39,
+        build-electron-40-41,
         build-electron,
         build-node-linux,
         build-node,

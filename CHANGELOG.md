@@ -102,6 +102,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Preserve custom Info dictionary keys passed to native `Recipe.info(options)`,
   matching Wasm, instead of silently discarding them; `custom(key, value)` remains
   the explicit spelling [#607](https://github.com/julianhille/MuhammaraJS/issues/607)
+
+- Actually build and publish the Electron 38.2 through 44.0 prebuilds announced
+  in 7.0.0-beta.1. The build matrix was lost when the branch was rebased across
+  the native/Wasm workflow split, so `ci-native.yml` only ever built Electron
+  36.0 through 38.1 [#537](https://github.com/julianhille/MuhammaraJS/issues/537)
 - Release the source PDF file handle that `Recipe` holds, so the source,
   appended, and overlaid files can be deleted right after `endPDF()` instead of
   failing with `EBUSY` on Windows [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
