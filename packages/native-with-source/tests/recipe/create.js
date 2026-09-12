@@ -179,7 +179,7 @@ describe("Create", () => {
 
   it("chains registered extensions and validates context transitions", () => {
     const output = path.join(__dirname, "../output/chain-context.pdf");
-    const recipe = new Recipe("new", output);
+    let recipe = new Recipe("new", output);
     assert.equal(
       recipe.register("drawMark", function () {
         return this;
@@ -203,5 +203,6 @@ describe("Create", () => {
     assert.throws(() => recipe.pauseContext(), /No active page/);
     assert.throws(() => recipe.resumeContext(), /No paused page/);
     recipe.endPDF();
+    recipe = null;
   });
 });
