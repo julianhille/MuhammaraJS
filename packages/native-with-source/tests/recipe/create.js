@@ -176,4 +176,33 @@ describe("Create", () => {
       }
     });
   });
+
+  it("chains registered extensions and validates context transitions", () => {
+    const output = path.join(__dirname, "../output/chain-context.pdf");
+    let recipe = new Recipe("new", output);
+    assert.equal(
+      recipe.register("drawMark", function () {
+        return this;
+      }),
+      recipe,
+    );
+    assert.equal(
+      recipe.register(function drawNamedMark() {
+        return this;
+      }),
+      recipe,
+    );
+    assert.throws(() => recipe.pauseContext(), /No active page/);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
+    recipe.createPage().drawMark().rectangle(10, 10, 20, 20);
+    assert.equal(recipe.pauseContext(), recipe);
+    assert.throws(() => recipe.pauseContext(), /No active page/);
+    assert.equal(recipe.resumeContext(), recipe);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
+    recipe.drawNamedMark().rectangle(40, 40, 20, 20).endPage();
+    assert.throws(() => recipe.pauseContext(), /No active page/);
+    assert.throws(() => recipe.resumeContext(), /No paused page/);
+    recipe.endPDF();
+    recipe = null;
+  });
 });

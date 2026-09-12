@@ -60,6 +60,7 @@ export function createPageMethods(
       this._activePageNumber = page.pageNumber;
       this._pageWidth = width;
       this._pageHeight = height;
+      this._contextState = "active-new";
       this.margins(margins || this.default.pageMargin);
       // Node Recipe initializes pages as if moveTo(0, 0) was called. Implicit
       // text and layout still use their margin fallbacks when the cursor is zero.
@@ -80,7 +81,7 @@ export function createPageMethods(
     endPage: function () {
       if (this._editingPage) {
         this._flushAnnotations();
-        if (this._pageContext) {
+        if (this._contextState === "active-edit") {
           this._page.endContext();
           this._page.writePage();
         }
@@ -89,6 +90,7 @@ export function createPageMethods(
         this._editingPage = false;
         this._pageHeight = 0;
         this._pageWidth = 0;
+        this._contextState = "idle";
         return this;
       }
       if (this._sourceMode) {
@@ -99,6 +101,7 @@ export function createPageMethods(
         this._page = null;
         this._pageHeight = 0;
         this._pageWidth = 0;
+        this._contextState = "idle";
         return this;
       }
       if (!this._recipe || !this._pageHeight) return this;
@@ -106,6 +109,7 @@ export function createPageMethods(
       call("_muhammara_wasm_recipe_end_page", this._recipe);
       this._pageHeight = 0;
       this._pageWidth = 0;
+      this._contextState = "idle";
       return this;
     },
 
@@ -305,6 +309,7 @@ export function createPageMethods(
       this._page = this.writer.createPageModifier(pageNumber - 1, true);
       this._pageContext = this._page.startContext().getContext();
       this._editingPage = true;
+      this._contextState = "active-edit";
       this._activePageNumber = pageNumber;
       this._pageWidth = page.width;
       this._pageHeight = page.height;
@@ -314,48 +319,61 @@ export function createPageMethods(
     },
 
     /**
-     * Writes and pauses the active edited-page content context.
-     * Page editing remains active, and a later resume restores the page's
-     * rotated, top-left Recipe coordinate transform.
+     * Pauses the active created-page or edited-page content context. Page
+     * editing remains active, and a later resume restores the page's rotated,
+     * top-left Recipe coordinate transform.
      *
      * @name pauseContext
      * @function
      * @memberof Recipe#
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If there is no active edited-page content context.
+     * @throws {Error} If there is no active page content context.
      */
     pauseContext: function () {
-      if (!this._editingPage || !this._pageContext) {
+      if (this._contextState === "active-edit") {
+        this._page.endContext();
+        this._page.writePage();
+        this._page = null;
+        this._pageContext = null;
+        this._contextState = "paused-edit";
+      } else if (this._contextState === "active-new") {
+        if (this._sourceMode) {
+          this.writer.pausePageContentContext(this._pageContext);
+        } else {
+          call("_muhammara_wasm_recipe_pause_page", this._recipe);
+        }
+        this._contextState = "paused-new";
+      } else {
         throw new Error("No active page content context to pause");
       }
-      this._page.endContext();
-      this._page.writePage();
-      this._page = null;
-      this._pageContext = null;
       return this;
     },
 
     /**
-     * Resumes a paused edited-page content context.
-     * The page rotation transform is reapplied so subsequent drawing continues
-     * in Recipe's top-left coordinate system.
+     * Resumes a paused created-page or edited-page content context. The page
+     * rotation transform is reapplied so subsequent drawing continues in
+     * Recipe's top-left coordinate system.
      *
      * @name resumeContext
      * @function
      * @memberof Recipe#
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If no edited page is paused, or its context is already active.
+     * @throws {Error} If there is no paused page content context.
      */
     resumeContext: function () {
-      if (!this._editingPage || this._pageContext) {
+      if (this._contextState === "paused-edit") {
+        this._page = this.writer.createPageModifier(
+          this._activePageNumber - 1,
+          true,
+        );
+        this._pageContext = this._page.startContext().getContext();
+        this._resumePageRotation();
+        this._contextState = "active-edit";
+      } else if (this._contextState === "paused-new") {
+        this._contextState = "active-new";
+      } else {
         throw new Error("No paused page content context to resume");
       }
-      this._page = this.writer.createPageModifier(
-        this._activePageNumber - 1,
-        true,
-      );
-      this._pageContext = this._page.startContext().getContext();
-      this._resumePageRotation();
       return this;
     },
 

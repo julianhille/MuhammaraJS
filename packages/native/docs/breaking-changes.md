@@ -5,6 +5,11 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
 
 ## Version 7.x
 
+- Recipe `pauseContext()` and `resumeContext()` throw when there is no matching
+  active or paused page content context. Calls outside a page lifecycle and
+  repeated pause or resume calls used to do nothing silently; call
+  `pauseContext()` only after creating or editing a page, and call
+  `resumeContext()` exactly once after a successful pause.
 - The undocumented native `Recipe` prototype members `ANNOTATION_PREFIX`,
   `appendPDFPageFromPDFWithAnnotations()`, and
   `appendPDFPagesFromPDFWithAnnotations()` were removed. Code that called them

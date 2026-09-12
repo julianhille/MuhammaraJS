@@ -1237,8 +1237,8 @@ declare namespace muhammara {
     /** Metadata read from the source PDF, keyed by one-based page number. */
     readonly metadata: Recipe.Metadata;
     read(inSrc?: string | Buffer): { pages: number; [page: number]: object };
-    register(key: string, callback: Function): void;
-    register(callback: Function & { name: string }): void;
+    register(key: string, callback: Function): Recipe;
+    register(callback: Function & { name: string }): Recipe;
 
     constructor(
       buffer: Buffer,
@@ -1342,8 +1342,8 @@ declare namespace muhammara {
       bottom?: number,
     ): Recipe;
     getPageInfo(): InfoDictionary;
-    pauseContext(): void;
-    resumeContext(): void;
+    pauseContext(): Recipe;
+    resumeContext(): Recipe;
     rotateContent(degrees: number, x?: number, y?: number): Recipe;
     split(outputDir?: string, prefix?: string): Recipe;
 

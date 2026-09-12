@@ -84,4 +84,5 @@ export function initializeRecipe(recipe, options) {
   recipe._page = null;
   recipe._pageContext = null;
   recipe._activePageNumber = 0;
+  recipe._contextState = "idle";
 }

@@ -5,6 +5,8 @@
   document composition methods.
 - Call `endPage()` before selecting, creating, or editing another page.
 - Call `endPDF()` only after all page and document operations are complete.
+- `pauseContext()` and `resumeContext()` are chainable for valid transitions.
+  They throw when there is no matching active or paused page content context.
 - Buffer output is delivered to the `endPDF` callback; `endPDF()` does not return
   the PDF Buffer.
 - `editPage` requires an existing input PDF and an output target unless using the
