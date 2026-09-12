@@ -1,9 +1,17 @@
 import muhammara = require("@muhammara/native-with-source");
 
 declare const writer: muhammara.PDFWriter;
+declare const literalString: muhammara.PDFLiteralString;
+declare const hexString: muhammara.PDFHexString;
 
 var page: muhammara.PDFPage = writer.createPage(0, 0, 595, 842);
 writer.startPageContentContext(page).c(0, 0, 1, 1, 2, 2).S();
+var literalBytes: number[] = literalString.toBytesArray();
+var hexBytes: number[] = hexString.toBytesArray();
+var hexText: string = hexString.toText();
+void literalBytes;
+void hexBytes;
+void hexText;
 
 declare const recipe: muhammara.Recipe;
 recipe
@@ -92,3 +100,55 @@ recipe.lineStyle({
   dash: [1],
   dashPhase: 1,
 });
+recipe
+  .register("drawMarker", function () {
+    this.moveTo(10, 10).lineTo(20, 20);
+  })
+  .pauseContext()
+  .resumeContext();
+recipe
+  .register(function drawNamedMarker() {
+    this.moveTo(20, 20).lineTo(30, 30);
+  })
+  .pauseContext()
+  .resumeContext();
+
+recipe
+  .layout("columns", 10, 10, 200, 100, { columns: 2, gap: 12 })
+  .table(10, 120, [{ name: "Ada", score: 10 }], {
+    columns: [
+      {
+        name: "name",
+        text: "Name",
+        cell: { padding: 4 },
+        renderer: (text, record, field, row) => {
+          void text;
+          void record;
+          void field;
+          void row;
+          return { color: "blue" };
+        },
+      },
+    ],
+    header: { alignToData: true, cell: { padding: 2 } },
+    row: { nth: "odd", cell: { padding: 2 } },
+    overflow: (currentRecipe, row) => {
+      currentRecipe.createPage("letter");
+      return row > 10 ? true : { position: [10, 10] };
+    },
+  })
+  .arrow(20, 20, { type: "dart", at: "head", head: [10, 5] })
+  .triangle(20, 20, [30, 40, 50], {
+    traitID: "sss",
+    position: "centroid",
+    flipX: true,
+  })
+  .chroma("brand", "#ff0000", "rgb");
+
+recipe.permission("print,copy");
+recipe.deletePage(1).deletePage([2, 3]);
+var pageMetadata: muhammara.Recipe.PageInfo = recipe.read()[1];
+var htmlTextObject: muhammara.Recipe.HtmlTextObject =
+  recipe.htmlToTextObjects("<b>text</b>")[0];
+pageMetadata.mediaBox;
+htmlTextObject.styles;

@@ -5,6 +5,7 @@ var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var editAnnotation = require("../../../native/docs/examples/edit-annotation");
+var deletePages = require("../../../native/docs/examples/delete-pages");
 
 var fontPath = path.join(
   __dirname,
@@ -33,6 +34,14 @@ function writeSourcePdf(sourcePath) {
     .ET();
   writer.writePage(page);
   writer.end();
+}
+
+function writeDeleteSource(sourcePath) {
+  var recipe = new muhammara.Recipe("new", sourcePath);
+  for (var page = 1; page <= 4; page += 1) {
+    recipe.createPage(100 + page, 200 + page).endPage();
+  }
+  recipe.endPDF();
 }
 
 function writeAnnotatedPdf(annotatedPath) {
@@ -203,5 +212,28 @@ describe("Documentation examples", function () {
 
     assert.strictEqual(remaining.length, 1);
     assert.strictEqual(remaining[0].contents, "Keep me");
+  });
+
+  it("deletes selected pages", function () {
+    var deleteSourcePath = path.join(outputDirectory, "delete-source.pdf");
+    var outputPath = path.join(outputDirectory, "deleted-pages.pdf");
+    writeDeleteSource(deleteSourcePath);
+
+    deletePages(deleteSourcePath, outputPath, [2, 4]);
+
+    var reader = muhammara.createReader(outputPath);
+    try {
+      assert.strictEqual(reader.getPagesCount(), 2);
+      assert.deepStrictEqual(
+        reader.parsePage(0).getMediaBox(),
+        [0, 0, 101, 201],
+      );
+      assert.deepStrictEqual(
+        reader.parsePage(1).getMediaBox(),
+        [0, 0, 103, 203],
+      );
+    } finally {
+      reader.end();
+    }
   });
 });

@@ -360,12 +360,15 @@ EStatusCode ObjectsContext::StartModifiedIndirectObject(ObjectIDType inObjectID)
 		TRACE_LOG1("ObjectsContext::StartModifiedIndirectObject, failed to mark object as updated. Object ID = %ld",inObjectID);
 		return status;
 	}
+	unsigned long generationNumber = mReferencesRegistry
+		.GetNthObjectReference(inObjectID)
+		.mGenerationNumber;
 	mPrimitiveWriter.WriteInteger(inObjectID);
-	mPrimitiveWriter.WriteInteger(0);
+	mPrimitiveWriter.WriteInteger(generationNumber);
 	mPrimitiveWriter.WriteKeyword(scObj);    
 
 	if (IsEncrypting()) {
-		mEncryptionHelper->OnObjectStart((long long)inObjectID, 0);
+		mEncryptionHelper->OnObjectStart((long long)inObjectID, generationNumber);
 	}
 
 	return status;

@@ -39,6 +39,7 @@ describe("Browser how-to examples", function () {
         "page-boxes",
         "form-gray",
         "rotated-page",
+        "delete-pages",
         "image-transform",
         "table",
         "passwords",
@@ -62,7 +63,10 @@ describe("Browser how-to examples", function () {
       var result = await runHowToExample(example.id, { assets });
       assert(result.bytes instanceof Uint8Array);
       assert(result.bytes.length > 100);
-      assert.equal(result.summary.pages, 1);
+      assert.equal(result.summary.pages, example.expectedPages || 1);
+      if (example.id === "delete-pages") {
+        assert.deepEqual(result.summary.pageWidths, [300, 340]);
+      }
       assert.match(result.filename, /^muhammara-.+\.pdf$/);
     });
   }

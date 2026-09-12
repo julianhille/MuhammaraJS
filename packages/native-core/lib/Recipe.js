@@ -216,6 +216,7 @@ class Recipe {
         this._releaseReader();
         this.pdfReader = pdfReader;
         this.metadata = metadata;
+        this.sourcePageCount = pages;
         isAdopted = true;
       }
       return metadata;
@@ -267,6 +268,34 @@ class Recipe {
    * @returns {*} The callback result, if a callback is provided.
    */
   endPDF(callback) {
+    if (this.endError) {
+      throw this.endError;
+    }
+    if (this.ended) {
+      if (!callback) return;
+      if (!this.isBufferSrc) return callback();
+      return callback(this.output || this.outStream.toBuffer());
+    }
+    if (this.contextState !== "idle") {
+      throw new Error("Finish the current page before endPDF");
+    }
+    try {
+      this._deletePages();
+    } catch (error) {
+      this.endError = error;
+      this.ended = true;
+      try {
+        this.writer.end();
+      } catch (_) {
+        // Preserve the deletion error; writer.end() still resets native files.
+      }
+      try {
+        this._releaseReader();
+      } catch (_) {
+        // Preserve the deletion error if releasing its separate reader fails.
+      }
+      throw error;
+    }
     this._writeInfo();
     this.writer.end();
     // This is a temporary work around for copying context will overwrite the current one
@@ -328,6 +357,8 @@ class Recipe {
     if (this.isBufferSrc && this.output) {
       fs.writeFileSync(this.output, this.outStream.toBuffer());
     }
+
+    this.ended = true;
 
     if (callback) {
       if (this.isBufferSrc) {

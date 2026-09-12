@@ -43,7 +43,8 @@ requires an active created or edited page and supports `page`, `scale`,
 ## Split Into Byte Outputs
 
 `split(prefix)` ends the Recipe and returns one named `Uint8Array` per page. It
-does not write an output directory.
+does not write an output directory. `Recipe.splitPdf(name, prefix)` provides the
+same `[{ name, bytes }]` result directly for a registered PDF.
 
 ```js
 import { createRecipe } from "@muhammara/wasm";

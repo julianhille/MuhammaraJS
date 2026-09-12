@@ -24,6 +24,28 @@ textual PDF structure, call `structure` on the Recipe instance:
 pdfDoc.structure("pdf-structure.txt").endPDF();
 ```
 
+`pauseContext()` and `resumeContext()` split page additions across content
+contexts and return the Recipe for chaining. A pause requires an active created
+or edited page context, and each successful pause requires exactly one resume;
+unmatched calls throw.
+
+## Delete Pages
+
+`deletePage(pageNumber)` and `deletePage(pageNumbers)` remove one or more
+one-based pages from an existing PDF. Multiple calls and duplicate selections
+are combined against the original source numbering. At least one page must
+remain.
+
+```javascript
+new Recipe("input.pdf", "without-drafts.pdf").deletePage([2, 4]).endPDF();
+```
+
+Deletion preserves retained page objects and their content, annotations, and
+inherited page-tree data. It writes an incremental PDF update, so removed page
+bytes may remain unreachable in the file; do not use it to erase sensitive
+data. Page deletion cannot be combined with `createPage()`, `appendPage()`, or
+`insertPage()` in the same Recipe.
+
 ## Replace Literal Text
 
 `replaceText(text, replacement, pageNumber)` rewrites literal text-showing

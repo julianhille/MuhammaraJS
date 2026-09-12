@@ -23,6 +23,7 @@ var pdfBytes = new Recipe({
 `password` alias) controls owner access, and `userProtectionFlag` is a numeric
 permission mask. `Recipe.permission()` combines the supported names `print`,
 `modify`, `copy`, `edit`, `fillform`, `extract`, `assemble`, and `printbest`.
+The instance method `recipe.permission()` performs the same conversion.
 
 Byte-first encryption supports RC4 and AES-128 through PDF 1.7. It does not
 support PDF 2.0/AES-256. Recipe also cannot directly open a password-protected

@@ -2,7 +2,8 @@
 
 High-level drawing uses points measured from the page's top-left corner. Create
 a named page or pass explicit width and height; page numbers used by Recipe are
-one-based.
+one-based. Named sizes are case-insensitive and include Letter, Legal, A/B/C,
+RA, and SRA sizes.
 
 ```js
 import { createRecipe } from "@muhammara/wasm";
@@ -33,6 +34,11 @@ point around which subsequent drawing rotates.
 page. Despite its name, `getPageInfo()` is the native-compatible document Info
 accessor, not a page-geometry method. Use `info()` to read metadata currently
 known to Recipe.
+
+`margins()` returns a copy of the current margins. Pass an object or four
+numbers to update margins; omitted sides retain their current values. The
+read-only `position` property reports the latest high-level cursor updated by
+`moveTo()`, `lineTo()`, and text placement.
 
 ## Page Boxes
 

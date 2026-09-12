@@ -36,6 +36,11 @@ normally. `split()` returns named byte arrays rather than writing an output
 directory, and `structure("json")` returns an in-memory summary rather than
 writing a diagnostic file.
 
+Filesystem-backed `structure(path)`, installed-font discovery, and the native
+plugin loader are also unavailable. `deletePage()` can remove one or more
+one-based original pages from a byte-backed source, but cannot remove every page
+or be combined with page creation, appending, or insertion in the same Recipe.
+
 Wasm-only `Recipe.dispose()` and `Recipe.disposeAssets()` release Emscripten
 allocations that JavaScript garbage collection cannot reclaim. Native objects
 use normal native lifetime management. See the [Recipe topic

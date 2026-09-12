@@ -331,7 +331,10 @@ exports._writeAnnotation = function _writeAnnotation(pageIndex) {
   objectsContext.startArray();
   if (pageObject["Annots"] && pageObject["Annots"].toJSArray) {
     pageObject["Annots"].toJSArray().forEach((annot) => {
-      objectsContext.writeIndirectObjectReference(annot.getObjectID());
+      objectsContext.writeIndirectObjectReference(
+        annot.getObjectID(),
+        annot.getVersion(),
+      );
     });
   }
   this.annotations[pageIndex].forEach((item) => {

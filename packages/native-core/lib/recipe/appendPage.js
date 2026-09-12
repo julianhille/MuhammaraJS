@@ -11,6 +11,9 @@ const utils = require("./utils");
  * @returns {Recipe} The recipe instance.
  */
 exports.appendPage = function appendPage(pdfSrc, pages = []) {
+  if (this.deletedPages?.size) {
+    throw new Error("appendPage cannot be combined with deletePage");
+  }
   if (!Array.isArray(pages) && !isNaN(pages)) {
     pages = [pages];
   }
@@ -43,6 +46,7 @@ exports.appendPage = function appendPage(pdfSrc, pages = []) {
       return [transformPageNumber(element), transformPageNumber(element)];
     }
   });
+  this.pagesAppended = true;
   if (pages.length > 0) {
     utils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc, {
       specificRanges: pages,
