@@ -345,7 +345,7 @@ async function usesLowLevelSurface() {
   recipe.fillOpacity(0.5);
   recipe.registerFont("instance-font", new Uint8Array());
   await recipe.registerFontAsync("instance-font-async", new Blob());
-  recipe.htmlToTextObjects("<b>text</b>")[0].styles.bold;
+  recipe.htmlToTextObjects("<ul><li><b>text</b></li></ul>")[0].indent;
   recipe
     .register("extension", function () {
       return this;

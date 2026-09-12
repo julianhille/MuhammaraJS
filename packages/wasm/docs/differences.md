@@ -21,9 +21,10 @@ or Recipe-created Separation colors. Register named colors individually; use
 the byte-safe low-level resource API for Separation colors.
 
 The Recipe HTML subset is DOM-free and Worker-safe. It supports URL links
-through `<a href>`, but does not provide arbitrary DOM, CSS inheritance, lists,
-or plugin HTML handlers. Its ellipsis mode writes three ASCII periods (`...`)
-rather than the Unicode ellipsis used by native Recipe.
+through `<a href>` and visual nested lists through `ul`, `ol`, and `li`, but
+does not provide arbitrary DOM, general CSS inheritance, semantic tagged-PDF
+lists, or plugin HTML handlers. Its ellipsis mode writes three ASCII periods
+(`...`) rather than the Unicode ellipsis used by native Recipe.
 
 On new pages, a text run's `opacity` option is scoped to that text in the PDF
 graphics state, but also becomes the default opacity for subsequent Recipe

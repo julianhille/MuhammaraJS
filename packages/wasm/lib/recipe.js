@@ -195,7 +195,9 @@ export function createRecipeFactory({
 
     /**
      * Converts supported DOM-free HTML into styled Recipe text fragments.
-     * This helper does not draw content or alter Recipe state.
+     * Ordered and unordered list fragments include their visual prefix and
+     * native-compatible indentation. This helper does not draw content or alter
+     * Recipe state.
      *
      * @name htmlToTextObjects
      * @function

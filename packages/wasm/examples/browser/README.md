@@ -84,15 +84,16 @@ streams, plugins, and Node EventEmitter hooks are unsupported. The example uses
 `end()` or `dispose()` for owners, unregisters assets, calls `disposeAssets()`,
 terminates Workers, and revokes replaced/final object URLs.
 
-## Automated Chrome Validation
+## Automated Browser Validation
 
 ```sh
 npm run wasm:test:browser
 ```
 
-The Chrome runner uses `puppeteer-core`, imports `workflow.mjs`, injects
+The browser runner uses `puppeteer-core`, imports `workflow.mjs`, injects
 JPEG/PNG/TIFF fixtures as bytes, executes the complete workflow with the bundled
 Recipe font in both the
 page and module Worker validation contexts, asserts parse-back summaries, and
-checks zero-setup table previews and object-URL replacement/disposal behavior. Set `CHROME_BIN` when Chrome is
-not discoverable by the runner.
+checks zero-setup table previews and object-URL replacement/disposal behavior.
+Set `CHROME_BIN` to test Chrome or `FIREFOX_BIN` to test Firefox. Chrome remains
+the CI default.

@@ -269,6 +269,8 @@ export interface RecipeTextOptions extends RecipePathOptions {
 export interface RecipeHtmlTextObject {
   value: string;
   styles: Partial<RecipeTextOptions>;
+  /** Native-compatible leading-space count when this fragment starts a list item. */
+  indent?: number;
 }
 export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
   name: string;

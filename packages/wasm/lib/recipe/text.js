@@ -61,6 +61,105 @@ function lines(value, width, measure, options, wrap) {
   return result;
 }
 
+function htmlLines(source, width, measure, options, wrap) {
+  var result = [];
+  var parts = [];
+  var lineWidth = 0;
+  var indent = 0;
+  var linePrefix = "";
+  var continuationPrefix = "";
+  var truncated = false;
+  var flush = (last) => {
+    result.push({
+      text: parts.map((part) => part.text).join(""),
+      parts,
+      indent,
+      last,
+    });
+    parts = [];
+    lineWidth = 0;
+    if (!last) linePrefix = continuationPrefix;
+  };
+
+  source.forEach((sourcePart) => {
+    if (sourcePart.indent !== undefined) {
+      indent = sourcePart.indent;
+      linePrefix = " ".repeat(indent);
+      // Native wraps list text beneath the item text, not beneath its marker.
+      continuationPrefix = " ".repeat(indent + sourcePart.value.length + 1);
+    }
+    String(sourcePart.value)
+      .split(/(\n)/)
+      .forEach((fragment) => {
+        if (fragment === "\n") {
+          flush(true);
+          indent = 0;
+          linePrefix = "";
+          continuationPrefix = "";
+          truncated = false;
+          return;
+        }
+        var words = fragment.match(/\s*\S+\s*|\s+/g) || [];
+        words.forEach((word) => {
+          if (truncated) return;
+          word = linePrefix + word;
+          linePrefix = "";
+          var textOptions = { ...options, ...sourcePart.styles };
+          var wordWidth =
+            measure(word, textOptions).width +
+            charSpacing(word, textOptions.charSpace);
+          if (width && parts.length && lineWidth + wordWidth > width) {
+            if (wrap === "auto" || wrap === true) {
+              flush(false);
+              word = linePrefix + word;
+              linePrefix = "";
+              wordWidth =
+                measure(word, textOptions).width +
+                charSpacing(word, textOptions.charSpace);
+            } else if (wrap === "ellipsis") {
+              ellipsizeHtmlParts(parts, width, measure, options);
+              truncated = true;
+              return;
+            } else if (wrap !== "clip") {
+              truncated = true;
+              return;
+            }
+          }
+          parts.push({ text: word, styles: sourcePart.styles });
+          lineWidth += wordWidth;
+        });
+      });
+  });
+  if (parts.length || !result.length) flush(true);
+  return result;
+}
+
+function ellipsizeHtmlParts(parts, width, measure, options) {
+  var suffix = "...";
+  while (parts.length) {
+    var total = parts.reduce((sum, part) => {
+      var textOptions = { ...options, ...part.styles };
+      return (
+        sum +
+        measure(part.text, textOptions).width +
+        charSpacing(part.text, textOptions.charSpace)
+      );
+    }, 0);
+    var last = parts[parts.length - 1];
+    var lastOptions = { ...options, ...last.styles };
+    var suffixWidth =
+      measure(suffix, lastOptions).width +
+      charSpacing(suffix, lastOptions.charSpace);
+    if (total + suffixWidth <= width) {
+      last.text = last.text.trimEnd() + suffix;
+      return;
+    }
+    last.text = last.text.slice(0, -1).trimEnd();
+    if (!last.text) parts.pop();
+  }
+  parts.push({ text: suffix, styles: {} });
+}
+
 function ellipsize(value, width, measure, options) {
   var suffix = "...";
   var result = value.trimEnd();
@@ -260,20 +359,24 @@ export function createTextMethods({ drawText, measure, module }) {
         box.width ||
         (options.flow ? this._pageWidth - x - this._margin.right : 0);
       var wrap = box.wrap === false ? "ellipsis" : box.wrap || "auto";
-      var source = options.html
-        ? htmlToTextObjects(value, options)
-        : [{ value: String(value), styles: {} }];
       var measureText = (text, textOptions) =>
         dimensions(this, text, textOptions);
-      var entries = source.flatMap((part) =>
-        lines(
-          part.value,
-          width ? width - left - right : 0,
-          measureText,
-          { ...options, ...part.styles, fontSize },
-          wrap,
-        ).map((line) => ({ ...line, styles: part.styles })),
-      );
+      var source = options.html ? htmlToTextObjects(value, options) : null;
+      var entries = options.html
+        ? htmlLines(
+            source,
+            width ? width - left - right : 0,
+            measureText,
+            { ...options, fontSize },
+            wrap,
+          )
+        : lines(
+            String(value),
+            width ? width - left - right : 0,
+            measureText,
+            { ...options, fontSize },
+            wrap,
+          ).map((line) => ({ ...line, styles: {} }));
       var lineHeight =
         box.lineHeight ||
         dimensions(this, "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}", {
@@ -311,8 +414,19 @@ export function createTextMethods({ drawText, measure, module }) {
       var naturalWidth =
         width ||
         Math.max(
-          ...entries.map(
-            (entry) => dimensions(this, entry.text, options).width,
+          ...entries.map((entry) =>
+            entry.parts
+              ? entry.parts.reduce(
+                  (sum, part) =>
+                    sum +
+                    dimensions(this, part.text, {
+                      ...options,
+                      ...part.styles,
+                      fontSize,
+                    }).width,
+                  0,
+                )
+              : dimensions(this, entry.text, options).width,
           ),
           0,
         );
@@ -378,7 +492,18 @@ export function createTextMethods({ drawText, measure, module }) {
           currentY = y + top;
         }
         var textOptions = { ...options, ...entry.styles, fontSize };
-        var textWidth = dimensions(this, entry.text, textOptions).width;
+        var textWidth = entry.parts
+          ? entry.parts.reduce(
+              (sum, part) =>
+                sum +
+                dimensions(this, part.text, {
+                  ...options,
+                  ...part.styles,
+                  fontSize,
+                }).width,
+              0,
+            )
+          : dimensions(this, entry.text, textOptions).width;
         var horizontal = box.textAlign?.split(" ")[0];
         var drawX =
           x +
@@ -418,7 +543,7 @@ export function createTextMethods({ drawText, measure, module }) {
             throw new Error("Unable to clip text box");
           }
         }
-        if (textOptions.hilite) {
+        if (textOptions.hilite && !entry.parts) {
           var hilite =
             typeof textOptions.hilite === "object" ? textOptions.hilite : {};
           var bounds = dimensions(this, entry.text, textOptions);
@@ -434,7 +559,48 @@ export function createTextMethods({ drawText, measure, module }) {
             },
           );
         }
-        if (horizontal === "justify" && !entry.last && width) {
+        if (entry.parts) {
+          var partWords = entry.parts.filter((part) => part.text.trim()).length;
+          var partGap =
+            horizontal === "justify" && !entry.last && width && partWords > 1
+              ? (width - left - right - textWidth) / (partWords - 1)
+              : 0;
+          entry.parts.forEach((part) => {
+            var partOptions = { ...options, ...part.styles, fontSize };
+            var partWidth = dimensions(this, part.text, partOptions).width;
+            if (partOptions.hilite) {
+              var partHilite =
+                typeof partOptions.hilite === "object"
+                  ? partOptions.hilite
+                  : {};
+              var partBounds = dimensions(this, part.text, partOptions);
+              this.rectangle(
+                drawX + partBounds.xMin,
+                this._pageHeight - baseline + partBounds.yMin,
+                partBounds.xMax - partBounds.xMin,
+                partBounds.yMax - partBounds.yMin,
+                {
+                  useGivenCoords: true,
+                  fill: partHilite.color || "#ffff00",
+                  opacity: partHilite.opacity ?? 0.5,
+                },
+              );
+            }
+            drawText.call(this, part.text, drawX, baseline, partOptions);
+            if (partOptions.link) {
+              var linkBounds = dimensions(this, part.text, partOptions);
+              this.link(
+                partOptions.link,
+                drawX + linkBounds.xMin,
+                currentY,
+                partWidth,
+                lineHeight,
+              );
+            }
+            drawX += partWidth;
+            if (part.text.trim() && --partWords > 0) drawX += partGap;
+          });
+        } else if (horizontal === "justify" && !entry.last && width) {
           var words = entry.text.match(/\S+\s*/g) || [entry.text];
           var wordsWidth = words.reduce(
             (sum, word) => sum + dimensions(this, word, textOptions).width,
@@ -453,7 +619,7 @@ export function createTextMethods({ drawText, measure, module }) {
           drawText.call(this, entry.text, drawX, baseline, textOptions);
         }
         if (clipping) this._restore();
-        if (textOptions.link) {
+        if (textOptions.link && !entry.parts) {
           var linkBounds = dimensions(this, entry.text, textOptions);
           this.link(
             textOptions.link,

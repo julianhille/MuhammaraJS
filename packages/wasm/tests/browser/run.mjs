@@ -103,11 +103,16 @@ var server;
 var browser;
 try {
   server = await startServer();
-  if (!process.env.CHROME_BIN) {
-    throw new Error("CHROME_BIN is required for browser validation");
+  var browserName = process.env.FIREFOX_BIN ? "firefox" : "chrome";
+  var executablePath = process.env.FIREFOX_BIN || process.env.CHROME_BIN;
+  if (!executablePath) {
+    throw new Error(
+      "CHROME_BIN or FIREFOX_BIN is required for browser validation",
+    );
   }
   browser = await puppeteer.launch({
-    executablePath: process.env.CHROME_BIN,
+    browser: browserName,
+    executablePath,
     headless: true,
   });
   var fontLoading = await validateFontLoading(
@@ -141,6 +146,7 @@ try {
       "complete",
       "annotations",
       "links",
+      "html-lists",
       "page-boxes",
       "form-gray",
       "rotated-page",

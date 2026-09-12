@@ -36,6 +36,7 @@ describe("Browser how-to examples", function () {
       [
         "annotations",
         "links",
+        "html-lists",
         "page-boxes",
         "form-gray",
         "rotated-page",
