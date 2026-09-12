@@ -81,14 +81,17 @@ describe("HTML to TextObjects", function () {
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(bytes);
     try {
-      var extracted = reader.extractPageText(0);
       var lines = new Map();
-      extracted.slice(0, 14).forEach((item) => {
+      reader.extractPageText(0).forEach((item) => {
         var y = item.textMatrix[5];
         lines.set(y, (lines.get(y) || "") + item.content);
       });
+      // Both text runs share the page; higher y is the first, upper block.
+      var rendered = Array.from(lines.entries())
+        .sort((left, right) => right[0] - left[0])
+        .map((entry) => entry[1]);
       assert.deepEqual(
-        Array.from(lines.values(), (line) => line.trimStart()),
+        rendered.slice(0, 6).map((line) => line.trimStart()),
         [
           "* plain",
           "* bold and linked",
@@ -98,12 +101,105 @@ describe("HTML to TextObjects", function () {
           "2. two",
         ],
       );
-      var wrapped = extracted.slice(14);
-      assert.equal(wrapped[0].content, "      * ");
-      assert.equal(
-        wrapped.find((item) => item.content.trim() === "bravo").content,
-        "         bravo ",
-      );
+      // Wrapped continuations hang under the item text and carry no trailing
+      // space, matching native list layout.
+      assert.deepEqual(rendered.slice(6), [
+        "      * alpha",
+        "         bravo",
+        "         charlie",
+        "         delta",
+      ]);
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
+  });
+
+  it("ends items without </li> and keeps item context across breaks", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe({ compress: false });
+    var values = (html) =>
+      recipe
+        .htmlToTextObjects(html)
+        .map((object) => object.value)
+        .join("");
+
+    // HTML5 makes </li> optional. Native's XML parser rejects the markup, so
+    // Wasm recovers instead: the item ends at its sibling or at its list.
+    assert.equal(values("<ul><li>one<li>two</ul>tail"), "* one\n* two\ntail");
+    assert.equal(values("<ol><li>one<li>two</ol>"), "1. one\n2. two");
+    assert.equal(
+      values("<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>"),
+      "* one\n* two",
+    );
+    assert.equal(
+      values("<ul><li>x<ul><li>y</ul><li>z</ul>end"),
+      "* x\n* y\n* z\nend",
+    );
+
+    // Native propagates the marker into block children, so an opening block
+    // right after a marker must not break the line.
+    assert.equal(values("<ul><li><p>para one</p></li></ul>"), "* para one");
+    assert.equal(values("<ul><li> <p>para one</p></li></ul>"), "* para one");
+    assert.equal(values("<ul><li><p>a</p><p>b</p></li></ul>"), "* a\nb");
+
+    // Content after the list is no longer indented by it.
+    assert.deepEqual(
+      recipe
+        .htmlToTextObjects("<ul><li>one</li></ul>tail")
+        .filter((object) => object.indent !== undefined)
+        .map((object) => object.indent),
+      [6, 0],
+    );
+  });
+
+  it("indents continuation lines and never starts a line with a space", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe({ compress: false });
+    recipe
+      .createPage(300, 300)
+      .text("<ul><li>a<br>b</li><li>c</li></ul>", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        textBox: { width: 200 },
+      })
+      .text("aaaa <b>bbbb</b> cccc", 20, 150, {
+        font: "arial",
+        size: 12,
+        html: true,
+        textBox: { width: 40, wrap: "auto" },
+      })
+      .endPage();
+    var bytes = recipe.endPDF();
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(bytes);
+    try {
+      var lines = new Map();
+      reader.extractPageText(0).forEach((item) => {
+        var y = item.textMatrix[5];
+        lines.set(y, (lines.get(y) || "") + item.content);
+      });
+      var rendered = Array.from(lines.entries())
+        .sort((left, right) => right[0] - left[0])
+        .map((entry) => entry[1]);
+      // A <br> inside an item keeps the item indentation. Native only adds the
+      // extra hanging space when it auto-wraps, not on a hard break.
+      assert.deepEqual(rendered.slice(0, 3), [
+        "      * a",
+        "      b",
+        "      * c",
+      ]);
+      // Wrapping at an inline boundary must not push the space onto the next
+      // line, and no line may keep a trailing space.
+      rendered.slice(3).forEach((line) => {
+        assert.equal(
+          line,
+          line.trim(),
+          `unexpected padding in ${JSON.stringify(line)}`,
+        );
+      });
+      assert.equal(rendered.slice(3).join(" "), "aaaa bbbb cccc");
     } finally {
       reader.end();
       muhammara.disposeAssets();

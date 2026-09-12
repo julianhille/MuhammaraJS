@@ -70,10 +70,17 @@ function htmlLines(source, width, measure, options, wrap) {
   var continuationPrefix = "";
   var truncated = false;
   var flush = (last) => {
+    // lines() trims every line it emits; keep trailing spaces out of the
+    // measured width so alignment and justification stay correct.
+    while (wrap !== "clip" && parts.length) {
+      var tail = parts[parts.length - 1];
+      tail.text = tail.text.trimEnd();
+      if (tail.text) break;
+      parts.pop();
+    }
     result.push({
       text: parts.map((part) => part.text).join(""),
       parts,
-      indent,
       last,
     });
     parts = [];
@@ -86,20 +93,25 @@ function htmlLines(source, width, measure, options, wrap) {
       indent = sourcePart.indent;
       linePrefix = " ".repeat(indent);
       // Native wraps list text beneath the item text, not beneath its marker.
-      continuationPrefix = " ".repeat(indent + sourcePart.value.length + 1);
+      // A zero indent marks the end of the list, not a marker to wrap under.
+      continuationPrefix = indent
+        ? " ".repeat(indent + String(sourcePart.value).length + 1)
+        : "";
     }
     String(sourcePart.value)
       .split(/(\n)/)
       .forEach((fragment) => {
         if (fragment === "\n") {
           flush(true);
-          indent = 0;
-          linePrefix = "";
-          continuationPrefix = "";
+          // Native re-applies the indent on every line of a list item, so a
+          // <br> or block break inside one stays indented.
+          linePrefix = " ".repeat(indent);
           truncated = false;
           return;
         }
-        var words = fragment.match(/\s*\S+\s*|\s+/g) || [];
+        // Same word split as lines(); a leading \s* would carry a fragment
+        // boundary space onto the start of the next wrapped line.
+        var words = fragment.match(/\S+\s*|\s+/g) || [];
         words.forEach((word) => {
           if (truncated) return;
           word = linePrefix + word;
@@ -411,25 +423,21 @@ export function createTextMethods({ drawText, measure, module }) {
       );
       var height = box.height || contentHeight;
       var topAlign = options.align?.split(" ") || [];
-      var naturalWidth =
-        width ||
-        Math.max(
-          ...entries.map((entry) =>
-            entry.parts
-              ? entry.parts.reduce(
-                  (sum, part) =>
-                    sum +
-                    dimensions(this, part.text, {
-                      ...options,
-                      ...part.styles,
-                      fontSize,
-                    }).width,
-                  0,
-                )
-              : dimensions(this, entry.text, options).width,
-          ),
-          0,
-        );
+      var entryWidth = (entry) =>
+        entry.parts
+          ? entry.parts.reduce(
+              (sum, part) =>
+                sum +
+                dimensions(this, part.text, {
+                  ...options,
+                  ...part.styles,
+                  fontSize,
+                }).width,
+              0,
+            )
+          : dimensions(this, entry.text, options).width;
+      var widestEntry = Math.max(...entries.map(entryWidth), 0);
+      var naturalWidth = width || widestEntry;
       if (topAlign[0] === "center") x -= naturalWidth / 2;
       else if (topAlign[0] === "right") x -= naturalWidth;
       if (topAlign[1] === "center") y -= height / 2;
@@ -438,15 +446,7 @@ export function createTextMethods({ drawText, measure, module }) {
         this.rectangle(
           x,
           y,
-          width ||
-            Math.max(
-              ...entries.map(
-                (entry) => dimensions(this, entry.text, options).width,
-              ),
-              0,
-            ) +
-              left +
-              right,
+          width || widestEntry + left + right,
           height,
           box.style,
         );

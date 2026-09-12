@@ -63,4 +63,19 @@ describe("HTML to TextObjects", () => {
       reader.end();
     }
   });
+
+  it("requires well-formed list markup", () => {
+    // The native parser is XML-strict, so an omitted </li> throws here. The
+    // Wasm parser is DOM-free and recovers instead; see packages/wasm/DIFFERENCES.md.
+    assert.throws(() => htmlToTextObjects("<ul><li>one<li>two</ul>"));
+  });
+
+  it("keeps block children inside their list item", () => {
+    const objects = htmlToTextObjects("<ul><li><p>para one</p></li></ul>");
+
+    // The renderer propagates the item's prependValue onto this block child,
+    // which is why the marker and the paragraph share a line.
+    assert.equal(objects[0].childs[0].tag, "li");
+    assert.equal(objects[0].childs[0].childs[0].tag, "p");
+  });
 });
