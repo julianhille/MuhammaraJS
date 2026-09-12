@@ -35,9 +35,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   to set both fill and stroke alpha. Opacity persists for later vector drawing,
   so call `opacity(1)` to restore opaque output. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#8-replace-recipefillopacity)
   [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
+- Tighten native Recipe TypeScript declarations for `register()`, `layout()`,
+  `table()`, colorspaces, arrows, and triangles. Existing TypeScript code that
+  relies on `Function`, broad `object` options, unknown table columns, or broad
+  strings for finite values may now fail `tsc`; use the named Recipe callback,
+  option, colorspace, arrow, and triangle types described in
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#9-update-recipe-types)
+  [#654](https://github.com/julianhille/MuhammaraJS/issues/654)
 
 ### Added
 
+- Add named native Recipe types for `read()` metadata, HTML text objects,
+  colors, permissions, layout and table options, and shape-specific arrow and
+  triangle options [#654](https://github.com/julianhille/MuhammaraJS/issues/654)
 - Add Recipe URL links for arbitrary areas, rendered text, images, and drawing
   bounds [#614](https://github.com/julianhille/MuhammaraJS/issues/614)
 - Document native writer encryption, reader passwords, continuation state, and
@@ -128,9 +138,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Make native Recipe `register()`, `pauseContext()`, and `resumeContext()`
   chainable, and track created-page and edited-page context transitions
   [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
-- Tighten native Recipe TypeScript declarations for extensions, layouts, tables,
-  metadata, HTML text objects, colorspaces, permissions, arrows, and triangles
-  [#654](https://github.com/julianhille/MuhammaraJS/issues/654)
 - Document that native writer events have no WebAssembly equivalent
   [#624](https://github.com/julianhille/MuhammaraJS/issues/624)
 - Declare documented native Recipe metadata and call forms in TypeScript,

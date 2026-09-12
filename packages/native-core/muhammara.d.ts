@@ -921,6 +921,14 @@ declare namespace muhammara {
     type Color = string | number[];
     type DeviceColorspace = "rgb" | "gray" | "cmyk";
     type Colorspace = DeviceColorspace | "separation";
+    type CaseInsensitive<Value extends string> =
+      Value extends `${infer First}${infer Rest}`
+        ? `${Lowercase<First> | Uppercase<First>}${CaseInsensitive<Rest>}`
+        : Value;
+    type TriangleTrait = CaseInsensitive<"sss" | "sas" | "asa" | "vtx">;
+    type TrianglePosition = CaseInsensitive<
+      "a" | "b" | "c" | "centroid" | "circumcenter" | "incenter"
+    >;
     type PermissionName =
       | "print"
       | "modify"
@@ -1019,7 +1027,7 @@ declare namespace muhammara {
       title?: string;
       subject?: string;
       keywords?: string[];
-      colorspace?: DeviceColorspace;
+      colorspace?: Colorspace;
     }
 
     interface RecipeMargins {
@@ -1215,7 +1223,9 @@ declare namespace muhammara {
       header?: boolean | TextOptions;
       hcell?: TextBox;
       renderer?: (
-        text: RecordType[Field],
+        text: undefined extends RecordType[Field]
+          ? Exclude<RecordType[Field], undefined> | ""
+          : RecordType[Field],
         record: RecordType,
         field: Field,
         row: number,
@@ -1313,18 +1323,9 @@ declare namespace muhammara {
     }
 
     interface TriangleOptions extends PolygonOptions {
-      traitID?: "sss" | "sas" | "asa" | "vtx";
-      traitsID?: "sss" | "sas" | "asa" | "vtx";
-      position?:
-        | "a"
-        | "b"
-        | "c"
-        | "A"
-        | "B"
-        | "C"
-        | "centroid"
-        | "circumcenter"
-        | "incenter";
+      traitID?: TriangleTrait;
+      traitsID?: TriangleTrait;
+      position?: TrianglePosition;
       flipX?: boolean;
       flipY?: boolean;
     }
