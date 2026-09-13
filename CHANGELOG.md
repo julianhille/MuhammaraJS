@@ -107,6 +107,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Release native writer stream proxies and mark the writer ended when finalization
+  fails, so a later `end()` call does not re-enter finalization [#677](https://github.com/julianhille/MuhammaraJS/issues/677)
 - Prevent native PDF readers and copying contexts from terminating Node.js when
   used after `end()`; affected calls now throw an ended-state error
   [#668](https://github.com/julianhille/MuhammaraJS/issues/668)

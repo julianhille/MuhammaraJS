@@ -15,6 +15,9 @@ function testBasicFileModification(inFileName, throws) {
         assert.throws(function () {
           protectedWriter.end();
         }, /Unable to end PDF/);
+        assert.doesNotThrow(function () {
+          protectedWriter.end();
+        });
         return;
       }
 

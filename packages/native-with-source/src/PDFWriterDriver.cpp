@@ -148,13 +148,7 @@ METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
     // now remove event listener
     pdfWriter->mPDFWriter.GetDocumentContext().RemoveDocumentContextExtender(pdfWriter);
 
-
-    if(status != PDFHummus::eSuccess)
-    {
-		THROW_EXCEPTION("Unable to end PDF");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
+    // Finalization may consume the writer even when it reports failure.
     if(pdfWriter->mWriteStreamProxy)
     {
         delete pdfWriter->mWriteStreamProxy;
@@ -168,6 +162,12 @@ METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
     }
 
     pdfWriter->mIsStarted = false;
+
+    if(status != PDFHummus::eSuccess)
+    {
+		THROW_EXCEPTION("Unable to end PDF");
+		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
 
     SET_FUNCTION_RETURN_VALUE(args.This())
 }
