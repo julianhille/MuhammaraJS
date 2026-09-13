@@ -197,6 +197,12 @@ bool PDFTextExtractor::Extract(
     }
     else if (operation == "Tm")
       SetMatrix(textMatrix, operands);
+    else if (operation == "ID")
+    {
+      SkipInlineImageData(objectParser);
+      operands.clear();
+      continue;
+    }
     else if (inTextObject && (operation == "Tj" || operation == "'" || operation == "\"" || operation == "TJ"))
     {
       std::string content;

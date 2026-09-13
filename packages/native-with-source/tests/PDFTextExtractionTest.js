@@ -35,6 +35,29 @@ describe("PDFTextExtraction", function () {
     assert.deepEqual(elements[1].textMatrix, [1, 0, 0, 1, 25, 75]);
   });
 
+  it("skips inline image payloads", function () {
+    var output = __dirname + "/output/PDFTextExtractionInlineImage.pdf";
+    var writer = muhammara.createWriter(output);
+    var page = writer.createPage(0, 0, 200, 200);
+    writer
+      .startPageContentContext(page)
+      .writeFreeCode(
+        "BI /W 4 /H 1 /BPC 8 /CS /G ID BT (fabricated) Tj ET EI BT (real) Tj ET",
+      );
+    writer.writePage(page).end();
+
+    var reader = muhammara.createReader(output);
+    var elements = reader.extractPageText(0);
+    reader.end();
+
+    assert.deepEqual(
+      elements.map(function (element) {
+        return element.content;
+      }),
+      ["real"],
+    );
+  });
+
   it("enforces configurable extraction limits", function () {
     var output = __dirname + "/output/PDFTextExtractionLimits.pdf";
     var writer = muhammara.createWriter(output);
