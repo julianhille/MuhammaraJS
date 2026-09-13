@@ -187,6 +187,7 @@ private:
     
     static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
     static METHOD_RETURN_TYPE End(const ARGS_TYPE& args);
+    static METHOD_RETURN_TYPE Abort(const ARGS_TYPE& args);
     static METHOD_RETURN_TYPE CreatePage(const ARGS_TYPE& args);
     static METHOD_RETURN_TYPE WritePage(const ARGS_TYPE& args);
     static METHOD_RETURN_TYPE WritePageAndReturnID(const ARGS_TYPE& args);

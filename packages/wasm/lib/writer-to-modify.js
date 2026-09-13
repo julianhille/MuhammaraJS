@@ -2122,6 +2122,16 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to require catalog update");
         }
       },
+      _setPageLabelsObject: function (objectId) {
+        requireOpen();
+        if (
+          !Number.isInteger(objectId) ||
+          objectId <= 0 ||
+          !module._muhammara_wasm_modifier_set_page_labels(modifier, objectId)
+        ) {
+          throw new RangeError("PageLabels object ID must be positive");
+        }
+      },
       replaceObject: function (
         pageIndex,
         sourceObjectId,
