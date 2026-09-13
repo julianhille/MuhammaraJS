@@ -82,6 +82,7 @@ exports._setParameters = function _setParameters() {
 
   this._margin = Object.assign({}, this.default.pageMargin);
   this.contextState = "idle";
+  this.modifiedSourcePages = new Set();
 
   // Object.assign(this, options);
 };

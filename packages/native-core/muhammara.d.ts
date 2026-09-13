@@ -1597,6 +1597,7 @@ declare namespace muhammara {
     ): Recipe;
 
     editPage(pageNumber: number): Recipe;
+    deletePage(pageNumbers: number | number[]): Recipe;
 
     replaceText(text: string, replacement: string, pageNumber: number): Recipe;
 
