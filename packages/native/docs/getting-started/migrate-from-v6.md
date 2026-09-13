@@ -147,6 +147,29 @@ recipe.opacity(0.5);
 recipe.opacity(1);
 ```
 
+## 9. Reactivate Pages After `endPage()`
+
+In v7, `Recipe.endPage()` clears the completed page and its content context.
+Calls that draw on or configure a page must follow `createPage()` or
+`editPage()` rather than relying on the completed page remaining active:
+
+```javascript
+recipe.endPage();
+
+// Create another page before adding more content.
+recipe.createPage("letter");
+recipe.text("Next page", 72, 72);
+```
+
+When modifying a PDF, call `editPage()` with the one-based page number before
+resuming page operations:
+
+```javascript
+recipe.endPage();
+recipe.editPage(2);
+recipe.text("More content", 72, 72);
+```
+
 ## What Does Not Change
 
 - The low-level API and all other Recipe APIs, including their TypeScript types.
