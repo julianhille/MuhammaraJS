@@ -17,6 +17,7 @@ export function htmlToTextObjects(html, options = {}) {
   var items = [];
   var pendingBoundary = false;
   var pendingReset = false;
+  var source = String(html);
   var tags = /<\/?[^>]+>|[^<]+/g;
   var match;
   var current = () => Object.assign({}, ...frames.map((frame) => frame.style));
@@ -51,13 +52,22 @@ export function htmlToTextObjects(html, options = {}) {
     if (item?.markerPending) pushItem(item);
     pendingBoundary = false;
   };
-  while ((match = tags.exec(String(html)))) {
+  while ((match = tags.exec(source))) {
     var token = match[0];
     if (!token.startsWith("<")) {
       var currentItem = items[items.length - 1];
+      var remaining = source.slice(tags.lastIndex);
+      var nextListIndex = remaining.search(/<(?:ul|ol)\b/i);
+      var onlyFormattingBeforeList =
+        nextListIndex !== -1 &&
+        !remaining
+          .slice(0, nextListIndex)
+          .replace(/<[^>]+>/g, "")
+          .trim();
       if (
         !token.trim() &&
-        (pendingBoundary ||
+        ((!objects.length && onlyFormattingBeforeList) ||
+          pendingBoundary ||
           currentItem?.markerPending ||
           (lists.length && currentItem?.depth !== lists.length))
       )
@@ -68,15 +78,12 @@ export function htmlToTextObjects(html, options = {}) {
         objects[objects.length - 1]?.value === "\n";
       continuePendingItem();
       var value = token
-        .replace(/&nbsp;/gi, " ")
+        .replace(/&nbsp;/gi, "\u00a0")
         .replace(/&amp;/gi, "&")
         .replace(/&lt;/gi, "<")
         .replace(/&gt;/gi, ">")
-        .replace(/&quot;/gi, '"')
-        .replace(/\s+/g, " ");
-      if (startsLine) value = value.trimStart();
-      else if (/\s$/.test(objects[objects.length - 1]?.value || ""))
-        value = value.trimStart();
+        .replace(/&quot;/gi, '"');
+      if (startsLine) value = value.replace(/^[ \t\r\n\f]+/, "");
       if (value) {
         currentItem = items[items.length - 1];
         if (currentItem?.markerPending) pushItem(currentItem);
@@ -93,34 +100,48 @@ export function htmlToTextObjects(html, options = {}) {
     if (closing) {
       var frameIndex = frames.length - 1;
       while (frameIndex >= 0 && frames[frameIndex].name !== name) frameIndex--;
-      if (frameIndex !== -1) frames.splice(frameIndex);
-      if (name === "li") {
+      var frame = frameIndex === -1 ? null : frames[frameIndex];
+      if (frame) frames.splice(frameIndex);
+      if (name === "li" && frame) {
         items.pop();
         pendingBoundary = false;
       }
-      if (["p", "div"].includes(name)) {
-        pendingBoundary = true;
+      if (["p", "div"].includes(name) && frame) {
         var blockItem = items[items.length - 1];
-        if (blockItem) blockItem.markerPending = true;
+        if (objects.length === frame.objectCount) {
+          pendingBoundary = frame.pendingBoundary;
+          if (blockItem) blockItem.markerPending = frame.markerPending;
+        } else {
+          pendingBoundary = true;
+          if (blockItem) blockItem.markerPending = true;
+        }
       }
-      if (["ul", "ol"].includes(name)) {
+      if (["ul", "ol"].includes(name) && frame) {
         lists.pop();
         closeItems(lists.length + 1);
-        pendingBoundary = true;
-        var parentItem = items[items.length - 1];
-        if (parentItem) parentItem.markerPending = true;
-        if (!lists.length) pendingReset = true;
+        if (objects.length > frame.objectCount) {
+          pendingBoundary = true;
+          var parentItem = items[items.length - 1];
+          if (parentItem) parentItem.markerPending = true;
+          if (!lists.length) pendingReset = true;
+        }
       }
       continue;
     }
     // Native propagates the marker into block children, so an opening block
     // right after one stays on the marker's line instead of orphaning it.
-    if (["p", "div"].includes(name)) {
-      var item = items[items.length - 1];
-      if (!item?.markerPending) {
-        lineBreak();
-        if (item) item.markerPending = true;
-      }
+    var block = ["p", "div"].includes(name);
+    var blockItem = block ? items[items.length - 1] : null;
+    var blockState = block
+      ? {
+          objectCount: objects.length,
+          pendingBoundary,
+          markerPending: blockItem?.markerPending,
+        }
+      : {};
+    if (block) {
+      pendingBoundary = true;
+      if (blockItem) blockItem.markerPending = true;
     }
     if (name === "li") {
       var openItem = frames.length - 1;
@@ -151,6 +172,8 @@ export function htmlToTextObjects(html, options = {}) {
       name,
       depth: lists.length,
       style: { ...style, font: options.font },
+      ...blockState,
+      objectCount: objects.length,
     });
     if (["ul", "ol"].includes(name)) {
       lists.push({ name, index: 0 });

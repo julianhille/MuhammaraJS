@@ -85,4 +85,26 @@ describe("Browser how-to examples", function () {
       muhammara.disposeAssets();
     }
   });
+
+  it("renders list markers, nesting, and links in the HTML list example", async function () {
+    var result = await runHowToExample("html-lists");
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(result.bytes);
+    try {
+      var text = reader
+        .extractPageText(0)
+        .map((item) => item.content)
+        .join("");
+      assert.ok(text.includes("* DOM-free parsing"));
+      assert.ok(text.includes("1. Scoped numbering"));
+      assert.ok(text.includes("2. Nested indentation"));
+      assert.match(
+        new TextDecoder().decode(result.bytes),
+        /\/URI \(https:\/\/github\.com\/julianhille\/MuhammaraJS\)/,
+      );
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
+  });
 });

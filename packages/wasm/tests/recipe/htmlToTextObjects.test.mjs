@@ -134,12 +134,18 @@ describe("HTML to TextObjects", function () {
     );
     assert.equal(values("<ul><li>\n  one</li></ul>"), "* one");
     assert.equal(values("<ul><li>one</li></ul>\ntext"), "* one\ntext");
-    assert.equal(values("a <b> b</b>"), "a b");
+    assert.equal(values("a <b> b</b>"), "a  b");
+    assert.equal(values("a\nb"), "a\nb");
+    assert.equal(values("a   b"), "a   b");
+    assert.equal(values("a&nbsp;&nbsp;b"), "a\u00a0\u00a0b");
     assert.equal(
       values("<ul><li>x<ul><li>y</ul><li>z</ul>end"),
       "* x\n* y\n* z\nend",
     );
     assert.equal(values("<ul><li><ol><li>x</li></ol></li></ul>"), "1. x");
+    assert.equal(values(" \n <b> </b><ul><li>x</li></ul>"), "* x");
+    assert.equal(values("<ul><li>a<ul></ul>b</li></ul>"), "* ab");
+    assert.equal(values("<ul><li>a<p></p>b</li></ul>"), "* ab");
 
     // Native propagates the marker into block children, so an opening block
     // right after a marker must not break the line.
@@ -262,15 +268,28 @@ describe("HTML to TextObjects", function () {
 
     var spacedRecipe = new Recipe({ compress: false })
       .createPage(300, 200)
-      .text("alpha bravo", 20, 20, {
+      .text("alpha <b>bravo</b> charlie", 20, 20, {
         font: "arial",
         size: 12,
         charSpace: 5,
         html: true,
       });
+    var spacedBytes = spacedRecipe.endPage().endPDF();
     assert.deepEqual(
-      extract(spacedRecipe).map((item) => item.content),
-      ["alpha bravo"],
+      (() => {
+        var reader = muhammara.createReader(spacedBytes);
+        try {
+          return reader.extractPageText(0).map((item) => item.content);
+        } finally {
+          reader.end();
+        }
+      })(),
+      ["alpha ", "bravo", " charlie"],
+    );
+    assert.match(
+      new TextDecoder().decode(spacedBytes),
+      /5 Tc/,
+      "character spacing must be emitted for styled HTML runs",
     );
 
     var justifiedRecipe = new Recipe({ compress: false }).createPage(300, 200);
@@ -308,6 +327,27 @@ describe("HTML to TextObjects", function () {
       /\/Rect \[\s*20 [^\]]+\]/,
       "the linked marker and item text must share one clickable rectangle",
     );
+
+    var clippedLinkBytes = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .text(
+        '<a href="https://example.test">a very long linked value</a>',
+        20,
+        20,
+        {
+          font: "arial",
+          size: 12,
+          html: true,
+          textBox: { width: 30, wrap: "clip" },
+        },
+      )
+      .endPage()
+      .endPDF();
+    var clippedRect = new TextDecoder()
+      .decode(clippedLinkBytes)
+      .match(/\/Rect \[\s*([\d.-]+)\s+[\d.-]+\s+([\d.-]+)/);
+    assert.ok(clippedRect, "the clipped link must create an annotation");
+    assert.ok(Number(clippedRect[2]) <= 50.001);
 
     muhammara.disposeAssets();
   });

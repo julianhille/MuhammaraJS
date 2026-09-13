@@ -3,6 +3,7 @@ import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
+import { createMuhammaraWasm } from "../../index.js";
 import { validateFontLoading } from "./font-loading.mjs";
 
 var root = path.resolve(
@@ -191,17 +192,54 @@ try {
         throw new Error(`${id} ${mode} preview did not receive a new blob URL`);
       if (download.hidden || !download.href.startsWith("blob:"))
         throw new Error(`${id} ${mode} PDF download was not shown`);
+      return Array.from(
+        new Uint8Array(await (await fetch(preview.src)).arrayBuffer()),
+      );
     };
-    await runExample("html-lists", "worker");
-    await runExample("html-lists", "page");
+    var workerListBytes = await runExample("html-lists", "worker");
+    var pageListBytes = await runExample("html-lists", "page");
     await runExample("table", "page");
     return {
       tabs: tabs.length,
       selected: "table",
       htmlLists: ["worker", "page"],
+      htmlListBytes: { worker: workerListBytes, page: pageListBytes },
       preview: true,
     };
   });
+  var htmlListBytes = result.ui.htmlListBytes;
+  delete result.ui.htmlListBytes;
+  var muhammara = await createMuhammaraWasm();
+  try {
+    for (var [mode, values] of Object.entries(htmlListBytes)) {
+      var bytes = new Uint8Array(values);
+      var reader = muhammara.createReader(bytes);
+      try {
+        var text = reader
+          .extractPageText(0)
+          .map((item) => item.content)
+          .join("");
+        if (
+          !text.includes("* DOM-free parsing") ||
+          !text.includes("1. Scoped numbering") ||
+          !text.includes("2. Nested indentation")
+        ) {
+          throw new Error(`${mode} HTML list output is missing list text`);
+        }
+        if (
+          !new TextDecoder()
+            .decode(bytes)
+            .includes("/URI (https://github.com/julianhille/MuhammaraJS)")
+        ) {
+          throw new Error(`${mode} HTML list output is missing its link`);
+        }
+      } finally {
+        reader.end();
+      }
+    }
+  } finally {
+    muhammara.disposeAssets();
+  }
   console.log(JSON.stringify(result));
 } catch (error) {
   console.error(`wasm browser validation failed: ${error.message}`);

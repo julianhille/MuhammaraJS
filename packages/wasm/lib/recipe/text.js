@@ -169,9 +169,12 @@ function htmlLines(source, width, measure, options, wrap) {
               marker: sourcePart.indent > 0,
             },
           ];
+          var breakBefore =
+            parts.length &&
+            (/\s$/.test(parts[parts.length - 1].text) || /^\s/.test(word));
           if (
             width &&
-            parts.length &&
+            breakBefore &&
             htmlPartsWidth(candidate, measure, options) > width
           ) {
             if (wrap === "auto" || wrap === true) {
@@ -291,13 +294,25 @@ export function createTextMethods({ drawText, measure, module }) {
           ...options,
           fontSize,
         }).height;
-      var entries = lines(
-        value,
-        width ? width - left - right : 0,
-        (text, textOptions) => dimensions(this, text, textOptions),
-        { ...options, fontSize },
-        box.wrap === false ? "ellipsis" : box.wrap || "auto",
-      );
+      var availableWidth = width ? width - left - right : 0;
+      var textOptions = { ...options, fontSize };
+      var measureText = (text, partOptions) =>
+        dimensions(this, text, partOptions);
+      var entries = options.html
+        ? htmlLines(
+            htmlToTextObjects(value, options),
+            availableWidth,
+            measureText,
+            textOptions,
+            box.wrap === false ? "ellipsis" : box.wrap || "auto",
+          )
+        : lines(
+            value,
+            availableWidth,
+            measureText,
+            textOptions,
+            box.wrap === false ? "ellipsis" : box.wrap || "auto",
+          );
       return Math.max(
         box.minHeight || 0,
         entries.length * lineHeight + top + bottom,
@@ -648,13 +663,26 @@ export function createTextMethods({ drawText, measure, module }) {
                 hasGapAfter(part, partIndex) &&
                 drawParts.slice(partIndex + 1).find((next) => next.text.trim())
                   ?.styles.link === partOptions.link;
-              this.link(
-                partOptions.link,
-                drawX + linkBounds.xMin,
-                currentY,
-                partWidth + (coversGap ? partGap : 0),
-                lineHeight,
-              );
+              var partLinkX = drawX + linkBounds.xMin;
+              var partLinkWidth = partWidth + (coversGap ? partGap : 0);
+              if (clipping) {
+                var clipLeft = x + left;
+                var clipRight = x + width - right;
+                var partLinkRight = Math.min(
+                  partLinkX + partLinkWidth,
+                  clipRight,
+                );
+                partLinkX = Math.max(partLinkX, clipLeft);
+                partLinkWidth = Math.max(0, partLinkRight - partLinkX);
+              }
+              if (partLinkWidth)
+                this.link(
+                  partOptions.link,
+                  partLinkX,
+                  currentY,
+                  partLinkWidth,
+                  lineHeight,
+                );
             }
             drawX += partWidth;
             if (hasGapAfter(part, partIndex)) drawX += partGap;

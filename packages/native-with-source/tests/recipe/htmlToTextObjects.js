@@ -107,4 +107,41 @@ describe("HTML to TextObjects", () => {
       reader.end();
     }
   });
+
+  it("renders one marker across formatted runs and hides break sentinels", () => {
+    const recipe = new muhammara.Recipe(Buffer.from("new"));
+    recipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    const bytes = recipe
+      .createPage(300, 300)
+      .text(
+        "<ul><li><b>bold</b> and plain</li><li><br>after</li>" +
+          "<li>before<ol><li>nested</li></ol>after nested</li></ul>",
+        20,
+        20,
+        { font: "arial", size: 12, html: true, textBox: { width: 200 } },
+      )
+      .endPage()
+      .endPDF((output) => output);
+    const reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(bytes),
+    );
+    try {
+      const content = reader
+        .extractPageText(0)
+        .map((item) => item.content)
+        .join("");
+      const normalized = content.replace(/\s+/g, " ").trim();
+      assert.equal((content.match(/\*/g) || []).length, 4);
+      assert.notInclude(content, "[@@DONOT_RENDER_THIS@@]");
+      assert.include(normalized, "* bold and plain");
+      assert.include(normalized, "* after");
+      assert.include(normalized, "1. nested");
+      assert.include(normalized, "* after nested");
+    } finally {
+      reader.end();
+    }
+  });
 });
