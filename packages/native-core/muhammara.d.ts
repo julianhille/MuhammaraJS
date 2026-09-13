@@ -1305,6 +1305,14 @@ declare namespace muhammara {
       ) => TextOptions | false | null | "" | 0 | void;
     }
 
+    /**
+     * A distributive map over every field of `RecordType`, so a column's
+     * `renderer` receives the exact value type for its own `name` rather than
+     * the union of all columns' value types. This costs one
+     * `TableColumnDefinition` instantiation per field of `RecordType`; a
+     * plain `TableColumnDefinition<RecordType>` would be cheaper but would
+     * widen every renderer's `text` parameter to the union of all fields.
+     */
     type TableColumnOptions<
       RecordType extends object = Record<string, unknown>,
     > = {
@@ -1381,14 +1389,16 @@ declare namespace muhammara {
 
     interface TransformedPathOptions extends PathOptions, TransformOptions {}
 
-    interface LineToOptions extends PathOptions {}
+    type LineToOptions = PathOptions;
 
-    interface LineOptions extends PathOptions {}
+    type LineOptions = PathOptions;
 
-    interface PolygonOptions extends TransformedPathOptions {
+    interface LinkFillOptions {
       link?: string;
       fill?: Color;
     }
+
+    interface PolygonOptions extends TransformedPathOptions, LinkFillOptions {}
 
     interface ShapeOptions extends PolygonOptions {
       debug?: boolean | number;
@@ -1449,16 +1459,13 @@ declare namespace muhammara {
       [number, number],
     ];
 
-    interface CircleOptions extends DrawingOptions, SkewOptions {
-      link?: string;
-      fill?: Color;
-    }
+    interface CircleOptions
+      extends DrawingOptions, SkewOptions, LinkFillOptions {}
 
     interface EllipseOptions extends CircleOptions, TransformOptions {}
 
-    interface RectangleOptions extends DrawingOptions, TransformOptions {
-      link?: string;
-      fill?: Color;
+    interface RectangleOptions
+      extends DrawingOptions, TransformOptions, LinkFillOptions {
       borderRadius?: BorderRadius;
     }
 
