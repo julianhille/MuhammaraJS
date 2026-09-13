@@ -682,13 +682,27 @@ export function createRecipeFactory({
     {
       endPDF: createEndPDF({
         endPDF: (recipe) => {
+          if (recipe._endError) throw recipe._endError;
           if (recipe._sourceMode) {
             if (recipe._editingPage || recipe._pageHeight) {
               throw new Error("Finish the current page before endPDF");
             }
             if (!recipe._endedBytes) {
-              recipe._writeCanonicalInfo();
-              recipe._endedBytes = recipe.writer.end();
+              var deletingPages = Boolean(recipe._deletedPages?.size);
+              try {
+                recipe._deletePages();
+                recipe._writeCanonicalInfo();
+                recipe._endedBytes = recipe.writer.end();
+              } catch (error) {
+                if (!deletingPages) throw error;
+                recipe._endError = error;
+                try {
+                  recipe.writer.dispose();
+                } catch (_) {
+                  // Preserve the deletion error if modifier cleanup fails.
+                }
+                throw error;
+              }
             }
             return recipe._endedBytes;
           }

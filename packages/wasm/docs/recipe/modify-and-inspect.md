@@ -32,7 +32,19 @@ Editing uses a byte-backed modifier, including for rotated pages and pages with
 non-zero MediaBox origins. `pauseContext()` and `resumeContext()` split an edit
 into separate appended content contexts. Both return the Recipe for valid
 transitions and throw for unmatched calls. Password-protected source editing
-is not available; decrypt first with the low-level byte-first `recrypt()` API.
+is not available; decrypt first with the low-level byte-first `recrypt()` API. A
+byte-backed Recipe can also add pages with `createPage()`.
+
+## Delete Source Pages
+
+`deletePage(pageNumber)` and `deletePage([pageNumbers])` remove one or more
+one-based pages from the original source when `endPDF()` finalizes the Recipe.
+At least one page must remain. Deletion cannot be combined with `createPage()`,
+`appendPage()`, or `insertPage()` in the same Recipe.
+
+Deletion preserves retained page objects and adjusts page labels, but it is an
+incremental update rather than secure erasure of the removed content. See
+[Delete Pages](../how-to/delete-pages.md) for a complete byte-input example.
 
 ## Inspect Without Replacing Output State
 
@@ -45,7 +57,8 @@ output Info dictionary rather than the parsed source values. `pageInfo()` and
 
 `structure("json")` returns a browser-safe summary rather than writing a
 diagnostic file. Calling `structure()` finalizes the Recipe through `endPDF()`,
-so perform all page and document operations first.
+so perform all page and document operations first. With no format argument,
+`structure()` returns a compact text summary.
 
 ```js
 import { createRecipe } from "@muhammara/wasm";
@@ -64,6 +77,10 @@ var metadata = await inspector.readAsync(
 console.log(metadata.pages, metadata[1].mediaBox);
 console.log(new Recipe(sourceBytes).structure("json"));
 ```
+
+For registered PDF bytes, `Recipe.inspectPdf(name)` returns the PDF level,
+encryption state, page count, and one-based page geometry without creating a
+Recipe instance.
 
 ## Replace Literal Text
 

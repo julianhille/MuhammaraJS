@@ -33,6 +33,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#617](https://github.com/julianhille/MuhammaraJS/issues/617)
 - Add third-party notices and security, provenance, and contribution guidance
   for the WebAssembly package [#626](https://github.com/julianhille/MuhammaraJS/issues/626)
+- Add chainable Recipe `deletePage()` support for removing one or more pages
+  from an existing byte-backed PDF while preserving retained page objects
+  [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
 - Add byte-first `recrypt()` and Recipe `encrypt()` with native-compatible
   password options, plus the password-change browser example
   [#595](https://github.com/julianhille/MuhammaraJS/issues/595)

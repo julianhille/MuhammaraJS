@@ -144,6 +144,7 @@ try {
       "page-boxes",
       "form-gray",
       "rotated-page",
+      "delete-pages",
       "image-transform",
       "table",
       "passwords",
@@ -176,7 +177,24 @@ try {
       throw new Error("PDF preview did not receive a blob URL");
     if (download.hidden || !download.href.startsWith("blob:"))
       throw new Error("PDF download was not shown");
-    return { tabs: tabs.length, selected: "table", preview: true };
+    var deletion = document.querySelector('[data-example="delete-pages"]');
+    deletion.click();
+    for (var mode of ["page", "worker"]) {
+      document.querySelector(`input[name="mode"][value="${mode}"]`).click();
+      document.querySelector("#example-form").requestSubmit();
+      for (var deletionRun = 0; deletionRun < 200; ++deletionRun) {
+        var deletionStatus = document.querySelector("#status").textContent;
+        if (deletionStatus.startsWith("Complete.")) break;
+        if (/Error|failed/i.test(deletionStatus))
+          throw new Error(deletionStatus);
+        await delay(50);
+      }
+      if (
+        !document.querySelector("#status").textContent.startsWith("Complete.")
+      )
+        throw new Error(`Delete pages ${mode} example timed out`);
+    }
+    return { tabs: tabs.length, selected: "delete-pages", preview: true };
   });
   console.log(JSON.stringify(result));
 } catch (error) {

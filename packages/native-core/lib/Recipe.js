@@ -216,6 +216,7 @@ class Recipe {
         this._releaseReader();
         this.pdfReader = pdfReader;
         this.metadata = metadata;
+        this.sourcePageCount = pages;
         isAdopted = true;
       }
       return metadata;
@@ -267,66 +268,97 @@ class Recipe {
    * @returns {*} The callback result, if a callback is provided.
    */
   endPDF(callback) {
-    this._writeInfo();
-    this.writer.end();
-    // This is a temporary work around for copying context will overwrite the current one
-    // write annotations at the end.
-    if (
-      (this.annotations && this.annotations.length > 0) ||
-      (this.annotationsToWrite && this.annotationsToWrite.length > 0)
-    ) {
-      if (this.isBufferSrc) {
-        const oldStream = this.outStream;
-        this.outStream = new streams.WritableStream();
-
-        this.writer = muhammara.createWriterToModify(
-          new muhammara.PDFRStreamForBuffer(oldStream.toBuffer()),
-          new muhammara.PDFStreamForResponse(this.outStream),
-          Object.assign({}, this.encryptOptions, {
-            log: this.logFile,
-          }),
-        );
-      } else {
-        this.writer = muhammara.createWriterToModify(
-          this.output,
-          Object.assign({}, this.encryptOptions, {
-            modifiedFilePath: this.output,
-            log: this.logFile,
-          }),
-        );
-      }
-
-      this._writeAnnotations();
+    if (this.endError) {
+      throw this.endError;
+    }
+    if (this.ended) {
+      if (!callback) return;
+      if (!this.isBufferSrc) return callback();
+      return callback(this.output || this.outStream.toBuffer());
+    }
+    var deletingPages = Boolean(this.deletedPages?.size);
+    try {
+      this._deletePages();
       this._writeInfo();
       this.writer.end();
-    }
+      // This is a temporary work around for copying context will overwrite the current one
+      // write annotations at the end.
+      if (
+        (this.annotations && this.annotations.length > 0) ||
+        (this.annotationsToWrite && this.annotationsToWrite.length > 0)
+      ) {
+        if (this.isBufferSrc) {
+          const oldStream = this.outStream;
+          this.outStream = new streams.WritableStream();
 
-    // Every step above may still read the source; _insertPages() and _encrypt()
-    // below rename the output, which is the source itself when no separate
-    // output was given, and Windows refuses that while the reader holds it.
-    this._releaseReader();
+          this.writer = muhammara.createWriterToModify(
+            new muhammara.PDFRStreamForBuffer(oldStream.toBuffer()),
+            new muhammara.PDFStreamForResponse(this.outStream),
+            Object.assign({}, this.encryptOptions, {
+              log: this.logFile,
+            }),
+          );
+        } else {
+          this.writer = muhammara.createWriterToModify(
+            this.output,
+            Object.assign({}, this.encryptOptions, {
+              modifiedFilePath: this.output,
+              log: this.logFile,
+            }),
+          );
+        }
 
-    if (this.needToInsertPages) {
-      if (this.isBufferSrc) {
-        // eslint-disable-next-line no-console
-        console.log(
-          "Feature: Inserting Pages is not supported in Buffer Mode yet.",
-        );
-      } else {
-        this._insertPages();
+        this._writeAnnotations();
+        this._writeInfo();
+        this.writer.end();
       }
-    }
-    if (this.needToEncrypt) {
-      if (this.isBufferSrc) {
-        // eslint-disable-next-line no-console
-        console.log("Feature: Encryption is not supported in Buffer Mode yet.");
-      } else {
-        this._encrypt();
-      }
-    }
 
-    if (this.isBufferSrc && this.output) {
-      fs.writeFileSync(this.output, this.outStream.toBuffer());
+      // Every step above may still read the source; _insertPages() and _encrypt()
+      // below rename the output, which is the source itself when no separate
+      // output was given, and Windows refuses that while the reader holds it.
+      this._releaseReader();
+
+      if (this.needToInsertPages) {
+        if (this.isBufferSrc) {
+          // eslint-disable-next-line no-console
+          console.log(
+            "Feature: Inserting Pages is not supported in Buffer Mode yet.",
+          );
+        } else {
+          this._insertPages();
+        }
+      }
+      if (this.needToEncrypt) {
+        if (this.isBufferSrc) {
+          // eslint-disable-next-line no-console
+          console.log(
+            "Feature: Encryption is not supported in Buffer Mode yet.",
+          );
+        } else {
+          this._encrypt();
+        }
+      }
+
+      if (this.isBufferSrc && this.output) {
+        fs.writeFileSync(this.output, this.outStream.toBuffer());
+      }
+
+      this.ended = true;
+    } catch (error) {
+      if (!deletingPages) throw error;
+      this.endError = error;
+      this.ended = true;
+      try {
+        this.writer._abort();
+      } catch (_) {
+        // Preserve the deletion error if native cleanup also fails.
+      }
+      try {
+        this._releaseReader();
+      } catch (_) {
+        // Preserve the deletion error if releasing its separate reader fails.
+      }
+      throw error;
     }
 
     if (callback) {

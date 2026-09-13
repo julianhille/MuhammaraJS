@@ -46,6 +46,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Link native package READMEs and previously orphaned executable examples to
   their documentation, and document pnpm 10 installation approval
   [#630](https://github.com/julianhille/MuhammaraJS/issues/630)
+- Add chainable native Recipe `deletePage()` support for removing one or more
+  pages from an existing PDF while preserving retained page objects
+  [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
 - Add `Recipe.rotate()` to set `/Rotate` on the current native Recipe page,
   including pages created with explicit dimensions, matching Wasm Recipe
   [#620](https://github.com/julianhille/MuhammaraJS/issues/620)

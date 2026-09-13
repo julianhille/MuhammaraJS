@@ -35,6 +35,7 @@ explicit point dimensions. Call `endPage()` before creating or editing another
 page. `pauseContext()` and `resumeContext()` split a page into separate content
 contexts and return the Recipe for valid transitions; unmatched calls throw.
 Repeated `endPDF()` calls return the same cached byte array. Call
+`endPDF(callback)` to also pass that same array to a synchronous callback. Call
 `recipe.dispose()` when a long-lived application no longer needs the Recipe's
 WebAssembly allocations.
 

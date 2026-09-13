@@ -28,11 +28,11 @@ values are written as comma-and-space-separated text. Dotted OID keys are
 accepted.
 
 New documents receive canonical creation and modification dates. When modifying
-source bytes, Recipe updates ModDate and writes MuhammaraJS Producer/Creator
-values. Existing ModDate, Creator, and Producer values are retained as
-`source-ModDate`, `source-Creator`, and `source-Producer` entries. Read-back
-through the underlying PDF Info dictionary can normalize key casing and does
-not preserve every arbitrary source entry.
+source bytes, Recipe preserves CreationDate, updates ModDate, and writes
+MuhammaraJS Producer/Creator values. Existing ModDate, Creator, and Producer
+values are retained as `source-ModDate`, `source-Creator`, and
+`source-Producer` entries. Read-back through the underlying PDF Info dictionary
+can normalize key casing and does not preserve every arbitrary source entry.
 
 Use `info()` to read the document metadata currently known to Recipe.
 `getPageInfo()` is the native-compatible accessor; during source editing it

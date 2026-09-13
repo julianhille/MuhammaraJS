@@ -17,10 +17,12 @@ exports.insertPage = function insertPage(
   pdfSrc,
   srcPageNumber,
 ) {
+  if (this.deletedPages?.size) {
+    throw new Error("insertPage cannot be combined with deletePage");
+  }
   if (isNaN(afterPageNumber)) {
     throw new Error("The afterPageNumber is inValid.");
   }
-  this.needToInsertPages = true;
   if (pdfSrc && srcPageNumber) {
     this.insertInformation = this.insertInformation || {};
     this.insertInformation[afterPageNumber] =
@@ -30,6 +32,7 @@ exports.insertPage = function insertPage(
       pdfSrc,
       srcPageNumber,
     });
+    this.needToInsertPages = true;
   }
   return this;
 };

@@ -3,6 +3,15 @@ const Recipe = require("@muhammara/native-with-source").Recipe;
 const assert = require("chai").assert;
 
 describe("Modify", () => {
+  it("ends an edited page while its content context is paused", () => {
+    const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    const output = path.join(__dirname, "../output/end-paused-edit.pdf");
+    const recipe = new Recipe(src, output);
+
+    assert.equal(recipe.editPage(1).pauseContext().endPage(), recipe);
+    assert.doesNotThrow(() => recipe.endPDF());
+  });
+
   it("Add something to an existing pdf", (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
     const output = path.join(

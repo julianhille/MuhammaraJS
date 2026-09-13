@@ -324,6 +324,14 @@ WASM_EXPORT int muhammara_wasm_modifier_require_catalog_update(
   return 1;
 }
 
+WASM_EXPORT int muhammara_wasm_modifier_set_page_labels(
+    WasmModifier* modifier, unsigned long objectId) {
+  if (modifier == nullptr || modifier->finished || objectId == 0) return 0;
+  modifier->catalogUpdate.required = true;
+  modifier->catalogUpdate.pageLabelsObjectID = objectId;
+  return 1;
+}
+
 // Rewrites one original page dictionary, replacing only matching direct references.
 WASM_EXPORT int muhammara_wasm_modifier_replace_object(
     WasmModifier* modifier, unsigned long pageIndex, unsigned long sourceObjectId,

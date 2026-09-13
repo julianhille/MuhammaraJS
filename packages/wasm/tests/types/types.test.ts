@@ -472,7 +472,14 @@ async function usesLowLevelSurface() {
   byteRecipe.replaceText("Before", "After");
   byteRecipe.getPageInfo();
   byteRecipe.getCurrentPageInfo()?.rotate;
-  byteRecipe.editPage(1).pauseContext().resumeContext().endPage().endPDF();
+  byteRecipe
+    .editPage(1)
+    .pauseContext()
+    .resumeContext()
+    .endPage()
+    .deletePage([2, 3])
+    .deletePage(1)
+    .endPDF();
   var asyncByteRecipe = new Recipe();
   var metadata: RecipeMetadata = await asyncByteRecipe.readAsync(sourceBlob);
   metadata[1].width;

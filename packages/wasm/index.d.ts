@@ -384,6 +384,7 @@ export interface Recipe {
   editPage(pageNumber: number): this;
   /** Replaces literal `(...) Tj` operands in an existing page's single content stream. */
   replaceText(text: string, replacement: string, pageNumber: number): this;
+  deletePage(pageNumbers: number | number[]): this;
   pauseContext(): this;
   resumeContext(): this;
   setPageBox(

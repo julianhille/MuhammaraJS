@@ -43,6 +43,15 @@ export var HOW_TO_EXAMPLES = [
     assets: [],
   },
   {
+    id: "delete-pages",
+    label: "Delete pages",
+    title: "Remove selected PDF pages",
+    description:
+      "Create a three-page PDF in memory, remove the middle page, and verify the retained page sizes.",
+    assets: [],
+    expectedPages: 2,
+  },
+  {
     id: "image-transform",
     label: "Images",
     title: "Place and transform an image",
@@ -87,10 +96,24 @@ async function summarize(bytes, details = {}) {
   var muhammara = await createMuhammaraWasm();
   var reader = muhammara.createReader(bytes);
   try {
+    var pageWidths = Array.from(
+      { length: reader.getPagesCount() },
+      (_, index) => {
+        var box = reader.getPageBox(index);
+        return box[2] - box[0];
+      },
+    );
+    if (
+      details.expectedPageWidths &&
+      pageWidths.join(",") !== details.expectedPageWidths.join(",")
+    ) {
+      throw new Error(`Unexpected page widths: ${pageWidths.join(", ")}`);
+    }
     return {
       pages: reader.getPagesCount(),
       objects: reader.getObjectsCount(),
       pdfLevel: reader.getPDFLevel(),
+      pageWidths,
       ...details,
     };
   } finally {
@@ -569,12 +592,46 @@ async function replaceTextExample(assets) {
   }
 }
 
+async function deletePagesExample() {
+  var Recipe = await createRecipe();
+  var sourceRecipe = new Recipe({ compress: false });
+  var recipe;
+  try {
+    sourceRecipe
+      .createPage(300, 420)
+      .rectangle(30, 30, 240, 360, { fill: "#dbeafe" })
+      .endPage()
+      .createPage(320, 440)
+      .rectangle(30, 30, 260, 380, { fill: "#fee2e2" })
+      .endPage()
+      .createPage(340, 460)
+      .rectangle(30, 30, 280, 400, { fill: "#dcfce7" })
+      .endPage();
+    recipe = new Recipe(sourceRecipe.endPDF()).deletePage(2);
+    var bytes = recipe.endPDF();
+    return {
+      bytes,
+      filename: "muhammara-delete-pages.pdf",
+      summary: await summarize(bytes, {
+        howTo: "Delete pages",
+        removedPage: 2,
+        expectedPageWidths: [300, 340],
+      }),
+    };
+  } finally {
+    recipe?.dispose();
+    sourceRecipe.dispose();
+    Recipe.disposeAssets();
+  }
+}
+
 var runners = {
   annotations: annotationsExample,
   links: linksExample,
   "page-boxes": pageBoxesExample,
   "form-gray": formGrayExample,
   "rotated-page": rotatedPageExample,
+  "delete-pages": deletePagesExample,
   "image-transform": imageTransformExample,
   table: tableExample,
   passwords: passwordsExample,

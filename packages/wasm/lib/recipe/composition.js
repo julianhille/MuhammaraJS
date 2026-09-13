@@ -28,6 +28,9 @@ export function createCompositionMethods({
      * order after endpoint clamping.
      */
     appendPage: function (name, pages = []) {
+      if (this._deletedPages?.size) {
+        throw new Error("appendPage cannot be combined with deletePage");
+      }
       var path = pdfs.get(name);
       if (!path) throw new Error(`Unknown PDF: ${name}`);
       var source = inspectPdf(name);
@@ -198,6 +201,9 @@ export function createCompositionMethods({
      * not a positive integer.
      */
     insertPage: function (afterPageNumber, name, sourcePageNumber) {
+      if (this._deletedPages?.size) {
+        throw new Error("insertPage cannot be combined with deletePage");
+      }
       if (!Number.isInteger(afterPageNumber) || afterPageNumber < 0)
         throw new Error("The afterPageNumber is inValid.");
       if (

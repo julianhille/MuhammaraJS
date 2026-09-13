@@ -1,9 +1,17 @@
 import muhammara = require("@muhammara/native-with-source");
 
 declare const writer: muhammara.PDFWriter;
+declare const literalString: muhammara.PDFLiteralString;
+declare const hexString: muhammara.PDFHexString;
 
 var page: muhammara.PDFPage = writer.createPage(0, 0, 595, 842);
 writer.startPageContentContext(page).c(0, 0, 1, 1, 2, 2).S();
+var literalBytes: number[] = literalString.toBytesArray();
+var hexBytes: number[] = hexString.toBytesArray();
+var hexText: string = hexString.toText();
+void literalBytes;
+void hexBytes;
+void hexText;
 
 declare const recipe: muhammara.Recipe;
 recipe
@@ -92,3 +100,4 @@ recipe.lineStyle({
   dash: [1],
   dashPhase: 1,
 });
+recipe.deletePage(1).deletePage([2, 3]);

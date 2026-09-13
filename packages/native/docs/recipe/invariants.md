@@ -11,6 +11,10 @@
   the PDF Buffer.
 - `editPage` requires an existing input PDF and an output target unless using the
   tested Buffer workflow.
+- `deletePage` accepts one-based original source page numbers. At least one page
+  must remain, and deletion cannot be mixed with page insertion or addition in
+  the same Recipe. If deletion fails during `endPDF()`, the Recipe releases its
+  resources and remains ended; create a new Recipe to retry.
 - Text, image, and annotation placement uses Recipe coordinates, including on
   rotated source pages.
 - `table` and `layout` are implemented and tested, but their declarations are

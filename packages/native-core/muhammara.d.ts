@@ -539,6 +539,7 @@ declare namespace muhammara {
   }
 
   export interface PDFLiteralString extends PDFObject {
+    toBytesArray(): Array<number>;
     toText(): string;
     value: string;
   }
@@ -553,6 +554,8 @@ declare namespace muhammara {
   }
 
   export interface PDFHexString extends PDFObject {
+    toBytesArray(): Array<number>;
+    toText(): string;
     value: string;
   }
 
@@ -1327,6 +1330,7 @@ declare namespace muhammara {
     ): Recipe;
 
     editPage(pageNumber: number): Recipe;
+    deletePage(pageNumbers: number | number[]): Recipe;
 
     replaceText(text: string, replacement: string, pageNumber: number): Recipe;
 

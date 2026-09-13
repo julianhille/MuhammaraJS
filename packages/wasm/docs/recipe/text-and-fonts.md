@@ -53,7 +53,8 @@ when matching metrics, wrapping, or layout matters.
 
 Use `registerFont()` for `Uint8Array` or `ArrayBuffer`, and
 `registerFontAsync()` for `Blob` or `File`. Register styles under one family
-name, then select them through text options.
+name as `regular`, `bold`, `italic`, or `bold-italic`, then select them with the
+`bold` and `italic` text options.
 
 ```js
 import { createRecipe } from "@muhammara/wasm";
@@ -119,7 +120,9 @@ have different output semantics; Wasm's ellipsis is three ASCII periods
 (`...`). `html: true` enables a DOM-free subset for text runs, paragraphs,
 simple emphasis, decoration, inline color, and URL links through `<a href>`.
 It is not browser HTML/CSS layout; arbitrary DOM, CSS inheritance, lists, and
-plugin handlers are unavailable.
+plugin handlers are unavailable. Multi-column `layout()` and `table()` are also
+available; their overflow and cell-renderer callbacks are synchronous and can
+continue content onto another page.
 
 ```js
 import { createRecipe } from "@muhammara/wasm";

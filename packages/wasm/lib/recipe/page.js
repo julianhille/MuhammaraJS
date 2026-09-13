@@ -1,6 +1,449 @@
 import { mediumSizes } from "./parameters.js";
 import { pageRecord } from "./page-record.js";
 
+function readPageTree(
+  parser,
+  objectID,
+  deletedPageIDs,
+  generation = 0,
+  visited = new Set(),
+  depth = 0,
+) {
+  if (depth > 1000 || visited.has(objectID)) {
+    throw new Error("deletePage requires a valid acyclic page tree");
+  }
+  visited.add(objectID);
+  var dictionary = parser.parseNewObject(objectID).toPDFDictionary();
+  var values = dictionary.toJSObject();
+  var kids = parser.queryDictionaryObject(dictionary, "Kids").toPDFArray();
+  var children = kids.toJSArray().map((entry) => {
+    var reference = entry.toPDFIndirectObjectReference();
+    var childID = reference.getObjectID();
+    var childDictionary = parser.parseNewObject(childID).toPDFDictionary();
+    var type = childDictionary.toJSObject().Type.toPDFName().value;
+    if (type === "Pages") {
+      return readPageTree(
+        parser,
+        childID,
+        deletedPageIDs,
+        reference.getVersion(),
+        visited,
+        depth + 1,
+      );
+    }
+    return deletedPageIDs.has(childID)
+      ? null
+      : {
+          objectID: childID,
+          generation: reference.getVersion(),
+          count: 1,
+        };
+  });
+
+  return {
+    objectID,
+    generation,
+    values,
+    children: children.filter((child) => child && child.count),
+    count: children.reduce((count, child) => count + (child?.count || 0), 0),
+  };
+}
+
+function writePageTree(writer, copyingContext, node) {
+  node.children
+    .filter((child) => child.children)
+    .forEach((child) => writePageTree(writer, copyingContext, child));
+
+  var objectsContext = writer.getObjectsContext();
+  objectsContext.startModifiedIndirectObject(node.objectID);
+  var dictionary = objectsContext.startDictionary();
+  Object.keys(node.values).forEach((key) => {
+    if (key === "Count" || key === "Kids") return;
+    dictionary.writeKey(key);
+    copyingContext.copyDirectObjectAsIs(node.values[key]);
+  });
+  dictionary.writeKey("Count");
+  objectsContext.writeNumber(node.count);
+  dictionary.writeKey("Kids");
+  objectsContext.startArray();
+  node.children.forEach((child) => {
+    objectsContext.writeIndirectObjectReference(
+      child.objectID,
+      child.generation || 0,
+    );
+  });
+  objectsContext.endArray().endDictionary(dictionary).endIndirectObject();
+}
+
+function collectPageTreeObjectIDs(node, objectIDs) {
+  objectIDs.add(node.objectID);
+  node.children
+    .filter((child) => child.children)
+    .forEach((child) => collectPageTreeObjectIDs(child, objectIDs));
+}
+
+function assertSupportedModifiedGenerations(writer, tree, pageLabels, root) {
+  var pending = [tree];
+  while (pending.length) {
+    var node = pending.pop();
+    if (node.generation !== 0) {
+      throw new Error(
+        "deletePage does not support rewriting nonzero-generation objects",
+      );
+    }
+    pending.push(...node.children.filter((child) => child.children));
+  }
+  if (pageLabels?.reference && pageLabels.reference.getVersion() !== 0) {
+    throw new Error(
+      "deletePage does not support rewriting nonzero-generation objects",
+    );
+  }
+  if (pageLabels && !pageLabels.reference && !writer._setPageLabelsObject) {
+    if (root.getVersion() !== 0) {
+      throw new Error(
+        "deletePage does not support rewriting nonzero-generation objects",
+      );
+    }
+  }
+}
+
+function assertNoDeletedPageReferences(
+  parser,
+  value,
+  deletedPageIDs,
+  skippedObjectIDs,
+  visited = new Set(),
+  depth = 0,
+) {
+  if (!value) return;
+  if (depth > 1000) {
+    throw new Error("deletePage cannot validate deeply nested references");
+  }
+  var reference = value.toPDFIndirectObjectReference?.();
+  if (reference) {
+    var objectID = reference.getObjectID();
+    if (deletedPageIDs.has(objectID)) {
+      throw new Error(
+        "deletePage cannot remove a page referenced by retained document structures",
+      );
+    }
+    if (skippedObjectIDs.has(objectID) || visited.has(objectID)) return;
+    visited.add(objectID);
+    assertNoDeletedPageReferences(
+      parser,
+      parser.parseNewObject(objectID),
+      deletedPageIDs,
+      skippedObjectIDs,
+      visited,
+      depth + 1,
+    );
+    return;
+  }
+  var array =
+    value.toPDFArray?.() ||
+    (typeof value.toJSArray === "function" ? value : null);
+  if (array) {
+    array
+      .toJSArray()
+      .forEach((entry) =>
+        assertNoDeletedPageReferences(
+          parser,
+          entry,
+          deletedPageIDs,
+          skippedObjectIDs,
+          visited,
+          depth + 1,
+        ),
+      );
+    return;
+  }
+  var dictionary =
+    value.toPDFDictionary?.() ||
+    (typeof value.toJSObject === "function" ? value : null);
+  if (dictionary) {
+    Object.values(dictionary.toJSObject()).forEach((entry) =>
+      assertNoDeletedPageReferences(
+        parser,
+        entry,
+        deletedPageIDs,
+        skippedObjectIDs,
+        visited,
+        depth + 1,
+      ),
+    );
+    return;
+  }
+  var stream = value.toPDFStream?.();
+  if (stream) {
+    assertNoDeletedPageReferences(
+      parser,
+      stream.getDictionary(),
+      deletedPageIDs,
+      skippedObjectIDs,
+      visited,
+      depth + 1,
+    );
+  }
+}
+
+function validateDeletedPageReferences(
+  parser,
+  catalog,
+  rootID,
+  tree,
+  deletedPages,
+  deletedPageIDs,
+  sourcePageCount,
+) {
+  var skippedObjectIDs = new Set([rootID]);
+  collectPageTreeObjectIDs(tree, skippedObjectIDs);
+  for (var pageIndex = 0; pageIndex < sourcePageCount; pageIndex += 1) {
+    skippedObjectIDs.add(parser.getPageObjectID(pageIndex));
+  }
+  var visited = new Set();
+  Object.entries(catalog)
+    .filter(([key]) => key !== "Pages")
+    .forEach(([, value]) =>
+      assertNoDeletedPageReferences(
+        parser,
+        value,
+        deletedPageIDs,
+        skippedObjectIDs,
+        visited,
+      ),
+    );
+  for (var pageNumber = 1; pageNumber <= sourcePageCount; pageNumber += 1) {
+    if (deletedPages.has(pageNumber)) continue;
+    var page = parser.parsePageDictionary(pageNumber - 1).toJSObject();
+    Object.entries(page)
+      .filter(([key]) => key !== "Parent")
+      .forEach(([, value]) =>
+        assertNoDeletedPageReferences(
+          parser,
+          value,
+          deletedPageIDs,
+          skippedObjectIDs,
+          visited,
+        ),
+      );
+  }
+}
+
+function collectPageLabels(
+  parser,
+  dictionary,
+  entries,
+  visited = new Set(),
+  objectID = 0,
+  depth = 0,
+) {
+  if (depth > 1000 || (objectID && visited.has(objectID))) {
+    throw new Error("deletePage requires valid acyclic PageLabels");
+  }
+  if (objectID) visited.add(objectID);
+  var values = dictionary.toJSObject();
+  if (values.Nums) {
+    var numbersArray = parser
+      .queryDictionaryObject(dictionary, "Nums")
+      .toPDFArray();
+    var numbers = numbersArray.toJSArray();
+    for (var index = 0; index < numbers.length; index += 2) {
+      entries.push({
+        index: numbers[index].toNumber(),
+        value: readPageLabel(parser.queryArrayObject(numbersArray, index + 1)),
+      });
+    }
+  }
+  if (values.Kids) {
+    parser
+      .queryDictionaryObject(dictionary, "Kids")
+      .toPDFArray()
+      .toJSArray()
+      .forEach((entry) => {
+        var objectID = entry.toPDFIndirectObjectReference().getObjectID();
+        collectPageLabels(
+          parser,
+          parser.parseNewObject(objectID).toPDFDictionary(),
+          entries,
+          visited,
+          objectID,
+          depth + 1,
+        );
+      });
+  }
+  return values;
+}
+
+function readPageLabel(value) {
+  var dictionary = value?.toPDFDictionary();
+  if (!dictionary) {
+    throw new Error("deletePage requires valid PageLabels entries");
+  }
+  var values = dictionary.toJSObject();
+  var prefixHex = values.P?.toPDFHexString();
+  var prefixLiteral = values.P?.toPDFLiteralString();
+  return {
+    style: values.S?.toPDFName()?.value,
+    prefix:
+      values.P === undefined
+        ? undefined
+        : {
+            bytes: (prefixHex || prefixLiteral).toBytesArray(),
+            isHex: Boolean(prefixHex),
+          },
+    start: values.St?.toNumber(),
+  };
+}
+
+function writePageLabelObjects(objectsContext, entries) {
+  return entries.map((entry) => {
+    var objectID = objectsContext.startNewIndirectObject();
+    var dictionary = objectsContext.startDictionary();
+    if (entry.value.style !== undefined) {
+      dictionary.writeKey("S");
+      objectsContext.writeName(entry.value.style);
+    }
+    if (entry.value.prefix !== undefined) {
+      dictionary.writeKey("P");
+      objectsContext[
+        entry.value.prefix.isHex ? "writeHexString" : "writeLiteralString"
+      ](entry.value.prefix.bytes);
+    }
+    if (entry.value.start !== undefined) {
+      dictionary.writeKey("St");
+      objectsContext.writeNumber(entry.value.start);
+    }
+    objectsContext.endDictionary(dictionary).endIndirectObject();
+    return { index: entry.index, objectID };
+  });
+}
+
+function writePageLabelsDictionary(
+  objectsContext,
+  copyingContext,
+  dictionary,
+  values,
+  entries,
+) {
+  Object.keys(values).forEach((key) => {
+    if (key === "Kids" || key === "Limits" || key === "Nums") return;
+    dictionary.writeKey(key);
+    copyingContext.copyDirectObjectAsIs(values[key]);
+  });
+  dictionary.writeKey("Nums");
+  objectsContext.startArray();
+  entries.forEach((entry) => {
+    objectsContext.writeNumber(entry.index);
+    objectsContext.writeIndirectObjectReference(entry.objectID);
+  });
+  objectsContext.endArray();
+}
+
+function preparePageLabels(
+  parser,
+  catalogDictionary,
+  deletedPages,
+  retainedPageCount,
+) {
+  var catalogValues = catalogDictionary.toJSObject();
+  if (!catalogValues.PageLabels || catalogValues.PageLabels.toPDFNull()) {
+    return null;
+  }
+
+  var labelsDictionary = parser
+    .queryDictionaryObject(catalogDictionary, "PageLabels")
+    .toPDFDictionary();
+  if (!labelsDictionary) {
+    throw new Error("deletePage requires PageLabels to be a number tree");
+  }
+  var entries = [];
+  var reference = catalogValues.PageLabels.toPDFIndirectObjectReference();
+  var values = collectPageLabels(
+    parser,
+    labelsDictionary,
+    entries,
+    new Set(),
+    reference?.getObjectID(),
+  );
+  var mappedEntries = new Map();
+  var deletedIndices = Array.from(
+    deletedPages,
+    (pageNumber) => pageNumber - 1,
+  ).sort((left, right) => left - right);
+  var deletedBefore = 0;
+  entries
+    .sort((left, right) => left.index - right.index)
+    .forEach((entry) => {
+      while (
+        deletedBefore < deletedIndices.length &&
+        deletedIndices[deletedBefore] < entry.index
+      ) {
+        deletedBefore += 1;
+      }
+      var index = entry.index - deletedBefore;
+      if (index < retainedPageCount) mappedEntries.set(index, entry.value);
+    });
+  var normalized = Array.from(mappedEntries, ([index, value]) => ({
+    index,
+    value,
+  }));
+  return {
+    catalogValues,
+    reference,
+    values,
+    entries: normalized,
+  };
+}
+
+function writePageLabels(writer, copyingContext, rootID, pageLabels) {
+  if (!pageLabels) return;
+
+  var objectsContext = writer.getObjectsContext();
+  var entries = writePageLabelObjects(objectsContext, pageLabels.entries);
+  if (pageLabels.reference) {
+    objectsContext.startModifiedIndirectObject(
+      pageLabels.reference.getObjectID(),
+    );
+    var labelsDictionary = objectsContext.startDictionary();
+    writePageLabelsDictionary(
+      objectsContext,
+      copyingContext,
+      labelsDictionary,
+      pageLabels.values,
+      entries,
+    );
+    objectsContext.endDictionary(labelsDictionary).endIndirectObject();
+    return;
+  }
+
+  var labelsObjectID = objectsContext.startNewIndirectObject();
+  var labelsDictionary = objectsContext.startDictionary();
+  writePageLabelsDictionary(
+    objectsContext,
+    copyingContext,
+    labelsDictionary,
+    pageLabels.values,
+    entries,
+  );
+  objectsContext.endDictionary(labelsDictionary).endIndirectObject();
+
+  if (writer._setPageLabelsObject) {
+    writer._setPageLabelsObject(labelsObjectID);
+    return;
+  }
+
+  objectsContext.startModifiedIndirectObject(rootID);
+  var dictionary = objectsContext.startDictionary();
+  Object.keys(pageLabels.catalogValues).forEach((key) => {
+    if (key === "PageLabels") return;
+    dictionary.writeKey(key);
+    copyingContext.copyDirectObjectAsIs(pageLabels.catalogValues[key]);
+  });
+  dictionary.writeKey("PageLabels");
+  objectsContext.writeIndirectObjectReference(labelsObjectID);
+  objectsContext.endDictionary(dictionary).endIndirectObject();
+}
+
 /** Creates Recipe page creation, inspection, and editing methods. */
 export function createPageMethods(
   call,
@@ -26,6 +469,9 @@ export function createPageMethods(
     createPage: function (width, height, margins) {
       if (this._endedBytes)
         throw new Error("Cannot create a page after endPDF");
+      if (this._deletedPages?.size) {
+        throw new Error("createPage cannot be combined with deletePage");
+      }
       if (typeof width === "string") {
         var rotation = height;
         var size =
@@ -270,6 +716,7 @@ export function createPageMethods(
       this._pages = pages;
       this._sourceBytes = bytes;
       this._sourceInfo = sourceInfo;
+      this._sourcePageCount = pages.length;
       this._info = { ...sourceInfo };
       this.metadata = metadata;
       return metadata;
@@ -315,6 +762,116 @@ export function createPageMethods(
       this._pageHeight = page.height;
       this._cursor = { x: this._margin.left, y: this._margin.top };
       this._resumePageRotation();
+      return this;
+    },
+
+    /**
+     * Deletes one or more pages from an existing PDF.
+     * Page numbers are one-based and refer to the original source document.
+     *
+     * @name deletePage
+     * @function
+     * @memberof Recipe#
+     * @param {number|number[]} pageNumbers - Page number or page numbers to delete.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If a retained structure references a selected page or a required object has a nonzero generation.
+     */
+    deletePage: function (pageNumbers) {
+      if (this._endedBytes || this._rebuiltBytes || this._endError) {
+        throw new Error("Cannot delete a page after endPDF");
+      }
+      if (!this._sourceMode) {
+        throw new Error("deletePage requires an existing PDF");
+      }
+      if (this._insertions) {
+        throw new Error("deletePage cannot be combined with insertPage");
+      }
+      if (this._pages.length !== this._sourcePageCount) {
+        throw new Error("deletePage cannot be combined with added pages");
+      }
+      pageNumbers = Array.isArray(pageNumbers) ? pageNumbers : [pageNumbers];
+      var deletedPages = new Set(this._deletedPages || []);
+      pageNumbers.forEach((pageNumber) => {
+        if (
+          !Number.isInteger(pageNumber) ||
+          pageNumber < 1 ||
+          pageNumber > this._sourcePageCount
+        ) {
+          throw new RangeError("pageNumber must identify an existing page");
+        }
+        deletedPages.add(pageNumber);
+      });
+      if (deletedPages.size >= this._sourcePageCount) {
+        throw new Error("At least one page must remain in the PDF");
+      }
+      this._deletedPages = deletedPages;
+      return this;
+    },
+
+    /** Applies queued page deletions during finalization. @private */
+    _deletePages: function () {
+      if (!this._deletedPages?.size) return this;
+
+      var copyingContext = this.writer.createPDFCopyingContextForModifiedFile();
+      try {
+        var parser = copyingContext.getSourceDocumentParser();
+        var deletedPageIDs = new Set(
+          Array.from(this._deletedPages, (pageNumber) =>
+            parser.getPageObjectID(pageNumber - 1),
+          ),
+        );
+        var trailer = parser.getTrailer().toJSObject();
+        var rootReference = trailer.Root.toPDFIndirectObjectReference();
+        var rootID = rootReference.getObjectID();
+        var catalogDictionary = parser.parseNewObject(rootID).toPDFDictionary();
+        var catalog = catalogDictionary.toJSObject();
+        var pagesReference = catalog.Pages.toPDFIndirectObjectReference();
+        var pageLabels = preparePageLabels(
+          parser,
+          catalogDictionary,
+          this._deletedPages,
+          this._sourcePageCount - this._deletedPages.size,
+        );
+        var tree = readPageTree(
+          parser,
+          pagesReference.getObjectID(),
+          deletedPageIDs,
+          pagesReference.getVersion(),
+        );
+        assertSupportedModifiedGenerations(
+          this.writer,
+          tree,
+          pageLabels,
+          rootReference,
+        );
+        validateDeletedPageReferences(
+          parser,
+          catalog,
+          rootID,
+          tree,
+          this._deletedPages,
+          deletedPageIDs,
+          this._sourcePageCount,
+        );
+        writePageTree(this.writer, copyingContext, tree);
+        writePageLabels(this.writer, copyingContext, rootID, pageLabels);
+      } finally {
+        copyingContext.end();
+      }
+
+      this._pages = this._pages
+        .filter((page) => !this._deletedPages.has(page.pageNumber))
+        .map((page, index) => ({ ...page, pageNumber: index + 1 }));
+      this.metadata = { pages: this._pages.length };
+      this._pages.forEach((page) => {
+        this.metadata[page.pageNumber] = {
+          ...page,
+          mediaBox: page.mediaBox.slice(),
+          size: page.size.slice(),
+        };
+      });
+      this._activePageNumber = 0;
+      this._deletedPages = null;
       return this;
     },
 
