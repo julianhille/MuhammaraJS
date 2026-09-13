@@ -138,6 +138,8 @@ describe("HTML to TextObjects", function () {
     assert.equal(values("a\nb"), "a\nb");
     assert.equal(values("a   b"), "a   b");
     assert.equal(values("a&nbsp;&nbsp;b"), "a\u00a0\u00a0b");
+    assert.equal(values("\u00a0<ul><li>x</li></ul>"), "\u00a0\n* x");
+    assert.equal(values("<ul><li>\u00a0</li></ul>"), "* \u00a0");
     assert.equal(
       values("<ul><li>x<ul><li>y</ul><li>z</ul>end"),
       "* x\n* y\n* z\nend",
@@ -146,6 +148,7 @@ describe("HTML to TextObjects", function () {
     assert.equal(values(" \n <b> </b><ul><li>x</li></ul>"), "* x");
     assert.equal(values("<ul><li>a<ul></ul>b</li></ul>"), "* ab");
     assert.equal(values("<ul><li>a<p></p>b</li></ul>"), "* ab");
+    assert.equal(values("<ol><li>a<ul><li>b</ol>tail"), "1. a\n* b\ntail");
 
     // Native propagates the marker into block children, so an opening block
     // right after a marker must not break the line.
@@ -290,6 +293,74 @@ describe("HTML to TextObjects", function () {
       new TextDecoder().decode(spacedBytes),
       /5 Tc/,
       "character spacing must be emitted for styled HTML runs",
+    );
+
+    var rotatedBytes = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .text("<b>ab</b>cd", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        rotation: 90,
+      })
+      .endPage()
+      .endPDF();
+    var rotationPivots = Array.from(
+      new TextDecoder()
+        .decode(rotatedBytes)
+        .matchAll(/1 0 0 1 ([\d.-]+) [\d.-]+ cm\s+0 1 -1 0 0 0 cm/g),
+      (match) => Number(match[1]),
+    );
+    assert.ok(rotationPivots.length >= 2);
+    assert.deepEqual(new Set(rotationPivots), new Set([20]));
+
+    var nonBreakingRecipe = new Recipe({ compress: false }).createPage(
+      300,
+      200,
+    );
+    var narrowNonBreakingWidth =
+      nonBreakingRecipe.textDimensions("a", {
+        font: "arial",
+        size: 12,
+      }).width + 0.1;
+    nonBreakingRecipe.text("a&nbsp;b", 20, 20, {
+      font: "arial",
+      size: 12,
+      html: true,
+      textBox: { width: narrowNonBreakingWidth, wrap: "auto" },
+    });
+    var nonBreaking = extract(nonBreakingRecipe);
+    assert.equal(
+      new Set(nonBreaking.map((item) => item.textMatrix[5])).size,
+      1,
+    );
+    assert.equal(nonBreaking.length, 1);
+
+    var breakableUnicodeRecipe = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .text("a\u2003b", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        textBox: { width: narrowNonBreakingWidth, wrap: "auto" },
+      });
+    var breakableUnicode = extract(breakableUnicodeRecipe);
+    assert.equal(
+      new Set(breakableUnicode.map((item) => item.textMatrix[5])).size,
+      2,
+    );
+
+    var narrowListRecipe = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .text("<ul><li>alpha bravo charlie</li></ul>", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        textBox: { width: 63, wrap: "auto" },
+      });
+    assert.deepEqual(
+      extract(narrowListRecipe).map((item) => item.content),
+      ["      *", "         alpha", "         bravo", "         charlie"],
     );
 
     var justifiedRecipe = new Recipe({ compress: false }).createPage(300, 200);

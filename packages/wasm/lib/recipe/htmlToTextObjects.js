@@ -20,6 +20,7 @@ export function htmlToTextObjects(html, options = {}) {
   var source = String(html);
   var tags = /<\/?[^>]+>|[^<]+/g;
   var match;
+  var hasText = (value) => /(?:\S|\u00a0)/.test(value);
   var current = () => Object.assign({}, ...frames.map((frame) => frame.style));
   var push = (object) => {
     if (pendingReset) {
@@ -60,12 +61,9 @@ export function htmlToTextObjects(html, options = {}) {
       var nextListIndex = remaining.search(/<(?:ul|ol)\b/i);
       var onlyFormattingBeforeList =
         nextListIndex !== -1 &&
-        !remaining
-          .slice(0, nextListIndex)
-          .replace(/<[^>]+>/g, "")
-          .trim();
+        !hasText(remaining.slice(0, nextListIndex).replace(/<[^>]+>/g, ""));
       if (
-        !token.trim() &&
+        !hasText(token) &&
         ((!objects.length && onlyFormattingBeforeList) ||
           pendingBoundary ||
           currentItem?.markerPending ||
@@ -101,7 +99,7 @@ export function htmlToTextObjects(html, options = {}) {
       var frameIndex = frames.length - 1;
       while (frameIndex >= 0 && frames[frameIndex].name !== name) frameIndex--;
       var frame = frameIndex === -1 ? null : frames[frameIndex];
-      if (frame) frames.splice(frameIndex);
+      var removedFrames = frame ? frames.splice(frameIndex) : [];
       if (name === "li" && frame) {
         items.pop();
         pendingBoundary = false;
@@ -117,7 +115,9 @@ export function htmlToTextObjects(html, options = {}) {
         }
       }
       if (["ul", "ol"].includes(name) && frame) {
-        lists.pop();
+        removedFrames.forEach((removedFrame) => {
+          if (["ul", "ol"].includes(removedFrame.name)) lists.pop();
+        });
         closeItems(lists.length + 1);
         if (objects.length > frame.objectCount) {
           pendingBoundary = true;

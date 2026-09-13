@@ -25,7 +25,9 @@ through `<a href>` and visual nested lists through `ul`, `ol`, and `li`, but
 does not provide arbitrary DOM, general CSS inheritance, semantic tagged-PDF
 lists, or plugin HTML handlers. It is also more forgiving than the XML-strict
 native parser: an omitted `</li>` ends that item at its next sibling or at the
-end of its list rather than throwing. Its ellipsis mode writes three ASCII periods
+end of its list rather than throwing. Wasm `htmlToTextObjects()` returns flat
+visual runs with list prefixes and `indent` values, while native returns its
+nested XML-derived layout tree. Its ellipsis mode writes three ASCII periods
 (`...`) rather than the Unicode ellipsis used by native Recipe.
 
 On new pages, a text run's `opacity` option is scoped to that text in the PDF

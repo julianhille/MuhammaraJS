@@ -96,8 +96,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Render one list marker for formatted native Recipe items and keep explicit
-  line-break sentinels out of list text
+- Render one correctly indented list marker for formatted native Recipe items
+  and keep explicit line-break sentinels out of list text
   [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Fix native `Recipe.lineWidth()` to apply its width to subsequent lines,
   matching Wasm [#617](https://github.com/julianhille/MuhammaraJS/issues/617)

@@ -902,7 +902,7 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
         ) {
           child.prependValue = prependValue;
           prependValue = null;
-          textObject.indent = 2 * textObject.layer;
+          textObject.indent = textObject.indent || 2 * textObject.layer;
         }
         if (textObject.indent) {
           child.indent = child.indent || textObject.indent;

@@ -129,10 +129,8 @@ describe("HTML to TextObjects", () => {
       new muhammara.PDFRStreamForBuffer(bytes),
     );
     try {
-      const content = reader
-        .extractPageText(0)
-        .map((item) => item.content)
-        .join("");
+      const extracted = reader.extractPageText(0);
+      const content = extracted.map((item) => item.content).join("");
       const normalized = content.replace(/\s+/g, " ").trim();
       assert.equal((content.match(/\*/g) || []).length, 4);
       assert.notInclude(content, "[@@DONOT_RENDER_THIS@@]");
@@ -140,6 +138,39 @@ describe("HTML to TextObjects", () => {
       assert.include(normalized, "* after");
       assert.include(normalized, "1. nested");
       assert.include(normalized, "* after nested");
+      assert.equal(
+        extracted.find((item) => item.content.includes("bold")).content,
+        "      * bold",
+      );
+    } finally {
+      reader.end();
+    }
+  });
+
+  it("matches first-line and hanging indentation at narrow widths", () => {
+    const recipe = new muhammara.Recipe(Buffer.from("new"));
+    recipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    const bytes = recipe
+      .createPage(300, 300)
+      .text("<ul><li>alpha bravo charlie</li></ul>", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        textBox: { width: 63, wrap: "auto" },
+      })
+      .endPage()
+      .endPDF((output) => output);
+    const reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(bytes),
+    );
+    try {
+      assert.deepEqual(
+        reader.extractPageText(0).map((item) => item.content),
+        ["      *", "         alpha", "         bravo", "         charlie"],
+      );
     } finally {
       reader.end();
     }
