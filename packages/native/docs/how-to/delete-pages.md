@@ -30,8 +30,14 @@ the file. This operation is therefore not suitable for securely erasing
 sensitive content. Page-label number trees are renumbered whether `/PageLabels`
 uses a direct dictionary or an indirect object.
 
-Buffer input uses the same API and returns the result through the `endPDF()`
-callback:
+`endPDF()` writes directly to `output` (or `src`, when `output` is omitted);
+the write is not atomic. If finalization fails partway through - deletion,
+encryption, or page insertion can all still throw at this point - the
+destination may be left with an incomplete PDF, which for an in-place edit
+(no separate `output`) is the caller's own source file. Write to a separate
+output path, make your own temporary copy of the source first, or use a
+`Buffer` source and consume the result from `endPDF()`'s callback instead of
+writing in place:
 
 ```javascript
 new Recipe(inputBuffer).deletePage(2).endPDF(function (outputBuffer) {
