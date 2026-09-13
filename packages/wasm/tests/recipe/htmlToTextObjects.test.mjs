@@ -132,6 +132,12 @@ describe("HTML to TextObjects", function () {
   it("ends items without </li> and keeps item context across breaks", async function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe({ compress: false });
+    /**
+     * Flattens parsed text objects so recovery cases can assert their text flow.
+     *
+     * @param {string} html HTML fragment to parse.
+     * @returns {string} Concatenated text object values.
+     */
     var values = (html) =>
       recipe
         .htmlToTextObjects(html)
@@ -263,6 +269,12 @@ describe("HTML to TextObjects", function () {
   it("preserves HTML word spacing through wrapping and justification", async function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();
+    /**
+     * Finalizes a recipe and extracts its first page for spacing assertions.
+     *
+     * @param {Recipe} recipe Recipe containing the page under test.
+     * @returns {Array<object>} Extracted text items from the first page.
+     */
     var extract = (recipe) => {
       var reader = muhammara.createReader(recipe.endPage().endPDF());
       try {

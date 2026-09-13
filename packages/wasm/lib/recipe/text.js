@@ -22,6 +22,7 @@ function padding(value = 0) {
   ];
 }
 
+/** Splits text into wrapping units while keeping non-breaking spaces inside words. */
 function splitWords(value) {
   return (
     String(value).match(
@@ -30,18 +31,22 @@ function splitWords(value) {
   );
 }
 
+/** Removes trailing breakable whitespace while preserving U+00A0. */
 function trimBreakableEnd(value) {
   return value.replace(/(?:(?!\u00a0)\s)+$/, "");
 }
 
+/** Reports whether a string contains visible text or a non-breaking space. */
 function hasText(value) {
   return /(?:\S|\u00a0)/.test(value);
 }
 
+/** Reports whether wrapping may occur at the start of a string. */
 function startsWithBreakableSpace(value) {
   return value[0] !== "\u00a0" && /^\s/.test(value);
 }
 
+/** Reports whether wrapping may occur at the end of a string. */
 function endsWithBreakableSpace(value) {
   return value[value.length - 1] !== "\u00a0" && /\s$/.test(value);
 }
@@ -85,6 +90,7 @@ function lines(value, width, measure, options, wrap) {
   return result;
 }
 
+/** Compares two shallow HTML style objects for equivalent entries. */
 function sameStyles(left, right) {
   var leftEntries = Object.entries(left || {});
   var rightEntries = Object.entries(right || {});
@@ -94,6 +100,7 @@ function sameStyles(left, right) {
   );
 }
 
+/** Coalesces adjacent HTML fragments that use equivalent styles. */
 function groupedHtmlParts(parts) {
   return parts.reduce((groups, part) => {
     var previous = groups[groups.length - 1];
@@ -106,6 +113,7 @@ function groupedHtmlParts(parts) {
   }, []);
 }
 
+/** Measures styled HTML fragments and spacing across separate drawing runs. */
 function htmlPartsWidth(parts, measure, options, group = true) {
   var groups = group ? groupedHtmlParts(parts) : parts;
   var text = groups.map((part) => part.text).join("");
@@ -120,6 +128,7 @@ function htmlPartsWidth(parts, measure, options, group = true) {
   return measured + charSpacing(text, options.charSpace) - groupedSpacing;
 }
 
+/** Calculates the character spacing needed between separately drawn runs. */
 function boundaryCharSpacing(left, right, charSpace) {
   return (
     charSpacing(left + right, charSpace) -
@@ -128,6 +137,7 @@ function boundaryCharSpacing(left, right, charSpace) {
   );
 }
 
+/** Lays out styled HTML into lines while preserving list and break structure. */
 function htmlLines(source, width, measure, options, wrap) {
   var result = [];
   var parts = [];
@@ -135,6 +145,7 @@ function htmlLines(source, width, measure, options, wrap) {
   var linePrefix = "";
   var continuationPrefix = "";
   var truncated = false;
+  /** Emits the accumulated fragments and prepares the next line prefix. */
   var flush = (last, force = false) => {
     // lines() trims every line it emits; keep trailing spaces out of the
     // measured width so alignment and justification stay correct.
@@ -233,6 +244,7 @@ function htmlLines(source, width, measure, options, wrap) {
   return result;
 }
 
+/** Truncates styled fragments in place until an ellipsis fits the width. */
 function ellipsizeHtmlParts(parts, width, measure, options) {
   var suffix = "...";
   while (parts.length) {
@@ -286,6 +298,7 @@ export function createTextMethods({ drawText, measure, module }) {
     return result;
   }
 
+  /** Runs drawing inside the requested rotation and skew graphics state. */
   function withTextTransform(recipe, options, callback) {
     if (!options.rotation && !options.skewX && !options.skewY) {
       callback();
@@ -310,6 +323,7 @@ export function createTextMethods({ drawText, measure, module }) {
     recipe._restore();
   }
 
+  /** Writes link bounds transformed and clipped with their associated text. */
   function transformedLink(recipe, url, x, y, width, height, options, clip) {
     if (!options.rotation && !options.skewX && !options.skewY) {
       recipe.link(url, x, y, width, height);
@@ -389,6 +403,7 @@ export function createTextMethods({ drawText, measure, module }) {
     recipe._linkPdf(url, left, bottom, right - left, top - bottom);
   }
 
+  /** Draws a highlight rectangle using the same transform as its text. */
   function drawHilite(recipe, x, y, width, height, options, hilite) {
     withTextTransform(recipe, options, () => {
       recipe.rectangle(x, y, width, height, {
@@ -437,6 +452,7 @@ export function createTextMethods({ drawText, measure, module }) {
         }).height;
       var availableWidth = width ? width - left - right : 0;
       var textOptions = { ...options, fontSize };
+      /** Measures a fragment with the current Recipe font state. */
       var measureText = (text, partOptions) =>
         dimensions(this, text, partOptions);
       var entries = options.html
@@ -625,6 +641,7 @@ export function createTextMethods({ drawText, measure, module }) {
       );
       var height = box.height || contentHeight;
       var topAlign = options.align?.split(" ") || [];
+      /** Measures a line with per-fragment HTML styles when present. */
       var entryWidth = (entry) =>
         entry.parts
           ? htmlPartsWidth(
@@ -755,6 +772,7 @@ export function createTextMethods({ drawText, measure, module }) {
         if (entry.parts) {
           var justify = horizontal === "justify" && !entry.last && width;
           var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
+          /** Reports whether this fragment owns an expandable justification gap. */
           var hasGapAfter = (part, index) =>
             justify &&
             !part.marker &&

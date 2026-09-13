@@ -831,6 +831,7 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
 
   let firstLineHeight;
   let toWriteTextObjects = [];
+  /** Reports whether a layout node contains content other than the break sentinel. */
   const hasRenderableContent = (textObject) =>
     (textObject.value !== undefined &&
       textObject.value !== null &&
@@ -937,6 +938,7 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
   const normalizedTextObjects = [];
   let pendingBreaks = [];
   const replacementLineIDs = new Map();
+  /** Converts pending break sentinels into line state without rendering their text. */
   const appendPendingBreaks = (nextTextObject) => {
     const previous = normalizedTextObjects[normalizedTextObjects.length - 1];
     if (previous) previous.lineComplete = true;

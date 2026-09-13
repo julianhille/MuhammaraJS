@@ -1,9 +1,9 @@
 // Deliberately small, DOM-free HTML subset so Recipe also works in Workers.
 /**
- * Converts supported HTML into styled objects consumed by Recipe text layout.
- * This DOM-free parser recognizes basic emphasis, links, colors, and line-break
- * elements. It does not draw or change Recipe state, and therefore does not
- * interpret page coordinates.
+ * Converts the supported DOM-free HTML subset into styled Recipe fragments,
+ * including inline formatting, links, colors, block breaks, and nested lists.
+ * It does not draw or change Recipe state, and therefore does not interpret
+ * page coordinates.
  *
  * @private
  * @param {string} html - HTML source to convert.
@@ -38,12 +38,15 @@ export function htmlToTextObjects(html, options = {}) {
   ]);
   var tags = /<\/?[^>]+>|[^<]+/g;
   var match;
+  /** Reports whether a token contains more than collapsible formatting whitespace. */
   var hasText = (value) => /[^ \t\r\n\f\v]/.test(value);
   var onlyFormattingBeforeFirstList =
     firstListIndex !== -1 &&
     !hasText(source.slice(0, firstListIndex).replace(/<[^>]+>/g, ""));
   var leadingListStructure = onlyFormattingBeforeFirstList;
+  /** Combines the styles inherited from the currently open element frames. */
   var current = () => Object.assign({}, ...frames.map((frame) => frame.style));
+  /** Appends a fragment while applying any pending reset after a closed list. */
   var push = (object) => {
     if (pendingReset) {
       if (object.indent === undefined) object.indent = 0;
@@ -51,6 +54,7 @@ export function htmlToTextObjects(html, options = {}) {
     }
     objects.push(object);
   };
+  /** Appends a styled newline, optionally preserving consecutive explicit breaks. */
   var lineBreak = (force = false) => {
     if (
       objects.length &&
@@ -59,6 +63,7 @@ export function htmlToTextObjects(html, options = {}) {
       push({ value: "\n", styles: current() });
     }
   };
+  /** Emits a pending list marker and clears its continuation state. */
   var pushItem = (item) => {
     push({ value: item.value, indent: item.indent, styles: current() });
     item.markerPending = false;
@@ -66,9 +71,11 @@ export function htmlToTextObjects(html, options = {}) {
   };
   // HTML5 allows omitting </li>, so an item also ends when its sibling or its
   // list does. Without this, later content would inherit a stale marker.
+  /** Closes active list items at or below the given nesting depth. */
   var closeItems = (depth) => {
     while (items.length && items[items.length - 1].depth >= depth) items.pop();
   };
+  /** Resolves a block boundary using the active item marker or continuation indent. */
   var continuePendingItem = () => {
     if (!pendingBoundary) return;
     lineBreak();

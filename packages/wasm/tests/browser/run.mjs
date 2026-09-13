@@ -161,6 +161,7 @@ try {
     }
     var preview = document.querySelector("#preview");
     var download = document.querySelector("#download");
+    /** Runs one browser example in the selected execution mode and returns its bytes. */
     var runExample = async (id, mode) => {
       var tab = document.querySelector(`[data-example="${id}"]`);
       for (var attempt = 0; attempt < 50; ++attempt) {

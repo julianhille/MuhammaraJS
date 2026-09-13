@@ -225,6 +225,7 @@ async function linksExample() {
   }
 }
 
+/** Builds the browser example for nested, formatted, and linked HTML lists. */
 async function htmlListsExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });

@@ -1,4 +1,4 @@
-/** Calculates total character spacing for non-whitespace text. */
+/** Calculates spacing between retained characters while preserving non-breaking spaces. */
 export function charSpacing(text, charSpace = 0) {
   var trimmed = String(text).replace(
     /^(?:(?!\u00a0)\s)+|(?:(?!\u00a0)\s)+$/g,
