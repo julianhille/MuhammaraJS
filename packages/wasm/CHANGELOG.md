@@ -62,8 +62,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 ### Fixed
 
 - Preserve HTML whitespace, non-breaking spaces, inline layout, and transforms;
-  match native list wrapping, recover malformed list closures, measure HTML
-  table cells, apply character spacing across formatted runs, and constrain
+  match native list wrapping and nesting, recover malformed list closures in
+  linear time, measure HTML table cells, apply character spacing across
+  formatted runs, transform highlights and links with their text, and constrain
   linked text to clipped text boxes
   [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Align Recipe text, measurement, and layout defaults on 14 points to match

@@ -18,7 +18,7 @@ describe("HTML to TextObjects", function () {
     );
     assert.deepEqual(
       objects.filter((object) => object.indent).map((object) => object.indent),
-      [6, 6, 10, 6, 6, 6],
+      [6, 6, 6, 6, 6, 6],
     );
     assert.equal(
       objects.find((object) => object.value === "bold").styles.bold,
@@ -140,15 +140,29 @@ describe("HTML to TextObjects", function () {
     assert.equal(values("a&nbsp;&nbsp;b"), "a\u00a0\u00a0b");
     assert.equal(values("\u00a0<ul><li>x</li></ul>"), "\u00a0\n* x");
     assert.equal(values("<ul><li>\u00a0</li></ul>"), "* \u00a0");
+    assert.equal(values("<ul><li>\u2003</li></ul>"), "* \u2003");
     assert.equal(
       values("<ul><li>x<ul><li>y</ul><li>z</ul>end"),
       "* x\n* y\n* z\nend",
     );
     assert.equal(values("<ul><li><ol><li>x</li></ol></li></ul>"), "1. x");
+    assert.deepEqual(
+      recipe
+        .htmlToTextObjects(
+          "<ul><li>one<ul><li>two<ul><li>three</li></ul></li></ul></li></ul>",
+        )
+        .filter((object) => object.indent !== undefined)
+        .map((object) => object.indent),
+      [6, 6, 6],
+    );
     assert.equal(values(" \n <b> </b><ul><li>x</li></ul>"), "* x");
     assert.equal(values("<ul><li>a<ul></ul>b</li></ul>"), "* ab");
     assert.equal(values("<ul><li>a<p></p>b</li></ul>"), "* ab");
     assert.equal(values("<ol><li>a<ul><li>b</ol>tail"), "1. a\n* b\ntail");
+    assert.equal(
+      values("<ul><li><ol><li>a</li></li></ol><li>b</li></ul>"),
+      "1. a\n* b",
+    );
 
     // Native propagates the marker into block children, so an opening block
     // right after a marker must not break the line.
@@ -176,6 +190,7 @@ describe("HTML to TextObjects", function () {
       recipe.htmlToTextObjects("<ul></ul><ul><li>x</li></ul>")[0].indent,
       6,
     );
+    assert.equal(values("<ul></ul>\n<ul><li>x</li></ul>"), "* x");
   });
 
   it("indents continuation lines and never starts a line with a space", async function () {
@@ -313,6 +328,91 @@ describe("HTML to TextObjects", function () {
     );
     assert.ok(rotationPivots.length >= 2);
     assert.deepEqual(new Set(rotationPivots), new Set([20]));
+
+    var transformedLinkBytes = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .text('<a href="https://example.test"><b>linked value</b></a>', 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        rotation: 90,
+        hilite: true,
+      })
+      .endPage()
+      .endPDF();
+    var transformedSource = new TextDecoder().decode(transformedLinkBytes);
+    var transformedRect = transformedSource.match(
+      /\/Rect \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/,
+    );
+    assert.ok(transformedRect);
+    assert.ok(
+      Number(transformedRect[4]) - Number(transformedRect[2]) >
+        Number(transformedRect[3]) - Number(transformedRect[1]),
+      "a 90-degree link rectangle must be taller than it is wide",
+    );
+    assert.ok(
+      Array.from(
+        transformedSource.matchAll(/1 0 0 1 20 [\d.-]+ cm\s+0 1 -1 0 0 0 cm/g),
+      ).length >= 2,
+      "the visual highlight and text must use the same rotation",
+    );
+
+    var editSource = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .endPage()
+      .endPDF();
+    var editedTransformSource = new TextDecoder().decode(
+      new Recipe(editSource, { compress: false })
+        .editPage(1)
+        .text('<a href="https://example.test"><b>ab</b>cd</a>', 20, 20, {
+          font: "arial",
+          size: 12,
+          html: true,
+          rotation: 90,
+          hilite: true,
+        })
+        .endPage()
+        .endPDF(),
+    );
+    assert.ok(
+      Array.from(
+        editedTransformSource.matchAll(
+          /1 0 0 1 20 [\d.-]+ cm\s+0 1 -1 0 0 0 cm/g,
+        ),
+      ).length >= 2,
+      "edited styled text must retain the shared rotation",
+    );
+    var editedLinkRect = editedTransformSource.match(
+      /\/Rect \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/,
+    );
+    assert.ok(editedLinkRect);
+    assert.ok(
+      Number(editedLinkRect[4]) - Number(editedLinkRect[2]) >
+        Number(editedLinkRect[3]) - Number(editedLinkRect[1]),
+    );
+
+    var justifiedHiliteBytes = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .text("<b>alpha</b> bravo charlie delta", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        hilite: true,
+        textBox: { width: 120, textAlign: "justify top" },
+      })
+      .endPage()
+      .endPDF();
+    var hiliteRectangles = Array.from(
+      new TextDecoder()
+        .decode(justifiedHiliteBytes)
+        .matchAll(/[\d.-]+ [\d.-]+ ([\d.-]+) ([\d.-]+) re/g),
+      (match) => [Number(match[1]), Number(match[2])],
+    );
+    assert.ok(hiliteRectangles.length > 1);
+    hiliteRectangles.forEach(([rectangleWidth, rectangleHeight]) => {
+      assert.ok(rectangleWidth > 0);
+      assert.ok(rectangleHeight > 0);
+    });
 
     var nonBreakingRecipe = new Recipe({ compress: false }).createPage(
       300,

@@ -18,9 +18,14 @@ export function htmlToTextObjects(html, options = {}) {
   var pendingBoundary = false;
   var pendingReset = false;
   var source = String(html);
+  var firstListIndex = source.search(/<(?:ul|ol)\b/i);
   var tags = /<\/?[^>]+>|[^<]+/g;
   var match;
-  var hasText = (value) => /(?:\S|\u00a0)/.test(value);
+  var hasText = (value) => /[^ \t\r\n\f\v]/.test(value);
+  var onlyFormattingBeforeFirstList =
+    firstListIndex !== -1 &&
+    !hasText(source.slice(0, firstListIndex).replace(/<[^>]+>/g, ""));
+  var leadingListStructure = onlyFormattingBeforeFirstList;
   var current = () => Object.assign({}, ...frames.map((frame) => frame.style));
   var push = (object) => {
     if (pendingReset) {
@@ -57,14 +62,9 @@ export function htmlToTextObjects(html, options = {}) {
     var token = match[0];
     if (!token.startsWith("<")) {
       var currentItem = items[items.length - 1];
-      var remaining = source.slice(tags.lastIndex);
-      var nextListIndex = remaining.search(/<(?:ul|ol)\b/i);
-      var onlyFormattingBeforeList =
-        nextListIndex !== -1 &&
-        !hasText(remaining.slice(0, nextListIndex).replace(/<[^>]+>/g, ""));
       if (
         !hasText(token) &&
-        ((!objects.length && onlyFormattingBeforeList) ||
+        ((!objects.length && leadingListStructure) ||
           pendingBoundary ||
           currentItem?.markerPending ||
           (lists.length && currentItem?.depth !== lists.length))
@@ -100,6 +100,13 @@ export function htmlToTextObjects(html, options = {}) {
       while (frameIndex >= 0 && frames[frameIndex].name !== name) frameIndex--;
       var frame = frameIndex === -1 ? null : frames[frameIndex];
       var removedFrames = frame ? frames.splice(frameIndex) : [];
+      var removedListFrames = removedFrames.filter((removedFrame) =>
+        ["ul", "ol"].includes(removedFrame.name),
+      );
+      removedListFrames.forEach(() => lists.pop());
+      if (removedFrames.some((removedFrame) => removedFrame.name === "li")) {
+        closeItems(lists.length + 1);
+      }
       if (name === "li" && frame) {
         items.pop();
         pendingBoundary = false;
@@ -114,12 +121,9 @@ export function htmlToTextObjects(html, options = {}) {
           if (blockItem) blockItem.markerPending = true;
         }
       }
-      if (["ul", "ol"].includes(name) && frame) {
-        removedFrames.forEach((removedFrame) => {
-          if (["ul", "ol"].includes(removedFrame.name)) lists.pop();
-        });
+      if (removedListFrames.length && name !== "li") {
         closeItems(lists.length + 1);
-        if (objects.length > frame.objectCount) {
+        if (objects.length > removedListFrames[0].objectCount) {
           pendingBoundary = true;
           var parentItem = items[items.length - 1];
           if (parentItem) parentItem.markerPending = true;
@@ -184,7 +188,7 @@ export function htmlToTextObjects(html, options = {}) {
       list.index++;
       var item = {
         value: list.name === "ol" ? `${list.index}. ` : "* ",
-        indent: 4 * lists.length + 2,
+        indent: 6,
         depth: lists.length,
         markerPending: true,
       };

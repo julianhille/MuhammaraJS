@@ -283,6 +283,94 @@ export function createTextMethods({ drawText, measure, module }) {
     return result;
   }
 
+  function withTextTransform(recipe, options, callback) {
+    if (!options.rotation && !options.skewX && !options.skewY) {
+      callback();
+      return;
+    }
+    recipe._save();
+    if (options.rotation) {
+      var origin = options.rotationOrigin || [0, 0];
+      recipe.rotateContent(options.rotation, origin[0], origin[1]);
+    }
+    if (options.skewX || options.skewY) {
+      recipe._transform(
+        1,
+        Math.tan(((options.skewY || 0) * Math.PI) / 180),
+        Math.tan(((options.skewX || 0) * Math.PI) / 180),
+        1,
+        0,
+        0,
+      );
+    }
+    callback();
+    recipe._restore();
+  }
+
+  function transformedLink(recipe, url, x, y, width, height, options, clip) {
+    if (!options.rotation && !options.skewX && !options.skewY) {
+      recipe.link(url, x, y, width, height);
+      return;
+    }
+    var bottomLeft = recipe._calibrateCoordinate(x, y, 0, -height);
+    var points = [
+      [bottomLeft.nx, bottomLeft.ny],
+      [bottomLeft.nx + width, bottomLeft.ny],
+      [bottomLeft.nx + width, bottomLeft.ny + height],
+      [bottomLeft.nx, bottomLeft.ny + height],
+    ];
+    if (options.skewX || options.skewY) {
+      var skewX = Math.tan(((options.skewX || 0) * Math.PI) / 180);
+      var skewY = Math.tan(((options.skewY || 0) * Math.PI) / 180);
+      points = points.map(([pointX, pointY]) => [
+        pointX + skewX * pointY,
+        skewY * pointX + pointY,
+      ]);
+    }
+    if (options.rotation) {
+      var origin = options.rotationOrigin || [x, y + height];
+      var pdfOrigin = recipe._calibrateCoordinate(origin[0], origin[1]);
+      var radians = (options.rotation * Math.PI) / 180;
+      var cosine = Math.cos(radians);
+      var sine = Math.sin(radians);
+      points = points.map(([pointX, pointY]) => {
+        var offsetX = pointX - pdfOrigin.nx;
+        var offsetY = pointY - pdfOrigin.ny;
+        return [
+          pdfOrigin.nx + cosine * offsetX - sine * offsetY,
+          pdfOrigin.ny + sine * offsetX + cosine * offsetY,
+        ];
+      });
+    }
+    var left = Math.min(...points.map((point) => point[0]));
+    var right = Math.max(...points.map((point) => point[0]));
+    var bottom = Math.min(...points.map((point) => point[1]));
+    var top = Math.max(...points.map((point) => point[1]));
+    if (clip) {
+      var clipBottomLeft = recipe._calibrateCoordinate(
+        clip.x,
+        clip.y,
+        0,
+        -clip.height,
+      );
+      left = Math.max(left, clipBottomLeft.nx);
+      right = Math.min(right, clipBottomLeft.nx + clip.width);
+      bottom = Math.max(bottom, clipBottomLeft.ny);
+      top = Math.min(top, clipBottomLeft.ny + clip.height);
+    }
+    if (right <= left || top <= bottom) return;
+    recipe._linkPdf(url, left, bottom, right - left, top - bottom);
+  }
+
+  function drawHilite(recipe, x, y, width, height, options, hilite) {
+    withTextTransform(recipe, options, () => {
+      recipe.rectangle(x, y, width, height, {
+        fill: hilite.color || "#ffff00",
+        opacity: hilite.opacity ?? 0.5,
+      });
+    });
+  }
+
   return {
     /**
      * Measures text in PDF points using the selected font and character spacing.
@@ -591,6 +679,9 @@ export function createTextMethods({ drawText, measure, module }) {
               ? width - right - textWidth
               : 0);
         var baseline = currentY + lineHeight;
+        if (textOptions.rotation && !textOptions.rotationOrigin) {
+          textOptions.rotationOrigin = [drawX, baseline];
+        }
         var linkX = drawX;
         var linkWidth = textWidth;
         var clipping = wrap === "clip" && width;
@@ -624,16 +715,14 @@ export function createTextMethods({ drawText, measure, module }) {
           var hilite =
             typeof textOptions.hilite === "object" ? textOptions.hilite : {};
           var bounds = dimensions(this, entry.text, textOptions);
-          this.rectangle(
+          drawHilite(
+            this,
             drawX + bounds.xMin,
-            this._pageHeight - baseline + bounds.yMin,
+            baseline - bounds.yMax,
             bounds.xMax - bounds.xMin,
             bounds.yMax - bounds.yMin,
-            {
-              useGivenCoords: true,
-              fill: hilite.color || "#ffff00",
-              opacity: hilite.opacity ?? 0.5,
-            },
+            textOptions,
+            hilite,
           );
         }
         if (entry.parts) {
@@ -674,16 +763,21 @@ export function createTextMethods({ drawText, measure, module }) {
                   ? partOptions.hilite
                   : {};
               var partBounds = dimensions(this, part.text, partOptions);
-              this.rectangle(
-                drawX + partBounds.xMin,
-                this._pageHeight - baseline + partBounds.yMin,
-                partBounds.xMax - partBounds.xMin,
-                partBounds.yMax - partBounds.yMin,
-                {
-                  useGivenCoords: true,
-                  fill: partHilite.color || "#ffff00",
-                  opacity: partHilite.opacity ?? 0.5,
-                },
+              var partHiliteBounds = partBounds.height
+                ? partBounds
+                : dimensions(
+                    this,
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
+                    partOptions,
+                  );
+              drawHilite(
+                this,
+                drawX + partHiliteBounds.xMin,
+                baseline - partHiliteBounds.yMax,
+                partWidth + (hasGapAfter(part, partIndex) ? partGap : 0),
+                partHiliteBounds.yMax - partHiliteBounds.yMin,
+                partOptions,
+                partHilite,
               );
             }
             drawText.call(this, part.text, drawX, baseline, partOptions);
@@ -697,7 +791,9 @@ export function createTextMethods({ drawText, measure, module }) {
                   partOptions.link;
               var partLinkX = drawX + linkBounds.xMin;
               var partLinkWidth = partWidth + (coversGap ? partGap : 0);
-              if (clipping) {
+              var transformed =
+                partOptions.rotation || partOptions.skewX || partOptions.skewY;
+              if (clipping && !transformed) {
                 var clipLeft = x + left;
                 var clipRight = x + width - right;
                 var partLinkRight = Math.min(
@@ -708,12 +804,22 @@ export function createTextMethods({ drawText, measure, module }) {
                 partLinkWidth = Math.max(0, partLinkRight - partLinkX);
               }
               if (partLinkWidth)
-                this.link(
+                transformedLink(
+                  this,
                   partOptions.link,
                   partLinkX,
                   currentY,
                   partLinkWidth,
                   lineHeight,
+                  partOptions,
+                  clipping
+                    ? {
+                        x: x + left,
+                        y: currentY,
+                        width: width - left - right,
+                        height: lineHeight,
+                      }
+                    : null,
                 );
             }
             drawX += partWidth;
@@ -741,12 +847,14 @@ export function createTextMethods({ drawText, measure, module }) {
         if (clipping) this._restore();
         if (textOptions.link && !entry.parts) {
           var linkBounds = dimensions(this, entry.text, textOptions);
-          this.link(
+          transformedLink(
+            this,
             textOptions.link,
             linkX + linkBounds.xMin,
             currentY,
             linkWidth,
             lineHeight,
+            textOptions,
           );
         }
         currentY += lineHeight;
