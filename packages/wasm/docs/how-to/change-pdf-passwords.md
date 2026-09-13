@@ -19,7 +19,8 @@ The options match native `recrypt`: `password` opens the input, while
 `userPassword`, `ownerPassword`, and `userProtectionFlag` configure output
 encryption. Supplying `userPassword`, including `""`, enables encryption;
 omitting it removes encryption. `version` defaults to `0`, preserving the source
-PDF version, and `compress` defaults to `true`.
+PDF version, and `compress` defaults to `true`. Encryption supports PDF 1.0
+through 1.7; PDF 2.0/AES-256 is unavailable in WebAssembly.
 
 Recipe also follows native's deferred API. Call `encrypt()` before `endPDF()`;
 the final composed bytes, including annotations and inserted pages, are then
