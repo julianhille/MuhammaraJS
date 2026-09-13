@@ -162,6 +162,7 @@ export function createRecipeFactory({
       if (this.writer?.dispose) this.writer.dispose();
       if (this._recipe) module._muhammara_wasm_recipe_destroy(this._recipe);
       this._recipe = 0;
+      this._disposed = true;
     }
 
     /**
@@ -689,13 +690,47 @@ export function createRecipeFactory({
     {
       endPDF: createEndPDF({
         endPDF: (recipe) => {
+          if (recipe._endError) throw recipe._endError;
           if (recipe._sourceMode) {
             if (recipe._editingPage || recipe._pageHeight) {
               throw new Error("Finish the current page before endPDF");
             }
             if (!recipe._endedBytes) {
-              recipe._writeCanonicalInfo();
-              recipe._endedBytes = recipe.writer.end();
+              var deletingPages = Boolean(recipe._deletedPages?.size);
+              var deletionState = deletingPages
+                ? {
+                    pages: recipe._pages,
+                    metadata: recipe.metadata,
+                    metadataValues: { ...recipe.metadata },
+                    activePageNumber: recipe._activePageNumber,
+                    deletedPages: recipe._deletedPages,
+                  }
+                : null;
+              try {
+                recipe._deletePages();
+                recipe._writeCanonicalInfo();
+                recipe._endedBytes = recipe.writer.end();
+              } catch (error) {
+                if (!deletingPages) throw error;
+                recipe._pages = deletionState.pages;
+                Object.keys(deletionState.metadata).forEach(
+                  (key) => delete deletionState.metadata[key],
+                );
+                Object.assign(
+                  deletionState.metadata,
+                  deletionState.metadataValues,
+                );
+                recipe.metadata = deletionState.metadata;
+                recipe._activePageNumber = deletionState.activePageNumber;
+                recipe._deletedPages = deletionState.deletedPages;
+                recipe._endError = error;
+                try {
+                  recipe.writer.dispose();
+                } catch (_) {
+                  // Preserve the deletion error if modifier cleanup fails.
+                }
+                throw error;
+              }
             }
             return recipe._endedBytes;
           }

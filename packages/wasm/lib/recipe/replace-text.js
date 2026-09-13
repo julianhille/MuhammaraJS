@@ -83,6 +83,7 @@ export function createReplaceTextMethods(encoder) {
         contentsObjectId,
         replacementObjectId,
       );
+      this._modifiedSourcePages.add(pageNumber);
       return this;
     },
   };
