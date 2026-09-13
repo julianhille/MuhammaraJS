@@ -148,7 +148,7 @@ METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
     // now remove event listener
     pdfWriter->mPDFWriter.GetDocumentContext().RemoveDocumentContextExtender(pdfWriter);
 
-
+    // Finalization may consume the writer even when it reports failure.
     if(pdfWriter->mWriteStreamProxy)
     {
         delete pdfWriter->mWriteStreamProxy;
