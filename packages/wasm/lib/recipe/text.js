@@ -61,15 +61,57 @@ function lines(value, width, measure, options, wrap) {
   return result;
 }
 
+function sameStyles(left, right) {
+  var leftEntries = Object.entries(left || {});
+  var rightEntries = Object.entries(right || {});
+  return (
+    leftEntries.length === rightEntries.length &&
+    leftEntries.every(([key, value]) => right?.[key] === value)
+  );
+}
+
+function groupedHtmlParts(parts) {
+  return parts.reduce((groups, part) => {
+    var previous = groups[groups.length - 1];
+    if (previous && sameStyles(previous.styles, part.styles)) {
+      previous.text += part.text;
+    } else {
+      groups.push({ ...part });
+    }
+    return groups;
+  }, []);
+}
+
+function htmlPartsWidth(parts, measure, options, group = true) {
+  var groups = group ? groupedHtmlParts(parts) : parts;
+  var text = groups.map((part) => part.text).join("");
+  var measured = groups.reduce((sum, part) => {
+    var textOptions = { ...options, ...part.styles };
+    return sum + measure(part.text, textOptions).width;
+  }, 0);
+  var groupedSpacing = groups.reduce((sum, part) => {
+    var textOptions = { ...options, ...part.styles };
+    return sum + charSpacing(part.text, textOptions.charSpace);
+  }, 0);
+  return measured + charSpacing(text, options.charSpace) - groupedSpacing;
+}
+
+function boundaryCharSpacing(left, right, charSpace) {
+  return (
+    charSpacing(left + right, charSpace) -
+    charSpacing(left, charSpace) -
+    charSpacing(right, charSpace)
+  );
+}
+
 function htmlLines(source, width, measure, options, wrap) {
   var result = [];
   var parts = [];
-  var lineWidth = 0;
   var indent = 0;
   var linePrefix = "";
   var continuationPrefix = "";
   var truncated = false;
-  var flush = (last) => {
+  var flush = (last, force = false) => {
     // lines() trims every line it emits; keep trailing spaces out of the
     // measured width so alignment and justification stay correct.
     while (wrap !== "clip" && parts.length) {
@@ -78,13 +120,16 @@ function htmlLines(source, width, measure, options, wrap) {
       if (tail.text) break;
       parts.pop();
     }
+    if (!parts.length && !force && result.length) {
+      if (!last) linePrefix = continuationPrefix;
+      return;
+    }
     result.push({
       text: parts.map((part) => part.text).join(""),
       parts,
       last,
     });
     parts = [];
-    lineWidth = 0;
     if (!last) linePrefix = continuationPrefix;
   };
 
@@ -102,7 +147,7 @@ function htmlLines(source, width, measure, options, wrap) {
       .split(/(\n)/)
       .forEach((fragment) => {
         if (fragment === "\n") {
-          flush(true);
+          flush(true, true);
           // Native re-applies the indent on every line of a list item, so a
           // <br> or block break inside one stays indented.
           linePrefix = " ".repeat(indent);
@@ -116,18 +161,24 @@ function htmlLines(source, width, measure, options, wrap) {
           if (truncated) return;
           word = linePrefix + word;
           linePrefix = "";
-          var textOptions = { ...options, ...sourcePart.styles };
-          var wordWidth =
-            measure(word, textOptions).width +
-            charSpacing(word, textOptions.charSpace);
-          if (width && parts.length && lineWidth + wordWidth > width) {
+          var candidate = [
+            ...parts,
+            {
+              text: word,
+              styles: sourcePart.styles,
+              marker: sourcePart.indent > 0,
+            },
+          ];
+          if (
+            width &&
+            parts.length &&
+            htmlPartsWidth(candidate, measure, options) > width
+          ) {
             if (wrap === "auto" || wrap === true) {
               flush(false);
+              if (!word.trim()) return;
               word = linePrefix + word;
               linePrefix = "";
-              wordWidth =
-                measure(word, textOptions).width +
-                charSpacing(word, textOptions.charSpace);
             } else if (wrap === "ellipsis") {
               ellipsizeHtmlParts(parts, width, measure, options);
               truncated = true;
@@ -137,32 +188,27 @@ function htmlLines(source, width, measure, options, wrap) {
               return;
             }
           }
-          parts.push({ text: word, styles: sourcePart.styles });
-          lineWidth += wordWidth;
+          if (!parts.length && !word.trim()) return;
+          parts.push({
+            text: word,
+            styles: sourcePart.styles,
+            marker: sourcePart.indent > 0,
+          });
         });
       });
   });
-  if (parts.length || !result.length) flush(true);
+  if (parts.length || !result.length) flush(true, !result.length);
   return result;
 }
 
 function ellipsizeHtmlParts(parts, width, measure, options) {
   var suffix = "...";
   while (parts.length) {
-    var total = parts.reduce((sum, part) => {
-      var textOptions = { ...options, ...part.styles };
-      return (
-        sum +
-        measure(part.text, textOptions).width +
-        charSpacing(part.text, textOptions.charSpace)
-      );
-    }, 0);
     var last = parts[parts.length - 1];
-    var lastOptions = { ...options, ...last.styles };
-    var suffixWidth =
-      measure(suffix, lastOptions).width +
-      charSpacing(suffix, lastOptions.charSpace);
-    if (total + suffixWidth <= width) {
+    var candidate = parts.map((part) => ({ ...part }));
+    candidate[candidate.length - 1].text =
+      candidate[candidate.length - 1].text.trimEnd() + suffix;
+    if (htmlPartsWidth(candidate, measure, options) <= width) {
       last.text = last.text.trimEnd() + suffix;
       return;
     }
@@ -425,15 +471,10 @@ export function createTextMethods({ drawText, measure, module }) {
       var topAlign = options.align?.split(" ") || [];
       var entryWidth = (entry) =>
         entry.parts
-          ? entry.parts.reduce(
-              (sum, part) =>
-                sum +
-                dimensions(this, part.text, {
-                  ...options,
-                  ...part.styles,
-                  fontSize,
-                }).width,
-              0,
+          ? htmlPartsWidth(
+              entry.parts,
+              (text, textOptions) => dimensions(this, text, textOptions),
+              { ...options, fontSize },
             )
           : dimensions(this, entry.text, options).width;
       var widestEntry = Math.max(...entries.map(entryWidth), 0);
@@ -493,15 +534,10 @@ export function createTextMethods({ drawText, measure, module }) {
         }
         var textOptions = { ...options, ...entry.styles, fontSize };
         var textWidth = entry.parts
-          ? entry.parts.reduce(
-              (sum, part) =>
-                sum +
-                dimensions(this, part.text, {
-                  ...options,
-                  ...part.styles,
-                  fontSize,
-                }).width,
-              0,
+          ? htmlPartsWidth(
+              entry.parts,
+              (text, partOptions) => dimensions(this, text, partOptions),
+              { ...options, fontSize },
             )
           : dimensions(this, entry.text, textOptions).width;
         var horizontal = box.textAlign?.split(" ")[0];
@@ -560,13 +596,32 @@ export function createTextMethods({ drawText, measure, module }) {
           );
         }
         if (entry.parts) {
-          var partWords = entry.parts.filter((part) => part.text.trim()).length;
+          var justify = horizontal === "justify" && !entry.last && width;
+          var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
+          var hasGapAfter = (part, index) =>
+            justify &&
+            !part.marker &&
+            /\s$/.test(part.text) &&
+            drawParts.slice(index + 1).some((next) => next.text.trim());
+          var partGaps = drawParts.filter(hasGapAfter).length;
+          var drawnWidth = justify
+            ? htmlPartsWidth(
+                drawParts,
+                (text, partOptions) => dimensions(this, text, partOptions),
+                { ...options, fontSize },
+                false,
+              )
+            : textWidth;
           var partGap =
-            horizontal === "justify" && !entry.last && width && partWords > 1
-              ? (width - left - right - textWidth) / (partWords - 1)
-              : 0;
-          entry.parts.forEach((part) => {
+            partGaps > 0 ? (width - left - right - drawnWidth) / partGaps : 0;
+          var drawnText = "";
+          drawParts.forEach((part, partIndex) => {
             var partOptions = { ...options, ...part.styles, fontSize };
+            drawX += boundaryCharSpacing(
+              drawnText,
+              part.text,
+              partOptions.charSpace,
+            );
             var partWidth = dimensions(this, part.text, partOptions).width;
             if (partOptions.hilite) {
               var partHilite =
@@ -589,16 +644,21 @@ export function createTextMethods({ drawText, measure, module }) {
             drawText.call(this, part.text, drawX, baseline, partOptions);
             if (partOptions.link) {
               var linkBounds = dimensions(this, part.text, partOptions);
+              var coversGap =
+                hasGapAfter(part, partIndex) &&
+                drawParts.slice(partIndex + 1).find((next) => next.text.trim())
+                  ?.styles.link === partOptions.link;
               this.link(
                 partOptions.link,
                 drawX + linkBounds.xMin,
                 currentY,
-                partWidth,
+                partWidth + (coversGap ? partGap : 0),
                 lineHeight,
               );
             }
             drawX += partWidth;
-            if (part.text.trim() && --partWords > 0) drawX += partGap;
+            if (hasGapAfter(part, partIndex)) drawX += partGap;
+            drawnText += part.text;
           });
         } else if (horizontal === "justify" && !entry.last && width) {
           var words = entry.text.match(/\S+\s*/g) || [entry.text];

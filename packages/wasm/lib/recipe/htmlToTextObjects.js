@@ -16,14 +16,13 @@ export function htmlToTextObjects(html, options = {}) {
   var lists = [];
   var items = [];
   var pendingBoundary = false;
-  var markerPending = false;
   var pendingReset = false;
   var tags = /<\/?[^>]+>|[^<]+/g;
   var match;
   var current = () => Object.assign({}, ...frames.map((frame) => frame.style));
   var push = (object) => {
     if (pendingReset) {
-      object.indent = 0;
+      if (object.indent === undefined) object.indent = 0;
       pendingReset = false;
     }
     objects.push(object);
@@ -35,11 +34,10 @@ export function htmlToTextObjects(html, options = {}) {
     ) {
       push({ value: "\n", styles: current() });
     }
-    markerPending = false;
   };
   var pushItem = (item) => {
     push({ value: item.value, indent: item.indent, styles: current() });
-    markerPending = true;
+    item.markerPending = false;
   };
   // HTML5 allows omitting </li>, so an item also ends when its sibling or its
   // list does. Without this, later content would inherit a stale marker.
@@ -50,7 +48,7 @@ export function htmlToTextObjects(html, options = {}) {
     if (!pendingBoundary) return;
     lineBreak();
     var item = items[items.length - 1];
-    if (item) pushItem(item);
+    if (item?.markerPending) pushItem(item);
     pendingBoundary = false;
   };
   while ((match = tags.exec(String(html)))) {
@@ -60,20 +58,29 @@ export function htmlToTextObjects(html, options = {}) {
       if (
         !token.trim() &&
         (pendingBoundary ||
-          markerPending ||
+          currentItem?.markerPending ||
           (lists.length && currentItem?.depth !== lists.length))
       )
         continue;
+      var startsLine =
+        pendingBoundary ||
+        currentItem?.markerPending ||
+        objects[objects.length - 1]?.value === "\n";
       continuePendingItem();
       var value = token
         .replace(/&nbsp;/gi, " ")
         .replace(/&amp;/gi, "&")
         .replace(/&lt;/gi, "<")
         .replace(/&gt;/gi, ">")
-        .replace(/&quot;/gi, '"');
+        .replace(/&quot;/gi, '"')
+        .replace(/\s+/g, " ");
+      if (startsLine) value = value.trimStart();
+      else if (/\s$/.test(objects[objects.length - 1]?.value || ""))
+        value = value.trimStart();
       if (value) {
+        currentItem = items[items.length - 1];
+        if (currentItem?.markerPending) pushItem(currentItem);
         push({ value, styles: current() });
-        markerPending = false;
       }
       continue;
     }
@@ -91,18 +98,29 @@ export function htmlToTextObjects(html, options = {}) {
         items.pop();
         pendingBoundary = false;
       }
+      if (["p", "div"].includes(name)) {
+        pendingBoundary = true;
+        var blockItem = items[items.length - 1];
+        if (blockItem) blockItem.markerPending = true;
+      }
       if (["ul", "ol"].includes(name)) {
         lists.pop();
         closeItems(lists.length + 1);
         pendingBoundary = true;
+        var parentItem = items[items.length - 1];
+        if (parentItem) parentItem.markerPending = true;
         if (!lists.length) pendingReset = true;
       }
       continue;
     }
     // Native propagates the marker into block children, so an opening block
     // right after one stays on the marker's line instead of orphaning it.
-    if (["p", "div"].includes(name) && !markerPending) {
-      lineBreak(true);
+    if (["p", "div"].includes(name)) {
+      var item = items[items.length - 1];
+      if (!item?.markerPending) {
+        lineBreak();
+        if (item) item.markerPending = true;
+      }
     }
     if (name === "li") {
       var openItem = frames.length - 1;
@@ -145,9 +163,9 @@ export function htmlToTextObjects(html, options = {}) {
         value: list.name === "ol" ? `${list.index}. ` : "* ",
         indent: 4 * lists.length + 2,
         depth: lists.length,
+        markerPending: true,
       };
       items.push(item);
-      pushItem(item);
     }
   }
   return objects;

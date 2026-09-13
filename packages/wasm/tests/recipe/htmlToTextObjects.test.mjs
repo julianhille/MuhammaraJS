@@ -132,16 +132,28 @@ describe("HTML to TextObjects", function () {
       values("<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>"),
       "* one\n* two",
     );
+    assert.equal(values("<ul><li>\n  one</li></ul>"), "* one");
+    assert.equal(values("<ul><li>one</li></ul>\ntext"), "* one\ntext");
+    assert.equal(values("a <b> b</b>"), "a b");
     assert.equal(
       values("<ul><li>x<ul><li>y</ul><li>z</ul>end"),
       "* x\n* y\n* z\nend",
     );
+    assert.equal(values("<ul><li><ol><li>x</li></ol></li></ul>"), "1. x");
 
     // Native propagates the marker into block children, so an opening block
     // right after a marker must not break the line.
     assert.equal(values("<ul><li><p>para one</p></li></ul>"), "* para one");
     assert.equal(values("<ul><li> <p>para one</p></li></ul>"), "* para one");
-    assert.equal(values("<ul><li><p>a</p><p>b</p></li></ul>"), "* a\nb");
+    assert.equal(values("<ul><li><p>a</p><p>b</p></li></ul>"), "* a\n* b");
+    assert.equal(values("<ul><li>a<p>b</p>c</li></ul>"), "* a\n* b\n* c");
+
+    var linked = recipe.htmlToTextObjects(
+      '<ul><li><a href="https://example.test"><b>linked</b></a></li></ul>',
+    );
+    assert.equal(linked[0].value, "* ");
+    assert.equal(linked[0].styles.bold, true);
+    assert.equal(linked[0].styles.link, "https://example.test");
 
     // Content after the list is no longer indented by it.
     assert.deepEqual(
@@ -150,6 +162,10 @@ describe("HTML to TextObjects", function () {
         .filter((object) => object.indent !== undefined)
         .map((object) => object.indent),
       [6, 0],
+    );
+    assert.equal(
+      recipe.htmlToTextObjects("<ul></ul><ul><li>x</li></ul>")[0].indent,
+      6,
     );
   });
 
@@ -204,5 +220,95 @@ describe("HTML to TextObjects", function () {
       reader.end();
       muhammara.disposeAssets();
     }
+  });
+
+  it("preserves HTML word spacing through wrapping and justification", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var extract = (recipe) => {
+      var reader = muhammara.createReader(recipe.endPage().endPDF());
+      try {
+        return reader.extractPageText(0);
+      } finally {
+        reader.end();
+      }
+    };
+
+    var clipped;
+    var clippedRecipe = new Recipe({ compress: false }).createPage(300, 200);
+    var narrowWidth = clippedRecipe.textDimensions("aaaa", {
+      font: "arial",
+      size: 12,
+    }).width;
+    clippedRecipe.text("<b>WWWW</b> WWWW", 20, 20, {
+      font: "arial",
+      size: 12,
+      html: true,
+      textBox: {
+        width: narrowWidth,
+        height: 24,
+        lineHeight: 12,
+        clipIfExceedsBox: true,
+        onClip: (_recipe, result) => {
+          clipped = result;
+        },
+      },
+    });
+    assert.deepEqual(
+      extract(clippedRecipe).map((item) => item.content),
+      ["WWWW", "WWWW"],
+    );
+    assert.equal(clipped, undefined);
+
+    var spacedRecipe = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .text("alpha bravo", 20, 20, {
+        font: "arial",
+        size: 12,
+        charSpace: 5,
+        html: true,
+      });
+    assert.deepEqual(
+      extract(spacedRecipe).map((item) => item.content),
+      ["alpha bravo"],
+    );
+
+    var justifiedRecipe = new Recipe({ compress: false }).createPage(300, 200);
+    var helWidth = justifiedRecipe.textDimensions("hel", {
+      font: "arial",
+      size: 12,
+      bold: true,
+    }).width;
+    justifiedRecipe.text("<b>hel</b>lo xx yy", 20, 20, {
+      font: "arial",
+      size: 12,
+      html: true,
+      textBox: { width: 45, textAlign: "justify top" },
+    });
+    var justified = extract(justifiedRecipe);
+    assert.equal(justified[0].content, "hel");
+    assert.equal(justified[1].content, "lo ");
+    assert.ok(
+      Math.abs(justified[1].textMatrix[4] - (20 + helWidth)) < 0.001,
+      "inline styling must not create a justified gap inside a word",
+    );
+
+    var linkedBytes = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .text(
+        '<ul><li><a href="https://example.test"><b>linked</b></a></li></ul>',
+        20,
+        20,
+        { font: "arial", size: 12, html: true },
+      )
+      .endPage()
+      .endPDF();
+    assert.match(
+      new TextDecoder().decode(linkedBytes),
+      /\/Rect \[\s*20 [^\]]+\]/,
+      "the linked marker and item text must share one clickable rectangle",
+    );
+
+    muhammara.disposeAssets();
   });
 });

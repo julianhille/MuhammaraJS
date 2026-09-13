@@ -158,31 +158,49 @@ try {
     if (tabIds.join(",") !== expectedTabIds.join(",")) {
       throw new Error(`Unexpected example tabs: ${tabIds.join(", ")}`);
     }
-    var table = document.querySelector('[data-example="table"]');
-    for (var attempt = 0; attempt < 50; ++attempt) {
-      table.click();
-      if (table.getAttribute("aria-selected") === "true") break;
-      await delay(50);
-    }
-    if (table.getAttribute("aria-selected") !== "true")
-      throw new Error("Tables tab did not activate");
-    document.querySelector('input[name="mode"][value="page"]').click();
-    document.querySelector("#example-form").requestSubmit();
-    for (var run = 0; run < 200; ++run) {
-      var status = document.querySelector("#status").textContent;
-      if (status.startsWith("Complete.")) break;
-      if (/Error|failed/i.test(status)) throw new Error(status);
-      await delay(50);
-    }
     var preview = document.querySelector("#preview");
     var download = document.querySelector("#download");
-    if (!document.querySelector("#status").textContent.startsWith("Complete."))
-      throw new Error("Zero-setup table example timed out");
-    if (!preview.src.startsWith("blob:"))
-      throw new Error("PDF preview did not receive a blob URL");
-    if (download.hidden || !download.href.startsWith("blob:"))
-      throw new Error("PDF download was not shown");
-    return { tabs: tabs.length, selected: "table", preview: true };
+    var runExample = async (id, mode) => {
+      var tab = document.querySelector(`[data-example="${id}"]`);
+      for (var attempt = 0; attempt < 50; ++attempt) {
+        tab.click();
+        if (tab.getAttribute("aria-selected") === "true") break;
+        await delay(50);
+      }
+      if (tab.getAttribute("aria-selected") !== "true")
+        throw new Error(`${id} tab did not activate`);
+      document.querySelector(`input[name="mode"][value="${mode}"]`).click();
+      var previousPreview = preview.src;
+      document.querySelector("#example-form").requestSubmit();
+      for (var run = 0; run < 200; ++run) {
+        var status = document.querySelector("#status").textContent;
+        if (
+          status.startsWith("Complete.") &&
+          preview.src.startsWith("blob:") &&
+          preview.src !== previousPreview
+        )
+          break;
+        if (/Error|failed/i.test(status)) throw new Error(status);
+        await delay(50);
+      }
+      if (
+        !document.querySelector("#status").textContent.startsWith("Complete.")
+      )
+        throw new Error(`${id} ${mode} example timed out`);
+      if (!preview.src.startsWith("blob:") || preview.src === previousPreview)
+        throw new Error(`${id} ${mode} preview did not receive a new blob URL`);
+      if (download.hidden || !download.href.startsWith("blob:"))
+        throw new Error(`${id} ${mode} PDF download was not shown`);
+    };
+    await runExample("html-lists", "worker");
+    await runExample("html-lists", "page");
+    await runExample("table", "page");
+    return {
+      tabs: tabs.length,
+      selected: "table",
+      htmlLists: ["worker", "page"],
+      preview: true,
+    };
   });
   console.log(JSON.stringify(result));
 } catch (error) {

@@ -78,4 +78,33 @@ describe("HTML to TextObjects", () => {
     assert.equal(objects[0].childs[0].tag, "li");
     assert.equal(objects[0].childs[0].childs[0].tag, "p");
   });
+
+  it("renders nested-only and pretty-printed list items without empty markers", () => {
+    const recipe = new muhammara.Recipe(Buffer.from("new"));
+    recipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    const bytes = recipe
+      .createPage(300, 300)
+      .text(
+        "<ul><li><ol><li>x</li></ol></li></ul>" + "<ul><li>\n  one</li></ul>",
+        20,
+        20,
+        { font: "arial", size: 12, html: true, textBox: { width: 200 } },
+      )
+      .endPage()
+      .endPDF((output) => output);
+    const reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(bytes),
+    );
+    try {
+      assert.deepEqual(
+        reader.extractPageText(0).map((item) => item.content.trim()),
+        ["1. x", "* one"],
+      );
+    } finally {
+      reader.end();
+    }
+  });
 });

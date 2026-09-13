@@ -8,10 +8,10 @@ it, copies/appends/merges/embeds pages, builds and edits a Recipe composition,
 parses both final outputs, and exposes preview and download controls.
 
 The tabs keep that complete laboratory intact and add focused, runnable how-to
-examples for annotations, URL links, page boxes, rotated-page coordinates,
-grayscale form XObjects, image transformations, and tables. Each focused example
-generates and parses its own previewable PDF; only image transformations require
-an upload. The
+examples for annotations, URL links, HTML lists, page boxes, rotated-page
+coordinates, grayscale form XObjects, image transformations, and tables. Each
+focused example generates and parses its own previewable PDF; only image
+transformations require an upload. The
 Tables tab and complete Recipe workflow use bundled Roboto Regular when no
 custom font is uploaded. With an upload, they skip importing Roboto: Tables passes
 the uploaded bytes as `createRecipe({ defaultFont: assets.font })`, while the
@@ -58,6 +58,7 @@ The matching guides explain the focused examples:
 
 - [annotations](https://muhammarajs-wasm.readthedocs.io/how-to/add-review-annotations/)
 - [links](https://muhammarajs-wasm.readthedocs.io/how-to/add-url-links/)
+- [HTML lists](https://muhammarajs-wasm.readthedocs.io/how-to/render-html-lists/)
 - [page boxes](https://muhammarajs-wasm.readthedocs.io/how-to/set-page-boxes/)
 - [rotated pages](https://muhammarajs-wasm.readthedocs.io/how-to/add-content-to-rotated-pages/)
 - [image transformations](https://muhammarajs-wasm.readthedocs.io/how-to/place-and-transform-images/)
