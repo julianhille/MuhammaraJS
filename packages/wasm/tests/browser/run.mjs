@@ -3,6 +3,7 @@ import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
+import { createMuhammaraWasm } from "../../index.js";
 import { validateFontLoading } from "./font-loading.mjs";
 
 var root = path.resolve(
@@ -103,11 +104,16 @@ var server;
 var browser;
 try {
   server = await startServer();
-  if (!process.env.CHROME_BIN) {
-    throw new Error("CHROME_BIN is required for browser validation");
+  var browserName = process.env.FIREFOX_BIN ? "firefox" : "chrome";
+  var executablePath = process.env.FIREFOX_BIN || process.env.CHROME_BIN;
+  if (!executablePath) {
+    throw new Error(
+      "CHROME_BIN or FIREFOX_BIN is required for browser validation",
+    );
   }
   browser = await puppeteer.launch({
-    executablePath: process.env.CHROME_BIN,
+    browser: browserName,
+    executablePath,
     headless: true,
   });
   var fontLoading = await validateFontLoading(
@@ -141,6 +147,7 @@ try {
       "complete",
       "annotations",
       "links",
+      "html-lists",
       "page-boxes",
       "form-gray",
       "rotated-page",
@@ -152,32 +159,87 @@ try {
     if (tabIds.join(",") !== expectedTabIds.join(",")) {
       throw new Error(`Unexpected example tabs: ${tabIds.join(", ")}`);
     }
-    var table = document.querySelector('[data-example="table"]');
-    for (var attempt = 0; attempt < 50; ++attempt) {
-      table.click();
-      if (table.getAttribute("aria-selected") === "true") break;
-      await delay(50);
-    }
-    if (table.getAttribute("aria-selected") !== "true")
-      throw new Error("Tables tab did not activate");
-    document.querySelector('input[name="mode"][value="page"]').click();
-    document.querySelector("#example-form").requestSubmit();
-    for (var run = 0; run < 200; ++run) {
-      var status = document.querySelector("#status").textContent;
-      if (status.startsWith("Complete.")) break;
-      if (/Error|failed/i.test(status)) throw new Error(status);
-      await delay(50);
-    }
     var preview = document.querySelector("#preview");
     var download = document.querySelector("#download");
-    if (!document.querySelector("#status").textContent.startsWith("Complete."))
-      throw new Error("Zero-setup table example timed out");
-    if (!preview.src.startsWith("blob:"))
-      throw new Error("PDF preview did not receive a blob URL");
-    if (download.hidden || !download.href.startsWith("blob:"))
-      throw new Error("PDF download was not shown");
-    return { tabs: tabs.length, selected: "table", preview: true };
+    var runExample = async (id, mode) => {
+      var tab = document.querySelector(`[data-example="${id}"]`);
+      for (var attempt = 0; attempt < 50; ++attempt) {
+        tab.click();
+        if (tab.getAttribute("aria-selected") === "true") break;
+        await delay(50);
+      }
+      if (tab.getAttribute("aria-selected") !== "true")
+        throw new Error(`${id} tab did not activate`);
+      document.querySelector(`input[name="mode"][value="${mode}"]`).click();
+      var previousPreview = preview.src;
+      document.querySelector("#example-form").requestSubmit();
+      for (var run = 0; run < 200; ++run) {
+        var status = document.querySelector("#status").textContent;
+        if (
+          status.startsWith("Complete.") &&
+          preview.src.startsWith("blob:") &&
+          preview.src !== previousPreview
+        )
+          break;
+        if (/Error|failed/i.test(status)) throw new Error(status);
+        await delay(50);
+      }
+      if (
+        !document.querySelector("#status").textContent.startsWith("Complete.")
+      )
+        throw new Error(`${id} ${mode} example timed out`);
+      if (!preview.src.startsWith("blob:") || preview.src === previousPreview)
+        throw new Error(`${id} ${mode} preview did not receive a new blob URL`);
+      if (download.hidden || !download.href.startsWith("blob:"))
+        throw new Error(`${id} ${mode} PDF download was not shown`);
+      return Array.from(
+        new Uint8Array(await (await fetch(preview.src)).arrayBuffer()),
+      );
+    };
+    var workerListBytes = await runExample("html-lists", "worker");
+    var pageListBytes = await runExample("html-lists", "page");
+    await runExample("table", "page");
+    return {
+      tabs: tabs.length,
+      selected: "table",
+      htmlLists: ["worker", "page"],
+      htmlListBytes: { worker: workerListBytes, page: pageListBytes },
+      preview: true,
+    };
   });
+  var htmlListBytes = result.ui.htmlListBytes;
+  delete result.ui.htmlListBytes;
+  var muhammara = await createMuhammaraWasm();
+  try {
+    for (var [mode, values] of Object.entries(htmlListBytes)) {
+      var bytes = new Uint8Array(values);
+      var reader = muhammara.createReader(bytes);
+      try {
+        var text = reader
+          .extractPageText(0)
+          .map((item) => item.content)
+          .join("");
+        if (
+          !text.includes("* DOM-free parsing") ||
+          !text.includes("1. Scoped numbering") ||
+          !text.includes("2. Nested indentation")
+        ) {
+          throw new Error(`${mode} HTML list output is missing list text`);
+        }
+        if (
+          !new TextDecoder()
+            .decode(bytes)
+            .includes("/URI (https://github.com/julianhille/MuhammaraJS)")
+        ) {
+          throw new Error(`${mode} HTML list output is missing its link`);
+        }
+      } finally {
+        reader.end();
+      }
+    }
+  } finally {
+    muhammara.disposeAssets();
+  }
   console.log(JSON.stringify(result));
 } catch (error) {
   console.error(`wasm browser validation failed: ${error.message}`);

@@ -831,6 +831,12 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
 
   let firstLineHeight;
   let toWriteTextObjects = [];
+  const hasRenderableContent = (textObject) =>
+    (textObject.value !== undefined &&
+      textObject.value !== null &&
+      textObject.value !== "" &&
+      textObject.value !== "[@@DONOT_RENDER_THIS@@]") ||
+    textObject.childs?.some(hasRenderableContent);
 
   const writeValue = (textObject) => {
     textObject.lineID = textObject.lineID || Date.now() * Math.random();
@@ -865,8 +871,12 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       textObject.layer++;
 
       textObject.currentIndex = 0;
+      let prependValue = textObject.prependValue;
 
       textObject.childs.forEach((child) => {
+        const startsBlock =
+          child.needsLineBreaker && hasRenderableContent(child);
+        if (startsBlock) prependValue = textObject.prependValue;
         if (textObject.tag == "ul") {
           child.prependValue = "* ";
           child.layer = textObject.layer + 1;
@@ -885,11 +895,14 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
             child.layer = textObject.layer - 1;
           }
         }
-        if (textObject.prependValue) {
-          child.prependValue = !["ol", "ul"].includes(textObject.tag)
-            ? textObject.prependValue
-            : child.prependValue;
-          textObject.indent = 2 * textObject.layer;
+        if (
+          prependValue &&
+          !["ol", "ul"].includes(child.tag) &&
+          hasRenderableContent(child)
+        ) {
+          child.prependValue = prependValue;
+          prependValue = null;
+          textObject.indent = textObject.indent || 2 * textObject.layer;
         }
         if (textObject.indent) {
           child.indent = child.indent || textObject.indent;
@@ -914,6 +927,9 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
 
         child.lineID = textObject.lineID;
         writeValue(child);
+        if (["ol", "ul"].includes(child.tag) || startsBlock) {
+          prependValue = textObject.prependValue;
+        }
       });
     }
   };

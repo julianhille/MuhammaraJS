@@ -301,4 +301,39 @@ describe("Recipe text layout and tables", function () {
     assert.ok(headers[0].textMatrix[5] - headers[1].textMatrix[5] > 80);
     reader.end();
   });
+
+  it("measures wrapped HTML table cells without overlapping the next row", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe({ compress: false }).createPage(240, 240);
+    recipe
+      .table(
+        10,
+        10,
+        [
+          { value: "<b>alpha bravo</b> charlie delta" },
+          { value: "second row" },
+        ],
+        {
+          font: "arial",
+          size: 12,
+          html: true,
+          columns: [{ name: "value", width: 60 }],
+        },
+      )
+      .endPage();
+    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var output = reader.extractPageText(0);
+    var firstRowY = new Set(
+      output
+        .filter((entry) => /(alpha|bravo|charlie|delta)/.test(entry.content))
+        .map((entry) => entry.textMatrix[5]),
+    );
+    var secondRow = output.find((entry) => /second/.test(entry.content));
+    assert.ok(
+      firstRowY.size > 1,
+      "the HTML cell must wrap onto multiple lines",
+    );
+    assert.ok(Math.min(...firstRowY) > secondRow.textMatrix[5]);
+    reader.end();
+  });
 });

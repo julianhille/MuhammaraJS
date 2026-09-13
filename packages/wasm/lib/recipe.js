@@ -195,7 +195,10 @@ export function createRecipeFactory({
 
     /**
      * Converts supported DOM-free HTML into styled Recipe text fragments.
-     * This helper does not draw content or alter Recipe state.
+     * Ordered and unordered list fragments include their visual prefix and
+     * native-style indentation. Unlike native's nested XML-derived layout tree,
+     * Wasm returns flat visual fragments. This helper does not draw content or
+     * alter Recipe state.
      *
      * @name htmlToTextObjects
      * @function
@@ -476,6 +479,7 @@ export function createRecipeFactory({
         this._pageContext
           .BT()
           .Tf(editFont, editSize)
+          .Tc(options.charSpace || 0)
           .Tm(1, 0, 0, 1, point.nx, point.ny)
           .Tj(String(value))
           .ET();
@@ -529,6 +533,7 @@ export function createRecipeFactory({
             fontPointer,
             fontSize,
             colorValue(options.color),
+            options.charSpace || 0,
           );
         }),
       );

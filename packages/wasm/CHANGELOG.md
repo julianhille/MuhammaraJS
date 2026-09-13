@@ -9,6 +9,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Support chainable Recipe `pauseContext()` and `resumeContext()` transitions
   on newly created pages while retaining errors for unmatched calls
   [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
+- Add native-style visual rendering for unordered, ordered, nested, formatted,
+  and linked HTML lists in Wasm Recipe
+  [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Add Recipe URL links for arbitrary areas, rendered text, images, and drawing
   bounds [#614](https://github.com/julianhille/MuhammaraJS/issues/614)
 - Add generated behavioral API reference documentation from JSDoc on every
@@ -58,6 +61,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Preserve HTML whitespace, non-breaking spaces, inline layout, and transforms;
+  match native list wrapping, recover malformed list closures, measure HTML
+  table cells, apply character spacing across formatted runs, and constrain
+  linked text to clipped text boxes
+  [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Align Recipe text, measurement, and layout defaults on 14 points to match
   native, correcting the 12-point default in the alpha and beta releases
   [#605](https://github.com/julianhille/MuhammaraJS/issues/605)

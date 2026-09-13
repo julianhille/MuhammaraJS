@@ -36,6 +36,7 @@ describe("Browser how-to examples", function () {
       [
         "annotations",
         "links",
+        "html-lists",
         "page-boxes",
         "form-gray",
         "rotated-page",
@@ -79,6 +80,28 @@ describe("Browser how-to examples", function () {
           .some((item) => item.content === "Browser-generated project table"),
       );
       assert.match(new TextDecoder().decode(result.bytes), /Roboto-Regular/);
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
+  });
+
+  it("renders list markers, nesting, and links in the HTML list example", async function () {
+    var result = await runHowToExample("html-lists");
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(result.bytes);
+    try {
+      var text = reader
+        .extractPageText(0)
+        .map((item) => item.content)
+        .join("");
+      assert.ok(text.includes("* DOM-free parsing"));
+      assert.ok(text.includes("1. Scoped numbering"));
+      assert.ok(text.includes("2. Nested indentation"));
+      assert.match(
+        new TextDecoder().decode(result.bytes),
+        /\/URI \(https:\/\/github\.com\/julianhille\/MuhammaraJS\)/,
+      );
     } finally {
       reader.end();
       muhammara.disposeAssets();

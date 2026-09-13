@@ -19,6 +19,14 @@ export var HOW_TO_EXAMPLES = [
     assets: [],
   },
   {
+    id: "html-lists",
+    label: "HTML lists",
+    title: "Render nested HTML lists",
+    description:
+      "Render unordered, ordered, nested, formatted, and linked list items without a DOM.",
+    assets: [],
+  },
+  {
     id: "page-boxes",
     label: "Page boxes",
     title: "Set and visualize page boxes",
@@ -209,6 +217,37 @@ async function linksExample() {
         howTo: "Add URL links",
         links: 3,
         coordinateSystem: "Recipe top-left coordinates",
+      }),
+    };
+  } finally {
+    recipe.dispose();
+    Recipe.disposeAssets();
+  }
+}
+
+async function htmlListsExample() {
+  var Recipe = await createRecipe();
+  var recipe = new Recipe({ compress: false });
+  try {
+    recipe
+      .createPage(420, 320)
+      .text("Worker-safe HTML lists", 36, 36, { size: 22, color: "#102a43" })
+      .text(
+        "<ul><li>DOM-free parsing</li><li><b>Inline emphasis</b></li>" +
+          '<li><a href="https://github.com/julianhille/MuhammaraJS">Linked item</a>' +
+          "<ol><li>Scoped numbering</li><li>Nested indentation</li></ol></li></ul>",
+        36,
+        82,
+        { html: true, size: 14, textBox: { width: 330 } },
+      )
+      .endPage();
+    var bytes = recipe.endPDF();
+    return {
+      bytes,
+      filename: "muhammara-html-lists.pdf",
+      summary: await summarize(bytes, {
+        howTo: "Render nested HTML lists",
+        listTypes: ["unordered", "ordered", "nested"],
       }),
     };
   } finally {
@@ -572,6 +611,7 @@ async function replaceTextExample(assets) {
 var runners = {
   annotations: annotationsExample,
   links: linksExample,
+  "html-lists": htmlListsExample,
   "page-boxes": pageBoxesExample,
   "form-gray": formGrayExample,
   "rotated-page": rotatedPageExample,
