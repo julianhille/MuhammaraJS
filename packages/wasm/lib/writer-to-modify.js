@@ -2122,6 +2122,7 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to require catalog update");
         }
       },
+      /** Attaches a newly written PageLabels object to the catalog. @private */
       _setPageLabelsObject: function (objectId) {
         requireOpen();
         if (

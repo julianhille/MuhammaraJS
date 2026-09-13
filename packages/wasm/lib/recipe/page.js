@@ -1,6 +1,7 @@
 import { mediumSizes } from "./parameters.js";
 import { pageRecord } from "./page-record.js";
 
+/** Builds the retained page tree while marking deleted leaf pages. @private */
 function readPageTree(
   parser,
   objectID,
@@ -83,6 +84,7 @@ function readPageTree(
   };
 }
 
+/** Writes changed page-tree nodes back to the modified PDF. @private */
 function writePageTree(writer, copyingContext, node) {
   node.children
     .filter((child) => child.children && child.changed)
@@ -125,12 +127,14 @@ function walkPageTree(tree, visit) {
   }
 }
 
+/** Adds retained Pages-node object IDs to a set. @private */
 function collectPageTreeObjectIDs(tree, objectIDs) {
   walkPageTree(tree, (node) => {
     if (node.children) objectIDs.add(node.objectID);
   });
 }
 
+/** Rejects page-tree objects that cannot be rewritten safely. @private */
 function assertSupportedModifiedGenerations(tree, pageLabels, root, writer) {
   walkPageTree(tree, (node) => {
     if (!node.children) return;
@@ -160,6 +164,7 @@ function assertSupportedModifiedGenerations(tree, pageLabels, root, writer) {
   }
 }
 
+/** Rejects retained structures that reference a deleted page. @private */
 function assertNoDeletedPageReferences(
   parser,
   value,
@@ -239,6 +244,7 @@ function assertNoDeletedPageReferences(
   }
 }
 
+/** Checks retained document structures for deleted-page references. @private */
 function validateDeletedPageReferences(
   parser,
   catalog,
@@ -298,6 +304,7 @@ function validateDeletedPageReferences(
   });
 }
 
+/** Collects page-label number-tree entries. @private */
 function collectPageLabels(
   parser,
   dictionary,
@@ -344,6 +351,7 @@ function collectPageLabels(
   return values;
 }
 
+/** Resolves an indirect chain used by a page-label number tree. @private */
 function resolvePageLabelObject(parser, value) {
   var visited = new Set();
   var resolved = value;
@@ -358,6 +366,7 @@ function resolvePageLabelObject(parser, value) {
   return resolved;
 }
 
+/** Reads a page-label dictionary into a serializable value. @private */
 function readPageLabel(parser, value) {
   var dictionary = value?.toPDFDictionary();
   if (!dictionary) {
@@ -382,6 +391,7 @@ function readPageLabel(parser, value) {
   };
 }
 
+/** Writes indirect objects for normalized page-label values. @private */
 function writePageLabelObjects(objectsContext, entries) {
   return entries.map((entry) => {
     var objectID = objectsContext.startNewIndirectObject();
@@ -405,6 +415,7 @@ function writePageLabelObjects(objectsContext, entries) {
   });
 }
 
+/** Writes the number-tree dictionary for page labels. @private */
 function writePageLabelsDictionary(
   objectsContext,
   copyingContext,
@@ -426,6 +437,7 @@ function writePageLabelsDictionary(
   objectsContext.endArray();
 }
 
+/** Reindexes page labels after removing source pages. @private */
 function preparePageLabels(
   parser,
   catalogDictionary,
@@ -501,6 +513,7 @@ function preparePageLabels(
   };
 }
 
+/** Writes updated page labels and attaches them to the catalog. @private */
 function writePageLabels(writer, copyingContext, rootID, pageLabels) {
   if (!pageLabels) return;
 
