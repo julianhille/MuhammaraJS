@@ -276,18 +276,82 @@ class Recipe {
       if (!this.isBufferSrc) return callback();
       return callback(this.output || this.outStream.toBuffer());
     }
-    if (this.contextState !== "idle") {
-      throw new Error("Finish the current page before endPDF");
-    }
+    var deletingPages = Boolean(this.deletedPages?.size);
     try {
       this._deletePages();
+      this._writeInfo();
+      this.writer.end();
+      // This is a temporary work around for copying context will overwrite the current one
+      // write annotations at the end.
+      if (
+        (this.annotations && this.annotations.length > 0) ||
+        (this.annotationsToWrite && this.annotationsToWrite.length > 0)
+      ) {
+        if (this.isBufferSrc) {
+          const oldStream = this.outStream;
+          this.outStream = new streams.WritableStream();
+
+          this.writer = muhammara.createWriterToModify(
+            new muhammara.PDFRStreamForBuffer(oldStream.toBuffer()),
+            new muhammara.PDFStreamForResponse(this.outStream),
+            Object.assign({}, this.encryptOptions, {
+              log: this.logFile,
+            }),
+          );
+        } else {
+          this.writer = muhammara.createWriterToModify(
+            this.output,
+            Object.assign({}, this.encryptOptions, {
+              modifiedFilePath: this.output,
+              log: this.logFile,
+            }),
+          );
+        }
+
+        this._writeAnnotations();
+        this._writeInfo();
+        this.writer.end();
+      }
+
+      // Every step above may still read the source; _insertPages() and _encrypt()
+      // below rename the output, which is the source itself when no separate
+      // output was given, and Windows refuses that while the reader holds it.
+      this._releaseReader();
+
+      if (this.needToInsertPages) {
+        if (this.isBufferSrc) {
+          // eslint-disable-next-line no-console
+          console.log(
+            "Feature: Inserting Pages is not supported in Buffer Mode yet.",
+          );
+        } else {
+          this._insertPages();
+        }
+      }
+      if (this.needToEncrypt) {
+        if (this.isBufferSrc) {
+          // eslint-disable-next-line no-console
+          console.log(
+            "Feature: Encryption is not supported in Buffer Mode yet.",
+          );
+        } else {
+          this._encrypt();
+        }
+      }
+
+      if (this.isBufferSrc && this.output) {
+        fs.writeFileSync(this.output, this.outStream.toBuffer());
+      }
+
+      this.ended = true;
     } catch (error) {
+      if (!deletingPages) throw error;
       this.endError = error;
       this.ended = true;
       try {
-        this.writer.end();
+        this.writer._abort();
       } catch (_) {
-        // Preserve the deletion error; writer.end() still resets native files.
+        // Preserve the deletion error if native cleanup also fails.
       }
       try {
         this._releaseReader();
@@ -296,69 +360,6 @@ class Recipe {
       }
       throw error;
     }
-    this._writeInfo();
-    this.writer.end();
-    // This is a temporary work around for copying context will overwrite the current one
-    // write annotations at the end.
-    if (
-      (this.annotations && this.annotations.length > 0) ||
-      (this.annotationsToWrite && this.annotationsToWrite.length > 0)
-    ) {
-      if (this.isBufferSrc) {
-        const oldStream = this.outStream;
-        this.outStream = new streams.WritableStream();
-
-        this.writer = muhammara.createWriterToModify(
-          new muhammara.PDFRStreamForBuffer(oldStream.toBuffer()),
-          new muhammara.PDFStreamForResponse(this.outStream),
-          Object.assign({}, this.encryptOptions, {
-            log: this.logFile,
-          }),
-        );
-      } else {
-        this.writer = muhammara.createWriterToModify(
-          this.output,
-          Object.assign({}, this.encryptOptions, {
-            modifiedFilePath: this.output,
-            log: this.logFile,
-          }),
-        );
-      }
-
-      this._writeAnnotations();
-      this._writeInfo();
-      this.writer.end();
-    }
-
-    // Every step above may still read the source; _insertPages() and _encrypt()
-    // below rename the output, which is the source itself when no separate
-    // output was given, and Windows refuses that while the reader holds it.
-    this._releaseReader();
-
-    if (this.needToInsertPages) {
-      if (this.isBufferSrc) {
-        // eslint-disable-next-line no-console
-        console.log(
-          "Feature: Inserting Pages is not supported in Buffer Mode yet.",
-        );
-      } else {
-        this._insertPages();
-      }
-    }
-    if (this.needToEncrypt) {
-      if (this.isBufferSrc) {
-        // eslint-disable-next-line no-console
-        console.log("Feature: Encryption is not supported in Buffer Mode yet.");
-      } else {
-        this._encrypt();
-      }
-    }
-
-    if (this.isBufferSrc && this.output) {
-      fs.writeFileSync(this.output, this.outStream.toBuffer());
-    }
-
-    this.ended = true;
 
     if (callback) {
       if (this.isBufferSrc) {

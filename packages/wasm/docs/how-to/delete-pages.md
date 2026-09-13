@@ -18,6 +18,16 @@ creation, appending, or insertion in the same Recipe. Retained page content,
 annotations, and page-tree metadata remain attached to their pages, and the
 result is renumbered contiguously.
 
+Deletion fails rather than leaving a dangling reference when a retained page or
+catalog-owned structure, such as an outline or open action, refers to a selected
+page. Remove or retarget that reference before calling `deletePage()`.
+
+Deletion also rejects page trees and page-label dictionaries that would require
+rewriting an indirect object with a nonzero generation number. This preserves a
+valid incremental update without changing the vendored PDFWriter implementation.
+Deletion also rejects page-tree or page-label objects with nonzero generation
+numbers because PDFWriter cannot safely rewrite those objects.
+
 Deletion is an incremental update, not secure erasure. Removed pages are no
 longer reachable through the page tree, but their old object bytes may remain in
 the returned data. Page-label number trees are renumbered whether `/PageLabels`

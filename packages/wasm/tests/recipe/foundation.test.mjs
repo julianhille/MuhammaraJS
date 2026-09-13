@@ -130,6 +130,13 @@ describe("Recipe foundation", function () {
       "original content is retained before both appended edit contexts",
     );
     reader.end();
+
+    var pausedRecipe = new Recipe(source);
+    assert.equal(
+      pausedRecipe.editPage(1).pauseContext().endPage(),
+      pausedRecipe,
+    );
+    assert.ok(pausedRecipe.endPDF() instanceof Uint8Array);
   });
 
   it("creates pages after reading byte source PDFs", async function () {

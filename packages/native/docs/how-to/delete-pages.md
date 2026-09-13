@@ -15,6 +15,16 @@ creation, appending, or insertion in the same Recipe. Retained page content,
 annotations, and page-tree metadata remain attached to their pages, and the
 result is renumbered contiguously.
 
+Deletion fails rather than leaving a dangling reference when a retained page or
+catalog-owned structure, such as an outline or open action, refers to a selected
+page. Remove or retarget that reference before calling `deletePage()`.
+
+Deletion also rejects page trees and page-label dictionaries that would require
+rewriting an indirect object with a nonzero generation number. This preserves a
+valid incremental update without changing the vendored PDFWriter implementation.
+Deletion also rejects page-tree or page-label objects with nonzero generation
+numbers because the bundled PDFWriter cannot safely rewrite those objects.
+
 Recipe writes deletion as an incremental PDF update. The removed pages are no
 longer reachable through the page tree, but their old object bytes may remain in
 the file. This operation is therefore not suitable for securely erasing

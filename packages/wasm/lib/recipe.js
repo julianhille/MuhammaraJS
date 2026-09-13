@@ -688,9 +688,13 @@ export function createRecipeFactory({
               throw new Error("Finish the current page before endPDF");
             }
             if (!recipe._endedBytes) {
+              var deletingPages = Boolean(recipe._deletedPages?.size);
               try {
                 recipe._deletePages();
+                recipe._writeCanonicalInfo();
+                recipe._endedBytes = recipe.writer.end();
               } catch (error) {
+                if (!deletingPages) throw error;
                 recipe._endError = error;
                 try {
                   recipe.writer.dispose();
@@ -699,8 +703,6 @@ export function createRecipeFactory({
                 }
                 throw error;
               }
-              recipe._writeCanonicalInfo();
-              recipe._endedBytes = recipe.writer.end();
             }
             return recipe._endedBytes;
           }

@@ -75,6 +75,160 @@ function writePageTree(writer, copyingContext, node) {
   objectsContext.endArray().endDictionary(dictionary).endIndirectObject();
 }
 
+function collectPageTreeObjectIDs(node, objectIDs) {
+  objectIDs.add(node.objectID);
+  node.children
+    .filter((child) => child.children)
+    .forEach((child) => collectPageTreeObjectIDs(child, objectIDs));
+}
+
+function assertSupportedModifiedGenerations(writer, tree, pageLabels, root) {
+  var pending = [tree];
+  while (pending.length) {
+    var node = pending.pop();
+    if (node.generation !== 0) {
+      throw new Error(
+        "deletePage does not support rewriting nonzero-generation objects",
+      );
+    }
+    pending.push(...node.children.filter((child) => child.children));
+  }
+  if (pageLabels?.reference && pageLabels.reference.getVersion() !== 0) {
+    throw new Error(
+      "deletePage does not support rewriting nonzero-generation objects",
+    );
+  }
+  if (pageLabels && !pageLabels.reference && !writer._setPageLabelsObject) {
+    if (root.getVersion() !== 0) {
+      throw new Error(
+        "deletePage does not support rewriting nonzero-generation objects",
+      );
+    }
+  }
+}
+
+function assertNoDeletedPageReferences(
+  parser,
+  value,
+  deletedPageIDs,
+  skippedObjectIDs,
+  visited = new Set(),
+  depth = 0,
+) {
+  if (!value) return;
+  if (depth > 1000) {
+    throw new Error("deletePage cannot validate deeply nested references");
+  }
+  var reference = value.toPDFIndirectObjectReference?.();
+  if (reference) {
+    var objectID = reference.getObjectID();
+    if (deletedPageIDs.has(objectID)) {
+      throw new Error(
+        "deletePage cannot remove a page referenced by retained document structures",
+      );
+    }
+    if (skippedObjectIDs.has(objectID) || visited.has(objectID)) return;
+    visited.add(objectID);
+    assertNoDeletedPageReferences(
+      parser,
+      parser.parseNewObject(objectID),
+      deletedPageIDs,
+      skippedObjectIDs,
+      visited,
+      depth + 1,
+    );
+    return;
+  }
+  var array =
+    value.toPDFArray?.() ||
+    (typeof value.toJSArray === "function" ? value : null);
+  if (array) {
+    array
+      .toJSArray()
+      .forEach((entry) =>
+        assertNoDeletedPageReferences(
+          parser,
+          entry,
+          deletedPageIDs,
+          skippedObjectIDs,
+          visited,
+          depth + 1,
+        ),
+      );
+    return;
+  }
+  var dictionary =
+    value.toPDFDictionary?.() ||
+    (typeof value.toJSObject === "function" ? value : null);
+  if (dictionary) {
+    Object.values(dictionary.toJSObject()).forEach((entry) =>
+      assertNoDeletedPageReferences(
+        parser,
+        entry,
+        deletedPageIDs,
+        skippedObjectIDs,
+        visited,
+        depth + 1,
+      ),
+    );
+    return;
+  }
+  var stream = value.toPDFStream?.();
+  if (stream) {
+    assertNoDeletedPageReferences(
+      parser,
+      stream.getDictionary(),
+      deletedPageIDs,
+      skippedObjectIDs,
+      visited,
+      depth + 1,
+    );
+  }
+}
+
+function validateDeletedPageReferences(
+  parser,
+  catalog,
+  rootID,
+  tree,
+  deletedPages,
+  deletedPageIDs,
+  sourcePageCount,
+) {
+  var skippedObjectIDs = new Set([rootID]);
+  collectPageTreeObjectIDs(tree, skippedObjectIDs);
+  for (var pageIndex = 0; pageIndex < sourcePageCount; pageIndex += 1) {
+    skippedObjectIDs.add(parser.getPageObjectID(pageIndex));
+  }
+  var visited = new Set();
+  Object.entries(catalog)
+    .filter(([key]) => key !== "Pages")
+    .forEach(([, value]) =>
+      assertNoDeletedPageReferences(
+        parser,
+        value,
+        deletedPageIDs,
+        skippedObjectIDs,
+        visited,
+      ),
+    );
+  for (var pageNumber = 1; pageNumber <= sourcePageCount; pageNumber += 1) {
+    if (deletedPages.has(pageNumber)) continue;
+    var page = parser.parsePageDictionary(pageNumber - 1).toJSObject();
+    Object.entries(page)
+      .filter(([key]) => key !== "Parent")
+      .forEach(([, value]) =>
+        assertNoDeletedPageReferences(
+          parser,
+          value,
+          deletedPageIDs,
+          skippedObjectIDs,
+          visited,
+        ),
+      );
+  }
+}
+
 function collectPageLabels(
   parser,
   dictionary,
@@ -212,12 +366,20 @@ function preparePageLabels(
     reference?.getObjectID(),
   );
   var mappedEntries = new Map();
+  var deletedIndices = Array.from(
+    deletedPages,
+    (pageNumber) => pageNumber - 1,
+  ).sort((left, right) => left - right);
+  var deletedBefore = 0;
   entries
     .sort((left, right) => left.index - right.index)
     .forEach((entry) => {
-      var deletedBefore = Array.from(deletedPages).filter(
-        (pageNumber) => pageNumber - 1 < entry.index,
-      ).length;
+      while (
+        deletedBefore < deletedIndices.length &&
+        deletedIndices[deletedBefore] < entry.index
+      ) {
+        deletedBefore += 1;
+      }
       var index = entry.index - deletedBefore;
       if (index < retainedPageCount) mappedEntries.set(index, entry.value);
     });
@@ -367,8 +529,8 @@ export function createPageMethods(
         this._flushAnnotations();
         if (this._contextState === "active-edit") {
           this._page.endContext();
+          this._page.writePage();
         }
-        this._page.writePage();
         this._pageContext = null;
         this._page = null;
         this._editingPage = false;
@@ -612,6 +774,7 @@ export function createPageMethods(
      * @memberof Recipe#
      * @param {number|number[]} pageNumbers - Page number or page numbers to delete.
      * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If a retained structure references a selected page or a required object has a nonzero generation.
      */
     deletePage: function (pageNumbers) {
       if (this._endedBytes || this._rebuiltBytes || this._endError) {
@@ -658,7 +821,8 @@ export function createPageMethods(
           ),
         );
         var trailer = parser.getTrailer().toJSObject();
-        var rootID = trailer.Root.toPDFIndirectObjectReference().getObjectID();
+        var rootReference = trailer.Root.toPDFIndirectObjectReference();
+        var rootID = rootReference.getObjectID();
         var catalogDictionary = parser.parseNewObject(rootID).toPDFDictionary();
         var catalog = catalogDictionary.toJSObject();
         var pagesReference = catalog.Pages.toPDFIndirectObjectReference();
@@ -673,6 +837,21 @@ export function createPageMethods(
           pagesReference.getObjectID(),
           deletedPageIDs,
           pagesReference.getVersion(),
+        );
+        assertSupportedModifiedGenerations(
+          this.writer,
+          tree,
+          pageLabels,
+          rootReference,
+        );
+        validateDeletedPageReferences(
+          parser,
+          catalog,
+          rootID,
+          tree,
+          this._deletedPages,
+          deletedPageIDs,
+          this._sourcePageCount,
         );
         writePageTree(this.writer, copyingContext, tree);
         writePageLabels(this.writer, copyingContext, rootID, pageLabels);

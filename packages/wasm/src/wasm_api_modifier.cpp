@@ -410,15 +410,6 @@ int muhammara_wasm_modifier_start_page(WasmModifier* modifier,
   return 1;
 }
 
-WASM_EXPORT int muhammara_wasm_modifier_resume_page(WasmModifier* modifier) {
-  if (modifier == nullptr || modifier->page == nullptr ||
-      modifier->context != nullptr || modifier->finished) {
-    return 0;
-  }
-  modifier->context = modifier->page->StartContentContext();
-  return modifier->context != nullptr;
-}
-
 WASM_EXPORT int muhammara_wasm_modifier_create_page(WasmModifier* modifier, double left,
                                         double bottom, double right, double top) {
   if (modifier == nullptr || modifier->page != nullptr || modifier->newPage != nullptr ||

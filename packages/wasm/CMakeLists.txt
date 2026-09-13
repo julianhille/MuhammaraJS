@@ -75,9 +75,6 @@ if(EMSCRIPTEN)
     "-sEXPORTED_FUNCTIONS+=['_muhammara_wasm_modifier_set_page_labels']"
   )
   target_link_options(muhammara-wasm PRIVATE
-    "-sEXPORTED_FUNCTIONS+=['_muhammara_wasm_modifier_resume_page']"
-  )
-  target_link_options(muhammara-wasm PRIVATE
     "-sEXPORTED_FUNCTIONS+=['_muhammara_wasm_recipe_get_objects_context','_muhammara_wasm_modifier_get_objects_context','_muhammara_wasm_objects_allocate_new_object_id','_muhammara_wasm_objects_start_indirect_object','_muhammara_wasm_objects_end_indirect_object','_muhammara_wasm_objects_start_modified_indirect_object','_muhammara_wasm_objects_delete_object','_muhammara_wasm_objects_start_dictionary','_muhammara_wasm_objects_end_dictionary','_muhammara_wasm_dictionary_write_key','_muhammara_wasm_dictionary_write_value','_muhammara_wasm_dictionary_write_bytes','_muhammara_wasm_dictionary_write_rectangle','_muhammara_wasm_objects_start_array','_muhammara_wasm_objects_end_array','_muhammara_wasm_objects_write_number','_muhammara_wasm_objects_write_string','_muhammara_wasm_objects_write_bytes','_muhammara_wasm_objects_write_boolean','_muhammara_wasm_objects_write_reference','_muhammara_wasm_objects_end_line','_muhammara_wasm_objects_set_compress_streams','_muhammara_wasm_objects_start_pdf_stream','_muhammara_wasm_pdf_stream_get_write_stream','_muhammara_wasm_byte_writer_write','_muhammara_wasm_objects_end_pdf_stream','_muhammara_wasm_objects_start_free_context','_muhammara_wasm_objects_end_free_context','_muhammara_wasm_objects_get_current_position']"
   )
   target_link_options(muhammara-wasm PRIVATE

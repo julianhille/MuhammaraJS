@@ -33,6 +33,7 @@ function pageWidths(source) {
 
 function nestedNonzeroGenerationPdf(options = {}) {
   const pageLabels = options.pageLabels || "indirect";
+  const pageTreeGeneration = options.nonzeroGeneration ? 1 : 0;
   const catalogPageLabels = {
     direct: "/PageLabels << /Nums [0 << /P (A-) >> 1 << /P (B-) >>] >>",
     indirect: "/PageLabels 4 0 R",
@@ -47,9 +48,23 @@ function nestedNonzeroGenerationPdf(options = {}) {
     offsets[id] = [Buffer.byteLength(pdf), generation];
     pdf += `${id} ${generation} obj\n${body}\nendobj\n`;
   };
-  object(1, 0, `<< /Type /Catalog /Pages 2 1 R ${catalogPageLabels} >>`);
-  object(2, 1, "<< /Type /Pages /Kids [5 1 R 6 0 R] /Count 2 >>");
-  object(3, 1, "<< /Type /Page /Parent 5 1 R /MediaBox [0 0 101 200] >>");
+  object(
+    1,
+    0,
+    `<< /Type /Catalog /Pages 2 ${pageTreeGeneration} R ${catalogPageLabels}${
+      options.openAction ? " /OpenAction [3 1 R /Fit]" : ""
+    } >>`,
+  );
+  object(
+    2,
+    pageTreeGeneration,
+    `<< /Type /Pages /Kids [5 ${pageTreeGeneration} R 6 0 R] /Count 2 >>`,
+  );
+  object(
+    3,
+    1,
+    `<< /Type /Page /Parent 5 ${pageTreeGeneration} R /MediaBox [0 0 101 200] >>`,
+  );
   object(
     4,
     0,
@@ -63,13 +78,13 @@ function nestedNonzeroGenerationPdf(options = {}) {
   );
   object(
     5,
-    1,
-    "<< /Type /Pages /Parent 2 1 R /Kids [3 1 R] /Count 1 /Rotate 90 /Resources << /ProcSet [/PDF] >> >>",
+    pageTreeGeneration,
+    `<< /Type /Pages /Parent 2 ${pageTreeGeneration} R /Kids [3 1 R] /Count 1 /Rotate 90 /Resources << /ProcSet [/PDF] >> >>`,
   );
   object(
     6,
     0,
-    `<< /Type /Page /Parent 2 1 R /MediaBox [0 0 102 200]${
+    `<< /Type /Page /Parent 2 ${pageTreeGeneration} R /MediaBox [0 0 102 200]${
       options.annotation ? " /Annots [7 1 R]" : ""
     } >>`,
   );
@@ -130,7 +145,7 @@ describe("Recipe deletePage", () => {
     });
   });
 
-  it("preserves object generations and remaps page labels", () => {
+  it("preserves retained page generations and remaps page labels", () => {
     const sourceBytes = nestedNonzeroGenerationPdf();
     new Recipe(sourceBytes).deletePage(2).endPDF((bytes) => {
       const reader = muhammara.createReader(
@@ -145,7 +160,7 @@ describe("Recipe deletePage", () => {
         const pagesReference = catalog
           .toJSObject()
           .Pages.toPDFIndirectObjectReference();
-        assert.equal(pagesReference.getVersion(), 1);
+        assert.equal(pagesReference.getVersion(), 0);
         const nestedReference = reader
           .queryDictionaryObject(
             reader.parseNewObject(2).toPDFDictionary(),
@@ -154,7 +169,16 @@ describe("Recipe deletePage", () => {
           .toPDFArray()
           .toJSArray()[0]
           .toPDFIndirectObjectReference();
-        assert.equal(nestedReference.getVersion(), 1);
+        assert.equal(nestedReference.getVersion(), 0);
+        const retainedPageReference = reader
+          .queryDictionaryObject(
+            reader.parseNewObject(5).toPDFDictionary(),
+            "Kids",
+          )
+          .toPDFArray()
+          .toJSArray()[0]
+          .toPDFIndirectObjectReference();
+        assert.equal(retainedPageReference.getVersion(), 1);
       } finally {
         reader.end();
       }
@@ -187,6 +211,15 @@ describe("Recipe deletePage", () => {
         reader.end();
       }
     });
+  });
+
+  it("rejects page trees that require nonzero-generation rewrites", () => {
+    const recipe = new Recipe(
+      nestedNonzeroGenerationPdf({ nonzeroGeneration: true }),
+    ).deletePage(2);
+
+    assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
+    assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
   });
 
   it("remaps direct page labels and accepts null page labels", () => {
@@ -401,13 +434,13 @@ describe("Recipe deletePage", () => {
       nestedNonzeroGenerationPdf({ pageLabels: "cycle" }),
       output,
     ).deletePage(1);
-    let writerEnded = false;
+    let writerAborted = false;
     let readerEnded = false;
-    const endWriter = recipe.writer.end.bind(recipe.writer);
+    const abortWriter = recipe.writer._abort.bind(recipe.writer);
     const endReader = recipe.pdfReader.end.bind(recipe.pdfReader);
-    recipe.writer.end = () => {
-      writerEnded = true;
-      return endWriter();
+    recipe.writer._abort = () => {
+      writerAborted = true;
+      return abortWriter();
     };
     recipe.pdfReader.end = () => {
       readerEnded = true;
@@ -415,7 +448,51 @@ describe("Recipe deletePage", () => {
     };
 
     const error = assert.throws(() => recipe.endPDF(), /acyclic PageLabels/);
-    assert.isTrue(writerEnded);
+    assert.isTrue(writerAborted);
+    assert.isTrue(readerEnded);
+    assert.strictEqual(recipe.pdfReader, null);
+    assert.throws(() => recipe.endPDF(), error.message);
+    assert.throws(() => recipe.deletePage(2), /after endPDF/);
+  });
+
+  it("rejects references from retained structures to deleted pages", () => {
+    const recipe = new Recipe(
+      nestedNonzeroGenerationPdf({ openAction: true }),
+    ).deletePage(1);
+
+    assert.throws(
+      () => recipe.endPDF(),
+      /referenced by retained document structures/,
+    );
+    assert.throws(
+      () => recipe.endPDF(),
+      /referenced by retained document structures/,
+    );
+  });
+
+  it("aborts and releases the reader when later finalization fails", () => {
+    const recipe = new Recipe(
+      nestedNonzeroGenerationPdf(),
+      path.join(__dirname, "../output/delete-later-failure.pdf"),
+    ).deletePage(1);
+    let writerAborted = false;
+    let readerEnded = false;
+    const abortWriter = recipe.writer._abort.bind(recipe.writer);
+    const endReader = recipe.pdfReader.end.bind(recipe.pdfReader);
+    recipe.writer._abort = () => {
+      writerAborted = true;
+      return abortWriter();
+    };
+    recipe.pdfReader.end = () => {
+      readerEnded = true;
+      return endReader();
+    };
+    recipe._writeInfo = () => {
+      throw new Error("injected info failure");
+    };
+
+    const error = assert.throws(() => recipe.endPDF(), /injected info failure/);
+    assert.isTrue(writerAborted);
     assert.isTrue(readerEnded);
     assert.strictEqual(recipe.pdfReader, null);
     assert.throws(() => recipe.endPDF(), error.message);

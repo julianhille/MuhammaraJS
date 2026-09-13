@@ -74,6 +74,7 @@ DEF_SUBORDINATE_INIT(PDFWriterDriver::Init)
 	t->InstanceTemplate()->SetInternalFieldCount(1);
 
 	SET_PROTOTYPE_METHOD(t, "end", End);
+	SET_PROTOTYPE_METHOD(t, "_abort", Abort);
 	SET_PROTOTYPE_METHOD(t, "createPage", CreatePage);
 	SET_PROTOTYPE_METHOD(t, "writePage", WritePage);
 	SET_PROTOTYPE_METHOD(t, "writePageAndReturnID", WritePageAndReturnID);
@@ -154,6 +155,37 @@ METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
 		THROW_EXCEPTION("Unable to end PDF");
 		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
+
+    if(pdfWriter->mWriteStreamProxy)
+    {
+        delete pdfWriter->mWriteStreamProxy;
+        pdfWriter->mWriteStreamProxy = NULL;
+    }
+
+    if(pdfWriter->mReadStreamProxy)
+    {
+        delete pdfWriter->mReadStreamProxy;
+        pdfWriter->mReadStreamProxy = NULL;
+    }
+
+    pdfWriter->mIsStarted = false;
+
+    SET_FUNCTION_RETURN_VALUE(args.This())
+}
+
+METHOD_RETURN_TYPE PDFWriterDriver::Abort(const ARGS_TYPE& args)
+{
+    CREATE_ISOLATE_CONTEXT;
+	CREATE_ESCAPABLE_SCOPE;
+
+    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
+
+    if(!pdfWriter->mIsStarted) {
+        SET_FUNCTION_RETURN_VALUE(args.This())
+    }
+
+    pdfWriter->mPDFWriter.GetDocumentContext().RemoveDocumentContextExtender(pdfWriter);
+    pdfWriter->mPDFWriter.Reset();
 
     if(pdfWriter->mWriteStreamProxy)
     {

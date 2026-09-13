@@ -2296,16 +2296,15 @@ export function createWriterToModifyFactory({
         return {
           startContext: function () {
             requireOpen();
-            var started = modifierPage
-              ? module._muhammara_wasm_modifier_resume_page(modifier)
-              : !page &&
-                !context &&
-                module._muhammara_wasm_modifier_start_page(
-                  modifier,
-                  index,
-                  ensureContentEncapsulation ? 1 : 0,
-                );
-            if (page || context || !started) {
+            if (
+              page ||
+              context ||
+              !module._muhammara_wasm_modifier_start_page(
+                modifier,
+                index,
+                ensureContentEncapsulation ? 1 : 0,
+              )
+            ) {
               throw new RangeError(`Unable to modify page ${index}`);
             }
             modifierPage = true;

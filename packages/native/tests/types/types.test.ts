@@ -4,6 +4,8 @@ import nativeCore = require("@muhammara/native-core");
 declare const writer: muhammara.PDFWriter;
 declare const recipe: muhammara.Recipe;
 declare const objects: muhammara.ObjectsContext;
+declare const literalString: muhammara.PDFLiteralString;
+declare const hexString: muhammara.PDFHexString;
 var page: muhammara.PDFPage = writer.createPage(0, 0, 595, 842);
 var context: muhammara.PageContentContext =
   writer.startPageContentContext(page);
@@ -28,6 +30,10 @@ api.eXrefEntryUndefined;
 context.J(api.LineCapStyle.LINECAP_BUTT).j(2);
 objects.endArray(api.ETokenSeparator.eTokenSeparatorEndLine);
 recipe.read();
+recipe.deletePage(1).deletePage([2, 3]);
+var literalBytes: number[] = literalString.toBytesArray();
+var hexBytes: number[] = hexString.toBytesArray();
+var hexText: string = hexString.toText();
 recipe
   .link("https://example.com", 100, 200, 160, 24)
   .comment("Please review.", 300, 100, {
@@ -118,3 +124,6 @@ void textWidth;
 void pages;
 void coordinates;
 void pageBox;
+void literalBytes;
+void hexBytes;
+void hexText;

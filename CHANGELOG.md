@@ -19,11 +19,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `appendPDFPagesFromPDFWithAnnotations()`. Code that called these undocumented
   internal helpers now fails; use `appendPage()`, `insertPage()`, or `split()`
   for supported page-copying operations [#623](https://github.com/julianhille/MuhammaraJS/issues/623)
-- Native Recipe `pauseContext()` and `resumeContext()` now throw when there is
-  no matching active or paused page content context instead of silently doing
-  nothing. Call `pauseContext()` only after creating or editing a page, and call
-  `resumeContext()` exactly once after a successful pause
-  [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - The native `PDFReader` methods that take a page index or object ID —
   `parseNewObject()`, `getPageObjectID()`, `parsePageDictionary()`,
   `parsePage()`, `extractPageText()`, `extractPageContentItems()`, and
@@ -54,9 +49,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add chainable native Recipe `deletePage()` support for removing one or more
   pages from an existing PDF while preserving retained page objects
   [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
-- Tighten native Recipe TypeScript declarations for extensions, layouts, tables,
-  metadata, HTML text objects, colorspaces, permissions, arrows, and triangles
-  [#654](https://github.com/julianhille/MuhammaraJS/issues/654)
 - Add `Recipe.rotate()` to set `/Rotate` on the current native Recipe page,
   including pages created with explicit dimensions, matching Wasm Recipe
   [#620](https://github.com/julianhille/MuhammaraJS/issues/620)
@@ -145,9 +137,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   including font styles, overlay shortcuts, flowing text, and centered text and
   images [#628](https://github.com/julianhille/MuhammaraJS/issues/628)
 - Correct native Recipe TypeScript declarations for text style and image transformation options [#625](https://github.com/julianhille/MuhammaraJS/issues/625)
-- Make native Recipe `register()`, `pauseContext()`, and `resumeContext()`
-  chainable, and track created-page and edited-page context transitions
-  [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Build Linux prebuilds against the Debian archive now that Debian 11
   bullseye is end of life [#577](https://github.com/julianhille/MuhammaraJS/issues/577)
 - Force the packaged-source Electron rebuild check in CI to build from source.
