@@ -33,7 +33,9 @@ Recipe.unregisterPdf("appendix");
 Recipe composition page numbers are one-based. Omit the second `appendPage()`
 argument to append every page. A number selects one page; arrays select pages
 and nested pairs select inclusive ranges. For example, `[1, 3]` selects pages 1
-and 3, while `[[1, 3]]` selects pages 1 through 3.
+and 3, while `[[1, 3]]` selects pages 1 through 3. Selections must be positive
+integers, ranges must be ascending, and endpoints beyond the source clamp to
+its final page.
 
 `insertPage(afterPageNumber, name, sourcePageNumber)` accepts zero as the output
 position before page one and defers rebuilding until `endPDF()`. `overlay()`

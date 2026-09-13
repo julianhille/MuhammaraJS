@@ -7,13 +7,18 @@ const utils = require("./utils");
  * @function
  * @memberof Recipe#
  * @param {string} pdfSrc - The path for the other pdf.
- * @param {number|number[]} [pages=[]] - The page number or array of page numbers to append. Omitting it appends all pages.
+ * @param {number|Array.<number|Array.<number>>} [pages=[]] - A one-based page
+ * number or array of page numbers and inclusive ranges. Omitting it appends all
+ * pages; endpoints beyond the source are clamped to its final page.
  * @returns {Recipe} The recipe instance.
+ * @throws {RangeError} If a selection is not a positive integer or a two-value
+ * range in ascending order.
  */
 exports.appendPage = function appendPage(pdfSrc, pages = []) {
-  if (!Array.isArray(pages) && !isNaN(pages)) {
-    pages = [pages];
+  if (this.deletedPages?.size) {
+    throw new Error("appendPage cannot be combined with deletePage");
   }
+  if (!Array.isArray(pages)) pages = [pages];
   // Using stream so it can be closed to release reader resource (Issue #61)
   const instream = new muhammara.PDFRStreamForFile(pdfSrc);
   let pageCount;
@@ -30,18 +35,25 @@ exports.appendPage = function appendPage(pdfSrc, pages = []) {
     instream.close();
   }
 
-  // prevent unmatched pagenumber
+  // Preserve the established upper-bound clamping after validating that the
+  // caller supplied meaningful one-based page numbers.
   const transformPageNumber = (pageNum) => {
     pageNum = pageNum > pageCount ? pageCount : pageNum;
-    pageNum = pageNum < 1 ? 1 : pageNum;
     return pageNum - 1;
   };
   pages = pages.map((element) => {
-    if (Array.isArray(element)) {
-      return [transformPageNumber(element[0]), transformPageNumber(element[1])];
-    } else {
-      return [transformPageNumber(element), transformPageNumber(element)];
+    let range = Array.isArray(element) ? element : [element, element];
+    range = range.map(Number);
+    if (
+      range.length !== 2 ||
+      !range.every(
+        (pageNumber) => Number.isInteger(pageNumber) && pageNumber > 0,
+      ) ||
+      range[1] < range[0]
+    ) {
+      throw new RangeError("Page ranges use one-based inclusive page numbers");
     }
+    return range.map(transformPageNumber);
   });
   if (pages.length > 0) {
     utils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc, {
@@ -50,5 +62,6 @@ exports.appendPage = function appendPage(pdfSrc, pages = []) {
   } else {
     utils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc);
   }
+  this.pagesAppended = true;
   return this;
 };

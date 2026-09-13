@@ -12,7 +12,8 @@ export function createCompositionMethods({
     /**
      * Appends selected pages from a registered PDF.
      * Page numbers and inclusive range endpoints are one-based. Omit `pages`
-     * to append every page; out-of-bounds endpoints are clamped to the source.
+     * to append every page; endpoints beyond the source are clamped to its
+     * final page.
      * Appended pages immediately become part of the output and page metadata.
      *
      * @name appendPage
@@ -24,24 +25,33 @@ export function createCompositionMethods({
      * `[1, 3]` selects pages 1 and 3 while `[[1, 3]]` selects pages 1 through 3.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If no PDF is registered under `name` or appending fails.
-     * @throws {RangeError} If a selection is not an integer range in ascending
-     * order after endpoint clamping.
+     * @throws {RangeError} If a selection is not a positive integer or a
+     * two-value range in ascending order.
      */
     appendPage: function (name, pages = []) {
+      if (this._deletedPages?.size) {
+        throw new Error("appendPage cannot be combined with deletePage");
+      }
       var path = pdfs.get(name);
       if (!path) throw new Error(`Unknown PDF: ${name}`);
       var source = inspectPdf(name);
       if (!Array.isArray(pages)) pages = [pages];
       var ranges = pages.map((page) => {
         var range = Array.isArray(page) ? page : [page, page];
-        range = range.map((number) =>
-          Math.min(source.pages, Math.max(1, Number(number))),
-        );
-        if (!range.every(Number.isInteger) || range[1] < range[0])
+        range = range.map(Number);
+        if (
+          range.length !== 2 ||
+          !range.every(
+            (pageNumber) => Number.isInteger(pageNumber) && pageNumber > 0,
+          ) ||
+          range[1] < range[0]
+        )
           throw new RangeError(
             "Page ranges use one-based inclusive page numbers",
           );
-        return [range[0] - 1, range[1] - 1];
+        return range.map(
+          (pageNumber) => Math.min(source.pages, pageNumber) - 1,
+        );
       });
       if (this._sourceMode) {
         var copiedPages = [];
@@ -57,6 +67,7 @@ export function createCompositionMethods({
             ? { type: constants.eRangeTypeSpecific, specificRanges: ranges }
             : {},
         );
+        this._pagesAppended = true;
         copiedPages.forEach((page) => {
           var pageNumber = this._pages.length + 1;
           this._pages.push({
@@ -74,21 +85,13 @@ export function createCompositionMethods({
         if (pages.length === 0) {
           call("_muhammara_wasm_recipe_append_pdf", this._recipe, pathPointer);
         } else {
-          pages.forEach((page) => {
-            var range = Array.isArray(page) ? page : [page, page];
-            range = range.map((number) =>
-              Math.min(source.pages, Math.max(1, Number(number))),
-            );
-            if (!range.every(Number.isInteger) || range[1] < range[0])
-              throw new RangeError(
-                "Page ranges use one-based inclusive page numbers",
-              );
+          ranges.forEach((range) => {
             call(
               "_muhammara_wasm_recipe_append_pdf_range",
               this._recipe,
               pathPointer,
-              range[0] - 1,
-              range[1] - 1,
+              range[0],
+              range[1],
             );
           });
         }
@@ -198,6 +201,9 @@ export function createCompositionMethods({
      * not a positive integer.
      */
     insertPage: function (afterPageNumber, name, sourcePageNumber) {
+      if (this._deletedPages?.size) {
+        throw new Error("insertPage cannot be combined with deletePage");
+      }
       if (!Number.isInteger(afterPageNumber) || afterPageNumber < 0)
         throw new Error("The afterPageNumber is inValid.");
       if (

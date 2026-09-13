@@ -17,8 +17,10 @@ pdfDoc
   .endPDF();
 ```
 
-Page numbers passed to Recipe composition methods are one-based. Omitting the
-page selection from `appendPage` appends all pages.
+Page numbers passed to Recipe composition methods are positive, one-based
+integers. Omitting the page selection from `appendPage` appends all pages;
+inclusive range pairs must be ascending, and endpoints beyond the source clamp
+to its final page. Pass all three `insertPage` arguments together.
 
 To overlay another PDF, edit the target page first:
 
