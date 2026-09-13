@@ -4,6 +4,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Reject unsupported PDF 2.0/AES-256 encryption in `recrypt()` with a clear
+  WebAssembly limitation error
+  [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
+
 ### Added
 
 - Support chainable Recipe `pauseContext()` and `resumeContext()` transitions

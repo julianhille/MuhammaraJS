@@ -57,4 +57,17 @@ describe("Xcryption", function () {
       plainReader.end();
     }
   });
+
+  it("rejects unsupported PDF 2.0 AES-256 encryption", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = muhammara.createBlankPdf(100, 100);
+    assert.throws(
+      () =>
+        muhammara.recrypt(source, {
+          userPassword: "view",
+          version: muhammara.ePDFVersion20,
+        }),
+      /PDF 2\.0\/AES-256 encryption is unavailable in WebAssembly/,
+    );
+  });
 });

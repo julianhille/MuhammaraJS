@@ -90,6 +90,8 @@ async function usesLowLevelSurface() {
     version: muhammara.ePDFVersion17,
   });
   muhammara.recrypt(encrypted, { password: "viewer", version: 0 });
+  // @ts-expect-error WebAssembly recrypt does not support PDF 2.0/AES-256.
+  muhammara.recrypt(source, { version: muhammara.ePDFVersion20 });
   var reader = muhammara.createReader(source);
   var textElement = reader.extractPageText(0)[0];
   textElement.content;

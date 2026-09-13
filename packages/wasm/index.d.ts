@@ -14,7 +14,7 @@ export type TextEncoding = "text" | "code" | "hex";
 export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
 export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
 export type PDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
-export type RecryptPDFVersion = 0 | PDFVersion;
+export type RecryptPDFVersion = 0 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
 export type RecipePDFVersion =
   | 1
   | 1.1
@@ -43,6 +43,7 @@ export interface WriterOptions {
 /** Options accepted by the byte-first equivalent of native `recrypt`. */
 export interface PDFRecryptOptions {
   password?: string;
+  /** PDF 1.0 through 1.7 encryption version. PDF 2.0/AES-256 is unavailable. */
   version?: RecryptPDFVersion;
   /** Enables Flate compression for streams. Defaults to true. */
   compress?: boolean;

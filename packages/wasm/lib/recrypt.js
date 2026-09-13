@@ -13,7 +13,12 @@ export function createRecrypt({
       throw new Error("recrypt log files are unavailable in WebAssembly");
     }
     var version = typeof options.version === "number" ? options.version | 0 : 0;
-    if (![0, 10, 11, 12, 13, 14, 15, 16, 17, 20].includes(version)) {
+    if (version === 20) {
+      throw new Error(
+        "PDF 2.0/AES-256 encryption is unavailable in WebAssembly",
+      );
+    }
+    if (![0, 10, 11, 12, 13, 14, 15, 16, 17].includes(version)) {
       throw new Error(
         "Wrong argument for PDF version, please provide a valid PDF version",
       );
