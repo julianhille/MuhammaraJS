@@ -195,7 +195,10 @@ export function createRecipeFactory({
 
     /**
      * Converts supported DOM-free HTML into styled Recipe text fragments.
-     * This helper does not draw content or alter Recipe state.
+     * Ordered and unordered list fragments include their visual prefix and
+     * native-style indentation. Unlike native's nested XML-derived layout tree,
+     * Wasm returns flat visual fragments. This helper does not draw content or
+     * alter Recipe state.
      *
      * @name htmlToTextObjects
      * @function
@@ -470,30 +473,15 @@ export function createRecipeFactory({
      */
     _drawText(value, x, y, options = {}) {
       var point = this._calibrateCoordinate(x, y);
-      if (this._pageContext) {
-        var editFont = this.writer.getFontForBytes(resolveFont(options));
-        var editSize = options.fontSize || options.size || 14;
-        this._pageContext
-          .BT()
-          .Tf(editFont, editSize)
-          .Tm(1, 0, 0, 1, point.nx, point.ny)
-          .Tj(String(value))
-          .ET();
-        this._lastLineHeight = editSize;
-        this._cursor = { x, y: y + editSize };
-        return this;
-      }
-      var fontPath = resolveFont(options);
-      var fontSize = options.fontSize || options.size || 14;
-      var dimensions = this.textDimensions(value, { ...options, fontSize });
       var transformed =
         options.rotation ||
         options.skewX ||
         options.skewY ||
-        options.opacity !== undefined;
+        (!this._pageContext && options.opacity !== undefined);
       if (transformed) {
         this._save();
-        if (options.opacity !== undefined) this.opacity(options.opacity);
+        if (!this._pageContext && options.opacity !== undefined)
+          this.opacity(options.opacity);
         var origin = options.rotationOrigin || [x, y];
         if (options.rotation)
           this.rotateContent(options.rotation, origin[0], origin[1]);
@@ -508,6 +496,24 @@ export function createRecipeFactory({
           );
         }
       }
+      if (this._pageContext) {
+        var editFont = this.writer.getFontForBytes(resolveFont(options));
+        var editSize = options.fontSize || options.size || 14;
+        this._pageContext
+          .BT()
+          .Tf(editFont, editSize)
+          .Tc(options.charSpace || 0)
+          .Tm(1, 0, 0, 1, point.nx, point.ny)
+          .Tj(String(value))
+          .ET();
+        if (transformed) this._restore();
+        this._lastLineHeight = editSize;
+        this._cursor = { x, y: y + editSize };
+        return this;
+      }
+      var fontPath = resolveFont(options);
+      var fontSize = options.fontSize || options.size || 14;
+      var dimensions = this.textDimensions(value, { ...options, fontSize });
       if (options.highlight) {
         var highlight =
           typeof options.highlight === "object" ? options.highlight : {};
@@ -529,6 +535,7 @@ export function createRecipeFactory({
             fontPointer,
             fontSize,
             colorValue(options.color),
+            options.charSpace || 0,
           );
         }),
       );

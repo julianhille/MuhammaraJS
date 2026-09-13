@@ -96,6 +96,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Render one correctly indented marker per native Recipe list item across
+  formatting, block children, nested lists, and explicit line breaks; keep
+  internal break artifacts out of layout and clipping; and count indentation
+  once during wrapping
+  [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Fix native `Recipe.lineWidth()` to apply its width to subsequent lines,
   matching Wasm [#617](https://github.com/julianhille/MuhammaraJS/issues/617)
 

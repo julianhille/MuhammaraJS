@@ -839,13 +839,19 @@ int muhammara_wasm_recipe_set_opacity(WasmRecipe* recipe, double opacity) {
 
 int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
                                const char* text, const char* fontPath,
-                               double fontSize, unsigned int color) {
+                               double fontSize, unsigned int color,
+                               double characterSpacing) {
   if (recipe == nullptr || recipe->context == nullptr || text == nullptr ||
       fontPath == nullptr || fontSize <= 0) {
     return 0;
   }
   PDFUsedFont* font = recipe->writer.GetFontForFile(fontPath);
   if (font == nullptr) {
+    return 0;
+  }
+  if (recipe->context->BT() != PDFHummus::eSuccess ||
+      recipe->context->Tc(characterSpacing) != PDFHummus::eSuccess ||
+      recipe->context->ET() != PDFHummus::eSuccess) {
     return 0;
   }
   return recipe->context->WriteText(

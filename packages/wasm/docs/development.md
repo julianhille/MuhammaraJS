@@ -58,10 +58,10 @@ npm run wasm:test:exports
 npm run wasm:test:browser
 ```
 
-The browser test starts a local server and uses Chrome through `puppeteer-core`.
-Set `CHROME_BIN` to the Chrome executable; CI provisions it with
-`browser-actions/setup-chrome`. Wasm tests share native test fixtures under
-`packages/native-with-source/tests/TestMaterials`.
+The browser test starts a local server and uses `puppeteer-core`. Set
+`CHROME_BIN` to a Chrome executable or `FIREFOX_BIN` to a Firefox executable;
+CI provisions Chrome with `browser-actions/setup-chrome`. Wasm tests share
+native test fixtures under `packages/native-with-source/tests/TestMaterials`.
 
 Wasm documentation sources are package-local and are not published in the npm
 package. The standalone WebAssembly documentation site is configured by

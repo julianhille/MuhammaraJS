@@ -117,9 +117,21 @@ lifecycle details.
 clipping, and continuation callbacks. Its `clip`, `trim`, and `ellipsis` modes
 have different output semantics; Wasm's ellipsis is three ASCII periods
 (`...`). `html: true` enables a DOM-free subset for text runs, paragraphs,
-simple emphasis, decoration, inline color, and URL links through `<a href>`.
-It is not browser HTML/CSS layout; arbitrary DOM, CSS inheritance, lists, and
-plugin handlers are unavailable.
+simple emphasis, decoration, inline color, URL links through `<a href>`, and
+visual unordered and ordered lists through `ul`, `ol`, and `li`. Lists use `* `
+or one-based numeric prefixes and native-compatible nesting indentation. Inline
+formatting and links remain active inside each item. This is not browser
+HTML/CSS layout or semantic tagged-PDF output; arbitrary DOM, general CSS
+inheritance, and plugin handlers are unavailable.
+
+```js
+recipe.text(
+  "<ul><li>First</li><li><b>Important</b><ol><li>Nested</li></ol></li></ul>",
+  36,
+  72,
+  { html: true, textBox: { width: 240 } },
+);
+```
 
 ```js
 import { createRecipe } from "@muhammara/wasm";

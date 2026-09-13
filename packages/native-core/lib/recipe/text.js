@@ -321,7 +321,7 @@ exports.text = function text(text = "", x, y, options = {}) {
       toWriteTextObjects = clippedText.textObjects;
       textBox.textHeight = getTextBoxHeight(toWriteTextObjects);
 
-      if (clippedText.remainder.length) {
+      if (clippedText.clipped) {
         clipResult = {
           remainder: clippedText.remainder,
           linesWritten: clippedText.linesWritten,
@@ -831,6 +831,13 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
 
   let firstLineHeight;
   let toWriteTextObjects = [];
+  /** Reports whether a layout node contains content other than the break sentinel. */
+  const hasRenderableContent = (textObject) =>
+    (textObject.value !== undefined &&
+      textObject.value !== null &&
+      textObject.value !== "" &&
+      textObject.value !== "[@@DONOT_RENDER_THIS@@]") ||
+    textObject.childs?.some(hasRenderableContent);
 
   const writeValue = (textObject) => {
     textObject.lineID = textObject.lineID || Date.now() * Math.random();
@@ -865,6 +872,7 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       textObject.layer++;
 
       textObject.currentIndex = 0;
+      let prependValue = textObject.prependValue;
 
       textObject.childs.forEach((child) => {
         if (textObject.tag == "ul") {
@@ -885,11 +893,17 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
             child.layer = textObject.layer - 1;
           }
         }
-        if (textObject.prependValue) {
-          child.prependValue = !["ol", "ul"].includes(textObject.tag)
-            ? textObject.prependValue
-            : child.prependValue;
-          textObject.indent = 2 * textObject.layer;
+        if (
+          prependValue &&
+          !["ol", "ul"].includes(child.tag) &&
+          hasRenderableContent(child)
+        ) {
+          child.prependValue = prependValue;
+          prependValue = null;
+          textObject.indent =
+            textObject.tag == "li"
+              ? 2 * textObject.layer
+              : textObject.indent || 2 * textObject.layer;
         }
         if (textObject.indent) {
           child.indent = child.indent || textObject.indent;
@@ -921,7 +935,55 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     writeValue(textObject);
   });
 
-  return { toWriteTextObjects: toWriteTextObjects, textHeight: totalHeight };
+  const normalizedTextObjects = [];
+  let pendingBreaks = [];
+  const replacementLineIDs = new Map();
+  /** Converts pending break sentinels into line state without rendering their text. */
+  const appendPendingBreaks = (nextTextObject) => {
+    const previous = normalizedTextObjects[normalizedTextObjects.length - 1];
+    if (previous) previous.lineComplete = true;
+    const blankBreaks =
+      previous && nextTextObject ? pendingBreaks.slice(1) : pendingBreaks;
+    blankBreaks.forEach((breakObject, index) => {
+      normalizedTextObjects.push({
+        ...breakObject,
+        lineID: previous ? pendingBreaks[index].lineID : breakObject.lineID,
+        text: "",
+        lineComplete: true,
+        lineWidth: 0,
+        textWidth: 0,
+      });
+    });
+    if (nextTextObject && previous) {
+      replacementLineIDs.set(
+        nextTextObject.lineID,
+        pendingBreaks[pendingBreaks.length - 1].lineID,
+      );
+    }
+    pendingBreaks = [];
+  };
+  toWriteTextObjects.forEach((textObject, index, objects) => {
+    const sentinel = textObject.text.trim() == "[@@DONOT_RENDER_THIS@@]";
+    const beforeSentinel =
+      textObject.text.trim() == "" &&
+      objects[index + 1]?.text.trim() == "[@@DONOT_RENDER_THIS@@]";
+    if (beforeSentinel) return;
+    if (sentinel) {
+      pendingBreaks.push(textObject);
+      return;
+    }
+    if (pendingBreaks.length) appendPendingBreaks(textObject);
+    textObject.lineID =
+      replacementLineIDs.get(textObject.lineID) || textObject.lineID;
+    normalizedTextObjects.push(textObject);
+  });
+  if (pendingBreaks.length) appendPendingBreaks();
+  toWriteTextObjects = normalizedTextObjects;
+
+  return {
+    toWriteTextObjects: toWriteTextObjects,
+    textHeight: getTextBoxHeight(toWriteTextObjects) || totalHeight,
+  };
 };
 
 function getTextBoxHeight(textObjs) {
@@ -983,6 +1045,7 @@ function clipTextToBox(textObjs, availableHeight) {
   return {
     textObjects: visibleLines.flat(),
     linesWritten,
+    clipped: remainderLines.length > 0,
     // Preserve line boundaries so a remainder can be written into another box.
     remainder: remainderLines
       .map((currentLine) => currentLine.map((textObj) => textObj.text).join(""))
@@ -1251,7 +1314,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
   const indent = textObject.indent || 0;
 
   const lineMaxWidth = textBox.width
-    ? textBox.width - textBox.paddingLeft - textBox.paddingRight - indent
+    ? textBox.width - textBox.paddingLeft - textBox.paddingRight
     : null;
   let remainderWidth = lineMaxWidth;
   let newLine;
