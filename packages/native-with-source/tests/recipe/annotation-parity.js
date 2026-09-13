@@ -79,7 +79,7 @@ describe("Recipe annotation parity", function () {
     var options = {
       title: "Review",
       replies: [
-        { text: "Confirmed.", title: "Reviewer" },
+        { text: "Confirmed.", title: "Reviewer", opacity: 0.35 },
         { text: "Ready to publish.", title: "Editor" },
       ],
     };
@@ -100,6 +100,10 @@ describe("Recipe annotation parity", function () {
         assert.equal(dictionary.Contents.toText(), reply.text);
         assert.equal(dictionary.T.toText(), reply.title);
         assert.equal(
+          dictionary.CA ? dictionary.CA.toNumber() : 1,
+          reply.opacity ?? 1,
+        );
+        assert.equal(
           dictionary.IRT.toPDFIndirectObjectReference().getObjectID(),
           parent.id,
         );
@@ -109,5 +113,38 @@ describe("Recipe annotation parity", function () {
     assert.equal(annotations[0].dictionary.Name.toString(), "Comment");
     assert.equal(annotations[6].dictionary.Contents.toText(), "No replies.");
     assert.equal(annotations[7].dictionary.Contents.toText(), "Empty replies.");
+  });
+
+  it("writes squiggly text markup options", async function () {
+    var recipe = new muhammara.Recipe("new", output).createPage(595, 842);
+    recipe.text("Review this text.", 50, 100, {
+      squiggly: {
+        text: "Needs review.",
+        color: [255, 0, 0],
+        opacity: 0.4,
+        replies: [{ text: "Confirmed.", title: "Reviewer", opacity: 0.2 }],
+      },
+    });
+
+    var annotations = await finish(recipe);
+    assert.equal(annotations.length, 2);
+    assert.equal(annotations[0].dictionary.Subtype.toString(), "Squiggly");
+    assert.equal(annotations[0].dictionary.Contents.toText(), "Needs review.");
+    assert.equal(annotations[0].dictionary.CA.toNumber(), 0.4);
+    assert.deepEqual(
+      annotations[0].dictionary.C.toPDFArray()
+        .toJSArray()
+        .map(function (value) {
+          return value.toNumber();
+        }),
+      [1, 0, 0],
+    );
+    assert.equal(annotations[1].dictionary.Contents.toText(), "Confirmed.");
+    assert.equal(annotations[1].dictionary.T.toText(), "Reviewer");
+    assert.equal(annotations[1].dictionary.CA.toNumber(), 0.2);
+    assert.equal(
+      annotations[1].dictionary.IRT.toPDFIndirectObjectReference().getObjectID(),
+      annotations[0].id,
+    );
   });
 });
