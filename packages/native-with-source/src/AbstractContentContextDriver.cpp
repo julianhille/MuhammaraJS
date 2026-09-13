@@ -1683,7 +1683,10 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::TJ(const ARGS_TYPE& args)
         for(int i=0; i < lengthButOptions && status; ++i)
         {
             if(args[i]->IsString())
-                params.push_back(StringOrDouble(*UTF_8_VALUE(args[i]->TO_STRING())));
+            {
+                String::Utf8Value value(isolate, args[i]->TO_STRING());
+                params.push_back(StringOrDouble(std::string(*value, value.length())));
+            }
             else if(args[i]->IsNumber())
                 params.push_back(StringOrDouble(TO_NUMBER(args[i])->Value()));
             else

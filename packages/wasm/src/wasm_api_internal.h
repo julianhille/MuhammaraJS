@@ -1148,10 +1148,10 @@ static PDFHummus::EStatusCode showTJ(AbstractContentContext* context, int encodi
       return PDFHummus::eFailure;
     }
     if (types[index] == 0) {
-      int offset = stringOffsets[index];
-      if (strings == nullptr || offset < 0 ||
-          static_cast<unsigned int>(offset) >= stringsLength ||
-          std::memchr(strings + offset, 0, stringsLength - offset) == nullptr) {
+      int start = stringOffsets[index];
+      int end = stringOffsets[index + 1];
+      if (strings == nullptr || start < 0 || end < start ||
+          static_cast<unsigned int>(end) > stringsLength) {
         return PDFHummus::eFailure;
       }
     }
@@ -1167,9 +1167,15 @@ static PDFHummus::EStatusCode showTJ(AbstractContentContext* context, int encodi
   }
   if (!hasGlyphs) {
     StringOrDoubleList values;
-    for (int index = 0; index < count; ++index)
-      types[index] == 1 ? values.push_back(StringOrDouble(numbers[index]))
-                        : values.push_back(StringOrDouble(strings + stringOffsets[index]));
+    for (int index = 0; index < count; ++index) {
+      if (types[index] == 1) {
+        values.push_back(StringOrDouble(numbers[index]));
+      } else {
+        int start = stringOffsets[index];
+        values.push_back(StringOrDouble(
+            std::string(strings + start, stringOffsets[index + 1] - start)));
+      }
+    }
     if (encoding == 1) return context->TJLow(values);
     if (encoding == 2) return context->TJHexLow(values);
     return context->TJ(values);
@@ -1182,7 +1188,10 @@ static PDFHummus::EStatusCode showTJ(AbstractContentContext* context, int encodi
       values.push_back(GlyphUnicodeMappingListOrDouble(numbers[index]));
     } else if (types[index] == 0) {
       GlyphUnicodeMappingList translated;
-      font->TranslateStringToGlyphs(strings + stringOffsets[index], translated);
+      int start = stringOffsets[index];
+      font->TranslateStringToGlyphs(
+          std::string(strings + start, stringOffsets[index + 1] - start),
+          translated);
       values.push_back(GlyphUnicodeMappingListOrDouble(translated));
     } else {
       int start = glyphOffsets[index];

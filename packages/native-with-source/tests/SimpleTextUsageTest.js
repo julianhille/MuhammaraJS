@@ -1,4 +1,5 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("node:assert/strict");
 
 describe("SimpleTextUsageTest", function () {
   it("should complete without error", function () {
@@ -115,5 +116,32 @@ describe("SimpleTextUsageTest", function () {
       ])
       .ET();
     pdfWriter.writePage(page).end();
+  });
+
+  it("preserves embedded NUL bytes in TJ strings", function () {
+    var outputPath = __dirname + "/output/SimpleTextUsageTJ-NUL.pdf";
+    var writer = muhammara.createWriter(outputPath);
+    var page = writer.createPage(0, 0, 100, 100);
+    writer
+      .startPageContentContext(page)
+      .BT()
+      .TJ("before\0after", { encoding: "hex" })
+      .ET();
+    writer.writePage(page).end();
+
+    var reader = muhammara.createReader(outputPath);
+    var stream = reader
+      .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+      .toPDFStream();
+    var parser = reader.startReadingObjectsFromStream(stream);
+    parser.parseNewObject();
+    var stringObject = parser.parseNewObject().toPDFArray().queryObject(0);
+    var string =
+      stringObject.toPDFLiteralString() || stringObject.toPDFHexString();
+    assert.deepEqual(
+      string.toBytesArray(),
+      [98, 101, 102, 111, 114, 101, 0, 97, 102, 116, 101, 114],
+    );
+    reader.end();
   });
 });

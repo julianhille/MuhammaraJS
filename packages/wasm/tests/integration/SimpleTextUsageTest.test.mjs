@@ -351,6 +351,37 @@ describe("SimpleTextUsageTest", function () {
     ]);
     modifiedReader.end();
   });
+
+  it("preserves embedded NUL bytes in TJ strings", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var page = writer.createPage(0, 0, 100, 100);
+    writer
+      .startPageContentContext(page)
+      .BT()
+      .TJ("before\0after", { encoding: "hex" })
+      .ET();
+    writer.writePage(page);
+
+    var reader = muhammara.createReader(writer.end());
+    var stream = reader
+      .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+      .toPDFStream();
+    var parser = reader.startReadingObjectsFromStream(stream);
+    parser.parseNewObject();
+    var string = parser
+      .parseNewObject()
+      .toPDFArray()
+      .queryObject(0)
+      .toPDFHexString();
+    assert.deepEqual(
+      Array.from(string.toBytesArray()),
+      [98, 101, 102, 111, 114, 101, 0, 97, 102, 116, 101, 114],
+    );
+    parser.end();
+    reader.end();
+  });
+
   it("writes free code on page, form, and modifier contexts", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter();

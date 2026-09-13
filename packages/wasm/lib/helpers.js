@@ -231,23 +231,23 @@ export function createHelpers(module) {
       throw new RangeError("TJ exceeds the maximum item count");
     var types = new Int32Array(items.length);
     var numbers = new Float64Array(items.length);
-    var stringOffsets = new Int32Array(items.length);
+    var stringOffsets = new Int32Array(items.length + 1);
     var glyphOffsets = new Int32Array(items.length + 1);
     var strings = [];
     var glyphs = [];
     var stringLength = 0;
     for (var index = 0; index < items.length; ++index) {
       var item = items[index];
+      stringOffsets[index] = stringLength;
       glyphOffsets[index] = glyphs.length / 2;
       if (typeof item === "string") {
         var encoded = encoder.encode(item);
-        if (stringLength + encoded.length + 1 > 16 * 1024 * 1024) {
+        if (stringLength + encoded.length > 16 * 1024 * 1024) {
           throw new RangeError("TJ string data exceeds 16 MiB");
         }
         types[index] = 0;
-        stringOffsets[index] = stringLength;
-        strings.push(item);
-        stringLength += encoded.length + 1;
+        strings.push(encoded);
+        stringLength += encoded.length;
       } else if (typeof item === "number") {
         if (!Number.isFinite(item)) {
           throw new TypeError("TJ requires finite numeric arguments");
@@ -263,8 +263,14 @@ export function createHelpers(module) {
         }
       }
     }
+    stringOffsets[items.length] = stringLength;
     glyphOffsets[items.length] = glyphs.length / 2;
-    var stringBytes = encoder.encode(`${strings.join("\0")}\0`);
+    var stringBytes = new Uint8Array(stringLength);
+    var stringOffset = 0;
+    for (var string of strings) {
+      stringBytes.set(string, stringOffset);
+      stringOffset += string.length;
+    }
     return withBytes(new Uint8Array(types.buffer), (typesPointer) =>
       withBytes(new Uint8Array(numbers.buffer), (numbersPointer) =>
         withBytes(

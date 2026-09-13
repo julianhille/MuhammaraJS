@@ -119,6 +119,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Preserve embedded NUL bytes in native low-level `TJ()` strings instead of
+  silently truncating each string at the first NUL
+  [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
 - Release native writer stream proxies and mark the writer ended when finalization
   fails, so a later `end()` call does not re-enter finalization [#677](https://github.com/julianhille/MuhammaraJS/issues/677)
 - Report the correct native text matrix after `BT`, `Td`, `TD`, `TL`, `T*`,
