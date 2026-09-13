@@ -158,14 +158,17 @@ function htmlLines(source, width, measure, options, wrap) {
   };
 
   source.forEach((sourcePart) => {
+    var listMarker = false;
     if (sourcePart.indent !== undefined) {
       indent = sourcePart.indent;
       linePrefix = " ".repeat(indent);
+      listMarker =
+        indent > 0 && /^(?:\*|\d+\.) $/.test(String(sourcePart.value));
       // Native wraps list text beneath the item text, not beneath its marker.
       // A zero indent marks the end of the list, not a marker to wrap under.
-      continuationPrefix = indent
+      continuationPrefix = listMarker
         ? " ".repeat(indent + String(sourcePart.value).length + 1)
-        : "";
+        : " ".repeat(indent);
     }
     String(sourcePart.value)
       .split(/(\n)/)
@@ -191,7 +194,7 @@ function htmlLines(source, width, measure, options, wrap) {
             {
               text: word,
               styles: sourcePart.styles,
-              marker: sourcePart.indent > 0,
+              marker: listMarker,
             },
           ];
           var breakBefore =
@@ -221,7 +224,7 @@ function htmlLines(source, width, measure, options, wrap) {
           parts.push({
             text: word,
             styles: sourcePart.styles,
-            marker: sourcePart.indent > 0,
+            marker: listMarker,
           });
         });
       });

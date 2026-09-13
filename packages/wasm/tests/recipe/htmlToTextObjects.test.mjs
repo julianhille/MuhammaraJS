@@ -18,7 +18,7 @@ describe("HTML to TextObjects", function () {
     );
     assert.deepEqual(
       objects.filter((object) => object.indent).map((object) => object.indent),
-      [6, 6, 6, 6, 6],
+      [6, 6, 10, 6, 6, 6],
     );
     assert.equal(
       objects.find((object) => object.value === "bold").styles.bold,
@@ -113,6 +113,8 @@ describe("HTML to TextObjects", function () {
           "2. two",
         ],
       );
+      assert.equal(rendered[2], "          1. nested");
+      assert.equal(rendered[3], "      after");
       // Wrapped continuations hang under the item text and carry no trailing
       // space, matching native list layout.
       assert.deepEqual(rendered.slice(6), [
@@ -165,7 +167,7 @@ describe("HTML to TextObjects", function () {
         )
         .filter((object) => object.indent !== undefined)
         .map((object) => object.indent),
-      [6, 6, 6],
+      [6, 10, 14],
     );
     assert.equal(values(" \n <b> </b><ul><li>x</li></ul>"), "* x");
     assert.equal(values("<ul><li>a<ul></ul>b</li></ul>"), "* ab");
@@ -533,6 +535,30 @@ describe("HTML to TextObjects", function () {
       extract(narrowListRecipe).map((item) => item.content),
       ["      * alpha", "         bravo", "         charlie"],
     );
+
+    var nestedContinuationRecipe = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .text(
+        "<ul><li>a<ol><li>b</li></ol>d alpha bravo charlie</li></ul>",
+        20,
+        20,
+        {
+          font: "arial",
+          size: 12,
+          html: true,
+          textBox: { width: 55, wrap: "auto" },
+        },
+      );
+    var nestedContinuation = extract(nestedContinuationRecipe).map(
+      (item) => item.content,
+    );
+    var continuationStart = nestedContinuation.findIndex((line) =>
+      line.includes("d"),
+    );
+    assert.ok(continuationStart > 0);
+    nestedContinuation.slice(continuationStart).forEach((line) => {
+      assert.match(line, /^ {6}\S/);
+    });
 
     var justifiedRecipe = new Recipe({ compress: false }).createPage(300, 200);
     var helWidth = justifiedRecipe.textDimensions("hel", {

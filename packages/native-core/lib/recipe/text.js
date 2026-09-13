@@ -899,7 +899,10 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
         ) {
           child.prependValue = prependValue;
           prependValue = null;
-          textObject.indent = textObject.indent || 2 * textObject.layer;
+          textObject.indent =
+            textObject.tag == "li"
+              ? 2 * textObject.layer
+              : textObject.indent || 2 * textObject.layer;
         }
         if (textObject.indent) {
           child.indent = child.indent || textObject.indent;
@@ -937,7 +940,8 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
   const appendPendingBreaks = (nextTextObject) => {
     const previous = normalizedTextObjects[normalizedTextObjects.length - 1];
     if (previous) previous.lineComplete = true;
-    const blankBreaks = previous ? pendingBreaks.slice(1) : pendingBreaks;
+    const blankBreaks =
+      previous && nextTextObject ? pendingBreaks.slice(1) : pendingBreaks;
     blankBreaks.forEach((breakObject, index) => {
       normalizedTextObjects.push({
         ...breakObject,

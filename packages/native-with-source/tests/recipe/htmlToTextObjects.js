@@ -55,9 +55,14 @@ describe("HTML to TextObjects", () => {
       new muhammara.PDFRStreamForBuffer(bytes),
     );
     try {
+      const extracted = reader.extractPageText(0);
       assert.deepEqual(
-        reader.extractPageText(0).map((item) => item.content.trim()),
+        extracted.map((item) => item.content.trim()),
         ["* plain", "1. nested", "1. one", "2. two"],
+      );
+      assert.equal(
+        extracted.find((item) => item.content.includes("nested")).content,
+        "          1. nested",
       );
     } finally {
       reader.end();
@@ -324,6 +329,32 @@ describe("HTML to TextObjects", () => {
       assert.deepEqual(Array.from(lines.values()).slice(0, 2), ["a", "bc"]);
     } finally {
       reader.end();
+    }
+
+    const trailingRecipe = new muhammara.Recipe(Buffer.from("new"));
+    trailingRecipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    const trailingBytes = trailingRecipe
+      .createPage(300, 300)
+      .text("a<br>", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        flow: true,
+      })
+      .text("FOLLOW", { font: "arial", size: 12, flow: false })
+      .endPage()
+      .endPDF((output) => output);
+    const trailingReader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(trailingBytes),
+    );
+    try {
+      const [first, following] = trailingReader.extractPageText(0);
+      assert.notEqual(first.textMatrix[5], following.textMatrix[5]);
+    } finally {
+      trailingReader.end();
     }
   });
 

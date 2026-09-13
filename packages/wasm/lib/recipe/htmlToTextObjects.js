@@ -17,6 +17,7 @@ export function htmlToTextObjects(html, options = {}) {
   var items = [];
   var pendingBoundary = false;
   var pendingReset = false;
+  var continuationIndent;
   var source = String(html);
   var firstListIndex = source.search(/<(?:ul|ol)\b/i);
   var voidElements = new Set([
@@ -61,6 +62,7 @@ export function htmlToTextObjects(html, options = {}) {
   var pushItem = (item) => {
     push({ value: item.value, indent: item.indent, styles: current() });
     item.markerPending = false;
+    continuationIndent = undefined;
   };
   // HTML5 allows omitting </li>, so an item also ends when its sibling or its
   // list does. Without this, later content would inherit a stale marker.
@@ -72,6 +74,7 @@ export function htmlToTextObjects(html, options = {}) {
     lineBreak();
     var item = items[items.length - 1];
     if (item?.markerPending) pushItem(item);
+    else if (item) continuationIndent = item.indent;
     pendingBoundary = false;
   };
   while ((match = tags.exec(source))) {
@@ -101,7 +104,12 @@ export function htmlToTextObjects(html, options = {}) {
       if (value) {
         currentItem = items[items.length - 1];
         if (currentItem?.markerPending) pushItem(currentItem);
-        push({ value, styles: current() });
+        var object = { value, styles: current() };
+        if (continuationIndent !== undefined) {
+          object.indent = continuationIndent;
+          continuationIndent = undefined;
+        }
+        push(object);
       }
       continue;
     }
@@ -140,7 +148,10 @@ export function htmlToTextObjects(html, options = {}) {
         closeItems(lists.length + 1);
         if (objects.length > removedListFrames[0].objectCount) {
           pendingBoundary = true;
-          if (!lists.length) pendingReset = true;
+          if (!lists.length) {
+            pendingReset = true;
+            continuationIndent = undefined;
+          }
         }
       }
       continue;
@@ -201,7 +212,7 @@ export function htmlToTextObjects(html, options = {}) {
       list.index++;
       var item = {
         value: list.name === "ol" ? `${list.index}. ` : "* ",
-        indent: 6,
+        indent: lists.length * 4 + 2,
         depth: lists.length,
         markerPending: true,
       };
