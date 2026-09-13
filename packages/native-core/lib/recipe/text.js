@@ -937,7 +937,58 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     writeValue(textObject);
   });
 
-  return { toWriteTextObjects: toWriteTextObjects, textHeight: totalHeight };
+  const normalizedTextObjects = [];
+  let pendingBreaks = [];
+  toWriteTextObjects.forEach((textObject, index, objects) => {
+    const sentinel = textObject.text.trim() == "[@@DONOT_RENDER_THIS@@]";
+    const beforeSentinel =
+      textObject.text.trim() == "" &&
+      objects[index + 1]?.text.trim() == "[@@DONOT_RENDER_THIS@@]";
+    if (beforeSentinel) return;
+    if (sentinel) {
+      pendingBreaks.push(textObject);
+      return;
+    }
+    if (pendingBreaks.length) {
+      const previous = normalizedTextObjects[normalizedTextObjects.length - 1];
+      if (previous) previous.lineComplete = true;
+      pendingBreaks.slice(1).forEach((breakObject, index) => {
+        normalizedTextObjects.push({
+          ...breakObject,
+          lineID: pendingBreaks[index].lineID,
+          text: "",
+          lineComplete: true,
+          lineWidth: 0,
+          textWidth: 0,
+          wordsInLine: [],
+        });
+      });
+      textObject.lineID = pendingBreaks[pendingBreaks.length - 1].lineID;
+      pendingBreaks = [];
+    }
+    normalizedTextObjects.push(textObject);
+  });
+  if (pendingBreaks.length) {
+    const previous = normalizedTextObjects[normalizedTextObjects.length - 1];
+    if (previous) previous.lineComplete = true;
+    pendingBreaks.slice(1).forEach((breakObject, index) => {
+      normalizedTextObjects.push({
+        ...breakObject,
+        lineID: pendingBreaks[index].lineID,
+        text: "",
+        lineComplete: true,
+        lineWidth: 0,
+        textWidth: 0,
+        wordsInLine: [],
+      });
+    });
+  }
+  toWriteTextObjects = normalizedTextObjects;
+
+  return {
+    toWriteTextObjects: toWriteTextObjects,
+    textHeight: getTextBoxHeight(toWriteTextObjects) || totalHeight,
+  };
 };
 
 function getTextBoxHeight(textObjs) {
@@ -1267,7 +1318,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
   const indent = textObject.indent || 0;
 
   const lineMaxWidth = textBox.width
-    ? textBox.width - textBox.paddingLeft - textBox.paddingRight - indent
+    ? textBox.width - textBox.paddingLeft - textBox.paddingRight
     : null;
   let remainderWidth = lineMaxWidth;
   let newLine;

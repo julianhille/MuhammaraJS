@@ -201,7 +201,7 @@ function htmlLines(source, width, measure, options, wrap) {
           if (
             width &&
             breakBefore &&
-            htmlPartsWidth(candidate, measure, options) > width - indent
+            htmlPartsWidth(candidate, measure, options) > width
           ) {
             if (wrap === "auto" || wrap === true) {
               flush(false);
@@ -209,7 +209,7 @@ function htmlLines(source, width, measure, options, wrap) {
               word = linePrefix + word;
               linePrefix = "";
             } else if (wrap === "ellipsis") {
-              ellipsizeHtmlParts(parts, width - indent, measure, options);
+              ellipsizeHtmlParts(parts, width, measure, options);
               truncated = true;
               return;
             } else if (wrap !== "clip") {
@@ -359,6 +359,30 @@ export function createTextMethods({ drawText, measure, module }) {
       top = Math.min(top, clipBottomLeft.ny + clip.height);
     }
     if (right <= left || top <= bottom) return;
+    var page = recipe.getCurrentPageInfo();
+    if (recipe._editingPage && page?.rotate) {
+      points = [
+        [left, bottom],
+        [right, bottom],
+        [right, top],
+        [left, top],
+      ].map(([pointX, pointY]) => {
+        if (page.rotate === 90 || page.rotate === -270) {
+          return [page.height - page.offsetX - pointY, page.offsetY + pointX];
+        }
+        if (page.rotate === 180 || page.rotate === -180) {
+          return [page.width - pointX, page.height - pointY];
+        }
+        if (page.rotate === 270 || page.rotate === -90) {
+          return [page.offsetX + pointY, page.width - page.offsetY - pointX];
+        }
+        return [pointX, pointY];
+      });
+      left = Math.min(...points.map((point) => point[0]));
+      right = Math.max(...points.map((point) => point[0]));
+      bottom = Math.min(...points.map((point) => point[1]));
+      top = Math.max(...points.map((point) => point[1]));
+    }
     recipe._linkPdf(url, left, bottom, right - left, top - bottom);
   }
 

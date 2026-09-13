@@ -19,6 +19,22 @@ export function htmlToTextObjects(html, options = {}) {
   var pendingReset = false;
   var source = String(html);
   var firstListIndex = source.search(/<(?:ul|ol)\b/i);
+  var voidElements = new Set([
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+  ]);
   var tags = /<\/?[^>]+>|[^<]+/g;
   var match;
   var hasText = (value) => /[^ \t\r\n\f\v]/.test(value);
@@ -172,6 +188,7 @@ export function htmlToTextObjects(html, options = {}) {
     var css = token.match(/style\s*=\s*["']([^"']*)/i)?.[1] || "";
     var cssColor = css.match(/color\s*:\s*([^;]+)/i);
     if (cssColor) style.color = cssColor[1].trim();
+    if (voidElements.has(name)) continue;
     frames.push({
       name,
       depth: lists.length,

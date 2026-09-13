@@ -169,10 +169,101 @@ describe("HTML to TextObjects", () => {
     try {
       assert.deepEqual(
         reader.extractPageText(0).map((item) => item.content),
-        ["      *", "         alpha", "         bravo", "         charlie"],
+        ["      * alpha", "         bravo", "         charlie"],
       );
     } finally {
       reader.end();
     }
+  });
+
+  it("hides indented break sentinels inside list items", () => {
+    let listClipped;
+    const recipe = new muhammara.Recipe(Buffer.from("new"));
+    recipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    const bytes = recipe
+      .createPage(300, 300)
+      .text("<ul><li>before<br>after</li></ul>", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        textBox: {
+          width: 200,
+          height: 24,
+          lineHeight: 12,
+          clipIfExceedsBox: true,
+          onClip: (_recipe, result) => {
+            listClipped = result;
+          },
+        },
+      })
+      .endPage()
+      .endPDF((output) => output);
+    const reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(bytes),
+    );
+    try {
+      assert.deepEqual(
+        reader.extractPageText(0).map((item) => item.content),
+        ["      * before", "      after"],
+      );
+      assert.equal(listClipped, undefined);
+    } finally {
+      reader.end();
+    }
+
+    let clipped;
+    const clippedBytes = new muhammara.Recipe(Buffer.from("new"))
+      .createPage(300, 300)
+      .text("a<br>b", 20, 20, {
+        size: 12,
+        html: true,
+        textBox: {
+          width: 200,
+          height: 30,
+          lineHeight: 12,
+          clipIfExceedsBox: true,
+          onClip: (_recipe, result) => {
+            clipped = result;
+          },
+        },
+      })
+      .endPage()
+      .endPDF((output) => output);
+    const clippedReader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(clippedBytes),
+    );
+    try {
+      assert.deepEqual(
+        clippedReader.extractPageText(0).map((item) => item.content),
+        ["a", "b"],
+      );
+      assert.equal(clipped, undefined);
+    } finally {
+      clippedReader.end();
+    }
+
+    let doubleBreakClip;
+    new muhammara.Recipe(Buffer.from("new"))
+      .createPage(300, 300)
+      .text("a<br><br>b", 20, 20, {
+        size: 12,
+        html: true,
+        textBox: {
+          width: 200,
+          height: 24,
+          lineHeight: 12,
+          clipIfExceedsBox: true,
+          onClip: (_recipe, result) => {
+            doubleBreakClip = result;
+          },
+        },
+      })
+      .endPage()
+      .endPDF();
+    assert.equal(doubleBreakClip.linesWritten, 2);
+    assert.equal(doubleBreakClip.remainder, "b");
   });
 });

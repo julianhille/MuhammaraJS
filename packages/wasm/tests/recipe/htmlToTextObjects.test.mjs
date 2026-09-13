@@ -35,6 +35,11 @@ describe("HTML to TextObjects", function () {
         .join(""),
       "a\n\nb",
     );
+    assert.deepEqual(
+      recipe.htmlToTextObjects('<img style="color:red">plain'),
+      [{ value: "plain", styles: {} }],
+      "void elements must not leak styles or accumulate parser frames",
+    );
     assert.equal(
       recipe
         .htmlToTextObjects(
@@ -292,12 +297,19 @@ describe("HTML to TextObjects", function () {
         charSpace: 5,
         html: true,
       });
+    var alphaWidth = spacedRecipe.textDimensions("alpha ", {
+      font: "arial",
+      size: 12,
+      charSpace: 5,
+    }).width;
     var spacedBytes = spacedRecipe.endPage().endPDF();
+    var spacedRuns;
     assert.deepEqual(
       (() => {
         var reader = muhammara.createReader(spacedBytes);
         try {
-          return reader.extractPageText(0).map((item) => item.content);
+          spacedRuns = reader.extractPageText(0);
+          return spacedRuns.map((item) => item.content);
         } finally {
           reader.end();
         }
@@ -308,6 +320,10 @@ describe("HTML to TextObjects", function () {
       new TextDecoder().decode(spacedBytes),
       /5 Tc/,
       "character spacing must be emitted for styled HTML runs",
+    );
+    assert.ok(
+      Math.abs(spacedRuns[1].textMatrix[4] - (20 + alphaWidth + 10)) < 0.001,
+      "styled whitespace boundaries must retain every character-space interval",
     );
 
     var rotatedBytes = new Recipe({ compress: false })
@@ -391,6 +407,54 @@ describe("HTML to TextObjects", function () {
         Number(editedLinkRect[3]) - Number(editedLinkRect[1]),
     );
 
+    var rotatedEditSource = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .rotate(90)
+      .endPage()
+      .endPDF();
+    var rotatedEditOutput = new TextDecoder().decode(
+      new Recipe(rotatedEditSource, { compress: false })
+        .editPage(1)
+        .text('<a href="https://example.test">linked</a>', 20, 20, {
+          font: "arial",
+          size: 12,
+          html: true,
+          skewX: 10,
+        })
+        .endPage()
+        .endPDF(),
+    );
+    var rotatedEditRect = rotatedEditOutput.match(
+      /\/Rect \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/,
+    );
+    assert.ok(rotatedEditRect);
+    assert.ok(
+      Number(rotatedEditRect[3]) < 50 && Number(rotatedEditRect[2]) < 120,
+      "transformed links must follow the source page rotation",
+    );
+
+    var rotatedCreatedOutput = new TextDecoder().decode(
+      new Recipe({ compress: false })
+        .createPage(300, 200)
+        .rotate(90)
+        .text('<a href="https://example.test">linked</a>', 20, 20, {
+          font: "arial",
+          size: 12,
+          html: true,
+          skewX: 10,
+        })
+        .endPage()
+        .endPDF(),
+    );
+    var rotatedCreatedRect = rotatedCreatedOutput.match(
+      /\/Rect \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/,
+    );
+    assert.ok(rotatedCreatedRect);
+    assert.ok(
+      Number(rotatedCreatedRect[2]) > 150,
+      "created-page rotation must not transform the link without its text",
+    );
+
     var justifiedHiliteBytes = new Recipe({ compress: false })
       .createPage(300, 200)
       .text("<b>alpha</b> bravo charlie delta", 20, 20, {
@@ -460,7 +524,7 @@ describe("HTML to TextObjects", function () {
       });
     assert.deepEqual(
       extract(narrowListRecipe).map((item) => item.content),
-      ["      *", "         alpha", "         bravo", "         charlie"],
+      ["      * alpha", "         bravo", "         charlie"],
     );
 
     var justifiedRecipe = new Recipe({ compress: false }).createPage(300, 200);
