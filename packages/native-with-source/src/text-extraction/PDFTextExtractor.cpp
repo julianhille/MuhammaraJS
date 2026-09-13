@@ -25,11 +25,42 @@ double GetNumber(PDFObject* inObject)
   return 0;
 }
 
+bool IsNumber(PDFObject* inObject)
+{
+  return inObject &&
+         (inObject->GetType() == PDFObject::ePDFObjectInteger ||
+          inObject->GetType() == PDFObject::ePDFObjectReal);
+}
+
+bool AreNumbers(const std::vector<RefCountPtr<PDFObject> >& inOperands, size_t inCount)
+{
+  if (inOperands.size() != inCount)
+    return false;
+  for (size_t i = 0; i < inCount; ++i)
+  {
+    if (!IsNumber(inOperands[i].GetPtr()))
+      return false;
+  }
+  return true;
+}
+
 bool IsTextString(PDFObject* inObject)
 {
   return inObject &&
          (inObject->GetType() == PDFObject::ePDFObjectLiteralString ||
           inObject->GetType() == PDFObject::ePDFObjectHexString);
+}
+
+bool IsValidQuote(const std::vector<RefCountPtr<PDFObject> >& inOperands)
+{
+  return inOperands.size() == 1 && IsTextString(inOperands[0].GetPtr());
+}
+
+bool IsValidDoubleQuote(const std::vector<RefCountPtr<PDFObject> >& inOperands)
+{
+  return inOperands.size() == 3 &&
+         IsNumber(inOperands[0].GetPtr()) && IsNumber(inOperands[1].GetPtr()) &&
+         IsTextString(inOperands[2].GetPtr());
 }
 
 bool IsVisibleTextRenderingMode(int inRenderingMode)
@@ -113,6 +144,33 @@ void SetMatrix(double outMatrix[6], const std::vector<RefCountPtr<PDFObject> >& 
   for (size_t i = 0; i < 6; ++i)
     outMatrix[i] = GetNumber(inOperands[i].GetPtr());
 }
+
+void SetIdentityMatrix(double outMatrix[6])
+{
+  const double identity[] = {1, 0, 0, 1, 0, 0};
+  for (size_t i = 0; i < 6; ++i)
+    outMatrix[i] = identity[i];
+}
+
+void CopyMatrix(double outMatrix[6], const double inMatrix[6])
+{
+  for (size_t i = 0; i < 6; ++i)
+    outMatrix[i] = inMatrix[i];
+}
+
+void MoveTextLine(double outTextMatrix[6], double ioTextLineMatrix[6], double inX, double inY)
+{
+  ioTextLineMatrix[4] += inX * ioTextLineMatrix[0] + inY * ioTextLineMatrix[2];
+  ioTextLineMatrix[5] += inX * ioTextLineMatrix[1] + inY * ioTextLineMatrix[3];
+  CopyMatrix(outTextMatrix, ioTextLineMatrix);
+}
+
+struct ExtractedTextState
+{
+  std::string fontResource;
+  double fontSize;
+  double leading;
+};
 }
 
 namespace
@@ -159,6 +217,9 @@ bool PDFTextExtractor::Extract(
   std::string fontResource;
   double fontSize = 0;
   double textMatrix[] = {1, 0, 0, 1, 0, 0};
+  double textLineMatrix[] = {1, 0, 0, 1, 0, 0};
+  double textLeading = 0;
+  std::vector<ExtractedTextState> textStateStack;
   std::vector<RefCountPtr<PDFObject> > operands;
   PDFObject* object = NULL;
   size_t extractedTextBytes = 0;
@@ -185,9 +246,28 @@ bool PDFTextExtractor::Extract(
     }
 
     std::string operation = static_cast<PDFSymbol*>(object)->GetValue();
-    if (operation == "BT")
+    if (operation == "q" && operands.empty())
+    {
+      ExtractedTextState state;
+      state.fontResource = fontResource;
+      state.fontSize = fontSize;
+      state.leading = textLeading;
+      textStateStack.push_back(state);
+    }
+    else if (operation == "Q" && operands.empty() && !textStateStack.empty())
+    {
+      fontResource = textStateStack.back().fontResource;
+      fontSize = textStateStack.back().fontSize;
+      textLeading = textStateStack.back().leading;
+      textStateStack.pop_back();
+    }
+    else if (operation == "BT" && operands.empty() && !inTextObject)
+    {
       inTextObject = true;
-    else if (operation == "ET")
+      SetIdentityMatrix(textMatrix);
+      SetIdentityMatrix(textLineMatrix);
+    }
+    else if (operation == "ET" && operands.empty() && inTextObject)
       inTextObject = false;
     else if (operation == "Tf" && operands.size() == 2)
     {
@@ -195,16 +275,37 @@ bool PDFTextExtractor::Extract(
         fontResource = static_cast<PDFName*>(operands[0].GetPtr())->GetValue();
       fontSize = GetNumber(operands[1].GetPtr());
     }
-    else if (operation == "Tm")
+    else if (inTextObject && operation == "Tm" && AreNumbers(operands, 6))
+    {
       SetMatrix(textMatrix, operands);
+      CopyMatrix(textLineMatrix, textMatrix);
+    }
+    else if (inTextObject && (operation == "Td" || operation == "TD") && AreNumbers(operands, 2))
+    {
+      double x = GetNumber(operands[0].GetPtr());
+      double y = GetNumber(operands[1].GetPtr());
+      if (operation == "TD")
+        textLeading = -y;
+      MoveTextLine(textMatrix, textLineMatrix, x, y);
+    }
+    else if (inTextObject && operation == "TL" && AreNumbers(operands, 1))
+      textLeading = GetNumber(operands[0].GetPtr());
+    else if (inTextObject && operation == "T*" && operands.empty())
+      MoveTextLine(textMatrix, textLineMatrix, 0, -textLeading);
     else if (operation == "ID")
     {
       SkipInlineImageData(objectParser);
       operands.clear();
       continue;
     }
-    else if (inTextObject && (operation == "Tj" || operation == "'" || operation == "\"" || operation == "TJ"))
+    else if (inTextObject &&
+             (operation == "Tj" || operation == "TJ" ||
+              (operation == "'" && IsValidQuote(operands)) ||
+              (operation == "\"" && IsValidDoubleQuote(operands))))
     {
+      if (operation == "'" || operation == "\"")
+        MoveTextLine(textMatrix, textLineMatrix, 0, -textLeading);
+
       std::string content;
       if (operation == "TJ" && operands.size() == 1 && operands[0]->GetType() == PDFObject::ePDFObjectArray)
         content = GetTextArray(static_cast<PDFArray*>(operands[0].GetPtr()));
