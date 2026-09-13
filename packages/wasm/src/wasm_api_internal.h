@@ -369,6 +369,43 @@ static double textObjectNumber(PDFObject* object) {
   return 0;
 }
 
+static bool isTextNumber(PDFObject* object) {
+  return object != nullptr &&
+         (object->GetType() == PDFObject::ePDFObjectInteger ||
+          object->GetType() == PDFObject::ePDFObjectReal);
+}
+
+static bool areTextNumbers(
+    const std::vector<RefCountPtr<PDFObject>>& operands, size_t count) {
+  if (operands.size() != count) return false;
+  for (size_t index = 0; index < count; ++index) {
+    if (!isTextNumber(operands[index].GetPtr())) return false;
+  }
+  return true;
+}
+
+static void setIdentityTextMatrix(double matrix[6]) {
+  const double identity[] = {1, 0, 0, 1, 0, 0};
+  for (size_t index = 0; index < 6; ++index) matrix[index] = identity[index];
+}
+
+static void copyTextMatrix(double output[6], const double input[6]) {
+  for (size_t index = 0; index < 6; ++index) output[index] = input[index];
+}
+
+static void moveTextLine(double textMatrix[6], double textLineMatrix[6],
+                         double x, double y) {
+  textLineMatrix[4] += x * textLineMatrix[0] + y * textLineMatrix[2];
+  textLineMatrix[5] += x * textLineMatrix[1] + y * textLineMatrix[3];
+  copyTextMatrix(textMatrix, textLineMatrix);
+}
+
+struct WasmExtractedTextState {
+  std::string fontResource;
+  double fontSize;
+  double leading;
+};
+
 // Hard ceilings mirroring the Node driver's PDFTextExtractor.h. Callers may
 // request lower values, never higher ones.
 static const size_t kWasmMaxExtractedElements = 100000;
@@ -385,6 +422,18 @@ static bool isTextString(PDFObject* object) {
   return object != nullptr &&
          (object->GetType() == PDFObject::ePDFObjectLiteralString ||
           object->GetType() == PDFObject::ePDFObjectHexString);
+}
+
+static bool isValidQuote(
+    const std::vector<RefCountPtr<PDFObject>>& operands) {
+  return operands.size() == 1 && isTextString(operands[0].GetPtr());
+}
+
+static bool isValidDoubleQuote(
+    const std::vector<RefCountPtr<PDFObject>>& operands) {
+  return operands.size() == 3 && isTextNumber(operands[0].GetPtr()) &&
+         isTextNumber(operands[1].GetPtr()) &&
+         isTextString(operands[2].GetPtr());
 }
 
 static std::string textString(PDFObject* object) {
@@ -480,6 +529,9 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
   std::string fontResource;
   double fontSize = 0;
   double textMatrix[] = {1, 0, 0, 1, 0, 0};
+  double textLineMatrix[] = {1, 0, 0, 1, 0, 0};
+  double textLeading = 0;
+  std::vector<WasmExtractedTextState> textStateStack;
   std::vector<RefCountPtr<PDFObject>> operands;
   size_t extractedTextBytes = 0;
   size_t parsedObjects = 0;
@@ -501,26 +553,57 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
     }
 
     std::string operation = static_cast<PDFSymbol*>(object)->GetValue();
-    if (operation == "BT") {
+    if (operation == "q" && operands.empty()) {
+      WasmExtractedTextState state;
+      state.fontResource = fontResource;
+      state.fontSize = fontSize;
+      state.leading = textLeading;
+      textStateStack.push_back(state);
+    } else if (operation == "Q" && operands.empty() &&
+               !textStateStack.empty()) {
+      fontResource = textStateStack.back().fontResource;
+      fontSize = textStateStack.back().fontSize;
+      textLeading = textStateStack.back().leading;
+      textStateStack.pop_back();
+    } else if (operation == "BT" && operands.empty() && !inTextObject) {
       inTextObject = true;
-    } else if (operation == "ET") {
+      setIdentityTextMatrix(textMatrix);
+      setIdentityTextMatrix(textLineMatrix);
+    } else if (operation == "ET" && operands.empty() && inTextObject) {
       inTextObject = false;
     } else if (operation == "Tf" && operands.size() == 2) {
       if (operands[0]->GetType() == PDFObject::ePDFObjectName) {
         fontResource = static_cast<PDFName*>(operands[0].GetPtr())->GetValue();
       }
       fontSize = textObjectNumber(operands[1].GetPtr());
-    } else if (operation == "Tm" && operands.size() == 6) {
+    } else if (inTextObject && operation == "Tm" &&
+               areTextNumbers(operands, 6)) {
       for (size_t index = 0; index < 6; ++index) {
         textMatrix[index] = textObjectNumber(operands[index].GetPtr());
       }
+      copyTextMatrix(textLineMatrix, textMatrix);
+    } else if (inTextObject && (operation == "Td" || operation == "TD") &&
+               areTextNumbers(operands, 2)) {
+      double x = textObjectNumber(operands[0].GetPtr());
+      double y = textObjectNumber(operands[1].GetPtr());
+      if (operation == "TD") textLeading = -y;
+      moveTextLine(textMatrix, textLineMatrix, x, y);
+    } else if (inTextObject && operation == "TL" &&
+               areTextNumbers(operands, 1)) {
+      textLeading = textObjectNumber(operands[0].GetPtr());
+    } else if (inTextObject && operation == "T*" && operands.empty()) {
+      moveTextLine(textMatrix, textLineMatrix, 0, -textLeading);
     } else if (operation == "ID") {
       skipInlineImageData(objectParser);
       operands.clear();
       continue;
     } else if (inTextObject &&
-               (operation == "Tj" || operation == "'" || operation == "\"" ||
-                operation == "TJ")) {
+               (operation == "Tj" || operation == "TJ" ||
+                (operation == "'" && isValidQuote(operands)) ||
+                (operation == "\"" && isValidDoubleQuote(operands)))) {
+      if (operation == "'" || operation == "\"") {
+        moveTextLine(textMatrix, textLineMatrix, 0, -textLeading);
+      }
       std::string content;
       if (operation == "TJ" && operands.size() == 1 &&
           operands[0]->GetType() == PDFObject::ePDFObjectArray) {

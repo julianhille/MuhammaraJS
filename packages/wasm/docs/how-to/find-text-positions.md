@@ -32,8 +32,12 @@ try {
 
 Each result is a PDF text-showing operation in content-stream order.
 `textMatrix` is `[a, b, c, d, e, f]`; `e` and `f` are its position. Content is
-raw PDF string data and is not decoded through every font character map, so this
-is not a general visual full-text search or glyph-bounds API.
+raw PDF string data. The matrix reflects explicit text positioning through
+`BT`, `Tm`, `Td`, `TD`, `TL`, `T*`, `'`, and `"`. The extractor does not decode
+every font character map or calculate glyph bounds and glyph-driven matrix
+advances, so adjacent text-showing operations without an explicit positioning
+operator retain the same matrix. This is not a general visual full-text search
+or glyph-bounds API.
 
 ## Bound the work on untrusted input
 

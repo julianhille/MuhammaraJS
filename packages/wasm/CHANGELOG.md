@@ -69,6 +69,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 - Prevent Wasm text extraction from reporting inline-image payload bytes as
   fabricated page text [#670](https://github.com/julianhille/MuhammaraJS/issues/670)
+- Report the correct text matrix after `BT`, `Td`, `TD`, `TL`, `T*`, `'`, and
+  `"` while extracting page text
+  [#673](https://github.com/julianhille/MuhammaraJS/issues/673)
 - Preserve HTML whitespace, non-breaking spaces, inline layout, and transforms;
   render one marker per list item while matching native wrapping and nesting;
   recover malformed list closures in linear time without retaining void

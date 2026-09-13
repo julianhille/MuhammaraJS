@@ -21,12 +21,16 @@ executed by
 
 Each result represents a PDF text-showing operation in content-stream drawing
 order. `textMatrix` is `[a, b, c, d, e, f]`; `e` and `f` are the text position.
+The matrix reflects explicit text positioning through `BT`, `Tm`, `Td`, `TD`,
+`TL`, `T*`, `'`, and `"`.
 Repeated text produces multiple matches, so use the matrix, font resource, and
 surrounding operations to choose the intended occurrence.
 
 `content` contains raw character codes from the PDF content stream. The API does
 not decode font character maps or calculate glyph bounds, so it is not a general
-visual-text search API. See the `PDFTextElement` declaration and [`tests/PDFTextExtractionTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFTextExtractionTest.js)
+visual-text search API. It also does not calculate glyph-driven text-matrix
+advances, so adjacent text-showing operations without an explicit positioning
+operator retain the same matrix. See the `PDFTextElement` declaration and [`tests/PDFTextExtractionTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFTextExtractionTest.js)
 for the verified output shape.
 
 ## Bound the work on untrusted input
