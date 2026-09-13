@@ -4,11 +4,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
-### Breaking Changes
+### Fixed
 
-- `recrypt()` no longer accepts `version: 20`; TypeScript now rejects it and
-  JavaScript throws because PDF 2.0/AES-256 encryption is unavailable in
-  WebAssembly. Use a PDF 1.0 through 1.7 version instead
+- Reject unsupported PDF 2.0/AES-256 encryption in `recrypt()` with a clear
+  WebAssembly limitation error
   [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
 
 ### Added
