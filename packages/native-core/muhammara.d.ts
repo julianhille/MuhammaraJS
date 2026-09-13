@@ -918,6 +918,63 @@ declare namespace muhammara {
   }
 
   namespace Recipe {
+    type Color = string | readonly number[];
+    type BorderRadius =
+      | number
+      | readonly [number]
+      | readonly [number, number]
+      | readonly [number, number, number]
+      | readonly [number, number, number, number];
+    type DeviceColorspace = "rgb" | "gray" | "cmyk";
+    type Colorspace = DeviceColorspace | "separation";
+    /**
+     * Matches known runtime values case-insensitively without enumerating
+     * every per-character capitalization combination — that recursive
+     * approach costs 2^N literal types for an N-character word (4096 for
+     * "circumcenter" alone). The runtime lowercases the whole value before
+     * comparing, so any casing works at runtime; the type instead accepts
+     * the three forms callers actually write (lower case, UPPER CASE, and
+     * Capitalized).
+     */
+    type CaseInsensitive<Value extends string> =
+      Lowercase<Value> | Uppercase<Value> | Capitalize<Lowercase<Value>>;
+    type TriangleTrait = CaseInsensitive<"sss" | "sas" | "asa" | "vtx">;
+    type TriangleMeasurementTrait = CaseInsensitive<"sss" | "sas" | "asa">;
+    type TriangleVertexTrait = CaseInsensitive<"vtx">;
+    type TrianglePosition = CaseInsensitive<
+      "a" | "b" | "c" | "centroid" | "circumcenter" | "incenter"
+    >;
+    type PermissionName =
+      | "print"
+      | "modify"
+      | "copy"
+      | "edit"
+      | "fillform"
+      | "extract"
+      | "assemble"
+      | "printbest";
+    /** Known permission names with string compatibility for composed lists. */
+    type PermissionList = PermissionName | (string & {});
+    /**
+     * Passes a colorspace argument through when it is valid, and otherwise
+     * resolves to the accepted set so the compiler names the valid values
+     * instead of reporting the bare `never` the optional parameter would
+     * collapse to. A plain `string` stays accepted for runtime-computed values.
+     */
+    type ValidColorspace<Value extends string | undefined> = [Value] extends [
+      undefined,
+    ]
+      ? Value
+      : string extends Exclude<Value, undefined>
+        ? Value
+        : Exclude<Value, undefined> extends Colorspace | ""
+          ? Value
+          : Colorspace | "";
+    type ExtensionCallback<
+      Arguments extends unknown[] = never[],
+      Result = unknown,
+    > = (this: Recipe, ...args: Arguments) => Result;
+
     type CommentOptionsFlag =
       | "invisible"
       | "hidden"
@@ -991,6 +1048,7 @@ declare namespace muhammara {
       title?: string;
       subject?: string;
       keywords?: string[];
+      colorspace?: Colorspace;
     }
 
     interface RecipeMargins {
@@ -1007,7 +1065,7 @@ declare namespace muhammara {
       richText?: boolean;
       flag?: CommentOptionsFlag;
       /** Replies linked to this comment annotation. */
-      replies?: Array<AnnotReply>;
+      replies?: readonly AnnotReply[];
     }
 
     interface AnnotOptions {
@@ -1022,7 +1080,7 @@ declare namespace muhammara {
       opacity?: number;
       date?: string;
       subject?: string;
-      replies?: Array<AnnotReply>;
+      replies?: readonly AnnotReply[];
     }
 
     interface AnnotReply {
@@ -1031,8 +1089,17 @@ declare namespace muhammara {
       title?: string;
       richText?: boolean;
       flag?: AnnotOptionsFlag;
+      opacity?: number;
       date?: string;
       subject?: string;
+    }
+
+    interface TextMarkupOptions extends Pick<
+      AnnotOptions,
+      "opacity" | "replies"
+    > {
+      text?: string;
+      color?: Color;
     }
 
     interface EncryptOptions {
@@ -1087,17 +1154,34 @@ declare namespace muhammara {
       offsetY?: number;
     }
 
+    interface ReadMetadataPage extends MetadataPage {
+      size: number[];
+      offsetX: number;
+      offsetY: number;
+    }
+
     interface Metadata {
+      /** Number of pages in a parsed source PDF. */
+      pages?: number;
+      /** Number of pages created in a new PDF. */
+      pageCount?: number;
+      [page: number]: MetadataPage | undefined;
+    }
+
+    interface ReadMetadata extends Metadata {
       pages: number;
-      [page: number]: MetadataPage;
+      pageCount?: never;
+      [page: number]: ReadMetadataPage | undefined;
     }
 
     interface TextBoxStyle {
       lineWidth?: number;
-      stroke?: string | number[];
-      dash?: number[];
-      fill?: string | number[];
+      stroke?: Color;
+      dash?: readonly number[];
+      fill?: Color;
+      colorspace?: Colorspace;
       opacity?: number;
+      borderRadius?: boolean | BorderRadius;
     }
 
     interface TextBoxClipResult {
@@ -1116,25 +1200,37 @@ declare namespace muhammara {
       width?: number;
       height?: number;
       minHeight?: number;
-      padding?: number | number[];
+      padding?: number | readonly number[];
       lineHeight?: number;
+      wrap?: boolean | "auto" | "clip" | "trim" | "ellipsis";
       textAlign?: string;
       clipIfExceedsBox?: boolean;
       onClip?: (recipe: Recipe, result: TextBoxClipResult) => void;
       style?: TextBoxStyle;
     }
 
+    interface TextOverflowInstructions {
+      layout?: number | string;
+      column?: number | readonly [number, number];
+    }
+
+    type TextOverflowCallback = (
+      this: Recipe,
+      recipe: Recipe,
+    ) => boolean | TextOverflowInstructions;
+
     interface TextOptions {
       /** Make the rendered text open this URL. */
       link?: string;
       charSpace?: number;
-      color?: string | number[];
+      color?: Color;
+      colorspace?: Colorspace;
       flow?: boolean;
-      overflow?: () => void;
+      overflow?: TextOverflowCallback;
       layout?: number | string;
       opacity?: number;
       rotation?: number;
-      rotationOrigin?: [number, number];
+      rotationOrigin?: readonly [number, number];
       font?: string;
       /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. */
       fontSize?: number;
@@ -1143,14 +1239,15 @@ declare namespace muhammara {
       bold?: boolean;
       italic?: boolean;
       align?: string;
-      highlight?: boolean;
-      underline?: boolean;
-      strikeOut?: boolean;
+      highlight?: boolean | TextMarkupOptions;
+      underline?: boolean | TextMarkupOptions;
+      strikeOut?: boolean | TextMarkupOptions;
+      squiggly?: boolean | TextMarkupOptions;
       html?: boolean;
       hilite?:
         | boolean
         | {
-            color?: string | number[];
+            color?: Color;
             opacity?: number;
           };
       textBox?: TextBox;
@@ -1163,52 +1260,220 @@ declare namespace muhammara {
       subject?: string;
     }
 
-    interface LineToOptions {
-      color?: string | number[];
-      stroke?: string | number[];
-      fill?: string | number[];
-      lineWidth?: number;
-      opacity?: number;
-      dash?: number[];
+    interface LayoutOptions {
+      columns?: number;
+      gap?: number;
+      reset?: boolean;
     }
 
-    interface LineOptions {
-      color?: string | number[];
-      stroke?: string | number[];
-      lineWidth?: number;
-      dash?: number[];
+    type TableField<RecordType extends object> = RecordType extends unknown
+      ? RecordType extends readonly unknown[]
+        ? number extends RecordType["length"]
+          ? `${number}`
+          : Extract<keyof RecordType, `${number}`>
+        : | Extract<keyof RecordType, string>
+          | `${Extract<keyof RecordType, number>}`
+      : never;
+    type TableColumnField<RecordType extends object> = Exclude<
+      TableField<RecordType>,
+      ""
+    >;
+    type TableFieldValue<
+      RecordType extends object,
+      Field extends TableField<RecordType>,
+    > = RecordType extends unknown
+      ? Field extends keyof RecordType
+        ? RecordType[Field]
+        : Field extends `${infer NumericField extends number}`
+          ? NumericField extends keyof RecordType
+            ? RecordType[NumericField]
+            : undefined
+          : undefined
+      : never;
+
+    interface TableColumnDefinition<
+      RecordType extends object = Record<string, unknown>,
+      Field extends TableColumnField<RecordType> = TableColumnField<RecordType>,
+    > extends Omit<TextOptions, "textBox"> {
+      name: Field;
+      text?: string;
+      width?: number;
+      cell?: TextBox;
+      header?: boolean | TextOptions;
+      hcell?: TextBox;
+      renderer?: (
+        this: void,
+        text: undefined extends TableFieldValue<RecordType, Field>
+          ? Exclude<TableFieldValue<RecordType, Field>, undefined> | ""
+          : TableFieldValue<RecordType, Field>,
+        record: RecordType,
+        field: Field,
+        row: number,
+      ) => TextOptions | false | null | "" | 0 | void;
     }
 
-    interface PolygonOptions {
-      link?: string;
-      color?: string | number[];
-      stroke?: string | number[];
-      fill?: string | number[];
-      lineWidth?: number;
-      opacity?: number;
-      dash?: number[];
+    /**
+     * A distributive map over every field of `RecordType`, so a column's
+     * `renderer` receives the exact value type for its own `name` rather than
+     * the union of all columns' value types. This costs one
+     * `TableColumnDefinition` instantiation per field of `RecordType`; a
+     * plain `TableColumnDefinition<RecordType>` would be cheaper but would
+     * widen every renderer's `text` parameter to the union of all fields.
+     */
+    type TableColumnOptions<
+      RecordType extends object = Record<string, unknown>,
+    > = {
+      [Field in TableColumnField<RecordType>]: TableColumnDefinition<
+        RecordType,
+        Field
+      >;
+    }[TableColumnField<RecordType>];
+
+    interface TableOptions<
+      RecordType extends object = Record<string, unknown>,
+    > extends Omit<TextOptions, "overflow"> {
+      height?: number;
+      order?:
+        | string
+        | TableField<RecordType>[]
+        | readonly [TableField<RecordType>, ...TableField<RecordType>[]];
+      columns?: readonly TableColumnOptions<RecordType>[];
+      header?:
+        boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
+      border?: boolean | PolygonOptions;
+      row?: TextOptions & { nth?: "even" | "odd"; cell?: TextBox };
+      overflow?: (
+        this: Recipe,
+        recipe: Recipe,
+        row: number,
+      ) => boolean | { position?: readonly [number, number] };
     }
 
-    interface CircleOptions {
-      link?: string;
-      color?: string | number[];
-      stroke?: string | number[];
-      fill?: string | number[];
-      lineWidth?: number;
-      opacity?: number;
-      dash?: number[];
+    interface HtmlTextObject {
+      value: string | null;
+      tag: string | undefined;
+      font: string | undefined;
+      isBold: boolean;
+      isItalic: boolean;
+      underline: boolean;
+      strikeOut: boolean;
+      attributes: Array<{ name: string; value: string | null }>;
+      styles: Record<string, string | number | number[]>;
+      needsLineBreaker: boolean;
+      size: number | undefined;
+      sizeRatio: number;
+      sizeRatios: number[];
+      link: string | null;
+      childs: HtmlTextObject[];
     }
 
-    interface RectangleOptions {
-      link?: string;
-      color?: string | number[];
-      stroke?: string | number[];
-      fill?: string | number[];
+    interface DrawingOptions {
+      color?: Color;
+      stroke?: Color;
+      colorspace?: Colorspace;
       lineWidth?: number;
+      width?: number;
       opacity?: number;
-      dash?: number[];
+      dash?: readonly number[];
+      dashPhase?: number;
+    }
+
+    interface PathOptions extends DrawingOptions {
+      lineCap?: "butt" | "round" | "square";
+      lineJoin?: "miter" | "round" | "bevel";
+      miterLimit?: number;
+    }
+
+    interface SkewOptions {
+      skewX?: number;
+      skewY?: number;
+    }
+
+    interface TransformOptions extends SkewOptions {
       rotation?: number;
-      rotationOrigin?: number[];
+      rotationOrigin?: readonly [number, number];
+    }
+
+    interface TransformedPathOptions extends PathOptions, TransformOptions {}
+
+    type LineToOptions = PathOptions;
+
+    type LineOptions = PathOptions;
+
+    interface LinkFillOptions {
+      link?: string;
+      fill?: Color;
+    }
+
+    interface PolygonOptions extends TransformedPathOptions, LinkFillOptions {}
+
+    interface ShapeOptions extends PolygonOptions {
+      debug?: boolean | number;
+    }
+
+    interface NGonOptions extends ShapeOptions {
+      rotationVertice?: number;
+    }
+
+    interface ArrowOptions extends ShapeOptions {
+      head?:
+        | number
+        | readonly [number]
+        | readonly [number, number]
+        | readonly [number, number, number];
+      shaft?: number | readonly [number] | readonly [number, number];
+      double?: boolean;
+      type?: 0 | 1 | 2 | "triangle" | "dart" | "kite";
+      at?: "head" | "tail";
+    }
+
+    interface TriangleBaseOptions extends ShapeOptions {
+      position?: TrianglePosition;
+      flipX?: boolean;
+      flipY?: boolean;
+    }
+
+    type TriangleMeasurementOptions = TriangleBaseOptions &
+      (
+        | { traitID: TriangleMeasurementTrait; traitsID?: TriangleTrait }
+        | {
+            traitID?: undefined;
+            traitsID?: TriangleMeasurementTrait;
+          }
+      );
+    type TriangleVertexIdentifier =
+      | { traitID: TriangleVertexTrait; traitsID?: TriangleTrait }
+      | { traitID?: undefined; traitsID: TriangleVertexTrait };
+    type TriangleVertexOptions = TriangleBaseOptions & TriangleVertexIdentifier;
+    type TriangleUnpositionedVertexOptions = Omit<
+      TriangleBaseOptions,
+      "position" | "flipX" | "flipY"
+    > & {
+      position?: undefined;
+      flipX?: false;
+      flipY?: false;
+    } & TriangleVertexIdentifier;
+    type TriangleOptions = TriangleMeasurementOptions | TriangleVertexOptions;
+    type TriangleMeasurements = readonly [number, number, number];
+    type TriangleVertices = readonly [
+      readonly [number, number],
+      readonly [number, number],
+      readonly [number, number],
+    ];
+    type MutableTriangleVertices = [
+      [number, number],
+      [number, number],
+      [number, number],
+    ];
+
+    interface CircleOptions
+      extends DrawingOptions, SkewOptions, LinkFillOptions {}
+
+    interface EllipseOptions extends CircleOptions, TransformOptions {}
+
+    interface RectangleOptions
+      extends DrawingOptions, TransformOptions, LinkFillOptions {
+      borderRadius?: BorderRadius;
     }
 
     interface LineStyleOptions {
@@ -1234,11 +1499,16 @@ declare namespace muhammara {
     );
 
     readonly position: { x: number; y: number };
-    /** Metadata read from the source PDF, keyed by one-based page number. */
+    /** Current document metadata, keyed by one-based page number. */
     readonly metadata: Recipe.Metadata;
-    read(inSrc?: string | Buffer): { pages: number; [page: number]: object };
-    register(key: string, callback: Function): Recipe;
-    register(callback: Function & { name: string }): Recipe;
+    read(inSrc?: string | Buffer): Recipe.ReadMetadata;
+    register<Arguments extends unknown[], Result>(
+      key: string,
+      callback: Recipe.ExtensionCallback<Arguments, Result>,
+    ): Recipe;
+    register<Arguments extends unknown[], Result>(
+      callback: Recipe.ExtensionCallback<Arguments, Result>,
+    ): Recipe;
 
     constructor(
       buffer: Buffer,
@@ -1364,9 +1634,14 @@ declare namespace muhammara {
       y?: number,
       width?: number,
       height?: number,
-      options?: object,
+      options?: Recipe.LayoutOptions,
     ): Recipe;
-    table(x: number, y: number, contents: object[], options?: object): Recipe;
+    table<RecordType extends object>(
+      x: number,
+      y: number,
+      contents: readonly RecordType[],
+      options?: Recipe.TableOptions<RecordType>,
+    ): Recipe;
 
     moveTo(x: number, y: number): Recipe;
 
@@ -1396,7 +1671,7 @@ declare namespace muhammara {
       cy: number,
       rx: number,
       ry: number,
-      options?: Recipe.CircleOptions,
+      options?: Recipe.EllipseOptions,
     ): Recipe;
     arc(
       x: number,
@@ -1404,7 +1679,7 @@ declare namespace muhammara {
       radius: number,
       startAngle?: number,
       endAngle?: number,
-      options?: Recipe.CircleOptions,
+      options?: Recipe.EllipseOptions,
     ): Recipe;
     pie(
       x: number,
@@ -1412,43 +1687,59 @@ declare namespace muhammara {
       radius: number,
       startAngle?: number,
       endAngle?: number,
-      options?: Recipe.CircleOptions,
+      options?: Recipe.EllipseOptions,
     ): Recipe;
     lineStyle(options?: Recipe.LineStyleOptions): Recipe;
     lineWidth(width: number): Recipe;
     /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */
     opacity(opacity: number): Recipe;
-    fill(color?: string | number[]): Recipe;
-    stroke(color?: string | number[]): Recipe;
-    fillAndStroke(fill?: string | number[], stroke?: string | number[]): Recipe;
+    fill(color?: Recipe.Color): Recipe;
+    stroke(color?: Recipe.Color): Recipe;
+    fillAndStroke(fill?: Recipe.Color, stroke?: Recipe.Color): Recipe;
     n_gon(
       cx: number,
       cy: number,
       radius: number,
-      sides?: number | Recipe.PolygonOptions,
-      options?: Recipe.PolygonOptions,
+      sides?: number | Recipe.NGonOptions,
+      options?: Recipe.NGonOptions,
     ): Recipe;
     star(
       cx: number,
       cy: number,
       radius: number,
-      points?: number | Recipe.PolygonOptions,
-      options?: Recipe.PolygonOptions,
+      points?: number | Recipe.ShapeOptions,
+      options?: Recipe.ShapeOptions,
     ): Recipe;
     triangle(
       x: number,
       y: number,
-      traits: number[] | number[][],
-      options?: Recipe.PolygonOptions,
+      traits: Recipe.TriangleMeasurements,
+      options?: Recipe.TriangleMeasurementOptions,
     ): Recipe;
-    arrow(x: number, y: number, options?: Recipe.PolygonOptions): Recipe;
-    chroma(name: string, value: string | number[], colorspace?: string): Recipe;
-    permission(flags?: string): number;
+    triangle(
+      x: number,
+      y: number,
+      traits: Recipe.TriangleVertices,
+      options: Recipe.TriangleUnpositionedVertexOptions,
+    ): Recipe;
+    triangle(
+      x: number,
+      y: number,
+      traits: Recipe.MutableTriangleVertices,
+      options: Recipe.TriangleVertexOptions,
+    ): Recipe;
+    arrow(x: number, y: number, options?: Recipe.ArrowOptions): Recipe;
+    chroma<ColorspaceValue extends string | undefined = undefined>(
+      name: string,
+      value: Recipe.Color,
+      colorspace?: Recipe.ValidColorspace<ColorspaceValue>,
+    ): Recipe;
+    permission(flags?: Recipe.PermissionList): number;
     structure(output: string): Recipe;
     htmlToTextObjects(
       htmlCodes: string,
       options?: Recipe.TextOptions,
-    ): object[];
+    ): Recipe.HtmlTextObject[];
 
     endPDF(): void;
     endPDF<T>(callback: (output?: Buffer | string) => T): T;

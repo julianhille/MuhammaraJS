@@ -39,6 +39,26 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
   longer a Recipe method; use `Recipe.opacity()` to set both fill and stroke
   alpha. Opacity persists for later vector drawing, so call `opacity(1)` to
   restore opaque output. See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#8-replace-recipefillopacity).
+- Native Recipe TypeScript declarations now use named callback and option types
+  for `register()`, `layout()`, and `table()`, finite colorspace values, and
+  shape-specific polygon, arrow, and triangle options. Code that passed a value
+  typed as `Function`, used `object[]` rows or unknown table fields, returned
+  unsupported values from text or table callbacks, relied on widened vector
+  line styles and rotation origins, or used broad strings for documented finite
+  values may now fail `tsc`; annotate those values with the corresponding
+  `muhammara.Recipe` types, return documented callback instructions, annotate
+  arrow dimensions and triangle definitions with fixed-length tuples, and omit
+  unsupported shape values to retain runtime defaults. See
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#10-update-recipe-types)
+  [#654](https://github.com/julianhille/MuhammaraJS/issues/654).
+- `Recipe.metadata` now declares the two optional counters the runtime uses: a
+  document read from a file has `pages`, while a document created from scratch
+  has `pageCount`. `recipe.metadata.pages` is therefore `number | undefined`,
+  not always `number`. Code that read it unconditionally now fails `tsc`; check
+  that `recipe.metadata.pages !== undefined`, or use the return value of
+  `read()`, which is typed `ReadMetadata` directly.
+  See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#10-update-recipe-types)
+  [#654](https://github.com/julianhille/MuhammaraJS/issues/654).
 - The unscoped `muhammara` package is deprecated and receives no further
   releases. Install `@muhammara/native` instead, or use an npm alias when an
   existing `require("muhammara")` import must remain unchanged. See

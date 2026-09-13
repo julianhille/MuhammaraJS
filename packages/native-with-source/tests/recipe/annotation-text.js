@@ -44,7 +44,7 @@ describe("Annotation: Text Annotations", () => {
         50,
         300,
         {
-          underline: {
+          squiggly: {
             color: [100, 0, 255],
             text: "Squiggly!",
           },

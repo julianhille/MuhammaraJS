@@ -35,6 +35,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   to set both fill and stroke alpha. Opacity persists for later vector drawing,
   so call `opacity(1)` to restore opaque output. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#8-replace-recipefillopacity)
   [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
+- Tighten native Recipe TypeScript declarations and add named types for
+  metadata, HTML text objects, colors, permissions, registered extensions,
+  layouts, tables, text boxes, markup, and vector shapes. Existing TypeScript
+  code that relies on `Function`, unchecked option literals, `object[]` rows,
+  unknown table fields, unsupported callback returns, widened vector styles,
+  broad strings for finite values, or an unconditional
+  `recipe.metadata.pages` may now fail `tsc`; use the corresponding
+  `muhammara.Recipe` types, return documented callback instructions, and check
+  the optional `pages` or `pageCount` counter. See
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#10-update-recipe-types)
+  [#654](https://github.com/julianhille/MuhammaraJS/issues/654)
 
 ### Added
 
