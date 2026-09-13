@@ -16,7 +16,7 @@ var { standardInfoKeys } = require("./recipe-info");
  * @param {string} [options.author] - The author
  * @param {string} [options.title] - The title
  * @param {string} [options.subject] - The subject
- * @param {string} [options.colorspace] - The default colorspace: rgb, cmyk, gray
+ * @param {string} [options.colorspace] - The default colorspace: rgb, cmyk, gray, separation
  * @param {string[]} [options.keywords] - The array of keywords
  * @param {string} [options.password] - permission password
  * @param {string} [options.userPassword] - this 'view' password also enables encryption

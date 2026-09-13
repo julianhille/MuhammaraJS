@@ -34,6 +34,14 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
   longer a Recipe method; use `Recipe.opacity()` to set both fill and stroke
   alpha. Opacity persists for later vector drawing, so call `opacity(1)` to
   restore opaque output. See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#8-replace-recipefillopacity).
+- Native Recipe TypeScript declarations now use named callback and option types
+  for `register()`, `layout()`, and `table()`, finite colorspace values, and
+  shape-specific arrow and triangle options. Code that passed a value typed as
+  `Function`, relied on broad `object` options or unknown table column names, or
+  used broad strings where the runtime accepts only finite values may now fail
+  `tsc`; annotate those values with the corresponding `muhammara.Recipe` types
+  and remove options the runtime does not support. See
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#9-update-recipe-types).
 - The unscoped `muhammara` package is deprecated and receives no further
   releases. Install `@muhammara/native` instead, or use an npm alias when an
   existing `require("muhammara")` import must remain unchanged. See

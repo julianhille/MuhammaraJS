@@ -13,8 +13,8 @@
   tested Buffer workflow.
 - Text, image, and annotation placement uses Recipe coordinates, including on
   rotated source pages.
-- `table` and `layout` are implemented and tested, but their declarations are
-  incomplete; use them with the documented tested call patterns.
+- `table` and `layout` are implemented, tested, and represented by the
+  `Recipe.TableOptions` and `Recipe.LayoutOptions` TypeScript declarations.
 - Fixed-height text clipping requires `textBox.height` and
   `textBox.clipIfExceedsBox: true`. `textBox.onClip` is invoked only when text
   is actually clipped; configuring it without clipping emits a warning.

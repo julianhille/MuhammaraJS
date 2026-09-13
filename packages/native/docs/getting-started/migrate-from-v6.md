@@ -10,8 +10,8 @@ under the `@muhammara` organization on npm:
 | `@muhammara/native-core`        | Shared JavaScript layer; a dependency of both, never installed direct |
 
 For Node.js applications the migration is a dependency rename, an import rename,
-a page-box constant update, and a check that a prebuilt binary still exists for
-your platform.
+a page-box constant update, a TypeScript Recipe declaration update, and a check
+that a prebuilt binary still exists for your platform.
 
 ## 1. Choose The Replacement Package
 
@@ -147,9 +147,126 @@ recipe.opacity(0.5);
 recipe.opacity(1);
 ```
 
+## 9. Update Recipe Types
+
+v7 replaces several broad native Recipe declarations with types that describe
+the values accepted by the runtime. JavaScript behavior is unchanged, but
+existing TypeScript can fail to compile in the following cases.
+
+### Type Registered Extensions
+
+`Recipe.register()` no longer accepts the unspecific `Function` type. Give the
+callback a callable signature, or use `Recipe.ExtensionCallback` when the
+extension uses its Recipe `this` context:
+
+```typescript
+var drawMarker: muhammara.Recipe.ExtensionCallback<
+  [number, number],
+  muhammara.Recipe
+> = function (x, y) {
+  return this.moveTo(x, y).lineTo(x + 10, y + 10);
+};
+
+recipe.register("drawMarker", drawMarker);
+```
+
+Named-function registration still requires a function with a runtime `name` and
+is represented by `Recipe.NamedExtensionCallback`. Use the two-argument
+overload when the callback is anonymous.
+
+### Type Layouts And Tables
+
+`Recipe.layout()` and `Recipe.table()` no longer accept arbitrary `object`
+options. Use `LayoutOptions<Row>` and `TableOptions<Row>`. A table column name
+must be a string key of `Row`; its renderer receives the value type for that
+specific key, the complete row, the column-name literal, and a one-based row
+number:
+
+```typescript
+type ScoreRow = { name: string; score: number };
+
+var tableOptions: muhammara.Recipe.TableOptions<ScoreRow> = {
+  columns: [
+    {
+      name: "score",
+      renderer: (score, row, field) => {
+        var value: number = score;
+        var column: "score" = field;
+        return { bold: row.name === "Ada" && value > 5 && column === "score" };
+      },
+    },
+  ],
+  row: { nth: "odd" },
+  overflow: (currentRecipe) => {
+    currentRecipe.endPage().createPage("letter");
+    return { position: [40, 40] };
+  },
+};
+
+recipe.table(40, 40, [{ name: "Ada", score: 10 }], tableOptions);
+```
+
+Replace unknown option fields, table column names that are not present in the
+row type, `row.nth` values other than `"even"` or `"odd"`, and overflow return
+values other than a boolean or `{ position: [x, y] }`. These values were
+previously accepted by the broad declaration but are not supported table
+instructions.
+
+### Type Colorspaces
+
+Recipe constructor, text, and drawing options accept `"rgb"`, `"gray"`,
+`"cmyk"`, or `"separation"`. Annotate reusable values with `Colorspace`, or
+with `DeviceColorspace` when separation colors are not appropriate, instead of
+widening them to `string`:
+
+```typescript
+var documentColorspace: muhammara.Recipe.Colorspace = "separation";
+var drawingColorspace: muhammara.Recipe.Colorspace = "separation";
+
+var options: muhammara.Recipe.RecipeOptions = {
+  colorspace: documentColorspace,
+};
+recipe.chroma("spotBlue", [23, 119, 209], "separation");
+recipe.text("Spot color", 40, 40, {
+  color: "spotBlue",
+  colorspace: drawingColorspace,
+});
+```
+
+`Recipe.chroma()` continues to accept dynamic strings for compatibility, but
+known invalid literals such as `"lab"` now fail `tsc` because the runtime throws
+for them. Use `"rgb"`, `"gray"`, `"cmyk"`, or `"separation"`.
+
+### Type Arrows And Triangles
+
+`Recipe.arrow()` and `Recipe.triangle()` now use `ArrowOptions` and
+`TriangleOptions`. Replace broad string or number variables with their finite
+runtime values:
+
+```typescript
+var arrow: muhammara.Recipe.ArrowOptions = {
+  type: "dart", // 0, 1, 2, "triangle", "dart", or "kite"
+  at: "head", // "head" or "tail"
+};
+var triangle: muhammara.Recipe.TriangleOptions = {
+  traitID: "sas", // "sss", "sas", "asa", or "vtx"
+  position: "centroid",
+};
+
+recipe.arrow(100, 100, arrow);
+recipe.triangle(200, 100, [50, 60, 70], triangle);
+```
+
+Triangle positions are `"a"`, `"b"`, `"c"`, `"centroid"`, `"circumcenter"`,
+or `"incenter"`. Trait identifiers and positions are case-insensitive.
+
+The more precise `Recipe.read()` metadata and `Recipe.htmlToTextObjects()`
+result types, reusable `Color` and permission types, and newly declared option
+fields are additive and require no migration.
+
 ## What Does Not Change
 
-- The low-level API and all other Recipe APIs, including their TypeScript types.
+- The low-level API and native Recipe runtime behavior.
 - Supported Node.js versions.
 - Native binary metadata and the `node-pre-gyp` install flow.
 
