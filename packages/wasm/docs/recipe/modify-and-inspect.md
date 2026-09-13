@@ -34,6 +34,17 @@ into separate appended content contexts. Both return the Recipe for valid
 transitions and throw for unmatched calls. Password-protected source editing
 is not available; decrypt first with the low-level byte-first `recrypt()` API.
 
+## Delete Source Pages
+
+`deletePage(pageNumber)` and `deletePage([pageNumbers])` remove one or more
+one-based pages from the original source when `endPDF()` finalizes the Recipe.
+At least one page must remain. Deletion cannot be combined with `createPage()`,
+`appendPage()`, or `insertPage()` in the same Recipe.
+
+Deletion preserves retained page objects and adjusts page labels, but it is an
+incremental update rather than secure erasure of the removed content. See
+[Delete Pages](../how-to/delete-pages.md) for a complete byte-input example.
+
 ## Inspect Without Replacing Output State
 
 `read(bytes)` and `readAsync(blob)` report page count and geometry without

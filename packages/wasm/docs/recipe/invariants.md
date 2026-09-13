@@ -6,13 +6,17 @@
 - Recipe drawing uses a top-left origin. `setPageBox()` and `rectangle()` with
   `useGivenCoords: true` use PDF-native bottom-left coordinates.
 - Recipe page numbers are one-based, including `editPage()`, `pageInfo()`,
-  `replaceText()`, and composition source pages. Only `insertPage()` uses zero
-  to mean before the first output page.
+  `replaceText()`, `deletePage()`, and composition source pages. Only
+  `insertPage()` uses zero to mean before the first output page.
 - Call `endPage()` before selecting, creating, or editing another page and before
   `endPDF()`.
 - `pauseContext()` and `resumeContext()` are chainable for valid created-page
   and edited-page transitions. They throw when there is no matching active or
   paused page content context.
+- `deletePage()` applies only to original pages in a byte-backed Recipe, must
+  leave at least one page, and cannot be combined with creating, appending, or
+  inserting pages. If deletion fails during `endPDF()`, the Recipe releases its
+  resources and remains ended; create a new Recipe to retry.
 - `endPDF()` returns an owned `Uint8Array`; repeated calls return the cached
   result. It never writes a path or stream.
 - `read()` and `readAsync()` inspect their argument without replacing Recipe's

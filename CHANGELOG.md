@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
+  and malformed page selections instead of clamping or partially interpreting
+  them; pass positive one-based integers or ascending two-value ranges. Integer
+  endpoints beyond the source still clamp to its final page
+  [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
+- Native Recipe `insertPage()` now throws synchronously when `pdfSrc` or
+  `srcPageNumber` is missing instead of silently queuing no insertion or failing
+  later in `endPDF()`; pass all three arguments before continuing the Recipe
+  chain [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
 - Native Recipe `pauseContext()` and `resumeContext()` now throw when there is
   no matching active or paused page content context instead of silently doing
   nothing. Call `pauseContext()` only after creating or editing a page, and call
@@ -57,6 +66,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Link native package READMEs and previously orphaned executable examples to
   their documentation, and document pnpm 10 installation approval
   [#630](https://github.com/julianhille/MuhammaraJS/issues/630)
+- Add chainable native Recipe `deletePage()` support for removing one or more
+  pages from an existing PDF while preserving retained page objects
+  [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
 - Add `Recipe.rotate()` to set `/Rotate` on the current native Recipe page,
   including pages created with explicit dimensions, matching Wasm Recipe
   [#620](https://github.com/julianhille/MuhammaraJS/issues/620)

@@ -5,7 +5,8 @@ They mirror the native package's common workflows while replacing filesystem
 paths, Node streams, and CommonJS with `Uint8Array`, `Blob`, `File`, and ESM.
 
 The [interactive browser examples](https://github.com/julianhille/MuhammaraJS/tree/develop/packages/wasm/examples/browser)
-run annotations, links, HTML lists, page boxes, rotated pages, image
+run annotations, links, HTML lists, page boxes, rotated pages, page deletion,
+image
 transformations, tables, and password changes on the page or in a module Worker.
 
 Review [Differences and Restrictions](../differences.md) before adapting native

@@ -6,10 +6,19 @@ For release-by-release changes, see the [Changelog](https://github.com/julianhil
 ## Version 7.x
 
 - Recipe `endPage()` no longer leaves the completed page active. Code that
-  calls page drawing, configuration, or context methods after `endPage()` now
-  fails instead of reusing the completed page and its content context; call
-  `createPage()` or `editPage()` before the next page operation. See
-  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#9-reactivate-pages-after-endpage).
+   calls page drawing, configuration, or context methods after `endPage()` now
+   fails instead of reusing the completed page and its content context; call
+   `createPage()` or `editPage()` before the next page operation. See
+   [Migrate from v6 to v7](getting-started/migrate-from-v6.md#9-reactivate-pages-after-endpage).
+- Recipe `appendPage()` rejects zero, negative, fractional, reversed, and
+  malformed page selections. These values were previously clamped, passed to
+  the low-level writer, or partially interpreted; pass positive one-based
+  integers or ascending two-value ranges instead. Integer endpoints beyond the
+  source still clamp to its final page.
+- Recipe `insertPage()` throws `TypeError` immediately when `pdfSrc` or
+   `srcPageNumber` is missing. Incomplete calls previously queued no insertion or
+   failed later during `endPDF()`; pass `afterPageNumber`, `pdfSrc`, and the
+   positive one-based `srcPageNumber` together.
 - Recipe `pauseContext()` and `resumeContext()` throw when there is no matching
   active or paused page content context. Calls outside a page lifecycle and
   repeated pause or resume calls used to do nothing silently; call
