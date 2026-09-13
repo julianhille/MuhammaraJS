@@ -927,10 +927,17 @@ declare namespace muhammara {
       | readonly [number, number, number, number];
     type DeviceColorspace = "rgb" | "gray" | "cmyk";
     type Colorspace = DeviceColorspace | "separation";
+    /**
+     * Matches known runtime values case-insensitively without enumerating
+     * every per-character capitalization combination — that recursive
+     * approach costs 2^N literal types for an N-character word (4096 for
+     * "circumcenter" alone). The runtime lowercases the whole value before
+     * comparing, so any casing works at runtime; the type instead accepts
+     * the three forms callers actually write (lower case, UPPER CASE, and
+     * Capitalized).
+     */
     type CaseInsensitive<Value extends string> =
-      Value extends `${infer First}${infer Rest}`
-        ? `${Lowercase<First> | Uppercase<First>}${CaseInsensitive<Rest>}`
-        : Value;
+      Lowercase<Value> | Uppercase<Value> | Capitalize<Lowercase<Value>>;
     type TriangleTrait = CaseInsensitive<"sss" | "sas" | "asa" | "vtx">;
     type TriangleMeasurementTrait = CaseInsensitive<"sss" | "sas" | "asa">;
     type TriangleVertexTrait = CaseInsensitive<"vtx">;
