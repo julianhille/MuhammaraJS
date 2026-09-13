@@ -808,10 +808,6 @@ declare namespace muhammara {
       replacementObjectId: number,
       options?: ObjectReplacementOptions,
     ): this;
-    /**
-     * Finalize the PDF. Later calls do nothing, including after a failed finalization.
-     * @throws {Error} If the PDF cannot be finalized.
-     */
     end(): PDFWriter;
     createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
