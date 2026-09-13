@@ -99,6 +99,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Prevent native PDF readers and copying contexts from terminating Node.js when
   used after `end()`; affected calls now throw an ended-state error
   [#668](https://github.com/julianhille/MuhammaraJS/issues/668)
+- Prevent native text extraction from reporting inline-image payload bytes as
+  fabricated page text [#670](https://github.com/julianhille/MuhammaraJS/issues/670)
 - Render one correctly indented marker per native Recipe list item across
   formatting, block children, nested lists, and explicit line breaks; keep
   internal break artifacts out of layout and clipping; and count indentation

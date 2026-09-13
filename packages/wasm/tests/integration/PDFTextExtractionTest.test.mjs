@@ -30,6 +30,27 @@ describe("PDFTextExtraction", function () {
     assert.throws(() => reader.extractPageText(0), /PDF reader has ended/);
   });
 
+  it("skips inline image payloads", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({ compress: false });
+    var page = writer.createPage(0, 0, 200, 200);
+    writer
+      .startPageContentContext(page)
+      .writeFreeCode(
+        "BI /W 4 /H 1 /BPC 8 /CS /G ID BT (fabricated) Tj ET EI BT (real) Tj ET",
+      );
+    writer.writePage(page);
+
+    var reader = muhammara.createReader(writer.end());
+    var elements = reader.extractPageText(0);
+    reader.end();
+
+    assert.deepEqual(
+      elements.map((element) => element.content),
+      ["real"],
+    );
+  });
+
   it("validates the page index", async function () {
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(muhammara.createBlankPdf(20, 20));

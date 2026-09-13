@@ -514,6 +514,10 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
       for (size_t index = 0; index < 6; ++index) {
         textMatrix[index] = textObjectNumber(operands[index].GetPtr());
       }
+    } else if (operation == "ID") {
+      skipInlineImageData(objectParser);
+      operands.clear();
+      continue;
     } else if (inTextObject &&
                (operation == "Tj" || operation == "'" || operation == "\"" ||
                 operation == "TJ")) {
