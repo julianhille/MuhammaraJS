@@ -27,7 +27,8 @@ re-encrypt, or remove encryption.
 Call `end()` when the reader is no longer needed, after every object and stream
 parsed from it has been consumed. It closes the underlying file handle; skipping
 it leaves `input.pdf` locked on Windows, where the file then cannot be deleted
-or renamed. `Recipe` releases the readers it opens itself, in `endPDF()`.
+or renamed. Calls on the reader after `end()` throw `PDF reader has ended`.
+`Recipe` releases the readers it opens itself, in `endPDF()`.
 
 Readers provide page counts, PDF level, trailers, page dictionaries, and
 low-level PDF objects. `parsePage(index)` exposes page boxes and rotation;

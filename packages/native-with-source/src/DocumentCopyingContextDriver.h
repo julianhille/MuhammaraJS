@@ -20,6 +20,7 @@
 #pragma once
 
 #include "nodes.h"
+#include "DriverLifecycle.h"
 
 class PDFDocumentCopyingContext;
 class IByteReaderWithPosition;
@@ -36,10 +37,14 @@ public:
     PDFDocumentCopyingContext* CopyingContext;
     // member holding an optional stream pointer, held by copying context for the sake of final release
     IByteReaderWithPosition* ReadStreamProxy;
+    bool IsActive();
+    DriverLifecycle GetLifecycle();
+    void SetOwnerLifecycle(DriverLifecycle inOwnerLifecycle);
     
 	ConstructorsHolder* holder;
 private:
     DocumentCopyingContextDriver();
+    DriverLifecycle mLifecycle;
     
 	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
 	static METHOD_RETURN_TYPE End(const ARGS_TYPE& args);

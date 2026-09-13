@@ -32,6 +32,7 @@ using namespace v8;
 
 DocumentCopyingContextDriver::~DocumentCopyingContextDriver()
 {
+    mLifecycle->End();
     delete CopyingContext;
     delete ReadStreamProxy;
 }
@@ -41,6 +42,22 @@ DocumentCopyingContextDriver::DocumentCopyingContextDriver()
     // initially null, set by external pdfwriter
     CopyingContext = NULL;
     ReadStreamProxy = NULL;
+    mLifecycle = DriverLifecycle(new DriverLifecycleState());
+}
+
+bool DocumentCopyingContextDriver::IsActive()
+{
+    return CopyingContext && mLifecycle->IsActive();
+}
+
+DriverLifecycle DocumentCopyingContextDriver::GetLifecycle()
+{
+    return mLifecycle;
+}
+
+void DocumentCopyingContextDriver::SetOwnerLifecycle(DriverLifecycle inOwnerLifecycle)
+{
+    mLifecycle->SetOwner(inOwnerLifecycle);
 }
 
 DEF_SUBORDINATE_INIT(DocumentCopyingContextDriver::Init)
@@ -92,6 +109,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::End(const ARGS_TYPE& args)
 
     DocumentCopyingContextDriver* copyingContext = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
 
+    copyingContext->mLifecycle->End();
     delete copyingContext->CopyingContext;
     copyingContext->CopyingContext = NULL;
     delete copyingContext->ReadStreamProxy;
@@ -107,7 +125,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CreateFormXObjectFromPDFPage(co
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -188,7 +206,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::MergePDFPageToPage(const ARGS_T
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -219,7 +237,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::AppendPDFPageFromPDF(const ARGS
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -252,7 +270,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::MergePDFPageToFormXObject(const
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -282,9 +300,17 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::GetSourceDocumentParser(const A
 	CREATE_ESCAPABLE_SCOPE;
 
     DocumentCopyingContextDriver* copyingContext = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
+
+    if(!copyingContext->IsActive())
+    {
+        THROW_EXCEPTION("PDF copying context has ended");
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    }
     
     Local<Value> newInstance = copyingContext->holder->GetNewPDFReader(args);
-    ObjectWrap::Unwrap<PDFReaderDriver>(newInstance->TO_OBJECT())->SetFromOwnedParser(copyingContext->CopyingContext->GetSourceDocumentParser());
+    ObjectWrap::Unwrap<PDFReaderDriver>(newInstance->TO_OBJECT())->SetFromOwnedParser(
+        copyingContext->CopyingContext->GetSourceDocumentParser(),
+        copyingContext->GetLifecycle());
     SET_FUNCTION_RETURN_VALUE(newInstance)
 }
 
@@ -295,7 +321,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyDirectObjectAsIs(const ARGS
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext or PDFWriter.createPDFCopyingContextForModifiedFile");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -321,7 +347,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyObject(const ARGS_TYPE& arg
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext or PDFWriter.createPDFCopyingContextForModifiedFile");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -349,7 +375,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyDirectObjectWithDeepCopy(co
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext or PDFWriter.createPDFCopyingContextForModifiedFile");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -383,7 +409,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::CopyNewObjectsForDirectObject(c
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext or PDFWriter.createPDFCopyingContextForModifiedFile");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -420,7 +446,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::GetCopiedObjectID(const ARGS_TY
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext or PDFWriter.createPDFCopyingContextForModifiedFile");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -449,7 +475,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::GetCopiedObjects(const ARGS_TYP
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext or PDFWriter.createPDFCopyingContextForModifiedFile");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -475,7 +501,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::ReplaceSourceObjects(const ARGS
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext or PDFWriter.createPDFCopyingContextForModifiedFile");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -516,7 +542,7 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::GetSourceDocumentStream(const A
 
     DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(args.This());
     
-    if(!copyingContextDriver->CopyingContext)
+    if(!copyingContextDriver->IsActive())
     {
 		THROW_EXCEPTION("copying context object not initialized, create using pdfWriter.createPDFCopyingContext or PDFWriter.createPDFCopyingContextForModifiedFile");
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
@@ -530,4 +556,3 @@ METHOD_RETURN_TYPE DocumentCopyingContextDriver::GetSourceDocumentStream(const A
     
     SET_FUNCTION_RETURN_VALUE(resultDriver)
 }
-
