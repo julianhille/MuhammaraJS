@@ -118,13 +118,27 @@ PDFReaderDriver::PDFReaderDriver()
     mPDFReader = NULL;
     mReadStreamProxy = NULL;
     mOwnsParser = false;
+    mLifecycle = DriverLifecycle(new DriverLifecycleState());
 }
 
 PDFReaderDriver::~PDFReaderDriver()
 {
+    mLifecycle->End();
     delete mReadStreamProxy;
     if(mOwnsParser)
         delete mPDFReader;
+}
+
+PDFReaderDriver* PDFReaderDriver::GetActiveReader(const ARGS_TYPE& args)
+{
+    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    if(!reader->mPDFReader || !reader->mLifecycle->IsActive())
+    {
+        Isolate* isolate = Isolate::GetCurrent();
+        THROW_EXCEPTION("PDF reader has ended");
+        return NULL;
+    }
+    return reader;
 }
 
 DEF_SUBORDINATE_INIT(PDFReaderDriver::Init)
@@ -186,14 +200,16 @@ METHOD_RETURN_TYPE PDFReaderDriver::End(const ARGS_TYPE& args)
 
     PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
 
+    reader->mLifecycle->End();
+
     delete reader->mReadStreamProxy;
     reader->mReadStreamProxy = NULL;
     if(reader->mOwnsParser)
     {
         delete reader->mPDFReader;
-        reader->mPDFReader = NULL;
         reader->mOwnsParser = false;
     }
+    reader->mPDFReader = NULL;
     reader->mPDFFile.CloseFile();
 
     SET_FUNCTION_RETURN_VALUE(args.This())
@@ -204,7 +220,11 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetPDFLevel(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
     CREATE_ESCAPABLE_SCOPE;
 
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(ObjectWrap::Unwrap<PDFReaderDriver>(args.This())->mPDFReader->GetPDFLevel()))
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+
+    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetPDFLevel()))
 }
 
 METHOD_RETURN_TYPE PDFReaderDriver::GetPagesCount(const ARGS_TYPE& args)
@@ -212,7 +232,11 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetPagesCount(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
     CREATE_ESCAPABLE_SCOPE;
 
-	SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(ObjectWrap::Unwrap<PDFReaderDriver>(args.This())->mPDFReader->GetPagesCount()))
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+
+	SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetPagesCount()))
 }
 
 
@@ -221,7 +245,9 @@ METHOD_RETURN_TYPE PDFReaderDriver::QueryDictionaryObject(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
     if(args.Length() != 2 ||
        !reader->holder->IsPDFDictionaryInstance(args[0]) ||
@@ -246,7 +272,9 @@ METHOD_RETURN_TYPE PDFReaderDriver::QueryArrayObject(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
     if(args.Length() != 2 ||
        !reader->holder->IsPDFArrayInstance(args[0]) ||
@@ -270,7 +298,9 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetTrailer(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
  
     PDFDictionary* trailer = reader->mPDFReader->GetTrailer();
     
@@ -320,7 +350,7 @@ PDFHummus::EStatusCode PDFReaderDriver::StartPDFParsing(const std::string& inPar
     return mPDFReader->StartPDFParsing(mPDFFile.GetInputStream(),inParsingOptions);
 }
 
-void PDFReaderDriver::SetFromOwnedParser(PDFParser* inParser)
+void PDFReaderDriver::SetFromOwnedParser(PDFParser* inParser, DriverLifecycle inOwnerLifecycle)
 {
     if(mOwnsParser)
     {
@@ -331,17 +361,27 @@ void PDFReaderDriver::SetFromOwnedParser(PDFParser* inParser)
         mPDFFile.CloseFile();
     }
     mPDFReader = inParser;
+    mLifecycle->SetOwner(inOwnerLifecycle);
 }
 
 PDFParser* PDFReaderDriver::GetParser()
 {
-    return mPDFReader;
+    return mLifecycle->IsActive() ? mPDFReader : NULL;
+}
+
+DriverLifecycle PDFReaderDriver::GetLifecycle()
+{
+    return mLifecycle;
 }
 
 METHOD_RETURN_TYPE PDFReaderDriver::ParseNewObject(const ARGS_TYPE& args)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
+
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
     if(args.Length() != 1)
     {
@@ -355,8 +395,6 @@ METHOD_RETURN_TYPE PDFReaderDriver::ParseNewObject(const ARGS_TYPE& args)
         THROW_EXCEPTION(scObjectIDError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
-    
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
     RefCountPtr<PDFObject> newObject = reader->mPDFReader->ParseNewObject(objectID);
     
@@ -373,6 +411,10 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetPageObjectID(const ARGS_TYPE& args)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
+
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     
     if(args.Length() != 1)
     {
@@ -386,8 +428,6 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetPageObjectID(const ARGS_TYPE& args)
         THROW_EXCEPTION(scPageIndexError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
-    
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
     SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetPageObjectID(index)))
 }
@@ -397,6 +437,10 @@ METHOD_RETURN_TYPE PDFReaderDriver::ParsePageDictionary(const ARGS_TYPE& args)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
+
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     
     if(args.Length() != 1)
     {
@@ -410,8 +454,6 @@ METHOD_RETURN_TYPE PDFReaderDriver::ParsePageDictionary(const ARGS_TYPE& args)
         THROW_EXCEPTION(scPageIndexError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
-    
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
     RefCountPtr<PDFDictionary> newObject = reader->mPDFReader->ParsePage(index);
     
@@ -429,6 +471,10 @@ METHOD_RETURN_TYPE PDFReaderDriver::ParsePage(const ARGS_TYPE& args)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
+
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     
     if(args.Length() != 1)
     {
@@ -442,8 +488,6 @@ METHOD_RETURN_TYPE PDFReaderDriver::ParsePage(const ARGS_TYPE& args)
         THROW_EXCEPTION(scPageIndexError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
-    
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
     RefCountPtr<PDFDictionary> newObject = reader->mPDFReader->ParsePage(index);
     
@@ -465,6 +509,10 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageText(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
     CREATE_ESCAPABLE_SCOPE;
 
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+
     if(args.Length() < 1 || args.Length() > 2)
     {
         THROW_EXCEPTION("Wrong arguments. Provide a page index and optional extraction limits");
@@ -484,7 +532,6 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageText(const ARGS_TYPE& args)
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
 
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
     if(!page)
     {
@@ -519,6 +566,10 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageContentItems(const ARGS_TYPE& arg
     CREATE_ISOLATE_CONTEXT;
     CREATE_ESCAPABLE_SCOPE;
 
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+
     if(args.Length() < 1 || args.Length() > 2)
     {
         THROW_EXCEPTION("Wrong arguments. Provide a page index and optional extraction limits");
@@ -538,7 +589,6 @@ METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageContentItems(const ARGS_TYPE& arg
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
 
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
     if(!page)
     {
@@ -567,33 +617,46 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetObjectsCount(const ARGS_TYPE& args)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
-    
-    
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(ObjectWrap::Unwrap<PDFReaderDriver>(args.This())->mPDFReader->GetObjectsCount()))
+
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+
+    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetObjectsCount()))
 }
 
 METHOD_RETURN_TYPE PDFReaderDriver::IsEncrypted(const ARGS_TYPE& args)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
-    
-    
-    SET_FUNCTION_RETURN_VALUE(NEW_BOOLEAN(ObjectWrap::Unwrap<PDFReaderDriver>(args.This())->mPDFReader->IsEncrypted()))
+
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+
+    SET_FUNCTION_RETURN_VALUE(NEW_BOOLEAN(reader->mPDFReader->IsEncrypted()))
 }
 
 METHOD_RETURN_TYPE PDFReaderDriver::GetXrefSize(const ARGS_TYPE& args)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
-    
-    
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(ObjectWrap::Unwrap<PDFReaderDriver>(args.This())->mPDFReader->GetXrefSize()))
+
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+
+    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetXrefSize()))
 }
 
 METHOD_RETURN_TYPE PDFReaderDriver::GetXrefEntry(const ARGS_TYPE& args)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
+
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     
     if(args.Length() != 1)
     {
@@ -607,8 +670,6 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetXrefEntry(const ARGS_TYPE& args)
         THROW_EXCEPTION(scObjectIDError);
         SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
-    
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
     
     XrefEntryInput* xrefEntry = reader->mPDFReader->GetXrefEntry(objectID);
     if(!xrefEntry)
@@ -631,9 +692,12 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetXrefPosition(const ARGS_TYPE& args)
 {
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
-    
-    
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(ObjectWrap::Unwrap<PDFReaderDriver>(args.This())->mPDFReader->GetXrefPosition()))
+
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+
+    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetXrefPosition()))
 }
 
 METHOD_RETURN_TYPE PDFReaderDriver::StartReadingFromStream(const ARGS_TYPE& args)
@@ -641,7 +705,9 @@ METHOD_RETURN_TYPE PDFReaderDriver::StartReadingFromStream(const ARGS_TYPE& args
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
     if(args.Length() != 1 ||
        !reader->holder->IsPDFStreamInputInstance(args[0]))
@@ -664,7 +730,9 @@ METHOD_RETURN_TYPE PDFReaderDriver::StartReadingFromStreamForPlainCopying(const 
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
     if(args.Length() != 1 ||
        !reader->holder->IsPDFStreamInputInstance(args[0]))
@@ -687,7 +755,9 @@ METHOD_RETURN_TYPE PDFReaderDriver::StartReadingObjectsFromStream(const ARGS_TYP
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
     if(args.Length() != 1 ||
        !reader->holder->IsPDFStreamInputInstance(args[0]))
@@ -710,7 +780,9 @@ METHOD_RETURN_TYPE PDFReaderDriver::StartReadingObjectsFromStreams(const ARGS_TY
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
     if(args.Length() != 1 ||
        !reader->holder->IsPDFArrayInstance(args[0]))
@@ -734,11 +806,12 @@ METHOD_RETURN_TYPE PDFReaderDriver::GetParserStream(const ARGS_TYPE& args)
     CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
     
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
+    PDFReaderDriver* reader = GetActiveReader(args);
+    if(!reader)
+        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
 
     Local<Value> driver = reader->holder->GetNewByteReaderWithPosition(args);
     ObjectWrap::Unwrap<ByteReaderWithPositionDriver>(driver->TO_OBJECT())->SetStream(reader->mPDFReader->GetParserStream(),false);
     
     SET_FUNCTION_RETURN_VALUE(driver)
 }
-

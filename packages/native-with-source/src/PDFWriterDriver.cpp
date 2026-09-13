@@ -1089,6 +1089,7 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContext(const ARGS_TYPE& arg
     PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
 
     PDFDocumentCopyingContext* copyingContext;
+    DriverLifecycle copyingOwnerLifecycle;
 
     ObjectByteReaderWithPosition* proxy = NULL;
     PDFParsingOptions parsingOptions;
@@ -1108,7 +1109,14 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContext(const ARGS_TYPE& arg
         {
             // parser based copying context  [note that here parsingOptions doesn't matter as the parser creation already took it into account]
 
-            PDFParser* theParser = ObjectWrap::Unwrap<PDFReaderDriver>(args[0]->TO_OBJECT())->GetParser();
+            PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args[0]->TO_OBJECT());
+            PDFParser* theParser = reader->GetParser();
+            if(!theParser)
+            {
+                THROW_EXCEPTION("PDF reader has ended");
+                SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+            }
+            copyingOwnerLifecycle = reader->GetLifecycle();
             copyingContext = pdfWriter->mPDFWriter.GetDocumentContext().CreatePDFCopyingContext(theParser);
         }
         else
@@ -1134,6 +1142,8 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContext(const ARGS_TYPE& arg
     Local<Value> newInstance = pdfWriter->holder->GetNewDocumentCopyingContext(args);
     ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->CopyingContext = copyingContext;
     ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->ReadStreamProxy = proxy;
+    if(copyingOwnerLifecycle)
+        ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->SetOwnerLifecycle(copyingOwnerLifecycle);
     SET_FUNCTION_RETURN_VALUE(newInstance)
 }
 

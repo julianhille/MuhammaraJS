@@ -20,6 +20,7 @@
 #pragma once
 
 #include "nodes.h"
+#include "DriverLifecycle.h"
 
 #include "PDFParser.h"
 #include "InputFile.h"
@@ -39,13 +40,15 @@ public:
     // two methods to create parser - owned, from file, or not owned, from another pointer
     PDFHummus::EStatusCode StartPDFParsing(const std::string& inParsedFilePath,const PDFParsingOptions& inParsingOptions);
     PDFHummus::EStatusCode StartPDFParsing(v8::Local<v8::Object> inStreamObject,const PDFParsingOptions& inParsingOptions);
-    void SetFromOwnedParser(PDFParser* inParser);
+    void SetFromOwnedParser(PDFParser* inParser, DriverLifecycle inOwnerLifecycle = DriverLifecycle());
     PDFParser* GetParser();
+    DriverLifecycle GetLifecycle();
     
 
 	ConstructorsHolder* holder;
 private:
     PDFReaderDriver();
+    static PDFReaderDriver* GetActiveReader(const ARGS_TYPE& args);
     
     
 	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
@@ -77,4 +80,5 @@ private:
     bool mOwnsParser;
     PDFParser* mPDFReader;
     InputFile mPDFFile;
+    DriverLifecycle mLifecycle;
 };
