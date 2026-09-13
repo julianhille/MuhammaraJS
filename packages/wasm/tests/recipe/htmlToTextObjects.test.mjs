@@ -14,11 +14,11 @@ describe("HTML to TextObjects", function () {
 
     assert.equal(
       objects.map((object) => object.value).join(""),
-      "* plain\n* bold and linked\n1. nested\n* after\n1. one\n2. two",
+      "* plain\n* bold and linked\n1. nested\nafter\n1. one\n2. two",
     );
     assert.deepEqual(
       objects.filter((object) => object.indent).map((object) => object.indent),
-      [6, 6, 6, 6, 6, 6],
+      [6, 6, 6, 6, 6],
     );
     assert.equal(
       objects.find((object) => object.value === "bold").styles.bold,
@@ -42,12 +42,19 @@ describe("HTML to TextObjects", function () {
     );
     assert.equal(
       recipe
+        .htmlToTextObjects("<ol><li><p>one</p><p>two</p></li></ol>")
+        .map((object) => object.value)
+        .join(""),
+      "1. one\ntwo",
+    );
+    assert.equal(
+      recipe
         .htmlToTextObjects(
           "<ul><li>before<ol><li>nested</li></ol>after</li></ul>outside",
         )
         .map((object) => object.value)
         .join(""),
-      "* before\n1. nested\n* after\noutside",
+      "* before\n1. nested\nafter\noutside",
     );
     ["<br>after", "<p>after</p>", "<div>after</div>"].forEach(
       (continuation) => {
@@ -58,7 +65,7 @@ describe("HTML to TextObjects", function () {
             )
             .map((object) => object.value)
             .join(""),
-          "* before\n1. nested\n* after",
+          "* before\n1. nested\nafter",
         );
       },
     );
@@ -101,7 +108,7 @@ describe("HTML to TextObjects", function () {
           "* plain",
           "* bold and linked",
           "1. nested",
-          "* after",
+          "after",
           "1. one",
           "2. two",
         ],
@@ -173,8 +180,8 @@ describe("HTML to TextObjects", function () {
     // right after a marker must not break the line.
     assert.equal(values("<ul><li><p>para one</p></li></ul>"), "* para one");
     assert.equal(values("<ul><li> <p>para one</p></li></ul>"), "* para one");
-    assert.equal(values("<ul><li><p>a</p><p>b</p></li></ul>"), "* a\n* b");
-    assert.equal(values("<ul><li>a<p>b</p>c</li></ul>"), "* a\n* b\n* c");
+    assert.equal(values("<ul><li><p>a</p><p>b</p></li></ul>"), "* a\nb");
+    assert.equal(values("<ul><li>a<p>b</p>c</li></ul>"), "* a\nb\nc");
 
     var linked = recipe.htmlToTextObjects(
       '<ul><li><a href="https://example.test"><b>linked</b></a></li></ul>',

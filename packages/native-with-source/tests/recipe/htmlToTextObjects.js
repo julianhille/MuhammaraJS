@@ -132,12 +132,13 @@ describe("HTML to TextObjects", () => {
       const extracted = reader.extractPageText(0);
       const content = extracted.map((item) => item.content).join("");
       const normalized = content.replace(/\s+/g, " ").trim();
-      assert.equal((content.match(/\*/g) || []).length, 4);
+      assert.equal((content.match(/\*/g) || []).length, 3);
       assert.notInclude(content, "[@@DONOT_RENDER_THIS@@]");
       assert.include(normalized, "* bold and plain");
       assert.include(normalized, "* after");
       assert.include(normalized, "1. nested");
-      assert.include(normalized, "* after nested");
+      assert.include(normalized, "after nested");
+      assert.notInclude(normalized, "* after nested");
       assert.equal(
         extracted.find((item) => item.content.includes("bold")).content,
         "      * bold",
@@ -265,5 +266,92 @@ describe("HTML to TextObjects", () => {
       .endPDF();
     assert.equal(doubleBreakClip.linesWritten, 2);
     assert.equal(doubleBreakClip.remainder, "b");
+
+    let trailingBreakClip;
+    new muhammara.Recipe(Buffer.from("new"))
+      .createPage(300, 300)
+      .text("a<br><br>", 20, 20, {
+        size: 12,
+        html: true,
+        textBox: {
+          width: 200,
+          height: 12,
+          lineHeight: 12,
+          clipIfExceedsBox: true,
+          onClip: (_recipe, result) => {
+            trailingBreakClip = result;
+          },
+        },
+      })
+      .endPage()
+      .endPDF();
+    assert.equal(trailingBreakClip.clipped, true);
+    assert.equal(trailingBreakClip.linesWritten, 1);
+  });
+
+  it("keeps break boundaries across inline runs and text flow", () => {
+    const recipe = new muhammara.Recipe(Buffer.from("new"));
+    recipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    const bytes = recipe
+      .createPage(300, 300)
+      .text("<p>a<br><b>b</b>c</p>", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+      })
+      .text("a<br><br>", 20, 100, {
+        font: "arial",
+        size: 12,
+        html: true,
+        flow: true,
+      })
+      .text("b", { font: "arial", size: 12, flow: false })
+      .text("<br>", 20, 200, { font: "arial", size: 12, html: true })
+      .endPage()
+      .endPDF((output) => output);
+    const reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(bytes),
+    );
+    try {
+      const lines = new Map();
+      reader.extractPageText(0).forEach((item) => {
+        const y = item.textMatrix[5];
+        lines.set(y, (lines.get(y) || "") + item.content);
+      });
+      assert.deepEqual(Array.from(lines.values()).slice(0, 2), ["a", "bc"]);
+    } finally {
+      reader.end();
+    }
+  });
+
+  it("renders one marker for block children in one list item", () => {
+    const recipe = new muhammara.Recipe(Buffer.from("new"));
+    recipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    const bytes = recipe
+      .createPage(300, 300)
+      .text("<ol><li><p>one</p><p>two</p></li></ol>", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+      })
+      .endPage()
+      .endPDF((output) => output);
+    const reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(bytes),
+    );
+    try {
+      assert.deepEqual(
+        reader.extractPageText(0).map((item) => item.content.trim()),
+        ["1. one", "two"],
+      );
+    } finally {
+      reader.end();
+    }
   });
 });

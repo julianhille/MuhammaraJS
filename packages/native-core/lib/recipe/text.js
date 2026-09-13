@@ -321,7 +321,7 @@ exports.text = function text(text = "", x, y, options = {}) {
       toWriteTextObjects = clippedText.textObjects;
       textBox.textHeight = getTextBoxHeight(toWriteTextObjects);
 
-      if (clippedText.remainder.length) {
+      if (clippedText.clipped) {
         clipResult = {
           remainder: clippedText.remainder,
           linesWritten: clippedText.linesWritten,
@@ -874,9 +874,6 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       let prependValue = textObject.prependValue;
 
       textObject.childs.forEach((child) => {
-        const startsBlock =
-          child.needsLineBreaker && hasRenderableContent(child);
-        if (startsBlock) prependValue = textObject.prependValue;
         if (textObject.tag == "ul") {
           child.prependValue = "* ";
           child.layer = textObject.layer + 1;
@@ -927,9 +924,6 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
 
         child.lineID = textObject.lineID;
         writeValue(child);
-        if (["ol", "ul"].includes(child.tag) || startsBlock) {
-          prependValue = textObject.prependValue;
-        }
       });
     }
   };
@@ -939,6 +933,29 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
 
   const normalizedTextObjects = [];
   let pendingBreaks = [];
+  const replacementLineIDs = new Map();
+  const appendPendingBreaks = (nextTextObject) => {
+    const previous = normalizedTextObjects[normalizedTextObjects.length - 1];
+    if (previous) previous.lineComplete = true;
+    const blankBreaks = previous ? pendingBreaks.slice(1) : pendingBreaks;
+    blankBreaks.forEach((breakObject, index) => {
+      normalizedTextObjects.push({
+        ...breakObject,
+        lineID: previous ? pendingBreaks[index].lineID : breakObject.lineID,
+        text: "",
+        lineComplete: true,
+        lineWidth: 0,
+        textWidth: 0,
+      });
+    });
+    if (nextTextObject && previous) {
+      replacementLineIDs.set(
+        nextTextObject.lineID,
+        pendingBreaks[pendingBreaks.length - 1].lineID,
+      );
+    }
+    pendingBreaks = [];
+  };
   toWriteTextObjects.forEach((textObject, index, objects) => {
     const sentinel = textObject.text.trim() == "[@@DONOT_RENDER_THIS@@]";
     const beforeSentinel =
@@ -949,40 +966,12 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       pendingBreaks.push(textObject);
       return;
     }
-    if (pendingBreaks.length) {
-      const previous = normalizedTextObjects[normalizedTextObjects.length - 1];
-      if (previous) previous.lineComplete = true;
-      pendingBreaks.slice(1).forEach((breakObject, index) => {
-        normalizedTextObjects.push({
-          ...breakObject,
-          lineID: pendingBreaks[index].lineID,
-          text: "",
-          lineComplete: true,
-          lineWidth: 0,
-          textWidth: 0,
-          wordsInLine: [],
-        });
-      });
-      textObject.lineID = pendingBreaks[pendingBreaks.length - 1].lineID;
-      pendingBreaks = [];
-    }
+    if (pendingBreaks.length) appendPendingBreaks(textObject);
+    textObject.lineID =
+      replacementLineIDs.get(textObject.lineID) || textObject.lineID;
     normalizedTextObjects.push(textObject);
   });
-  if (pendingBreaks.length) {
-    const previous = normalizedTextObjects[normalizedTextObjects.length - 1];
-    if (previous) previous.lineComplete = true;
-    pendingBreaks.slice(1).forEach((breakObject, index) => {
-      normalizedTextObjects.push({
-        ...breakObject,
-        lineID: pendingBreaks[index].lineID,
-        text: "",
-        lineComplete: true,
-        lineWidth: 0,
-        textWidth: 0,
-        wordsInLine: [],
-      });
-    });
-  }
+  if (pendingBreaks.length) appendPendingBreaks();
   toWriteTextObjects = normalizedTextObjects;
 
   return {
@@ -1050,6 +1039,7 @@ function clipTextToBox(textObjs, availableHeight) {
   return {
     textObjects: visibleLines.flat(),
     linesWritten,
+    clipped: remainderLines.length > 0,
     // Preserve line boundaries so a remainder can be written into another box.
     remainder: remainderLines
       .map((currentLine) => currentLine.map((textObj) => textObj.text).join(""))

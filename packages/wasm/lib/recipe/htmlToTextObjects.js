@@ -134,15 +134,12 @@ export function htmlToTextObjects(html, options = {}) {
           if (blockItem) blockItem.markerPending = frame.markerPending;
         } else {
           pendingBoundary = true;
-          if (blockItem) blockItem.markerPending = true;
         }
       }
       if (removedListFrames.length && name !== "li") {
         closeItems(lists.length + 1);
         if (objects.length > removedListFrames[0].objectCount) {
           pendingBoundary = true;
-          var parentItem = items[items.length - 1];
-          if (parentItem) parentItem.markerPending = true;
           if (!lists.length) pendingReset = true;
         }
       }
@@ -161,7 +158,6 @@ export function htmlToTextObjects(html, options = {}) {
       : {};
     if (block) {
       pendingBoundary = true;
-      if (blockItem) blockItem.markerPending = true;
     }
     if (name === "li") {
       var openItem = frames.length - 1;
