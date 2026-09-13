@@ -108,9 +108,13 @@ function registerExtension(
   recipe.register("drawMarker", callback);
 }
 registerExtension(extension);
-recipe.register(function drawNamedMarker(x: number, y: number) {
+var namedExtension: muhammara.Recipe.NamedExtensionCallback<
+  [number, number],
+  void
+> = function drawNamedMarker(x, y) {
   this.moveTo(x, y).lineTo(x + 10, y + 10);
-});
+};
+recipe.register(namedExtension);
 var broadExtension: Function = function () {};
 // @ts-expect-error register() requires a concrete callable signature.
 recipe.register("broadExtension", broadExtension);

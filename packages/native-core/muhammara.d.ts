@@ -953,6 +953,10 @@ declare namespace muhammara {
       Arguments extends unknown[] = never[],
       Result = unknown,
     > = (this: Recipe, ...args: Arguments) => Result;
+    type NamedExtensionCallback<
+      Arguments extends unknown[] = never[],
+      Result = unknown,
+    > = ExtensionCallback<Arguments, Result> & { readonly name: string };
 
     type CommentOptionsFlag =
       | "invisible"
@@ -1385,7 +1389,7 @@ declare namespace muhammara {
       callback: Recipe.ExtensionCallback<Arguments, Result>,
     ): Recipe;
     register<Arguments extends unknown[], Result>(
-      callback: Recipe.ExtensionCallback<Arguments, Result>,
+      callback: Recipe.NamedExtensionCallback<Arguments, Result>,
     ): Recipe;
 
     constructor(

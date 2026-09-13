@@ -170,8 +170,9 @@ var drawMarker: muhammara.Recipe.ExtensionCallback<
 recipe.register("drawMarker", drawMarker);
 ```
 
-Named-function registration still requires a function with a runtime `name`.
-Use the two-argument overload when the callback is anonymous.
+Named-function registration still requires a function with a runtime `name` and
+is represented by `Recipe.NamedExtensionCallback`. Use the two-argument
+overload when the callback is anonymous.
 
 ### Type Layouts And Tables
 
