@@ -29,7 +29,7 @@ var result = spawnSync(
   [
     mocha,
     "-R",
-    "tap",
+    "spec",
     ...process.argv.slice(2).map(function (testPath) {
       return path.resolve(packageRoot, testPath);
     }),
