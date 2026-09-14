@@ -22,9 +22,5 @@ writer.appendPDFPagesFromPDF("source.pdf");
 writer.end();
 ```
 
-[`tests/AppendPagesTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/AppendPagesTest.js), [`tests/MergePDFPages.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/MergePDFPages.js),
-[`tests/PDFCopyingContextTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFCopyingContextTest.js), and [`tests/BasicModificationWithStreams.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/BasicModificationWithStreams.js)
-cover these operations.
-
 See [Copy And Embed PDFs](../low-level/copy-and-embed-pdfs.md) and
 [Modify Existing PDFs](../low-level/modify-pdfs.md) for workflows.

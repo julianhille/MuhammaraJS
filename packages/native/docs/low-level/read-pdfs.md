@@ -39,5 +39,5 @@ such as `toPDFDictionary()` or `toPDFArray()`.
 their text matrix and active font state, and
 `extractPageContentItems(pageIndex, limits?)` reports page-marking operations
 without reading text. Neither provides general visual-text or
-image-extraction. See [Find Text Positions](../how-to/find-text-positions.md),
-[`tests/PDFTextExtractionTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFTextExtractionTest.js), and [`tests/PDFParser.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFParser.js) for verified usage.
+image-extraction. See [Find Text Positions](../how-to/find-text-positions.md)
+for extraction examples and limits.

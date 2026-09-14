@@ -52,8 +52,5 @@ replacement to every page instead.
 writer.replaceObject(0, contentsId, replacementId, { scope: "global" });
 ```
 
-See [`tests/ObjectReplacementTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/ObjectReplacementTest.js) for verified examples.
-
 Modification uses incremental PDF updates, but this documentation does not make
-signature-preservation guarantees. See [`tests/BasicModification2.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/BasicModification2.js),
-[`tests/ModifyExistingPageContent.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/ModifyExistingPageContent.js), and [`tests/BasicModificationWithStreams.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/BasicModificationWithStreams.js).
+signature-preservation guarantees.

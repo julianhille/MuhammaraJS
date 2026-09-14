@@ -35,8 +35,7 @@ pdfDoc.createPage("letter").endPage().endPDF();
 ```
 
 The low-level `createWriter` API takes the integer enums instead; see
-[Create A PDF](../low-level/create-a-pdf.md). Version handling is exercised in
-[`tests/recipe/version.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/version.js).
+[Create A PDF](../low-level/create-a-pdf.md).
 
 ## Buffer Output
 
@@ -54,6 +53,4 @@ pdfDoc
   });
 ```
 
-`endPDF()` does not return the Buffer. Buffer mode is exercised in
-[`tests/recipe/createWithBuffer.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/createWithBuffer.js); general creation examples are in
-[`tests/recipe/create.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/create.js).
+`endPDF()` does not return the Buffer; consume it in the callback.

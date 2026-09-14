@@ -19,7 +19,3 @@ pdfDoc
     textBox: { textAlign: "justify" },
   });
 ```
-
-`layout()` and flowing-text forms are tested implementation behavior. See
-[`tests/recipe/text-columns.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/text-columns.js) and
-[`tests/recipe/text-continued.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/text-continued.js).

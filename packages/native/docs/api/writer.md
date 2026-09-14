@@ -44,14 +44,11 @@ var resumedWriter = muhammara.createWriterToContinue(
 `getModifiedInputFile()` and `getOutputFile()` while modifying a PDF. They expose
 `openFile`, `closeFile`, the file path, and their synchronous byte stream; prefer
 `createReader`, `createWriter`, and the stream classes for normal application
-code. The continuation lifecycle is exercised in [`tests/ShutdownRestartTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/ShutdownRestartTest.js).
+code.
 
 `createPDFDate()` returns a mutable PDF date. Call `setToCurrentTime()` or use
 the initial value, then pass its `toString()` result to a PDF date field. The
 method is intended for low-level dictionary writing; Recipe metadata accepts
 JavaScript `Date` values directly.
-
-[`tests/EmptyPagesPDF.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/EmptyPagesPDF.js), [`tests/FormXObjectTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/FormXObjectTest.js), and
-[`tests/WriterEvents.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/WriterEvents.js) cover these lifecycles.
 
 For task-focused usage, see the [Low-Level API](../low-level/index.md) section.

@@ -27,5 +27,4 @@ pdfDoc.createPage("letter").table(50, 52, people, {
 
 Columns can set widths, alignment, and renderers; table options support header,
 border, row styling, field ordering, and overflow behavior. TypeScript users can use
-`Recipe.TableOptions` and `Recipe.TableColumnOptions` for these options. See
-[`tests/recipe/table.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/table.js).
+`Recipe.TableOptions` and `Recipe.TableColumnOptions` for these options.

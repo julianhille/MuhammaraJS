@@ -1,7 +1,6 @@
 # Breaking Changes
 
 This page collects the compatibility changes formerly maintained in the README.
-For release-by-release changes, see the [Changelog](https://github.com/julianhille/MuhammaraJS/blob/develop/CHANGELOG.md).
 
 ## Version 7.x
 

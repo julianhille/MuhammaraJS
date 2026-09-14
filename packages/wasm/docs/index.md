@@ -11,8 +11,8 @@ normal release tag has its own documentation version. After a release, its tag
 is made the default Read the Docs version while `latest` continues to track
 development.
 
-For current release history, read the
-[Wasm changelog on GitHub](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/CHANGELOG.md).
+For changes that require updates to your application, read
+[Breaking Changes](breaking-changes.md).
 
 ## Node.js Native Addon
 

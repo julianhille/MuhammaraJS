@@ -16,5 +16,5 @@ pdfDoc
 ```
 
 Encryption options can also be supplied while creating a new Recipe document.
-See [`tests/recipe/encryption.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/encryption.js) for the supported creation and modification
-cases.
+See [Change PDF Passwords](../how-to/change-pdf-passwords.md) for password
+replacement and encryption removal.

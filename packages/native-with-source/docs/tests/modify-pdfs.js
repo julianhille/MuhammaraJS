@@ -6,6 +6,7 @@ var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var editAnnotation = require("../../../native/docs/examples/edit-annotation");
 var deletePages = require("../../../native/docs/examples/delete-pages");
+var runExample = require("../run-example");
 
 var fontPath = path.join(
   __dirname,
@@ -212,6 +213,63 @@ describe("Documentation examples", function () {
 
     assert.strictEqual(remaining.length, 1);
     assert.strictEqual(remaining[0].contents, "Keep me");
+  });
+
+  /** Exercise both inline annotation workflows without the helper module. */
+  it("runs the self-contained annotation editing and removal examples", async function () {
+    var annotatedPath = path.join(outputDirectory, "annotated.pdf");
+    var inputPath = path.join(outputDirectory, "input.pdf");
+    var outputPath = path.join(outputDirectory, "output.pdf");
+    await writeAnnotatedPdf(annotatedPath);
+    var id = editAnnotation.findAnnotationId(annotatedPath, 0, "Edit me");
+    editAnnotation.editAnnotationContents(
+      annotatedPath,
+      inputPath,
+      id,
+      "Original comment",
+    );
+
+    assert.strictEqual(
+      runExample(
+        "edit-existing-annotations",
+        [0, 1],
+        outputDirectory,
+        "annotationId",
+      ),
+      id,
+    );
+    var edited = readAnnotations(outputPath);
+    assert.strictEqual(edited.length, 2);
+    assert.deepInclude(edited, {
+      id: id,
+      subtype: "FreeText",
+      contents: "Edited comment",
+    });
+    assert.strictEqual(edited[0].contents, "Keep me");
+
+    runExample(
+      "edit-existing-annotations",
+      [0, 2],
+      outputDirectory,
+      "annotationId",
+    );
+    var remaining = readAnnotations(outputPath);
+    assert.strictEqual(remaining.length, 1);
+    assert.strictEqual(remaining[0].contents, "Keep me");
+  });
+
+  /** A source page without Annots must not break the lookup example. */
+  it("runs the inline annotation lookup on a page without annotations", function () {
+    fs.copyFileSync(sourcePath, path.join(outputDirectory, "input.pdf"));
+    assert.deepEqual(
+      runExample(
+        "edit-existing-annotations",
+        [0],
+        outputDirectory,
+        "annotationIds",
+      ),
+      [],
+    );
   });
 
   it("deletes selected pages", function () {
