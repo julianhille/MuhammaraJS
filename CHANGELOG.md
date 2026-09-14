@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [7.0.0-beta.2] - 2026-09-14
+
 ### Breaking Changes
 
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
@@ -859,7 +861,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.1...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.2...HEAD
+[7.0.0-beta.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.1...native-v7.0.0-beta.2
 [7.0.0-beta.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-alpha.1...native-v7.0.0-beta.1
 [7.0.0-alpha.1]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...native-v7.0.0-alpha.1
 [6.0.6]: https://github.com/julianhille/MuhammaraJS/compare/6.0.5...6.0.6
