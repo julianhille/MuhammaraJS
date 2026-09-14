@@ -1058,23 +1058,25 @@ static PDFHummus::EStatusCode applyStructuredOperator(
 
 static PDFHummus::EStatusCode showText(AbstractContentContext* context, int operation,
                                        int encoding, double wordSpace,
-                                       double characterSpace, const char* text) {
+                                       double characterSpace, const char* text,
+                                       unsigned int textLength) {
   if (context == nullptr || text == nullptr || !std::isfinite(wordSpace) ||
       !std::isfinite(characterSpace)) return PDFHummus::eFailure;
+  std::string value(text, textLength);
   if (operation == 0) {
-    if (encoding == 1) return context->TjLow(text);
-    if (encoding == 2) return context->TjHexLow(text);
-    return context->Tj(text);
+    if (encoding == 1) return context->TjLow(value);
+    if (encoding == 2) return context->TjHexLow(value);
+    return context->Tj(value);
   }
   if (operation == 1) {
-    if (encoding == 1) return context->QuoteLow(text);
-    if (encoding == 2) return context->QuoteHexLow(text);
-    return context->Quote(text);
+    if (encoding == 1) return context->QuoteLow(value);
+    if (encoding == 2) return context->QuoteHexLow(value);
+    return context->Quote(value);
   }
   if (operation == 2) {
-    if (encoding == 1) return context->DoubleQuoteLow(wordSpace, characterSpace, text);
-    if (encoding == 2) return context->DoubleQuoteHexLow(wordSpace, characterSpace, text);
-    return context->DoubleQuote(wordSpace, characterSpace, text);
+    if (encoding == 1) return context->DoubleQuoteLow(wordSpace, characterSpace, value);
+    if (encoding == 2) return context->DoubleQuoteHexLow(wordSpace, characterSpace, value);
+    return context->DoubleQuote(wordSpace, characterSpace, value);
   }
   return PDFHummus::eFailure;
 }
@@ -1132,10 +1134,14 @@ static PDFHummus::EStatusCode showTJ(AbstractContentContext* context, int encodi
                                      const int* types, const double* numbers,
                                       const int* stringOffsets, const char* strings,
                                       const int* glyphOffsets, const unsigned int* glyphs,
-                                      int count, unsigned int stringsLength,
+                                      int count, unsigned int stringOffsetsLength,
+                                      unsigned int stringsLength,
                                       unsigned int glyphOffsetsLength,
                                       unsigned int glyphCount) {
+  // Both offset arrays hold one entry per item plus a terminating total, so
+  // every item can be read as the half-open range [offset, next offset).
   if (context == nullptr || encoding < 0 || encoding > 2 || count < 0 ||
+      stringOffsetsLength < static_cast<unsigned int>(count) + 1 ||
       glyphOffsetsLength < static_cast<unsigned int>(count) + 1 ||
       (count > 0 && (types == nullptr ||
       numbers == nullptr || stringOffsets == nullptr || glyphOffsets == nullptr))) {

@@ -517,7 +517,7 @@ export function createWriterToModifyFactory({
       result.Tj = function (text, options) {
         requireContext(result);
         if (typeof text === "string")
-          return withString(text, (pointer) => {
+          return withString(text, (pointer, length) => {
             if (
               !module._muhammara_wasm_modifier_show_text_operator(
                 modifier,
@@ -526,6 +526,7 @@ export function createWriterToModifyFactory({
                 0,
                 0,
                 pointer,
+                length,
               )
             )
               throw new Error("Unable to show text");
@@ -1641,7 +1642,7 @@ export function createWriterToModifyFactory({
               if (form._ended)
                 throw new Error("Form XObject content has ended");
               if (typeof text === "string")
-                return withString(text, (pointer) => {
+                return withString(text, (pointer, length) => {
                   if (
                     !module._muhammara_wasm_modifier_form_show_text_operator(
                       modifier,
@@ -1651,6 +1652,7 @@ export function createWriterToModifyFactory({
                       0,
                       0,
                       pointer,
+                      length,
                     )
                   )
                     throw new Error("Unable to show text");

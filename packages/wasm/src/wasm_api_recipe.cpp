@@ -324,11 +324,13 @@ WASM_EXPORT int muhammara_wasm_writer_form_draw_image(
 
 WASM_EXPORT int muhammara_wasm_writer_form_show_text_operator(
     WasmRecipe* recipe, WasmForm* form, int operation, int encoding,
-    double wordSpace, double characterSpace, const char* text) {
+    double wordSpace, double characterSpace, const char* text,
+    unsigned int textLength) {
   return recipe != nullptr && form != nullptr && form->recipe == recipe &&
          form->form != nullptr && !form->ended &&
          !recipe->finished && showText(form->form->GetContentContext(), operation, encoding,
-                                       wordSpace, characterSpace, text) == PDFHummus::eSuccess;
+                                       wordSpace, characterSpace, text,
+                                       textLength) == PDFHummus::eSuccess;
 }
 
 WASM_EXPORT int muhammara_wasm_writer_form_show_glyphs_operator(
@@ -344,13 +346,14 @@ WASM_EXPORT int muhammara_wasm_writer_form_show_tj(
     WasmRecipe* recipe, WasmForm* form, int encoding, const int* types,
     const double* numbers, const int* stringOffsets, const char* strings,
     const int* glyphOffsets, const unsigned int* glyphs, int count,
-    unsigned int stringsLength, unsigned int glyphOffsetsLength,
-    unsigned int glyphCount) {
+    unsigned int stringOffsetsLength, unsigned int stringsLength,
+    unsigned int glyphOffsetsLength, unsigned int glyphCount) {
   return recipe != nullptr && form != nullptr && form->recipe == recipe &&
          form->form != nullptr && !form->ended &&
          !recipe->finished && showTJ(form->form->GetContentContext(), encoding, types, numbers,
                                        stringOffsets, strings, glyphOffsets, glyphs, count,
-                                       stringsLength, glyphOffsetsLength,
+                                       stringOffsetsLength, stringsLength,
+                                       glyphOffsetsLength,
                                        glyphCount) == PDFHummus::eSuccess;
 }
 
@@ -641,9 +644,10 @@ WASM_EXPORT int muhammara_wasm_writer_show_glyphs(
 
 WASM_EXPORT int muhammara_wasm_writer_show_text_operator(
     WasmRecipe* recipe, int operation, int encoding, double wordSpace,
-    double characterSpace, const char* text) {
+    double characterSpace, const char* text, unsigned int textLength) {
   return recipe != nullptr && recipe->context != nullptr &&
-         showText(recipe->context, operation, encoding, wordSpace, characterSpace, text) == PDFHummus::eSuccess;
+         showText(recipe->context, operation, encoding, wordSpace, characterSpace, text,
+                  textLength) == PDFHummus::eSuccess;
 }
 
 WASM_EXPORT int muhammara_wasm_writer_show_glyphs_operator(
@@ -656,11 +660,13 @@ WASM_EXPORT int muhammara_wasm_writer_show_glyphs_operator(
 WASM_EXPORT int muhammara_wasm_writer_show_tj(
     WasmRecipe* recipe, int encoding, const int* types, const double* numbers,
     const int* stringOffsets, const char* strings, const int* glyphOffsets,
-    const unsigned int* glyphs, int count, unsigned int stringsLength,
-    unsigned int glyphOffsetsLength, unsigned int glyphCount) {
+    const unsigned int* glyphs, int count, unsigned int stringOffsetsLength,
+    unsigned int stringsLength, unsigned int glyphOffsetsLength,
+    unsigned int glyphCount) {
   return recipe != nullptr && recipe->context != nullptr &&
           showTJ(recipe->context, encoding, types, numbers, stringOffsets, strings,
-                  glyphOffsets, glyphs, count, stringsLength, glyphOffsetsLength,
+                  glyphOffsets, glyphs, count, stringOffsetsLength, stringsLength,
+                  glyphOffsetsLength,
                   glyphCount) == PDFHummus::eSuccess;
 }
 

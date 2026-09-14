@@ -221,7 +221,8 @@ export function createHelpers(module) {
    *
    * @param {Array} items Text strings, spacing numbers, or glyph lists.
    * @param {Function} callback Receives pointers in fixed order: types, numbers,
-   * string offsets, strings, glyph offsets, glyphs, then their four counts.
+   * string offsets, strings, glyph offsets, glyphs, then the item count and the
+   * lengths of the string offset, string, glyph offset, and glyph buffers.
    * @returns {*} The callback result before all temporary buffers are freed.
    */
   function withTJItems(items, callback) {
@@ -291,6 +292,7 @@ export function createHelpers(module) {
                         glyphOffsetsPointer,
                         glyphsPointer,
                         items.length,
+                        stringOffsets.length,
                         stringBytes.length,
                         glyphOffsets.length,
                         glyphs.length / 2,
@@ -310,7 +312,7 @@ export function createHelpers(module) {
         throw new TypeError("DoubleQuote requires finite numeric arguments");
       }
       if (typeof text === "string")
-        return withString(text, (pointer) => {
+        return withString(text, (pointer, length) => {
           if (
             !api.text(
               operation,
@@ -318,6 +320,7 @@ export function createHelpers(module) {
               wordSpace,
               characterSpace,
               pointer,
+              length,
             )
           )
             throw new Error("Unable to show text");

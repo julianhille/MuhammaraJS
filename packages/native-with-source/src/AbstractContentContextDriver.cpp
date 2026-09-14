@@ -41,6 +41,15 @@ using namespace v8;
 
 typedef std::map<std::string,unsigned long> StringToULongMap;
 
+// Converts a V8 string into an std::string that keeps its full byte length.
+// Dereferencing String::Utf8Value into a C string truncates the text at the
+// first embedded NUL byte, which PDF strings are allowed to contain.
+static std::string ToStdString(Isolate* isolate, Local<Value> inValue)
+{
+    auto value = UTF_8_VALUE(inValue->TO_STRING());
+    return *value == NULL ? std::string() : std::string(*value, value.length());
+}
+
 class ColorMap
 {
 public:
@@ -1534,13 +1543,13 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::Tj(const ARGS_TYPE& args)
         switch(options.encoding)
         {
             case TextPlacingOptions::EEncodingCode:
-                contentContext->GetContext()->TjLow(*UTF_8_VALUE(args[0]->TO_STRING()));
+                contentContext->GetContext()->TjLow(ToStdString(isolate, args[0]));
                 break;
             case TextPlacingOptions::EEncodingHex:
-                contentContext->GetContext()->TjHexLow(*UTF_8_VALUE(args[0]->TO_STRING()));
+                contentContext->GetContext()->TjHexLow(ToStdString(isolate, args[0]));
                 break;
             default:
-                contentContext->GetContext()->Tj(*UTF_8_VALUE(args[0]->TO_STRING()));
+                contentContext->GetContext()->Tj(ToStdString(isolate, args[0]));
         }
     }
     SET_FUNCTION_RETURN_VALUE(args.This())
@@ -1580,13 +1589,13 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::Quote(const ARGS_TYPE& args)
         switch(options.encoding)
         {
             case TextPlacingOptions::EEncodingCode:
-                contentContext->GetContext()->QuoteLow(*UTF_8_VALUE(args[0]->TO_STRING()));
+                contentContext->GetContext()->QuoteLow(ToStdString(isolate, args[0]));
                 break;
             case TextPlacingOptions::EEncodingHex:
-                contentContext->GetContext()->QuoteHexLow(*UTF_8_VALUE(args[0]->TO_STRING()));
+                contentContext->GetContext()->QuoteHexLow(ToStdString(isolate, args[0]));
                 break;
             default:
-                contentContext->GetContext()->Quote(*UTF_8_VALUE(args[0]->TO_STRING()));
+                contentContext->GetContext()->Quote(ToStdString(isolate, args[0]));
         }
     }
     SET_FUNCTION_RETURN_VALUE(args.This())
@@ -1632,17 +1641,17 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::DoubleQuote(const ARGS_TYPE& ar
             case TextPlacingOptions::EEncodingCode:
                 contentContext->GetContext()->DoubleQuoteLow(TO_NUMBER(args[0])->Value(),
                                                           TO_NUMBER(args[1])->Value(),
-                                                          *UTF_8_VALUE(args[2]->TO_STRING()));
+                                                          ToStdString(isolate, args[2]));
                 break;
             case TextPlacingOptions::EEncodingHex:
                 contentContext->GetContext()->DoubleQuoteHexLow(TO_NUMBER(args[0])->Value(),
                                                           TO_NUMBER(args[1])->Value(),
-                                                          *UTF_8_VALUE(args[2]->TO_STRING()));
+                                                          ToStdString(isolate, args[2]));
                 break;
             default:
                 contentContext->GetContext()->DoubleQuote(TO_NUMBER(args[0])->Value(),
                                                           TO_NUMBER(args[1])->Value(),
-                                                          *UTF_8_VALUE(args[2]->TO_STRING()));
+                                                          ToStdString(isolate, args[2]));
         }
     }
     
@@ -1683,10 +1692,7 @@ METHOD_RETURN_TYPE AbstractContentContextDriver::TJ(const ARGS_TYPE& args)
         for(int i=0; i < lengthButOptions && status; ++i)
         {
             if(args[i]->IsString())
-            {
-                String::Utf8Value value(isolate, args[i]->TO_STRING());
-                params.push_back(StringOrDouble(std::string(*value, value.length())));
-            }
+                params.push_back(StringOrDouble(ToStdString(isolate, args[i])));
             else if(args[i]->IsNumber())
                 params.push_back(StringOrDouble(TO_NUMBER(args[i])->Value()));
             else
@@ -1745,10 +1751,11 @@ TextPlacingOptions AbstractContentContextDriver::ObjectToOptions(const Local<Obj
     
 	if (inObject->Has(GET_CURRENT_CONTEXT, NEW_SYMBOL("encoding")).FromJust())
     {
-        std::string value = *UTF_8_VALUE(inObject->Get(GET_CURRENT_CONTEXT, NEW_SYMBOL("encoding")).ToLocalChecked()->TO_STRING());
-        if(value.compare("hex"))
+        // compare() returns 0 on a match, so each branch tests for equality.
+        std::string value = ToStdString(isolate, inObject->Get(GET_CURRENT_CONTEXT, NEW_SYMBOL("encoding")).ToLocalChecked());
+        if(value.compare("hex") == 0)
             options.encoding = TextPlacingOptions::EEncodingHex;
-        else if(value.compare("code"))
+        else if(value.compare("code") == 0)
             options.encoding = TextPlacingOptions::EEncodingCode;
     
         // EEncodingText is the default

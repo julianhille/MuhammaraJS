@@ -799,7 +799,7 @@ export function createWriterFactory({
           requireActiveContext(context);
           if (typeof text === "string") {
             var encoding = textEncoding(options);
-            return withString(text, (textPointer) => {
+            return withString(text, (textPointer, textLength) => {
               if (
                 !module._muhammara_wasm_writer_show_text_operator(
                   recipe,
@@ -808,6 +808,7 @@ export function createWriterFactory({
                   0,
                   0,
                   textPointer,
+                  textLength,
                 )
               ) {
                 throw new Error("Unable to show text");
@@ -836,7 +837,7 @@ export function createWriterFactory({
         Quote: function (text, options) {
           requireActiveContext(context);
           if (typeof text === "string") {
-            return withString(text, (pointer) => {
+            return withString(text, (pointer, length) => {
               if (
                 !module._muhammara_wasm_writer_show_text_operator(
                   recipe,
@@ -845,6 +846,7 @@ export function createWriterFactory({
                   0,
                   0,
                   pointer,
+                  length,
                 )
               )
                 throw new Error("Unable to show text");
@@ -875,7 +877,7 @@ export function createWriterFactory({
               "DoubleQuote requires finite numeric arguments",
             );
           if (typeof text === "string")
-            return withString(text, (pointer) => {
+            return withString(text, (pointer, length) => {
               if (
                 !module._muhammara_wasm_writer_show_text_operator(
                   recipe,
@@ -884,6 +886,7 @@ export function createWriterFactory({
                   wordSpace,
                   characterSpace,
                   pointer,
+                  length,
                 )
               )
                 throw new Error("Unable to show text");
@@ -1692,7 +1695,7 @@ export function createWriterFactory({
         };
         context.Tj = function (text, options) {
           if (typeof text === "string")
-            return withString(text, (pointer) => {
+            return withString(text, (pointer, length) => {
               if (
                 !module._muhammara_wasm_writer_form_show_text_operator(
                   recipe,
@@ -1702,6 +1705,7 @@ export function createWriterFactory({
                   0,
                   0,
                   pointer,
+                  length,
                 )
               )
                 throw new Error("Unable to show text");

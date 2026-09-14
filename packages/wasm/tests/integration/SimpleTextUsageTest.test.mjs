@@ -352,34 +352,67 @@ describe("SimpleTextUsageTest", function () {
     modifiedReader.end();
   });
 
-  it("preserves embedded NUL bytes in TJ strings", async function () {
-    var muhammara = await createMuhammaraWasm();
-    var writer = muhammara.createWriter();
-    var page = writer.createPage(0, 0, 100, 100);
-    writer
-      .startPageContentContext(page)
-      .BT()
-      .TJ("before\0after", { encoding: "hex" })
-      .ET();
-    writer.writePage(page);
+  var NUL_TEXT = "before\0after";
+  var NUL_BYTES = [98, 101, 102, 111, 114, 101, 0, 97, 102, 116, 101, 114];
 
-    var reader = muhammara.createReader(writer.end());
+  // Reads the single text operand of the first content stream operator back as
+  // raw bytes, so an embedded NUL is visible instead of ending the string.
+  function readTextOperandBytes(muhammara, bytes, toStringObject) {
+    var reader = muhammara.createReader(bytes);
     var stream = reader
       .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
       .toPDFStream();
     var parser = reader.startReadingObjectsFromStream(stream);
     parser.parseNewObject();
-    var string = parser
-      .parseNewObject()
-      .toPDFArray()
-      .queryObject(0)
-      .toPDFHexString();
-    assert.deepEqual(
-      Array.from(string.toBytesArray()),
-      [98, 101, 102, 111, 114, 101, 0, 97, 102, 116, 101, 114],
+    var operand = Array.from(
+      toStringObject(parser.parseNewObject()).toBytesArray(),
     );
     parser.end();
     reader.end();
+    return operand;
+  }
+
+  [
+    { encoding: "hex", accessor: "toPDFHexString" },
+    { encoding: "code", accessor: "toPDFLiteralString" },
+  ].forEach(function (variant) {
+    it(`preserves embedded NUL bytes in ${variant.encoding} TJ strings`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var writer = muhammara.createWriter();
+      var page = writer.createPage(0, 0, 100, 100);
+      writer
+        .startPageContentContext(page)
+        .BT()
+        .TJ(NUL_TEXT, { encoding: variant.encoding })
+        .ET();
+      writer.writePage(page);
+
+      assert.deepEqual(
+        readTextOperandBytes(muhammara, writer.end(), (object) =>
+          object.toPDFArray().queryObject(0)[variant.accessor](),
+        ),
+        NUL_BYTES,
+      );
+    });
+
+    it(`preserves embedded NUL bytes in ${variant.encoding} Tj strings`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var writer = muhammara.createWriter();
+      var page = writer.createPage(0, 0, 100, 100);
+      writer
+        .startPageContentContext(page)
+        .BT()
+        .Tj(NUL_TEXT, { encoding: variant.encoding })
+        .ET();
+      writer.writePage(page);
+
+      assert.deepEqual(
+        readTextOperandBytes(muhammara, writer.end(), (object) =>
+          object[variant.accessor](),
+        ),
+        NUL_BYTES,
+      );
+    });
   });
 
   it("writes free code on page, form, and modifier contexts", async function () {

@@ -71,9 +71,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
-- Preserve embedded NUL bytes in Wasm low-level `TJ()` strings instead of
-  silently truncating each string at the first NUL
-  [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
+- Preserve embedded NUL bytes in the Wasm low-level `TJ()`, `Tj()`, `Quote()`,
+  and `DoubleQuote()` strings instead of silently truncating each string at the
+  first NUL [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
 - Reject unsupported PDF 2.0/AES-256 encryption in `recrypt()` with a clear
   WebAssembly limitation error
   [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
