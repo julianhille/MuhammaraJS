@@ -66,6 +66,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Guard stateful writer methods consistently after `end()`, `dispose()`, or
+  failed finalization with `Error("PDF writer has ended")`, matching native;
+  asynchronous methods preserve promise rejection semantics
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 - Preserve embedded NUL bytes in the Wasm low-level `TJ()`, `Tj()`, `Quote()`,
   and `DoubleQuote()` strings instead of silently truncating each string at the
   first NUL [#683](https://github.com/julianhille/MuhammaraJS/issues/683)

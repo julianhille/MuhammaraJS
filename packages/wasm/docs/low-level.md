@@ -1,5 +1,20 @@
 # Low-Level Writer, Reader, And Modifier
 
+## Writer Lifecycle
+
+Finish drawing before calling `writer.end()`. After finalization, disposal, or
+a finalization failure, stateful writer methods throw
+`Error("PDF writer has ended")`, matching native. Async methods reject their
+promises with the same error. Create a new writer for further output and
+consume borrowed resources before ending their writer.
+
+`createPDFDate()` and `createPDFTextString()` create independent values and
+remain usable after cleanup. `dispose()` is idempotent; Wasm `end()` still
+throws on a second call, whereas native `end()` is a no-op. Recipe uses the
+writer guard internally, so there is no additional Recipe method for it.
+
+## Create A PDF
+
 Create a writer, draw in PDF's bottom-left coordinate system, then retain the
 returned bytes:
 

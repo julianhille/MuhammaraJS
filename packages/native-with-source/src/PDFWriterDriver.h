@@ -183,6 +183,9 @@ public:
         
 private:
     PDFWriterDriver();
+
+    template <void (*Method)(const ARGS_TYPE&)>
+    static METHOD_RETURN_TYPE WithActiveWriter(const ARGS_TYPE& args);
     
     
     static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);

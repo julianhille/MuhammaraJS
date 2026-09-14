@@ -40,3 +40,10 @@ Wasm-only `writer.dispose()`, `Recipe.dispose()`, and `Recipe.disposeAssets()`
 release Emscripten heap allocations that JavaScript garbage collection cannot
 reclaim. Native objects use normal native lifetime management, so they have no
 corresponding methods.
+
+Stateful low-level writer methods reject use after cleanup on both ends with
+`Error("PDF writer has ended")`. Native `end()` is idempotent and returns the
+writer; Wasm `end()` returns bytes once and rejects subsequent calls. Use Wasm
+`dispose()` for idempotent cleanup. Native `shutdown()` retires the writer and
+requires `createWriterToContinue()` to resume; filesystem continuation is not
+available in Wasm.

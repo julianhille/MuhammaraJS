@@ -1130,6 +1130,7 @@ export interface DocumentCopyingContext extends CopyingObjectOperations {
   ): this;
   end(): this;
 }
+/** Stateful methods require an active writer and throw Error("PDF writer has ended") after cleanup. Async methods reject instead. */
 export interface PDFWriter {
   appendPDFPagesFromPDF(
     source: ByteSource,
