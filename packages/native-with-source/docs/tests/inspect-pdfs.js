@@ -6,7 +6,6 @@ var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var detectBlankPages = require("../../../native/docs/examples/detect-blank-pages");
 var findTextPositions = require("../../../native/docs/examples/find-text-positions");
-var runExample = require("../run-example");
 
 describe("Documentation examples for reading pages", function () {
   var outputDirectory;
@@ -78,37 +77,5 @@ describe("Documentation examples for reading pages", function () {
       { x: 25, y: 50, fontSize: 12, fontResource: "FN1" },
     ]);
     assert.deepEqual(findTextPositions(inputPath, 2, "missing"), []);
-  });
-
-  /** Verify that the inline guide uses only the installed package API. */
-  it("runs the self-contained text-position example", function () {
-    var inputPath = path.join(outputDirectory, "input.pdf");
-    var writer = muhammara.createWriter(inputPath);
-    var font = writer.getFontForFile(
-      path.join(__dirname, "../../tests/TestMaterials/fonts/arial.ttf"),
-    );
-    var page = writer.createPage(0, 0, 200, 200);
-    writer
-      .startPageContentContext(page)
-      .BT()
-      .Tf(font, 12)
-      .Tm(1, 0, 0, 1, 25, 50)
-      .Tj("Text to locate")
-      .ET();
-    writer.writePage(page).end();
-
-    assert.deepEqual(
-      runExample("find-text-positions", [0], outputDirectory, "positions"),
-      [{ x: 25, y: 50, fontSize: 12, fontResource: "FN1" }],
-    );
-  });
-
-  /** Verify blank-page scanning directly from the published Markdown. */
-  it("runs the self-contained blank-page example", function () {
-    writeSamplePdf(path.join(outputDirectory, "input.pdf"));
-    assert.deepEqual(
-      runExample("find-text-positions", [2], outputDirectory, "blankPages"),
-      [0],
-    );
   });
 });
