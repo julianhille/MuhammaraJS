@@ -848,23 +848,32 @@ int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
                                double fontSize, unsigned int color,
                                double characterSpacing) {
   if (recipe == nullptr || recipe->context == nullptr || text == nullptr ||
-      fontPath == nullptr || fontSize <= 0) {
+      fontPath == nullptr || fontSize <= 0 ||
+      !std::isfinite(characterSpacing)) {
     return 0;
   }
   PDFUsedFont* font = recipe->writer.GetFontForFile(fontPath);
   if (font == nullptr) {
     return 0;
   }
-  if (recipe->context->BT() != PDFHummus::eSuccess ||
-      recipe->context->Tc(characterSpacing) != PDFHummus::eSuccess ||
-      recipe->context->ET() != PDFHummus::eSuccess) {
-    return 0;
+  if (recipe->context->q() != PDFHummus::eSuccess) return 0;
+
+  PDFHummus::EStatusCode status = recipe->context->BT();
+  if (status == PDFHummus::eSuccess) {
+    status = recipe->context->Tc(characterSpacing);
+    PDFHummus::EStatusCode endTextStatus = recipe->context->ET();
+    if (status == PDFHummus::eSuccess) status = endTextStatus;
   }
-  return recipe->context->WriteText(
-             x, y, text,
-             AbstractContentContext::TextOptions(font, fontSize,
-                                                 AbstractContentContext::eRGB,
-                                                  color)) == PDFHummus::eSuccess;
+  if (status == PDFHummus::eSuccess) {
+    status = recipe->context->WriteText(
+        x, y, text,
+        AbstractContentContext::TextOptions(font, fontSize,
+                                            AbstractContentContext::eRGB,
+                                            color));
+  }
+  PDFHummus::EStatusCode restoreStatus = recipe->context->Q();
+  return status == PDFHummus::eSuccess &&
+         restoreStatus == PDFHummus::eSuccess;
 }
 
 int muhammara_wasm_recipe_text_dimensions(WasmRecipe* recipe, const char* text,

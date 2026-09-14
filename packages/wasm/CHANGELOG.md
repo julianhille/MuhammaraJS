@@ -90,8 +90,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   render one marker per list item while matching native wrapping and nesting;
   recover malformed list closures in linear time without retaining void
   elements; measure HTML table cells; apply character spacing across formatted
-  runs; transform highlights and links with their text and source page; and
-  constrain linked text to clipped text boxes
+  runs, scoped to its own text operation so later low-level page text does not
+  inherit it and rejecting non-finite `charSpace` values; transform highlights
+  and links with their text and source page; and constrain linked text to
+  clipped text boxes
   [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Align Recipe text, measurement, and layout defaults on 14 points to match
   native, correcting the 12-point default in the alpha and beta releases
