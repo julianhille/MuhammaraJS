@@ -8,8 +8,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
-- Publish the executable browser example from successful `develop` builds to
-  GitHub Pages without checking generated binaries into the repository
+- Publish versioned executable browser examples to GitHub Pages for `develop`
+  and release builds
   [#690](https://github.com/julianhille/MuhammaraJS/issues/690)
 - Support chainable Recipe `pauseContext()` and `resumeContext()` transitions
   on newly created pages while retaining errors for unmatched calls
