@@ -407,7 +407,7 @@ declare namespace muhammara {
     /** The page resource name selected by the most recent Tf operation. */
     fontResource: string;
     fontSize: number;
-    /** The active PDF text matrix: [a, b, c, d, e, f]. */
+    /** The text-to-page matrix after applying the active graphics CTM: [a, b, c, d, e, f]. */
     textMatrix: [number, number, number, number, number, number];
   }
 

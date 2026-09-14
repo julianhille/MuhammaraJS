@@ -55,6 +55,7 @@ export function createReaderFactory({
     }
     var ended = false;
     var readerOwner = {};
+    var byteReaders = new Set();
 
     function requireReader() {
       if (requireOwner) requireOwner();
@@ -368,9 +369,29 @@ export function createReaderFactory({
     }
 
     function wrapByteReader(handle, positioned) {
+      var active = true;
+
+      /** Rejects access after this byte reader is disposed. */
+      function requireByteReader() {
+        requireReader();
+        if (!active) throw new Error("PDF byte reader has ended");
+      }
+
+      /** Unregisters and releases this byte reader once. */
+      function disposeByteReader() {
+        if (!active) return byteReader;
+        if (!ended && reader) {
+          module._muhammara_wasm_byte_reader_destroy(handle);
+        }
+        byteReaders.delete(disposeByteReader);
+        handle = 0;
+        active = false;
+        return byteReader;
+      }
+
       var byteReader = {
         read: function (amount) {
-          requireReader();
+          requireByteReader();
           if (!Number.isInteger(amount) || amount < 0 || amount > 0x7fffffff) {
             throw new RangeError("read requires a non-negative integer");
           }
@@ -391,9 +412,11 @@ export function createReaderFactory({
           }
         },
         notEnded: function () {
-          requireReader();
+          requireByteReader();
           return Boolean(module._muhammara_wasm_byte_reader_not_ended(handle));
         },
+        /** Releases this byte reader without ending its parent PDF reader. */
+        dispose: disposeByteReader,
       };
       if (positioned) {
         function requirePosition(value, label) {
@@ -402,7 +425,7 @@ export function createReaderFactory({
           }
         }
         byteReader.setPosition = function (position) {
-          requireReader();
+          requireByteReader();
           requirePosition(position, "setPosition");
           if (
             !module._muhammara_wasm_byte_reader_set_position(handle, position)
@@ -412,7 +435,7 @@ export function createReaderFactory({
           return byteReader;
         };
         byteReader.setPositionFromEnd = function (position) {
-          requireReader();
+          requireByteReader();
           requirePosition(position, "setPositionFromEnd");
           if (
             !module._muhammara_wasm_byte_reader_set_position_from_end(
@@ -425,7 +448,7 @@ export function createReaderFactory({
           return byteReader;
         };
         byteReader.skip = function (amount) {
-          requireReader();
+          requireByteReader();
           requirePosition(amount, "skip");
           if (!module._muhammara_wasm_byte_reader_skip(handle, amount)) {
             throw new Error("Unable to skip parser stream bytes");
@@ -433,7 +456,7 @@ export function createReaderFactory({
           return byteReader;
         };
         byteReader.getCurrentPosition = function () {
-          requireReader();
+          requireByteReader();
           var position =
             module._muhammara_wasm_byte_reader_get_current_position(handle);
           if (position < 0)
@@ -441,6 +464,7 @@ export function createReaderFactory({
           return position;
         };
       }
+      byteReaders.add(disposeByteReader);
       return byteReader;
     }
 
@@ -947,6 +971,9 @@ export function createReaderFactory({
       end: function () {
         if (reader) {
           try {
+            Array.from(byteReaders).forEach(function (disposeByteReader) {
+              disposeByteReader();
+            });
             if (destroyReader) module._muhammara_wasm_reader_destroy(reader);
           } finally {
             removeFile(path);
@@ -957,6 +984,9 @@ export function createReaderFactory({
         return this;
       },
       _end: function () {
+        Array.from(byteReaders).forEach(function (disposeByteReader) {
+          disposeByteReader();
+        });
         reader = 0;
         ended = true;
       },

@@ -126,8 +126,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Prevent native writer use-after-end crashes by guarding stateful entry points
-  before accessing closed output streams
+- Prevent native writer and copying-context use-after-end crashes by guarding
+  stateful entry points and tying copying contexts to their writer lifecycle
   [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 - Preserve embedded NUL bytes in the native low-level `TJ()`, `Tj()`, `Quote()`,
   and `DoubleQuote()` strings instead of silently truncating each string at the
@@ -140,8 +140,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
 - Release native writer stream proxies and mark the writer ended when finalization
   fails, so a later `end()` call does not re-enter finalization [#677](https://github.com/julianhille/MuhammaraJS/issues/677)
-- Report the correct native text matrix after `BT`, `Td`, `TD`, `TL`, `T*`,
-  `'`, and `"` while extracting page text
+- Report the correct native text-to-page matrix after text-positioning and `cm`
+  operations while extracting page text
   [#673](https://github.com/julianhille/MuhammaraJS/issues/673)
 - Prevent native PDF readers and copying contexts from terminating Node.js when
   used after `end()`; affected calls now throw an ended-state error

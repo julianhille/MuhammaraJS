@@ -39,7 +39,7 @@ public:
     IByteReaderWithPosition* ReadStreamProxy;
     bool IsActive();
     DriverLifecycle GetLifecycle();
-    void SetOwnerLifecycle(DriverLifecycle inOwnerLifecycle);
+    void AddOwnerLifecycle(DriverLifecycle inOwnerLifecycle);
     
 	ConstructorsHolder* holder;
 private:

@@ -66,6 +66,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   guide [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
 - Show `extractPageContentItems()` in the low-level browser example
   [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
+- Add idempotent `PDFByteReader.dispose()` for immediately releasing Wasm
+  decoded, plain-copying, parser, and copying-context stream readers.
 
 ### Fixed
 
@@ -81,8 +83,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
 - Prevent Wasm text extraction from reporting inline-image payload bytes as
   fabricated page text [#670](https://github.com/julianhille/MuhammaraJS/issues/670)
-- Report the correct text matrix after `BT`, `Td`, `TD`, `TL`, `T*`, `'`, and
-  `"` while extracting page text
+- Report the correct text-to-page matrix after text-positioning and `cm`
+  operations while extracting page text
   [#673](https://github.com/julianhille/MuhammaraJS/issues/673)
 - Preserve HTML whitespace, non-breaking spaces, inline layout, and transforms;
   render one marker per list item while matching native wrapping and nesting;

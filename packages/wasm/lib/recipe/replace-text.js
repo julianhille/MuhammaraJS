@@ -41,6 +41,7 @@ export function createReplaceTextMethods(encoder) {
       var parser = this.writer.getModifiedFileParser();
       var contentsObjectId;
       var source = "";
+      var streamReader;
       try {
         var page = parser
           .parsePage(pageNumber - 1)
@@ -55,11 +56,12 @@ export function createReplaceTextMethods(encoder) {
         }
         contentsObjectId = reference.getObjectID();
         var stream = parser.parseNewObject(contentsObjectId).toPDFStream();
-        var streamReader = parser.startReadingFromStream(stream);
+        streamReader = parser.startReadingFromStream(stream);
         while (streamReader.notEnded()) {
           source += oneByteString(new Uint8Array(streamReader.read(65536)));
         }
       } finally {
+        streamReader?.dispose();
         parser.end();
       }
 

@@ -58,6 +58,13 @@ writer.replaceObject(0, contentsId, replacementId, { scope: "global" });
 aliases are byte adapters, not Node or Web streams. A writer adapter exposes
 `buffer`, `toUint8Array()`, `toArrayBuffer()`, and `toBlob()`.
 
+Stream readers returned by `startReadingFromStream()`,
+`startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
+`getSourceDocumentStream()` allocate Wasm resources. Call their idempotent
+`dispose()` method as soon as reading finishes. Disposing one of these byte
+readers does not end its parent PDF reader; ending the parent remains fallback
+cleanup for byte readers that were not disposed explicitly.
+
 For exact signatures, lifecycle rules, content operators, object contexts,
 copying contexts, images, forms, and modifier APIs, use the
 [TypeScript reference](reference.md).

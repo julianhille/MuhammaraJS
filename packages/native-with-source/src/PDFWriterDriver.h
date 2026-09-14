@@ -20,6 +20,7 @@
 #pragma once
 
 #include "nodes.h"
+#include "DriverLifecycle.h"
 #include <utility>
 #include <string>
 #include <map>
@@ -233,6 +234,7 @@ private:
     bool mStartedWithStream;
 	bool mIsCatalogUpdateRequired;
 	bool mIsStarted;    
+    DriverLifecycle mLifecycle;
     PDFWriter mPDFWriter;
     ObjectByteWriterWithPosition* mWriteStreamProxy;
     ObjectByteReaderWithPosition* mReadStreamProxy;

@@ -28,10 +28,11 @@ try {
 }
 ```
 
-Each result represents a PDF text-showing operation in content-stream drawing
-order. `textMatrix` is `[a, b, c, d, e, f]`; `e` and `f` are the text position.
-The matrix reflects explicit text positioning through `BT`, `Tm`, `Td`, `TD`,
-`TL`, `T*`, `'`, and `"`.
+Each result represents a PDF text-showing operation in direct content-stream
+drawing order. `textMatrix` is `[a, b, c, d, e, f]`; `e` and `f` are the text
+origin in page coordinates. The matrix combines explicit text positioning
+through `BT`, `Tm`, `Td`, `TD`, `TL`, `T*`, `'`, and `"` with the active graphics
+transformation from `cm`. Its first four values retain rotation, scale, or skew.
 Repeated text produces multiple matches, so use the matrix, font resource, and
 surrounding operations to choose the intended occurrence.
 
@@ -39,7 +40,8 @@ surrounding operations to choose the intended occurrence.
 not decode font character maps or calculate glyph bounds, so it is not a general
 visual-text search API. It also does not calculate glyph-driven text-matrix
 advances, so adjacent text-showing operations without an explicit positioning
-operator retain the same matrix.
+operator retain the same matrix. Extraction does not descend into Form XObjects,
+including appended forms created by `Recipe.editPage()`.
 
 ## Bound the work on untrusted input
 

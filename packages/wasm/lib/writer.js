@@ -3057,6 +3057,8 @@ export function createWriterFactory({
           },
           end: function () {
             requireCopying();
+            sourceParsers.forEach((parser) => parser._end());
+            sourceParsers.length = 0;
             var result = module._muhammara_wasm_copying_context_end(copying);
             copyingEnded = true;
             cleanupCopying();
