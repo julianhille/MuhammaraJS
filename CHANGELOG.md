@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Validate that the native GYP and Wasm CMake builds compile the same PDFWriter
+  translation units, preventing either backend from silently omitting new source
+  files [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
+- Publish all three native npm packages before creating the GitHub release, so a
+  failed npm publication does not leave an orphan release
+  [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
 - Document the complete set of Perl packages RPM-based distributions need for a
   source build. The list grew from `perl-FindBin` and `perl-IPC-Cmd` to also
   cover `perl-lib`, `perl-File-Compare`, `perl-File-Copy`, `perl-Time-Piece`,

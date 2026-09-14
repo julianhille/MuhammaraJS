@@ -17,4 +17,5 @@ Read the [Wasm documentation](https://muhammarajs-wasm.readthedocs.io/) for
 installation and API guidance. The focused [Recipe topic
 guides](https://muhammarajs-wasm.readthedocs.io/latest/recipe/index.html)
 cover byte-first PDF creation, drawing, composition, modification, metadata,
-and encryption; browser examples and task-oriented how-to guides are included.
+and encryption. Browser examples and task-oriented how-to guides are available
+on the documentation site.

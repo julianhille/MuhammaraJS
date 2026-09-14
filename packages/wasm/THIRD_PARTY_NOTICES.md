@@ -11,9 +11,8 @@
 
 Recipe uses this openly licensed face as its automatic default. No proprietary
 native font faces are included in the Wasm package.
-`@muhammara/wasm` statically links the following libraries from the vendored
-source tree at `packages/native-with-source/src/deps/`. OpenSSL is not linked
-into the WebAssembly target.
+`@muhammara/wasm` statically links the following libraries from MuhammaraJS's
+vendored source tree.
 
 | Library   | Version or baseline                                                    | License                          |
 | --------- | ---------------------------------------------------------------------- | -------------------------------- |
