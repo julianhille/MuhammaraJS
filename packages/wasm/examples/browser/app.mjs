@@ -17,6 +17,8 @@ var description = document.querySelector("#example-description");
 var requirement = document.querySelector("#example-requirement");
 var fileGrid = document.querySelector(".file-grid");
 var assetFields = Array.from(document.querySelectorAll("[data-asset]"));
+var versionPicker = document.querySelector("#version-picker");
+var versionSelect = document.querySelector("#version");
 var urls = new ObjectUrlStore();
 var active;
 var result;
@@ -24,6 +26,41 @@ var exampleId = "complete";
 var examples = new Map(
   BROWSER_EXAMPLES.map((example) => [example.id, example]),
 );
+
+/** Opens the selected deployed browser example version. */
+function selectVersion() {
+  window.location.href = new URL(
+    `../${encodeURIComponent(versionSelect.value)}/index.html`,
+    window.location.href,
+  ).href;
+}
+
+/** Loads the versions managed by Mike when the example runs on GitHub Pages. */
+async function setupVersionPicker() {
+  try {
+    var response = await fetch("../versions.json");
+    if (!response.ok) return;
+    var versions = await response.json();
+    var current = new URL(".", window.location.href).pathname
+      .split("/")
+      .filter(Boolean)
+      .pop();
+    for (var entry of versions) {
+      var option = document.createElement("option");
+      option.value = entry.version;
+      option.textContent = entry.title;
+      option.selected =
+        entry.version === current || entry.aliases.includes(current);
+      versionSelect.append(option);
+    }
+    versionSelect.addEventListener("change", selectVersion);
+    versionPicker.hidden = false;
+  } catch {
+    // Local examples do not have Mike's versions manifest.
+  }
+}
+
+void setupVersionPicker();
 
 function report(message, percent = 0, details) {
   progressBar.value = percent;
