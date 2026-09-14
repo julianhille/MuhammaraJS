@@ -85,4 +85,7 @@ export function initializeRecipe(recipe, options) {
   recipe._pageContext = null;
   recipe._activePageNumber = 0;
   recipe._contextState = "idle";
+  recipe._modifiedSourcePages = new Set();
+  recipe._pagesCreated = false;
+  recipe._pagesAppended = false;
 }

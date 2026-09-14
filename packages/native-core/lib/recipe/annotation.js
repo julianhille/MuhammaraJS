@@ -294,8 +294,12 @@ exports._writeAnnotations = function _writeAnnotations() {
 
     if (annot.replies) {
       annot.replies.forEach((reply) => {
-        annot.args.reply = reply;
-        this._annot(annot.subtype, annot.args, annot.pageNumber, ref);
+        this._annot(
+          annot.subtype,
+          { ...annot.args, reply },
+          annot.pageNumber,
+          ref,
+        );
       });
     }
   });
@@ -331,7 +335,10 @@ exports._writeAnnotation = function _writeAnnotation(pageIndex) {
   objectsContext.startArray();
   if (pageObject["Annots"] && pageObject["Annots"].toJSArray) {
     pageObject["Annots"].toJSArray().forEach((annot) => {
-      objectsContext.writeIndirectObjectReference(annot.getObjectID());
+      objectsContext.writeIndirectObjectReference(
+        annot.getObjectID(),
+        annot.getVersion(),
+      );
     });
   }
   this.annotations[pageIndex].forEach((item) => {

@@ -11,26 +11,31 @@ const utils = require("./utils");
  * @param {number} srcPageNumber - The page number to be insterted from the other pdf.
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If afterPageNumber is not a number.
+ * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
  */
 exports.insertPage = function insertPage(
   afterPageNumber,
   pdfSrc,
   srcPageNumber,
 ) {
+  if (this.deletedPages?.size) {
+    throw new Error("insertPage cannot be combined with deletePage");
+  }
   if (isNaN(afterPageNumber)) {
     throw new Error("The afterPageNumber is inValid.");
   }
-  this.needToInsertPages = true;
-  if (pdfSrc && srcPageNumber) {
-    this.insertInformation = this.insertInformation || {};
-    this.insertInformation[afterPageNumber] =
-      this.insertInformation[afterPageNumber] || [];
-    this.insertInformation[afterPageNumber].push({
-      afterPageNumber,
-      pdfSrc,
-      srcPageNumber,
-    });
+  if (!pdfSrc || !srcPageNumber) {
+    throw new TypeError("insertPage requires pdfSrc and srcPageNumber");
   }
+  this.insertInformation = this.insertInformation || {};
+  this.insertInformation[afterPageNumber] =
+    this.insertInformation[afterPageNumber] || [];
+  this.insertInformation[afterPageNumber].push({
+    afterPageNumber,
+    pdfSrc,
+    srcPageNumber,
+  });
+  this.needToInsertPages = true;
   return this;
 };
 

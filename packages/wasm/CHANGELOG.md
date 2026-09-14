@@ -4,11 +4,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
-### Fixed
+### Breaking Changes
 
-- Reject unsupported PDF 2.0/AES-256 encryption in `recrypt()` with a clear
-  WebAssembly limitation error
-  [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
+- Recipe `appendPage()` now rejects zero, negative, and fractional page
+  selections before upper-bound clamping; pass positive one-based integers or
+  ascending two-value ranges
+  [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
 
 ### Added
 
@@ -42,6 +43,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#617](https://github.com/julianhille/MuhammaraJS/issues/617)
 - Add third-party notices and security, provenance, and contribution guidance
   for the WebAssembly package [#626](https://github.com/julianhille/MuhammaraJS/issues/626)
+- Add chainable Recipe `deletePage()` support for removing one or more pages
+  from an existing byte-backed PDF while preserving retained page objects
+  [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
 - Add byte-first `recrypt()` and Recipe `encrypt()` with native-compatible
   password options, plus the password-change browser example
   [#595](https://github.com/julianhille/MuhammaraJS/issues/595)
@@ -67,6 +71,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Reject unsupported PDF 2.0/AES-256 encryption in `recrypt()` with a clear
+  WebAssembly limitation error
+  [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
 - Prevent Wasm text extraction from reporting inline-image payload bytes as
   fabricated page text [#670](https://github.com/julianhille/MuhammaraJS/issues/670)
 - Report the correct text matrix after `BT`, `Td`, `TD`, `TL`, `T*`, `'`, and

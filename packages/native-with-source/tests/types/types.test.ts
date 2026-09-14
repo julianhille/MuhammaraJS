@@ -118,7 +118,6 @@ recipe.lineStyle({
   dash: [1],
   dashPhase: 1,
 });
-
 var extension: muhammara.Recipe.ExtensionCallback<
   [number, number],
   muhammara.Recipe
@@ -649,3 +648,4 @@ void triangleTrait;
 void trianglePosition;
 void invalidColorspace;
 void invalidPermission;
+recipe.deletePage(1).deletePage([2, 3]);

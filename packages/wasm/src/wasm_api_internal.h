@@ -70,9 +70,20 @@ class WasmRecipe;
 class WasmCatalogUpdateExtender : public DocumentContextExtenderAdapter {
  public:
   bool required = false;
+  ObjectIDType pageLabelsObjectID = 0;
 
   bool IsCatalogUpdateRequiredForModifiedFile(PDFParser*) override {
     return required;
+  }
+
+  PDFHummus::EStatusCode OnCatalogWrite(
+      CatalogInformation*, DictionaryContext* catalog,
+      ObjectsContext*, PDFHummus::DocumentContext*) override {
+    if (pageLabelsObjectID != 0) {
+      catalog->WriteKey("PageLabels");
+      catalog->WriteNewObjectReferenceValue(pageLabelsObjectID);
+    }
+    return PDFHummus::eSuccess;
   }
 };
 

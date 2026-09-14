@@ -61,5 +61,6 @@ exports.replaceText = function replaceText(text, replacement, pageNumber) {
   replacementStream.getWriteStream().write(Array.from(Buffer.from(replaced)));
   objectsContext.endPDFStream(replacementStream).endIndirectObject();
   this.writer.replaceObject(pageIndex, contentsObjectId, replacementObjectId);
+  this.modifiedSourcePages.add(pageNumber);
   return this;
 };

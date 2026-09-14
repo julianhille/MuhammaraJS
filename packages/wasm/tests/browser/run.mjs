@@ -151,6 +151,7 @@ try {
       "page-boxes",
       "form-gray",
       "rotated-page",
+      "delete-pages",
       "image-transform",
       "table",
       "passwords",
@@ -161,6 +162,7 @@ try {
     }
     var preview = document.querySelector("#preview");
     var download = document.querySelector("#download");
+    var runButton = document.querySelector("#run");
     /** Runs one browser example in the selected execution mode and returns its bytes. */
     var runExample = async (id, mode) => {
       var tab = document.querySelector(`[data-example="${id}"]`);
@@ -177,6 +179,7 @@ try {
       for (var run = 0; run < 200; ++run) {
         var status = document.querySelector("#status").textContent;
         if (
+          !runButton.disabled &&
           status.startsWith("Complete.") &&
           preview.src.startsWith("blob:") &&
           preview.src !== previousPreview
@@ -186,6 +189,7 @@ try {
         await delay(50);
       }
       if (
+        runButton.disabled ||
         !document.querySelector("#status").textContent.startsWith("Complete.")
       )
         throw new Error(`${id} ${mode} example timed out`);
@@ -200,9 +204,11 @@ try {
     var workerListBytes = await runExample("html-lists", "worker");
     var pageListBytes = await runExample("html-lists", "page");
     await runExample("table", "page");
+    await runExample("delete-pages", "page");
+    await runExample("delete-pages", "worker");
     return {
       tabs: tabs.length,
-      selected: "table",
+      selected: "delete-pages",
       htmlLists: ["worker", "page"],
       htmlListBytes: { worker: workerListBytes, page: pageListBytes },
       preview: true,
