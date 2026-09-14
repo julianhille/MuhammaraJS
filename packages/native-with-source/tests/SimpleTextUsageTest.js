@@ -1,4 +1,5 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("node:assert/strict");
 
 describe("SimpleTextUsageTest", function () {
   it("should complete without error", function () {
@@ -115,5 +116,79 @@ describe("SimpleTextUsageTest", function () {
       ])
       .ET();
     pdfWriter.writePage(page).end();
+  });
+
+  var NUL_TEXT = "before\0after";
+  var NUL_BYTES = [98, 101, 102, 111, 114, 101, 0, 97, 102, 116, 101, 114];
+
+  // Reads the single text operand of the first content stream operator back as
+  // raw bytes, so an embedded NUL is visible instead of ending the string.
+  function readTextOperandBytes(outputPath, toStringObject) {
+    var reader = muhammara.createReader(outputPath);
+    var stream = reader
+      .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+      .toPDFStream();
+    var parser = reader.startReadingObjectsFromStream(stream);
+    parser.parseNewObject();
+    var bytes = toStringObject(parser.parseNewObject()).toBytesArray();
+    reader.end();
+    return bytes;
+  }
+
+  [
+    { encoding: "hex", accessor: "toPDFHexString" },
+    { encoding: "code", accessor: "toPDFLiteralString" },
+  ].forEach(function (variant) {
+    it(
+      "preserves embedded NUL bytes in " + variant.encoding + " TJ strings",
+      function () {
+        var outputPath =
+          __dirname +
+          "/output/SimpleTextUsageTJ-NUL-" +
+          variant.encoding +
+          ".pdf";
+        var writer = muhammara.createWriter(outputPath);
+        var page = writer.createPage(0, 0, 100, 100);
+        writer
+          .startPageContentContext(page)
+          .BT()
+          .TJ(NUL_TEXT, { encoding: variant.encoding })
+          .ET();
+        writer.writePage(page).end();
+
+        assert.deepEqual(
+          readTextOperandBytes(outputPath, function (object) {
+            return object.toPDFArray().queryObject(0)[variant.accessor]();
+          }),
+          NUL_BYTES,
+        );
+      },
+    );
+
+    it(
+      "preserves embedded NUL bytes in " + variant.encoding + " Tj strings",
+      function () {
+        var outputPath =
+          __dirname +
+          "/output/SimpleTextUsageTj-NUL-" +
+          variant.encoding +
+          ".pdf";
+        var writer = muhammara.createWriter(outputPath);
+        var page = writer.createPage(0, 0, 100, 100);
+        writer
+          .startPageContentContext(page)
+          .BT()
+          .Tj(NUL_TEXT, { encoding: variant.encoding })
+          .ET();
+        writer.writePage(page).end();
+
+        assert.deepEqual(
+          readTextOperandBytes(outputPath, function (object) {
+            return object[variant.accessor]();
+          }),
+          NUL_BYTES,
+        );
+      },
+    );
   });
 });

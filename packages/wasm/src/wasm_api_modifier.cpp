@@ -568,9 +568,10 @@ WASM_EXPORT int muhammara_wasm_modifier_show_text(WasmModifier* modifier, const 
 
 WASM_EXPORT int muhammara_wasm_modifier_show_text_operator(
     WasmModifier* modifier, int operation, int encoding, double wordSpace,
-    double characterSpace, const char* text) {
+    double characterSpace, const char* text, unsigned int textLength) {
   return modifier != nullptr && modifier->context != nullptr &&
-         showText(modifier->context, operation, encoding, wordSpace, characterSpace, text) == PDFHummus::eSuccess;
+         showText(modifier->context, operation, encoding, wordSpace, characterSpace, text,
+                  textLength) == PDFHummus::eSuccess;
 }
 
 WASM_EXPORT int muhammara_wasm_modifier_show_glyphs_operator(
@@ -583,11 +584,13 @@ WASM_EXPORT int muhammara_wasm_modifier_show_glyphs_operator(
 WASM_EXPORT int muhammara_wasm_modifier_show_tj(
     WasmModifier* modifier, int encoding, const int* types, const double* numbers,
     const int* stringOffsets, const char* strings, const int* glyphOffsets,
-    const unsigned int* glyphs, int count, unsigned int stringsLength,
-    unsigned int glyphOffsetsLength, unsigned int glyphCount) {
+    const unsigned int* glyphs, int count, unsigned int stringOffsetsLength,
+    unsigned int stringsLength, unsigned int glyphOffsetsLength,
+    unsigned int glyphCount) {
   return modifier != nullptr && modifier->context != nullptr &&
          showTJ(modifier->context, encoding, types, numbers, stringOffsets, strings,
-                  glyphOffsets, glyphs, count, stringsLength, glyphOffsetsLength,
+                  glyphOffsets, glyphs, count, stringOffsetsLength, stringsLength,
+                  glyphOffsetsLength,
                   glyphCount) == PDFHummus::eSuccess;
 }
 
@@ -805,11 +808,12 @@ WASM_EXPORT int muhammara_wasm_modifier_form_show_text(
 
 WASM_EXPORT int muhammara_wasm_modifier_form_show_text_operator(
     WasmModifier* modifier, WasmForm* form, int operation, int encoding,
-    double wordSpace, double characterSpace, const char* text) {
+    double wordSpace, double characterSpace, const char* text,
+    unsigned int textLength) {
   return modifier != nullptr && !modifier->finished && form != nullptr &&
          form->modifier == modifier && form->form != nullptr && !form->ended &&
          showText(form->form->GetContentContext(), operation, encoding, wordSpace,
-                  characterSpace, text) == PDFHummus::eSuccess;
+                  characterSpace, text, textLength) == PDFHummus::eSuccess;
 }
 
 WASM_EXPORT int muhammara_wasm_modifier_form_show_glyphs_operator(
@@ -825,13 +829,14 @@ WASM_EXPORT int muhammara_wasm_modifier_form_show_tj(
     WasmModifier* modifier, WasmForm* form, int encoding, const int* types,
     const double* numbers, const int* stringOffsets, const char* strings,
     const int* glyphOffsets, const unsigned int* glyphs, int count,
-    unsigned int stringsLength, unsigned int glyphOffsetsLength,
-    unsigned int glyphCount) {
+    unsigned int stringOffsetsLength, unsigned int stringsLength,
+    unsigned int glyphOffsetsLength, unsigned int glyphCount) {
   return modifier != nullptr && !modifier->finished && form != nullptr &&
          form->modifier == modifier && form->form != nullptr && !form->ended &&
          showTJ(form->form->GetContentContext(), encoding, types, numbers,
                   stringOffsets, strings, glyphOffsets, glyphs, count,
-                  stringsLength, glyphOffsetsLength, glyphCount) == PDFHummus::eSuccess;
+                  stringOffsetsLength, stringsLength, glyphOffsetsLength,
+                  glyphCount) == PDFHummus::eSuccess;
 }
 
 WASM_EXPORT int muhammara_wasm_modifier_form_write_free_code(
