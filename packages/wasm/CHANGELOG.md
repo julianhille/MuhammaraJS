@@ -8,6 +8,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Host each pushed checkout's executable browser example within its WebAssembly
+  Read the Docs build without checking generated binaries into the repository
+  [#690](https://github.com/julianhille/MuhammaraJS/issues/690)
 - Support chainable Recipe `pauseContext()` and `resumeContext()` transitions
   on newly created pages while retaining errors for unmatched calls
   [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
