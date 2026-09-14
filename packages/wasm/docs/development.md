@@ -92,6 +92,13 @@ Build the site strictly before opening a pull request:
 npm run docs:check --workspace=@muhammara/wasm
 ```
 
+The docs check stages the browser example from the current checkout. It includes
+the local `dist/` when that directory has already been built. Read the Docs waits
+for the matching `muhammara-wasm` artifact from Wasm CI, downloads it through
+[`nightly.link`](https://nightly.link/), and requires that verified output before
+staging the site. Generated WebAssembly binaries remain untracked, and the docs
+builder does not need Docker or Emscripten.
+
 Serve a local preview with:
 
 ```sh
