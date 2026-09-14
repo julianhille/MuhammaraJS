@@ -7,7 +7,18 @@ var packageRoot = path.resolve(
   "..",
 );
 var cmake = await readFile(path.join(packageRoot, "CMakeLists.txt"), "utf8");
-var exports = new Set(cmake.match(/'_muhammara_wasm_[^']+'/g) || []);
+var exportEntries = Array.from(
+  cmake.matchAll(/'(_muhammara_wasm_[A-Za-z0-9_]+)'/g),
+  (match) => match[1],
+);
+var exports = new Set(exportEntries);
+
+/**
+ * Recursively list files below a directory.
+ *
+ * @param {string} directory Directory to inspect.
+ * @returns {Promise<string[]>} Discovered filenames.
+ */
 async function list(directory) {
   var entries = await readdir(directory, {
     withFileTypes: true,
@@ -22,30 +33,49 @@ async function list(directory) {
   ).flat();
 }
 
-var missing = [];
-for (var filename of (await list(path.join(packageRoot, "lib"))).filter(
-  (file) => file.endsWith(".js"),
-)) {
+var runtimeFiles = [
+  path.join(packageRoot, "index.js"),
+  ...(await list(path.join(packageRoot, "lib"))).filter((file) =>
+    file.endsWith(".js"),
+  ),
+];
+var required = new Set();
+for (var filename of runtimeFiles) {
   var source = await readFile(filename, "utf8");
   for (var name of source.match(/_muhammara_wasm_[A-Za-z0-9_]+/g) || []) {
-    if (!exports.has(`'${name}'`))
-      missing.push(`${name} (${path.relative(packageRoot, filename)})`);
+    required.add(name);
   }
 }
+var definitions = new Set();
 for (var filename of (await list(path.join(packageRoot, "src"))).filter(
   (file) => file.endsWith(".cpp"),
 )) {
   var source = await readFile(filename, "utf8");
-  for (var definition of source.match(
-    /WASM_EXPORT\s+[^\s]+\s+(muhammara_wasm_[A-Za-z0-9_]+)/g,
-  ) || []) {
-    var name = definition.match(/(muhammara_wasm_[A-Za-z0-9_]+)$/)[1];
-    if (!exports.has(`'_${name}'`))
-      missing.push(`${name} (${path.relative(packageRoot, filename)})`);
+  for (var match of source.matchAll(
+    /^(?:WASM_EXPORT\s+)?(?:const\s+)?(?:unsigned\s+long|unsigned\s+char|[A-Za-z_][A-Za-z0-9_:<>]*)(?:\s*\*)?\s+(muhammara_wasm_[A-Za-z0-9_]+)\s*\(/gm,
+  )) {
+    definitions.add(`_${match[1]}`);
   }
 }
-if (missing.length) {
-  throw new Error(
-    `Wasm symbols missing CMake exports:\n${[...new Set(missing)].join("\n")}`,
+var duplicates = [
+  ...new Set(
+    exportEntries.filter(
+      (name, index) => exportEntries.indexOf(name) !== index,
+    ),
+  ),
+].sort();
+var missing = [...required].filter((name) => !exports.has(name)).sort();
+var stale = [...exports].filter((name) => !required.has(name)).sort();
+var undefinedSymbols = [...required]
+  .filter((name) => !definitions.has(name))
+  .sort();
+var errors = [];
+if (duplicates.length)
+  errors.push(`Duplicate CMake exports: ${duplicates.join(", ")}`);
+if (missing.length) errors.push(`Missing CMake exports: ${missing.join(", ")}`);
+if (stale.length) errors.push(`Unused CMake exports: ${stale.join(", ")}`);
+if (undefinedSymbols.length)
+  errors.push(
+    `Exports without C++ definitions: ${undefinedSymbols.join(", ")}`,
   );
-}
+if (errors.length) throw new Error(errors.join("\n"));
