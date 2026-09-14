@@ -80,6 +80,4 @@ is the PDF operator that produced it. An inline image reports as
 rather than parsed, so the bytes cannot invent extra items. Text drawn in an invisible rendering mode
 (`Tr 3` or `Tr 7`) is excluded; white-on-white text is included, because it is
 still a page mark. `limits.maxTextBytes` is accepted for signature parity with
-`extractPageText` but has no effect here. See
-[`tests/integration/PDFPageContentItemsTest.test.mjs`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/tests/integration/PDFPageContentItemsTest.test.mjs)
-for the verified output shape.
+`extractPageText` but has no effect here.

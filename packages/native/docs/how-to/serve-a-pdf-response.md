@@ -16,7 +16,4 @@ res.end();
 
 The response framework is your choice; this example does not require Express.
 `PDFStreamForResponse` writes directly to the supplied response and does not
-implement Node stream backpressure handling. The implementation and an Express
-sample are in
-[`packages/native-core/lib/PDFStreamForResponse.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-core/lib/PDFStreamForResponse.js)
-and [`samples/PDFServer.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/samples/PDFServer.js).
+implement Node stream backpressure handling.

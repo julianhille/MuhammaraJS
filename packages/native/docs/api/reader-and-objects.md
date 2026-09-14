@@ -57,9 +57,6 @@ var firstPage = reader.parsePage(0);
 reader.end();
 ```
 
-[`tests/PDFParser.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFParser.js) covers reader creation, page inspection, trailer traversal,
-and object conversion.
-
 For a complete reader workflow, see [Read PDFs](../low-level/read-pdfs.md).
 
 `getXrefSize`, `getXrefPosition`, `getParserStream`,

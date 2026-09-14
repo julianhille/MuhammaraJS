@@ -58,7 +58,3 @@ split across several show operations, or encoded through a font that does not
 map to the source characters, is not replaced. Pages with more than one content
 stream are rejected with an error. When nothing matches, the page is left
 unchanged.
-
-See [`tests/recipe/replaceText.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/replaceText.js) for a verified example.
-
-See [`tests/recipe/modify.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/modify.js) and [`tests/recipe/info.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/info.js) for verified examples.

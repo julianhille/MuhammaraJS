@@ -169,6 +169,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Make documentation self-contained with inline text-extraction and annotation
+  examples, replacing links to tests, implementation files, and GitHub releases
+  [#689](https://github.com/julianhille/MuhammaraJS/issues/689)
 - Validate that the native GYP and Wasm CMake builds compile the same PDFWriter
   translation units, preventing either backend from silently omitting new source
   files [#684](https://github.com/julianhille/MuhammaraJS/issues/684)

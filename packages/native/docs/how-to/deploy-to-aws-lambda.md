@@ -149,7 +149,7 @@ therefore lag releases, it offers x64 only, and its copy instructions target the
 unscoped `node_modules/muhammara/binding/` path that the scoped package no
 longer uses. Use the overrides above instead.
 
-## Verification Sources
+## Binary Resolution Examples
 
 The overrides on this page were verified on Linux x64. For example,
 `target_platform=win32` produced a Windows PE32+ binary from
@@ -158,11 +158,5 @@ produced `node-v115-linux-x64-glibc.tar.gz`; and `target=22.19.0` with
 `target_arch=arm64` resolved through the crosswalk fallback to `node-v127` and
 produced an ELF aarch64 binary.
 
-Install-time resolution is implemented in
-[`packages/native/scripts/install-prebuilt.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native/scripts/install-prebuilt.js)
-and the `binary` block of
-[`packages/native/package.json`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native/package.json).
-Published binaries come from the release workflow in
-[`.github/workflows/ci-native.yml`](https://github.com/julianhille/MuhammaraJS/blob/develop/.github/workflows/ci-native.yml).
 AWS runtime details are current as of this page's last revision and are
 maintained by AWS, not by this project.

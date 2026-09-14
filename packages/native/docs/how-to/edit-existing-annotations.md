@@ -11,21 +11,34 @@ annotation. Resolve it with `queryDictionaryObject` so the lookup also works whe
 `Annots` is itself an indirect reference:
 
 ```javascript
+var muhammara = require("@muhammara/native");
 var reader = muhammara.createReader("input.pdf");
 var page = reader.parsePage(0).getDictionary();
-var annotationIds = reader
-  .queryDictionaryObject(page, "Annots")
-  .toPDFArray()
-  .toJSArray()
-  .map(function (annotation) {
-    return annotation.toPDFIndirectObjectReference().getObjectID();
-  });
+var annotations = reader.queryDictionaryObject(page, "Annots");
+var annotationIds = annotations
+  ? annotations
+      .toPDFArray()
+      .toJSArray()
+      .map(function (annotation) {
+        return annotation.toPDFIndirectObjectReference().getObjectID();
+      })
+  : [];
+
+var annotationId = annotationIds.find(function (id) {
+  var contents = reader
+    .parseNewObject(id)
+    .toPDFDictionary()
+    .toJSObject().Contents;
+  return contents && contents.toText() === "Original comment";
+});
 
 reader.end();
 ```
 
 A page without annotations has no `Annots` key, so `queryDictionaryObject`
 returns nothing rather than an empty array. Page indexes here are zero-based.
+The example selects a comment by its current text; `annotationId` is `undefined`
+if no comment matches. Use the selected ID in either workflow below.
 
 ## Rewrite It Completely
 
@@ -35,28 +48,38 @@ write is gone, so copy every key you are keeping — an annotation that loses
 edit that "disappears" from the viewer.
 
 ```javascript
-var editAnnotation = require("./edit-annotation");
+if (annotationId === undefined) {
+  throw new Error("Annotation not found");
+}
 
-var annotationId = editAnnotation.findAnnotationId(
-  "input.pdf",
-  0,
-  "Original comment",
-);
+var writer = muhammara.createWriterToModify("input.pdf", {
+  modifiedFilePath: "output.pdf",
+});
+var copyingContext = writer.createPDFCopyingContextForModifiedFile();
+var existing = copyingContext
+  .getSourceDocumentParser()
+  .parseNewObject(annotationId)
+  .toPDFDictionary()
+  .toJSObject();
+var objectsContext = writer.getObjectsContext();
 
-editAnnotation.editAnnotationContents(
-  "input.pdf",
-  "output.pdf",
-  annotationId,
-  "Edited comment",
-);
+objectsContext.startModifiedIndirectObject(annotationId);
+var dictionary = objectsContext.startDictionary();
+Object.keys(existing).forEach(function (key) {
+  if (key === "Contents" || key === "AP") {
+    return;
+  }
+  dictionary.writeKey(key);
+  copyingContext.copyDirectObjectAsIs(existing[key]);
+});
+dictionary.writeKey("Contents").writeLiteralStringValue("Edited comment");
+objectsContext.endDictionary(dictionary);
+objectsContext.endIndirectObject();
+copyingContext.end();
+writer.end();
 ```
 
-The runnable source is
-[`docs/examples/edit-annotation.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native/docs/examples/edit-annotation.js),
-executed by
-[`docs/tests/modify-pdfs.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/docs/tests/modify-pdfs.js).
-
-It iterates the existing dictionary and copies each entry with
+The example iterates the existing dictionary and copies each entry with
 `copyDirectObjectAsIs`, replacing only `Contents`. Two details matter:
 
 - **Drop `AP` when the text changes.** The appearance stream caches how the
@@ -80,7 +103,40 @@ it swaps references that appear directly in the page dictionary, and an
 annotation reference sits inside the `Annots` array rather than at the top level.
 
 ```javascript
-editAnnotation.removeAnnotation("input.pdf", "output.pdf", 0, annotationId);
+if (annotationId === undefined) {
+  throw new Error("Annotation not found");
+}
+
+var writer = muhammara.createWriterToModify("input.pdf", {
+  modifiedFilePath: "output.pdf",
+});
+var copyingContext = writer.createPDFCopyingContextForModifiedFile();
+var parser = copyingContext.getSourceDocumentParser();
+var pageId = parser.getPageObjectID(0);
+var page = parser.parsePage(0).getDictionary().toJSObject();
+var keptIds = annotationIds.filter(function (id) {
+  return id !== annotationId;
+});
+var objectsContext = writer.getObjectsContext();
+
+objectsContext.startModifiedIndirectObject(pageId);
+var dictionary = objectsContext.startDictionary();
+Object.keys(page).forEach(function (key) {
+  dictionary.writeKey(key);
+  if (key !== "Annots") {
+    copyingContext.copyDirectObjectAsIs(page[key]);
+    return;
+  }
+  objectsContext.startArray();
+  keptIds.forEach(function (id) {
+    objectsContext.writeIndirectObjectReference(id);
+  });
+  objectsContext.endArray(muhammara.eTokenSeparatorEndLine);
+});
+objectsContext.endDictionary(dictionary);
+objectsContext.endIndirectObject();
+copyingContext.end();
+writer.end();
 ```
 
 The same rule applies: copy every page key you are keeping, and write the array

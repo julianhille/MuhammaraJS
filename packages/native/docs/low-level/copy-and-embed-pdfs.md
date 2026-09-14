@@ -17,7 +17,3 @@ or form XObject, and expose a source reader. Form-creation APIs return object
 IDs that can be mapped for placement; do not assume they return form objects.
 Calls on a copying context after `end()` throw instead of accessing its released
 source parser.
-
-See [`tests/AppendPagesTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/AppendPagesTest.js), [`tests/MergePDFPages.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/MergePDFPages.js),
-[`tests/PDFEmbedTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFEmbedTest.js), and [`tests/PDFCopyingContextTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFCopyingContextTest.js) for tested
-workflows.

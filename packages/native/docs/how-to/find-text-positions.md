@@ -5,19 +5,28 @@ operations on a page, then filter their `content`. Pages are zero-based and
 positions use the low-level PDF bottom-left coordinate system.
 
 ```javascript
-var findTextPositions = require("./find-text-positions");
+var muhammara = require("@muhammara/native");
+var reader = muhammara.createReader("input.pdf");
+var target = "Text to locate";
 
-var positions = findTextPositions(
-  "input.pdf",
-  0,
-  "Add some texts to an existing pdf file",
-);
+try {
+  var positions = reader
+    .extractPageText(0, { maxTextBytes: 1024 * 1024 })
+    .filter(function (element) {
+      return element.content === target;
+    })
+    .map(function (element) {
+      return {
+        x: element.textMatrix[4],
+        y: element.textMatrix[5],
+        fontSize: element.fontSize,
+        fontResource: element.fontResource,
+      };
+    });
+} finally {
+  reader.end();
+}
 ```
-
-The runnable source is
-[`docs/examples/find-text-positions.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native/docs/examples/find-text-positions.js),
-executed by
-[`docs/tests/inspect-pdfs.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/docs/tests/inspect-pdfs.js).
 
 Each result represents a PDF text-showing operation in content-stream drawing
 order. `textMatrix` is `[a, b, c, d, e, f]`; `e` and `f` are the text position.
@@ -30,8 +39,7 @@ surrounding operations to choose the intended occurrence.
 not decode font character maps or calculate glyph bounds, so it is not a general
 visual-text search API. It also does not calculate glyph-driven text-matrix
 advances, so adjacent text-showing operations without an explicit positioning
-operator retain the same matrix. See the `PDFTextElement` declaration and [`tests/PDFTextExtractionTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFTextExtractionTest.js)
-for the verified output shape.
+operator retain the same matrix.
 
 ## Bound the work on untrusted input
 
@@ -62,14 +70,33 @@ content-stream operation that puts a mark on the page, which is a cheaper way to
 answer "is this page blank?" than extracting text:
 
 ```javascript
-var detectBlankPages = require("./detect-blank-pages");
+var muhammara = require("@muhammara/native");
+var reader = muhammara.createReader("input.pdf");
+var blankPages = [];
 
-var blankPages = detectBlankPages("input.pdf"); // e.g. [0]
+try {
+  for (var pageIndex = 0; pageIndex < reader.getPagesCount(); ++pageIndex) {
+    var items;
+    try {
+      items = reader.extractPageContentItems(pageIndex, {
+        maxElements: 1000,
+        maxParsedObjects: 100000,
+      });
+    } catch (error) {
+      if (!/exceeds item extraction limits/.test(error.message)) {
+        throw error;
+      }
+      // A page with more marks than the budget allows is not blank.
+      continue;
+    }
+    if (items.length === 0) {
+      blankPages.push(pageIndex);
+    }
+  }
+} finally {
+  reader.end();
+}
 ```
-
-The runnable source is
-[`docs/examples/detect-blank-pages.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native/docs/examples/detect-blank-pages.js),
-executed by the same test.
 
 Each item is `{ type, operation }`, where `type` is one of
 `ePDFPageContentItemText`, `ePDFPageContentItemPath`,
@@ -79,6 +106,4 @@ is the PDF operator that produced it. An inline image reports as
 rather than parsed, so the bytes cannot invent extra items. Text drawn in an invisible rendering mode
 (`Tr 3` or `Tr 7`) is excluded; white-on-white text is included, because it is
 still a page mark. `limits.maxTextBytes` is accepted for signature parity with
-`extractPageText` but has no effect here. See
-[`tests/PDFPageContentItemsTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PDFPageContentItemsTest.js)
-for the verified output shape.
+`extractPageText` but has no effect here.

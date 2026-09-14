@@ -29,18 +29,13 @@ test under `packages/native-with-source/docs/tests/` must execute each example i
 directory and verify its output. Do not document behavior based only on an
 untested snippet.
 
-## Test References
+## Self-Contained Examples
 
-When a page cites an implementation test, use a full GitHub link in this form:
-
-```text
-https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/path/to/test.js
-```
-
-This works from repository Markdown and Read the Docs. It is the convention for
-the `latest` documentation, which tracks `develop`. Before a release tag is
-published, replace `develop` in its documentation test links with that release
-tag so its versioned site points to the matching source.
+Keep pages self-contained. Include the code required to explain a workflow
+rather than linking readers to implementation tests, source files, or GitHub
+release pages. Small duplication is preferable to documentation that depends
+on a particular source revision. Use relative links to other documentation
+pages for related explanations.
 
 ## Writing Rules
 

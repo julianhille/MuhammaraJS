@@ -95,6 +95,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Make documentation self-contained by replacing links to tests, implementation
+  files, and GitHub releases with local guides and inline explanations
+  [#689](https://github.com/julianhille/MuhammaraJS/issues/689)
 - Validate that the native GYP and Wasm CMake builds compile the same PDFWriter
   translation units and that the Wasm ABI exports exactly match runtime use
   [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
