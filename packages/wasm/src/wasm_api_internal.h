@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdlib>
 #include <cmath>
 #include <limits>
@@ -54,8 +56,6 @@
 #include <ft2build.h>
 #include FT_SIZES_H
 #include <vector>
-
-#pragma once
 
 class WasmDictionaryContext;
 class WasmPDFStream;
