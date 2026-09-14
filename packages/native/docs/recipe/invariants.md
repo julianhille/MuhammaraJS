@@ -8,6 +8,9 @@
   document composition methods.
 - Call `endPage()` before selecting, creating, or editing another page.
 - Call `endPDF()` only after all page and document operations are complete.
+- `endPDF()` finalizes a Recipe only once. Later calls do not rewrite the PDF;
+  when given a callback, they invoke it with the already completed output where
+  applicable. Create a new Recipe to produce changed output.
 - `pauseContext()` and `resumeContext()` are chainable for valid transitions.
   They throw when there is no matching active or paused page content context.
 - Buffer output is delivered to the `endPDF` callback; `endPDF()` does not return
