@@ -261,7 +261,8 @@ class Recipe {
   }
 
   /**
-   * End the pdfDoc
+   * End the pdfDoc. Finalization happens once; later calls do not rewrite the
+   * PDF and invoke the callback with the completed output when applicable.
    * @function
    * @memberof Recipe
    * @param {function} [callback] - The callback function.

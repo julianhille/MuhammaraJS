@@ -15,4 +15,25 @@ describe("endPDF called twice", () => {
 
     done();
   });
+
+  it("invokes repeated callbacks with the completed buffer", () => {
+    const recipe = new Recipe(Buffer.from("new"));
+    let firstOutput;
+    const firstResult = recipe
+      .createPage("letter")
+      .endPage()
+      .endPDF((output) => {
+        firstOutput = output;
+        return "first";
+      });
+    let secondOutput;
+    const secondResult = recipe.endPDF((output) => {
+      secondOutput = output;
+      return "second";
+    });
+
+    expect(firstResult).to.equal("first");
+    expect(secondResult).to.equal("second");
+    expect(secondOutput.equals(firstOutput)).to.equal(true);
+  });
 });

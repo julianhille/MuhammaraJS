@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   a new writer, or resume saved state with `createWriterToContinue()`; direct
   `new PDFWriter()` instances cannot perform stateful operations
   [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+- Make native Recipe `endPDF()` idempotent. Repeated calls no longer attempt to
+  rewrite the completed PDF, while repeated `endPDF(callback)` calls still
+  invoke the callback with the completed output where applicable. Create a new
+  Recipe instead of calling `endPDF()` again to flush later changes
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
   and malformed page selections instead of clamping or partially interpreting
   them; pass positive one-based integers or ascending two-value ranges. Integer

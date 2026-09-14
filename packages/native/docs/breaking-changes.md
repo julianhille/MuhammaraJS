@@ -4,6 +4,12 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Recipe `endPDF()` is now idempotent. Repeated calls that previously attempted
+  to finalize the writer again, and could crash, now leave the completed PDF
+  unchanged; a repeated `endPDF(callback)` still invokes the callback with the
+  completed output where applicable. Code that relied on another call to flush
+  later changes must create and finalize a new Recipe instead
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693).
 - Stateful `PDFWriter` calls after `end()` or `shutdown()` now throw
   `Error("PDF writer has ended")` instead of accessing closed resources or
   crashing. Failed finalization also retires the writer. Create a new writer
