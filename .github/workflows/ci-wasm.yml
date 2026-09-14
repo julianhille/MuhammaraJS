@@ -9,6 +9,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/ci-wasm.yml"
+      - ".github/workflows/ci-native.yml"
       - ".github/actions/setup-wasm-build-cache/**"
       - "package.json"
       - "package-lock.json"
@@ -42,7 +43,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run wasm:build
       - name: Verify Wasm package contents
-        run: test -s packages/wasm/dist/muhammara-wasm.js && test -s packages/wasm/dist/muhammara-wasm.wasm && npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json | node -e "var pack = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0]; var files = pack.files.map(function(file) { return file.path; }); if (!files.includes('dist/muhammara-wasm.js') || !files.includes('dist/muhammara-wasm.wasm')) process.exit(1);"
+        run: npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json | node packages/wasm/scripts/check-package-contents.mjs
       - uses: actions/upload-artifact@v6
         with:
           name: muhammara-wasm
@@ -68,6 +69,7 @@ jobs:
       - run: npm run wasm:test:types
       - run: npm run wasm:test:paths
       - run: npm run wasm:test:exports
+      - run: npm run wasm:test:manifests
       - name: Install Chrome for Testing
         id: chrome
         uses: browser-actions/setup-chrome@v2
@@ -125,13 +127,7 @@ jobs:
           name: muhammara-wasm
           path: packages/wasm/dist
       - name: Verify Wasm package contents
-        run: test -s packages/wasm/dist/muhammara-wasm.js && test -s packages/wasm/dist/muhammara-wasm.wasm && npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json | node -e "var pack = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0]; var files = pack.files.map(function(file) { return file.path; }); if (!files.includes('dist/muhammara-wasm.js') || !files.includes('dist/muhammara-wasm.wasm')) process.exit(1);"
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          files: packages/wasm/dist/*
+        run: npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json | node packages/wasm/scripts/check-package-contents.mjs
       - id: npm-tag
         run: |
           case "${GITHUB_REF_NAME#wasm-v}" in
@@ -140,7 +136,16 @@ jobs:
             *-rc.*) echo "value=rc" >> "$GITHUB_OUTPUT" ;;
             *) echo "value=latest" >> "$GITHUB_OUTPUT" ;;
           esac
-      - run: npm publish --workspace=@muhammara/wasm --ignore-scripts --provenance --tag ${{ steps.npm-tag.outputs.value }}
+      - name: Verify Wasm package publish preflight
+        run: npm publish --workspace=@muhammara/wasm --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }}
+      - name: Publish Wasm package
+        run: npm publish --workspace=@muhammara/wasm --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: packages/wasm/dist/*
   tag-docs:
     needs: [publish]
     if: startsWith(github.ref, 'refs/tags/wasm-v')

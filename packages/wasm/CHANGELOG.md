@@ -4,13 +4,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
-### Breaking Changes
-
-- Recipe `appendPage()` now rejects zero, negative, and fractional page
-  selections before upper-bound clamping; pass positive one-based integers or
-  ascending two-value ranges
-  [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
-
 ### Added
 
 - Support chainable Recipe `pauseContext()` and `resumeContext()` transitions
@@ -93,8 +86,24 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   native, correcting the 12-point default in the alpha and beta releases
   [#605](https://github.com/julianhille/MuhammaraJS/issues/605)
 
+### Removed
+
+- Remove browser example source files from the `@muhammara/wasm` npm package,
+  keeping the published package runtime-only; examples remain available on the
+  [documentation site](https://muhammarajs-wasm.readthedocs.io/latest/browser-examples/)
+  and in the repository [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
+
 ### Changed
 
+- Validate that the native GYP and Wasm CMake builds compile the same PDFWriter
+  translation units and that the Wasm ABI exports exactly match runtime use
+  [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
+- Validate that the Wasm npm package contains its JavaScript, WebAssembly,
+  declarations, and fonts without development sources or build files
+  [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
+- Run a Wasm npm publish dry run, then publish the npm package before creating
+  the GitHub release so publication failures do not leave orphan releases
+  [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
 - Replace the monolithic Wasm Recipe guide with focused, byte-first topic pages
   parallel to the native documentation [#649](https://github.com/julianhille/MuhammaraJS/issues/649)
 - Document the native-only writer events and Wasm-only `dispose()` methods

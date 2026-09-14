@@ -93,8 +93,10 @@ Configure the project to use that file rather than the repository root.
 Normal package tags trigger validation and publication. The package version must
 match the version in the tag. A native release builds its prebuilds once, then
 publishes `@muhammara/native-core`, then `@muhammara/native-with-source`, before
-the smaller prebuilt-only `@muhammara/native` package. Native packages use npm
-trusted publishing through GitHub Actions OIDC and do not require an npm token.
+the smaller prebuilt-only `@muhammara/native` package. After all three npm
+publishes succeed, the workflow creates the GitHub release and uploads its
+prebuilds. Native packages use npm trusted publishing through GitHub Actions
+OIDC and do not require an npm token.
 
 Before the first native release, configure npm trusted publishers for all three
 scoped native packages. Each publisher must trust this repository's native

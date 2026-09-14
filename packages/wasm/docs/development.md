@@ -13,7 +13,8 @@ writes `packages/wasm/dist/muhammara-wasm.js` and
 Docker is the only supported build toolchain. Start its daemon before running
 the command; the build intentionally has no local-Emscripten fallback so release
 artifacts use the pinned image. Release CI builds `dist/` first and publishes the
-validated result with npm lifecycle scripts disabled.
+validated result with npm lifecycle scripts disabled. The npm package is a
+precompiled runtime distribution and does not include these development inputs.
 
 ## Compiler Cache
 
@@ -55,8 +56,13 @@ npm run wasm:test
 npm run wasm:test:types
 npm run wasm:test:paths
 npm run wasm:test:exports
+npm run wasm:test:manifests
 npm run wasm:test:browser
 ```
+
+The manifest check compares the native GYP and Wasm CMake PDFWriter translation
+units without changing either vendored manifest. The export check requires the
+CMake export list to match the symbols used by the package runtime exactly.
 
 The browser test starts a local server and uses `puppeteer-core`. Set
 `CHROME_BIN` to a Chrome executable or `FIREFOX_BIN` to a Firefox executable;
@@ -99,7 +105,9 @@ output.
 
 WebAssembly package tags trigger validation and publication. The package version
 must match the version in the tag. Wasm releases use npm trusted publishing
-through GitHub Actions OIDC and do not require an npm token.
+through GitHub Actions OIDC and do not require an npm token. The workflow checks
+the runtime package contents and an npm publish dry run, publishes to npm, and
+only then creates the GitHub release.
 
 Before the first Wasm release, configure an npm trusted publisher for
 `@muhammara/wasm` that trusts this repository's Wasm release workflow and
