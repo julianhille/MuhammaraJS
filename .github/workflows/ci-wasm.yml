@@ -15,6 +15,9 @@ on:
       - "package-lock.json"
       - "packages/native-with-source/src/**"
       - "packages/wasm/**"
+      - "!packages/wasm/docs/**"
+      - "!packages/wasm/mkdocs.yml"
+      - "!packages/wasm/.readthedocs.yaml"
   workflow_dispatch:
 
 concurrency:
@@ -96,6 +99,33 @@ jobs:
           MUHAMMARA_WASM_SANITIZE: ON
       - run: node ./scripts/run-mocha.mjs tests/integration/MemoryLifecycle.test.mjs
         working-directory: packages/wasm
+  deploy-example:
+    needs: [build, test, sanitizer]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: muhammara-wasm
+          path: packages/wasm/dist
+      - run: npm run pages:stage-example --workspace=@muhammara/wasm
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: packages/wasm/pages
+      - id: deployment
+        uses: actions/deploy-pages@v4
   publish:
     needs: [test, sanitizer]
     if: startsWith(github.ref, 'refs/tags/wasm-v')
