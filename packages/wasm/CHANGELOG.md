@@ -4,13 +4,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
-### Breaking Changes
-
-- Recipe `appendPage()` now rejects zero, negative, and fractional page
-  selections before upper-bound clamping; pass positive one-based integers or
-  ascending two-value ranges
-  [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
-
 ### Added
 
 - Support chainable Recipe `pauseContext()` and `resumeContext()` transitions
