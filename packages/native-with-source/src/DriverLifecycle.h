@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 class DriverLifecycleState
 {
@@ -9,7 +10,14 @@ public:
 
     bool IsActive() const
     {
-        return mActive && (!mOwner || mOwner->IsActive());
+        if(!mActive)
+            return false;
+        for(std::vector<std::shared_ptr<DriverLifecycleState> >::const_iterator it = mOwners.begin(); it != mOwners.end(); ++it)
+        {
+            if(!(*it)->IsActive())
+                return false;
+        }
+        return true;
     }
 
     void End()
@@ -19,12 +27,19 @@ public:
 
     void SetOwner(const std::shared_ptr<DriverLifecycleState>& inOwner)
     {
-        mOwner = inOwner;
+        mOwners.clear();
+        AddOwner(inOwner);
+    }
+
+    void AddOwner(const std::shared_ptr<DriverLifecycleState>& inOwner)
+    {
+        if(inOwner)
+            mOwners.push_back(inOwner);
     }
 
 private:
     bool mActive;
-    std::shared_ptr<DriverLifecycleState> mOwner;
+    std::vector<std::shared_ptr<DriverLifecycleState> > mOwners;
 };
 
 typedef std::shared_ptr<DriverLifecycleState> DriverLifecycle;

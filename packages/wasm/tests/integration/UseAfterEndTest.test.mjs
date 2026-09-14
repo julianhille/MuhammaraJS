@@ -64,4 +64,22 @@ describe("UseAfterEndTest", function () {
       }
     });
   });
+
+  it("rejects copying context use after its writer is disposed", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var sourceWriter = muhammara.createWriter();
+    sourceWriter.writePage(sourceWriter.createPage(0, 0, 200, 200));
+    var source = sourceWriter.end();
+    var writer = muhammara.createWriter();
+    var copying = writer.createPDFCopyingContext(source);
+
+    writer.dispose();
+
+    assert.throws(
+      function () {
+        copying.appendPDFPageFromPDF(0);
+      },
+      { name: "Error", message: "PDF writer has ended" },
+    );
+  });
 });

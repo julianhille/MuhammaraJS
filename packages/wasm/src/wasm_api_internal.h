@@ -268,24 +268,28 @@ class WasmPageContentItems {
   std::vector<WasmPageContentItem> items;
 };
 
-// The reader owns these handles because PDFParser owns the underlying input
-// stream that they read from. A handle may be closed independently, but its
-// storage remains reader-owned until the reader is destroyed.
+// The parent owns undisposed handles. Explicit disposal unregisters the handle
+// before deleting it, while parent cleanup remains the fallback.
 class WasmByteReader {
  public:
   IByteReader* reader;
   IByteReaderWithPosition* positionedReader = nullptr;
-  WasmReader* owner;
+  std::vector<WasmByteReader*>* owner;
   bool ownsReader = true;
   bool active = true;
 
-  WasmByteReader(IByteReader* value, WasmReader* readerOwner,
+  WasmByteReader(IByteReader* value, std::vector<WasmByteReader*>* readerOwner,
                  bool owns = true)
       : reader(value), owner(readerOwner), ownsReader(owns) {}
 
-  WasmByteReader(IByteReaderWithPosition* value, WasmReader* readerOwner)
+  WasmByteReader(IByteReaderWithPosition* value,
+                 std::vector<WasmByteReader*>* readerOwner)
       : reader(value), positionedReader(value), owner(readerOwner),
         ownsReader(false) {}
+
+  ~WasmByteReader() {
+    if (ownsReader) delete reader;
+  }
 };
 
 class WasmObject {
@@ -326,13 +330,7 @@ class WasmObjectParser {
 };
 
 inline WasmReader::~WasmReader() {
-  for (WasmByteReader* byteReader : byteReaders) {
-    if (byteReader->ownsReader) delete byteReader->reader;
-    byteReader->reader = nullptr;
-    byteReader->positionedReader = nullptr;
-    byteReader->active = false;
-    delete byteReader;
-  }
+  for (WasmByteReader* byteReader : byteReaders) delete byteReader;
   for (WasmObjectParser* parser : objectParsers) delete parser;
   for (WasmObject* object : objects) delete object;
   for (WasmPageInput* page : pages) delete page;
@@ -404,6 +402,18 @@ static void copyTextMatrix(double output[6], const double input[6]) {
   for (size_t index = 0; index < 6; ++index) output[index] = input[index];
 }
 
+static void multiplyTextMatrices(double output[6], const double left[6],
+                                 const double right[6]) {
+  double result[] = {
+      left[0] * right[0] + left[1] * right[2],
+      left[0] * right[1] + left[1] * right[3],
+      left[2] * right[0] + left[3] * right[2],
+      left[2] * right[1] + left[3] * right[3],
+      left[4] * right[0] + left[5] * right[2] + right[4],
+      left[4] * right[1] + left[5] * right[3] + right[5]};
+  copyTextMatrix(output, result);
+}
+
 static void moveTextLine(double textMatrix[6], double textLineMatrix[6],
                          double x, double y) {
   textLineMatrix[4] += x * textLineMatrix[0] + y * textLineMatrix[2];
@@ -415,6 +425,7 @@ struct WasmExtractedTextState {
   std::string fontResource;
   double fontSize;
   double leading;
+  double ctm[6];
 };
 
 // Hard ceilings mirroring the Node driver's PDFTextExtractor.h. Callers may
@@ -541,6 +552,7 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
   double fontSize = 0;
   double textMatrix[] = {1, 0, 0, 1, 0, 0};
   double textLineMatrix[] = {1, 0, 0, 1, 0, 0};
+  double ctm[] = {1, 0, 0, 1, 0, 0};
   double textLeading = 0;
   std::vector<WasmExtractedTextState> textStateStack;
   std::vector<RefCountPtr<PDFObject>> operands;
@@ -569,13 +581,21 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
       state.fontResource = fontResource;
       state.fontSize = fontSize;
       state.leading = textLeading;
+      copyTextMatrix(state.ctm, ctm);
       textStateStack.push_back(state);
     } else if (operation == "Q" && operands.empty() &&
                !textStateStack.empty()) {
       fontResource = textStateStack.back().fontResource;
       fontSize = textStateStack.back().fontSize;
       textLeading = textStateStack.back().leading;
+      copyTextMatrix(ctm, textStateStack.back().ctm);
       textStateStack.pop_back();
+    } else if (operation == "cm" && areTextNumbers(operands, 6)) {
+      double matrix[6];
+      for (size_t index = 0; index < 6; ++index) {
+        matrix[index] = textObjectNumber(operands[index].GetPtr());
+      }
+      multiplyTextMatrices(ctm, matrix, ctm);
     } else if (operation == "BT" && operands.empty() && !inTextObject) {
       inTextObject = true;
       setIdentityTextMatrix(textMatrix);
@@ -636,9 +656,7 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
         element.content = content;
         element.fontResource = fontResource;
         element.fontSize = fontSize;
-        for (size_t index = 0; index < 6; ++index) {
-          element.textMatrix[index] = textMatrix[index];
-        }
+        multiplyTextMatrices(element.textMatrix, textMatrix, ctm);
         elements.push_back(element);
         extractedTextBytes += content.size();
       }

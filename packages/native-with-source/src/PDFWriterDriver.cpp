@@ -56,10 +56,12 @@ PDFWriterDriver::PDFWriterDriver()
     mStartedWithStream = false;
     mIsCatalogUpdateRequired = false;
     mIsStarted = false;
+    mLifecycle = DriverLifecycle(new DriverLifecycleState());
 }
 
 PDFWriterDriver::~PDFWriterDriver()
 {
+    mLifecycle->End();
     delete mWriteStreamProxy;
     delete mReadStreamProxy;
 }
@@ -178,6 +180,7 @@ METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
     }
 
     pdfWriter->mIsStarted = false;
+    pdfWriter->mLifecycle->End();
 
     if(status != PDFHummus::eSuccess)
     {
@@ -215,6 +218,7 @@ METHOD_RETURN_TYPE PDFWriterDriver::Abort(const ARGS_TYPE& args)
     }
 
     pdfWriter->mIsStarted = false;
+    pdfWriter->mLifecycle->End();
 
     SET_FUNCTION_RETURN_VALUE(args.This())
 }
@@ -1190,10 +1194,12 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContext(const ARGS_TYPE& arg
     }
 
     Local<Value> newInstance = pdfWriter->holder->GetNewDocumentCopyingContext(args);
-    ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->CopyingContext = copyingContext;
-    ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->ReadStreamProxy = proxy;
+    DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT());
+    copyingContextDriver->CopyingContext = copyingContext;
+    copyingContextDriver->ReadStreamProxy = proxy;
+    copyingContextDriver->AddOwnerLifecycle(pdfWriter->mLifecycle);
     if(copyingOwnerLifecycle)
-        ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->SetOwnerLifecycle(copyingOwnerLifecycle);
+        copyingContextDriver->AddOwnerLifecycle(copyingOwnerLifecycle);
     SET_FUNCTION_RETURN_VALUE(newInstance)
 }
 
@@ -1321,7 +1327,9 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContextForModifiedFile(const
     }
 
     Local<Value> newInstance = pdfWriter->holder->GetNewDocumentCopyingContext(args);
-    ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->CopyingContext = copyingContext;
+    DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT());
+    copyingContextDriver->CopyingContext = copyingContext;
+    copyingContextDriver->AddOwnerLifecycle(pdfWriter->mLifecycle);
     SET_FUNCTION_RETURN_VALUE(newInstance)
 }
 

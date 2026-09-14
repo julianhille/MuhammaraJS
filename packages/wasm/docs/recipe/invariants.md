@@ -15,8 +15,12 @@
   paused page content context.
 - `deletePage()` applies only to original pages in a byte-backed Recipe, must
   leave at least one page, and cannot be combined with creating, appending, or
-  inserting pages. If deletion fails during `endPDF()`, the Recipe releases its
-  resources and remains ended; create a new Recipe to retry.
+  inserting pages. Page-tree cycles, retained references to deleted pages, and
+  nonzero-generation rewrites are validated during `endPDF()`, not
+  `deletePage()`. If finalization fails, the Recipe releases its resources and
+  remains ended; create a new Recipe to retry.
+- `insertPage()` and `appendPage()` throw synchronously for invalid or missing
+  arguments; neither silently no-ops.
 - `endPDF()` returns an owned `Uint8Array`; repeated calls return the cached
   result. It never writes a path or stream.
 - `read()` and `readAsync()` inspect their argument without replacing Recipe's

@@ -36,10 +36,11 @@ be registered from bytes. Integer Recipe version enums (`10` through `17` and
 `20`) and byte/Blob registration APIs are browser byte-first extensions, not
 Node Recipe parity behavior.
 
-Wasm-only `writer.dispose()`, `Recipe.dispose()`, and `Recipe.disposeAssets()`
-release Emscripten heap allocations that JavaScript garbage collection cannot
-reclaim. Native objects use normal native lifetime management, so they have no
-corresponding methods.
+Wasm-only `writer.dispose()`, `PDFByteReader.dispose()`, `Recipe.dispose()`, and
+`Recipe.disposeAssets()` release Emscripten heap allocations that JavaScript
+garbage collection cannot reclaim. Native objects use normal native lifetime
+management, so they have no corresponding methods. Disposing a PDF byte reader
+does not end its parent PDF reader.
 
 Stateful low-level writer methods reject use after cleanup on both ends with
 `Error("PDF writer has ended")`. Native `end()` is idempotent and returns the
