@@ -1,7 +1,9 @@
 # MuhammaraJS
 
-[![NPM version](https://img.shields.io/npm/v/%40muhammara%2Fnative.svg?style=flat)](https://www.npmjs.org/package/@muhammara/native)
+[![Native npm version](https://img.shields.io/npm/v/%40muhammara%2Fnative.svg?style=flat&label=native%20npm)](https://www.npmjs.com/package/@muhammara/native)
 [![Native CI status](https://github.com/julianhille/MuhammaraJS/actions/workflows/ci-native.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/ci-native.yml)
+[![Wasm npm version](https://img.shields.io/npm/v/%40muhammara%2Fwasm.svg?style=flat&label=wasm%20npm)](https://www.npmjs.com/package/@muhammara/wasm)
+[![Wasm CI status](https://github.com/julianhille/MuhammaraJS/actions/workflows/ci-wasm.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/ci-wasm.yml)
 
 MuhammaraJS is a fast library for creating, reading, and modifying PDF files.
 It is available as a native Node.js addon and as a browser-safe WebAssembly
