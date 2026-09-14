@@ -23,6 +23,21 @@ the WebAssembly writer has no `getEvents()` equivalent. `createFormXObject`
 starts a reusable drawing form; finish it with `endFormXObject` before placement.
 Image and form creation must not occur while a page content context is active.
 
+## Lifecycle
+
+Create an active writer with `createWriter()`, `createWriterToModify()`, or
+`createWriterToContinue()`. Stateful methods, including page creation, page
+writing, and context getters, throw `Error("PDF writer has ended")` after
+`end()` or `shutdown()`. A failed finalization or shutdown also retires the
+writer. Repeated `end()` calls return the writer without finalizing again.
+
+Complete all drawing and consume borrowed contexts, fonts, parsers, and file
+wrappers before ending their writer. Start a new writer for further work, or
+use `createWriterToContinue()` with successfully saved continuation state.
+The independent `createPDFDate()` and `createPDFTextString()` value factories
+remain usable after cleanup. Recipe uses this low-level guard internally;
+there is no additional Recipe method for it.
+
 ## Continuation State
 
 `shutdown(restartStateFile)` saves an unfinished writer's state and closes it.

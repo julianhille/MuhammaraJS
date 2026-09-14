@@ -797,6 +797,7 @@ declare namespace muhammara {
 
   export type inInterPagesCallback = () => {};
 
+  /** Stateful methods require an active writer and throw Error("PDF writer has ended") after cleanup. */
   export interface PDFWriter {
     /**
      * Replace direct references to an object in a page dictionary.
@@ -808,6 +809,7 @@ declare namespace muhammara {
       replacementObjectId: number,
       options?: ObjectReplacementOptions,
     ): this;
+    /** Finalize once; repeated calls return this writer. A failed finalization also ends the writer. */
     end(): PDFWriter;
     createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
@@ -840,6 +842,7 @@ declare namespace muhammara {
       right: PosX,
       top: PosY,
     ): this;
+    /** Save continuation state and retire this writer, including when saving fails. */
     shutdown(outputFilePath: FilePath): this;
     createFormXObjectFromTIFF(
       filePath: FilePath | PDFRStreamForFile,

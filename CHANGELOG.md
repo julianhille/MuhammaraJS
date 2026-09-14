@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Reject native `PDFWriter` stateful calls after `end()` or `shutdown()` with
+  `Error("PDF writer has ended")`, including after finalization failures. Create
+  a new writer, or resume saved state with `createWriterToContinue()`; direct
+  `new PDFWriter()` instances cannot perform stateful operations
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
   and malformed page selections instead of clamping or partially interpreting
   them; pass positive one-based integers or ascending two-value ranges. Integer
@@ -121,6 +126,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Prevent native writer use-after-end crashes by guarding stateful entry points
+  before accessing closed output streams
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 - Preserve embedded NUL bytes in the native low-level `TJ()`, `Tj()`, `Quote()`,
   and `DoubleQuote()` strings instead of silently truncating each string at the
   first NUL [#683](https://github.com/julianhille/MuhammaraJS/issues/683)

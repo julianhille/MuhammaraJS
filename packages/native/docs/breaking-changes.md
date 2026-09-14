@@ -4,6 +4,13 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Stateful `PDFWriter` calls after `end()` or `shutdown()` now throw
+  `Error("PDF writer has ended")` instead of accessing closed resources or
+  crashing. Failed finalization also retires the writer. Create a new writer
+  with `createWriter()` or `createWriterToModify()`, or resume a saved state
+  with `createWriterToContinue()`; `new PDFWriter()` alone is not active.
+  Repeated `end()` remains a no-op. See [Writer lifecycle](api/writer.md#lifecycle)
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693).
 - Recipe `endPage()` no longer leaves the completed page active. Code that
   calls page drawing, configuration, or context methods after `endPage()` now
   fails instead of reusing the completed page and its content context; call
