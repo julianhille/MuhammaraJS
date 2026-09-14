@@ -8,8 +8,6 @@ build:
   jobs:
     pre_build:
       - npm ci --ignore-scripts
-      - node packages/wasm/scripts/download-wasm-artifact.mjs
-      - REQUIRE_WASM_DIST=1 npm run docs:stage-browser-example --workspace=@muhammara/wasm
       - npm run docs:generate --workspace=@muhammara/wasm
 
 mkdocs:

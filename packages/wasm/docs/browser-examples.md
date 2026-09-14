@@ -2,12 +2,11 @@
 
 The executable browser example creates PDFs on the page or in a module Worker.
 
-[Open the executable browser example](browser-example/examples/browser/index.html){ .md-button .md-button--primary }
+[Open the executable browser example](https://julianhille.github.io/MuhammaraJS/examples/browser/){ .md-button .md-button--primary }
 
-Read the Docs combines the example sources from the same pushed checkout as this
-page with that commit's verified Wasm CI artifact, so the JavaScript and
-WebAssembly stay together on the documentation origin. To run it locally, build
-the package, run `npm run wasm:server:browser` from the repository root, and open
+Wasm CI publishes the example from the latest successful `develop` build to
+GitHub Pages. To run the current checkout locally, build the package, run
+`npm run wasm:server:browser` from the repository root, and open
 <http://127.0.0.1:8080/>.
 
 ## Focused Examples
