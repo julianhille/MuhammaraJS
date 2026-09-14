@@ -474,6 +474,10 @@ export function createRecipeFactory({
      */
     _drawText(value, x, y, options = {}) {
       var point = this._calibrateCoordinate(x, y);
+      var characterSpacing = options.charSpace ?? 0;
+      if (!Number.isFinite(characterSpacing)) {
+        throw new TypeError("charSpace must be a finite number");
+      }
       var transformed =
         options.rotation ||
         options.skewX ||
@@ -503,7 +507,7 @@ export function createRecipeFactory({
         this._pageContext
           .BT()
           .Tf(editFont, editSize)
-          .Tc(options.charSpace || 0)
+          .Tc(characterSpacing)
           .Tm(1, 0, 0, 1, point.nx, point.ny)
           .Tj(String(value))
           .ET();
@@ -536,7 +540,7 @@ export function createRecipeFactory({
             fontPointer,
             fontSize,
             colorValue(options.color),
-            options.charSpace || 0,
+            characterSpacing,
           );
         }),
       );
