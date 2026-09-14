@@ -30,7 +30,7 @@ var output = new Recipe(inputBytes)
 `output` is a new `Uint8Array`; `inputBytes` is not overwritten. Recipe page
 numbers are one-based.
 
-[Run the browser example for version 1.0.0-beta.1](https://julianhille.github.io/MuhammaraJS/wasm/browser-example/1.0.0-beta.1/index.html).
+[Run the browser example for version 1.0.0-beta.2](https://julianhille.github.io/MuhammaraJS/wasm/browser-example/1.0.0-beta.2/index.html).
 
 Read the [Wasm documentation](https://muhammarajs-wasm.readthedocs.io/) for
 installation and API guidance. The focused [Recipe topic
