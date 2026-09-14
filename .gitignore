@@ -69,8 +69,8 @@ xcode/DerivedData
 packages/wasm/build/
 packages/wasm/.ccache/
 packages/wasm/dist/
+packages/wasm/pages/
 packages/wasm/docs/reference.md
-packages/wasm/docs/browser-example/
 packages/native/docs/recipe/reference.md
 packages/native/docs/api/type-declarations.md
 *.tgz
