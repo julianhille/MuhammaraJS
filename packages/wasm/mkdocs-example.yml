@@ -1,0 +1,8 @@
+site_name: MuhammaraJS WebAssembly Browser Example
+site_description: Executable browser examples for MuhammaraJS WebAssembly releases.
+site_url: !ENV MUHAMMARA_WASM_EXAMPLE_SITE_URL
+docs_dir: pages
+site_dir: pages-site
+use_directory_urls: false
+theme: null
+plugins: []
