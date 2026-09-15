@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   invoke the callback with the completed output where applicable. Create a new
   Recipe instead of calling `endPDF()` again to flush later changes
   [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+- Retire native Recipe instances after any `endPDF()` failure and rethrow the
+  original error on later calls. Code that retried the same Recipe must create a
+  new instance instead [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
   and malformed page selections instead of clamping or partially interpreting
   them; pass positive one-based integers or ascending two-value ranges. Integer
@@ -175,6 +178,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Release the file handles `Recipe#appendPage()` opens when the appended PDF
   cannot be read or a page cannot be copied, instead of leaking them for the
   life of the process [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
+- Abort the native Recipe writer and release its source reader after every
+  `endPDF()` failure, so a non-deletion failure no longer retains file handles
+  on Windows [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
 - Update `mkdocs-material` to 9.7.7 for the DOM XSS security vulnerability fix
   in search suggestions, bringing the native documentation build back in line
   with the Wasm one [#600](https://github.com/julianhille/MuhammaraJS/issues/600)
