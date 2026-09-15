@@ -18,6 +18,8 @@ through text options. Recipe coordinates use a top-left origin and accept
 
 Recipe `text()` and `textDimensions()` default to 14 points when `size` is
 omitted. Pass `{ size: 12 }` to render and measure at 12 points instead.
+Character spacing ignores leading and trailing breakable whitespace but counts
+non-breaking spaces, including U+00A0 at either boundary.
 
 ```javascript
 var pdfDoc = new Recipe("new", "output.pdf", { fontSrcPath: ["./fonts"] });

@@ -4,6 +4,10 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Native Recipe character-spacing measurements now count leading and trailing
+  non-breaking spaces, matching Wasm. Text using `charSpace` can measure wider
+  or wrap earlier; replace boundary U+00A0 characters with regular spaces when
+  they should be trimmed from spacing calculations.
 - Recipe `endPDF()` is now idempotent. Repeated calls that previously attempted
   to finalize the writer again, and could crash, now leave the completed PDF
   unchanged; a repeated `endPDF(callback)` still invokes the callback with the

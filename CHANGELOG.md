@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Retire native Recipe instances after any `endPDF()` failure and rethrow the
   original error on later calls. Code that retried the same Recipe must create a
   new instance instead [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
+- Count leading and trailing non-breaking spaces in native Recipe `charSpace`
+  measurements, matching Wasm. Text can measure wider or wrap earlier; use
+  regular boundary spaces when they should be trimmed
+  [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
   and malformed page selections instead of clamping or partially interpreting
   them; pass positive one-based integers or ascending two-value ranges. Integer
