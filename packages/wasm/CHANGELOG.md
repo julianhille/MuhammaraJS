@@ -144,6 +144,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Align Recipe text, measurement, and layout defaults on 14 points to match
   native, correcting the 12-point default in the alpha and beta releases
   [#605](https://github.com/julianhille/MuhammaraJS/issues/605)
+- Retire the byte-first Recipe and rethrow the original error on later
+  `endPDF()` calls after a finalization failure, matching native, instead of
+  re-entering finalization against an already-destroyed handle
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 
 ## [1.0.0-beta.1] - 2026-09-05
 

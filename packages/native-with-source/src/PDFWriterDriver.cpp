@@ -1189,6 +1189,7 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContext(const ARGS_TYPE& arg
 
     if(!copyingContext)
     {
+        delete proxy;
 		THROW_EXCEPTION("unable to create copying context. verify that the target is an existing PDF file");
 		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
