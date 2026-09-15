@@ -225,25 +225,35 @@ v8::Local<v8::Value> ConstructorsHolder::GetNewInfoDictionary(const ARGS_TYPE& a
 	return CLOSE_SCOPE(instance);	
 }
 
-v8::Local<v8::Value> ConstructorsHolder::GetNewPDFDate(const ARGS_TYPE& args) {
+v8::Local<v8::Value> ConstructorsHolder::GetNewPDFDate(const ARGS_TYPE& args, bool inAllowNoArguments) {
 	CREATE_ISOLATE_CONTEXT;
 	CREATE_ESCAPABLE_SCOPE;
 
 	const unsigned argc = 1;
 
-	if (args.Length() != 1 || (!args[0]->IsDate() && !args[0]->IsString()))
+	if (inAllowNoArguments && args.Length() == 0)
 	{
-		THROW_EXCEPTION("Wrong arguments. Provide 1 argument which is a date");
+		// Value factories accept an omitted argument and yield an empty date,
+		// matching the PDFDate constructor and the Wasm writer.
 		Local<Value> argv[argc] = { NEW_STRING("") };
 		NEW_INSTANCE_ARGS(PDFDate_constructor, instance, argc, argv);
 
 		return CLOSE_SCOPE(instance);
-	} else {
-		Local<Value> argv[argc] = { args[0] };
-		NEW_INSTANCE_ARGS(PDFDate_constructor, instance, argc, argv);
+	}
 
-		return CLOSE_SCOPE(instance);
-	}	
+	if (args.Length() != 1 || (!args[0]->IsDate() && !args[0]->IsString()))
+	{
+		// Never construct after throwing: NewInstance bails out while an
+		// exception is pending, and ToLocalChecked() on the empty result aborts
+		// the process. Hand callers an empty handle instead.
+		THROW_EXCEPTION("Wrong arguments. Provide 1 argument which is a date");
+		return Local<Value>();
+	}
+
+	Local<Value> argv[argc] = { args[0] };
+	NEW_INSTANCE_ARGS(PDFDate_constructor, instance, argc, argv);
+
+	return CLOSE_SCOPE(instance);
 }
 
 v8::Local<v8::Value> ConstructorsHolder::GetNewImageXObject(const ARGS_TYPE& args)

@@ -145,6 +145,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Stop native `createPDFDate()`, `setCreationDate()`, and `setModDate()` from
+  aborting the process on a rejected argument. They threw a `TypeError` and then
+  constructed a `PDFDate` anyway, which is fatal on Node.js 20 and older because
+  the pending exception makes `NewInstance()` return empty. They now raise the
+  `TypeError` on its own. `createPDFDate()` without an argument keeps returning
+  an empty date, matching the `PDFDate` constructor and the Wasm writer
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+- Widen the native `createPDFDate()` typing to the `string | Date` argument it
+  has always accepted, matching the Wasm declaration
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 - Prevent native writer and copying-context use-after-end crashes by guarding
   stateful entry points and tying copying contexts to their writer lifecycle
   [#693](https://github.com/julianhille/MuhammaraJS/issues/693)

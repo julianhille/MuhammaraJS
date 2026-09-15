@@ -106,7 +106,12 @@ function checkEndedWriter(directory, mode) {
   var text = writer.createPDFTextString();
   text.fromString("still valid");
   assert.equal(text.toString(), "still valid");
-  assert.ok(writer.createPDFDate());
+  assert.equal(writer.createPDFDate().toString(), "");
+  assert.ok(writer.createPDFDate(new Date()));
+  // A rejected argument must raise a JavaScript error, not abort the process.
+  assert.throws(function () {
+    writer.createPDFDate(42);
+  }, /Provide 1 argument which is a date/);
 }
 
 describe("UseAfterEndTest", function () {
