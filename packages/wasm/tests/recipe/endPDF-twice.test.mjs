@@ -26,6 +26,9 @@ describe("Recipe endPDF called twice", function () {
     assert.throws(() => recipe.endPDF(), /injected finalization failure/);
     assert.equal(recipe._recipe, 0);
     assert.equal(recipe._endError, finalizationError);
-    assert.throws(() => recipe.endPDF(), (error) => error === finalizationError);
+    assert.throws(
+      () => recipe.endPDF(),
+      (error) => error === finalizationError,
+    );
   });
 });

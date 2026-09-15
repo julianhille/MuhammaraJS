@@ -18,7 +18,10 @@ export function endPDF(recipe, module, assertOutputSize) {
       if (!pdfPointer || !length) throw new Error("Unable to finish PDF");
       try {
         assertOutputSize(length);
-        recipe._endedBytes = module.HEAPU8.slice(pdfPointer, pdfPointer + length);
+        recipe._endedBytes = module.HEAPU8.slice(
+          pdfPointer,
+          pdfPointer + length,
+        );
         return recipe._endedBytes;
       } finally {
         module._muhammara_wasm_free(pdfPointer);
