@@ -1350,8 +1350,11 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFDate(const ARGS_TYPE& args)
 	CREATE_ESCAPABLE_SCOPE;
     PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
 
-    SET_FUNCTION_RETURN_VALUE(pdfWriter->holder->GetNewPDFDate(args))
+    Local<Value> date = pdfWriter->holder->GetNewPDFDate(args, true);
+    if(date.IsEmpty())
+        return;
 
+    SET_FUNCTION_RETURN_VALUE(date)
 }
 
 PDFWriter* PDFWriterDriver::GetWriter()

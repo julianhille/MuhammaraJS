@@ -118,7 +118,7 @@ class ConstructorsHolder {
         v8::Local<v8::Value> GetNewDictionaryContext(const ARGS_TYPE& args);
         v8::Local<v8::Value> GetNewDocumentContext(const ARGS_TYPE& args);
         v8::Local<v8::Value> GetNewInfoDictionary(const ARGS_TYPE& args);
-        v8::Local<v8::Value> GetNewPDFDate(const ARGS_TYPE& args);
+        v8::Local<v8::Value> GetNewPDFDate(const ARGS_TYPE& args, bool inAllowNoArguments = false);
         v8::Local<v8::Value> GetNewImageXObject(const ARGS_TYPE& args);
         v8::Local<v8::Value> GetNewPDFArray();
         v8::Local<v8::Value> GetNewPDFBoolean();

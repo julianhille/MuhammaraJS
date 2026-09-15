@@ -886,7 +886,7 @@ declare namespace muhammara {
     ): FormXObjectId[];
     createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
     createPDFTextString(): PDFTextString;
-    createPDFDate(): PDFDate;
+    createPDFDate(value?: string | Date): PDFDate;
     getImageDimensions(
       inFontFilePath: FilePath | ReadStream,
     ): RectangleDimension;
