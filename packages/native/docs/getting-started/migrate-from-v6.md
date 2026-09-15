@@ -397,9 +397,22 @@ and always has `pages: number`:
 var total: number = recipe.read("in.pdf").pages;
 ```
 
+## 11. Trim Boundary Non-Breaking Spaces From `charSpace` Text
+
+v7 Recipe character-spacing measurements now count leading and trailing
+non-breaking spaces (`U+00A0`), matching Wasm. Text using `charSpace` can
+measure wider or wrap earlier than it did in v6. If boundary non-breaking
+spaces should not contribute to spacing, replace them with regular spaces
+before measuring or rendering:
+
+```javascript
+var nbsp = String.fromCharCode(160); // U+00A0 non-breaking space
+var text = (nbsp + "Indented label" + nbsp).split(nbsp).join(" ");
+recipe.text(text, 72, 72, { charSpace: 2 });
+```
+
 ## What Does Not Change
 
-- The low-level API and native Recipe runtime behavior.
 - Supported Node.js versions.
 - Native binary metadata and the `node-pre-gyp` install flow.
 

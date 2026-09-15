@@ -43,9 +43,10 @@ Do not document behavior based only on an untested snippet.
 ## Self-Contained Examples
 
 Keep pages self-contained. Include the code required to explain a workflow
-rather than linking readers to implementation tests or source files. Small
-duplication is preferable to documentation that depends on a particular source
-revision.
+rather than linking readers to implementation tests, source files, or GitHub
+release pages. Small duplication is preferable to documentation that depends
+on a particular source revision. Use relative links to other documentation
+pages for related explanations.
 
 ## Writing Rules
 

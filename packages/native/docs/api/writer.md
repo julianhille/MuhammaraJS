@@ -23,6 +23,21 @@ the WebAssembly writer has no `getEvents()` equivalent. `createFormXObject`
 starts a reusable drawing form; finish it with `endFormXObject` before placement.
 Image and form creation must not occur while a page content context is active.
 
+## Lifecycle
+
+Create an active writer with `createWriter()`, `createWriterToModify()`, or
+`createWriterToContinue()`. Stateful methods, including page creation, page
+writing, and context getters, throw `Error("PDF writer has ended")` after
+`end()` or `shutdown()`. A failed finalization or shutdown also retires the
+writer. Repeated `end()` calls return the writer without finalizing again.
+
+Complete all drawing and consume borrowed contexts, fonts, parsers, and file
+wrappers before ending their writer. Start a new writer for further work, or
+use `createWriterToContinue()` with successfully saved continuation state.
+The independent `createPDFDate()` and `createPDFTextString()` value factories
+remain usable after cleanup. Recipe uses this low-level guard internally;
+there is no additional Recipe method for it.
+
 ## Continuation State
 
 `shutdown(restartStateFile)` saves an unfinished writer's state and closes it.
@@ -44,14 +59,11 @@ var resumedWriter = muhammara.createWriterToContinue(
 `getModifiedInputFile()` and `getOutputFile()` while modifying a PDF. They expose
 `openFile`, `closeFile`, the file path, and their synchronous byte stream; prefer
 `createReader`, `createWriter`, and the stream classes for normal application
-code. The continuation lifecycle is exercised in [`tests/ShutdownRestartTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/ShutdownRestartTest.js).
+code.
 
 `createPDFDate()` returns a mutable PDF date. Call `setToCurrentTime()` or use
 the initial value, then pass its `toString()` result to a PDF date field. The
 method is intended for low-level dictionary writing; Recipe metadata accepts
 JavaScript `Date` values directly.
-
-[`tests/EmptyPagesPDF.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/EmptyPagesPDF.js), [`tests/FormXObjectTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/FormXObjectTest.js), and
-[`tests/WriterEvents.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/WriterEvents.js) cover these lifecycles.
 
 For task-focused usage, see the [Low-Level API](../low-level/index.md) section.

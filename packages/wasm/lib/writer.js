@@ -442,6 +442,22 @@ export function createWriterFactory({
       if (ended) throw new Error("PDF writer has ended");
     }
 
+    /** Guard a writer method while preserving asynchronous rejection semantics. */
+    function withActiveWriter(method, asynchronous) {
+      if (asynchronous) {
+        /** Reject calls on a finalized writer before normalizing async inputs. */
+        return async function (...args) {
+          requireOpenWriter();
+          return method.apply(this, args);
+        };
+      }
+      /** Reject calls on a finalized writer before touching its resources. */
+      return function (...args) {
+        requireOpenWriter();
+        return method.apply(this, args);
+      };
+    }
+
     var additionalInfo = new Map();
     var infoDictionary = {
       addAdditionalInfoEntry: function (key, value) {
@@ -3041,6 +3057,8 @@ export function createWriterFactory({
           },
           end: function () {
             requireCopying();
+            sourceParsers.forEach((parser) => parser._end());
+            sourceParsers.length = 0;
             var result = module._muhammara_wasm_copying_context_end(copying);
             copyingEnded = true;
             cleanupCopying();
@@ -3206,6 +3224,18 @@ export function createWriterFactory({
       return result;
     }
 
+    // Like native WithActiveWriter<Method>, guard stateful entry points once at
+    // the API boundary. Keep inner guards for borrowed objects and async resumes.
+    Object.keys(writer).forEach(function (name) {
+      if (
+        ["end", "dispose", "createPDFTextString", "createPDFDate"].includes(
+          name,
+        )
+      ) {
+        return;
+      }
+      writer[name] = withActiveWriter(writer[name], name.endsWith("Async"));
+    });
     return writer;
   }
 

@@ -321,7 +321,7 @@ WASM_EXPORT WasmByteReader* muhammara_wasm_reader_start_reading_from_stream(
                                    : reader->GetParser().StartReadingFromStream(
                                         static_cast<PDFStreamInput*>(stream->object));
   if (nativeReader == nullptr) return nullptr;
-  WasmByteReader* handle = new WasmByteReader(nativeReader, reader);
+  WasmByteReader* handle = new WasmByteReader(nativeReader, &reader->byteReaders);
   reader->byteReaders.push_back(handle);
   return handle;
 }
@@ -329,7 +329,8 @@ WASM_EXPORT WasmByteReader* muhammara_wasm_reader_start_reading_from_stream(
 WASM_EXPORT WasmByteReader* muhammara_wasm_reader_get_parser_stream(
     WasmReader* reader) {
   if (reader == nullptr) return nullptr;
-  WasmByteReader* handle = new WasmByteReader(reader->GetParser().GetParserStream(), reader);
+  WasmByteReader* handle = new WasmByteReader(
+      reader->GetParser().GetParserStream(), &reader->byteReaders);
   reader->byteReaders.push_back(handle);
   return handle;
 }
@@ -393,10 +394,13 @@ WASM_EXPORT double muhammara_wasm_byte_reader_get_current_position(
 
 WASM_EXPORT void muhammara_wasm_byte_reader_destroy(WasmByteReader* reader) {
   if (reader == nullptr || !reader->active) return;
-  if (reader->ownsReader) delete reader->reader;
-  reader->reader = nullptr;
-  reader->positionedReader = nullptr;
   reader->active = false;
+  if (reader->owner != nullptr) {
+    std::vector<WasmByteReader*>& readers = *reader->owner;
+    readers.erase(std::remove(readers.begin(), readers.end(), reader),
+                  readers.end());
+  }
+  delete reader;
 }
 
 WASM_EXPORT int muhammara_wasm_object_get_type(WasmObject* object) {

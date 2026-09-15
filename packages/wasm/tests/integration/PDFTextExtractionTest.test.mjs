@@ -84,6 +84,35 @@ describe("PDFTextExtraction", function () {
     );
   });
 
+  it("applies and restores the graphics CTM in reported text matrices", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({ compress: false });
+    var page = writer.createPage(0, 0, 200, 200);
+    writer
+      .startPageContentContext(page)
+      .writeFreeCode(
+        "q 2 0 0 3 10 20 cm BT 1 0 0 1 5 7 Tm (outer) Tj ET " +
+          "q 0 1 -1 0 100 200 cm BT 1 0 0 1 2 3 Tm (nested) Tj ET Q " +
+          "BT 1 0 0 1 1 1 Tm (restored-outer) Tj ET Q " +
+          "BT 1 0 0 1 4 6 Tm (restored-page) Tj ET",
+      );
+    writer.writePage(page);
+
+    var reader = muhammara.createReader(writer.end());
+    var elements = reader.extractPageText(0);
+    reader.end();
+
+    assert.deepEqual(
+      elements.map((element) => [element.content, element.textMatrix]),
+      [
+        ["outer", [2, 0, 0, 3, 20, 41]],
+        ["nested", [0, 3, -2, 0, 204, 626]],
+        ["restored-outer", [2, 0, 0, 3, 12, 23]],
+        ["restored-page", [1, 0, 0, 1, 4, 6]],
+      ],
+    );
+  });
+
   it("ignores malformed and out-of-context text positioning", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter({ compress: false });
@@ -91,7 +120,7 @@ describe("PDFTextExtraction", function () {
     writer
       .startPageContentContext(page)
       .writeFreeCode(
-        "9 TL T* BT /bad TL T* (after-leading) Tj /bad 2 Td (after-td) Tj " +
+        "/bad 0 0 1 10 20 cm 9 TL T* BT /bad TL T* (after-leading) Tj /bad 2 Td (after-td) Tj " +
           "/bad 0 0 1 5 6 Tm (after-tm) Tj 99 T* (after-star) Tj " +
           "/bad ' 99 (ignored-quote) ' (after-quote) Tj " +
           '1 2 /bad " 1 /bad (ignored-double-quote) " (after-double-quote) Tj ET',

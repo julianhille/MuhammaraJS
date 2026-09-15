@@ -1,8 +1,7 @@
 # Add Review Annotations
 
 Use Recipe annotations to add comments, FreeText boxes, or highlights to a new
-or existing page. Numeric coordinates are the typed interface; `center` is also
-used by the current Recipe tests for placement.
+or existing page. Use numeric coordinates for placement.
 
 ```javascript
 var pdfDoc = new Recipe("input.pdf", "output.pdf");
@@ -37,11 +36,8 @@ Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create
 markup annotations. Their nested object sets `text`, `color`, `opacity`, and
 `replies`; put shared metadata such as `title`, `date`, and `subject` on the
 outer text options.
-The dictionary behavior is covered by
-[`tests/recipe/annotation-parity.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/annotation-parity.js).
 
-Set `richText: true` on a comment to use supported HTML formatting. See
-[`tests/recipe/annotation-comment.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/annotation-comment.js) and [`tests/recipe/annotation-text.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/annotation-text.js).
+Set `richText: true` on a comment to use supported HTML formatting.
 
 To change or remove an annotation that is already in a document, see
 [Edit or Remove an Existing Annotation](edit-existing-annotations.md).

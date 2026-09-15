@@ -1,5 +1,20 @@
 # Low-Level Writer, Reader, And Modifier
 
+## Writer Lifecycle
+
+Finish drawing before calling `writer.end()`. After finalization, disposal, or
+a finalization failure, stateful writer methods throw
+`Error("PDF writer has ended")`, matching native. Async methods reject their
+promises with the same error. Create a new writer for further output and
+consume borrowed resources before ending their writer.
+
+`createPDFDate()` and `createPDFTextString()` create independent values and
+remain usable after cleanup. `dispose()` is idempotent; Wasm `end()` still
+throws on a second call, whereas native `end()` is a no-op. Recipe uses the
+writer guard internally, so there is no additional Recipe method for it.
+
+## Create A PDF
+
 Create a writer, draw in PDF's bottom-left coordinate system, then retain the
 returned bytes:
 
@@ -42,6 +57,13 @@ writer.replaceObject(0, contentsId, replacementId, { scope: "global" });
 `PDFRStreamForBuffer`, `PDFWStreamForBuffer`, and the `ByteReader`/`ByteWriter`
 aliases are byte adapters, not Node or Web streams. A writer adapter exposes
 `buffer`, `toUint8Array()`, `toArrayBuffer()`, and `toBlob()`.
+
+Stream readers returned by `startReadingFromStream()`,
+`startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
+`getSourceDocumentStream()` allocate Wasm resources. Call their idempotent
+`dispose()` method as soon as reading finishes. Disposing one of these byte
+readers does not end its parent PDF reader; ending the parent remains fallback
+cleanup for byte readers that were not disposed explicitly.
 
 For exact signatures, lifecycle rules, content operators, object contexts,
 copying contexts, images, forms, and modifier APIs, use the

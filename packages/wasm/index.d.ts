@@ -949,6 +949,8 @@ export interface InfoDictionary {
 export interface PDFByteReader {
   read(amount: number): number[];
   notEnded(): boolean;
+  /** Immediately releases this Wasm stream reader without ending its parent PDF reader. */
+  dispose(): this;
 }
 export interface PositionedPDFByteReader extends PDFByteReader {
   setPosition(position: number): this;
@@ -1015,6 +1017,7 @@ export interface PDFTextElement {
   content: string;
   fontResource: string;
   fontSize: number;
+  /** The text-to-page matrix after applying the active graphics CTM. */
   textMatrix: [number, number, number, number, number, number];
 }
 export type PDFPageContentItemType = 0 | 1 | 2 | 3;
@@ -1130,6 +1133,7 @@ export interface DocumentCopyingContext extends CopyingObjectOperations {
   ): this;
   end(): this;
 }
+/** Stateful methods require an active writer and throw Error("PDF writer has ended") after cleanup. Async methods reject instead. */
 export interface PDFWriter {
   appendPDFPagesFromPDF(
     source: ByteSource,

@@ -98,7 +98,7 @@ describe("TiffSpecialsTest", function () {
     assert.match(output, /\/DeviceCMYK/);
     assert.throws(
       () => writer.createFormXObjectFromTIFF(multipage),
-      /Unable to create TIFF form XObject/,
+      /PDF writer has ended/,
     );
   });
 

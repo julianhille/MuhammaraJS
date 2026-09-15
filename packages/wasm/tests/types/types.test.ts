@@ -258,11 +258,12 @@ async function usesLowLevelSurface() {
   var pageInput = parser.parsePage(0);
   pageInput.getDictionary().toJSObject();
   pageInput.getMediaBox();
-  parser.getParserStream().setPosition(0).read(8);
+  parser.getParserStream().setPosition(0).dispose();
   mergeWriter
     .createPDFCopyingContext(source)
     .getSourceDocumentParser()
     .getSourceDocumentStream()
+    .dispose()
     .read(1);
   parser.getXrefEntry(parser.getPageObjectID(0));
   modifier.replaceObject(0, parser.getPageObjectID(0), 11, { scope: "global" });

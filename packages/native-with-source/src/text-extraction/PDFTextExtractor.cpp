@@ -158,6 +158,19 @@ void CopyMatrix(double outMatrix[6], const double inMatrix[6])
     outMatrix[i] = inMatrix[i];
 }
 
+void MultiplyMatrices(double outMatrix[6], const double inLeft[6], const double inRight[6])
+{
+  double result[] = {
+    inLeft[0] * inRight[0] + inLeft[1] * inRight[2],
+    inLeft[0] * inRight[1] + inLeft[1] * inRight[3],
+    inLeft[2] * inRight[0] + inLeft[3] * inRight[2],
+    inLeft[2] * inRight[1] + inLeft[3] * inRight[3],
+    inLeft[4] * inRight[0] + inLeft[5] * inRight[2] + inRight[4],
+    inLeft[4] * inRight[1] + inLeft[5] * inRight[3] + inRight[5]
+  };
+  CopyMatrix(outMatrix, result);
+}
+
 void MoveTextLine(double outTextMatrix[6], double ioTextLineMatrix[6], double inX, double inY)
 {
   ioTextLineMatrix[4] += inX * ioTextLineMatrix[0] + inY * ioTextLineMatrix[2];
@@ -170,6 +183,7 @@ struct ExtractedTextState
   std::string fontResource;
   double fontSize;
   double leading;
+  double ctm[6];
 };
 }
 
@@ -218,6 +232,7 @@ bool PDFTextExtractor::Extract(
   double fontSize = 0;
   double textMatrix[] = {1, 0, 0, 1, 0, 0};
   double textLineMatrix[] = {1, 0, 0, 1, 0, 0};
+  double ctm[] = {1, 0, 0, 1, 0, 0};
   double textLeading = 0;
   std::vector<ExtractedTextState> textStateStack;
   std::vector<RefCountPtr<PDFObject> > operands;
@@ -252,6 +267,7 @@ bool PDFTextExtractor::Extract(
       state.fontResource = fontResource;
       state.fontSize = fontSize;
       state.leading = textLeading;
+      CopyMatrix(state.ctm, ctm);
       textStateStack.push_back(state);
     }
     else if (operation == "Q" && operands.empty() && !textStateStack.empty())
@@ -259,7 +275,14 @@ bool PDFTextExtractor::Extract(
       fontResource = textStateStack.back().fontResource;
       fontSize = textStateStack.back().fontSize;
       textLeading = textStateStack.back().leading;
+      CopyMatrix(ctm, textStateStack.back().ctm);
       textStateStack.pop_back();
+    }
+    else if (operation == "cm" && AreNumbers(operands, 6))
+    {
+      double matrix[6];
+      SetMatrix(matrix, operands);
+      MultiplyMatrices(ctm, matrix, ctm);
     }
     else if (operation == "BT" && operands.empty() && !inTextObject)
     {
@@ -324,8 +347,7 @@ bool PDFTextExtractor::Extract(
         element.content = content;
         element.fontResource = fontResource;
         element.fontSize = fontSize;
-        for (size_t i = 0; i < 6; ++i)
-          element.textMatrix[i] = textMatrix[i];
+        MultiplyMatrices(element.textMatrix, textMatrix, ctm);
         outElements.push_back(element);
         extractedTextBytes += content.size();
       }

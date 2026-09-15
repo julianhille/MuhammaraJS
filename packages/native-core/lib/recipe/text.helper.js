@@ -1,5 +1,5 @@
 const charSpacing = function charSpacing(text, charSpace) {
-  let txt = text.trim();
+  let txt = text.replace(/^(?:(?!\u00a0)\s)+|(?:(?!\u00a0)\s)+$/g, "");
   return txt.length ? (txt.length - 1) * charSpace : 0;
 };
 

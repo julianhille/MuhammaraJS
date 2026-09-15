@@ -38,4 +38,3 @@ pdfWriter.writePage(page);
 `artBox` is available for an application-defined content region. Unset optional
 boxes are `undefined`. These workflows cover newly created pages; resizing an
 existing page and preserving its annotations require separate verification.
-See [`tests/PageBoxes.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/PageBoxes.js).

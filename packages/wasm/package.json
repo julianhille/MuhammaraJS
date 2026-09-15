@@ -1,6 +1,6 @@
 {
   "name": "@muhammara/wasm",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "Browser-safe, byte-first WebAssembly API for Muhammara",
   "license": "Apache-2.0",
   "homepage": "https://muhammarajs-wasm.readthedocs.io/",
@@ -42,6 +42,7 @@
     "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types/types.test.ts && tsc --noEmit --strict --lib es2022 --module nodenext --moduleResolution nodenext tests/types/types-node.test.ts",
     "docs:generate": "node ./scripts/generate-reference.mjs && prettier --write docs/reference.md",
     "docs:check": "npm run docs:generate && mkdocs build --strict --config-file mkdocs.yml",
+    "pages:stage-example": "node ./scripts/stage-pages-example.mjs",
     "serve:browser": "node ./tests/browser/serve.mjs",
     "server:browser": "npm run serve:browser",
     "test:browser": "node ./tests/browser/run.mjs",

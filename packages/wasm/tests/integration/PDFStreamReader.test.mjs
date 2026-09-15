@@ -80,6 +80,11 @@ describe("PDFReader stream byte readers", function () {
     assert.throws(() => parserStream.setPosition(-1), /non-negative integer/);
     assert.throws(() => parserStream.skip(-1), /non-negative integer/);
 
+    assert.equal(parserStream.dispose(), parserStream);
+    assert.equal(parserStream.dispose(), parserStream);
+    assert.throws(() => parserStream.read(1), /PDF byte reader has ended/);
+    assert.equal(reader.getPagesCount(), 1);
+
     reader.end();
     assert.throws(() => parserStream.read(1), /PDF reader has ended/);
     assert.throws(() => parserStream.notEnded(), /PDF reader has ended/);
@@ -106,11 +111,14 @@ describe("PDFReader stream byte readers", function () {
     assert.deepEqual(decoded.read(100), Array.from(decodedBytes.slice(7)));
     assert.equal(decoded.notEnded(), false);
     assert.deepEqual(decoded.read(1), []);
+    decoded.dispose();
+    assert.throws(() => decoded.notEnded(), /PDF byte reader has ended/);
 
     var plain = reader.startReadingFromStreamForPlainCopying(stream);
     assert.deepEqual(plain.read(100), Array.from(flateBytes));
     assert.equal(plain.notEnded(), false);
     assert.deepEqual(plain.read(1), []);
+    plain.dispose();
     reader.end();
   });
 

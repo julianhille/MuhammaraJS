@@ -55,9 +55,9 @@ DriverLifecycle DocumentCopyingContextDriver::GetLifecycle()
     return mLifecycle;
 }
 
-void DocumentCopyingContextDriver::SetOwnerLifecycle(DriverLifecycle inOwnerLifecycle)
+void DocumentCopyingContextDriver::AddOwnerLifecycle(DriverLifecycle inOwnerLifecycle)
 {
-    mLifecycle->SetOwner(inOwnerLifecycle);
+    mLifecycle->AddOwner(inOwnerLifecycle);
 }
 
 DEF_SUBORDINATE_INIT(DocumentCopyingContextDriver::Init)

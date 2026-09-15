@@ -92,6 +92,13 @@ Build the site strictly before opening a pull request:
 npm run docs:check --workspace=@muhammara/wasm
 ```
 
+After Wasm tests pass on `develop`, CI stages the browser example with that run's
+Wasm artifact and updates its `dev` version under `wasm/browser-example` on
+GitHub Pages. Release tags deploy immutable versions and update their `alpha`,
+`beta`, `rc`, or `latest` alias. `mike` stores the generated examples on the
+`gh-pages` branch; pull requests create no preview versions that require cleanup.
+Wasm reference documentation remains on Read the Docs.
+
 Serve a local preview with:
 
 ```sh

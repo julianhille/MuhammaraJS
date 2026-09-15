@@ -44,4 +44,24 @@ describe("SettingInfoValues", function () {
     assert.equal(info["words of praise"].toText(), "amazing");
     reader.end();
   });
+
+  it("should reject invalid dates instead of aborting", function () {
+    var pdfWriter = muhammara.createWriter(
+      __dirname + "/output/SettingInfoValuesInvalidDate.pdf",
+    );
+    var infoDictionary = pdfWriter.getDocumentContext().getInfoDictionary();
+
+    [[], [42], [null], ["D:20140720204655+03'00'", 42]].forEach(
+      function (args) {
+        ["setCreationDate", "setModDate"].forEach(function (method) {
+          assert.throws(function () {
+            infoDictionary[method].apply(infoDictionary, args);
+          }, /Provide 1 argument which is a date/);
+        });
+      },
+    );
+
+    pdfWriter.writePage(pdfWriter.createPage(0, 0, 595, 842));
+    pdfWriter.end();
+  });
 });

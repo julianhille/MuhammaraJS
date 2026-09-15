@@ -30,5 +30,3 @@ pdfDoc.endPage().endPDF();
 ```
 
 `pie()` closes the arc to its center, so each slice can be filled independently.
-For a fuller chart helper with percentage labels, callouts, and offset slices,
-see [`tests/recipe/arcs.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/arcs.js).

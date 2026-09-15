@@ -1,7 +1,16 @@
+const assert = require("node:assert/strict");
 const Recipe = require("@muhammara/native-with-source").Recipe;
+const { Word } = require("@muhammara/native-core/lib/recipe/text.helper");
 const path = require("path");
 
 describe("Text", () => {
+  it("counts non-breaking spaces at text boundaries", () => {
+    const options = { charSpace: 2 };
+
+    assert.equal(new Word(" ab ", options).charSpacing, 2);
+    assert.equal(new Word("\u00a0ab\u00a0", options).charSpacing, 6);
+  });
+
   it("Simple text", (done) => {
     const output = path.join(__dirname, "../output/text-charSpace.pdf");
     const recipe = new Recipe("new", output);

@@ -63,7 +63,5 @@ the time of the edit.
 These entries live in the document Info dictionary. Writing XMP metadata is a
 separate mechanism and is not exposed by Recipe.
 
-See [`tests/recipe/info-custom-keys.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/recipe/info-custom-keys.js)
-for the verified workflow, and
-[Metadata And Custom Data](../recipe/metadata-and-custom-data.md) for metadata on
+See [Metadata And Custom Data](../recipe/metadata-and-custom-data.md) for metadata on
 newly created documents.
