@@ -26,7 +26,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   new instance instead [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
 - Count leading and trailing non-breaking spaces in native Recipe `charSpace`
   measurements, matching Wasm. Text can measure wider or wrap earlier; use
-  regular boundary spaces when they should be trimmed
+  regular boundary spaces when they should be trimmed. See
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#11-trim-boundary-non-breaking-spaces-from-charspace-text)
   [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
   and malformed page selections instead of clamping or partially interpreting
@@ -41,6 +42,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   no matching active or paused page content context instead of silently doing
   nothing. Call `pauseContext()` only after creating or editing a page, and call
   `resumeContext()` exactly once after a successful pause
+  [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
+- Native Recipe `endPage()` now clears the completed page and its content
+  context instead of leaving them active. Code that called page drawing,
+  configuration, or context methods after `endPage()` now fails; call
+  `createPage()` or `editPage()` before the next page operation. See
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#9-reactivate-pages-after-endpage)
   [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Remove the accidentally exposed native `Recipe` prototype members
   `ANNOTATION_PREFIX`, `appendPDFPageFromPDFWithAnnotations()`, and

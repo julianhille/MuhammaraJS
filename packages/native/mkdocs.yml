@@ -108,4 +108,5 @@ nav:
   - Project:
       - Development Commands: development.md
       - Security and Vendored Dependencies: security.md
+      - Documentation Sources: provenance.md
       - Current Changelog: https://github.com/julianhille/MuhammaraJS/blob/develop/CHANGELOG.md
