@@ -5,6 +5,8 @@ text, text measurement, and tables need no font upload or registration.
 `text()` and `textDimensions()` use 14 points when neither `size` nor `fontSize`
 is supplied. The two option names are aliases; `{ fontSize: 12 }` and
 `{ size: 12 }` both select 12 points.
+Character spacing ignores leading and trailing breakable whitespace but counts
+non-breaking spaces, including U+00A0 at either boundary.
 
 ```js
 import { createRecipe } from "@muhammara/wasm";
