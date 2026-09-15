@@ -69,43 +69,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Add idempotent `PDFByteReader.dispose()` for immediately releasing Wasm
   decoded, plain-copying, parser, and copying-context stream readers.
 
-### Fixed
-
-- Guard stateful writer methods consistently after `end()`, `dispose()`, or
-  failed finalization with `Error("PDF writer has ended")`, matching native;
-  asynchronous methods preserve promise rejection semantics
-  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
-- Preserve embedded NUL bytes in the Wasm low-level `TJ()`, `Tj()`, `Quote()`,
-  and `DoubleQuote()` strings instead of silently truncating each string at the
-  first NUL [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
-- Reject unsupported PDF 2.0/AES-256 encryption in `recrypt()` with a clear
-  WebAssembly limitation error
-  [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
-- Prevent Wasm text extraction from reporting inline-image payload bytes as
-  fabricated page text [#670](https://github.com/julianhille/MuhammaraJS/issues/670)
-- Report the correct text-to-page matrix after text-positioning and `cm`
-  operations while extracting page text
-  [#673](https://github.com/julianhille/MuhammaraJS/issues/673)
-- Preserve HTML whitespace, non-breaking spaces, inline layout, and transforms;
-  render one marker per list item while matching native wrapping and nesting;
-  recover malformed list closures in linear time without retaining void
-  elements; measure HTML table cells; apply character spacing across formatted
-  runs, scoped to its own text operation so later low-level page text does not
-  inherit it and rejecting non-finite `charSpace` values; transform highlights
-  and links with their text and source page; and constrain linked text to
-  clipped text boxes
-  [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
-- Align Recipe text, measurement, and layout defaults on 14 points to match
-  native, correcting the 12-point default in the alpha and beta releases
-  [#605](https://github.com/julianhille/MuhammaraJS/issues/605)
-
-### Removed
-
-- Remove browser example source files from the `@muhammara/wasm` npm package,
-  keeping the published package runtime-only; examples remain available on the
-  [documentation site](https://muhammarajs-wasm.readthedocs.io/latest/browser-examples/)
-  and in the repository [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
-
 ### Changed
 
 - Make documentation self-contained by replacing links to tests, implementation
@@ -144,6 +107,43 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)`, replacing the
   inherited `Hummus-Recipe` value. PDFs edited with `Recipe` still record the
   source document's own creator as `source-Creator`.
+
+### Removed
+
+- Remove browser example source files from the `@muhammara/wasm` npm package,
+  keeping the published package runtime-only; examples remain available on the
+  [documentation site](https://muhammarajs-wasm.readthedocs.io/latest/browser-examples/)
+  and in the repository [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
+
+### Fixed
+
+- Guard stateful writer methods consistently after `end()`, `dispose()`, or
+  failed finalization with `Error("PDF writer has ended")`, matching native;
+  asynchronous methods preserve promise rejection semantics
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+- Preserve embedded NUL bytes in the Wasm low-level `TJ()`, `Tj()`, `Quote()`,
+  and `DoubleQuote()` strings instead of silently truncating each string at the
+  first NUL [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
+- Reject unsupported PDF 2.0/AES-256 encryption in `recrypt()` with a clear
+  WebAssembly limitation error
+  [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
+- Prevent Wasm text extraction from reporting inline-image payload bytes as
+  fabricated page text [#670](https://github.com/julianhille/MuhammaraJS/issues/670)
+- Report the correct text-to-page matrix after text-positioning and `cm`
+  operations while extracting page text
+  [#673](https://github.com/julianhille/MuhammaraJS/issues/673)
+- Preserve HTML whitespace, non-breaking spaces, inline layout, and transforms;
+  render one marker per list item while matching native wrapping and nesting;
+  recover malformed list closures in linear time without retaining void
+  elements; measure HTML table cells; apply character spacing across formatted
+  runs, scoped to its own text operation so later low-level page text does not
+  inherit it and rejecting non-finite `charSpace` values; transform highlights
+  and links with their text and source page; and constrain linked text to
+  clipped text boxes
+  [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
+- Align Recipe text, measurement, and layout defaults on 14 points to match
+  native, correcting the 12-point default in the alpha and beta releases
+  [#605](https://github.com/julianhille/MuhammaraJS/issues/605)
 
 ## [1.0.0-beta.1] - 2026-09-05
 
