@@ -10,6 +10,11 @@ This page collects the compatibility changes formerly maintained in the README.
   completed output where applicable. Code that relied on another call to flush
   later changes must create and finalize a new Recipe instead
   [#693](https://github.com/julianhille/MuhammaraJS/issues/693).
+- A failed Recipe `endPDF()` now retires the Recipe, aborts its writer, releases
+  its source reader, and rethrows the original error on later calls. Code that
+  retried finalization on the same Recipe must create a new Recipe instead. This
+  prevents failed finalization from retaining source file handles on Windows
+  [#381](https://github.com/julianhille/MuhammaraJS/issues/381).
 - Stateful `PDFWriter` calls after `end()` or `shutdown()` now throw
   `Error("PDF writer has ended")` instead of accessing closed resources or
   crashing. Failed finalization also retires the writer. Create a new writer
