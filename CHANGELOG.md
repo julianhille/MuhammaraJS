@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Silicon runners, so `npm run test`, `test:electron`, and the packaged-binary
   check were skipped for every arm64 target. Electron 38 and newer build no
   macOS x64 leg at all, so those prebuilds shipped without being executed once
+  [#695](https://github.com/julianhille/MuhammaraJS/issues/695)
 
 ## [7.0.0-beta.2] - 2026-09-14
 
