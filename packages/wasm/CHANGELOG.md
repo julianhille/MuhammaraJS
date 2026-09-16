@@ -4,6 +4,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Deploy the browser example on a release tag when the `gh-pages` branch does
+  not exist yet. The already-deployed check treated a missing branch as a
+  completed deployment, skipping the `mike deploy` that creates the branch and
+  then failing the release job when it checked that branch out
+  [#690](https://github.com/julianhille/MuhammaraJS/issues/690)
+
 ## [1.0.0-beta.2] - 2026-09-14
 
 ### Added

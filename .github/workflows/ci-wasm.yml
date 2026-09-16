@@ -256,7 +256,9 @@ jobs:
         run: |
           VERSION="${{ steps.example-version.outputs.version }}"
           ALIAS="${{ steps.example-version.outputs.alias }}"
-          if git show origin/gh-pages:wasm/browser-example/versions.json 2>/dev/null | jq --exit-status --arg version "$VERSION" 'any(.[]; .version == $version)' >/dev/null; then
+          # A missing gh-pages branch leaves jq with empty input, which reads as
+          # "already deployed" and skips the deploy that creates the branch.
+          if git rev-parse --verify --quiet refs/remotes/origin/gh-pages >/dev/null && git show origin/gh-pages:wasm/browser-example/versions.json 2>/dev/null | jq --exit-status --arg version "$VERSION" 'any(.[]; .version == $version)' >/dev/null; then
             echo "Example version $VERSION is already deployed"
           elif test "$(npm view @muhammara/wasm "dist-tags.$ALIAS")" = "$VERSION"; then
             mike deploy --config-file packages/wasm/mkdocs-example.yml --deploy-prefix wasm/browser-example --push --update-aliases --alias-type redirect "$VERSION" "$ALIAS"
