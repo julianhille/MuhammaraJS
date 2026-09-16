@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Build and test the macOS arm64 binaries natively instead of cross-compiling
+  them from an x64 Node. The arm64 matrix legs pinned an x64 host on Apple
+  Silicon runners, so `npm run test`, `test:electron`, and the packaged-binary
+  check were skipped for every arm64 target. Electron 38 and newer build no
+  macOS x64 leg at all, so those prebuilds shipped without being executed once
+
 ## [7.0.0-beta.2] - 2026-09-14
 
 ### Breaking Changes

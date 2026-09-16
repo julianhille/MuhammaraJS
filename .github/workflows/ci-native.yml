@@ -231,10 +231,10 @@ jobs:
         include:
           - electron_mocha_version: ^13
             python_version: "3.10"
+          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
           - architecture: arm64
-            architecture_node: x64
+            architecture_node: arm64
             target_architecture: arm64
-            extra_compile_flags: -arch arm64
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
@@ -338,14 +338,7 @@ jobs:
         uses: coactions/setup-xvfb@90473c3ebc69533a1a6e0505c36511b69c8c3135
         with:
           run: npm run test:electron
-        if: ${{ matrix.target_architecture != 'arm64' }}
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
-        env:
-          npm_config_runtime: electron
-          npm_config_target: ${{ matrix.electron }}
-        if: ${{ matrix.target_architecture != 'arm64' }}
-      - run: npm run package --workspace=@muhammara/native-with-source -- --target_arch=${{ matrix.target_architecture }}
-        if: ${{ matrix.target_architecture == 'arm64' }}
         env:
           npm_config_runtime: electron
           npm_config_target: ${{ matrix.electron }}
@@ -411,10 +404,10 @@ jobs:
         include:
           - electron_mocha_version: ^13
             python_version: "3.10"
+          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
           - architecture: arm64
-            architecture_node: x64
+            architecture_node: arm64
             target_architecture: arm64
-            extra_compile_flags: -arch arm64
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
@@ -587,10 +580,10 @@ jobs:
         include:
           - electron_mocha_version: ^13
             python_version: "3.10"
+          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
           - architecture: arm64
-            architecture_node: x64
+            architecture_node: arm64
             target_architecture: arm64
-            extra_compile_flags: -arch arm64
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
@@ -763,10 +756,10 @@ jobs:
         include:
           - electron_mocha_version: ^13
             python_version: "3.10"
+          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
           - architecture: arm64
-            architecture_node: x64
+            architecture_node: arm64
             target_architecture: arm64
-            extra_compile_flags: -arch arm64
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
@@ -930,10 +923,10 @@ jobs:
           - architecture: x64
             architecture_node: x64
             target_architecture: x64
+          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
           - architecture: arm64
-            architecture_node: x64
+            architecture_node: arm64
             target_architecture: arm64
-            extra_compile_flags: -arch arm64
         exclude:
           - os: windows-2022
             architecture: arm64
@@ -976,11 +969,7 @@ jobs:
           npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
       - run: npm run test
-        if: ${{ matrix.target_architecture != 'arm64' }}
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
-        if: ${{ matrix.target_architecture != 'arm64' }}
-      - run: npm run package --workspace=@muhammara/native-with-source -- --target_arch=${{ matrix.target_architecture }}
-        if: ${{ matrix.target_architecture == 'arm64' }}
       - uses: actions/upload-artifact@v6
         with:
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
