@@ -4,6 +4,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta.3] - 2026-09-18
+
 ### Fixed
 
 - Deploy the browser example on a release tag when the `gh-pages` branch does
@@ -188,7 +190,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Validate Wasm ABI exports, resource ownership, temporary-file cleanup, and
   bounded byte input/output handling.
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.2...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.3...HEAD
+[1.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.2...wasm-v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.1...wasm-v1.0.0-beta.2
 [1.0.0-beta.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-alpha.1...wasm-v1.0.0-beta.1
 [1.0.0-alpha.1]: https://github.com/julianhille/MuhammaraJS/releases/tag/wasm-v1.0.0-alpha.1
