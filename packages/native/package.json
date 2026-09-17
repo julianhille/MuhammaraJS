@@ -1,6 +1,6 @@
 {
   "name": "@muhammara/native",
-  "version": "7.0.0-beta.2",
+  "version": "7.0.0-beta.3",
   "description": "HummusJS-compatible native PDF addon with prebuilt binaries",
   "homepage": "https://muhammarajs.readthedocs.io/",
   "license": "Apache-2.0",
@@ -30,7 +30,7 @@
   ],
   "dependencies": {
     "@mapbox/node-pre-gyp": "^2.0.3",
-    "@muhammara/native-core": "7.0.0-beta.2"
+    "@muhammara/native-core": "7.0.0-beta.3"
   },
   "binary": {
     "module_name": "muhammara",

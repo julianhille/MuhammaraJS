@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [7.0.0-beta.3] - 2026-09-18
+
 ### Fixed
 
 - Build and test the macOS arm64 binaries natively instead of cross-compiling
@@ -919,7 +921,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.2...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.3...HEAD
+[7.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.2...native-v7.0.0-beta.3
 [7.0.0-beta.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.1...native-v7.0.0-beta.2
 [7.0.0-beta.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-alpha.1...native-v7.0.0-beta.1
 [7.0.0-alpha.1]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...native-v7.0.0-alpha.1
