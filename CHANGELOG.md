@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   check were skipped for every arm64 target. Electron 38 and newer build no
   macOS x64 leg at all, so those prebuilds shipped without being executed once
   [#695](https://github.com/julianhille/MuhammaraJS/issues/695)
+- Upload the GitHub release prebuilds before publishing to npm, and let a re-run
+  on an existing tag finish a partial release. Prebuilds that share an asset
+  name are de-duplicated before upload, a stuck draft release is completed, and
+  an already-published npm version is skipped instead of failing the job with
+  `You cannot publish over the previously published versions`
+  [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
 ## [7.0.0-beta.2] - 2026-09-14
 

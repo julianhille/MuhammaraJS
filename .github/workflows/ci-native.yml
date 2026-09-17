@@ -158,6 +158,7 @@ jobs:
       - run: npm run package --workspace=@muhammara/native-with-source -- --target_libc=musl --target_arch=${{ matrix.target_architecture }}
       - uses: actions/upload-artifact@v6
         with:
+          overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-node-musl-arm-${{ matrix.node }}
           if-no-files-found: error
@@ -200,6 +201,7 @@ jobs:
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage --target_libc=musl
       - uses: actions/upload-artifact@v6
         with:
+          overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-node-musl-${{ matrix.node }}
           if-no-files-found: error
@@ -344,6 +346,7 @@ jobs:
           npm_config_target: ${{ matrix.electron }}
       - uses: actions/upload-artifact@v6
         with:
+          overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.electron}}
           if-no-files-found: error
@@ -908,6 +911,7 @@ jobs:
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
       - uses: actions/upload-artifact@v6
         with:
+          overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.node}}
           if-no-files-found: error
@@ -972,6 +976,7 @@ jobs:
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
       - uses: actions/upload-artifact@v6
         with:
+          overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
           name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.node}}
           if-no-files-found: error
@@ -1025,20 +1030,52 @@ jobs:
             *-rc.*) echo "value=rc" >> "$GITHUB_OUTPUT" ;;
             *) echo "value=latest" >> "$GITHUB_OUTPUT" ;;
           esac
-      - name: Verify native package publish preflight
-        run: npm publish --workspace=@muhammara/native-core --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }} && npm publish --workspace=@muhammara/native-with-source --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }} && npm publish --workspace=@muhammara/native --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }}
-      - name: Publish native core package
-        run: npm publish --workspace=@muhammara/native-core --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
-      - name: Publish source-capable native package
-        run: npm publish --workspace=@muhammara/native-with-source --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
-      - name: Publish slim native package
-        run: npm publish --workspace=@muhammara/native --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
+      - name: Collect prebuilds
+        run: |
+          # Electron patch releases that share an ABI stage the same tarball
+          # name, and a release cannot hold one asset name twice.
+          mkdir -p builds/release
+          find builds/bindings -type f -print0 | sort -z |
+            while IFS= read -r -d '' file; do
+              target="builds/release/$(basename "$file")"
+              if test -e "$target"; then
+                echo "Skipping duplicate $(basename "$file")"
+                continue
+              fi
+              cp "$file" "$target"
+            done
+          ls -lah builds/release/
       - name: Create release and upload prebuilds
         uses: softprops/action-gh-release@v2
         with:
-          files: "builds/bindings/**/*"
+          files: "builds/release/*"
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
+          draft: false
+      - id: pending
+        name: Select packages the registry does not serve yet
+        run: |
+          pending=""
+          for workspace in @muhammara/native-core @muhammara/native-with-source @muhammara/native; do
+            if npm view "$workspace@${GITHUB_REF_NAME#native-v}" version >/dev/null 2>&1; then
+              echo "$workspace@${GITHUB_REF_NAME#native-v} is already published"
+            else
+              pending="$pending $workspace"
+            fi
+          done
+          echo "workspaces=$pending" >> "$GITHUB_OUTPUT"
+      - name: Verify native package publish preflight
+        if: steps.pending.outputs.workspaces != ''
+        run: |
+          for workspace in ${{ steps.pending.outputs.workspaces }}; do
+            npm publish --workspace="$workspace" --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }}
+          done
+      - name: Publish native packages
+        if: steps.pending.outputs.workspaces != ''
+        run: |
+          for workspace in ${{ steps.pending.outputs.workspaces }}; do
+            npm publish --workspace="$workspace" --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
+          done
   tag-docs:
     needs: [publish]
     if: startsWith(github.ref, 'refs/tags/native-v')

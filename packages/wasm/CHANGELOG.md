@@ -11,6 +11,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   completed deployment, skipping the `mike deploy` that creates the branch and
   then failing the release job when it checked that branch out
   [#690](https://github.com/julianhille/MuhammaraJS/issues/690)
+- Create the GitHub release before publishing to npm, and skip the publish when
+  the registry already serves the tagged version, so a re-run on an existing tag
+  completes instead of failing
+  [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
 ## [1.0.0-beta.2] - 2026-09-14
 
