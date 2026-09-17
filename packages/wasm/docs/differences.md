@@ -44,6 +44,4 @@ writing a diagnostic file.
 Wasm-only `Recipe.dispose()` and `Recipe.disposeAssets()` release Emscripten
 allocations that JavaScript garbage collection cannot reclaim. Native objects
 use normal native lifetime management. See the [Recipe topic
-guides](recipe/index.md) for examples that follow these boundaries and the
-[package compatibility table](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/DIFFERENCES.md)
-for the complete maintained list.
+guides](recipe/index.md) for examples that follow these boundaries.

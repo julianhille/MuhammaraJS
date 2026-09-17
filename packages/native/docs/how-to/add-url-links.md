@@ -50,5 +50,4 @@ pdfWriter
   .end();
 ```
 
-The rectangle values are PDF coordinates: left, bottom, right, and top. See
-[`tests/LinksTest.js`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/tests/LinksTest.js) for text and image link examples.
+The rectangle values are PDF coordinates: left, bottom, right, and top.

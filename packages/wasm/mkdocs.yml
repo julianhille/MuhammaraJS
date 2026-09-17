@@ -24,6 +24,7 @@ plugins:
 
 markdown_extensions:
   - admonition
+  - attr_list
   - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
@@ -80,4 +81,3 @@ nav:
       - Security: security.md
       - Documentation Sources: provenance.md
       - Contributing Documentation: contributing.md
-  - Breaking Changes: breaking-changes.md

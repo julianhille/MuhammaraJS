@@ -35,6 +35,4 @@ await fetch("/documents", {
 ```
 
 Returning a PDF from a server remains a server-side responsibility. Use the
-native package there if direct response streaming is required. See the
-[interactive application](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/examples/browser/app.mjs)
-for preview replacement and cleanup.
+native package there if direct response streaming is required.

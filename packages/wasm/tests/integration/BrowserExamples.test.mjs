@@ -57,6 +57,7 @@ describe("Browser how-to examples", function () {
     for (var example of HOW_TO_EXAMPLES) {
       assert.match(page, new RegExp(`data-example="${example.id}"`));
     }
+    assert.match(page, /id="version-picker"/);
   });
 
   for (const example of HOW_TO_EXAMPLES) {

@@ -8,6 +8,22 @@ is required.
 npm install @muhammara/native-with-source
 ```
 
+Load the CommonJS package and add text to the first page of an existing PDF
+`Buffer`:
+
+```js
+var { Recipe } = require("@muhammara/native-with-source");
+
+var output = new Recipe(inputBuffer)
+  .editPage(1)
+  .text("Hello", 72, 72)
+  .endPage()
+  .endPDF((bytes) => bytes);
+```
+
+`output` is a new `Buffer`; `inputBuffer` is not overwritten. Recipe page
+numbers are one-based.
+
 The source-capable package downloads a
 matching prebuilt binary when available and otherwise compiles its bundled
 `src/` tree with the local Node.js build toolchain. It exposes the same API as

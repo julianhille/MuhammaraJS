@@ -19,6 +19,29 @@ body {
   border-bottom: 1px solid #102a43;
   background: #f7f1e5;
 }
+.masthead-meta {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.version-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font:
+    700 0.72rem/1 ui-monospace,
+    monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.version-picker select {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #102a43;
+  background: #f7f1e5;
+  color: #102a43;
+  font: inherit;
+}
 .eyebrow,
 .section-number {
   margin: 0 0 0.8rem;

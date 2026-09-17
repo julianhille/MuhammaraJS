@@ -256,7 +256,7 @@ muhammara_wasm_copying_context_get_source_document_stream(
   }
   IByteReaderWithPosition* stream = context->context->GetSourceDocumentStream();
   if (stream == nullptr) return nullptr;
-  WasmByteReader* handle = new WasmByteReader(stream, nullptr);
+  WasmByteReader* handle = new WasmByteReader(stream, &context->byteReaders);
   context->byteReaders.push_back(handle);
   return handle;
 }

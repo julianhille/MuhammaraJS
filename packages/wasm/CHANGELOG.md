@@ -4,8 +4,27 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Deploy the browser example on a release tag when the `gh-pages` branch does
+  not exist yet. The already-deployed check treated a missing branch as a
+  completed deployment, skipping the `mike deploy` that creates the branch and
+  then failing the release job when it checked that branch out
+  [#690](https://github.com/julianhille/MuhammaraJS/issues/690)
+- Create the GitHub release before publishing to npm, and skip the publish when
+  the registry already serves the tagged version, so a re-run on an existing tag
+  completes instead of failing
+  [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
+- Mark alpha, beta, and release candidate GitHub releases as pre-releases
+  [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
+
+## [1.0.0-beta.2] - 2026-09-14
+
 ### Added
 
+- Publish versioned executable browser examples to GitHub Pages for `develop`
+  and release builds
+  [#690](https://github.com/julianhille/MuhammaraJS/issues/690)
 - Support chainable Recipe `pauseContext()` and `resumeContext()` transitions
   on newly created pages while retaining errors for unmatched calls
   [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
@@ -61,40 +80,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   guide [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
 - Show `extractPageContentItems()` in the low-level browser example
   [#275](https://github.com/julianhille/MuhammaraJS/issues/275)
-
-### Fixed
-
-- Preserve embedded NUL bytes in the Wasm low-level `TJ()`, `Tj()`, `Quote()`,
-  and `DoubleQuote()` strings instead of silently truncating each string at the
-  first NUL [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
-- Reject unsupported PDF 2.0/AES-256 encryption in `recrypt()` with a clear
-  WebAssembly limitation error
-  [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
-- Prevent Wasm text extraction from reporting inline-image payload bytes as
-  fabricated page text [#670](https://github.com/julianhille/MuhammaraJS/issues/670)
-- Report the correct text matrix after `BT`, `Td`, `TD`, `TL`, `T*`, `'`, and
-  `"` while extracting page text
-  [#673](https://github.com/julianhille/MuhammaraJS/issues/673)
-- Preserve HTML whitespace, non-breaking spaces, inline layout, and transforms;
-  render one marker per list item while matching native wrapping and nesting;
-  recover malformed list closures in linear time without retaining void
-  elements; measure HTML table cells; apply character spacing across formatted
-  runs; transform highlights and links with their text and source page; and
-  constrain linked text to clipped text boxes
-  [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
-- Align Recipe text, measurement, and layout defaults on 14 points to match
-  native, correcting the 12-point default in the alpha and beta releases
-  [#605](https://github.com/julianhille/MuhammaraJS/issues/605)
-
-### Removed
-
-- Remove browser example source files from the `@muhammara/wasm` npm package,
-  keeping the published package runtime-only; examples remain available on the
-  [documentation site](https://muhammarajs-wasm.readthedocs.io/latest/browser-examples/)
-  and in the repository [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
+- Add idempotent `PDFByteReader.dispose()` for immediately releasing Wasm
+  decoded, plain-copying, parser, and copying-context stream readers.
 
 ### Changed
 
+- Make documentation self-contained by replacing links to tests, implementation
+  files, and GitHub releases with local guides and inline explanations
+  [#689](https://github.com/julianhille/MuhammaraJS/issues/689)
 - Validate that the native GYP and Wasm CMake builds compile the same PDFWriter
   translation units and that the Wasm ABI exports exactly match runtime use
   [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
@@ -129,6 +122,47 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   inherited `Hummus-Recipe` value. PDFs edited with `Recipe` still record the
   source document's own creator as `source-Creator`.
 
+### Removed
+
+- Remove browser example source files from the `@muhammara/wasm` npm package,
+  keeping the published package runtime-only; examples remain available on the
+  [documentation site](https://muhammarajs-wasm.readthedocs.io/latest/browser-examples/)
+  and in the repository [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
+
+### Fixed
+
+- Guard stateful writer methods consistently after `end()`, `dispose()`, or
+  failed finalization with `Error("PDF writer has ended")`, matching native;
+  asynchronous methods preserve promise rejection semantics
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+- Preserve embedded NUL bytes in the Wasm low-level `TJ()`, `Tj()`, `Quote()`,
+  and `DoubleQuote()` strings instead of silently truncating each string at the
+  first NUL [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
+- Reject unsupported PDF 2.0/AES-256 encryption in `recrypt()` with a clear
+  WebAssembly limitation error
+  [#678](https://github.com/julianhille/MuhammaraJS/issues/678)
+- Prevent Wasm text extraction from reporting inline-image payload bytes as
+  fabricated page text [#670](https://github.com/julianhille/MuhammaraJS/issues/670)
+- Report the correct text-to-page matrix after text-positioning and `cm`
+  operations while extracting page text
+  [#673](https://github.com/julianhille/MuhammaraJS/issues/673)
+- Preserve HTML whitespace, non-breaking spaces, inline layout, and transforms;
+  render one marker per list item while matching native wrapping and nesting;
+  recover malformed list closures in linear time without retaining void
+  elements; measure HTML table cells; apply character spacing across formatted
+  runs, scoped to its own text operation so later low-level page text does not
+  inherit it and rejecting non-finite `charSpace` values; transform highlights
+  and links with their text and source page; and constrain linked text to
+  clipped text boxes
+  [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
+- Align Recipe text, measurement, and layout defaults on 14 points to match
+  native, correcting the 12-point default in the alpha and beta releases
+  [#605](https://github.com/julianhille/MuhammaraJS/issues/605)
+- Retire the byte-first Recipe and rethrow the original error on later
+  `endPDF()` calls after a finalization failure, matching native, instead of
+  re-entering finalization against an already-destroyed handle
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+
 ## [1.0.0-beta.1] - 2026-09-05
 
 ### Fixed
@@ -154,6 +188,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Validate Wasm ABI exports, resource ownership, temporary-file cleanup, and
   bounded byte input/output handling.
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.1...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.2...HEAD
+[1.0.0-beta.2]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.1...wasm-v1.0.0-beta.2
 [1.0.0-beta.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-alpha.1...wasm-v1.0.0-beta.1
 [1.0.0-alpha.1]: https://github.com/julianhille/MuhammaraJS/releases/tag/wasm-v1.0.0-alpha.1

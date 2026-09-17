@@ -30,14 +30,16 @@ try {
 }
 ```
 
-Each result is a PDF text-showing operation in content-stream order.
-`textMatrix` is `[a, b, c, d, e, f]`; `e` and `f` are its position. Content is
-raw PDF string data. The matrix reflects explicit text positioning through
-`BT`, `Tm`, `Td`, `TD`, `TL`, `T*`, `'`, and `"`. The extractor does not decode
-every font character map or calculate glyph bounds and glyph-driven matrix
-advances, so adjacent text-showing operations without an explicit positioning
-operator retain the same matrix. This is not a general visual full-text search
-or glyph-bounds API.
+Each result is a PDF text-showing operation in direct content-stream order.
+`textMatrix` is `[a, b, c, d, e, f]`; `e` and `f` are its origin in page
+coordinates. The matrix combines explicit text positioning through `BT`, `Tm`,
+`Td`, `TD`, `TL`, `T*`, `'`, and `"` with the active graphics transformation
+from `cm`; its first four values retain rotation, scale, or skew. Content is raw
+PDF string data. The extractor does not decode every font character map,
+calculate glyph bounds or glyph-driven matrix advances, or descend into Form
+XObjects such as appended content created by `Recipe.editPage()`. Adjacent
+text-showing operations without an explicit positioning operator retain the
+same matrix. This is not a general visual full-text search or glyph-bounds API.
 
 ## Bound the work on untrusted input
 
@@ -80,6 +82,4 @@ is the PDF operator that produced it. An inline image reports as
 rather than parsed, so the bytes cannot invent extra items. Text drawn in an invisible rendering mode
 (`Tr 3` or `Tr 7`) is excluded; white-on-white text is included, because it is
 still a page mark. `limits.maxTextBytes` is accepted for signature parity with
-`extractPageText` but has no effect here. See
-[`tests/integration/PDFPageContentItemsTest.test.mjs`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/tests/integration/PDFPageContentItemsTest.test.mjs)
-for the verified output shape.
+`extractPageText` but has no effect here.

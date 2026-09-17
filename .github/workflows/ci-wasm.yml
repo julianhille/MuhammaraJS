@@ -22,7 +22,7 @@ on:
 
 concurrency:
   group: wasm-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/develop' }}
 
 permissions:
   contents: read
@@ -46,6 +46,7 @@ jobs:
         run: npm pack --workspace=@muhammara/wasm --ignore-scripts --dry-run --json | node packages/wasm/scripts/check-package-contents.mjs
       - uses: actions/upload-artifact@v6
         with:
+          overwrite: true
           name: muhammara-wasm
           path: packages/wasm/dist/
           if-no-files-found: error
@@ -99,6 +100,62 @@ jobs:
           MUHAMMARA_WASM_SANITIZE: ON
       - run: node ./scripts/run-mocha.mjs tests/integration/MemoryLifecycle.test.mjs
         working-directory: packages/wasm
+  deploy-development-example:
+    needs: [build, test, sanitizer]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-22.04
+    concurrency:
+      group: wasm-example-pages
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r packages/wasm/docs/requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: muhammara-wasm
+          path: packages/wasm/dist
+      - run: npm run pages:stage-example --workspace=@muhammara/wasm
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Fetch existing example versions
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages
+          fi
+      - name: Deploy development example
+        run: |
+          mike deploy --config-file packages/wasm/mkdocs-example.yml --deploy-prefix wasm/browser-example --push --update-aliases --alias-type redirect dev
+          mike set-default --config-file packages/wasm/mkdocs-example.yml --deploy-prefix wasm/browser-example --push dev
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          MUHAMMARA_WASM_EXAMPLE_SITE_URL: ${{ steps.pages.outputs.base_url }}/wasm/browser-example/
+      - uses: actions/checkout@v6
+        with:
+          ref: gh-pages
+          path: pages
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: pages
+      - id: deployment
+        uses: actions/deploy-pages@v4
   publish:
     needs: [test, sanitizer]
     if: startsWith(github.ref, 'refs/tags/wasm-v')
@@ -136,27 +193,98 @@ jobs:
             *-rc.*) echo "value=rc" >> "$GITHUB_OUTPUT" ;;
             *) echo "value=latest" >> "$GITHUB_OUTPUT" ;;
           esac
-      - name: Verify Wasm package publish preflight
-        run: npm publish --workspace=@muhammara/wasm --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }}
-      - name: Publish Wasm package
-        run: npm publish --workspace=@muhammara/wasm --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: packages/wasm/dist/*
-  tag-docs:
+          draft: false
+          prerelease: ${{ steps.npm-tag.outputs.value != 'latest' }}
+      - id: published
+        name: Check whether the registry serves this version already
+        run: |
+          if npm view "@muhammara/wasm@${GITHUB_REF_NAME#wasm-v}" version >/dev/null 2>&1; then
+            echo "@muhammara/wasm@${GITHUB_REF_NAME#wasm-v} is already published"
+            echo "value=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=no" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify Wasm package publish preflight
+        if: steps.published.outputs.value == 'no'
+        run: npm publish --workspace=@muhammara/wasm --ignore-scripts --provenance --dry-run --access public --tag ${{ steps.npm-tag.outputs.value }}
+      - name: Publish Wasm package
+        if: steps.published.outputs.value == 'no'
+        run: npm publish --workspace=@muhammara/wasm --ignore-scripts --provenance --access public --tag ${{ steps.npm-tag.outputs.value }}
+  deploy-release-docs-and-example:
     needs: [publish]
     if: startsWith(github.ref, 'refs/tags/wasm-v')
     runs-on: ubuntu-22.04
+    concurrency:
+      group: wasm-example-pages
     permissions:
       actions: write
       contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r packages/wasm/docs/requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: muhammara-wasm
+          path: packages/wasm/dist
+      - run: npm run pages:stage-example --workspace=@muhammara/wasm
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Fetch existing example versions
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages
+          fi
+      - id: example-version
+        name: Select example version and alias
+        run: |
+          VERSION="${GITHUB_REF_NAME#wasm-v}"
+          case "$VERSION" in
+            *-alpha.*) ALIAS=alpha ;;
+            *-beta.*) ALIAS=beta ;;
+            *-rc.*) ALIAS=rc ;;
+            *) ALIAS=latest ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "alias=$ALIAS" >> "$GITHUB_OUTPUT"
+      - name: Deploy release example
+        run: |
+          VERSION="${{ steps.example-version.outputs.version }}"
+          ALIAS="${{ steps.example-version.outputs.alias }}"
+          # A missing gh-pages branch leaves jq with empty input, which reads as
+          # "already deployed" and skips the deploy that creates the branch.
+          if git rev-parse --verify --quiet refs/remotes/origin/gh-pages >/dev/null && git show origin/gh-pages:wasm/browser-example/versions.json 2>/dev/null | jq --exit-status --arg version "$VERSION" 'any(.[]; .version == $version)' >/dev/null; then
+            echo "Example version $VERSION is already deployed"
+          elif test "$(npm view @muhammara/wasm "dist-tags.$ALIAS")" = "$VERSION"; then
+            mike deploy --config-file packages/wasm/mkdocs-example.yml --deploy-prefix wasm/browser-example --push --update-aliases --alias-type redirect "$VERSION" "$ALIAS"
+          else
+            mike deploy --config-file packages/wasm/mkdocs-example.yml --deploy-prefix wasm/browser-example --push "$VERSION"
+          fi
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          MUHAMMARA_WASM_EXAMPLE_SITE_URL: ${{ steps.pages.outputs.base_url }}/wasm/browser-example/
       - name: Create matching Wasm documentation tag
         run: |
           DOC_TAG="wasm-doc-v${GITHUB_REF_NAME#wasm-v}"
@@ -170,3 +298,12 @@ jobs:
           gh workflow run docs.yml --ref "$DOC_TAG"
         env:
           GH_TOKEN: ${{ github.token }}
+      - uses: actions/checkout@v6
+        with:
+          ref: gh-pages
+          path: pages
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: pages
+      - id: deployment
+        uses: actions/deploy-pages@v4

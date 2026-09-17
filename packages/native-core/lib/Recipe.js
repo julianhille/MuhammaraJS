@@ -261,7 +261,10 @@ class Recipe {
   }
 
   /**
-   * End the pdfDoc
+   * End the pdfDoc. Finalization happens once; later calls do not rewrite the
+   * PDF and invoke the callback with the completed output when applicable.
+   * A failed finalization retires the Recipe and later calls rethrow the
+   * original error.
    * @function
    * @memberof Recipe
    * @param {function} [callback] - The callback function.
@@ -357,26 +360,27 @@ class Recipe {
 
       this.ended = true;
     } catch (error) {
-      if (!deletingPages) throw error;
-      Object.keys(deletionState.metadata).forEach(
-        (key) => delete deletionState.metadata[key],
-      );
-      Object.assign(deletionState.metadata, deletionState.metadataValues);
-      this.metadata = deletionState.metadata;
-      this.annotations = deletionState.annotations;
-      this.annotationsToWrite = deletionState.annotationsToWrite;
-      this.deletedPages = deletionState.deletedPages;
+      if (deletingPages) {
+        Object.keys(deletionState.metadata).forEach(
+          (key) => delete deletionState.metadata[key],
+        );
+        Object.assign(deletionState.metadata, deletionState.metadataValues);
+        this.metadata = deletionState.metadata;
+        this.annotations = deletionState.annotations;
+        this.annotationsToWrite = deletionState.annotationsToWrite;
+        this.deletedPages = deletionState.deletedPages;
+      }
       this.endError = error;
       this.ended = true;
       try {
         this.writer._abort();
       } catch (_) {
-        // Preserve the deletion error if native cleanup also fails.
+        // Preserve the finalization error if native cleanup also fails.
       }
       try {
         this._releaseReader();
       } catch (_) {
-        // Preserve the deletion error if releasing its separate reader fails.
+        // Preserve the finalization error if releasing its separate reader fails.
       }
       throw error;
     }

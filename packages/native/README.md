@@ -7,6 +7,22 @@ reading, and modifying PDF files and streams.
 npm install @muhammara/native
 ```
 
+Load the CommonJS package and add text to the first page of an existing PDF
+`Buffer`:
+
+```js
+var { Recipe } = require("@muhammara/native");
+
+var output = new Recipe(inputBuffer)
+  .editPage(1)
+  .text("Hello", 72, 72)
+  .endPage()
+  .endPDF((bytes) => bytes);
+```
+
+`output` is a new `Buffer`; `inputBuffer` is not overwritten. Recipe page
+numbers are one-based.
+
 When a compatible prebuilt binary is unavailable, install
 `@muhammara/native-with-source` to compile the addon locally or rebuild it for
 Electron. Both packages expose the same API through the shared

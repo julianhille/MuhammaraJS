@@ -56,12 +56,29 @@ PDFWriterDriver::PDFWriterDriver()
     mStartedWithStream = false;
     mIsCatalogUpdateRequired = false;
     mIsStarted = false;
+    mLifecycle = DriverLifecycle(new DriverLifecycleState());
 }
 
 PDFWriterDriver::~PDFWriterDriver()
 {
+    mLifecycle->End();
     delete mWriteStreamProxy;
     delete mReadStreamProxy;
+}
+
+// Check before argument conversion or accessing any finalized writer state.
+// Stateless value factories and idempotent cleanup do not need this guard.
+template <void (*Method)(const ARGS_TYPE&)>
+METHOD_RETURN_TYPE PDFWriterDriver::WithActiveWriter(const ARGS_TYPE& args)
+{
+    PDFWriterDriver* writer = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
+    if(!writer->mIsStarted)
+    {
+        Isolate* isolate = Isolate::GetCurrent();
+        isolate->ThrowException(Exception::Error(NEW_STRING("PDF writer has ended")));
+        return;
+    }
+    Method(args);
 }
 
 DEF_SUBORDINATE_INIT(PDFWriterDriver::Init)
@@ -75,38 +92,38 @@ DEF_SUBORDINATE_INIT(PDFWriterDriver::Init)
 
 	SET_PROTOTYPE_METHOD(t, "end", End);
 	SET_PROTOTYPE_METHOD(t, "_abort", Abort);
-	SET_PROTOTYPE_METHOD(t, "createPage", CreatePage);
-	SET_PROTOTYPE_METHOD(t, "writePage", WritePage);
-	SET_PROTOTYPE_METHOD(t, "writePageAndReturnID", WritePageAndReturnID);
-	SET_PROTOTYPE_METHOD(t, "startPageContentContext", StartPageContentContext);
-	SET_PROTOTYPE_METHOD(t, "pausePageContentContext", PausePageContentContext);
-	SET_PROTOTYPE_METHOD(t, "createFormXObject", CreateFormXObject);
-	SET_PROTOTYPE_METHOD(t, "endFormXObject", EndFormXObject);
-	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromJPG", CreateformXObjectFromJPG);
-	SET_PROTOTYPE_METHOD(t, "getFontForFile", GetFontForFile);
-	SET_PROTOTYPE_METHOD(t, "attachURLLinktoCurrentPage", AttachURLLinktoCurrentPage);
-	SET_PROTOTYPE_METHOD(t, "shutdown", Shutdown);
-	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromTIFF", CreateFormXObjectFromTIFF);
-	SET_PROTOTYPE_METHOD(t, "createImageXObjectFromJPG", CreateImageXObjectFromJPG);
-	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromPNG", CreateFormXObjectFromPNG);
-	SET_PROTOTYPE_METHOD(t, "retrieveJPGImageInformation", RetrieveJPGImageInformation);
-	SET_PROTOTYPE_METHOD(t, "getObjectsContext", GetObjectsContext);
-	SET_PROTOTYPE_METHOD(t, "getDocumentContext", GetDocumentContext);
-	SET_PROTOTYPE_METHOD(t, "appendPDFPagesFromPDF", AppendPDFPagesFromPDF);
-	SET_PROTOTYPE_METHOD(t, "mergePDFPagesToPage", MergePDFPagesToPage);
-	SET_PROTOTYPE_METHOD(t, "createPDFCopyingContext", CreatePDFCopyingContext);
-	SET_PROTOTYPE_METHOD(t, "createFormXObjectsFromPDF", CreateFormXObjectsFromPDF);
-	SET_PROTOTYPE_METHOD(t, "createPDFCopyingContextForModifiedFile", CreatePDFCopyingContextForModifiedFile);
+	SET_PROTOTYPE_METHOD(t, "createPage", WithActiveWriter<CreatePage>);
+	SET_PROTOTYPE_METHOD(t, "writePage", WithActiveWriter<WritePage>);
+	SET_PROTOTYPE_METHOD(t, "writePageAndReturnID", WithActiveWriter<WritePageAndReturnID>);
+	SET_PROTOTYPE_METHOD(t, "startPageContentContext", WithActiveWriter<StartPageContentContext>);
+	SET_PROTOTYPE_METHOD(t, "pausePageContentContext", WithActiveWriter<PausePageContentContext>);
+	SET_PROTOTYPE_METHOD(t, "createFormXObject", WithActiveWriter<CreateFormXObject>);
+	SET_PROTOTYPE_METHOD(t, "endFormXObject", WithActiveWriter<EndFormXObject>);
+	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromJPG", WithActiveWriter<CreateformXObjectFromJPG>);
+	SET_PROTOTYPE_METHOD(t, "getFontForFile", WithActiveWriter<GetFontForFile>);
+	SET_PROTOTYPE_METHOD(t, "attachURLLinktoCurrentPage", WithActiveWriter<AttachURLLinktoCurrentPage>);
+	SET_PROTOTYPE_METHOD(t, "shutdown", WithActiveWriter<Shutdown>);
+	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromTIFF", WithActiveWriter<CreateFormXObjectFromTIFF>);
+	SET_PROTOTYPE_METHOD(t, "createImageXObjectFromJPG", WithActiveWriter<CreateImageXObjectFromJPG>);
+	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromPNG", WithActiveWriter<CreateFormXObjectFromPNG>);
+	SET_PROTOTYPE_METHOD(t, "retrieveJPGImageInformation", WithActiveWriter<RetrieveJPGImageInformation>);
+	SET_PROTOTYPE_METHOD(t, "getObjectsContext", WithActiveWriter<GetObjectsContext>);
+	SET_PROTOTYPE_METHOD(t, "getDocumentContext", WithActiveWriter<GetDocumentContext>);
+	SET_PROTOTYPE_METHOD(t, "appendPDFPagesFromPDF", WithActiveWriter<AppendPDFPagesFromPDF>);
+	SET_PROTOTYPE_METHOD(t, "mergePDFPagesToPage", WithActiveWriter<MergePDFPagesToPage>);
+	SET_PROTOTYPE_METHOD(t, "createPDFCopyingContext", WithActiveWriter<CreatePDFCopyingContext>);
+	SET_PROTOTYPE_METHOD(t, "createFormXObjectsFromPDF", WithActiveWriter<CreateFormXObjectsFromPDF>);
+	SET_PROTOTYPE_METHOD(t, "createPDFCopyingContextForModifiedFile", WithActiveWriter<CreatePDFCopyingContextForModifiedFile>);
 	SET_PROTOTYPE_METHOD(t, "createPDFTextString", CreatePDFTextString);
 	SET_PROTOTYPE_METHOD(t, "createPDFDate", CreatePDFDate);
-	SET_PROTOTYPE_METHOD(t, "getImageDimensions", GetImageDimensions);
-	SET_PROTOTYPE_METHOD(t, "getImagePagesCount", GetImagePagesCount);
-	SET_PROTOTYPE_METHOD(t, "getImageType", GetImageType);
-	SET_PROTOTYPE_METHOD(t, "getModifiedFileParser", GetModifiedFileParser);
-	SET_PROTOTYPE_METHOD(t, "getModifiedInputFile", GetModifiedInputFile);
-	SET_PROTOTYPE_METHOD(t, "getOutputFile", GetOutputFile);
-	SET_PROTOTYPE_METHOD(t, "registerAnnotationReferenceForNextPageWrite", RegisterAnnotationReferenceForNextPageWrite);
-    SET_PROTOTYPE_METHOD(t, "requireCatalogUpdate", RequireCatalogUpdate);
+	SET_PROTOTYPE_METHOD(t, "getImageDimensions", WithActiveWriter<GetImageDimensions>);
+	SET_PROTOTYPE_METHOD(t, "getImagePagesCount", WithActiveWriter<GetImagePagesCount>);
+	SET_PROTOTYPE_METHOD(t, "getImageType", WithActiveWriter<GetImageType>);
+	SET_PROTOTYPE_METHOD(t, "getModifiedFileParser", WithActiveWriter<GetModifiedFileParser>);
+	SET_PROTOTYPE_METHOD(t, "getModifiedInputFile", WithActiveWriter<GetModifiedInputFile>);
+	SET_PROTOTYPE_METHOD(t, "getOutputFile", WithActiveWriter<GetOutputFile>);
+	SET_PROTOTYPE_METHOD(t, "registerAnnotationReferenceForNextPageWrite", WithActiveWriter<RegisterAnnotationReferenceForNextPageWrite>);
+    SET_PROTOTYPE_METHOD(t, "requireCatalogUpdate", WithActiveWriter<RequireCatalogUpdate>);
     SET_CONSTRUCTOR_EXPORT("PDFWriter", t);
 
     // save in factory
@@ -163,6 +180,7 @@ METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
     }
 
     pdfWriter->mIsStarted = false;
+    pdfWriter->mLifecycle->End();
 
     if(status != PDFHummus::eSuccess)
     {
@@ -200,6 +218,7 @@ METHOD_RETURN_TYPE PDFWriterDriver::Abort(const ARGS_TYPE& args)
     }
 
     pdfWriter->mIsStarted = false;
+    pdfWriter->mLifecycle->End();
 
     SET_FUNCTION_RETURN_VALUE(args.This())
 }
@@ -616,6 +635,9 @@ METHOD_RETURN_TYPE PDFWriterDriver::Shutdown(const ARGS_TYPE& args)
     PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
 
     EStatusCode status = pdfWriter->mPDFWriter.Shutdown(*UTF_8_VALUE(args[0]->TO_STRING()));
+    // Shutdown closes the output file even when saving the state fails.
+    // Retire the driver and stream proxies without attempting finalization.
+    Abort(args);
     if(status != eSuccess)
     {
 		THROW_EXCEPTION("unable to save state file. verify that path is not occupied");
@@ -1167,15 +1189,18 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContext(const ARGS_TYPE& arg
 
     if(!copyingContext)
     {
+        delete proxy;
 		THROW_EXCEPTION("unable to create copying context. verify that the target is an existing PDF file");
 		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
     }
 
     Local<Value> newInstance = pdfWriter->holder->GetNewDocumentCopyingContext(args);
-    ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->CopyingContext = copyingContext;
-    ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->ReadStreamProxy = proxy;
+    DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT());
+    copyingContextDriver->CopyingContext = copyingContext;
+    copyingContextDriver->ReadStreamProxy = proxy;
+    copyingContextDriver->AddOwnerLifecycle(pdfWriter->mLifecycle);
     if(copyingOwnerLifecycle)
-        ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->SetOwnerLifecycle(copyingOwnerLifecycle);
+        copyingContextDriver->AddOwnerLifecycle(copyingOwnerLifecycle);
     SET_FUNCTION_RETURN_VALUE(newInstance)
 }
 
@@ -1303,7 +1328,9 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContextForModifiedFile(const
     }
 
     Local<Value> newInstance = pdfWriter->holder->GetNewDocumentCopyingContext(args);
-    ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT())->CopyingContext = copyingContext;
+    DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT());
+    copyingContextDriver->CopyingContext = copyingContext;
+    copyingContextDriver->AddOwnerLifecycle(pdfWriter->mLifecycle);
     SET_FUNCTION_RETURN_VALUE(newInstance)
 }
 
@@ -1323,8 +1350,11 @@ METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFDate(const ARGS_TYPE& args)
 	CREATE_ESCAPABLE_SCOPE;
     PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
 
-    SET_FUNCTION_RETURN_VALUE(pdfWriter->holder->GetNewPDFDate(args))
+    Local<Value> date = pdfWriter->holder->GetNewPDFDate(args, true);
+    if(date.IsEmpty())
+        return;
 
+    SET_FUNCTION_RETURN_VALUE(date)
 }
 
 PDFWriter* PDFWriterDriver::GetWriter()

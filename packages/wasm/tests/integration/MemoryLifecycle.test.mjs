@@ -24,6 +24,12 @@ describe("MemoryLifecycle", function () {
     var source = muhammara.createBlankPdf(100, 100);
 
     var reader = muhammara.createReader(source);
+    var parserStream = reader.getParserStream();
+    for (var index = 0; index < 100; index += 1) {
+      parserStream.dispose();
+      parserStream = reader.getParserStream();
+    }
+    parserStream.dispose();
     reader.end();
     assert.throws(
       () => muhammara.createReader(new Uint8Array([1, 2, 3])),

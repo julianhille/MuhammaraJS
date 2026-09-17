@@ -1,10 +1,31 @@
 # Breaking Changes
 
 This page collects the compatibility changes formerly maintained in the README.
-For release-by-release changes, see the [Changelog](https://github.com/julianhille/MuhammaraJS/blob/develop/CHANGELOG.md).
 
 ## Version 7.x
 
+- Native Recipe character-spacing measurements now count leading and trailing
+  non-breaking spaces, matching Wasm. Text using `charSpace` can measure wider
+  or wrap earlier; replace boundary U+00A0 characters with regular spaces when
+  they should be trimmed from spacing calculations.
+- Recipe `endPDF()` is now idempotent. Repeated calls that previously attempted
+  to finalize the writer again, and could crash, now leave the completed PDF
+  unchanged; a repeated `endPDF(callback)` still invokes the callback with the
+  completed output where applicable. Code that relied on another call to flush
+  later changes must create and finalize a new Recipe instead
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693).
+- A failed Recipe `endPDF()` now retires the Recipe, aborts its writer, releases
+  its source reader, and rethrows the original error on later calls. Code that
+  retried finalization on the same Recipe must create a new Recipe instead. This
+  prevents failed finalization from retaining source file handles on Windows
+  [#381](https://github.com/julianhille/MuhammaraJS/issues/381).
+- Stateful `PDFWriter` calls after `end()` or `shutdown()` now throw
+  `Error("PDF writer has ended")` instead of accessing closed resources or
+  crashing. Failed finalization also retires the writer. Create a new writer
+  with `createWriter()` or `createWriterToModify()`, or resume a saved state
+  with `createWriterToContinue()`; `new PDFWriter()` alone is not active.
+  Repeated `end()` remains a no-op. See [Writer lifecycle](api/writer.md#lifecycle)
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693).
 - Recipe `endPage()` no longer leaves the completed page active. Code that
   calls page drawing, configuration, or context methods after `endPage()` now
   fails instead of reusing the completed page and its content context; call

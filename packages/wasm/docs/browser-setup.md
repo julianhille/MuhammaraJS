@@ -25,6 +25,6 @@ Keep source PDFs, fonts, and images as bytes in application code. Inputs are
 operation completes.
 
 Continue with [Byte Assets and Blob Input](byte-assets.md), then run the
-[interactive browser examples](https://github.com/julianhille/MuhammaraJS/tree/develop/packages/wasm/examples/browser).
+[interactive browser examples](browser-examples.md).
 To display or transfer generated output, see [Preview, Download, or Upload a
 PDF](how-to/serve-a-pdf-response.md).

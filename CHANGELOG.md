@@ -7,8 +7,46 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Build and test the macOS arm64 binaries natively instead of cross-compiling
+  them from an x64 Node. The arm64 matrix legs pinned an x64 host on Apple
+  Silicon runners, so `npm run test`, `test:electron`, and the packaged-binary
+  check were skipped for every arm64 target. Electron 38 and newer build no
+  macOS x64 leg at all, so those prebuilds shipped without being executed once
+  [#695](https://github.com/julianhille/MuhammaraJS/issues/695)
+- Upload the GitHub release prebuilds before publishing to npm, and let a re-run
+  on an existing tag finish a partial release. Prebuilds that share an asset
+  name are de-duplicated before upload, a stuck draft release is completed, and
+  an already-published npm version is skipped instead of failing the job with
+  `You cannot publish over the previously published versions`
+  [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
+- Mark alpha, beta, and release candidate GitHub releases as pre-releases. They
+  were published as normal releases, so GitHub pointed its latest release at a
+  prerelease tag [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
+
+## [7.0.0-beta.2] - 2026-09-14
+
 ### Breaking Changes
 
+- Reject native `PDFWriter` stateful calls after `end()` or `shutdown()` with
+  `Error("PDF writer has ended")`, including after finalization failures. Create
+  a new writer, or resume saved state with `createWriterToContinue()`; direct
+  `new PDFWriter()` instances cannot perform stateful operations
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+- Make native Recipe `endPDF()` idempotent. Repeated calls no longer attempt to
+  rewrite the completed PDF, while repeated `endPDF(callback)` calls still
+  invoke the callback with the completed output where applicable. Create a new
+  Recipe instead of calling `endPDF()` again to flush later changes
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+- Retire native Recipe instances after any `endPDF()` failure and rethrow the
+  original error on later calls. Code that retried the same Recipe must create a
+  new instance instead [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
+- Count leading and trailing non-breaking spaces in native Recipe `charSpace`
+  measurements, matching Wasm. Text can measure wider or wrap earlier; use
+  regular boundary spaces when they should be trimmed. See
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#11-trim-boundary-non-breaking-spaces-from-charspace-text)
+  [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
   and malformed page selections instead of clamping or partially interpreting
   them; pass positive one-based integers or ascending two-value ranges. Integer
@@ -22,6 +60,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   no matching active or paused page content context instead of silently doing
   nothing. Call `pauseContext()` only after creating or editing a page, and call
   `resumeContext()` exactly once after a successful pause
+  [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
+- Native Recipe `endPage()` now clears the completed page and its content
+  context instead of leaving them active. Code that called page drawing,
+  configuration, or context methods after `endPage()` now fails; call
+  `createPage()` or `editPage()` before the next page operation. See
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#9-reactivate-pages-after-endpage)
   [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Remove the accidentally exposed native `Recipe` prototype members
   `ANNOTATION_PREFIX`, `appendPDFPageFromPDFWithAnnotations()`, and
@@ -119,6 +163,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Stop native `createPDFDate()`, `setCreationDate()`, and `setModDate()` from
+  aborting the process on a rejected argument. They threw a `TypeError` and then
+  constructed a `PDFDate` anyway, which is fatal on Node.js 20 and older because
+  the pending exception makes `NewInstance()` return empty. They now raise the
+  `TypeError` on its own. `createPDFDate()` without an argument keeps returning
+  an empty date, matching the `PDFDate` constructor and the Wasm writer
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+- Widen the native `createPDFDate()` typing to the `string | Date` argument it
+  has always accepted, matching the Wasm declaration
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+- Prevent native writer and copying-context use-after-end crashes by guarding
+  stateful entry points and tying copying contexts to their writer lifecycle
+  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 - Preserve embedded NUL bytes in the native low-level `TJ()`, `Tj()`, `Quote()`,
   and `DoubleQuote()` strings instead of silently truncating each string at the
   first NUL [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
@@ -130,8 +187,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#683](https://github.com/julianhille/MuhammaraJS/issues/683)
 - Release native writer stream proxies and mark the writer ended when finalization
   fails, so a later `end()` call does not re-enter finalization [#677](https://github.com/julianhille/MuhammaraJS/issues/677)
-- Report the correct native text matrix after `BT`, `Td`, `TD`, `TL`, `T*`,
-  `'`, and `"` while extracting page text
+- Report the correct native text-to-page matrix after text-positioning and `cm`
+  operations while extracting page text
   [#673](https://github.com/julianhille/MuhammaraJS/issues/673)
 - Prevent native PDF readers and copying contexts from terminating Node.js when
   used after `end()`; affected calls now throw an ended-state error
@@ -160,6 +217,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Release the file handles `Recipe#appendPage()` opens when the appended PDF
   cannot be read or a page cannot be copied, instead of leaking them for the
   life of the process [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
+- Abort the native Recipe writer and release its source reader after every
+  `endPDF()` failure, so a non-deletion failure no longer retains file handles
+  on Windows [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
 - Update `mkdocs-material` to 9.7.7 for the DOM XSS security vulnerability fix
   in search suggestions, bringing the native documentation build back in line
   with the Wasm one [#600](https://github.com/julianhille/MuhammaraJS/issues/600)
@@ -169,6 +229,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Make documentation self-contained with inline text-extraction and annotation
+  examples, replacing links to tests, implementation files, and GitHub releases
+  [#689](https://github.com/julianhille/MuhammaraJS/issues/689)
 - Validate that the native GYP and Wasm CMake builds compile the same PDFWriter
   translation units, preventing either backend from silently omitting new source
   files [#684](https://github.com/julianhille/MuhammaraJS/issues/684)
@@ -856,7 +919,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.1...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.2...HEAD
+[7.0.0-beta.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.1...native-v7.0.0-beta.2
 [7.0.0-beta.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-alpha.1...native-v7.0.0-beta.1
 [7.0.0-alpha.1]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...native-v7.0.0-alpha.1
 [6.0.6]: https://github.com/julianhille/MuhammaraJS/compare/6.0.5...6.0.6

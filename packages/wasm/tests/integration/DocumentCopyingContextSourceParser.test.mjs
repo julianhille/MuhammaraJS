@@ -73,11 +73,20 @@ describe("DocumentCopyingContext source parser", function () {
     parserStream.setPosition(0);
     assert.deepEqual(parserStream.read(5), [37, 80, 68, 70, 45]);
     assert.equal(typeof parserStream.getCurrentPosition(), "number");
+    parserStream.dispose();
+    assert.throws(() => parserStream.read(1), /PDF byte reader has ended/);
 
     var sourceStream = copying.getSourceDocumentStream();
     sourceStream.setPosition(0);
     assert.deepEqual(sourceStream.read(5), [37, 80, 68, 70, 45]);
     assert.equal(typeof sourceStream.skip(1).getCurrentPosition(), "number");
+    sourceStream.dispose();
+    assert.throws(() => sourceStream.read(1), /PDF byte reader has ended/);
+    assert.equal(parser.getPagesCount(), 1);
+    var endedParser = copying.getSourceDocumentParser();
+    var endedParserStream = endedParser.getParserStream();
+    endedParser.end();
+    assert.equal(endedParserStream.dispose(), endedParserStream);
     copying.end();
     assert.throws(() => parser.getTrailer(), /copying context has ended/);
     assert.throws(() => page.getType(), /copying context has ended/);
@@ -92,11 +101,17 @@ describe("DocumentCopyingContext source parser", function () {
     var source = sourceWriter.end();
     var modifier = muhammara.createWriterToModify(source);
     var copying = modifier.createPDFCopyingContext(source);
+    var externalStream = copying.getSourceDocumentStream();
     assert.ok(copying.createFormXObjectFromPDFPage(0) > 0);
     var form = modifier.createFormXObject(0, 0, 200, 200);
     assert.equal(copying.mergePDFPageToFormXObject(form, 0), copying);
     form.end();
     copying.end();
+    assert.equal(externalStream.dispose(), externalStream);
+    var modifiedCopying = modifier.createPDFCopyingContextForModifiedFile();
+    var modifiedStream = modifiedCopying.getSourceDocumentStream();
+    modifiedCopying.end();
+    assert.equal(modifiedStream.dispose(), modifiedStream);
     var output = modifier.end();
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 1);
