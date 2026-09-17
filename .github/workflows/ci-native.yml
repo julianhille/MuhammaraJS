@@ -1052,6 +1052,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           draft: false
+          prerelease: ${{ steps.npm-tag.outputs.value != 'latest' }}
       - id: pending
         name: Select packages the registry does not serve yet
         run: |

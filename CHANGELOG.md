@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   an already-published npm version is skipped instead of failing the job with
   `You cannot publish over the previously published versions`
   [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
+- Mark alpha, beta, and release candidate GitHub releases as pre-releases. They
+  were published as normal releases, so GitHub pointed its latest release at a
+  prerelease tag [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
 ## [7.0.0-beta.2] - 2026-09-14
 

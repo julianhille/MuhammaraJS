@@ -15,6 +15,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   the registry already serves the tagged version, so a re-run on an existing tag
   completes instead of failing
   [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
+- Mark alpha, beta, and release candidate GitHub releases as pre-releases
+  [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
 ## [1.0.0-beta.2] - 2026-09-14
 

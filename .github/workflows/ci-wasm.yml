@@ -200,6 +200,7 @@ jobs:
           name: ${{ github.ref_name }}
           files: packages/wasm/dist/*
           draft: false
+          prerelease: ${{ steps.npm-tag.outputs.value != 'latest' }}
       - id: published
         name: Check whether the registry serves this version already
         run: |
