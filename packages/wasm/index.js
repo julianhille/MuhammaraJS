@@ -47,6 +47,15 @@ async function createRuntime(options) {
   });
   var moduleOptions = options ? { ...options } : options;
   if (moduleOptions) delete moduleOptions.limits;
+  // Emscripten copies wasmBinary with new Uint8Array(), which converts other
+  // views element by element instead of copying their bytes.
+  var wasmBinary = moduleOptions?.wasmBinary;
+  if (
+    wasmBinary !== undefined &&
+    !(wasmBinary instanceof Uint8Array || wasmBinary instanceof ArrayBuffer)
+  ) {
+    throw new TypeError("wasmBinary must be a Uint8Array or ArrayBuffer");
+  }
   var module = await createModule(moduleOptions);
   function normalizeBytes(value, label) {
     var bytes = normalizeByteSource(value, label);
@@ -285,6 +294,10 @@ async function createRuntime(options) {
  * @param {object} [options.limits] Limits for individual inputs and outputs.
  * @param {number} [options.limits.maxInputBytes=268435456] Maximum input size.
  * @param {number} [options.limits.maxOutputBytes=268435456] Maximum output size.
+ * @param {Uint8Array|ArrayBuffer} [options.wasmBinary] Bytes of
+ * `muhammara-wasm.wasm`; when supplied the binary is not fetched or read.
+ * @param {Function} [options.locateFile] Maps the requested file name to the
+ * URL or path to load it from.
  * @returns {Promise<object>} The initialized Muhammara API.
  */
 export async function createMuhammaraWasm(options) {

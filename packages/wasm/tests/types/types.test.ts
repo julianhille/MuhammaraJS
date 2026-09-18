@@ -329,6 +329,18 @@ async function usesLowLevelSurface() {
     .endPDF();
   recipe.textDimensions("Hello").width;
   void defaultFontBytes;
+  await createMuhammaraWasm({ wasmBinary: new Uint8Array() });
+  await createMuhammaraWasm({ wasmBinary: new ArrayBuffer(0) });
+  await createRecipe({
+    wasmBinary: new Uint8Array(),
+    locateFile: (path, prefix) => prefix + path,
+  });
+  // @ts-expect-error Other views are converted element by element, not copied.
+  await createMuhammaraWasm({ wasmBinary: new Uint16Array() });
+  // @ts-expect-error Read Blob and File input with arrayBuffer() first.
+  await createRecipe({ wasmBinary: new Blob() });
+  // @ts-expect-error Use locateFile to load the binary from a URL.
+  await createMuhammaraWasm({ wasmBinary: "muhammara-wasm.wasm" });
   await createRecipe({ defaultFont: new Uint8Array() });
   await createRecipe({ defaultFont: new ArrayBuffer(0) });
   await createRecipe({ defaultFont: new Blob() });

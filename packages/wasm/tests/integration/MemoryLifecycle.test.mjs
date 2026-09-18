@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm, createRecipe } from "../index.js";
 
 describe("MemoryLifecycle", function () {
@@ -16,6 +17,47 @@ describe("MemoryLifecycle", function () {
       limits: { maxOutputBytes: 10 },
     });
     assert.throws(() => outputLimited.createBlankPdf(10, 10), /maxOutputBytes/);
+  });
+
+  it("instantiates from caller-supplied wasmBinary bytes", async function () {
+    var bytes = await readFile(
+      new URL("../../dist/muhammara-wasm.wasm", import.meta.url),
+    );
+    var locateFile = (path) =>
+      path.endsWith(".wasm") ? "/nonexistent/muhammara-wasm.wasm" : path;
+
+    var buffer = bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.length,
+    );
+    for (var wasmBinary of [new Uint8Array(bytes), buffer]) {
+      var muhammara = await createMuhammaraWasm({
+        wasmBinary,
+        locateFile,
+        limits: { maxInputBytes: 1 },
+      });
+      var pdf = muhammara.createBlankPdf(100, 100);
+      assert.equal(new TextDecoder().decode(pdf.subarray(0, 5)), "%PDF-");
+    }
+
+    var Recipe = await createRecipe({
+      wasmBinary: bytes,
+      locateFile,
+      defaultFont: false,
+    });
+    assert.ok(new Recipe().createPage("A4").endPage().endPDF().length > 0);
+
+    for (var invalid of [
+      new Uint16Array(buffer, 0, buffer.byteLength >>> 1),
+      new DataView(buffer),
+      new Blob([bytes]),
+      "muhammara-wasm.wasm",
+    ]) {
+      await assert.rejects(
+        createMuhammaraWasm({ wasmBinary: invalid }),
+        new TypeError("wasmBinary must be a Uint8Array or ArrayBuffer"),
+      );
+    }
   });
 
   it("releases temporary PDF files and copying contexts", async function () {

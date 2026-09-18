@@ -6,6 +6,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [1.0.0-beta.3] - 2026-09-18
 
+### Added
+
+- Declare and document the `wasmBinary` loading option, which instantiates the
+  module from caller-supplied `Uint8Array` or `ArrayBuffer` bytes without
+  fetching the binary, and reject other inputs with a `TypeError`
+  [#702](https://github.com/julianhille/MuhammaraJS/issues/702)
+
 ### Fixed
 
 - Deploy the browser example on a release tag when the `gh-pages` branch does
