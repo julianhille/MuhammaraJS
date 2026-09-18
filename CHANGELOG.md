@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Stop Recipe `text()` with `html: true` from throwing when the HTML has text
+  outside any element and no explicit `size`; that text now uses the default
+  14pt size like element text
+  [#704](https://github.com/julianhille/MuhammaraJS/issues/704)
+
 ## [7.0.0-beta.3] - 2026-09-18
 
 ### Fixed
