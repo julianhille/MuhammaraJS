@@ -16,6 +16,30 @@ function readAnnotations(reader) {
     });
 }
 
+function readPageContent(muhammara, reader) {
+  var page = reader.parsePage(0).getDictionary();
+  var contents = reader.queryDictionaryObject(page, "Contents");
+  var streams =
+    contents.getType() === muhammara.ePDFObjectArray
+      ? contents
+          .toPDFArray()
+          .toJSArray()
+          .map(function (reference) {
+            return reader.parseNewObject(
+              reference.toPDFIndirectObjectReference().getObjectID(),
+            );
+          })
+      : [contents];
+  return streams
+    .map(function (stream) {
+      var input = reader.startReadingFromStream(stream.toPDFStream());
+      var bytes = [];
+      while (input.notEnded()) bytes.push(...input.read(4096));
+      return new TextDecoder("latin1").decode(new Uint8Array(bytes));
+    })
+    .join("\n");
+}
+
 function subtypes(annotations) {
   return annotations.map(function (annotation) {
     return annotation.dictionary.Subtype.toString();
@@ -194,5 +218,30 @@ describe("Recipe annotation parity", function () {
       );
     });
     assert.equal(annotations[1].dictionary.Contents.toText(), "Underlined.");
+  });
+
+  it("keeps the page content readable when annotations share the page", function () {
+    var recipe = new Recipe().createPage(595, 842);
+    recipe.text("Commented text.", 50, 100, { highlight: true });
+    recipe.comment("Please review.", 300, 100);
+    var source = recipe.endPage().endPDF();
+    reader = muhammara.createReader(source);
+    assert.match(readPageContent(muhammara, reader), /Tj[\s\S]*Q\s*$/);
+    assert.deepEqual(subtypes(readAnnotations(reader)), ["Highlight", "Text"]);
+    reader.end();
+
+    var edited = new Recipe(source);
+    edited
+      .editPage(1)
+      .text("Edited text.", 50, 200, { underline: true, strikeOut: true });
+    reader = muhammara.createReader(edited.endPage().endPDF());
+    // Edited content is drawn through a form XObject the page invokes.
+    assert.match(readPageContent(muhammara, reader), /Commented text[\s\S]*Do/);
+    assert.deepEqual(subtypes(readAnnotations(reader)), [
+      "Highlight",
+      "Text",
+      "Underline",
+      "StrikeOut",
+    ]);
   });
 });

@@ -19,6 +19,30 @@ function readAnnotations(reader) {
     });
 }
 
+function readPageContent(reader) {
+  var page = reader.parsePage(0).getDictionary();
+  var contents = reader.queryDictionaryObject(page, "Contents");
+  var streams =
+    contents.getType() === muhammara.ePDFObjectArray
+      ? contents
+          .toPDFArray()
+          .toJSArray()
+          .map(function (reference) {
+            return reader.parseNewObject(
+              reference.toPDFIndirectObjectReference().getObjectID(),
+            );
+          })
+      : [contents];
+  return streams
+    .map(function (stream) {
+      var input = reader.startReadingFromStream(stream.toPDFStream());
+      var bytes = [];
+      while (input.notEnded()) bytes.push(...input.read(4096));
+      return Buffer.from(bytes).toString("latin1");
+    })
+    .join("\n");
+}
+
 function subtypes(annotations) {
   return annotations.map(function (annotation) {
     return annotation.dictionary.Subtype.toString();
@@ -189,5 +213,33 @@ describe("Recipe annotation parity", function () {
       );
     });
     assert.equal(annotations[1].dictionary.Contents.toText(), "Underlined.");
+  });
+
+  it("keeps the page content readable when annotations share the page", async function () {
+    var recipe = new muhammara.Recipe("new", output).createPage(595, 842);
+    recipe.text("Commented text.", 50, 100, { highlight: true });
+    recipe.comment("Please review.", 300, 100);
+    await finish(recipe);
+    assert.match(readPageContent(reader), /Tj[\s\S]*Q\s*$/);
+    assert.deepEqual(subtypes(readAnnotations(reader)), ["Highlight", "Text"]);
+    reader.end();
+    reader = undefined;
+
+    var edited = path.join(directory, "edited.pdf");
+    var editor = new muhammara.Recipe(output, edited);
+    editor
+      .editPage(1)
+      .text("Edited text.", 50, 200, { underline: true, strikeOut: true });
+    await new Promise(function (resolve) {
+      editor.endPage().endPDF(resolve);
+    });
+    reader = muhammara.createReader(edited);
+    assert.match(readPageContent(reader), /Commented text/);
+    assert.deepEqual(subtypes(readAnnotations(reader)), [
+      "Highlight",
+      "Text",
+      "Underline",
+      "StrikeOut",
+    ]);
   });
 });

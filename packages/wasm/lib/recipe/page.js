@@ -645,11 +645,16 @@ export function createPageMethods(
      * @returns {Recipe} The Recipe instance.
      */
     endPage: function () {
+      // Annotations are indirect objects, so every branch closes the page's
+      // open content stream before writing them; writing them into an open
+      // stream corrupts its compressed data.
       if (this._editingPage) {
-        this._flushAnnotations();
         if (this._contextState === "active-edit") {
           this._page.endContext();
+          this._flushAnnotations();
           this._page.writePage();
+        } else {
+          this._flushAnnotations();
         }
         this._pageContext = null;
         this._page = null;
@@ -661,6 +666,8 @@ export function createPageMethods(
       }
       if (this._sourceMode) {
         if (!this._pageContext) return this;
+        if (this._annotations.length && this._contextState === "active-new")
+          this.writer.pausePageContentContext(this._pageContext);
         this._flushAnnotations();
         this.writer.writePage(this._page);
         this._pageContext = null;
@@ -671,6 +678,8 @@ export function createPageMethods(
         return this;
       }
       if (!this._recipe || !this._pageHeight) return this;
+      if (this._annotations.length && this._contextState === "active-new")
+        call("_muhammara_wasm_recipe_pause_page", this._recipe);
       this._flushAnnotations();
       call("_muhammara_wasm_recipe_end_page", this._recipe);
       this._pageHeight = 0;

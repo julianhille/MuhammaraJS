@@ -15,6 +15,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Stop corrupting the page content stream when a Recipe page has both drawn
+  content and an annotation, such as `comment()`, `annot()`, or a text
+  `highlight`; annotations are now written after the content stream is closed
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
 - Inherit parent annotation metadata for replies without their own `title`,
   `subject`, `date`, `flag`, `open`, or icon, matching native. A reply keeps
   its own contents, rich-text mode, and opacity (opaque by default)
