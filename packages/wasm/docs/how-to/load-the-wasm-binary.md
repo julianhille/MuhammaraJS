@@ -103,7 +103,7 @@ var muhammara = await createMuhammaraWasm({
   with `Access-Control-Allow-Origin`, whether the package or your code fetches
   it.
 - **Send the WebAssembly MIME type.** Serve the file as `application/wasm`.
-  Otherwise the package logs a warning and downloads the whole file before
+  Otherwise the package logs a console error and downloads the whole file before
   compiling it, which is slower but still works.
 - **Update the Content Security Policy.** A strict policy must list the host
   under `connect-src` and allow compilation with `'wasm-unsafe-eval'` in
