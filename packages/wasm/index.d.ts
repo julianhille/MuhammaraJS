@@ -1611,7 +1611,19 @@ export interface MuhammaraWasm {
   getTypeLabel(type: number): string;
 }
 export interface MuhammaraWasmOptions {
+  /**
+   * Maps the requested file name (`muhammara-wasm.wasm`) to the URL, or under
+   * Node the path or `file:` URL, to load it from. When `wasmBinary` is
+   * supplied, the returned location is not loaded.
+   */
   locateFile?: (path: string, prefix: string) => string;
+  /**
+   * Bytes of `muhammara-wasm.wasm` obtained by the caller, for example with
+   * `fetch()` or `File.arrayBuffer()`. When supplied, the binary is not
+   * fetched or read and `limits` does not apply to it. Other typed arrays,
+   * `DataView`, and `Blob` are rejected with a `TypeError`.
+   */
+  wasmBinary?: Uint8Array | ArrayBuffer;
   limits?: {
     maxInputBytes?: number;
     maxOutputBytes?: number;

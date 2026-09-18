@@ -60,6 +60,7 @@ nav:
   - How-To Guides:
       - Overview: how-to/index.md
       - Preview, Download, or Upload a PDF: how-to/serve-a-pdf-response.md
+      - Load the WebAssembly Binary: how-to/load-the-wasm-binary.md
       - Add Review Annotations: how-to/add-review-annotations.md
       - Edit or Remove an Existing Annotation: how-to/edit-existing-annotations.md
       - Create Multi-Page Tables: how-to/create-tables.md

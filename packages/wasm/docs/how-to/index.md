@@ -9,5 +9,8 @@ run annotations, links, HTML lists, page boxes, rotated pages, page deletion,
 image
 transformations, tables, and password changes on the page or in a module Worker.
 
+To serve the WebAssembly binary from a CDN or load it from bytes you retrieved
+yourself, see [Load the WebAssembly Binary](load-the-wasm-binary.md).
+
 Review [Differences and Restrictions](../differences.md) before adapting native
 examples, particularly for password-protected Recipe source editing.

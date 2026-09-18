@@ -20,6 +20,16 @@ The package is ESM-only. Browser applications should serve the bundled module
 and its `.wasm` asset over HTTP through their bundler or static server. Do not
 use synchronous CommonJS loading.
 
+## Load The WebAssembly Binary
+
+By default the package loads `muhammara-wasm.wasm` from next to its own
+module, and bundlers emit the file automatically. To serve it from a CDN or
+supply bytes the application retrieved itself, use the `locateFile` or
+`wasmBinary` options described in [Load the WebAssembly Binary From a CDN or
+Your Own Bytes](how-to/load-the-wasm-binary.md).
+
+## Work With Bytes
+
 Keep source PDFs, fonts, and images as bytes in application code. Inputs are
 `Uint8Array` or `ArrayBuffer`; output remains owned JavaScript bytes after an
 operation completes.
