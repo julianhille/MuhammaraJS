@@ -239,7 +239,8 @@ var optionalTableOptions: muhammara.Recipe.TableOptions<OptionalTableRecord> = {
     {
       name: "score",
       renderer: (text) => {
-        var score: number | null | "" = text;
+        var score: number | "" = text;
+        // Missing and null values arrive as "".
         void score;
       },
     },

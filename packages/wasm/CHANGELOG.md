@@ -92,6 +92,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Constrain Recipe text links to their visible clipping region when using
   `textBox.wrap: "clip"`, so hidden overflow does not remain clickable outside
   the text box [#718](https://github.com/julianhille/MuhammaraJS/issues/718)
+- Run a Recipe table column `renderer` once per cell instead of twice, keep the
+  text cursor at the table's left edge after an overflow moved the table, keep
+  every `border` option such as `dash` on the outer rectangle, and stop drawing
+  the table's bottom border twice
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ### Changed
 
@@ -118,6 +123,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Draw Recipe text without a `color` in native's default `#1777d1` instead of
   black. Pass `color: "#000000"` to keep black text
   [#712](https://github.com/julianhille/MuhammaraJS/issues/712)
+- Derive Recipe `table()` columns from every record instead of only the first,
+  keep `order` entries whose field the first record lacks, and give cells and
+  headers native's default 2pt padding, matching native Recipe table layout
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ## [1.0.0-beta.3] - 2026-09-18
 

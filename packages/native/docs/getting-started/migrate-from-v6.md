@@ -411,6 +411,28 @@ var text = (nbsp + "Indented label" + nbsp).split(nbsp).join(" ");
 recipe.text(text, 72, 72, { charSpace: 2 });
 ```
 
+## 12. Choose Table Columns Explicitly
+
+v7 `Recipe.table()` builds its columns from every record instead of only the
+first one, keeps `order` and `columns` entries even when the first record lacks
+that field, and uses exactly the listed `columns` when there is no `order`. In
+v6, a field missing from the first record was dropped, and a `columns` list
+longer than the first record's fields was ignored in favor of those fields. A
+column `renderer` result now also sizes its row. Tables can therefore gain
+columns, change column order, or get taller rows.
+
+To keep a fixed set of columns, list them with `order` or `columns`:
+
+```javascript
+recipe.table(50, 52, people, {
+  order: ["name", "city"],
+  columns: [
+    { name: "name", text: "Name", width: 180 },
+    { name: "city", text: "City", width: 160 },
+  ],
+});
+```
+
 ## What Does Not Change
 
 - Supported Node.js versions.

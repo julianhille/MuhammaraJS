@@ -40,39 +40,73 @@ function getCellHeight(self, text, column, options) {
 }
 
 function drawTableBorder(self, x, y, width, height, rowLines, options) {
-  if (options.border) {
-    let borderOptions = options.border === true ? {} : options.border;
+  // A segment without rows has nothing to enclose.
+  if (!options.border || height <= 0) {
+    return;
+  }
+  const borderOptions = Object.assign(
+    {},
+    options.border === true ? {} : options.border,
+    // Keep borders from extending outside of the enclosing box.
+    { lineCap: "butt" },
+  );
+  if (!borderOptions.width) {
+    borderOptions.width = 0.5;
+  }
 
-    if (!borderOptions.width) {
-      borderOptions = Object.assign({}, borderOptions, { width: 0.5 });
-    }
+  self.rectangle(x, y, width, height, borderOptions);
+  const columns = self._layouts["_table_"];
 
-    self.rectangle(x, y, width, height, borderOptions);
-    const columns = self._layouts["_table_"];
+  // Draw verticals
+  for (let index = 0; index < columns.length - 1; index++) {
+    const column = columns[index];
+    self.line(
+      [
+        [column.x + column.width, y],
+        [column.x + column.width, y + height],
+      ],
+      borderOptions,
+    );
+  }
+  // Draw horizontals; the last row line is the rectangle's bottom edge.
+  for (let index = 0; index < rowLines.length - 1; index++) {
+    const yPos = rowLines[index];
+    self.line(
+      [
+        [x, yPos],
+        [x + width, yPos],
+      ],
+      borderOptions,
+    );
+  }
+}
 
-    // Draw verticles
-    for (let index = 0; index < columns.length - 1; index++) {
-      const column = columns[index];
-      self.line(
-        [
-          [column.x + column.width, y],
-          [column.x + column.width, y + height],
-        ],
-        borderOptions,
-      );
-    }
-    // Draw horizontals
-    for (let index = 0; index < rowLines.length - 1; index++) {
-      const yPos = rowLines[index];
-      self.line(
-        [
-          [x, yPos],
-          [x + width, yPos],
-        ],
-        borderOptions,
-      );
+/**
+ * Resolves the table's data fields: `order` when given, otherwise the names
+ * of the configured `columns`, otherwise every field found in any record, in
+ * first-seen order.
+ * @private
+ */
+function tableFields(contents, options) {
+  if (options.order && options.order.length) {
+    const order =
+      typeof options.order === "string"
+        ? options.order.split(",")
+        : options.order;
+    return order.map((field) => String(field).trim()).filter(Boolean);
+  }
+  if (options.columns && options.columns.length) {
+    return options.columns.map((column) => column.name);
+  }
+  const fields = [];
+  for (const record of contents) {
+    for (const field of Object.keys(record || {})) {
+      if (!fields.includes(field)) {
+        fields.push(field);
+      }
     }
   }
+  return fields;
 }
 
 /**
@@ -123,44 +157,15 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
  * @returns {Recipe} The recipe instance.
  */
 exports.table = function table(x, y, contents, options = {}) {
-  let tableBottom = options.height ? y + options.height : 0;
-  let fields = Object.keys(contents[0]);
-  let order = options.order || [];
-  let columns = [];
-
-  if (order.length !== 0) {
-    if (typeof options.order === "string") {
-      order = options.order.split(",");
-    }
-  } else {
-    if (!options.columns || options.columns.length > fields.length) {
-      order = fields; // all fields emitted, columns in order of first record
-    } else {
-      // columns in order found in options
-      for (const column of options.columns) {
-        order.push(column.name);
-      }
-    }
+  if (!Array.isArray(contents) || contents.length === 0) {
+    return this;
   }
-
-  for (const field of order) {
-    if (fields.includes(field)) {
-      let found = false;
-      if (options.columns) {
-        for (const column of options.columns) {
-          if (column.name && column.name === field) {
-            columns.push(column);
-            found = true;
-            break;
-          }
-        }
-      }
-
-      if (!found) {
-        columns.push({ text: field, name: field });
-      }
-    }
-  }
+  const columns = tableFields(contents, options).map((field) => {
+    const column =
+      options.columns &&
+      options.columns.find((definition) => definition.name === field);
+    return column || { text: field, name: field };
+  });
   this.layout("_table_", x, y, 0, 0, { columns: columns, reset: true });
 
   const tableWidth = this._layouts["_table_"].reduce((width, column) => {
@@ -168,41 +173,55 @@ exports.table = function table(x, y, contents, options = {}) {
     return width;
   }, 0);
 
-  let tableHeight = 0;
-  let headerHeight = 0;
-  let rowLines = [];
-  let currentY = y;
   this._previousTextObjects = [];
   let nth;
   let rowOptions = {};
 
-  if (options.header) {
-    // Wade through columns to determine minimum header height
-    for (const column of this._layouts["_table_"]) {
-      let colOptions = clone(column.options.header);
-      if (typeof options.header === "object") {
-        const cellOptions = getCellOptions(options.header);
-        colOptions = this._merge(colOptions, cellOptions);
-      }
+  // Header cells are measured with exactly the options they are drawn with.
+  const headerOptions = (column) => {
+    let colOptions = clone(column.options.header);
+    if (typeof options.header === "object") {
+      colOptions = this._merge(colOptions, getCellOptions(options.header));
+    }
+    // Have header alignment match data alignment?
+    if (options.header.alignToData && column.options.textBox.textAlign) {
+      colOptions.textBox.textAlign = column.options.textBox.textAlign;
+    }
+    // Is there a specific header cell override in this column?
+    if (column.options.hcell) {
+      const cellOptions = getCellOptions(column.options, "hcell");
+      colOptions.textBox = this._merge(
+        colOptions.textBox,
+        clone(cellOptions.textBox),
+      );
+    }
+    return colOptions;
+  };
 
-      const cellHeight = getCellHeight(this, column.text, column, colOptions);
+  let headerHeight = 0;
+  if (options.header) {
+    for (const column of this._layouts["_table_"]) {
+      const cellHeight = getCellHeight(
+        this,
+        column.text,
+        column,
+        headerOptions(column),
+      );
       headerHeight = Math.max(headerHeight, cellHeight);
     }
   }
 
-  if (options.overflow) {
-    this._tableFullNotifier = options.overflow;
-
+  // The bottom is recomputed for every continuation, so a new position or a
+  // new page gets its own bounds.
+  const segmentBottom = (top) => {
+    let bottom = options.height ? top + options.height : 0;
     const pageBottom =
       this.pageInfo(this.pageNumber).height - this._margin.bottom;
-    if (tableBottom === 0 || tableBottom > pageBottom) {
-      tableBottom = pageBottom;
+    if (bottom === 0 || bottom > pageBottom) {
+      bottom = pageBottom;
     }
-  }
-
-  if (options.border) {
-    options.border.lineCap = "butt"; // keep borders from extending outside of enclosing box.
-  }
+    return bottom;
+  };
 
   if (options.row) {
     rowOptions = getCellOptions(options.row);
@@ -226,42 +245,65 @@ exports.table = function table(x, y, contents, options = {}) {
     }
   }
 
+  let tableBottom = options.overflow ? segmentBottom(y) : 0;
+  let tableHeight = 0;
+  let rowLines = [];
+  let currentY = y;
   let firstTime = true;
   let row = 0;
 
   for (const record of contents) {
-    let rowHeight = 0;
     row++;
 
-    // Wade through row data to determine row height
-    for (const column of this._layouts["_table_"]) {
+    // Resolve every cell once: the renderer runs once per cell, and its
+    // options size the row as well as style the drawn text.
+    const cells = this._layouts["_table_"].map((column) => {
       const field = column.field;
-      const text = record[field];
-      if (text !== undefined) {
-        let colOptions = clone(options);
-        colOptions = this._merge(colOptions, clone(column.options));
-        if (nth && nth(row)) {
-          colOptions = this._merge(colOptions, clone(rowOptions));
-        }
-        const cellHeight = getCellHeight(this, text, column, colOptions);
-        rowHeight = Math.max(rowHeight, cellHeight);
+      const value = record[field];
+      const text = value === undefined || value === null ? "" : value;
+      let colOptions = clone(options);
+      colOptions = this._merge(colOptions, clone(column.options));
+      if (nth && nth(row)) {
+        colOptions = this._merge(colOptions, clone(rowOptions));
       }
+      if (column.options.renderer) {
+        const renderOptions = column.options.renderer(text, record, field, row);
+        if (renderOptions) {
+          colOptions = this._merge(colOptions, renderOptions);
+        }
+      }
+      return { column, text: String(text), options: colOptions };
+    });
+
+    let rowHeight = 0;
+    for (const cell of cells) {
+      const cellHeight = getCellHeight(
+        this,
+        cell.text,
+        cell.column,
+        cell.options,
+      );
+      rowHeight = Math.max(rowHeight, cellHeight);
     }
 
     // When table gets 'full', let user know when overflow callback provided.
     // They can choose to bail out of table filling loop, or keep on going with
     // appropriate variables reset to initial values. This gives the user the
     // opportunity to change to a new page to continue table production with
-    // remaining rows of data.
-    if (currentY + rowHeight > tableBottom && this._tableFullNotifier) {
+    // remaining rows of data. A continuation reserves room for its repeated
+    // header as well as the row.
+    const needed = rowHeight + (firstTime && options.header ? headerHeight : 0);
+    if (options.overflow && currentY + needed > tableBottom) {
       drawTableBorder(this, x, y, tableWidth, tableHeight, rowLines, options);
 
-      const orders = this._tableFullNotifier(this, row);
+      const orders = options.overflow(this, row);
 
       if (orders === true) {
-        return this;
-      } // stop processing table data
-      if (orders.position) {
+        // stop processing table data
+        tableHeight = 0;
+        break;
+      }
+      if (orders && orders.position) {
         [x, y] = orders.position;
         let xx = x;
         // Make sure x position adjusted in all columns
@@ -275,32 +317,13 @@ exports.table = function table(x, y, contents, options = {}) {
       currentY = y;
       tableHeight = 0;
       rowLines = [];
+      tableBottom = segmentBottom(y);
     }
 
     if (firstTime && options.header) {
       // Display table header
       for (const column of this._layouts["_table_"]) {
-        let colOptions = clone(column.options.header);
-        if (typeof options.header === "object") {
-          const cellOptions = getCellOptions(options.header);
-          colOptions = this._merge(colOptions, clone(cellOptions));
-        }
-
-        // Have header alignment match data alignment?
-        if (options.header.alignToData && column.options.textBox.textAlign) {
-          colOptions.textBox.textAlign = column.options.textBox.textAlign;
-        }
-
-        // Is there a specific header cell override in this column?
-        if (column.options.hcell) {
-          const cellOptions = getCellOptions(column.options, "hcell");
-          colOptions.textBox = this._merge(
-            colOptions.textBox,
-            clone(cellOptions.textBox),
-          );
-        }
-
-        colOptions = this._merge(colOptions, {
+        const colOptions = this._merge(headerOptions(column), {
           textBox: { minHeight: headerHeight, width: column.width },
         });
         this.text(column.text, column.x, currentY, colOptions);
@@ -314,27 +337,11 @@ exports.table = function table(x, y, contents, options = {}) {
     firstTime = false;
 
     // Now write out table cells for current record
-    for (const column of this._layouts["_table_"]) {
-      const field = column.field;
-      let text = record[field];
-      if (text === undefined) {
-        text = "";
-      }
-      let colOptions = clone(options);
-      colOptions = this._merge(colOptions, clone(column.options));
-      if (nth && nth(row)) {
-        colOptions = this._merge(colOptions, clone(rowOptions));
-      }
-      if (column.options.renderer) {
-        let renderOptions = column.options.renderer(text, record, field, row);
-        if (renderOptions) {
-          colOptions = this._merge(colOptions, renderOptions);
-        }
-      }
-      colOptions = this._merge(colOptions, {
-        textBox: { minHeight: rowHeight, width: column.width },
+    for (const cell of cells) {
+      const colOptions = this._merge(cell.options, {
+        textBox: { minHeight: rowHeight, width: cell.column.width },
       });
-      this.text(text, column.x, currentY, colOptions);
+      this.text(cell.text, cell.column.x, currentY, colOptions);
     }
 
     currentY += rowHeight;
@@ -343,6 +350,13 @@ exports.table = function table(x, y, contents, options = {}) {
   }
 
   drawTableBorder(this, x, y, tableWidth, tableHeight, rowLines, options);
+
+  // Leave the text cursor at the table's left edge, below its last segment.
+  this.x = x;
+  this.y = currentY;
+  this.box = { x, y: currentY };
+  this._flow = false;
+  this._previousTextObjects = [];
 
   return this;
 };
