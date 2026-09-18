@@ -7,7 +7,7 @@ export var HOW_TO_EXAMPLES = [
     label: "Annotations",
     title: "Add review annotations",
     description:
-      "Create highlights, a bordered review region, a comment, and a threaded reply.",
+      "Create highlights, a bordered review region, underlined text markup, a comment, and a threaded reply.",
     assets: [],
   },
   {
@@ -163,6 +163,12 @@ async function annotationsExample() {
         color: "#dc2626",
         border: { width: 3, dash: [7, 4] },
       })
+      .text("Approved wording is underlined for review.", 78, 352, {
+        size: 12,
+        color: "#102a43",
+        title: "Reviewer",
+        underline: { text: "Approved", color: "#16a34a" },
+      })
       .comment("Please confirm the highlighted section.", 505, 225, {
         title: "Muhammara reviewer",
         richText: true,
@@ -177,7 +183,13 @@ async function annotationsExample() {
       filename: "muhammara-annotations.pdf",
       summary: await summarize(bytes, {
         howTo: "Add review annotations",
-        annotations: ["Highlight", "Square", "Text comment", "Reply"],
+        annotations: [
+          "Highlight",
+          "Square",
+          "Underline text markup",
+          "Text comment",
+          "Reply",
+        ],
       }),
     };
   } finally {

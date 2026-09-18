@@ -29,6 +29,11 @@ var outputBytes = pdf
     color: "#ff0000",
     borderWidth: 2,
   })
+  .text("Reviewed", 100, 250, {
+    title: "Review",
+    underline: { text: "Approved", color: "#00aa00", opacity: 0.8 },
+    strikeOut: { text: "Superseded", color: "#ff0000" },
+  })
   .endPage()
   .endPDF();
 ```
@@ -45,6 +50,13 @@ inherits the parent's, matching native. A reply keeps its own contents,
 Annotations are queued until `endPage()`. Supported markup subtypes include
 `Highlight`, `Underline`, `StrikeOut`, and `Squiggly`. Recipe's rich-text form
 is a Worker-safe XML subset, not arbitrary browser HTML.
+
+Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create
+markup annotations, one per drawn line, on new and edited pages. Their nested
+object sets `text`, `color`, `opacity`, and `replies`; put shared metadata such
+as `title`, `date`, and `subject` on the outer text options. `underline` and
+`strikeOut` also draw the visible line. HTML `<u>` and `<s>` only draw the line
+and add no annotation.
 
 Editing a source page can add annotations. Appending or rebuilding a source page
 does not deep-copy its existing `/Annots` graph.

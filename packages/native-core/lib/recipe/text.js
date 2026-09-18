@@ -609,7 +609,7 @@ exports.text = function text(text = "", x, y, options = {}) {
 
         for (let key in targetAnnotations) {
           const subtype = this._getTextMarkupAnnotationSubtype(key);
-          if (subtype) {
+          if (subtype && targetAnnotations[key]) {
             const markupOption =
               typeof targetAnnotations[key] != "object"
                 ? {}

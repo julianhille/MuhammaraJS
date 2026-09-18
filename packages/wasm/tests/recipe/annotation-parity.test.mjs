@@ -16,6 +16,12 @@ function readAnnotations(reader) {
     });
 }
 
+function subtypes(annotations) {
+  return annotations.map(function (annotation) {
+    return annotation.dictionary.Subtype.toString();
+  });
+}
+
 describe("Recipe annotation parity", function () {
   var Recipe;
   var muhammara;
@@ -123,5 +129,70 @@ describe("Recipe annotation parity", function () {
     assert.equal(inherited.Open.toPDFBoolean().value, true);
     assert.equal(overridden.T.toText(), "Editor");
     assert.equal(overridden.F.toNumber(), 2);
+  });
+
+  it("writes squiggly text markup options", function () {
+    var recipe = new Recipe().createPage(595, 842);
+    recipe.text("Review this text.", 50, 100, {
+      squiggly: {
+        text: "Needs review.",
+        color: [255, 0, 0],
+        opacity: 0.4,
+        replies: [{ text: "Confirmed.", title: "Reviewer", opacity: 0.2 }],
+      },
+    });
+
+    var annotations = finish(recipe);
+    assert.equal(annotations.length, 2);
+    assert.equal(annotations[0].dictionary.Subtype.toString(), "Squiggly");
+    assert.equal(annotations[0].dictionary.Contents.toText(), "Needs review.");
+    assert.equal(annotations[0].dictionary.CA.toNumber(), 0.4);
+    assert.deepEqual(
+      annotations[0].dictionary.C.toPDFArray()
+        .toJSArray()
+        .map(function (value) {
+          return value.toNumber();
+        }),
+      [1, 0, 0],
+    );
+    assert.equal(annotations[1].dictionary.Contents.toText(), "Confirmed.");
+    assert.equal(annotations[1].dictionary.T.toText(), "Reviewer");
+    assert.equal(annotations[1].dictionary.CA.toNumber(), 0.2);
+    assert.equal(
+      annotations[1].dictionary.IRT.toPDFIndirectObjectReference().getObjectID(),
+      annotations[0].id,
+    );
+  });
+
+  it("adds text markup only for requested options", function () {
+    var recipe = new Recipe().createPage(595, 842);
+    recipe.text("Marked text.", 50, 100, {
+      highlight: true,
+      underline: { text: "Underlined." },
+      strikeOut: true,
+      squiggly: false,
+      title: "Reviewer",
+    });
+    recipe.text("Plain text.", 50, 200, { underline: false, highlight: false });
+    recipe.text("<u>Decorated</u> <s>only</s>.", 50, 300, {
+      html: true,
+      size: 14,
+      textBox: { width: 300 },
+    });
+
+    var annotations = finish(recipe);
+    assert.deepEqual(subtypes(annotations), [
+      "Highlight",
+      "Underline",
+      "StrikeOut",
+    ]);
+    annotations.forEach(function (annotation) {
+      assert.equal(annotation.dictionary.T.toText(), "Reviewer");
+      assert.equal(
+        annotation.dictionary.QuadPoints.toPDFArray().getLength(),
+        8,
+      );
+    });
+    assert.equal(annotations[1].dictionary.Contents.toText(), "Underlined.");
   });
 });

@@ -403,6 +403,52 @@ export function createTextMethods({ drawText, measure, module }) {
     recipe._linkPdf(url, left, bottom, right - left, top - bottom);
   }
 
+  var textMarkupSubtypes = {
+    highlight: "Highlight",
+    underline: "Underline",
+    strikeOut: "StrikeOut",
+    squiggly: "Squiggly",
+  };
+
+  /**
+   * Adds the text-markup annotations requested by text() options over one
+   * drawn line. Only the outer text() options request annotations; HTML
+   * `<u>` and `<s>` styles stay visual decoration, as in native Recipe.
+   */
+  function addTextMarkup(recipe, options, x, baseline, width) {
+    if (!width) return;
+    var bounds;
+    Object.entries(textMarkupSubtypes).forEach(([key, subtype]) => {
+      if (!options[key]) return;
+      bounds ||= dimensions(
+        recipe,
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
+        options,
+      );
+      var markup = typeof options[key] === "object" ? options[key] : {};
+      var annotation = {
+        text: markup.text || "",
+        color: markup.color,
+        opacity: markup.opacity,
+        replies: markup.replies,
+        title: options.title,
+        open: options.open,
+        richText: options.richText,
+        flag: options.flag,
+        icon: options.icon,
+        date: options.date,
+        subject: options.subject,
+        width,
+        height: bounds.yMax - bounds.yMin,
+      };
+      Object.keys(annotation).forEach((name) => {
+        if (annotation[name] === undefined) delete annotation[name];
+      });
+      // annot() anchors the box at its bottom edge, the line's descent.
+      recipe.annot(x, baseline - bounds.yMin, subtype, annotation);
+    });
+  }
+
   /** Draws a highlight rectangle using the same transform as its text. */
   function drawHilite(recipe, x, y, width, height, options, hilite) {
     withTextTransform(recipe, options, () => {
@@ -890,6 +936,13 @@ export function createTextMethods({ drawText, measure, module }) {
           drawText.call(this, entry.text, drawX, baseline, textOptions);
         }
         if (clipping) this._restore();
+        addTextMarkup(
+          this,
+          { ...options, fontSize },
+          linkX,
+          baseline,
+          hasText(entry.text) ? linkWidth : 0,
+        );
         if (textOptions.link && !entry.parts) {
           var linkBounds = dimensions(this, entry.text, textOptions);
           transformedLink(

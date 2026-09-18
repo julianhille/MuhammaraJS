@@ -4,6 +4,8 @@ import type {
   RecipeArcOptions,
   RecipeArrowOptions,
   RecipeColorSpace,
+  RecipeDeviceColorSpace,
+  RecipeExtension,
   RecipeLayoutOptions,
   RecipeLineStyleOptions,
   RecipeMetadata,
@@ -18,7 +20,11 @@ import type {
   RecipeSplitResult,
   RecipeStructure,
   RecipeStructureFormat,
+  Recipe,
+  RecipeTableColumnOptions,
+  RecipeTableOptions,
   RecipeTableRow,
+  RecipeTextMarkupOptions,
   RecipeTriangleOptions,
   RecipeTrianglePosition,
   RecipeTriangleTrait,
@@ -508,3 +514,106 @@ async function usesLowLevelSurface() {
 }
 
 void usesLowLevelSurface;
+
+interface Invoice {
+  id: number;
+  customer: string;
+  note?: string;
+}
+
+/**
+ * Parameters keep their declared types at the call sites below; initialized
+ * variables would be narrowed to their literals and hide declaration bugs.
+ */
+function usesRecipeDeclarations(
+  recipe: Recipe,
+  invoices: readonly Invoice[],
+  deviceColorSpace: RecipeDeviceColorSpace,
+  colorSpace: RecipeColorSpace,
+  markup: RecipeTextMarkupOptions,
+  extension: RecipeExtension<[prefix: string], string>,
+  columns: readonly RecipeTableColumnOptions<Invoice>[],
+  tableOptions: RecipeTableOptions<Invoice>,
+) {
+  recipe.chroma("brand", "#001122", deviceColorSpace);
+  recipe.chroma("inferred", "#001122", "");
+  // @ts-expect-error Separation colors are unsupported in WebAssembly Recipe.
+  recipe.chroma("spot", [0, 255, 0, 0], colorSpace);
+  // @ts-expect-error Separation colors are unsupported in WebAssembly Recipe.
+  recipe.rectangle(0, 0, 10, 10, { colorspace: "separation" });
+
+  recipe.register("describe", extension);
+  recipe.register(function summarize(this: Recipe, count: number) {
+    return count;
+  });
+  recipe.register("chain", function (this: Recipe, label: string): Recipe {
+    return this.text(label);
+  });
+
+  recipe.text("Marked", 10, 10, {
+    highlight: markup,
+    underline: { text: "Check.", color: "#0000ff", opacity: 0.5 },
+    strikeOut: true,
+    squiggly: { replies: [{ text: "Reply.", title: "Reviewer" }] },
+    title: "Reviewer",
+    open: true,
+    date: new Date(),
+  });
+  // @ts-expect-error Markup options are annotation options, not path options.
+  recipe.text("Marked", 10, 10, { underline: { lineWidth: 2 } });
+
+  recipe.table(10, 10, invoices, {
+    order: ["customer", "id"],
+    columns: [
+      {
+        name: "id",
+        renderer: (text, record, field, row) => {
+          var id: number = text;
+          var customer: string = record.customer;
+          var name: "id" = field;
+          void [id, customer, name, row];
+          return { color: "#ff0000" };
+        },
+      },
+      {
+        name: "note",
+        renderer: (text) => {
+          var note: string = text;
+          void note;
+          return null;
+        },
+      },
+    ],
+    row: { nth: "even", cell: { padding: 2 } },
+  });
+  recipe.table(10, 10, invoices, { columns, ...tableOptions });
+  recipe.table(10, 10, [{ a: 1 }, { a: 2, b: "x" }]);
+  // @ts-expect-error Columns name record fields.
+  recipe.table(10, 10, invoices, { columns: [{ name: "total" }] });
+  // @ts-expect-error Order names record fields.
+  recipe.table(10, 10, invoices, { order: ["total"] });
+
+  recipe.layout("columns", 0, 0, 0, 0, { columns: 2, gap: 12 });
+  // @ts-expect-error Layout columns is a column count.
+  recipe.layout("columns", 0, 0, 0, 0, { columns: [{ name: "a" }] });
+
+  recipe.arrow(10, 10, { type: 2, head: [5, 10], shaft: 3 });
+  // @ts-expect-error Arrow types are 0, 1, 2, triangle, dart, or kite.
+  recipe.arrow(10, 10, { type: 3 });
+  // @ts-expect-error An arrow head has at most three dimensions.
+  recipe.arrow(10, 10, { head: [1, 2, 3, 4] });
+
+  recipe.triangle(10, 10, [3, 4, 5], { traitID: "SAS", position: "Centroid" });
+  var vertices = [
+    [0, 0],
+    [1, 1],
+    [2, 0],
+  ] as const;
+  recipe.triangle(10, 10, vertices, { traitID: "vtx" });
+  // @ts-expect-error Readonly vertices cannot be repositioned.
+  recipe.triangle(10, 10, vertices, { traitID: "vtx", position: "a" });
+  // @ts-expect-error Measurements need a measurement trait.
+  recipe.triangle(10, 10, [3, 4, 5], { traitID: "vtx" });
+}
+
+void usesRecipeDeclarations;

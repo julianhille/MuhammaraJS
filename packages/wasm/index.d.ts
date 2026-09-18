@@ -57,7 +57,13 @@ export type RecipeFontStyle =
   "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
 export type RecipeCoordinate = number | "center";
 export type RecipePosition = [number, number];
-export type RecipeColorSpace = "rgb" | "gray" | "cmyk" | "separation";
+/** Device color spaces Recipe draws with in WebAssembly. */
+export type RecipeDeviceColorSpace = "rgb" | "gray" | "cmyk";
+/**
+ * Every Recipe color space, including Separation. WebAssembly Recipe keeps
+ * Separation entries in `knownColors` but throws when asked to draw with them.
+ */
+export type RecipeColorSpace = RecipeDeviceColorSpace | "separation";
 export type RecipePermissionName =
   | "print"
   | "modify"
@@ -84,7 +90,7 @@ export interface RecipeOptions {
   title?: string;
   subject?: string;
   keywords?: string | string[];
-  colorspace?: Exclude<RecipeColorSpace, "separation">;
+  colorspace?: RecipeDeviceColorSpace;
   password?: string;
   ownerPassword?: string;
   userPassword?: string;
@@ -102,7 +108,11 @@ export type RecipeKnownColors = Record<
   RecipeColorSpace,
   Record<string, string>
 >;
-export type RecipeExtension = (this: Recipe, ...args: any[]) => unknown;
+/** A Recipe extension method; `this` is the Recipe it is called on. */
+export type RecipeExtension<
+  Arguments extends unknown[] = never[],
+  Result = unknown,
+> = (this: Recipe, ...args: Arguments) => Result;
 export interface RecipePathOptions {
   /** Make the rendered path's bounding rectangle open this URL. */
   link?: string;
@@ -110,7 +120,7 @@ export interface RecipePathOptions {
   colour?: RecipeColor;
   stroke?: RecipeColor;
   fill?: RecipeColor;
-  colorspace?: RecipeColorSpace;
+  colorspace?: RecipeDeviceColorSpace;
   colorName?: string;
   width?: number;
   lineWidth?: number;
@@ -151,25 +161,76 @@ export interface RecipeArcOptions extends RecipePathOptions {
 export interface RecipeNGonOptions extends RecipePathOptions {
   rotationVertice?: number;
 }
-export type RecipeArrowType = number | "triangle" | "dart" | "kite";
+export type RecipeArrowType = 0 | 1 | 2 | "triangle" | "dart" | "kite";
 export type RecipeArrowAnchor = "head" | "tail";
 export interface RecipeArrowOptions extends RecipePathOptions {
-  head?: number | number[];
-  shaft?: number | number[];
+  head?:
+    | number
+    | readonly [number]
+    | readonly [number, number]
+    | readonly [number, number, number];
+  shaft?: number | readonly [number] | readonly [number, number];
   double?: boolean;
   type?: RecipeArrowType;
   at?: RecipeArrowAnchor;
 }
-export type RecipeTriangleTrait = "sss" | "sas" | "asa" | "vtx";
-export type RecipeTrianglePosition =
-  "a" | "b" | "c" | "A" | "B" | "C" | "centroid" | "circumcenter" | "incenter";
-export interface RecipeTriangleOptions extends RecipePathOptions {
-  traitID?: RecipeTriangleTrait;
-  traitsID?: RecipeTriangleTrait;
+/**
+ * Matches known runtime values in lower case, UPPER CASE, and Capitalized
+ * form. The runtime lowercases the whole value, so any casing works there.
+ */
+export type RecipeCaseInsensitive<Value extends string> =
+  Lowercase<Value> | Uppercase<Value> | Capitalize<Lowercase<Value>>;
+export type RecipeTriangleTrait = RecipeCaseInsensitive<
+  "sss" | "sas" | "asa" | "vtx"
+>;
+export type RecipeTriangleMeasurementTrait = RecipeCaseInsensitive<
+  "sss" | "sas" | "asa"
+>;
+export type RecipeTriangleVertexTrait = RecipeCaseInsensitive<"vtx">;
+export type RecipeTrianglePosition = RecipeCaseInsensitive<
+  "a" | "b" | "c" | "centroid" | "circumcenter" | "incenter"
+>;
+/** Three sides, or sides and angles in degrees, selected by the trait. */
+export type RecipeTriangleMeasurements = readonly [number, number, number];
+export type RecipeTriangleVertices = readonly [
+  readonly [number, number],
+  readonly [number, number],
+  readonly [number, number],
+];
+export type RecipeMutableTriangleVertices = [
+  [number, number],
+  [number, number],
+  [number, number],
+];
+export interface RecipeTriangleBaseOptions extends RecipePathOptions {
   position?: RecipeTrianglePosition;
   flipX?: boolean;
   flipY?: boolean;
 }
+export type RecipeTriangleMeasurementOptions = RecipeTriangleBaseOptions &
+  (
+    | {
+        traitID: RecipeTriangleMeasurementTrait;
+        traitsID?: RecipeTriangleTrait;
+      }
+    | { traitID?: undefined; traitsID?: RecipeTriangleMeasurementTrait }
+  );
+export type RecipeTriangleVertexIdentifier =
+  | { traitID: RecipeTriangleVertexTrait; traitsID?: RecipeTriangleTrait }
+  | { traitID?: undefined; traitsID: RecipeTriangleVertexTrait };
+export type RecipeTriangleVertexOptions = RecipeTriangleBaseOptions &
+  RecipeTriangleVertexIdentifier;
+/** Vertex options for readonly vertices, which cannot be repositioned or flipped. */
+export type RecipeTriangleUnpositionedVertexOptions = Omit<
+  RecipeTriangleBaseOptions,
+  "position" | "flipX" | "flipY"
+> & {
+  position?: undefined;
+  flipX?: false;
+  flipY?: false;
+} & RecipeTriangleVertexIdentifier;
+export type RecipeTriangleOptions =
+  RecipeTriangleMeasurementOptions | RecipeTriangleVertexOptions;
 export interface RecipeLineStyleOptions {
   width?: number;
   lineWidth?: number;
@@ -253,11 +314,28 @@ export interface RecipeTextOptions extends RecipePathOptions {
     | "right"
     | `${"left" | "center" | "right"} ${"top" | "center" | "bottom"}`;
   layout?: string | number;
-  highlight?: boolean | RecipePathOptions;
+  /** Adds a Highlight annotation over each drawn line. */
+  highlight?: boolean | RecipeTextMarkupOptions;
   /** Visual text background, distinct from the Highlight annotation option. */
   hilite?: boolean | RecipePathOptions;
-  underline?: boolean;
-  strikeOut?: boolean;
+  /** Draws an underline and adds an Underline annotation over each drawn line. */
+  underline?: boolean | RecipeTextMarkupOptions;
+  /** Draws a strikeout line and adds a StrikeOut annotation over each drawn line. */
+  strikeOut?: boolean | RecipeTextMarkupOptions;
+  /** Adds a Squiggly annotation over each drawn line. */
+  squiggly?: boolean | RecipeTextMarkupOptions;
+  /** Author written to every text-markup annotation. */
+  title?: string;
+  /** Opens the text-markup annotations' pop-up windows initially. */
+  open?: boolean;
+  /** Writes text-markup annotation contents as rich text. */
+  richText?: boolean;
+  /** Annotation flag written to every text-markup annotation. */
+  flag?: string | number;
+  icon?: string;
+  /** Modification date written to every text-markup annotation. */
+  date?: string | Date;
+  subject?: string;
   textBox?: RecipeTextBox;
   cell?: RecipeTextBox;
   overflow?: (
@@ -267,48 +345,112 @@ export interface RecipeTextOptions extends RecipePathOptions {
     | { column?: number | [number, number]; layout?: string | number }
     | void;
 }
+/** Per-annotation options for `highlight`, `underline`, `strikeOut`, and `squiggly`. */
+export interface RecipeTextMarkupOptions extends Pick<
+  RecipeAnnotationOptions,
+  "opacity" | "replies"
+> {
+  /** Annotation contents. */
+  text?: string;
+  /** Annotation color; defaults to yellow for Highlight, red for StrikeOut, and green otherwise. */
+  color?: RecipeColor;
+}
 export interface RecipeHtmlTextObject {
   value: string;
   styles: Partial<RecipeTextOptions>;
   /** Leading-space count for the lines of this flat visual fragment; `0` ends list indentation. */
   indent?: number;
 }
-export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
-  name: string;
+/** Record field names a table column can name, including numeric keys as strings. */
+export type RecipeTableField<RecordType extends object> =
+  RecordType extends unknown
+    ? RecordType extends readonly unknown[]
+      ? number extends RecordType["length"]
+        ? `${number}`
+        : Extract<keyof RecordType, `${number}`>
+      : | Extract<keyof RecordType, string>
+        | `${Extract<keyof RecordType, number>}`
+    : never;
+export type RecipeTableColumnField<RecordType extends object> = Exclude<
+  RecipeTableField<RecordType>,
+  ""
+>;
+export type RecipeTableFieldValue<
+  RecordType extends object,
+  Field extends RecipeTableField<RecordType>,
+> = RecordType extends unknown
+  ? Field extends keyof RecordType
+    ? RecordType[Field]
+    : Field extends `${infer NumericField extends number}`
+      ? NumericField extends keyof RecordType
+        ? RecordType[NumericField]
+        : undefined
+      : undefined
+  : never;
+export interface RecipeTableColumn<
+  RecordType extends object = RecipeTableRow,
+  Field extends RecipeTableColumnField<RecordType> =
+    RecipeTableColumnField<RecordType>,
+> extends Omit<RecipeTextOptions, "font" | "textBox"> {
+  name: Field;
   font?: string;
   text?: string;
   width?: number;
   cell?: RecipeTextBox;
-  header?: RecipeTextOptions;
+  header?: boolean | RecipeTextOptions;
   hcell?: RecipeTextBox;
+  /** Returns cell text options, or a falsy value to keep the defaults. */
   renderer?: (
-    text: unknown,
-    record: Record<string, unknown>,
-    field: string,
+    this: void,
+    text: undefined extends RecipeTableFieldValue<RecordType, Field>
+      ? Exclude<RecipeTableFieldValue<RecordType, Field>, undefined> | ""
+      : RecipeTableFieldValue<RecordType, Field>,
+    record: RecordType,
+    field: Field,
     row: number,
-  ) => RecipeTextOptions | void;
+  ) => RecipeTextOptions | false | null | "" | 0 | void;
 }
+/**
+ * One column definition per record field, so each `renderer` receives the
+ * value type of its own `name` rather than the union of every field's type.
+ */
+export type RecipeTableColumnOptions<
+  RecordType extends object = RecipeTableRow,
+> = {
+  [Field in RecipeTableColumnField<RecordType>]: RecipeTableColumn<
+    RecordType,
+    Field
+  >;
+}[RecipeTableColumnField<RecordType>];
 export type RecipeTableRow = Record<string, unknown>;
-export interface RecipeTableOptions extends Omit<
-  RecipeTextOptions,
-  "overflow"
-> {
+export interface RecipeTableOptions<
+  RecordType extends object = RecipeTableRow,
+> extends Omit<RecipeTextOptions, "overflow"> {
   /** Per-continuation table height. Wrapped headers and cells are measured before rows are placed. */
   height?: number;
-  order?: string | string[];
-  columns?: RecipeTableColumn[];
+  order?:
+    | string
+    | RecipeTableField<RecordType>[]
+    | readonly [
+        RecipeTableField<RecordType>,
+        ...RecipeTableField<RecordType>[],
+      ];
+  columns?: readonly RecipeTableColumnOptions<RecordType>[];
   header?:
     | boolean
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
-  row?: RecipeTextOptions & { nth?: "even" | "odd" };
+  row?: RecipeTextOptions & { nth?: "even" | "odd"; cell?: RecipeTextBox };
   overflow?: (
+    this: Recipe,
     recipe: Recipe,
     row: number,
-  ) => boolean | { position?: [number, number] } | void;
+  ) => boolean | { position?: readonly [number, number] } | void;
 }
 export interface RecipeLayoutOptions {
-  columns?: number | RecipeTableColumn[];
+  /** Number of equal-width columns to divide the layout width into. */
+  columns?: number;
+  /** Space between columns in points. Defaults to 18. */
   gap?: number;
   reset?: boolean;
 }
@@ -357,8 +499,14 @@ export interface Recipe {
   readonly position: { x: number; y: number };
   /** A per-Recipe copy of the built-in named device colors. */
   readonly knownColors: RecipeKnownColors;
-  register(key: string, callback: RecipeExtension): this;
-  register(callback: RecipeExtension & { name: string }): this;
+  register<Arguments extends unknown[], Result>(
+    key: string,
+    callback: RecipeExtension<Arguments, Result>,
+  ): this;
+  /** Registers a named function under its `name`. */
+  register<Arguments extends unknown[], Result>(
+    callback: RecipeExtension<Arguments, Result>,
+  ): this;
   registerFont(name: string, bytes: ByteSource, type?: RecipeFontStyle): this;
   registerFontAsync(
     name: string,
@@ -399,7 +547,11 @@ export interface Recipe {
   ): this;
   rotate(rotation: number): this;
   rotateContent(degrees: number, x?: number, y?: number): this;
-  chroma(name: string, value: RecipeColor, colorspace?: RecipeColorSpace): this;
+  chroma(
+    name: string,
+    value: RecipeColor,
+    colorspace?: RecipeDeviceColorSpace | "",
+  ): this;
   line(coordinates: [number, number][], options?: RecipePathOptions): this;
   line(
     startX: number,
@@ -477,8 +629,20 @@ export interface Recipe {
   triangle(
     x: number,
     y: number,
-    traits: number[] | [number, number][],
-    options?: RecipeTriangleOptions,
+    traits: RecipeTriangleMeasurements,
+    options?: RecipeTriangleMeasurementOptions,
+  ): this;
+  triangle(
+    x: number,
+    y: number,
+    traits: RecipeTriangleVertices,
+    options: RecipeTriangleUnpositionedVertexOptions,
+  ): this;
+  triangle(
+    x: number,
+    y: number,
+    traits: RecipeMutableTriangleVertices,
+    options: RecipeTriangleVertexOptions,
   ): this;
   lineStyle(options?: RecipeLineStyleOptions): this;
   lineWidth(width: number): this;
@@ -499,11 +663,11 @@ export interface Recipe {
     height?: number,
     options?: RecipeLayoutOptions,
   ): this;
-  table(
+  table<RecordType extends object>(
     x: number,
     y: number,
-    contents: RecipeTableRow[],
-    options?: RecipeTableOptions,
+    contents: readonly RecordType[],
+    options?: RecipeTableOptions<RecordType>,
   ): this;
   image(name: string, x: number, y: number, options?: RecipeImageOptions): this;
   appendPage(name: string, pages?: RecipePageSelection): this;

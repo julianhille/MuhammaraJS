@@ -25,7 +25,7 @@ function interfaceBody(declarations, name) {
 
 function declaredMethods(body) {
   return new Set(
-    Array.from(body.matchAll(/^  ([A-Za-z]\w*)\(/gm), (match) => match[1]),
+    Array.from(body.matchAll(/^  ([A-Za-z]\w*)[<(]/gm), (match) => match[1]),
   );
 }
 

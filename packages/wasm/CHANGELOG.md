@@ -4,12 +4,36 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Add Recipe `text()` options `underline`, `strikeOut`, and `squiggly` as
+  structured text-markup annotations alongside `highlight`, with per-annotation
+  `text`, `color`, `opacity`, and `replies`, shared `title`, `date`, `subject`,
+  `open`, `richText`, `flag`, and `icon`, one annotation per drawn line, on new
+  and edited pages. `underline` and `strikeOut` keep drawing their visible line
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+
 ### Fixed
 
 - Inherit parent annotation metadata for replies without their own `title`,
   `subject`, `date`, `flag`, `open`, or icon, matching native. A reply keeps
   its own contents, rich-text mode, and opacity (opaque by default)
   [#717](https://github.com/julianhille/MuhammaraJS/issues/717)
+- Draw `underline` and `strikeOut` text decoration on edited pages, not only on
+  new pages [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+
+### Changed
+
+- Align the Recipe declarations with native: generic `RecipeExtension`
+  callbacks and `register()` overloads, `table<RecordType>()` with typed
+  columns, `order`, and per-column `renderer` values, numeric `layout()`
+  `columns`, finite arrow `type`, `head`, and `shaft` values, and native
+  triangle trait, position, and vertex overloads
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Type drawing, text, and `chroma()` color spaces as the new
+  `RecipeDeviceColorSpace`, so Separation colors, which WebAssembly Recipe
+  rejects at runtime, now fail type checking
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 
 ## [1.0.0-beta.3] - 2026-09-18
 

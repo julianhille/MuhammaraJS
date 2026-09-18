@@ -19,6 +19,12 @@ function readAnnotations(reader) {
     });
 }
 
+function subtypes(annotations) {
+  return annotations.map(function (annotation) {
+    return annotation.dictionary.Subtype.toString();
+  });
+}
+
 describe("Recipe annotation parity", function () {
   var directory;
   var output;
@@ -146,5 +152,42 @@ describe("Recipe annotation parity", function () {
       annotations[1].dictionary.IRT.toPDFIndirectObjectReference().getObjectID(),
       annotations[0].id,
     );
+  });
+
+  it("adds text markup only for requested options", async function () {
+    var recipe = new muhammara.Recipe("new", output).createPage(595, 842);
+    recipe.text("Marked text.", 50, 100, {
+      highlight: true,
+      underline: { text: "Underlined." },
+      strikeOut: true,
+      squiggly: false,
+      title: "Reviewer",
+    });
+    recipe.text("Plain text.", 50, 200, { underline: false, highlight: false });
+    recipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    recipe.text("<u>Decorated</u> <s>only</s>.", 50, 300, {
+      font: "arial",
+      html: true,
+      size: 14,
+      textBox: { width: 300 },
+    });
+
+    var annotations = await finish(recipe);
+    assert.deepEqual(subtypes(annotations), [
+      "Highlight",
+      "Underline",
+      "StrikeOut",
+    ]);
+    annotations.forEach(function (annotation) {
+      assert.equal(annotation.dictionary.T.toText(), "Reviewer");
+      assert.equal(
+        annotation.dictionary.QuadPoints.toPDFArray().getLength(),
+        8,
+      );
+    });
+    assert.equal(annotations[1].dictionary.Contents.toText(), "Underlined.");
   });
 });
