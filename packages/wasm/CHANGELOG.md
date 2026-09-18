@@ -4,6 +4,21 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Run a Recipe table column `renderer` once per cell instead of twice, keep the
+  text cursor at the table's left edge after an overflow moved the table, keep
+  every `border` option such as `dash` on the outer rectangle, and stop drawing
+  the table's bottom border twice
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+
+### Changed
+
+- Derive Recipe `table()` columns from every record instead of only the first,
+  keep `order` entries whose field the first record lacks, and give cells and
+  headers native's default 2pt padding, matching native Recipe table layout
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+
 ## [1.0.0-beta.3] - 2026-09-18
 
 ### Added

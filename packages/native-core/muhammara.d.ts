@@ -1306,9 +1306,12 @@ declare namespace muhammara {
       hcell?: TextBox;
       renderer?: (
         this: void,
+        /** The cell value; missing and nullish values arrive as `""`. */
         text: undefined extends TableFieldValue<RecordType, Field>
-          ? Exclude<TableFieldValue<RecordType, Field>, undefined> | ""
-          : TableFieldValue<RecordType, Field>,
+          ? Exclude<TableFieldValue<RecordType, Field>, null | undefined> | ""
+          : null extends TableFieldValue<RecordType, Field>
+            ? Exclude<TableFieldValue<RecordType, Field>, null | undefined> | ""
+            : TableFieldValue<RecordType, Field>,
         record: RecordType,
         field: Field,
         row: number,

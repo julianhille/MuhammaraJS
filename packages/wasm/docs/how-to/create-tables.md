@@ -36,6 +36,14 @@ pdf.dispose();
 Recipe.disposeAssets();
 ```
 
+Columns come from `order` when it is set, otherwise from `columns`, otherwise
+from every field found in any record, in first-seen order. Columns that a record
+lacks, and `null` or `undefined` values, render as empty cells. A column
+`renderer` runs once per cell, and the options it returns also size the row. A
+continuation reserves room for its repeated header and uses the bounds of the
+position and page it continues on. Empty `contents` draw nothing. After a table,
+`movedown(0, true)` returns the table's left edge and bottom.
+
 Columns can define widths, cell styles, header styles, and renderers. Table
 options also support borders, row styling, bounded height, and repeated headers.
 Keep overflow callbacks synchronous; load every font and asset before starting

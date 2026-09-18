@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Derive Recipe `table()` columns from every record instead of only the first,
+  keep `order` and `columns` entries whose field the first record lacks, and
+  use exactly the listed `columns` when no `order` is given. A column
+  `renderer` result now also sizes its row. List the intended columns with
+  `order` or `columns` to keep a fixed layout; see the
+  [breaking changes](packages/native/docs/breaking-changes.md) page
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+
+### Fixed
+
+- Stop Recipe `table()` from throwing for empty `contents`, reusing a previous
+  table's `overflow` callback, keeping the first page's bounds on a
+  continuation, overlapping a continued row with its repeated header, drawing a
+  zero-height border for an empty segment, and mutating `border` options
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Pass `""` instead of `null` to a table column `renderer` for null values, and
+  leave the text cursor at the table's left edge and bottom
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+
 ## [7.0.0-beta.3] - 2026-09-18
 
 ### Fixed
