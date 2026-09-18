@@ -402,9 +402,13 @@ export interface RecipeTableColumn<
   /** Returns cell text options, or a falsy value to keep the defaults. */
   renderer?: (
     this: void,
+    /** The cell value; missing and nullish values arrive as `""`. */
     text: undefined extends RecipeTableFieldValue<RecordType, Field>
-      ? Exclude<RecipeTableFieldValue<RecordType, Field>, undefined> | ""
-      : RecipeTableFieldValue<RecordType, Field>,
+      ? Exclude<RecipeTableFieldValue<RecordType, Field>, null | undefined> | ""
+      : null extends RecipeTableFieldValue<RecordType, Field>
+        ? | Exclude<RecipeTableFieldValue<RecordType, Field>, null | undefined>
+          | ""
+        : RecipeTableFieldValue<RecordType, Field>,
     record: RecordType,
     field: Field,
     row: number,

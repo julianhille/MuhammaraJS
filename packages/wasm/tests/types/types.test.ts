@@ -519,6 +519,7 @@ interface Invoice {
   id: number;
   customer: string;
   note?: string;
+  paid: string | null;
 }
 
 /**
@@ -581,6 +582,14 @@ function usesRecipeDeclarations(
           var note: string = text;
           void note;
           return null;
+        },
+      },
+      {
+        name: "paid",
+        renderer: (text) => {
+          // Missing and null values arrive as "".
+          var paid: string = text;
+          void paid;
         },
       },
     ],
