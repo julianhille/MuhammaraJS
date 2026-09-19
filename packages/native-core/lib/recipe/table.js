@@ -125,6 +125,9 @@ function tableFields(contents, options) {
  * Rows and headers use their rendered text-box heights, including padding,
  * minimum heights, fixed heights, and HTML layout. Empty contents or no selected
  * columns leave the Recipe unchanged. Array-form order preserves exact keys.
+ * Header text styles are independent of body styles: column header options
+ * (or defaults) are overridden by table header options, then alignToData
+ * and column hcell box overrides are applied.
  * @name table
  * @function
  * @memberof Recipe#

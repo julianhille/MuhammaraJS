@@ -6,6 +6,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Resolve table header styles independently of body styles, matching native.
+  Headers that inherited a body font, size, or color can change appearance;
+  set those properties explicitly in `header` to retain the intended style
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Derive Recipe `table()` columns from every record and apply native's default
   2pt cell/header padding. Tables can gain columns or grow taller; use explicit
   `order`/`columns` and set `cell.padding` and `header.cell.padding` to `0` to
@@ -107,6 +111,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Constrain Recipe text links to their visible clipping region when using
   `textBox.wrap: "clip"`, so hidden overflow does not remain clickable outside
   the text box [#718](https://github.com/julianhille/MuhammaraJS/issues/718)
+- Preserve explicit table header styles against body-column overrides and
+  merge nested `hcell` styles without discarding header backgrounds or borders
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Run a Recipe table column `renderer` once per cell instead of twice, keep the
   text cursor at the table's left edge after an overflow moved the table, keep
   every `border` option such as `dash` on the outer rectangle, and stop drawing

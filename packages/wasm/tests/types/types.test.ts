@@ -335,15 +335,26 @@ async function usesLowLevelSurface() {
     .endPDF();
   recipe.textDimensions("Hello").width;
   recipe.table(20, 20, [{ value: "first" }], {
-    header: true,
+    // @ts-expect-error Native Recipe ignores a table-level cell.
+    cell: { padding: 0 },
+  });
+  recipe.table(20, 20, [{ value: "first", optional: "second" }], {
+    header: {
+      font: "arial",
+      size: 12,
+      alignToData: true,
+      cell: { padding: 2 },
+    },
     columns: [
       {
         name: "value",
         cell: { padding: 4, minHeight: 40 },
+        header: { size: 18, textBox: { style: { stroke: "blue" } } },
         hcell: { height: 60 },
         /** Exercises renderer-controlled table box sizing. */
         renderer: () => ({ textBox: { minHeight: 80 } }),
       },
+      { name: "optional", header: false },
     ],
     /** The callback receiver and first argument both expose Recipe methods. */
     overflow: function (currentRecipe, row) {

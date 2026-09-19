@@ -606,4 +606,152 @@ describe("Recipe table layout", () => {
       ["recovered"],
     );
   });
+
+  [true, false].forEach(function (columnHeader) {
+    it(`isolates default headers from body styles with column.header=${columnHeader}`, function () {
+      var recipe = new Recipe("new", output).createPage(400, 400);
+      recipe.text("control", 20, 10, { bold: true });
+      recipe.table(20, 50, [{ value: "body" }], {
+        header: true,
+        font: "arial",
+        size: 30,
+        color: "red",
+        textBox: { lineHeight: 60 },
+        columns: [
+          {
+            name: "value",
+            text: "Header",
+            width: 250,
+            header: columnHeader,
+            font: "arial",
+            size: 24,
+            bold: false,
+            cell: { padding: 20, textAlign: "right top" },
+          },
+        ],
+      });
+      finish(recipe);
+      var entries = reader.extractPageText(0);
+      var control = entries.find((entry) => entry.content === "control");
+      var header = entries.find((entry) => entry.content === "Header");
+      var body = entries.find((entry) => entry.content === "body");
+      assert.equal(header.fontSize, 14);
+      assert.equal(header.fontResource, control.fontResource);
+      assert.equal(body.fontSize, 24);
+      assert.notEqual(body.fontResource, header.fontResource);
+      assert.ok(header.textMatrix[4] < body.textMatrix[4]);
+    });
+  });
+
+  it("lets explicit table header styles override column headers and body styles", function () {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    recipe.table(20, 20, [{ value: "body" }], {
+      size: 30,
+      color: "red",
+      header: { font: "arial", size: 12, color: "blue" },
+      columns: [
+        {
+          name: "value",
+          text: "Header",
+          width: 250,
+          size: 24,
+          color: "red",
+          header: { size: 18, color: "green" },
+        },
+      ],
+    });
+    finish(recipe);
+    assert.deepEqual(
+      reader.extractPageText(0).map((entry) => [entry.content, entry.fontSize]),
+      [
+        ["Header", 12],
+        ["body", 24],
+      ],
+    );
+    var content = pageContent(reader, 0);
+    assert.match(content, /\b0\s+0\s+1\s+rg\b/);
+    assert.match(content, /\b1\s+0\s+0\s+rg\b/);
+  });
+
+  it("merges header box overrides and uses the same styles on continuations", function () {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    var headerCalls = [];
+    var writeText = recipe.text;
+    /** Captures effective box styling alongside assertions on the produced PDF. */
+    recipe.text = function (text, x, y, options) {
+      if (text === "Header")
+        headerCalls.push(JSON.parse(JSON.stringify(options)));
+      return writeText.call(this, text, x, y, options);
+    };
+    var options = {
+      size: 8,
+      height: 70,
+      header: {
+        size: 12,
+        alignToData: true,
+        textBox: { minHeight: 200 },
+        cell: { padding: 3, minHeight: 40, style: { fill: "#eeeeee" } },
+      },
+      columns: [
+        {
+          name: "value",
+          text: "Header",
+          width: 120,
+          size: 8,
+          header: {
+            size: 18,
+            textBox: { style: { opacity: 0.4, lineWidth: 2 } },
+          },
+          cell: { padding: 0, lineHeight: 10, textAlign: "right top" },
+          hcell: {
+            padding: [5, 6],
+            minHeight: 50,
+            textAlign: "left top",
+            style: { stroke: "blue" },
+          },
+        },
+      ],
+      /** Continues the final row in a second bounded area on the same page. */
+      overflow: () => ({ position: [200, 200] }),
+    };
+    var before = JSON.stringify(options);
+    recipe.table(
+      20,
+      20,
+      [{ value: "row1" }, { value: "row2" }, { value: "row3" }],
+      options,
+    );
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.equal(
+      JSON.stringify(options),
+      before,
+      "does not mutate header options",
+    );
+    assert.equal(headerCalls.length, 2);
+    headerCalls.forEach((header) => {
+      assert.equal(header.size, 12);
+      assert.deepEqual(header.textBox.padding, [5, 6]);
+      assert.equal(header.textBox.textAlign, "left top");
+      assert.deepEqual(header.textBox.style, {
+        opacity: 0.4,
+        lineWidth: 2,
+        fill: "#eeeeee",
+        stroke: "blue",
+      });
+    });
+    assert.deepEqual(cursor, [200, 260]);
+    var entries = reader.extractPageText(0);
+    assert.deepEqual(
+      entries.map((entry) => [entry.content, entry.fontSize]),
+      [
+        ["Header", 12],
+        ["row1", 8],
+        ["row2", 8],
+        ["Header", 12],
+        ["row3", 8],
+      ],
+    );
+    assert.ok(entries[3].textMatrix[5] > entries[4].textMatrix[5]);
+  });
 });

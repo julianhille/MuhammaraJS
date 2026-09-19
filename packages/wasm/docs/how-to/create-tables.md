@@ -51,6 +51,21 @@ Header and row measurements include vertical padding, `minHeight`, fixed
 `height`, and HTML line breaks. Set these through column `cell`/`hcell`,
 header/row `cell`, or a renderer's `textBox` options.
 
+Header text styles are independent of table/body text styles. Both packages
+resolve them in this order:
+
+1. Start with the column's `header` object, or the default bold, centered header
+   with 2pt padding when that option is omitted or boolean. A column-level
+   `header: false` selects the default style; it does not hide the header.
+2. Apply table-level `header` options, including `header.cell` box styling.
+3. If `header.alignToData` is true, copy the column's `cell.textAlign`.
+4. Apply the column's `hcell` box overrides, merging nested styles.
+
+The table-level `header` option controls whether headers are drawn. Set header
+`font`, `size`, and `color` explicitly when they should match the body; body
+column styling cannot override an explicit header style. Measurement and every
+repeated header use the same resolved options.
+
 An `overflow` callback receives the Recipe as both `this` and its first
 argument. It is called once for a pending row: return `true` to stop, or
 continue in an area that fits the entire row plus its repeated header. The

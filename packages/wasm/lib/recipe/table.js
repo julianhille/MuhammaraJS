@@ -7,6 +7,20 @@ function merge(left = {}, right = {}) {
   };
 }
 
+/** Resolves nested header styles like native without mutating caller options. */
+function mergeHeaderOptions(left = {}, right = {}) {
+  var result = { ...left };
+  for (var key of Object.keys(right)) {
+    var value = right[key];
+    result[key] = Array.isArray(value)
+      ? value.slice()
+      : value && typeof value === "object"
+        ? mergeHeaderOptions(result[key], value)
+        : value;
+  }
+  return result;
+}
+
 /** Converts a table cell style into text options. */
 function cellOptions(options = {}, name = "cell") {
   var result = { ...options };
@@ -58,6 +72,9 @@ export function createTableMethods() {
      * Measurements include padding, minimum heights, fixed heights, and HTML
      * layout. Overflow callbacks receive the Recipe as `this` and the first
      * argument; rows are not split across continuation areas.
+     * Header text styles are independent of body styles: column header options
+     * (or defaults) are overridden by table header options, then alignToData
+     * and column hcell box overrides are applied, matching native Recipe.
      *
      * @name table
      * @function
@@ -136,23 +153,34 @@ export function createTableMethods() {
           : cellOptionsValue;
       /** Resolves header styles identically for measurement and drawing. */
       var headerOptions = (column) => {
-        var header = merge(
+        var header = mergeHeaderOptions(
+          { textBox: {} },
           column.options.header && typeof column.options.header === "object"
             ? column.options.header
             : {
                 bold: true,
                 textBox: { padding: 2, textAlign: "center center" },
               },
-          options.header === true ? {} : cellOptions(options.header),
         );
-        var dataCell = paddedCell(cellOptions(column.options));
-        if (options.header?.alignToData && dataCell.textBox.textAlign) {
-          header.textBox.textAlign = dataCell.textBox.textAlign;
+        if (typeof options.header === "object") {
+          var overrides = { ...options.header };
+          // Native's table header.cell replaces the same override's textBox.
+          if (overrides.cell) {
+            overrides.textBox = overrides.cell;
+            delete overrides.cell;
+          }
+          header = mergeHeaderOptions(header, overrides);
         }
-        return merge(
-          merge(options, header),
-          cellOptions(column.options, "hcell"),
-        );
+        if (options.header?.alignToData && column.options.cell?.textAlign) {
+          header.textBox.textAlign = column.options.cell.textAlign;
+        }
+        if (column.options.hcell) {
+          header.textBox = mergeHeaderOptions(
+            header.textBox,
+            column.options.hcell,
+          );
+        }
+        return header;
       };
       /** Writes a repeated header at the current segment's top. */
       var writeHeader = () => {

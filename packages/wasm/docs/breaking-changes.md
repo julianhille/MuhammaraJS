@@ -9,6 +9,11 @@ These changes affect upgrades from the earlier 1.0 prereleases
 
 - Automatic columns include fields from every record, so tables may gain
   columns. Set `order` or `columns` explicitly to keep a fixed field list.
+- Header text styles are independent of body styles, matching native. Existing
+  headers may change font, size, or color; explicitly set those properties in
+  table-level `header` or a column's `header` object to retain the intended
+  appearance. Table-level header options take precedence over column header
+  options, and body-column styles no longer override them.
 - Cells and headers default to native's 2pt padding, and fixed cell/header
   heights count toward row sizing. Tables can become taller or continue
   earlier. Set column `cell.padding` and `header.cell.padding` to `0` to retain

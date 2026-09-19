@@ -400,7 +400,9 @@ export interface RecipeTableColumn<
   text?: string;
   width?: number;
   cell?: RecipeTextBox;
+  /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
   header?: boolean | RecipeTextOptions;
+  /** Final header text-box overrides, applied after header styles and alignToData. */
   hcell?: RecipeTextBox;
   /** Returns cell text options, or a falsy value to keep the defaults. */
   renderer?: (
@@ -444,6 +446,7 @@ export interface RecipeTableOptions<
         ...RecipeTableField<RecordType>[],
       ];
   columns?: readonly RecipeTableColumnOptions<RecordType>[];
+  /** Enables headers and overrides column header styles; body text styles are not inherited. */
   header?:
     | boolean
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
