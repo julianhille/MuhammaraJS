@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   outside any element and no explicit `size`; that text now uses the default
   14pt size like element text
   [#704](https://github.com/julianhille/MuhammaraJS/issues/704)
+- Constrain Recipe text links to their visible clipping region when using
+  `textBox.wrap: "clip"`, so hidden overflow does not remain clickable outside
+  the text box [#718](https://github.com/julianhille/MuhammaraJS/issues/718)
+- Keep Recipe text links on their original page when an `overflow` callback
+  changes pages or an `onClip` callback ends the page, instead of attaching
+  links to a later page or throwing after the callback
+  [#718](https://github.com/julianhille/MuhammaraJS/issues/718)
 
 ## [7.0.0-beta.3] - 2026-09-18
 
