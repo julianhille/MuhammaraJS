@@ -186,17 +186,23 @@ var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
       text: "Name",
       cell: {
         padding: 4,
+        minHeight: 40,
         wrap: "ellipsis",
         style: { borderRadius: 4, colorspace: "gray", fill: "#00" },
       },
       header: true,
+      hcell: { height: 60 },
       renderer: (text, record, field, row) => {
         void text;
         var score: number = record.score;
         void field;
         void score;
         return row % 2
-          ? { color: "blue", underline: { text: "reviewed", color: "red" } }
+          ? {
+              color: "blue",
+              underline: { text: "reviewed", color: "red" },
+              textBox: { minHeight: 80 },
+            }
           : undefined;
       },
     },

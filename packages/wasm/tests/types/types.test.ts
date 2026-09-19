@@ -334,6 +334,25 @@ async function usesLowLevelSurface() {
     .endPage()
     .endPDF();
   recipe.textDimensions("Hello").width;
+  recipe.table(20, 20, [{ value: "first" }], {
+    header: true,
+    columns: [
+      {
+        name: "value",
+        cell: { padding: 4, minHeight: 40 },
+        hcell: { height: 60 },
+        /** Exercises renderer-controlled table box sizing. */
+        renderer: () => ({ textBox: { minHeight: 80 } }),
+      },
+    ],
+    /** The callback receiver and first argument both expose Recipe methods. */
+    overflow: function (currentRecipe, row) {
+      var callbackThis: InstanceType<typeof Recipe> = this;
+      callbackThis.endPage().createPage("letter");
+      void currentRecipe;
+      return row > 10 ? true : { position: [20, 20] };
+    },
+  });
   void defaultFontBytes;
   await createMuhammaraWasm({ wasmBinary: new Uint8Array() });
   await createMuhammaraWasm({ wasmBinary: new ArrayBuffer(0) });

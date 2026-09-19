@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 
+/** Decodes page streams for structural border assertions. */
 function pageContent(muhammara, reader, pageIndex) {
   var page = reader.parsePage(pageIndex).getDictionary();
   var contents = reader.queryDictionaryObject(page, "Contents");
@@ -25,6 +26,7 @@ function pageContent(muhammara, reader, pageIndex) {
     .join("\n");
 }
 
+/** Counts line paths independently of text and rectangles. */
 function lineCount(content) {
   return (content.match(/ m\b/g) || []).length;
 }
@@ -44,11 +46,13 @@ describe("Recipe table layout", function () {
     reader = undefined;
   });
 
+  /** Finalizes the output and opens the reader owned by this test. */
   function finish(recipe) {
     reader = muhammara.createReader(recipe.endPage().endPDF());
     return reader;
   }
 
+  /** Extracts text and PDF-space positions from a generated page. */
   function texts(pageIndex = 0) {
     return reader.extractPageText(pageIndex).map((entry) => ({
       content: entry.content,
@@ -79,10 +83,20 @@ describe("Recipe table layout", function () {
 
   it("renders nullish values as empty cells and keeps other values", function () {
     var recipe = new Recipe().createPage(400, 400);
-    recipe.table(20, 20, [{ a: null, b: undefined, c: 0, d: false }]);
+    var values = [];
+    recipe.table(20, 20, [{ a: null, b: undefined, c: 0, d: false }, {}], {
+      columns: ["a", "b", "c", "d"].map((name) => ({
+        name,
+        /** Records the normalized value without modifying the cell. */
+        renderer: (text) => {
+          values.push(text);
+        },
+      })),
+    });
     finish(recipe);
     var content = texts().map((entry) => entry.content);
     assert.deepEqual(content, ["0", "false"]);
+    assert.deepEqual(values, ["", "", 0, false, "", "", "", ""]);
   });
 
   it("runs each renderer once per cell and sizes rows with its options", function () {
@@ -123,7 +137,9 @@ describe("Recipe table layout", function () {
     var recipe = new Recipe().createPage(300, 300);
     recipe.table(20, 20, rows, {
       header: true,
-      overflow: (self) => {
+      /** Continues on a taller page with the Recipe as the callback receiver. */
+      overflow: function (self) {
+        assert.equal(this, self);
         overflows += 1;
         self.endPage().createPage(300, 800);
         return { position: [20, 20] };
@@ -186,5 +202,171 @@ describe("Recipe table layout", function () {
     var last = texts().find((entry) => entry.content === "B");
     assert.equal(x, 40);
     assert.ok(y > 400 - last.y, "the cursor is below the last row");
+  });
+
+  it("preserves exact field names in an order array", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    recipe.table(20, 20, [{ " a ": "spaced", "": "empty", a: "wrong" }], {
+      order: [" a ", ""],
+    });
+    finish(recipe);
+    assert.deepEqual(
+      texts().map((entry) => entry.content),
+      ["spaced", "empty"],
+    );
+  });
+
+  it("leaves tables with no columns unchanged", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    recipe.table(40, 20, [{ a: "before" }]);
+    var before = recipe.movedown(0, true);
+    recipe.table(150, 150, [{}, {}], { header: true, border: true });
+    var after = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(after, before);
+    assert.deepEqual(
+      texts().map((entry) => entry.content),
+      ["before"],
+    );
+  });
+
+  it("includes vertical padding in row heights and overflow decisions", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    var overflowRows = [];
+    recipe.table(20, 20, [{ a: "first" }, { a: "second" }], {
+      size: 8,
+      height: 40,
+      columns: [{ name: "a", cell: { lineHeight: 10, padding: [7, 2, 9, 2] } }],
+      /** Moves the second row into a separate bounded segment. */
+      overflow: (self, row) => {
+        overflowRows.push(row);
+        return { position: [180, 100] };
+      },
+    });
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(overflowRows, [2]);
+    assert.deepEqual(cursor, [180, 126]);
+    assert.ok(texts().find((entry) => entry.content === "second").x >= 180);
+  });
+
+  ["minHeight", "height"].forEach(function (heightOption) {
+    it(`sizes headers and renderer cells with textBox.${heightOption}`, function () {
+      var recipe = new Recipe().createPage(400, 400);
+      var calls = [];
+      recipe.table(20, 20, [{ a: "first" }, { a: "second" }], {
+        header: true,
+        columns: [
+          {
+            name: "a",
+            hcell: { [heightOption]: 60 },
+            /** Gives the first data row a larger box than its text needs. */
+            renderer: (text, record, field, row) => {
+              calls.push(row);
+              return { textBox: { [heightOption]: row === 1 ? 80 : 40 } };
+            },
+          },
+        ],
+      });
+      var cursor = recipe.movedown(0, true);
+      finish(recipe);
+      assert.deepEqual(calls, [1, 2]);
+      assert.deepEqual(cursor, [20, 200]);
+      var entries = texts();
+      var first = entries.find((entry) => entry.content === "first");
+      var second = entries.find((entry) => entry.content === "second");
+      assert.ok(Math.abs(first.y - second.y - 80) < 0.001);
+    });
+  });
+
+  it("measures HTML line breaks as rendered content", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    recipe.table(
+      20,
+      20,
+      [{ a: "one<br>two<br>three<br>four" }, { a: "after" }],
+      {
+        html: true,
+        size: 8,
+        columns: [
+          { name: "a", width: 350, cell: { lineHeight: 12, padding: 0 } },
+        ],
+      },
+    );
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    var entries = texts();
+    assert.ok(
+      entries.find((entry) => entry.content === "four").y >
+        entries.find((entry) => entry.content === "after").y,
+    );
+    assert.deepEqual(cursor, [20, 80]);
+  });
+
+  it("finishes borders only once when overflow stops the table", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    var overflowRows = [];
+    recipe.table(
+      20,
+      20,
+      [
+        { a: "first", b: "cell" },
+        { a: "omitted", b: "row" },
+      ],
+      {
+        size: 8,
+        height: 15,
+        border: { opacity: 0.5 },
+        row: { cell: { lineHeight: 10, padding: 0 } },
+        /** Stops after the first complete row. */
+        overflow: (self, row) => {
+          overflowRows.push(row);
+          return true;
+        },
+      },
+    );
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(overflowRows, [2]);
+    assert.deepEqual(cursor, [20, 30]);
+    assert.deepEqual(
+      texts().map((entry) => entry.content),
+      ["first", "cell"],
+    );
+    assert.equal(lineCount(pageContent(muhammara, reader, 0)), 1);
+  });
+
+  it("rejects a continuation without room for its header and first row", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    var calls = 0;
+    assert.throws(
+      () =>
+        recipe.table(20, 390, [{ a: "omitted" }], {
+          header: { cell: { minHeight: 40 } },
+          row: { cell: { minHeight: 40 } },
+          /** Returns an area where the row alone fits, but its header does not. */
+          overflow: (self) => {
+            calls++;
+            self.endPage().createPage(400, 300);
+            return { position: [20, 180] };
+          },
+        }),
+      {
+        name: "RangeError",
+        message:
+          "Recipe.table: row 1 and its header do not fit in the continuation area.",
+      },
+    );
+    recipe.text("recovered", 20, 20);
+    finish(recipe);
+    assert.equal(
+      calls,
+      1,
+      "does not repeatedly create pages for an oversized row",
+    );
+    assert.deepEqual(
+      texts(1).map((entry) => entry.content),
+      ["recovered"],
+    );
   });
 });

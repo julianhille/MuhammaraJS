@@ -1339,7 +1339,9 @@ declare namespace muhammara {
     interface TableOptions<
       RecordType extends object = Record<string, unknown>,
     > extends Omit<TextOptions, "overflow"> {
+      /** Per-segment height, also bounded by the current page's bottom margin. */
       height?: number;
+      /** Comma-separated names are trimmed; array entries preserve exact keys. */
       order?:
         | string
         | TableField<RecordType>[]
@@ -1349,6 +1351,7 @@ declare namespace muhammara {
         boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
       border?: boolean | PolygonOptions;
       row?: TextOptions & { nth?: "even" | "odd"; cell?: TextBox };
+      /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError. */
       overflow?: (
         this: Recipe,
         recipe: Recipe,

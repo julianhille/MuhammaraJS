@@ -559,9 +559,9 @@ export function createTextMethods({ drawText, measure, module }) {
             textOptions,
             box.wrap === false ? "ellipsis" : box.wrap || "auto",
           );
-      return Math.max(
-        box.minHeight || 0,
-        entries.length * lineHeight + top + bottom,
+      return (
+        box.height ||
+        Math.max(box.minHeight || 0, entries.length * lineHeight + top + bottom)
       );
     },
 

@@ -433,8 +433,9 @@ export type RecipeTableRow = Record<string, unknown>;
 export interface RecipeTableOptions<
   RecordType extends object = RecipeTableRow,
 > extends Omit<RecipeTextOptions, "overflow"> {
-  /** Per-continuation table height. Wrapped headers and cells are measured before rows are placed. */
+  /** Per-segment height, bounded by the page bottom margin. Measurements include padding and minimum/fixed cell heights. */
   height?: number;
+  /** Comma-separated names are trimmed; array entries preserve exact keys. */
   order?:
     | string
     | RecipeTableField<RecordType>[]
@@ -448,6 +449,7 @@ export interface RecipeTableOptions<
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
   row?: RecipeTextOptions & { nth?: "even" | "odd"; cell?: RecipeTextBox };
+  /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError. */
   overflow?: (
     this: Recipe,
     recipe: Recipe,

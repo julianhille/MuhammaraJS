@@ -1,9 +1,11 @@
-const { htmlToTextObjects } = require("./htmlToTextObjects");
+var { htmlToTextObjects } = require("./htmlToTextObjects");
 
+/** Copies serializable table styling before resolving cell overrides. */
 function clone(object) {
   return JSON.parse(JSON.stringify(object));
 }
 
+/** Converts a table cell style into text options. */
 function getCellOptions(options, cell = "cell") {
   const cellOptions = clone(options);
 
@@ -15,6 +17,7 @@ function getCellOptions(options, cell = "cell") {
   return cellOptions;
 }
 
+/** Measures the same text and outer box height that text() will draw. */
 function getCellHeight(self, text, column, options) {
   let colOptions = self._merge(options, { textBox: { width: column.width } });
   const originCoord = self._calibrateCoordinate(
@@ -29,16 +32,23 @@ function getCellHeight(self, text, column, options) {
     originCoord.nx,
     originCoord.ny,
   );
-  // Measure HTML cells as text() lays them out, including line breaks.
-  const textObjects = colOptions.html
-    ? htmlToTextObjects(String(text), colOptions)
+  pathOptions.html = colOptions.html;
+  var textObjects = colOptions.html
+    ? htmlToTextObjects(text, colOptions)
     : self._makeTextObject(text, pathOptions.size, colOptions);
   const textBox = self._makeTextBox(colOptions);
   const { textHeight } = self._layoutText(textObjects, textBox, pathOptions);
 
-  return textHeight;
+  return (
+    textBox.height ||
+    Math.max(
+      textBox.minHeight,
+      textHeight + textBox.paddingTop + textBox.paddingBottom,
+    )
+  );
 }
 
+/** Draws a completed table segment without duplicating its bottom edge. */
 function drawTableBorder(self, x, y, width, height, rowLines, options) {
   // A segment without rows has nothing to enclose.
   if (!options.border || height <= 0) {
@@ -89,11 +99,12 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
  */
 function tableFields(contents, options) {
   if (options.order && options.order.length) {
-    const order =
-      typeof options.order === "string"
-        ? options.order.split(",")
-        : options.order;
-    return order.map((field) => String(field).trim()).filter(Boolean);
+    return typeof options.order === "string"
+      ? options.order
+          .split(",")
+          .map((field) => field.trim())
+          .filter(Boolean)
+      : options.order.slice();
   }
   if (options.columns && options.columns.length) {
     return options.columns.map((column) => column.name);
@@ -111,6 +122,9 @@ function tableFields(contents, options) {
 
 /**
  * Display text data in tabular form
+ * Rows and headers use their rendered text-box heights, including padding,
+ * minimum heights, fixed heights, and HTML layout. Empty contents or no selected
+ * columns leave the Recipe unchanged. Array-form order preserves exact keys.
  * @name table
  * @function
  * @memberof Recipe#
@@ -147,6 +161,7 @@ function tableFields(contents, options) {
  * @param {function} [options.overflow] - Called when the next table entry is going to expand the table
  * beyond the given height or page boundary. Its parameters are (self, row) where 'self' is the recipe handle so
  * that other recipe interfaces can be called, and the row number of the data which caused the data overflow.
+ * The callback's `this` is also the Recipe instance.
  * The return value can be 'true' which indicates that data processing should stop, or 'false' which indicates that
  * the data should continue being processed with the original [x,y] coordinates, or it can be an object containing
  * a 'position' property indicating the [x,y] coordinates where the next table for the remaining data should start.
@@ -155,6 +170,9 @@ function tableFields(contents, options) {
  * @param {string} [options.row.nth] - 'even|odd', indicating that the properties should be applied only to
  * 'even' or 'odd' rows.
  * @returns {Recipe} The recipe instance.
+ * @throws {RangeError} If the overflow callback continues into an area too small
+ * for the pending row and its repeated header. Return true to stop, or provide
+ * enough space; rows are not split and the callback is called once per overflow.
  */
 exports.table = function table(x, y, contents, options = {}) {
   if (!Array.isArray(contents) || contents.length === 0) {
@@ -166,6 +184,9 @@ exports.table = function table(x, y, contents, options = {}) {
       options.columns.find((definition) => definition.name === field);
     return column || { text: field, name: field };
   });
+  if (columns.length === 0) {
+    return this;
+  }
   this.layout("_table_", x, y, 0, 0, { columns: columns, reset: true });
 
   const tableWidth = this._layouts["_table_"].reduce((width, column) => {
@@ -177,7 +198,7 @@ exports.table = function table(x, y, contents, options = {}) {
   let nth;
   let rowOptions = {};
 
-  // Header cells are measured with exactly the options they are drawn with.
+  /** Resolves header styles identically for measurement and drawing. */
   const headerOptions = (column) => {
     let colOptions = clone(column.options.header);
     if (typeof options.header === "object") {
@@ -211,8 +232,7 @@ exports.table = function table(x, y, contents, options = {}) {
     }
   }
 
-  // The bottom is recomputed for every continuation, so a new position or a
-  // new page gets its own bounds.
+  /** Recomputes bounds for each continuation position and page. */
   const segmentBottom = (top) => {
     let bottom = options.height ? top + options.height : 0;
     const pageBottom =
@@ -296,7 +316,7 @@ exports.table = function table(x, y, contents, options = {}) {
     if (options.overflow && currentY + needed > tableBottom) {
       drawTableBorder(this, x, y, tableWidth, tableHeight, rowLines, options);
 
-      const orders = options.overflow(this, row);
+      var orders = options.overflow.call(this, this, row);
 
       if (orders === true) {
         // stop processing table data
@@ -318,6 +338,11 @@ exports.table = function table(x, y, contents, options = {}) {
       tableHeight = 0;
       rowLines = [];
       tableBottom = segmentBottom(y);
+      if (currentY + rowHeight + headerHeight > tableBottom) {
+        throw new RangeError(
+          `Recipe.table: row ${row} and its header do not fit in the continuation area.`,
+        );
+      }
     }
 
     if (firstTime && options.header) {
