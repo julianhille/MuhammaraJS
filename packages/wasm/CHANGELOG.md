@@ -15,11 +15,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
-- Reject invalid Recipe link rectangles before queuing them, so non-finite or
-  negative dimensions cannot produce malformed PDF coordinates or interrupt
-  `endPage()` when modifying an existing document
+- Reject non-finite Recipe link rectangles before queuing them, so they
+  cannot produce malformed PDF coordinates or interrupt `endPage()`, and
+  accept negative link widths and heights on edited pages as on new pages,
+  covering the same area as native
   [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
-
 - Validate all text-markup options before drawing text or queuing annotations,
   so a rejected `text()` call cannot leave partial content or markup behind
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)

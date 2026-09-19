@@ -623,8 +623,6 @@ describe("Recipe annotation parity", function () {
         [50, 50, Number.NaN, 12],
         [50, 50, 80, Number.NaN],
         [50, 50, Number.POSITIVE_INFINITY, 12],
-        [50, 50, -80, 12],
-        [50, 50, 80, -12],
         [Number.MAX_VALUE, 50, Number.MAX_VALUE, 12],
       ].forEach(function (rectangle) {
         assert.throws(
@@ -657,6 +655,33 @@ describe("Recipe annotation parity", function () {
           ? readPageForms(reader)
           : readPageContent(muhammara, reader, pageIndex);
       assert.equal((content.match(/Tj/g) || []).length, 2);
+    });
+  });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`keeps negative link sizes over the same area on ${mode} pages`, function () {
+      var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      var recipe =
+        mode === "new"
+          ? new Recipe().createPage(595, 842)
+          : new Recipe(source).editPage(1);
+      recipe.link("https://negative.test", 100, 150, -40, -10);
+      recipe.rectangle(100, 200, -50, 20, { link: "https://shape.test" });
+      assert.deepEqual(
+        finish(recipe).map(function (annotation) {
+          var [left, bottom, right, top] =
+            annotation.dictionary.Rect.toPDFArray()
+              .toJSArray()
+              .map(function (value) {
+                return value.toNumber();
+              });
+          return [Math.abs(right - left), Math.abs(top - bottom)];
+        }),
+        [
+          [40, 10],
+          [50, 20],
+        ],
+      );
     });
   });
 });

@@ -551,4 +551,40 @@ describe("Recipe annotation parity", function () {
       );
     });
   });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`keeps negative link sizes over the same area on ${mode} pages`, async function () {
+      var source = path.join(directory, "source.pdf");
+      await new Promise(function (resolve) {
+        new muhammara.Recipe("new", source)
+          .createPage(595, 842)
+          .endPage()
+          .endPDF(resolve);
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(595, 842);
+      else recipe.editPage(1);
+      recipe.link("https://negative.test", 100, 150, -40, -10);
+      recipe.rectangle(100, 200, -50, 20, { link: "https://shape.test" });
+      var annotations = await finish(recipe);
+      assert.deepEqual(
+        annotations.map(function (annotation) {
+          var [left, bottom, right, top] =
+            annotation.dictionary.Rect.toPDFArray()
+              .toJSArray()
+              .map(function (value) {
+                return value.toNumber();
+              });
+          return [Math.abs(right - left), Math.abs(top - bottom)];
+        }),
+        [
+          [40, 10],
+          [50, 20],
+        ],
+      );
+    });
+  });
 });
