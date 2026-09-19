@@ -4,6 +4,16 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Write annotation `title`, `subject`, and text as PDF text strings on new
+  pages, so non-ASCII characters no longer display as garbled UTF-8 bytes in
+  PDF viewers
+  [#716](https://github.com/julianhille/MuhammaraJS/issues/716)
+- Preserve `0` and `false` annotation titles and subjects instead of treating
+  them as absent
+  [#716](https://github.com/julianhille/MuhammaraJS/issues/716)
+
 ## [1.0.0-beta.3] - 2026-09-18
 
 ### Added

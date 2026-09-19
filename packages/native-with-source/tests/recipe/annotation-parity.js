@@ -147,4 +147,38 @@ describe("Recipe annotation parity", function () {
       annotations[0].id,
     );
   });
+
+  it("writes non-ASCII annotation text on new pages", async function () {
+    var recipe = new muhammara.Recipe("new", output).createPage(595, 842);
+    recipe.comment("Größe ✓", 50, 50, { title: "Jürgen", subject: "Prüfung" });
+    var annotations = await finish(recipe);
+    assert.equal(annotations[0].dictionary.Contents.toText(), "Größe ✓");
+    assert.equal(annotations[0].dictionary.T.toText(), "Jürgen");
+    assert.equal(annotations[0].dictionary.Subj.toText(), "Prüfung");
+  });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`preserves falsy annotation titles and subjects on ${mode} pages`, async function () {
+      var source = path.join(directory, "source.pdf");
+      await new Promise(function (resolve) {
+        new muhammara.Recipe("new", source)
+          .createPage(595, 842)
+          .endPage()
+          .endPDF(resolve);
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(595, 842);
+      else recipe.editPage(1);
+      recipe.comment("x", 50, 100, { title: 0, subject: false });
+      recipe.comment("y", 50, 150, { title: null });
+      var annotations = await finish(recipe);
+      assert.equal(annotations[0].dictionary.T.toText(), "0");
+      assert.equal(annotations[0].dictionary.Subj.toText(), "false");
+      // Native always writes a /T entry, empty when there is no title.
+      assert.equal(annotations[1].dictionary.T.toText(), "");
+    });
+  });
 });

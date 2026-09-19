@@ -43,7 +43,10 @@ Annotations are queued until `endPage()`. Supported markup subtypes include
 `Highlight`, `Underline`, `StrikeOut`, and `Squiggly`. Recipe's rich-text form
 is a Worker-safe XML subset, not arbitrary browser HTML.
 
-Editing a source page can add annotations. Appending or rebuilding a source page
+On new pages, `title`, `subject`, and contents are written as PDF text
+strings, so non-ASCII characters display correctly in PDF viewers, and `0`
+and `false` are preserved as `"0"`/`"false"` rather than becoming an empty
+title. Editing a source page can add annotations. Appending or rebuilding a source page
 does not deep-copy its existing `/Annots` graph.
 
 To change or remove an annotation that is already in a document, see

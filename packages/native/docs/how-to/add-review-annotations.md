@@ -39,5 +39,9 @@ outer text options.
 
 Set `richText: true` on a comment to use supported HTML formatting.
 
+`title`, `subject`, and contents are written as PDF text strings, so non-ASCII
+characters display correctly in PDF viewers. `0` and `false` are preserved as
+`"0"`/`"false"` rather than becoming an empty title or subject.
+
 To change or remove an annotation that is already in a document, see
 [Edit or Remove an Existing Annotation](edit-existing-annotations.md).
