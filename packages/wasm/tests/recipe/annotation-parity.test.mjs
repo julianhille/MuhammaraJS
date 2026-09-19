@@ -381,6 +381,31 @@ describe("Recipe annotation parity", function () {
     ]);
   });
 
+  it("adds FreeText annotations at fixed and centered coordinates", function () {
+    var recipe = new Recipe().createPage(612, 792);
+    recipe
+      .annot(300, 300, "FreeText", { text: "Yo yo yo" })
+      .annot("center", "center", "FreeText", {
+        text: "Do you have Free Style yo?",
+        width: 200,
+        height: 50,
+      });
+    var annotations = finish(recipe);
+    assert.deepEqual(subtypes(annotations), ["FreeText", "FreeText"]);
+    assert.equal(annotations[0].dictionary.Contents.toText(), "Yo yo yo");
+    assert.equal(
+      annotations[1].dictionary.Contents.toText(),
+      "Do you have Free Style yo?",
+    );
+    var centeredRect = annotations[1].dictionary.Rect.toPDFArray()
+      .toJSArray()
+      .map(function (value) {
+        return value.toNumber();
+      });
+    assert.equal(centeredRect[2] - centeredRect[0], 200);
+    assert.equal(centeredRect[3] - centeredRect[1], 50);
+  });
+
   ["new", "added", "edited", "paused", "resumed"].forEach(function (mode) {
     it(`preserves structured markup on ${mode} source pages`, function () {
       var source = new Recipe().createPage(595, 842).endPage().endPDF();

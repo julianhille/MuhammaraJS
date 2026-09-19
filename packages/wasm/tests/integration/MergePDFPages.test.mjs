@@ -133,6 +133,35 @@ describe("MergePDFPages", function () {
     reader.end();
   });
 
+  it("appends non-sequential page indices from a multi-page source", function () {
+    var pageCount = 5;
+    var sourceWriter = muhammara.createWriter();
+    for (var index = 0; index < pageCount; ++index) {
+      var page = new muhammara.PDFPage(0, 0, 100, 100);
+      sourceWriter
+        .startPageContentContext(page)
+        .q()
+        .cm(1, 0, 0, 1, index * 10, 0)
+        .re(0, 0, 5, 5)
+        .f()
+        .Q();
+      sourceWriter.writePage(page);
+    }
+    var source = sourceWriter.end();
+
+    var writer = muhammara.createWriter();
+    var copying = writer.createPDFCopyingContext(source);
+    var ids = [3, 0, 4].map((index) => copying.appendPDFPageFromPDF(index));
+    copying.end();
+    var output = writer.end();
+
+    assert.equal(new Set(ids).size, ids.length);
+    ids.forEach((id) => assert.ok(id > 0));
+    var reader = muhammara.createReader(output);
+    assert.equal(reader.getPagesCount(), ids.length);
+    reader.end();
+  });
+
   it("directly merges byte-backed pages before and during target content", function () {
     var source = sourcePdf(200, 300);
     var writer = muhammara.createWriter();
