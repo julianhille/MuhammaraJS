@@ -799,4 +799,39 @@ describe("Recipe table layout", () => {
     assert.match(content, /\b1 0 0 rg\b/, "the column fill survives");
     assert.match(content, /\b0 0 1 RG\b/, "the row stroke applies");
   });
+
+  it("merges renderer box styles over column and row styles", () => {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      columns: [
+        {
+          name: "a",
+          cell: { lineHeight: 10, style: { fill: "#ff0000" } },
+          /** Overrides only the stroke; the column fill must survive. */
+          renderer: () => ({ textBox: { style: { stroke: "#00ff00" } } }),
+        },
+      ],
+      row: { cell: { style: { stroke: "#0000ff" } } },
+    });
+    finish(recipe);
+    var content = pageContent(reader, 0) + formContent(reader, 0);
+    assert.match(content, /\b1 0 0 rg\b/, "the column fill survives");
+    assert.match(content, /\b0 1 0 RG\b/, "the renderer stroke applies");
+    assert.doesNotMatch(content, /\b0 0 1 RG\b/, "the row stroke is replaced");
+  });
+
+  it("replaces arrays such as padding instead of merging their entries", () => {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      columns: [
+        { name: "a", cell: { lineHeight: 10, padding: [10, 2, 10, 2] } },
+      ],
+      row: { cell: { padding: [3] } },
+    });
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    // [3] pads every side by 3; merging entries would keep the 10pt bottom.
+    assert.deepEqual(cursor, [20, 36]);
+  });
 });
