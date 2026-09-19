@@ -35,8 +35,7 @@ reply is a separate annotation linked to its parent through `/IRT` and `/RT /R`.
 Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create
 markup annotations. Their nested object sets `text`, `color`, `opacity`, and
 `replies`; put shared metadata such as `title`, `date`, and `subject` on the
-outer text options. In `html: true` text, `<u>` and `<del>` draw lines in the
-text color instead of annotations.
+outer text options.
 
 Set `richText: true` on a comment to use supported HTML formatting.
 

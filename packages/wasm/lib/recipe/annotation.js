@@ -197,7 +197,6 @@ export function createAnnotationMethods({
                 ? [255, 0, 0]
                 : [0, 255, 0],
           );
-        // Native writes generated markup quad points as whole numbers.
         var quadPoints =
           options.quadPoints ||
           (markup
@@ -210,7 +209,7 @@ export function createAnnotationMethods({
                 bottom,
                 left + width,
                 bottom,
-              ].map(Math.round)
+              ]
             : []);
         var border = options.border || {};
         var borderWidth =

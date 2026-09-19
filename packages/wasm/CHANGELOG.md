@@ -4,13 +4,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
-### Added
-
-- Add the `squiggly` text option and typed `highlight`, `underline`, and
-  `strikeOut` objects (`text`, `color`, `opacity`, `replies`), creating
-  text-markup annotations like native
-  [#714](https://github.com/julianhille/MuhammaraJS/issues/714)
-
 ### Fixed
 
 - Resolve Recipe text colors like native: gray (`#gg`), CMYK (`#ccmmyykk`),
@@ -24,12 +17,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Draw Recipe text without a `color` in native's default `#1777d1` instead of
   black. Pass `color: "#000000"` to keep black text
   [#712](https://github.com/julianhille/MuhammaraJS/issues/712)
-- Create `Underline` and `StrikeOut` annotations for the `underline` and
-  `strikeOut` text options instead of drawing black lines, and place
-  `Highlight` annotations over native's line box. HTML `<u>` and `<del>` still
-  draw lines, now in the text color at native's offsets; use `line()` to keep
-  a drawn rule under plain text
-  [#714](https://github.com/julianhille/MuhammaraJS/issues/714)
 
 ## [1.0.0-beta.3] - 2026-09-18
 
