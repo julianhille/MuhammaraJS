@@ -15,7 +15,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   the table's bottom border twice, including when `overflow` returns `true`
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Leave tables with no columns unchanged instead of setting the cursor to
-  `-Infinity`
+  `-Infinity`, and throw a clear `Error` when an `overflow` callback ends the
+  page without starting another
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ### Changed

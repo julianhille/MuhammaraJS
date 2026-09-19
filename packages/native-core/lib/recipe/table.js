@@ -176,6 +176,8 @@ function tableFields(contents, options) {
  * @throws {RangeError} If the overflow callback continues into an area too small
  * for the pending row and its repeated header. Return true to stop, or provide
  * enough space; rows are not split and the callback is called once per overflow.
+ * @throws {Error} If the overflow callback continues after ending the page
+ * without starting another one.
  */
 exports.table = function table(x, y, contents, options = {}) {
   if (!Array.isArray(contents) || contents.length === 0) {
@@ -325,6 +327,11 @@ exports.table = function table(x, y, contents, options = {}) {
         // stop processing table data
         tableHeight = 0;
         break;
+      }
+      if (!this.page) {
+        throw new Error(
+          "Recipe.table: the overflow callback must leave an active page to continue on.",
+        );
       }
       if (orders && orders.position) {
         [x, y] = orders.position;
