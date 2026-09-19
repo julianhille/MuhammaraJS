@@ -162,6 +162,8 @@ async function usesLowLevelSurface() {
     compress: false,
   });
   var resumedPage = syncModifier.createPageModifier(0, true);
+  // @ts-expect-error Starting new-page content requires a PDFPage, not a null modifier placeholder.
+  syncModifier.startPageContentContext(null);
   resumedPage
     .startContext()
     .endContext()
@@ -336,6 +338,8 @@ async function usesLowLevelSurface() {
     .endPDF();
   recipe.textDimensions("Hello").width;
   recipe.table(20, 20, [{ value: "first" }], {
+    textBox: { style: { stroke: "blue", lineWidth: 2 } },
+    row: { nth: "odd", textBox: { style: { opacity: 0.25 } } },
     header: {
       font: "arial",
       size: 12,
@@ -354,6 +358,7 @@ async function usesLowLevelSurface() {
             minHeight: 80,
             height: 100,
             clipIfExceedsBox: true,
+            style: { fill: "red" },
             /** Renderer-returned callbacks retain their typed arguments. */
             onClip(currentRecipe, result) {
               var remainder: string = result.remainder;

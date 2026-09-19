@@ -296,6 +296,8 @@ export interface RecipeTableOptions extends Omit<
   RecipeTextOptions,
   "overflow"
 > {
+  /** Nested body-cell styles merge in table, column, matching row, then renderer order. */
+  textBox?: RecipeTextBox;
   /** Per-segment height, bounded by the page bottom margin. Measurements include padding and minimum/fixed cell heights. */
   height?: number;
   /** Comma-separated names are trimmed; array entries preserve exact keys. */

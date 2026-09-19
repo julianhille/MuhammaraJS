@@ -681,6 +681,87 @@ describe("Recipe table layout", function () {
     });
   });
 
+  it("keeps zero table coordinates aligned with borders and continuations", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    var overflows = [];
+    recipe.table(
+      0,
+      0,
+      [
+        { a: "A1", b: "B1" },
+        { a: "A2", b: "B2" },
+        { a: "A3", b: "B3" },
+      ],
+      {
+        size: 8,
+        height: 20,
+        border: true,
+        columns: [
+          { name: "a", width: 80 },
+          { name: "b", width: 80 },
+        ],
+        row: { cell: { padding: 0, lineHeight: 10 } },
+        /** Continues at the same literal left edge, below the first segment. */
+        overflow: (self, row) => {
+          overflows.push(row);
+          return { position: [0, 80] };
+        },
+      },
+    );
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(overflows, [3]);
+    assert.deepEqual(
+      texts().map((entry) => [entry.content, entry.x]),
+      [
+        ["A1", 0],
+        ["B1", 80],
+        ["A2", 0],
+        ["B2", 80],
+        ["A3", 0],
+        ["B3", 80],
+      ],
+    );
+    assert.deepEqual(cursor, [0, 90]);
+    assert.equal(lineCount(pageContent(muhammara, reader, 0)), 3);
+    assert.match(pageContent(muhammara, reader, 0), /(^|\s)80\s+400\s+m\b/);
+  });
+
+  it("merges table, column, row, and renderer box styles without discarding properties", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    var styles = [];
+    var writeText = recipe.text;
+    /** Captures effective styles before drawing also verifies the generated text. */
+    recipe.text = function (text, x, y, options) {
+      styles.push({ ...options.textBox.style });
+      return writeText.call(this, text, x, y, options);
+    };
+    var options = {
+      textBox: { style: { stroke: "blue", lineWidth: 2 } },
+      columns: [
+        {
+          name: "value",
+          cell: { style: { fill: "#eeeeee" } },
+          /** Replaces only the fill; inherited border and row opacity must survive. */
+          renderer: () => ({ textBox: { style: { fill: "red" } } }),
+        },
+      ],
+      row: { nth: "odd", cell: { style: { opacity: 0.25 } } },
+    };
+    var before = JSON.stringify(options);
+    recipe.table(20, 20, [{ value: "first" }, { value: "second" }], options);
+    finish(recipe);
+    assert.deepEqual(styles, [
+      { stroke: "blue", lineWidth: 2, fill: "red", opacity: 0.25 },
+      { stroke: "blue", lineWidth: 2, fill: "red" },
+    ]);
+    assert.equal(JSON.stringify(options), before);
+    assert.deepEqual(
+      texts().map((entry) => entry.content),
+      ["first", "second"],
+    );
+  });
+
   it("merges header box overrides and uses the same styles on continuations", function () {
     var recipe = new Recipe().createPage(400, 400);
     var headerCalls = [];

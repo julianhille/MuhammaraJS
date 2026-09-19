@@ -70,6 +70,10 @@ describe("BasicModification", function () {
         .l(10, 10)
         .S();
       pageModifier.endContext();
+      assert.throws(
+        () => writer.startPageContentContext(null),
+        "a missing new page must not resume a paused page modifier",
+      );
     });
     pageModifier.writePage();
     writer.end();

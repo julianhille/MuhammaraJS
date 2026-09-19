@@ -33,6 +33,15 @@ continuation reserves room for its repeated header and uses the bounds of the
 position and page it continues on. Empty `contents` draw nothing. After a table,
 `movedown(0, true)` returns the table's left edge and bottom.
 
+The table's `x` and `y` are literal Recipe coordinates: `0` means the page's
+left or top edge, including for overflow continuation positions. Cells and
+borders use the same origin.
+
+Body-cell options merge in this order: table text options, column options,
+matching `row` options, then renderer results. Nested `textBox.style`
+properties merge individually, so overriding a fill retains an inherited
+stroke, line width, or row opacity.
+
 Array-form `order` preserves exact keys, including surrounding whitespace and
 empty-string keys; comma-separated string entries are trimmed. If no columns
 are selected or discovered, the call draws nothing and preserves the cursor.

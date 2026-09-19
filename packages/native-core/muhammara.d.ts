@@ -1342,6 +1342,8 @@ declare namespace muhammara {
     interface TableOptions<
       RecordType extends object = Record<string, unknown>,
     > extends Omit<TextOptions, "overflow"> {
+      /** Nested body-cell styles merge in table, column, matching row, then renderer order. */
+      textBox?: TextBox;
       /** Per-segment height, also bounded by the current page's bottom margin. */
       height?: number;
       /** Comma-separated names are trimmed; array entries preserve exact keys. */

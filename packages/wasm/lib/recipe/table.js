@@ -1,21 +1,12 @@
-/** Merges text options while retaining nested text-box styles. */
+/** Merges nested cell and header styles like native without mutating caller options. */
 function merge(left = {}, right = {}) {
-  return {
-    ...left,
-    ...right,
-    textBox: { ...left.textBox, ...right.textBox },
-  };
-}
-
-/** Resolves nested header styles like native without mutating caller options. */
-function mergeHeaderOptions(left = {}, right = {}) {
   var result = { ...left };
   for (var key of Object.keys(right)) {
     var value = right[key];
     result[key] = Array.isArray(value)
       ? value.slice()
       : value && typeof value === "object"
-        ? mergeHeaderOptions(result[key], value)
+        ? merge(result[key], value)
         : value;
   }
   return result;
@@ -77,6 +68,8 @@ export function createTableMethods() {
      * Header text styles are independent of body styles: column header options
      * (or defaults) are overridden by table header options, then alignToData
      * and column hcell box overrides are applied, matching native Recipe.
+     * Coordinates are literal Recipe points, including zero. Nested body-cell
+     * styles merge in table, column, matching row, then renderer order.
      *
      * @name table
      * @function
@@ -105,7 +98,11 @@ export function createTableMethods() {
         reset: true,
       });
       var columns = this._layouts._table_;
-      var tableWidth = columns.reduce((sum, column) => sum + column.width, 0);
+      var tableWidth = columns.reduce((sum, column) => {
+        // Table coordinates are literal, unlike layout()'s zero-as-margin defaults.
+        column.position = [x + sum, y];
+        return sum + column.width;
+      }, 0);
       /** Bounds are recomputed for every continuation position and page. */
       var segmentBottom = (top) =>
         options.height
@@ -156,7 +153,7 @@ export function createTableMethods() {
           : cellOptionsValue;
       /** Resolves header styles identically for measurement and drawing. */
       var headerOptions = (column) => {
-        var header = mergeHeaderOptions(
+        var header = merge(
           { textBox: {} },
           column.options.header && typeof column.options.header === "object"
             ? column.options.header
@@ -172,16 +169,13 @@ export function createTableMethods() {
             overrides.textBox = overrides.cell;
             delete overrides.cell;
           }
-          header = mergeHeaderOptions(header, overrides);
+          header = merge(header, overrides);
         }
         if (options.header?.alignToData && column.options.cell?.textAlign) {
           header.textBox.textAlign = column.options.cell.textAlign;
         }
         if (column.options.hcell) {
-          header.textBox = mergeHeaderOptions(
-            header.textBox,
-            column.options.hcell,
-          );
+          header.textBox = merge(header.textBox, column.options.hcell);
         }
         return header;
       };
@@ -270,7 +264,7 @@ export function createTableMethods() {
             [x, y] = order.position;
             var columnX = x;
             columns.forEach((column) => {
-              column.x = columnX;
+              column.position = [columnX, y];
               columnX += column.width;
             });
           }

@@ -3,6 +3,8 @@ import muhammara = require("@muhammara/native-with-source");
 declare const writer: muhammara.PDFWriter;
 var resumedPage = new muhammara.PDFPageModifier(writer, 0, true);
 resumedPage.startContext().endContext().startContext().endContext().writePage();
+// @ts-expect-error Starting new-page content requires a PDFPage, not a null modifier placeholder.
+writer.startPageContentContext(null);
 
 var page: muhammara.PDFPage = writer.createPage(0, 0, 595, 842);
 writer.startPageContentContext(page).c(0, 0, 1, 1, 2, 2).S();
@@ -162,6 +164,7 @@ var invalidLayoutOptions: muhammara.Recipe.LayoutOptions = {
   direction: "horizontal",
 };
 var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
+  textBox: { style: { stroke: "blue", lineWidth: 2 } },
   order: ["name", "score"],
   columns: [
     {
@@ -188,6 +191,7 @@ var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
                 minHeight: 80,
                 height: 100,
                 clipIfExceedsBox: true,
+                style: { fill: "red" },
                 /** Renderer-returned callbacks retain their typed arguments. */
                 onClip(currentRecipe, result) {
                   var remainder: string = result.remainder;
@@ -202,7 +206,7 @@ var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
   ],
   header: { font: "arial", size: 12, alignToData: true, cell: { padding: 2 } },
   border: { width: 0.5, lineCap: "butt" },
-  row: { nth: "odd", cell: { padding: 2 } },
+  row: { nth: "odd", cell: { padding: 2, style: { opacity: 0.25 } } },
   overflow: function (currentRecipe, row) {
     var callbackThis: muhammara.Recipe = this;
     void callbackThis;

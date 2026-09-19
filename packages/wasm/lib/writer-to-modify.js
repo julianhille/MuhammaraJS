@@ -2271,7 +2271,7 @@ export function createWriterToModifyFactory({
       },
       startPageContentContext: function (nextPage) {
         requireOpen();
-        if (nextPage !== page || context) {
+        if (!page || nextPage !== page || context) {
           throw new Error("A writable PDFPage is required");
         }
         return startContext();

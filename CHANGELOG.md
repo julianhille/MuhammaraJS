@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Align table cells with borders at literal zero coordinates, including after
+  overflow continuation, instead of shifting the first segment to the margin
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Stop Recipe `table()` from throwing for empty `contents`, reusing a previous
   table's `overflow` callback, keeping the first page's bounds on a
   continuation, overlapping a continued row with its repeated header, drawing a

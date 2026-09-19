@@ -6,6 +6,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Align table cells with borders at literal zero coordinates, including after
+  overflow continuation, instead of shifting the first segment to the margin
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Merge nested table body-cell styles across table, column, row, and renderer
+  options so fill overrides retain inherited borders and opacity, matching native
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Retain edited-page content across Recipe `pauseContext()`/`resumeContext()`
   and allow a low-level page modifier to restart its context before writing,
   matching native and preventing earlier table rows from disappearing

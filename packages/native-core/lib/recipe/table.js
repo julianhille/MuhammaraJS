@@ -151,6 +151,8 @@ function tableFields(contents, options) {
  * Header text styles are independent of body styles: column header options
  * (or defaults) are overridden by table header options, then alignToData
  * and column hcell box overrides are applied.
+ * Coordinates are literal Recipe points, including zero. Nested body-cell
+ * styles merge in table, column, matching row, then renderer order.
  * @name table
  * @function
  * @memberof Recipe#
@@ -224,6 +226,8 @@ exports.table = function table(x, y, contents, options = {}) {
   var columns = this._layouts["_table_"];
 
   var tableWidth = columns.reduce((width, column) => {
+    // Table coordinates are literal, unlike layout()'s zero-as-margin defaults.
+    column.position = [x + width, y];
     width += column.width;
     return width;
   }, 0);
@@ -383,7 +387,7 @@ exports.table = function table(x, y, contents, options = {}) {
         var xx = x;
         // Make sure x position adjusted in all columns
         for (var column of columns) {
-          column.x = xx;
+          column.position = [xx, y];
           xx += column.width;
         }
       }
