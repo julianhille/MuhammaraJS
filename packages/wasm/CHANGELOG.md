@@ -49,6 +49,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   or provide a large enough continuation area. Callbacks now receive the Recipe
   as `this`, matching native
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Inherit parent annotation metadata for replies without their own `title`,
+  `subject`, `date`, `flag`, `open`, or icon, matching native. A reply keeps
+  its own contents, rich-text mode, and opacity (opaque by default)
+  [#717](https://github.com/julianhille/MuhammaraJS/issues/717)
 
 ## [1.0.0-beta.3] - 2026-09-18
 

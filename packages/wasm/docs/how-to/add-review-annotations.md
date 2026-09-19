@@ -38,6 +38,9 @@ the annotation's `/CA` value; the `color` option sets its RGB color separately.
 On new pages, both `comment()` and `annot()` accept `replies`, an array of objects
 with `text` and optional `title`, `date`, `subject`, `richText`, and `flag`. Each
 reply is a separate annotation linked to its parent through `/IRT` and `/RT /R`.
+A reply without its own `title`, `subject`, `date`, `flag`, `open`, or icon
+inherits the parent's, matching native. A reply keeps its own contents,
+`richText` mode, and `opacity` (opaque by default) regardless of the parent's.
 
 Annotations are queued until `endPage()`. Supported markup subtypes include
 `Highlight`, `Underline`, `StrikeOut`, and `Squiggly`. Recipe's rich-text form
