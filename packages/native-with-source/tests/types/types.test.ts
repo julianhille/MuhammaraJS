@@ -188,7 +188,7 @@ var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
       },
     },
   ],
-  header: { alignToData: true, cell: { padding: 2 } },
+  header: { font: "arial", size: 12, alignToData: true, cell: { padding: 2 } },
   border: { width: 0.5, lineCap: "butt" },
   row: { nth: "odd", cell: { padding: 2 } },
   overflow: function (currentRecipe, row) {

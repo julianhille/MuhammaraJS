@@ -1302,7 +1302,9 @@ declare namespace muhammara {
       text?: string;
       width?: number;
       cell?: TextBox;
+      /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
       header?: boolean | TextOptions;
+      /** Final header text-box overrides, applied after header styles and alignToData. */
       hcell?: TextBox;
       renderer?: (
         this: void,
@@ -1346,6 +1348,7 @@ declare namespace muhammara {
         | TableField<RecordType>[]
         | readonly [TableField<RecordType>, ...TableField<RecordType>[]];
       columns?: readonly TableColumnOptions<RecordType>[];
+      /** Enables headers and overrides column header styles; body text styles are not inherited. */
       header?:
         boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
       border?: boolean | PolygonOptions;

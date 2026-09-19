@@ -279,7 +279,9 @@ export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
   text?: string;
   width?: number;
   cell?: RecipeTextBox;
-  header?: RecipeTextOptions;
+  /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
+  header?: boolean | RecipeTextOptions;
+  /** Final header text-box overrides, applied after header styles and alignToData. */
   hcell?: RecipeTextBox;
   renderer?: (
     text: unknown,
@@ -298,6 +300,7 @@ export interface RecipeTableOptions extends Omit<
   /** Comma-separated names are trimmed; array entries preserve exact keys. */
   order?: string | string[];
   columns?: RecipeTableColumn[];
+  /** Enables headers and overrides column header styles; body text styles are not inherited. */
   header?:
     | boolean
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
