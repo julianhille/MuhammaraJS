@@ -390,6 +390,7 @@ export type RecipeTableFieldValue<
         : undefined
       : undefined
   : never;
+/** Table column options. `cell` is the column's only body text box, as in native Recipe. */
 export interface RecipeTableColumn<
   RecordType extends object = RecipeTableRow,
   Field extends RecipeTableColumnField<RecordType> =
