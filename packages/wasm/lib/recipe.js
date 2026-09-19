@@ -1,5 +1,9 @@
 import { coordinateMethods } from "./recipe/coordinate.js";
-import { knownColors, createColorMethods } from "./recipe/colors.js";
+import {
+  colorModel,
+  knownColors,
+  createColorMethods,
+} from "./recipe/colors.js";
 import { endPDF } from "./recipe/end.js";
 import { getFont, registerFont } from "./recipe/font.js";
 import { createImageMethods } from "./recipe/image.js";
@@ -28,6 +32,20 @@ import { createReplaceTextMethods } from "./recipe/replace-text.js";
 import { standardInfoKeys } from "./recipe-info.js";
 
 /** Creates the high-level Recipe PDF composition factory. */
+/**
+ * Packs a Recipe color model for the text export: a color-space index (0 gray,
+ * 1 RGB, 2 CMYK) and one byte per component, as PDFWriter expects.
+ */
+function textColor(model) {
+  return {
+    space: ["gray", "rgb", "cmyk"].indexOf(model.colorspace),
+    value: model.values.reduce(
+      (packed, component) => packed * 256 + Math.round(component * 255),
+      0,
+    ),
+  };
+}
+
 export function createRecipeFactory({
   defaultFont,
   module,
@@ -478,6 +496,9 @@ export function createRecipeFactory({
       if (!Number.isFinite(characterSpacing)) {
         throw new TypeError("charSpace must be a finite number");
       }
+      // Resolve like native: registered names, gray/RGB/CMYK codes, and the
+      // #1777d1 default for a missing or unknown color.
+      var fill = colorModel(this, options.color || options.colour, options);
       var transformed =
         options.rotation ||
         options.skewX ||
@@ -504,14 +525,16 @@ export function createRecipeFactory({
       var fontPath = resolveFont(options);
       var fontSize = options.fontSize || options.size || 14;
       if (this._pageContext) {
-        this._pageContext
+        var editContext = this._pageContext
           .BT()
           .Tf(this.writer.getFontForBytes(fontPath), fontSize)
-          .Tc(characterSpacing)
-          .Tm(1, 0, 0, 1, point.nx, point.ny)
-          .Tj(String(value))
-          .ET();
+          .Tc(characterSpacing);
+        if (fill.colorspace === "gray") editContext.g(...fill.values);
+        else if (fill.colorspace === "cmyk") editContext.k(...fill.values);
+        else editContext.rg(...fill.values);
+        editContext.Tm(1, 0, 0, 1, point.nx, point.ny).Tj(String(value)).ET();
       } else {
+        var packedFill = textColor(fill);
         withString(value, (textPointer) =>
           withString(fontPath, (fontPointer) => {
             call(
@@ -522,7 +545,8 @@ export function createRecipeFactory({
               textPointer,
               fontPointer,
               fontSize,
-              colorValue(options.color),
+              packedFill.space,
+              packedFill.value,
               characterSpacing,
             );
           }),

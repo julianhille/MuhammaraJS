@@ -127,3 +127,85 @@ describe("Recipe text default-size parity", function () {
     }
   });
 });
+
+/** Collects fill-color operators from a page and its Form XObjects. */
+function fillOperators(reader, pageIndex) {
+  var page = reader.parsePage(pageIndex).getDictionary();
+  var contents = reader.queryDictionaryObject(page, "Contents");
+  var streams =
+    contents.getType() === muhammara.ePDFObjectArray
+      ? contents
+          .toPDFArray()
+          .toJSArray()
+          .map((reference) =>
+            reader.parseNewObject(
+              reference.toPDFIndirectObjectReference().getObjectID(),
+            ),
+          )
+      : [contents];
+  var resources = reader.queryDictionaryObject(page, "Resources");
+  if (resources.exists("XObject")) {
+    var forms = reader.queryDictionaryObject(resources, "XObject");
+    Object.keys(forms.toJSObject()).forEach(function (name) {
+      streams.push(reader.queryDictionaryObject(forms, name));
+    });
+  }
+  var content = streams
+    .map(function (stream) {
+      var input = reader.startReadingFromStream(stream.toPDFStream());
+      var chunks = [];
+      while (input.notEnded()) chunks.push(Buffer.from(input.read(4096)));
+      return Buffer.concat(chunks).toString("latin1");
+    })
+    .join("\n");
+  return Array.from(
+    content.matchAll(/(?:^|\s)((?:[\d.]+ ){1,4}(?:g|rg|k))(?=\s)/g),
+    (match) => match[1],
+  );
+}
+
+describe("Recipe text color parity", function () {
+  var cases = [
+    [{}, "0.090196 0.466667 0.819608 rg"],
+    [{ color: "#ff0000" }, "1 0 0 rg"],
+    [{ color: "#80" }, "0.501961 g"],
+    [{ color: "#ff000000" }, "1 0 0 0 k"],
+    [{ color: "%100,0,0" }, "1 0 0 rg"],
+    [{ color: [0, 0, 255] }, "0 0 1 rg"],
+    [{ color: "nosuchcolor" }, "0.090196 0.466667 0.819608 rg"],
+    [{ colour: "brand" }, "0 1 0 rg"],
+  ];
+
+  [false, true].forEach(function (editing) {
+    it(`resolves text colors like native when ${editing ? "editing" : "creating"}`, function () {
+      var recipe = new Recipe(Buffer.from("new"));
+      if (editing) {
+        cases.forEach(function () {
+          recipe.createPage(200, 200).endPage();
+        });
+        recipe = new Recipe(recipe.endPDF((bytes) => bytes));
+      }
+      recipe.chroma("brand", "#00ff00");
+      cases.forEach(function ([options], index) {
+        if (editing) recipe.editPage(index + 1);
+        else recipe.createPage(200, 200);
+        recipe.text("Hello", 20, 20, options).endPage();
+      });
+      var bytes = recipe.endPDF((output) => output);
+      var reader = muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(bytes),
+      );
+      try {
+        cases.forEach(function ([options, expected], index) {
+          assert.deepEqual(
+            fillOperators(reader, index),
+            [expected],
+            JSON.stringify(options),
+          );
+        });
+      } finally {
+        reader.end();
+      }
+    });
+  });
+});
