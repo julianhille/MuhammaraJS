@@ -417,6 +417,7 @@ export function createTextMethods({ drawText, measure, module }) {
    * Adds the text-markup annotations requested by text() options over one
    * drawn line. Only the outer text() options request annotations; HTML
    * `<u>` and `<s>` styles stay visual decoration, as in native Recipe.
+   * An optional clip rectangle limits the annotation to visible line bounds.
    */
   function addTextMarkup(
     recipe,
@@ -425,6 +426,7 @@ export function createTextMethods({ drawText, measure, module }) {
     baseline,
     width,
     validateOnly = false,
+    clip,
   ) {
     if (!width) return;
     var bounds;
@@ -435,6 +437,17 @@ export function createTextMethods({ drawText, measure, module }) {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
         options,
       );
+      var left = x;
+      var right = x + width;
+      var top = baseline - bounds.yMax;
+      var bottom = baseline - bounds.yMin;
+      if (clip) {
+        left = Math.max(left, clip.x);
+        right = Math.min(right, clip.x + clip.width);
+        top = Math.max(top, clip.y);
+        bottom = Math.min(bottom, clip.y + clip.height);
+        if (right <= left || bottom <= top) return;
+      }
       var markup = typeof options[key] === "object" ? options[key] : {};
       var annotation = {
         text: markup.text || "",
@@ -448,8 +461,8 @@ export function createTextMethods({ drawText, measure, module }) {
         icon: options.icon,
         date: options.date,
         subject: options.subject,
-        width,
-        height: bounds.yMax - bounds.yMin,
+        width: clip ? right - left : width,
+        height: clip ? bottom - top : bounds.yMax - bounds.yMin,
       };
       Object.keys(annotation).forEach((name) => {
         if (annotation[name] === undefined) delete annotation[name];
@@ -458,14 +471,14 @@ export function createTextMethods({ drawText, measure, module }) {
       if (validateOnly) {
         recipe._flushAnnotations(true, [
           {
-            x,
-            y: baseline - bounds.yMin,
+            x: left,
+            y: bottom,
             subtype,
             options: annotation,
           },
         ]);
       } else {
-        recipe.annot(x, baseline - bounds.yMin, subtype, annotation);
+        recipe.annot(left, bottom, subtype, annotation);
       }
     });
   }
@@ -967,6 +980,15 @@ export function createTextMethods({ drawText, measure, module }) {
           linkX,
           baseline,
           hasText(entry.text) ? linkWidth : 0,
+          false,
+          clipping
+            ? {
+                x: x + left,
+                y: currentY,
+                width: width - left - right,
+                height: lineHeight,
+              }
+            : undefined,
         );
         if (textOptions.link && !entry.parts) {
           var linkBounds = dimensions(this, entry.text, textOptions);

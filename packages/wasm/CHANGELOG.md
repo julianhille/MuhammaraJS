@@ -15,6 +15,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Constrain Recipe text-markup annotations to the visible clipping region when
+  using `textBox.wrap: "clip"`, so hidden text does not leave highlights or
+  other review markup outside the box
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+
 - Reject non-finite Recipe link rectangles before queuing them, so they
   cannot produce malformed PDF coordinates or interrupt `endPage()`, and
   accept negative link widths and heights on edited pages as on new pages,

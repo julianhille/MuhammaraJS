@@ -40,6 +40,10 @@ markup annotations. Their nested object sets `text`, `color`, `opacity`, and
 `replies`; put shared metadata such as `title`, `date`, and `subject` on the
 outer text options.
 
+With `textBox.wrap: "clip"`, text-markup rectangles and quadrilaterals are
+limited to the line's visible clipping region. Hidden portions of the text do
+not create markup outside that region.
+
 Markup also works on pages created while modifying an existing document.
 Justified text uses markup bounds that include the expanded spaces between words.
 

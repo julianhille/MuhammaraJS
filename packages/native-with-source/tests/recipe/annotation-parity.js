@@ -96,6 +96,76 @@ describe("Recipe annotation parity", function () {
     return readAnnotations(reader);
   }
 
+  ["new", "edited"].forEach(function (mode) {
+    [false, true].forEach(function (html) {
+      it(`clips ${html ? "HTML" : "plain"} text markup to the box on ${mode} pages`, async function () {
+        var source = path.join(directory, "source.pdf");
+        await new Promise(function (resolve) {
+          new muhammara.Recipe("new", source)
+            .createPage(300, 300)
+            .endPage()
+            .endPDF(resolve);
+        });
+        var recipe = new muhammara.Recipe(
+          mode === "new" ? "new" : source,
+          output,
+        );
+        if (mode === "new") recipe.createPage(300, 300);
+        else recipe.editPage(1);
+        ["left", "center", "right"].forEach(function (alignment, index) {
+          recipe.text(
+            "This sentence is much wider than the clipped text box.",
+            50,
+            40 + index * 70,
+            {
+              size: 14,
+              html,
+              opacity: index === 1 ? 0.5 : 1,
+              highlight: true,
+              squiggly: true,
+              textBox: {
+                width: 100,
+                height: 24,
+                lineHeight: 24,
+                wrap: "clip",
+                textAlign: `${alignment} top`,
+              },
+            },
+          );
+        });
+        var annotations = await finish(recipe);
+        assert.equal(annotations.length, 6);
+        annotations.forEach(function (annotation, index) {
+          var top = 300 - (40 + Math.floor(index / 2) * 70);
+          var bottom = top - 24;
+          var rect = annotation.dictionary.Rect.toPDFArray()
+            .toJSArray()
+            .map(function (value) {
+              return value.toNumber();
+            });
+          assert.ok(
+            rect[0] >= 49.99 && rect[2] <= 150.01 && rect[2] > rect[0],
+            `horizontal bounds: ${rect}`,
+          );
+          assert.ok(
+            rect[1] >= bottom - 0.01 && rect[3] <= top + 0.01,
+            `vertical bounds: ${rect}`,
+          );
+          annotation.dictionary.QuadPoints.toPDFArray()
+            .toJSArray()
+            .forEach(function (value, coordinate) {
+              var number = value.toNumber();
+              assert.ok(
+                coordinate % 2
+                  ? number >= bottom - 0.01 && number <= top + 0.01
+                  : number >= 49.99 && number <= 150.01,
+              );
+            });
+        });
+      });
+    });
+  });
+
   it("writes fractional and zero opacity while keeping the opaque default", async function () {
     var recipe = new muhammara.Recipe("new", output).createPage(595, 842);
     var opacities = [0.45, 0, 1, undefined];

@@ -72,6 +72,10 @@ as `title`, `date`, and `subject` on the outer text options. `underline` and
 `strikeOut` also draw the visible line. HTML `<u>` and `<s>` only draw the line
 and add no annotation.
 
+With `textBox.wrap: "clip"`, text-markup rectangles and quadrilaterals are
+limited to the line's visible clipping region. Hidden portions of the text do
+not create markup outside that region.
+
 These options preserve metadata, rich text, and reply relationships on new
 documents, edited pages, and pages created while modifying an existing document.
 `date` accepts a string or `Date`. A paused edited page still flushes its queued

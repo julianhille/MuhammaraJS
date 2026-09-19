@@ -610,6 +610,25 @@ exports.text = function text(text = "", x, y, options = {}) {
 
         const { textHeight } = options;
 
+        var markupLeft = lineX;
+        var markupBottom = y - textHeight * 0.2;
+        var markupWidth = _justify ? next_x - lineX : currentLineWidth;
+        var markupHeight = textHeight * 1.4;
+        if (textBox.wrap === "clip") {
+          // Clipped runs retain the first overflowing word, so measure the
+          // drawn text instead of using the preceding fitting line's width.
+          var markupRight = Math.min(
+            lineX + new Word(text, options).dimensions.xMax,
+            nx + textBox.width,
+          );
+          var markupTop = Math.min(markupBottom + markupHeight, y + lineHeight);
+          markupLeft = Math.max(markupLeft, nx);
+          markupBottom = Math.max(markupBottom, y);
+          markupWidth = markupRight - markupLeft;
+          markupHeight = markupTop - markupBottom;
+          if (markupWidth <= 0 || markupHeight <= 0) return next_x;
+        }
+
         for (let key in targetAnnotations) {
           const subtype = this._getTextMarkupAnnotationSubtype(key);
           if (subtype && targetAnnotations[key]) {
@@ -621,8 +640,8 @@ exports.text = function text(text = "", x, y, options = {}) {
             const { title, open, richText, flag, icon, date, subject } =
               targetAnnotations;
             Object.assign(markupOption, {
-              height: textHeight * 1.4,
-              width: _justify ? next_x - lineX : currentLineWidth,
+              height: markupHeight,
+              width: markupWidth,
               text: markupOption.text || "",
               _textHeight: textHeight,
               // add options to annotation
@@ -635,8 +654,8 @@ exports.text = function text(text = "", x, y, options = {}) {
               subject: subject || "",
             });
             const { ox, oy } = this._reverseCoordinate(
-              lineX,
-              y - textHeight * 0.2,
+              markupLeft,
+              markupBottom,
             );
 
             this.annot(ox, oy, subtype, markupOption);
