@@ -76,6 +76,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Write Recipe annotation `title`, `subject`, and text as PDF text strings, so
   non-ASCII characters no longer display as garbled UTF-8 bytes in PDF viewers
+  [#716](https://github.com/julianhille/MuhammaraJS/issues/716)
 - Preserve `Date` objects in text-markup options and cover the full width of
   justified HTML lines [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Reject Recipe links between pages instead of attaching them to the next page

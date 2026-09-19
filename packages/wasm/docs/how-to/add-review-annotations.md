@@ -60,10 +60,11 @@ pattern works on new and edited pages. `annot()`, `comment()`, and the text
 markup options check annotation geometry and appearance when they are called;
 invalid values throw `TypeError: Invalid annotation options` and add nothing,
 so the page can still end normally.
-Contents, titles, subjects, and icon names are written as strings, as on
-native. Titles and subjects preserve `0` and `false`; nullish metadata and falsy
-contents are empty. `text()` validates all its markup options before
-drawing, including when several markup types are requested together.
+Contents, titles, subjects, and icon names are written as PDF text strings, so
+non-ASCII characters display correctly in PDF viewers, as on native. Titles
+and subjects preserve `0` and `false`; nullish metadata and falsy contents are
+empty. `text()` validates all its markup options before drawing, including
+when several markup types are requested together.
 
 Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create
 markup annotations, one per drawn line, on new and edited pages. Their nested
