@@ -779,6 +779,18 @@ describe("Recipe table layout", () => {
     assert.deepEqual(cursor, [20, 36]);
   });
 
+  it("ignores a table-level cell like native Recipe", () => {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      cell: { minHeight: 60 },
+      columns: [{ name: "a", cell: { lineHeight: 10, padding: 3 } }],
+    });
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(cursor, [20, 36]);
+  });
+
   it("lets a row cell replace the row's textBox", () => {
     var recipe = new Recipe("new", output).createPage(400, 400);
     recipe.table(20, 20, [{ a: "first" }], {

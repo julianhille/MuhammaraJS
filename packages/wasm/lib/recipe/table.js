@@ -33,6 +33,13 @@ function cellOptions(options = {}, name = "cell") {
   return result;
 }
 
+/** Keeps table-level text options; native ignores a table-level `cell`. */
+function tableTextOptions(options) {
+  var result = { ...options };
+  delete result.cell;
+  return result;
+}
+
 /** Uses a column's `cell` as its only body text box, like native columns. */
 function columnCellOptions(options) {
   var result = { ...options, textBox: { ...options.cell } };
@@ -240,7 +247,7 @@ export function createTableMethods() {
             options: merge(
               merge(
                 merge(
-                  cellOptions(options),
+                  tableTextOptions(options),
                   paddedCell(columnCellOptions(column.options)),
                 ),
                 cellOptions(rowOptions),

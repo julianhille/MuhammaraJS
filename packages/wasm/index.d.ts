@@ -295,9 +295,10 @@ export interface RecipeTableColumn extends Omit<
   ) => RecipeTextOptions | void;
 }
 export type RecipeTableRow = Record<string, unknown>;
+/** Table options. Like native Recipe, a table-level `cell` is not accepted; style cells per column or row. */
 export interface RecipeTableOptions extends Omit<
   RecipeTextOptions,
-  "overflow"
+  "overflow" | "cell"
 > {
   /** Per-segment height, bounded by the page bottom margin. Measurements include padding and minimum/fixed cell heights. */
   height?: number;

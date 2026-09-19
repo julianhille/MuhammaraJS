@@ -329,6 +329,10 @@ async function usesLowLevelSurface() {
     .endPDF();
   recipe.textDimensions("Hello").width;
   recipe.table(20, 20, [{ value: "first" }], {
+    // @ts-expect-error Native Recipe ignores a table-level cell.
+    cell: { padding: 0 },
+  });
+  recipe.table(20, 20, [{ value: "first" }], {
     header: {
       font: "arial",
       size: 12,
