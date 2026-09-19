@@ -30,6 +30,25 @@ function pageContent(reader, pageIndex) {
     .join("\n");
 }
 
+/** Decodes a page's form XObjects, where native draws text-box styles. */
+function formContent(reader, pageIndex) {
+  var page = reader.parsePage(pageIndex).getDictionary();
+  var resources = reader.queryDictionaryObject(page, "Resources");
+  if (!resources.exists("XObject")) return "";
+  var forms = reader.queryDictionaryObject(resources, "XObject").toJSObject();
+  return Object.values(forms)
+    .map((reference) => {
+      var form = reader.parseNewObject(
+        reference.toPDFIndirectObjectReference().getObjectID(),
+      );
+      var input = reader.startReadingFromStream(form.toPDFStream());
+      var bytes = [];
+      while (input.notEnded()) bytes.push(...input.read(4096));
+      return Buffer.from(bytes).toString("latin1");
+    })
+    .join("\n");
+}
+
 /** Counts line paths independently of text and rectangle form XObjects. */
 function lineCount(content) {
   return (content.match(/ m\b/g) || []).length;
@@ -732,5 +751,52 @@ describe("Recipe table layout", () => {
       ],
     );
     assert.ok(entries[3].textMatrix[5] > entries[4].textMatrix[5]);
+  });
+
+  it("uses a column's cell as its only body text box", () => {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      columns: [
+        {
+          name: "a",
+          textBox: { minHeight: 60 },
+          cell: { lineHeight: 10, padding: 3 },
+        },
+      ],
+    });
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(cursor, [20, 36]);
+  });
+
+  it("lets a row cell replace the row's textBox", () => {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      columns: [{ name: "a", cell: { lineHeight: 10, padding: 3 } }],
+      row: { textBox: { padding: 20 }, cell: { minHeight: 30 } },
+    });
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(cursor, [20, 50]);
+  });
+
+  it("merges nested column and row cell styles", () => {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      columns: [
+        {
+          name: "a",
+          cell: { lineHeight: 10, style: { fill: "#ff0000" } },
+        },
+      ],
+      row: { cell: { style: { stroke: "#0000ff" } } },
+    });
+    finish(recipe);
+    var content = pageContent(reader, 0) + formContent(reader, 0);
+    assert.match(content, /\b1 0 0 rg\b/, "the column fill survives");
+    assert.match(content, /\b0 0 1 RG\b/, "the row stroke applies");
   });
 });

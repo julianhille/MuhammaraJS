@@ -17,6 +17,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Leave tables with no columns unchanged instead of setting the cursor to
   `-Infinity`
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Resolve table cell text boxes like native: a column's `cell` is its only
+  body text box, a row `cell` replaces the row's `textBox`, and nested styles
+  such as a column fill and a row stroke merge instead of replacing each other.
+  `RecipeTableColumn` no longer declares `textBox`; use `cell`
+  [#710](https://github.com/julianhille/MuhammaraJS/issues/710)
 
 ### Changed
 

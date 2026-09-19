@@ -273,7 +273,11 @@ export interface RecipeHtmlTextObject {
   /** Leading-space count for the lines of this flat visual fragment; `0` ends list indentation. */
   indent?: number;
 }
-export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
+/** Table column options. `cell` is the column's only body text box, as in native Recipe. */
+export interface RecipeTableColumn extends Omit<
+  RecipeTextOptions,
+  "font" | "textBox"
+> {
   name: string;
   font?: string;
   text?: string;

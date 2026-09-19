@@ -345,6 +345,8 @@ async function usesLowLevelSurface() {
         renderer: () => ({ textBox: { minHeight: 80 } }),
       },
       { name: "optional", header: false },
+      // @ts-expect-error A column's body text box is `cell`, as in native.
+      { name: "boxed", textBox: { padding: 0 } },
     ],
     /** The callback receiver and first argument both expose Recipe methods. */
     overflow: function (currentRecipe, row) {
