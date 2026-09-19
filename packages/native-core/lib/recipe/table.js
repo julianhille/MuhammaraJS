@@ -7,7 +7,7 @@ function clone(object) {
 
 /** Converts a table cell style into text options. */
 function getCellOptions(options, cell = "cell") {
-  const cellOptions = clone(options);
+  var cellOptions = clone(options);
 
   if (cellOptions[cell]) {
     // convert cell options to textBox options
@@ -19,15 +19,15 @@ function getCellOptions(options, cell = "cell") {
 
 /** Measures the same text and outer box height that text() will draw. */
 function getCellHeight(self, text, column, options) {
-  let colOptions = self._merge(options, { textBox: { width: column.width } });
-  const originCoord = self._calibrateCoordinate(
+  var colOptions = self._merge(options, { textBox: { width: column.width } });
+  var originCoord = self._calibrateCoordinate(
     column.x,
     column.y,
     0,
     0,
     self.pageNumber,
   );
-  const pathOptions = self._getPathOptions(
+  var pathOptions = self._getPathOptions(
     colOptions,
     originCoord.nx,
     originCoord.ny,
@@ -36,8 +36,8 @@ function getCellHeight(self, text, column, options) {
   var textObjects = colOptions.html
     ? htmlToTextObjects(text, colOptions)
     : self._makeTextObject(text, pathOptions.size, colOptions);
-  const textBox = self._makeTextBox(colOptions);
-  const { textHeight } = self._layoutText(textObjects, textBox, pathOptions);
+  var textBox = self._makeTextBox(colOptions);
+  var { textHeight } = self._layoutText(textObjects, textBox, pathOptions);
 
   return (
     textBox.height ||
@@ -54,7 +54,7 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
   if (!options.border || height <= 0) {
     return;
   }
-  const borderOptions = Object.assign(
+  var borderOptions = Object.assign(
     {},
     options.border === true ? {} : options.border,
     // Keep borders from extending outside of the enclosing box.
@@ -65,11 +65,11 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
   }
 
   self.rectangle(x, y, width, height, borderOptions);
-  const columns = self._layouts["_table_"];
+  var columns = self._layouts["_table_"];
 
   // Draw verticals
-  for (let index = 0; index < columns.length - 1; index++) {
-    const column = columns[index];
+  for (var index = 0; index < columns.length - 1; index++) {
+    var column = columns[index];
     self.line(
       [
         [column.x + column.width, y],
@@ -79,8 +79,8 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
     );
   }
   // Draw horizontals; the last row line is the rectangle's bottom edge.
-  for (let index = 0; index < rowLines.length - 1; index++) {
-    const yPos = rowLines[index];
+  for (var index = 0; index < rowLines.length - 1; index++) {
+    var yPos = rowLines[index];
     self.line(
       [
         [x, yPos],
@@ -109,9 +109,9 @@ function tableFields(contents, options) {
   if (options.columns && options.columns.length) {
     return options.columns.map((column) => column.name);
   }
-  const fields = [];
-  for (const record of contents) {
-    for (const field of Object.keys(record || {})) {
+  var fields = [];
+  for (var record of contents) {
+    for (var field of Object.keys(record || {})) {
       if (!fields.includes(field)) {
         fields.push(field);
       }
@@ -178,8 +178,8 @@ exports.table = function table(x, y, contents, options = {}) {
   if (!Array.isArray(contents) || contents.length === 0) {
     return this;
   }
-  const columns = tableFields(contents, options).map((field) => {
-    const column =
+  var columns = tableFields(contents, options).map((field) => {
+    var column =
       options.columns &&
       options.columns.find((definition) => definition.name === field);
     return column || { text: field, name: field };
@@ -189,18 +189,18 @@ exports.table = function table(x, y, contents, options = {}) {
   }
   this.layout("_table_", x, y, 0, 0, { columns: columns, reset: true });
 
-  const tableWidth = this._layouts["_table_"].reduce((width, column) => {
+  var tableWidth = this._layouts["_table_"].reduce((width, column) => {
     width += column.width;
     return width;
   }, 0);
 
   this._previousTextObjects = [];
-  let nth;
-  let rowOptions = {};
+  var nth;
+  var rowOptions = {};
 
   /** Resolves header styles identically for measurement and drawing. */
-  const headerOptions = (column) => {
-    let colOptions = clone(column.options.header);
+  var headerOptions = (column) => {
+    var colOptions = clone(column.options.header);
     if (typeof options.header === "object") {
       colOptions = this._merge(colOptions, getCellOptions(options.header));
     }
@@ -210,7 +210,7 @@ exports.table = function table(x, y, contents, options = {}) {
     }
     // Is there a specific header cell override in this column?
     if (column.options.hcell) {
-      const cellOptions = getCellOptions(column.options, "hcell");
+      var cellOptions = getCellOptions(column.options, "hcell");
       colOptions.textBox = this._merge(
         colOptions.textBox,
         clone(cellOptions.textBox),
@@ -219,10 +219,10 @@ exports.table = function table(x, y, contents, options = {}) {
     return colOptions;
   };
 
-  let headerHeight = 0;
+  var headerHeight = 0;
   if (options.header) {
-    for (const column of this._layouts["_table_"]) {
-      const cellHeight = getCellHeight(
+    for (var column of this._layouts["_table_"]) {
+      var cellHeight = getCellHeight(
         this,
         column.text,
         column,
@@ -233,9 +233,9 @@ exports.table = function table(x, y, contents, options = {}) {
   }
 
   /** Recomputes bounds for each continuation position and page. */
-  const segmentBottom = (top) => {
-    let bottom = options.height ? top + options.height : 0;
-    const pageBottom =
+  var segmentBottom = (top) => {
+    var bottom = options.height ? top + options.height : 0;
+    var pageBottom =
       this.pageInfo(this.pageNumber).height - this._margin.bottom;
     if (bottom === 0 || bottom > pageBottom) {
       bottom = pageBottom;
@@ -265,29 +265,29 @@ exports.table = function table(x, y, contents, options = {}) {
     }
   }
 
-  let tableBottom = options.overflow ? segmentBottom(y) : 0;
-  let tableHeight = 0;
-  let rowLines = [];
-  let currentY = y;
-  let firstTime = true;
-  let row = 0;
+  var tableBottom = options.overflow ? segmentBottom(y) : 0;
+  var tableHeight = 0;
+  var rowLines = [];
+  var currentY = y;
+  var firstTime = true;
+  var row = 0;
 
-  for (const record of contents) {
+  for (var record of contents) {
     row++;
 
     // Resolve every cell once: the renderer runs once per cell, and its
     // options size the row as well as style the drawn text.
-    const cells = this._layouts["_table_"].map((column) => {
-      const field = column.field;
-      const value = record[field];
-      const text = value === undefined || value === null ? "" : value;
-      let colOptions = clone(options);
+    var cells = this._layouts["_table_"].map((column) => {
+      var field = column.field;
+      var value = record[field];
+      var text = value === undefined || value === null ? "" : value;
+      var colOptions = clone(options);
       colOptions = this._merge(colOptions, clone(column.options));
       if (nth && nth(row)) {
         colOptions = this._merge(colOptions, clone(rowOptions));
       }
       if (column.options.renderer) {
-        const renderOptions = column.options.renderer(text, record, field, row);
+        var renderOptions = column.options.renderer(text, record, field, row);
         if (renderOptions) {
           colOptions = this._merge(colOptions, renderOptions);
         }
@@ -295,9 +295,9 @@ exports.table = function table(x, y, contents, options = {}) {
       return { column, text: String(text), options: colOptions };
     });
 
-    let rowHeight = 0;
-    for (const cell of cells) {
-      const cellHeight = getCellHeight(
+    var rowHeight = 0;
+    for (var cell of cells) {
+      var cellHeight = getCellHeight(
         this,
         cell.text,
         cell.column,
@@ -312,7 +312,7 @@ exports.table = function table(x, y, contents, options = {}) {
     // opportunity to change to a new page to continue table production with
     // remaining rows of data. A continuation reserves room for its repeated
     // header as well as the row.
-    const needed = rowHeight + (firstTime && options.header ? headerHeight : 0);
+    var needed = rowHeight + (firstTime && options.header ? headerHeight : 0);
     if (options.overflow && currentY + needed > tableBottom) {
       drawTableBorder(this, x, y, tableWidth, tableHeight, rowLines, options);
 
@@ -325,9 +325,9 @@ exports.table = function table(x, y, contents, options = {}) {
       }
       if (orders && orders.position) {
         [x, y] = orders.position;
-        let xx = x;
+        var xx = x;
         // Make sure x position adjusted in all columns
-        for (const column of this._layouts["_table_"]) {
+        for (var column of this._layouts["_table_"]) {
           column.x = xx;
           xx += column.width;
         }
@@ -347,8 +347,8 @@ exports.table = function table(x, y, contents, options = {}) {
 
     if (firstTime && options.header) {
       // Display table header
-      for (const column of this._layouts["_table_"]) {
-        const colOptions = this._merge(headerOptions(column), {
+      for (var column of this._layouts["_table_"]) {
+        var colOptions = this._merge(headerOptions(column), {
           textBox: { minHeight: headerHeight, width: column.width },
         });
         this.text(column.text, column.x, currentY, colOptions);
@@ -362,8 +362,8 @@ exports.table = function table(x, y, contents, options = {}) {
     firstTime = false;
 
     // Now write out table cells for current record
-    for (const cell of cells) {
-      const colOptions = this._merge(cell.options, {
+    for (var cell of cells) {
+      var colOptions = this._merge(cell.options, {
         textBox: { minHeight: rowHeight, width: cell.column.width },
       });
       this.text(cell.text, cell.column.x, currentY, colOptions);

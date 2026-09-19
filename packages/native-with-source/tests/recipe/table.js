@@ -1,15 +1,15 @@
-const assert = require("node:assert/strict");
-const os = require("os");
-const path = require("path");
-const muhammara = require("@muhammara/native-with-source");
-const Recipe = muhammara.Recipe;
-const fs = require("fs");
+var assert = require("node:assert/strict");
+var os = require("os");
+var path = require("path");
+var muhammara = require("@muhammara/native-with-source");
+var Recipe = muhammara.Recipe;
+var fs = require("fs");
 
 /** Decodes page streams for structural border assertions. */
 function pageContent(reader, pageIndex) {
-  const page = reader.parsePage(pageIndex).getDictionary();
-  const contents = reader.queryDictionaryObject(page, "Contents");
-  const streams =
+  var page = reader.parsePage(pageIndex).getDictionary();
+  var contents = reader.queryDictionaryObject(page, "Contents");
+  var streams =
     contents.getType() === muhammara.ePDFObjectArray
       ? contents
           .toPDFArray()
@@ -22,8 +22,8 @@ function pageContent(reader, pageIndex) {
       : [contents];
   return streams
     .map((stream) => {
-      const input = reader.startReadingFromStream(stream.toPDFStream());
-      const bytes = [];
+      var input = reader.startReadingFromStream(stream.toPDFStream());
+      var bytes = [];
       while (input.notEnded()) bytes.push(...input.read(4096));
       return Buffer.from(bytes).toString("latin1");
     })
@@ -37,10 +37,10 @@ function lineCount(content) {
 
 function compare(a, b) {
   // Use toUpperCase() to ignore character casing
-  const nameA = a.last_name.toUpperCase();
-  const nameB = b.last_name.toUpperCase();
+  var nameA = a.last_name.toUpperCase();
+  var nameB = b.last_name.toUpperCase();
 
-  let comparison = 0;
+  var comparison = 0;
   if (nameA > nameB) {
     comparison = 1;
   } else if (nameA < nameB) {
@@ -78,13 +78,13 @@ describe("Text - Columns", () => {
   });
 
   it("Table", () => {
-    const output = path.join(__dirname, "../output/table.pdf");
-    const pplFile = path.join(__dirname, "../TestMaterials/recipe/people.json");
-    const recipe = new Recipe("new", output);
-    const peeps = fs.readFileSync(pplFile, "utf8");
-    const people = JSON.parse(peeps);
+    var output = path.join(__dirname, "../output/table.pdf");
+    var pplFile = path.join(__dirname, "../TestMaterials/recipe/people.json");
+    var recipe = new Recipe("new", output);
+    var peeps = fs.readFileSync(pplFile, "utf8");
+    var people = JSON.parse(peeps);
 
-    const contents = [
+    var contents = [
       {
         name: "Steven Haehn",
         address: "257 Banana Ave.",
@@ -129,7 +129,7 @@ describe("Text - Columns", () => {
       },
     ];
 
-    const pcols = [
+    var pcols = [
       {
         name: "email",
         width: 170,
@@ -150,7 +150,7 @@ describe("Text - Columns", () => {
       },
     ];
 
-    const columns = [
+    var columns = [
       {
         text: "Name",
         name: "name",
@@ -185,16 +185,16 @@ describe("Text - Columns", () => {
       },
     ];
 
-    // const stop = () => { return true; };
+    // var stop = () => { return true; };
 
-    const newPage = (self) => {
+    var newPage = (self) => {
       self.endPage();
       self.createPage("letter");
       return { position: [30, 52] };
     };
 
-    let nextTable = 30;
-    const samePage = () => {
+    var nextTable = 30;
+    var samePage = () => {
       nextTable += 170;
       if (nextTable > 500) {
         return true;
@@ -202,8 +202,8 @@ describe("Text - Columns", () => {
       return { position: [nextTable, 302] };
     };
 
-    let x = 50;
-    let y = 52;
+    var x = 50;
+    var y = 52;
     recipe
       .createPage("letter")
       .text("Table with alternating row properties", 230, 30, {
@@ -273,9 +273,9 @@ describe("Text - Columns", () => {
 });
 
 describe("Recipe table layout", () => {
-  let directory;
-  let output;
-  let reader;
+  var directory;
+  var output;
+  var reader;
 
   beforeEach(() => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "recipe-table-"));
@@ -305,7 +305,7 @@ describe("Recipe table layout", () => {
   }
 
   it("includes fields from every record and explicit optional columns", () => {
-    const recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe("new", output).createPage(400, 400);
     recipe
       .table(20, 20, [{ a: "A1" }, { a: "A2", b: "B2" }], { header: true })
       .table(20, 120, [{ a: "A3" }], {
@@ -314,18 +314,18 @@ describe("Recipe table layout", () => {
       })
       .table(20, 220, [{ a: "A4", b: "B4" }], { header: true, order: "b, a" });
     finish(recipe);
-    const entries = texts();
-    const content = entries.map((entry) => entry.content);
+    var entries = texts();
+    var content = entries.map((entry) => entry.content);
     assert.ok(content.includes("B2"), "a field missing from the first row");
     assert.ok(content.includes("Note"), "an explicit optional column");
-    const ordered = entries.filter((entry) => entry.y < 200);
-    const b = ordered.find((entry) => entry.content === "b");
-    const a = ordered.find((entry) => entry.content === "a");
+    var ordered = entries.filter((entry) => entry.y < 200);
+    var b = ordered.find((entry) => entry.content === "b");
+    var a = ordered.find((entry) => entry.content === "a");
     assert.ok(b.x < a.x, "order places b before a");
   });
 
   it("renders nullish values as empty cells and keeps other values", () => {
-    const recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe("new", output).createPage(400, 400);
     var values = [];
     recipe.table(20, 20, [{ a: null, b: undefined, c: 0, d: false }, {}], {
       columns: ["a", "b", "c", "d"].map((name) => ({
@@ -337,14 +337,14 @@ describe("Recipe table layout", () => {
       })),
     });
     finish(recipe);
-    const content = texts().map((entry) => entry.content);
+    var content = texts().map((entry) => entry.content);
     assert.deepEqual(content, ["0", "false"]);
     assert.deepEqual(values, ["", "", 0, false, "", "", "", ""]);
   });
 
   it("runs each renderer once per cell and sizes rows with its options", () => {
-    const calls = [];
-    const recipe = new Recipe("new", output).createPage(400, 400);
+    var calls = [];
+    var recipe = new Recipe("new", output).createPage(400, 400);
     recipe
       .table(20, 20, [{ a: "x" }, { a: "y" }])
       .table(200, 20, [{ b: "x" }, { b: "z" }], {
@@ -363,9 +363,9 @@ describe("Recipe table layout", () => {
       ["x", "b", 1],
       ["z", "b", 2],
     ]);
-    const entries = texts();
-    const control = entries.find((entry) => entry.content === "y");
-    const rendered = entries.find((entry) => entry.content === "z");
+    var entries = texts();
+    var control = entries.find((entry) => entry.content === "y");
+    var rendered = entries.find((entry) => entry.content === "z");
     assert.ok(
       control.y - rendered.y > 10,
       "the renderer's larger size grows its row",
@@ -373,11 +373,11 @@ describe("Recipe table layout", () => {
   });
 
   it("continues with each position's own bounds and a repeated header", () => {
-    let overflows = 0;
-    const rows = Array.from({ length: 30 }, (_, index) => ({
+    var overflows = 0;
+    var rows = Array.from({ length: 30 }, (_, index) => ({
       name: `row ${index + 1}`,
     }));
-    const recipe = new Recipe("new", output).createPage(300, 300);
+    var recipe = new Recipe("new", output).createPage(300, 300);
     recipe.table(20, 20, rows, {
       header: true,
       /** Continues on a taller page with the Recipe as the callback receiver. */
@@ -391,8 +391,8 @@ describe("Recipe table layout", () => {
     recipe.table(20, 700, [{ name: "later table" }]);
     finish(recipe);
     assert.equal(overflows, 1, "a later table does not reuse the callback");
-    const first = texts(0).map((entry) => entry.content);
-    const second = texts(1).map((entry) => entry.content);
+    var first = texts(0).map((entry) => entry.content);
+    var second = texts(1).map((entry) => entry.content);
     assert.equal(first.filter((content) => content === "name").length, 1);
     assert.equal(second.filter((content) => content === "name").length, 1);
     assert.deepEqual(
@@ -403,12 +403,12 @@ describe("Recipe table layout", () => {
   });
 
   it("draws each border line once, keeps its options, and skips empty segments", () => {
-    const data = [
+    var data = [
       { a: "A1", b: "B1" },
       { a: "A2", b: "B2" },
     ];
-    const border = { dash: [3, 2] };
-    const recipe = new Recipe("new", output).createPage(300, 300);
+    var border = { dash: [3, 2] };
+    var recipe = new Recipe("new", output).createPage(300, 300);
     recipe.table(20, 20, data, { header: true, border });
     recipe.endPage().createPage(300, 300);
     recipe.table(20, 290, data, {
@@ -418,7 +418,7 @@ describe("Recipe table layout", () => {
     });
     finish(recipe);
     [0, 1].forEach((pageIndex) => {
-      const content = pageContent(reader, pageIndex);
+      var content = pageContent(reader, pageIndex);
       // One column divider plus the header and first-row separators.
       assert.equal(lineCount(content), 3);
       assert.match(content, /\[\s*3\s+2\s*\]\s*0\s+d/);
@@ -431,12 +431,12 @@ describe("Recipe table layout", () => {
   });
 
   it("returns for empty contents and leaves the cursor below the table", () => {
-    const recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe("new", output).createPage(400, 400);
     assert.equal(recipe.table(20, 20, []), recipe);
     recipe.table(40, 20, [{ a: "A" }, { a: "B" }]);
-    const [x, y] = recipe.movedown(0, true);
+    var [x, y] = recipe.movedown(0, true);
     finish(recipe);
-    const last = texts().find((entry) => entry.content === "B");
+    var last = texts().find((entry) => entry.content === "B");
     assert.equal(x, 40);
     assert.ok(y > 400 - last.y, "the cursor is below the last row");
   });
