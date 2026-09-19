@@ -85,7 +85,15 @@ function writeSourceAnnotation(writer, subtype, rectangle, options) {
     ? richText(contents)
     : contents;
   Object.entries(strings).forEach(([key, value]) => {
-    if (value) dictionary.writeKey(key).writeLiteralStringValue(value);
+    if (!value) return;
+    // Dates are ASCII; the other entries are PDFDocEncoding or UTF-16BE text.
+    dictionary
+      .writeKey(key)
+      .writeLiteralStringValue(
+        key === "M"
+          ? value
+          : new Uint8Array(writer.createPDFTextString(value).toBytesArray()),
+      );
   });
   dictionary.writeKey("Open").writeBooleanValue(Boolean(options.open));
   dictionary.writeKey("F").writeNumberValue(flags);

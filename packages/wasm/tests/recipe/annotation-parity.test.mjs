@@ -391,4 +391,25 @@ describe("Recipe annotation parity", function () {
       });
     });
   });
+
+  it("writes non-ASCII annotation text and supplied rich text", function () {
+    var source = new Recipe().createPage(595, 842).endPage().endPDF();
+    var xml = '<?xml version="1.0"?><body><p>Supplied.</p></body>';
+    ["new", "edited"].forEach(function (mode) {
+      var recipe =
+        mode === "new"
+          ? new Recipe().createPage(595, 842)
+          : new Recipe(source).editPage(1);
+      recipe
+        .comment("Größe ✓", 50, 50, { title: "Jürgen", subject: "Prüfung" })
+        .comment(xml, 50, 100, { richText: true });
+      reader = muhammara.createReader(recipe.endPage().endPDF());
+      var annotations = readAnnotations(reader);
+      assert.equal(annotations[0].dictionary.Contents.toText(), "Größe ✓");
+      assert.equal(annotations[0].dictionary.T.toText(), "Jürgen");
+      assert.equal(annotations[0].dictionary.Subj.toText(), "Prüfung");
+      assert.equal(annotations[1].dictionary.RC.toText(), xml);
+      reader.end();
+    });
+  });
 });

@@ -1215,14 +1215,21 @@ WASM_EXPORT unsigned long muhammara_wasm_recipe_annotation_full(
   dictionary->WriteKey("Subtype"); dictionary->WriteNameValue(subtype);
   dictionary->WriteKey("Rect");
   dictionary->WriteRectangleValue(PDFRectangle(left, bottom, right, top));
-  if (*subject) { dictionary->WriteKey("Subj"); dictionary->WriteLiteralStringValue(subject); }
-  if (*title) { dictionary->WriteKey("T"); dictionary->WriteLiteralStringValue(title); }
+  // Text strings are PDFDocEncoding or UTF-16BE, never raw UTF-8.
+  if (*subject) {
+    dictionary->WriteKey("Subj");
+    dictionary->WriteLiteralStringValue(PDFTextString().FromUTF8(subject).ToString());
+  }
+  if (*title) {
+    dictionary->WriteKey("T");
+    dictionary->WriteLiteralStringValue(PDFTextString().FromUTF8(title).ToString());
+  }
   if (*date) { dictionary->WriteKey("M"); dictionary->WriteLiteralStringValue(date); }
   dictionary->WriteKey("Open"); dictionary->WriteBooleanValue(open != 0);
   dictionary->WriteKey("F"); dictionary->WriteIntegerValue(flags);
   if (*text) {
     dictionary->WriteKey(richText ? "RC" : "Contents");
-    dictionary->WriteLiteralStringValue(text);
+    dictionary->WriteLiteralStringValue(PDFTextString().FromUTF8(text).ToString());
   }
   if (isReply && (replyTo || recipe->lastAnnotationId)) {
     dictionary->WriteKey("IRT"); dictionary->WriteObjectReferenceValue(

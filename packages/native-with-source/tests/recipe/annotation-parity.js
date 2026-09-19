@@ -387,4 +387,37 @@ describe("Recipe annotation parity", function () {
         assert.equal((readPageForms(reader).match(/Tj/g) || []).length, 2);
     });
   });
+
+  it("writes non-ASCII annotation text and supplied rich text", async function () {
+    var source = path.join(directory, "source.pdf");
+    await new Promise(function (resolve) {
+      new muhammara.Recipe("new", source)
+        .createPage(595, 842)
+        .endPage()
+        .endPDF(resolve);
+    });
+    var xml = '<?xml version="1.0"?><body><p>Supplied.</p></body>';
+    for (var mode of ["new", "edited"]) {
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(595, 842);
+      else recipe.editPage(1);
+      recipe
+        .comment("Größe ✓", 50, 50, { title: "Jürgen", subject: "Prüfung" })
+        .comment(xml, 50, 100, { richText: true });
+      await new Promise(function (resolve) {
+        recipe.endPage().endPDF(resolve);
+      });
+      reader = muhammara.createReader(output);
+      var annotations = readAnnotations(reader);
+      assert.equal(annotations[0].dictionary.Contents.toText(), "Größe ✓");
+      assert.equal(annotations[0].dictionary.T.toText(), "Jürgen");
+      assert.equal(annotations[0].dictionary.Subj.toText(), "Prüfung");
+      assert.equal(annotations[1].dictionary.RC.toText(), xml);
+      reader.end();
+      reader = undefined;
+    }
+  });
 });
