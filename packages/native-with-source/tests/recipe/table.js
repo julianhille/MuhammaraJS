@@ -933,8 +933,8 @@ describe("Recipe table layout", () => {
     });
     finish(recipe);
     var content = pageContent(reader, 0) + formContent(reader, 0);
-    assert.match(content, /\b1 0 0 rg\b/, "the column fill survives");
-    assert.match(content, /\b0 0 1 RG\b/, "the row stroke applies");
+    assert.match(content, /(^|\s)1 0 0 rg\b/, "the column fill survives");
+    assert.match(content, /(^|\s)0 0 1 RG\b/, "the row stroke applies");
   });
 
   it("merges renderer box styles over column and row styles", () => {
@@ -952,9 +952,13 @@ describe("Recipe table layout", () => {
     });
     finish(recipe);
     var content = pageContent(reader, 0) + formContent(reader, 0);
-    assert.match(content, /\b1 0 0 rg\b/, "the column fill survives");
-    assert.match(content, /\b0 1 0 RG\b/, "the renderer stroke applies");
-    assert.doesNotMatch(content, /\b0 0 1 RG\b/, "the row stroke is replaced");
+    assert.match(content, /(^|\s)1 0 0 rg\b/, "the column fill survives");
+    assert.match(content, /(^|\s)0 1 0 RG\b/, "the renderer stroke applies");
+    assert.doesNotMatch(
+      content,
+      /(^|\s)0 0 1 RG\b/,
+      "the row stroke is replaced",
+    );
   });
 
   it("replaces arrays such as padding instead of merging their entries", () => {
