@@ -23,6 +23,27 @@ function hilight(text, record) {
 }
 
 describe("Text - Columns", () => {
+  it("binds table overflow callbacks to the Recipe", function () {
+    var assert = require("node:assert/strict");
+    var recipe = new Recipe(
+      "new",
+      path.join(__dirname, "../output/table-overflow-this.pdf"),
+    );
+    var calls = 0;
+    recipe.createPage(300, 300).table(10, 10, [{ value: "row" }], {
+      height: 1,
+      overflow: function (currentRecipe, row) {
+        calls += 1;
+        assert.equal(this, recipe);
+        assert.equal(currentRecipe, recipe);
+        assert.equal(row, 1);
+        return true;
+      },
+    });
+    recipe.endPage().endPDF();
+    assert.equal(calls, 1);
+  });
+
   it("Table", () => {
     const output = path.join(__dirname, "../output/table.pdf");
     const pplFile = path.join(__dirname, "../TestMaterials/recipe/people.json");

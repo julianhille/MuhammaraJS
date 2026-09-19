@@ -32,10 +32,20 @@ the annotation's `/CA` value; the `color` option sets its RGB color separately.
 Both `comment()` and `annot()` accept `replies`, an array of objects with `text`
 and optional `title`, `date`, `subject`, `richText`, `flag`, and `opacity`. Each
 reply is a separate annotation linked to its parent through `/IRT` and `/RT /R`.
+Replies inherit the parent's title, subject, date, flags, open state, and icon.
+Set a reply's own title, subject, date, or flag to override that metadata.
+Each reply's opacity defaults to `1`, and rich text remains opt-in per reply.
 Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create
 markup annotations. Their nested object sets `text`, `color`, `opacity`, and
 `replies`; put shared metadata such as `title`, `date`, and `subject` on the
 outer text options.
+
+With `textBox.wrap: "clip"`, text-markup rectangles and quadrilaterals are
+limited to the line's visible clipping region. Hidden portions of the text do
+not create markup outside that region.
+
+Markup also works on pages created while modifying an existing document.
+Justified text uses markup bounds that include the expanded spaces between words.
 
 Set `richText: true` on a comment to use supported HTML formatting.
 

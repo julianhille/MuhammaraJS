@@ -501,58 +501,43 @@ export function createRecipeFactory({
           );
         }
       }
+      var fontPath = resolveFont(options);
+      var fontSize = options.fontSize || options.size || 14;
       if (this._pageContext) {
-        var editFont = this.writer.getFontForBytes(resolveFont(options));
-        var editSize = options.fontSize || options.size || 14;
         this._pageContext
           .BT()
-          .Tf(editFont, editSize)
+          .Tf(this.writer.getFontForBytes(fontPath), fontSize)
           .Tc(characterSpacing)
           .Tm(1, 0, 0, 1, point.nx, point.ny)
           .Tj(String(value))
           .ET();
-        if (transformed) this._restore();
-        this._lastLineHeight = editSize;
-        this._cursor = { x, y: y + editSize };
-        return this;
+      } else {
+        withString(value, (textPointer) =>
+          withString(fontPath, (fontPointer) => {
+            call(
+              "_muhammara_wasm_recipe_text",
+              this._recipe,
+              point.nx,
+              point.ny,
+              textPointer,
+              fontPointer,
+              fontSize,
+              colorValue(options.color),
+              characterSpacing,
+            );
+          }),
+        );
       }
-      var fontPath = resolveFont(options);
-      var fontSize = options.fontSize || options.size || 14;
-      var dimensions = this.textDimensions(value, { ...options, fontSize });
-      if (options.highlight) {
-        var highlight =
-          typeof options.highlight === "object" ? options.highlight : {};
-        this.annot(x + dimensions.xMin, y - dimensions.yMax, "Highlight", {
-          ...highlight,
-          color: highlight.color || "#ffff00",
-          width: dimensions.xMax - dimensions.xMin,
-          height: dimensions.yMax - dimensions.yMin,
-        });
-      }
-      withString(value, (textPointer) =>
-        withString(fontPath, (fontPointer) => {
-          call(
-            "_muhammara_wasm_recipe_text",
-            this._recipe,
-            point.nx,
-            point.ny,
-            textPointer,
-            fontPointer,
-            fontSize,
-            colorValue(options.color),
-            characterSpacing,
-          );
-        }),
-      );
-      if (options.underline) {
-        this.line(x, y + 2, x + dimensions.width, y + 2, {
-          stroke: options.color || "#000000",
-        });
-      }
-      if (options.strikeOut) {
-        this.line(x, y - fontSize / 3, x + dimensions.width, y - fontSize / 3, {
-          stroke: options.color || "#000000",
-        });
+      // Text-markup annotations are added per line by text(); the visual
+      // underline and strikeout decoration belongs to each drawn run.
+      if (options.underline || options.strikeOut) {
+        var width = this.textDimensions(value, { ...options, fontSize }).width;
+        var stroke = { stroke: options.color || "#000000" };
+        if (options.underline) this.line(x, y + 2, x + width, y + 2, stroke);
+        if (options.strikeOut) {
+          var strikeY = y - fontSize / 3;
+          this.line(x, strikeY, x + width, strikeY, stroke);
+        }
       }
       if (transformed) this._restore();
       this._lastLineHeight = fontSize;

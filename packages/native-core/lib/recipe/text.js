@@ -484,6 +484,9 @@ exports.text = function text(text = "", x, y, options = {}) {
           // nothing to write, so simply escape.
           return next_x;
         }
+        // The opacity and rotation path below resets x to the text box edge;
+        // text-markup annotations need the line's own start.
+        const lineX = x;
 
         if (options.underline || options.strikeOut) {
           options.lineWidth = lineWidth;
@@ -607,18 +610,38 @@ exports.text = function text(text = "", x, y, options = {}) {
 
         const { textHeight } = options;
 
+        var markupLeft = lineX;
+        var markupBottom = y - textHeight * 0.2;
+        var markupWidth = _justify ? next_x - lineX : currentLineWidth;
+        var markupHeight = textHeight * 1.4;
+        if (textBox.wrap === "clip") {
+          // Clipped runs retain the first overflowing word, so measure the
+          // drawn text instead of using the preceding fitting line's width.
+          var markupRight = Math.min(
+            lineX + new Word(text, options).dimensions.xMax,
+            nx + textBox.width,
+          );
+          var markupTop = Math.min(markupBottom + markupHeight, y + lineHeight);
+          markupLeft = Math.max(markupLeft, nx);
+          markupBottom = Math.max(markupBottom, y);
+          markupWidth = markupRight - markupLeft;
+          markupHeight = markupTop - markupBottom;
+          if (markupWidth <= 0 || markupHeight <= 0) return next_x;
+        }
+
         for (let key in targetAnnotations) {
           const subtype = this._getTextMarkupAnnotationSubtype(key);
-          if (subtype) {
+          if (subtype && targetAnnotations[key]) {
+            // Copy so the caller's markup options are not modified.
             const markupOption =
               typeof targetAnnotations[key] != "object"
                 ? {}
-                : targetAnnotations[key];
+                : { ...targetAnnotations[key] };
             const { title, open, richText, flag, icon, date, subject } =
               targetAnnotations;
             Object.assign(markupOption, {
-              height: textHeight * 1.4,
-              width: currentLineWidth,
+              height: markupHeight,
+              width: markupWidth,
               text: markupOption.text || "",
               _textHeight: textHeight,
               // add options to annotation
@@ -630,7 +653,10 @@ exports.text = function text(text = "", x, y, options = {}) {
               date: date || "",
               subject: subject || "",
             });
-            const { ox, oy } = this._reverseCoordinate(x, y - textHeight * 0.2);
+            const { ox, oy } = this._reverseCoordinate(
+              markupLeft,
+              markupBottom,
+            );
 
             this.annot(ox, oy, subtype, markupOption);
           }

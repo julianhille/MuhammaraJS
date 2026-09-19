@@ -2302,11 +2302,13 @@ export function createWriterToModifyFactory({
             if (
               page ||
               context ||
-              !module._muhammara_wasm_modifier_start_page(
-                modifier,
-                index,
-                ensureContentEncapsulation ? 1 : 0,
-              )
+              !(modifierPage
+                ? module._muhammara_wasm_modifier_start_page_context(modifier)
+                : module._muhammara_wasm_modifier_start_page(
+                    modifier,
+                    index,
+                    ensureContentEncapsulation ? 1 : 0,
+                  ))
             ) {
               throw new RangeError(`Unable to modify page ${index}`);
             }

@@ -1,4 +1,18 @@
 /**
+ * Encodes annotation text as a PDF text string, so characters outside
+ * PDFDocEncoding are written as UTF-16BE instead of raw UTF-8 bytes.
+ * @private
+ * @param {Object} writer - The PDF writer.
+ * @param {string} [value] - The text to encode.
+ * @returns {number[]} The encoded string bytes.
+ */
+function textString(writer, value) {
+  var text = writer.createPDFTextString();
+  text.fromString(String(value ?? ""));
+  return text.toBytesArray();
+}
+
+/**
  * Create a comment annotation
  * @name comment
  * @function
@@ -171,9 +185,9 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
     .writeKey("Rect")
     .writeRectangleValue(position)
     .writeKey("Subj")
-    .writeLiteralStringValue(params.subject)
+    .writeLiteralStringValue(textString(this.writer, params.subject))
     .writeKey("T")
-    .writeLiteralStringValue(params.title || "")
+    .writeLiteralStringValue(textString(this.writer, params.title))
     .writeKey("M")
     .writeLiteralStringValue(
       this.writer.createPDFDate(new Date(params.date)).toString(),
@@ -194,16 +208,16 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
    */
   if (text && params.richText) {
     const richText =
-      text.substring(0, 5) !== "<?xml" ? contentToRC(text) : params.richText;
+      text.substring(0, 5) !== "<?xml" ? contentToRC(text) : text;
     const richTextContent = richText;
     this.dictionaryContext
       .writeKey("RC")
-      .writeLiteralStringValue(richTextContent);
+      .writeLiteralStringValue(textString(this.writer, richTextContent));
   } else if (text) {
     const textContent = text;
     this.dictionaryContext
       .writeKey("Contents")
-      .writeLiteralStringValue(textContent);
+      .writeLiteralStringValue(textString(this.writer, textContent));
   }
 
   if (reply && ref) {

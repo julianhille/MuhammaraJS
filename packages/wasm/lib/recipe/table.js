@@ -167,7 +167,7 @@ export function createTableMethods() {
         var needed = height + (first ? headerHeight : 0);
         if (currentY + needed > bottom && options.overflow) {
           drawBorder();
-          var order = options.overflow(this, row + 1);
+          var order = options.overflow.call(this, this, row + 1);
           if (order === true) {
             stopped = true;
             return;

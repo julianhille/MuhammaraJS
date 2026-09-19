@@ -4,12 +4,105 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Add Recipe `text()` options `underline`, `strikeOut`, and `squiggly` as
+  structured text-markup annotations alongside `highlight`, with per-annotation
+  `text`, `color`, `opacity`, and `replies`, shared `title`, `date`, `subject`,
+  `open`, `richText`, `flag`, and `icon`, one annotation per drawn line, on new
+  and edited pages. `underline` and `strikeOut` keep drawing their visible line
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+
 ### Fixed
 
+- Write a zero-width `/Border` for text-markup annotations (`highlight`,
+  `underline`, `strikeOut`, `squiggly`) by default, matching native, instead of
+  omitting it and letting viewers apply the PDF default 1pt border. Other
+  annotation subtypes keep omitting `/Border` when none is requested
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Stop writing an empty `/RC` or `/Contents` entry for a `richText` annotation
+  with no text
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Constrain Recipe text-markup annotations to the visible clipping region when
+  using `textBox.wrap: "clip"`, so hidden text does not leave highlights or
+  other review markup outside the box
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+
+- Reject non-finite Recipe link rectangles before queuing them, so they
+  cannot produce malformed PDF coordinates or interrupt `endPage()`, and
+  accept negative link widths and heights on edited pages as on new pages,
+  covering the same area as native
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
+- Validate all text-markup options before drawing text or queuing annotations,
+  so a rejected `text()` call cannot leave partial content or markup behind
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Write non-string annotation contents and metadata, including replies and
+  text-markup `text`, as strings the way native does. Preserve `0` and `false`
+  titles and subjects; omit nullish metadata and falsy contents instead of
+  failing while finalizing the page
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject unsupported URL strings before queuing Recipe links, so non-ASCII
+  URLs fail at `link()` instead of interrupting `endPage()`
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
+- Inherit parent annotation metadata for replies, matching native defaults for
+  title, subject, date, flags, open state, and icon while keeping reply opacity
+  and rich-text mode independent. An empty or zero reply `flag` keeps the
+  parent's flag, as on native
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Write Recipe annotation dash patterns as a nested `/Border` array on new
+  documents, matching edited pages and allowing PDF viewers to render the dashes
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject invalid annotation options when `annot()`, `comment()`, or a text
+  markup option adds the annotation, instead of during `endPage()`. A failed
+  call no longer leaves the page unable to end or the Recipe unable to finish
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Stop corrupting the page content stream when a Recipe page has both drawn
+  content and an annotation or link, such as `comment()`, `annot()`, `link()`,
+  a text `link`, or a text `highlight`; annotations and links are now written
+  after the content stream is closed
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
 - Inherit parent annotation metadata for replies without their own `title`,
   `subject`, `date`, `flag`, `open`, or icon, matching native. A reply keeps
   its own contents, rich-text mode, and opacity (opaque by default)
   [#717](https://github.com/julianhille/MuhammaraJS/issues/717)
+- Draw `underline` and `strikeOut` text decoration on edited pages, not only on
+  new pages [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Preserve annotation metadata, rich text, dates, and reply relationships on
+  edited pages and pages added to existing documents; flush queued annotations
+  and links even when an edited page was paused
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Retain drawn content across Recipe `pauseContext()`/`resumeContext()` and
+  low-level page-modifier `endContext()`/`startContext()` calls
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Write Recipe annotation `title`, `subject`, and text as PDF text strings, so
+  non-ASCII characters no longer display as garbled UTF-8 bytes in PDF viewers
+- Preserve `Date` objects in text-markup options and cover the full width of
+  justified HTML lines [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject Recipe links between pages instead of attaching them to the next page
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
+- Bind table overflow callbacks to their Recipe instance, matching their declared
+  `this` type and native behavior
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+
+### Changed
+
+- Align the Recipe declarations with native: generic `RecipeExtension`
+  callbacks and `register()` overloads, `table<RecordType>()` with typed
+  columns, `order`, and per-column `renderer` values, numeric `layout()`
+  `columns`, finite arrow `type`, `head`, and `shaft` values, and native
+  triangle trait, position, and vertex overloads
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Type drawing, text, and `chroma()` color spaces as the new
+  `RecipeDeviceColorSpace`, so Separation colors, which WebAssembly Recipe
+  rejects at runtime, now fail type checking
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject Recipe annotations with an `opacity` outside 0 to 1, a non-finite
+  `width`, `height`, or `borderWidth`, non-numeric `borderDash` values, or
+  `quadPoints` whose length is not a multiple of eight with
+  `TypeError: Invalid annotation options` from `annot()`, `comment()`, or
+  `text()`, on new and edited pages alike; new pages previously threw a generic
+  `Unable to create annotation` error from `endPage()` for an invalid `opacity`
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 
 ## [1.0.0-beta.3] - 2026-09-18
 

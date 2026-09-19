@@ -41,6 +41,11 @@ options also support borders, row styling, bounded height, and repeated headers.
 Keep overflow callbacks synchronous; load every font and asset before starting
 layout.
 
+A normal overflow function receives the Recipe as `this` as well as its first
+argument. TypeScript callers can use `RecipeTableOptions<Row>` and
+`RecipeTableColumnOptions<Row>` to check stored options against their record
+fields; inline options infer the record type from the table contents.
+
 To use your own face and skip loading Roboto, initialize with
 `var Recipe = await createRecipe({ defaultFont: fontFile })`. The rest of the
 example stays the same. You can also use `defaultFont: false`, register it with

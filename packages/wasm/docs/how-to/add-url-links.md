@@ -36,6 +36,17 @@ With `html: true`, `<a href="https://example.com">Visit our site</a>` creates
 a link over the rendered text. PDF link annotations are rectangular; use
 `link()` to select the clickable region for complex drawings.
 
+Use an ASCII URL. Percent-encode non-ASCII path or query text, for example
+`encodeURI("https://example.com/✓")`, before passing it to `link()` or a `link`
+option. Unsupported URLs throw when the link is added, so the page can still
+be finalized.
+
+Link coordinates and dimensions must be finite numbers. A negative width or
+height extends the link leftward or upward, as it does for the shapes that
+carry a `link` option. Recipe checks the resulting PDF rectangle before queuing
+the link on new and edited pages. Invalid rectangles throw a `TypeError` from
+`link()` and leave the page available for further drawing and finalization.
+
 The low-level API uses PDF bottom-left rectangle coordinates. Pause an active
 page content context before attaching the link:
 
