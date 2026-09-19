@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `strikeOut`, and `squiggly` options that are enabled; `false` values no
   longer add an annotation
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Keep valid Recipe page numbers when adding pages to an existing document so
+  annotations on those pages no longer fail during `endPDF()`.
+- Extend Recipe text-markup bounds across justified lines, including the expanded
+  spaces [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Stop Recipe `text()` with `html: true` from throwing when the HTML has text
   outside any element and no explicit `size`; that text now uses the default
   14pt size like element text

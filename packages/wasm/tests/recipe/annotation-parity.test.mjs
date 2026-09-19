@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 
-function readAnnotations(reader) {
-  var page = reader.parsePage(0).getDictionary();
+function readAnnotations(reader, pageIndex = 0) {
+  var page = reader.parsePage(pageIndex).getDictionary();
   return reader
     .queryDictionaryObject(page, "Annots")
     .toPDFArray()
@@ -16,8 +16,8 @@ function readAnnotations(reader) {
     });
 }
 
-function readPageContent(muhammara, reader) {
-  var page = reader.parsePage(0).getDictionary();
+function readPageContent(muhammara, reader, pageIndex = 0) {
+  var page = reader.parsePage(pageIndex).getDictionary();
   var contents = reader.queryDictionaryObject(page, "Contents");
   var streams =
     contents.getType() === muhammara.ePDFObjectArray
@@ -44,6 +44,29 @@ function subtypes(annotations) {
   return annotations.map(function (annotation) {
     return annotation.dictionary.Subtype.toString();
   });
+}
+
+/** Decodes the form streams that contain an edited page's drawn content. */
+function readPageForms(reader, pageIndex = 0) {
+  var page = reader.parsePage(pageIndex).getDictionary();
+  var resources = reader
+    .queryDictionaryObject(page, "Resources")
+    .toPDFDictionary();
+  var forms = reader
+    .queryDictionaryObject(resources, "XObject")
+    .toPDFDictionary()
+    .toJSObject();
+  return Object.values(forms)
+    .map(function (reference) {
+      var stream = reader
+        .parseNewObject(reference.toPDFIndirectObjectReference().getObjectID())
+        .toPDFStream();
+      var input = reader.startReadingFromStream(stream);
+      var bytes = [];
+      while (input.notEnded()) bytes.push(...input.read(4096));
+      return new TextDecoder("latin1").decode(new Uint8Array(bytes));
+    })
+    .join("\n");
 }
 
 describe("Recipe annotation parity", function () {
@@ -188,6 +211,36 @@ describe("Recipe annotation parity", function () {
     );
   });
 
+  it("rejects links between pages instead of queuing them on the next page", function () {
+    var recipe = new Recipe().createPage(595, 842).endPage();
+    assert.throws(function () {
+      recipe.link("https://invalid.test", 50, 100, 80, 12);
+    });
+    recipe.createPage(595, 842).link("https://valid.test", 50, 100, 80, 12);
+    reader = muhammara.createReader(recipe.endPage().endPDF());
+    assert.equal(readAnnotations(reader, 1).length, 1);
+  });
+
+  [false, true].forEach(function (html) {
+    it(`covers each justified ${html ? "HTML" : "plain"} line with markup`, function () {
+      var recipe = new Recipe().createPage(300, 300);
+      recipe.text("alpha beta gamma delta epsilon", 50, 50, {
+        html,
+        size: 14,
+        highlight: true,
+        textBox: { width: 100, textAlign: "justify" },
+      });
+      var annotations = finish(recipe);
+      assert.ok(annotations.length > 1);
+      var rect = annotations[0].dictionary.Rect.toPDFArray()
+        .toJSArray()
+        .map(function (value) {
+          return value.toNumber();
+        });
+      assert.ok(Math.abs(rect[2] - rect[0] - 100) < 0.01);
+    });
+  });
+
   it("adds text markup only for requested options", function () {
     var recipe = new Recipe().createPage(595, 842);
     recipe.text("Marked text.", 50, 100, {
@@ -245,6 +298,7 @@ describe("Recipe annotation parity", function () {
     reader = muhammara.createReader(edited.endPage().endPDF());
     // Edited content is drawn through a form XObject the page invokes.
     assert.match(readPageContent(muhammara, reader), /Commented text[\s\S]*Do/);
+    assert.match(readPageForms(reader), /Tj/);
     assert.deepEqual(subtypes(readAnnotations(reader)), [
       "Link",
       "Link",
@@ -254,5 +308,57 @@ describe("Recipe annotation parity", function () {
       "Underline",
       "StrikeOut",
     ]);
+  });
+
+  ["new", "added", "edited", "paused", "resumed"].forEach(function (mode) {
+    it(`preserves structured markup on ${mode} source pages`, function () {
+      var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      var recipe = mode === "new" ? new Recipe() : new Recipe(source);
+      if (mode === "added" || mode === "new") recipe.createPage(595, 842);
+      else recipe.editPage(1);
+      recipe.text("Reviewed text.", 50, 100, {
+        subject: "Review subject",
+        date: new Date("2026-01-02T03:04:05Z"),
+        title: "Reviewer",
+        richText: true,
+        squiggly: {
+          text: "<p>Needs review.</p>",
+          opacity: 0.4,
+          replies: [{ text: "Confirmed.", title: "Editor" }],
+        },
+      });
+      recipe.link("https://before.test", 50, 150, 80, 12);
+      recipe.link("https://after.test", 50, 250, 80, 12);
+      if (mode === "paused" || mode === "resumed") recipe.pauseContext();
+      if (mode === "resumed")
+        recipe.resumeContext().text("After resume.", 50, 300);
+      recipe.comment("After pause.", 300, 200);
+      reader = muhammara.createReader(recipe.endPage().endPDF());
+      var pageIndex = mode === "added" ? 1 : 0;
+      var annotations = readAnnotations(reader, pageIndex);
+      var parent = annotations.find(function (annotation) {
+        return annotation.dictionary.RC;
+      });
+      assert.equal(annotations.length, 5);
+      assert.equal(parent.dictionary.Subj.toText(), "Review subject");
+      assert.match(parent.dictionary.M.toText(), /^D:20260102030405/);
+      assert.match(parent.dictionary.RC.toText(), /<p>Needs review\.<\/p>/);
+      assert.equal(parent.dictionary.T.toText(), "Reviewer");
+      assert.equal(parent.dictionary.CA.toNumber(), 0.4);
+      var reply = annotations.find(function (annotation) {
+        return annotation.dictionary.Contents?.toText() === "Confirmed.";
+      });
+      assert.equal(
+        reply.dictionary.IRT.toPDFIndirectObjectReference().getObjectID(),
+        parent.id,
+      );
+      assert.equal(reply.dictionary.RT.toString(), "R");
+      var content = readPageContent(muhammara, reader, pageIndex);
+      assert.match(content, mode === "added" || mode === "new" ? /Tj/ : /Do/);
+      if (mode === "edited" || mode === "paused" || mode === "resumed")
+        assert.match(readPageForms(reader), /Tj/);
+      if (mode === "resumed")
+        assert.equal((readPageForms(reader).match(/Tj/g) || []).length, 2);
+    });
   });
 });

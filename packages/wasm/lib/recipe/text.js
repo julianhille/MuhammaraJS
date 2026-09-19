@@ -5,7 +5,10 @@ function merge(left = {}, right = {}) {
   var result = { ...left };
   Object.entries(right).forEach(([key, value]) => {
     result[key] =
-      value && typeof value === "object" && !Array.isArray(value)
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      !(value instanceof Date)
         ? merge(result[key], value)
         : value;
   });
@@ -917,6 +920,7 @@ export function createTextMethods({ drawText, measure, module }) {
             if (hasGapAfter(part, partIndex)) drawX += partGap;
             drawnText += part.text;
           });
+          linkWidth = drawX - linkX;
         } else if (horizontal === "justify" && !entry.last && width) {
           var words = entry.text.match(/\S+\s*/g) || [entry.text];
           var wordsWidth = words.reduce(

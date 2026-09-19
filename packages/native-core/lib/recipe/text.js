@@ -618,7 +618,7 @@ exports.text = function text(text = "", x, y, options = {}) {
               targetAnnotations;
             Object.assign(markupOption, {
               height: textHeight * 1.4,
-              width: currentLineWidth,
+              width: _justify ? next_x - x : currentLineWidth,
               text: markupOption.text || "",
               _textHeight: textHeight,
               // add options to annotation

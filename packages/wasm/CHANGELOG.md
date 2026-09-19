@@ -26,6 +26,19 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#717](https://github.com/julianhille/MuhammaraJS/issues/717)
 - Draw `underline` and `strikeOut` text decoration on edited pages, not only on
   new pages [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Preserve annotation metadata, rich text, dates, and reply relationships on
+  edited pages and pages added to existing documents; flush queued annotations
+  and links even when an edited page was paused
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Retain drawn content across Recipe `pauseContext()`/`resumeContext()` and
+  low-level page-modifier `endContext()`/`startContext()` calls.
+- Preserve `Date` objects in text-markup options and cover the full width of
+  justified HTML lines [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject Recipe links between pages instead of attaching them to the next page
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
+- Bind table overflow callbacks to their Recipe instance, matching their declared
+  `this` type and native behavior
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 
 ### Changed
 

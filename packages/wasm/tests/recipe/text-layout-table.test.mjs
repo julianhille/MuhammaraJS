@@ -282,7 +282,9 @@ describe("Recipe text layout and tables", function () {
             { name: "name", width: 65 },
             { name: "value", width: 65 },
           ],
-          overflow: () => {
+          overflow: function (currentRecipe) {
+            assert.equal(this, recipe);
+            assert.equal(currentRecipe, recipe);
             continuations += 1;
             return { position: [10, 130] };
           },

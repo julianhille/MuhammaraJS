@@ -58,6 +58,12 @@ as `title`, `date`, and `subject` on the outer text options. `underline` and
 `strikeOut` also draw the visible line. HTML `<u>` and `<s>` only draw the line
 and add no annotation.
 
+These options preserve metadata, rich text, and reply relationships on new
+documents, edited pages, and pages created while modifying an existing document.
+`date` accepts a string or `Date`. A paused edited page still flushes its queued
+annotations and links when `endPage()` is called.
+Pausing and resuming an edit preserves the content drawn in every context.
+
 Editing a source page can add annotations. Appending or rebuilding a source page
 does not deep-copy its existing `/Annots` graph.
 

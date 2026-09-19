@@ -615,7 +615,8 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
     }
   }
   // from 0
-  this.metadata.pageCount += 1;
+  this.metadata.pageCount =
+    (this.metadata.pageCount ?? this.metadata.pages ?? 0) + 1;
   const pageNumber = this.metadata.pageCount;
   const dimensions = [0, 0, pageWidth, pageHeight];
   const layout = pageWidth > pageHeight ? "landscape" : "portrait";

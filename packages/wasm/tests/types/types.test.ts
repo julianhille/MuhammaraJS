@@ -594,6 +594,12 @@ function usesRecipeDeclarations(
       },
     ],
     row: { nth: "even", cell: { padding: 2 } },
+    overflow: function (currentRecipe) {
+      var receiver: Recipe = this;
+      void currentRecipe;
+      receiver.endPage().createPage(300, 300);
+      return { position: [10, 10] };
+    },
   });
   recipe.table(10, 10, invoices, { columns, ...tableOptions });
   recipe.table(10, 10, [{ a: 1 }, { a: 2, b: "x" }]);

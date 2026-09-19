@@ -37,6 +37,9 @@ markup annotations. Their nested object sets `text`, `color`, `opacity`, and
 `replies`; put shared metadata such as `title`, `date`, and `subject` on the
 outer text options.
 
+Markup also works on pages created while modifying an existing document.
+Justified text uses markup bounds that include the expanded spaces between words.
+
 Set `richText: true` on a comment to use supported HTML formatting.
 
 To change or remove an annotation that is already in a document, see

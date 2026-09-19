@@ -29,6 +29,67 @@ function richText(value) {
   return `<?xml version="1.0"?><body xmlns="http://www.w3.org/1999/xhtml">${value.replace(/&nbsp;/g, " ").replace(/\r?\n|\r|\t/g, "")}</body>`;
 }
 
+/** Writes Recipe metadata and reply relationships through the modifier's object API. */
+function writeSourceAnnotation(writer, subtype, rectangle, options) {
+  var opacity = options.opacity ?? 1;
+  if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1)
+    throw new TypeError("Invalid annotation options");
+  var flags = annotationFlags(options.flag ?? options.flags);
+  var objects = writer.getObjectsContext();
+  var id = objects.startNewIndirectObject();
+  var dictionary = objects.startDictionary();
+  dictionary.writeKey("Type").writeNameValue("Annot");
+  dictionary.writeKey("Subtype").writeNameValue(subtype);
+  /** Writes a numeric array in the annotation dictionary. */
+  function writeArray(key, values) {
+    dictionary.writeKey(key);
+    objects.startArray();
+    values.forEach((value) => objects.writeNumber(value));
+    objects.endArray();
+  }
+  writeArray("Rect", rectangle);
+  var strings = {
+    T: options.title || "",
+    Subj: options.subject || "",
+    M: annotationDate(options.date),
+  };
+  var contents = options.text || options.contents || "";
+  strings[options.richText ? "RC" : "Contents"] = options.richText
+    ? richText(contents)
+    : contents;
+  Object.entries(strings).forEach(([key, value]) => {
+    if (value) dictionary.writeKey(key).writeLiteralStringValue(value);
+  });
+  dictionary.writeKey("Open").writeBooleanValue(Boolean(options.open));
+  dictionary.writeKey("F").writeNumberValue(flags);
+  if (opacity !== 1) dictionary.writeKey("CA").writeNumberValue(opacity);
+  if (options.replyTo) {
+    dictionary.writeKey("IRT").writeObjectReferenceValue(options.replyTo);
+    dictionary.writeKey("RT").writeNameValue("R");
+  }
+  var name = options.icon || options.name;
+  if (name) dictionary.writeKey("Name").writeNameValue(name);
+  if (options.color.length) writeArray("C", options.color);
+  if (options.quadPoints.length) writeArray("QuadPoints", options.quadPoints);
+  if (options.borderWidth >= 0) {
+    dictionary.writeKey("Border");
+    objects
+      .startArray()
+      .writeNumber(0)
+      .writeNumber(0)
+      .writeNumber(options.borderWidth);
+    if (options.borderDash.length) {
+      objects.startArray();
+      options.borderDash.forEach((value) => objects.writeNumber(value));
+      objects.endArray();
+    }
+    objects.endArray();
+  }
+  objects.endDictionary(dictionary).endIndirectObject();
+  writer.registerAnnotationReferenceForNextPageWrite(id);
+  return id;
+}
+
 /** Creates Recipe annotation methods. */
 export function createAnnotationMethods({
   module,
@@ -67,7 +128,7 @@ export function createAnnotationMethods({
      * @param {number} width Link width.
      * @param {number} height Link height.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the underlying PDF operation fails.
+     * @throws {Error} If there is no active page or the underlying PDF operation fails.
      */
     link: function (url, x, y, width, height) {
       var point = this._calibrateCoordinate(x, y, 0, -height);
@@ -82,6 +143,7 @@ export function createAnnotationMethods({
      * @private
      */
     _linkPdf: function (url, left, bottom, width, height) {
+      if (!this._pageHeight) throw new Error("Links require an active page");
       // A link is an indirect object, so it is written with the queued
       // annotations once endPage() has closed the page content stream.
       this._links.push({ url, left, bottom, width, height });
@@ -254,23 +316,17 @@ export function createAnnotationMethods({
           var contents = source.text || source.contents || "";
           var useRichText = Boolean(source.richText);
           if (this._sourceMode) {
-            return this._page.createAnnotation(
+            return writeSourceAnnotation(
+              this.writer,
               annotation.subtype,
-              left,
-              bottom,
-              left + width,
-              bottom + height,
+              [left, bottom, left + width, bottom + height],
               {
-                contents: useRichText ? richText(contents) : contents,
-                title: source.title || "",
-                name: source.icon || source.name || "",
+                ...source,
                 color,
-                borderWidth: Math.max(0, borderWidth),
+                borderWidth,
                 borderDash,
                 quadPoints,
-                flags: annotationFlags(source.flag ?? source.flags),
-                open: Boolean(source.open),
-                opacity: source.opacity ?? 1,
+                replyTo,
               },
             );
           }

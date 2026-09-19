@@ -23,6 +23,10 @@ existing page's `/Annots` graph. Recipe-created annotations are preserved in
 their own output, but appended or rebuilt source pages lose existing
 annotations. This is a core copying limitation, not a browser storage issue.
 
+Text-markup rectangles use Wasm's measured ascent-to-descent line box; native
+Recipe uses `1.4 × textHeight`. Both cover the text, but their vertical bounds
+can differ along with the platforms' font metrics.
+
 Wasm's async `createRecipe()` factory dynamically imports bundled Roboto only
 when its `defaultFont` option is omitted. Pass custom default bytes/Blob/File or
 `false` (named-font registration only) to skip that download. Custom default
