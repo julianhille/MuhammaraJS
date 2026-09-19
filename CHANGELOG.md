@@ -37,6 +37,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Pass `""` instead of `null` to a table column `renderer` for null values, and
   leave the text cursor at the table's left edge and bottom
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Allow `alignToData` with custom table headers that omit `textBox`
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Preserve a table's columns, rows, and borders when its overflow callback
+  draws another table
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Keep reusable table renderer options unmodified, preventing cell padding and
+  drawing state from leaking into later cells while preserving `onClip` callbacks
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Reject table continuations on paused pages with the active-page error; call
+  `resumeContext()` before continuing or return `true` to stop
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Stop Recipe `text()` with `html: true` from throwing when the HTML has text
+  outside any element and no explicit `size`; that text now uses the default
+  14pt size like element text
+  [#704](https://github.com/julianhille/MuhammaraJS/issues/704)
 
 ## [7.0.0-beta.3] - 2026-09-18
 

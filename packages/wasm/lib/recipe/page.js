@@ -649,8 +649,8 @@ export function createPageMethods(
         this._flushAnnotations();
         if (this._contextState === "active-edit") {
           this._page.endContext();
-          this._page.writePage();
         }
+        this._page.writePage();
         this._pageContext = null;
         this._page = null;
         this._editingPage = false;
@@ -1024,6 +1024,8 @@ export function createPageMethods(
      * Pauses the active created-page or edited-page content context. Page
      * editing remains active, and a later resume restores the page's rotated,
      * top-left Recipe coordinate transform.
+     * Edited-page content is retained across pauses and written at endPage(),
+     * including when ending the page while paused.
      *
      * @name pauseContext
      * @function
@@ -1034,8 +1036,6 @@ export function createPageMethods(
     pauseContext: function () {
       if (this._contextState === "active-edit") {
         this._page.endContext();
-        this._page.writePage();
-        this._page = null;
         this._pageContext = null;
         this._contextState = "paused-edit";
       } else if (this._contextState === "active-new") {
@@ -1064,10 +1064,6 @@ export function createPageMethods(
      */
     resumeContext: function () {
       if (this._contextState === "paused-edit") {
-        this._page = this.writer.createPageModifier(
-          this._activePageNumber - 1,
-          true,
-        );
         this._pageContext = this._page.startContext().getContext();
         this._resumePageRotation();
         this._contextState = "active-edit";

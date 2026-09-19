@@ -66,13 +66,20 @@ The table-level `header` option controls whether headers are drawn. Set header
 column styling cannot override an explicit header style. Measurement and every
 repeated header use the same resolved options.
 
+Custom column header objects may omit `textBox`, including when using
+`header.alignToData`. A renderer may return the same options object for several
+cells: table layout keeps that object unmodified and preserves callback
+properties such as `textBox.onClip`.
+
 An `overflow` callback receives the Recipe as both `this` and its first
 argument. It is called once for a pending row: return `true` to stop, or
 continue in an area that fits the entire row plus its repeated header. The
 destination is bounded by `options.height` and the page's bottom margin. If it
 is too small, `table()` throws `RangeError` before drawing that header or row. A
-callback that ends the page must start another one before continuing;
-otherwise `table()` throws an `Error`.
+callback may draw another table; the original table retains its own columns.
+If the callback ends the page it must start another, and if it pauses the
+context it must call `resumeContext()` before continuing. Otherwise `table()`
+throws an `Error`. Returning `true` stops without requiring an active context.
 Move the continuation upward, use a taller page/table area, reduce the cell
 heights, or split a large record into multiple rows. Tables do not split a row
 automatically.

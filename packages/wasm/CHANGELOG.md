@@ -6,6 +6,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Retain edited-page content across Recipe `pauseContext()`/`resumeContext()`
+  and allow a low-level page modifier to restart its context before writing,
+  matching native and preventing earlier table rows from disappearing
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Reject table continuations on paused pages with the active-page error; call
+  `resumeContext()` before continuing or return `true` to stop
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Preserve explicit table header styles against body-column overrides and
   merge nested `hcell` styles without discarding header backgrounds or borders
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)

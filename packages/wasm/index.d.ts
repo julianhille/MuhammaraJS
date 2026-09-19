@@ -283,6 +283,7 @@ export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
   header?: boolean | RecipeTextOptions;
   /** Final header text-box overrides, applied after header styles and alignToData. */
   hcell?: RecipeTextBox;
+  /** Called once per cell. Returned options may be reused; table() does not mutate them and preserves callback properties. */
   renderer?: (
     text: unknown,
     record: Record<string, unknown>,
@@ -306,7 +307,7 @@ export interface RecipeTableOptions extends Omit<
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
   row?: RecipeTextOptions & { nth?: "even" | "odd" };
-  /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
+  /** Called once per overflow; may draw another table. A continuing destination must fit the row and repeated header or table() throws RangeError; leaving no active, unpaused page throws Error. */
   overflow?: (
     this: Recipe,
     recipe: Recipe,
@@ -1289,6 +1290,7 @@ export interface PDFWriter {
   dispose(): void;
 }
 export interface PageModifier {
+  /** Starts or resumes this modifier's content after endContext(); retain the modifier and writePage() once after all contexts. */
   startContext(): this;
   getContext(): ContentContext;
   getResourcesDictionary(): ResourcesDictionary;

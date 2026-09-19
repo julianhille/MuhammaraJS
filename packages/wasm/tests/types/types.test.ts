@@ -161,6 +161,13 @@ async function usesLowLevelSurface() {
     version: muhammara.ePDFVersion17,
     compress: false,
   });
+  var resumedPage = syncModifier.createPageModifier(0, true);
+  resumedPage
+    .startContext()
+    .endContext()
+    .startContext()
+    .endContext()
+    .writePage();
   muhammara
     .createModifier(source)
     .startPage(0)
@@ -342,7 +349,19 @@ async function usesLowLevelSurface() {
         header: { size: 18, textBox: { style: { stroke: "blue" } } },
         hcell: { height: 60 },
         /** Exercises renderer-controlled table box sizing. */
-        renderer: () => ({ textBox: { minHeight: 80 } }),
+        renderer: () => ({
+          textBox: {
+            minHeight: 80,
+            height: 100,
+            clipIfExceedsBox: true,
+            /** Renderer-returned callbacks retain their typed arguments. */
+            onClip(currentRecipe, result) {
+              var remainder: string = result.remainder;
+              void currentRecipe;
+              void remainder;
+            },
+          },
+        }),
       },
       { name: "optional", header: false },
     ],

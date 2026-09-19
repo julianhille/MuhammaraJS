@@ -2297,16 +2297,19 @@ export function createWriterToModifyFactory({
         }
         var modifierPage = null;
         return {
+          /** Starts another content context on the retained page until writePage(). */
           startContext: function () {
             requireOpen();
             if (
               page ||
               context ||
-              !module._muhammara_wasm_modifier_start_page(
-                modifier,
-                index,
-                ensureContentEncapsulation ? 1 : 0,
-              )
+              !(modifierPage
+                ? module._muhammara_wasm_modifier_start_page_context(modifier)
+                : module._muhammara_wasm_modifier_start_page(
+                    modifier,
+                    index,
+                    ensureContentEncapsulation ? 1 : 0,
+                  ))
             ) {
               throw new RangeError(`Unable to modify page ${index}`);
             }

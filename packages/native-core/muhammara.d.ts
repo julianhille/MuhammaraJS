@@ -79,6 +79,7 @@ declare namespace muhammara {
       pageIndex?: number,
       ensureContentEncapsulation?: boolean,
     ): PDFPageModifier;
+    /** Starts or resumes this modifier's content after endContext(); retain the modifier and writePage() once after all contexts. */
     startContext(): this;
     getContext(): XObjectContentContext;
     endContext(): this;
@@ -1306,6 +1307,7 @@ declare namespace muhammara {
       header?: boolean | TextOptions;
       /** Final header text-box overrides, applied after header styles and alignToData. */
       hcell?: TextBox;
+      /** Called once per cell. Returned options may be reused; table() does not mutate them and preserves callback properties. */
       renderer?: (
         this: void,
         /** The cell value; missing and nullish values arrive as `""`. */
@@ -1353,7 +1355,7 @@ declare namespace muhammara {
         boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
       border?: boolean | PolygonOptions;
       row?: TextOptions & { nth?: "even" | "odd"; cell?: TextBox };
-      /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
+      /** Called once per overflow; may draw another table. A continuing destination must fit the row and repeated header or table() throws RangeError; leaving no active, unpaused page throws Error. */
       overflow?: (
         this: Recipe,
         recipe: Recipe,

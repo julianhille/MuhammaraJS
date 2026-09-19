@@ -35,6 +35,30 @@ function lineCount(content) {
   return (content.match(/ m\b/g) || []).length;
 }
 
+/** Reads text sizes from edit Form XObjects, which extractPageText does not traverse. */
+function formFontSizes(reader) {
+  var page = reader.parsePage(0).getDictionary();
+  var resources = reader
+    .queryDictionaryObject(page, "Resources")
+    .toPDFDictionary();
+  var forms = reader
+    .queryDictionaryObject(resources, "XObject")
+    .toPDFDictionary();
+  return Object.keys(forms.toJSObject()).flatMap((name) => {
+    var input = reader.startReadingFromStream(
+      reader.queryDictionaryObject(forms, name).toPDFStream(),
+    );
+    var bytes = [];
+    while (input.notEnded()) bytes.push(...input.read(4096));
+    return Array.from(
+      Buffer.from(bytes)
+        .toString("latin1")
+        .matchAll(/\/\S+\s+([\d.]+)\s+Tf\b/g),
+      (match) => Number(match[1]),
+    );
+  });
+}
+
 function compare(a, b) {
   // Use toUpperCase() to ignore character casing
   var nameA = a.last_name.toUpperCase();
@@ -683,6 +707,183 @@ describe("Recipe table layout", () => {
     var content = pageContent(reader, 0);
     assert.match(content, /(^|\s)0\s+0\s+1\s+rg\b/);
     assert.match(content, /(^|\s)1\s+0\s+0\s+rg\b/);
+  });
+
+  it("aligns a custom header without an explicit textBox", function () {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    recipe.table(20, 20, [{ value: "body" }], {
+      header: { alignToData: true },
+      columns: [
+        {
+          name: "value",
+          text: "Heading",
+          width: 120,
+          header: { size: 12 },
+          cell: { textAlign: "right top" },
+        },
+      ],
+    });
+    finish(recipe);
+    var header = reader
+      .extractPageText(0)
+      .find((entry) => entry.content === "Heading");
+    assert.equal(header.fontSize, 12);
+    assert.ok(
+      header.textMatrix[4] > 50,
+      "custom header uses the data alignment",
+    );
+  });
+
+  it("retains its columns when an overflow callback draws another table", function () {
+    var recipe = new Recipe("new", output).createPage(500, 500);
+    var calls = 0;
+    recipe.table(
+      20,
+      20,
+      [
+        { a: "A1", b: "B1" },
+        { a: "A2", b: "B2" },
+        { a: "A3", b: "B3" },
+        { a: "A4", b: "B4" },
+      ],
+      {
+        size: 8,
+        height: 40,
+        border: true,
+        header: { cell: { minHeight: 20 } },
+        columns: [
+          { name: "a", width: 60 },
+          { name: "b", width: 60 },
+        ],
+        row: { cell: { lineHeight: 10, padding: 0 } },
+        /** Adds an independent note table before continuing the original table. */
+        overflow: (self) => {
+          calls++;
+          self.table(20, 120, [{ note: "note" }]);
+          return { position: [200, 200] };
+        },
+      },
+    );
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.equal(calls, 1);
+    assert.deepEqual(
+      texts().map((entry) => entry.content),
+      [
+        "a",
+        "b",
+        "A1",
+        "B1",
+        "A2",
+        "B2",
+        "note",
+        "a",
+        "b",
+        "A3",
+        "B3",
+        "A4",
+        "B4",
+      ],
+    );
+    assert.equal(texts().find((entry) => entry.content === "A3").x, 200);
+    assert.equal(texts().find((entry) => entry.content === "B4").x, 260);
+    assert.deepEqual(cursor, [200, 240]);
+    assert.equal(lineCount(pageContent(reader, 0)), 6);
+  });
+
+  it("keeps reusable renderer options isolated across cells and retains callbacks", function () {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    var clips = [];
+    /** Records real clipping so copying renderer styles must preserve callbacks. */
+    var onClip = (self, result) => {
+      clips.push(result);
+    };
+    var rendered = {
+      textBox: {
+        height: 60,
+        clipIfExceedsBox: true,
+        onClip,
+        style: { fill: "#eeeeee" },
+      },
+    };
+    /** Reuses one style object for columns with different padding. */
+    var renderer = () => rendered;
+    recipe.table(
+      20,
+      20,
+      [{ left: "L1\nL2\nL3\nL4\nL5", right: "R1\nR2\nR3\nR4\nR5" }],
+      {
+        size: 8,
+        columns: [
+          {
+            name: "left",
+            width: 100,
+            cell: { padding: 0, lineHeight: 10 },
+            renderer,
+          },
+          {
+            name: "right",
+            width: 100,
+            cell: { padding: 12, lineHeight: 10 },
+            renderer,
+          },
+        ],
+      },
+    );
+    finish(recipe);
+    assert.deepEqual(rendered, {
+      textBox: {
+        height: 60,
+        clipIfExceedsBox: true,
+        onClip,
+        style: { fill: "#eeeeee" },
+      },
+    });
+    assert.equal(clips.length, 1);
+    assert.equal(texts().find((entry) => entry.content === "R1").x, 132);
+    assert.ok(!texts().some((entry) => entry.content === "R4"));
+  });
+
+  [false, true].forEach(function (editing) {
+    [false, true].forEach(function (resume) {
+      it(`rejects a continuation on a paused ${editing ? "edited" : "new"} page and allows ${resume ? "recovery" : "ending the page"}`, function () {
+        var recipe;
+        if (editing) {
+          var source = path.join(directory, "source.pdf");
+          new Recipe("new", source).createPage(400, 400).endPage().endPDF();
+          recipe = new Recipe(source, output).editPage(1);
+        } else {
+          recipe = new Recipe("new", output).createPage(400, 400);
+        }
+        assert.throws(
+          () =>
+            recipe.table(20, 20, [{ a: "first" }, { a: "omitted" }], {
+              height: 20,
+              /** Leaves the page paused rather than ready for more table content. */
+              overflow: (self) => {
+                self.pauseContext();
+                return { position: [200, 20] };
+              },
+            }),
+          {
+            name: "Error",
+            message:
+              "Recipe.table: the overflow callback must leave an active page to continue on.",
+          },
+        );
+        if (resume)
+          recipe.resumeContext().text("recovered", 20, 100, { size: 18 });
+        finish(recipe);
+        if (editing) {
+          assert.deepEqual(formFontSizes(reader), resume ? [14, 18] : [14]);
+        } else {
+          assert.deepEqual(
+            texts().map((entry) => entry.content),
+            resume ? ["first", "recovered"] : ["first"],
+          );
+        }
+      });
+    });
   });
 
   it("merges header box overrides and uses the same styles on continuations", function () {

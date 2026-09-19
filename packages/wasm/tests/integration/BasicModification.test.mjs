@@ -4,6 +4,50 @@ import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
 
 describe("BasicModification", function () {
+  it("retains every context when a page modifier is resumed before writing", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var sourceWriter = muhammara.createWriter();
+    sourceWriter.writePage(sourceWriter.createPage(0, 0, 200, 200));
+    var writer = muhammara.createWriterToModify(sourceWriter.end());
+    var pageModifier = writer.createPageModifier(0, true);
+    [1, 3, 5].forEach((x) => {
+      pageModifier
+        .startContext()
+        .getContext()
+        .m(x, x + 1)
+        .l(10, 10)
+        .S();
+      pageModifier.endContext();
+    });
+    pageModifier.writePage();
+    var reader = muhammara.createReader(writer.end());
+    try {
+      var resources = reader
+        .queryDictionaryObject(reader.parsePage(0).getDictionary(), "Resources")
+        .toPDFDictionary();
+      var forms = reader
+        .queryDictionaryObject(resources, "XObject")
+        .toPDFDictionary();
+      var streams = Object.keys(forms.toJSObject()).map((name) => {
+        var input = reader.startReadingFromStream(
+          reader.queryDictionaryObject(forms, name).toPDFStream(),
+        );
+        var bytes = [];
+        while (input.notEnded()) bytes.push(...input.read(4096));
+        return Buffer.from(bytes).toString("latin1");
+      });
+      assert.equal(streams.length, 3);
+      [1, 3, 5].forEach((x) =>
+        assert.match(
+          streams.join("\n"),
+          new RegExp(`(^|\\s)${x} ${x + 1} m\\b`),
+        ),
+      );
+    } finally {
+      reader.end();
+    }
+  });
+
   it("modifies, appends, and merges byte-backed PDFs", async function () {
     var muhammara = await createMuhammaraWasm();
     var sourceWriter = muhammara.createWriter();

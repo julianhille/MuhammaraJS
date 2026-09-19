@@ -44,6 +44,10 @@ page through `createPageModifier(index?, ensureContentEncapsulation?)`. Its
 `end()` returns a new `Uint8Array`. `createModifier(bytes)` is the compact
 drawing facade.
 
+Retain the same page modifier when splitting an edit into several content
+contexts: `endContext()` followed by `startContext()` preserves earlier content.
+Call `endContext().writePage()` once after the final context, matching native.
+
 A writer created with `createWriterToModify` also exposes
 `replaceObject(pageIndex, sourceObjectId, replacementObjectId, options?)`, which
 repoints every direct reference to `sourceObjectId` in the zero-based page's

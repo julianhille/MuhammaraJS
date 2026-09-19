@@ -5,6 +5,21 @@ function clone(object) {
   return JSON.parse(JSON.stringify(object));
 }
 
+/** Copies renderer-owned arrays and objects while preserving callbacks. */
+function cloneRendererOptions(value) {
+  if (Array.isArray(value)) {
+    return value.map(cloneRendererOptions);
+  }
+  if (value && typeof value === "object") {
+    var result = {};
+    for (var key of Object.keys(value)) {
+      result[key] = cloneRendererOptions(value[key]);
+    }
+    return result;
+  }
+  return value;
+}
+
 /** Converts a table cell style into text options. */
 function getCellOptions(options, cell = "cell") {
   var cellOptions = clone(options);
@@ -49,7 +64,16 @@ function getCellHeight(self, text, column, options) {
 }
 
 /** Draws a completed table segment without duplicating its bottom edge. */
-function drawTableBorder(self, x, y, width, height, rowLines, options) {
+function drawTableBorder(
+  self,
+  x,
+  y,
+  width,
+  height,
+  rowLines,
+  options,
+  columns,
+) {
   // A segment without rows has nothing to enclose.
   if (!options.border || height <= 0) {
     return;
@@ -65,7 +89,6 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
   }
 
   self.rectangle(x, y, width, height, borderOptions);
-  var columns = self._layouts["_table_"];
 
   // Draw verticals
   for (var index = 0; index < columns.length - 1; index++) {
@@ -153,7 +176,9 @@ function tableFields(contents, options) {
  * @param {function} [options.columns[].renderer] - function to be called which can be used to modify the text options for a particular
  * table cell. The function is called with `(text, data, field, row)`, where `text` is the text to be written in the cell,
  * `data` holds the text elements in the table row, `field` is the column field, and `row` is the one-based row number. The function returns an object with the text attributes that
- * are to be modified for the table cell.
+ * are to be modified for the table cell. Returned options are copied without
+ * mutation and may be reused across cells; callbacks such as textBox.onClip
+ * remain callable.
  * @param {object|boolean} [options.header=false] - When true, the column name associated with a column will
  * appear at the top of the column. When presented as an object it is the set of unique options to be applied to column headers.
  * All 'text' interface options can be used.
@@ -168,6 +193,7 @@ function tableFields(contents, options) {
  * The return value can be 'true' which indicates that data processing should stop, or 'false' which indicates that
  * the data should continue being processed with the original [x,y] coordinates, or it can be an object containing
  * a 'position' property indicating the [x,y] coordinates where the next table for the remaining data should start.
+ * The callback may draw another table without replacing this table's columns.
  * @param {object} [options.row] - text properties to be applied to all cells in a table row.
  * @param {object} [options.row.cell] - All textBox options from the 'text' interface can be used here.
  * @param {string} [options.row.nth] - 'even|odd', indicating that the properties should be applied only to
@@ -176,25 +202,28 @@ function tableFields(contents, options) {
  * @throws {RangeError} If the overflow callback continues into an area too small
  * for the pending row and its repeated header. Return true to stop, or provide
  * enough space; rows are not split and the callback is called once per overflow.
- * @throws {Error} If the overflow callback continues after ending the page
- * without starting another one.
+ * @throws {Error} If the overflow callback continues without leaving an active,
+ * unpaused page.
  */
 exports.table = function table(x, y, contents, options = {}) {
   if (!Array.isArray(contents) || contents.length === 0) {
     return this;
   }
-  var columns = tableFields(contents, options).map((field) => {
+  var definitions = tableFields(contents, options).map((field) => {
     var column =
       options.columns &&
       options.columns.find((definition) => definition.name === field);
     return column || { text: field, name: field };
   });
-  if (columns.length === 0) {
+  if (definitions.length === 0) {
     return this;
   }
-  this.layout("_table_", x, y, 0, 0, { columns: columns, reset: true });
+  this.layout("_table_", x, y, 0, 0, { columns: definitions, reset: true });
+  // Nested tables in callbacks may replace the named layout. Keep our own
+  // columns for all subsequent measurement, continuation, and border drawing.
+  var columns = this._layouts["_table_"];
 
-  var tableWidth = this._layouts["_table_"].reduce((width, column) => {
+  var tableWidth = columns.reduce((width, column) => {
     width += column.width;
     return width;
   }, 0);
@@ -211,6 +240,7 @@ exports.table = function table(x, y, contents, options = {}) {
     }
     // Have header alignment match data alignment?
     if (options.header.alignToData && column.options.textBox.textAlign) {
+      colOptions.textBox = colOptions.textBox || {};
       colOptions.textBox.textAlign = column.options.textBox.textAlign;
     }
     // Is there a specific header cell override in this column?
@@ -226,7 +256,7 @@ exports.table = function table(x, y, contents, options = {}) {
 
   var headerHeight = 0;
   if (options.header) {
-    for (var column of this._layouts["_table_"]) {
+    for (var column of columns) {
       var cellHeight = getCellHeight(
         this,
         column.text,
@@ -282,7 +312,7 @@ exports.table = function table(x, y, contents, options = {}) {
 
     // Resolve every cell once: the renderer runs once per cell, and its
     // options size the row as well as style the drawn text.
-    var cells = this._layouts["_table_"].map((column) => {
+    var cells = columns.map((column) => {
       var field = column.field;
       var value = record[field];
       var text = value === undefined || value === null ? "" : value;
@@ -294,7 +324,10 @@ exports.table = function table(x, y, contents, options = {}) {
       if (column.options.renderer) {
         var renderOptions = column.options.renderer(text, record, field, row);
         if (renderOptions) {
-          colOptions = this._merge(colOptions, renderOptions);
+          colOptions = this._merge(
+            colOptions,
+            cloneRendererOptions(renderOptions),
+          );
         }
       }
       return { column, text: String(text), options: colOptions };
@@ -319,7 +352,16 @@ exports.table = function table(x, y, contents, options = {}) {
     // header as well as the row.
     var needed = rowHeight + (firstTime && options.header ? headerHeight : 0);
     if (options.overflow && currentY + needed > tableBottom) {
-      drawTableBorder(this, x, y, tableWidth, tableHeight, rowLines, options);
+      drawTableBorder(
+        this,
+        x,
+        y,
+        tableWidth,
+        tableHeight,
+        rowLines,
+        options,
+        columns,
+      );
 
       var orders = options.overflow.call(this, this, row);
 
@@ -328,7 +370,10 @@ exports.table = function table(x, y, contents, options = {}) {
         tableHeight = 0;
         break;
       }
-      if (!this.page) {
+      if (
+        this.contextState !== "active-new" &&
+        this.contextState !== "active-edit"
+      ) {
         throw new Error(
           "Recipe.table: the overflow callback must leave an active page to continue on.",
         );
@@ -337,7 +382,7 @@ exports.table = function table(x, y, contents, options = {}) {
         [x, y] = orders.position;
         var xx = x;
         // Make sure x position adjusted in all columns
-        for (var column of this._layouts["_table_"]) {
+        for (var column of columns) {
           column.x = xx;
           xx += column.width;
         }
@@ -357,7 +402,7 @@ exports.table = function table(x, y, contents, options = {}) {
 
     if (firstTime && options.header) {
       // Display table header
-      for (var column of this._layouts["_table_"]) {
+      for (var column of columns) {
         var colOptions = this._merge(headerOptions(column), {
           textBox: { minHeight: headerHeight, width: column.width },
         });
@@ -384,7 +429,16 @@ exports.table = function table(x, y, contents, options = {}) {
     rowLines.push(y + tableHeight);
   }
 
-  drawTableBorder(this, x, y, tableWidth, tableHeight, rowLines, options);
+  drawTableBorder(
+    this,
+    x,
+    y,
+    tableWidth,
+    tableHeight,
+    rowLines,
+    options,
+    columns,
+  );
 
   // Leave the text cursor at the table's left edge, below its last segment.
   this.x = x;

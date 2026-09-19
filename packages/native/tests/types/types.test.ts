@@ -2,6 +2,8 @@ import muhammara = require("@muhammara/native");
 import nativeCore = require("@muhammara/native-core");
 
 declare const writer: muhammara.PDFWriter;
+var resumedPage = new muhammara.PDFPageModifier(writer, 0, true);
+resumedPage.startContext().endContext().startContext().endContext().writePage();
 declare const recipe: muhammara.Recipe;
 declare const objects: muhammara.ObjectsContext;
 var page: muhammara.PDFPage = writer.createPage(0, 0, 595, 842);
@@ -201,7 +203,17 @@ var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
           ? {
               color: "blue",
               underline: { text: "reviewed", color: "red" },
-              textBox: { minHeight: 80 },
+              textBox: {
+                minHeight: 80,
+                height: 100,
+                clipIfExceedsBox: true,
+                /** Renderer-returned callbacks retain their typed arguments. */
+                onClip(currentRecipe, result) {
+                  var remainder: string = result.remainder;
+                  void currentRecipe;
+                  void remainder;
+                },
+              },
             }
           : undefined;
       },

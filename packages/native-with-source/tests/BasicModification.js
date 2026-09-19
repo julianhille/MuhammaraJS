@@ -1,5 +1,6 @@
 var muhammara = require("@muhammara/native-with-source");
 var fs = require("fs");
+var assert = require("node:assert/strict");
 
 function testInPlaceFileModification(inFileName) {
   describe(inFileName, function () {
@@ -50,6 +51,58 @@ function testInPlaceFileModification(inFileName) {
 }
 
 describe("BasicModification", function () {
+  it("retains every context when a page modifier is resumed before writing", function () {
+    var sourceOutput = new muhammara.PDFWStreamForBuffer();
+    var sourceWriter = muhammara.createWriter(sourceOutput);
+    sourceWriter.writePage(sourceWriter.createPage(0, 0, 200, 200));
+    sourceWriter.end();
+    var output = new muhammara.PDFWStreamForBuffer();
+    var writer = muhammara.createWriterToModify(
+      new muhammara.PDFRStreamForBuffer(sourceOutput.buffer),
+      output,
+    );
+    var pageModifier = new muhammara.PDFPageModifier(writer, 0, true);
+    [1, 3, 5].forEach((x) => {
+      pageModifier
+        .startContext()
+        .getContext()
+        .m(x, x + 1)
+        .l(10, 10)
+        .S();
+      pageModifier.endContext();
+    });
+    pageModifier.writePage();
+    writer.end();
+    var reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(output.buffer),
+    );
+    try {
+      var resources = reader
+        .queryDictionaryObject(reader.parsePage(0).getDictionary(), "Resources")
+        .toPDFDictionary();
+      var forms = reader
+        .queryDictionaryObject(resources, "XObject")
+        .toPDFDictionary();
+      var streams = Object.keys(forms.toJSObject()).map((name) => {
+        var input = reader.startReadingFromStream(
+          reader.queryDictionaryObject(forms, name).toPDFStream(),
+        );
+        var bytes = [];
+        while (input.notEnded()) bytes.push(...input.read(4096));
+        return Buffer.from(bytes).toString("latin1");
+      });
+      assert.equal(streams.length, 3);
+      [1, 3, 5].forEach((x) =>
+        assert.match(
+          streams.join("\n"),
+          new RegExp(`(^|\\s)${x} ${x + 1} m\\b`),
+        ),
+      );
+    } finally {
+      reader.end();
+    }
+  });
+
   testInPlaceFileModification("Linearized");
   testInPlaceFileModification("MultipleChange");
   testInPlaceFileModification("RemovedItem");
