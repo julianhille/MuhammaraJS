@@ -18,11 +18,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Write Recipe annotation dash patterns as a nested `/Border` array on new
   documents, matching edited pages and allowing PDF viewers to render the dashes
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Reject non-finite annotation dimensions and validate queued annotations before
-  closing page content or consuming the queue, so a failed `endPage()` cannot
-  silently discard annotations on retry or leave an edited context unusable
+- Reject invalid annotation options when `annot()`, `comment()`, or a text
+  markup option adds the annotation, instead of during `endPage()`. A failed
+  call no longer leaves the page unable to end or the Recipe unable to finish
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-
 - Stop corrupting the page content stream when a Recipe page has both drawn
   content and an annotation or link, such as `comment()`, `annot()`, `link()`,
   a text `link`, or a text `highlight`; annotations and links are now written
@@ -63,11 +62,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `RecipeDeviceColorSpace`, so Separation colors, which WebAssembly Recipe
   rejects at runtime, now fail type checking
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Reject Recipe annotations with an `opacity` outside 0 to 1, non-numeric
-  `borderWidth` or `borderDash` values, or `quadPoints` whose length is not a
-  multiple of eight with `TypeError: Invalid annotation options` from
-  `endPage()`, on new and edited pages alike; new pages previously threw a
-  generic `Unable to create annotation` error for an invalid `opacity`
+- Reject Recipe annotations with an `opacity` outside 0 to 1, a non-finite
+  `width`, `height`, or `borderWidth`, non-numeric `borderDash` values, or
+  `quadPoints` whose length is not a multiple of eight with
+  `TypeError: Invalid annotation options` from `annot()`, `comment()`, or
+  `text()`, on new and edited pages alike; new pages previously threw a generic
+  `Unable to create annotation` error from `endPage()` for an invalid `opacity`
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 
 ## [1.0.0-beta.3] - 2026-09-18

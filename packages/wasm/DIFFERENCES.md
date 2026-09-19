@@ -30,7 +30,8 @@ can differ along with the platforms' font metrics.
 Wasm Recipe rejects annotation values that cannot form a valid PDF
 annotation, such as an `opacity` outside 0 to 1, non-numeric `borderDash`
 entries, or `quadPoints` whose length is not a multiple of eight, with a
-`TypeError` from `endPage()` on new and edited pages. Native Recipe writes
+`TypeError` when the annotation is added, on new and edited pages. Native
+Recipe writes
 these values unchecked.
 
 Wasm's async `createRecipe()` factory dynamically imports bundled Roboto only

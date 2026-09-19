@@ -236,7 +236,8 @@ export function createAnnotationMethods({
      * @param {RecipeAnnotationOptions} [options={}] Annotation options. The
      * `text` argument supplies the contents and the default icon is `Comment`.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If there is no active page.
+     * @throws {Error} If there is no active page or a flag is unknown.
+     * @throws {TypeError} If the options cannot form a valid PDF annotation.
      */
     comment: function (text = "", x, y, options = {}) {
       return this.annot(x, y, "Text", { icon: "Comment", ...options, text });
@@ -254,15 +255,20 @@ export function createAnnotationMethods({
      * @param {RecipeAnnotationOptions} [options={}] Annotation appearance,
      * contents, replies, dimensions, flags, and rotation handling.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If there is no active page.
-     * @throws {TypeError} If `subtype` is not a non-empty string.
+     * @throws {Error} If there is no active page or a flag is unknown.
+     * @throws {TypeError} If `subtype` is not a non-empty string or the
+     * options cannot form a valid PDF annotation.
      */
     annot: function (x, y, subtype, options = {}) {
       if (!this._pageHeight)
         throw new Error("Annotations require an active page");
       if (typeof subtype !== "string" || !subtype)
         throw new TypeError("Annotation subtype is required");
-      this._annotations.push({ x, y, subtype, options: { ...options } });
+      var annotation = { x, y, subtype, options: { ...options } };
+      // Reject invalid options here, so they never enter the queue and block
+      // every later endPage() call.
+      this._flushAnnotations(true, [annotation]);
+      this._annotations.push(annotation);
       return this;
     },
     /**
@@ -273,10 +279,13 @@ export function createAnnotationMethods({
      * @memberof Recipe#
      * @private
      * @param {boolean} [validateOnly=false] Check the queue without writing or clearing it.
+     * @param {Object[]} [annotations=this._annotations] Queued annotations to process.
      */
-    _flushAnnotations: function (validateOnly = false) {
+    _flushAnnotations: function (
+      validateOnly = false,
+      annotations = this._annotations,
+    ) {
       if (!validateOnly) this._flushLinks();
-      var annotations = this._annotations;
       if (!validateOnly) this._annotations = [];
       annotations.forEach((annotation) => {
         var options = annotation.options;

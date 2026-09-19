@@ -52,9 +52,10 @@ Annotations are queued until `endPage()`. Supported markup subtypes include
 is a Worker-safe XML subset, not arbitrary browser HTML.
 
 For a dashed review region, set `border: { width: 2, dash: [3, 4] }`. The dash
-pattern works on new and edited pages. `endPage()` checks annotation geometry
-and appearance before closing the page's content context; invalid values throw
-`TypeError: Invalid annotation options` without consuming the annotation queue.
+pattern works on new and edited pages. `annot()`, `comment()`, and the text
+markup options check annotation geometry and appearance when they are called;
+invalid values throw `TypeError: Invalid annotation options` and add nothing,
+so the page can still end normally.
 
 Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create
 markup annotations, one per drawn line, on new and edited pages. Their nested

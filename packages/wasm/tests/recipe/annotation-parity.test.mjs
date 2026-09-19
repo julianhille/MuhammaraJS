@@ -384,21 +384,30 @@ describe("Recipe annotation parity", function () {
       [
         new Recipe().createPage(595, 842),
         new Recipe(source).editPage(1),
-      ].forEach(function (recipe) {
-        try {
-          recipe.text("Keep this content.", 50, 30);
-          recipe.annot(50, 50, "Square", { width: 10, height: 10, ...options });
-          // Validation must leave the queue and content context intact. A
-          // retry must not silently drop annotations or end a context twice.
-          for (var attempt = 0; attempt < 2; attempt++) {
-            assert.throws(() => recipe.endPage(), {
-              name: "TypeError",
-              message: "Invalid annotation options",
-            });
-          }
-        } finally {
-          recipe.dispose();
-        }
+      ].forEach(function (recipe, index) {
+        recipe.text("Keep this content.", 50, 30);
+        recipe.comment("Valid.", 50, 80);
+        // Invalid options throw at the call and never enter the queue, so
+        // the page still ends with its content and valid annotations.
+        assert.throws(
+          () =>
+            recipe.annot(50, 50, "Square", {
+              width: 10,
+              height: 10,
+              ...options,
+            }),
+          { name: "TypeError", message: "Invalid annotation options" },
+        );
+        reader = muhammara.createReader(recipe.endPage().endPDF());
+        assert.deepEqual(subtypes(readAnnotations(reader)), ["Text"]);
+        assert.match(
+          index === 0
+            ? readPageContent(muhammara, reader)
+            : readPageForms(reader),
+          /Tj/,
+        );
+        reader.end();
+        reader = undefined;
       });
     });
   });
