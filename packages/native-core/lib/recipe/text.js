@@ -724,6 +724,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         }
 
         if (overflow && this._overflowNotifier) {
+          flushTextLinks(this, linkAnnotations);
           let orders = this._overflowNotifier(this);
           if (orders === true) {
             return true; // stop processing remaining text.
@@ -805,23 +806,29 @@ exports.text = function text(text = "", x, y, options = {}) {
     });
 
     if (clipResult && typeof textBox.onClip === "function") {
-      // The active text operation owns the page context until it returns.
+      // The callback may finish the page or start drawing on another one.
+      flushTextLinks(this, linkAnnotations);
       textBox.onClip(this, clipResult);
     }
   }
 
-  linkAnnotations.forEach((annotation) => {
+  flushTextLinks(this, linkAnnotations);
+  return this;
+};
+
+/** Writes pending text links before a callback can change the active page. @private */
+function flushTextLinks(recipe, annotations) {
+  for (var annotation of annotations.splice(0)) {
     linkPdf(
-      this,
+      recipe,
       annotation.url,
       annotation.left,
       annotation.bottom,
       annotation.width,
       annotation.height,
     );
-  });
-  return this;
-};
+  }
+}
 
 exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
   let totalHeight = 0;

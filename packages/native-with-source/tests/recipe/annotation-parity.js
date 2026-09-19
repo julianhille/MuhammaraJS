@@ -224,6 +224,94 @@ describe("Recipe annotation parity", function () {
     });
   });
 
+  it("keeps text links on their page across overflow callbacks", async function () {
+    var recipe = new muhammara.Recipe("new", output).createPage(200, 200);
+    var overflows = 0;
+    recipe
+      .layout("links", 20, 20, 100, 24, { columns: 1 })
+      .text("First\nSecond\nThird", {
+        size: 14,
+        layout: "links",
+        flow: false,
+        link: "https://example.test",
+        textBox: { lineHeight: 24 },
+        overflow: function (currentRecipe) {
+          overflows++;
+          currentRecipe.endPage().createPage(200, 200);
+          return { column: 0 };
+        },
+      });
+    await new Promise(function (resolve) {
+      recipe.endPage().endPDF(resolve);
+    });
+    reader = muhammara.createReader(output);
+    assert.equal(overflows, 2);
+    assert.equal(reader.getPagesCount(), 3);
+    for (var index = 0; index < 3; index++) {
+      assert.ok(
+        reader.parsePage(index).getDictionary().toJSObject().Annots,
+        `page ${index + 1} has its link`,
+      );
+      assert.deepEqual(subtypes(readAnnotations(reader, index)), ["Link"]);
+    }
+  });
+
+  it("writes text links before onClip ends the page", async function () {
+    var recipe = new muhammara.Recipe("new", output).createPage(200, 200);
+    var clipped = false;
+    recipe.text("First\nSecond", 20, 20, {
+      size: 14,
+      link: "https://example.test",
+      textBox: {
+        width: 100,
+        height: 24,
+        lineHeight: 24,
+        clipIfExceedsBox: true,
+        onClip: function (currentRecipe) {
+          clipped = true;
+          currentRecipe.endPage();
+        },
+      },
+    });
+    await new Promise(function (resolve) {
+      recipe.endPDF(resolve);
+    });
+    reader = muhammara.createReader(output);
+    assert.equal(clipped, true);
+    assert.deepEqual(subtypes(readAnnotations(reader)), ["Link"]);
+    assert.match(readPageContent(reader), /Tj/);
+  });
+
+  it("retains edited content when linked text overflows on the same page", async function () {
+    var source = path.join(directory, "source.pdf");
+    await new Promise(function (resolve) {
+      new muhammara.Recipe("new", source)
+        .createPage(300, 300)
+        .endPage()
+        .endPDF(resolve);
+    });
+    var recipe = new muhammara.Recipe(source, output).editPage(1);
+    var overflows = 0;
+    recipe
+      .layout("links", 20, 20, 100, 24, { columns: 1 })
+      .text("First\nSecond\nThird", {
+        size: 14,
+        layout: "links",
+        flow: false,
+        link: "https://example.test",
+        textBox: { lineHeight: 24 },
+        overflow: function () {
+          overflows++;
+          return { column: [20, 20 + overflows * 50] };
+        },
+      });
+    var annotations = await finish(recipe);
+    assert.equal(overflows, 2);
+    assert.equal(reader.getPagesCount(), 1);
+    assert.deepEqual(subtypes(annotations), ["Link", "Link", "Link"]);
+    assert.equal((readPageForms(reader).match(/Tj/g) || []).length, 3);
+  });
+
   it("writes fractional and zero opacity while keeping the opaque default", async function () {
     var recipe = new muhammara.Recipe("new", output).createPage(595, 842);
     var opacities = [0.45, 0, 1, undefined];

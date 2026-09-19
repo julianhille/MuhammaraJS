@@ -201,6 +201,82 @@ describe("Recipe annotation parity", function () {
     });
   });
 
+  it("keeps text links on their page across overflow callbacks", function () {
+    var recipe = new Recipe().createPage(200, 200);
+    var overflows = 0;
+    recipe
+      .layout("links", 20, 20, 100, 24, { columns: 1 })
+      .text("First\nSecond\nThird", {
+        size: 14,
+        layout: "links",
+        flow: false,
+        link: "https://example.test",
+        textBox: { lineHeight: 24 },
+        overflow: function (currentRecipe) {
+          overflows++;
+          currentRecipe.endPage().createPage(200, 200);
+          return { column: 0 };
+        },
+      });
+    reader = muhammara.createReader(recipe.endPage().endPDF());
+    assert.equal(overflows, 2);
+    assert.equal(reader.getPagesCount(), 3);
+    for (var index = 0; index < 3; index++) {
+      assert.ok(
+        reader.parsePage(index).getDictionary().toJSObject().Annots,
+        `page ${index + 1} has its link`,
+      );
+      assert.deepEqual(subtypes(readAnnotations(reader, index)), ["Link"]);
+    }
+  });
+
+  it("writes text links before onClip ends the page", function () {
+    var recipe = new Recipe().createPage(200, 200);
+    var clipped = false;
+    recipe.text("First\nSecond", 20, 20, {
+      size: 14,
+      link: "https://example.test",
+      textBox: {
+        width: 100,
+        height: 24,
+        lineHeight: 24,
+        clipIfExceedsBox: true,
+        onClip: function (currentRecipe) {
+          clipped = true;
+          currentRecipe.endPage();
+        },
+      },
+    });
+    reader = muhammara.createReader(recipe.endPDF());
+    assert.equal(clipped, true);
+    assert.deepEqual(subtypes(readAnnotations(reader)), ["Link"]);
+    assert.match(readPageContent(muhammara, reader), /Tj/);
+  });
+
+  it("retains edited content when linked text overflows on the same page", function () {
+    var source = new Recipe().createPage(300, 300).endPage().endPDF();
+    var recipe = new Recipe(source).editPage(1);
+    var overflows = 0;
+    recipe
+      .layout("links", 20, 20, 100, 24, { columns: 1 })
+      .text("First\nSecond\nThird", {
+        size: 14,
+        layout: "links",
+        flow: false,
+        link: "https://example.test",
+        textBox: { lineHeight: 24 },
+        overflow: function () {
+          overflows++;
+          return { column: [20, 20 + overflows * 50] };
+        },
+      });
+    var annotations = finish(recipe);
+    assert.equal(overflows, 2);
+    assert.equal(reader.getPagesCount(), 1);
+    assert.deepEqual(subtypes(annotations), ["Link", "Link", "Link"]);
+    assert.equal((readPageForms(reader).match(/Tj/g) || []).length, 3);
+  });
+
   it("writes fractional and zero opacity while keeping the opaque default", function () {
     var recipe = new Recipe().createPage(595, 842);
     var opacities = [0.45, 0, 1, undefined];
