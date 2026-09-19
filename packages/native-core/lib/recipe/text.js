@@ -665,6 +665,29 @@ exports.text = function text(text = "", x, y, options = {}) {
         return next_x;
       };
 
+      /** Queues a text link limited to the run's visible clipping region. */
+      var queueTextLink = function (content, x, y, nextX) {
+        if (!content.writeOptions.link) return;
+        var left = x;
+        var width = nextX ? nextX - x : content.lineWidth;
+        if (textBox.wrap === "clip") {
+          var right = Math.min(
+            x + new Word(content.text, content.writeOptions).dimensions.xMax,
+            nx + textBox.width,
+          );
+          left = Math.max(left, nx);
+          width = right - left;
+          if (width <= 0) return;
+        }
+        linkAnnotations.push({
+          url: content.writeOptions.link,
+          left,
+          bottom: y,
+          width,
+          height: content.lineHeight,
+        });
+      };
+
       if (!isContinued) {
         // flush out current line before processing next one
         let next_x = 0;
@@ -672,15 +695,7 @@ exports.text = function text(text = "", x, y, options = {}) {
           const x = next_x || getStartX(content.startX, content);
           const y = currentY;
           next_x = writeText(context, x, y, content);
-          if (content.writeOptions.link) {
-            linkAnnotations.push({
-              url: content.writeOptions.link,
-              left: x,
-              bottom: y,
-              width: next_x ? next_x - x : content.lineWidth,
-              height: content.lineHeight,
-            });
-          }
+          queueTextLink(content, x, y, next_x);
         });
         // The line offset from the last line in the
         // group determines Y positioning for next line.
@@ -779,15 +794,7 @@ exports.text = function text(text = "", x, y, options = {}) {
           const x = next_x || getStartX(content.startX, content);
           const y = currentY;
           next_x = writeText(context, x, y, content);
-          if (content.writeOptions.link) {
-            linkAnnotations.push({
-              url: content.writeOptions.link,
-              left: x,
-              bottom: y,
-              width: next_x ? next_x - x : content.lineWidth,
-              height: content.lineHeight,
-            });
-          }
+          queueTextLink(content, x, y, next_x);
         }
 
         // Flush any left over text objects.

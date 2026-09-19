@@ -329,6 +329,15 @@ export function createTextMethods({ drawText, measure, module }) {
   /** Writes link bounds transformed and clipped with their associated text. */
   function transformedLink(recipe, url, x, y, width, height, options, clip) {
     if (!options.rotation && !options.skewX && !options.skewY) {
+      if (clip) {
+        var clippedRight = Math.min(x + width, clip.x + clip.width);
+        var clippedBottom = Math.min(y + height, clip.y + clip.height);
+        x = Math.max(x, clip.x);
+        y = Math.max(y, clip.y);
+        width = clippedRight - x;
+        height = clippedBottom - y;
+        if (width <= 0 || height <= 0) return;
+      }
       recipe.link(url, x, y, width, height);
       return;
     }
@@ -812,6 +821,14 @@ export function createTextMethods({ drawText, measure, module }) {
         var linkX = drawX;
         var linkWidth = textWidth;
         var clipping = wrap === "clip" && width;
+        var clip = clipping
+          ? {
+              x: x + left,
+              y: currentY,
+              width: width - left - right,
+              height: lineHeight,
+            }
+          : undefined;
         if (clipping) {
           var clipPoint = this._calibrateCoordinate(
             x + left,
@@ -919,18 +936,6 @@ export function createTextMethods({ drawText, measure, module }) {
                   partOptions.link;
               var partLinkX = drawX + linkBounds.xMin;
               var partLinkWidth = partWidth + (coversGap ? partGap : 0);
-              var transformed =
-                partOptions.rotation || partOptions.skewX || partOptions.skewY;
-              if (clipping && !transformed) {
-                var clipLeft = x + left;
-                var clipRight = x + width - right;
-                var partLinkRight = Math.min(
-                  partLinkX + partLinkWidth,
-                  clipRight,
-                );
-                partLinkX = Math.max(partLinkX, clipLeft);
-                partLinkWidth = Math.max(0, partLinkRight - partLinkX);
-              }
               if (partLinkWidth)
                 transformedLink(
                   this,
@@ -940,14 +945,7 @@ export function createTextMethods({ drawText, measure, module }) {
                   partLinkWidth,
                   lineHeight,
                   partOptions,
-                  clipping
-                    ? {
-                        x: x + left,
-                        y: currentY,
-                        width: width - left - right,
-                        height: lineHeight,
-                      }
-                    : null,
+                  clip,
                 );
             }
             drawX += partWidth;
@@ -981,14 +979,7 @@ export function createTextMethods({ drawText, measure, module }) {
           baseline,
           hasText(entry.text) ? linkWidth : 0,
           false,
-          clipping
-            ? {
-                x: x + left,
-                y: currentY,
-                width: width - left - right,
-                height: lineHeight,
-              }
-            : undefined,
+          clip,
         );
         if (textOptions.link && !entry.parts) {
           var linkBounds = dimensions(this, entry.text, textOptions);
@@ -1000,6 +991,7 @@ export function createTextMethods({ drawText, measure, module }) {
             linkWidth,
             lineHeight,
             textOptions,
+            clip,
           );
         }
         currentY += lineHeight;

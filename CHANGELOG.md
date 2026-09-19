@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Constrain Recipe text links to their visible clipping region when using
+  `textBox.wrap: "clip"`, so hidden overflow does not remain clickable outside
+  the text box [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+
 - Constrain Recipe text-markup annotations to the visible clipping region when
   using `textBox.wrap: "clip"`, so hidden text does not leave highlights or
   other review markup outside the box

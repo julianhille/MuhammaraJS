@@ -36,6 +36,9 @@ With `html: true`, `<a href="https://example.com">Visit our site</a>` creates
 a link over the rendered text. PDF link annotations are rectangular; use
 `link()` to select the clickable region for complex drawings.
 
+With `textBox.wrap: "clip"`, text links are limited to the line's clipping
+region. Hidden overflow does not create clickable areas outside the text box.
+
 Use an ASCII URL. Percent-encode non-ASCII path or query text, for example
 `encodeURI("https://example.com/✓")`, before passing it to `link()` or a `link`
 option. Unsupported URLs throw when the link is added, so the page can still
