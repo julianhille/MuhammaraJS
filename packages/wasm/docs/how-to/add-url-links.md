@@ -36,6 +36,11 @@ With `html: true`, `<a href="https://example.com">Visit our site</a>` creates
 a link over the rendered text. PDF link annotations are rectangular; use
 `link()` to select the clickable region for complex drawings.
 
+Use an ASCII URL. Percent-encode non-ASCII path or query text, for example
+`encodeURI("https://example.com/✓")`, before passing it to `link()` or a `link`
+option. Unsupported URLs throw when the link is added, so the page can still
+be finalized.
+
 The low-level API uses PDF bottom-left rectangle coordinates. Pause an active
 page content context before attaching the link:
 

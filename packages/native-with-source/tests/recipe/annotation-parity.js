@@ -490,4 +490,65 @@ describe("Recipe annotation parity", function () {
     assert.equal(annotations[2].dictionary.Subtype.toString(), "Highlight");
     assert.equal(annotations[2].dictionary.Contents?.toText() ?? "", "");
   });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`preserves zero and false annotation metadata on ${mode} pages`, async function () {
+      var source = path.join(directory, "source.pdf");
+      await new Promise(function (resolve) {
+        new muhammara.Recipe("new", source)
+          .createPage(595, 842)
+          .endPage()
+          .endPDF(resolve);
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(595, 842);
+      else recipe.editPage(1);
+      recipe.comment("Parent.", 50, 50, {
+        title: 0,
+        subject: false,
+        replies: [{ text: "Reply." }],
+      });
+      recipe.comment("Other.", 50, 100, { title: false, subject: 0 });
+      var annotations = await finish(recipe);
+      [0, 1].forEach(function (index) {
+        assert.equal(annotations[index].dictionary.T?.toText(), "0");
+        assert.equal(annotations[index].dictionary.Subj?.toText(), "false");
+      });
+      assert.equal(annotations[2].dictionary.T?.toText(), "false");
+      assert.equal(annotations[2].dictionary.Subj?.toText(), "0");
+    });
+
+    it(`rejects unsupported URLs before queuing links on ${mode} pages`, async function () {
+      var source = path.join(directory, "source.pdf");
+      await new Promise(function (resolve) {
+        new muhammara.Recipe("new", source)
+          .createPage(595, 842)
+          .endPage()
+          .endPDF(resolve);
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(595, 842);
+      else recipe.editPage(1);
+      recipe.text("Keep this content.", 50, 30);
+      recipe.link("https://valid.test", 50, 50, 80, 12);
+      [42, "https://example.test/✓"].forEach(function (url) {
+        assert.throws(function () {
+          recipe.link(url, 50, 80, 80, 12);
+        });
+      });
+      recipe.link(encodeURI("https://example.test/✓"), 50, 110, 80, 12);
+      var annotations = await finish(recipe);
+      assert.deepEqual(subtypes(annotations), ["Link", "Link"]);
+      assert.match(
+        mode === "new" ? readPageContent(reader) : readPageForms(reader),
+        /Tj/,
+      );
+    });
+  });
 });

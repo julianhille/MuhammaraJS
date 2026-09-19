@@ -61,7 +61,8 @@ markup options check annotation geometry and appearance when they are called;
 invalid values throw `TypeError: Invalid annotation options` and add nothing,
 so the page can still end normally.
 Contents, titles, subjects, and icon names are written as strings, as on
-native; `null` and other empty values are omitted. `text()` validates all its markup options before
+native. Titles and subjects preserve `0` and `false`; nullish metadata and falsy
+contents are empty. `text()` validates all its markup options before
 drawing, including when several markup types are requested together.
 
 Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create

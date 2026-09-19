@@ -59,13 +59,16 @@ function assertAnnotationValues(
 }
 
 /**
- * Converts annotation text fields to strings as native Recipe does: empty,
- * `null`, and other falsy values are omitted, and anything else is stringified.
+ * Converts annotation text fields like native Recipe. Contents and icon names
+ * omit falsy values; titles and subjects preserve zero and false as strings.
  */
 function annotationText(options) {
   var result = { ...options };
-  ["text", "contents", "title", "subject", "icon", "name"].forEach((key) => {
+  ["text", "contents", "icon", "name"].forEach((key) => {
     result[key] = options[key] ? String(options[key]) : undefined;
+  });
+  ["title", "subject"].forEach((key) => {
+    result[key] = String(options[key] ?? "");
   });
   return result;
 }
@@ -169,7 +172,7 @@ export function createAnnotationMethods({
      * @name link
      * @function
      * @memberof Recipe#
-     * @param {string} url URL to open.
+     * @param {string} url ASCII URL to open; percent-encode non-ASCII path or query text.
      * @param {number} x Left coordinate in Recipe coordinates.
      * @param {number} y Top coordinate in Recipe coordinates.
      * @param {number} width Link width.
@@ -191,6 +194,14 @@ export function createAnnotationMethods({
      */
     _linkPdf: function (url, left, bottom, width, height) {
       if (!this._pageHeight) throw new Error("Links require an active page");
+      if (typeof url !== "string")
+        throw new TypeError("URL link requires a URL and valid PDF rectangle");
+      // The PDFWriter URL encoder accepts ASCII only. Reject unsupported URLs
+      // before queuing them, while the page's content context is still usable.
+      if (/[^\x00-\x7f]/.test(url))
+        throw new Error(
+          "unable to attach link to current page. will happen if the input URL may not be encoded to ascii7",
+        );
       // A link is an indirect object, so it is written with the queued
       // annotations once endPage() has closed the page content stream.
       this._links.push({ url, left, bottom, width, height });

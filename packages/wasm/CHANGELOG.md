@@ -19,9 +19,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   so a rejected `text()` call cannot leave partial content or markup behind
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Write non-string annotation contents and metadata, including replies and
-  text-markup `text`, as strings the way native does, with `null` and other
-  empty values omitted, instead of failing while finalizing the page
+  text-markup `text`, as strings the way native does. Preserve `0` and `false`
+  titles and subjects; omit nullish metadata and falsy contents instead of
+  failing while finalizing the page
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject unsupported URL strings before queuing Recipe links, so non-ASCII
+  URLs fail at `link()` instead of interrupting `endPage()`
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
 - Inherit parent annotation metadata for replies, matching native defaults for
   title, subject, date, flags, open state, and icon while keeping reply opacity
   and rich-text mode independent. An empty or zero reply `flag` keeps the
