@@ -749,12 +749,8 @@ exports.text = function text(text = "", x, y, options = {}) {
 
       const startX = nx + currentLineWidth;
 
-      // This text will only ever have this strange tag when the
-      // HTML option is being used and an explicit linebreak encountered.
-      if (text != "[@@DONOT_RENDER_THIS@@]") {
-        toWriteTextObject.startX = toWriteTextObject.startX || startX;
-        toWriteContents.push(toWriteTextObject);
-      }
+      toWriteTextObject.startX = toWriteTextObject.startX || startX;
+      toWriteContents.push(toWriteTextObject);
 
       // To handle text that has been split in middle of word,
       // need to decide if current text ends with a space.
@@ -857,19 +853,52 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
 
   let firstLineHeight;
   let toWriteTextObjects = [];
-  /** Reports whether a layout node contains content other than the break sentinel. */
+  /** Reports whether a layout node contains text, not only line breaks. */
   const hasRenderableContent = (textObject) =>
     (textObject.value !== undefined &&
       textObject.value !== null &&
-      textObject.value !== "" &&
-      textObject.value !== "[@@DONOT_RENDER_THIS@@]") ||
+      textObject.value !== "") ||
     textObject.childs?.some(hasRenderableContent);
+
+  /** Adds laid-out objects, recording the first line height. */
+  const addLaidOutObjects = (newToWriteObjects, paragraphHeight) => {
+    toWriteTextObjects = [...toWriteTextObjects, ...newToWriteObjects];
+
+    if (!firstLineHeight) {
+      this._lineHeight = firstLineHeight = toWriteTextObjects[0].lineHeight;
+      if (!this._firstLineHeight) {
+        this._firstLineHeight = this._lineHeight; // used in textbox coordinate computation
+      }
+    }
+    totalHeight += paragraphHeight;
+  };
 
   const writeValue = (textObject) => {
     textObject.lineID = textObject.lineID || Date.now() * Math.random();
-    textObject.lineID = textObject.needsLineBreaker
-      ? Date.now() * Math.random()
-      : textObject.lineID;
+    textObject.lineID =
+      textObject.needsLineBreaker || textObject.lineBreak
+        ? Date.now() * Math.random()
+        : textObject.lineID;
+    if (textObject.lineBreak) {
+      // A line break lays out as one empty line sized like its text; the
+      // normalization below turns it into line state, never into text.
+      const { toWriteTextObjects: newToWriteObjects, paragraphHeight } =
+        makeTextObjects(
+          this,
+          Object.assign({}, textObject, { value: "" }),
+          pathOptions,
+          textBox,
+        );
+      const lineBreak = newToWriteObjects[newToWriteObjects.length - 1];
+      lineBreak.lineBreak = true;
+      // Flowed text marks the last word of the previous line, so an empty
+      // break line still carries one empty word.
+      if (!lineBreak.wordsInLine.length) {
+        lineBreak.wordsInLine.push(new Word("", pathOptions));
+      }
+      addLaidOutObjects(newToWriteObjects, paragraphHeight);
+      return;
+    }
     // Want to allow empty string to pass through. Undefined and null elements, stay out!
     if (textObject.value !== undefined && textObject.value !== null) {
       textObject.styles.color = textObject.styles.color
@@ -877,16 +906,7 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
         : pathOptions.color;
       const { toWriteTextObjects: newToWriteObjects, paragraphHeight } =
         makeTextObjects(this, textObject, pathOptions, textBox);
-
-      toWriteTextObjects = [...toWriteTextObjects, ...newToWriteObjects];
-
-      if (!firstLineHeight) {
-        this._lineHeight = firstLineHeight = toWriteTextObjects[0].lineHeight;
-        if (!this._firstLineHeight) {
-          this._firstLineHeight = this._lineHeight; // used in textbox coordinate computation
-        }
-      }
-      totalHeight += paragraphHeight;
+      addLaidOutObjects(newToWriteObjects, paragraphHeight);
     }
     if (textObject.tag && textObject.childs.length) {
       // console.log(textObject);
@@ -957,14 +977,18 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       });
     }
   };
+  // Top-level nodes share a line, as children of a block element do, so
+  // inline runs outside any element are not split onto separate lines.
+  const topLevelLineID = Date.now() * Math.random();
   textObjects.forEach((textObject) => {
+    textObject.lineID = textObject.lineID || topLevelLineID;
     writeValue(textObject);
   });
 
   const normalizedTextObjects = [];
   let pendingBreaks = [];
   const replacementLineIDs = new Map();
-  /** Converts pending break sentinels into line state without rendering their text. */
+  /** Converts pending line breaks into line state: blank lines and line IDs. */
   const appendPendingBreaks = (nextTextObject) => {
     const previous = normalizedTextObjects[normalizedTextObjects.length - 1];
     if (previous) previous.lineComplete = true;
@@ -989,12 +1013,13 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     pendingBreaks = [];
   };
   toWriteTextObjects.forEach((textObject, index, objects) => {
-    const sentinel = textObject.text.trim() == "[@@DONOT_RENDER_THIS@@]";
-    const beforeSentinel =
+    // Whitespace that only precedes a line break would start a blank line.
+    const beforeLineBreak =
+      !textObject.lineBreak &&
       textObject.text.trim() == "" &&
-      objects[index + 1]?.text.trim() == "[@@DONOT_RENDER_THIS@@]";
-    if (beforeSentinel) return;
-    if (sentinel) {
+      objects[index + 1]?.lineBreak;
+    if (beforeLineBreak) return;
+    if (textObject.lineBreak) {
       pendingBreaks.push(textObject);
       return;
     }
@@ -1366,7 +1391,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
     const previousLine = toWriteTextObjects[end];
     let lineComplete, fini;
 
-    if (text === "" && !self._flow) {
+    if (text === "" && !self._flow && !textObject.lineBreak) {
       // turning off flow with empty text so
       previousLine.lastLine = true; // need to make previous line, the last.
     }
