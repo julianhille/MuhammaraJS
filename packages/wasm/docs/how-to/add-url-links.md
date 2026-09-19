@@ -36,6 +36,9 @@ With `html: true`, `<a href="https://example.com">Visit our site</a>` creates
 a link over the rendered text. PDF link annotations are rectangular; use
 `link()` to select the clickable region for complex drawings.
 
+With `textBox.wrap: "clip"`, text links are limited to the line's clipping
+region. Hidden overflow does not create clickable areas outside the text box.
+
 The low-level API uses PDF bottom-left rectangle coordinates. Pause an active
 page content context before attaching the link:
 
