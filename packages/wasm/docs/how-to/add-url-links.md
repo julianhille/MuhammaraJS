@@ -47,6 +47,9 @@ carry a `link` option. Recipe checks the resulting PDF rectangle before queuing
 the link on new and edited pages. Invalid rectangles throw a `TypeError` from
 `link()` and leave the page available for further drawing and finalization.
 
+With `textBox.wrap: "clip"`, text links are limited to the line's clipping
+region. Hidden overflow does not create clickable areas outside the text box.
+
 The low-level API uses PDF bottom-left rectangle coordinates. Pause an active
 page content context before attaching the link:
 
