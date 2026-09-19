@@ -231,4 +231,26 @@ to lists, requires prior specific permission and/or a fee.";
     recipe.endPage();
     recipe.endPDF();
   }).timeout(60000);
+
+  it("Stops flowing when overflow returns true", () => {
+    const output = path.join(__dirname, "../output/layout-stop.pdf");
+    const recipe = new Recipe("new", output);
+    const lorem =
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in suscipit purus. ".repeat(
+        30,
+      );
+
+    recipe
+      .createPage("letter")
+      .layout("stop-test", 72, 72, 200, 100, { columns: 2, gap: 10 })
+      .text(lorem, {
+        layout: "stop-test",
+        flow: false,
+        overflow: () => true,
+        textBox: { textAlign: "justify" },
+      });
+
+    recipe.endPage();
+    recipe.endPDF();
+  });
 });
