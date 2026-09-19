@@ -1,3 +1,5 @@
+const { PAGE_CONTEXT_STATE } = require("./utils");
+
 this.mediumSizes = {
   executive: [521.86, 756.0], // north american
   folio: [612.0, 936.0],
@@ -81,7 +83,7 @@ exports._setParameters = function _setParameters() {
   };
 
   this._margin = Object.assign({}, this.default.pageMargin);
-  this.contextState = "idle";
+  this.contextState = PAGE_CONTEXT_STATE.IDLE;
   this.modifiedSourcePages = new Set();
 
   // Object.assign(this, options);

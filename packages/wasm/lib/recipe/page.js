@@ -1,5 +1,6 @@
 import { mediumSizes } from "./parameters.js";
 import { pageRecord } from "./page-record.js";
+import { PAGE_CONTEXT_STATE } from "./context-state.js";
 
 /** Builds the retained page tree while marking deleted leaf pages. @private */
 function readPageTree(
@@ -626,7 +627,7 @@ export function createPageMethods(
       this._activePageNumber = page.pageNumber;
       this._pageWidth = width;
       this._pageHeight = height;
-      this._contextState = "active-new";
+      this._contextState = PAGE_CONTEXT_STATE.ACTIVE_NEW;
       this.margins(margins || this.default.pageMargin);
       // Node Recipe initializes pages as if moveTo(0, 0) was called. Implicit
       // text and layout still use their margin fallbacks when the cursor is zero.
@@ -652,7 +653,7 @@ export function createPageMethods(
       // the page's open content stream before writing them; writing them
       // into an open stream corrupts its compressed data.
       if (this._editingPage) {
-        if (this._contextState === "active-edit") {
+        if (this._contextState === PAGE_CONTEXT_STATE.ACTIVE_EDIT) {
           this._page.endContext();
         }
         this._flushAnnotations();
@@ -662,14 +663,14 @@ export function createPageMethods(
         this._editingPage = false;
         this._pageHeight = 0;
         this._pageWidth = 0;
-        this._contextState = "idle";
+        this._contextState = PAGE_CONTEXT_STATE.IDLE;
         return this;
       }
       if (this._sourceMode) {
         if (!this._pageContext) return this;
         if (
           (this._annotations.length || this._links.length) &&
-          this._contextState === "active-new"
+          this._contextState === PAGE_CONTEXT_STATE.ACTIVE_NEW
         )
           this.writer.pausePageContentContext(this._pageContext);
         this._flushAnnotations();
@@ -678,20 +679,20 @@ export function createPageMethods(
         this._page = null;
         this._pageHeight = 0;
         this._pageWidth = 0;
-        this._contextState = "idle";
+        this._contextState = PAGE_CONTEXT_STATE.IDLE;
         return this;
       }
       if (!this._recipe || !this._pageHeight) return this;
       if (
         (this._annotations.length || this._links.length) &&
-        this._contextState === "active-new"
+        this._contextState === PAGE_CONTEXT_STATE.ACTIVE_NEW
       )
         call("_muhammara_wasm_recipe_pause_page", this._recipe);
       this._flushAnnotations();
       call("_muhammara_wasm_recipe_end_page", this._recipe);
       this._pageHeight = 0;
       this._pageWidth = 0;
-      this._contextState = "idle";
+      this._contextState = PAGE_CONTEXT_STATE.IDLE;
       return this;
     },
 
@@ -892,7 +893,7 @@ export function createPageMethods(
       this._page = this.writer.createPageModifier(pageNumber - 1, true);
       this._pageContext = this._page.startContext().getContext();
       this._editingPage = true;
-      this._contextState = "active-edit";
+      this._contextState = PAGE_CONTEXT_STATE.ACTIVE_EDIT;
       this._modifiedSourcePages.add(pageNumber);
       this._activePageNumber = pageNumber;
       this._pageWidth = page.width;
@@ -1048,17 +1049,17 @@ export function createPageMethods(
      * @throws {Error} If there is no active page content context.
      */
     pauseContext: function () {
-      if (this._contextState === "active-edit") {
+      if (this._contextState === PAGE_CONTEXT_STATE.ACTIVE_EDIT) {
         this._page.endContext();
         this._pageContext = null;
-        this._contextState = "paused-edit";
-      } else if (this._contextState === "active-new") {
+        this._contextState = PAGE_CONTEXT_STATE.PAUSED_EDIT;
+      } else if (this._contextState === PAGE_CONTEXT_STATE.ACTIVE_NEW) {
         if (this._sourceMode) {
           this.writer.pausePageContentContext(this._pageContext);
         } else {
           call("_muhammara_wasm_recipe_pause_page", this._recipe);
         }
-        this._contextState = "paused-new";
+        this._contextState = PAGE_CONTEXT_STATE.PAUSED_NEW;
       } else {
         throw new Error("No active page content context to pause");
       }
@@ -1077,12 +1078,12 @@ export function createPageMethods(
      * @throws {Error} If there is no paused page content context.
      */
     resumeContext: function () {
-      if (this._contextState === "paused-edit") {
+      if (this._contextState === PAGE_CONTEXT_STATE.PAUSED_EDIT) {
         this._pageContext = this._page.startContext().getContext();
         this._resumePageRotation();
-        this._contextState = "active-edit";
-      } else if (this._contextState === "paused-new") {
-        this._contextState = "active-new";
+        this._contextState = PAGE_CONTEXT_STATE.ACTIVE_EDIT;
+      } else if (this._contextState === PAGE_CONTEXT_STATE.PAUSED_NEW) {
+        this._contextState = PAGE_CONTEXT_STATE.ACTIVE_NEW;
       } else {
         throw new Error("No paused page content context to resume");
       }

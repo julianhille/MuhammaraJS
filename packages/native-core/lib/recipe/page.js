@@ -1,4 +1,5 @@
 const muhammara = require("../muhammara");
+const { PAGE_CONTEXT_STATE } = require("./utils");
 
 /** Builds the retained page tree while marking deleted leaf pages. @private */
 function readPageTree(
@@ -636,7 +637,7 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
   this.pageNumber = pageNumber;
   this.pageContext = this.writer.startPageContentContext(this.page);
   this.editingPage = false;
-  this.contextState = "active-new";
+  this.contextState = PAGE_CONTEXT_STATE.ACTIVE_NEW;
   if (!this.isNewPDF) this.pagesCreated = true;
 
   if (margins) {
@@ -715,7 +716,8 @@ exports.endPage = function endPage() {
   }
 
   if (this.page.endContext) {
-    if (this.contextState === "active-edit") this.page.endContext();
+    if (this.contextState === PAGE_CONTEXT_STATE.ACTIVE_EDIT)
+      this.page.endContext();
     this.page.writePage();
   } else {
     this.writer.writePage(this.page);
@@ -724,7 +726,7 @@ exports.endPage = function endPage() {
   this.pageContext = null;
   this.pageNumber = 0;
   this.editingPage = false;
-  this.contextState = "idle";
+  this.contextState = PAGE_CONTEXT_STATE.IDLE;
 
   return this;
 };
@@ -749,7 +751,7 @@ exports.editPage = function editPage(pageNumber) {
   this.pageNumber = pageNumber;
   this.pageContext = pageModifier.startContext().getContext();
   this.editingPage = true;
-  this.contextState = "active-edit";
+  this.contextState = PAGE_CONTEXT_STATE.ACTIVE_EDIT;
   this.modifiedSourcePages.add(pageNumber);
 
   this._resumePageRotation(pageNumber);
@@ -1017,13 +1019,13 @@ exports.getCurrentPageInfo = function getCurrentPageInfo() {
  * @throws {Error} If there is no active page content context.
  */
 exports.pauseContext = function pauseContext() {
-  if (this.contextState === "active-edit") {
+  if (this.contextState === PAGE_CONTEXT_STATE.ACTIVE_EDIT) {
     this.page.endContext();
     this.pageContext = null;
-    this.contextState = "paused-edit";
-  } else if (this.contextState === "active-new") {
+    this.contextState = PAGE_CONTEXT_STATE.PAUSED_EDIT;
+  } else if (this.contextState === PAGE_CONTEXT_STATE.ACTIVE_NEW) {
     this.writer.pausePageContentContext(this.pageContext);
-    this.contextState = "paused-new";
+    this.contextState = PAGE_CONTEXT_STATE.PAUSED_NEW;
   } else {
     throw new Error("No active page content context to pause");
   }
@@ -1039,12 +1041,12 @@ exports.pauseContext = function pauseContext() {
  * @throws {Error} If there is no paused page content context.
  */
 exports.resumeContext = function resumeContext() {
-  if (this.contextState === "paused-edit") {
+  if (this.contextState === PAGE_CONTEXT_STATE.PAUSED_EDIT) {
     this.pageContext = this.page.startContext().getContext();
     this._resumePageRotation();
-    this.contextState = "active-edit";
-  } else if (this.contextState === "paused-new") {
-    this.contextState = "active-new";
+    this.contextState = PAGE_CONTEXT_STATE.ACTIVE_EDIT;
+  } else if (this.contextState === PAGE_CONTEXT_STATE.PAUSED_NEW) {
+    this.contextState = PAGE_CONTEXT_STATE.ACTIVE_NEW;
   } else {
     throw new Error("No paused page content context to resume");
   }
