@@ -1,5 +1,14 @@
 const ANNOTATION_PREFIX = "Annots";
 
+/** Recipe page content-stream lifecycle states. */
+const PAGE_CONTEXT_STATE = Object.freeze({
+  IDLE: "idle",
+  ACTIVE_NEW: "active-new",
+  ACTIVE_EDIT: "active-edit",
+  PAUSED_NEW: "paused-new",
+  PAUSED_EDIT: "paused-edit",
+});
+
 /**
  * Append PDF Page with annotations.
  *
@@ -73,6 +82,7 @@ function appendPDFPagesFromPDFWithAnnotations(
 }
 
 exports.ANNOTATION_PREFIX = ANNOTATION_PREFIX;
+exports.PAGE_CONTEXT_STATE = PAGE_CONTEXT_STATE;
 exports.appendPDFPageFromPDFWithAnnotations =
   appendPDFPageFromPDFWithAnnotations;
 exports.appendPDFPagesFromPDFWithAnnotations =
