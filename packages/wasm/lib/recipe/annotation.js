@@ -218,7 +218,22 @@ export function createAnnotationMethods({
             : (options.borderWidth ?? border.width ?? -1);
         var borderDash = options.borderDash ?? border.dash ?? [];
         var write = (replyTo, reply) => {
-          var source = reply || options;
+          // Replies inherit the parent's metadata, matching native, but keep
+          // their own contents, rich-text mode, and opacity (opaque by
+          // default). An empty or zero reply flag keeps the parent's flag.
+          var source = reply
+            ? {
+                ...reply,
+                title: reply.title || options.title,
+                subject: reply.subject || options.subject,
+                date: reply.date || options.date,
+                flag:
+                  reply.flag || reply.flags || options.flag || options.flags,
+                open: reply.open ?? options.open,
+                icon: reply.icon ?? options.icon,
+                name: reply.name ?? options.name,
+              }
+            : options;
           var contents = source.text || source.contents || "";
           var useRichText = Boolean(source.richText);
           if (this._sourceMode) {

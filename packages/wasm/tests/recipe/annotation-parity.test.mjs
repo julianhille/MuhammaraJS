@@ -103,4 +103,25 @@ describe("Recipe annotation parity", function () {
     assert.equal(annotations[6].dictionary.Contents.toText(), "No replies.");
     assert.equal(annotations[7].dictionary.Contents.toText(), "Empty replies.");
   });
+
+  it("inherits parent metadata for replies without their own", function () {
+    var recipe = new Recipe().createPage(595, 842);
+    recipe.comment("Please review.", 50, 50, {
+      title: "Reviewer",
+      flag: "print",
+      open: true,
+      replies: [
+        { text: "Inherited." },
+        { text: "Override.", title: "Editor", flag: "hidden" },
+      ],
+    });
+    var annotations = finish(recipe);
+    var inherited = annotations[1].dictionary;
+    var overridden = annotations[2].dictionary;
+    assert.equal(inherited.T.toText(), "Reviewer");
+    assert.equal(inherited.F.toNumber(), 4);
+    assert.equal(inherited.Open.toPDFBoolean().value, true);
+    assert.equal(overridden.T.toText(), "Editor");
+    assert.equal(overridden.F.toNumber(), 2);
+  });
 });
