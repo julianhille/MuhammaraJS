@@ -15,6 +15,17 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Validate all text-markup options before drawing text or queuing annotations,
+  so a rejected `text()` call cannot leave partial content or markup behind
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject non-string annotation contents and metadata when annotations are added,
+  including replies, instead of failing while finalizing the page
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Inherit parent annotation metadata for replies, matching native defaults for
+  title, subject, date, flags, open state, and icon while keeping reply opacity
+  and rich-text mode independent
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+
 - Write Recipe annotation dash patterns as a nested `/Border` array on new
   documents, matching edited pages and allowing PDF viewers to render the dashes
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)

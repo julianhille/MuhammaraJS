@@ -380,6 +380,11 @@ describe("Recipe annotation parity", function () {
       { borderWidth: Number.NaN },
       { width: Number.NaN },
       { height: Number.NaN },
+      { text: 42, richText: true },
+      { title: {} },
+      { subject: [] },
+      { icon: 1 },
+      { replies: [{ text: 42, richText: true }] },
     ].forEach(function (options) {
       [
         new Recipe().createPage(595, 842),
@@ -409,6 +414,82 @@ describe("Recipe annotation parity", function () {
         reader.end();
         reader = undefined;
       });
+    });
+  });
+
+  it("rejects invalid text markup before drawing or queuing annotations", function () {
+    var source = new Recipe().createPage(595, 842).endPage().endPDF();
+    ["new", "edited"].forEach(function (mode) {
+      var recipe =
+        mode === "new"
+          ? new Recipe().createPage(595, 842)
+          : new Recipe(source).editPage(1);
+      recipe.text("Keep this content.", 50, 30);
+      recipe.comment("Valid.", 50, 80);
+      var position = recipe.position;
+      assert.throws(
+        function () {
+          recipe.text("Do not draw this text.", 50, 50, {
+            highlight: true,
+            underline: { opacity: 2 },
+          });
+        },
+        { name: "TypeError", message: "Invalid annotation options" },
+      );
+      assert.deepEqual(recipe.position, position);
+      reader = muhammara.createReader(recipe.endPage().endPDF());
+      assert.deepEqual(subtypes(readAnnotations(reader)), ["Text"]);
+      var content =
+        mode === "new"
+          ? readPageContent(muhammara, reader)
+          : readPageForms(reader);
+      assert.equal((content.match(/Tj/g) || []).length, 1);
+      reader.end();
+      reader = undefined;
+    });
+  });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`inherits parent metadata for replies on ${mode} pages`, function () {
+      var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      var recipe =
+        mode === "new"
+          ? new Recipe().createPage(595, 842)
+          : new Recipe(source).editPage(1);
+      recipe.comment("Parent.", 50, 50, {
+        title: "Reviewer",
+        subject: "Review subject",
+        date: new Date("2026-09-19T12:00:00Z"),
+        flag: "print",
+        open: true,
+        opacity: 0.4,
+        richText: true,
+        replies: [
+          { text: "Inherited." },
+          {
+            text: "Override.",
+            title: "Editor",
+            subject: "Other",
+            flag: "hidden",
+          },
+        ],
+      });
+      var annotations = finish(recipe);
+      var parent = annotations[0].dictionary;
+      var inherited = annotations[1].dictionary;
+      var overridden = annotations[2].dictionary;
+      assert.equal(inherited.T.toText(), "Reviewer");
+      assert.equal(inherited.Subj.toText(), "Review subject");
+      assert.equal(inherited.M.toText(), parent.M.toText());
+      assert.equal(inherited.F.toNumber(), 4);
+      assert.equal(inherited.Name.toString(), "Comment");
+      assert.equal(inherited.Open.toPDFBoolean().value, true);
+      assert.equal(inherited.Contents.toText(), "Inherited.");
+      assert.equal(inherited.RC, undefined);
+      assert.equal(inherited.CA?.toNumber() ?? 1, 1);
+      assert.equal(overridden.T.toText(), "Editor");
+      assert.equal(overridden.Subj.toText(), "Other");
+      assert.equal(overridden.F.toNumber(), 2);
     });
   });
 

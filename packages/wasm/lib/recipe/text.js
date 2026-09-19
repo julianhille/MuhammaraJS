@@ -418,7 +418,14 @@ export function createTextMethods({ drawText, measure, module }) {
    * drawn line. Only the outer text() options request annotations; HTML
    * `<u>` and `<s>` styles stay visual decoration, as in native Recipe.
    */
-  function addTextMarkup(recipe, options, x, baseline, width) {
+  function addTextMarkup(
+    recipe,
+    options,
+    x,
+    baseline,
+    width,
+    validateOnly = false,
+  ) {
     if (!width) return;
     var bounds;
     Object.entries(textMarkupSubtypes).forEach(([key, subtype]) => {
@@ -430,7 +437,7 @@ export function createTextMethods({ drawText, measure, module }) {
       );
       var markup = typeof options[key] === "object" ? options[key] : {};
       var annotation = {
-        text: markup.text || "",
+        text: markup.text ?? "",
         color: markup.color,
         opacity: markup.opacity,
         replies: markup.replies,
@@ -448,7 +455,18 @@ export function createTextMethods({ drawText, measure, module }) {
         if (annotation[name] === undefined) delete annotation[name];
       });
       // annot() anchors the box at its bottom edge, the line's descent.
-      recipe.annot(x, baseline - bounds.yMin, subtype, annotation);
+      if (validateOnly) {
+        recipe._flushAnnotations(true, [
+          {
+            x,
+            y: baseline - bounds.yMin,
+            subtype,
+            options: annotation,
+          },
+        ]);
+      } else {
+        recipe.annot(x, baseline - bounds.yMin, subtype, annotation);
+      }
     });
   }
 
@@ -637,6 +655,9 @@ export function createTextMethods({ drawText, measure, module }) {
       var width =
         box.width ||
         (options.flow ? this._pageWidth - x - this._margin.right : 0);
+      // Validate every requested markup option before drawing any part of
+      // this text call, so a later invalid subtype cannot leave partial output.
+      addTextMarkup(this, { ...options, fontSize }, x, y, 1, true);
       var wrap = box.wrap === false ? "ellipsis" : box.wrap || "auto";
       var measureText = (text, textOptions) =>
         dimensions(this, text, textOptions);

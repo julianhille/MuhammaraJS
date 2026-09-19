@@ -258,6 +258,7 @@ export interface RecipeAnnotationOptions {
   open?: boolean;
   opacity?: number;
   richText?: boolean;
+  /** Replies inherit parent metadata; opacity defaults to 1 and richText to false independently. */
   replies?: RecipeAnnotationOptions[];
   followOriginalPageRotation?: boolean;
   width?: number;

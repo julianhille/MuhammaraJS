@@ -420,4 +420,56 @@ describe("Recipe annotation parity", function () {
       reader = undefined;
     }
   });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`inherits parent metadata for replies on ${mode} pages`, async function () {
+      var source = path.join(directory, "source.pdf");
+      await new Promise(function (resolve) {
+        new muhammara.Recipe("new", source)
+          .createPage(595, 842)
+          .endPage()
+          .endPDF(resolve);
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(595, 842);
+      else recipe.editPage(1);
+      recipe.comment("Parent.", 50, 50, {
+        title: "Reviewer",
+        subject: "Review subject",
+        date: new Date("2026-09-19T12:00:00Z"),
+        flag: "print",
+        open: true,
+        opacity: 0.4,
+        richText: true,
+        replies: [
+          { text: "Inherited." },
+          {
+            text: "Override.",
+            title: "Editor",
+            subject: "Other",
+            flag: "hidden",
+          },
+        ],
+      });
+      var annotations = await finish(recipe);
+      var parent = annotations[0].dictionary;
+      var inherited = annotations[1].dictionary;
+      var overridden = annotations[2].dictionary;
+      assert.equal(inherited.T.toText(), "Reviewer");
+      assert.equal(inherited.Subj.toText(), "Review subject");
+      assert.equal(inherited.M.toText(), parent.M.toText());
+      assert.equal(inherited.F.toNumber(), 4);
+      assert.equal(inherited.Name.toString(), "Comment");
+      assert.equal(inherited.Open.toPDFBoolean().value, true);
+      assert.equal(inherited.Contents.toText(), "Inherited.");
+      assert.equal(inherited.RC, undefined);
+      assert.equal(inherited.CA?.toNumber() ?? 1, 1);
+      assert.equal(overridden.T.toText(), "Editor");
+      assert.equal(overridden.Subj.toText(), "Other");
+      assert.equal(overridden.F.toNumber(), 2);
+    });
+  });
 });

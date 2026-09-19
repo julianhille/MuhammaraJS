@@ -47,6 +47,10 @@ A reply without its own `title`, `subject`, `date`, `flag`, `open`, or icon
 inherits the parent's, matching native. A reply keeps its own contents,
 `richText` mode, and `opacity` (opaque by default) regardless of the parent's.
 
+Replies inherit the parent's title, subject, date, flags, open state, and icon.
+Set a reply's own title, subject, date, or flag to override that metadata.
+Each reply's opacity defaults to `1`, and rich text remains opt-in per reply.
+
 Annotations are queued until `endPage()`. Supported markup subtypes include
 `Highlight`, `Underline`, `StrikeOut`, and `Squiggly`. Recipe's rich-text form
 is a Worker-safe XML subset, not arbitrary browser HTML.
@@ -56,6 +60,9 @@ pattern works on new and edited pages. `annot()`, `comment()`, and the text
 markup options check annotation geometry and appearance when they are called;
 invalid values throw `TypeError: Invalid annotation options` and add nothing,
 so the page can still end normally.
+Contents, titles, subjects, and icon names must be strings; invalid fields are rejected before
+queuing the annotation. `text()` validates all its markup options before
+drawing, including when several markup types are requested together.
 
 Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create
 markup annotations, one per drawn line, on new and edited pages. Their nested
