@@ -1297,7 +1297,8 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
     opacity: parseFloat(textObject.styles.opacity || pathOptions.opacity || 1),
     underline: textObject.underline || pathOptions.underline,
     strikeOut: textObject.strikeOut || pathOptions.strikeOut,
-    size: textObject.size,
+    // Text outside any HTML element has no inherited size of its own.
+    size: size,
     alignHorizontal: alignHorizontal,
     alignVertical: alignVertical,
     font: self._getFont(textObject),

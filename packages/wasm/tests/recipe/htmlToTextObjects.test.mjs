@@ -631,4 +631,32 @@ describe("HTML to TextObjects", function () {
 
     muhammara.disposeAssets();
   });
+
+  it("sizes text outside HTML elements like element text", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var cases = [
+      ["Decorated", {}, 14],
+      ["a <u>b</u>", {}, 14],
+      ["a <u>b</u>", { size: 20 }, 20],
+    ];
+    for (var [html, options, size] of cases) {
+      var bytes = new Recipe()
+        .createPage(300, 300)
+        .text(html, 20, 20, { html: true, textBox: { width: 200 }, ...options })
+        .endPage()
+        .endPDF();
+      var reader = muhammara.createReader(bytes);
+      try {
+        var extracted = reader.extractPageText(0);
+        assert.deepEqual(
+          extracted.map((item) => item.content.trim()).filter(Boolean),
+          html.replace(/<[^>]+>/g, "").split(" "),
+        );
+        extracted.forEach((item) => assert.equal(item.fontSize, size));
+      } finally {
+        reader.end();
+      }
+    }
+  });
 });

@@ -385,4 +385,42 @@ describe("HTML to TextObjects", () => {
       reader.end();
     }
   });
+
+  it("sizes text outside HTML elements like element text", () => {
+    const cases = [
+      ["Decorated", {}, 14],
+      ["a <u>b</u>", {}, 14],
+      ["a <u>b</u>", { size: 20 }, 20],
+    ];
+    for (const [html, options, size] of cases) {
+      const recipe = new muhammara.Recipe(Buffer.from("new"));
+      recipe.registerFont(
+        "arial",
+        path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+      );
+      const bytes = recipe
+        .createPage(300, 300)
+        .text(html, 20, 20, {
+          font: "arial",
+          html: true,
+          textBox: { width: 200 },
+          ...options,
+        })
+        .endPage()
+        .endPDF((output) => output);
+      const reader = muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(bytes),
+      );
+      try {
+        const extracted = reader.extractPageText(0);
+        assert.deepEqual(
+          extracted.map((item) => item.content.trim()).filter(Boolean),
+          html.replace(/<[^>]+>/g, "").split(" "),
+        );
+        extracted.forEach((item) => assert.equal(item.fontSize, size));
+      } finally {
+        reader.end();
+      }
+    }
+  });
 });
