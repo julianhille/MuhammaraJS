@@ -93,6 +93,15 @@ describe("Recipe table layout", function () {
     assert.ok(b.x < a.x, "order places b before a");
   });
 
+  it("rejects a null record like native Recipe", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    assert.throws(
+      () => recipe.table(20, 20, [{ a: "A1" }, null], {}),
+      TypeError,
+    );
+    finish(recipe);
+  });
+
   it("renders nullish values as empty cells and keeps other values", function () {
     var recipe = new Recipe().createPage(400, 400);
     var values = [];
