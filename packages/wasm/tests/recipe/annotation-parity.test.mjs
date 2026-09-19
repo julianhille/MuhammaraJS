@@ -36,6 +36,34 @@ describe("Recipe annotation parity", function () {
     return readAnnotations(reader);
   }
 
+  it("writes non-ASCII annotation text on new pages", function () {
+    var recipe = new Recipe().createPage(595, 842);
+    recipe.comment("Größe ✓", 50, 50, { title: "Jürgen", subject: "Prüfung" });
+    var annotations = finish(recipe);
+    assert.equal(annotations[0].dictionary.Contents.toText(), "Größe ✓");
+    assert.equal(annotations[0].dictionary.T.toText(), "Jürgen");
+    assert.equal(annotations[0].dictionary.Subj.toText(), "Prüfung");
+  });
+
+  ["new", "edited"].forEach(function (mode) {
+    // Edited pages write annotations through the low-level modifier API,
+    // which has no Subj support at all yet; only title is checked there.
+    it(`preserves falsy annotation titles on ${mode} pages`, function () {
+      var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      var recipe =
+        mode === "new"
+          ? new Recipe().createPage(595, 842)
+          : new Recipe(source).editPage(1);
+      recipe.comment("x", 50, 100, { title: 0, subject: false });
+      recipe.comment("y", 50, 150, { title: null });
+      var annotations = finish(recipe);
+      assert.equal(annotations[0].dictionary.T.toText(), "0");
+      if (mode === "new")
+        assert.equal(annotations[0].dictionary.Subj.toText(), "false");
+      assert.equal(annotations[1].dictionary.T, undefined);
+    });
+  });
+
   it("writes fractional and zero opacity while keeping the opaque default", function () {
     var recipe = new Recipe().createPage(595, 842);
     var opacities = [0.45, 0, 1, undefined];

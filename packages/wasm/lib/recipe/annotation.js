@@ -221,6 +221,10 @@ export function createAnnotationMethods({
           var source = reply || options;
           var contents = source.text || source.contents || "";
           var useRichText = Boolean(source.richText);
+          // Preserve falsy titles/subjects (0, false) as text like native,
+          // instead of treating them as absent.
+          var title = String(source.title ?? "");
+          var subject = String(source.subject ?? "");
           if (this._sourceMode) {
             return this._page.createAnnotation(
               annotation.subtype,
@@ -230,7 +234,7 @@ export function createAnnotationMethods({
               bottom + height,
               {
                 contents: useRichText ? richText(contents) : contents,
-                title: source.title || "",
+                title,
                 name: source.icon || source.name || "",
                 color,
                 borderWidth: Math.max(0, borderWidth),
@@ -244,8 +248,8 @@ export function createAnnotationMethods({
           }
           return withString(annotation.subtype, (subtype) =>
             withString(useRichText ? richText(contents) : contents, (text) =>
-              withString(source.title || "", (title) =>
-                withString(source.subject || "", (subject) =>
+              withString(title, (title) =>
+                withString(subject, (subject) =>
                   withString(annotationDate(source.date), (date) =>
                     withString(source.icon || source.name || "", (name) =>
                       withDoubles(color, (colorPointer) =>

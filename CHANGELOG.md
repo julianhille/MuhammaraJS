@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Write Recipe annotation `title`, `subject`, contents, and rich text as PDF
+  text strings, so non-ASCII characters no longer display as garbled UTF-8
+  bytes in PDF viewers. A `0` or `false` title or subject is now written as
+  `"0"`/`"false"` instead of an empty title
+  [#716](https://github.com/julianhille/MuhammaraJS/issues/716)
+- Write supplied rich text that starts with `<?xml` to the annotation instead
+  of the string `true`
+  [#716](https://github.com/julianhille/MuhammaraJS/issues/716)
 - Stop Recipe `text()` with `html: true` from throwing when the HTML has text
   outside any element and no explicit `size`; that text now uses the default
   14pt size like element text
