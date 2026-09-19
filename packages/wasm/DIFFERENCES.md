@@ -31,8 +31,10 @@ Wasm Recipe rejects annotation values that cannot form a valid PDF
 annotation, such as an `opacity` outside 0 to 1, non-numeric `borderDash`
 entries, or `quadPoints` whose length is not a multiple of eight, with a
 `TypeError` when the annotation is added, on new and edited pages. Native
-Recipe writes
-these values unchecked.
+Recipe writes these values unchecked. Wasm Recipe also checks link rectangles
+when adding them: coordinates and dimensions must be finite, dimensions must be
+non-negative, and the resulting PDF coordinates must not overflow. Invalid
+rectangles throw a `TypeError`; native forwards numeric rectangles unchecked.
 
 Wasm's async `createRecipe()` factory dynamically imports bundled Roboto only
 when its `defaultFont` option is omitted. Pass custom default bytes/Blob/File or

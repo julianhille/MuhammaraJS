@@ -684,6 +684,7 @@ export interface Recipe {
     y?: number,
     options?: RecipeOverlayOptions,
   ): this;
+  /** Adds an ASCII URL link with finite coordinates and non-negative, finite dimensions. */
   link(url: string, x: number, y: number, width: number, height: number): this;
   comment(
     text: string,

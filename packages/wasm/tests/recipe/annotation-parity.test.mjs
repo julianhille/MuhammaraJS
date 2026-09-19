@@ -608,4 +608,55 @@ describe("Recipe annotation parity", function () {
       assert.match(content, /Tj/);
     });
   });
+
+  ["new", "added", "edited"].forEach(function (mode) {
+    it(`rejects invalid link rectangles before queuing on ${mode} pages`, function () {
+      var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      var recipe = mode === "new" ? new Recipe() : new Recipe(source);
+      if (mode === "edited") recipe.editPage(1);
+      else recipe.createPage(595, 842);
+      recipe.text("Before rejected links.", 50, 30);
+      recipe.link("https://before.test", 50, 50, 80, 12);
+      [
+        [Number.NaN, 50, 80, 12],
+        [50, Number.POSITIVE_INFINITY, 80, 12],
+        [50, 50, Number.NaN, 12],
+        [50, 50, 80, Number.NaN],
+        [50, 50, Number.POSITIVE_INFINITY, 12],
+        [50, 50, -80, 12],
+        [50, 50, 80, -12],
+        [Number.MAX_VALUE, 50, Number.MAX_VALUE, 12],
+      ].forEach(function (rectangle) {
+        assert.throws(
+          function () {
+            recipe.link("https://invalid.test", ...rectangle);
+          },
+          {
+            name: "TypeError",
+            message: "URL link requires a URL and valid PDF rectangle",
+          },
+        );
+      });
+      recipe.text("After rejected links.", 50, 80);
+      recipe.link("https://after.test", 50, 100, 80, 12);
+      // Zero-sized rectangles remain valid, as in the low-level writer API.
+      recipe.link("https://empty.test", 50, 120, 0, 0);
+      reader = muhammara.createReader(recipe.endPage().endPDF());
+      var pageIndex = mode === "added" ? 1 : 0;
+      var annotations = readAnnotations(reader, pageIndex);
+      assert.deepEqual(subtypes(annotations), ["Link", "Link", "Link"]);
+      annotations.forEach(function (annotation) {
+        annotation.dictionary.Rect.toPDFArray()
+          .toJSArray()
+          .forEach(function (value) {
+            assert.ok(Number.isFinite(value.toNumber()));
+          });
+      });
+      var content =
+        mode === "edited"
+          ? readPageForms(reader)
+          : readPageContent(muhammara, reader, pageIndex);
+      assert.equal((content.match(/Tj/g) || []).length, 2);
+    });
+  });
 });

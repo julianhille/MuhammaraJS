@@ -41,6 +41,11 @@ Use an ASCII URL. Percent-encode non-ASCII path or query text, for example
 option. Unsupported URLs throw when the link is added, so the page can still
 be finalized.
 
+Link coordinates and dimensions must be finite numbers, and width and height
+must be non-negative. Recipe checks the resulting PDF rectangle before queuing
+the link on new and edited pages. Invalid rectangles throw a `TypeError` from
+`link()` and leave the page available for further drawing and finalization.
+
 The low-level API uses PDF bottom-left rectangle coordinates. Pause an active
 page content context before attaching the link:
 

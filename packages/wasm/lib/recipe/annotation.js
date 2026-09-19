@@ -175,10 +175,11 @@ export function createAnnotationMethods({
      * @param {string} url ASCII URL to open; percent-encode non-ASCII path or query text.
      * @param {number} x Left coordinate in Recipe coordinates.
      * @param {number} y Top coordinate in Recipe coordinates.
-     * @param {number} width Link width.
-     * @param {number} height Link height.
+     * @param {number} width Non-negative link width.
+     * @param {number} height Non-negative link height.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If there is no active page or the underlying PDF operation fails.
+     * @throws {TypeError} If the URL is not a string or the rectangle is not finite and ordered.
      */
     link: function (url, x, y, width, height) {
       var point = this._calibrateCoordinate(x, y, 0, -height);
@@ -194,7 +195,14 @@ export function createAnnotationMethods({
      */
     _linkPdf: function (url, left, bottom, width, height) {
       if (!this._pageHeight) throw new Error("Links require an active page");
-      if (typeof url !== "string")
+      if (
+        typeof url !== "string" ||
+        ![left, bottom, width, height, left + width, bottom + height].every(
+          Number.isFinite,
+        ) ||
+        width < 0 ||
+        height < 0
+      )
         throw new TypeError("URL link requires a URL and valid PDF rectangle");
       // The PDFWriter URL encoder accepts ASCII only. Reject unsupported URLs
       // before queuing them, while the page's content context is still usable.
