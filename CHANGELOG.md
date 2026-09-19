@@ -17,9 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   paragraph. See the [breaking changes](packages/native/docs/breaking-changes.md)
   page [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
 - Derive Recipe `table()` columns from every record instead of only the first,
-  keep `order` and `columns` entries whose field the first record lacks, and
+  keep `order` and `columns` entries even when no record has that field, and
   use exactly the listed `columns` when no `order` is given. A column
-  `renderer` result now also sizes its row. List the intended columns with
+  `renderer` result now also sizes its row, and a misspelled `order` or
+  `columns` name draws an empty column instead of being dropped. List the intended columns with
   `order` or `columns` to keep a fixed layout; see the
   [breaking changes](packages/native/docs/breaking-changes.md) page
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)

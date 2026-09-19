@@ -40,8 +40,8 @@ Header and row measurements include vertical padding, `minHeight`, fixed
 `height`, and HTML line breaks. Set these through column `cell`/`hcell`,
 header/row `cell`, or a renderer's `textBox` options.
 
-Header text styles are independent of table/body text styles. Both packages
-resolve them in this order:
+Header text styles are independent of table/body text styles. Recipe resolves
+them in this order:
 
 1. Start with the column's `header` object, or the default bold, centered header
    with 2pt padding when that option is omitted or boolean. A column-level

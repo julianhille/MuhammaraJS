@@ -13,10 +13,11 @@ This page collects the compatibility changes formerly maintained in the README.
   with `lineBreak: true` instead of a `p` object holding placeholder text
   [#667](https://github.com/julianhille/MuhammaraJS/issues/667).
 - Recipe `table()` derives its columns from every record, not just the first,
-  keeps `order` and `columns` entries whose field the first record lacks, and
+  keeps `order` and `columns` entries even when no record has that field, and
   uses exactly the listed `columns` when no `order` is given. A column
   `renderer` result now also sizes its row. Existing tables can gain columns,
-  reorder them, or grow taller rows; list the intended columns with `order` or
+  reorder them, or grow taller rows, and a misspelled `order` or `columns`
+  name now draws an empty column instead of being dropped; list the intended columns with `order` or
   `columns` to keep a fixed layout. See
   [Migrate from v6 to v7](getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly)
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666).
