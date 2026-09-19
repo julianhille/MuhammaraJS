@@ -38,7 +38,8 @@ Each reply's opacity defaults to `1`, and rich text remains opt-in per reply.
 Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create
 markup annotations. Their nested object sets `text`, `color`, `opacity`, and
 `replies`; put shared metadata such as `title`, `date`, and `subject` on the
-outer text options.
+outer text options. In `html: true` text, `<u>` and `<del>` draw lines in the
+text color instead of annotations.
 
 With `textBox.wrap: "clip"`, text-markup rectangles and quadrilaterals are
 limited to the line's visible clipping region. Hidden portions of the text do

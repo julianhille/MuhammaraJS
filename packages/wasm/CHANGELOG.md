@@ -10,7 +10,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   structured text-markup annotations alongside `highlight`, with per-annotation
   `text`, `color`, `opacity`, and `replies`, shared `title`, `date`, `subject`,
   `open`, `richText`, `flag`, and `icon`, one annotation per drawn line, on new
-  and edited pages. `underline` and `strikeOut` keep drawing their visible line
+  and edited pages
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Add regression coverage for the truncated-input parser sweep, non-sequential
   `appendPDFPageFromPDF` indices, the full rotation fixture matrix, repeated
@@ -160,6 +160,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   keep `order` entries whose field the first record lacks, and give cells and
   headers native's default 2pt padding, matching native Recipe table layout
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Create `Underline` and `StrikeOut` annotations for the `underline` and
+  `strikeOut` text options instead of drawing black lines, and place
+  `Highlight` annotations over native's line box. HTML `<u>` and `<del>` still
+  draw lines, now in the text color at native's offsets; use `line()` to keep
+  a drawn rule under plain text
+  [#714](https://github.com/julianhille/MuhammaraJS/issues/714)
 
 ## [1.0.0-beta.3] - 2026-09-18
 

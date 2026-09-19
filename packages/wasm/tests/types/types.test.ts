@@ -388,6 +388,20 @@ async function usesLowLevelSurface() {
       return row > 10 ? true : { position: [20, 20] };
     },
   });
+  var markup: RecipeTextMarkupOptions = {
+    text: "Review",
+    color: "#ff0000",
+    opacity: 0.4,
+    replies: [{ text: "Done", title: "Editor" }],
+  };
+  recipe.text("Marked", 20, 20, {
+    highlight: true,
+    underline: markup,
+    strikeOut: { text: "cut" },
+    squiggly: true,
+    title: "Reviewer",
+    subject: "Check",
+  });
   void defaultFontBytes;
   await createMuhammaraWasm({ wasmBinary: new Uint8Array() });
   await createMuhammaraWasm({ wasmBinary: new ArrayBuffer(0) });

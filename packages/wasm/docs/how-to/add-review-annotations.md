@@ -52,8 +52,14 @@ Set a reply's own title, subject, date, or flag to override that metadata.
 Each reply's opacity defaults to `1`, and rich text remains opt-in per reply.
 
 Annotations are queued until `endPage()`. Supported markup subtypes include
-`Highlight`, `Underline`, `StrikeOut`, and `Squiggly`. Recipe's rich-text form
-is a Worker-safe XML subset, not arbitrary browser HTML.
+`Highlight`, `Underline`, `StrikeOut`, and `Squiggly`. Text options
+`highlight`, `underline`, `strikeOut`, and `squiggly` also create markup
+annotations. Their nested object sets `text`, `color`, `opacity`, and
+`replies`; put shared metadata such as `title`, `date`, and `subject` on the
+outer text options. In `html: true` text, `<u>` and `<del>` (and Wasm's `<s>`
+and `<strike>`) draw lines in the text color instead of annotations.
+Recipe's rich-text form is a Worker-safe XML subset, not arbitrary browser
+HTML.
 
 For a dashed review region, set `border: { width: 2, dash: [3, 4] }`. The dash
 pattern works on new and edited pages. `annot()`, `comment()`, and the text
