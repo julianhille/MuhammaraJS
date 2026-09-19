@@ -31,7 +31,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   and links even when an edited page was paused
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Retain drawn content across Recipe `pauseContext()`/`resumeContext()` and
-  low-level page-modifier `endContext()`/`startContext()` calls.
+  low-level page-modifier `endContext()`/`startContext()` calls
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Write Recipe annotation `title`, `subject`, and text as PDF text strings, so
+  non-ASCII characters no longer display as garbled UTF-8 bytes in PDF viewers
 - Preserve `Date` objects in text-markup options and cover the full width of
   justified HTML lines [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Reject Recipe links between pages instead of attaching them to the next page
@@ -51,6 +54,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Type drawing, text, and `chroma()` color spaces as the new
   `RecipeDeviceColorSpace`, so Separation colors, which WebAssembly Recipe
   rejects at runtime, now fail type checking
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject Recipe annotations with an `opacity` outside 0 to 1, non-numeric
+  `borderWidth` or `borderDash` values, or `quadPoints` whose length is not a
+  multiple of eight with `TypeError: Invalid annotation options` from
+  `endPage()`, on new and edited pages alike; new pages previously threw a
+  generic `Unable to create annotation` error for an invalid `opacity`
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 
 ## [1.0.0-beta.3] - 2026-09-18

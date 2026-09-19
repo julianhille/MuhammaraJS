@@ -14,9 +14,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   longer add an annotation
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Keep valid Recipe page numbers when adding pages to an existing document so
-  annotations on those pages no longer fail during `endPDF()`.
+  annotations on those pages no longer fail during `endPDF()`
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Extend Recipe text-markup bounds across justified lines, including the expanded
-  spaces [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+  spaces, and start them at the drawn line for text with `opacity` or
+  `rotation` instead of at the text box edge. The caller's markup options
+  object is no longer modified [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Write Recipe annotation `title`, `subject`, and text as PDF text strings, so
+  non-ASCII characters no longer display as garbled UTF-8 bytes in PDF viewers
+- Write supplied rich text that starts with `<?xml` to the annotation instead
+  of the string `true`
 - Stop Recipe `text()` with `html: true` from throwing when the HTML has text
   outside any element and no explicit `size`; that text now uses the default
   14pt size like element text
