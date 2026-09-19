@@ -273,7 +273,11 @@ export interface RecipeHtmlTextObject {
   /** Leading-space count for the lines of this flat visual fragment; `0` ends list indentation. */
   indent?: number;
 }
-export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
+/** Table column options. `cell` is the column's only body text box, as in native Recipe. */
+export interface RecipeTableColumn extends Omit<
+  RecipeTextOptions,
+  "font" | "textBox"
+> {
   name: string;
   font?: string;
   text?: string;
@@ -291,9 +295,10 @@ export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
   ) => RecipeTextOptions | void;
 }
 export type RecipeTableRow = Record<string, unknown>;
+/** Table options. Like native Recipe, a table-level `cell` is not accepted; style cells per column or row. */
 export interface RecipeTableOptions extends Omit<
   RecipeTextOptions,
-  "overflow"
+  "overflow" | "cell"
 > {
   /** Per-segment height, bounded by the page bottom margin. Measurements include padding and minimum/fixed cell heights. */
   height?: number;

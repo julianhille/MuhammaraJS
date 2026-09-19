@@ -1,35 +1,52 @@
-/** Merges text options while retaining nested text-box styles. */
-function merge(left = {}, right = {}) {
-  return {
-    ...left,
-    ...right,
-    textBox: { ...left.textBox, ...right.textBox },
-  };
+/** Reports whether a style value is a plain object whose keys can merge. */
+function isPlainObject(value) {
+  if (!value || typeof value !== "object") return false;
+  var prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
-/** Resolves nested header styles like native without mutating caller options. */
-function mergeHeaderOptions(left = {}, right = {}) {
+/**
+ * Merges nested text styles like native Recipe without mutating either side.
+ * Plain objects merge key by key; arrays and other values replace.
+ */
+function merge(left = {}, right = {}) {
   var result = { ...left };
   for (var key of Object.keys(right)) {
     var value = right[key];
     result[key] = Array.isArray(value)
       ? value.slice()
-      : value && typeof value === "object"
-        ? mergeHeaderOptions(result[key], value)
+      : isPlainObject(value)
+        ? merge(isPlainObject(result[key]) ? result[key] : {}, value)
         : value;
   }
   return result;
 }
 
-/** Converts a table cell style into text options. */
+/** Converts a row or header style's `cell` into its text box, like native. */
 function cellOptions(options = {}, name = "cell") {
   var result = { ...options };
   if (result[name]) {
-    result.textBox = { ...result.textBox, ...result[name] };
+    // Native replaces the style's textBox with its cell rather than merging.
+    result.textBox = result[name];
     delete result[name];
   }
   return result;
 }
+
+/** Keeps table-level text options; native ignores a table-level `cell`. */
+function tableTextOptions(options) {
+  var result = { ...options };
+  delete result.cell;
+  return result;
+}
+
+/** Uses a column's `cell` as its only body text box, like native columns. */
+function columnCellOptions(options) {
+  var result = { ...options, textBox: { ...options.cell } };
+  delete result.cell;
+  return result;
+}
+
 /**
  * Resolves the table's data fields: `order` when given, otherwise the names
  * of the configured `columns`, otherwise every field found in any record, in
@@ -154,7 +171,7 @@ export function createTableMethods() {
           : cellOptionsValue;
       /** Resolves header styles identically for measurement and drawing. */
       var headerOptions = (column) => {
-        var header = mergeHeaderOptions(
+        var header = merge(
           { textBox: {} },
           column.options.header && typeof column.options.header === "object"
             ? column.options.header
@@ -170,16 +187,13 @@ export function createTableMethods() {
             overrides.textBox = overrides.cell;
             delete overrides.cell;
           }
-          header = mergeHeaderOptions(header, overrides);
+          header = merge(header, overrides);
         }
         if (options.header?.alignToData && column.options.cell?.textAlign) {
           header.textBox.textAlign = column.options.cell.textAlign;
         }
         if (column.options.hcell) {
-          header.textBox = mergeHeaderOptions(
-            header.textBox,
-            column.options.hcell,
-          );
+          header.textBox = merge(header.textBox, column.options.hcell);
         }
         return header;
       };
@@ -234,8 +248,8 @@ export function createTableMethods() {
             options: merge(
               merge(
                 merge(
-                  cellOptions(options),
-                  paddedCell(cellOptions(column.options)),
+                  tableTextOptions(options),
+                  paddedCell(columnCellOptions(column.options)),
                 ),
                 cellOptions(rowOptions),
               ),

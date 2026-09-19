@@ -329,6 +329,10 @@ async function usesLowLevelSurface() {
     .endPDF();
   recipe.textDimensions("Hello").width;
   recipe.table(20, 20, [{ value: "first" }], {
+    // @ts-expect-error Native Recipe ignores a table-level cell.
+    cell: { padding: 0 },
+  });
+  recipe.table(20, 20, [{ value: "first" }], {
     header: {
       font: "arial",
       size: 12,
@@ -345,6 +349,8 @@ async function usesLowLevelSurface() {
         renderer: () => ({ textBox: { minHeight: 80 } }),
       },
       { name: "optional", header: false },
+      // @ts-expect-error A column's body text box is `cell`, as in native.
+      { name: "boxed", textBox: { padding: 0 } },
     ],
     /** The callback receiver and first argument both expose Recipe methods. */
     overflow: function (currentRecipe, row) {
