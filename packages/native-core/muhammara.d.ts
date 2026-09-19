@@ -1354,7 +1354,7 @@ declare namespace muhammara {
         boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
       border?: boolean | PolygonOptions;
       row?: TextOptions & { nth?: "even" | "odd"; cell?: TextBox };
-      /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError. */
+      /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
       overflow?: (
         this: Recipe,
         recipe: Recipe,

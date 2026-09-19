@@ -582,6 +582,30 @@ describe("Recipe table layout", () => {
     assert.equal(lineCount(pageContent(reader, 0)), 1);
   });
 
+  it("rejects a continuation after the callback ends the page", function () {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    var calls = 0;
+    assert.throws(
+      () =>
+        recipe.table(20, 20, [{ a: "first" }, { a: "second" }], {
+          height: 20,
+          /** Ends the page without starting the next one. */
+          overflow: (self) => {
+            calls++;
+            self.endPage();
+            return { position: [20, 20] };
+          },
+        }),
+      {
+        name: "Error",
+        message:
+          "Recipe.table: the overflow callback must leave an active page to continue on.",
+      },
+    );
+    assert.equal(calls, 1);
+    recipe.endPDF(() => {});
+  });
+
   it("rejects a continuation without room for its header and first row", function () {
     var recipe = new Recipe("new", output).createPage(400, 400);
     var calls = 0;
@@ -678,8 +702,8 @@ describe("Recipe table layout", () => {
       ],
     );
     var content = pageContent(reader, 0);
-    assert.match(content, /\b0\s+0\s+1\s+rg\b/);
-    assert.match(content, /\b1\s+0\s+0\s+rg\b/);
+    assert.match(content, /(^|\s)0\s+0\s+1\s+rg\b/);
+    assert.match(content, /(^|\s)1\s+0\s+0\s+rg\b/);
   });
 
   it("merges header box overrides and uses the same styles on continuations", function () {

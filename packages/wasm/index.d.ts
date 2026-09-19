@@ -452,7 +452,7 @@ export interface RecipeTableOptions<
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
   row?: RecipeTextOptions & { nth?: "even" | "odd"; cell?: RecipeTextBox };
-  /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError. */
+  /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
   overflow?: (
     this: Recipe,
     recipe: Recipe,

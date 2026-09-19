@@ -78,7 +78,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Stop Recipe `table()` from throwing for empty `contents`, reusing a previous
   table's `overflow` callback, keeping the first page's bounds on a
   continuation, overlapping a continued row with its repeated header, drawing a
-  zero-height border for an empty segment, and mutating `border` options
+  zero-height border for an empty segment, and mutating `border` options.
+  An `overflow` callback that ends the page without starting another now
+  throws a clear `Error` instead of an internal `TypeError`
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Pass `""` instead of `null` to a table column `renderer` for null values, and
   leave the text cursor at the table's left edge and bottom
