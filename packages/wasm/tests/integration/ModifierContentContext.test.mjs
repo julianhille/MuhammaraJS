@@ -245,4 +245,21 @@ describe("ModifierContentContext", function () {
     pageModifier.endContext().writePage();
     assert.match(new TextDecoder().decode(modifier.end()), /\/XObject/);
   });
+
+  it("keeps content from every restarted page context", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var sourceWriter = muhammara.createWriter();
+    sourceWriter.writePage(sourceWriter.createPage(0, 0, 100, 100));
+    var modifier = muhammara.createWriterToModify(sourceWriter.end());
+    modifier.getObjectsContext().setCompressStreams(false);
+    var pageModifier = modifier.createPageModifier(0);
+    pageModifier.startContext().getContext().re(10, 10, 5, 5).f();
+    pageModifier.endContext();
+    pageModifier.startContext().getContext().re(30, 30, 5, 5).f();
+    pageModifier.endContext().writePage();
+
+    var output = new TextDecoder().decode(modifier.end());
+    assert.match(output, /10 10 5 5 re/);
+    assert.match(output, /30 30 5 5 re/);
+  });
 });
