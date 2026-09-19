@@ -236,6 +236,8 @@ export interface RecipeTextBoxClipResult {
   bounds: { x: number; y: number; width: number; height: number };
 }
 export interface RecipeTextOptions extends RecipePathOptions {
+  /** Text fill color: `#gg`, `#rrggbb`, `#ccmmyykk`, `%r,g,b` percentages, a 0-255 component array, or a name registered with `chroma()`. Missing or unknown colors use `#1777d1`. */
+  color?: RecipeColor;
   /** Font family; uses createRecipe's default font when omitted (bundled Roboto unless configured). */
   font?: string;
   /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. */

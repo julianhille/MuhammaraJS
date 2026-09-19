@@ -4,6 +4,20 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Resolve Recipe text colors like native: gray (`#gg`), CMYK (`#ccmmyykk`),
+  percent (`%r,g,b`), and names registered with `chroma()` now draw instead of
+  throwing, an unknown name falls back to the default, and text written while
+  editing an existing page uses its color
+  [#712](https://github.com/julianhille/MuhammaraJS/issues/712)
+
+### Changed
+
+- Draw Recipe text without a `color` in native's default `#1777d1` instead of
+  black. Pass `color: "#000000"` to keep black text
+  [#712](https://github.com/julianhille/MuhammaraJS/issues/712)
+
 ## [1.0.0-beta.3] - 2026-09-18
 
 ### Added

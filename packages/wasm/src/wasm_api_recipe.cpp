@@ -843,15 +843,21 @@ int muhammara_wasm_recipe_set_opacity(WasmRecipe* recipe, double opacity) {
          opacity <= 1 && recipe->context->SetOpacity(opacity) == PDFHummus::eSuccess;
 }
 
+// colorSpace is 0 for gray, 1 for RGB, or 2 for CMYK. color packs one byte
+// per component in PDFWriter's order: 0xGG, 0xRRGGBB, or 0xCCMMYYKK.
 int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
                                const char* text, const char* fontPath,
-                               double fontSize, unsigned int color,
-                               double characterSpacing) {
+                               double fontSize, int colorSpace,
+                               unsigned int color, double characterSpacing) {
   if (recipe == nullptr || recipe->context == nullptr || text == nullptr ||
-      fontPath == nullptr || fontSize <= 0 ||
-      !std::isfinite(characterSpacing)) {
+      fontPath == nullptr || fontSize <= 0 || colorSpace < 0 ||
+      colorSpace > 2 || !std::isfinite(characterSpacing)) {
     return 0;
   }
+  AbstractContentContext::EColorSpace textColorSpace =
+      colorSpace == 0   ? AbstractContentContext::eGray
+      : colorSpace == 1 ? AbstractContentContext::eRGB
+                        : AbstractContentContext::eCMYK;
   PDFUsedFont* font = recipe->writer.GetFontForFile(fontPath);
   if (font == nullptr) {
     return 0;
@@ -867,8 +873,7 @@ int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
   if (status == PDFHummus::eSuccess) {
     status = recipe->context->WriteText(
         x, y, text,
-        AbstractContentContext::TextOptions(font, fontSize,
-                                            AbstractContentContext::eRGB,
+        AbstractContentContext::TextOptions(font, fontSize, textColorSpace,
                                             color));
   }
   PDFHummus::EStatusCode restoreStatus = recipe->context->Q();
