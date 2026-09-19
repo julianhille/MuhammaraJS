@@ -34,10 +34,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Pass `""` instead of `null` to a table column `renderer` for null values, and
   leave the text cursor at the table's left edge and bottom
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Preserve exact field names in array-form table `order`, leave the cursor
-  unchanged when no columns exist, and retain the Recipe as an `overflow`
-  callback's `this`
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ## [7.0.0-beta.3] - 2026-09-18
 

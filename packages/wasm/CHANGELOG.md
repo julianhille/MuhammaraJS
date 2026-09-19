@@ -4,25 +4,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
-### Breaking Changes
-
-- Resolve table header styles independently of body styles, matching native.
-  Headers that inherited a body font, size, or color can change appearance;
-  set those properties explicitly in `header` to retain the intended style
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Derive Recipe `table()` columns from every record and apply native's default
-  2pt cell/header padding. Tables can gain columns or grow taller; use explicit
-  `order`/`columns` and set `cell.padding` and `header.cell.padding` to `0` to
-  retain unpadded layouts. Fixed cell/header heights now count toward table
-  sizing and pagination; adjust cell heights or continuation areas as needed.
-  See [breaking changes](docs/breaking-changes.md)
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Throw `RangeError` when an `overflow` destination cannot fit a row and its
-  repeated header instead of drawing beyond the bounds. Return `true` to stop
-  or provide a large enough continuation area. Callbacks now receive the Recipe
-  as `this`; access table options through a closure rather than the receiver
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-
 ### Fixed
 
 - Preserve explicit table header styles against body-column overrides and
@@ -33,8 +14,26 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   every `border` option such as `dash` on the outer rectangle, and stop drawing
   the table's bottom border twice, including when `overflow` returns `true`
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Preserve exact field names in array-form table `order` and leave tables with
-  no columns unchanged instead of setting the cursor to `-Infinity`
+- Leave tables with no columns unchanged instead of setting the cursor to
+  `-Infinity`
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+
+### Changed
+
+- Resolve table header styles independently of body styles, matching native.
+  Headers that inherited a body font, size, or color can change appearance;
+  set those properties explicitly in `header` to retain the intended style
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Derive Recipe `table()` columns from every record and apply native's default
+  2pt cell/header padding. Tables can gain columns or grow taller; use explicit
+  `order`/`columns` and set `cell.padding` and `header.cell.padding` to `0` to
+  retain unpadded layouts. Fixed cell/header heights now count toward table
+  sizing and pagination
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Throw `RangeError` when an `overflow` destination cannot fit a row and its
+  repeated header instead of drawing beyond the bounds. Return `true` to stop
+  or provide a large enough continuation area. Callbacks now receive the Recipe
+  as `this`, matching native
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ## [1.0.0-beta.3] - 2026-09-18
