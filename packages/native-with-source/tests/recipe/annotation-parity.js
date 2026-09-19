@@ -219,9 +219,16 @@ describe("Recipe annotation parity", function () {
     var recipe = new muhammara.Recipe("new", output).createPage(595, 842);
     recipe.text("Commented text.", 50, 100, { highlight: true });
     recipe.comment("Please review.", 300, 100);
+    recipe.link("https://example.test", 50, 150, 80, 12);
+    recipe.text("Linked text.", 50, 180, { link: "https://text.test" });
     await finish(recipe);
     assert.match(readPageContent(reader), /Tj[\s\S]*Q\s*$/);
-    assert.deepEqual(subtypes(readAnnotations(reader)), ["Highlight", "Text"]);
+    assert.deepEqual(subtypes(readAnnotations(reader)), [
+      "Link",
+      "Link",
+      "Highlight",
+      "Text",
+    ]);
     reader.end();
     reader = undefined;
 
@@ -229,15 +236,19 @@ describe("Recipe annotation parity", function () {
     var editor = new muhammara.Recipe(output, edited);
     editor
       .editPage(1)
-      .text("Edited text.", 50, 200, { underline: true, strikeOut: true });
+      .text("Edited text.", 50, 200, { underline: true, strikeOut: true })
+      .link("https://edited.test", 50, 220, 80, 12);
     await new Promise(function (resolve) {
       editor.endPage().endPDF(resolve);
     });
     reader = muhammara.createReader(edited);
     assert.match(readPageContent(reader), /Commented text/);
     assert.deepEqual(subtypes(readAnnotations(reader)), [
+      "Link",
+      "Link",
       "Highlight",
       "Text",
+      "Link",
       "Underline",
       "StrikeOut",
     ]);

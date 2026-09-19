@@ -76,6 +76,7 @@ export function initializeRecipe(recipe, options) {
   recipe._cursor = { x: 0, y: 0 };
   recipe._pages = [];
   recipe._annotations = [];
+  recipe._links = [];
   recipe._info = {};
   recipe._endedBytes = null;
   recipe._sourceMode = false;

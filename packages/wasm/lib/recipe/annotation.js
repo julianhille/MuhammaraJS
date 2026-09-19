@@ -82,32 +82,48 @@ export function createAnnotationMethods({
      * @private
      */
     _linkPdf: function (url, left, bottom, width, height) {
-      if (this._sourceMode) {
-        return (
+      // A link is an indirect object, so it is written with the queued
+      // annotations once endPage() has closed the page content stream.
+      this._links.push({ url, left, bottom, width, height });
+      return this;
+    },
+    /**
+     * Writes and clears links queued for the active page.
+     *
+     * @name _flushLinks
+     * @function
+     * @memberof Recipe#
+     * @private
+     */
+    _flushLinks: function () {
+      var links = this._links;
+      this._links = [];
+      links.forEach(({ url, left, bottom, width, height }) => {
+        if (this._sourceMode) {
           this.writer.attachURLLinktoCurrentPage(
             url,
             left,
             bottom,
             left + width,
             bottom + height,
-          ) && this
-        );
-      }
-      return withString(url, (urlPointer) => {
-        if (
-          !module._muhammara_wasm_recipe_link(
-            this._recipe,
-            urlPointer,
-            left,
-            bottom,
-            width,
-            height,
-          )
-        )
-          throw new Error(
-            "Muhammara WebAssembly operation failed: _muhammara_wasm_recipe_link",
           );
-        return this;
+          return;
+        }
+        withString(url, (urlPointer) => {
+          if (
+            !module._muhammara_wasm_recipe_link(
+              this._recipe,
+              urlPointer,
+              left,
+              bottom,
+              width,
+              height,
+            )
+          )
+            throw new Error(
+              "Muhammara WebAssembly operation failed: _muhammara_wasm_recipe_link",
+            );
+        });
       });
     },
     /**
@@ -161,6 +177,7 @@ export function createAnnotationMethods({
      * @private
      */
     _flushAnnotations: function () {
+      this._flushLinks();
       var annotations = this._annotations;
       this._annotations = [];
       annotations.forEach((annotation) => {

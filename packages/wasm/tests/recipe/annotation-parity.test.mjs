@@ -224,22 +224,33 @@ describe("Recipe annotation parity", function () {
     var recipe = new Recipe().createPage(595, 842);
     recipe.text("Commented text.", 50, 100, { highlight: true });
     recipe.comment("Please review.", 300, 100);
+    recipe.link("https://example.test", 50, 150, 80, 12);
+    recipe.text("Linked text.", 50, 180, { link: "https://text.test" });
     var source = recipe.endPage().endPDF();
     reader = muhammara.createReader(source);
-    assert.match(readPageContent(muhammara, reader), /Tj[\s\S]*Q\s*$/);
-    assert.deepEqual(subtypes(readAnnotations(reader)), ["Highlight", "Text"]);
+    assert.match(readPageContent(muhammara, reader), /Linked text[\s\S]*Q\s*$/);
+    assert.deepEqual(subtypes(readAnnotations(reader)), [
+      "Link",
+      "Link",
+      "Highlight",
+      "Text",
+    ]);
     reader.end();
 
     var edited = new Recipe(source);
     edited
       .editPage(1)
-      .text("Edited text.", 50, 200, { underline: true, strikeOut: true });
+      .text("Edited text.", 50, 200, { underline: true, strikeOut: true })
+      .link("https://edited.test", 50, 220, 80, 12);
     reader = muhammara.createReader(edited.endPage().endPDF());
     // Edited content is drawn through a form XObject the page invokes.
     assert.match(readPageContent(muhammara, reader), /Commented text[\s\S]*Do/);
     assert.deepEqual(subtypes(readAnnotations(reader)), [
+      "Link",
+      "Link",
       "Highlight",
       "Text",
+      "Link",
       "Underline",
       "StrikeOut",
     ]);
