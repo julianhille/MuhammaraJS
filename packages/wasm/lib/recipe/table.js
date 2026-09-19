@@ -219,7 +219,7 @@ export function createTableMethods() {
       }
       var tableX = x;
       for (var row = 0; row < contents.length; row += 1) {
-        var record = contents[row] || {};
+        var record = contents[row];
         var rowOptions =
           options.row &&
           (!options.row.nth ||
