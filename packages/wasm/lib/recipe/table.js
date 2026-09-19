@@ -1,11 +1,18 @@
+/** Merges nested cell and header styles like native without mutating caller options. */
 function merge(left = {}, right = {}) {
-  return {
-    ...left,
-    ...right,
-    textBox: { ...left.textBox, ...right.textBox },
-  };
+  var result = { ...left };
+  for (var key of Object.keys(right)) {
+    var value = right[key];
+    result[key] = Array.isArray(value)
+      ? value.slice()
+      : value && typeof value === "object"
+        ? merge(result[key], value)
+        : value;
+  }
+  return result;
 }
 
+/** Converts a table cell style into text options. */
 function cellOptions(options = {}, name = "cell") {
   var result = { ...options };
   if (result[name]) {
@@ -14,16 +21,55 @@ function cellOptions(options = {}, name = "cell") {
   }
   return result;
 }
+/**
+ * Resolves the table's data fields: `order` when given, otherwise the names
+ * of the configured `columns`, otherwise every field found in any record, in
+ * first-seen order.
+ */
+function tableFields(contents, options) {
+  if (options.order?.length) {
+    return typeof options.order === "string"
+      ? options.order
+          .split(",")
+          .map((field) => field.trim())
+          .filter(Boolean)
+      : options.order.slice();
+  }
+  if (options.columns?.length)
+    return options.columns.map((column) => column.name);
+  var fields = [];
+  contents.forEach((record) =>
+    Object.keys(record || {}).forEach((field) => {
+      if (!fields.includes(field)) fields.push(field);
+    }),
+  );
+  return fields;
+}
+
 /** Creates Recipe table layout methods. */
 export function createTableMethods() {
   return {
     /**
      * Draws records as a table on the active page.
      * x and y are PDF points in Recipe's top-left coordinate system, where x
-     * increases rightward and y increases downward. Rows are measured before
-     * drawing, optional overflow handling can continue at another Recipe
-     * position, and the cursor finishes at the table's left edge and bottom.
-     * Empty contents leave the Recipe unchanged.
+     * increases rightward and y increases downward. Columns follow `order`,
+     * then the configured `columns`, then every field found in any record.
+     * Missing and nullish values render as empty cells. Rows are measured
+     * with their final cell options, including renderer results, before
+     * drawing; each renderer runs once per cell. Renderer results may be reused
+     * across cells; callback properties remain callable. An overflow callback
+     * may draw another table without replacing this table's columns, and
+     * continue at another Recipe position. The cursor finishes at the
+     * table's left edge and bottom. Empty contents or no selected columns leave
+     * the Recipe unchanged. Array-form order preserves exact field names.
+     * Measurements include padding, minimum heights, fixed heights, and HTML
+     * layout. Overflow callbacks receive the Recipe as `this` and the first
+     * argument; rows are not split across continuation areas.
+     * Header text styles are independent of body styles: column header options
+     * (or defaults) are overridden by table header options, then alignToData
+     * and column hcell box overrides are applied, matching native Recipe.
+     * Coordinates are literal Recipe points, including zero. Nested body-cell
+     * styles merge in table, column, matching row, then renderer order.
      *
      * @name table
      * @function
@@ -34,46 +80,54 @@ export function createTableMethods() {
      * @param {RecipeTableOptions} [options] - Column, row, header, border, text, and overflow options.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If table text cannot be measured or drawn, including when a requested font cannot be loaded.
+     * @throws {RangeError} If an overflow callback continues into an area too small for the pending row and its repeated header. Return true to stop, or provide enough space; the callback is called once per overflow.
+     * @throws {Error} If an overflow callback continues without leaving an active, unpaused page.
      */
     table(x, y, contents, options = {}) {
       if (!Array.isArray(contents) || !contents.length) return this;
-      var fields = options.order
-        ? typeof options.order === "string"
-          ? options.order.split(",")
-          : options.order
-        : options.columns?.map((column) => column.name) ||
-          Object.keys(contents[0]);
-      var definitions = fields.map(
+      var definitions = tableFields(contents, options).map(
         (field) =>
           options.columns?.find((column) => column.name === field) || {
             name: field,
             text: field,
           },
       );
+      if (!definitions.length) return this;
       this.layout("_table_", x, y, 0, options.height || 0, {
         columns: definitions,
         reset: true,
       });
       var columns = this._layouts._table_;
-      var tableWidth = columns.reduce((sum, column) => sum + column.width, 0);
-      var bottom = options.height
-        ? y + options.height
-        : this._pageHeight - this._margin.bottom;
+      var tableWidth = columns.reduce((sum, column) => {
+        // Table coordinates are literal, unlike layout()'s zero-as-margin defaults.
+        column.position = [x + sum, y];
+        return sum + column.width;
+      }, 0);
+      /** Bounds are recomputed for every continuation position and page. */
+      var segmentBottom = (top) =>
+        options.height
+          ? Math.min(
+              top + options.height,
+              this._pageHeight - this._margin.bottom,
+            )
+          : this._pageHeight - this._margin.bottom;
+      var bottom = segmentBottom(y);
       var currentY = y,
         tableTop = y,
         lines = [],
         first = true;
       var headerHeight = 0;
+      /** Draws each completed segment once, including an overflow stop. */
       var drawBorder = () => {
+        // A segment without rows has nothing to enclose.
         if (!options.border || currentY === tableTop) return;
-        var border =
-          options.border === true
-            ? { width: 0.5 }
-            : { width: 0.5, ...options.border };
-        this.rectangle(x, tableTop, tableWidth, currentY - tableTop, {
-          stroke: border.stroke || border.color,
-          lineWidth: border.width,
-        });
+        var border = {
+          ...(options.border === true ? {} : options.border),
+          // Keep borders from extending outside of the enclosing box.
+          lineCap: "butt",
+        };
+        if (!border.width) border.width = 0.5;
+        this.rectangle(x, tableTop, tableWidth, currentY - tableTop, border);
         columns
           .slice(0, -1)
           .forEach((column) =>
@@ -85,19 +139,55 @@ export function createTableMethods() {
               border,
             ),
           );
-        lines.forEach((line) =>
-          this.line(x, line, x + tableWidth, line, border),
-        );
+        // The last row line is the rectangle's bottom edge.
+        lines
+          .slice(0, -1)
+          .forEach((line) => this.line(x, line, x + tableWidth, line, border));
+        tableTop = currentY;
+        lines = [];
       };
+      /** Applies native's 2pt default cell padding unless one is set. */
+      var paddedCell = (cellOptionsValue) =>
+        cellOptionsValue.textBox?.padding === undefined
+          ? merge(cellOptionsValue, { textBox: { padding: 2 } })
+          : cellOptionsValue;
+      /** Resolves header styles identically for measurement and drawing. */
+      var headerOptions = (column) => {
+        var header = merge(
+          { textBox: {} },
+          column.options.header && typeof column.options.header === "object"
+            ? column.options.header
+            : {
+                bold: true,
+                textBox: { padding: 2, textAlign: "center center" },
+              },
+        );
+        if (typeof options.header === "object") {
+          var overrides = { ...options.header };
+          // Native's table header.cell replaces the same override's textBox.
+          if (overrides.cell) {
+            overrides.textBox = overrides.cell;
+            delete overrides.cell;
+          }
+          header = merge(header, overrides);
+        }
+        if (options.header?.alignToData && column.options.cell?.textAlign) {
+          header.textBox.textAlign = column.options.cell.textAlign;
+        }
+        if (column.options.hcell) {
+          header.textBox = merge(header.textBox, column.options.hcell);
+        }
+        return header;
+      };
+      /** Writes a repeated header at the current segment's top. */
       var writeHeader = () => {
         if (!options.header) return;
         columns.forEach((column) => {
-          var header = headerOptions(column);
           this.text(
             column.text,
             column.x,
             currentY,
-            merge(merge(options, header), {
+            merge(headerOptions(column), {
               textBox: { width: column.width, minHeight: headerHeight },
             }),
           );
@@ -105,34 +195,21 @@ export function createTableMethods() {
         currentY += headerHeight;
         lines.push(currentY);
       };
-      var headerOptions = (column) => {
-        var header = merge(
-          column.options.header || {
-            bold: true,
-            textBox: { textAlign: "center center" },
-          },
-          options.header === true ? {} : cellOptions(options.header),
-        );
-        if (options.header?.alignToData && column.options.textBox?.textAlign) {
-          header.textBox.textAlign = column.options.textBox.textAlign;
-        }
-        return merge(header, cellOptions(column.options, "hcell"));
-      };
       if (options.header) {
         headerHeight = Math.max(
           ...columns.map((column) =>
             this._measureTextBoxHeight(
               column.text,
-              merge(merge(options, headerOptions(column)), {
+              merge(headerOptions(column), {
                 textBox: { width: column.width },
               }),
             ),
           ),
         );
       }
-      var stopped = false;
-      contents.forEach((record, row) => {
-        if (stopped) return;
+      var tableX = x;
+      for (var row = 0; row < contents.length; row += 1) {
+        var record = contents[row];
         var rowOptions =
           options.row &&
           (!options.row.nth ||
@@ -140,70 +217,89 @@ export function createTableMethods() {
             (options.row.nth === "odd" && (row + 1) % 2))
             ? options.row
             : {};
-        var cellOptionsFor = (column) => {
+        // Resolve every cell once: the renderer runs once per cell, and its
+        // options size the row as well as style the drawn text.
+        var cells = columns.map((column) => {
           var text = record[column.field] ?? "";
           var rendered =
             column.options.renderer?.(text, record, column.field, row + 1) ||
             {};
-          return merge(
-            merge(
-              merge(cellOptions(options), cellOptions(column.options)),
-              cellOptions(rowOptions),
+          return {
+            column,
+            text: String(text),
+            options: merge(
+              merge(
+                merge(
+                  cellOptions(options),
+                  paddedCell(cellOptions(column.options)),
+                ),
+                cellOptions(rowOptions),
+              ),
+              rendered,
             ),
-            rendered,
-          );
-        };
+          };
+        });
         var height = Math.max(
-          ...columns.map((column) =>
+          ...cells.map((cell) =>
             this._measureTextBoxHeight(
-              String(record[column.field] ?? ""),
-              merge(cellOptionsFor(column), {
-                textBox: { width: column.width },
-              }),
+              cell.text,
+              merge(cell.options, { textBox: { width: cell.column.width } }),
             ),
           ),
         );
         // A continuation must reserve room for its repeated header and row.
-        var needed = height + (first ? headerHeight : 0);
-        if (currentY + needed > bottom && options.overflow) {
+        var needed = height + (first && options.header ? headerHeight : 0);
+        if (options.overflow && currentY + needed > bottom) {
           drawBorder();
-          var order = options.overflow(this, row + 1);
-          if (order === true) {
-            stopped = true;
-            return;
+          var order = options.overflow.call(this, this, row + 1);
+          if (order === true) break;
+          if (
+            this._contextState !== "active-new" &&
+            this._contextState !== "active-edit"
+          )
+            throw new Error(
+              "Recipe.table: the overflow callback must leave an active page to continue on.",
+            );
+          if (order?.position) {
+            [x, y] = order.position;
+            var columnX = x;
+            columns.forEach((column) => {
+              column.position = [columnX, y];
+              columnX += column.width;
+            });
           }
-          [x, y] = order?.position || [x, y];
-          columns.forEach((column) => {
-            column.x = x;
-            x += column.width;
-          });
+          tableX = x;
           currentY = tableTop = y;
-          bottom = options.height
-            ? y + options.height
-            : this._pageHeight - this._margin.bottom;
+          bottom = segmentBottom(y);
           lines = [];
           first = true;
+          if (currentY + height + headerHeight > bottom) {
+            throw new RangeError(
+              `Recipe.table: row ${row + 1} and its header do not fit in the continuation area.`,
+            );
+          }
         }
         if (first) {
           writeHeader();
           first = false;
         }
-        columns.forEach((column) => {
-          var text = record[column.field] ?? "";
+        cells.forEach((cell) => {
           this.text(
-            String(text),
-            column.x,
+            cell.text,
+            cell.column.x,
             currentY,
-            merge(cellOptionsFor(column), {
-              textBox: { width: column.width, minHeight: height },
+            merge(cell.options, {
+              textBox: { width: cell.column.width, minHeight: height },
             }),
           );
         });
         currentY += height;
         lines.push(currentY);
-      });
+      }
       drawBorder();
-      this._cursor = { x, y: currentY };
+      // Leave the text cursor at the table's left edge, below its last segment.
+      this._cursor = { x: tableX, y: currentY };
+      this._textBoxOrigin = { x: tableX, y: currentY };
       return this;
     },
   };

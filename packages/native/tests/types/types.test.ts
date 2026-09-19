@@ -2,6 +2,10 @@ import muhammara = require("@muhammara/native");
 import nativeCore = require("@muhammara/native-core");
 
 declare const writer: muhammara.PDFWriter;
+var resumedPage = new muhammara.PDFPageModifier(writer, 0, true);
+resumedPage.startContext().endContext().startContext().endContext().writePage();
+// @ts-expect-error Starting new-page content requires a PDFPage, not a null modifier placeholder.
+writer.startPageContentContext(null);
 declare const recipe: muhammara.Recipe;
 declare const objects: muhammara.ObjectsContext;
 var page: muhammara.PDFPage = writer.createPage(0, 0, 595, 842);
@@ -179,6 +183,7 @@ var invalidLayoutOptions: muhammara.Recipe.LayoutOptions = {
   direction: "horizontal",
 };
 var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
+  textBox: { style: { stroke: "blue", lineWidth: 2 } },
   order: ["name", "score"],
   columns: [
     {
@@ -186,24 +191,41 @@ var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
       text: "Name",
       cell: {
         padding: 4,
+        minHeight: 40,
         wrap: "ellipsis",
         style: { borderRadius: 4, colorspace: "gray", fill: "#00" },
       },
       header: true,
+      hcell: { height: 60 },
       renderer: (text, record, field, row) => {
         void text;
         var score: number = record.score;
         void field;
         void score;
         return row % 2
-          ? { color: "blue", underline: { text: "reviewed", color: "red" } }
+          ? {
+              color: "blue",
+              underline: { text: "reviewed", color: "red" },
+              textBox: {
+                minHeight: 80,
+                height: 100,
+                clipIfExceedsBox: true,
+                style: { fill: "red" },
+                /** Renderer-returned callbacks retain their typed arguments. */
+                onClip(currentRecipe, result) {
+                  var remainder: string = result.remainder;
+                  void currentRecipe;
+                  void remainder;
+                },
+              },
+            }
           : undefined;
       },
     },
   ],
-  header: { alignToData: true, cell: { padding: 2 } },
+  header: { font: "arial", size: 12, alignToData: true, cell: { padding: 2 } },
   border: { width: 0.5, lineCap: "butt" },
-  row: { nth: "odd", cell: { padding: 2 } },
+  row: { nth: "odd", cell: { padding: 2, style: { opacity: 0.25 } } },
   overflow: function (currentRecipe, row) {
     var callbackThis: muhammara.Recipe = this;
     void callbackThis;
@@ -239,7 +261,8 @@ var optionalTableOptions: muhammara.Recipe.TableOptions<OptionalTableRecord> = {
     {
       name: "score",
       renderer: (text) => {
-        var score: number | null | "" = text;
+        var score: number | "" = text;
+        // Missing and null values arrive as "".
         void score;
       },
     },

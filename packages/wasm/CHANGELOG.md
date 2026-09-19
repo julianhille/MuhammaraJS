@@ -6,6 +6,49 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Align table cells with borders at literal zero coordinates, including after
+  overflow continuation, instead of shifting the first segment to the margin
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Merge nested table body-cell styles across table, column, row, and renderer
+  options so fill overrides retain inherited borders and opacity, matching native
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Retain edited-page content across Recipe `pauseContext()`/`resumeContext()`
+  and allow a low-level page modifier to restart its context before writing,
+  matching native and preventing earlier table rows from disappearing
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Reject table continuations on paused pages with the active-page error; call
+  `resumeContext()` before continuing or return `true` to stop
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Preserve explicit table header styles against body-column overrides and
+  merge nested `hcell` styles without discarding header backgrounds or borders
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Run a Recipe table column `renderer` once per cell instead of twice, keep the
+  text cursor at the table's left edge after an overflow moved the table, keep
+  every `border` option such as `dash` on the outer rectangle, and stop drawing
+  the table's bottom border twice, including when `overflow` returns `true`
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Leave tables with no columns unchanged instead of setting the cursor to
+  `-Infinity`, and throw a clear `Error` when an `overflow` callback ends the
+  page without starting another
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+
+### Changed
+
+- Resolve table header styles independently of body styles, matching native.
+  Headers that inherited a body font, size, or color can change appearance;
+  set those properties explicitly in `header` to retain the intended style
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Derive Recipe `table()` columns from every record and apply native's default
+  2pt cell/header padding. Tables can gain columns or grow taller; use explicit
+  `order`/`columns` and set `cell.padding` and `header.cell.padding` to `0` to
+  retain unpadded layouts. Fixed cell/header heights now count toward table
+  sizing and pagination
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Throw `RangeError` when an `overflow` destination cannot fit a row and its
+  repeated header instead of drawing beyond the bounds. Return `true` to stop
+  or provide a large enough continuation area. Callbacks now receive the Recipe
+  as `this`, matching native
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Inherit parent annotation metadata for replies without their own `title`,
   `subject`, `date`, `flag`, `open`, or icon, matching native. A reply keeps
   its own contents, rich-text mode, and opacity (opaque by default)

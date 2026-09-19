@@ -279,8 +279,11 @@ export interface RecipeTableColumn extends Omit<RecipeTextOptions, "font"> {
   text?: string;
   width?: number;
   cell?: RecipeTextBox;
-  header?: RecipeTextOptions;
+  /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
+  header?: boolean | RecipeTextOptions;
+  /** Final header text-box overrides, applied after header styles and alignToData. */
   hcell?: RecipeTextBox;
+  /** Called once per cell. Returned options may be reused; table() does not mutate them and preserves callback properties. */
   renderer?: (
     text: unknown,
     record: Record<string, unknown>,
@@ -293,16 +296,22 @@ export interface RecipeTableOptions extends Omit<
   RecipeTextOptions,
   "overflow"
 > {
-  /** Per-continuation table height. Wrapped headers and cells are measured before rows are placed. */
+  /** Nested body-cell styles merge in table, column, matching row, then renderer order. */
+  textBox?: RecipeTextBox;
+  /** Per-segment height, bounded by the page bottom margin. Measurements include padding and minimum/fixed cell heights. */
   height?: number;
+  /** Comma-separated names are trimmed; array entries preserve exact keys. */
   order?: string | string[];
   columns?: RecipeTableColumn[];
+  /** Enables headers and overrides column header styles; body text styles are not inherited. */
   header?:
     | boolean
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
   row?: RecipeTextOptions & { nth?: "even" | "odd" };
+  /** Called once per overflow; may draw another table. A continuing destination must fit the row and repeated header or table() throws RangeError; leaving no active, unpaused page throws Error. */
   overflow?: (
+    this: Recipe,
     recipe: Recipe,
     row: number,
   ) => boolean | { position?: [number, number] } | void;
@@ -1283,6 +1292,7 @@ export interface PDFWriter {
   dispose(): void;
 }
 export interface PageModifier {
+  /** Starts or resumes this modifier's content after endContext(); retain the modifier and writePage() once after all contexts. */
   startContext(): this;
   getContext(): ContentContext;
   getResourcesDictionary(): ResourcesDictionary;

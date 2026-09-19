@@ -263,7 +263,8 @@ describe("Recipe text layout and tables", function () {
   it("measures wrapped cells before continuing and repeats headers without overlap", async function () {
     var Recipe = await getRecipe();
     var continuations = 0;
-    var recipe = new Recipe({ compress: false }).createPage(240, 240);
+    // Both segments must fit above the page's 72pt bottom margin.
+    var recipe = new Recipe({ compress: false }).createPage(240, 320);
     recipe
       .table(
         10,
@@ -275,7 +276,7 @@ describe("Recipe text layout and tables", function () {
         {
           font: "arial",
           size: 12,
-          height: 50,
+          height: 60,
           header: true,
           border: true,
           columns: [
@@ -299,6 +300,7 @@ describe("Recipe text layout and tables", function () {
     assert.ok(headers[0].textMatrix[5] > firstRow.textMatrix[5]);
     assert.ok(headers[1].textMatrix[5] > secondRow.textMatrix[5]);
     assert.ok(headers[0].textMatrix[5] - headers[1].textMatrix[5] > 80);
+    assert.ok(output.every((entry) => entry.textMatrix[5] >= 72));
     reader.end();
   });
 

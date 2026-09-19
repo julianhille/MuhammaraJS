@@ -79,6 +79,7 @@ declare namespace muhammara {
       pageIndex?: number,
       ensureContentEncapsulation?: boolean,
     ): PDFPageModifier;
+    /** Starts or resumes this modifier's content after endContext(); retain the modifier and writePage() once after all contexts. */
     startContext(): this;
     getContext(): XObjectContentContext;
     endContext(): this;
@@ -1302,13 +1303,19 @@ declare namespace muhammara {
       text?: string;
       width?: number;
       cell?: TextBox;
+      /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
       header?: boolean | TextOptions;
+      /** Final header text-box overrides, applied after header styles and alignToData. */
       hcell?: TextBox;
+      /** Called once per cell. Returned options may be reused; table() does not mutate them and preserves callback properties. */
       renderer?: (
         this: void,
+        /** The cell value; missing and nullish values arrive as `""`. */
         text: undefined extends TableFieldValue<RecordType, Field>
-          ? Exclude<TableFieldValue<RecordType, Field>, undefined> | ""
-          : TableFieldValue<RecordType, Field>,
+          ? Exclude<TableFieldValue<RecordType, Field>, null | undefined> | ""
+          : null extends TableFieldValue<RecordType, Field>
+            ? Exclude<TableFieldValue<RecordType, Field>, null | undefined> | ""
+            : TableFieldValue<RecordType, Field>,
         record: RecordType,
         field: Field,
         row: number,
@@ -1335,16 +1342,22 @@ declare namespace muhammara {
     interface TableOptions<
       RecordType extends object = Record<string, unknown>,
     > extends Omit<TextOptions, "overflow"> {
+      /** Nested body-cell styles merge in table, column, matching row, then renderer order. */
+      textBox?: TextBox;
+      /** Per-segment height, also bounded by the current page's bottom margin. */
       height?: number;
+      /** Comma-separated names are trimmed; array entries preserve exact keys. */
       order?:
         | string
         | TableField<RecordType>[]
         | readonly [TableField<RecordType>, ...TableField<RecordType>[]];
       columns?: readonly TableColumnOptions<RecordType>[];
+      /** Enables headers and overrides column header styles; body text styles are not inherited. */
       header?:
         boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
       border?: boolean | PolygonOptions;
       row?: TextOptions & { nth?: "even" | "odd"; cell?: TextBox };
+      /** Called once per overflow; may draw another table. A continuing destination must fit the row and repeated header or table() throws RangeError; leaving no active, unpaused page throws Error. */
       overflow?: (
         this: Recipe,
         recipe: Recipe,

@@ -4,6 +4,23 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Recipe `table()` derives its columns from every record, not just the first,
+  keeps `order` and `columns` entries even when no record has that field, and
+  uses exactly the listed `columns` when no `order` is given. A column
+  `renderer` result now also sizes its row. Existing tables can gain columns,
+  reorder them, or grow taller rows, and a misspelled `order` or `columns`
+  name now draws an empty column instead of being dropped; list the intended columns with `order` or
+  `columns` to keep a fixed layout. See
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly)
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666).
+- Recipe table sizing includes vertical padding, minimum/fixed cell heights,
+  and rendered HTML. Rows can grow taller and continue earlier; adjust the cell
+  sizing or continuation area. If an `overflow` callback continues into an
+  area too small for the pending row and repeated header, `table()` now throws
+  `RangeError` instead of drawing beyond the bounds. Return `true` to stop or
+  provide enough space; see the
+  [table migration steps](getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly)
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666).
 - Native Recipe character-spacing measurements now count leading and trailing
   non-breaking spaces, matching Wasm. Text using `charSpace` can measure wider
   or wrap earlier; replace boundary U+00A0 characters with regular spaces when

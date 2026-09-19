@@ -18,6 +18,11 @@ they never load Node modules, filesystem paths, or Recipe plugins.
 | Metadata and encryption | New and modified PDFs receive canonical Recipe dates and Producer/Creator fields; source modifications retain prior ModDate/Creator/Producer as `source-*` Info entries. `info()` returns metadata currently known to Recipe. `getPageInfo()` follows Node Recipe and exposes the writable output Info dictionary during source editing; use `pageInfo(pageNumber)` or `getCurrentPageInfo()` for page geometry. `structure("json")` provides a browser-safe summary and finalizes the Recipe through `endPDF()`. Byte-first `recrypt` and Recipe `encrypt()` match native option names through PDF 1.7 using bundled RC4/AES-128. Paths, streams, log files, PDF 2.0/AES-256, and password-protected Recipe source editing are unavailable.                             |
 | Writer events           | Native `writer.getEvents()` exposes `OnPageWrite` and `OnCatalogWrite` EventEmitter hooks that can modify dictionaries while they are written. Wasm has no equivalent because it would need C++-to-JavaScript callbacks and live dictionary handles with explicit mid-write lifetime management; Node EventEmitter hooks are intentionally excluded from the browser-safe API.                                                                                                                                                                                                                                                                                                                                                                                           |
 
+Table header styling follows native precedence: column header options (or
+defaults), table header overrides, `alignToData`, then `hcell` box overrides.
+Body text styles do not flow into headers. Default font metrics can still
+produce different wrapping as described above.
+
 The current PDFWriter `AppendPDFPagesFromPDF` byte path does not deep-copy an
 existing page's `/Annots` graph. Recipe-created annotations are preserved in
 their own output, but appended or rebuilt source pages lose existing

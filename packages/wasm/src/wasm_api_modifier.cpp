@@ -422,11 +422,14 @@ WASM_EXPORT int muhammara_wasm_modifier_create_page(WasmModifier* modifier, doub
 }
 
 WASM_EXPORT int muhammara_wasm_modifier_start_page_context(WasmModifier* modifier) {
-  if (modifier == nullptr || modifier->newPage == nullptr || modifier->context != nullptr ||
+  if (modifier == nullptr || (modifier->newPage == nullptr && modifier->page == nullptr) ||
+      modifier->context != nullptr ||
       modifier->finished) {
     return 0;
   }
-  modifier->context = modifier->writer.StartPageContentContext(modifier->newPage);
+  modifier->context = modifier->page != nullptr
+                          ? modifier->page->StartContentContext()
+                          : modifier->writer.StartPageContentContext(modifier->newPage);
   return modifier->context != nullptr;
 }
 

@@ -161,6 +161,15 @@ async function usesLowLevelSurface() {
     version: muhammara.ePDFVersion17,
     compress: false,
   });
+  var resumedPage = syncModifier.createPageModifier(0, true);
+  // @ts-expect-error Starting new-page content requires a PDFPage, not a null modifier placeholder.
+  syncModifier.startPageContentContext(null);
+  resumedPage
+    .startContext()
+    .endContext()
+    .startContext()
+    .endContext()
+    .writePage();
   muhammara
     .createModifier(source)
     .startPage(0)
@@ -328,6 +337,47 @@ async function usesLowLevelSurface() {
     .endPage()
     .endPDF();
   recipe.textDimensions("Hello").width;
+  recipe.table(20, 20, [{ value: "first" }], {
+    textBox: { style: { stroke: "blue", lineWidth: 2 } },
+    row: { nth: "odd", textBox: { style: { opacity: 0.25 } } },
+    header: {
+      font: "arial",
+      size: 12,
+      alignToData: true,
+      cell: { padding: 2 },
+    },
+    columns: [
+      {
+        name: "value",
+        cell: { padding: 4, minHeight: 40 },
+        header: { size: 18, textBox: { style: { stroke: "blue" } } },
+        hcell: { height: 60 },
+        /** Exercises renderer-controlled table box sizing. */
+        renderer: () => ({
+          textBox: {
+            minHeight: 80,
+            height: 100,
+            clipIfExceedsBox: true,
+            style: { fill: "red" },
+            /** Renderer-returned callbacks retain their typed arguments. */
+            onClip(currentRecipe, result) {
+              var remainder: string = result.remainder;
+              void currentRecipe;
+              void remainder;
+            },
+          },
+        }),
+      },
+      { name: "optional", header: false },
+    ],
+    /** The callback receiver and first argument both expose Recipe methods. */
+    overflow: function (currentRecipe, row) {
+      var callbackThis: InstanceType<typeof Recipe> = this;
+      callbackThis.endPage().createPage("letter");
+      void currentRecipe;
+      return row > 10 ? true : { position: [20, 20] };
+    },
+  });
   void defaultFontBytes;
   await createMuhammaraWasm({ wasmBinary: new Uint8Array() });
   await createMuhammaraWasm({ wasmBinary: new ArrayBuffer(0) });
