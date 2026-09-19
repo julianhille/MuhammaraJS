@@ -96,9 +96,11 @@ function writeSourceAnnotation(writer, subtype, rectangle, options) {
     M: annotationDate(options.date),
   };
   var contents = options.text || options.contents || "";
-  strings[options.richText ? "RC" : "Contents"] = options.richText
-    ? richText(contents)
-    : contents;
+  if (contents) {
+    strings[options.richText ? "RC" : "Contents"] = options.richText
+      ? richText(contents)
+      : contents;
+  }
   Object.entries(strings).forEach(([key, value]) => {
     if (!value) return;
     // Dates are ASCII; the other entries are PDFDocEncoding or UTF-16BE text.
@@ -369,10 +371,12 @@ export function createAnnotationMethods({
               ]
             : []);
         var border = options.border || {};
+        // Markup annotations default to a zero-width border like native;
+        // other subtypes fall back to the PDF viewer's own default.
         var borderWidth =
           typeof border === "number"
             ? border
-            : (options.borderWidth ?? border.width ?? -1);
+            : (options.borderWidth ?? border.width ?? (markup ? 0 : -1));
         var borderDash = options.borderDash ?? border.dash ?? [];
         var write = (replyTo, reply) => {
           // Native replies inherit metadata, but keep their own contents,
@@ -419,8 +423,15 @@ export function createAnnotationMethods({
               },
             );
           }
+          // Wrap only when there is content, so an empty comment does not
+          // write a non-empty XHTML rich-text wrapper to Contents/RC.
+          var wrappedContents = contents
+            ? useRichText
+              ? richText(contents)
+              : contents
+            : "";
           return withString(annotation.subtype, (subtype) =>
-            withString(useRichText ? richText(contents) : contents, (text) =>
+            withString(wrappedContents, (text) =>
               withString(source.title || "", (title) =>
                 withString(source.subject || "", (subject) =>
                   withString(annotationDate(source.date), (date) =>

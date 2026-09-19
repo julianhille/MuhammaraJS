@@ -872,4 +872,28 @@ describe("Recipe annotation parity", function () {
       );
     });
   });
+  ["new", "edited"].forEach(function (mode) {
+    it(`defaults markup borders to zero width and omits empty rich text on ${mode} pages`, function () {
+      var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      var recipe =
+        mode === "new"
+          ? new Recipe().createPage(595, 842)
+          : new Recipe(source).editPage(1);
+      recipe.text("Marked.", 50, 100, { highlight: true });
+      recipe.annot(50, 150, "Square", { width: 20, height: 20 });
+      recipe.comment("", 50, 200, { richText: true });
+      var annotations = finish(recipe);
+      assert.deepEqual(
+        annotations[0].dictionary.Border.toPDFArray()
+          .toJSArray()
+          .map(function (value) {
+            return value.toNumber();
+          }),
+        [0, 0, 0],
+      );
+      assert.equal(annotations[1].dictionary.Border, undefined);
+      assert.equal(annotations[2].dictionary.RC, undefined);
+      assert.equal(annotations[2].dictionary.Contents, undefined);
+    });
+  });
 });

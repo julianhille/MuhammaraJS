@@ -15,6 +15,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Write a zero-width `/Border` for text-markup annotations (`highlight`,
+  `underline`, `strikeOut`, `squiggly`) by default, matching native, instead of
+  omitting it and letting viewers apply the PDF default 1pt border. Other
+  annotation subtypes keep omitting `/Border` when none is requested
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Stop writing an empty `/RC` or `/Contents` entry for a `richText` annotation
+  with no text
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Constrain Recipe text links to their visible clipping region when using
   `textBox.wrap: "clip"`, so hidden overflow does not remain clickable outside
   the text box [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
