@@ -4,6 +4,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Inherit parent annotation metadata for replies without their own `title`,
+  `subject`, `date`, `flag`, `open`, or icon, matching native. A reply keeps
+  its own contents, rich-text mode, and opacity (opaque by default)
+  [#717](https://github.com/julianhille/MuhammaraJS/issues/717)
+
 ## [1.0.0-beta.3] - 2026-09-18
 
 ### Added
