@@ -100,6 +100,22 @@ function sameStyles(left, right) {
   );
 }
 
+/**
+ * Combines text options with an HTML fragment's styles for drawing. Like
+ * native, HTML underline and strike-out styles draw lines, while the same
+ * option names on text() create text-markup annotations.
+ */
+function fragmentOptions(options, styles = {}, fontSize) {
+  var { underline, strikeOut, ...rest } = styles;
+  return {
+    ...options,
+    ...rest,
+    fontSize,
+    htmlUnderline: Boolean(underline),
+    htmlStrikeOut: Boolean(strikeOut),
+  };
+}
+
 /** Coalesces adjacent HTML fragments that use equivalent styles. */
 function groupedHtmlParts(parts) {
   return parts.reduce((groups, part) => {
@@ -705,7 +721,7 @@ export function createTextMethods({ drawText, measure, module }) {
           y = layout[columnIndex].y;
           currentY = y + top;
         }
-        var textOptions = { ...options, ...entry.styles, fontSize };
+        var textOptions = fragmentOptions(options, entry.styles, fontSize);
         var textWidth = entry.parts
           ? htmlPartsWidth(
               entry.parts,
@@ -792,7 +808,7 @@ export function createTextMethods({ drawText, measure, module }) {
           var drawnText = "";
           var rotationOrigin = options.rotationOrigin || [drawX, baseline];
           drawParts.forEach((part, partIndex) => {
-            var partOptions = { ...options, ...part.styles, fontSize };
+            var partOptions = fragmentOptions(options, part.styles, fontSize);
             if (partOptions.rotation && !partOptions.rotationOrigin) {
               partOptions.rotationOrigin = rotationOrigin;
             }

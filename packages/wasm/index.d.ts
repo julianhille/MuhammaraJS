@@ -235,7 +235,23 @@ export interface RecipeTextBoxClipResult {
   clipped: true;
   bounds: { x: number; y: number; width: number; height: number };
 }
-export interface RecipeTextOptions extends RecipePathOptions {
+/** Text-markup annotation options for `highlight`, `underline`, `strikeOut`, and `squiggly`, as in native Recipe. */
+export interface RecipeTextMarkupOptions extends Pick<
+  RecipeAnnotationOptions,
+  "opacity" | "replies"
+> {
+  /** Annotation contents. */
+  text?: string;
+  /** Annotation color; defaults to yellow for highlight, red for strikeOut, and green otherwise. */
+  color?: RecipeColor;
+}
+export interface RecipeTextOptions
+  extends
+    RecipePathOptions,
+    Pick<
+      RecipeAnnotationOptions,
+      "title" | "open" | "richText" | "flag" | "icon" | "date" | "subject"
+    > {
   /** Text fill color: `#gg`, `#rrggbb`, `#ccmmyykk`, `%r,g,b` percentages, a 0-255 component array, or a name registered with `chroma()`. Missing or unknown colors use `#1777d1`. */
   color?: RecipeColor;
   /** Font family; uses createRecipe's default font when omitted (bundled Roboto unless configured). */
@@ -255,11 +271,16 @@ export interface RecipeTextOptions extends RecipePathOptions {
     | "right"
     | `${"left" | "center" | "right"} ${"top" | "center" | "bottom"}`;
   layout?: string | number;
-  highlight?: boolean | RecipePathOptions;
+  /** Adds a Highlight annotation over each drawn run. */
+  highlight?: boolean | RecipeTextMarkupOptions;
   /** Visual text background, distinct from the Highlight annotation option. */
   hilite?: boolean | RecipePathOptions;
-  underline?: boolean;
-  strikeOut?: boolean;
+  /** Adds an Underline annotation; HTML `<u>` draws a line instead. */
+  underline?: boolean | RecipeTextMarkupOptions;
+  /** Adds a StrikeOut annotation; HTML `<del>`, `<s>`, and `<strike>` draw a line instead. */
+  strikeOut?: boolean | RecipeTextMarkupOptions;
+  /** Adds a Squiggly annotation. */
+  squiggly?: boolean | RecipeTextMarkupOptions;
   textBox?: RecipeTextBox;
   cell?: RecipeTextBox;
   overflow?: (

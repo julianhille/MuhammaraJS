@@ -46,6 +46,40 @@ function textColor(model) {
   };
 }
 
+/**
+ * Adds native-style text-markup annotations for `highlight`, `underline`,
+ * `strikeOut`, and `squiggly` text options over one drawn run.
+ */
+function textMarkupAnnotations(
+  recipe,
+  x,
+  baseline,
+  width,
+  textHeight,
+  options,
+) {
+  ["Highlight", "Underline", "StrikeOut", "Squiggly"].forEach((subtype) => {
+    var key = Object.keys(options).find(
+      (name) => name.toLowerCase() === subtype.toLowerCase() && options[name],
+    );
+    if (!key) return;
+    var markup = typeof options[key] === "object" ? options[key] : {};
+    recipe.annot(x, baseline + textHeight * 0.2, subtype, {
+      ...markup,
+      width,
+      height: textHeight * 1.4,
+      text: markup.text || "",
+      title: options.title || "",
+      open: Boolean(options.open),
+      richText: Boolean(options.richText),
+      flag: options.flag || "",
+      icon: options.icon || "",
+      date: options.date || "",
+      subject: options.subject || "",
+    });
+  });
+}
+
 export function createRecipeFactory({
   defaultFont,
   module,
@@ -541,16 +575,15 @@ export function createRecipeFactory({
       var fontPath = resolveFont(options);
       var fontSize = options.fontSize || options.size || 14;
       var dimensions = this.textDimensions(value, { ...options, fontSize });
-      if (options.highlight) {
-        var highlight =
-          typeof options.highlight === "object" ? options.highlight : {};
-        this.annot(x + dimensions.xMin, y - dimensions.yMax, "Highlight", {
-          ...highlight,
-          color: highlight.color || "#ffff00",
-          width: dimensions.xMax - dimensions.xMin,
-          height: dimensions.yMax - dimensions.yMin,
-        });
-      }
+      // Native measures markup against one sample so every run on a line
+      // gets the same height, including descenders and tall glyphs.
+      var textHeight = this.textDimensions(
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
+        { ...options, fontSize },
+      ).height;
+      // Native markup and decoration lines span to the run's right glyph edge.
+      var runWidth = dimensions.xMax;
+      textMarkupAnnotations(this, x, y, runWidth, textHeight, options);
       var packedFill = textColor(fill);
       withString(value, (textPointer) =>
         withString(fontPath, (fontPointer) => {
@@ -568,15 +601,19 @@ export function createRecipeFactory({
           );
         }),
       );
-      if (options.underline) {
-        this.line(x, y + 2, x + dimensions.width, y + 2, {
-          stroke: options.color || "#000000",
-        });
+      // HTML underline and strike-out lines use the text color, like native.
+      var decoration = {
+        stroke: options.color || options.colour || "#1777d1",
+        colorspace: options.colorspace,
+        width: 2,
+      };
+      if (options.htmlUnderline) {
+        var underlineY = y + textHeight * 0.1;
+        this.line(x, underlineY, x + runWidth, underlineY, decoration);
       }
-      if (options.strikeOut) {
-        this.line(x, y - fontSize / 3, x + dimensions.width, y - fontSize / 3, {
-          stroke: options.color || "#000000",
-        });
+      if (options.htmlStrikeOut) {
+        var strikeOutY = y - textHeight * 0.2;
+        this.line(x, strikeOutY, x + runWidth, strikeOutY, decoration);
       }
       if (transformed) this._restore();
       this._lastLineHeight = fontSize;
