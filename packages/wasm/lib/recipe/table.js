@@ -103,6 +103,7 @@ export function createTableMethods() {
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If table text cannot be measured or drawn, including when a requested font cannot be loaded.
      * @throws {RangeError} If an overflow callback continues into an area too small for the pending row and its repeated header. Return true to stop, or provide enough space; the callback is called once per overflow.
+     * @throws {Error} If an overflow callback continues after ending the page without starting another one.
      */
     table(x, y, contents, options = {}) {
       if (!Array.isArray(contents) || !contents.length) return this;
@@ -270,6 +271,10 @@ export function createTableMethods() {
           drawBorder();
           var order = options.overflow.call(this, this, row + 1);
           if (order === true) break;
+          if (!this._pageHeight)
+            throw new Error(
+              "Recipe.table: the overflow callback must leave an active page to continue on.",
+            );
           if (order?.position) {
             [x, y] = order.position;
             var columnX = x;

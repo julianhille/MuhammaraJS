@@ -63,7 +63,9 @@ An `overflow` callback receives the Recipe as both `this` and its first
 argument. It is called once for a pending row: return `true` to stop, or
 continue in an area that fits the entire row plus its repeated header. The
 destination is bounded by `options.height` and the page's bottom margin. If it
-is too small, `table()` throws `RangeError` before drawing that header or row.
+is too small, `table()` throws `RangeError` before drawing that header or row. A
+callback that ends the page must start another one before continuing;
+otherwise `table()` throws an `Error`.
 Move the continuation upward, use a taller page/table area, reduce the cell
 heights, or split a large record into multiple rows. Tables do not split a row
 automatically.
