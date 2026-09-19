@@ -2,6 +2,7 @@
 // ModifyExistingPageContent.js, and BufferReadTest.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("BasicModification", function () {
   it("modifies, appends, and merges byte-backed PDFs", async function () {
@@ -43,6 +44,7 @@ describe("BasicModification", function () {
     });
     pageModifier.endContext().writePage();
     var modified = writer.end();
+    writeOutput("BasicModification-modified", modified);
     var modifiedReader = muhammara.createReader(modified);
     assert.equal(modifiedReader.getPagesCount(), 2);
     assert.deepEqual(modifiedReader.getPageInfo(1).mediaBox, [0, 0, 300, 400]);
@@ -52,6 +54,7 @@ describe("BasicModification", function () {
     var copying = copyWriter.createPDFCopyingContext(modified);
     copying.appendPDFPagesFromPDF(0, 1).end();
     var copied = copyWriter.end();
+    writeOutput("BasicModification-copied", copied);
     var copiedReader = muhammara.createReader(copied);
     assert.equal(copiedReader.getPagesCount(), 3);
     copiedReader.end();
@@ -63,6 +66,7 @@ describe("BasicModification", function () {
     mergeWriter.startPageContentContext(mergePage).q().Q();
     mergeWriter.writePage(mergePage);
     var merged = mergeWriter.end();
+    writeOutput("BasicModification-merged", merged);
     var mergedReader = muhammara.createReader(merged);
     assert.equal(mergedReader.getPagesCount(), 2);
     mergedReader.end();
