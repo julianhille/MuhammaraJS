@@ -33,6 +33,13 @@ function cellOptions(options = {}, name = "cell") {
   return result;
 }
 
+/** Keeps table-level text options; native ignores a table-level `cell`. */
+function tableTextOptions(options) {
+  var result = { ...options };
+  delete result.cell;
+  return result;
+}
+
 /** Uses a column's `cell` as its only body text box, like native columns. */
 function columnCellOptions(options) {
   var result = { ...options, textBox: { ...options.cell } };
@@ -237,9 +244,10 @@ export function createTableMethods() {
           var rendered =
             column.options.renderer?.(text, record, column.field, row + 1) ||
             {};
-          // The table callback is not a text-flow overflow callback.
+          // The table callback is not a text-flow overflow callback, and
+          // native ignores a table-level cell rather than boxing every cell.
           var { overflow: _tableOverflow, ...tableCellOptions } =
-            cellOptions(options);
+            tableTextOptions(options);
           return {
             column,
             text: String(text),

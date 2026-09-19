@@ -56,7 +56,8 @@ Header and row measurements include vertical padding, `minHeight`, fixed
 header/row `cell`, or a renderer's `textBox` options. A column's `cell` is its
 only body text box, so a column-level `textBox` is ignored. A row or header
 `cell` replaces that style's `textBox`, and nested box styles such as `style`
-merge across column, row, and renderer options.
+merge across column, row, and renderer options. A table-level `cell` is
+ignored; style cells through each column's `cell` or the table's `row.cell`.
 
 Header text styles are independent of table/body text styles. Recipe resolves
 them in this order:

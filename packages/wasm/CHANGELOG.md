@@ -113,7 +113,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Resolve table cell text boxes like native: a column's `cell` is its only
   body text box, a row `cell` replaces the row's `textBox`, and nested styles
   such as a column fill and a row stroke merge instead of replacing each other.
-  `RecipeTableColumn` no longer declares `textBox`; use `cell`
+  A table-level `cell` is ignored. `RecipeTableColumn` no longer declares
+  `textBox` and `RecipeTableOptions` no longer declares `cell`; use a column's
+  `cell` or `row.cell`
   [#710](https://github.com/julianhille/MuhammaraJS/issues/710)
 
 ### Changed

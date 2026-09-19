@@ -434,6 +434,7 @@ export type RecipeTableColumnOptions<
   >;
 }[RecipeTableColumnField<RecordType>];
 export type RecipeTableRow = Record<string, unknown>;
+/** Table options. Like native Recipe, a table-level `cell` is not accepted; style cells per column or row. */
 export interface RecipeTableOptions<
   RecordType extends object = RecipeTableRow,
 > extends Omit<RecipeTextOptions, "overflow" | "cell"> {
