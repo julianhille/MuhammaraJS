@@ -29,11 +29,38 @@ function richText(value) {
   return `<?xml version="1.0"?><body xmlns="http://www.w3.org/1999/xhtml">${value.replace(/&nbsp;/g, " ").replace(/\r?\n|\r|\t/g, "")}</body>`;
 }
 
+/**
+ * Rejects annotation geometry and appearance values that cannot be written as
+ * a valid PDF annotation, identically for new and edited pages.
+ */
+function assertAnnotationValues(
+  rectangle,
+  borderWidth,
+  borderDash,
+  quadPoints,
+  opacity,
+) {
+  var [left, bottom, right, top] = rectangle;
+  if (
+    !rectangle.every(Number.isFinite) ||
+    right < left ||
+    top < bottom ||
+    !Number.isFinite(borderWidth) ||
+    !Array.isArray(borderDash) ||
+    !borderDash.every(Number.isFinite) ||
+    !Array.isArray(quadPoints) ||
+    quadPoints.length % 8 !== 0 ||
+    !quadPoints.every(Number.isFinite) ||
+    !Number.isFinite(opacity) ||
+    opacity < 0 ||
+    opacity > 1
+  )
+    throw new TypeError("Invalid annotation options");
+}
+
 /** Writes Recipe metadata and reply relationships through the modifier's object API. */
 function writeSourceAnnotation(writer, subtype, rectangle, options) {
   var opacity = options.opacity ?? 1;
-  if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1)
-    throw new TypeError("Invalid annotation options");
   var flags = annotationFlags(options.flag ?? options.flags);
   var objects = writer.getObjectsContext();
   var id = objects.startNewIndirectObject();
@@ -315,6 +342,13 @@ export function createAnnotationMethods({
             : options;
           var contents = source.text || source.contents || "";
           var useRichText = Boolean(source.richText);
+          assertAnnotationValues(
+            [left, bottom, left + width, bottom + height],
+            borderWidth,
+            borderDash,
+            quadPoints,
+            source.opacity ?? 1,
+          );
           if (this._sourceMode) {
             return writeSourceAnnotation(
               this.writer,

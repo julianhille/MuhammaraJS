@@ -370,4 +370,25 @@ describe("Recipe annotation parity", function () {
         assert.equal((readPageForms(reader).match(/Tj/g) || []).length, 2);
     });
   });
+
+  it("rejects invalid annotation values alike on new and edited pages", function () {
+    var source = new Recipe().createPage(595, 842).endPage().endPDF();
+    [
+      { opacity: 2 },
+      { borderDash: ["x"] },
+      { quadPoints: [1, 2, 3] },
+      { borderWidth: Number.NaN },
+    ].forEach(function (options) {
+      [
+        new Recipe().createPage(595, 842),
+        new Recipe(source).editPage(1),
+      ].forEach(function (recipe) {
+        recipe.annot(50, 50, "Square", { width: 10, height: 10, ...options });
+        assert.throws(() => recipe.endPage(), {
+          name: "TypeError",
+          message: "Invalid annotation options",
+        });
+      });
+    });
+  });
 });
