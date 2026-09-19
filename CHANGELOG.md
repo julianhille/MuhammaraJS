@@ -21,7 +21,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `rotation` instead of at the text box edge. The caller's markup options
   object is no longer modified [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
 - Write Recipe annotation `title`, `subject`, and text as PDF text strings, so
-  non-ASCII characters no longer display as garbled UTF-8 bytes in PDF viewers
+  non-ASCII characters no longer display as garbled UTF-8 bytes in PDF viewers.
+  A `0` or `false` title or subject is now written as `"0"` or `"false"`
+  instead of an empty title
 - Write supplied rich text that starts with `<?xml` to the annotation instead
   of the string `true`
 - Stop Recipe `text()` with `html: true` from throwing when the HTML has text
