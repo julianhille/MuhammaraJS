@@ -645,6 +645,9 @@ export function createPageMethods(
      * @returns {Recipe} The Recipe instance.
      */
     endPage: function () {
+      // Validate before closing a content context or consuming the queue, so
+      // invalid options leave the page in the same state on every attempt.
+      if (this._pageHeight) this._flushAnnotations(true);
       // Annotations and links are indirect objects, so every branch closes
       // the page's open content stream before writing them; writing them
       // into an open stream corrupts its compressed data.

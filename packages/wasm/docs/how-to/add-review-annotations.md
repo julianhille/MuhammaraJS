@@ -40,7 +40,7 @@ var outputBytes = pdf
 
 Set `opacity` from `0` (transparent) to `1` (opaque, the default). Recipe writes
 the annotation's `/CA` value; the `color` option sets its RGB color separately.
-On new pages, both `comment()` and `annot()` accept `replies`, an array of objects
+On new and edited pages, both `comment()` and `annot()` accept `replies`, an array of objects
 with `text` and optional `title`, `date`, `subject`, `richText`, and `flag`. Each
 reply is a separate annotation linked to its parent through `/IRT` and `/RT /R`.
 A reply without its own `title`, `subject`, `date`, `flag`, `open`, or icon
@@ -50,6 +50,11 @@ inherits the parent's, matching native. A reply keeps its own contents,
 Annotations are queued until `endPage()`. Supported markup subtypes include
 `Highlight`, `Underline`, `StrikeOut`, and `Squiggly`. Recipe's rich-text form
 is a Worker-safe XML subset, not arbitrary browser HTML.
+
+For a dashed review region, set `border: { width: 2, dash: [3, 4] }`. The dash
+pattern works on new and edited pages. `endPage()` checks annotation geometry
+and appearance before closing the page's content context; invalid values throw
+`TypeError: Invalid annotation options` without consuming the annotation queue.
 
 Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create
 markup annotations, one per drawn line, on new and edited pages. Their nested

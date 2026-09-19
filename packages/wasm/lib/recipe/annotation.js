@@ -272,15 +272,16 @@ export function createAnnotationMethods({
      * @function
      * @memberof Recipe#
      * @private
+     * @param {boolean} [validateOnly=false] Check the queue without writing or clearing it.
      */
-    _flushAnnotations: function () {
-      this._flushLinks();
+    _flushAnnotations: function (validateOnly = false) {
+      if (!validateOnly) this._flushLinks();
       var annotations = this._annotations;
-      this._annotations = [];
+      if (!validateOnly) this._annotations = [];
       annotations.forEach((annotation) => {
         var options = annotation.options;
-        var width = options.width || 0;
-        var height = options.height || 0;
+        var width = options.width ?? 0;
+        var height = options.height ?? 0;
         var point = this._calibrateCoordinateForAnnots(
           annotation.x,
           annotation.y,
@@ -357,6 +358,8 @@ export function createAnnotationMethods({
             quadPoints,
             source.opacity ?? 1,
           );
+          var flags = annotationFlags(source.flag ?? source.flags);
+          if (validateOnly) return 0;
           if (this._sourceMode) {
             return writeSourceAnnotation(
               this.writer,
@@ -403,7 +406,7 @@ export function createAnnotationMethods({
                                   borderDash.length,
                                   quadPointer,
                                   quadPoints.length,
-                                  annotationFlags(source.flag ?? source.flags),
+                                  flags,
                                   source.open ? 1 : 0,
                                   source.opacity ?? 1,
                                   useRichText ? 1 : 0,

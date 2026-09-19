@@ -378,17 +378,64 @@ describe("Recipe annotation parity", function () {
       { borderDash: ["x"] },
       { quadPoints: [1, 2, 3] },
       { borderWidth: Number.NaN },
+      { width: Number.NaN },
+      { height: Number.NaN },
     ].forEach(function (options) {
       [
         new Recipe().createPage(595, 842),
         new Recipe(source).editPage(1),
       ].forEach(function (recipe) {
-        recipe.annot(50, 50, "Square", { width: 10, height: 10, ...options });
-        assert.throws(() => recipe.endPage(), {
-          name: "TypeError",
-          message: "Invalid annotation options",
-        });
+        try {
+          recipe.text("Keep this content.", 50, 30);
+          recipe.annot(50, 50, "Square", { width: 10, height: 10, ...options });
+          // Validation must leave the queue and content context intact. A
+          // retry must not silently drop annotations or end a context twice.
+          for (var attempt = 0; attempt < 2; attempt++) {
+            assert.throws(() => recipe.endPage(), {
+              name: "TypeError",
+              message: "Invalid annotation options",
+            });
+          }
+        } finally {
+          recipe.dispose();
+        }
       });
+    });
+  });
+
+  it("writes the same valid dashed border on new and edited pages", function () {
+    var source = new Recipe().createPage(595, 842).endPage().endPDF();
+    ["new", "edited"].forEach(function (mode) {
+      var recipe =
+        mode === "new"
+          ? new Recipe().createPage(595, 842)
+          : new Recipe(source).editPage(1);
+      recipe.text("Review border.", 50, 30);
+      recipe.annot(50, 50, "Square", {
+        width: 100,
+        height: 20,
+        border: { width: 2, dash: [3, 4] },
+      });
+      var annotation = finish(recipe)[0].dictionary;
+      var border = annotation.Border.toPDFArray().toJSArray();
+      assert.equal(border.length, 4);
+      assert.deepEqual(
+        border.slice(0, 3).map(function (value) {
+          return value.toNumber();
+        }),
+        [0, 0, 2],
+      );
+      assert.deepEqual(
+        border[3]
+          .toPDFArray()
+          .toJSArray()
+          .map(function (value) {
+            return value.toNumber();
+          }),
+        [3, 4],
+      );
+      reader.end();
+      reader = undefined;
     });
   });
 

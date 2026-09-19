@@ -15,6 +15,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Write Recipe annotation dash patterns as a nested `/Border` array on new
+  documents, matching edited pages and allowing PDF viewers to render the dashes
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject non-finite annotation dimensions and validate queued annotations before
+  closing page content or consuming the queue, so a failed `endPage()` cannot
+  silently discard annotations on retry or leave an edited context unusable
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+
 - Stop corrupting the page content stream when a Recipe page has both drawn
   content and an annotation or link, such as `comment()`, `annot()`, `link()`,
   a text `link`, or a text `highlight`; annotations and links are now written

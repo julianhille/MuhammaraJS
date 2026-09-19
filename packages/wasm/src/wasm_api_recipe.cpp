@@ -1240,7 +1240,11 @@ WASM_EXPORT unsigned long muhammara_wasm_recipe_annotation_full(
   if (borderWidth >= 0) {
     dictionary->WriteKey("Border"); objects.StartArray();
     objects.WriteDouble(0); objects.WriteDouble(0); objects.WriteDouble(borderWidth);
-    for (int i = 0; i < borderDashLength; ++i) objects.WriteDouble(borderDash[i]);
+    if (borderDashLength) {
+      objects.StartArray();
+      for (int i = 0; i < borderDashLength; ++i) objects.WriteDouble(borderDash[i]);
+      objects.EndArray();
+    }
     objects.EndArray();
   }
   if (colorLength) {
