@@ -1363,6 +1363,8 @@ declare namespace muhammara {
       attributes: Array<{ name: string; value: string | null }>;
       styles: Record<string, string | number | number[]>;
       needsLineBreaker: boolean;
+      /** True for a `<br>` element, which ends the current line. */
+      lineBreak: boolean;
       size: number | undefined;
       sizeRatio: number;
       sizeRatios: number[];

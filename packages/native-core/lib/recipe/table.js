@@ -1,3 +1,5 @@
+const { htmlToTextObjects } = require("./htmlToTextObjects");
+
 function clone(object) {
   return JSON.parse(JSON.stringify(object));
 }
@@ -27,7 +29,10 @@ function getCellHeight(self, text, column, options) {
     originCoord.nx,
     originCoord.ny,
   );
-  const textObjects = self._makeTextObject(text, pathOptions.size, colOptions);
+  // Measure HTML cells as text() lays them out, including line breaks.
+  const textObjects = colOptions.html
+    ? htmlToTextObjects(String(text), colOptions)
+    : self._makeTextObject(text, pathOptions.size, colOptions);
   const textBox = self._makeTextBox(colOptions);
   const { textHeight } = self._layoutText(textObjects, textBox, pathOptions);
 

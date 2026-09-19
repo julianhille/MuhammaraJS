@@ -123,7 +123,9 @@ export function htmlToTextObjects(html, options = {}) {
     var closing = /^<\//.test(token);
     var name = token.match(/^<\/?\s*([\w-]+)/)?.[1]?.toLowerCase();
     if (name === "br" && !closing) {
-      lineBreak(true);
+      // An explicit break always ends a line, including an empty first line,
+      // as in native Recipe.
+      push({ value: "\n", styles: current() });
       continue;
     }
     if (closing) {

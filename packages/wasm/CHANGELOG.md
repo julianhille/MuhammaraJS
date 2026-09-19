@@ -86,6 +86,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Render leading `<br>` elements in Recipe HTML text as blank lines, as native
+  Recipe does, instead of ignoring them
+  [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
 - Align the Recipe declarations with native: generic `RecipeExtension`
   callbacks and `register()` overloads, `table<RecordType>()` with typed
   columns, `order`, and per-column `renderer` values, numeric `layout()`

@@ -10,7 +10,6 @@ const DOMParser = require("@xmldom/xmldom").DOMParser;
  * @returns {Object[]} The parsed text layout objects.
  */
 exports.htmlToTextObjects = function (htmlCodes, options = {}) {
-  htmlCodes = htmlCodes.replace(/<br\/?>/g, "<p>[@@DONOT_RENDER_THIS@@]</p>");
   const nodes = new DOMParser().parseFromString(
     `<html>${htmlCodes}</html>`,
     "text/html",
@@ -37,6 +36,33 @@ function getFontSizeRatio(tagName = "") {
 function needsLineBreaker(tagName = "") {
   const lineBreakers = ["p", "li", "h1", "h2", "h3"];
   return lineBreakers.includes(tagName);
+}
+
+/**
+ * Reports whether text in `node` begins a visual line: after a line break or
+ * block element, or at the start of a block. Only such text drops its
+ * leading whitespace; text that follows inline content keeps one space.
+ * @private
+ */
+function startsLine(node) {
+  const previous = node.previousSibling;
+  if (previous) {
+    const tag = (previous.tagName || "").toLowerCase();
+    return tag === "br" || needsLineBreaker(tag) || ["ul", "ol"].includes(tag);
+  }
+  const parent = node.parentNode;
+  const parentTag = (
+    parent && parent.tagName ? parent.tagName : ""
+  ).toLowerCase();
+  if (
+    !parent ||
+    !parentTag ||
+    parentTag === "html" ||
+    needsLineBreaker(parentTag)
+  ) {
+    return true;
+  }
+  return startsLine(parent);
 }
 
 function isBoldTag(tagName = "") {
@@ -84,6 +110,14 @@ function parseNode(node, options) {
     }
   }
   let value = node.data ? node.data.replace(/^\s*/gm, "") : null;
+  if (value !== null && /^\s/.test(node.data) && !startsLine(node)) {
+    value = " " + value;
+  }
+  // Whitespace before a line break would only pad the end of the line.
+  const next = node.nextSibling;
+  if (value !== null && next && /^br$/i.test(next.tagName || "")) {
+    value = value.replace(/\s+$/, "");
+  }
   if (value && value.charCodeAt(0) == 8203) {
     // zero width space
     value = value.substring(1);
@@ -99,6 +133,8 @@ function parseNode(node, options) {
     attributes,
     styles,
     needsLineBreaker: needsLineBreaker(node.tagName),
+    // An explicit line break; text layout ends the current line here.
+    lineBreak: /^br$/i.test(node.tagName || ""),
     size: options.size,
     sizeRatio: getFontSizeRatio(node.tagName),
     sizeRatios: [getFontSizeRatio(node.tagName)],

@@ -359,6 +359,8 @@ var metadataPageSize: number[] = metadataPage.size;
 var metadataOffsetX: number = metadataPage.offsetX;
 var htmlTextObject: muhammara.Recipe.HtmlTextObject =
   recipe.htmlToTextObjects("<b>text</b>")[0];
+var lineBreak: boolean = recipe.htmlToTextObjects("a<br>b")[1].lineBreak;
+void lineBreak;
 metadataPage.mediaBox;
 htmlTextObject.styles;
 htmlTextObject.childs;

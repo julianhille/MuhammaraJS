@@ -7,8 +7,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Keep Recipe HTML text outside any element on one line with its neighboring
+  inline elements, with one space between them, instead of starting a new line
+  for each top-level run and inline element; wrap content in `<p>` or add
+  `<br>` where separate lines are intended. `htmlToTextObjects()` returns a
+  `<br>` as an object with `lineBreak: true` instead of a placeholder
+  paragraph. See the [breaking changes](packages/native/docs/breaking-changes.md)
+  page [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
+
 ### Fixed
 
+- Break lines for `<br />` and uppercase `<BR>` in Recipe HTML text, not only
+  `<br>` and `<br/>`, and drop the whitespace before a line break so aligned
+  lines are not padded [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
+- Measure Recipe `table()` cells with `html: true` as HTML, so a cell with line
+  breaks no longer overlaps the next row
+  [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
 - Constrain Recipe text-markup annotations to the visible clipping region when
   using `textBox.wrap: "clip"`, so hidden text does not leave highlights or
   other review markup outside the box

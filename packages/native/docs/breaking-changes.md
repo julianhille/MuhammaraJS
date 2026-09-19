@@ -4,6 +4,14 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Recipe HTML text keeps text outside any element on one line with its
+  neighboring inline elements, and keeps one space between them: `x <b>a</b> y`
+  renders as one line `x a y`, as it already did inside `<p>`. Previously each
+  top-level text run and inline element started its own line and lost its
+  leading space. Wrap content in `<p>` elements or add `<br>` where separate
+  lines are intended. `htmlToTextObjects()` now returns a `<br>` as an object
+  with `lineBreak: true` instead of a `p` object holding placeholder text
+  [#667](https://github.com/julianhille/MuhammaraJS/issues/667).
 - Native Recipe character-spacing measurements now count leading and trailing
   non-breaking spaces, matching Wasm. Text using `charSpace` can measure wider
   or wrap earlier; replace boundary U+00A0 characters with regular spaces when

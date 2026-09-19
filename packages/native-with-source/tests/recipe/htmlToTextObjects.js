@@ -9,6 +9,77 @@ const htmlCodes = fs.readFileSync(
   path.join(__dirname, "../TestMaterials/recipe/text.html"),
   "utf8",
 );
+/** Renders HTML and returns its visual lines; blank lines appear as "". */
+function renderLines(html, options = {}) {
+  const recipe = new muhammara.Recipe(Buffer.from("new"));
+  recipe.registerFont(
+    "arial",
+    path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+  );
+  const bytes = recipe
+    .createPage(400, 400)
+    .text("x<br>x", 20, 20, {
+      font: "arial",
+      size: 12,
+      html: true,
+      textBox: { width: 300 },
+    })
+    .endPage()
+    .createPage(400, 400)
+    .text(html, 20, 20, {
+      font: "arial",
+      size: 12,
+      html: true,
+      textBox: { width: 300 },
+      ...options,
+    })
+    .endPage()
+    .endPDF((output) => output);
+  const reader = muhammara.createReader(
+    new muhammara.PDFRStreamForBuffer(bytes),
+  );
+  try {
+    return visualLines(reader.extractPageText(0), reader.extractPageText(1));
+  } finally {
+    reader.end();
+  }
+}
+
+/**
+ * Groups extracted text into lines, top to bottom. The reference page holds
+ * "x<br>x", which gives the first line's position and the line pitch, so
+ * skipped pitches, including leading ones, become blank "" lines.
+ */
+function visualLines(reference, items) {
+  const rows = (entries) => {
+    const grouped = [];
+    entries.forEach((item) => {
+      const y = item.textMatrix[5];
+      const row = grouped.find((candidate) => Math.abs(candidate.y - y) < 1);
+      if (row) row.parts.push(item);
+      else grouped.push({ y, parts: [item] });
+    });
+    return grouped.sort((a, b) => b.y - a.y);
+  };
+  const [first, second] = rows(reference);
+  const pitch = first.y - second.y;
+  const lines = [];
+  let previous = first.y + pitch;
+  rows(items).forEach((row) => {
+    const skipped = Math.round((previous - row.y) / pitch) - 1;
+    for (let blank = 0; blank < skipped; blank++) lines.push("");
+    row.parts.sort((a, b) => a.textMatrix[4] - b.textMatrix[4]);
+    lines.push(
+      row.parts
+        .map((part) => part.content)
+        .join("")
+        .trim(),
+    );
+    previous = row.y;
+  });
+  return lines;
+}
+
 describe("HTML to TextObjects", () => {
   it("parse HTML", (done) => {
     const textObjects = htmlToTextObjects(htmlCodes);
@@ -113,7 +184,7 @@ describe("HTML to TextObjects", () => {
     }
   });
 
-  it("renders one marker across formatted runs and hides break sentinels", () => {
+  it("renders one marker across formatted runs and hides line breaks", () => {
     const recipe = new muhammara.Recipe(Buffer.from("new"));
     recipe.registerFont(
       "arial",
@@ -182,7 +253,7 @@ describe("HTML to TextObjects", () => {
     }
   });
 
-  it("hides indented break sentinels inside list items", () => {
+  it("hides indented line breaks inside list items", () => {
     let listClipped;
     const recipe = new muhammara.Recipe(Buffer.from("new"));
     recipe.registerFont(
@@ -421,6 +492,109 @@ describe("HTML to TextObjects", () => {
       } finally {
         reader.end();
       }
+    }
+  });
+
+  it("lays out explicit line breaks without placeholder text", () => {
+    const objects = htmlToTextObjects("a<br/>b");
+    assert.deepEqual(
+      objects.map((object) => [object.value, object.lineBreak]),
+      [
+        ["a", false],
+        [null, true],
+        ["b", false],
+      ],
+    );
+    const cases = [
+      ["a<br>b", ["a", "b"]],
+      ["<br>a", ["", "a"]],
+      ["<br><br>a", ["", "", "a"]],
+      ["<ul><li><br>a</li></ul>", ["", "* a"]],
+      ["a<br>", ["a"]],
+      ["a<br><br>b", ["a", "", "b"]],
+      ["<br>", []],
+      ["a<br/>b", ["a", "b"]],
+      ["a<br />b", ["a", "b"]],
+      ["a<BR>b", ["a", "b"]],
+      ["a <br> b", ["a", "b"]],
+      ["x <b>a<br>b</b> y", ["x a", "b y"]],
+      ["<p>para<br>line</p><p>next</p>", ["para", "line", "next"]],
+      ["<ul><li>a<br>b</li><li>c</li></ul>", ["* a", "b", "* c"]],
+      ["<ul><li>a<br><br>b</li></ul>", ["* a", "", "b"]],
+      [
+        "<ol><li>one<br>two</li><li>three<ul><li>n1<br>n2</li></ul></li></ol>",
+        ["1. one", "two", "2. three", "* n1", "n2"],
+      ],
+    ];
+    for (const [html, lines] of cases) {
+      assert.deepEqual(renderLines(html), lines, html);
+    }
+  });
+
+  it("keeps line breaks in links, table cells, and clipped text", () => {
+    const recipe = new muhammara.Recipe(Buffer.from("new"));
+    recipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    let remainder;
+    const options = { font: "arial", size: 12, html: true };
+    const bytes = recipe
+      .createPage(400, 400)
+      .text('<a href="https://example.test">a<br>b</a>', 20, 20, {
+        ...options,
+        textBox: { width: 300 },
+      })
+      // Links get their own page: Wasm writes them as separate objects, and
+      // the assertions below only read their rectangles.
+      .endPage()
+      .createPage(400, 400)
+      .table(20, 100, [{ cell: "one<br>two" }, { cell: "three" }], {
+        ...options,
+        columns: [{ name: "cell", width: 150 }],
+      })
+      .text("a<br><br>b<br>c", 20, 250, {
+        ...options,
+        textBox: {
+          width: 300,
+          height: 20,
+          clipIfExceedsBox: true,
+          onClip: (_, result) => {
+            remainder = result.remainder;
+          },
+        },
+      })
+      .endPage()
+      .endPDF((output) => output);
+    const reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(bytes),
+    );
+    try {
+      const page = reader.parsePage(0).getDictionary();
+      const links = reader
+        .queryDictionaryObject(page, "Annots")
+        .toPDFArray()
+        .toJSArray()
+        .map((reference) =>
+          reader
+            .parseNewObject(
+              reference.toPDFIndirectObjectReference().getObjectID(),
+            )
+            .toPDFDictionary()
+            .toJSObject()
+            .Rect.toPDFArray()
+            .toJSArray()[1]
+            .toNumber(),
+        );
+      assert.equal(links.length, 2, "one link per line");
+      assert.ok(links[0] > links[1], "the second link is on the next line");
+      const text = reader.extractPageText(1);
+      const y = (content) =>
+        text.find((item) => item.content.trim() === content).textMatrix[5];
+      assert.ok(y("one") > y("two") && y("two") > y("three"));
+      assert.equal(remainder, "\nb\nc");
+    } finally {
+      reader.end();
     }
   });
 });
