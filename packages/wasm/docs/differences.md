@@ -16,6 +16,11 @@ Helvetica family. Bold and italic fall back to regular unless their byte fonts
 are registered, and the different metrics can change wrapping. The low-level
 writer does not load the bundled font.
 
+Table header text styles also retain their existing platform-specific
+precedence: Wasm inherits table/column styles such as `font` and `size`, while
+native resolves header text styles separately. Specify styles explicitly when
+matching typography across the two packages.
+
 Wasm Recipe does not support native `chroma("!load", path)` color-file loading
 or Recipe-created Separation colors. Register named colors individually; use
 the byte-safe low-level resource API for Separation colors.

@@ -1,3 +1,4 @@
+/** Merges text options while retaining nested text-box styles. */
 function merge(left = {}, right = {}) {
   return {
     ...left,
@@ -6,6 +7,7 @@ function merge(left = {}, right = {}) {
   };
 }
 
+/** Converts a table cell style into text options. */
 function cellOptions(options = {}, name = "cell") {
   var result = { ...options };
   if (result[name]) {
@@ -21,11 +23,12 @@ function cellOptions(options = {}, name = "cell") {
  */
 function tableFields(contents, options) {
   if (options.order?.length) {
-    var order =
-      typeof options.order === "string"
-        ? options.order.split(",")
-        : options.order;
-    return order.map((field) => String(field).trim()).filter(Boolean);
+    return typeof options.order === "string"
+      ? options.order
+          .split(",")
+          .map((field) => field.trim())
+          .filter(Boolean)
+      : options.order.slice();
   }
   if (options.columns?.length)
     return options.columns.map((column) => column.name);
@@ -50,7 +53,11 @@ export function createTableMethods() {
      * with their final cell options, including renderer results, before
      * drawing; each renderer runs once per cell. Optional overflow handling
      * can continue at another Recipe position, and the cursor finishes at the
-     * table's left edge and bottom. Empty contents leave the Recipe unchanged.
+     * table's left edge and bottom. Empty contents or no selected columns leave
+     * the Recipe unchanged. Array-form order preserves exact field names.
+     * Measurements include padding, minimum heights, fixed heights, and HTML
+     * layout. Overflow callbacks receive the Recipe as `this` and the first
+     * argument; rows are not split across continuation areas.
      *
      * @name table
      * @function
@@ -61,6 +68,7 @@ export function createTableMethods() {
      * @param {RecipeTableOptions} [options] - Column, row, header, border, text, and overflow options.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If table text cannot be measured or drawn, including when a requested font cannot be loaded.
+     * @throws {RangeError} If an overflow callback continues into an area too small for the pending row and its repeated header. Return true to stop, or provide enough space; the callback is called once per overflow.
      */
     table(x, y, contents, options = {}) {
       if (!Array.isArray(contents) || !contents.length) return this;
@@ -71,6 +79,7 @@ export function createTableMethods() {
             text: field,
           },
       );
+      if (!definitions.length) return this;
       this.layout("_table_", x, y, 0, options.height || 0, {
         columns: definitions,
         reset: true,
@@ -91,6 +100,7 @@ export function createTableMethods() {
         lines = [],
         first = true;
       var headerHeight = 0;
+      /** Draws each completed segment once, including an overflow stop. */
       var drawBorder = () => {
         // A segment without rows has nothing to enclose.
         if (!options.border || currentY === tableTop) return;
@@ -116,12 +126,15 @@ export function createTableMethods() {
         lines
           .slice(0, -1)
           .forEach((line) => this.line(x, line, x + tableWidth, line, border));
+        tableTop = currentY;
+        lines = [];
       };
       /** Applies native's 2pt default cell padding unless one is set. */
       var paddedCell = (cellOptionsValue) =>
         cellOptionsValue.textBox?.padding === undefined
           ? merge(cellOptionsValue, { textBox: { padding: 2 } })
           : cellOptionsValue;
+      /** Resolves header styles identically for measurement and drawing. */
       var headerOptions = (column) => {
         var header = merge(
           column.options.header && typeof column.options.header === "object"
@@ -141,6 +154,7 @@ export function createTableMethods() {
           cellOptions(column.options, "hcell"),
         );
       };
+      /** Writes a repeated header at the current segment's top. */
       var writeHeader = () => {
         if (!options.header) return;
         columns.forEach((column) => {
@@ -212,7 +226,7 @@ export function createTableMethods() {
         var needed = height + (first && options.header ? headerHeight : 0);
         if (options.overflow && currentY + needed > bottom) {
           drawBorder();
-          var order = options.overflow(this, row + 1);
+          var order = options.overflow.call(this, this, row + 1);
           if (order === true) break;
           if (order?.position) {
             [x, y] = order.position;
@@ -227,6 +241,11 @@ export function createTableMethods() {
           bottom = segmentBottom(y);
           lines = [];
           first = true;
+          if (currentY + height + headerHeight > bottom) {
+            throw new RangeError(
+              `Recipe.table: row ${row + 1} and its header do not fit in the continuation area.`,
+            );
+          }
         }
         if (first) {
           writeHeader();

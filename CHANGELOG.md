@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `order` or `columns` to keep a fixed layout; see the
   [breaking changes](packages/native/docs/breaking-changes.md) page
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Include padding, minimum/fixed cell heights, and rendered HTML in Recipe
+  table sizing. Tables can grow taller or continue earlier; adjust cell sizing
+  and continuation areas using the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly).
+  An `overflow` destination too small for a row and its repeated header now
+  throws `RangeError` instead of drawing beyond the bounds; return `true` to
+  stop or provide a large enough area
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ### Fixed
 
@@ -26,6 +33,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Pass `""` instead of `null` to a table column `renderer` for null values, and
   leave the text cursor at the table's left edge and bottom
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Preserve exact field names in array-form table `order`, leave the cursor
+  unchanged when no columns exist, and retain the Recipe as an `overflow`
+  callback's `this`
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ## [7.0.0-beta.3] - 2026-09-18

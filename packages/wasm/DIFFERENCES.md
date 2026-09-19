@@ -18,6 +18,12 @@ they never load Node modules, filesystem paths, or Recipe plugins.
 | Metadata and encryption | New and modified PDFs receive canonical Recipe dates and Producer/Creator fields; source modifications retain prior ModDate/Creator/Producer as `source-*` Info entries. `info()` returns metadata currently known to Recipe. `getPageInfo()` follows Node Recipe and exposes the writable output Info dictionary during source editing; use `pageInfo(pageNumber)` or `getCurrentPageInfo()` for page geometry. `structure("json")` provides a browser-safe summary and finalizes the Recipe through `endPDF()`. Byte-first `recrypt` and Recipe `encrypt()` match native option names through PDF 1.7 using bundled RC4/AES-128. Paths, streams, log files, PDF 2.0/AES-256, and password-protected Recipe source editing are unavailable.                             |
 | Writer events           | Native `writer.getEvents()` exposes `OnPageWrite` and `OnCatalogWrite` EventEmitter hooks that can modify dictionaries while they are written. Wasm has no equivalent because it would need C++-to-JavaScript callbacks and live dictionary handles with explicit mid-write lifetime management; Node EventEmitter hooks are intentionally excluded from the browser-safe API.                                                                                                                                                                                                                                                                                                                                                                                           |
 
+Table header text-style inheritance remains a deliberate compatibility
+difference: Wasm inherits table/column text styles such as `font` and `size`,
+while native resolves header text styles separately. Set header styles
+explicitly on both ends when matching typography; this layout fix preserves
+each platform's existing styling precedence.
+
 The current PDFWriter `AppendPDFPagesFromPDF` byte path does not deep-copy an
 existing page's `/Annots` graph. Recipe-created annotations are preserved in
 their own output, but appended or rebuilt source pages lose existing

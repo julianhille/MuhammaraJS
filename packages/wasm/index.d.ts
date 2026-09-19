@@ -293,8 +293,9 @@ export interface RecipeTableOptions extends Omit<
   RecipeTextOptions,
   "overflow"
 > {
-  /** Per-continuation table height. Wrapped headers and cells are measured before rows are placed. */
+  /** Per-segment height, bounded by the page bottom margin. Measurements include padding and minimum/fixed cell heights. */
   height?: number;
+  /** Comma-separated names are trimmed; array entries preserve exact keys. */
   order?: string | string[];
   columns?: RecipeTableColumn[];
   header?:
@@ -302,7 +303,9 @@ export interface RecipeTableOptions extends Omit<
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
   row?: RecipeTextOptions & { nth?: "even" | "odd" };
+  /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError. */
   overflow?: (
+    this: Recipe,
     recipe: Recipe,
     row: number,
   ) => boolean | { position?: [number, number] } | void;

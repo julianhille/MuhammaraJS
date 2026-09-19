@@ -433,6 +433,25 @@ recipe.table(50, 52, people, {
 });
 ```
 
+Row and header sizing now includes vertical padding, `minHeight`, fixed
+`height`, and rendered HTML rather than just unpadded plain text. A default
+cell's 2pt top and bottom padding therefore adds 4pt to its row height. To make
+rows more compact, set column `cell.padding` and `header.cell.padding`
+explicitly; remove or reduce any unnecessary `minHeight`/`height`. HTML cells
+reserve the space their rendered lines need.
+
+Review overflow callbacks after adjusting sizing. The callback receives the
+Recipe as `this` and its first argument, and is called once per pending row.
+If it continues, the destination must fit both the repeated header and the
+entire row within the table height and page bottom margin. Otherwise `table()`
+throws `RangeError` before drawing that header or row. Return `true` to stop,
+move the next segment upward, choose a taller page/table area, or split an
+oversized record into multiple rows. See [Create Multi-Page Tables](../how-to/create-tables.md).
+
+Array-form `order` preserves exact field names, including whitespace and
+empty-string keys; the comma-separated form trims surrounding whitespace.
+Tables with empty contents or no discovered columns preserve the cursor.
+
 ## What Does Not Change
 
 - Supported Node.js versions.
