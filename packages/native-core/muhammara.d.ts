@@ -1226,6 +1226,7 @@ declare namespace muhammara {
       /** Make the rendered text open this URL. */
       link?: string;
       charSpace?: number;
+      /** Text fill color: `#gg`, `#rrggbb`, `#ccmmyykk`, `%r,g,b` percentages, a 0-255 component array, or a name registered with `chroma()`. Missing or unknown colors use `#1777d1`. */
       color?: Color;
       colorspace?: Colorspace;
       flow?: boolean;
