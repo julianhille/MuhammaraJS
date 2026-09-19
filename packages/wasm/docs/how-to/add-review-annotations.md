@@ -60,8 +60,8 @@ pattern works on new and edited pages. `annot()`, `comment()`, and the text
 markup options check annotation geometry and appearance when they are called;
 invalid values throw `TypeError: Invalid annotation options` and add nothing,
 so the page can still end normally.
-Contents, titles, subjects, and icon names must be strings; invalid fields are rejected before
-queuing the annotation. `text()` validates all its markup options before
+Contents, titles, subjects, and icon names are written as strings, as on
+native; `null` and other empty values are omitted. `text()` validates all its markup options before
 drawing, including when several markup types are requested together.
 
 Text options `highlight`, `underline`, `strikeOut`, and `squiggly` also create

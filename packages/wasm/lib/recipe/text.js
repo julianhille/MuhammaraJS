@@ -437,7 +437,7 @@ export function createTextMethods({ drawText, measure, module }) {
       );
       var markup = typeof options[key] === "object" ? options[key] : {};
       var annotation = {
-        text: markup.text ?? "",
+        text: markup.text || "",
         color: markup.color,
         opacity: markup.opacity,
         replies: markup.replies,

@@ -58,14 +58,16 @@ function assertAnnotationValues(
     throw new TypeError("Invalid annotation options");
 }
 
-/** Validates string fields before an annotation can enter the write queue. */
-function assertAnnotationText(options) {
-  if (
-    !["text", "contents", "title", "subject", "icon", "name"].every(
-      (key) => options[key] === undefined || typeof options[key] === "string",
-    )
-  )
-    throw new TypeError("Invalid annotation options");
+/**
+ * Converts annotation text fields to strings as native Recipe does: empty,
+ * `null`, and other falsy values are omitted, and anything else is stringified.
+ */
+function annotationText(options) {
+  var result = { ...options };
+  ["text", "contents", "title", "subject", "icon", "name"].forEach((key) => {
+    result[key] = options[key] ? String(options[key]) : undefined;
+  });
+  return result;
 }
 
 /** Writes Recipe metadata and reply relationships through the modifier's object API. */
@@ -352,23 +354,24 @@ export function createAnnotationMethods({
             : (options.borderWidth ?? border.width ?? -1);
         var borderDash = options.borderDash ?? border.dash ?? [];
         var write = (replyTo, reply) => {
-          assertAnnotationText(reply || options);
-          // Replies inherit the parent's metadata, matching native, but keep
-          // their own contents, rich-text mode, and opacity (opaque by
-          // default). An empty or zero reply flag keeps the parent's flag.
-          var source = reply
-            ? {
-                ...reply,
-                title: reply.title || options.title,
-                subject: reply.subject || options.subject,
-                date: reply.date || options.date,
-                flag:
-                  reply.flag || reply.flags || options.flag || options.flags,
-                open: reply.open ?? options.open,
-                icon: reply.icon ?? options.icon,
-                name: reply.name ?? options.name,
-              }
-            : options;
+          // Native replies inherit metadata, but keep their own contents,
+          // rich-text mode, and opacity (opaque by default).
+          var source = annotationText(
+            reply
+              ? {
+                  ...reply,
+                  title: reply.title || options.title,
+                  subject: reply.subject || options.subject,
+                  date: reply.date || options.date,
+                  // Like native, an empty or zero reply flag keeps the parent's.
+                  flag:
+                    reply.flag || reply.flags || options.flag || options.flags,
+                  open: reply.open ?? options.open,
+                  icon: reply.icon ?? options.icon,
+                  name: reply.name ?? options.name,
+                }
+              : options,
+          );
           var contents = source.text || source.contents || "";
           var useRichText = Boolean(source.richText);
           assertAnnotationValues(

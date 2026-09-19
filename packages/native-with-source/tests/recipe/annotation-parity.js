@@ -472,4 +472,22 @@ describe("Recipe annotation parity", function () {
       assert.equal(overridden.F.toNumber(), 2);
     });
   });
+
+  it("converts annotation text like native and inherits empty reply flags", async function () {
+    var recipe = new muhammara.Recipe("new", output).createPage(595, 842);
+    recipe.comment("Parent.", 50, 50, {
+      title: null,
+      subject: 42,
+      flag: "print",
+      replies: [{ text: 7, flag: "" }],
+    });
+    recipe.text("Marked.", 50, 100, { highlight: { text: null } });
+    var annotations = await finish(recipe);
+    assert.equal(annotations[0].dictionary.T?.toText() ?? "", "");
+    assert.equal(annotations[0].dictionary.Subj.toText(), "42");
+    assert.equal(annotations[1].dictionary.Contents.toText(), "7");
+    assert.equal(annotations[1].dictionary.F.toNumber(), 4);
+    assert.equal(annotations[2].dictionary.Subtype.toString(), "Highlight");
+    assert.equal(annotations[2].dictionary.Contents?.toText() ?? "", "");
+  });
 });
