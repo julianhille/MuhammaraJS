@@ -484,6 +484,9 @@ exports.text = function text(text = "", x, y, options = {}) {
           // nothing to write, so simply escape.
           return next_x;
         }
+        // The opacity and rotation path below resets x to the text box edge;
+        // text-markup annotations need the line's own start.
+        const lineX = x;
 
         if (options.underline || options.strikeOut) {
           options.lineWidth = lineWidth;
@@ -610,15 +613,16 @@ exports.text = function text(text = "", x, y, options = {}) {
         for (let key in targetAnnotations) {
           const subtype = this._getTextMarkupAnnotationSubtype(key);
           if (subtype && targetAnnotations[key]) {
+            // Copy so the caller's markup options are not modified.
             const markupOption =
               typeof targetAnnotations[key] != "object"
                 ? {}
-                : targetAnnotations[key];
+                : { ...targetAnnotations[key] };
             const { title, open, richText, flag, icon, date, subject } =
               targetAnnotations;
             Object.assign(markupOption, {
               height: textHeight * 1.4,
-              width: _justify ? next_x - x : currentLineWidth,
+              width: _justify ? next_x - lineX : currentLineWidth,
               text: markupOption.text || "",
               _textHeight: textHeight,
               // add options to annotation
@@ -630,7 +634,10 @@ exports.text = function text(text = "", x, y, options = {}) {
               date: date || "",
               subject: subject || "",
             });
-            const { ox, oy } = this._reverseCoordinate(x, y - textHeight * 0.2);
+            const { ox, oy } = this._reverseCoordinate(
+              lineX,
+              y - textHeight * 0.2,
+            );
 
             this.annot(ox, oy, subtype, markupOption);
           }

@@ -222,22 +222,31 @@ describe("Recipe annotation parity", function () {
   });
 
   [false, true].forEach(function (html) {
-    it(`covers each justified ${html ? "HTML" : "plain"} line with markup`, function () {
-      var recipe = new Recipe().createPage(300, 300);
-      recipe.text("alpha beta gamma delta epsilon", 50, 50, {
-        html,
-        size: 14,
-        highlight: true,
-        textBox: { width: 100, textAlign: "justify" },
-      });
-      var annotations = finish(recipe);
-      assert.ok(annotations.length > 1);
-      var rect = annotations[0].dictionary.Rect.toPDFArray()
-        .toJSArray()
-        .map(function (value) {
-          return value.toNumber();
+    [1, 0.5].forEach(function (opacity) {
+      it(`covers each justified ${html ? "HTML" : "plain"} line with markup at opacity ${opacity}`, function () {
+        var recipe = new Recipe().createPage(300, 300);
+        var highlight = { text: "Check." };
+        recipe.text("alpha beta gamma delta epsilon", 50, 50, {
+          html,
+          opacity,
+          size: 14,
+          highlight,
+          textBox: { width: 120, padding: 10, textAlign: "justify" },
         });
-      assert.ok(Math.abs(rect[2] - rect[0] - 100) < 0.01);
+        var annotations = finish(recipe);
+        assert.ok(annotations.length > 1);
+        annotations.forEach(function (annotation, index) {
+          var rect = annotation.dictionary.Rect.toPDFArray()
+            .toJSArray()
+            .map(function (value) {
+              return value.toNumber();
+            });
+          assert.ok(Math.abs(rect[0] - 60) < 0.01);
+          if (index < annotations.length - 1)
+            assert.ok(Math.abs(rect[2] - rect[0] - 100) < 0.01);
+        });
+        assert.deepEqual(highlight, { text: "Check." });
+      });
     });
   });
 
