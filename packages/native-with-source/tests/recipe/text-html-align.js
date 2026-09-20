@@ -91,7 +91,9 @@ describe("Recipe HTML text alignment", function () {
   function runExtent(text) {
     var recipe = new Recipe(Buffer.from("new")).createPage(300, 300);
     recipe.registerFont("arial", FONT);
-    return recipe.textDimensions(text, { font: "arial", size: 12 }).xMax;
+    var extent = recipe.textDimensions(text, { font: "arial", size: 12 }).xMax;
+    recipe.endPage().endPDF(function () {});
+    return extent;
   }
 
   it("ends a multi-segment HTML line at the box edge when right aligned", function () {

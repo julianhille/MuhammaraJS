@@ -65,7 +65,9 @@ describe("Recipe HTML text alignment", function () {
   /** xMax of a run measured with the fixture font, as the layout measures it. */
   function runExtent(text) {
     var recipe = new Recipe().createPage(300, 300);
-    return recipe.textDimensions(text, { font: "arial", size: 12 }).xMax;
+    var extent = recipe.textDimensions(text, { font: "arial", size: 12 }).xMax;
+    recipe.endPage().endPDF();
+    return extent;
   }
 
   // Mirrors the native assertions for #708, where HTML lines were measured a
