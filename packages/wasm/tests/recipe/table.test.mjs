@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 /** Decodes page streams for structural border assertions. */
 function pageContent(muhammara, reader, pageIndex) {
@@ -58,9 +59,11 @@ describe("Recipe table layout", function () {
     reader = undefined;
   });
 
-  /** Finalizes the output and opens the reader owned by this test. */
-  function finish(recipe) {
-    reader = muhammara.createReader(recipe.endPage().endPDF());
+  /** Finalizes the output, writes it for review, and opens the owned reader. */
+  function finish(recipe, name) {
+    var bytes = recipe.endPage().endPDF();
+    if (name) writeOutput(name, bytes);
+    reader = muhammara.createReader(bytes);
     return reader;
   }
 
@@ -82,7 +85,7 @@ describe("Recipe table layout", function () {
         columns: [{ name: "a" }, { name: "note", text: "Note" }],
       })
       .table(20, 220, [{ a: "A4", b: "B4" }], { header: true, order: "b, a" });
-    finish(recipe);
+    finish(recipe, "table-fields-and-columns");
     var entries = texts();
     var content = entries.map((entry) => entry.content);
     assert.ok(content.includes("B2"), "a field missing from the first row");
@@ -114,7 +117,7 @@ describe("Recipe table layout", function () {
         },
       })),
     });
-    finish(recipe);
+    finish(recipe, "table-nullish-cells");
     var content = texts().map((entry) => entry.content);
     assert.deepEqual(content, ["0", "false"]);
     assert.deepEqual(values, ["", "", 0, false, "", "", "", ""]);
@@ -136,7 +139,7 @@ describe("Recipe table layout", function () {
           },
         ],
       });
-    finish(recipe);
+    finish(recipe, "table-renderer-sizing");
     assert.deepEqual(calls, [
       ["x", "b", 1],
       ["z", "b", 2],
@@ -167,7 +170,7 @@ describe("Recipe table layout", function () {
       },
     });
     recipe.table(20, 700, [{ name: "later table" }]);
-    finish(recipe);
+    finish(recipe, "table-overflow-repeated-header");
     assert.equal(overflows, 1, "a later table does not reuse the callback");
     var first = texts(0).map((entry) => entry.content);
     var second = texts(1).map((entry) => entry.content);
@@ -194,7 +197,7 @@ describe("Recipe table layout", function () {
       border,
       overflow: () => ({ position: [20, 20] }),
     });
-    finish(recipe);
+    finish(recipe, "table-border-dash");
     [0, 1].forEach((pageIndex) => {
       var content = pageContent(muhammara, reader, pageIndex);
       // One column divider plus the header and first-row separators.
@@ -219,7 +222,7 @@ describe("Recipe table layout", function () {
     assert.equal(recipe.table(20, 20, []), recipe);
     recipe.table(40, 20, [{ a: "A" }, { a: "B" }]);
     var [x, y] = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-empty-contents");
     var last = texts().find((entry) => entry.content === "B");
     assert.equal(x, 40);
     assert.ok(y > 400 - last.y, "the cursor is below the last row");
@@ -230,7 +233,7 @@ describe("Recipe table layout", function () {
     recipe.table(20, 20, [{ " a ": "spaced", "": "empty", a: "wrong" }], {
       order: [" a ", ""],
     });
-    finish(recipe);
+    finish(recipe, "table-order-array");
     assert.deepEqual(
       texts().map((entry) => entry.content),
       ["spaced", "empty"],
@@ -243,7 +246,7 @@ describe("Recipe table layout", function () {
     var before = recipe.movedown(0, true);
     recipe.table(150, 150, [{}, {}], { header: true, border: true });
     var after = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-no-columns");
     assert.deepEqual(after, before);
     assert.deepEqual(
       texts().map((entry) => entry.content),
@@ -265,7 +268,7 @@ describe("Recipe table layout", function () {
       },
     });
     var cursor = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-vertical-padding");
     assert.deepEqual(overflowRows, [2]);
     assert.deepEqual(cursor, [180, 126]);
     assert.ok(texts().find((entry) => entry.content === "second").x >= 180);
@@ -290,7 +293,7 @@ describe("Recipe table layout", function () {
         ],
       });
       var cursor = recipe.movedown(0, true);
-      finish(recipe);
+      finish(recipe, `table-header-sizing-${heightOption}`);
       assert.deepEqual(calls, [1, 2]);
       assert.deepEqual(cursor, [20, 200]);
       var entries = texts();
@@ -315,7 +318,7 @@ describe("Recipe table layout", function () {
       },
     );
     var cursor = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-html-line-breaks");
     var entries = texts();
     assert.ok(
       entries.find((entry) => entry.content === "four").y >
@@ -347,7 +350,7 @@ describe("Recipe table layout", function () {
       },
     );
     var cursor = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-border-overflow-stop");
     assert.deepEqual(overflowRows, [2]);
     assert.deepEqual(cursor, [20, 30]);
     assert.deepEqual(
@@ -403,7 +406,7 @@ describe("Recipe table layout", function () {
       },
     );
     recipe.text("recovered", 20, 20);
-    finish(recipe);
+    finish(recipe, "table-continuation-recovery");
     assert.equal(
       calls,
       1,
@@ -438,7 +441,7 @@ describe("Recipe table layout", function () {
           },
         ],
       });
-      finish(recipe);
+      finish(recipe, `table-header-isolation-${columnHeader}`);
       var entries = reader.extractPageText(0);
       var control = entries.find((entry) => entry.content === "control");
       var header = entries.find((entry) => entry.content === "Header");
@@ -468,7 +471,7 @@ describe("Recipe table layout", function () {
         },
       ],
     });
-    finish(recipe);
+    finish(recipe, "table-header-style-override");
     assert.deepEqual(
       reader.extractPageText(0).map((entry) => [entry.content, entry.fontSize]),
       [
@@ -498,7 +501,7 @@ describe("Recipe table layout", function () {
         },
       })),
     });
-    finish(recipe);
+    finish(recipe, "table-inherited-properties");
     assert.deepEqual(values, ["", "", "", "ctor", "string", "own"]);
     assert.deepEqual(
       texts().map((entry) => entry.content),
@@ -555,7 +558,7 @@ describe("Recipe table layout", function () {
       options,
     );
     var cursor = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-header-overrides-continuation");
     assert.equal(
       JSON.stringify(options),
       before,
