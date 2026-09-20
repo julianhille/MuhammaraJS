@@ -85,10 +85,7 @@ describe("Recipe byte metadata and composition", function () {
       return writer.end();
     }
 
-    Recipe.registerPdf(
-      "insert-order-source",
-      markerSource(["S1", "S2", "S3"]),
-    );
+    Recipe.registerPdf("insert-order-source", markerSource(["S1", "S2", "S3"]));
 
     var recipe = new Recipe({ compress: false })
       .createPage(200, 200)
