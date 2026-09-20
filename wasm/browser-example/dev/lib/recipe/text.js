@@ -5,7 +5,10 @@ function merge(left = {}, right = {}) {
   var result = { ...left };
   Object.entries(right).forEach(([key, value]) => {
     result[key] =
-      value && typeof value === "object" && !Array.isArray(value)
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      !(value instanceof Date)
         ? merge(result[key], value)
         : value;
   });
@@ -98,6 +101,26 @@ function sameStyles(left, right) {
     leftEntries.length === rightEntries.length &&
     leftEntries.every(([key, value]) => right?.[key] === value)
   );
+}
+
+/**
+ * Combines text options with an HTML fragment's styles for drawing. Like
+ * native, HTML underline and strike-out styles draw lines, while the same
+ * option names on text() create text-markup annotations.
+ * @param {RecipeTextOptions} options - Text options passed to text().
+ * @param {object} [styles] - The HTML fragment's own styles.
+ * @param {number} fontSize - Resolved font size for the fragment.
+ * @returns {RecipeTextOptions} Options for drawing this fragment.
+ */
+function fragmentOptions(options, styles = {}, fontSize) {
+  var { underline, strikeOut, ...rest } = styles;
+  return {
+    ...options,
+    ...rest,
+    fontSize,
+    htmlUnderline: Boolean(underline),
+    htmlStrikeOut: Boolean(strikeOut),
+  };
 }
 
 /** Coalesces adjacent HTML fragments that use equivalent styles. */
@@ -326,6 +349,15 @@ export function createTextMethods({ drawText, measure, module }) {
   /** Writes link bounds transformed and clipped with their associated text. */
   function transformedLink(recipe, url, x, y, width, height, options, clip) {
     if (!options.rotation && !options.skewX && !options.skewY) {
+      if (clip) {
+        var clippedRight = Math.min(x + width, clip.x + clip.width);
+        var clippedBottom = Math.min(y + height, clip.y + clip.height);
+        x = Math.max(x, clip.x);
+        y = Math.max(y, clip.y);
+        width = clippedRight - x;
+        height = clippedBottom - y;
+        if (width <= 0 || height <= 0) return;
+      }
       recipe.link(url, x, y, width, height);
       return;
     }
@@ -403,6 +435,86 @@ export function createTextMethods({ drawText, measure, module }) {
     recipe._linkPdf(url, left, bottom, right - left, top - bottom);
   }
 
+  var textMarkupSubtypes = {
+    highlight: "Highlight",
+    underline: "Underline",
+    strikeOut: "StrikeOut",
+    squiggly: "Squiggly",
+  };
+
+  /**
+   * Adds the text-markup annotations requested by text() options over one
+   * drawn line. Only the outer text() options request annotations; HTML
+   * `<u>` and `<s>` styles stay visual decoration, as in native Recipe.
+   * An optional clip rectangle limits the annotation to visible line bounds.
+   */
+  function addTextMarkup(
+    recipe,
+    options,
+    x,
+    baseline,
+    width,
+    validateOnly = false,
+    clip,
+  ) {
+    if (!width) return;
+    var bounds;
+    Object.entries(textMarkupSubtypes).forEach(([key, subtype]) => {
+      if (!options[key]) return;
+      // Native measures markup against one sample so every run on a line
+      // gets the same height, including descenders and tall glyphs, and
+      // boxes a fixed 0.2 text heights below the baseline to 1.2 above it.
+      bounds ||= dimensions(
+        recipe,
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
+        options,
+      );
+      var left = x;
+      var right = x + width;
+      var top = baseline - bounds.height * 1.2;
+      var bottom = baseline + bounds.height * 0.2;
+      if (clip) {
+        left = Math.max(left, clip.x);
+        right = Math.min(right, clip.x + clip.width);
+        top = Math.max(top, clip.y);
+        bottom = Math.min(bottom, clip.y + clip.height);
+        if (right <= left || bottom <= top) return;
+      }
+      var markup = typeof options[key] === "object" ? options[key] : {};
+      var annotation = {
+        text: markup.text || "",
+        color: markup.color,
+        opacity: markup.opacity,
+        replies: markup.replies,
+        title: options.title,
+        open: options.open,
+        richText: options.richText,
+        flag: options.flag,
+        icon: options.icon,
+        date: options.date,
+        subject: options.subject,
+        width: clip ? right - left : width,
+        height: clip ? bottom - top : bounds.height * 1.4,
+      };
+      Object.keys(annotation).forEach((name) => {
+        if (annotation[name] === undefined) delete annotation[name];
+      });
+      // annot() anchors the box at its bottom edge, the line's descent.
+      if (validateOnly) {
+        recipe._flushAnnotations(true, [
+          {
+            x: left,
+            y: bottom,
+            subtype,
+            options: annotation,
+          },
+        ]);
+      } else {
+        recipe.annot(left, bottom, subtype, annotation);
+      }
+    });
+  }
+
   /** Draws a highlight rectangle using the same transform as its text. */
   function drawHilite(recipe, x, y, width, height, options, hilite) {
     withTextTransform(recipe, options, () => {
@@ -470,9 +582,9 @@ export function createTextMethods({ drawText, measure, module }) {
             textOptions,
             box.wrap === false ? "ellipsis" : box.wrap || "auto",
           );
-      return Math.max(
-        box.minHeight || 0,
-        entries.length * lineHeight + top + bottom,
+      return (
+        box.height ||
+        Math.max(box.minHeight || 0, entries.length * lineHeight + top + bottom)
       );
     },
 
@@ -588,6 +700,9 @@ export function createTextMethods({ drawText, measure, module }) {
       var width =
         box.width ||
         (options.flow ? this._pageWidth - x - this._margin.right : 0);
+      // Validate every requested markup option before drawing any part of
+      // this text call, so a later invalid subtype cannot leave partial output.
+      addTextMarkup(this, { ...options, fontSize }, x, y, 1, true);
       var wrap = box.wrap === false ? "ellipsis" : box.wrap || "auto";
       var measureText = (text, textOptions) =>
         dimensions(this, text, textOptions);
@@ -705,15 +820,19 @@ export function createTextMethods({ drawText, measure, module }) {
           y = layout[columnIndex].y;
           currentY = y + top;
         }
-        var textOptions = { ...options, ...entry.styles, fontSize };
+        var textOptions = fragmentOptions(options, entry.styles, fontSize);
+        var entryDimensions = entry.parts
+          ? null
+          : dimensions(this, entry.text, textOptions);
         var textWidth = entry.parts
           ? htmlPartsWidth(
               entry.parts,
               (text, partOptions) => dimensions(this, text, partOptions),
               { ...options, fontSize },
             )
-          : dimensions(this, entry.text, textOptions).width;
+          : entryDimensions.width;
         var horizontal = box.textAlign?.split(" ")[0];
+        var isJustifiedLine = horizontal === "justify" && !entry.last && width;
         var drawX =
           x +
           left +
@@ -729,6 +848,14 @@ export function createTextMethods({ drawText, measure, module }) {
         var linkX = drawX;
         var linkWidth = textWidth;
         var clipping = wrap === "clip" && width;
+        var clip = clipping
+          ? {
+              x: x + left,
+              y: currentY,
+              width: width - left - right,
+              height: lineHeight,
+            }
+          : undefined;
         if (clipping) {
           var clipPoint = this._calibrateCoordinate(
             x + left,
@@ -792,7 +919,7 @@ export function createTextMethods({ drawText, measure, module }) {
           var drawnText = "";
           var rotationOrigin = options.rotationOrigin || [drawX, baseline];
           drawParts.forEach((part, partIndex) => {
-            var partOptions = { ...options, ...part.styles, fontSize };
+            var partOptions = fragmentOptions(options, part.styles, fontSize);
             if (partOptions.rotation && !partOptions.rotationOrigin) {
               partOptions.rotationOrigin = rotationOrigin;
             }
@@ -836,18 +963,6 @@ export function createTextMethods({ drawText, measure, module }) {
                   partOptions.link;
               var partLinkX = drawX + linkBounds.xMin;
               var partLinkWidth = partWidth + (coversGap ? partGap : 0);
-              var transformed =
-                partOptions.rotation || partOptions.skewX || partOptions.skewY;
-              if (clipping && !transformed) {
-                var clipLeft = x + left;
-                var clipRight = x + width - right;
-                var partLinkRight = Math.min(
-                  partLinkX + partLinkWidth,
-                  clipRight,
-                );
-                partLinkX = Math.max(partLinkX, clipLeft);
-                partLinkWidth = Math.max(0, partLinkRight - partLinkX);
-              }
               if (partLinkWidth)
                 transformedLink(
                   this,
@@ -857,21 +972,15 @@ export function createTextMethods({ drawText, measure, module }) {
                   partLinkWidth,
                   lineHeight,
                   partOptions,
-                  clipping
-                    ? {
-                        x: x + left,
-                        y: currentY,
-                        width: width - left - right,
-                        height: lineHeight,
-                      }
-                    : null,
+                  clip,
                 );
             }
             drawX += partWidth;
             if (hasGapAfter(part, partIndex)) drawX += partGap;
             drawnText += part.text;
           });
-        } else if (horizontal === "justify" && !entry.last && width) {
+          linkWidth = drawX - linkX;
+        } else if (isJustifiedLine) {
           var words = entry.text.match(/\S+\s*/g) || [entry.text];
           var wordsWidth = words.reduce(
             (sum, word) => sum + dimensions(this, word, textOptions).width,
@@ -890,6 +999,29 @@ export function createTextMethods({ drawText, measure, module }) {
           drawText.call(this, entry.text, drawX, baseline, textOptions);
         }
         if (clipping) this._restore();
+        // Text-markup annotations span to the run's right glyph edge, like
+        // native, while links, multi-run, and justified lines keep the
+        // advance width they need for accurate click and gap placement.
+        var markupWidth =
+          entryDimensions && !isJustifiedLine
+            ? entryDimensions.xMax
+            : linkWidth;
+        addTextMarkup(
+          this,
+          { ...options, fontSize },
+          linkX,
+          baseline,
+          hasText(entry.text) ? markupWidth : 0,
+          false,
+          clipping
+            ? {
+                x: x + left,
+                y: currentY,
+                width: width - left - right,
+                height: lineHeight,
+              }
+            : undefined,
+        );
         if (textOptions.link && !entry.parts) {
           var linkBounds = dimensions(this, entry.text, textOptions);
           transformedLink(
@@ -900,6 +1032,7 @@ export function createTextMethods({ drawText, measure, module }) {
             linkWidth,
             lineHeight,
             textOptions,
+            clip,
           );
         }
         currentY += lineHeight;

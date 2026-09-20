@@ -1,3 +1,5 @@
+import { PAGE_CONTEXT_STATE } from "./context-state.js";
+
 /** Standard page sizes in PDF points. */
 export var mediumSizes = {
   executive: [521.86, 756],
@@ -76,6 +78,7 @@ export function initializeRecipe(recipe, options) {
   recipe._cursor = { x: 0, y: 0 };
   recipe._pages = [];
   recipe._annotations = [];
+  recipe._links = [];
   recipe._info = {};
   recipe._endedBytes = null;
   recipe._sourceMode = false;
@@ -84,7 +87,7 @@ export function initializeRecipe(recipe, options) {
   recipe._page = null;
   recipe._pageContext = null;
   recipe._activePageNumber = 0;
-  recipe._contextState = "idle";
+  recipe._contextState = PAGE_CONTEXT_STATE.IDLE;
   recipe._modifiedSourcePages = new Set();
   recipe._pagesCreated = false;
   recipe._pagesAppended = false;
