@@ -386,7 +386,7 @@ export async function runValidation() {
       ],
       {
         font: "browser-arial",
-        height: 50,
+        height: 70,
         header: true,
         columns: [
           { name: "name", width: 65 },
@@ -394,7 +394,7 @@ export async function runValidation() {
         ],
         overflow: () => {
           overflowCalls += 1;
-          return { position: [10, 150] };
+          return { position: [10, 20] };
         },
       },
     )

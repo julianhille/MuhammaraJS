@@ -53,7 +53,11 @@ empty-string keys; comma-separated string entries are trimmed. If no columns
 are selected or discovered, the call draws nothing and preserves the cursor.
 Header and row measurements include vertical padding, `minHeight`, fixed
 `height`, and HTML line breaks. Set these through column `cell`/`hcell`,
-header/row `cell`, or a renderer's `textBox` options.
+header/row `cell`, or a renderer's `textBox` options. A column's `cell` is its
+only body text box, so a column-level `textBox` is ignored. A row or header
+`cell` replaces that style's `textBox`, and nested box styles such as `style`
+merge across column, row, and renderer options. A table-level `cell` is
+ignored; style cells through each column's `cell` or the table's `row.cell`.
 
 Header text styles are independent of table/body text styles. Recipe resolves
 them in this order:

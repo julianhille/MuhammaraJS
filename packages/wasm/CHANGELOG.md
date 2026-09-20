@@ -115,6 +115,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Stop a table's `overflow` callback from also running as the text-flow
   overflow callback while drawing a cell's text
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Resolve table cell text boxes like native: a column's `cell` is its only
+  body text box, a row `cell` replaces the row's `textBox`, and nested styles
+  such as a column fill and a row stroke merge instead of replacing each other.
+  A table-level `cell` is ignored. `RecipeTableColumn` no longer declares
+  `textBox` and `RecipeTableOptions` no longer declares `cell`; use a column's
+  `cell` or `row.cell`
+  [#710](https://github.com/julianhille/MuhammaraJS/issues/710)
 
 ### Changed
 

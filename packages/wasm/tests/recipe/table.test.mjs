@@ -590,4 +590,102 @@ describe("Recipe table layout", function () {
     );
     assert.ok(entries[3].textMatrix[5] > entries[4].textMatrix[5]);
   });
+
+  it("uses a column's cell as its only body text box", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      columns: [
+        {
+          name: "a",
+          textBox: { minHeight: 60 },
+          cell: { lineHeight: 10, padding: 3 },
+        },
+      ],
+    });
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(cursor, [20, 36]);
+  });
+
+  it("ignores a table-level cell like native Recipe", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      cell: { minHeight: 60 },
+      columns: [{ name: "a", cell: { lineHeight: 10, padding: 3 } }],
+    });
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(cursor, [20, 36]);
+  });
+
+  it("lets a row cell replace the row's textBox", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      columns: [{ name: "a", cell: { lineHeight: 10, padding: 3 } }],
+      row: { textBox: { padding: 20 }, cell: { minHeight: 30 } },
+    });
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    assert.deepEqual(cursor, [20, 50]);
+  });
+
+  it("merges nested column and row cell styles", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      columns: [
+        {
+          name: "a",
+          cell: { lineHeight: 10, style: { fill: "#ff0000" } },
+        },
+      ],
+      row: { cell: { style: { stroke: "#0000ff" } } },
+    });
+    finish(recipe);
+    var content = pageContent(muhammara, reader, 0);
+    assert.match(content, /(^|\s)1 0 0 rg\b/, "the column fill survives");
+    assert.match(content, /(^|\s)0 0 1 RG\b/, "the row stroke applies");
+  });
+
+  it("merges renderer box styles over column and row styles", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      columns: [
+        {
+          name: "a",
+          cell: { lineHeight: 10, style: { fill: "#ff0000" } },
+          /** Overrides only the stroke; the column fill must survive. */
+          renderer: () => ({ textBox: { style: { stroke: "#00ff00" } } }),
+        },
+      ],
+      row: { cell: { style: { stroke: "#0000ff" } } },
+    });
+    finish(recipe);
+    var content = pageContent(muhammara, reader, 0);
+    assert.match(content, /(^|\s)1 0 0 rg\b/, "the column fill survives");
+    assert.match(content, /(^|\s)0 1 0 RG\b/, "the renderer stroke applies");
+    assert.doesNotMatch(
+      content,
+      /(^|\s)0 0 1 RG\b/,
+      "the row stroke is replaced",
+    );
+  });
+
+  it("replaces arrays such as padding instead of merging their entries", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    recipe.table(20, 20, [{ a: "first" }], {
+      size: 8,
+      columns: [
+        { name: "a", cell: { lineHeight: 10, padding: [10, 2, 10, 2] } },
+      ],
+      row: { cell: { padding: [3] } },
+    });
+    var cursor = recipe.movedown(0, true);
+    finish(recipe);
+    // [3] pads every side by 3; merging entries would keep the 10pt bottom.
+    assert.deepEqual(cursor, [20, 36]);
+  });
 });
