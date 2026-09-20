@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createRecipe, createMuhammaraWasm } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe foundation", function () {
   it("uses Letter defaults, incremental margins, and named page sizes", async function () {
@@ -240,7 +241,9 @@ describe("Recipe foundation", function () {
         textBox: { width: 30, wrap: "clip" },
       })
       .endPage();
-    var output = new TextDecoder().decode(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("foundation-links-images-clip", bytes);
+    var output = new TextDecoder().decode(bytes);
     assert.match(output, /\/URI \(https:\/\/example\.test\)/);
     assert.match(output, /30 [\d.]+ re\r?\nW\r?\nn/);
   });

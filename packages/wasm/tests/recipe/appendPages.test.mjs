@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe appendPages", function () {
   it("inspects, appends, selects, and splits registered PDFs", async function () {
@@ -14,12 +15,15 @@ describe("Recipe appendPages", function () {
     assert.equal(metadata[1].height, 842);
 
     var appended = new Recipe().appendPage("source").endPDF();
+    writeOutput("appendPages-appended", appended);
     assert.match(new TextDecoder().decode(appended), /%%EOF/);
     var selected = new Recipe().appendPage("source", 1).endPDF();
+    writeOutput("appendPages-selected", selected);
     assert.match(new TextDecoder().decode(selected), /%%EOF/);
     var split = Recipe.splitPdf("source", "split");
     assert.equal(split.length, 1);
     assert.equal(split[0].name, "split-1.pdf");
+    writeOutput("appendPages-split", split[0].bytes);
     assert.match(new TextDecoder().decode(split[0].bytes), /%%EOF/);
   });
 
@@ -51,6 +55,7 @@ describe("Recipe appendPages", function () {
     var recipe = new Recipe(source).appendPage("source-mode-append");
     assert.deepEqual(recipe.pageInfo(3).mediaBox, [0, 0, 300, 300]);
     var bytes = recipe.endPDF();
+    writeOutput("appendPages-source-mode-append", bytes);
     assert.match(new TextDecoder().decode(bytes), /%%EOF/);
     assert.equal(Recipe.inspectPdf("source-mode-append").pages, 1);
     var reader = (await createMuhammaraWasm()).createReader(bytes);

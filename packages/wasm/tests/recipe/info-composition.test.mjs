@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe byte metadata and composition", function () {
   it("queues rich comments, markup, replies, and rotated coordinates", async function () {
@@ -21,6 +22,7 @@ describe("Recipe byte metadata and composition", function () {
       .annot(30, 180, "Square", { width: 40, height: 20, border: 2 })
       .endPage()
       .endPDF();
+    writeOutput("info-composition-annotations", bytes);
     var output = new TextDecoder().decode(bytes);
     assert.match(output, /\/RC \(/);
     assert.match(output, /\/IRT \d+ 0 R/);

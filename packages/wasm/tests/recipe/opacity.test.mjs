@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 function readExtGStates(reader) {
   var page = reader.parsePage(0).getDictionary().toPDFDictionary();
@@ -43,6 +44,7 @@ describe("Recipe opacity", function () {
       .rectangle(72, 72, 120, 60, { fill: "#ff0000", stroke: "#0000ff" })
       .endPage()
       .endPDF();
+    writeOutput("opacity-fill-and-stroke", bytes);
     var reader = (await createMuhammaraWasm()).createReader(bytes);
     try {
       var states = readExtGStates(reader);

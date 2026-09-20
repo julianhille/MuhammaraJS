@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import { defaultFontBytes } from "../../fonts/Roboto-Regular.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe default font", function () {
   var Recipe;
@@ -52,6 +53,7 @@ describe("Recipe default font", function () {
         recipe.textDimensions("Hello", { font: "rObOtO" }),
       );
       var bytes = recipe.text("Hello", 72, 72).endPage().endPDF();
+      writeOutput("default-font-hello", bytes);
       checkText(bytes, ["Hello"]);
       assert.match(new TextDecoder().decode(bytes), /Roboto-Regular/);
     } finally {
@@ -72,7 +74,9 @@ describe("Recipe default font", function () {
         );
         recipe.text("Café", 72, 72 + index * 30, style);
       });
-      checkText(recipe.endPage().endPDF(), ["Café", "Café", "Café"]);
+      var styledBytes = recipe.endPage().endPDF();
+      writeOutput("default-font-cafe-styles", styledBytes);
+      checkText(styledBytes, ["Café", "Café", "Café"]);
     } finally {
       recipe.dispose();
     }
@@ -89,6 +93,7 @@ describe("Recipe default font", function () {
         .text("Added", 72, 72)
         .endPage()
         .endPDF();
+      writeOutput("default-font-edited-and-added", bytes);
       // Page edits live in a Form XObject, which extractPageText does not recurse into.
       var output = new TextDecoder().decode(bytes);
       assert.match(output, /\(Edited\) Tj/);
@@ -121,6 +126,7 @@ describe("Recipe default font", function () {
         .text("Default", 72, 100)
         .endPage()
         .endPDF();
+      writeOutput("default-font-custom-and-default", bytes);
       checkText(bytes, ["Custom", "Default"]);
       var output = new TextDecoder().decode(bytes);
       assert.match(output, /Arial/);
@@ -136,6 +142,7 @@ describe("Recipe default font", function () {
     var recipe = new Recipe().createPage("letter");
     try {
       var bytes = recipe.text("Override", 72, 72).endPage().endPDF();
+      writeOutput("default-font-override", bytes);
       assert.match(new TextDecoder().decode(bytes), /Arial/);
       assert.doesNotMatch(new TextDecoder().decode(bytes), /Roboto-Regular/);
     } finally {
@@ -200,6 +207,7 @@ describe("Recipe default font", function () {
         .text("Named", 72, 72, { font: "body" })
         .endPage()
         .endPDF();
+      writeOutput("default-font-named", bytes);
       checkText(bytes, ["Named"]);
       assert.doesNotMatch(new TextDecoder().decode(bytes), /Roboto-Regular/);
     } finally {

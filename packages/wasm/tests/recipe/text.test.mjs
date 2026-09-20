@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe text", function () {
   it("writes decorated text with descender-aware highlights", async function () {
@@ -22,6 +23,7 @@ describe("Recipe text", function () {
       })
       .endPage()
       .endPDF();
+    writeOutput("text-decorated-highlights", pdf);
     var output = new TextDecoder().decode(pdf);
     assert.match(output, /\/Subtype \/Highlight/);
     assert.match(output, /\/QuadPoints/);
@@ -42,6 +44,7 @@ describe("Recipe text", function () {
       .text("Spaced", 20, 40, { charSpace: 5 })
       .endPage()
       .endPDF();
+    writeOutput("text-charspace", bytes);
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(bytes);
     try {

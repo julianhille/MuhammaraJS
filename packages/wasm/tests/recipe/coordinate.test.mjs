@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe coordinates", function () {
   it("uses canonical rotated source geometry and calibrated edit coordinates", async function () {
@@ -45,7 +46,9 @@ describe("Recipe coordinates", function () {
       .annot(110, 120, "Square", { width: 30, height: 40 });
     assert.deepEqual(recipe.position, { x: 70, y: 80 });
 
-    var output = new TextDecoder().decode(recipe.endPage().endPDF());
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("coordinate-rotated-edit", bytes);
+    var output = new TextDecoder().decode(bytes);
     assert.match(output, /0 1 -1 0 190 20 cm/);
     assert.match(output, /40 170 20 10 re/);
     assert.match(output, /60 160 m\s+80 140 l/);

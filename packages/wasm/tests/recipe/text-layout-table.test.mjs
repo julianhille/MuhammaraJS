@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe text layout and tables", function () {
   it("measures character spacing and writes wrapped, centered transformed text", async function () {
@@ -27,10 +28,9 @@ describe("Recipe text layout and tables", function () {
       },
     });
     assert.ok(recipe.position.y > 20);
-    assert.match(
-      new TextDecoder().decode(recipe.endPage().endPDF()),
-      /\/Type \/Page/,
-    );
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("text-layout-wrapped-centered", bytes);
+    assert.match(new TextDecoder().decode(bytes), /\/Type \/Page/);
   });
 
   it("supports Worker-safe HTML, flow, columns, and markup annotations", async function () {
@@ -51,10 +51,9 @@ describe("Recipe text layout and tables", function () {
     );
     var coords = recipe.movedown(1, true);
     assert.equal(coords.length, 2);
-    assert.match(
-      new TextDecoder().decode(recipe.endPage().endPDF()),
-      /\/Subtype \/Highlight/,
-    );
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("text-layout-html-flow-columns", bytes);
+    assert.match(new TextDecoder().decode(bytes), /\/Subtype \/Highlight/);
   });
 
   it("writes headers, row styling, borders, renderers, and table continuation", async function () {
@@ -86,10 +85,9 @@ describe("Recipe text layout and tables", function () {
       },
     );
     assert.equal(continued, 0);
-    assert.match(
-      new TextDecoder().decode(recipe.endPage().endPDF()),
-      /\/Type \/Page/,
-    );
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("text-layout-table-headers-borders", bytes);
+    assert.match(new TextDecoder().decode(bytes), /\/Type \/Page/);
   });
 
   it("keeps text-box truncation modes, justification, hilite, and layout orders distinct", async function () {
@@ -132,6 +130,7 @@ describe("Recipe text layout and tables", function () {
       })
       .endPage();
     var bytes = recipe.endPDF();
+    writeOutput("text-layout-truncation-modes", bytes);
     assert.match(new TextDecoder().decode(bytes), /\sW\s+n\s/);
     var reader = (await createMuhammaraWasm()).createReader(bytes);
     var text = reader.extractPageText(0);
@@ -166,7 +165,9 @@ describe("Recipe text layout and tables", function () {
         ],
       })
       .endPage();
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("text-layout-table-header-alignment", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     var text = reader.extractPageText(0);
     var leftHeader = text.find((entry) => entry.content === "left");
     var rightHeader = text.find((entry) => entry.content === "right");
@@ -197,7 +198,9 @@ describe("Recipe text layout and tables", function () {
         textBox: { width: 45, wrap: "ellipsis" },
       })
       .endPage();
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("text-layout-wrap-modes", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     var output = reader.extractPageText(0);
     assert.equal(output[0].content, "alpha bravo charlie");
     assert.equal(output[1].content, "alpha");
@@ -233,7 +236,9 @@ describe("Recipe text layout and tables", function () {
       bounds: { x: 10, y: 20, width: 100, height: 12 },
     });
     recipe.endPage();
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("text-layout-clip-remainder", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     assert.equal(reader.extractPageText(0).length, 1);
     reader.end();
   });
@@ -292,7 +297,9 @@ describe("Recipe text layout and tables", function () {
         },
       )
       .endPage();
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("text-layout-table-continuation", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     var output = reader.extractPageText(0);
     var headers = output.filter((entry) => entry.content === "name");
     var firstRow = output.find((entry) => entry.content === "first row");
@@ -325,7 +332,9 @@ describe("Recipe text layout and tables", function () {
         },
       )
       .endPage();
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("text-layout-html-table-wrap", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     var output = reader.extractPageText(0);
     var firstRowY = new Set(
       output
