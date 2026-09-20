@@ -103,6 +103,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   overflow callback while drawing a cell's text
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
+### Changed
+
+- Declare native Recipe `fill()`, `stroke()`, and `fillAndStroke()` without a
+  color parameter, matching the implementation, the "no effect" prose, and the
+  WebAssembly declarations. The parameter existed only in `7.0.0-beta` and was
+  never accepted at runtime; set colors through shape options such as
+  `rectangle(x, y, w, h, { fill: "red" })`
+  [#735](https://github.com/julianhille/MuhammaraJS/issues/735)
+
 ## [7.0.0-beta.3] - 2026-09-18
 
 ### Fixed
