@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   stop or provide a large enough area
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
+### Added
+
+- Add regression coverage for `retrieveJPGImageInformation`, the `compress`
+  writer option's effect on output bytes, and the low-level `ri`, `i`, `gs`,
+  `CS`, `cs`, `SC`, `SCN`, `sc`, and `scn` content-stream operators, closing
+  test-parity gaps against `@muhammara/wasm`
+  [#725](https://github.com/julianhille/MuhammaraJS/issues/725)
+
 ### Fixed
 
 - Break lines for `<br />` and uppercase `<BR>` in Recipe HTML text, not only

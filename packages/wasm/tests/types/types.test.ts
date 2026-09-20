@@ -614,6 +614,9 @@ function usesRecipeDeclarations(
     open: true,
     date: new Date(),
   });
+  recipe.text("Wrapped", 10, 10, {
+    textBox: { width: 100, height: 50, wrap: "ellipsis" },
+  });
   // @ts-expect-error Markup options are annotation options, not path options.
   recipe.text("Marked", 10, 10, { underline: { lineWidth: 2 } });
 

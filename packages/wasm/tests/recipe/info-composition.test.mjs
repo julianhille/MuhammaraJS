@@ -68,4 +68,45 @@ describe("Recipe byte metadata and composition", function () {
     assert.equal(Recipe.permission("print, copy"), 20);
     assert.equal(new Recipe().encrypt().constructor, Recipe);
   });
+
+  it("orders repeated and non-sequential insertPage calls", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+
+    function markerSource(labels) {
+      var writer = muhammara.createWriter({ compress: false });
+      labels.forEach((label) => {
+        var page = writer.createPage(0, 0, 200, 200);
+        writer
+          .startPageContentContext(page)
+          .writeFreeCode(`BT /F1 12 Tf 1 0 0 1 25 50 Tm (${label}) Tj ET`);
+        writer.writePage(page);
+      });
+      return writer.end();
+    }
+
+    Recipe.registerPdf("insert-order-source", markerSource(["S1", "S2", "S3"]));
+
+    var recipe = new Recipe({ compress: false })
+      .createPage(200, 200)
+      .text("B1", 10, 10)
+      .endPage()
+      .createPage(200, 200)
+      .text("B2", 10, 10)
+      .endPage()
+      .insertPage(0, "insert-order-source", 1)
+      .insertPage(2, "insert-order-source", 3)
+      .insertPage(1, "insert-order-source", 2)
+      .insertPage(1, "insert-order-source", 1);
+
+    var bytes = recipe.endPDF();
+    var reader = muhammara.createReader(bytes);
+    assert.equal(reader.getPagesCount(), 6);
+    var labels = [];
+    for (var index = 0; index < 6; index += 1) {
+      labels.push(reader.extractPageText(index)[0].content);
+    }
+    reader.end();
+    assert.deepEqual(labels, ["S1", "B1", "S2", "S1", "B2", "S3"]);
+  });
 });

@@ -1,5 +1,6 @@
 // Byte-first ports of tests/security/GHSA-*.js and GH-518.js.
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../../index.js";
 
 var encoder = new TextEncoder();
@@ -91,5 +92,47 @@ describe("parser security regressions", function () {
     var safeReader = muhammara.createReader(safeInput);
     assert.equal(safeReader.getPagesCount(), 1);
     safeReader.end();
+  });
+
+  // Port of tests/security/TruncatedInput.js.
+  it("either parses or rejects every sampled truncation cleanly", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile("tests/TestMaterials/Original.pdf");
+    var offsets = new Set([1, source.length - 1]);
+    var originalReader = muhammara.createReader(source);
+    var originalPageCount;
+
+    try {
+      originalPageCount = originalReader.getPagesCount();
+    } finally {
+      originalReader.end();
+    }
+
+    for (var offset = 1024; offset < source.length; offset += 1024)
+      offsets.add(offset);
+
+    offsets.forEach(function (offset) {
+      var reader;
+      try {
+        reader = muhammara.createReader(source.subarray(0, offset));
+      } catch (error) {
+        assert.match(
+          error.message,
+          /Unable to parse PDF/,
+          `Unexpected error at truncation offset ${offset}`,
+        );
+        return;
+      }
+
+      try {
+        assert.equal(
+          reader.getPagesCount(),
+          originalPageCount,
+          `Unexpected page count at truncation offset ${offset}`,
+        );
+      } finally {
+        reader.end();
+      }
+    });
   });
 });

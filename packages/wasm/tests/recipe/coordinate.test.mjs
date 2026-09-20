@@ -1,5 +1,15 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+
+function rotationFixture(name) {
+  return readFileSync(
+    new URL(
+      `../../../native-with-source/tests/TestMaterials/recipe/${name}.pdf`,
+      import.meta.url,
+    ),
+  );
+}
 
 describe("Recipe coordinates", function () {
   it("uses canonical rotated source geometry and calibrated edit coordinates", async function () {
@@ -50,5 +60,60 @@ describe("Recipe coordinates", function () {
     assert.match(output, /40 170 20 10 re/);
     assert.match(output, /60 160 m\s+80 140 l/);
     assert.match(output, /\/Rect \[ 50 140 90 170 \]/);
+  });
+
+  // Port of tests/recipe/rotation.js, extended with the byte-level
+  // assertions this file already applies to a single rotated case.
+  [
+    ["test-P-0", "portrait", 0],
+    ["test-P-90", "portrait", 90],
+    ["test-P-180", "portrait", 180],
+    ["test-P-270", "portrait", 270],
+    ["test-L-0", "landscape", 0],
+    ["test-L-90", "landscape", 90],
+    ["test-L-180", "landscape", 180],
+    ["test-L-270", "landscape", 270],
+  ].forEach(function ([name, layout, rotate]) {
+    it(`edits an existing ${name} page at its calibrated origin`, async function () {
+      var Recipe = await createRecipe();
+      var recipe = new Recipe(rotationFixture(name), { compress: false });
+      var page = recipe.metadata[1];
+      assert.equal(page.rotate, rotate);
+      assert.equal(page.layout, layout);
+      assert.equal(page.offsetX, 0);
+      assert.equal(page.offsetY, 0);
+
+      var halfWidth = page.width / 2;
+      var halfHeight = page.height / 2;
+      recipe
+        .editPage(1)
+        .rectangle(0, 0, halfWidth, halfHeight, { fill: "#000000" })
+        .moveTo(0, 0)
+        .lineTo(page.width, page.height);
+      assert.deepEqual(recipe.position, { x: page.width, y: page.height });
+
+      var bytes = recipe.endPage().endPDF();
+      var output = new TextDecoder().decode(bytes);
+      assert.match(
+        output,
+        new RegExp(`0 ${halfHeight} ${halfWidth} ${halfHeight} re`),
+      );
+      assert.match(output, new RegExp(`0 ${page.height} m`));
+      assert.match(output, new RegExp(`${page.width} 0 l`));
+      if (rotate === 90) {
+        assert.match(output, new RegExp(`0 1 -1 0 ${page.height} 0 cm`));
+      } else if (rotate === 180) {
+        assert.match(
+          output,
+          new RegExp(`-1 0 0 -1 ${page.width} ${page.height} cm`),
+        );
+      } else if (rotate === 270) {
+        assert.match(output, new RegExp(`0 -1 1 0 0 ${page.width} cm`));
+      }
+
+      var reread = new Recipe(bytes, { compress: false });
+      assert.equal(reread.metadata[1].rotate, rotate);
+      assert.equal(reread.metadata[1].layout, layout);
+    });
   });
 });

@@ -12,6 +12,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `open`, `richText`, `flag`, and `icon`, one annotation per drawn line, on new
   and edited pages. `underline` and `strikeOut` keep drawing their visible line
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Add regression coverage for the truncated-input parser sweep, non-sequential
+  `appendPDFPageFromPDF` indices, the full rotation fixture matrix, repeated
+  `insertPage()` ordering, `FreeText` annotations, and the text `wrap` type
+  test, closing test-parity gaps against native
+  [#725](https://github.com/julianhille/MuhammaraJS/issues/725)
 
 ### Fixed
 
