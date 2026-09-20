@@ -150,7 +150,7 @@ export function createRecipeFactory({
       if (Object.keys(info).length) this.info(info);
     }
 
-    /** The last high-level moveTo, lineTo, or text position in Recipe coordinates. */
+    /** The last moveTo or lineTo path position in Recipe coordinates. */
     get position() {
       return { ...this._cursor };
     }
@@ -586,7 +586,7 @@ export function createRecipeFactory({
       }
       if (transformed) this._restore();
       this._lastLineHeight = fontSize;
-      this._cursor = { x, y: y + this._lastLineHeight };
+      this._textCursor = { x, y: y + this._lastLineHeight };
       return this;
     }
   }

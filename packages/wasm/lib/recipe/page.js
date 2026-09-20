@@ -648,9 +648,10 @@ export function createPageMethods(
       this._pageHeight = height;
       this._contextState = PAGE_CONTEXT_STATE.ACTIVE_NEW;
       this.margins(margins || this.default.pageMargin);
-      // Node Recipe initializes pages as if moveTo(0, 0) was called. Implicit
-      // text and layout still use their margin fallbacks when the cursor is zero.
+      // Node Recipe ends createPage with moveTo(0, 0). Implicit text and
+      // layout still use their margin fallbacks when the text cursor is zero.
       this._cursor = { x: 0, y: 0 };
+      this._textCursor = { x: 0, y: 0 };
       return this;
     },
 
@@ -917,7 +918,7 @@ export function createPageMethods(
       this._activePageNumber = pageNumber;
       this._pageWidth = page.width;
       this._pageHeight = page.height;
-      this._cursor = { x: this._margin.left, y: this._margin.top };
+      this._textCursor = { x: this._margin.left, y: this._margin.top };
       this._resumePageRotation();
       return this;
     },

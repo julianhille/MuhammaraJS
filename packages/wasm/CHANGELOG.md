@@ -32,6 +32,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   failure. A page still open while pages are marked for deletion is still
   reported, before the Recipe is retired
   [#732](https://github.com/julianhille/MuhammaraJS/issues/732)
+- Stop advancing Recipe `position` in `text()`, `movedown()`, and `table()`.
+  `position` is the path cursor, written only by `moveTo()` and `lineTo()` as
+  in native, and text flow now runs on its own cursor, so drawing text no
+  longer moves the point a following path continues from. `editPage()` seeds
+  that text cursor with the page margins instead of reporting them as the path
+  position
+  [#734](https://github.com/julianhille/MuhammaraJS/issues/734)
 - Write a zero-width `/Border` for text-markup annotations (`highlight`,
   `underline`, `strikeOut`, `squiggly`) by default, matching native, instead of
   omitting it and letting viewers apply the PDF default 1pt border. Other

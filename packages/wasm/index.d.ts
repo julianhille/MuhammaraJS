@@ -514,7 +514,7 @@ export interface Recipe {
     pageMargin: Required<RecipeMargins>;
     mediumSizes: Record<string, [number, number]>;
   };
-  /** The last high-level moveTo, lineTo, or text position in Recipe coordinates. */
+  /** The last moveTo or lineTo path position in Recipe coordinates. */
   readonly position: { x: number; y: number };
   /** A per-Recipe copy of the built-in named device colors. */
   readonly knownColors: RecipeKnownColors;

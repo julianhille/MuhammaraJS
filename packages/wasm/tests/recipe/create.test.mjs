@@ -72,8 +72,12 @@ describe("Recipe create", function () {
     assert.equal(recipe.pageInfo(1).height, 612);
     assert.deepEqual(recipe.position, { x: 0, y: 0 });
     recipe.text("margin layout", { font: "arial" });
-    assert.equal(recipe.position.x, 40);
-    assert.ok(recipe.position.y > 50);
+    // Implicit text starts at the margins and advances the text cursor only;
+    // the path position stays where moveTo and lineTo left it.
+    assert.deepEqual(recipe.position, { x: 0, y: 0 });
+    var [cursorX, cursorY] = recipe.movedown(0, true);
+    assert.equal(cursorX, 40);
+    assert.ok(cursorY > 50);
     recipe.rotate(90).endPage().endPDF();
     assert.equal(recipe.getCurrentPageInfo().rotate, 90);
   });

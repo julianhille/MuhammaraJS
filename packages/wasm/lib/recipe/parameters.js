@@ -75,7 +75,10 @@ export function initializeRecipe(recipe, options) {
   recipe._pageHeight = 0;
   recipe._pageWidth = 0;
   recipe._margin = { ...recipe.default.pageMargin };
+  // The path cursor backs the public position and is written only by
+  // moveTo and lineTo; text flow runs on its own cursor, like Node Recipe.
   recipe._cursor = { x: 0, y: 0 };
+  recipe._textCursor = { x: 0, y: 0 };
   recipe._pages = [];
   recipe._annotations = [];
   recipe._links = [];

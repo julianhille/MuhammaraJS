@@ -27,7 +27,7 @@ describe("Recipe text layout and tables", function () {
         style: { fill: "#eeeeee", stroke: "#222222" },
       },
     });
-    assert.ok(recipe.position.y > 20);
+    assert.ok(recipe.movedown(0, true)[1] > 20);
     var bytes = recipe.endPage().endPDF();
     writeOutput("text-layout-wrapped-centered", bytes);
     assert.match(new TextDecoder().decode(bytes), /\/Type \/Page/);
