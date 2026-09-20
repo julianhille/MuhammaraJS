@@ -706,6 +706,77 @@ describe("Recipe table layout", () => {
     assert.match(content, /(^|\s)1\s+0\s+0\s+rg\b/);
   });
 
+  it("treats inherited prototype properties as missing cells", function () {
+    var recipe = new Recipe("new", output).createPage(400, 400);
+    var records = [
+      {},
+      { constructor: "ctor", toString: "string", hasOwnProperty: "own" },
+    ];
+    var values = [];
+    recipe.table(20, 20, records);
+    recipe.table(20, 200, records, {
+      columns: ["constructor", "toString", "hasOwnProperty"].map((name) => ({
+        name,
+        /** Records normalized values for missing fields and shadowed built-ins. */
+        renderer: (text) => {
+          values.push(text);
+        },
+      })),
+    });
+    finish(recipe);
+    assert.deepEqual(values, ["", "", "", "ctor", "string", "own"]);
+    assert.deepEqual(
+      texts().map((entry) => entry.content),
+      ["ctor", "string", "own", "ctor", "string", "own"],
+    );
+  });
+
+  ["table", "column", "row", "header", "column-header", "hcell"].forEach(
+    function (scope) {
+      it(`preserves ${scope} onClip callbacks when resolving table styles`, function () {
+        var recipe = new Recipe("new", output).createPage(400, 400);
+        var clips = [];
+        var box = {
+          height: 14,
+          lineHeight: 10,
+          padding: 2,
+          clipIfExceedsBox: true,
+          /** Reports the clipped line through a declaratively configured callback. */
+          onClip: (self, result) => {
+            clips.push(result);
+          },
+        };
+        var column = { name: "value" };
+        var options = { size: 8, columns: [column] };
+        var header = ["header", "column-header", "hcell"].includes(scope);
+        if (scope === "table") options.textBox = box;
+        if (scope === "column") column.cell = box;
+        if (scope === "row") options.row = { cell: box };
+        if (header) {
+          options.header = { size: 8 };
+          column.text = "one\ntwo";
+          if (scope === "header") options.header.cell = box;
+          if (scope === "column-header") column.header = { textBox: box };
+          if (scope === "hcell") column.hcell = box;
+        }
+        recipe.table(
+          20,
+          20,
+          [{ value: header ? "body" : "one\ntwo" }],
+          options,
+        );
+        finish(recipe);
+        assert.equal(clips.length, 1);
+        assert.equal(clips[0].linesWritten, 1);
+        assert.ok(clips[0].remainder.includes("two"));
+        assert.deepEqual(
+          texts().map((entry) => entry.content),
+          header ? ["one", "body"] : ["one"],
+        );
+      });
+    },
+  );
+
   it("merges header box overrides and uses the same styles on continuations", function () {
     var recipe = new Recipe("new", output).createPage(400, 400);
     var headerCalls = [];

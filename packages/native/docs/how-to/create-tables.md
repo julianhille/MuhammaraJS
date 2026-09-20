@@ -33,6 +33,15 @@ continuation reserves room for its repeated header and uses the bounds of the
 position and page it continues on. Empty `contents` draw nothing. After a table,
 `movedown(0, true)` returns the table's left edge and bottom.
 
+Cell values come from each record's own properties. Inherited properties,
+including built-ins such as `constructor` and `toString`, are treated as
+missing and passed to renderers as `""` unless the record defines them itself.
+
+Table, column, row, and header options keep callback properties such as
+`textBox.onClip` when Recipe resolves nested cell styles, so clipping
+callbacks configured directly in table `textBox`, column `cell`, row `cell`,
+header `cell`/`textBox`, or column `hcell` options still run.
+
 Array-form `order` preserves exact keys, including surrounding whitespace and
 empty-string keys; comma-separated string entries are trimmed. If no columns
 are selected or discovered, the call draws nothing and preserves the cursor.

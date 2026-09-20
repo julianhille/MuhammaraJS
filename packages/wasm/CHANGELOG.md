@@ -104,6 +104,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `-Infinity`, and throw a clear `Error` when an `overflow` callback ends the
   page without starting another
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Treat inherited record properties as missing table cells instead of
+  rendering prototype methods such as `constructor` and `toString`
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Stop a table's `overflow` callback from also running as the text-flow
+  overflow callback while drawing a cell's text
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ### Changed
 

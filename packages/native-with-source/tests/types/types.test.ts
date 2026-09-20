@@ -198,6 +198,29 @@ var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
     return row > 10 ? true : { position: [10, 10] };
   },
 };
+var tableClippingBox: muhammara.Recipe.TextBox = {
+  height: 14,
+  clipIfExceedsBox: true,
+  /** Declarative table callbacks receive a Recipe and the clipping result. */
+  onClip(currentRecipe, result) {
+    var remainder: string = result.remainder;
+    void currentRecipe;
+    void remainder;
+  },
+};
+recipe.table(20, 20, [{ value: "one\ntwo" }], {
+  textBox: tableClippingBox,
+  columns: [
+    {
+      name: "value",
+      cell: tableClippingBox,
+      header: { textBox: tableClippingBox },
+      hcell: tableClippingBox,
+    },
+  ],
+  header: { cell: tableClippingBox },
+  row: { cell: tableClippingBox },
+});
 function applyTable(options: muhammara.Recipe.TableOptions<TableRecord>): void {
   recipe.table(10, 120, [{ name: "Ada", score: 10 }], options);
 }

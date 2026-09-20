@@ -1302,6 +1302,7 @@ declare namespace muhammara {
       name: Field;
       text?: string;
       width?: number;
+      /** Cell text-box options, including onClip callbacks preserved during table layout. */
       cell?: TextBox;
       /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
       header?: boolean | TextOptions;
@@ -1309,7 +1310,7 @@ declare namespace muhammara {
       hcell?: TextBox;
       renderer?: (
         this: void,
-        /** The cell value; missing and nullish values arrive as `""`. */
+        /** The own cell value; missing, inherited, and nullish values arrive as `""`. */
         text: undefined extends TableFieldValue<RecordType, Field>
           ? Exclude<TableFieldValue<RecordType, Field>, null | undefined> | ""
           : null extends TableFieldValue<RecordType, Field>

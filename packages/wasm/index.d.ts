@@ -399,6 +399,7 @@ export interface RecipeTableColumn<
   font?: string;
   text?: string;
   width?: number;
+  /** Cell text-box options, including onClip callbacks preserved during table layout. */
   cell?: RecipeTextBox;
   /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
   header?: boolean | RecipeTextOptions;
@@ -407,7 +408,7 @@ export interface RecipeTableColumn<
   /** Returns cell text options, or a falsy value to keep the defaults. */
   renderer?: (
     this: void,
-    /** The cell value; missing and nullish values arrive as `""`. */
+    /** The own cell value; missing, inherited, and nullish values arrive as `""`. */
     text: undefined extends RecipeTableFieldValue<RecordType, Field>
       ? Exclude<RecipeTableFieldValue<RecordType, Field>, null | undefined> | ""
       : null extends RecipeTableFieldValue<RecordType, Field>
@@ -434,7 +435,7 @@ export type RecipeTableColumnOptions<
 export type RecipeTableRow = Record<string, unknown>;
 export interface RecipeTableOptions<
   RecordType extends object = RecipeTableRow,
-> extends Omit<RecipeTextOptions, "overflow"> {
+> extends Omit<RecipeTextOptions, "overflow" | "cell"> {
   /** Per-segment height, bounded by the page bottom margin. Measurements include padding and minimum/fixed cell heights. */
   height?: number;
   /** Comma-separated names are trimmed; array entries preserve exact keys. */

@@ -481,6 +481,31 @@ describe("Recipe table layout", function () {
     assert.match(content, /(^|\s)1\s+0\s+0\s+rg\b/);
   });
 
+  it("treats inherited prototype properties as missing cells", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    var records = [
+      {},
+      { constructor: "ctor", toString: "string", hasOwnProperty: "own" },
+    ];
+    var values = [];
+    recipe.table(20, 20, records);
+    recipe.table(20, 200, records, {
+      columns: ["constructor", "toString", "hasOwnProperty"].map((name) => ({
+        name,
+        /** Records normalized values for missing fields and shadowed built-ins. */
+        renderer: (text) => {
+          values.push(text);
+        },
+      })),
+    });
+    finish(recipe);
+    assert.deepEqual(values, ["", "", "", "ctor", "string", "own"]);
+    assert.deepEqual(
+      texts().map((entry) => entry.content),
+      ["ctor", "string", "own", "ctor", "string", "own"],
+    );
+  });
+
   it("merges header box overrides and uses the same styles on continuations", function () {
     var recipe = new Recipe().createPage(400, 400);
     var headerCalls = [];

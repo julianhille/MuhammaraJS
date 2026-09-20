@@ -224,17 +224,22 @@ export function createTableMethods() {
         // Resolve every cell once: the renderer runs once per cell, and its
         // options size the row as well as style the drawn text.
         var cells = columns.map((column) => {
-          var text = record[column.field] ?? "";
+          var text = Object.prototype.hasOwnProperty.call(record, column.field)
+            ? (record[column.field] ?? "")
+            : "";
           var rendered =
             column.options.renderer?.(text, record, column.field, row + 1) ||
             {};
+          // The table callback is not a text-flow overflow callback.
+          var { overflow: _tableOverflow, ...tableCellOptions } =
+            cellOptions(options);
           return {
             column,
             text: String(text),
             options: merge(
               merge(
                 merge(
-                  cellOptions(options),
+                  tableCellOptions,
                   paddedCell(cellOptions(column.options)),
                 ),
                 cellOptions(rowOptions),

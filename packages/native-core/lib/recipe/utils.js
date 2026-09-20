@@ -10,6 +10,20 @@ const PAGE_CONTEXT_STATE = Object.freeze({
 });
 
 /**
+ * Copies nested option objects and arrays without discarding callback values.
+ * @private
+ */
+function cloneOptions(value) {
+  if (Array.isArray(value)) return value.map(cloneOptions);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, cloneOptions(item)]),
+    );
+  }
+  return value;
+}
+
+/**
  * Append PDF Page with annotations.
  *
  * @param {any} pdfWriter - Hummus writer.
@@ -83,6 +97,7 @@ function appendPDFPagesFromPDFWithAnnotations(
 
 exports.ANNOTATION_PREFIX = ANNOTATION_PREFIX;
 exports.PAGE_CONTEXT_STATE = PAGE_CONTEXT_STATE;
+exports.cloneOptions = cloneOptions;
 exports.appendPDFPageFromPDFWithAnnotations =
   appendPDFPageFromPDFWithAnnotations;
 exports.appendPDFPagesFromPDFWithAnnotations =

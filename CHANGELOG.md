@@ -85,6 +85,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Pass `""` instead of `null` to a table column `renderer` for null values, and
   leave the text cursor at the table's left edge and bottom
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Treat inherited record properties as missing table cells instead of
+  rendering prototype methods such as `constructor` and `toString`
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Preserve `onClip` and other callback options set on a table, column, row, or
+  header instead of silently discarding them while cloning options
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Stop a table's `overflow` callback from also running as the text-flow
+  overflow callback while drawing a cell's text
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ## [7.0.0-beta.3] - 2026-09-18
 

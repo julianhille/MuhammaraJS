@@ -1,9 +1,5 @@
 var { htmlToTextObjects } = require("./htmlToTextObjects");
-
-/** Copies serializable table styling before resolving cell overrides. */
-function clone(object) {
-  return JSON.parse(JSON.stringify(object));
-}
+var { cloneOptions: clone } = require("./utils");
 
 /** Converts a table cell style into text options. */
 function getCellOptions(options, cell = "cell") {
@@ -284,9 +280,13 @@ exports.table = function table(x, y, contents, options = {}) {
     // options size the row as well as style the drawn text.
     var cells = this._layouts["_table_"].map((column) => {
       var field = column.field;
-      var value = record[field];
+      var value = Object.prototype.hasOwnProperty.call(record, field)
+        ? record[field]
+        : undefined;
       var text = value === undefined || value === null ? "" : value;
       var colOptions = clone(options);
+      // The table callback is not a text-flow overflow callback.
+      delete colOptions.overflow;
       colOptions = this._merge(colOptions, clone(column.options));
       if (nth && nth(row)) {
         colOptions = this._merge(colOptions, clone(rowOptions));

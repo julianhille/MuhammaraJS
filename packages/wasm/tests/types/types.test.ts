@@ -24,6 +24,7 @@ import type {
   RecipeTableColumnOptions,
   RecipeTableOptions,
   RecipeTableRow,
+  RecipeTextBox,
   RecipeTextMarkupOptions,
   RecipeTriangleOptions,
   RecipeTrianglePosition,
@@ -334,6 +335,29 @@ async function usesLowLevelSurface() {
     .endPage()
     .endPDF();
   recipe.textDimensions("Hello").width;
+  var tableClippingBox: RecipeTextBox = {
+    height: 14,
+    clipIfExceedsBox: true,
+    /** Declarative table callbacks receive a Recipe and the clipping result. */
+    onClip(currentRecipe, result) {
+      var remainder: string = result.remainder;
+      void currentRecipe;
+      void remainder;
+    },
+  };
+  recipe.table(20, 20, [{ value: "one\ntwo" }], {
+    textBox: tableClippingBox,
+    columns: [
+      {
+        name: "value",
+        cell: tableClippingBox,
+        header: { textBox: tableClippingBox },
+        hcell: tableClippingBox,
+      },
+    ],
+    header: { cell: tableClippingBox },
+    row: { cell: tableClippingBox },
+  });
   recipe.table(20, 20, [{ value: "first" }], {
     // @ts-expect-error Native Recipe ignores a table-level cell.
     cell: { padding: 0 },
