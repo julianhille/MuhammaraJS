@@ -1,5 +1,5 @@
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
-import { charSpacing, Column } from "./text.helper.js";
+import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 
 function merge(left = {}, right = {}) {
   var result = { ...left };
@@ -538,12 +538,13 @@ export function createTextMethods({ drawText, measure, module }) {
      * @param {string} value - Text to measure.
      * @param {RecipeTextOptions} [options] - Font and measurement options.
      * @returns {TextDimensions} Text bounds and dimensions in PDF points.
+     * @throws {RangeError} If `fontSize`, or its `size` alias, is negative.
      * @throws {Error} If the requested font is not registered or cannot be loaded.
      */
     textDimensions(value, options = {}) {
       return dimensions(this, value, {
         ...options,
-        fontSize: options.fontSize || options.size || 14,
+        fontSize: resolveFontSize(options),
       });
     },
 
@@ -554,7 +555,7 @@ export function createTextMethods({ drawText, measure, module }) {
     _measureTextBoxHeight(value, options = {}) {
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
-      var fontSize = options.fontSize || options.size || 14;
+      var fontSize = resolveFontSize(options);
       var width = box.width || 0;
       var lineHeight =
         box.lineHeight ||
@@ -677,6 +678,7 @@ export function createTextMethods({ drawText, measure, module }) {
      * @param {number} [y] - Top coordinate.
      * @param {RecipeTextOptions} [options] - Text and layout options.
      * @returns {Recipe} The Recipe instance.
+     * @throws {RangeError} If `fontSize`, or its `size` alias, is negative.
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
      */
     text(value = "", x, y, options = {}) {
@@ -696,7 +698,7 @@ export function createTextMethods({ drawText, measure, module }) {
         y = column.y;
         box = merge(box, { width: column.width, height: column.height });
       }
-      var fontSize = options.fontSize || options.size || 14;
+      var fontSize = resolveFontSize(options);
       var width =
         box.width ||
         (options.flow ? this._pageWidth - x - this._margin.right : 0);

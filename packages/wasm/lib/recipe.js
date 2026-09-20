@@ -20,6 +20,7 @@ import { createLineMethods } from "./recipe/vector-line.js";
 import { createPolygonMethods } from "./recipe/vector-polygon.js";
 import { createVectorMethods } from "./recipe/vector.js";
 import { createTextMethods } from "./recipe/text.js";
+import { resolveFontSize } from "./recipe/text.helper.js";
 import { htmlToTextObjects } from "./recipe/htmlToTextObjects.js";
 import { createTableMethods } from "./recipe/table.js";
 import { createAnnotationMethods } from "./recipe/annotation.js";
@@ -528,7 +529,7 @@ export function createRecipeFactory({
         }
       }
       var fontPath = resolveFont(options);
-      var fontSize = options.fontSize || options.size || 14;
+      var fontSize = resolveFontSize(options);
       if (this._pageContext) {
         var editContext = this._pageContext
           .BT()
@@ -603,10 +604,7 @@ export function createRecipeFactory({
         if (this._sourceMode) {
           return this.writer
             .getFontForBytes(fontPath)
-            .calculateTextDimensions(
-              String(value),
-              options.fontSize || options.size || 14,
-            );
+            .calculateTextDimensions(String(value), resolveFontSize(options));
         }
         var resultPointer = module._malloc(48);
         try {
@@ -617,7 +615,7 @@ export function createRecipeFactory({
                 this._recipe,
                 textPointer,
                 fontPointer,
-                options.fontSize || options.size || 14,
+                resolveFontSize(options),
                 resultPointer,
               );
               var offset = resultPointer >>> 3;

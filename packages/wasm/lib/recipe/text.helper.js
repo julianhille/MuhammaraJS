@@ -68,3 +68,23 @@ export class Column {
     [this.x, this.y] = value;
   }
 }
+
+/**
+ * Resolves the font size for a text call from `fontSize`, its `size` alias, or
+ * the 14pt default, rejecting negative values before they reach a measuring or
+ * drawing call. A negative size produces nonsensical font metrics rather than
+ * output, so it is reported as invalid input naming the option and the value.
+ *
+ * @param {object} [options] - Text options holding `fontSize` or `size`.
+ * @returns {number} The resolved font size in PDF points.
+ * @throws {RangeError} If the resolved size is negative.
+ */
+export function resolveFontSize(options = {}) {
+  var size = options.fontSize || options.size || 14;
+  if (size < 0) {
+    throw new RangeError(
+      `Text ${options.fontSize ? "fontSize" : "size"} must be a non-negative number, received ${size}`,
+    );
+  }
+  return size;
+}
