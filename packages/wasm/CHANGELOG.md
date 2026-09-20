@@ -20,6 +20,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Finish an active Recipe page in `endPDF()` and `appendPage()` instead of
+  failing with `Unable to finish PDF` or
+  `Muhammara WebAssembly operation failed: _muhammara_wasm_recipe_append_pdf`,
+  matching native. New documents and source edits alike no longer need an
+  explicit `endPage()` first, and the Recipe is no longer destroyed by the
+  failure. A page still open while pages are marked for deletion is still
+  reported, before the Recipe is retired
+  [#732](https://github.com/julianhille/MuhammaraJS/issues/732)
 - Write a zero-width `/Border` for text-markup annotations (`highlight`,
   `underline`, `strikeOut`, `squiggly`) by default, matching native, instead of
   omitting it and letting viewers apply the PDF default 1pt border. Other

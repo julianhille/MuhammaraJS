@@ -7,6 +7,9 @@
 - Recipe page numbers are one-based, including `editPage`, `pageInfo`, and
   document composition methods.
 - Call `endPage()` before selecting, creating, or editing another page.
+  `endPDF()` and `appendPage()` finish an active page themselves, so a forgotten
+  `endPage()` does not cost that page. While pages are marked for deletion,
+  `endPDF()` reports an active page instead of finishing it.
 - Call `endPDF()` only after all page and document operations are complete.
 - `endPDF()` finalizes a Recipe only once. Later calls do not rewrite the PDF;
   when given a callback, they invoke it with the already completed output where

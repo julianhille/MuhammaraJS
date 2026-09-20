@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createCompositionMethods } from "../../lib/recipe/composition.js";
+import { PAGE_CONTEXT_STATE } from "../../lib/recipe/context-state.js";
 import { createInfoMethods } from "../../lib/recipe/info.js";
 import { permission } from "../../lib/recipe/security.js";
 
@@ -36,7 +37,14 @@ describe("Recipe extracted modules", function () {
         2: { width: 80, height: 40 },
       }),
     });
-    var recipe = { _recipe: 9, _pageWidth: 200, _pageHeight: 300 };
+    // appendPage() finishes an open page first, so the stub reports the idle
+    // lifecycle state a Recipe between pages would have.
+    var recipe = {
+      _recipe: 9,
+      _pageWidth: 200,
+      _pageHeight: 300,
+      _contextState: PAGE_CONTEXT_STATE.IDLE,
+    };
     assert.strictEqual(methods.appendPage.call(recipe, "source", 9), recipe);
     assert.deepEqual(calls.pop(), [
       "_muhammara_wasm_recipe_append_pdf_range",

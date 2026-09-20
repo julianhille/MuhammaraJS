@@ -156,8 +156,8 @@ describe("Recipe foundation", function () {
     recipe = new Recipe(source);
     assert.throws(() => recipe.editPage(2), /pageNumber/);
     recipe.editPage(1);
-    assert.throws(() => recipe.endPDF(), /Finish the current page/);
-    recipe.endPage().endPDF();
+    // endPDF() finishes the edited page itself, so no guard fires here.
+    assert.ok(recipe.endPDF() instanceof Uint8Array);
   });
 
   it("inspects Blob input asynchronously without entering source mode", async function () {

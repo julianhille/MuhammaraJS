@@ -2,7 +2,8 @@ const muhammara = require("../muhammara");
 const utils = require("./utils");
 
 /**
- * Append pages from the other pdf to the current pdf
+ * Append pages from the other pdf to the current pdf. An active page is
+ * finished first, so appended pages follow it in the output.
  * @name appendPage
  * @function
  * @memberof Recipe#
@@ -55,6 +56,10 @@ exports.appendPage = function appendPage(pdfSrc, pages = []) {
     }
     return range.map(transformPageNumber);
   });
+  // Appending writes whole pages, which the writer cannot do around an open
+  // content stream. Close the active page only once the selection is known to
+  // be valid, so a rejected selection leaves the page exactly as it was.
+  if (this.page) this.endPage();
   if (pages.length > 0) {
     utils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc, {
       specificRanges: pages,
