@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 function assertTextStateOperations(reader, stream, operations) {
   var found = new Set();
@@ -150,6 +151,7 @@ describe("SimpleTextUsageTest", function () {
     assert.throws(() => context.Tw(1), /not active/);
 
     var pdf = writer.end();
+    writeOutput("SimpleTextUsageTest", pdf);
     assert.ok(pdf instanceof Uint8Array);
     assert.equal(new TextDecoder().decode(pdf.slice(0, 8)), "%PDF-1.4");
     assert.match(new TextDecoder().decode(pdf), /\/Font/);
@@ -310,6 +312,7 @@ describe("SimpleTextUsageTest", function () {
     writer.startPageContentContext(formPage).doXObject(form);
     writer.writePage(formPage);
     var source = writer.end();
+    writeOutput("SimpleTextUsageTest-positioning", source);
 
     var reader = muhammara.createReader(source);
     var pageDictionary = reader.parsePageDictionary(0).toPDFDictionary();
@@ -340,6 +343,7 @@ describe("SimpleTextUsageTest", function () {
     assert.throws(() => modifierContext.Quote("stale"), /not active/);
     pageModifier.writePage();
     var modified = modifier.end();
+    writeOutput("SimpleTextUsageTest-positioning-modified", modified);
     var modifiedReader = muhammara.createReader(modified);
     assertOperators(modifiedReader, allStreams(modifiedReader), [
       "Td",

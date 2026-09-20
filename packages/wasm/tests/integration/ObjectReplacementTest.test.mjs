@@ -1,6 +1,7 @@
 // Byte-first port of tests/ObjectReplacementTest.js page-scoped replacement.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 function getPageContentsID(reader, pageIndex) {
   return reader
@@ -42,6 +43,7 @@ describe("ObjectReplacement", function () {
       writer,
     );
     var output = writer.end();
+    writeOutput("ObjectReplacementTest", output);
 
     var reader = muhammara.createReader(output);
     assert.equal(getPageContentsID(reader, 0), replacementId);
@@ -139,6 +141,7 @@ describe("ObjectReplacement", function () {
       scope: "global",
     });
     var output = writer.end();
+    writeOutput("ObjectReplacementTest-global", output);
 
     var reader = muhammara.createReader(output);
     assert.equal(getPageContentsID(reader, 0), replacementId);

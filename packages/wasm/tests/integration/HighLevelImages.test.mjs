@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 async function fixture(path) {
   return new Uint8Array(await readFile(`tests/TestMaterials/${path}`));
@@ -59,6 +60,7 @@ describe("HighLevelImages", function () {
     writer.startPageContentContext(page).doXObject(form);
     writer.writePage(page);
     var output = writer.end();
+    writeOutput("HighLevelImages-output", output);
     assert.match(new TextDecoder().decode(output), /\/XObject/);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 2);
@@ -74,6 +76,7 @@ describe("HighLevelImages", function () {
     await modifierContext.drawImageAsync(90, 20, new Blob([png]));
     modifiedPage.endContext().writePage();
     var modified = modifier.end();
+    writeOutput("HighLevelImages-modified", modified);
     reader = muhammara.createReader(modified);
     assert.equal(reader.getPagesCount(), 2);
     reader.end();
@@ -128,6 +131,7 @@ describe("HighLevelImages", function () {
     modifierContext.drawImage(0, 0, "jpg");
     pageModifier.endContext().writePage();
     var modified = modifier.end();
+    writeOutput("HighLevelImages-invalid-modified", modified);
     var reader = muhammara.createReader(modified);
     assert.equal(reader.getPagesCount(), 1);
     reader.end();

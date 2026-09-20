@@ -1,6 +1,7 @@
 // Byte-first ports of LinksTest.js and resource usage in ImagesAndFormsForwardReferenceTest.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("LinksTest", function () {
   it("writes annotations and resource mappings", async function () {
@@ -42,6 +43,7 @@ describe("LinksTest", function () {
     );
     writer.endFormXObject(form);
     var pdf = writer.end();
+    writeOutput("LinksTest", pdf);
     var output = new TextDecoder().decode(pdf);
     assert.match(output, /\/URI \(https:\/\/example\.test\)/);
     assert.match(output, /\/QuadPoints \[ 10 40 90 40 10 20 90 20 \]/);
@@ -81,6 +83,7 @@ describe("LinksTest", function () {
     );
     pageModifier.endContext().writePage();
     var modified = modifier.end();
+    writeOutput("LinksTest-modified", modified);
     var modifiedOutput = new TextDecoder().decode(modified);
     assert.match(modifiedOutput, /\/URI \(https:\/\/modified\.test\)/);
     var modifiedReader = muhammara.createReader(modified);

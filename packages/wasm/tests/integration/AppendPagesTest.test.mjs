@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("AppendPagesTest", function () {
   var muhammara;
@@ -35,6 +36,7 @@ describe("AppendPagesTest", function () {
     assert.equal(rangeIds.length, 3);
     assert.ok([...allIds, ...rangeIds].every((id) => id > 0));
     var output = writer.end();
+    writeOutput("AppendPagesTest", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 7);
     assert.deepEqual(

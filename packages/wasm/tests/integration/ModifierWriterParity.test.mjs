@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("ModifierWriterParity", function () {
   it("exposes safe writer operations on byte-backed modifiers", async function () {
@@ -51,6 +52,7 @@ describe("ModifierWriterParity", function () {
     var forms = writer.createFormXObjectsFromPDF(source);
     assert.equal(forms.length, 1);
     var output = writer.end();
+    writeOutput("ModifierWriterParity", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 3);
     reader.end();

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("EmptyPagesPDF", function () {
   it("creates and reads blank pages with a reusable page", async function () {
@@ -24,6 +25,7 @@ describe("EmptyPagesPDF", function () {
     page.mediaBox = [0, 0, 595, 842];
     for (var index = 0; index < 4; ++index) writer.writePage(page);
     var pdf = writer.end();
+    writeOutput("EmptyPagesPDF", pdf);
     var header = new TextDecoder().decode(pdf.slice(0, 8));
 
     assert.equal(header, "%PDF-1.4");
@@ -51,6 +53,7 @@ describe("EmptyPagesPDF", function () {
     });
     version20Writer.writePage(version20Writer.createPage(0, 0, 100, 100));
     var version20Pdf = version20Writer.end();
+    writeOutput("EmptyPagesPDF-version20", version20Pdf);
     assert.equal(
       new TextDecoder().decode(version20Pdf.slice(0, 8)),
       "%PDF-2.0",
@@ -76,6 +79,7 @@ describe("EmptyPagesPDF", function () {
       .text("Modified", 50, 300, { font: "arial", fontSize: 24 })
       .endPage()
       .end();
+    writeOutput("EmptyPagesPDF-modified", modified);
     var modifiedReader = muhammara.createReader(modified);
     assert.equal(modifiedReader.getPagesCount(), 1);
     modifiedReader.end();

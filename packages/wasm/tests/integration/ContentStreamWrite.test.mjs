@@ -2,6 +2,7 @@
 // FormXObject.getContentStream using browser-safe native byte handles.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 function readStream(reader, stream) {
   var input = reader.startReadingFromStream(stream);
@@ -36,6 +37,7 @@ describe("ContentStreamWrite", function () {
 
     writer.writePage(page);
     var pdf = writer.end();
+    writeOutput("ContentStreamWrite", pdf);
     var reader = muhammara.createReader(pdf);
     var pageContents = reader
       .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")

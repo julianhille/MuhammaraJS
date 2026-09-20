@@ -1,6 +1,7 @@
 // Ports tests/SettingInfoValuesTest.js and tests/PDFTextString.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 function infoDictionary(pdf) {
   var text = new TextDecoder().decode(pdf);
@@ -58,6 +59,7 @@ describe("SettingInfoValuesTest", function () {
     writer.startPageContentContext(page);
     writer.writePage(page);
     var pdf = writer.end();
+    writeOutput("SettingInfoValuesTest", pdf);
     var entries = infoDictionary(pdf);
 
     assert.match(entries, /\/Author \(Gal Kahana\)/);

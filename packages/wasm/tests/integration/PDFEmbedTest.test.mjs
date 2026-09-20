@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("PDFEmbedTest", function () {
   it("embeds PDF pages as form IDs from direct and registered bytes", async function () {
@@ -42,6 +43,7 @@ describe("PDFEmbedTest", function () {
       .Q();
     writer.writePage(page);
     var output = writer.end();
+    writeOutput("PDFEmbedTest", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 1);
     reader.end();

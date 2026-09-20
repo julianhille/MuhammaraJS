@@ -1,6 +1,7 @@
 // Port of the creation behavior in tests/SimpleContentPageTest.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("SimpleContentPageTest", function () {
   it("creates a low-level content page", async function () {
@@ -59,6 +60,7 @@ describe("SimpleContentPageTest", function () {
     assert.notEqual(secondPageObjectId, firstPageObjectId);
 
     var pdf = writer.end();
+    writeOutput("SimpleContentPageTest", pdf);
     assert.ok(pdf instanceof Uint8Array);
     assert.equal(new TextDecoder().decode(pdf.slice(0, 8)), "%PDF-1.4");
     var text = new TextDecoder().decode(pdf);

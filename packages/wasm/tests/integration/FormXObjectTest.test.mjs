@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("FormXObjectTest", function () {
   it("matches page content operators, helpers, resources, and lifecycle", async function () {
@@ -87,6 +88,7 @@ describe("FormXObjectTest", function () {
     writer.startPageContentContext(page).doXObject(form);
     writer.writePage(page);
     var pdf = writer.end();
+    writeOutput("FormXObjectTest-operators", pdf);
     var output = new TextDecoder().decode(pdf);
     var reader = muhammara.createReader(pdf);
     var operators = new Set();
@@ -247,6 +249,7 @@ describe("FormXObjectTest", function () {
     writer.writePage(page);
 
     var pdf = writer.end();
+    writeOutput("FormXObjectTest-images", pdf);
     assert.ok(pdf instanceof Uint8Array);
     assert.match(new TextDecoder().decode(pdf), /\/XObject/);
     var reader = muhammara.createReader(pdf);
