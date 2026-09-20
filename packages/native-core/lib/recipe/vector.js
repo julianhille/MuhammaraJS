@@ -668,7 +668,6 @@ exports.opacity = function opacity(value) {
  * @name fill
  * @function
  * @memberof Recipe#
- * @param {string|number[]} [color] - The requested fill color.
  * @returns {Recipe} The recipe instance.
  */
 exports.fill = function fill() {
@@ -682,7 +681,6 @@ exports.fill = function fill() {
  * @name stroke
  * @function
  * @memberof Recipe#
- * @param {string|number[]} [color] - The requested stroke color.
  * @returns {Recipe} The recipe instance.
  */
 exports.stroke = function stroke() {

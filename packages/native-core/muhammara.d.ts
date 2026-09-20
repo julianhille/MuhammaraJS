@@ -1710,9 +1710,9 @@ declare namespace muhammara {
     lineWidth(width: number): Recipe;
     /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */
     opacity(opacity: number): Recipe;
-    fill(color?: Recipe.Color): Recipe;
-    stroke(color?: Recipe.Color): Recipe;
-    fillAndStroke(fill?: Recipe.Color, stroke?: Recipe.Color): Recipe;
+    fill(): Recipe;
+    stroke(): Recipe;
+    fillAndStroke(): Recipe;
     n_gon(
       cx: number,
       cy: number,

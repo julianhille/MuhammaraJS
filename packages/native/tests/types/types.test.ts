@@ -125,10 +125,12 @@ recipe
   .stroke()
   .fillAndStroke();
 recipe.opacity(0.5);
-recipe
-  .fill("#ff0000")
-  .stroke([0, 0, 0] as const)
-  .fillAndStroke("#ffffff", [255, 255, 255] as const);
+// @ts-expect-error Recipe.fill() takes no color; set colors through shape options.
+recipe.fill("#ff0000");
+// @ts-expect-error Recipe.stroke() takes no color; set colors through shape options.
+recipe.stroke([0, 0, 0] as const);
+// @ts-expect-error Recipe.fillAndStroke() takes no colors; set colors through shape options.
+recipe.fillAndStroke("#ffffff", [255, 255, 255] as const);
 // @ts-expect-error Recipe.fillOpacity() was removed in v7.
 recipe.fillOpacity(0.5);
 recipe.htmlToTextObjects("<p>text</p>");
