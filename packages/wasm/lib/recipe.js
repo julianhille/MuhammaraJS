@@ -552,15 +552,31 @@ export function createRecipeFactory({
           }),
         );
       }
-      // Text-markup annotations are added per line by text(); the visual
-      // underline and strikeout decoration belongs to each drawn run.
-      if (options.underline || options.strikeOut) {
-        var width = this.textDimensions(value, { ...options, fontSize }).width;
-        var stroke = { stroke: options.color || "#000000" };
-        if (options.underline) this.line(x, y + 2, x + width, y + 2, stroke);
-        if (options.strikeOut) {
-          var strikeY = y - fontSize / 3;
-          this.line(x, strikeY, x + width, strikeY, stroke);
+      // Text-markup annotations are added per line by text(); only HTML
+      // underline and strike-out styles draw a visible decoration line.
+      if (options.htmlUnderline || options.htmlStrikeOut) {
+        var runWidth = this.textDimensions(value, {
+          ...options,
+          fontSize,
+        }).xMax;
+        // Native measures markup against one sample so every run on a line
+        // gets the same height, including descenders and tall glyphs.
+        var textHeight = this.textDimensions(
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
+          { ...options, fontSize },
+        ).height;
+        var decoration = {
+          stroke: options.color || options.colour || "#1777d1",
+          colorspace: options.colorspace,
+          width: 2,
+        };
+        if (options.htmlUnderline) {
+          var underlineY = y + textHeight * 0.1;
+          this.line(x, underlineY, x + runWidth, underlineY, decoration);
+        }
+        if (options.htmlStrikeOut) {
+          var strikeOutY = y - textHeight * 0.2;
+          this.line(x, strikeOutY, x + runWidth, strikeOutY, decoration);
         }
       }
       if (transformed) this._restore();
