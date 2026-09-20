@@ -1,6 +1,7 @@
 // Ports creation behavior from tests/recipe/create.js and createWithBuffer.js.
 import assert from "node:assert/strict";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe create", function () {
   var Recipe;
@@ -78,7 +79,7 @@ describe("Recipe create", function () {
     var [cursorX, cursorY] = recipe.movedown(0, true);
     assert.equal(cursorX, 40);
     assert.ok(cursorY > 50);
-    recipe.rotate(90).endPage().endPDF();
+    writeOutput("create-margin-layout", recipe.rotate(90).endPage().endPDF());
     assert.equal(recipe.getCurrentPageInfo().rotate, 90);
   });
 

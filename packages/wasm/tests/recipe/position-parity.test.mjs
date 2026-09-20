@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 // Expected values were read from @muhammara/native-with-source on the same
 // calls: `position` is the path cursor, written only by moveTo and lineTo,
@@ -33,7 +34,7 @@ describe("Recipe position parity", function () {
       { x: 99, y: 110 },
       "a painted lineTo moves the path position like an appended one",
     );
-    recipe.endPage().endPDF();
+    writeOutput("position-parity-path-cursor", recipe.endPage().endPDF());
   });
 
   it("keeps the text cursor flowing while the path position rests", async function () {
@@ -52,7 +53,7 @@ describe("Recipe position parity", function () {
       "movedown advances whole line heights",
     );
     assert.deepEqual(recipe.position, { x: 11, y: 22 });
-    recipe.endPage().endPDF();
+    writeOutput("position-parity-text-cursor", recipe.endPage().endPDF());
   });
 
   it("leaves the path position where the table found it", async function () {
@@ -70,7 +71,7 @@ describe("Recipe position parity", function () {
       recipe.movedown(0, true)[1] > 40,
       "the text cursor drops below the table",
     );
-    recipe.endPage().endPDF();
+    writeOutput("position-parity-table", recipe.endPage().endPDF());
   });
 
   it("restarts each new page at the origin", async function () {
@@ -80,6 +81,6 @@ describe("Recipe position parity", function () {
     // Node Recipe ends createPage with moveTo(0, 0).
     recipe.createPage(600, 800);
     assert.deepEqual(recipe.position, { x: 0, y: 0 });
-    recipe.endPage().endPDF();
+    writeOutput("position-parity-new-page", recipe.endPage().endPDF());
   });
 });
