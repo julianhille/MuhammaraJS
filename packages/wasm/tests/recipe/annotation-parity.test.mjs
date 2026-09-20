@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 /** Reads the shared Arial fixture so both ends measure text identically. */
 async function arialBytes() {
@@ -97,8 +98,10 @@ describe("Recipe annotation parity", function () {
     reader = undefined;
   });
 
-  function finish(recipe) {
-    reader = muhammara.createReader(recipe.endPage().endPDF());
+  function finish(recipe, outputName) {
+    var bytes = recipe.endPage().endPDF();
+    if (outputName) writeOutput(outputName, bytes);
+    reader = muhammara.createReader(bytes);
     return readAnnotations(reader);
   }
 
@@ -875,7 +878,7 @@ describe("Recipe annotation parity", function () {
         title: "Editor",
       })
       .text("Hello", 50, 200, { font: "arial", highlight: true });
-    var annotations = finish(recipe);
+    var annotations = finish(recipe, "text-markup-annotations");
     /** Reads a numeric PDF array from an annotation dictionary. */
     var numbers = (value) =>
       value
@@ -924,7 +927,9 @@ describe("Recipe annotation parity", function () {
         html: true,
         color: "#ff0000",
       });
-    reader = muhammara.createReader(recipe.endPage().endPDF());
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("html-underline-strikeout-lines", bytes);
+    reader = muhammara.createReader(bytes);
     var page = reader.parsePage(0).getDictionary();
     assert.equal(page.exists("Annots"), false, "HTML markup is not annotated");
     var content = (function () {

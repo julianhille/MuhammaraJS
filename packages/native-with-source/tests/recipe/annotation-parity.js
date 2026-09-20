@@ -96,6 +96,13 @@ describe("Recipe annotation parity", function () {
     return readAnnotations(reader);
   }
 
+  /** Copies the generated PDF to tests/output/<name>.pdf for manual review. */
+  function writeOutput(name) {
+    var directory = path.join(__dirname, "../output");
+    fs.mkdirSync(directory, { recursive: true });
+    fs.copyFileSync(output, path.join(directory, name + ".pdf"));
+  }
+
   ["new", "edited"].forEach(function (mode) {
     [false, true].forEach(function (html) {
       it(`clips ${html ? "HTML" : "plain"} text markup to the box on ${mode} pages`, async function () {
@@ -484,6 +491,7 @@ describe("Recipe annotation parity", function () {
       })
       .text("Hello", 50, 200, { font: "arial", highlight: true });
     var annotations = await finish(recipe);
+    writeOutput("text-markup-annotations");
     /** Reads a numeric PDF array from an annotation dictionary. */
     var numbers = (value) =>
       value
@@ -539,6 +547,7 @@ describe("Recipe annotation parity", function () {
     await new Promise(function (resolve) {
       recipe.endPage().endPDF(resolve);
     });
+    writeOutput("html-underline-strikeout-lines");
     reader = muhammara.createReader(output);
     var page = reader.parsePage(0).getDictionary();
     assert.equal(page.exists("Annots"), false, "HTML markup is not annotated");

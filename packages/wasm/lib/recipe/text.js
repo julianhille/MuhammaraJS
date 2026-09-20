@@ -107,6 +107,10 @@ function sameStyles(left, right) {
  * Combines text options with an HTML fragment's styles for drawing. Like
  * native, HTML underline and strike-out styles draw lines, while the same
  * option names on text() create text-markup annotations.
+ * @param {RecipeTextOptions} options - Text options passed to text().
+ * @param {object} [styles] - The HTML fragment's own styles.
+ * @param {number} fontSize - Resolved font size for the fragment.
+ * @returns {RecipeTextOptions} Options for drawing this fragment.
  */
 function fragmentOptions(options, styles = {}, fontSize) {
   var { underline, strikeOut, ...rest } = styles;

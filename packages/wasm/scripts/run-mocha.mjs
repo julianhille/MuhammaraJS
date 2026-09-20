@@ -15,12 +15,17 @@ var materials = path.join(
   repositoryRoot,
   "packages/native-with-source/tests/TestMaterials",
 );
+var output = path.join(packageRoot, "tests/output");
 fs.mkdirSync(path.join(testCwd, "tests"), { recursive: true });
+fs.mkdirSync(output, { recursive: true });
 fs.symlinkSync(
   materials,
   path.join(testCwd, "tests/TestMaterials"),
   "junction",
 );
+// Symlinked (not copied into the disposable testRoot) so files tests write
+// here for manual review survive the fs.rmSync cleanup below.
+fs.symlinkSync(output, path.join(testCwd, "tests/output"), "junction");
 fs.symlinkSync(packageRoot, path.join(testRoot, "wasm"), "junction");
 
 var mocha = fileURLToPath(import.meta.resolve("mocha/bin/mocha.js"));
