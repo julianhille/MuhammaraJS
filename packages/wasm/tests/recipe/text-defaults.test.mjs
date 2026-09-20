@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe text default-size parity", function () {
   [false, true].forEach(function (editing) {
@@ -30,6 +31,10 @@ describe("Recipe text default-size parity", function () {
         },
       );
       var bytes = recipe.endPage().endPDF();
+      writeOutput(
+        `text-defaults-sizes-${editing ? "editing" : "creating"}`,
+        bytes,
+      );
       var reader = (await createMuhammaraWasm()).createReader(bytes);
       try {
         var sizes;
@@ -98,7 +103,9 @@ describe("Recipe text default-size parity", function () {
         )
         .endPage();
     });
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("text-defaults-wrapped-table", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     try {
       var output = reader.extractPageText(0);
       assert.ok(
@@ -178,7 +185,12 @@ describe("Recipe text color parity", function () {
         else recipe.createPage(200, 200);
         recipe.text("Hello", 20, 20, options).endPage();
       });
-      var reader = muhammara.createReader(recipe.endPDF());
+      var bytes = recipe.endPDF();
+      writeOutput(
+        `text-color-parity-${editing ? "editing" : "creating"}`,
+        bytes,
+      );
+      var reader = muhammara.createReader(bytes);
       try {
         cases.forEach(function ([options, expected], index) {
           assert.deepEqual(

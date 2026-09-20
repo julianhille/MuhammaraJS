@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("MergePDFPages", function () {
   var muhammara;
@@ -53,6 +54,7 @@ describe("MergePDFPages", function () {
       .Q();
     formWriter.writePage(formPage);
     var forms = formWriter.end();
+    writeOutput("MergePDFPages-forms", forms);
     var formsReader = muhammara.createReader(forms);
     assert.equal(formsReader.getPagesCount(), 1);
     formsReader.end();
@@ -70,6 +72,7 @@ describe("MergePDFPages", function () {
     mergeContext.Q();
     mergeWriter.writePage(mergePage);
     var merged = mergeWriter.end();
+    writeOutput("MergePDFPages-merged", merged);
     var mergedReader = muhammara.createReader(merged);
     assert.equal(mergedReader.getPagesCount(), 1);
     mergedReader.end();
@@ -80,6 +83,7 @@ describe("MergePDFPages", function () {
       copying.appendPDFPagesFromPDF(0, 1).end();
     }
     var appended = appendWriter.end();
+    writeOutput("MergePDFPages-appended", appended);
     var appendedReader = muhammara.createReader(appended);
     assert.equal(appendedReader.getPagesCount(), 6);
     appendedReader.end();
@@ -111,6 +115,7 @@ describe("MergePDFPages", function () {
     writer.startPageContentContext(page).doXObject(formId);
     writer.writePage(page);
     var output = writer.end();
+    writeOutput("MergePDFPages-crop-transform", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 2);
     var form = reader.parseNewObject(formId).toPDFStream().getDictionary();
@@ -197,6 +202,7 @@ describe("MergePDFPages", function () {
     writer.writePage(page);
 
     var output = writer.end();
+    writeOutput("MergePDFPages-direct-merge", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 1);
     reader.end();
@@ -215,6 +221,7 @@ describe("MergePDFPages", function () {
     });
     writer.writePage(page);
     var output = writer.end();
+    writeOutput("MergePDFPages-selected-merge", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 1);
     reader.end();

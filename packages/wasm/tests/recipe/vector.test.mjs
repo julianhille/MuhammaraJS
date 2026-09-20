@@ -4,6 +4,7 @@ import { Buffer } from "node:buffer";
 import { inflateSync } from "node:zlib";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 function getFirstContentStream(pdf) {
   var bytes = Buffer.from(pdf);
@@ -79,6 +80,7 @@ describe("Recipe vector", function () {
       .endPage()
       .endPDF();
 
+    writeOutput("vector-shapes", pdf);
     assert.equal(new TextDecoder().decode(pdf.slice(0, 8)), "%PDF-1.7");
     assert.match(new TextDecoder().decode(pdf), /%%EOF/);
   });
@@ -91,6 +93,7 @@ describe("Recipe vector", function () {
       .endPage()
       .endPDF();
 
+    writeOutput("vector-pie-wedge", pdf);
     assert.match(getFirstContentStream(pdf), /\r?\nh\r?\n[\s\S]*?S\r?\n/);
   });
 });

@@ -5,6 +5,7 @@ import {
   HOW_TO_EXAMPLES,
   runHowToExample,
 } from "../../examples/browser/how-tos.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Browser how-to examples", function () {
   var assets;
@@ -63,6 +64,7 @@ describe("Browser how-to examples", function () {
   for (const example of HOW_TO_EXAMPLES) {
     it(`generates the ${example.label} PDF`, async function () {
       var result = await runHowToExample(example.id, { assets });
+      writeOutput(`BrowserExamples-${example.id}`, result.bytes);
       assert(result.bytes instanceof Uint8Array);
       assert(result.bytes.length > 100);
       assert.equal(result.summary.pages, example.expectedPages || 1);
@@ -75,6 +77,7 @@ describe("Browser how-to examples", function () {
 
   it("renders table text without any uploaded assets", async function () {
     var result = await runHowToExample("table");
+    writeOutput("BrowserExamples-table-no-assets", result.bytes);
     assert.equal(result.summary.font, "Roboto (bundled)");
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(result.bytes);
@@ -93,6 +96,7 @@ describe("Browser how-to examples", function () {
 
   it("renders list markers, nesting, and links in the HTML list example", async function () {
     var result = await runHowToExample("html-lists");
+    writeOutput("BrowserExamples-html-lists-links", result.bytes);
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(result.bytes);
     try {

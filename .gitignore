@@ -3,6 +3,8 @@ build
 .DS_Store
 packages/native-with-source/tests/output
 packages/native-with-source/tests/**/output
+packages/wasm/tests/output
+packages/wasm/tests/**/output
 packages/native-with-source/binding
 packages/native-with-source/build/
 packages/native-with-source/openssl-build/

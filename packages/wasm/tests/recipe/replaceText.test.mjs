@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Replace text", function () {
   it("replaces text at its existing position", async function () {
@@ -28,6 +29,7 @@ describe("Replace text", function () {
 
     var Recipe = await createRecipe();
     var output = new Recipe(source).replaceText("Before", "After", 1).endPDF();
+    writeOutput("replaceText", output);
     var reader = muhammara.createReader(output);
     var text = reader.extractPageText(0);
 

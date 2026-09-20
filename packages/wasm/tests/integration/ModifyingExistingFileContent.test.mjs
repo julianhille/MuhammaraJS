@@ -2,6 +2,7 @@
 // tests/ModifyingExistingFileContent.js and tests/MergePDFPages.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("ModifyingExistingFileContent", function () {
   it("provides a modifier-owned reader view of its original bytes", async function () {
@@ -72,6 +73,7 @@ describe("ModifyingExistingFileContent", function () {
     assert.throws(() => copying.appendPDFPageFromPDF(0), /has ended/);
 
     var output = writer.end();
+    writeOutput("ModifyingExistingFileContent-form", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 3);
     var form = reader.parseNewObject(formId).toPDFStream();
@@ -111,6 +113,7 @@ describe("ModifyingExistingFileContent", function () {
     form.end();
     modified.end();
     var output = writer.end();
+    writeOutput("ModifyingExistingFileContent-interleaved", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 2);
     reader.end();
@@ -171,6 +174,7 @@ describe("ModifyingExistingFileContent", function () {
     );
 
     var output = writer.end();
+    writeOutput("ModifyingExistingFileContent-page-dictionary", output);
     var reader = muhammara.createReader(output);
     assert.deepEqual(reader.getPageBox(0), [0, 0, 500, 500]);
     reader.end();

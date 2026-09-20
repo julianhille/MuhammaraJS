@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("HighLevelContentContext", function () {
   it("draws shapes and text with byte-registered fonts", async function () {
@@ -48,6 +49,7 @@ describe("HighLevelContentContext", function () {
     writer.writePage(page);
 
     var pdf = writer.end();
+    writeOutput("HighLevelContentContext", pdf);
     var output = new TextDecoder().decode(pdf);
     assert.match(output, /\/ca 0.5/);
     assert.match(output, /\/CA 0.5/);

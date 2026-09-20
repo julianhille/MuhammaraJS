@@ -1,4 +1,5 @@
 const assert = require("assert");
+const fs = require("fs");
 const { inflateSync } = require("zlib");
 const Recipe = require("@muhammara/native-with-source").Recipe;
 
@@ -38,7 +39,9 @@ describe("Recipe lineStyle", () => {
       .endPage()
       .endPDF();
 
-    const content = getContentStream(recipe.outStream.toBuffer());
+    const bytes = recipe.outStream.toBuffer();
+    fs.writeFileSync(__dirname + "/../output/lineStyle-dashed.pdf", bytes);
+    const content = getContentStream(bytes);
     assert.match(
       content,
       /q\s+1 J\s+2 j\s+\[ 6 3 \] 2 d\s+4 M[\s\S]*?3 w[\s\S]*?S\s+Q/,
@@ -57,7 +60,9 @@ describe("Recipe lineStyle", () => {
       .endPage()
       .endPDF();
 
-    const content = getContentStream(recipe.outStream.toBuffer());
+    const bytes = recipe.outStream.toBuffer();
+    fs.writeFileSync(__dirname + "/../output/lineStyle-width.pdf", bytes);
+    const content = getContentStream(bytes);
     assert.match(content, /q[\s\S]*?5 w[\s\S]*?S\s+Q/);
   });
 });

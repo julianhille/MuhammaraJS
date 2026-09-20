@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { inflateSync } from "node:zlib";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 function getContentStream(pdf) {
   var bytes = Buffer.from(pdf);
@@ -39,6 +40,7 @@ describe("Recipe lineStyle", function () {
       ])
       .endPage()
       .endPDF();
+    writeOutput("lineStyle-dashed", pdf);
     var content = getContentStream(pdf);
 
     assert.match(
@@ -58,6 +60,7 @@ describe("Recipe lineStyle", function () {
       ])
       .endPage()
       .endPDF();
+    writeOutput("lineStyle-width", pdf);
     var content = getContentStream(pdf);
 
     assert.match(content, /q\s+5 w[\s\S]*?S\s+Q/);

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe colors, shapes, and images", function () {
   it("writes normalized device colors and shared path state", async function () {
@@ -30,6 +31,7 @@ describe("Recipe colors, shapes, and images", function () {
       .triangle(230, 110, [30, 40, 50], { fill: "#123456" })
       .endPage();
     var bytes = recipe.endPDF();
+    writeOutput("colors-shapes-normalized-colors", bytes);
     var reader = (await createMuhammaraWasm()).createReader(bytes);
     assert.equal(reader.getPagesCount(), 1);
     assert.deepEqual(reader.getPageInfo(0).mediaBox, [0, 0, 300, 300]);
@@ -61,7 +63,9 @@ describe("Recipe colors, shapes, and images", function () {
       })
       .image("logo", 180, 80, { scale: 0.25 })
       .endPage();
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("colors-shapes-images-placement", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     var page = reader.parsePage(0).getDictionary().toPDFDictionary();
     assert.ok(
       page.queryObject("Resources").toPDFDictionary().queryObject("XObject"),
@@ -85,7 +89,9 @@ describe("Recipe colors, shapes, and images", function () {
         debug: true,
       })
       .endPage();
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("colors-shapes-rectangle-radii-ngon-debug", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     assert.deepEqual(reader.getPageInfo(0).mediaBox, [0, 0, 200, 200]);
     var contents = reader
       .parsePage(0)
@@ -127,7 +133,9 @@ describe("Recipe colors, shapes, and images", function () {
       .arrow(155, 30, { fill: "#123456" })
       .triangle(20, 80, [20, 25, 30], { fill: "#654321" })
       .endPage();
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("colors-shapes-polygon-derived-edit", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     var contents = reader
       .parsePage(0)
       .getDictionary()
@@ -173,7 +181,9 @@ describe("Recipe colors, shapes, and images", function () {
       )
       .image("multipage-tiff", 20, 200, { width: 80, index: 1 })
       .endPage();
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("colors-shapes-arrows-triangles-tiff", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     assert.equal(reader.getPagesCount(), 1);
     reader.end();
   });

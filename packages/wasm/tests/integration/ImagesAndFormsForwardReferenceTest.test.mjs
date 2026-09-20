@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("ImagesAndFormsForwardReferenceTest", function () {
   it("maps and places byte assets before defining their supplied object IDs", async function () {
@@ -66,6 +67,7 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
     writer.endFormXObject(form);
 
     var pdf = writer.end();
+    writeOutput("ImagesAndFormsForwardReferenceTest", pdf);
     var reader = muhammara.createReader(pdf);
     assert.equal(reader.getPagesCount(), 1);
     reader.end();

@@ -1,6 +1,7 @@
 // Ports byte-backed overlay behavior from tests/recipe/overlay.js.
 import assert from "node:assert/strict";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe overlay", function () {
   it("overlays registered PDF pages with scale and fit options", async function () {
@@ -23,6 +24,7 @@ describe("Recipe overlay", function () {
       })
       .endPage()
       .endPDF();
+    writeOutput("overlay", overlay);
     assert.match(new TextDecoder().decode(overlay), /%%EOF/);
   });
 });

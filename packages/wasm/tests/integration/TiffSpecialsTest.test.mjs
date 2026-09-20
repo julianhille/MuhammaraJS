@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("TiffSpecialsTest", function () {
   it("creates selected TIFF directories and RGB/CMYK treatment forms", async function () {
@@ -83,6 +84,7 @@ describe("TiffSpecialsTest", function () {
       assert.throws(() => writer.createFormXObjectFromTIFF(multipage, options));
     });
     var pdf = writer.end();
+    writeOutput("TiffSpecialsTest", pdf);
     var reader = muhammara.createReader(pdf);
     assert.equal(reader.getPagesCount(), 4);
     [bwId, rgbId, cmykId].forEach((id) => {

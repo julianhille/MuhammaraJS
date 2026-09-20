@@ -1,4 +1,5 @@
 const assert = require("chai").assert;
+const fs = require("fs");
 const muhammara = require("@muhammara/native-with-source");
 const Recipe = muhammara.Recipe;
 
@@ -11,6 +12,10 @@ describe("Recipe graphics state", () => {
       .rectangle(0, 0, 10, 10, { fill: "#000000" })
       .endPage()
       .endPDF((bytes) => {
+        fs.writeFileSync(
+          __dirname + "/../output/graphics-state-rotate.pdf",
+          bytes,
+        );
         const reader = muhammara.createReader(
           new muhammara.PDFRStreamForBuffer(bytes),
         );
