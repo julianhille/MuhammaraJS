@@ -36,10 +36,7 @@ Wasm Recipe rejects annotation values that cannot form a valid PDF
 annotation, such as an `opacity` outside 0 to 1, non-numeric `borderDash`
 entries, or `quadPoints` whose length is not a multiple of eight, with a
 `TypeError` when the annotation is added, on new and edited pages. Native
-Recipe writes these values unchecked. A negative text `size`, or its
-`fontSize` alias, is likewise rejected with a `RangeError` from `text()` and
-`textDimensions()`; native forwards it to its font metrics, which report
-nonsensical dimensions instead. Wasm Recipe also checks link rectangles
+Recipe writes these values unchecked. Wasm Recipe also checks link rectangles
 when adding them: coordinates and dimensions must be finite, and the resulting
 PDF coordinates must not overflow. Invalid rectangles throw a `TypeError`;
 native forwards numeric rectangles unchecked. A negative width or height is

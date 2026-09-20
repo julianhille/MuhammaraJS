@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Reject a negative Recipe text `size`, or its `fontSize` alias, with a
+  `RangeError` naming the option and the value. `text()` clamped a negative
+  size to 1pt and `textDimensions()` measured with it, returning nonsensical
+  font metrics; both now throw before drawing or measuring. Pass a non-negative
+  size; zero and `NaN` still select the 14pt default. See the
+  [breaking changes](packages/native/docs/breaking-changes.md) page
+  [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
 - Keep Recipe HTML text outside any element on one line with its neighboring
   inline elements, with one space between them, instead of starting a new line
   for each top-level run and inline element; wrap content in `<p>` or add
@@ -52,6 +59,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   one space wider, so centered HTML lines no longer sit half a space and right
   aligned ones a full space left of the same text without `html`
   [#708](https://github.com/julianhille/MuhammaraJS/issues/708)
+- Measure Recipe `textDimensions()` with the `fontSize` alias as well as
+  `size`, matching `text()` and `@muhammara/wasm`, instead of silently
+  measuring at the 14pt default
+  [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
 - Break lines for `<br />` and uppercase `<BR>` in Recipe HTML text, not only
   `<br>` and `<br/>`, and drop the whitespace before a line break so aligned
   lines are not padded [#667](https://github.com/julianhille/MuhammaraJS/issues/667)

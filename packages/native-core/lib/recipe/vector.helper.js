@@ -1,4 +1,5 @@
 const { xObjectForm } = require("./xObjectForm");
+const { resolveFontSize } = require("./utils");
 
 exports._getPathOptions = function _getPathOptions(
   options = {},
@@ -55,7 +56,7 @@ exports._getPathOptions = function _getPathOptions(
   pathOptions.fillGsId = extGStates.fill;
 
   if (options.size || options.fontSize) {
-    const size = options.size || options.fontSize;
+    const size = resolveFontSize(options);
     if (!isNaN(size)) {
       pathOptions.size = size <= 0 ? 1 : size;
     }

@@ -95,9 +95,30 @@ function appendPDFPagesFromPDFWithAnnotations(
   }
 }
 
+/**
+ * Resolves a text font size from `size`, its `fontSize` alias, or a fallback,
+ * rejecting a negative size. A negative size has no usable meaning: measuring
+ * with it returns nonsensical font metrics, so it is reported as invalid input
+ * naming the option and the value.
+ * @param {Object} [options] - Options holding `size` or `fontSize`.
+ * @param {number} [fallback] - Size used when neither option is given.
+ * @returns {number} The resolved font size in PDF points.
+ * @throws {RangeError} If the resolved size is negative.
+ */
+function resolveFontSize(options = {}, fallback) {
+  const size = options.size || options.fontSize || fallback;
+  if (size < 0) {
+    throw new RangeError(
+      `Text ${options.size ? "size" : "fontSize"} must be a non-negative number, received ${size}`,
+    );
+  }
+  return size;
+}
+
 exports.ANNOTATION_PREFIX = ANNOTATION_PREFIX;
 exports.PAGE_CONTEXT_STATE = PAGE_CONTEXT_STATE;
 exports.cloneOptions = cloneOptions;
+exports.resolveFontSize = resolveFontSize;
 exports.appendPDFPageFromPDFWithAnnotations =
   appendPDFPageFromPDFWithAnnotations;
 exports.appendPDFPagesFromPDFWithAnnotations =

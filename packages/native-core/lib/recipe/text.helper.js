@@ -1,4 +1,4 @@
-var { cloneOptions } = require("./utils");
+var { cloneOptions, resolveFontSize } = require("./utils");
 
 const charSpacing = function charSpacing(text, charSpace) {
   let txt = text.replace(/^(?:(?!\u00a0)\s)+|(?:(?!\u00a0)\s)+$/g, "");
@@ -248,7 +248,7 @@ exports.textDimensions = function textDimensions(text, options = {}) {
     if (options.charSpace) {
       charSpaces = charSpacing(text, options.charSpace);
     }
-    const fontSize = options.size || this.current.defaultFontSize;
+    const fontSize = resolveFontSize(options, this.current.defaultFontSize);
     dimensions = font.calculateTextDimensions(text, fontSize);
     dimensions.xMax += charSpaces;
   }
