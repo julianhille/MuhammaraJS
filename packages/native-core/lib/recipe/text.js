@@ -379,7 +379,6 @@ exports.text = function text(text = "", x, y, options = {}) {
     let columnIndex = 1;
 
     toWriteTextObjects.some((toWriteTextObject, index) => {
-      const isHTML = toWriteTextObject.writeOptions.html;
       const { text, lineHeight, lineWidth, lineID, spaceWidth } =
         toWriteTextObject;
 
@@ -769,10 +768,12 @@ exports.text = function text(text = "", x, y, options = {}) {
       toWriteContents.push(toWriteTextObject);
 
       // To handle text that has been split in middle of word,
-      // need to decide if current text ends with a space.
+      // need to decide if current text ends with a space. HTML segments carry
+      // their own separating space, so adding one unconditionally in HTML mode
+      // measured every line a space wider than it is drawn and pushed aligned
+      // lines left.
       currentLineWidth +=
-        lineWidth +
-        (isHTML || toWriteTextObject.text.endsWith(" ") ? spaceWidth : 0);
+        lineWidth + (toWriteTextObject.text.endsWith(" ") ? spaceWidth : 0);
 
       // Processing last text object?
       if (index === toWriteTextObjects.length - 1) {

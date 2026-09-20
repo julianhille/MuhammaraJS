@@ -12,6 +12,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `open`, `richText`, `flag`, and `icon`, one annotation per drawn line, on new
   and edited pages
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Add Recipe HTML text alignment coverage mirroring native, asserting that
+  `html: true` lines align like the same text without `html` for `center`,
+  `right`, and `justify`, including multi-segment lines and lines ended by
+  `<br>` [#708](https://github.com/julianhille/MuhammaraJS/issues/708)
 - Add regression coverage for the truncated-input parser sweep, non-sequential
   `appendPDFPageFromPDF` indices, the full rotation fixture matrix, repeated
   `insertPage()` ordering, `FreeText` annotations, and the text `wrap` type
