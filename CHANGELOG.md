@@ -16,6 +16,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `<br>` as an object with `lineBreak: true` instead of a placeholder
   paragraph. See the [breaking changes](packages/native/docs/breaking-changes.md)
   page [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
+- Derive Recipe `table()` columns from every record instead of only the first,
+  keep `order` and `columns` entries even when no record has that field, and
+  use exactly the listed `columns` when no `order` is given. A column
+  `renderer` result now also sizes its row, and a misspelled `order` or
+  `columns` name draws an empty column instead of being dropped. List the intended columns with
+  `order` or `columns` to keep a fixed layout; see the
+  [breaking changes](packages/native/docs/breaking-changes.md) page
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Include padding, minimum/fixed cell heights, and rendered HTML in Recipe
+  table sizing. Tables can grow taller or continue earlier; adjust cell sizing
+  and continuation areas using the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly).
+  An `overflow` destination too small for a row and its repeated header now
+  throws `RangeError` instead of drawing beyond the bounds; return `true` to
+  stop or provide a large enough area
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ### Fixed
 
@@ -60,6 +75,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   changes pages or an `onClip` callback ends the page, instead of attaching
   links to a later page or throwing after the callback
   [#718](https://github.com/julianhille/MuhammaraJS/issues/718)
+- Stop Recipe `table()` from throwing for empty `contents`, reusing a previous
+  table's `overflow` callback, keeping the first page's bounds on a
+  continuation, overlapping a continued row with its repeated header, drawing a
+  zero-height border for an empty segment, and mutating `border` options.
+  An `overflow` callback that ends the page without starting another now
+  throws a clear `Error` instead of an internal `TypeError`
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Pass `""` instead of `null` to a table column `renderer` for null values, and
+  leave the text cursor at the table's left edge and bottom
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Treat inherited record properties as missing table cells instead of
+  rendering prototype methods such as `constructor` and `toString`
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Preserve `onClip` and other callback options set on a table, column, row, or
+  header instead of silently discarding them while cloning options
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Stop a table's `overflow` callback from also running as the text-flow
+  overflow callback while drawing a cell's text
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ## [7.0.0-beta.3] - 2026-09-18
 

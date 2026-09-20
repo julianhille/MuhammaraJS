@@ -1,12 +1,9 @@
-var assert = require("node:assert/strict");
-var os = require("os");
-var path = require("path");
-var muhammara = require("@muhammara/native-with-source");
-var Recipe = muhammara.Recipe;
-var fs = require("fs");
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { createMuhammaraWasm, createRecipe } from "../../index.js";
 
 /** Decodes page streams for structural border assertions. */
-function pageContent(reader, pageIndex) {
+function pageContent(muhammara, reader, pageIndex) {
   var page = reader.parsePage(pageIndex).getDictionary();
   var contents = reader.queryDictionaryObject(page, "Contents");
   var streams =
@@ -25,273 +22,45 @@ function pageContent(reader, pageIndex) {
       var input = reader.startReadingFromStream(stream.toPDFStream());
       var bytes = [];
       while (input.notEnded()) bytes.push(...input.read(4096));
-      return Buffer.from(bytes).toString("latin1");
+      return new TextDecoder("latin1").decode(new Uint8Array(bytes));
     })
     .join("\n");
 }
 
-/** Counts line paths independently of text and rectangle form XObjects. */
+/** Counts line paths independently of text and rectangles. */
 function lineCount(content) {
   return (content.match(/ m\b/g) || []).length;
 }
 
-function compare(a, b) {
-  // Use toUpperCase() to ignore character casing
-  var nameA = a.last_name.toUpperCase();
-  var nameB = b.last_name.toUpperCase();
-
-  var comparison = 0;
-  if (nameA > nameB) {
-    comparison = 1;
-  } else if (nameA < nameB) {
-    comparison = -1;
-  }
-  return comparison;
-}
-
-function hilight(text, record) {
-  if (record.gender.toLowerCase() === "female") {
-    return { color: "#ff1493" };
-  }
-}
-
-describe("Text - Columns", () => {
-  it("binds table overflow callbacks to the Recipe", function () {
-    var assert = require("node:assert/strict");
-    var recipe = new Recipe(
-      "new",
-      path.join(__dirname, "../output/table-overflow-this.pdf"),
-    );
-    var calls = 0;
-    recipe.createPage(300, 300).table(10, 10, [{ value: "row" }], {
-      height: 1,
-      overflow: function (currentRecipe, row) {
-        calls += 1;
-        assert.equal(this, recipe);
-        assert.equal(currentRecipe, recipe);
-        assert.equal(row, 1);
-        return true;
-      },
-    });
-    recipe.endPage().endPDF();
-    assert.equal(calls, 1);
-  });
-
-  it("Table", () => {
-    var output = path.join(__dirname, "../output/table.pdf");
-    var pplFile = path.join(__dirname, "../TestMaterials/recipe/people.json");
-    var recipe = new Recipe("new", output);
-    var peeps = fs.readFileSync(pplFile, "utf8");
-    var people = JSON.parse(peeps);
-
-    var contents = [
-      {
-        name: "Steven Haehn",
-        address: "257 Banana Ave.",
-        city: "Colorado Springs",
-        state: "Colorado",
-        job: "computer programmer",
-      },
-      {
-        name: "Yunjin Kim",
-        address: "123 Laurel Blvd.",
-        city: "Phoenix",
-        state: "Arizona",
-        job: "musical director, teacher",
-      },
-      {
-        name: "Chunyen Huang",
-        address: "34178 Sunset Lane",
-        city: "Los Angles",
-        state: "California",
-        job: "computer analyst",
-      },
-      {
-        name: "Iris Johansen",
-        address: "341 Washington Ave.",
-        city: "Atlanta",
-        state: "Georgia",
-        job: "author",
-      },
-      {
-        name: "Terry Brooks",
-        address: "1523 Bernard Blvd.",
-        // city: "Seattle",
-        state: "Oregon",
-        job: "author",
-      },
-      {
-        name: "Joy Merchand",
-        address: "46 Medulla Lane",
-        city: "San Jose",
-        state: "California",
-        job: "psycologist",
-      },
-    ];
-
-    var pcols = [
-      {
-        name: "email",
-        width: 170,
-      },
-      {
-        name: "ip_address",
-        width: 110,
-      },
-      {
-        name: "first_name",
-        renderer: hilight,
-        width: 80,
-      },
-      {
-        name: "last_name",
-        renderer: hilight,
-        width: 80,
-      },
-    ];
-
-    var columns = [
-      {
-        text: "Name",
-        name: "name",
-        width: 110,
-        cell: { textAlign: "center center" },
-      },
-      {
-        text: "Address",
-        name: "address",
-        width: 130,
-        cell: { textAlign: "left center" },
-      },
-      {
-        text: "City/Town",
-        name: "city",
-        width: 100,
-        cell: { textAlign: "center center" },
-      },
-      {
-        text: "State",
-        name: "state",
-        width: 80,
-      },
-      {
-        text: "Occupation",
-        name: "job",
-        width: 100,
-        color: "red",
-        size: 10,
-        cell: { textAlign: "right bottom" },
-        hcell: { textAlign: "center center" },
-      },
-    ];
-
-    // var stop = () => { return true; };
-
-    var newPage = (self) => {
-      self.endPage();
-      self.createPage("letter");
-      return { position: [30, 52] };
-    };
-
-    var nextTable = 30;
-    var samePage = () => {
-      nextTable += 170;
-      if (nextTable > 500) {
-        return true;
-      }
-      return { position: [nextTable, 302] };
-    };
-
-    var x = 50;
-    var y = 52;
-    recipe
-      .createPage("letter")
-      .text("Table with alternating row properties", 230, 30, {
-        color: "#000000",
-      })
-      .table(x, y, contents, {
-        columns: columns,
-        header: {
-          alignToData: true,
-          cell: { padding: [8, 2, 8, 2], textAlign: "left" },
-        },
-        border: { stroke: "#dddddd" },
-        row: { nth: "odd", cell: { style: { fill: "#dddddd" } } },
-      })
-      .text(
-        'Tables showing new position when "overflow" encountered.',
-        80,
-        y + 200,
-        { color: "#000000" },
-      )
-      .text("Note data driven property (color) assignment", 130, y + 220, {
-        size: 12,
-        color: "#000000",
-      })
-      .table(x - 20, y + 250, people.sort(compare), {
-        columns: pcols,
-        border: true,
-        header: { cell: { textAlign: "left" } },
-        row: { size: 10 },
-        overflow: samePage,
-        order: "first_name,last_name",
-      })
-      .endPage()
-      .createPage("letter")
-      .text(
-        "Table continued onto subsequent pages (overflow encountered)",
-        x,
-        y - 30,
-        { color: "#000000" },
-      )
-      .table(x - 20, y, people.sort(compare), {
-        columns: pcols,
-        border: true,
-        header: true,
-        row: { size: 10 },
-        overflow: newPage,
-        order: "first_name,last_name,email",
-      })
-      .endPage()
-      .createPage("letter")
-      .text("Table with less columns than fields in data", 230, 30, {
-        color: "#000000",
-      })
-      .table(x, y, contents, {
-        columns: columns.slice(0, 4),
-        header: {
-          alignToData: true,
-          cell: { padding: [8, 2, 8, 2], textAlign: "left" },
-        },
-        border: { stroke: "#dddddd" },
-        row: { size: 10 },
-      });
-
-    recipe.endPage();
-    recipe.endPDF();
-  }).timeout(60000);
-});
-
-describe("Recipe table layout", () => {
-  var directory;
-  var output;
+describe("Recipe table layout", function () {
+  var Recipe;
+  var muhammara;
   var reader;
 
-  beforeEach(() => {
-    directory = fs.mkdtempSync(path.join(os.tmpdir(), "recipe-table-"));
-    output = path.join(directory, "table.pdf");
+  before(async function () {
+    Recipe = await createRecipe();
+    Recipe.registerFont(
+      "arial",
+      new Uint8Array(
+        await readFile(
+          new URL(
+            "../../../native-with-source/tests/TestMaterials/fonts/arial.ttf",
+            import.meta.url,
+          ),
+        ),
+      ),
+    );
+    muhammara = await createMuhammaraWasm();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     if (reader) reader.end();
     reader = undefined;
-    fs.rmSync(directory, { recursive: true, force: true });
   });
 
   /** Finalizes the output and opens the reader owned by this test. */
   function finish(recipe) {
-    recipe.endPage().endPDF();
-    reader = muhammara.createReader(output);
+    reader = muhammara.createReader(recipe.endPage().endPDF());
     return reader;
   }
 
@@ -304,8 +73,8 @@ describe("Recipe table layout", () => {
     }));
   }
 
-  it("includes fields from every record and explicit optional columns", () => {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+  it("includes fields from every record and explicit optional columns", function () {
+    var recipe = new Recipe().createPage(400, 400);
     recipe
       .table(20, 20, [{ a: "A1" }, { a: "A2", b: "B2" }], { header: true })
       .table(20, 120, [{ a: "A3" }], {
@@ -324,8 +93,8 @@ describe("Recipe table layout", () => {
     assert.ok(b.x < a.x, "order places b before a");
   });
 
-  it("rejects a null record like native Recipe", () => {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+  it("rejects a null record like native Recipe", function () {
+    var recipe = new Recipe().createPage(400, 400);
     assert.throws(
       () => recipe.table(20, 20, [{ a: "A1" }, null], {}),
       TypeError,
@@ -333,8 +102,8 @@ describe("Recipe table layout", () => {
     finish(recipe);
   });
 
-  it("renders nullish values as empty cells and keeps other values", () => {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+  it("renders nullish values as empty cells and keeps other values", function () {
+    var recipe = new Recipe().createPage(400, 400);
     var values = [];
     recipe.table(20, 20, [{ a: null, b: undefined, c: 0, d: false }, {}], {
       columns: ["a", "b", "c", "d"].map((name) => ({
@@ -351,9 +120,9 @@ describe("Recipe table layout", () => {
     assert.deepEqual(values, ["", "", 0, false, "", "", "", ""]);
   });
 
-  it("runs each renderer once per cell and sizes rows with its options", () => {
+  it("runs each renderer once per cell and sizes rows with its options", function () {
     var calls = [];
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     recipe
       .table(20, 20, [{ a: "x" }, { a: "y" }])
       .table(200, 20, [{ b: "x" }, { b: "z" }], {
@@ -381,12 +150,12 @@ describe("Recipe table layout", () => {
     );
   });
 
-  it("continues with each position's own bounds and a repeated header", () => {
+  it("continues with each position's own bounds and a repeated header", function () {
     var overflows = 0;
     var rows = Array.from({ length: 30 }, (_, index) => ({
       name: `row ${index + 1}`,
     }));
-    var recipe = new Recipe("new", output).createPage(300, 300);
+    var recipe = new Recipe().createPage(300, 300);
     recipe.table(20, 20, rows, {
       header: true,
       /** Continues on a taller page with the Recipe as the callback receiver. */
@@ -411,13 +180,13 @@ describe("Recipe table layout", () => {
     assert.ok(second.includes("later table"));
   });
 
-  it("draws each border line once, keeps its options, and skips empty segments", () => {
+  it("draws each border line once, keeps its options, and skips empty segments", function () {
     var data = [
       { a: "A1", b: "B1" },
       { a: "A2", b: "B2" },
     ];
     var border = { dash: [3, 2] };
-    var recipe = new Recipe("new", output).createPage(300, 300);
+    var recipe = new Recipe().createPage(300, 300);
     recipe.table(20, 20, data, { header: true, border });
     recipe.endPage().createPage(300, 300);
     recipe.table(20, 290, data, {
@@ -427,10 +196,16 @@ describe("Recipe table layout", () => {
     });
     finish(recipe);
     [0, 1].forEach((pageIndex) => {
-      var content = pageContent(reader, pageIndex);
+      var content = pageContent(muhammara, reader, pageIndex);
       // One column divider plus the header and first-row separators.
       assert.equal(lineCount(content), 3);
       assert.match(content, /\[\s*3\s+2\s*\]\s*0\s+d/);
+      // Wasm strokes the outer rectangle in the page content as well, so it
+      // must carry the same dash. Native draws it through a form XObject.
+      assert.equal(
+        (content.match(/\[\s*3\s+2\s*\]\s*0\s+d/g) || []).length,
+        lineCount(content) + 1,
+      );
     });
     assert.deepEqual(
       border,
@@ -439,8 +214,8 @@ describe("Recipe table layout", () => {
     );
   });
 
-  it("returns for empty contents and leaves the cursor below the table", () => {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+  it("returns for empty contents and leaves the cursor below the table", function () {
+    var recipe = new Recipe().createPage(400, 400);
     assert.equal(recipe.table(20, 20, []), recipe);
     recipe.table(40, 20, [{ a: "A" }, { a: "B" }]);
     var [x, y] = recipe.movedown(0, true);
@@ -451,7 +226,7 @@ describe("Recipe table layout", () => {
   });
 
   it("preserves exact field names in an order array", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     recipe.table(20, 20, [{ " a ": "spaced", "": "empty", a: "wrong" }], {
       order: [" a ", ""],
     });
@@ -463,7 +238,7 @@ describe("Recipe table layout", () => {
   });
 
   it("leaves tables with no columns unchanged", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     recipe.table(40, 20, [{ a: "before" }]);
     var before = recipe.movedown(0, true);
     recipe.table(150, 150, [{}, {}], { header: true, border: true });
@@ -477,7 +252,7 @@ describe("Recipe table layout", () => {
   });
 
   it("includes vertical padding in row heights and overflow decisions", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     var overflowRows = [];
     recipe.table(20, 20, [{ a: "first" }, { a: "second" }], {
       size: 8,
@@ -498,7 +273,7 @@ describe("Recipe table layout", () => {
 
   ["minHeight", "height"].forEach(function (heightOption) {
     it(`sizes headers and renderer cells with textBox.${heightOption}`, function () {
-      var recipe = new Recipe("new", output).createPage(400, 400);
+      var recipe = new Recipe().createPage(400, 400);
       var calls = [];
       recipe.table(20, 20, [{ a: "first" }, { a: "second" }], {
         header: true,
@@ -526,7 +301,7 @@ describe("Recipe table layout", () => {
   });
 
   it("measures HTML line breaks as rendered content", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     recipe.table(
       20,
       20,
@@ -550,7 +325,7 @@ describe("Recipe table layout", () => {
   });
 
   it("finishes borders only once when overflow stops the table", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     var overflowRows = [];
     recipe.table(
       20,
@@ -579,11 +354,11 @@ describe("Recipe table layout", () => {
       texts().map((entry) => entry.content),
       ["first", "cell"],
     );
-    assert.equal(lineCount(pageContent(reader, 0)), 1);
+    assert.equal(lineCount(pageContent(muhammara, reader, 0)), 1);
   });
 
   it("rejects a continuation after the callback ends the page", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     var calls = 0;
     assert.throws(
       () =>
@@ -607,7 +382,7 @@ describe("Recipe table layout", () => {
   });
 
   it("rejects a continuation without room for its header and first row", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     var calls = 0;
     assert.throws(
       () =>
@@ -642,7 +417,7 @@ describe("Recipe table layout", () => {
 
   [true, false].forEach(function (columnHeader) {
     it(`isolates default headers from body styles with column.header=${columnHeader}`, function () {
-      var recipe = new Recipe("new", output).createPage(400, 400);
+      var recipe = new Recipe().createPage(400, 400);
       recipe.text("control", 20, 10, { bold: true });
       recipe.table(20, 50, [{ value: "body" }], {
         header: true,
@@ -677,7 +452,7 @@ describe("Recipe table layout", () => {
   });
 
   it("lets explicit table header styles override column headers and body styles", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     recipe.table(20, 20, [{ value: "body" }], {
       size: 30,
       color: "red",
@@ -701,13 +476,13 @@ describe("Recipe table layout", () => {
         ["body", 24],
       ],
     );
-    var content = pageContent(reader, 0);
+    var content = pageContent(muhammara, reader, 0);
     assert.match(content, /(^|\s)0\s+0\s+1\s+rg\b/);
     assert.match(content, /(^|\s)1\s+0\s+0\s+rg\b/);
   });
 
   it("treats inherited prototype properties as missing cells", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     var records = [
       {},
       { constructor: "ctor", toString: "string", hasOwnProperty: "own" },
@@ -731,54 +506,8 @@ describe("Recipe table layout", () => {
     );
   });
 
-  ["table", "column", "row", "header", "column-header", "hcell"].forEach(
-    function (scope) {
-      it(`preserves ${scope} onClip callbacks when resolving table styles`, function () {
-        var recipe = new Recipe("new", output).createPage(400, 400);
-        var clips = [];
-        var box = {
-          height: 14,
-          lineHeight: 10,
-          padding: 2,
-          clipIfExceedsBox: true,
-          /** Reports the clipped line through a declaratively configured callback. */
-          onClip: (self, result) => {
-            clips.push(result);
-          },
-        };
-        var column = { name: "value" };
-        var options = { size: 8, columns: [column] };
-        var header = ["header", "column-header", "hcell"].includes(scope);
-        if (scope === "table") options.textBox = box;
-        if (scope === "column") column.cell = box;
-        if (scope === "row") options.row = { cell: box };
-        if (header) {
-          options.header = { size: 8 };
-          column.text = "one\ntwo";
-          if (scope === "header") options.header.cell = box;
-          if (scope === "column-header") column.header = { textBox: box };
-          if (scope === "hcell") column.hcell = box;
-        }
-        recipe.table(
-          20,
-          20,
-          [{ value: header ? "body" : "one\ntwo" }],
-          options,
-        );
-        finish(recipe);
-        assert.equal(clips.length, 1);
-        assert.equal(clips[0].linesWritten, 1);
-        assert.ok(clips[0].remainder.includes("two"));
-        assert.deepEqual(
-          texts().map((entry) => entry.content),
-          header ? ["one", "body"] : ["one"],
-        );
-      });
-    },
-  );
-
   it("merges header box overrides and uses the same styles on continuations", function () {
-    var recipe = new Recipe("new", output).createPage(400, 400);
+    var recipe = new Recipe().createPage(400, 400);
     var headerCalls = [];
     var writeText = recipe.text;
     /** Captures effective box styling alongside assertions on the produced PDF. */

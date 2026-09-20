@@ -1,3 +1,5 @@
+var { cloneOptions } = require("./utils");
+
 const charSpacing = function charSpacing(text, charSpace) {
   let txt = text.replace(/^(?:(?!\u00a0)\s)+|(?:(?!\u00a0)\s)+$/g, "");
   return txt.length ? (txt.length - 1) * charSpace : 0;
@@ -276,7 +278,7 @@ exports.Column = class Column {
     this._field = field; // associated data field
     this._text = text || field; // for column title
     this._gap = 0;
-    this._options = JSON.parse(JSON.stringify(options)); // cloning
+    this._options = cloneOptions(options);
 
     this._options.textBox = this._options.cell;
 

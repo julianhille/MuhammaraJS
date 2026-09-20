@@ -399,13 +399,16 @@ export interface RecipeTableColumn<
   font?: string;
   text?: string;
   width?: number;
+  /** Cell text-box options, including onClip callbacks preserved during table layout. */
   cell?: RecipeTextBox;
+  /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
   header?: boolean | RecipeTextOptions;
+  /** Final header text-box overrides, applied after header styles and alignToData. */
   hcell?: RecipeTextBox;
   /** Returns cell text options, or a falsy value to keep the defaults. */
   renderer?: (
     this: void,
-    /** The cell value; missing and nullish values arrive as `""`. */
+    /** The own cell value; missing, inherited, and nullish values arrive as `""`. */
     text: undefined extends RecipeTableFieldValue<RecordType, Field>
       ? Exclude<RecipeTableFieldValue<RecordType, Field>, null | undefined> | ""
       : null extends RecipeTableFieldValue<RecordType, Field>
@@ -432,9 +435,10 @@ export type RecipeTableColumnOptions<
 export type RecipeTableRow = Record<string, unknown>;
 export interface RecipeTableOptions<
   RecordType extends object = RecipeTableRow,
-> extends Omit<RecipeTextOptions, "overflow"> {
-  /** Per-continuation table height. Wrapped headers and cells are measured before rows are placed. */
+> extends Omit<RecipeTextOptions, "overflow" | "cell"> {
+  /** Per-segment height, bounded by the page bottom margin. Measurements include padding and minimum/fixed cell heights. */
   height?: number;
+  /** Comma-separated names are trimmed; array entries preserve exact keys. */
   order?:
     | string
     | RecipeTableField<RecordType>[]
@@ -443,11 +447,13 @@ export interface RecipeTableOptions<
         ...RecipeTableField<RecordType>[],
       ];
   columns?: readonly RecipeTableColumnOptions<RecordType>[];
+  /** Enables headers and overrides column header styles; body text styles are not inherited. */
   header?:
     | boolean
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
   row?: RecipeTextOptions & { nth?: "even" | "odd"; cell?: RecipeTextBox };
+  /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
   overflow?: (
     this: Recipe,
     recipe: Recipe,

@@ -411,6 +411,49 @@ var text = (nbsp + "Indented label" + nbsp).split(nbsp).join(" ");
 recipe.text(text, 72, 72, { charSpace: 2 });
 ```
 
+## 12. Choose Table Columns Explicitly
+
+v7 `Recipe.table()` builds its columns from every record instead of only the
+first one, keeps `order` and `columns` entries even when no record has that
+field, and uses exactly the listed `columns` when there is no `order`. In v6, a
+field missing from the first record was dropped, and a `columns` list longer
+than the first record's fields was ignored in favor of those fields. A column
+`renderer` result now also sizes its row. Tables can therefore gain columns,
+change column order, or get taller rows. A misspelled `order` or `columns` name
+now draws an empty column instead of being dropped silently; check the names
+against your records.
+
+To keep a fixed set of columns, list them with `order` or `columns`:
+
+```javascript
+recipe.table(50, 52, people, {
+  order: ["name", "city"],
+  columns: [
+    { name: "name", text: "Name", width: 180 },
+    { name: "city", text: "City", width: 160 },
+  ],
+});
+```
+
+Row and header sizing now includes vertical padding, `minHeight`, fixed
+`height`, and rendered HTML rather than just unpadded plain text. A default
+cell's 2pt top and bottom padding therefore adds 4pt to its row height. To make
+rows more compact, set column `cell.padding` and `header.cell.padding`
+explicitly; remove or reduce any unnecessary `minHeight`/`height`. HTML cells
+reserve the space their rendered lines need.
+
+Review overflow callbacks after adjusting sizing. The callback receives the
+Recipe as `this` and its first argument, and is called once per pending row.
+If it continues, the destination must fit both the repeated header and the
+entire row within the table height and page bottom margin. Otherwise `table()`
+throws `RangeError` before drawing that header or row. Return `true` to stop,
+move the next segment upward, choose a taller page/table area, or split an
+oversized record into multiple rows. See [Create Multi-Page Tables](../how-to/create-tables.md).
+
+Array-form `order` preserves exact field names, including whitespace and
+empty-string keys; the comma-separated form trims surrounding whitespace.
+Tables with empty contents or no discovered columns preserve the cursor.
+
 ## What Does Not Change
 
 - Supported Node.js versions.

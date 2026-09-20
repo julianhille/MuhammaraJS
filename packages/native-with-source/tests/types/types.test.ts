@@ -167,22 +167,28 @@ var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
       text: "Name",
       cell: {
         padding: 4,
+        minHeight: 40,
         wrap: "ellipsis",
         style: { borderRadius: 4, colorspace: "gray", fill: "#00" },
       },
       header: true,
+      hcell: { height: 60 },
       renderer: (text, record, field, row) => {
         void text;
         var score: number = record.score;
         void field;
         void score;
         return row % 2
-          ? { color: "blue", underline: { text: "reviewed", color: "red" } }
+          ? {
+              color: "blue",
+              underline: { text: "reviewed", color: "red" },
+              textBox: { minHeight: 80 },
+            }
           : undefined;
       },
     },
   ],
-  header: { alignToData: true, cell: { padding: 2 } },
+  header: { font: "arial", size: 12, alignToData: true, cell: { padding: 2 } },
   border: { width: 0.5, lineCap: "butt" },
   row: { nth: "odd", cell: { padding: 2 } },
   overflow: function (currentRecipe, row) {
@@ -192,6 +198,29 @@ var tableOptions: muhammara.Recipe.TableOptions<TableRecord> = {
     return row > 10 ? true : { position: [10, 10] };
   },
 };
+var tableClippingBox: muhammara.Recipe.TextBox = {
+  height: 14,
+  clipIfExceedsBox: true,
+  /** Declarative table callbacks receive a Recipe and the clipping result. */
+  onClip(currentRecipe, result) {
+    var remainder: string = result.remainder;
+    void currentRecipe;
+    void remainder;
+  },
+};
+recipe.table(20, 20, [{ value: "one\ntwo" }], {
+  textBox: tableClippingBox,
+  columns: [
+    {
+      name: "value",
+      cell: tableClippingBox,
+      header: { textBox: tableClippingBox },
+      hcell: tableClippingBox,
+    },
+  ],
+  header: { cell: tableClippingBox },
+  row: { cell: tableClippingBox },
+});
 function applyTable(options: muhammara.Recipe.TableOptions<TableRecord>): void {
   recipe.table(10, 120, [{ name: "Ada", score: 10 }], options);
 }
@@ -220,7 +249,8 @@ var optionalTableOptions: muhammara.Recipe.TableOptions<OptionalTableRecord> = {
     {
       name: "score",
       renderer: (text) => {
-        var score: number | null | "" = text;
+        var score: number | "" = text;
+        // Missing and null values arrive as "".
         void score;
       },
     },

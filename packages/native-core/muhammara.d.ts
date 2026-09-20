@@ -1302,14 +1302,20 @@ declare namespace muhammara {
       name: Field;
       text?: string;
       width?: number;
+      /** Cell text-box options, including onClip callbacks preserved during table layout. */
       cell?: TextBox;
+      /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
       header?: boolean | TextOptions;
+      /** Final header text-box overrides, applied after header styles and alignToData. */
       hcell?: TextBox;
       renderer?: (
         this: void,
+        /** The own cell value; missing, inherited, and nullish values arrive as `""`. */
         text: undefined extends TableFieldValue<RecordType, Field>
-          ? Exclude<TableFieldValue<RecordType, Field>, undefined> | ""
-          : TableFieldValue<RecordType, Field>,
+          ? Exclude<TableFieldValue<RecordType, Field>, null | undefined> | ""
+          : null extends TableFieldValue<RecordType, Field>
+            ? Exclude<TableFieldValue<RecordType, Field>, null | undefined> | ""
+            : TableFieldValue<RecordType, Field>,
         record: RecordType,
         field: Field,
         row: number,
@@ -1336,16 +1342,20 @@ declare namespace muhammara {
     interface TableOptions<
       RecordType extends object = Record<string, unknown>,
     > extends Omit<TextOptions, "overflow"> {
+      /** Per-segment height, also bounded by the current page's bottom margin. */
       height?: number;
+      /** Comma-separated names are trimmed; array entries preserve exact keys. */
       order?:
         | string
         | TableField<RecordType>[]
         | readonly [TableField<RecordType>, ...TableField<RecordType>[]];
       columns?: readonly TableColumnOptions<RecordType>[];
+      /** Enables headers and overrides column header styles; body text styles are not inherited. */
       header?:
         boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
       border?: boolean | PolygonOptions;
       row?: TextOptions & { nth?: "even" | "odd"; cell?: TextBox };
+      /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
       overflow?: (
         this: Recipe,
         recipe: Recipe,
