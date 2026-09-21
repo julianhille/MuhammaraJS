@@ -263,8 +263,9 @@ class Recipe {
   /**
    * End the pdfDoc. Finalization happens once; later calls do not rewrite the
    * PDF and invoke the callback with the completed output when applicable.
-   * A failed finalization retires the Recipe and later calls rethrow the
-   * original error.
+   * An active page is finished first, so a forgotten endPage() does not cost
+   * that page. A failed finalization retires the Recipe and later calls
+   * rethrow the original error.
    * @function
    * @memberof Recipe
    * @param {function} [callback] - The callback function.
@@ -292,6 +293,10 @@ class Recipe {
     if (deletingPages && this.page) {
       throw new Error("Finish the current page before endPDF");
     }
+    // The writer cannot finalize around an open content stream: it drops the
+    // page and emits a catalog with no page tree. Finish the page for the
+    // caller instead, before finalization retires the Recipe.
+    if (this.page) this.endPage();
     try {
       this._deletePages();
       this._writeInfo();

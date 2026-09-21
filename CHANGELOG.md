@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Finish an active Recipe page in `endPDF()` and `appendPage()` instead of
+  writing a document without it. `createPage()` followed by `endPDF()` wrote a
+  PDF with no page tree, and the same sequence with page content or an
+  `appendPage()` threw `Unable to end PDF`. A page still open while pages are
+  marked for deletion is still reported, before the Recipe is retired
+  [#732](https://github.com/julianhille/MuhammaraJS/issues/732)
 - Break lines for `<br />` and uppercase `<BR>` in Recipe HTML text, not only
   `<br>` and `<br/>`, and drop the whitespace before a line break so aligned
   lines are not padded [#667](https://github.com/julianhille/MuhammaraJS/issues/667)

@@ -564,6 +564,25 @@ function writePageLabels(writer, copyingContext, rootID, pageLabels) {
   objectsContext.endDictionary(dictionary).endIndirectObject();
 }
 
+/**
+ * Reports whether a page is still open, for new pages and edited pages alike.
+ * Document-level operations close the active page before they run, so the
+ * writer never has to finalize around an open content stream.
+ */
+export function hasActivePage(recipe) {
+  return recipe._contextState !== PAGE_CONTEXT_STATE.IDLE;
+}
+
+/**
+ * Finishes an open page on behalf of a document-level operation, so a caller
+ * that forgot {@link Recipe#endPage} keeps that page instead of losing it to a
+ * writer that cannot finalize around an open content stream.
+ */
+export function endActivePage(recipe) {
+  if (hasActivePage(recipe)) recipe.endPage();
+  return recipe;
+}
+
 /** Creates Recipe page creation, inspection, and editing methods. */
 export function createPageMethods(
   call,

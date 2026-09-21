@@ -8,8 +8,10 @@
 - Recipe page numbers are one-based, including `editPage()`, `pageInfo()`,
   `replaceText()`, `deletePage()`, and composition source pages. Only
   `insertPage()` uses zero to mean before the first output page.
-- Call `endPage()` before selecting, creating, or editing another page and before
-  `endPDF()`.
+- Call `endPage()` before selecting, creating, or editing another page.
+  `endPDF()` and `appendPage()` finish an active page themselves, so a forgotten
+  `endPage()` does not cost that page. While pages are marked for deletion,
+  `endPDF()` reports an active page instead of finishing it.
 - `pauseContext()` and `resumeContext()` are chainable for valid created-page
   and edited-page transitions. They throw when there is no matching active or
   paused page content context.
