@@ -21,7 +21,7 @@ runs:
         echo "directory=${directory#"$PWD/"}" >> "$GITHUB_OUTPUT"
         echo "name=$(basename "$directory")" >> "$GITHUB_OUTPUT"
         echo "digest=$digest" >> "$GITHUB_OUTPUT"
-    - uses: actions/cache@v5
+    - uses: actions/cache@v6
       with:
         path: ${{ steps.configuration.outputs.directory }}
         key: wasm-${{ steps.configuration.outputs.name }}-${{ steps.configuration.outputs.digest }}-${{ hashFiles('packages/wasm/build.sh', 'packages/wasm/CMakeLists.txt', 'packages/wasm/src/**', 'packages/native-with-source/src/**') }}

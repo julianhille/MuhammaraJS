@@ -122,6 +122,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Update GitHub Actions to their current releases to remove deprecated Node.js
+  action runtimes [#700](https://github.com/julianhille/MuhammaraJS/issues/700)
 - Declare native Recipe `fill()`, `stroke()`, and `fillAndStroke()` without a
   color parameter, matching the implementation, the "no effect" prose, and the
   WebAssembly declarations. The parameter existed only in `7.0.0-beta` and was
