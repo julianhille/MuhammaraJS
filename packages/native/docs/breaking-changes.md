@@ -134,7 +134,8 @@ This page collects the compatibility changes formerly maintained in the README.
   such as a width of 2147483645.5 for `size: -5`. Zero and `NaN` previously fell
   back to the 14pt default in some paths, hiding the mistake. Pass a size
   greater than zero, or omit the option — `null` and `undefined` still select
-  the 14pt default
+  the 14pt default. See
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
   [#733](https://github.com/julianhille/MuhammaraJS/issues/733).
 
 ## Version 5.x

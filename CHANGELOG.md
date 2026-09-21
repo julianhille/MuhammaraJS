@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   metrics; zero and `NaN` also fell back to the 14pt default in some paths.
   Both now throw before drawing or measuring. Pass a size greater than zero, or
   omit the option — `null` and `undefined` still select the 14pt default. See
-  the [breaking changes](packages/native/docs/breaking-changes.md) page
+  the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
+  and the [breaking changes](packages/native/docs/breaking-changes.md) page
   [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
 - Keep Recipe HTML text outside any element on one line with its neighboring
   inline elements, with one space between them, instead of starting a new line
