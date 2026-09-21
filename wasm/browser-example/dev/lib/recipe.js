@@ -8,7 +8,12 @@ import { endPDF } from "./recipe/end.js";
 import { getFont, registerFont } from "./recipe/font.js";
 import { createImageMethods } from "./recipe/image.js";
 import { initializeRecipe, recipeVersion } from "./recipe/parameters.js";
-import { createPageMethods, updateMediaBox } from "./recipe/page.js";
+import {
+  createPageMethods,
+  endActivePage,
+  hasActivePage,
+  updateMediaBox,
+} from "./recipe/page.js";
 import { createShapeMethods } from "./recipe/shapes.js";
 import { createVectorHelpers } from "./recipe/vector.helper.js";
 import { createLineMethods } from "./recipe/vector-line.js";
@@ -145,7 +150,7 @@ export function createRecipeFactory({
       if (Object.keys(info).length) this.info(info);
     }
 
-    /** The last high-level moveTo, lineTo, or text position in Recipe coordinates. */
+    /** The last moveTo or lineTo path position in Recipe coordinates. */
     get position() {
       return { ...this._cursor };
     }
@@ -581,7 +586,7 @@ export function createRecipeFactory({
       }
       if (transformed) this._restore();
       this._lastLineHeight = fontSize;
-      this._cursor = { x, y: y + this._lastLineHeight };
+      this._textCursor = { x, y: y + this._lastLineHeight };
       return this;
     }
   }
@@ -720,10 +725,17 @@ export function createRecipeFactory({
       endPDF: createEndPDF({
         endPDF: (recipe) => {
           if (recipe._endError) throw recipe._endError;
+          // deletePage() rewrites the page tree it read when the page was
+          // marked, so an open page cannot be folded into that rewrite.
+          // Native reports the same conflict the same way.
+          if (recipe._deletedPages?.size && hasActivePage(recipe)) {
+            throw new Error("Finish the current page before endPDF");
+          }
+          // Otherwise finish the open page for the caller, before finalization
+          // retires the Recipe: a forgotten page ending must not cost the page
+          // or leave an unrecoverable document behind.
+          endActivePage(recipe);
           if (recipe._sourceMode) {
-            if (recipe._editingPage || recipe._pageHeight) {
-              throw new Error("Finish the current page before endPDF");
-            }
             if (!recipe._endedBytes) {
               var deletingPages = Boolean(recipe._deletedPages?.size);
               var deletionState = deletingPages

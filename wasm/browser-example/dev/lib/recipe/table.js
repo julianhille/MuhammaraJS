@@ -319,7 +319,7 @@ export function createTableMethods() {
       }
       drawBorder();
       // Leave the text cursor at the table's left edge, below its last segment.
-      this._cursor = { x: tableX, y: currentY };
+      this._textCursor = { x: tableX, y: currentY };
       this._textBoxOrigin = { x: tableX, y: currentY };
       return this;
     },

@@ -1,4 +1,5 @@
 import { constants } from "../constants.js";
+import { endActivePage } from "./page.js";
 
 /** Creates Recipe methods for composing registered PDF files. */
 export function createCompositionMethods({
@@ -15,6 +16,8 @@ export function createCompositionMethods({
      * to append every page; endpoints beyond the source are clamped to its
      * final page.
      * Appended pages immediately become part of the output and page metadata.
+     * An active page is finished first, so appended pages follow it in the
+     * output.
      *
      * @name appendPage
      * @function
@@ -53,6 +56,11 @@ export function createCompositionMethods({
           (pageNumber) => Math.min(source.pages, pageNumber) - 1,
         );
       });
+      // Appending writes whole pages into the document, which the writer
+      // cannot do around an open content stream. Close the active page only
+      // once the selection is known to be valid, so a rejected selection
+      // leaves the page exactly as it was.
+      endActivePage(this);
       if (this._sourceMode) {
         var copiedPages = [];
         (ranges.length ? ranges : [[0, source.pages - 1]]).forEach(
@@ -235,8 +243,10 @@ export function createEndPDF({
 }) {
   /**
    * Finishes the Recipe and returns its PDF bytes.
-   * Deferred page insertions rebuild the document and configured encryption is
-   * applied. Repeated calls return cached finished bytes.
+   * An active page is finished first, so a forgotten {@link Recipe#endPage}
+   * does not cost that page. Deferred page insertions rebuild the document and
+   * configured encryption is applied. Repeated calls return cached finished
+   * bytes.
    *
    * @name endPDF
    * @function
@@ -245,7 +255,8 @@ export function createEndPDF({
    * same finished bytes that are returned.
    * @returns {Uint8Array} Finished PDF bytes.
    * @throws {TypeError} If `callback` is supplied but is not a function.
-   * @throws {Error} If a page is still active or a PDF operation fails.
+   * @throws {Error} If a page is still active while pages are marked for
+   * deletion, or a PDF operation fails.
    */
   return function (callback) {
     if (callback !== undefined && typeof callback !== "function") {
