@@ -250,11 +250,12 @@ to stop, `false` to continue, or an object selecting the next `layout` and/or
 `column`. A column can be an index or an `[x, y]` position:
 
 ```typescript
+recipe.layout("article", 72, 72, 468, 600, { columns: 2, gap: 18 });
 recipe.text(longText, {
-  layout: "page",
+  layout: "article",
   overflow: (currentRecipe) => {
     currentRecipe.endPage().createPage("letter");
-    return { layout: "page", column: 0 };
+    return { layout: "article", column: 0 };
   },
 });
 ```

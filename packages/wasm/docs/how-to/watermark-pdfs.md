@@ -30,7 +30,6 @@ for (var pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
 }
 
 var outputBytes = pdf.endPDF();
-Recipe.unregisterFont("watermark-font");
 ```
 
 The reader uses zero-based page indexes for page operations, while Recipe
@@ -60,11 +59,13 @@ for (var pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
 }
 
 inputBytes = pdf.endPDF();
+Recipe.unregisterFont("watermark-font");
 ```
 
 The result is a separate `Uint8Array`; the input is never modified, so both
 documents are briefly in memory. Drop your reference to the source, as above,
-when only the watermarked bytes are needed.
+when only the watermarked bytes are needed. Unregister the font once every page
+that uses it has been watermarked.
 
 Editing an existing document appends an incremental update rather than rewriting
 it, so feeding the output back in as the next input grows the document each

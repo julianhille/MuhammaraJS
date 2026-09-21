@@ -50,10 +50,12 @@ built-in default, and values above it are clamped down, so a caller can tighten
 the budget but never raise it past the ceiling:
 
 ```javascript
+var reader = muhammara.createReader("input.pdf");
 var elements = reader.extractPageText(0, {
   maxElements: 500,
   maxTextBytes: 64 * 1024,
 });
+reader.end();
 ```
 
 | Field              | Default and ceiling |

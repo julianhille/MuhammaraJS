@@ -7,9 +7,7 @@ clickable region is independent of its content, such as a custom drawing:
 var recipe = new Recipe("new", "links.pdf")
   .createPage(595, 842)
   .rectangle(65, 100, 465, 120, { fill: "#dbeafe" })
-  .link("https://example.com", 65, 100, 465, 120)
-  .endPage()
-  .endPDF();
+  .link("https://example.com", 65, 100, 465, 120);
 ```
 
 Text, images, and supported shapes can instead calculate their clickable
@@ -29,7 +27,9 @@ recipe
   .rectangle(65, 450, 180, 48, {
     fill: "#dbeafe",
     link: "https://example.com",
-  });
+  })
+  .endPage()
+  .endPDF();
 ```
 
 With `html: true`, `<a href="https://example.com">Visit our site</a>` creates
