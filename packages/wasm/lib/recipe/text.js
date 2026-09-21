@@ -656,9 +656,9 @@ export function createTextMethods({ drawText, measure, module }) {
      * @returns {Recipe|RecipePosition} The Recipe instance, or the new `[x, y]` coordinates.
      */
     movedown(count = 1, returnCoords = false) {
-      this._cursor.x = this._textBoxOrigin?.x ?? this._cursor.x;
-      this._cursor.y += count * (this._lastLineHeight || 14);
-      return returnCoords ? [this._cursor.x, this._cursor.y] : this;
+      this._textCursor.x = this._textBoxOrigin?.x ?? this._textCursor.x;
+      this._textCursor.y += count * (this._lastLineHeight || 14);
+      return returnCoords ? [this._textCursor.x, this._textCursor.y] : this;
     },
 
     /**
@@ -682,8 +682,8 @@ export function createTextMethods({ drawText, measure, module }) {
     text(value = "", x, y, options = {}) {
       if (typeof x === "object" || x === undefined) {
         options = x || {};
-        x = this._cursor.x || this._margin.left;
-        y = this._cursor.y || this._margin.top;
+        x = this._textCursor.x || this._margin.left;
+        y = this._textCursor.y || this._margin.top;
       }
       var inherited = options.flow ? this._textOptions || {} : {};
       options = merge(inherited, options);
@@ -1039,7 +1039,7 @@ export function createTextMethods({ drawText, measure, module }) {
         return false;
       });
       this._lastLineHeight = lineHeight;
-      this._cursor = { x, y: currentY };
+      this._textCursor = { x, y: currentY };
       this._textBoxOrigin = { x, y };
       this._textOptions = options.flow ? options : null;
       if (clipResult && typeof box.onClip === "function") {
