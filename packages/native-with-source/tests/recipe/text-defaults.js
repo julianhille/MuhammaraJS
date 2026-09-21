@@ -260,6 +260,7 @@ describe("Recipe text size validation", function () {
           }),
         expected,
       );
+      recipe.endPage().endPDF((output) => output);
     });
   });
 
@@ -272,6 +273,7 @@ describe("Recipe text size validation", function () {
     assert.throws(() => recipe.text("Hello", 72, 72, { size: -5 }), {
       name: "RangeError",
     });
+    recipe.endPage().endPDF((output) => output);
   });
 
   it("draws nothing for a rejected size and keeps the document usable", function () {
@@ -336,6 +338,7 @@ describe("Recipe text size validation", function () {
       recipe.textDimensions("Hello", { font: "arial", fontSize: 12 }),
       recipe.textDimensions("Hello", { font: "arial" }),
     );
+    recipe.endPage().endPDF((output) => output);
   });
 
   it("accepts an infinite size without throwing", function () {
