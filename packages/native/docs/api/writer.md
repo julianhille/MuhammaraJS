@@ -47,6 +47,9 @@ available in Wasm. `options.modifiedFilePath` writes the resumed output to a
 different path, and `options.log` configures writer logging.
 
 ```javascript
+var writer = muhammara.createWriter("output.pdf");
+var page = writer.createPage(0, 0, 595, 842);
+writer.writePage(page);
 writer.shutdown("writer-state.txt");
 
 var resumedWriter = muhammara.createWriterToContinue(

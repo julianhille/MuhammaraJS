@@ -19,6 +19,9 @@ Create a writer, draw in PDF's bottom-left coordinate system, then retain the
 returned bytes:
 
 ```js
+import { createMuhammaraWasm } from "@muhammara/wasm";
+
+var muhammara = await createMuhammaraWasm();
 var page = new muhammara.PDFPage(0, 0, 595, 842);
 var writer = muhammara.createWriter({ compress: true });
 muhammara.registerFont("inter", fontBytes);
@@ -51,7 +54,10 @@ dictionary at `replacementObjectId`. Only that page is rewritten; pass
 `{ scope: "global" }` to apply the replacement across every page.
 
 ```javascript
-writer.replaceObject(0, contentsId, replacementId, { scope: "global" });
+var modifyingWriter = muhammara.createWriterToModify(pdfBytes);
+modifyingWriter.replaceObject(0, contentsId, replacementId, {
+  scope: "global",
+});
 ```
 
 `PDFRStreamForBuffer`, `PDFWStreamForBuffer`, and the `ByteReader`/`ByteWriter`

@@ -16,17 +16,31 @@ import { createMuhammaraWasm } from "@muhammara/wasm";
 var muhammara = await createMuhammaraWasm();
 var reader = muhammara.createReader(inputBytes);
 var page = reader.parsePage(0).getDictionary().toPDFDictionary();
-var annotationIds = reader
-  .queryDictionaryObject(page, "Annots")
-  .toPDFArray()
-  .toJSArray()
-  .map((annotation) => annotation.toPDFIndirectObjectReference().getObjectID());
+var annotations = reader.queryDictionaryObject(page, "Annots");
+var annotationIds = annotations
+  ? annotations
+      .toPDFArray()
+      .toJSArray()
+      .map((annotation) =>
+        annotation.toPDFIndirectObjectReference().getObjectID(),
+      )
+  : [];
+
+var annotationId = annotationIds.find((id) => {
+  var contents = reader
+    .parseNewObject(id)
+    .toPDFDictionary()
+    .toJSObject().Contents;
+  return contents && contents.toText() === "Original comment";
+});
 
 reader.end();
 ```
 
 A page without annotations has no `Annots` key, so `queryDictionaryObject`
 returns nothing rather than an empty array. Page indexes here are zero-based.
+The example selects a comment by its current text; `annotationId` is `undefined`
+if no comment matches. Use the selected ID in either workflow below.
 
 ## Rewrite It Completely
 
@@ -36,6 +50,10 @@ write is gone, so copy every key you are keeping — an annotation that loses
 edit that "disappears" from the viewer.
 
 ```javascript
+if (annotationId === undefined) {
+  throw new Error("Annotation not found");
+}
+
 var writer = muhammara.createWriterToModify(inputBytes);
 var copyingContext = writer.createPDFCopyingContextForModifiedFile();
 var existing = copyingContext
@@ -86,6 +104,13 @@ it swaps references that appear directly in the page dictionary, and an
 annotation reference sits inside the `Annots` array rather than at the top level.
 
 ```javascript
+if (annotationId === undefined) {
+  throw new Error("Annotation not found");
+}
+
+var writer = muhammara.createWriterToModify(inputBytes);
+var copyingContext = writer.createPDFCopyingContextForModifiedFile();
+var objectsContext = writer.getObjectsContext();
 var parser = copyingContext.getSourceDocumentParser();
 var pageId = parser.getPageObjectID(0);
 var pageEntries = parser.parsePage(0).getDictionary().toJSObject();
@@ -107,10 +132,15 @@ Object.keys(pageEntries).forEach((key) => {
 });
 objectsContext.endDictionary(pageDictionary);
 objectsContext.endIndirectObject();
+copyingContext.end();
+
+var outputBytes = writer.end();
 ```
 
-The orphaned annotation object stays in the file but is no longer referenced by
-the page.
+This workflow starts its own writer rather than continuing the one from
+"Rewrite It Completely" — that writer, and its copying and objects contexts,
+were already ended by `writer.end()` above. The orphaned annotation object
+stays in the file but is no longer referenced by the page.
 
 Modification appends an incremental update, so both the original and the
 rewritten object remain in the output. See [Low-Level API](../low-level.md) for

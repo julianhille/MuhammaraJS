@@ -20,6 +20,17 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Fix Wasm documentation examples that could not run as written: the Edit Or
+  Remove An Existing Annotation how-to never defined `annotationId` and its
+  removal example reused a writer and copying context an earlier block had
+  already ended; a `queryDictionaryObject` call was unguarded against its own
+  documented "returns nothing for a page without annotations" caveat; the
+  Watermark Every Page how-to unregistered its font before the "Watermark In
+  Place" section that still needed it; the Low-Level API guide never showed
+  how to obtain `muhammara` and illustrated `replaceObject()` on a plain
+  writer that does not have the method; and the Find Text Positions guide
+  reused a reader an earlier block had already ended
+  [#740](https://github.com/julianhille/MuhammaraJS/issues/740)
 - Finish an active Recipe page in `endPDF()` and `appendPage()` instead of
   failing with `Unable to finish PDF` or
   `Muhammara WebAssembly operation failed: _muhammara_wasm_recipe_append_pdf`,

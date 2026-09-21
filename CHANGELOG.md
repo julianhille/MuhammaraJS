@@ -42,6 +42,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Fix native documentation examples that could not run as written: `endPDF()`
+  discarded the Recipe instance in the Add Clickable URL Links how-to because
+  native `endPDF()` returns nothing without a callback; a migration-guide
+  `text()` sample used an unregistered `layout` id; the Continuation State,
+  Find Text Positions, and Modify PDFs guides reused a writer or reader an
+  earlier code block had already ended or shut down
+  [#740](https://github.com/julianhille/MuhammaraJS/issues/740)
 - Finish an active Recipe page in `endPDF()` and `appendPage()` instead of
   writing a document without it. `createPage()` followed by `endPDF()` wrote a
   PDF with no page tree, and the same sequence with page content or an

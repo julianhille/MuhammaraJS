@@ -41,15 +41,15 @@ var replacement = objectsContext.startPDFStream();
 replacement.getWriteStream().write(Array.from(Buffer.from("BT ET")));
 objectsContext.endPDFStream(replacement).endIndirectObject();
 writer.replaceObject(0, contentsId, replacementId);
-writer.end();
 ```
 
 Only the named page is rewritten, so an object shared by several pages keeps its
 old reference elsewhere. Pass `{ scope: "global" }` to apply the same
-replacement to every page instead.
+replacement to every page instead:
 
 ```javascript
 writer.replaceObject(0, contentsId, replacementId, { scope: "global" });
+writer.end();
 ```
 
 Modification uses incremental PDF updates, but this documentation does not make

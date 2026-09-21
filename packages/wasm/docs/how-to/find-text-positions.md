@@ -48,10 +48,12 @@ built-in default, and values above it are clamped down, so a caller can tighten
 the budget but never raise it past the ceiling:
 
 ```javascript
+var reader = await muhammara.createReaderAsync(pdfFile);
 var elements = reader.extractPageText(0, {
   maxElements: 500,
   maxTextBytes: 64 * 1024,
 });
+reader.end();
 ```
 
 | Field              | Default and ceiling |
@@ -70,7 +72,9 @@ content-stream operation that puts a mark on the page, which is a cheaper way to
 answer "is this page blank?" than extracting text:
 
 ```javascript
+var reader = await muhammara.createReaderAsync(pdfFile);
 var isBlank = reader.extractPageContentItems(0).length === 0;
+reader.end();
 ```
 
 Each item is `{ type, operation }`, where `type` is one of
