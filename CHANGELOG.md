@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `appendPage()` threw `Unable to end PDF`. A page still open while pages are
   marked for deletion is still reported, before the Recipe is retired
   [#732](https://github.com/julianhille/MuhammaraJS/issues/732)
+- Align Recipe text with `html: true` on the width it is drawn at instead of
+  one space wider, so centered HTML lines no longer sit half a space and right
+  aligned ones a full space left of the same text without `html`
+  [#708](https://github.com/julianhille/MuhammaraJS/issues/708)
 - Break lines for `<br />` and uppercase `<BR>` in Recipe HTML text, not only
   `<br>` and `<br/>`, and drop the whitespace before a line break so aligned
   lines are not padded [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
