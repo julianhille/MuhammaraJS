@@ -4,10 +4,11 @@ Wasm Recipe bundles Apache-2.0 **Roboto Regular** as its zero-setup default, so
 text, text measurement, and tables need no font upload or registration.
 `text()` and `textDimensions()` use 14 points when neither `size` nor `fontSize`
 is supplied. The two option names are aliases; `{ fontSize: 12 }` and
-`{ size: 12 }` both select 12 points. Zero and `NaN` select the 14pt default,
-while a negative size throws a `RangeError` naming the option and the value, as
-it does on native, because a negative size can only produce nonsensical
-metrics.
+`{ size: 12 }` both select 12 points. A size that is not greater than zero,
+including zero, a negative number, and `NaN`, throws a `RangeError` naming the
+option and the value, as it does on native, because such a size draws nothing
+readable and measures to nonsensical metrics. Pass `null`, `undefined`, or
+neither option to select the default.
 Character spacing ignores leading and trailing breakable whitespace but counts
 non-breaking spaces, including U+00A0 at either boundary.
 

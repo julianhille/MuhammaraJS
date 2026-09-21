@@ -538,7 +538,8 @@ export function createTextMethods({ drawText, measure, module }) {
      * @param {string} value - Text to measure.
      * @param {RecipeTextOptions} [options] - Font and measurement options.
      * @returns {TextDimensions} Text bounds and dimensions in PDF points.
-     * @throws {RangeError} If `fontSize`, or its `size` alias, is negative.
+     * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
+     *   not greater than zero.
      * @throws {Error} If the requested font is not registered or cannot be loaded.
      */
     textDimensions(value, options = {}) {
@@ -678,7 +679,8 @@ export function createTextMethods({ drawText, measure, module }) {
      * @param {number} [y] - Top coordinate.
      * @param {RecipeTextOptions} [options] - Text and layout options.
      * @returns {Recipe} The Recipe instance.
-     * @throws {RangeError} If `fontSize`, or its `size` alias, is negative.
+     * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
+     *   not greater than zero.
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
      */
     text(value = "", x, y, options = {}) {

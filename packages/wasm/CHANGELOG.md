@@ -39,12 +39,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   that text cursor with the page margins instead of reporting them as the path
   position
   [#734](https://github.com/julianhille/MuhammaraJS/issues/734)
-- Reject a negative Recipe text `size`, or its `fontSize` alias, with a
-  `RangeError` naming the option and the value, instead of failing inside the
-  measuring call with an error naming the internal
-  `_muhammara_wasm_recipe_text_dimensions` symbol. The check runs before
-  `text()` or `textDimensions()` measures or draws anything, on new and edited
-  pages; zero and `NaN` still select the 14pt default
+- Require a Recipe text `size`, or its `fontSize` alias, greater than zero and
+  throw `RangeError` naming the option and the value otherwise, instead of
+  failing inside the measuring call with an error naming the internal
+  `_muhammara_wasm_recipe_text_dimensions` symbol or silently falling back to
+  the 14pt default for zero and `NaN`. The check runs before `text()` or
+  `textDimensions()` measures or draws anything, on new and edited pages;
+  `null`, `undefined`, and an omitted option still select the 14pt default
   [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
 - Write a zero-width `/Border` for text-markup annotations (`highlight`,
   `underline`, `strikeOut`, `squiggly`) by default, matching native, instead of

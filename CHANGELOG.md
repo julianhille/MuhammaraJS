@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
-- Reject a negative Recipe text `size`, or its `fontSize` alias, with a
-  `RangeError` naming the option and the value. `text()` clamped a negative
-  size to 1pt and `textDimensions()` measured with it, returning nonsensical
-  font metrics; both now throw before drawing or measuring. Pass a non-negative
-  size; zero and `NaN` still select the 14pt default. See the
-  [breaking changes](packages/native/docs/breaking-changes.md) page
+- Require a Recipe text `size`, or its `fontSize` alias, greater than zero and
+  throw `RangeError` naming the option and the value otherwise. `text()`
+  clamped a negative size to 1pt, drew nothing visible for zero, and
+  `textDimensions()` measured with those values, returning nonsensical font
+  metrics; zero and `NaN` also fell back to the 14pt default in some paths.
+  Both now throw before drawing or measuring. Pass a size greater than zero, or
+  omit the option — `null` and `undefined` still select the 14pt default. See
+  the [breaking changes](packages/native/docs/breaking-changes.md) page
   [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
 - Keep Recipe HTML text outside any element on one line with its neighboring
   inline elements, with one space between them, instead of starting a new line

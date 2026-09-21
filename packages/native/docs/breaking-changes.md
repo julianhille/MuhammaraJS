@@ -127,11 +127,14 @@ This page collects the compatibility changes formerly maintained in the README.
 - Windows win32 (32-bit) prebuilds and build tooling were removed. Windows x64
   is the current prebuilt target; Windows arm64 is not part of the prebuilt
   matrix.
-- Recipe rejects a negative text `size`, or its `fontSize` alias, with a
-  `RangeError` naming the option and the value. `text()` previously clamped a
-  negative size to 1pt and `textDimensions()` measured with it, returning
-  nonsensical metrics such as a width of 2147483645.5 for `size: -5`. Pass a
-  non-negative size; zero and `NaN` still select the 14pt default
+- Recipe requires a text `size`, or its `fontSize` alias, greater than zero and
+  throws `RangeError` naming the option and the value otherwise. `text()`
+  previously clamped a negative size to 1pt, drew nothing visible for zero, and
+  `textDimensions()` measured with those values, returning nonsensical metrics
+  such as a width of 2147483645.5 for `size: -5`. Zero and `NaN` previously fell
+  back to the 14pt default in some paths, hiding the mistake. Pass a size
+  greater than zero, or omit the option — `null` and `undefined` still select
+  the 14pt default
   [#733](https://github.com/julianhille/MuhammaraJS/issues/733).
 
 ## Version 5.x

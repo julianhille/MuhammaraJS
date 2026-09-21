@@ -14,7 +14,7 @@ exports._getPathOptions = function _getPathOptions(
     originX,
     originY,
     font: this._getFont(options),
-    size: options.size || this.current.defaultFontSize,
+    size: resolveFontSize(options, this.current.defaultFontSize),
     charSpace: options.charSpace || 0,
     underline: false,
     strikeOut: false,
@@ -55,12 +55,6 @@ exports._getPathOptions = function _getPathOptions(
   pathOptions.strokeGsId = extGStates.stroke;
   pathOptions.fillGsId = extGStates.fill;
 
-  if (options.size || options.fontSize) {
-    const size = resolveFontSize(options);
-    if (!isNaN(size)) {
-      pathOptions.size = size <= 0 ? 1 : size;
-    }
-  }
   if (options.width || options.lineWidth) {
     const width = options.width || options.lineWidth;
     if (!isNaN(width)) {

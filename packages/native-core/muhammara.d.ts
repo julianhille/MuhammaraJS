@@ -1236,9 +1236,9 @@ declare namespace muhammara {
       rotation?: number;
       rotationOrigin?: readonly [number, number];
       font?: string;
-      /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. A negative size throws RangeError. */
+      /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. A size that is not greater than zero throws RangeError. */
       fontSize?: number;
-      /** Font size in points for text() and textDimensions(); defaults to 14. A negative size throws RangeError. */
+      /** Font size in points for text() and textDimensions(); defaults to 14. A size that is not greater than zero throws RangeError. */
       size?: number;
       bold?: boolean;
       italic?: boolean;
