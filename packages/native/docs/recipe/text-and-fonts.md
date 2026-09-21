@@ -17,7 +17,12 @@ through text options. Recipe coordinates use a top-left origin and accept
 `center` for either coordinate.
 
 Recipe `text()` and `textDimensions()` default to 14 points when `size` is
-omitted. Pass `{ size: 12 }` to render and measure at 12 points instead.
+omitted. Pass `{ size: 12 }` to render and measure at 12 points instead; the
+`fontSize` alias selects the same size for both. A size that is not greater
+than zero, including zero, a negative number, and `NaN`, throws a `RangeError`
+naming the option and the value, because such a size draws nothing readable and
+measures to nonsensical metrics. Pass `null`, `undefined`, or neither option to
+select the default.
 Character spacing ignores leading and trailing breakable whitespace but counts
 non-breaking spaces, including U+00A0 at either boundary.
 

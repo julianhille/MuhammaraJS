@@ -455,6 +455,25 @@ Array-form `order` preserves exact field names, including whitespace and
 empty-string keys; the comma-separated form trims surrounding whitespace.
 Tables with empty contents or no discovered columns preserve the cursor.
 
+## 13. Pass A Text Size Greater Than Zero
+
+v7 Recipe `text()` and `textDimensions()` require a `size`, or its `fontSize`
+alias, greater than zero and throw `RangeError` naming the option and the value
+otherwise. In v6, a negative size was clamped to 1pt while drawing and measured
+as given, so `textDimensions("Hello", { size: -5 })` reported a width of
+2147483645.5, and zero or `NaN` quietly fell back to the 14pt default.
+
+A computed size is the usual source of these values. Guard it, or leave the
+option out to keep the 14pt default:
+
+```javascript
+var size = scale * base; // may compute 0 or NaN
+recipe.text("Hello", 72, 72, size > 0 ? { size: size } : {});
+```
+
+`null` and `undefined` still select the default, so an optional property that
+is simply absent needs no change.
+
 ## What Does Not Change
 
 - Supported Node.js versions.

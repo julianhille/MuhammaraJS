@@ -318,9 +318,9 @@ export interface RecipeTextOptions
   color?: RecipeColor;
   /** Font family; uses createRecipe's default font when omitted (bundled Roboto unless configured). */
   font?: string;
-  /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. */
+  /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. A size that is not greater than zero throws RangeError. */
   fontSize?: number;
-  /** Alternative font size in points; defaults to 14 when both size and fontSize are omitted. */
+  /** Alternative font size in points; defaults to 14 when both size and fontSize are omitted. A size that is not greater than zero throws RangeError. */
   size?: number;
   bold?: boolean;
   italic?: boolean;

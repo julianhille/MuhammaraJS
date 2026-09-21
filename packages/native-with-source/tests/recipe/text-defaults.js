@@ -209,3 +209,161 @@ describe("Recipe text color parity", function () {
     });
   });
 });
+
+describe("Recipe text size validation", function () {
+  /** Creates a Recipe with the parity test font registered. */
+  function newRecipe() {
+    var recipe = new Recipe(Buffer.from("new"));
+    recipe.registerFont(
+      "arial",
+      path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+    );
+    return recipe;
+  }
+
+  var rejected = [
+    [
+      { size: -5 },
+      /^Text size must be a number greater than zero, received -5$/,
+    ],
+    [
+      { size: -0.1 },
+      /^Text size must be a number greater than zero, received -0\.1$/,
+    ],
+    [{ size: 0 }, /^Text size must be a number greater than zero, received 0$/],
+    [
+      { size: NaN },
+      /^Text size must be a number greater than zero, received NaN$/,
+    ],
+    [
+      { fontSize: -14 },
+      /^Text fontSize must be a number greater than zero, received -14$/,
+    ],
+    [
+      { fontSize: 0 },
+      /^Text fontSize must be a number greater than zero, received 0$/,
+    ],
+  ];
+
+  rejected.forEach(function ([size, message]) {
+    it(`rejects ${Object.entries(size).map(([key, value]) => `${key} ${String(value)}`)} on every measuring and drawing path`, function () {
+      var recipe = newRecipe().createPage("letter");
+      var options = { font: "arial", ...size };
+      var expected = { name: "RangeError", message };
+      assert.throws(() => recipe.textDimensions("Hello", options), expected);
+      assert.throws(() => recipe.text("Hello", 72, 72, options), expected);
+      assert.throws(
+        () =>
+          recipe.text("Hello world wraps", 72, 72, {
+            ...options,
+            textBox: { width: 90 },
+          }),
+        expected,
+      );
+      assert.throws(
+        () => recipe.text("<b>Hello</b>", 72, 72, { ...options, html: true }),
+        expected,
+      );
+      assert.throws(
+        () =>
+          recipe.table(72, 200, [{ value: "Hello" }], {
+            ...options,
+            columns: [{ name: "value", width: 90 }],
+          }),
+        expected,
+      );
+      recipe.endPage().endPDF((output) => output);
+    });
+  });
+
+  it("rejects a negative size while editing an existing page", function () {
+    var source = newRecipe()
+      .createPage("letter")
+      .endPage()
+      .endPDF((bytes) => bytes);
+    var recipe = new Recipe(source).editPage(1);
+    assert.throws(() => recipe.text("Hello", 72, 72, { size: -5 }), {
+      name: "RangeError",
+    });
+    recipe.endPage().endPDF((output) => output);
+  });
+
+  it("draws nothing for a rejected size and keeps the document usable", function () {
+    var recipe = newRecipe().createPage("letter");
+    assert.throws(() => recipe.text("Rejected", 72, 72, { size: -5 }), {
+      name: "RangeError",
+    });
+    var bytes = recipe
+      .text("Kept", 72, 72, { font: "arial" })
+      .endPage()
+      .endPDF((output) => output);
+    var reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(bytes),
+    );
+    try {
+      assert.deepEqual(
+        reader.extractPageText(0).map((item) => item.content),
+        ["Kept"],
+      );
+    } finally {
+      reader.end();
+    }
+  });
+
+  it("keeps the 14pt default when no size is given", function () {
+    var recipe = newRecipe().createPage("letter");
+    var expected = recipe.textDimensions("Hello", { font: "arial", size: 14 });
+    [undefined, null].forEach(function (size) {
+      assert.deepEqual(
+        recipe.textDimensions("Hello", { font: "arial", size }),
+        expected,
+        `size ${String(size)}`,
+      );
+      assert.deepEqual(
+        recipe.textDimensions("Hello", { font: "arial", fontSize: size }),
+        expected,
+        `fontSize ${String(size)}`,
+      );
+      recipe.text("Hello", 72, 72, { font: "arial", size });
+    });
+    assert.deepEqual(
+      recipe.textDimensions("Hello", { font: "arial" }),
+      expected,
+    );
+    recipe.text("Hello", 72, 72, { font: "arial" });
+    var bytes = recipe.endPage().endPDF((output) => output);
+    var reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(bytes),
+    );
+    try {
+      assert.deepEqual(
+        reader.extractPageText(0).map((item) => item.fontSize),
+        [14, 14, 14],
+      );
+    } finally {
+      reader.end();
+    }
+  });
+
+  it("measures the fontSize alias like size", function () {
+    var recipe = newRecipe().createPage("letter");
+    assert.deepEqual(
+      recipe.textDimensions("Hello", { font: "arial", fontSize: 12 }),
+      recipe.textDimensions("Hello", { font: "arial", size: 12 }),
+    );
+    assert.notDeepEqual(
+      recipe.textDimensions("Hello", { font: "arial", fontSize: 12 }),
+      recipe.textDimensions("Hello", { font: "arial" }),
+    );
+    recipe.endPage().endPDF((output) => output);
+  });
+
+  it("accepts an infinite size without throwing", function () {
+    var recipe = newRecipe().createPage("letter");
+    assert.doesNotThrow(function () {
+      recipe.textDimensions("Hello", { font: "arial", size: Infinity });
+      recipe.text("Hello", 72, 72, { font: "arial", size: Infinity });
+    });
+    recipe.endPage().endPDF((output) => output);
+  });
+});
