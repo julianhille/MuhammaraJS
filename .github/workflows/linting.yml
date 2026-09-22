@@ -19,6 +19,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run test:codestyle
+      - run: npm run test:electron-matrix
 
   line-endings:
     runs-on: ubuntu-22.04
