@@ -367,6 +367,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Build only the newest Electron patch release in each supported minor so
+  equivalent prebuilds no longer consume duplicate CI jobs and release assets
+  [#748](https://github.com/julianhille/MuhammaraJS/issues/748)
 - Make documentation self-contained with inline text-extraction and annotation
   examples, replacing links to tests, implementation files, and GitHub releases
   [#689](https://github.com/julianhille/MuhammaraJS/issues/689)

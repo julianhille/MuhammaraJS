@@ -7,6 +7,7 @@
   "scripts": {
     "test": "npm run test --workspace=@muhammara/native-with-source",
     "test:codestyle": "npx prettier -c ./",
+    "test:electron-matrix": "node .github/scripts/validate-electron-matrix.mjs",
     "test:electron": "npm run test:electron --workspace=@muhammara/native-with-source",
     "package": "npm run package --workspace=@muhammara/native-with-source",
     "wasm:build": "npm run build --workspace=@muhammara/wasm",
