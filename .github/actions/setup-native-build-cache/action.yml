@@ -12,7 +12,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: hendrikmuhs/ccache-action@v1.2
+    - uses: hendrikmuhs/ccache-action@v1.2.24
       with:
         key: ${{ inputs.key }}
         restore-keys: ${{ inputs.restore-keys }}

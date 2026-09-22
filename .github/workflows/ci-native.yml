@@ -31,8 +31,8 @@ jobs:
   packed-source-fallback:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - uses: ./.github/actions/setup-native-build-cache
@@ -90,8 +90,8 @@ jobs:
       LSAN_OPTIONS: print_suppressions=0
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - uses: ./.github/actions/setup-native-build-cache
@@ -127,8 +127,8 @@ jobs:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
@@ -143,7 +143,7 @@ jobs:
         id: npm-cache-dir
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
       - name: Restore npm download cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-arm-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
@@ -156,7 +156,7 @@ jobs:
           npm_config_unsafe_perm: true
       # - run: npm run test, this is not an arm64 machine so we can not test.
       - run: npm run package --workspace=@muhammara/native-with-source -- --target_libc=musl --target_arch=${{ matrix.target_architecture }}
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
@@ -176,7 +176,7 @@ jobs:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: apk update
       - run: apk add --no-cache ccache make gcc jq g++ linux-headers perl python${{ matrix.python_version }} tar
       - uses: ./.github/actions/setup-native-build-cache
@@ -189,7 +189,7 @@ jobs:
         id: npm-cache-dir
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
       - name: Restore npm download cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-musl-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
@@ -199,7 +199,7 @@ jobs:
           npm_config_unsafe_perm: true
       - run: npm run test
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage --target_libc=musl
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
@@ -284,16 +284,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps: &build-electron-steps
       - name: Set up GCC
-        uses: egor-tensin/setup-gcc@v1
+        uses: egor-tensin/setup-gcc@v2
         with:
           version: 11
           platform: ${{matrix.architecture}}
         if: ${{ matrix.os == 'ubuntu-22.04' }}
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python_version }}
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
@@ -303,15 +303,15 @@ jobs:
           restore-keys: native-electron-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.electron }}-
       - run: node --version
       - run: npm --version
-      - name: Install OpenSSL build tools (Linux)
+      - name: Install Linux build and test tools
         if: ${{ matrix.os == 'ubuntu-22.04' }}
-        run: sudo apt-get update && sudo apt-get install -y perl
+        run: sudo apt-get update && sudo apt-get install -y perl xvfb x11-xserver-utils
       - name: Get npm cache directory
         id: npm-cache-dir
         shell: bash
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
       - name: Restore npm download cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
@@ -336,15 +336,17 @@ jobs:
           npm_config_runtime: electron
           npm_config_python: python${{ matrix.python_version }}
           CFLAGS: ${{ matrix.extra_compile_flags }}
+      - name: Run test with Xvfb
+        if: ${{ runner.os == 'Linux' }}
+        run: xvfb-run --auto-servernum npm run test:electron
       - name: Run test
-        uses: coactions/setup-xvfb@90473c3ebc69533a1a6e0505c36511b69c8c3135
-        with:
-          run: npm run test:electron
+        if: ${{ runner.os != 'Linux' }}
+        run: npm run test:electron
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
         env:
           npm_config_runtime: electron
           npm_config_target: ${{ matrix.electron }}
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
@@ -618,8 +620,8 @@ jobs:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
@@ -649,7 +651,7 @@ jobs:
         shell: bash
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
       - name: Restore npm download cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
@@ -660,7 +662,7 @@ jobs:
           CFLAGS: ${{ matrix.extra_compile_flags }}
       - run: npm run test
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
@@ -687,11 +689,11 @@ jobs:
             architecture: arm64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python_version }}
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
@@ -713,7 +715,7 @@ jobs:
         shell: bash
         run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
       - name: Restore npm download cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.npm-cache-dir.outputs.dir }}
           key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
@@ -725,7 +727,7 @@ jobs:
           CFLAGS: ${{ matrix.extra_compile_flags }}
       - run: npm run test
       - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           overwrite: true
           path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
@@ -751,12 +753,12 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: npm install --global npm@11.5.1
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: npm ci --ignore-scripts
@@ -765,7 +767,7 @@ jobs:
       - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
       - run: npm run test:codestyle
       - run: npm run docs:check
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: bindings-*
           path: builds/bindings
@@ -797,7 +799,7 @@ jobs:
             done
           ls -lah builds/release/
       - name: Create release and upload prebuilds
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: "builds/release/*"
           tag_name: ${{ github.ref_name }}
@@ -836,7 +838,7 @@ jobs:
       actions: write
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Create matching native documentation tag
