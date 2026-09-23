@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Correct low-level shape `type: "clip"` to clip without painting and end the
+  path; unrecognized types end the path without painting or clipping. Use `"clip"` explicitly with
+  `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+- Validate low-level shape and `writeText()` arguments before drawing, and
+  propagate conversion errors instead of aborting or emitting partial output.
+  Supply finite coordinates, dimensions, stroke widths, and text sizes, and
+  at least two complete `drawPath()` coordinate pairs; incomplete paths now
+  throw instead of silently drawing a prefix. Correct invalid inputs before retrying. See
+  [breaking changes](packages/native/docs/breaking-changes.md).
 - Replace runtime-specific Node.js and Electron native binaries with Node-API 8
   prebuilds shared by every supported runtime. Standard npm installs and public
   package imports require no changes, but custom binary mirrors, direct archive

@@ -4,6 +4,24 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Treat low-level shape `type: null` as an unknown type, ending the path without
+  painting instead of stroking with stale graphics state, matching native.
+  Omit `type` or pass `"stroke"` to draw an outline; see
+  [drawing helpers](docs/low-level.md#drawing-helpers-and-clipping).
+- Correct low-level shape `type: "clip"` to clip without painting instead of
+  stroking, and end paths with unknown types without painting. Pass `"stroke"`/`"fill"` to paint,
+  or scope intentional clipping with `q()`/`Q()`. See
+  [breaking changes](docs/breaking-changes.md).
+- Validate drawing options before emitting shape or text operators, preventing
+  failed option getters from leaving partial output. Reject overflowing circle
+  and underline geometry, sparse paths, and incomplete or extra modified-form
+  path arguments before drawing. Supply complete finite coordinate pairs and
+  reduce coordinates or sizes that overflow. Return stable option
+  values and correct invalid inputs before retrying; see
+  [breaking changes](docs/breaking-changes.md).
+
 ### Added
 
 - Add Recipe `text()` options `underline`, `strikeOut`, and `squiggly` as

@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <map>
@@ -26,6 +27,16 @@
 using namespace muhammara::napi;
 
 namespace {
+
+// Preserve conversion exceptions while rejecting numbers PDF cannot represent.
+bool DrawingNumber(napi_env env, napi_value value, double *result) {
+  if (!CoerceToDouble(env, value, result))
+    return false;
+  if (std::isfinite(*result))
+    return true;
+  ThrowTypeError(env, "Drawing arguments must be finite numbers");
+  return false;
+}
 
 enum class Op : intptr_t {
   b,
@@ -836,90 +847,11 @@ napi_value AbstractContentContextDriver::TJ(const CallbackArgs &args) {
   return args.This();
 }
 
-void AbstractContentContextDriver::SetupColorAndLineWidth(
-    napi_env env, napi_value maybeOptions) {
-  if (!IsObject(env, maybeOptions))
-    return;
-  bool isStroke = !Has(env, maybeOptions, "type") ||
-                  LegacyString(env, Get(env, maybeOptions, "type")) == "stroke";
-  SetColor(env, maybeOptions, isStroke);
-  if (HasPendingException(env))
-    return;
-  if (isStroke && Has(env, maybeOptions, "width")) {
-    napi_value value = nullptr;
-    double width = 0;
-    if (!Get(env, maybeOptions, "width", &value) ||
-        !CoerceToDouble(env, value, &width))
-      return;
-    GetContext()->w(width);
-  }
-}
-
-void AbstractContentContextDriver::SetColor(napi_env env,
-                                            napi_value maybeOptions,
-                                            bool isStroke) {
-  if (!IsObject(env, maybeOptions) || !Has(env, maybeOptions, "color"))
-    return;
-  napi_value color = nullptr;
-  if (!Get(env, maybeOptions, "color", &color))
-    return;
-  if (IsType(env, color, napi_string)) {
-    SetRGBColor(colorMap.GetRGBForColorName(LegacyString(env, color)),
-                isStroke);
-    return;
-  }
-
-  int32_t numericColor = 0;
-  if (!CoerceToInt32(env, color, &numericColor))
-    return;
-  unsigned long colorValue = static_cast<unsigned long>(numericColor);
-  std::string colorSpace = "rgb";
-  if (Has(env, maybeOptions, "colorspace")) {
-    napi_value value = nullptr;
-    if (!Get(env, maybeOptions, "colorspace", &value))
-      return;
-    colorSpace = LegacyString(env, value);
-    if (HasPendingException(env))
-      return;
-  }
-  if (colorSpace == "rgb") {
-    SetRGBColor(colorValue, isStroke);
-  } else if (colorSpace == "cmyk") {
-    double c = static_cast<unsigned char>((colorValue >> 24) & 0xff);
-    double m = static_cast<unsigned char>((colorValue >> 16) & 0xff);
-    double y = static_cast<unsigned char>((colorValue >> 8) & 0xff);
-    double k = static_cast<unsigned char>(colorValue & 0xff);
-    if (isStroke)
-      GetContext()->K(c / 255, m / 255, y / 255, k / 255);
-    else
-      GetContext()->k(c / 255, m / 255, y / 255, k / 255);
-  } else if (colorSpace == "gray") {
-    double gray = static_cast<unsigned char>(colorValue & 0xff);
-    if (isStroke)
-      GetContext()->G(gray / 255);
-    else
-      GetContext()->g(gray / 255);
-  }
-}
-
-bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
+bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
                                                    napi_value maybeOptions,
                                                    PathOptions &options) {
   if (!IsObject(env, maybeOptions))
     return true;
-
-  bool hasType = Has(env, maybeOptions, "type");
-  if (HasPendingException(env))
-    return false;
-  if (hasType) {
-    napi_value value = nullptr;
-    if (!Get(env, maybeOptions, "type", &value))
-      return false;
-    options.setupIsStroke = LegacyString(env, value) == "stroke";
-    if (HasPendingException(env))
-      return false;
-  }
-
   options.hasColor = Has(env, maybeOptions, "color");
   if (HasPendingException(env))
     return false;
@@ -951,13 +883,34 @@ bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
     }
   }
 
+  return true;
+}
+
+bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
+                                                   napi_value maybeOptions,
+                                                   PathOptions &options) {
+  if (!IsObject(env, maybeOptions))
+    return true;
+  bool hasType = Has(env, maybeOptions, "type");
+  if (HasPendingException(env))
+    return false;
+  if (hasType) {
+    napi_value value = nullptr;
+    if (!Get(env, maybeOptions, "type", &value))
+      return false;
+    options.setupIsStroke = LegacyString(env, value) == "stroke";
+    if (HasPendingException(env))
+      return false;
+  }
+  if (!ReadColorOptions(env, maybeOptions, options))
+    return false;
   options.hasWidth = options.setupIsStroke && Has(env, maybeOptions, "width");
   if (HasPendingException(env))
     return false;
   if (options.hasWidth) {
     napi_value value = nullptr;
     if (!Get(env, maybeOptions, "width", &value) ||
-        !CoerceToDouble(env, value, &options.width))
+        !DrawingNumber(env, value, &options.width))
       return false;
   }
 
@@ -1023,10 +976,13 @@ void AbstractContentContextDriver::CompletePath(const PathOptions &options) {
       GetContext()->S();
   } else if (options.finishType == "fill") {
     GetContext()->f();
-  } else if (options.finishType.compare("clip")) {
+  } else if (options.finishType == "clip") {
     if (options.closePath)
       GetContext()->h();
     GetContext()->W();
+    GetContext()->n();
+  } else {
+    GetContext()->n();
   }
 }
 
@@ -1039,30 +995,6 @@ void AbstractContentContextDriver::SetRGBColor(unsigned long colorValue,
     GetContext()->RG(r / 255, g / 255, b / 255);
   else
     GetContext()->rg(r / 255, g / 255, b / 255);
-}
-
-void AbstractContentContextDriver::FinishPath(napi_env env,
-                                              napi_value maybeOptions) {
-  bool closePath = false;
-  std::string type = "stroke";
-  if (IsObject(env, maybeOptions)) {
-    if (Has(env, maybeOptions, "type"))
-      type = LegacyString(env, Get(env, maybeOptions, "type"));
-    if (Has(env, maybeOptions, "close"))
-      closePath = ToBoolean(env, Get(env, maybeOptions, "close"));
-  }
-  if (type == "stroke") {
-    if (closePath)
-      GetContext()->s();
-    else
-      GetContext()->S();
-  } else if (type == "fill") {
-    GetContext()->f();
-  } else if (type.compare("clip")) {
-    if (closePath)
-      GetContext()->h();
-    GetContext()->W();
-  }
 }
 
 napi_value AbstractContentContextDriver::DrawPath(const CallbackArgs &args) {
@@ -1084,19 +1016,23 @@ napi_value AbstractContentContextDriver::DrawPath(const CallbackArgs &args) {
   if (!IsArray(args.Env(), args[0])) {
     std::vector<double> coordinates;
     double coordinate = 0;
-    if (!CoerceToDouble(args.Env(), args[0], &coordinate))
+    size_t count = args.Length();
+    if (IsObject(args.Env(), args[count - 1]))
+      --count;
+    if (count < 4 || count % 2 != 0)
+      return ThrowTypeError(
+          args.Env(), "drawPath requires at least two complete coordinate pairs");
+    if (!DrawingNumber(args.Env(), args[0], &coordinate))
       return nullptr;
     coordinates.push_back(coordinate);
-    if (!CoerceToDouble(args.Env(), args[1], &coordinate))
+    if (!DrawingNumber(args.Env(), args[1], &coordinate))
       return nullptr;
     coordinates.push_back(coordinate);
-    for (size_t i = 2; i < args.Length() - 1; i += 2) {
-      if (!IsNumber(args, i))
-        break;
-      if (!CoerceToDouble(args.Env(), args[i], &coordinate))
+    for (size_t i = 2; i < count; i += 2) {
+      if (!DrawingNumber(args.Env(), args[i], &coordinate))
         return nullptr;
       coordinates.push_back(coordinate);
-      if (!CoerceToDouble(args.Env(), args[i + 1], &coordinate))
+      if (!DrawingNumber(args.Env(), args[i + 1], &coordinate))
         return nullptr;
       coordinates.push_back(coordinate);
     }
@@ -1106,6 +1042,10 @@ napi_value AbstractContentContextDriver::DrawPath(const CallbackArgs &args) {
       driver->GetContext()->l(coordinates[i], coordinates[i + 1]);
     driver->CompletePath(options);
   } else {
+    if (args.Length() > 2)
+      return ThrowTypeError(
+          args.Env(),
+          "drawPath accepts coordinate pairs and an optional options object");
     uint32_t length = 0;
     if (!Length(args.Env(), args[0], &length))
       return nullptr;
@@ -1133,7 +1073,7 @@ napi_value AbstractContentContextDriver::DrawPath(const CallbackArgs &args) {
         napi_value value = nullptr;
         double coordinate = 0;
         if (!Get(args.Env(), point, j, &value) ||
-            !CoerceToDouble(args.Env(), value, &coordinate))
+            !DrawingNumber(args.Env(), value, &coordinate))
           return nullptr;
         coordinates.push_back(coordinate);
       }
@@ -1156,11 +1096,19 @@ napi_value AbstractContentContextDriver::DrawCircle(const CallbackArgs &args) {
     return WrongArguments(args.Env(),
                           "Wrong Arguments, please provide x and y coordinates "
                           "for center, radius and an optional options object");
-  driver->SetupColorAndLineWidth(args.Env(), args[args.Length() - 1]);
+  PathOptions options;
+  if (!driver->ReadPathOptions(args.Env(), args[args.Length() - 1], options))
+    return nullptr;
   const double magic = 0.551784;
-  double x = CoerceToDouble(args.Env(), args[0]);
-  double y = CoerceToDouble(args.Env(), args[1]);
-  double radius = CoerceToDouble(args.Env(), args[2]);
+  double x, y, radius;
+  if (!DrawingNumber(args.Env(), args[0], &x) ||
+      !DrawingNumber(args.Env(), args[1], &y) ||
+      !DrawingNumber(args.Env(), args[2], &radius))
+    return nullptr;
+  if (!std::isfinite(x - radius) || !std::isfinite(x + radius) ||
+      !std::isfinite(y - radius) || !std::isfinite(y + radius))
+    return ThrowTypeError(args.Env(), "Circle geometry must be finite");
+  driver->ApplyPathOptions(options);
   double radiusMagic = radius * magic;
   driver->GetContext()->m(x - radius, y);
   driver->GetContext()->c(x - radius, y + radiusMagic, x - radiusMagic,
@@ -1171,7 +1119,7 @@ napi_value AbstractContentContextDriver::DrawCircle(const CallbackArgs &args) {
                           y - radius, x, y - radius);
   driver->GetContext()->c(x - radiusMagic, y - radius, x - radius,
                           y - radiusMagic, x - radius, y);
-  driver->FinishPath(args.Env(), args[args.Length() - 1]);
+  driver->CompletePath(options);
   return args.This();
 }
 
@@ -1184,11 +1132,17 @@ napi_value AbstractContentContextDriver::DrawSquare(const CallbackArgs &args) {
     return WrongArguments(
         args.Env(), "Wrong Arguments, please provide bottom left coordinates, "
                     "an edge size and optional options object");
-  driver->SetupColorAndLineWidth(args.Env(), args[args.Length() - 1]);
-  double size = CoerceToDouble(args.Env(), args[2]);
-  driver->GetContext()->re(CoerceToDouble(args.Env(), args[0]),
-                           CoerceToDouble(args.Env(), args[1]), size, size);
-  driver->FinishPath(args.Env(), args[args.Length() - 1]);
+  PathOptions options;
+  if (!driver->ReadPathOptions(args.Env(), args[args.Length() - 1], options))
+    return nullptr;
+  double size, x, y;
+  if (!DrawingNumber(args.Env(), args[2], &size) ||
+      !DrawingNumber(args.Env(), args[0], &x) ||
+      !DrawingNumber(args.Env(), args[1], &y))
+    return nullptr;
+  driver->ApplyPathOptions(options);
+  driver->GetContext()->re(x, y, size, size);
+  driver->CompletePath(options);
   return args.This();
 }
 
@@ -1202,26 +1156,45 @@ AbstractContentContextDriver::DrawRectangle(const CallbackArgs &args) {
     return WrongArguments(
         args.Env(), "Wrong Arguments, please provide bottom left coordinates, "
                     "width and height and optional options object");
-  driver->SetupColorAndLineWidth(args.Env(), args[args.Length() - 1]);
-  driver->GetContext()->re(
-      CoerceToDouble(args.Env(), args[0]), CoerceToDouble(args.Env(), args[1]),
-      CoerceToDouble(args.Env(), args[2]), CoerceToDouble(args.Env(), args[3]));
-  driver->FinishPath(args.Env(), args[args.Length() - 1]);
+  PathOptions options;
+  if (!driver->ReadPathOptions(args.Env(), args[args.Length() - 1], options))
+    return nullptr;
+  double values[4];
+  for (size_t i = 0; i < 4; ++i)
+    if (!DrawingNumber(args.Env(), args[i], &values[i]))
+      return nullptr;
+  driver->ApplyPathOptions(options);
+  driver->GetContext()->re(values[0], values[1], values[2], values[3]);
+  driver->CompletePath(options);
   return args.This();
 }
 
-void AbstractContentContextDriver::SetFont(napi_env env,
-                                           napi_value maybeOptions) {
-  if (!IsObject(env, maybeOptions) || !Has(env, maybeOptions, "font"))
-    return;
-  napi_value fontValue = Get(env, maybeOptions, "font");
+bool AbstractContentContextDriver::ReadFont(napi_env env,
+                                            napi_value maybeOptions,
+                                            PDFUsedFont *&font, double &size) {
+  if (!IsObject(env, maybeOptions))
+    return true;
+  bool hasFont = Has(env, maybeOptions, "font");
+  if (HasPendingException(env))
+    return false;
+  if (!hasFont)
+    return true;
+  napi_value fontValue = nullptr;
+  if (!Get(env, maybeOptions, "font", &fontValue))
+    return false;
   if (holder->IsUsedFontInstance(fontValue)) {
-    double size = Has(env, maybeOptions, "size")
-                      ? CoerceToDouble(env, Get(env, maybeOptions, "size"))
-                      : 1;
-    GetContext()->Tf(
-        ObjectWrap::Unwrap<UsedFontDriver>(env, fontValue)->UsedFont, size);
+    bool hasSize = Has(env, maybeOptions, "size");
+    if (HasPendingException(env))
+      return false;
+    if (hasSize) {
+      napi_value value = nullptr;
+      if (!Get(env, maybeOptions, "size", &value) ||
+          !DrawingNumber(env, value, &size))
+        return false;
+    }
+    font = ObjectWrap::Unwrap<UsedFontDriver>(env, fontValue)->UsedFont;
   }
+  return !HasPendingException(env);
 }
 
 napi_value AbstractContentContextDriver::WriteText(const CallbackArgs &args) {
@@ -1235,38 +1208,65 @@ napi_value AbstractContentContextDriver::WriteText(const CallbackArgs &args) {
         "Wrong Arguments, please provide the text and x,y coordinate for text "
         "position. optionally also add an options object");
 
-  driver->GetContext()->BT();
+  PathOptions textColor;
+  textColor.setupIsStroke = false;
+  PDFUsedFont *font = nullptr;
+  double size = 1;
   if (args.Length() >= 4) {
-    driver->SetColor(args.Env(), args[3], false);
-    driver->SetFont(args.Env(), args[3]);
+    if (!driver->ReadColorOptions(args.Env(), args[3], textColor) ||
+        !driver->ReadFont(args.Env(), args[3], font, size))
+      return nullptr;
   }
   std::string text = LegacyString(args.Env(), args[0]);
-  double x = CoerceToDouble(args.Env(), args[1]);
-  double y = CoerceToDouble(args.Env(), args[2]);
+  double x, y;
+  if (HasPendingException(args.Env()) ||
+      !DrawingNumber(args.Env(), args[1], &x) ||
+      !DrawingNumber(args.Env(), args[2], &y))
+    return nullptr;
+  PDFUsedFont *underlineFont = nullptr;
+  double underlineSize = 1;
+  PathOptions underlineColor;
+  if (args.Length() >= 4 && IsObject(args.Env(), args[3])) {
+    bool hasUnderline = Has(args.Env(), args[3], "underline");
+    if (HasPendingException(args.Env()))
+      return nullptr;
+    if (hasUnderline) {
+      napi_value value = nullptr;
+      if (!Get(args.Env(), args[3], "underline", &value))
+        return nullptr;
+      bool underline = ToBoolean(args.Env(), value);
+      if (HasPendingException(args.Env()))
+        return nullptr;
+      if (underline &&
+          (!driver->ReadFont(args.Env(), args[3], underlineFont, underlineSize) ||
+           (underlineFont &&
+            !driver->ReadColorOptions(args.Env(), args[3], underlineColor))))
+        return nullptr;
+    }
+  }
+  double underlineWidth = 0, startLine = 0, endLine = 0;
+  if (underlineFont) {
+    FreeTypeFaceWrapper *wrapper = underlineFont->GetFreeTypeFont();
+    underlineWidth = GetUnderlineThicknessFactor(wrapper) * underlineSize;
+    startLine = y + GetUnderlinePositionFactor(wrapper) * underlineSize;
+    endLine = x + underlineFont->CalculateTextAdvance(text, underlineSize);
+    if (!std::isfinite(underlineWidth) || !std::isfinite(startLine) ||
+        !std::isfinite(endLine))
+      return ThrowTypeError(args.Env(), "Underline geometry must be finite");
+  }
+  driver->GetContext()->BT();
+  driver->ApplyPathOptions(textColor);
+  if (font)
+    driver->GetContext()->Tf(font, size);
   driver->GetContext()->Tm(1, 0, 0, 1, x, y);
   driver->GetContext()->Tj(text);
   driver->GetContext()->ET();
-
-  if (args.Length() >= 4 && IsObject(args.Env(), args[3]) &&
-      Has(args.Env(), args[3], "underline") &&
-      ToBoolean(args.Env(), Get(args.Env(), args[3], "underline"))) {
-    napi_value fontValue = Get(args.Env(), args[3], "font");
-    if (driver->holder->IsUsedFontInstance(fontValue)) {
-      double fontSize =
-          Has(args.Env(), args[3], "size")
-              ? CoerceToDouble(args.Env(), Get(args.Env(), args[3], "size"))
-              : 1;
-      PDFUsedFont *font =
-          ObjectWrap::Unwrap<UsedFontDriver>(args.Env(), fontValue)->UsedFont;
-      FreeTypeFaceWrapper *wrapper = font->GetFreeTypeFont();
-      driver->SetColor(args.Env(), args[3], true);
-      driver->GetContext()->w(GetUnderlineThicknessFactor(wrapper) * fontSize);
-      double startLine = y + GetUnderlinePositionFactor(wrapper) * fontSize;
-      driver->GetContext()->m(x, startLine);
-      driver->GetContext()->l(x + font->CalculateTextAdvance(text, fontSize),
-                              startLine);
-      driver->GetContext()->S();
-    }
+  if (underlineFont) {
+    driver->ApplyPathOptions(underlineColor);
+    driver->GetContext()->w(underlineWidth);
+    driver->GetContext()->m(x, startLine);
+    driver->GetContext()->l(endLine, startLine);
+    driver->GetContext()->S();
   }
   return args.This();
 }

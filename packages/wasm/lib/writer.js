@@ -1,4 +1,11 @@
 import { createChildLifecycle } from "./lifecycle.js";
+import {
+  readDrawingOptions,
+  finishDrawingPath,
+  readTextOptions,
+  validateDrawingGeometry,
+  snapshotDrawingPoints,
+} from "./drawing-options.js";
 
 /** Creates shared support functions used by low-level PDF writers. */
 export function createWriterSupport({
@@ -1090,25 +1097,19 @@ export function createWriterFactory({
       }
 
       function finishHighLevelPath(options) {
-        options = options || {};
-        var stroke = options.type !== "fill";
+        var stroke = options.stroke;
         applyHighLevelColor(options, stroke);
         if (stroke && options.width !== undefined) context.w(options.width);
-        return options.type === "fill"
-          ? context.f()
-          : options.close
-            ? context.s()
-            : context.S();
+        return finishDrawingPath(context, options);
       }
 
       context.drawRectangle = function (x, y, width, height, options) {
         if (![x, y, width, height].every(Number.isFinite)) {
           throw new TypeError("drawRectangle requires four finite coordinates");
         }
+        options = readDrawingOptions(options, colorValue);
         context.re(x, y, width, height);
-        return finishHighLevelPath(
-          options && typeof options === "object" ? options : {},
-        );
+        return finishHighLevelPath(options);
       };
       context.drawSquare = function (x, y, edge, options) {
         if (![x, y, edge].every(Number.isFinite)) {
@@ -1120,16 +1121,21 @@ export function createWriterFactory({
         if (![x, y, radius].every(Number.isFinite)) {
           throw new TypeError("drawCircle requires three finite coordinates");
         }
+        options = readDrawingOptions(options, colorValue);
         var control = radius * 0.5522847498307936;
+        validateDrawingGeometry([
+          x + radius,
+          x - radius,
+          y + radius,
+          y - radius,
+        ]);
         context
           .m(x + radius, y)
           .c(x + radius, y + control, x + control, y + radius, x, y + radius)
           .c(x - control, y + radius, x - radius, y + control, x - radius, y)
           .c(x - radius, y - control, x - control, y - radius, x, y - radius)
           .c(x + control, y - radius, x + radius, y - control, x + radius, y);
-        return finishHighLevelPath(
-          options && typeof options === "object" ? options : {},
-        );
+        return finishHighLevelPath(options);
       };
       context.drawPath = function (...args) {
         var points;
@@ -1161,6 +1167,7 @@ export function createWriterFactory({
             points.push([coordinates[index], coordinates[index + 1]]);
           }
         }
+        points = snapshotDrawingPoints(points);
         if (
           !Array.isArray(points) ||
           points.length < 2 ||
@@ -1178,6 +1185,7 @@ export function createWriterFactory({
             "drawPath requires at least two coordinate pairs of finite numbers",
           );
         }
+        options = readDrawingOptions(options, colorValue);
         context.m(...points[0]);
         for (var index = 1; index < points.length; index += 1) {
           context.l(...points[index]);
@@ -1185,6 +1193,7 @@ export function createWriterFactory({
         return finishHighLevelPath(options);
       };
       context.writeText = function (text, x, y, options = {}) {
+        options = readTextOptions(options, colorValue);
         if (
           typeof text !== "string" ||
           ![x, y].every(Number.isFinite) ||
@@ -1201,11 +1210,15 @@ export function createWriterFactory({
         if (!Number.isFinite(size) || size <= 0) {
           throw new RangeError("writeText requires a positive font size");
         }
+        var dimensions = options.underline
+          ? options.font.calculateTextDimensions(text, size)
+          : null;
+        if (dimensions)
+          validateDrawingGeometry([x + dimensions.width, y + dimensions.yMin]);
         context.BT();
         applyHighLevelColor(options, false);
         context.Tf(options.font, size).Tm(1, 0, 0, 1, x, y).Tj(text).ET();
-        if (options.underline) {
-          var dimensions = options.font.calculateTextDimensions(text, size);
+        if (dimensions) {
           context
             .w(Math.max(size * 0.05, 0.1))
             .m(x, y + dimensions.yMin)
@@ -1819,25 +1832,19 @@ export function createWriterFactory({
           throw new TypeError("colorspace must be rgb, gray, or cmyk");
         }
         function finishHighLevelPath(options) {
-          options = options || {};
-          var stroke = options.type !== "fill";
+          var stroke = options.stroke;
           applyHighLevelColor(options, stroke);
           if (stroke && options.width !== undefined) context.w(options.width);
-          return options.type === "fill"
-            ? context.f()
-            : options.close
-              ? context.s()
-              : context.S();
+          return finishDrawingPath(context, options);
         }
         context.drawRectangle = function (x, y, width, height, options) {
           if (![x, y, width, height].every(Number.isFinite))
             throw new TypeError(
               "drawRectangle requires four finite coordinates",
             );
+          options = readDrawingOptions(options, colorValue);
           context.re(x, y, width, height);
-          return finishHighLevelPath(
-            options && typeof options === "object" ? options : {},
-          );
+          return finishHighLevelPath(options);
         };
         context.drawSquare = function (x, y, edge, options) {
           if (![x, y, edge].every(Number.isFinite))
@@ -1847,16 +1854,21 @@ export function createWriterFactory({
         context.drawCircle = function (x, y, radius, options) {
           if (![x, y, radius].every(Number.isFinite))
             throw new TypeError("drawCircle requires three finite coordinates");
+          options = readDrawingOptions(options, colorValue);
           var control = radius * 0.5522847498307936;
+          validateDrawingGeometry([
+            x + radius,
+            x - radius,
+            y + radius,
+            y - radius,
+          ]);
           context
             .m(x + radius, y)
             .c(x + radius, y + control, x + control, y + radius, x, y + radius)
             .c(x - control, y + radius, x - radius, y + control, x - radius, y)
             .c(x - radius, y - control, x - control, y - radius, x, y - radius)
             .c(x + control, y - radius, x + radius, y - control, x + radius, y);
-          return finishHighLevelPath(
-            options && typeof options === "object" ? options : {},
-          );
+          return finishHighLevelPath(options);
         };
         context.drawPath = function (...args) {
           var points;
@@ -1885,6 +1897,7 @@ export function createWriterFactory({
             for (var index = 0; index < coordinates.length; index += 2)
               points.push([coordinates[index], coordinates[index + 1]]);
           }
+          points = snapshotDrawingPoints(points);
           if (
             !Array.isArray(points) ||
             points.length < 2 ||
@@ -1901,12 +1914,14 @@ export function createWriterFactory({
             throw new TypeError(
               "drawPath requires at least two coordinate pairs of finite numbers",
             );
+          options = readDrawingOptions(options, colorValue);
           context.m(...points[0]);
           for (var index = 1; index < points.length; index += 1)
             context.l(...points[index]);
           return finishHighLevelPath(options);
         };
         context.writeText = function (text, x, y, options = {}) {
+          options = readTextOptions(options, colorValue);
           if (
             typeof text !== "string" ||
             ![x, y].every(Number.isFinite) ||
@@ -1921,11 +1936,18 @@ export function createWriterFactory({
           var size = options.size ?? 1;
           if (!Number.isFinite(size) || size <= 0)
             throw new RangeError("writeText requires a positive font size");
+          var dimensions = options.underline
+            ? options.font.calculateTextDimensions(text, size)
+            : null;
+          if (dimensions)
+            validateDrawingGeometry([
+              x + dimensions.width,
+              y + dimensions.yMin,
+            ]);
           context.BT();
           applyHighLevelColor(options, false);
           context.Tf(options.font, size).Tm(1, 0, 0, 1, x, y).Tj(text).ET();
-          if (options.underline) {
-            var dimensions = options.font.calculateTextDimensions(text, size);
+          if (dimensions) {
             context
               .w(Math.max(size * 0.05, 0.1))
               .m(x, y + dimensions.yMin)

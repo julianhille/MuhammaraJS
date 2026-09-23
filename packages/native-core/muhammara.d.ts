@@ -109,6 +109,7 @@ declare namespace muhammara {
   }
 
   export interface GraphicOptions extends ColorOptions {
+    /** "clip" intersects the clipping region without painting; scope with q()/Q(). */
     type?: "stroke" | "fill" | "clip";
     width?: number;
     close?: boolean;
@@ -215,11 +216,15 @@ declare namespace muhammara {
     ): this;
     TJ(value: string | Glyph, options?: TextRenderOptions): this;
     writeFreeCode(freeCode: string): this;
+    /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////drawPath(...xyPairs: number[], options: GraphicOptions): this;
     drawPath(xyPairs: Array<[number, number]>, options: GraphicOptions): this;
+    /** Coordinates, radius, and calculated circle geometry must remain finite. */
     drawCircle(x: PosX, y: PosY, r: number, options?: GraphicOptions): this;
+    /** Coordinates and edge length must be finite. */
     drawSquare(x: PosX, y: PosY, l: number, options?: GraphicOptions): this;
+    /** Coordinates and dimensions must be finite. */
     drawRectangle(
       x: PosX,
       y: PosY,
@@ -227,6 +232,7 @@ declare namespace muhammara {
       h: number,
       options?: GraphicOptions,
     ): this;
+    /** Coordinates, font size, and calculated underline geometry must remain finite. */
     writeText(text: string, x: PosX, y: PosY, options?: WriteTextOptions): this;
     drawImage(
       x: PosX,

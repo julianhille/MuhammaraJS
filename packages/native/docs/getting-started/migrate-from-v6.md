@@ -498,6 +498,32 @@ duplicating these values.
 The real `napi_versions: [8]` metadata also allows package analyzers such as
 Turbopack to identify the addon as Node-API compatible.
 
+## 15. Check Low-Level Clipping Options
+
+The `drawPath`, `drawCircle`, `drawSquare`, and `drawRectangle` helpers now
+interpret `type: "clip"` as clipping without painting. Previously that spelling
+did not apply a clip, while unknown strings incorrectly entered the clip branch.
+Replace misspelled or unsupported types with `"clip"` when clipping is intended,
+or `"stroke"`/`"fill"` when drawing an outline or filled shape is intended.
+
+Clipping now ends the path (`W n`). Do not rely on a later painting operator to
+paint that same path: draw the shape again with a painting type if necessary.
+Save graphics state with `q()` before the clip, draw the content that should be
+clipped, then restore it with `Q()` so later content is unaffected. See
+[Draw Primitives](../low-level/drawing-primitives.md).
+
+Drawing helpers and `writeText()` also convert their inputs before emitting
+operators. If an option getter or numeric conversion throws, correct the input
+and retry; failed calls no longer leave partial drawing output in the stream.
+
+Coordinates, dimensions, stroke widths, and `writeText()` font sizes must
+convert to finite numbers. Replace `NaN` and infinities with finite values and
+reduce values whose circle or underline calculations overflow. Finite numeric
+coercions remain supported. Supply at least two complete coordinate pairs to
+`drawPath()`; malformed pairs and extra arguments now throw instead of silently
+drawing a prefix. A failed call emits no operators and can be retried after
+correcting the input.
+
 ## What Does Not Change
 
 - Supported Node.js versions.

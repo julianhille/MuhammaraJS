@@ -795,6 +795,7 @@ export interface AnnotationOptions {
 export interface DrawPathOptions {
   color?: number | string;
   colorspace?: "rgb" | "gray" | "cmyk";
+  /** "stroke" (default), "fill", or "clip". Clip ends the path without painting. */
   type?: "fill" | string;
   width?: number;
   close?: boolean;
@@ -1051,7 +1052,9 @@ export interface ContentContext {
   sc(...components: number[]): this;
   scn(...componentsAndPattern: (number | string | number[])[]): this;
   doXObject(xObject: string | number | FormXObject | ImageXObject): this;
+  /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
   drawPath(points: [number, number][], options?: DrawPathOptions): this;
+  /** Require complete finite coordinate pairs followed by an options object. */
   drawPath(
     x1: number,
     y1: number,
@@ -1059,18 +1062,21 @@ export interface ContentContext {
     y2: number,
     ...coordinatesAndOptions: [...number[], DrawPathOptions]
   ): this;
+  /** Coordinates, radius, and calculated circle geometry must remain finite. */
   drawCircle(
     x: number,
     y: number,
     radius: number,
     options?: DrawPathOptions,
   ): this;
+  /** Coordinates and edge length must be finite. */
   drawSquare(
     x: number,
     y: number,
     edge: number,
     options?: DrawPathOptions,
   ): this;
+  /** Coordinates and dimensions must be finite. */
   drawRectangle(
     x: number,
     y: number,
@@ -1078,6 +1084,7 @@ export interface ContentContext {
     height: number,
     options?: DrawPathOptions,
   ): this;
+  /** Coordinates and calculated underline geometry must be finite; font size must be positive and finite. */
   writeText(
     text: string,
     x: number,

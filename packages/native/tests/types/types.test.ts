@@ -10,6 +10,19 @@ var context: muhammara.PageContentContext =
 var api: typeof muhammara = nativeCore.createMuhammara({});
 
 context.m(0, 0).l(100, 100).S();
+context
+  .drawPath(
+    [
+      [0, 0],
+      [20, 20],
+    ],
+    { width: 2 },
+  )
+  .writeText("Finite geometry", 10, 20, {
+    font: writer.getFontForFile("font.ttf"),
+    size: 12,
+    underline: true,
+  });
 context.c(0, 0, 1, 1, 2, 2).S();
 context.drawCircle(10, 10, 5).drawSquare(10, 10, 5);
 api.createWriter("output.pdf");

@@ -4,6 +4,20 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Low-level shape helpers now honor `type: "clip"`, ending the path with `W n`
+  without painting it. Previously `"clip"` did nothing and unrecognized types
+  incorrectly clipped. Unknown types now end the path without painting. Use `"clip"` explicitly and scope it with `q()`/`Q()`;
+  use `"stroke"` or `"fill"` when painting is intended. See the
+  [drawing migration](getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+- Shape helpers and `writeText()` now finish input conversion before emitting
+  operators. Failed getters or coercions no longer leave partial graphics/text
+  output; correct the input and retry rather than relying on that partial output.
+  Coordinates, dimensions, stroke widths, and text sizes must convert to finite
+  numbers; calculated circle and underline geometry must also remain finite.
+  `drawPath()` requires at least two complete pairs and rejects malformed or
+  extra arguments instead of drawing a prefix. Replace `NaN`/infinities with
+  finite values, reduce overflowing geometry, and supply complete pairs. See
+  the [drawing migration](getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
 - Native prebuilds now use Node-API 8 and are named
   `napi-v8-{platform}-{arch}-{libc}.tar.gz` instead of
   `node-v{abi}-{platform}-{arch}-{libc}.tar.gz`. The installed addon now lives

@@ -8,6 +8,7 @@
 class AbstractContentContext;
 class ResourcesDictionary;
 class ConstructorsHolder;
+class PDFUsedFont;
 
 struct TextPlacingOptions {
   enum EEncoding { EEncodingText, EEncodingCode, EEncodingHex };
@@ -67,9 +68,9 @@ private:
                        PathOptions &options);
   void ApplyPathOptions(const PathOptions &options);
   void CompletePath(const PathOptions &options);
-  void SetupColorAndLineWidth(napi_env env, napi_value maybeOptions);
-  void SetColor(napi_env env, napi_value maybeOptions, bool isStroke);
-  void FinishPath(napi_env env, napi_value maybeOptions);
-  void SetFont(napi_env env, napi_value maybeOptions);
+  bool ReadColorOptions(napi_env env, napi_value maybeOptions,
+                        PathOptions &options);
+  bool ReadFont(napi_env env, napi_value maybeOptions,
+                 PDFUsedFont *&font, double &size);
   void SetRGBColor(unsigned long colorValue, bool isStroke);
 };

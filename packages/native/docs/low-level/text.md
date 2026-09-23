@@ -21,3 +21,9 @@ such as `setOpacity(0.5)`.
 
 Use `font.calculateTextDimensions(text, size)` when positioning needs the text
 bounds.
+
+`writeText` reads and converts text, coordinates, font size, color, and underline
+options before emitting `BT` or changing graphics state. If a getter or
+conversion throws, the original exception is propagated and the call emits no
+partial text or underline. Correct the input before retrying. This also applies
+to form contexts and writers modifying existing PDFs.
