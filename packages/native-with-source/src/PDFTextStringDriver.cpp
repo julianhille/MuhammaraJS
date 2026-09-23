@@ -1,110 +1,72 @@
-/*
- Source File : UsedFontDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #include "PDFTextStringDriver.h"
+
 #include "IOBasicTypes.h"
-#include "ConstructorsHolder.h"
-#include <string>
 
-using namespace v8;
+using namespace muhammara::napi;
 
-DEF_SUBORDINATE_INIT(PDFTextStringDriver::Init)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-	Local<FunctionTemplate> t = NEW_FUNCTION_TEMPLATE(New);
-
-	t->SetClassName(NEW_STRING("PDFTextString"));
-	t->InstanceTemplate()->SetInternalFieldCount(1);
-
-	SET_PROTOTYPE_METHOD(t, "toBytesArray", ToBytesArray);
-	SET_PROTOTYPE_METHOD(t, "toString", ToString);
-	SET_PROTOTYPE_METHOD(t, "fromString", FromString);
-
-	SET_CONSTRUCTOR_EXPORT("PDFTextString", t);
-
-    // save in factory
-	EXPOSE_EXTERNAL_FOR_INIT(ConstructorsHolder, holder)
-    SET_CONSTRUCTOR(holder->PDFTextString_constructor, t);   	
+bool PDFTextStringDriver::Init(ModuleState &state, napi_value exports) {
+  ClassBuilder builder(state, "PDFTextString", New);
+  builder.Method("toBytesArray", ToBytesArray)
+      .Method("toString", ToString)
+      .Method("fromString", FromString);
+  return builder.Define(exports) != nullptr;
 }
 
-METHOD_RETURN_TYPE PDFTextStringDriver::New(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFTextStringDriver* element = new PDFTextStringDriver();
-	if(args.Length() > 0) {
-		if(args[0]->IsString()) {
-			// text string, consider a plain unicode string
-	        element->mTextString.FromUTF8(*UTF_8_VALUE(args[0]->TO_STRING()));
-		}
-		else if(args[0]->IsArray()) {
-			// bytes array, init as is
-			int bufferSize = args[0]->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked()->TO_UINT32Value();
-			std::string buffer;
-
-			for(int i=0;i<bufferSize;++i)
-				buffer.push_back((char)(args[0]->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->TO_UINT32Value()));
-			element->mTextString = buffer;
-		}
-	}
-    
-    element->Wrap(args.This());
-	SET_FUNCTION_RETURN_VALUE( args.This())
+napi_value PDFTextStringDriver::New(const CallbackArgs &args) {
+  auto *driver = new PDFTextStringDriver();
+  if (args.Length() > 0) {
+    if (IsType(args.Env(), args[0], napi_string)) {
+      driver->mTextString.FromUTF8(
+          muhammara::napi::LegacyString(args.Env(), args[0]));
+    } else if (IsArray(args.Env(), args[0])) {
+      uint32_t length = 0;
+      if (!Length(args.Env(), args[0], &length)) {
+        delete driver;
+        return nullptr;
+      }
+      std::string buffer;
+      buffer.reserve(length);
+      for (uint32_t i = 0; i < length; ++i) {
+        napi_value value = nullptr;
+        uint32_t byte = 0;
+        if (!Get(args.Env(), args[0], i, &value) ||
+            !CoerceToUint32(args.Env(), value, &byte)) {
+          delete driver;
+          return nullptr;
+        }
+        buffer.push_back(static_cast<char>(byte));
+      }
+      driver->mTextString = buffer;
+    }
+  }
+  if (!driver->Wrap(args.Env(), args.This())) {
+    delete driver;
+    return nullptr;
+  }
+  return args.This();
 }
 
-METHOD_RETURN_TYPE PDFTextStringDriver::ToBytesArray(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFTextStringDriver* element = ObjectWrap::Unwrap<PDFTextStringDriver>(args.This());
-    
-	std::string aString = element->mTextString.ToString();
-
-	Local<Array> result = NEW_ARRAY(aString.length());
-
-	for(std::string::size_type i=0;i<aString.length();++i)
-		result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(i),NEW_NUMBER((IOBasicTypes::Byte)(aString[i])));
-
-	SET_FUNCTION_RETURN_VALUE(result)
+napi_value PDFTextStringDriver::ToBytesArray(const CallbackArgs &args) {
+  auto *driver =
+      ObjectWrap::Unwrap<PDFTextStringDriver>(args.Env(), args.This());
+  std::string value = driver->mTextString.ToString();
+  return BytesToArray(args.Env(),
+                      reinterpret_cast<const unsigned char *>(value.data()),
+                      value.size());
 }
 
-METHOD_RETURN_TYPE PDFTextStringDriver::ToString(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFTextStringDriver* element = ObjectWrap::Unwrap<PDFTextStringDriver>(args.This());
-    
-    SET_FUNCTION_RETURN_VALUE(NEW_STRING(element->mTextString.ToUTF8String().c_str()))
+napi_value PDFTextStringDriver::ToString(const CallbackArgs &args) {
+  auto *driver =
+      ObjectWrap::Unwrap<PDFTextStringDriver>(args.Env(), args.This());
+  return String(args.Env(), driver->mTextString.ToUTF8String());
 }
 
-METHOD_RETURN_TYPE PDFTextStringDriver::FromString(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFTextStringDriver* element = ObjectWrap::Unwrap<PDFTextStringDriver>(args.This());
-    if(args.Length() > 0 && args[0]->IsString())
-        element->mTextString.FromUTF8(*UTF_8_VALUE(args[0]->TO_STRING()));
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
+napi_value PDFTextStringDriver::FromString(const CallbackArgs &args) {
+  auto *driver =
+      ObjectWrap::Unwrap<PDFTextStringDriver>(args.Env(), args.This());
+  if (args.Length() > 0 && IsType(args.Env(), args[0], napi_string)) {
+    driver->mTextString.FromUTF8(
+        muhammara::napi::LegacyString(args.Env(), args[0]));
+  }
+  return args.This();
 }

@@ -1,199 +1,82 @@
-/*
- Source File : PDFPageInputDriver
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #include "PDFPageInputDriver.h"
-#include "PDFPageInput.h"
-#include "PDFDictionaryDriver.h"
-#include "ConstructorsHolder.h"
 
-using namespace v8;
+#include "ConstructorsHolder.h"
+#include "PDFPageInput.h"
+
+using namespace muhammara::napi;
 
 PDFPageInputDriver::PDFPageInputDriver()
-{
-    PageInput = NULL;
+    : PageInput(nullptr), holder(nullptr) {}
+PDFPageInputDriver::~PDFPageInputDriver() { delete PageInput; }
+
+bool PDFPageInputDriver::Init(ModuleState &state, napi_value exports) {
+  ClassBuilder builder(state, "PDFPageInput", New);
+  builder.Method("getDictionary", GetDictionary)
+      .Method("getMediaBox", GetMediaBox)
+      .Method("getCropBox", GetCropBox)
+      .Method("getTrimBox", GetTrimBox)
+      .Method("getBleedBox", GetBleedBox)
+      .Method("getArtBox", GetArtBox)
+      .Method("getRotate", GetRotate);
+  return builder.Define(exports, false) != nullptr;
 }
 
-PDFPageInputDriver::~PDFPageInputDriver()
-{
-    delete PageInput;
+napi_value PDFPageInputDriver::New(const CallbackArgs &args) {
+  auto *driver = new PDFPageInputDriver();
+  driver->holder = &ModuleState::Get(args.Env())->Constructors();
+  if (!driver->Wrap(args.Env(), args.This())) {
+    delete driver;
+    return nullptr;
+  }
+  return args.This();
 }
 
-DEF_SUBORDINATE_INIT(PDFPageInputDriver::Init)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-	Local<FunctionTemplate> t = NEW_FUNCTION_TEMPLATE_EXTERNAL(New);
-
-	t->SetClassName(NEW_STRING("PDFPageInput"));
-	t->InstanceTemplate()->SetInternalFieldCount(1);
-
-	SET_PROTOTYPE_METHOD(t, "getDictionary", GetDictionary);
-	SET_PROTOTYPE_METHOD(t, "getMediaBox", GetMediaBox);
-	SET_PROTOTYPE_METHOD(t, "getCropBox", GetCropBox);
-	SET_PROTOTYPE_METHOD(t, "getTrimBox", GetTrimBox);
-	SET_PROTOTYPE_METHOD(t, "getBleedBox", GetBleedBox);
-	SET_PROTOTYPE_METHOD(t, "getArtBox", GetArtBox);
-	SET_PROTOTYPE_METHOD(t, "getRotate", GetRotate);
-
-    // save in factory
-	EXPOSE_EXTERNAL_FOR_INIT(ConstructorsHolder, holder)
-    SET_CONSTRUCTOR(holder->PDFPageInput_constructor, t);  
+PDFPageInputDriver *PDFPageInputDriver::GetPage(const CallbackArgs &args) {
+  auto *driver =
+      ObjectWrap::Unwrap<PDFPageInputDriver>(args.Env(), args.This());
+  if (!driver->PageInput) {
+    ThrowError(
+        args.Env(),
+        "page input not initialized. create one using the PDFReader.parsePage");
+    return nullptr;
+  }
+  return driver;
 }
 
-METHOD_RETURN_TYPE PDFPageInputDriver::New(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    EXPOSE_EXTERNAL_ARGS(ConstructorsHolder, externalHolder)
-
-    PDFPageInputDriver* element = new PDFPageInputDriver();
-	element->holder = externalHolder;
-    element->Wrap(args.This());
-	SET_FUNCTION_RETURN_VALUE(args.This())
+napi_value PDFPageInputDriver::GetDictionary(const CallbackArgs &args) {
+  auto *driver = GetPage(args);
+  return driver ? driver->holder->GetInstanceFor(
+                      driver->PageInputDictionary.GetPtr())
+                : nullptr;
 }
 
-METHOD_RETURN_TYPE  PDFPageInputDriver::GetDictionary(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFPageInputDriver* element = ObjectWrap::Unwrap<PDFPageInputDriver>(args.This());
-    
-    if(!element->PageInput)
-    {
-		THROW_EXCEPTION("page input not initialized. create one using the PDFReader.parsePage");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance;
-
-    newInstance = element->holder->GetNewPDFDictionary();
-    ObjectWrap::Unwrap<PDFDictionaryDriver>(newInstance->TO_OBJECT())->TheObject = element->PageInputDictionary;
-    SET_FUNCTION_RETURN_VALUE(newInstance)
+napi_value
+PDFPageInputDriver::GetArrayForPDFRectangle(napi_env env,
+                                            const PDFRectangle &rectangle) {
+  napi_value result = Array(env, 4);
+  Set(env, result, uint32_t{0}, Number(env, rectangle.LowerLeftX));
+  Set(env, result, uint32_t{1}, Number(env, rectangle.LowerLeftY));
+  Set(env, result, uint32_t{2}, Number(env, rectangle.UpperRightX));
+  Set(env, result, uint32_t{3}, Number(env, rectangle.UpperRightY));
+  return result;
 }
 
-METHOD_RETURN_TYPE PDFPageInputDriver::GetMediaBox(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
+#define RECTANGLE_METHOD(Name, Getter)                                         \
+  napi_value PDFPageInputDriver::Name(const CallbackArgs &args) {              \
+    auto *driver = GetPage(args);                                              \
+    return driver ? GetArrayForPDFRectangle(args.Env(),                        \
+                                            driver->PageInput->Getter())       \
+                  : nullptr;                                                   \
+  }
 
-    PDFPageInputDriver* element = ObjectWrap::Unwrap<PDFPageInputDriver>(args.This());
-    
-    if(!element->PageInput)
-    {
-		THROW_EXCEPTION("page input not initialized. create one using the PDFReader.parsePage");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-	else
-		SET_FUNCTION_RETURN_VALUE(GetArrayForPDFRectangle(element->PageInput->GetMediaBox()))
-}
+RECTANGLE_METHOD(GetMediaBox, GetMediaBox)
+RECTANGLE_METHOD(GetCropBox, GetCropBox)
+RECTANGLE_METHOD(GetTrimBox, GetTrimBox)
+RECTANGLE_METHOD(GetBleedBox, GetBleedBox)
+RECTANGLE_METHOD(GetArtBox, GetArtBox)
+#undef RECTANGLE_METHOD
 
-Local<Value> PDFPageInputDriver::GetArrayForPDFRectangle(const PDFRectangle& inRectangle)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    Local<Array> result = NEW_ARRAY(4);
-    
-    result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(0),NEW_NUMBER(inRectangle.LowerLeftX));
-    result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(1),NEW_NUMBER(inRectangle.LowerLeftY));
-    result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(2),NEW_NUMBER(inRectangle.UpperRightX));
-    result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(3),NEW_NUMBER(inRectangle.UpperRightY));
-    return CLOSE_SCOPE(result);
-    
-}
-METHOD_RETURN_TYPE PDFPageInputDriver::GetCropBox(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-	PDFPageInputDriver* element = ObjectWrap::Unwrap<PDFPageInputDriver>(args.This());
-
-	if (!element->PageInput)
-	{
-		THROW_EXCEPTION("page input not initialized. create one using the PDFReader.parsePage");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-	else
-		SET_FUNCTION_RETURN_VALUE(GetArrayForPDFRectangle(element->PageInput->GetCropBox()))
-}
-
-METHOD_RETURN_TYPE PDFPageInputDriver::GetTrimBox(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-	PDFPageInputDriver* element = ObjectWrap::Unwrap<PDFPageInputDriver>(args.This());
-
-	if (!element->PageInput)
-	{
-		THROW_EXCEPTION("page input not initialized. create one using the PDFReader.parsePage");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-	else
-		SET_FUNCTION_RETURN_VALUE(GetArrayForPDFRectangle(element->PageInput->GetTrimBox()))
-}
-
-METHOD_RETURN_TYPE PDFPageInputDriver::GetBleedBox(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-	PDFPageInputDriver* element = ObjectWrap::Unwrap<PDFPageInputDriver>(args.This());
-
-	if (!element->PageInput)
-	{
-		THROW_EXCEPTION("page input not initialized. create one using the PDFReader.parsePage");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-	else
-		SET_FUNCTION_RETURN_VALUE(GetArrayForPDFRectangle(element->PageInput->GetBleedBox()))
-}
-
-METHOD_RETURN_TYPE PDFPageInputDriver::GetArtBox(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-	PDFPageInputDriver* element = ObjectWrap::Unwrap<PDFPageInputDriver>(args.This());
-
-	if (!element->PageInput)
-	{
-		THROW_EXCEPTION("page input not initialized. create one using the PDFReader.parsePage");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-	else
-		SET_FUNCTION_RETURN_VALUE(GetArrayForPDFRectangle(element->PageInput->GetArtBox()))
-}
-
-METHOD_RETURN_TYPE PDFPageInputDriver::GetRotate(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-	PDFPageInputDriver* element = ObjectWrap::Unwrap<PDFPageInputDriver>(args.This());
-
-	if (!element->PageInput)
-	{
-		THROW_EXCEPTION("page input not initialized. create one using the PDFReader.parsePage");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-	else
-		SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(element->PageInput->GetRotate()))
+napi_value PDFPageInputDriver::GetRotate(const CallbackArgs &args) {
+  auto *driver = GetPage(args);
+  return driver ? Number(args.Env(), driver->PageInput->GetRotate()) : nullptr;
 }

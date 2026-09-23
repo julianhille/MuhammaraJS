@@ -7,6 +7,8 @@ packages/wasm/tests/output
 packages/wasm/tests/**/output
 packages/native-with-source/binding
 packages/native-with-source/build/
+packages/native-with-source/build-tmp-napi-v*/
+packages/native-with-source/napi-poc/
 packages/native-with-source/openssl-build/
 packages/src
 node_modules

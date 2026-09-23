@@ -1,2326 +1,1345 @@
-/*
- Source File : AbstractContentContextDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
-
 #include "AbstractContentContextDriver.h"
+
 #include "AbstractContentContext.h"
-#include "ResourcesDictionary.h"
-#include "PDFFormXObject.h"
-#include "FormXObjectDriver.h"
-#include "UsedFontDriver.h"
-#include "ImageXObjectDriver.h"
 #include "CSSColors.h"
-#include "PDFWriterDriver.h"
-#include "PDFUsedFont.h"
-#include "FreeTypeFaceWrapper.h"
 #include "ConstructorsHolder.h"
-
-#include <map>
-#include <string.h>
-#include <ctype.h>
-#include <algorithm>
-
-using namespace v8;
-
-
-typedef std::map<std::string,unsigned long> StringToULongMap;
-
-// Converts a V8 string into an std::string that keeps its full byte length.
-// Dereferencing String::Utf8Value into a C string truncates the text at the
-// first embedded NUL byte, which PDF strings are allowed to contain.
-static std::string ToStdString(Isolate* isolate, Local<Value> inValue)
-{
-    auto value = UTF_8_VALUE(inValue->TO_STRING());
-    return *value == NULL ? std::string() : std::string(*value, value.length());
-}
-
-class ColorMap
-{
-public:
-    ColorMap();
-    
-    unsigned long GetRGBForColorName(const std::string& inColorName);
-    
-private:
-    
-    StringToULongMap mColorMap;
-    
-};
-
-ColorMap::ColorMap()
-{
-    unsigned long i;
-
-    for(i=0;strlen(kCSSColorsArray[i].name) != 0; ++i)
-        mColorMap.insert(StringToULongMap::value_type(kCSSColorsArray[i].name,kCSSColorsArray[i].rgbValue));
-    
-}
-
-
-unsigned long ColorMap::GetRGBForColorName(const std::string& inColorName)
-{
-    std::string key = inColorName;
-    
-    // convert to lower case, to match against color names
-    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-    
-    StringToULongMap::iterator it = mColorMap.find(key);
-    
-    if(it == mColorMap.end())
-        return 0;
-    else
-        return it->second;
-}
-
-
-// single instance of color map
-static ColorMap sColorMap;
-
-AbstractContentContextDriver::AbstractContentContextDriver()
-{
-    mResourcesDictionary = NULL;
-}
-
-void AbstractContentContextDriver::SetResourcesDictionary(ResourcesDictionary* inResourcesDictionary)
-{
-    mResourcesDictionary = inResourcesDictionary;
-}
-
-void AbstractContentContextDriver::Init(Local<FunctionTemplate>& ioDriverTemplate)
-{
-	SET_PROTOTYPE_METHOD(ioDriverTemplate,"b",b);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "B", B);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "bStar", bStar);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "BStar", BStar);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "s", s);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "S", S);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "f", f);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "F", F);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "fStar", fStar);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "n", n);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "m", m);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "l", l);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "c", c);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "v", v);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "y", y);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "h", h);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "re", re);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "q", q);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Q", Q);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "cm", cm);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "w", w);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "J", J);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "j", j);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "M", M);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "d", d);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "ri", ri);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "i", i);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "gs", gs);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "setOpacity", SetOpacity);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "CS", CS);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "cs", cs);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "SC", SC);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "SCN", SCN);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "sc", sc);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "scn", scn);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "G", G);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "g", g);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "RG", RG);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "rg", rg);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "K", K);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "k", k);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "W", W);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "WStar", WStar);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "doXObject", doXObject);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Tc", Tc);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Tw", Tw);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Tz", Tz);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "TL", TL);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Tr", Tr);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Ts", Ts);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "BT", BT);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "ET", ET);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Td", Td);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "TD", TD);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Tm", Tm);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "TStar", TStar);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Tf", Tf);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Tj", Tj);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "Quote", Quote);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "DoubleQuote", DoubleQuote);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "TJ", TJ);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "writeFreeCode", WriteFreeCode);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "drawPath", DrawPath);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "drawCircle", DrawCircle);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "drawSquare", DrawSquare);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "drawRectangle", DrawRectangle);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "writeText", WriteText);
-	SET_PROTOTYPE_METHOD(ioDriverTemplate, "drawImage", DrawImage);
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::b(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->b();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::B(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->B();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::bStar(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->bStar();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::BStar(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->BStar();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::s(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-	if (!contentContext->GetContext())
-		THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->s();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::S(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->S();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::f(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->f();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::F(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->F();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::fStar(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->fStar();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::n(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->n();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::m(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 2 || !args[0]->IsNumber() || !args[1]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 2 parameters, movement position");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->m(TO_NUMBER(args[0])->Value(),TO_NUMBER(args[1])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::l(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 2 || !args[0]->IsNumber() || !args[1]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 2 parameters, line to position");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->l(TO_NUMBER(args[0])->Value(),TO_NUMBER(args[1])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::c(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 6 ||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber() ||
-        !args[2]->IsNumber() ||
-        !args[3]->IsNumber() ||
-        !args[4]->IsNumber() ||
-        !args[5]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 6 parameters of the curve");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->c(TO_NUMBER(args[0])->Value(),
-                                    TO_NUMBER(args[1])->Value(),
-                                    TO_NUMBER(args[2])->Value(),
-                                    TO_NUMBER(args[3])->Value(),
-                                    TO_NUMBER(args[4])->Value(),
-                                    TO_NUMBER(args[5])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::v(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 4 ||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber() ||
-        !args[2]->IsNumber() ||
-        !args[3]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 4 parameters of the curve");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->v(TO_NUMBER(args[0])->Value(),
-                                    TO_NUMBER(args[1])->Value(),
-                                    TO_NUMBER(args[2])->Value(),
-                                    TO_NUMBER(args[3])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::y(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 4 ||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber() ||
-        !args[2]->IsNumber() ||
-        !args[3]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 4 parameters of the curve");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->y(TO_NUMBER(args[0])->Value(),
-                                    TO_NUMBER(args[1])->Value(),
-                                    TO_NUMBER(args[2])->Value(),
-                                    TO_NUMBER(args[3])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::h(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    contentContext->GetContext()->h();
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::re(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context using pdfWriter.startPageContentContext(page)");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 4 || !args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsNumber() || !args[3]->IsNumber()) {
-		THROW_EXCEPTION("Wrong Argument, please provide 4 parameters: 2 bottom left coordinates, and width and height measures");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->re(TO_NUMBER(args[0])->Value(),
-                                     TO_NUMBER(args[1])->Value(),
-                                     TO_NUMBER(args[2])->Value(),
-                                     TO_NUMBER(args[3])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::q(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context using pdfWriter.startPageContentContext(page)");
-    else
-        contentContext->GetContext()->q();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Q(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context using pdfWriter.startPageContentContext(page)");
-    else
-        contentContext->GetContext()->Q();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::cm(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 6 ||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber() ||
-        !args[2]->IsNumber() ||
-        !args[3]->IsNumber() ||
-        !args[4]->IsNumber() ||
-        !args[5]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 6 arguments forming a 2d transformation matrix");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->cm(TO_NUMBER(args[0])->Value(),
-                                     TO_NUMBER(args[1])->Value(),
-                                     TO_NUMBER(args[2])->Value(),
-                                     TO_NUMBER(args[3])->Value(),
-                                     TO_NUMBER(args[4])->Value(),
-                                     TO_NUMBER(args[5])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::w(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide 1 parameter, width measure");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->w(TO_NUMBER(args[0])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::J(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide 1 parameter, line cap style");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->J(TO_INT32(args[0])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::j(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide 1 parameter, line join style");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->j(TO_INT32(args[0])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::M(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide 1 parameter, miter limit");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->M(TO_NUMBER(args[0])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::d(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 2 ||
-        !args[0]->IsArray() ||
-        !args[1]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide 2 parameters - array for dash pattern and dash phase number");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-    int dashArrayLength = TO_INT32(args[0]->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
-    double* dashArray = new double[dashArrayLength];
-    for(int i=0; i < dashArrayLength;++i)
-        dashArray[i] = TO_INT32(args[0]->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked())->Value();
-    
-    contentContext->GetContext()->d(dashArray,dashArrayLength,TO_INT32(args[1])->Value());
-    
-    delete[] dashArray;
-                             
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::ri(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context using pdfWriter.startPageContentContext(page)");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsString()) {
-		THROW_EXCEPTION("Wrong Argument, please provide 1 string argument, the rendering intent");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->ri(*UTF_8_VALUE(args[0]->TO_STRING()));
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::i(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide 1 parameter, flatness");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->i(TO_INT32(args[0])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::gs(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context using pdfWriter.startPageContentContext(page)");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsString()) {
-		THROW_EXCEPTION("Wrong Argument, please provide 1 string argument, graphic state name");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->gs(*UTF_8_VALUE(args[0]->TO_STRING()));
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::SetOpacity(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context using pdfWriter.startPageContentContext(page)");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    double opacity = args.Length() == 1 && args[0]->IsNumber() ? TO_NUMBER(args[0])->Value() : -1;
-    if(opacity < 0 || opacity > 1 || opacity != opacity)
-    {
-        THROW_EXCEPTION("Wrong Argument, please provide 1 opacity value between 0 and 1");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    contentContext->GetContext()->SetOpacity(opacity);
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::CS(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsString())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide a color space name");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->CS(*UTF_8_VALUE(args[0]->TO_STRING()));
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::cs(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsString())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide a color space name");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->cs(*UTF_8_VALUE(args[0]->TO_STRING()));
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::SC(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() == 0)
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide at least one color component");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    
-    double* components = new double[args.Length()];
-    for(int i = 0; i < args.Length(); ++i)
-        components[i] = TO_NUMBER(args[i])->Value();
-    
-    contentContext->GetContext()->SC(components,args.Length());
-    
-    delete[] components;
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::SCN(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (
-	    args.Length() == 0 ||
-        (args.Length() == 1 && !(args[0]->IsNumber() || args[0]->IsArray())) ||
-        (args.Length() > 1 && !(args[args.Length()-1]->IsNumber() || args[args.Length()-1]->IsArray() || args[args.Length()-1]->IsString() ))
-
-        )
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide at least one color component or a list of color components and optional a pattern name");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-    double* components;
-    int componentsLength = 0;
-    bool hasPatternArgument = args[args.Length()-1]->IsString();
-    if (!args[0]->IsArray()) {
-        componentsLength = hasPatternArgument ? args.Length() - 1 : args.Length();
-        components = new double[componentsLength];
-        for(int i = 0; i < componentsLength; ++i)
-            components[i] = TO_NUMBER(args[i])->Value();
-    } else {
-        Local<Object> arr = args[0]->TO_OBJECT();
-        componentsLength = TO_INT32(arr->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
-        components = new double[componentsLength];
-        for(int i = 0; i < componentsLength; ++i) {
-           components[i] = TO_NUMBER(arr->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked())->Value();
-       }
-    }
-
-    if(hasPatternArgument)
-        contentContext->GetContext()->SCN(components,componentsLength,*UTF_8_VALUE(args[args.Length()-1]->TO_STRING()));
-    else
-        contentContext->GetContext()->SCN(components,componentsLength);
-    
-    delete[] components;
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::sc(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() == 0)
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide at least one color component");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    
-    double* components = new double[args.Length()];
-    for(int i = 0; i < args.Length(); ++i)
-        components[i] = TO_NUMBER(args[i])->Value();
-    
-    contentContext->GetContext()->sc(components,args.Length());
-    
-    delete[] components;
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::scn(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if (
-        args.Length() == 0 ||
-        (args.Length() == 1 && !(args[0]->IsNumber() || args[0]->IsArray())) ||
-        (args.Length() > 1 && !(args[args.Length()-1]->IsNumber() || args[args.Length()-1]->IsArray() || args[args.Length()-1]->IsString() ))
-
-        )
-    {
-        THROW_EXCEPTION("Wrong Arguments, please provide at least one color component or a list of color components and optional a pattern name");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    double* components;
-    int componentsLength = 0;
-    bool hasPatternArgument = args[args.Length()-1]->IsString();
-    if (!args[0]->IsArray()) {
-        componentsLength = hasPatternArgument ? args.Length() - 1 : args.Length();
-        components = new double[componentsLength];
-        for(int i = 0; i < componentsLength; ++i)
-            components[i] = TO_NUMBER(args[i])->Value();
-    } else {
-        Local<Object> arr = args[0]->TO_OBJECT();
-        componentsLength = TO_INT32(arr->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
-        components = new double[componentsLength];
-        for(int i = 0; i < componentsLength; ++i) {
-           components[i] = TO_NUMBER(arr->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked())->Value();
-       }
-    }
-
-    if(hasPatternArgument)
-        contentContext->GetContext()->scn(components,componentsLength,*UTF_8_VALUE(args[args.Length()-1]->TO_STRING()));
-    else
-        contentContext->GetContext()->scn(components,componentsLength);
-    
-    delete[] components;
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::G(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context using pdfWriter.startPageContentContext(page)");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide 1 parameter, gray value (0-255)");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->G(TO_NUMBER(args[0])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::g(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context using pdfWriter.startPageContentContext(page)");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 || !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Argument, please provide 1 parameter, gray value (0-255)");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->g(TO_NUMBER(args[0])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::RG(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 3 ||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber() ||
-        !args[2]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 3 arguments as rgb color values");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->RG(TO_NUMBER(args[0])->Value(),
-                                     TO_NUMBER(args[1])->Value(),
-                                     TO_NUMBER(args[2])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::rg(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 3 ||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber() ||
-        !args[2]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 3 arguments as rgb color values");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->rg(TO_NUMBER(args[0])->Value(),
-                                     TO_NUMBER(args[1])->Value(),
-                                     TO_NUMBER(args[2])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::K(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 4 || !args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsNumber() || !args[3]->IsNumber()) {
-		THROW_EXCEPTION("Wrong Argument, please provide 4 cmyk components (values should be 0-255)");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->K(TO_NUMBER(args[0])->Value(),
-                                    TO_NUMBER(args[1])->Value(),
-                                    TO_NUMBER(args[2])->Value(),
-                                    TO_NUMBER(args[3])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::k(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 4 || !args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsNumber() || !args[3]->IsNumber()) {
-		THROW_EXCEPTION("Wrong Argument, please provide 4 cmyk components (values should be 0-255)");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->k(TO_NUMBER(args[0])->Value(),
-                                    TO_NUMBER(args[1])->Value(),
-                                    TO_NUMBER(args[2])->Value(),
-                                    TO_NUMBER(args[3])->Value());
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::W(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    contentContext->GetContext()->W();
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::WStar(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    contentContext->GetContext()->WStar();
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::doXObject(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext() || !contentContext->mResourcesDictionary)
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args.Length() != 1)
-    {
-        THROW_EXCEPTION("Invalid arguments. pass an xobject");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args[0]->IsString())
-    {
-        // string type, form name in local resources dictionary
-        contentContext->GetContext()->Do(*UTF_8_VALUE(args[0]->TO_STRING()));
-    }
-    else if(contentContext->holder->IsFormXObjectInstance(args[0]))
-    {
-        // a form object
-        FormXObjectDriver* formDriver = ObjectWrap::Unwrap<FormXObjectDriver>(args[0]->TO_OBJECT());
-        if(!formDriver)
-        {
-            THROW_EXCEPTION("Wrong arguments, provide an xobject as the single parameter or its name according to the local resource dictionary");
-            SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-        }
-        
-        contentContext->GetContext()->Do(contentContext->mResourcesDictionary->AddFormXObjectMapping(formDriver->FormXObject->GetObjectID()));
-    }else if(contentContext->holder->IsImageXObjectInstance(args[0]))
-    {
-        // an image object
-        ImageXObjectDriver* imageDriver = ObjectWrap::Unwrap<ImageXObjectDriver>(args[0]->TO_OBJECT());
-        if(!imageDriver)
-        {
-            THROW_EXCEPTION("Wrong arguments, provide an xobject as the single parameter or its name according to the local resource dictionary");
-            SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-        }
-        
-        contentContext->GetContext()->Do(contentContext->mResourcesDictionary->AddImageXObjectMapping(imageDriver->ImageXObject));
-    }
-    else
-    {
-        THROW_EXCEPTION("Wrong arguments, provide an xobject as the single parameter or its name according to the local resource dictionary");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Tc(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 ||
-        !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide character space");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->Tc(TO_NUMBER(args[0])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-    
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Tw(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 ||
-        !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide word space");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->Tw(TO_NUMBER(args[0])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-    
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Tz(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 ||
-        !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide horizontal scaling");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->Tz(TO_INT32(args[0])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-    
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::TL(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 ||
-        !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide text leading");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->TL(TO_NUMBER(args[0])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-    
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Tr(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 ||
-        !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide rendering mode");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->Tr(TO_INT32(args[0])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-    
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Ts(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 ||
-        !args[0]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide font rise");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->Ts(TO_NUMBER(args[0])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-    
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::BT(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->BT();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-    
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::ET(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-        THROW_EXCEPTION("Null content context. Please create a context");
-    else
-        contentContext->GetContext()->ET();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Td(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 2 ||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 2 arguments");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->Td(TO_NUMBER(args[0])->Value(),
-                                     TO_NUMBER(args[1])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::TD(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 2 ||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 2 arguments");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->TD(TO_NUMBER(args[0])->Value(),
-                                     TO_NUMBER(args[1])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Tm(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 6 ||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber() ||
-        !args[2]->IsNumber() ||
-        !args[3]->IsNumber() ||
-        !args[4]->IsNumber() ||
-        !args[5]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 6 arguments forming a 2d transformation matrix (for text)");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->Tm(TO_NUMBER(args[0])->Value(),
-                                     TO_NUMBER(args[1])->Value(),
-                                     TO_NUMBER(args[2])->Value(),
-                                     TO_NUMBER(args[3])->Value(),
-                                     TO_NUMBER(args[4])->Value(),
-                                     TO_NUMBER(args[5])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::TStar(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    contentContext->GetContext()->TStar();
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Tf(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 2 ||
-        (!contentContext->holder->IsUsedFontInstance(args[0]) && !args[0]->IsString()) ||
-        !args[1]->IsNumber())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide a font object (create with pdfWriter.getFontForFile) or font resource name and a size measure");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    if(args[0]->IsString())
-        contentContext->GetContext()->TfLow(
-                                         *UTF_8_VALUE(args[0]->TO_STRING()),
-                                         TO_NUMBER(args[1])->Value());
-    else
-        contentContext->GetContext()->Tf(
-                                     ObjectWrap::Unwrap<UsedFontDriver>(args[0]->TO_OBJECT())->UsedFont,
-                                     TO_NUMBER(args[1])->Value());
-    SET_FUNCTION_RETURN_VALUE(args.This())
-    
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Tj(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if ((args.Length() != 1 && args.Length() != 2 ) ||
-        (!args[0]->IsString() && !args[0]->IsArray()) ||
-        (args.Length() == 2 && !args[1]->IsObject()))
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 1 argument, the string that you wish to display or a glyphs IDs array, and an optional options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-        
-    
-    if(args[0]->IsArray())
-    {
-        contentContext->GetContext()->Tj(ArrayToGlyphsList(args[0]));
-    }
-    else
-    {
-        TextPlacingOptions options;
-        if(args.Length() == 2)
-            options = ObjectToOptions(args[1]->TO_OBJECT());
-
-        switch(options.encoding)
-        {
-            case TextPlacingOptions::EEncodingCode:
-                contentContext->GetContext()->TjLow(ToStdString(isolate, args[0]));
-                break;
-            case TextPlacingOptions::EEncodingHex:
-                contentContext->GetContext()->TjHexLow(ToStdString(isolate, args[0]));
-                break;
-            default:
-                contentContext->GetContext()->Tj(ToStdString(isolate, args[0]));
-        }
-    }
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::Quote(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if ((args.Length() != 1 && args.Length() != 2 ) ||
-        (!args[0]->IsString() && !args[0]->IsArray()) ||
-        (args.Length() == 2 && !args[1]->IsObject()))
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 1 argument, the string that you wish to display or a glyphs IDs array, and an optional options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    if(args[0]->IsArray())
-    {
-        contentContext->GetContext()->Quote(ArrayToGlyphsList(args[0]));
-    }
-    else
-    {
-    
-        TextPlacingOptions options;
-        if(args.Length() == 2)
-            options = ObjectToOptions(args[1]->TO_OBJECT());
-    
-        switch(options.encoding)
-        {
-            case TextPlacingOptions::EEncodingCode:
-                contentContext->GetContext()->QuoteLow(ToStdString(isolate, args[0]));
-                break;
-            case TextPlacingOptions::EEncodingHex:
-                contentContext->GetContext()->QuoteHexLow(ToStdString(isolate, args[0]));
-                break;
-            default:
-                contentContext->GetContext()->Quote(ToStdString(isolate, args[0]));
-        }
-    }
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::DoubleQuote(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if ((args.Length() != 3 && args.Length() != 4)||
-        !args[0]->IsNumber() ||
-        !args[1]->IsNumber() ||
-        (!args[2]->IsString() && !args[2]->IsArray()) ||
-        (args.Length() == 4 && !args[3]->IsObject()))
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide 3 arguments, word spacing, character spacing and text, and optionally an options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    if(args[2]->IsArray())
-    {
-        contentContext->GetContext()->DoubleQuote(TO_NUMBER(args[0])->Value(),
-                                                  TO_NUMBER(args[1])->Value(),
-                                                  ArrayToGlyphsList(args[2]));
-    }
-    else
-    {
-    
-        TextPlacingOptions options;
-        if(args.Length() == 4)
-            options = ObjectToOptions(args[3]->TO_OBJECT());
-        
-        switch(options.encoding)
-        {
-            case TextPlacingOptions::EEncodingCode:
-                contentContext->GetContext()->DoubleQuoteLow(TO_NUMBER(args[0])->Value(),
-                                                          TO_NUMBER(args[1])->Value(),
-                                                          ToStdString(isolate, args[2]));
-                break;
-            case TextPlacingOptions::EEncodingHex:
-                contentContext->GetContext()->DoubleQuoteHexLow(TO_NUMBER(args[0])->Value(),
-                                                          TO_NUMBER(args[1])->Value(),
-                                                          ToStdString(isolate, args[2]));
-                break;
-            default:
-                contentContext->GetContext()->DoubleQuote(TO_NUMBER(args[0])->Value(),
-                                                          TO_NUMBER(args[1])->Value(),
-                                                          ToStdString(isolate, args[2]));
-        }
-    }
-    
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::TJ(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    // first, scan args to see if has arrays or lists, to realize which form of TJ to run
-    bool hasStrings = false;
-    bool hasOptions = (args.Length()>0) && (!args[args.Length()-1]->IsString())
-                                        && (!args[args.Length()-1]->IsNumber())
-                                        && (args[args.Length()-1]->IsObject());
-    for(int i=0;i<args.Length() && !hasStrings;++i)
-        hasStrings = args[i]->IsString();
-    
-    if(hasStrings)
-    {
-        StringOrDoubleList params;
-
-        TextPlacingOptions options;
-        if(hasOptions)
-            options = ObjectToOptions(args[args.Length()-1]->TO_OBJECT());
-        
-        bool status = true;
-        int lengthButOptions = hasOptions ? (args.Length()-1) : args.Length();
-        for(int i=0; i < lengthButOptions && status; ++i)
-        {
-            if(args[i]->IsString())
-                params.push_back(StringOrDouble(ToStdString(isolate, args[i])));
-            else if(args[i]->IsNumber())
-                params.push_back(StringOrDouble(TO_NUMBER(args[i])->Value()));
-            else
-                status = false;
-        }
-        
-        if(!status)
-        {
-            THROW_EXCEPTION("Wrong arguments. please provide a variable number of elements each either string/glyphs list or number, and an optional final options object");
-            SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-        }
-
-        
-        switch(options.encoding)
-        {
-            case TextPlacingOptions::EEncodingCode:
-                contentContext->GetContext()->TJLow(params);
-                break;
-            case TextPlacingOptions::EEncodingHex:
-                contentContext->GetContext()->TJHexLow(params);
-                break;
-            default:
-                contentContext->GetContext()->TJ(params);
-        }
-    }
-    else
-    {
-        GlyphUnicodeMappingListOrDoubleList params;
-
-        bool status = true;
-        for(int i=0; i < args.Length() && status; ++i)
-        {
-            if(args[i]->IsArray())
-                params.push_back(GlyphUnicodeMappingListOrDouble(ArrayToGlyphsList(args[i])));
-            else if(args[i]->IsNumber())
-                params.push_back(GlyphUnicodeMappingListOrDouble(TO_NUMBER(args[i])->Value()));
-            else
-                status = false;
-        }
-        
-        if(!status)
-        {
-            THROW_EXCEPTION("Wrong arguments. please provide a variable number of elements each either string/glyph list or number, and an optional final options object");
-            SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-        }
-        contentContext->GetContext()->TJ(params);
-        
-    }
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-TextPlacingOptions AbstractContentContextDriver::ObjectToOptions(const Local<Object>& inObject)
-{
-	CREATE_ISOLATE_CONTEXT;
-	TextPlacingOptions options;
-    
-	if (inObject->Has(GET_CURRENT_CONTEXT, NEW_SYMBOL("encoding")).FromJust())
-    {
-        // compare() returns 0 on a match, so each branch tests for equality.
-        std::string value = ToStdString(isolate, inObject->Get(GET_CURRENT_CONTEXT, NEW_SYMBOL("encoding")).ToLocalChecked());
-        if(value.compare("hex") == 0)
-            options.encoding = TextPlacingOptions::EEncodingHex;
-        else if(value.compare("code") == 0)
-            options.encoding = TextPlacingOptions::EEncodingCode;
-    
-        // EEncodingText is the default
-    }
-    
-    return options;
-}
-
-GlyphUnicodeMappingList AbstractContentContextDriver::ArrayToGlyphsList(const v8::Local<v8::Value>& inArray)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-	
-	GlyphUnicodeMappingList glyphList;
-
-    int arrayLength =TO_INT32(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
-    Local<Object> arrayObject = inArray->TO_OBJECT();
-
-    for(int i=0; i < arrayLength; ++i)
-    {
-        if(!arrayObject->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->IsArray())
-            continue;
-        
-        int itemLength = TO_INT32(arrayObject->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
-        if(0 == itemLength)
-            continue;
-        
-        GlyphUnicodeMapping mapping;
-        
-        mapping.mGlyphCode = TO_UINT32(arrayObject->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked())->Value();
-        for(int j=1; j < itemLength;++j)
-            mapping.mUnicodeValues.push_back(TO_UINT32(arrayObject->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, j).ToLocalChecked())->Value());
-			
-		glyphList.push_back(mapping);
-    }
-   
-    return glyphList;
-}
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::WriteFreeCode(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-	if (args.Length() != 1 ||
-        !args[0]->IsString())
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide string to write");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-    
-    contentContext->GetContext()->WriteFreeCode(*UTF_8_VALUE(args[0]->TO_STRING()));
-    SET_FUNCTION_RETURN_VALUE(args.This())
-    
-}
-
-/* context.drawPath(x1,y1,x2,y2,x3,y3...{type:stroke, color:#FF00FF, width:3, close:true})
-/* context.drawPath([[x1,y1],[x2,y2].....]...{type:stroke, color:#FF00FF, width:3, close:true})
- */
-METHOD_RETURN_TYPE AbstractContentContextDriver::DrawPath(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    if(
-        (args.Length() == 1 && !args[0]->IsArray()) ||
-        args.Length() < 2
-    )
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide path coordinates as numbers (x1, y1, x2, y2 etc) or as list of coordinates and an optional options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    if (!args[0]->IsArray())
-    {
-        contentContext->SetupColorAndLineWidth(args[args.Length() - 1]);
-        contentContext->GetContext()->m(TO_NUMBER(args[0])->Value(),TO_NUMBER(args[1])->Value());
-        for(int i=2;i<args.Length()-1;i+=2)
-        {
-            if(!args[i]->IsNumber()) // options object, stop
-                break;
-            contentContext->GetContext()->l(TO_NUMBER(args[i])->Value(),TO_NUMBER(args[i+1])->Value());
-        }
-
-        contentContext->FinishPath(args[args.Length() - 1]);
-    }
-    else
-    {
-        Local<Object> outer = args[0]->TO_OBJECT();
-        int arrayLength =TO_INT32(outer->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
-        if(arrayLength <= 1) {
-            THROW_EXCEPTION("Wrong arguments. Coordinate list must have at least one point");
-            SET_FUNCTION_RETURN_VALUE(UNDEFINED);
-        }
-        Local<Object> inner;
-        contentContext->SetupColorAndLineWidth(args[args.Length() - 1]);
-        for(int i=0;i<arrayLength;++i) {
-            inner = outer->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->TO_OBJECT();
-
-            if (!inner->IsArray() || TO_INT32(inner->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value() != 2)
-            {
-               THROW_EXCEPTION("Wrong arguments. Coordinate list must have exactly one x and one y value");
-               SET_FUNCTION_RETURN_VALUE(UNDEFINED);
-               break;
-            }
-            if (i == 0)
-            {
-                contentContext->GetContext()->m(
-                    TO_NUMBER(inner->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked())->Value(),
-                    TO_NUMBER(inner->Get(GET_CURRENT_CONTEXT, 1).ToLocalChecked())->Value()
-                );
-            }
-            else
-            {
-                contentContext->GetContext()->l(
-                    TO_NUMBER(inner->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked())->Value(),
-                    TO_NUMBER(inner->Get(GET_CURRENT_CONTEXT, 1).ToLocalChecked())->Value()
-                );
-            }
-        }
-        contentContext->FinishPath(args[args.Length() - 1]);
-    }
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-void AbstractContentContextDriver::SetupColorAndLineWidth(const Local<Value>& inMaybeOptions)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if(!inMaybeOptions->IsObject())
-        return;
-    
-    Local<Object> options = inMaybeOptions->TO_OBJECT();
-    
-    bool isStroke = !options->Has(GET_CURRENT_CONTEXT, NEW_STRING("type")).FromJust() ||
-                    strcmp(*UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("type")).ToLocalChecked()),"stroke") == 0;
-    SetColor(inMaybeOptions,isStroke);
-    
-    if(isStroke && options->Has(GET_CURRENT_CONTEXT, NEW_STRING("width")).FromJust())
-        GetContext()->w(TO_NUMBER(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("width")).ToLocalChecked())->Value());
-}
-
-void AbstractContentContextDriver::SetColor(const Local<Value>& inMaybeOptions,bool inIsStroke)
-{
-	CREATE_ISOLATE_CONTEXT;
-	
-	if (!inMaybeOptions->IsObject())
-        return;
-    
-    Local<Object> options = inMaybeOptions->TO_OBJECT();
-
-    if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("color")).FromJust())
-    {
-        if(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("color")).ToLocalChecked()->IsString())
-        {
-            // string, named color. always RGB (for now)
-            SetRGBColor(sColorMap.GetRGBForColorName(*UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("color")).ToLocalChecked()->TO_STRING())),inIsStroke);
-        }
-        else
-        {
-            // should be number
-            unsigned long colorvalue = (unsigned long)(TO_INT32(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("color")).ToLocalChecked())->Value());
-            std::string colorspace = options->Has(GET_CURRENT_CONTEXT, NEW_STRING("colorspace")).FromJust() ?
-            *UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("colorspace")->TO_STRING()).ToLocalChecked()) :
-            "rgb";
-            if(colorspace.compare("rgb") == 0)
-            {
-                SetRGBColor(colorvalue,inIsStroke);
-            }
-            else if(colorspace.compare("cmyk") == 0)
-            {
-                double c = (unsigned char)((colorvalue >> 24) & 0xFF);
-                double m = (unsigned char)((colorvalue >> 16) & 0xFF);
-                double y = (unsigned char)((colorvalue >> 8) & 0xFF);
-                double k = (unsigned char)(colorvalue & 0xFF);
-                
-                if(inIsStroke)
-                    GetContext()->K(c/255,m/255,y/255,k/255);
-                else
-                    GetContext()->k(c/255,m/255,y/255,k/255);
-            }
-            else if(colorspace.compare("gray") == 0)
-            {
-                double g = (unsigned char)(colorvalue & 0xFF);
-                
-                if(inIsStroke)
-                    GetContext()->G(g/255);
-                else
-                    GetContext()->g(g/255);
-            }
-        }
-    }
-}
-
-void AbstractContentContextDriver::SetRGBColor(unsigned long inColorValue,bool inIsStroke)
-{
-    double r = (unsigned char)((inColorValue >> 16) & 0xFF);
-    double g = (unsigned char)((inColorValue >> 8) & 0xFF);
-    double b = (unsigned char)(inColorValue & 0xFF);
-    
-    if(inIsStroke)
-        GetContext()->RG(r/255,g/255,b/255);
-    else
-        GetContext()->rg(r/255,g/255,b/255);
-}
-
-void AbstractContentContextDriver::FinishPath(const Local<Value>& inMaybeOptions)
-{
-	CREATE_ISOLATE_CONTEXT;
-	
-	bool closePath = false;
-    std::string type = "stroke";
-    
-    if(inMaybeOptions->IsObject())
-    {
-    
-        Local<Object> options = inMaybeOptions->TO_OBJECT();
-    
-        if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("type")).FromJust())
-            type = *UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("type")).ToLocalChecked());
-        
-        if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("close")).FromJust())
-            closePath = options->Get(GET_CURRENT_CONTEXT, NEW_STRING("close")).ToLocalChecked()->TO_BOOLEAN()->Value();
-    }
-    
-    if(type.compare("stroke") == 0)
-    {
-        if(closePath)
-            GetContext()->s();
-        else
-            GetContext()->S();
-    }
-    else if(type.compare("fill") == 0)
-    {
-        GetContext()->f();
-    }
-    else if(type.compare("clip"))
-    {
-        if(closePath)
-            GetContext()->h();
-        GetContext()->W();
-    }
-}
-
-/* context.drawCircle(x,y,r,[{type:stroke, color:#FF00FF, width:3, close:true}])
- */
-
-METHOD_RETURN_TYPE AbstractContentContextDriver::DrawCircle(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args.Length() < 3)
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide x and y coordinates for center, radius and an optional options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    contentContext->SetupColorAndLineWidth(args[args.Length() - 1]);
-    
-    const double magic = 0.551784;
-    double x = TO_NUMBER(args[0])->Value();
-    double y = TO_NUMBER(args[1])->Value();
-    double r = TO_NUMBER(args[2])->Value();
-    double rmagic = r * magic;
-    
-    contentContext->GetContext()->m(x-r,y);
-    contentContext->GetContext()->c(x-r,y+rmagic,x-rmagic,y+r,x,y+r);
-    contentContext->GetContext()->c(x+rmagic,y+r,x+r,y+rmagic,x+r,y);
-    contentContext->GetContext()->c(x+r,y-rmagic,x+rmagic,y-r,x,y-r);
-    contentContext->GetContext()->c(x-rmagic,y-r,x-r,y-rmagic,x-r,y);
-    
-/*
- const double magic = 0.551784;
- double xmagic = xrad * magic;
- double ymagic = yrad * magic;
- g.MoveTo(-xrad, 0);
- g.CurveTo(-xrad, ymagic, -xmagic, yrad, 0, yrad);
- g.CurveTo(xmagic, yrad, xrad, ymagic, xrad, 0);
- g.CurveTo(xrad, -ymagic, xmagic, -yrad, 0, -yrad);
-
- g.CurveTo(-xmagic, -yrad, -xrad, -ymagic, -xrad, 0);
- */
-    
-    contentContext->FinishPath(args[args.Length() - 1]);
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-/* context.drawSquare(x,y,l,[{type:stroke, color:#FF00FF, width:3, close:true}])
- */
-METHOD_RETURN_TYPE AbstractContentContextDriver::DrawSquare(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args.Length() < 3)
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide bottom left coordinates, an edge size and optional options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    contentContext->SetupColorAndLineWidth(args[args.Length() - 1]);
-    contentContext->GetContext()->re(
-        TO_NUMBER(args[0])->Value(),
-        TO_NUMBER(args[1])->Value(),
-        TO_NUMBER(args[2])->Value(),
-        TO_NUMBER(args[2])->Value()
-    );
-
-    contentContext->FinishPath(args[args.Length() - 1]);
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-/* context.drawSquare(x,y,w,h,[{type:stroke, color:#FF00FF, width:3, close:true}])
- */
-METHOD_RETURN_TYPE AbstractContentContextDriver::DrawRectangle(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args.Length() < 4)
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide bottom left coordinates, width and height and optional options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    contentContext->SetupColorAndLineWidth(args[args.Length() - 1]);
-    contentContext->GetContext()->re(
-                                     TO_NUMBER(args[0])->Value(),
-                                     TO_NUMBER(args[1])->Value(),
-                                     TO_NUMBER(args[2])->Value(),
-                                     TO_NUMBER(args[3])->Value()
-                                     );
-    
-    contentContext->FinishPath(args[args.Length() - 1]);
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
+#include "FormXObjectDriver.h"
+#include "FreeTypeFaceWrapper.h"
+#include "ImageXObjectDriver.h"
+#include "PDFFormXObject.h"
+#include "PDFUsedFont.h"
+#include "ResourcesDictionary.h"
+#include "UsedFontDriver.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include FT_TRUETYPE_TABLES_H 
+#include FT_TRUETYPE_TABLES_H
 
+#include <algorithm>
+#include <cctype>
+#include <cstdint>
+#include <cstring>
+#include <map>
+#include <string>
+#include <vector>
 
-double sGetUnderlineThicknessFactor(FreeTypeFaceWrapper* inFTWrapper)
-{
-	void* tableInfo = FT_Get_Sfnt_Table(*inFTWrapper,ft_sfnt_post);
-	if(tableInfo)
-	{
-		TT_Postscript* theTable = (TT_Postscript*)tableInfo;
-		return theTable->underlineThickness*1.0/(*inFTWrapper)->units_per_EM;
-	}
-	else
-		return 0.05;
+using namespace muhammara::napi;
+
+namespace {
+
+enum class Op : intptr_t {
+  b,
+  B,
+  bStar,
+  BStar,
+  s,
+  S,
+  f,
+  F,
+  fStar,
+  n,
+  m,
+  l,
+  c,
+  v,
+  y,
+  h,
+  re,
+  q,
+  Q,
+  cm,
+  w,
+  J,
+  j,
+  M,
+  ri,
+  i,
+  gs,
+  CS,
+  cs,
+  G,
+  g,
+  RG,
+  rg,
+  K,
+  k,
+  W,
+  WStar,
+  Tc,
+  Tw,
+  Tz,
+  TL,
+  Tr,
+  Ts,
+  BT,
+  ET,
+  Td,
+  TD,
+  Tm,
+  TStar,
+  WriteFreeCode
+};
+
+struct Definition {
+  const char *name;
+  Op op;
+};
+
+constexpr Definition definitions[] = {
+    {"b", Op::b},         {"B", Op::B},
+    {"bStar", Op::bStar}, {"BStar", Op::BStar},
+    {"s", Op::s},         {"S", Op::S},
+    {"f", Op::f},         {"F", Op::F},
+    {"fStar", Op::fStar}, {"n", Op::n},
+    {"m", Op::m},         {"l", Op::l},
+    {"c", Op::c},         {"v", Op::v},
+    {"y", Op::y},         {"h", Op::h},
+    {"re", Op::re},       {"q", Op::q},
+    {"Q", Op::Q},         {"cm", Op::cm},
+    {"w", Op::w},         {"J", Op::J},
+    {"j", Op::j},         {"M", Op::M},
+    {"ri", Op::ri},       {"i", Op::i},
+    {"gs", Op::gs},       {"CS", Op::CS},
+    {"cs", Op::cs},       {"G", Op::G},
+    {"g", Op::g},         {"RG", Op::RG},
+    {"rg", Op::rg},       {"K", Op::K},
+    {"k", Op::k},         {"W", Op::W},
+    {"WStar", Op::WStar}, {"Tc", Op::Tc},
+    {"Tw", Op::Tw},       {"Tz", Op::Tz},
+    {"TL", Op::TL},       {"Tr", Op::Tr},
+    {"Ts", Op::Ts},       {"BT", Op::BT},
+    {"ET", Op::ET},       {"Td", Op::Td},
+    {"TD", Op::TD},       {"Tm", Op::Tm},
+    {"TStar", Op::TStar}, {"writeFreeCode", Op::WriteFreeCode}};
+
+enum class ColorOp : intptr_t { SC, SCN, sc, scn };
+
+typedef std::map<std::string, unsigned long> StringToULongMap;
+
+class ColorMap {
+public:
+  ColorMap() {
+    for (unsigned long i = 0; std::strlen(kCSSColorsArray[i].name) != 0; ++i) {
+      colorMap_.insert(StringToULongMap::value_type(
+          kCSSColorsArray[i].name, kCSSColorsArray[i].rgbValue));
+    }
+  }
+
+  unsigned long GetRGBForColorName(const std::string &colorName) {
+    std::string key = colorName;
+    std::transform(key.begin(), key.end(), key.begin(),
+                   [](unsigned char value) { return std::tolower(value); });
+    StringToULongMap::iterator found = colorMap_.find(key);
+    return found == colorMap_.end() ? 0 : found->second;
+  }
+
+private:
+  StringToULongMap colorMap_;
+};
+
+ColorMap colorMap;
+
+AbstractContentContextDriver *Driver(const CallbackArgs &args) {
+  return ObjectWrap::Unwrap<AbstractContentContextDriver>(args.Env(),
+                                                          args.This());
 }
 
-double sGetUnderlinePositionFactor(FreeTypeFaceWrapper* inFTWrapper)
-{
-	void* tableInfo = FT_Get_Sfnt_Table(*inFTWrapper,ft_sfnt_post);
-	if(tableInfo)
-	{
-		TT_Postscript* theTable = (TT_Postscript*)tableInfo;
-		return theTable->underlinePosition*1.0/(*inFTWrapper)->units_per_EM;
-	}
-	else
-		return -0.15;
+bool IsNumber(const CallbackArgs &args, size_t index) {
+  return IsType(args.Env(), args[index], napi_number);
 }
 
-/* context.writeText(text,x,y,[{font:fontObject, size:fontSize ,color:#FF00FF,underline:boolean}])
- */
-METHOD_RETURN_TYPE AbstractContentContextDriver::WriteText(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args.Length() < 3)
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide the text and x,y coordinate for text position. optionally also add an options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    contentContext->GetContext()->BT();
-	if(args.Length() >= 4)
-	{
-		contentContext->SetColor(args[3],false);
-		contentContext->SetFont(args[3]);
-	}
-
-	std::string text = *UTF_8_VALUE(args[0]->TO_STRING());
-	double xPos = TO_NUMBER(args[1])->Value();
-	double yPos = TO_NUMBER(args[2])->Value();
-
-    contentContext->GetContext()->Tm(1,0,0,1,xPos,yPos);
-    contentContext->GetContext()->Tj(text);
-    contentContext->GetContext()->ET();
-
-
-	// underline
-	if(args.Length() >= 4 && args[3]->IsObject())
-	{
-		Local<Object> options = args[3]->TO_OBJECT();
-		if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("underline")).FromJust() && 
-				options->Get(GET_CURRENT_CONTEXT, NEW_STRING("underline")).ToLocalChecked()->TO_BOOLEAN()->Value() &&
-				contentContext->holder->IsUsedFontInstance(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("font")).ToLocalChecked()))
-		{
-			// draw underline. use font data for position and thickness
-			double fontSize = options->Has(GET_CURRENT_CONTEXT, NEW_STRING("size")).FromJust() ? TO_NUMBER(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("size")).ToLocalChecked())->Value():1;
-
-			PDFUsedFont* font = ObjectWrap::Unwrap<UsedFontDriver>(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("font")).ToLocalChecked()->TO_OBJECT())->UsedFont;
-			FreeTypeFaceWrapper*  ftWrapper = font->GetFreeTypeFont();
-
-			contentContext->SetColor(args[3],true);
-			contentContext->GetContext()->w(sGetUnderlineThicknessFactor(ftWrapper)*fontSize);
-			double startLine = yPos+sGetUnderlinePositionFactor(ftWrapper)*fontSize;
-			contentContext->GetContext()->m(xPos,startLine);
-			contentContext->GetContext()->l(xPos + font->CalculateTextAdvance(text,fontSize),startLine);
-			contentContext->GetContext()->S();
-		}
-	}
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
+bool IsString(const CallbackArgs &args, size_t index) {
+  return IsType(args.Env(), args[index], napi_string);
 }
 
-void AbstractContentContextDriver::SetFont(const v8::Local<v8::Value>& inMaybeOptions)
-{
-	CREATE_ISOLATE_CONTEXT;
-	
-	if (!inMaybeOptions->IsObject())
-        return;
-    
-    Local<Object> options = inMaybeOptions->TO_OBJECT();
-    
-    if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("font")).FromJust() &&
-       holder->IsUsedFontInstance(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("font")).ToLocalChecked()))
-        GetContext()->Tf(ObjectWrap::Unwrap<UsedFontDriver>(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("font")).ToLocalChecked()->TO_OBJECT())->UsedFont,
-                         options->Has(GET_CURRENT_CONTEXT, NEW_STRING("size")).FromJust() ? TO_NUMBER(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("size")).ToLocalChecked())->Value():1);
+napi_value WrongArguments(napi_env env, const char *message) {
+  return ThrowError(env, message);
 }
 
-METHOD_RETURN_TYPE AbstractContentContextDriver::DrawImage(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
+double GetUnderlineThicknessFactor(FreeTypeFaceWrapper *wrapper) {
+  void *tableInfo = FT_Get_Sfnt_Table(*wrapper, ft_sfnt_post);
+  if (tableInfo) {
+    TT_Postscript *table = static_cast<TT_Postscript *>(tableInfo);
+    return table->underlineThickness * 1.0 / (*wrapper)->units_per_EM;
+  }
+  return 0.05;
+}
 
-    AbstractContentContextDriver* contentContext = ObjectWrap::Unwrap<AbstractContentContextDriver>(args.This());
-    if(!contentContext->GetContext())
-    {
-        THROW_EXCEPTION("Null content context. Please create a context");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+double GetUnderlinePositionFactor(FreeTypeFaceWrapper *wrapper) {
+  void *tableInfo = FT_Get_Sfnt_Table(*wrapper, ft_sfnt_post);
+  if (tableInfo) {
+    TT_Postscript *table = static_cast<TT_Postscript *>(tableInfo);
+    return table->underlinePosition * 1.0 / (*wrapper)->units_per_EM;
+  }
+  return -0.15;
+}
+
+} // namespace
+
+AbstractContentContextDriver::AbstractContentContextDriver()
+    : holder(nullptr), mResourcesDictionary(nullptr) {}
+
+void AbstractContentContextDriver::SetResourcesDictionary(
+    ResourcesDictionary *value) {
+  mResourcesDictionary = value;
+}
+
+ResourcesDictionary *AbstractContentContextDriver::GetResourcesDictionary() {
+  return mResourcesDictionary;
+}
+
+void AbstractContentContextDriver::Init(ClassBuilder &builder) {
+  for (const Definition &definition : definitions) {
+    builder.Method(
+        definition.name, Operator,
+        reinterpret_cast<void *>(static_cast<intptr_t>(definition.op)));
+  }
+  builder.Method("d", Dash)
+      .Method("setOpacity", SetOpacity)
+      .Method("SC", Color,
+              reinterpret_cast<void *>(static_cast<intptr_t>(ColorOp::SC)))
+      .Method("SCN", Color,
+              reinterpret_cast<void *>(static_cast<intptr_t>(ColorOp::SCN)))
+      .Method("sc", Color,
+              reinterpret_cast<void *>(static_cast<intptr_t>(ColorOp::sc)))
+      .Method("scn", Color,
+              reinterpret_cast<void *>(static_cast<intptr_t>(ColorOp::scn)))
+      .Method("doXObject", DoXObject)
+      .Method("Tf", Tf)
+      .Method("Tj", Tj)
+      .Method("Quote", Quote)
+      .Method("DoubleQuote", DoubleQuote)
+      .Method("TJ", TJ)
+      .Method("drawPath", DrawPath)
+      .Method("drawCircle", DrawCircle)
+      .Method("drawSquare", DrawSquare)
+      .Method("drawRectangle", DrawRectangle)
+      .Method("writeText", WriteText)
+      .Method("drawImage", DrawImage);
+}
+
+napi_value AbstractContentContextDriver::Operator(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  Op op = static_cast<Op>(reinterpret_cast<intptr_t>(args.Data()));
+  if (!driver->GetContext()) {
+    const char *message = op == Op::re || op == Op::q || op == Op::Q ||
+                                  op == Op::ri || op == Op::gs || op == Op::G ||
+                                  op == Op::g
+                              ? "Null content context. Please create a context "
+                                "using pdfWriter.startPageContentContext(page)"
+                              : "Null content context. Please create a context";
+    return ThrowError(args.Env(), message);
+  }
+
+  AbstractContentContext *context = driver->GetContext();
+  auto requireNumbers = [&](size_t count, const char *message) {
+    if (args.Length() != count) {
+      WrongArguments(args.Env(), message);
+      return false;
     }
-    
-    if(args.Length() < 3 ||
-       !args[0]->IsNumber() ||
-       !args[1]->IsNumber() ||
-       !args[2]->IsString() ||
-       (args.Length() >= 4 && !args[3]->IsObject()))
-    {
-		THROW_EXCEPTION("Wrong Arguments, please provide bottom left coordinates, an edge size and optional options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+    for (size_t i = 0; i < count; ++i) {
+      if (!IsNumber(args, i)) {
+        WrongArguments(args.Env(), message);
+        return false;
+      }
     }
+    return true;
+  };
+  auto number = [&](size_t index) { return ToDouble(args.Env(), args[index]); };
 
-    /*
-     when placing the image, do the following:
-     create object id for image file + index [we can reuse], if one does not exist yet. store it in a general dictionary for the pdfwriter (need to get it from the context). register task to write the image to the file, if first
-     use object id to register the image
-     determine transformation matrix
-     if it's just a plain transform (or none), add to position
-     if it's fitting, determine the fit (consider proportional), add to position
-     gsave, apply determined transformation matrix, place image with do, grestore
-     */
+  switch (op) {
+#define NO_ARGUMENT_OPERATOR(name)                                             \
+  case Op::name:                                                               \
+    context->name();                                                           \
+    break
+    NO_ARGUMENT_OPERATOR(b);
+    NO_ARGUMENT_OPERATOR(B);
+    NO_ARGUMENT_OPERATOR(bStar);
+    NO_ARGUMENT_OPERATOR(BStar);
+    NO_ARGUMENT_OPERATOR(s);
+    NO_ARGUMENT_OPERATOR(S);
+    NO_ARGUMENT_OPERATOR(f);
+    NO_ARGUMENT_OPERATOR(F);
+    NO_ARGUMENT_OPERATOR(fStar);
+    NO_ARGUMENT_OPERATOR(n);
+    NO_ARGUMENT_OPERATOR(h);
+    NO_ARGUMENT_OPERATOR(q);
+    NO_ARGUMENT_OPERATOR(Q);
+    NO_ARGUMENT_OPERATOR(W);
+    NO_ARGUMENT_OPERATOR(WStar);
+    NO_ARGUMENT_OPERATOR(BT);
+    NO_ARGUMENT_OPERATOR(ET);
+    NO_ARGUMENT_OPERATOR(TStar);
+#undef NO_ARGUMENT_OPERATOR
+  case Op::m:
+    if (!requireNumbers(
+            2,
+            "Wrong Arguments, please provide 2 parameters, movement position"))
+      return nullptr;
+    context->m(number(0), number(1));
+    break;
+  case Op::l:
+    if (!requireNumbers(
+            2,
+            "Wrong Arguments, please provide 2 parameters, line to position"))
+      return nullptr;
+    context->l(number(0), number(1));
+    break;
+  case Op::c:
+    if (!requireNumbers(
+            6, "Wrong Arguments, please provide 6 parameters of the curve"))
+      return nullptr;
+    context->c(number(0), number(1), number(2), number(3), number(4),
+               number(5));
+    break;
+  case Op::v:
+    if (!requireNumbers(
+            4, "Wrong Arguments, please provide 4 parameters of the curve"))
+      return nullptr;
+    context->v(number(0), number(1), number(2), number(3));
+    break;
+  case Op::y:
+    if (!requireNumbers(
+            4, "Wrong Arguments, please provide 4 parameters of the curve"))
+      return nullptr;
+    context->y(number(0), number(1), number(2), number(3));
+    break;
+  case Op::re:
+    if (!requireNumbers(4,
+                        "Wrong Argument, please provide 4 parameters: 2 bottom "
+                        "left coordinates, and width and height measures"))
+      return nullptr;
+    context->re(number(0), number(1), number(2), number(3));
+    break;
+  case Op::cm:
+    if (!requireNumbers(6, "Wrong Arguments, please provide 6 arguments "
+                           "forming a 2d transformation matrix"))
+      return nullptr;
+    context->cm(number(0), number(1), number(2), number(3), number(4),
+                number(5));
+    break;
+  case Op::w:
+    if (!requireNumbers(
+            1, "Wrong Argument, please provide 1 parameter, width measure"))
+      return nullptr;
+    context->w(number(0));
+    break;
+  case Op::J:
+    if (!requireNumbers(
+            1, "Wrong Argument, please provide 1 parameter, line cap style"))
+      return nullptr;
+    context->J(ToInt32(args.Env(), args[0]));
+    break;
+  case Op::j:
+    if (!requireNumbers(
+            1, "Wrong Argument, please provide 1 parameter, line join style"))
+      return nullptr;
+    context->j(ToInt32(args.Env(), args[0]));
+    break;
+  case Op::M:
+    if (!requireNumbers(
+            1, "Wrong Argument, please provide 1 parameter, miter limit"))
+      return nullptr;
+    context->M(number(0));
+    break;
+  case Op::ri:
+    if (args.Length() != 1 || !IsString(args, 0))
+      return WrongArguments(args.Env(),
+                            "Wrong Argument, please provide 1 string argument, "
+                            "the rendering intent");
+    context->ri(LegacyString(args.Env(), args[0]));
+    break;
+  case Op::i:
+    if (!requireNumbers(1,
+                        "Wrong Argument, please provide 1 parameter, flatness"))
+      return nullptr;
+    context->i(ToInt32(args.Env(), args[0]));
+    break;
+  case Op::gs:
+    if (args.Length() != 1 || !IsString(args, 0))
+      return WrongArguments(args.Env(), "Wrong Argument, please provide 1 "
+                                        "string argument, graphic state name");
+    context->gs(LegacyString(args.Env(), args[0]));
+    break;
+  case Op::CS:
+  case Op::cs:
+    if (args.Length() != 1 || !IsString(args, 0))
+      return WrongArguments(
+          args.Env(), "Wrong Argument, please provide a color space name");
+    if (op == Op::CS)
+      context->CS(LegacyString(args.Env(), args[0]));
+    else
+      context->cs(LegacyString(args.Env(), args[0]));
+    break;
+  case Op::G:
+  case Op::g:
+    if (!requireNumbers(
+            1,
+            "Wrong Argument, please provide 1 parameter, gray value (0-255)"))
+      return nullptr;
+    if (op == Op::G)
+      context->G(number(0));
+    else
+      context->g(number(0));
+    break;
+  case Op::RG:
+  case Op::rg:
+    if (!requireNumbers(
+            3,
+            "Wrong Arguments, please provide 3 arguments as rgb color values"))
+      return nullptr;
+    if (op == Op::RG)
+      context->RG(number(0), number(1), number(2));
+    else
+      context->rg(number(0), number(1), number(2));
+    break;
+  case Op::K:
+  case Op::k:
+    if (!requireNumbers(4, "Wrong Argument, please provide 4 cmyk components "
+                           "(values should be 0-255)"))
+      return nullptr;
+    if (op == Op::K)
+      context->K(number(0), number(1), number(2), number(3));
+    else
+      context->k(number(0), number(1), number(2), number(3));
+    break;
+  case Op::Tc:
+    if (!requireNumbers(1, "Wrong Arguments, please provide character space"))
+      return nullptr;
+    context->Tc(number(0));
+    break;
+  case Op::Tw:
+    if (!requireNumbers(1, "Wrong Arguments, please provide word space"))
+      return nullptr;
+    context->Tw(number(0));
+    break;
+  case Op::Tz:
+    if (!requireNumbers(1,
+                        "Wrong Arguments, please provide horizontal scaling"))
+      return nullptr;
+    context->Tz(ToInt32(args.Env(), args[0]));
+    break;
+  case Op::TL:
+    if (!requireNumbers(1, "Wrong Arguments, please provide text leading"))
+      return nullptr;
+    context->TL(number(0));
+    break;
+  case Op::Tr:
+    if (!requireNumbers(1, "Wrong Arguments, please provide rendering mode"))
+      return nullptr;
+    context->Tr(ToInt32(args.Env(), args[0]));
+    break;
+  case Op::Ts:
+    if (!requireNumbers(1, "Wrong Arguments, please provide font rise"))
+      return nullptr;
+    context->Ts(number(0));
+    break;
+  case Op::Td:
+  case Op::TD:
+    if (!requireNumbers(2, "Wrong Arguments, please provide 2 arguments"))
+      return nullptr;
+    if (op == Op::Td)
+      context->Td(number(0), number(1));
+    else
+      context->TD(number(0), number(1));
+    break;
+  case Op::Tm:
+    if (!requireNumbers(6, "Wrong Arguments, please provide 6 arguments "
+                           "forming a 2d transformation matrix (for text)"))
+      return nullptr;
+    context->Tm(number(0), number(1), number(2), number(3), number(4),
+                number(5));
+    break;
+  case Op::WriteFreeCode:
+    if (args.Length() != 1 || !IsString(args, 0))
+      return WrongArguments(args.Env(),
+                            "Wrong Arguments, please provide string to write");
+    context->WriteFreeCode(LegacyString(args.Env(), args[0]));
+    break;
+  }
+  return args.This();
+}
 
-    double x = TO_NUMBER(args[0])->Value();
-    double y = TO_NUMBER(args[1])->Value();
-    std::string imagePath = *(UTF_8_VALUE(args[2]->TO_STRING()));
-    AbstractContentContext::ImageOptions imageOptions;
-    
-    if(args.Length() >= 4)
-    {
-        Local<Object> optionsObject = args[3]->TO_OBJECT();
-        
-        if(optionsObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("index")).FromJust())
-            imageOptions.imageIndex = TO_UINT32(optionsObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("index")).ToLocalChecked())->Value();
-        
-        if(optionsObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("transformation")).FromJust())
-        {
-            Local<Value> transformationValue = optionsObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("transformation")).ToLocalChecked();
-            
-            if(transformationValue->IsArray() || transformationValue->IsObject())
-            {
-                Local<Object> transformationObject = transformationValue->TO_OBJECT();
-                
-                if(transformationValue->IsArray() && TO_NUMBER(transformationObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value() == 6)
-                {
-                    imageOptions.transformationMethod = AbstractContentContext::eMatrix;
-                    for(int i=0;i<6;++i)
-                        imageOptions.matrix[i] = TO_NUMBER(transformationObject->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked())->Value();
-                }
-                else if(transformationValue->IsObject())
-                {
-                    // fitting object, determine transformation according to image dimensions relation to width/height
-                    imageOptions.transformationMethod = AbstractContentContext::eFit;
-                    imageOptions.boundingBoxWidth = TO_NUMBER(transformationObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("width")).ToLocalChecked())->Value();
-                    imageOptions.boundingBoxHeight = TO_NUMBER(transformationObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("height")).ToLocalChecked())->Value();
-                    imageOptions.fitProportional = transformationObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("proportional")).FromJust() ?
-                                            transformationObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("proportional")).ToLocalChecked()->TO_BOOLEAN()->Value() :
-                                            false;
-                    imageOptions.fitPolicy = transformationObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("fit")).FromJust() ?
-                                    (strcmp("always",*UTF_8_VALUE(transformationObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("fit")).ToLocalChecked()->TO_STRING())) == 0 ? AbstractContentContext::eAlways : AbstractContentContext::eOverflow):
-                                    AbstractContentContext::eOverflow;
-                }
-                
-            }
+napi_value AbstractContentContextDriver::Dash(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if (args.Length() != 2 || !IsArray(args.Env(), args[0]) || !IsNumber(args, 1))
+    return WrongArguments(args.Env(),
+                          "Wrong Argument, please provide 2 parameters - array "
+                          "for dash pattern and dash phase number");
+
+  uint32_t length = 0;
+  if (!Length(args.Env(), args[0], &length))
+    return nullptr;
+  std::vector<double> dashArray(length);
+  for (uint32_t i = 0; i < length; ++i) {
+    napi_value value = nullptr;
+    int32_t dash = 0;
+    if (!Get(args.Env(), args[0], i, &value) ||
+        !CoerceToInt32(args.Env(), value, &dash))
+      return nullptr;
+    dashArray[i] = dash;
+  }
+  driver->GetContext()->d(dashArray.data(), length,
+                          ToInt32(args.Env(), args[1]));
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::SetOpacity(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context using "
+                      "pdfWriter.startPageContentContext(page)");
+  double opacity = args.Length() == 1 && IsNumber(args, 0)
+                       ? ToDouble(args.Env(), args[0])
+                       : -1;
+  if (opacity < 0 || opacity > 1 || opacity != opacity)
+    return WrongArguments(
+        args.Env(),
+        "Wrong Argument, please provide 1 opacity value between 0 and 1");
+  driver->GetContext()->SetOpacity(opacity);
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::Color(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  ColorOp op = static_cast<ColorOp>(reinterpret_cast<intptr_t>(args.Data()));
+  bool patternOperator = op == ColorOp::SCN || op == ColorOp::scn;
+  if (!patternOperator && args.Length() == 0)
+    return WrongArguments(
+        args.Env(),
+        "Wrong Arguments, please provide at least one color component");
+  if (patternOperator &&
+      (args.Length() == 0 ||
+       (args.Length() == 1 &&
+        !(IsNumber(args, 0) || IsArray(args.Env(), args[0]))) ||
+       (args.Length() > 1 && !(IsNumber(args, args.Length() - 1) ||
+                               IsArray(args.Env(), args[args.Length() - 1]) ||
+                               IsString(args, args.Length() - 1)))))
+    return WrongArguments(
+        args.Env(),
+        "Wrong Arguments, please provide at least one color component or a "
+        "list of color components and optional a pattern name");
+
+  bool hasPattern = patternOperator && IsString(args, args.Length() - 1);
+  bool arrayForm = IsArray(args.Env(), args[0]);
+  uint32_t length =
+      static_cast<uint32_t>(args.Length() - (hasPattern ? 1 : 0));
+  if (arrayForm && !Length(args.Env(), args[0], &length))
+    return nullptr;
+  std::vector<double> components(length);
+  for (uint32_t i = 0; i < length; ++i) {
+    napi_value value = nullptr;
+    if (arrayForm) {
+      if (!Get(args.Env(), args[0], i, &value))
+        return nullptr;
+    } else {
+      value = args[i];
+    }
+    if (!CoerceToDouble(args.Env(), value, &components[i]))
+      return nullptr;
+  }
+
+  AbstractContentContext *context = driver->GetContext();
+  if (op == ColorOp::SC)
+    context->SC(components.data(), length);
+  else if (op == ColorOp::sc)
+    context->sc(components.data(), length);
+  else if (op == ColorOp::SCN && hasPattern)
+    context->SCN(components.data(), length,
+                 LegacyString(args.Env(), args[args.Length() - 1]));
+  else if (op == ColorOp::SCN)
+    context->SCN(components.data(), length);
+  else if (hasPattern)
+    context->scn(components.data(), length,
+                 LegacyString(args.Env(), args[args.Length() - 1]));
+  else
+    context->scn(components.data(), length);
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::DoXObject(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext() || !driver->mResourcesDictionary)
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if (args.Length() != 1)
+    return WrongArguments(args.Env(), "Invalid arguments. pass an xobject");
+
+  if (IsString(args, 0)) {
+    driver->GetContext()->Do(LegacyString(args.Env(), args[0]));
+  } else if (driver->holder->IsFormXObjectInstance(args[0])) {
+    FormXObjectDriver *form =
+        ObjectWrap::Unwrap<FormXObjectDriver>(args.Env(), args[0]);
+    if (!form)
+      return WrongArguments(
+          args.Env(),
+          "Wrong arguments, provide an xobject as the single parameter or its "
+          "name according to the local resource dictionary");
+    driver->GetContext()->Do(
+        driver->mResourcesDictionary->AddFormXObjectMapping(
+            form->FormXObject->GetObjectID()));
+  } else if (driver->holder->IsImageXObjectInstance(args[0])) {
+    ImageXObjectDriver *image =
+        ObjectWrap::Unwrap<ImageXObjectDriver>(args.Env(), args[0]);
+    if (!image)
+      return WrongArguments(
+          args.Env(),
+          "Wrong arguments, provide an xobject as the single parameter or its "
+          "name according to the local resource dictionary");
+    driver->GetContext()->Do(
+        driver->mResourcesDictionary->AddImageXObjectMapping(
+            image->ImageXObject));
+  } else {
+    return WrongArguments(
+        args.Env(),
+        "Wrong arguments, provide an xobject as the single parameter or its "
+        "name according to the local resource dictionary");
+  }
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::Tf(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if (args.Length() != 2 ||
+      (!driver->holder->IsUsedFontInstance(args[0]) && !IsString(args, 0)) ||
+      !IsNumber(args, 1))
+    return WrongArguments(
+        args.Env(),
+        "Wrong Arguments, please provide a font object (create with "
+        "pdfWriter.getFontForFile) or font resource name and a size measure");
+  if (IsString(args, 0))
+    driver->GetContext()->TfLow(LegacyString(args.Env(), args[0]),
+                                ToDouble(args.Env(), args[1]));
+  else
+    driver->GetContext()->Tf(
+        ObjectWrap::Unwrap<UsedFontDriver>(args.Env(), args[0])->UsedFont,
+        ToDouble(args.Env(), args[1]));
+  return args.This();
+}
+
+TextPlacingOptions
+AbstractContentContextDriver::ObjectToOptions(napi_env env, napi_value object) {
+  TextPlacingOptions options;
+  if (Has(env, object, "encoding")) {
+    std::string value = CoerceToString(env, Get(env, object, "encoding"));
+    if (value == "hex")
+      options.encoding = TextPlacingOptions::EEncodingHex;
+    else if (value == "code")
+      options.encoding = TextPlacingOptions::EEncodingCode;
+  }
+  return options;
+}
+
+bool AbstractContentContextDriver::ArrayToGlyphsList(
+    napi_env env, napi_value array, GlyphUnicodeMappingList &out) {
+  GlyphUnicodeMappingList glyphList;
+  uint32_t length = 0;
+  if (!Length(env, array, &length))
+    return false;
+  for (uint32_t i = 0; i < length; ++i) {
+    napi_value item = nullptr;
+    if (!Get(env, array, i, &item))
+      return false;
+    if (!IsArray(env, item))
+      continue;
+    uint32_t itemLength = 0;
+    if (!Length(env, item, &itemLength))
+      return false;
+    if (itemLength == 0)
+      continue;
+    GlyphUnicodeMapping mapping;
+    napi_value value = nullptr;
+    uint32_t glyph = 0;
+    if (!Get(env, item, uint32_t{0}, &value) ||
+        !CoerceToUint32(env, value, &glyph))
+      return false;
+    mapping.mGlyphCode = glyph;
+    for (uint32_t j = 1; j < itemLength; ++j) {
+      uint32_t unicode = 0;
+      if (!Get(env, item, j, &value) ||
+          !CoerceToUint32(env, value, &unicode))
+        return false;
+      mapping.mUnicodeValues.push_back(unicode);
+    }
+    glyphList.push_back(mapping);
+  }
+  out = std::move(glyphList);
+  return true;
+}
+
+napi_value AbstractContentContextDriver::Tj(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if ((args.Length() != 1 && args.Length() != 2) ||
+      (!IsString(args, 0) && !IsArray(args.Env(), args[0])) ||
+      (args.Length() == 2 && !IsObject(args.Env(), args[1])))
+    return WrongArguments(
+        args.Env(),
+        "Wrong Arguments, please provide 1 argument, the string that you wish "
+        "to display or a glyphs IDs array, and an optional options object");
+  if (IsArray(args.Env(), args[0])) {
+    GlyphUnicodeMappingList glyphs;
+    if (!ArrayToGlyphsList(args.Env(), args[0], glyphs))
+      return nullptr;
+    driver->GetContext()->Tj(glyphs);
+  } else {
+    TextPlacingOptions options = args.Length() == 2
+                                     ? ObjectToOptions(args.Env(), args[1])
+                                     : TextPlacingOptions();
+    std::string text = ToString(args.Env(), args[0]);
+    if (options.encoding == TextPlacingOptions::EEncodingCode)
+      driver->GetContext()->TjLow(text);
+    else if (options.encoding == TextPlacingOptions::EEncodingHex)
+      driver->GetContext()->TjHexLow(text);
+    else
+      driver->GetContext()->Tj(text);
+  }
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::Quote(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if ((args.Length() != 1 && args.Length() != 2) ||
+      (!IsString(args, 0) && !IsArray(args.Env(), args[0])) ||
+      (args.Length() == 2 && !IsObject(args.Env(), args[1])))
+    return WrongArguments(
+        args.Env(),
+        "Wrong Arguments, please provide 1 argument, the string that you wish "
+        "to display or a glyphs IDs array, and an optional options object");
+  if (IsArray(args.Env(), args[0])) {
+    GlyphUnicodeMappingList glyphs;
+    if (!ArrayToGlyphsList(args.Env(), args[0], glyphs))
+      return nullptr;
+    driver->GetContext()->Quote(glyphs);
+  } else {
+    TextPlacingOptions options = args.Length() == 2
+                                     ? ObjectToOptions(args.Env(), args[1])
+                                     : TextPlacingOptions();
+    std::string text = ToString(args.Env(), args[0]);
+    if (options.encoding == TextPlacingOptions::EEncodingCode)
+      driver->GetContext()->QuoteLow(text);
+    else if (options.encoding == TextPlacingOptions::EEncodingHex)
+      driver->GetContext()->QuoteHexLow(text);
+    else
+      driver->GetContext()->Quote(text);
+  }
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::DoubleQuote(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if ((args.Length() != 3 && args.Length() != 4) || !IsNumber(args, 0) ||
+      !IsNumber(args, 1) ||
+      (!IsString(args, 2) && !IsArray(args.Env(), args[2])) ||
+      (args.Length() == 4 && !IsObject(args.Env(), args[3])))
+    return WrongArguments(
+        args.Env(),
+        "Wrong Arguments, please provide 3 arguments, word spacing, character "
+        "spacing and text, and optionally an options object");
+  double wordSpacing = ToDouble(args.Env(), args[0]);
+  double characterSpacing = ToDouble(args.Env(), args[1]);
+  if (IsArray(args.Env(), args[2])) {
+    GlyphUnicodeMappingList glyphs;
+    if (!ArrayToGlyphsList(args.Env(), args[2], glyphs))
+      return nullptr;
+    driver->GetContext()->DoubleQuote(wordSpacing, characterSpacing, glyphs);
+  } else {
+    TextPlacingOptions options = args.Length() == 4
+                                     ? ObjectToOptions(args.Env(), args[3])
+                                     : TextPlacingOptions();
+    std::string text = ToString(args.Env(), args[2]);
+    if (options.encoding == TextPlacingOptions::EEncodingCode)
+      driver->GetContext()->DoubleQuoteLow(wordSpacing, characterSpacing, text);
+    else if (options.encoding == TextPlacingOptions::EEncodingHex)
+      driver->GetContext()->DoubleQuoteHexLow(wordSpacing, characterSpacing,
+                                              text);
+    else
+      driver->GetContext()->DoubleQuote(wordSpacing, characterSpacing, text);
+  }
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::TJ(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+
+  bool hasStrings = false;
+  bool hasOptions = args.Length() > 0 && !IsString(args, args.Length() - 1) &&
+                    !IsNumber(args, args.Length() - 1) &&
+                    IsObject(args.Env(), args[args.Length() - 1]);
+  for (size_t i = 0; i < args.Length() && !hasStrings; ++i)
+    hasStrings = IsString(args, i);
+
+  if (hasStrings) {
+    StringOrDoubleList params;
+    TextPlacingOptions options =
+        hasOptions ? ObjectToOptions(args.Env(), args[args.Length() - 1])
+                   : TextPlacingOptions();
+    size_t length = hasOptions ? args.Length() - 1 : args.Length();
+    for (size_t i = 0; i < length; ++i) {
+      if (IsString(args, i))
+        params.push_back(StringOrDouble(ToString(args.Env(), args[i])));
+      else if (IsNumber(args, i))
+        params.push_back(StringOrDouble(ToDouble(args.Env(), args[i])));
+      else
+        return WrongArguments(
+            args.Env(), "Wrong arguments. please provide a variable number of "
+                        "elements each either string/glyphs list or number, "
+                        "and an optional final options object");
+    }
+    if (options.encoding == TextPlacingOptions::EEncodingCode)
+      driver->GetContext()->TJLow(params);
+    else if (options.encoding == TextPlacingOptions::EEncodingHex)
+      driver->GetContext()->TJHexLow(params);
+    else
+      driver->GetContext()->TJ(params);
+  } else {
+    GlyphUnicodeMappingListOrDoubleList params;
+    for (size_t i = 0; i < args.Length(); ++i) {
+      if (IsArray(args.Env(), args[i])) {
+        GlyphUnicodeMappingList glyphs;
+        if (!ArrayToGlyphsList(args.Env(), args[i], glyphs))
+          return nullptr;
+        params.push_back(GlyphUnicodeMappingListOrDouble(glyphs));
+      }
+      else if (IsNumber(args, i))
+        params.push_back(
+            GlyphUnicodeMappingListOrDouble(ToDouble(args.Env(), args[i])));
+      else
+        return WrongArguments(
+            args.Env(), "Wrong arguments. please provide a variable number of "
+                        "elements each either string/glyph list or number, and "
+                        "an optional final options object");
+    }
+    driver->GetContext()->TJ(params);
+  }
+  return args.This();
+}
+
+void AbstractContentContextDriver::SetupColorAndLineWidth(
+    napi_env env, napi_value maybeOptions) {
+  if (!IsObject(env, maybeOptions))
+    return;
+  bool isStroke = !Has(env, maybeOptions, "type") ||
+                  LegacyString(env, Get(env, maybeOptions, "type")) == "stroke";
+  SetColor(env, maybeOptions, isStroke);
+  if (HasPendingException(env))
+    return;
+  if (isStroke && Has(env, maybeOptions, "width")) {
+    napi_value value = nullptr;
+    double width = 0;
+    if (!Get(env, maybeOptions, "width", &value) ||
+        !CoerceToDouble(env, value, &width))
+      return;
+    GetContext()->w(width);
+  }
+}
+
+void AbstractContentContextDriver::SetColor(napi_env env,
+                                            napi_value maybeOptions,
+                                            bool isStroke) {
+  if (!IsObject(env, maybeOptions) || !Has(env, maybeOptions, "color"))
+    return;
+  napi_value color = nullptr;
+  if (!Get(env, maybeOptions, "color", &color))
+    return;
+  if (IsType(env, color, napi_string)) {
+    SetRGBColor(colorMap.GetRGBForColorName(LegacyString(env, color)),
+                isStroke);
+    return;
+  }
+
+  int32_t numericColor = 0;
+  if (!CoerceToInt32(env, color, &numericColor))
+    return;
+  unsigned long colorValue = static_cast<unsigned long>(numericColor);
+  std::string colorSpace = "rgb";
+  if (Has(env, maybeOptions, "colorspace")) {
+    napi_value value = nullptr;
+    if (!Get(env, maybeOptions, "colorspace", &value))
+      return;
+    colorSpace = LegacyString(env, value);
+    if (HasPendingException(env))
+      return;
+  }
+  if (colorSpace == "rgb") {
+    SetRGBColor(colorValue, isStroke);
+  } else if (colorSpace == "cmyk") {
+    double c = static_cast<unsigned char>((colorValue >> 24) & 0xff);
+    double m = static_cast<unsigned char>((colorValue >> 16) & 0xff);
+    double y = static_cast<unsigned char>((colorValue >> 8) & 0xff);
+    double k = static_cast<unsigned char>(colorValue & 0xff);
+    if (isStroke)
+      GetContext()->K(c / 255, m / 255, y / 255, k / 255);
+    else
+      GetContext()->k(c / 255, m / 255, y / 255, k / 255);
+  } else if (colorSpace == "gray") {
+    double gray = static_cast<unsigned char>(colorValue & 0xff);
+    if (isStroke)
+      GetContext()->G(gray / 255);
+    else
+      GetContext()->g(gray / 255);
+  }
+}
+
+bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
+                                                   napi_value maybeOptions,
+                                                   PathOptions &options) {
+  if (!IsObject(env, maybeOptions))
+    return true;
+
+  bool hasType = Has(env, maybeOptions, "type");
+  if (HasPendingException(env))
+    return false;
+  if (hasType) {
+    napi_value value = nullptr;
+    if (!Get(env, maybeOptions, "type", &value))
+      return false;
+    options.setupIsStroke = LegacyString(env, value) == "stroke";
+    if (HasPendingException(env))
+      return false;
+  }
+
+  options.hasColor = Has(env, maybeOptions, "color");
+  if (HasPendingException(env))
+    return false;
+  if (options.hasColor) {
+    napi_value color = nullptr;
+    if (!Get(env, maybeOptions, "color", &color))
+      return false;
+    options.hasNamedColor = IsType(env, color, napi_string);
+    if (options.hasNamedColor) {
+      options.colorName = LegacyString(env, color);
+      if (HasPendingException(env))
+        return false;
+    } else {
+      int32_t numericColor = 0;
+      if (!CoerceToInt32(env, color, &numericColor))
+        return false;
+      options.colorValue = static_cast<unsigned long>(numericColor);
+      bool hasColorSpace = Has(env, maybeOptions, "colorspace");
+      if (HasPendingException(env))
+        return false;
+      if (hasColorSpace) {
+        napi_value colorSpace = nullptr;
+        if (!Get(env, maybeOptions, "colorspace", &colorSpace))
+          return false;
+        options.colorSpace = LegacyString(env, colorSpace);
+        if (HasPendingException(env))
+          return false;
+      }
+    }
+  }
+
+  options.hasWidth = options.setupIsStroke && Has(env, maybeOptions, "width");
+  if (HasPendingException(env))
+    return false;
+  if (options.hasWidth) {
+    napi_value value = nullptr;
+    if (!Get(env, maybeOptions, "width", &value) ||
+        !CoerceToDouble(env, value, &options.width))
+      return false;
+  }
+
+  hasType = Has(env, maybeOptions, "type");
+  if (HasPendingException(env))
+    return false;
+  if (hasType) {
+    napi_value value = nullptr;
+    if (!Get(env, maybeOptions, "type", &value))
+      return false;
+    options.finishType = LegacyString(env, value);
+    if (HasPendingException(env))
+      return false;
+  }
+  bool hasClose = Has(env, maybeOptions, "close");
+  if (HasPendingException(env))
+    return false;
+  if (hasClose) {
+    napi_value value = nullptr;
+    if (!Get(env, maybeOptions, "close", &value))
+      return false;
+    options.closePath = ToBoolean(env, value);
+    if (HasPendingException(env))
+      return false;
+  }
+  return true;
+}
+
+void AbstractContentContextDriver::ApplyPathOptions(
+    const PathOptions &options) {
+  if (options.hasColor) {
+    if (options.hasNamedColor) {
+      SetRGBColor(colorMap.GetRGBForColorName(options.colorName),
+                  options.setupIsStroke);
+    } else if (options.colorSpace == "rgb") {
+      SetRGBColor(options.colorValue, options.setupIsStroke);
+    } else if (options.colorSpace == "cmyk") {
+      double c = static_cast<unsigned char>((options.colorValue >> 24) & 0xff);
+      double m = static_cast<unsigned char>((options.colorValue >> 16) & 0xff);
+      double y = static_cast<unsigned char>((options.colorValue >> 8) & 0xff);
+      double k = static_cast<unsigned char>(options.colorValue & 0xff);
+      if (options.setupIsStroke)
+        GetContext()->K(c / 255, m / 255, y / 255, k / 255);
+      else
+        GetContext()->k(c / 255, m / 255, y / 255, k / 255);
+    } else if (options.colorSpace == "gray") {
+      double gray = static_cast<unsigned char>(options.colorValue & 0xff);
+      if (options.setupIsStroke)
+        GetContext()->G(gray / 255);
+      else
+        GetContext()->g(gray / 255);
+    }
+  }
+  if (options.hasWidth)
+    GetContext()->w(options.width);
+}
+
+void AbstractContentContextDriver::CompletePath(const PathOptions &options) {
+  if (options.finishType == "stroke") {
+    if (options.closePath)
+      GetContext()->s();
+    else
+      GetContext()->S();
+  } else if (options.finishType == "fill") {
+    GetContext()->f();
+  } else if (options.finishType.compare("clip")) {
+    if (options.closePath)
+      GetContext()->h();
+    GetContext()->W();
+  }
+}
+
+void AbstractContentContextDriver::SetRGBColor(unsigned long colorValue,
+                                               bool isStroke) {
+  double r = static_cast<unsigned char>((colorValue >> 16) & 0xff);
+  double g = static_cast<unsigned char>((colorValue >> 8) & 0xff);
+  double b = static_cast<unsigned char>(colorValue & 0xff);
+  if (isStroke)
+    GetContext()->RG(r / 255, g / 255, b / 255);
+  else
+    GetContext()->rg(r / 255, g / 255, b / 255);
+}
+
+void AbstractContentContextDriver::FinishPath(napi_env env,
+                                              napi_value maybeOptions) {
+  bool closePath = false;
+  std::string type = "stroke";
+  if (IsObject(env, maybeOptions)) {
+    if (Has(env, maybeOptions, "type"))
+      type = LegacyString(env, Get(env, maybeOptions, "type"));
+    if (Has(env, maybeOptions, "close"))
+      closePath = ToBoolean(env, Get(env, maybeOptions, "close"));
+  }
+  if (type == "stroke") {
+    if (closePath)
+      GetContext()->s();
+    else
+      GetContext()->S();
+  } else if (type == "fill") {
+    GetContext()->f();
+  } else if (type.compare("clip")) {
+    if (closePath)
+      GetContext()->h();
+    GetContext()->W();
+  }
+}
+
+napi_value AbstractContentContextDriver::DrawPath(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if ((args.Length() == 1 && !IsArray(args.Env(), args[0])) ||
+      args.Length() < 2)
+    return WrongArguments(
+        args.Env(),
+        "Wrong Arguments, please provide path coordinates as numbers (x1, y1, "
+        "x2, y2 etc) or as list of coordinates and an optional options object");
+
+  PathOptions options;
+  if (!driver->ReadPathOptions(args.Env(), args[args.Length() - 1], options))
+    return nullptr;
+
+  if (!IsArray(args.Env(), args[0])) {
+    std::vector<double> coordinates;
+    double coordinate = 0;
+    if (!CoerceToDouble(args.Env(), args[0], &coordinate))
+      return nullptr;
+    coordinates.push_back(coordinate);
+    if (!CoerceToDouble(args.Env(), args[1], &coordinate))
+      return nullptr;
+    coordinates.push_back(coordinate);
+    for (size_t i = 2; i < args.Length() - 1; i += 2) {
+      if (!IsNumber(args, i))
+        break;
+      if (!CoerceToDouble(args.Env(), args[i], &coordinate))
+        return nullptr;
+      coordinates.push_back(coordinate);
+      if (!CoerceToDouble(args.Env(), args[i + 1], &coordinate))
+        return nullptr;
+      coordinates.push_back(coordinate);
+    }
+    driver->ApplyPathOptions(options);
+    driver->GetContext()->m(coordinates[0], coordinates[1]);
+    for (size_t i = 2; i < coordinates.size(); i += 2)
+      driver->GetContext()->l(coordinates[i], coordinates[i + 1]);
+    driver->CompletePath(options);
+  } else {
+    uint32_t length = 0;
+    if (!Length(args.Env(), args[0], &length))
+      return nullptr;
+    if (length <= 1)
+      return WrongArguments(
+          args.Env(),
+          "Wrong arguments. Coordinate list must have at least one point");
+    std::vector<double> coordinates;
+    coordinates.reserve(length * 2);
+    for (uint32_t i = 0; i < length; ++i) {
+      napi_value point = nullptr;
+      uint32_t pointLength = 0;
+      if (!Get(args.Env(), args[0], i, &point) || !IsArray(args.Env(), point) ||
+          !Length(args.Env(), point, &pointLength))
+        return HasPendingException(args.Env())
+                   ? nullptr
+                   : WrongArguments(args.Env(),
+                                    "Wrong arguments. Coordinate list must "
+                                    "have exactly one x and one y value");
+      if (pointLength != 2)
+        return WrongArguments(args.Env(),
+                              "Wrong arguments. Coordinate list must have "
+                              "exactly one x and one y value");
+      for (uint32_t j = 0; j < pointLength; ++j) {
+        napi_value value = nullptr;
+        double coordinate = 0;
+        if (!Get(args.Env(), point, j, &value) ||
+            !CoerceToDouble(args.Env(), value, &coordinate))
+          return nullptr;
+        coordinates.push_back(coordinate);
+      }
+    }
+    driver->ApplyPathOptions(options);
+    driver->GetContext()->m(coordinates[0], coordinates[1]);
+    for (size_t i = 2; i < coordinates.size(); i += 2)
+      driver->GetContext()->l(coordinates[i], coordinates[i + 1]);
+    driver->CompletePath(options);
+  }
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::DrawCircle(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if (args.Length() < 3)
+    return WrongArguments(args.Env(),
+                          "Wrong Arguments, please provide x and y coordinates "
+                          "for center, radius and an optional options object");
+  driver->SetupColorAndLineWidth(args.Env(), args[args.Length() - 1]);
+  const double magic = 0.551784;
+  double x = CoerceToDouble(args.Env(), args[0]);
+  double y = CoerceToDouble(args.Env(), args[1]);
+  double radius = CoerceToDouble(args.Env(), args[2]);
+  double radiusMagic = radius * magic;
+  driver->GetContext()->m(x - radius, y);
+  driver->GetContext()->c(x - radius, y + radiusMagic, x - radiusMagic,
+                          y + radius, x, y + radius);
+  driver->GetContext()->c(x + radiusMagic, y + radius, x + radius,
+                          y + radiusMagic, x + radius, y);
+  driver->GetContext()->c(x + radius, y - radiusMagic, x + radiusMagic,
+                          y - radius, x, y - radius);
+  driver->GetContext()->c(x - radiusMagic, y - radius, x - radius,
+                          y - radiusMagic, x - radius, y);
+  driver->FinishPath(args.Env(), args[args.Length() - 1]);
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::DrawSquare(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if (args.Length() < 3)
+    return WrongArguments(
+        args.Env(), "Wrong Arguments, please provide bottom left coordinates, "
+                    "an edge size and optional options object");
+  driver->SetupColorAndLineWidth(args.Env(), args[args.Length() - 1]);
+  double size = CoerceToDouble(args.Env(), args[2]);
+  driver->GetContext()->re(CoerceToDouble(args.Env(), args[0]),
+                           CoerceToDouble(args.Env(), args[1]), size, size);
+  driver->FinishPath(args.Env(), args[args.Length() - 1]);
+  return args.This();
+}
+
+napi_value
+AbstractContentContextDriver::DrawRectangle(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if (args.Length() < 4)
+    return WrongArguments(
+        args.Env(), "Wrong Arguments, please provide bottom left coordinates, "
+                    "width and height and optional options object");
+  driver->SetupColorAndLineWidth(args.Env(), args[args.Length() - 1]);
+  driver->GetContext()->re(
+      CoerceToDouble(args.Env(), args[0]), CoerceToDouble(args.Env(), args[1]),
+      CoerceToDouble(args.Env(), args[2]), CoerceToDouble(args.Env(), args[3]));
+  driver->FinishPath(args.Env(), args[args.Length() - 1]);
+  return args.This();
+}
+
+void AbstractContentContextDriver::SetFont(napi_env env,
+                                           napi_value maybeOptions) {
+  if (!IsObject(env, maybeOptions) || !Has(env, maybeOptions, "font"))
+    return;
+  napi_value fontValue = Get(env, maybeOptions, "font");
+  if (holder->IsUsedFontInstance(fontValue)) {
+    double size = Has(env, maybeOptions, "size")
+                      ? CoerceToDouble(env, Get(env, maybeOptions, "size"))
+                      : 1;
+    GetContext()->Tf(
+        ObjectWrap::Unwrap<UsedFontDriver>(env, fontValue)->UsedFont, size);
+  }
+}
+
+napi_value AbstractContentContextDriver::WriteText(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if (args.Length() < 3)
+    return WrongArguments(
+        args.Env(),
+        "Wrong Arguments, please provide the text and x,y coordinate for text "
+        "position. optionally also add an options object");
+
+  driver->GetContext()->BT();
+  if (args.Length() >= 4) {
+    driver->SetColor(args.Env(), args[3], false);
+    driver->SetFont(args.Env(), args[3]);
+  }
+  std::string text = LegacyString(args.Env(), args[0]);
+  double x = CoerceToDouble(args.Env(), args[1]);
+  double y = CoerceToDouble(args.Env(), args[2]);
+  driver->GetContext()->Tm(1, 0, 0, 1, x, y);
+  driver->GetContext()->Tj(text);
+  driver->GetContext()->ET();
+
+  if (args.Length() >= 4 && IsObject(args.Env(), args[3]) &&
+      Has(args.Env(), args[3], "underline") &&
+      ToBoolean(args.Env(), Get(args.Env(), args[3], "underline"))) {
+    napi_value fontValue = Get(args.Env(), args[3], "font");
+    if (driver->holder->IsUsedFontInstance(fontValue)) {
+      double fontSize =
+          Has(args.Env(), args[3], "size")
+              ? CoerceToDouble(args.Env(), Get(args.Env(), args[3], "size"))
+              : 1;
+      PDFUsedFont *font =
+          ObjectWrap::Unwrap<UsedFontDriver>(args.Env(), fontValue)->UsedFont;
+      FreeTypeFaceWrapper *wrapper = font->GetFreeTypeFont();
+      driver->SetColor(args.Env(), args[3], true);
+      driver->GetContext()->w(GetUnderlineThicknessFactor(wrapper) * fontSize);
+      double startLine = y + GetUnderlinePositionFactor(wrapper) * fontSize;
+      driver->GetContext()->m(x, startLine);
+      driver->GetContext()->l(x + font->CalculateTextAdvance(text, fontSize),
+                              startLine);
+      driver->GetContext()->S();
+    }
+  }
+  return args.This();
+}
+
+napi_value AbstractContentContextDriver::DrawImage(const CallbackArgs &args) {
+  AbstractContentContextDriver *driver = Driver(args);
+  if (!driver->GetContext())
+    return ThrowError(args.Env(),
+                      "Null content context. Please create a context");
+  if (args.Length() < 3 || !IsNumber(args, 0) || !IsNumber(args, 1) ||
+      !IsString(args, 2) ||
+      (args.Length() >= 4 && !IsObject(args.Env(), args[3])))
+    return WrongArguments(
+        args.Env(), "Wrong Arguments, please provide bottom left coordinates, "
+                    "an edge size and optional options object");
+
+  AbstractContentContext::ImageOptions options;
+  if (args.Length() >= 4) {
+    napi_value optionsObject = args[3];
+    if (Has(args.Env(), optionsObject, "index")) {
+      napi_value index = nullptr;
+      uint32_t imageIndex = 0;
+      if (!Get(args.Env(), optionsObject, "index", &index) ||
+          !CoerceToUint32(args.Env(), index, &imageIndex))
+        return nullptr;
+      options.imageIndex = imageIndex;
+    }
+    if (Has(args.Env(), optionsObject, "transformation")) {
+      napi_value transformation =
+          Get(args.Env(), optionsObject, "transformation");
+      if (IsArray(args.Env(), transformation) ||
+          IsObject(args.Env(), transformation)) {
+        uint32_t transformationLength = 0;
+        bool matrix = IsArray(args.Env(), transformation);
+        if (matrix && !Length(args.Env(), transformation,
+                              &transformationLength))
+          return nullptr;
+        if (matrix && transformationLength == 6) {
+          if (HasPendingException(args.Env()))
+            return nullptr;
+          options.transformationMethod = AbstractContentContext::eMatrix;
+          if (!ReadNumberArray(args.Env(), transformation, options.matrix))
+            return nullptr;
+        } else if (IsObject(args.Env(), transformation)) {
+          options.transformationMethod = AbstractContentContext::eFit;
+          options.boundingBoxWidth = CoerceToDouble(
+              args.Env(), Get(args.Env(), transformation, "width"));
+          options.boundingBoxHeight = CoerceToDouble(
+              args.Env(), Get(args.Env(), transformation, "height"));
+          options.fitProportional =
+              Has(args.Env(), transformation, "proportional")
+                  ? ToBoolean(args.Env(),
+                              Get(args.Env(), transformation, "proportional"))
+                  : false;
+          options.fitPolicy =
+              Has(args.Env(), transformation, "fit") &&
+                      LegacyString(args.Env(), Get(args.Env(), transformation,
+                                                   "fit")) == "always"
+                  ? AbstractContentContext::eAlways
+                  : AbstractContentContext::eOverflow;
         }
-
-        if(optionsObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("password")).FromJust() && optionsObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->IsString())
-        {
-            imageOptions.pdfParsingOptions.Password = *UTF_8_VALUE(optionsObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->TO_STRING());
-        }        
-
+      }
     }
-    
-    contentContext->GetContext()->DrawImage(x,
-                                            y,
-                                            imagePath,
-                                            imageOptions);    
-    
-    SET_FUNCTION_RETURN_VALUE(args.This())
+    if (Has(args.Env(), optionsObject, "password")) {
+      napi_value password = Get(args.Env(), optionsObject, "password");
+      if (IsType(args.Env(), password, napi_string))
+        options.pdfParsingOptions.Password = LegacyString(args.Env(), password);
+    }
+  }
+  if (HasPendingException(args.Env()))
+    return nullptr;
+  driver->GetContext()->DrawImage(ToDouble(args.Env(), args[0]),
+                                  ToDouble(args.Env(), args[1]),
+                                  LegacyString(args.Env(), args[2]), options);
+  return args.This();
 }

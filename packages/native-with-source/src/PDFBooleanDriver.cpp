@@ -1,74 +1,27 @@
-/*
- Source File : PDFBooleanDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #include "PDFBooleanDriver.h"
-#include "RefCountPtr.h"
-#include "ConstructorsHolder.h"
 
-using namespace v8;
+using namespace muhammara::napi;
 
-
-
-DEF_SUBORDINATE_INIT(PDFBooleanDriver::Init)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-	Local<FunctionTemplate> t = NEW_FUNCTION_TEMPLATE_EXTERNAL(New);
-
-	t->SetClassName(NEW_STRING("PDFBoolean"));
-	t->InstanceTemplate()->SetInternalFieldCount(1);
-
-	SET_ACCESSOR_METHOD(t, "value", GetValue);
-	PDFObjectDriver::Init(t);
-
-    // save in factory
-	EXPOSE_EXTERNAL_FOR_INIT(ConstructorsHolder, holder)
-    SET_CONSTRUCTOR(holder->PDFBoolean_constructor, t);    
-	SET_CONSTRUCTOR_TEMPLATE(holder->PDFBoolean_constructor_template, t);
+bool PDFBooleanDriver::Init(ModuleState &state, napi_value exports) {
+  ClassBuilder builder(state, "PDFBoolean", New);
+  builder.Accessor("value", GetValue);
+  PDFObjectDriver::AddMethods(builder);
+  return builder.Define(exports, false) != nullptr;
 }
 
-METHOD_RETURN_TYPE PDFBooleanDriver::New(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-	EXPOSE_EXTERNAL_ARGS(ConstructorsHolder, externalHolder)
-    
-    PDFBooleanDriver* driver = new PDFBooleanDriver();
-	driver->holder = externalHolder;
-    driver->Wrap(args.This());
-	SET_FUNCTION_RETURN_VALUE(args.This())
+napi_value PDFBooleanDriver::New(const CallbackArgs &args) {
+  auto *driver = new PDFBooleanDriver();
+  driver->holder = &ModuleState::Get(args.Env())->Constructors();
+  if (!driver->Wrap(args.Env(), args.This())) {
+    delete driver;
+    return nullptr;
+  }
+  return args.This();
 }
 
-PDFObject* PDFBooleanDriver::GetObject()
-{
-    return TheObject.GetPtr();
+PDFObject *PDFBooleanDriver::GetObject() { return TheObject.GetPtr(); }
+
+napi_value PDFBooleanDriver::GetValue(const CallbackArgs &args) {
+  auto *driver = ObjectWrap::Unwrap<PDFBooleanDriver>(args.Env(), args.This());
+  return Boolean(args.Env(), driver->TheObject->GetValue());
 }
-
-METHOD_RETURN_TYPE PDFBooleanDriver::GetValue(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    Local<Boolean> result = NEW_BOOLEAN(ObjectWrap::Unwrap<PDFBooleanDriver>(PROPERTY_HOLDER(info))->TheObject->GetValue());
-
-    
-    SET_ACCESSOR_RETURN_VALUE(result)
-}
-
-

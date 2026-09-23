@@ -10,7 +10,7 @@ var sourceDirectories = [
   path.join(packageRoot, "openssl-build"),
 ];
 var addonPaths = [
-  path.join(packageRoot, "binding", "muhammara.node"),
+  path.join(packageRoot, "binding", "napi-v8", "muhammara.node"),
   path.join(packageRoot, "build", "Release", "muhammara.node"),
 ];
 

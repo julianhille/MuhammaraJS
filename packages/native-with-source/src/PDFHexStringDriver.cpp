@@ -1,98 +1,49 @@
-/*
- Source File : PDFHexStringDriver.cpp
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #include "PDFHexStringDriver.h"
-#include "RefCountPtr.h"
-#include "PDFTextString.h"
+
 #include "IOBasicTypes.h"
-#include "ConstructorsHolder.h"
+#include "PDFTextString.h"
 
-using namespace v8;
+using namespace muhammara::napi;
 
-
-
-DEF_SUBORDINATE_INIT(PDFHexStringDriver::Init)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-	Local<FunctionTemplate> t = NEW_FUNCTION_TEMPLATE_EXTERNAL(New);
-
-	t->SetClassName(NEW_STRING("PDFHexString"));
-	t->InstanceTemplate()->SetInternalFieldCount(1);
-	SET_PROTOTYPE_METHOD(t, "toText", ToText);
-	SET_PROTOTYPE_METHOD(t, "toBytesArray", ToBytesArray);
-	SET_ACCESSOR_METHOD(t, "value", GetValue);
-	PDFObjectDriver::Init(t);
-
-    // save in factory
-	EXPOSE_EXTERNAL_FOR_INIT(ConstructorsHolder, holder)
-    SET_CONSTRUCTOR(holder->PDFHexString_constructor, t); 	
-	SET_CONSTRUCTOR_TEMPLATE(holder->PDFHexString_constructor_template, t);
+bool PDFHexStringDriver::Init(ModuleState &state, napi_value exports) {
+  ClassBuilder builder(state, "PDFHexString", New);
+  builder.Method("toText", ToText)
+      .Method("toBytesArray", ToBytesArray)
+      .Accessor("value", GetValue);
+  PDFObjectDriver::AddMethods(builder);
+  return builder.Define(exports, false) != nullptr;
 }
 
-METHOD_RETURN_TYPE PDFHexStringDriver::New(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-	EXPOSE_EXTERNAL_ARGS(ConstructorsHolder, externalHolder)
-    
-    PDFHexStringDriver* driver = new PDFHexStringDriver();
-	driver->holder = externalHolder;
-    driver->Wrap(args.This());
-	SET_FUNCTION_RETURN_VALUE(args.This())
+napi_value PDFHexStringDriver::New(const CallbackArgs &args) {
+  auto *driver = new PDFHexStringDriver();
+  driver->holder = &ModuleState::Get(args.Env())->Constructors();
+  if (!driver->Wrap(args.Env(), args.This())) {
+    delete driver;
+    return nullptr;
+  }
+  return args.This();
 }
 
-PDFObject* PDFHexStringDriver::GetObject()
-{
-    return TheObject.GetPtr();
+PDFObject *PDFHexStringDriver::GetObject() { return TheObject.GetPtr(); }
+
+napi_value PDFHexStringDriver::GetValue(const CallbackArgs &args) {
+  auto *driver =
+      ObjectWrap::Unwrap<PDFHexStringDriver>(args.Env(), args.This());
+  return String(args.Env(), driver->TheObject->GetValue());
 }
 
-METHOD_RETURN_TYPE PDFHexStringDriver::GetValue(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    Local<String> result = NEW_STRING(ObjectWrap::Unwrap<PDFHexStringDriver>(PROPERTY_HOLDER(info))->TheObject->GetValue().c_str());
-    SET_ACCESSOR_RETURN_VALUE(result)
+napi_value PDFHexStringDriver::ToText(const CallbackArgs &args) {
+  auto *driver =
+      ObjectWrap::Unwrap<PDFHexStringDriver>(args.Env(), args.This());
+  return String(args.Env(),
+                PDFTextString(driver->TheObject->GetValue()).ToUTF8String());
 }
 
-METHOD_RETURN_TYPE PDFHexStringDriver::ToText(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    PDFHexStringDriver* driver = ObjectWrap::Unwrap<PDFHexStringDriver>(args.This());
-
-    
-    Local<String> result = NEW_STRING(PDFTextString(driver->TheObject->GetValue()).ToUTF8String().c_str());
-    SET_FUNCTION_RETURN_VALUE(result)
-}
-
-METHOD_RETURN_TYPE PDFHexStringDriver::ToBytesArray(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-	std::string aString =  ObjectWrap::Unwrap<PDFHexStringDriver>(args.This())->TheObject->GetValue();
-
-	Local<Array> result = NEW_ARRAY(aString.length());
-
-	for(std::string::size_type i=0;i<aString.length();++i)
-		result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(i),NEW_NUMBER((IOBasicTypes::Byte)(aString[i])));
-
-	SET_FUNCTION_RETURN_VALUE(result)
+napi_value PDFHexStringDriver::ToBytesArray(const CallbackArgs &args) {
+  auto *driver =
+      ObjectWrap::Unwrap<PDFHexStringDriver>(args.Env(), args.This());
+  std::string value = driver->TheObject->GetValue();
+  return BytesToArray(args.Env(),
+                      reinterpret_cast<const unsigned char *>(value.data()),
+                      value.size());
 }

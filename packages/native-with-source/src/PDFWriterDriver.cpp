@@ -1,1781 +1,1141 @@
-/*
- Source File : PDFWriterDriver.cpp
-
-
- Copyright 2013 Gal Kahana HummusJS
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-
- */
 #include "PDFWriterDriver.h"
-#include "PDFPageDriver.h"
-#include "ByteReaderWithPositionDriver.h"
-#include "PageContentContextDriver.h"
-#include "FormXObjectDriver.h"
-#include "UsedFontDriver.h"
-#include "ImageXObjectDriver.h"
-#include "ObjectsContextDriver.h"
+
+#include "ConstructorsHolder.h"
+#include "DictionaryContextDriver.h"
+#include "DocumentContextDriver.h"
 #include "DocumentContextExtenderAdapter.h"
 #include "DocumentCopyingContextDriver.h"
+#include "FormXObjectDriver.h"
+#include "ImageXObjectDriver.h"
 #include "InputFile.h"
-#include "PDFParser.h"
+#include "InputFileDriver.h"
+#include "ObjectsContextDriver.h"
+#include "OutputFileDriver.h"
 #include "PDFDateDriver.h"
-#include "PDFTextStringDriver.h"
-#include "PDFParser.h"
-#include "PDFPageInput.h"
-#include "PDFRectangle.h"
-#include "TIFFImageHandler.h"
-#include "IOBasicTypes.h"
 #include "PDFDocumentCopyingContext.h"
 #include "PDFFormXObject.h"
+#include "PDFImageXObject.h"
+#include "PDFPageDriver.h"
 #include "PDFReaderDriver.h"
-#include "InputFileDriver.h"
-#include "OutputFileDriver.h"
-#include "DocumentContextDriver.h"
-#include "ObjectByteReaderWithPosition.h"
-#include "DictionaryContextDriver.h"
+#include "PDFRectangle.h"
+#include "PageContentContextDriver.h"
 #include "ResourcesDictionaryDriver.h"
-#include "ConstructorsHolder.h"
+#include "TIFFImageHandler.h"
+#include "Trace.h"
+#include "UsedFontDriver.h"
 
-using namespace v8;
+using namespace muhammara::napi;
+using namespace PDFHummus;
+
+namespace {
+PDFWriterDriver *Driver(const CallbackArgs &a) {
+  return ObjectWrap::Unwrap<PDFWriterDriver>(a.Env(), a.This());
+}
+bool Type(napi_env e, napi_value v, napi_valuetype t) {
+  return IsType(e, v, t);
+}
+std::vector<napi_value> Values(const CallbackArgs &a) {
+  std::vector<napi_value> v;
+  for (size_t i = 0; i < a.Length(); ++i)
+    v.push_back(a[i]);
+  return v;
+}
+void Password(napi_env e, napi_value o, PDFParsingOptions &p) {
+  if (Has(e, o, "password") && Type(e, Get(e, o, "password"), napi_string))
+    p.Password = LegacyString(e, Get(e, o, "password"));
+}
+} // namespace
 
 PDFWriterDriver::PDFWriterDriver()
-{
-    mWriteStreamProxy = NULL;
-    mReadStreamProxy = NULL;
-    mStartedWithStream = false;
-    mIsCatalogUpdateRequired = false;
-    mIsStarted = false;
-    mLifecycle = DriverLifecycle(new DriverLifecycleState());
+    : holder(nullptr), startedWithStream_(false), catalogUpdateRequired_(false),
+      started_(false), lifecycle_(new DriverLifecycleState()),
+      writeProxy_(nullptr), readProxy_(nullptr), logProxy_(nullptr),
+      env_(nullptr) {}
+PDFWriterDriver::~PDFWriterDriver() {
+  if (started_)
+    Retire();
+  delete writeProxy_;
+  delete readProxy_;
+  delete logProxy_;
 }
-
-PDFWriterDriver::~PDFWriterDriver()
-{
-    mLifecycle->End();
-    delete mWriteStreamProxy;
-    delete mReadStreamProxy;
+template <napi_value (*Method)(const CallbackArgs &)>
+napi_value PDFWriterDriver::Active(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  if (!d || !d->started_)
+    return ThrowError(a.Env(), "PDF writer has ended");
+  return Method(a);
 }
-
-// Check before argument conversion or accessing any finalized writer state.
-// Stateless value factories and idempotent cleanup do not need this guard.
-template <void (*Method)(const ARGS_TYPE&)>
-METHOD_RETURN_TYPE PDFWriterDriver::WithActiveWriter(const ARGS_TYPE& args)
-{
-    PDFWriterDriver* writer = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-    if(!writer->mIsStarted)
-    {
-        Isolate* isolate = Isolate::GetCurrent();
-        isolate->ThrowException(Exception::Error(NEW_STRING("PDF writer has ended")));
-        return;
-    }
-    Method(args);
+bool PDFWriterDriver::Init(ModuleState &s, napi_value exports) {
+  ClassBuilder b(s, "PDFWriter", New);
+  b.Method("end", End)
+      .Method("_abort", Abort)
+      .Method("createPage", Active<CreatePage>)
+      .Method("writePage", Active<WritePage>)
+      .Method("writePageAndReturnID", Active<WritePageAndReturnID>)
+      .Method("startPageContentContext", Active<StartPageContentContext>)
+      .Method("pausePageContentContext", Active<PausePageContentContext>)
+      .Method("createFormXObject", Active<CreateFormXObject>)
+      .Method("endFormXObject", Active<EndFormXObject>)
+      .Method("createFormXObjectFromJPG", Active<CreateformXObjectFromJPG>)
+      .Method("retrieveJPGImageInformation",
+              Active<RetrieveJPGImageInformation>)
+      .Method("createFormXObjectFromPNG", Active<CreateFormXObjectFromPNG>)
+      .Method("createFormXObjectFromTIFF", Active<CreateFormXObjectFromTIFF>)
+      .Method("createImageXObjectFromJPG", Active<CreateImageXObjectFromJPG>)
+      .Method("getFontForFile", Active<GetFontForFile>)
+      .Method("attachURLLinktoCurrentPage", Active<AttachURLLinktoCurrentPage>)
+      .Method("shutdown", Active<Shutdown>)
+      .Method("getObjectsContext", Active<GetObjectsContext>)
+      .Method("getDocumentContext", Active<GetDocumentContext>)
+      .Method("appendPDFPagesFromPDF", Active<AppendPDFPagesFromPDF>)
+      .Method("mergePDFPagesToPage", Active<MergePDFPagesToPage>)
+      .Method("createPDFCopyingContext", Active<CreatePDFCopyingContext>)
+      .Method("createFormXObjectsFromPDF", Active<CreateFormXObjectsFromPDF>)
+      .Method("createPDFCopyingContextForModifiedFile",
+              Active<CreatePDFCopyingContextForModifiedFile>)
+      .Method("createPDFTextString", CreatePDFTextString)
+      .Method("createPDFDate", CreatePDFDate)
+      .Method("getImageDimensions", Active<GetImageDimensions>)
+      .Method("getImagePagesCount", Active<GetImagePagesCount>)
+      .Method("getImageType", Active<GetImageType>)
+      .Method("getModifiedFileParser", Active<GetModifiedFileParser>)
+      .Method("getModifiedInputFile", Active<GetModifiedInputFile>)
+      .Method("getOutputFile", Active<GetOutputFile>)
+      .Method("registerAnnotationReferenceForNextPageWrite",
+              Active<RegisterAnnotationReferenceForNextPageWrite>)
+      .Method("requireCatalogUpdate", Active<RequireCatalogUpdate>);
+  return b.Define(exports) != nullptr;
 }
-
-DEF_SUBORDINATE_INIT(PDFWriterDriver::Init)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-	Local<FunctionTemplate> t = NEW_FUNCTION_TEMPLATE_EXTERNAL(New);
-
-	t->SetClassName(NEW_STRING("PDFWriter"));
-	t->InstanceTemplate()->SetInternalFieldCount(1);
-
-	SET_PROTOTYPE_METHOD(t, "end", End);
-	SET_PROTOTYPE_METHOD(t, "_abort", Abort);
-	SET_PROTOTYPE_METHOD(t, "createPage", WithActiveWriter<CreatePage>);
-	SET_PROTOTYPE_METHOD(t, "writePage", WithActiveWriter<WritePage>);
-	SET_PROTOTYPE_METHOD(t, "writePageAndReturnID", WithActiveWriter<WritePageAndReturnID>);
-	SET_PROTOTYPE_METHOD(t, "startPageContentContext", WithActiveWriter<StartPageContentContext>);
-	SET_PROTOTYPE_METHOD(t, "pausePageContentContext", WithActiveWriter<PausePageContentContext>);
-	SET_PROTOTYPE_METHOD(t, "createFormXObject", WithActiveWriter<CreateFormXObject>);
-	SET_PROTOTYPE_METHOD(t, "endFormXObject", WithActiveWriter<EndFormXObject>);
-	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromJPG", WithActiveWriter<CreateformXObjectFromJPG>);
-	SET_PROTOTYPE_METHOD(t, "getFontForFile", WithActiveWriter<GetFontForFile>);
-	SET_PROTOTYPE_METHOD(t, "attachURLLinktoCurrentPage", WithActiveWriter<AttachURLLinktoCurrentPage>);
-	SET_PROTOTYPE_METHOD(t, "shutdown", WithActiveWriter<Shutdown>);
-	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromTIFF", WithActiveWriter<CreateFormXObjectFromTIFF>);
-	SET_PROTOTYPE_METHOD(t, "createImageXObjectFromJPG", WithActiveWriter<CreateImageXObjectFromJPG>);
-	SET_PROTOTYPE_METHOD(t, "createFormXObjectFromPNG", WithActiveWriter<CreateFormXObjectFromPNG>);
-	SET_PROTOTYPE_METHOD(t, "retrieveJPGImageInformation", WithActiveWriter<RetrieveJPGImageInformation>);
-	SET_PROTOTYPE_METHOD(t, "getObjectsContext", WithActiveWriter<GetObjectsContext>);
-	SET_PROTOTYPE_METHOD(t, "getDocumentContext", WithActiveWriter<GetDocumentContext>);
-	SET_PROTOTYPE_METHOD(t, "appendPDFPagesFromPDF", WithActiveWriter<AppendPDFPagesFromPDF>);
-	SET_PROTOTYPE_METHOD(t, "mergePDFPagesToPage", WithActiveWriter<MergePDFPagesToPage>);
-	SET_PROTOTYPE_METHOD(t, "createPDFCopyingContext", WithActiveWriter<CreatePDFCopyingContext>);
-	SET_PROTOTYPE_METHOD(t, "createFormXObjectsFromPDF", WithActiveWriter<CreateFormXObjectsFromPDF>);
-	SET_PROTOTYPE_METHOD(t, "createPDFCopyingContextForModifiedFile", WithActiveWriter<CreatePDFCopyingContextForModifiedFile>);
-	SET_PROTOTYPE_METHOD(t, "createPDFTextString", CreatePDFTextString);
-	SET_PROTOTYPE_METHOD(t, "createPDFDate", CreatePDFDate);
-	SET_PROTOTYPE_METHOD(t, "getImageDimensions", WithActiveWriter<GetImageDimensions>);
-	SET_PROTOTYPE_METHOD(t, "getImagePagesCount", WithActiveWriter<GetImagePagesCount>);
-	SET_PROTOTYPE_METHOD(t, "getImageType", WithActiveWriter<GetImageType>);
-	SET_PROTOTYPE_METHOD(t, "getModifiedFileParser", WithActiveWriter<GetModifiedFileParser>);
-	SET_PROTOTYPE_METHOD(t, "getModifiedInputFile", WithActiveWriter<GetModifiedInputFile>);
-	SET_PROTOTYPE_METHOD(t, "getOutputFile", WithActiveWriter<GetOutputFile>);
-	SET_PROTOTYPE_METHOD(t, "registerAnnotationReferenceForNextPageWrite", WithActiveWriter<RegisterAnnotationReferenceForNextPageWrite>);
-    SET_PROTOTYPE_METHOD(t, "requireCatalogUpdate", WithActiveWriter<RequireCatalogUpdate>);
-    SET_CONSTRUCTOR_EXPORT("PDFWriter", t);
-
-    // save in factory
-	EXPOSE_EXTERNAL_FOR_INIT(ConstructorsHolder, holder)
-    SET_CONSTRUCTOR(holder->PDFWriter_constructor, t);
+napi_value PDFWriterDriver::New(const CallbackArgs &a) {
+  auto *d = new PDFWriterDriver();
+  d->holder = &ModuleState::Get(a.Env())->Constructors();
+  d->env_ = a.Env();
+  d->self_.Reset(a.Env(), a.This(), 0);
+  if (!d->Wrap(a.Env(), a.This())) {
+    delete d;
+    return nullptr;
+  }
+  return a.This();
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::New(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    EXPOSE_EXTERNAL_ARGS(ConstructorsHolder, externalHolder)
-
-    PDFWriterDriver* pdfWriter = new PDFWriterDriver();
-
-    pdfWriter->holder = externalHolder;
-    pdfWriter->Wrap(args.This());
-
-	SET_FUNCTION_RETURN_VALUE(args.This())
+void PDFWriterDriver::Retire() {
+  writer_.GetDocumentContext().RemoveDocumentContextExtender(this);
+  delete writeProxy_;
+  writeProxy_ = nullptr;
+  delete readProxy_;
+  readProxy_ = nullptr;
+  delete logProxy_;
+  logProxy_ = nullptr;
+  started_ = false;
+  lifecycle_->End();
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::End(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    if(!pdfWriter->mIsStarted) {
-        SET_FUNCTION_RETURN_VALUE(args.This())
-    }
-
-    EStatusCode status;
-
-    if(pdfWriter->mStartedWithStream)
-        status = pdfWriter->mPDFWriter.EndPDFForStream();
+napi_value PDFWriterDriver::End(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  if (!d || !d->started_)
+    return a.This();
+  EStatusCode status = d->startedWithStream_ ? d->writer_.EndPDFForStream()
+                                             : d->writer_.EndPDF();
+  d->Retire();
+  return status == eSuccess ? a.This()
+                            : ThrowError(a.Env(), "Unable to end PDF");
+}
+napi_value PDFWriterDriver::Abort(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  if (!d || !d->started_)
+    return a.This();
+  d->writer_.GetDocumentContext().RemoveDocumentContextExtender(d);
+  d->writer_.Reset();
+  delete d->writeProxy_;
+  d->writeProxy_ = nullptr;
+  delete d->readProxy_;
+  d->readProxy_ = nullptr;
+  d->started_ = false;
+  d->lifecycle_->End();
+  return a.This();
+}
+napi_value PDFWriterDriver::CreatePage(const CallbackArgs &a) {
+  return Driver(a)->holder->New("PDFPage", Values(a));
+}
+napi_value PDFWriterDriver::WritePage(const CallbackArgs &a) {
+  napi_value result = WritePageAndReturnID(a);
+  return result ? a.This() : nullptr;
+}
+napi_value PDFWriterDriver::WritePageAndReturnID(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  if (a.Length() != 1 || !d->holder->IsPDFPageInstance(a[0]))
+    return ThrowError(
+        a.Env(), "Wrong arguments, provide a page as the single parameter");
+  auto *p = ObjectWrap::Unwrap<PDFPageDriver>(a.Env(), a[0]);
+  if (!p)
+    return ThrowError(
+        a.Env(), "Wrong arguments, provide a page as the single parameter");
+  if (p->ContentContext &&
+      d->writer_.EndPageContentContext(p->ContentContext) != eSuccess)
+    return ThrowError(a.Env(), "Unable to finalize page context");
+  p->ContentContext = nullptr;
+  auto r = d->writer_.WritePageAndReturnPageID(p->GetPage());
+  return r.first == eSuccess ? Number(a.Env(), r.second)
+                             : ThrowError(a.Env(), "Unable to write page");
+}
+napi_value PDFWriterDriver::StartPageContentContext(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  if (a.Length() != 1 || !d->holder->IsPDFPageInstance(a[0]))
+    return ThrowError(
+        a.Env(), "Wrong arguments, provide a page as the single parameter");
+  auto *p = ObjectWrap::Unwrap<PDFPageDriver>(a.Env(), a[0]);
+  if (!p)
+    return ThrowError(
+        a.Env(), "Wrong arguments, provide a page as the single parameter");
+  napi_value v = d->holder->GetNewPageContentContext();
+  PageContentContextDriver *c = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &c))
+    return nullptr;
+  c->ContentContext = d->writer_.StartPageContentContext(p->GetPage());
+  c->SetResourcesDictionary(&p->GetPage()->GetResourcesDictionary());
+  p->ContentContext = c->ContentContext;
+  return v;
+}
+napi_value PDFWriterDriver::PausePageContentContext(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  if (a.Length() != 1 || !d->holder->IsPageContentContextInstance(a[0]))
+    return ThrowError(
+        a.Env(),
+        "Wrong arguments, provide a page context as the single parameter");
+  auto *c = ObjectWrap::Unwrap<PageContentContextDriver>(a.Env(), a[0]);
+  if (!c)
+    return ThrowError(
+        a.Env(),
+        "Wrong arguments, provide a page context as the single parameter");
+  if (!c->ContentContext)
+    return ThrowError(a.Env(), "paused context not initialized, please create "
+                               "one using pdfWriter.startPageContentContext");
+  d->writer_.PausePageContentContext(c->ContentContext);
+  return a.This();
+}
+napi_value PDFWriterDriver::CreateFormXObject(const CallbackArgs &a) {
+  if ((a.Length() != 4 && a.Length() != 5) ||
+      !Type(a.Env(), a[0], napi_number) || !Type(a.Env(), a[1], napi_number) ||
+      !Type(a.Env(), a[2], napi_number) || !Type(a.Env(), a[3], napi_number) ||
+      (a.Length() == 5 && !Type(a.Env(), a[4], napi_number)))
+    return ThrowError(
+        a.Env(),
+        "wrong arguments, pass 4 coordinates of the form rectangle and an "
+        "optional 5th agument which is the forward reference ID");
+  auto *d = Driver(a);
+  napi_value v = d->holder->GetNewFormXObject();
+  FormXObjectDriver *f = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &f))
+    return nullptr;
+  PDFRectangle r(ToDouble(a.Env(), a[0]), ToDouble(a.Env(), a[1]),
+                 ToDouble(a.Env(), a[2]), ToDouble(a.Env(), a[3]));
+  f->FormXObject = a.Length() == 5
+                       ? d->writer_.StartFormXObject(r, ToUint32(a.Env(), a[4]))
+                       : d->writer_.StartFormXObject(r);
+  return v;
+}
+napi_value PDFWriterDriver::EndFormXObject(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  if (a.Length() != 1 || !d->holder->IsFormXObjectInstance(a[0]))
+    return ThrowError(
+        a.Env(), "Wrong arguments, provide a form as the single parameter");
+  auto *f = ObjectWrap::Unwrap<FormXObjectDriver>(a.Env(), a[0]);
+  if (!f)
+    return ThrowError(a.Env(),
+                      "Wrong arguments, provide a form as the single parameter");
+  d->writer_.EndFormXObject(f->FormXObject);
+  return a.This();
+}
+static napi_value FormImage(const CallbackArgs &a, const char *kind) {
+  auto *d = Driver(a);
+  if ((a.Length() != 1 && a.Length() != 2) ||
+      (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
+      (a.Length() == 2 && !Type(a.Env(), a[1], napi_number)))
+    return ThrowError(a.Env(),
+                      "wrong arguments, pass 1 argument that is the path to "
+                      "the image or an image stream. Optionally pass an object "
+                      "ID for a forward reference image");
+  PDFFormXObject *f = nullptr;
+  ObjectIDType id = a.Length() == 2 ? ToInt32(a.Env(), a[1]) : 0;
+  if (IsObject(a.Env(), a[0])) {
+    ObjectByteReaderWithPosition p(a.Env(), a[0]);
+    if (!strcmp(kind, "JPG"))
+      f = id ? d->GetWriter()->CreateFormXObjectFromJPGStream(&p, id)
+             : d->GetWriter()->CreateFormXObjectFromJPGStream(&p);
     else
-        status = pdfWriter->mPDFWriter.EndPDF();
-
-    // now remove event listener
-    pdfWriter->mPDFWriter.GetDocumentContext().RemoveDocumentContextExtender(pdfWriter);
-
-    // Finalization may consume the writer even when it reports failure.
-    if(pdfWriter->mWriteStreamProxy)
-    {
-        delete pdfWriter->mWriteStreamProxy;
-        pdfWriter->mWriteStreamProxy = NULL;
-    }
-
-    if(pdfWriter->mReadStreamProxy)
-    {
-        delete pdfWriter->mReadStreamProxy;
-        pdfWriter->mReadStreamProxy = NULL;
-    }
-
-    pdfWriter->mIsStarted = false;
-    pdfWriter->mLifecycle->End();
-
-    if(status != PDFHummus::eSuccess)
-    {
-		THROW_EXCEPTION("Unable to end PDF");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::Abort(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    if(!pdfWriter->mIsStarted) {
-        SET_FUNCTION_RETURN_VALUE(args.This())
-    }
-
-    pdfWriter->mPDFWriter.GetDocumentContext().RemoveDocumentContextExtender(pdfWriter);
-    pdfWriter->mPDFWriter.Reset();
-
-    if(pdfWriter->mWriteStreamProxy)
-    {
-        delete pdfWriter->mWriteStreamProxy;
-        pdfWriter->mWriteStreamProxy = NULL;
-    }
-
-    if(pdfWriter->mReadStreamProxy)
-    {
-        delete pdfWriter->mReadStreamProxy;
-        pdfWriter->mReadStreamProxy = NULL;
-    }
-
-    pdfWriter->mIsStarted = false;
-    pdfWriter->mLifecycle->End();
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreatePage(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    SET_FUNCTION_RETURN_VALUE(pdfWriter->holder->GetNewPDFPage(args))
-
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::WritePage(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    WritePageAndReturnID(args);
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
-
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::WritePageAndReturnID(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-	if (args.Length() != 1 || !pdfWriter->holder->IsPDFPageInstance(args[0])) {
-		THROW_EXCEPTION("Wrong arguments, provide a page as the single parameter");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(args[0]->TO_OBJECT());
-    if(!pageDriver)
-    {
-		THROW_EXCEPTION("Wrong arguments, provide a page as the single parameter");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    if(pageDriver->ContentContext &&
-       (pdfWriter->mPDFWriter.EndPageContentContext(pageDriver->ContentContext) != PDFHummus::eSuccess))
-    {
-		THROW_EXCEPTION("Unable to finalize page context");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    pageDriver->ContentContext = NULL;
-
-    EStatusCodeAndObjectIDType result = pdfWriter->mPDFWriter.WritePageAndReturnPageID(pageDriver->GetPage());
-
-    if(result.first != PDFHummus::eSuccess)
-    {
-		THROW_EXCEPTION("Unable to write page");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(result.second))
-
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::StartPageContentContext(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-	if (args.Length() != 1 || !pdfWriter->holder->IsPDFPageInstance(args[0])) {
-		THROW_EXCEPTION("Wrong arguments, provide a page as the single parameter");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-    PDFPageDriver* pageDriver = ObjectWrap::Unwrap<PDFPageDriver>(args[0]->TO_OBJECT());
-    if(!pageDriver)
-    {
-		THROW_EXCEPTION("Wrong arguments, provide a page as the single parameter");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewPageContentContext(args);
-    PageContentContextDriver* contentContextDriver = ObjectWrap::Unwrap<PageContentContextDriver>(newInstance->TO_OBJECT());
-    contentContextDriver->ContentContext = pdfWriter->mPDFWriter.StartPageContentContext(pageDriver->GetPage());
-    contentContextDriver->SetResourcesDictionary(&(pageDriver->GetPage()->GetResourcesDictionary()));
-
-    // save it also at page driver, so we can end the context when the page is written
-    pageDriver->ContentContext = contentContextDriver->ContentContext;
-
-    SET_FUNCTION_RETURN_VALUE(newInstance)
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::PausePageContentContext(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-	if (args.Length() != 1 || !pdfWriter->holder->IsPageContentContextInstance(args[0])) {
-		THROW_EXCEPTION("Wrong arguments, provide a page context as the single parameter");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-    PageContentContextDriver* pageContextDriver = ObjectWrap::Unwrap<PageContentContextDriver>(args[0]->TO_OBJECT());
-    if(!pageContextDriver)
-    {
-		THROW_EXCEPTION("Wrong arguments, provide a page context as the single parameter");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    if(!pageContextDriver->ContentContext)
-    {
-		THROW_EXCEPTION("paused context not initialized, please create one using pdfWriter.startPageContentContext");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    pdfWriter->mPDFWriter.PausePageContentContext(pageContextDriver->ContentContext);
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreateFormXObject(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if((args.Length() != 4  && args.Length() != 5) || !args[0]->IsNumber() || !args[1]->IsNumber() || !args[2]->IsNumber() || !args[3]->IsNumber()
-        || (args.Length() == 5 && !args[4]->IsNumber()))
-    {
-		THROW_EXCEPTION("wrong arguments, pass 4 coordinates of the form rectangle and an optional 5th agument which is the forward reference ID");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-    Local<Value> newInstance = pdfWriter->holder->GetNewFormXObject(args);
-    FormXObjectDriver* formXObjectDriver = ObjectWrap::Unwrap<FormXObjectDriver>(newInstance->TO_OBJECT());
-    formXObjectDriver->FormXObject =
-                        args.Length() == 5 ?
-                                            pdfWriter->mPDFWriter.StartFormXObject(
-                                                                            PDFRectangle(TO_NUMBER(args[0])->Value(),
-                                                                                         TO_NUMBER(args[1])->Value(),
-                                                                                         TO_NUMBER(args[2])->Value(),
-                                                                                         TO_NUMBER(args[3])->Value()),
-                                                                                        (ObjectIDType)TO_NUMBER(args[4])->Value()):
-                                            pdfWriter->mPDFWriter.StartFormXObject(
-                                                                            PDFRectangle(TO_NUMBER(args[0])->Value(),
-                                                                                         TO_NUMBER(args[1])->Value(),
-                                                                                         TO_NUMBER(args[2])->Value(),
-                                                                                         TO_NUMBER(args[3])->Value()));
-    SET_FUNCTION_RETURN_VALUE(newInstance)
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::EndFormXObject(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-	if (args.Length() != 1 || !pdfWriter->holder->IsFormXObjectInstance(args[0])) {
-		THROW_EXCEPTION("Wrong arguments, provide a form as the single parameter");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-    FormXObjectDriver* formContextDriver = ObjectWrap::Unwrap<FormXObjectDriver>(args[0]->TO_OBJECT());
-    if(!formContextDriver)
-    {
-		THROW_EXCEPTION("Wrong arguments, provide a form as the single parameter");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    pdfWriter->mPDFWriter.EndFormXObject(formContextDriver->FormXObject);
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
-
-}
-
-
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreateformXObjectFromJPG(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if((args.Length() != 1  && args.Length() != 2 ) || (!args[0]->IsString() && !args[0]->IsObject()) || (args.Length() == 2 && !args[1]->IsNumber()))
-    {
-		THROW_EXCEPTION("wrong arguments, pass 1 argument that is the path to the image or an image stream. Optionally pass an object ID for a forward reference image");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFFormXObject* formXObject;
-
-    if(args[0]->IsObject())
-    {
-        ObjectByteReaderWithPosition proxy(args[0]->TO_OBJECT());
-
-        formXObject =
-        args.Length() == 2 ?
-        pdfWriter->mPDFWriter.CreateFormXObjectFromJPGStream(&proxy,(ObjectIDType)TO_INT32(args[1])->Value()):
-        pdfWriter->mPDFWriter.CreateFormXObjectFromJPGStream(&proxy);
-
-    }
+      f = id ? d->GetWriter()->CreateFormXObjectFromPNGStream(&p, id)
+             : d->GetWriter()->CreateFormXObjectFromPNGStream(&p);
+  } else {
+    std::string path = LegacyString(a.Env(), a[0]);
+    if (!strcmp(kind, "JPG"))
+      f = id ? d->GetWriter()->CreateFormXObjectFromJPGFile(path, id)
+             : d->GetWriter()->CreateFormXObjectFromJPGFile(path);
     else
-    {
-        formXObject =
-            args.Length() == 2 ?
-            pdfWriter->mPDFWriter.CreateFormXObjectFromJPGFile(*UTF_8_VALUE(args[0]->TO_STRING()),(ObjectIDType)TO_INT32(args[1])->Value()):
-            pdfWriter->mPDFWriter.CreateFormXObjectFromJPGFile(*UTF_8_VALUE(args[0]->TO_STRING()));
-    }
-    if(!formXObject)
-    {
-		THROW_EXCEPTION("unable to create form xobject. verify that the target is an existing jpg file/stream");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewFormXObject(args);
-    ObjectWrap::Unwrap<FormXObjectDriver>(newInstance->TO_OBJECT())->FormXObject = formXObject;
-    SET_FUNCTION_RETURN_VALUE(newInstance)
+      f = id ? d->GetWriter()->CreateFormXObjectFromPNGFile(path, id)
+             : d->GetWriter()->CreateFormXObjectFromPNGFile(path);
+  }
+  if (!f)
+    return ThrowError(a.Env(),
+                      !strcmp(kind, "JPG")
+                          ? "unable to create form xobject. verify that the "
+                            "target is an existing jpg file/stream"
+                          : "unable to create form xobject. verify that the "
+                            "target is an existing png file/stream");
+  napi_value v = d->holder->GetNewFormXObject();
+  FormXObjectDriver *form = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &form)) {
+    delete f;
+    return nullptr;
+  }
+  form->FormXObject = f;
+  return v;
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::RetrieveJPGImageInformation(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if(args.Length() != 1  ||
-       !args[0]->IsString())
-    {
-		THROW_EXCEPTION("wrong arguments, pass 1 argument that is the path to the image");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-    BoolAndJPEGImageInformation info = pdfWriter->mPDFWriter.GetDocumentContext().GetJPEGImageHandler().RetrieveImageInformation(*UTF_8_VALUE(args[0]->TO_STRING()));
-
-    if(!info.first)
-    {
-		THROW_EXCEPTION("unable to retrieve image information");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Object> result = NEW_OBJECT;
-
-	result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("samplesWidth"), NEW_INTEGER((int)info.second.SamplesWidth));
-	result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("samplesHeight"), NEW_INTEGER((int)info.second.SamplesHeight));
-	result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("colorComponentsCount"), NEW_INTEGER(info.second.ColorComponentsCount));
-	result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("JFIFInformationExists"), NEW_BOOLEAN(info.second.JFIFInformationExists));
-    if(info.second.JFIFInformationExists)
-    {
-		result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("JFIFUnit"), NEW_INTEGER(info.second.JFIFUnit));
-		result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("JFIFXDensity"), NEW_NUMBER(info.second.JFIFXDensity));
-		result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("JFIFYDensity"), NEW_NUMBER(info.second.JFIFYDensity));
-    }
-	result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("ExifInformationExists"), NEW_BOOLEAN(info.second.ExifInformationExists));
-    if(info.second.ExifInformationExists)
-    {
-		result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("ExifUnit"), NEW_INTEGER(info.second.ExifUnit));
-		result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("ExifXDensity"), NEW_NUMBER(info.second.ExifXDensity));
-		result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("ExifYDensity"), NEW_NUMBER(info.second.ExifYDensity));
-    }
-	result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("PhotoshopInformationExists"), NEW_BOOLEAN(info.second.PhotoshopInformationExists));
-    if(info.second.PhotoshopInformationExists)
-    {
-		result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("PhotoshopXDensity"), NEW_NUMBER(info.second.PhotoshopXDensity));
-		result->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("PhotoshopYDensity"), NEW_NUMBER(info.second.PhotoshopYDensity));
-    }
-
-    SET_FUNCTION_RETURN_VALUE(result)
+napi_value PDFWriterDriver::CreateformXObjectFromJPG(const CallbackArgs &a) {
+  return FormImage(a, "JPG");
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreateFormXObjectFromPNG(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if((args.Length() != 1  && args.Length() != 2 ) || (!args[0]->IsString() && !args[0]->IsObject()) || (args.Length() == 2 && !args[1]->IsNumber()))
-    {
-		THROW_EXCEPTION("wrong arguments, pass 1 argument that is the path to the image or an image stream. Optionally pass an object ID for a forward reference image");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFFormXObject* formXObject;
-
-    if(args[0]->IsObject())
-    {
-        ObjectByteReaderWithPosition proxy(args[0]->TO_OBJECT());
-
-        formXObject =
-        args.Length() == 2 ?
-        pdfWriter->mPDFWriter.CreateFormXObjectFromPNGStream(&proxy,(ObjectIDType)TO_INT32(args[1])->Value()):
-        pdfWriter->mPDFWriter.CreateFormXObjectFromPNGStream(&proxy);
-
-    }
-    else
-    {
-        formXObject =
-            args.Length() == 2 ?
-            pdfWriter->mPDFWriter.CreateFormXObjectFromPNGFile(*UTF_8_VALUE(args[0]->TO_STRING()),(ObjectIDType)TO_INT32(args[1])->Value()):
-            pdfWriter->mPDFWriter.CreateFormXObjectFromPNGFile(*UTF_8_VALUE(args[0]->TO_STRING()));
-    }
-    if(!formXObject)
-    {
-		THROW_EXCEPTION("unable to create form xobject. verify that the target is an existing png file/stream");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewFormXObject(args);
-    ObjectWrap::Unwrap<FormXObjectDriver>(newInstance->TO_OBJECT())->FormXObject = formXObject;
-    SET_FUNCTION_RETURN_VALUE(newInstance)
+napi_value PDFWriterDriver::CreateFormXObjectFromPNG(const CallbackArgs &a) {
+  return FormImage(a, "PNG");
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::GetFontForFile(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if(args.Length() < 1 ||
-        !args[0]->IsString() ||
-                (args.Length() == 2 && !args[1]->IsString() && !args[1]->IsNumber()) ||
-                (args.Length() == 3 && !args[1]->IsString() && !args[2]->IsNumber()))
-    {
-		THROW_EXCEPTION("wrong arguments, pass 1 argument that is the path to the font file, with option to a 2nd parameter for another path in case of type 1 font. another optional argument may follow with font index in case of font packages (TTC, DFont)");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFUsedFont* usedFont;
-
-    if(args.Length() == 3)
-    {
-        usedFont = pdfWriter->mPDFWriter.GetFontForFile(*UTF_8_VALUE(args[0]->TO_STRING()),
-                                                        *UTF_8_VALUE(args[1]->TO_STRING()),
-                                                        TO_UINT32(args[0])->Value());
-    }
-    else if(args.Length() == 2)
-    {
-        if(args[1]->IsString())
-            usedFont = pdfWriter->mPDFWriter.GetFontForFile(*UTF_8_VALUE(args[0]->TO_STRING()),
-                                                            *UTF_8_VALUE(args[1]->TO_STRING()));
-        else
-            usedFont = pdfWriter->mPDFWriter.GetFontForFile(*UTF_8_VALUE(args[0]->TO_STRING()),
-                                                            TO_UINT32(args[1])->Value());
-    }
-    else // length is 1
-    {
-        usedFont = pdfWriter->mPDFWriter.GetFontForFile(*UTF_8_VALUE(args[0]->TO_STRING()));
-    }
-
-    if(!usedFont)
-    {
-		THROW_EXCEPTION("unable to create font object. verify that the target is an existing and supported font type (ttf,otf,type1,dfont,ttc)");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewUsedFont(args);
-    ObjectWrap::Unwrap<UsedFontDriver>(newInstance->TO_OBJECT())->UsedFont = usedFont;
-    SET_FUNCTION_RETURN_VALUE(newInstance)
+napi_value PDFWriterDriver::RetrieveJPGImageInformation(const CallbackArgs &a) {
+  if (a.Length() != 1 || !Type(a.Env(), a[0], napi_string))
+    return ThrowError(
+        a.Env(),
+        "wrong arguments, pass 1 argument that is the path to the image");
+  auto info = Driver(a)
+                  ->writer_.GetDocumentContext()
+                  .GetJPEGImageHandler()
+                  .RetrieveImageInformation(LegacyString(a.Env(), a[0]));
+  if (!info.first)
+    return ThrowError(a.Env(), "unable to retrieve image information");
+  napi_value o = Object(a.Env());
+  Set(a.Env(), o, "samplesWidth", Number(a.Env(), info.second.SamplesWidth));
+  Set(a.Env(), o, "samplesHeight", Number(a.Env(), info.second.SamplesHeight));
+  Set(a.Env(), o, "colorComponentsCount",
+      Number(a.Env(), info.second.ColorComponentsCount));
+  Set(a.Env(), o, "JFIFInformationExists",
+      Boolean(a.Env(), info.second.JFIFInformationExists));
+  if (info.second.JFIFInformationExists) {
+    Set(a.Env(), o, "JFIFUnit", Number(a.Env(), info.second.JFIFUnit));
+    Set(a.Env(), o, "JFIFXDensity", Number(a.Env(), info.second.JFIFXDensity));
+    Set(a.Env(), o, "JFIFYDensity", Number(a.Env(), info.second.JFIFYDensity));
+  }
+  Set(a.Env(), o, "ExifInformationExists",
+      Boolean(a.Env(), info.second.ExifInformationExists));
+  if (info.second.ExifInformationExists) {
+    Set(a.Env(), o, "ExifUnit", Number(a.Env(), info.second.ExifUnit));
+    Set(a.Env(), o, "ExifXDensity", Number(a.Env(), info.second.ExifXDensity));
+    Set(a.Env(), o, "ExifYDensity", Number(a.Env(), info.second.ExifYDensity));
+  }
+  Set(a.Env(), o, "PhotoshopInformationExists",
+      Boolean(a.Env(), info.second.PhotoshopInformationExists));
+  if (info.second.PhotoshopInformationExists) {
+    Set(a.Env(), o, "PhotoshopXDensity",
+        Number(a.Env(), info.second.PhotoshopXDensity));
+    Set(a.Env(), o, "PhotoshopYDensity",
+        Number(a.Env(), info.second.PhotoshopYDensity));
+  }
+  return o;
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::AttachURLLinktoCurrentPage(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if(args.Length() != 5 ||
-        !args[0]->IsString() ||
-        !args[1]->IsNumber() ||
-        !args[2]->IsNumber() ||
-        !args[3]->IsNumber() ||
-        !args[4]->IsNumber())
-    {
-		THROW_EXCEPTION("wrong arguments, pass a url, and 4 numbers (left,bottom,right,top) for the rectangle valid for clicking");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    EStatusCode status = pdfWriter->mPDFWriter.AttachURLLinktoCurrentPage(*UTF_8_VALUE(args[0]->TO_STRING()),
-                                                                             PDFRectangle(TO_NUMBER(args[1])->Value(),
-                                                                             TO_NUMBER(args[2])->Value(),
-                                                                             TO_NUMBER(args[3])->Value(),
-                                                                             TO_NUMBER(args[4])->Value()));
-    if(status != eSuccess)
-    {
-		THROW_EXCEPTION("unable to attach link to current page. will happen if the input URL may not be encoded to ascii7");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
+napi_value PDFWriterDriver::GetFontForFile(const CallbackArgs &a) {
+  if (a.Length() < 1 || !Type(a.Env(), a[0], napi_string) ||
+      (a.Length() == 2 && !Type(a.Env(), a[1], napi_string) &&
+       !Type(a.Env(), a[1], napi_number)) ||
+      (a.Length() == 3 && (!Type(a.Env(), a[1], napi_string) ||
+                           !Type(a.Env(), a[2], napi_number))))
+    return ThrowError(
+        a.Env(), "wrong arguments, pass 1 argument that is the path to the "
+                 "font file, with option to a 2nd parameter for another path "
+                 "in case of type 1 font. another optional argument may follow "
+                 "with font index in case of font packages (TTC, DFont)");
+  auto *d = Driver(a);
+  PDFUsedFont *f = nullptr;
+  std::string p = LegacyString(a.Env(), a[0]);
+  if (a.Length() == 3)
+    f = d->writer_.GetFontForFile(p, LegacyString(a.Env(), a[1]),
+                                  ToUint32(a.Env(), a[2]));
+  else if (a.Length() == 2)
+    f = Type(a.Env(), a[1], napi_string)
+            ? d->writer_.GetFontForFile(p, LegacyString(a.Env(), a[1]))
+            : d->writer_.GetFontForFile(p, ToUint32(a.Env(), a[1]));
+  else
+    f = d->writer_.GetFontForFile(p);
+  if (!f)
+    return ThrowError(
+        a.Env(), "unable to create font object. verify that the target is an "
+                 "existing and supported font type (ttf,otf,type1,dfont,ttc)");
+  napi_value v = d->holder->GetNewUsedFont();
+  UsedFontDriver *font = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &font))
+    return nullptr;
+  font->UsedFont = f;
+  return v;
 }
-
-
-METHOD_RETURN_TYPE PDFWriterDriver::Shutdown(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if(args.Length() != 1 ||
-       !args[0]->IsString())
-    {
-		THROW_EXCEPTION("wrong arguments, pass a path to save the state file to");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    EStatusCode status = pdfWriter->mPDFWriter.Shutdown(*UTF_8_VALUE(args[0]->TO_STRING()));
-    // Shutdown closes the output file even when saving the state fails.
-    // Retire the driver and stream proxies without attempting finalization.
-    Abort(args);
-    if(status != eSuccess)
-    {
-		THROW_EXCEPTION("unable to save state file. verify that path is not occupied");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
+napi_value PDFWriterDriver::AttachURLLinktoCurrentPage(const CallbackArgs &a) {
+  if (a.Length() != 5 || !Type(a.Env(), a[0], napi_string) ||
+      !Type(a.Env(), a[1], napi_number) || !Type(a.Env(), a[2], napi_number) ||
+      !Type(a.Env(), a[3], napi_number) || !Type(a.Env(), a[4], napi_number))
+    return ThrowError(
+        a.Env(),
+        "wrong arguments, pass a url, and 4 numbers (left,bottom,right,top) "
+        "for the rectangle valid for clicking");
+  auto s = Driver(a)->writer_.AttachURLLinktoCurrentPage(
+      LegacyString(a.Env(), a[0]),
+      PDFRectangle(ToDouble(a.Env(), a[1]), ToDouble(a.Env(), a[2]),
+                   ToDouble(a.Env(), a[3]), ToDouble(a.Env(), a[4])));
+  return s == eSuccess
+             ? a.This()
+             : ThrowError(a.Env(),
+                          "unable to attach link to current page. will happen "
+                          "if the input URL may not be encoded to ascii7");
 }
-
-PDFHummus::EStatusCode PDFWriterDriver::StartPDF(const std::string& inOutputFilePath,
-                                                 EPDFVersion inPDFVersion,
-                                                 const LogConfiguration& inLogConfiguration,
-                                                 const PDFCreationSettings& inCreationSettings)
-{
-    mStartedWithStream = false;
-
-    return setupListenerIfOK(mPDFWriter.StartPDF(inOutputFilePath,inPDFVersion,inLogConfiguration,inCreationSettings));
+napi_value PDFWriterDriver::Shutdown(const CallbackArgs &a) {
+  if (a.Length() != 1 || !Type(a.Env(), a[0], napi_string))
+    return ThrowError(a.Env(),
+                      "wrong arguments, pass a path to save the state file to");
+  EStatusCode s = Driver(a)->writer_.Shutdown(LegacyString(a.Env(), a[0]));
+  Abort(a);
+  return s == eSuccess
+             ? a.This()
+             : ThrowError(a.Env(), "unable to save state file. verify that "
+                                   "path is not occupied");
 }
-
-PDFHummus::EStatusCode PDFWriterDriver::StartPDF(Local<Object> inWriteStream,
-                                                 EPDFVersion inPDFVersion,
-                                                 const LogConfiguration& inLogConfiguration,
-                                                 const PDFCreationSettings& inCreationSettings)
-{
-
-    mWriteStreamProxy = new ObjectByteWriterWithPosition(inWriteStream);
-    mStartedWithStream = true;
-    return setupListenerIfOK(mPDFWriter.StartPDFForStream(mWriteStreamProxy,inPDFVersion,inLogConfiguration,inCreationSettings));
+PDFHummus::EStatusCode PDFWriterDriver::StartPDF(const std::string &p,
+                                                 EPDFVersion v,
+                                                 const LogConfiguration &l,
+                                                 const PDFCreationSettings &c) {
+  startedWithStream_ = false;
+  return Setup(writer_.StartPDF(p, v, l, c));
 }
-
-
-
-PDFHummus::EStatusCode PDFWriterDriver::ContinuePDF(const std::string& inOutputFilePath,
-                                                    const std::string& inStateFilePath,
-                                                    const std::string& inOptionalOtherOutputFile,
-                                                    const LogConfiguration& inLogConfiguration)
-{
-    mStartedWithStream = false;
-   return setupListenerIfOK(mPDFWriter.ContinuePDF(inOutputFilePath,inStateFilePath,inOptionalOtherOutputFile,inLogConfiguration));
+PDFHummus::EStatusCode PDFWriterDriver::StartPDF(napi_env e, napi_value stream,
+                                                 EPDFVersion v,
+                                                 const LogConfiguration &l,
+                                                 const PDFCreationSettings &c) {
+  writeProxy_ = new ObjectByteWriterWithPosition(e, stream);
+  startedWithStream_ = true;
+  return Setup(writer_.StartPDFForStream(writeProxy_, v, l, c));
 }
-
-PDFHummus::EStatusCode PDFWriterDriver::ContinuePDF(Local<Object> inOutputStream,
-                                                    const std::string& inStateFilePath,
-                                                    Local<Object> inModifiedSourceStream,
-                                                    const LogConfiguration& inLogConfiguration)
-{
-   mStartedWithStream = true;
-   mWriteStreamProxy = new ObjectByteWriterWithPosition(inOutputStream);
-    if(!inModifiedSourceStream.IsEmpty())
-        mReadStreamProxy = new ObjectByteReaderWithPosition(inModifiedSourceStream);
-
-
-    return setupListenerIfOK(mPDFWriter.ContinuePDFForStream(mWriteStreamProxy,inStateFilePath,inModifiedSourceStream.IsEmpty() ? NULL : mReadStreamProxy,inLogConfiguration));
+PDFHummus::EStatusCode PDFWriterDriver::ContinuePDF(const std::string &o,
+                                                    const std::string &s,
+                                                    const std::string &m,
+                                                    const LogConfiguration &l) {
+  startedWithStream_ = false;
+  return Setup(writer_.ContinuePDF(o, s, m, l));
 }
-
-
-PDFHummus::EStatusCode PDFWriterDriver::ModifyPDF(const std::string& inSourceFile,
-                                                  EPDFVersion inPDFVersion,
-                                                  const std::string& inOptionalOtherOutputFile,
-                                                  const LogConfiguration& inLogConfiguration,
-                                                  const PDFCreationSettings& inCreationSettings)
-{
-    // two phase, cause i don't want to bother the users with the level BS.
-    // first, parse the source file, get the level. then modify with this level
-
-    mStartedWithStream = false;
-    return setupListenerIfOK(mPDFWriter.ModifyPDF(inSourceFile,inPDFVersion,inOptionalOtherOutputFile,inLogConfiguration,inCreationSettings));
+PDFHummus::EStatusCode PDFWriterDriver::ContinuePDF(napi_env e, napi_value o,
+                                                    const std::string &s,
+                                                    napi_value m,
+                                                    const LogConfiguration &l) {
+  startedWithStream_ = true;
+  writeProxy_ = new ObjectByteWriterWithPosition(e, o);
+  if (m && !Type(e, m, napi_undefined))
+    readProxy_ = new ObjectByteReaderWithPosition(e, m);
+  return Setup(writer_.ContinuePDFForStream(writeProxy_, s, readProxy_, l));
 }
-
-PDFHummus::EStatusCode PDFWriterDriver::ModifyPDF(Local<Object> inSourceStream,
-                                                  Local<Object> inDestinationStream,
-                                                  EPDFVersion inPDFVersion,
-                                                  const LogConfiguration& inLogConfiguration,
-                                                  const PDFCreationSettings& inCreationSettings)
-{
-    mStartedWithStream = true;
-
-    mWriteStreamProxy = new ObjectByteWriterWithPosition(inDestinationStream);
-    mReadStreamProxy = new ObjectByteReaderWithPosition(inSourceStream);
-
-    // use minimal leve ePDFVersion10 to use the modified file level (cause i don't care
-    return setupListenerIfOK(mPDFWriter.ModifyPDFForStream(mReadStreamProxy,mWriteStreamProxy,false,inPDFVersion,inLogConfiguration,inCreationSettings));
+PDFHummus::EStatusCode
+PDFWriterDriver::ModifyPDF(const std::string &s, EPDFVersion v,
+                           const std::string &o, const LogConfiguration &l,
+                           const PDFCreationSettings &c) {
+  startedWithStream_ = false;
+  return Setup(writer_.ModifyPDF(s, v, o, l, c));
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreateFormXObjectFromTIFF(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if((args.Length() != 1 && args.Length() != 2) || (!args[0]->IsString() && !args[0]->IsObject()) || (args.Length() == 2 && !args[1]->IsObject() && !args[1]->IsNumber()))
-    {
-		THROW_EXCEPTION("wrong arguments, pass 1 argument that is the path to the image, and optionally an options object or object ID");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    TIFFUsageParameters tiffUsageParameters = TIFFUsageParameters::DefaultTIFFUsageParameters();
-    ObjectIDType objectID = 0;
-
-    if(args.Length() == 2)
-    {
-        if(args[1]->IsObject())
-        {
-            Local<Object> anObject = args[1]->TO_OBJECT();
-
-            // page index parameters
-            if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("pageIndex")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("pageIndex")).ToLocalChecked()->IsNumber())
-                tiffUsageParameters.PageIndex = (unsigned int)TO_NUMBER(anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("pageIndex")).ToLocalChecked())->Value();
-
-            if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("bwTreatment")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("bwTreatment")).ToLocalChecked()->IsObject())
-            {
-                // special black and white treatment
-                Local<Object> bwObject = anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("bwTreatment")).ToLocalChecked()->TO_OBJECT();
-                if(bwObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("asImageMask")).FromJust() && bwObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("asImageMask")).ToLocalChecked()->IsBoolean())
-                    tiffUsageParameters.BWTreatment.AsImageMask = bwObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("asImageMask")).ToLocalChecked()->TO_BOOLEAN()->Value();
-                if(bwObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("oneColor")).FromJust() && bwObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("oneColor")).ToLocalChecked()->IsArray())
-                    tiffUsageParameters.BWTreatment.OneColor = colorFromArray(bwObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("oneColor")).ToLocalChecked());
-            }
-
-            if(anObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("grayscaleTreatment")).FromJust() && anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("grayscaleTreatment")).ToLocalChecked()->IsObject())
-            {
-                // special black and white treatment
-                Local<Object> colormapObject = anObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("grayscaleTreatment")).ToLocalChecked()->TO_OBJECT();
-                if(colormapObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("asColorMap")).FromJust() && colormapObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("asColorMap")).ToLocalChecked()->IsBoolean())
-                    tiffUsageParameters.GrayscaleTreatment.AsColorMap = colormapObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("asColorMap")).ToLocalChecked()->TO_BOOLEAN()->Value();
-                if(colormapObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("oneColor")).FromJust() && colormapObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("oneColor")).ToLocalChecked()->IsArray())
-                    tiffUsageParameters.GrayscaleTreatment.OneColor = colorFromArray(colormapObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("oneColor")).ToLocalChecked());
-                if(colormapObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("zeroColor")).FromJust() && colormapObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("zeroColor")).ToLocalChecked()->IsArray())
-                    tiffUsageParameters.GrayscaleTreatment.ZeroColor = colorFromArray(colormapObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("zeroColor")).ToLocalChecked());
-            }
+PDFHummus::EStatusCode
+PDFWriterDriver::ModifyPDF(napi_env e, napi_value s, napi_value o,
+                           EPDFVersion v, const LogConfiguration &l,
+                           const PDFCreationSettings &c) {
+  startedWithStream_ = true;
+  writeProxy_ = new ObjectByteWriterWithPosition(e, o);
+  readProxy_ = new ObjectByteReaderWithPosition(e, s);
+  return Setup(
+      writer_.ModifyPDFForStream(readProxy_, writeProxy_, false, v, l, c));
+}
+bool PDFWriterDriver::ColorFromArray(napi_env e, napi_value a,
+                                      CMYKRGBColor &color) {
+  uint32_t n = 0;
+  if (!Length(e, a, &n))
+    return false;
+  if (n != 3 && n != 4) {
+    ThrowTypeError(
+        e,
+        "wrong input for color values. should be array of either 3 or 4 colors");
+    return false;
+  }
+  double values[4] = {};
+  for (uint32_t i = 0; i < n; ++i) {
+    napi_value value = nullptr;
+    if (!Get(e, a, i, &value) || !CoerceToDouble(e, value, &values[i]))
+      return false;
+  }
+  color = n == 4 ? CMYKRGBColor(values[0], values[1], values[2], values[3])
+                 : CMYKRGBColor(values[0], values[1], values[2]);
+  return true;
+}
+napi_value PDFWriterDriver::CreateFormXObjectFromTIFF(const CallbackArgs &a) {
+  if ((a.Length() != 1 && a.Length() != 2) ||
+      (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
+      (a.Length() == 2 && !IsObject(a.Env(), a[1]) &&
+       !Type(a.Env(), a[1], napi_number)))
+    return ThrowError(
+        a.Env(), "wrong arguments, pass 1 argument that is the path to the "
+                 "image, and optionally an options object or object ID");
+  auto *d = Driver(a);
+  TIFFUsageParameters p = TIFFUsageParameters::DefaultTIFFUsageParameters();
+  ObjectIDType id = 0;
+  if (a.Length() == 2) {
+    if (Type(a.Env(), a[1], napi_number))
+      id = ToInt32(a.Env(), a[1]);
+    else {
+      napi_value o = a[1];
+      if (Has(a.Env(), o, "pageIndex") &&
+          Type(a.Env(), Get(a.Env(), o, "pageIndex"), napi_number))
+        p.PageIndex = ToUint32(a.Env(), Get(a.Env(), o, "pageIndex"));
+      if (Has(a.Env(), o, "bwTreatment") &&
+          IsObject(a.Env(), Get(a.Env(), o, "bwTreatment"))) {
+        napi_value b = Get(a.Env(), o, "bwTreatment");
+        if (Has(a.Env(), b, "asImageMask") &&
+            Type(a.Env(), Get(a.Env(), b, "asImageMask"), napi_boolean))
+          p.BWTreatment.AsImageMask =
+              ToBoolean(a.Env(), Get(a.Env(), b, "asImageMask"));
+        if (Has(a.Env(), b, "oneColor") &&
+            IsArray(a.Env(), Get(a.Env(), b, "oneColor"))) {
+          CMYKRGBColor color;
+          if (!ColorFromArray(a.Env(), Get(a.Env(), b, "oneColor"), color))
+            return nullptr;
+          p.BWTreatment.OneColor = color;
         }
-        else // number
-        {
-            objectID = TO_INT32(args[1])->Value();
+      }
+      if (Has(a.Env(), o, "grayscaleTreatment") &&
+          IsObject(a.Env(), Get(a.Env(), o, "grayscaleTreatment"))) {
+        napi_value g = Get(a.Env(), o, "grayscaleTreatment");
+        if (Has(a.Env(), g, "asColorMap") &&
+            Type(a.Env(), Get(a.Env(), g, "asColorMap"), napi_boolean))
+          p.GrayscaleTreatment.AsColorMap =
+              ToBoolean(a.Env(), Get(a.Env(), g, "asColorMap"));
+        if (Has(a.Env(), g, "oneColor") &&
+            IsArray(a.Env(), Get(a.Env(), g, "oneColor"))) {
+          CMYKRGBColor color;
+          if (!ColorFromArray(a.Env(), Get(a.Env(), g, "oneColor"), color))
+            return nullptr;
+          p.GrayscaleTreatment.OneColor = color;
         }
-
-    }
-
-    PDFFormXObject* formXObject;
-
-    if(args[0]->IsObject())
-    {
-        ObjectByteReaderWithPosition proxy(args[0]->TO_OBJECT());
-
-        formXObject =
-            objectID == 0 ?
-                pdfWriter->mPDFWriter.CreateFormXObjectFromTIFFStream(&proxy,tiffUsageParameters):
-                pdfWriter->mPDFWriter.CreateFormXObjectFromTIFFStream(&proxy,objectID,tiffUsageParameters);
-
-    }
-    else
-    {
-        formXObject =
-            objectID == 0 ?
-                pdfWriter->mPDFWriter.CreateFormXObjectFromTIFFFile(*UTF_8_VALUE(args[0]->TO_STRING()),tiffUsageParameters):
-                pdfWriter->mPDFWriter.CreateFormXObjectFromTIFFFile(*UTF_8_VALUE(args[0]->TO_STRING()),objectID,tiffUsageParameters);
-    }
-    if(!formXObject)
-    {
-		THROW_EXCEPTION("unable to create form xobject. verify that the target is an existing tiff file");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewFormXObject(args);
-    ObjectWrap::Unwrap<FormXObjectDriver>(newInstance->TO_OBJECT())->FormXObject = formXObject;
-    SET_FUNCTION_RETURN_VALUE(newInstance)
-}
-
-CMYKRGBColor PDFWriterDriver::colorFromArray(v8::Local<v8::Value> inArray)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-    if(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked()->TO_UINT32Value() == 4)
-    {
-        // cmyk color
-        return CMYKRGBColor((unsigned char)TO_NUMBER(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked())->Value(),
-                            (unsigned char)TO_NUMBER(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, 1).ToLocalChecked())->Value(),
-                            (unsigned char)TO_NUMBER(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, 2).ToLocalChecked())->Value(),
-                            (unsigned char)TO_NUMBER(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, 3).ToLocalChecked())->Value());
-
-    }
-    else if(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, v8::NEW_STRING("length")).ToLocalChecked()->TO_UINT32Value() == 3)
-    {
-        // rgb color
-        return CMYKRGBColor((unsigned char)TO_NUMBER(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked())->Value(),
-                            (unsigned char)TO_NUMBER(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, 1).ToLocalChecked())->Value(),
-                            (unsigned char)TO_NUMBER(inArray->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, 2).ToLocalChecked())->Value());
-    }
-    else
-    {
-        THROW_EXCEPTION("wrong input for color values. should be array of either 3 or 4 colors");
-        return CMYKRGBColor::CMYKBlack();
-    }
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreateImageXObjectFromJPG(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if((args.Length() != 1 && args.Length() != 2) || (!args[0]->IsString() && !args[0]->IsObject()) || (args.Length() == 2 && !args[1]->IsNumber()))
-    {
-		THROW_EXCEPTION("wrong arguments, pass 1 argument that is the path to the image. pass another optional argument of a forward reference object ID");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-
-    PDFImageXObject* imageXObject;
-
-    if(args[0]->IsObject())
-    {
-        ObjectByteReaderWithPosition proxy(args[0]->TO_OBJECT());
-
-        imageXObject =
-            args.Length() == 2 ?
-            pdfWriter->mPDFWriter.CreateImageXObjectFromJPGStream(&proxy,(ObjectIDType)TO_INT32(args[1])->Value()) :
-            pdfWriter->mPDFWriter.CreateImageXObjectFromJPGStream(&proxy);
-    }
-    else
-    {
-        imageXObject =
-            args.Length() == 2 ?
-            pdfWriter->mPDFWriter.CreateImageXObjectFromJPGFile(*UTF_8_VALUE(args[0]->TO_STRING()),(ObjectIDType)TO_INT32(args[1])->Value()) :
-            pdfWriter->mPDFWriter.CreateImageXObjectFromJPGFile(*UTF_8_VALUE(args[0]->TO_STRING()));
-    }
-    if(!imageXObject)
-    {
-		THROW_EXCEPTION("unable to create image xobject. verify that the target is an existing jpg file");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewImageXObject(args);
-    ObjectWrap::Unwrap<ImageXObjectDriver>(newInstance->TO_OBJECT())->ImageXObject = imageXObject;
-    SET_FUNCTION_RETURN_VALUE(newInstance)
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::GetObjectsContext(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewObjectsContext(args);
-    ObjectsContextDriver* objectsContextDriver = ObjectWrap::Unwrap<ObjectsContextDriver>(newInstance->TO_OBJECT());
-    objectsContextDriver->ObjectsContextInstance = &(pdfWriter->mPDFWriter.GetObjectsContext());
-
-    SET_FUNCTION_RETURN_VALUE(newInstance)
-}
-
-METHOD_RETURN_TYPE PDFWriterDriver::GetDocumentContext(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewDocumentContext(args);
-    DocumentContextDriver* documentContextDriver = ObjectWrap::Unwrap<DocumentContextDriver>(newInstance->TO_OBJECT());
-    documentContextDriver->DocumentContextInstance = &(pdfWriter->mPDFWriter.GetDocumentContext());
-
-    SET_FUNCTION_RETURN_VALUE(newInstance)
-}
-
-
-METHOD_RETURN_TYPE PDFWriterDriver::AppendPDFPagesFromPDF(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if( (args.Length() < 1  && args.Length() > 2) ||
-        (!args[0]->IsString() && !args[0]->IsObject()) ||
-        (args.Length() >= 2 && !args[1]->IsObject())
-       )
-    {
-		THROW_EXCEPTION("wrong arguments, pass a path for file to append pages from or a stream object, optionally an options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFPageRange pageRange;
-    PDFParsingOptions parsingOptions;
-
-    if(args.Length() >= 2) {
-        Local<Object> options = args[1]->TO_OBJECT();
-        if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("password")).FromJust() && options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->IsString())
-        {
-            parsingOptions.Password = *UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->TO_STRING());
+        if (Has(a.Env(), g, "zeroColor") &&
+            IsArray(a.Env(), Get(a.Env(), g, "zeroColor"))) {
+          CMYKRGBColor color;
+          if (!ColorFromArray(a.Env(), Get(a.Env(), g, "zeroColor"), color))
+            return nullptr;
+          p.GrayscaleTreatment.ZeroColor = color;
         }
-        pageRange = ObjectToPageRange(options);
+      }
     }
-
-    EStatusCodeAndObjectIDTypeList result;
-
-    if(args[0]->IsObject())
-    {
-        ObjectByteReaderWithPosition proxy(args[0]->TO_OBJECT());
-        result = pdfWriter->mPDFWriter.AppendPDFPagesFromPDF(
-                                                             &proxy,
-                                                             pageRange,
-                                                             ObjectIDTypeList(),
-                                                             parsingOptions);
-    }
-    else
-    {
-        result = pdfWriter->mPDFWriter.AppendPDFPagesFromPDF(
-                                                        *UTF_8_VALUE(args[0]->TO_STRING()),
-                                                        pageRange,
-                                                        ObjectIDTypeList(),
-                                                        parsingOptions);
-    }
-
-    if(result.first != eSuccess)
-    {
-		THROW_EXCEPTION("unable to append page, make sure it's fine");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Array> resultPageIDs = NEW_ARRAY((unsigned int)result.second.size());
-    unsigned int index = 0;
-
-    ObjectIDTypeList::iterator it = result.second.begin();
-    for(; it != result.second.end();++it)
-        resultPageIDs->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(index++),NEW_NUMBER(*it));
-
-    SET_FUNCTION_RETURN_VALUE(resultPageIDs)
+  }
+  if (HasPendingException(a.Env()))
+    return nullptr;
+  PDFFormXObject *f = nullptr;
+  if (IsObject(a.Env(), a[0])) {
+    ObjectByteReaderWithPosition r(a.Env(), a[0]);
+    f = id ? d->writer_.CreateFormXObjectFromTIFFStream(&r, id, p)
+           : d->writer_.CreateFormXObjectFromTIFFStream(&r, p);
+  } else {
+    std::string path = LegacyString(a.Env(), a[0]);
+    f = id ? d->writer_.CreateFormXObjectFromTIFFFile(path, id, p)
+           : d->writer_.CreateFormXObjectFromTIFFFile(path, p);
+  }
+  if (!f)
+    return ThrowError(a.Env(), "unable to create form xobject. verify that the "
+                               "target is an existing tiff file");
+  napi_value v = d->holder->GetNewFormXObject();
+  FormXObjectDriver *form = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &form)) {
+    delete f;
+    return nullptr;
+  }
+  form->FormXObject = f;
+  return v;
 }
-
-PDFPageRange PDFWriterDriver::ObjectToPageRange(Local<Object> inObject)
-{
-	CREATE_ISOLATE_CONTEXT;
-	PDFPageRange pageRange;
-
-    if(inObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("type")).FromJust() && inObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("type")).ToLocalChecked()->IsNumber())
-    {
-        pageRange.mType = (PDFPageRange::ERangeType)(TO_UINT32(inObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("type")).ToLocalChecked())->Value());
-    }
-
-    if(inObject->Has(GET_CURRENT_CONTEXT, NEW_STRING("specificRanges")).FromJust() && inObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("specificRanges")).ToLocalChecked()->IsArray())
-    {
-        Local<Object> anArray = inObject->Get(GET_CURRENT_CONTEXT, NEW_STRING("specificRanges")).ToLocalChecked()->TO_OBJECT();
-        unsigned int length = TO_UINT32(anArray->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value();
-        for(unsigned int i=0; i < length; ++i)
-        {
-            if(!anArray->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->IsArray() ||
-               TO_UINT32(anArray->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, NEW_STRING("length")).ToLocalChecked())->Value() != 2)
-            {
-                THROW_EXCEPTION("wrong argument for specificRanges. it should be an array of arrays. each subarray should be of the length of 2, signifying begining page and ending page numbers");
-                break;
-            }
-            Local<Object> item = anArray->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked()->TO_OBJECT();
-            if(!item->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked()->IsNumber() || !item->Get(GET_CURRENT_CONTEXT, 1).ToLocalChecked()->IsNumber())
-            {
-                THROW_EXCEPTION("wrong argument for specificRanges. it should be an array of arrays. each subarray should be of the length of 2, signifying begining page and ending page numbers");
-                break;
-            }
-            pageRange.mSpecificRanges.push_back(ULongAndULong(
-                                                              TO_UINT32(item->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked())->Value(),
-                                                              TO_UINT32(item->Get(GET_CURRENT_CONTEXT, 1).ToLocalChecked())->Value()));
-
-        }
-    }
-
-    return pageRange;
+napi_value PDFWriterDriver::CreateImageXObjectFromJPG(const CallbackArgs &a) {
+  if ((a.Length() != 1 && a.Length() != 2) ||
+      (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
+      (a.Length() == 2 && !Type(a.Env(), a[1], napi_number)))
+    return ThrowError(
+        a.Env(),
+        "wrong arguments, pass 1 argument that is the path to the image. pass "
+        "another optional argument of a forward reference object ID");
+  auto *d = Driver(a);
+  ObjectIDType id = a.Length() == 2 ? ToInt32(a.Env(), a[1]) : 0;
+  PDFImageXObject *x = nullptr;
+  if (IsObject(a.Env(), a[0])) {
+    ObjectByteReaderWithPosition r(a.Env(), a[0]);
+    x = id ? d->writer_.CreateImageXObjectFromJPGStream(&r, id)
+           : d->writer_.CreateImageXObjectFromJPGStream(&r);
+  } else {
+    std::string p = LegacyString(a.Env(), a[0]);
+    x = id ? d->writer_.CreateImageXObjectFromJPGFile(p, id)
+           : d->writer_.CreateImageXObjectFromJPGFile(p);
+  }
+  if (!x)
+    return ThrowError(a.Env(), "unable to create image xobject. verify that "
+                               "the target is an existing jpg file");
+  napi_value v = d->holder->GetNewImageXObject();
+  ImageXObjectDriver *image = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &image)) {
+    delete x;
+    return nullptr;
+  }
+  image->ImageXObject = x;
+  return v;
 }
-
-class MergeInterpageCallbackCaller : public DocumentContextExtenderAdapter
-{
+napi_value PDFWriterDriver::GetObjectsContext(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  napi_value v = d->holder->GetNewObjectsContext();
+  ObjectsContextDriver *context = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &context))
+    return nullptr;
+  context->ObjectsContextInstance = &d->writer_.GetObjectsContext();
+  return v;
+}
+napi_value PDFWriterDriver::GetDocumentContext(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  napi_value v = d->holder->GetNewDocumentContext();
+  DocumentContextDriver *context = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &context))
+    return nullptr;
+  context->DocumentContextInstance = &d->writer_.GetDocumentContext();
+  return v;
+}
+bool PDFWriterDriver::ObjectToPageRange(napi_env e, napi_value o,
+                                        PDFPageRange &out) {
+  PDFPageRange r;
+  if (Has(e, o, "type") && Type(e, Get(e, o, "type"), napi_number))
+    r.mType =
+        static_cast<PDFPageRange::ERangeType>(ToUint32(e, Get(e, o, "type")));
+  if (HasPendingException(e))
+    return false;
+  if (Has(e, o, "specificRanges") && IsArray(e, Get(e, o, "specificRanges"))) {
+    napi_value a = Get(e, o, "specificRanges");
+    uint32_t length = 0;
+    if (!a || !Length(e, a, &length))
+      return false;
+    for (uint32_t i = 0; i < length; ++i) {
+      napi_value item = nullptr;
+      uint32_t itemLength = 0;
+      napi_value first = nullptr;
+      napi_value second = nullptr;
+      if (!Get(e, a, i, &item) || !IsArray(e, item) ||
+          !Length(e, item, &itemLength)) {
+        if (!HasPendingException(e))
+          ThrowError(e, "wrong argument for specificRanges. it should be an "
+                        "array of arrays. each subarray should be of the length "
+                        "of 2, signifying begining page and ending page numbers");
+        return false;
+      }
+      if (itemLength != 2 || !Get(e, item, uint32_t{0}, &first) ||
+          !Get(e, item, uint32_t{1}, &second)) {
+        if (!HasPendingException(e))
+          ThrowError(e, "wrong argument for specificRanges. it should be an "
+                        "array of arrays. each subarray should be of the length "
+                        "of 2, signifying begining page and ending page numbers");
+        return false;
+      }
+      if (!Type(e, first, napi_number) || !Type(e, second, napi_number)) {
+        ThrowError(e, "wrong argument for specificRanges. it should be an "
+                      "array of arrays. each subarray should be of the length "
+                      "of 2, signifying begining page and ending page numbers");
+        return false;
+      }
+      r.mSpecificRanges.push_back(
+          ULongAndULong(ToUint32(e, first), ToUint32(e, second)));
+    }
+  }
+  if (HasPendingException(e))
+    return false;
+  out = r;
+  return true;
+}
+napi_value PDFWriterDriver::AppendPDFPagesFromPDF(const CallbackArgs &a) {
+  if (a.Length() < 1 || a.Length() > 2 ||
+      (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
+      (a.Length() == 2 && !IsObject(a.Env(), a[1])))
+    return ThrowError(a.Env(),
+                      "wrong arguments, pass a path for file to append pages "
+                      "from or a stream object, optionally an options object");
+  auto *d = Driver(a);
+  PDFPageRange range;
+  PDFParsingOptions p;
+  if (a.Length() == 2) {
+    Password(a.Env(), a[1], p);
+    if (HasPendingException(a.Env()) ||
+        !ObjectToPageRange(a.Env(), a[1], range))
+      return nullptr;
+  }
+  EStatusCodeAndObjectIDTypeList r;
+  if (IsObject(a.Env(), a[0])) {
+    ObjectByteReaderWithPosition s(a.Env(), a[0]);
+    r = d->writer_.AppendPDFPagesFromPDF(&s, range, ObjectIDTypeList(), p);
+  } else
+    r = d->writer_.AppendPDFPagesFromPDF(LegacyString(a.Env(), a[0]), range,
+                                         ObjectIDTypeList(), p);
+  if (r.first != eSuccess)
+    return ThrowError(a.Env(), "unable to append page, make sure it's fine");
+  napi_value out = Array(a.Env(), r.second.size());
+  uint32_t i = 0;
+  for (auto id : r.second)
+    Set(a.Env(), out, i++, Number(a.Env(), id));
+  return out;
+}
+class MergeCaller : public DocumentContextExtenderAdapter {
 public:
-	EStatusCode OnAfterMergePageFromPage(
-                                         PDFPage* inTargetPage,
-                                         PDFDictionary* inPageObjectDictionary,
-                                         ObjectsContext* inPDFWriterObjectContext,
-                                         DocumentContext* inPDFWriterDocumentContext,
-                                         PDFDocumentHandler* inPDFDocumentHandler)
-	{
-        if(!callback.IsEmpty())
-        {
-            const unsigned argc = 0;
-            callback->Call(GET_CURRENT_CONTEXT, GET_CURRENT_CONTEXT->Global(), argc, NULL).ToLocalChecked();
-        }
-		return PDFHummus::eSuccess;
-	}
-
-    bool IsValid(){return !callback.IsEmpty();}
-
-    Local<Function> callback;
+  MergeCaller(napi_env e, napi_value f) : env(e), callback(e, f) {}
+  EStatusCode OnAfterMergePageFromPage(PDFPage *, PDFDictionary *,
+                                       ObjectsContext *, DocumentContext *,
+                                       PDFDocumentHandler *) override {
+    napi_value fn = callback.Get();
+    return !fn || Call(env, Undefined(env), fn) ? eSuccess : eFailure;
+  }
+  napi_env env;
+  Reference callback;
 };
-
-METHOD_RETURN_TYPE PDFWriterDriver::MergePDFPagesToPage(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    /*
-        parameters are:
-            target page
-            file path to pdf to merge pages from OR stream of pdf to merge pages from
-            optional 1: options object
-            optional 2: callback function to call after each page merge
-     */
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    if(args.Length() < 2)
-    {
-		THROW_EXCEPTION("Too few arguments. Pass a page object, a path to pages source file or an IByteReaderWithPosition, and two optional: configuration object and callback function that will be called between pages merging");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+napi_value PDFWriterDriver::MergePDFPagesToPage(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  if (a.Length() < 2)
+    return ThrowError(
+        a.Env(),
+        "Too few arguments. Pass a page object, a path to pages source file or "
+        "an IByteReaderWithPosition, and two optional: configuration object "
+        "and callback function that will be called between pages merging");
+  if (!d->holder->IsPDFPageInstance(a[0]))
+    return ThrowError(
+        a.Env(), "Invalid arguments. First argument must be a page object");
+  if (!Type(a.Env(), a[1], napi_string) && !IsObject(a.Env(), a[1]))
+    return ThrowError(a.Env(),
+                      "Invalid arguments. Second argument must be either an "
+                      "input stream or a path to a pages source file.");
+  PDFPageRange range;
+  PDFParsingOptions p;
+  napi_value cb = nullptr;
+  for (size_t i = 2; i < a.Length(); ++i) {
+    if (Type(a.Env(), a[i], napi_function))
+      cb = a[i];
+    else if (IsObject(a.Env(), a[i])) {
+      Password(a.Env(), a[i], p);
+      if (HasPendingException(a.Env()) ||
+          !ObjectToPageRange(a.Env(), a[i], range))
+        return nullptr;
     }
-
-    if(!pdfWriter->holder->IsPDFPageInstance(args[0]))
-    {
-		THROW_EXCEPTION("Invalid arguments. First argument must be a page object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    if(!args[1]->IsString() &&
-       !args[1]->IsObject())
-    {
-		THROW_EXCEPTION("Invalid arguments. Second argument must be either an input stream or a path to a pages source file.");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFPageDriver* page = ObjectWrap::Unwrap<PDFPageDriver>(args[0]->TO_OBJECT());
-
-    PDFPageRange pageRange;
-    PDFParsingOptions parsingOptions;
-
-    // get page range
-    if(args.Length() > 2 && args[2]->IsObject()) {
-        Local<Object> options = args[2]->TO_OBJECT();
-        if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("password")).FromJust() && options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->IsString())
-        {
-            parsingOptions.Password = *UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->TO_STRING());
-        }
-        pageRange = ObjectToPageRange(options);
-    }
-    else if(args.Length() > 3 && args[3]->IsObject()) {
-        Local<Object> options = args[3]->TO_OBJECT();
-        if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("password")).FromJust() && options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->IsString())
-        {
-            parsingOptions.Password = *UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->TO_STRING());
-        }
-        pageRange = ObjectToPageRange(options);
-    }
-
-    // now see if there's a need for activating the callback. will do that using the document extensibility option of the lib
-    MergeInterpageCallbackCaller caller;
-    if((args.Length() > 2 && args[2]->IsFunction()) ||
-       (args.Length() > 3 && args[3]->IsFunction()))
-        caller.callback = Local<Function>::Cast(args[2]->IsFunction() ? args[2] : args[3]);
-    if(caller.IsValid())
-        pdfWriter->mPDFWriter.GetDocumentContext().AddDocumentContextExtender(&caller);
-
-    EStatusCode status;
-    if(args[1]->IsString())
-    {
-        status = pdfWriter->mPDFWriter.MergePDFPagesToPage(page->GetPage(),
-                                                           *UTF_8_VALUE(args[1]->TO_STRING()),
-                                                           pageRange,
-                                                           ObjectIDTypeList(),
-                                                           parsingOptions);
-    }
-    else
-    {
-		ObjectByteReaderWithPosition proxy(args[1]->TO_OBJECT());
-        status = pdfWriter->mPDFWriter.MergePDFPagesToPage(page->GetPage(),
-                                                           &proxy,
-                                                           pageRange,
-                                                           ObjectIDTypeList(),
-                                                           parsingOptions);
-    }
-
-    if(caller.IsValid())
-        pdfWriter->mPDFWriter.GetDocumentContext().RemoveDocumentContextExtender(&caller);
-
-    if(status != eSuccess)
-    {
-		THROW_EXCEPTION("unable to append to page, make sure source file exists");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    SET_FUNCTION_RETURN_VALUE(args.This())
+  }
+  std::unique_ptr<MergeCaller> caller;
+  if (cb) {
+    caller = std::make_unique<MergeCaller>(a.Env(), cb);
+    d->writer_.GetDocumentContext().AddDocumentContextExtender(caller.get());
+  }
+  auto *page = ObjectWrap::Unwrap<PDFPageDriver>(a.Env(), a[0]);
+  EStatusCode s;
+  if (IsObject(a.Env(), a[1])) {
+    ObjectByteReaderWithPosition r(a.Env(), a[1]);
+    s = d->writer_.MergePDFPagesToPage(page->GetPage(), &r, range,
+                                       ObjectIDTypeList(), p);
+  } else
+    s = d->writer_.MergePDFPagesToPage(page->GetPage(),
+                                      LegacyString(a.Env(), a[1]),
+                                       range, ObjectIDTypeList(), p);
+  if (caller)
+    d->writer_.GetDocumentContext().RemoveDocumentContextExtender(caller.get());
+  return s == eSuccess
+             ? a.This()
+             : ThrowError(
+                   a.Env(),
+                   "unable to append to page, make sure source file exists");
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContext(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if( (args.Length() < 1  && args.Length() > 2) ||
-        (!args[0]->IsString() && !args[0]->IsObject()) ||
-        (args.Length() >= 2 && !args[1]->IsObject())
-       )
-    {
-		THROW_EXCEPTION("wrong arguments, pass a path to a PDF file to create copying context for or a stream object, and then an optional options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+napi_value PDFWriterDriver::CreatePDFCopyingContext(const CallbackArgs &a) {
+  if (a.Length() < 1 || a.Length() > 2 ||
+      (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
+      (a.Length() == 2 && !IsObject(a.Env(), a[1])))
+    return ThrowError(
+        a.Env(),
+        "wrong arguments, pass a path to a PDF file to create copying context "
+        "for or a stream object, and then an optional options object");
+  auto *d = Driver(a);
+  PDFParsingOptions p;
+  if (a.Length() == 2)
+    Password(a.Env(), a[1], p);
+  PDFDocumentCopyingContext *c = nullptr;
+  DriverLifecycle owner;
+  ObjectByteReaderWithPosition *proxy = nullptr;
+  if (IsObject(a.Env(), a[0])) {
+    if (d->holder->IsPDFReaderInstance(a[0])) {
+      auto *r = ObjectWrap::Unwrap<PDFReaderDriver>(a.Env(), a[0]);
+      if (!r->GetParser())
+        return ThrowError(a.Env(), "PDF reader has ended");
+      owner = r->GetLifecycle();
+      c = d->writer_.GetDocumentContext().CreatePDFCopyingContext(
+          r->GetParser());
+    } else {
+      proxy = new ObjectByteReaderWithPosition(a.Env(), a[0]);
+      c = d->writer_.CreatePDFCopyingContext(proxy, p);
     }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFDocumentCopyingContext* copyingContext;
-    DriverLifecycle copyingOwnerLifecycle;
-
-    ObjectByteReaderWithPosition* proxy = NULL;
-    PDFParsingOptions parsingOptions;
-
-    if(args.Length() >= 2) {
-        Local<Object> options = args[1]->TO_OBJECT();
-        if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("password")).FromJust() && options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->IsString())
-        {
-            parsingOptions.Password = *UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->TO_STRING());
-        }
+  } else
+    c = d->writer_.CreatePDFCopyingContext(LegacyString(a.Env(), a[0]), p);
+  if (!c) {
+    delete proxy;
+    return ThrowError(a.Env(), "unable to create copying context. verify that "
+                               "the target is an existing PDF file");
+  }
+  napi_value v = d->holder->GetNewDocumentCopyingContext();
+  DocumentCopyingContextDriver *cd = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &cd)) {
+    delete c;
+    delete proxy;
+    return nullptr;
+  }
+  cd->CopyingContext = c;
+  cd->ReadStreamProxy = proxy;
+  cd->AddOwnerLifecycle(d->lifecycle_);
+  if (owner)
+    cd->AddOwnerLifecycle(owner);
+  return v;
+}
+napi_value PDFWriterDriver::CreateFormXObjectsFromPDF(const CallbackArgs &a) {
+  if (a.Length() < 1 || a.Length() > 5 || !Type(a.Env(), a[0], napi_string) ||
+      (a.Length() >= 2 && !Type(a.Env(), a[1], napi_number) &&
+       !IsArray(a.Env(), a[1])) ||
+      (a.Length() >= 3 && !IsObject(a.Env(), a[2])) ||
+      (a.Length() >= 4 && !IsArray(a.Env(), a[3])) ||
+      (a.Length() == 5 && !IsArray(a.Env(), a[4])))
+    return ThrowError(
+        a.Env(),
+        "wrong arguments, pass a path to the file, and optionals - a box "
+        "enumerator or actual 4 numbers box, a range object, a matrix for the "
+        "form, array of object ids to copy in addition");
+  auto *d = Driver(a);
+  PDFPageRange range;
+  PDFParsingOptions p;
+  if (a.Length() >= 3) {
+    Password(a.Env(), a[2], p);
+    if (HasPendingException(a.Env()) ||
+        !ObjectToPageRange(a.Env(), a[2], range))
+      return nullptr;
+  }
+  double matrix[6], *mp = nullptr;
+  if (a.Length() >= 4) {
+    if (!ReadNumberArray(a.Env(), a[3], matrix,
+                         "matrix array should be 6 numbers long"))
+      return nullptr;
+    mp = matrix;
+  }
+  ObjectIDTypeList extra;
+  if (a.Length() == 5) {
+    uint32_t length = 0;
+    if (!Length(a.Env(), a[4], &length))
+      return nullptr;
+    for (uint32_t i = 0; i < length; ++i) {
+      napi_value value = nullptr;
+      uint32_t id = 0;
+      if (!Get(a.Env(), a[4], i, &value) ||
+          !CoerceToUint32(a.Env(), value, &id))
+        return nullptr;
+      extra.push_back(id);
     }
-
-
-    if(args[0]->IsObject())
-    {
-        if(pdfWriter->holder->IsPDFReaderInstance(args[0]))
-        {
-            // parser based copying context  [note that here parsingOptions doesn't matter as the parser creation already took it into account]
-
-            PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args[0]->TO_OBJECT());
-            PDFParser* theParser = reader->GetParser();
-            if(!theParser)
-            {
-                THROW_EXCEPTION("PDF reader has ended");
-                SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-            }
-            copyingOwnerLifecycle = reader->GetLifecycle();
-            copyingContext = pdfWriter->mPDFWriter.GetDocumentContext().CreatePDFCopyingContext(theParser);
-        }
-        else
-        {
-            // stream based copying context
-
-            proxy = new ObjectByteReaderWithPosition(args[0]->TO_OBJECT());
-            copyingContext = pdfWriter->mPDFWriter.CreatePDFCopyingContext(proxy,parsingOptions);
-        }
-    }
-    else
-    {
-        // file path based copying context
-        copyingContext = pdfWriter->mPDFWriter.CreatePDFCopyingContext(*UTF_8_VALUE(args[0]->TO_STRING()),parsingOptions);
-    }
-
-    if(!copyingContext)
-    {
-        delete proxy;
-		THROW_EXCEPTION("unable to create copying context. verify that the target is an existing PDF file");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewDocumentCopyingContext(args);
-    DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT());
-    copyingContextDriver->CopyingContext = copyingContext;
-    copyingContextDriver->ReadStreamProxy = proxy;
-    copyingContextDriver->AddOwnerLifecycle(pdfWriter->mLifecycle);
-    if(copyingOwnerLifecycle)
-        copyingContextDriver->AddOwnerLifecycle(copyingOwnerLifecycle);
-    SET_FUNCTION_RETURN_VALUE(newInstance)
+  }
+  EStatusCodeAndObjectIDTypeList r;
+  if (IsArray(a.Env(), a[1])) {
+    double values[4];
+    if (!ReadNumberArray(a.Env(), a[1], values,
+                         "box dimensions array should be 4 numbers long"))
+      return nullptr;
+    PDFRectangle box(values[0], values[1], values[2], values[3]);
+    r = d->writer_.CreateFormXObjectsFromPDF(LegacyString(a.Env(), a[0]), range,
+                                             box, mp, extra, p);
+  } else
+    r = d->writer_.CreateFormXObjectsFromPDF(
+        LegacyString(a.Env(), a[0]), range,
+        a.Length() >= 2
+            ? static_cast<EPDFPageBox>(ToUint32(a.Env(), a[1]))
+            : ePDFPageBoxMediaBox,
+        mp, extra, p);
+  if (r.first != eSuccess)
+    return ThrowError(
+        a.Env(),
+        "unable to create forms from file. make sure the file exists, and that "
+        "the input page range is valid (well, if you provided one..m'k?");
+  napi_value out = Array(a.Env(), r.second.size());
+  uint32_t i = 0;
+  for (auto id : r.second)
+    Set(a.Env(), out, i++, Number(a.Env(), id));
+  return out;
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreateFormXObjectsFromPDF(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if(args.Length() < 1  ||
-       args.Length() > 5 ||
-       !args[0]->IsString() ||
-       (args.Length() >= 2 && (!args[1]->IsNumber() && !args[1]->IsArray())) ||
-       (args.Length() >= 3 && !args[2]->IsObject()) ||
-       (args.Length() >= 4 && !args[3]->IsArray()) ||
-       (args.Length() == 5 && !args[4]->IsArray())
-       )
-    {
-		THROW_EXCEPTION("wrong arguments, pass a path to the file, and optionals - a box enumerator or actual 4 numbers box, a range object, a matrix for the form, array of object ids to copy in addition");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFPageRange pageRange;
-    PDFParsingOptions parsingOptions;
-
-    if(args.Length() >= 3) {
-        Local<Object> options = args[2]->TO_OBJECT();
-        if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("password")).FromJust() && options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->IsString())
-        {
-            parsingOptions.Password = *UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->TO_STRING());
-        }
-        pageRange = ObjectToPageRange(options);
-    }
-
-    EStatusCodeAndObjectIDTypeList result;
-    double matrixBuffer[6];
-    double* transformationMatrix = NULL;
-
-    if(args.Length() >= 4)
-    {
-        Local<Object> matrixArray = args[3]->TO_OBJECT();
-        if(matrixArray->Get(GET_CURRENT_CONTEXT, v8::NEW_STRING("length")).ToLocalChecked()->TO_UINT32Value() != 6)
-        {
-            THROW_EXCEPTION("matrix array should be 6 numbers long");
-            SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-        }
-
-        for(int i=0;i<6;++i)
-            matrixBuffer[i] = TO_NUMBER(matrixArray->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked())->Value();
-        transformationMatrix = matrixBuffer;
-    }
-
-    ObjectIDTypeList extraObjectsList;
-    if(args.Length() >= 5)
-    {
-        Local<Object> objectsIDsArray = args[4]->TO_OBJECT();
-        unsigned int arrayLength = objectsIDsArray->Get(GET_CURRENT_CONTEXT, v8::NEW_STRING("length")).ToLocalChecked()->TO_UINT32Value();
-        for(unsigned int i=0;i<arrayLength;++i)
-            extraObjectsList.push_back((ObjectIDType)(TO_UINT32(objectsIDsArray->Get(GET_CURRENT_CONTEXT, i).ToLocalChecked())->Value()));
-
-    }
-
-    if(args[1]->IsArray())
-    {
-        Local<Object> boxArray = args[1]->TO_OBJECT();
-        if(boxArray->Get(GET_CURRENT_CONTEXT, v8::NEW_STRING("length")).ToLocalChecked()->TO_UINT32Value() != 4)
-        {
-            THROW_EXCEPTION("box dimensions array should be 4 numbers long");
-            SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-        }
-
-        PDFRectangle box(TO_NUMBER(boxArray->Get(GET_CURRENT_CONTEXT, 0).ToLocalChecked())->Value(),
-                            TO_NUMBER(boxArray->Get(GET_CURRENT_CONTEXT, 1).ToLocalChecked())->Value(),
-                            TO_NUMBER(boxArray->Get(GET_CURRENT_CONTEXT, 2).ToLocalChecked())->Value(),
-                            TO_NUMBER(boxArray->Get(GET_CURRENT_CONTEXT, 3).ToLocalChecked())->Value());
-
-        result = pdfWriter->mPDFWriter.CreateFormXObjectsFromPDF(
-                                                                 *UTF_8_VALUE(args[0]->TO_STRING()),
-                                                                 pageRange,
-                                                                 box,
-                                                                 transformationMatrix,
-                                                                 extraObjectsList,
-                                                                 parsingOptions);
-    }
-    else
-    {
-        result = pdfWriter->mPDFWriter.CreateFormXObjectsFromPDF(
-                                                                *UTF_8_VALUE(args[0]->TO_STRING()),
-                                                                pageRange,
-                                                                (EPDFPageBox)TO_UINT32(args[1])->Value(),
-                                                                 transformationMatrix,
-                                                                 extraObjectsList,
-                                                                 parsingOptions);
-    }
-
-    if(result.first != eSuccess)
-    {
-		THROW_EXCEPTION("unable to create forms from file. make sure the file exists, and that the input page range is valid (well, if you provided one..m'k?");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Array> resultFormIDs = NEW_ARRAY((unsigned int)result.second.size());
-    unsigned int index = 0;
-
-    ObjectIDTypeList::iterator it = result.second.begin();
-    for(; it != result.second.end();++it)
-        resultFormIDs->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(index++),NEW_NUMBER(*it));
-
-    SET_FUNCTION_RETURN_VALUE(resultFormIDs)
+napi_value
+PDFWriterDriver::CreatePDFCopyingContextForModifiedFile(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  auto *c = d->writer_.CreatePDFCopyingContextForModifiedFile();
+  if (!c)
+    return ThrowError(
+        a.Env(),
+        "unable to create copying context for modified file...possibly a file "
+        "is not being modified by this writer...");
+  napi_value v = d->holder->GetNewDocumentCopyingContext();
+  DocumentCopyingContextDriver *cd = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &cd)) {
+    delete c;
+    return nullptr;
+  }
+  cd->CopyingContext = c;
+  cd->AddOwnerLifecycle(d->lifecycle_);
+  return v;
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFCopyingContextForModifiedFile(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFDocumentCopyingContext* copyingContext = pdfWriter->mPDFWriter.CreatePDFCopyingContextForModifiedFile();
-    if(!copyingContext)
-    {
-		THROW_EXCEPTION("unable to create copying context for modified file...possibly a file is not being modified by this writer...");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewDocumentCopyingContext(args);
-    DocumentCopyingContextDriver* copyingContextDriver = ObjectWrap::Unwrap<DocumentCopyingContextDriver>(newInstance->TO_OBJECT());
-    copyingContextDriver->CopyingContext = copyingContext;
-    copyingContextDriver->AddOwnerLifecycle(pdfWriter->mLifecycle);
-    SET_FUNCTION_RETURN_VALUE(newInstance)
+napi_value PDFWriterDriver::CreatePDFTextString(const CallbackArgs &a) {
+  return Driver(a)->holder->GetNewPDFTextString(Values(a));
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFTextString(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    SET_FUNCTION_RETURN_VALUE(pdfWriter->holder->GetNewPDFTextString(args))
-
+napi_value PDFWriterDriver::CreatePDFDate(const CallbackArgs &a) {
+  return Driver(a)->holder->GetNewPDFDate(Values(a), true);
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::CreatePDFDate(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    Local<Value> date = pdfWriter->holder->GetNewPDFDate(args, true);
-    if(date.IsEmpty())
-        return;
-
-    SET_FUNCTION_RETURN_VALUE(date)
+PDFWriter *PDFWriterDriver::GetWriter() { return &writer_; }
+void PDFWriterDriver::SetLogStream(napi_env e, napi_value stream,
+                                   LogConfiguration &c) {
+  delete logProxy_;
+  logProxy_ = new ObjectByteWriter(e, stream);
+  c.ShouldLog = true;
+  c.LogFileLocation = "";
+  c.LogStream = logProxy_;
 }
-
-PDFWriter* PDFWriterDriver::GetWriter()
-{
-    return &mPDFWriter;
+napi_value PDFWriterDriver::GetImageDimensions(const CallbackArgs &a) {
+  if (a.Length() < 1 || a.Length() > 3 ||
+      (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
+      (a.Length() >= 2 && !Type(a.Env(), a[1], napi_number)) ||
+      (a.Length() == 3 && !IsObject(a.Env(), a[2])))
+    return ThrowError(a.Env(),
+                      "wrong arguments, pass 1 to 3 arguments. a path to an "
+                      "image or a stream object, an optional image index (for "
+                      "multi-image files), and an options object");
+  auto *d = Driver(a);
+  PDFParsingOptions p;
+  if (a.Length() == 3)
+    Password(a.Env(), a[2], p);
+  DoubleAndDoublePair dim;
+  if (IsObject(a.Env(), a[0])) {
+    ObjectByteReaderWithPosition r(a.Env(), a[0]);
+    dim = d->writer_.GetImageDimensions(
+        &r, a.Length() >= 2 ? ToUint32(a.Env(), a[1]) : 0, p);
+  } else
+    dim = d->writer_.GetImageDimensions(
+        LegacyString(a.Env(), a[0]),
+        a.Length() >= 2 ? ToUint32(a.Env(), a[1]) : 0,
+        p);
+  napi_value o = Object(a.Env());
+  Set(a.Env(), o, "width", Number(a.Env(), dim.first));
+  Set(a.Env(), o, "height", Number(a.Env(), dim.second));
+  return o;
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::GetImageDimensions(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if(args.Length() < 1 || args.Length() > 3 ||
-       (!args[0]->IsString() && !args[0]->IsObject()) ||
-       (args.Length()>=2 && !args[1]->IsNumber()) ||
-       (args.Length() >= 3 && !args[2]->IsObject())
-       )
-    {
-		THROW_EXCEPTION("wrong arguments, pass 1 to 3 arguments. a path to an image or a stream object, an optional image index (for multi-image files), and an options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFParsingOptions parsingOptions;
-
-    if(args.Length() >= 3) {
-        Local<Object> options = args[2]->TO_OBJECT();
-        if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("password")).FromJust() && options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->IsString())
-        {
-            parsingOptions.Password = *UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->TO_STRING());
-        }
-    }
-
-    DoubleAndDoublePair dimensions;
-
-    if(args[0]->IsObject())
-    {
-      ObjectByteReaderWithPosition proxy(args[0]->TO_OBJECT());
-
-      dimensions = pdfWriter->mPDFWriter.GetImageDimensions(&proxy,
-                                                            args.Length() >= 2 ? TO_UINT32(args[1])->Value() : 0,
-                                                            parsingOptions);
-    }
-    else
-    {
-      dimensions = pdfWriter->mPDFWriter.GetImageDimensions(*UTF_8_VALUE(args[0]->TO_STRING()),
-                                                            args.Length() >= 2 ? TO_UINT32(args[1])->Value() : 0,
-                                                            parsingOptions);
-    }
-
-    Local<Object> newObject = NEW_OBJECT;
-
-    newObject->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("width"),NEW_NUMBER(dimensions.first));
-    newObject->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("height"),NEW_NUMBER(dimensions.second));
-    SET_FUNCTION_RETURN_VALUE(newObject)
-};
-
-
-METHOD_RETURN_TYPE PDFWriterDriver::GetImagePagesCount(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if(args.Length() < 1 || args.Length() > 2 ||
-       !args[0]->IsString() ||
-       (args.Length() >= 2 && !args[1]->IsObject())
-       )
-	{
-		THROW_EXCEPTION("wrong arguments, pass 1 argument and an optional one. a path to an image, and an options object");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-	PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-    PDFParsingOptions parsingOptions;
-
-    if(args.Length() >= 2) {
-        Local<Object> options = args[1]->TO_OBJECT();
-        if(options->Has(GET_CURRENT_CONTEXT, NEW_STRING("password")).FromJust() && options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->IsString())
-        {
-            parsingOptions.Password = *UTF_8_VALUE(options->Get(GET_CURRENT_CONTEXT, NEW_STRING("password")).ToLocalChecked()->TO_STRING());
-        }
-    }
-
-	unsigned long result = pdfWriter->mPDFWriter.GetImagePagesCount(*UTF_8_VALUE(args[0]->TO_STRING()),parsingOptions);
-
-	SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(result))
+napi_value PDFWriterDriver::GetImagePagesCount(const CallbackArgs &a) {
+  if (a.Length() < 1 || a.Length() > 2 || !Type(a.Env(), a[0], napi_string) ||
+      (a.Length() == 2 && !IsObject(a.Env(), a[1])))
+    return ThrowError(a.Env(),
+                      "wrong arguments, pass 1 argument and an optional one. a "
+                      "path to an image, and an options object");
+  PDFParsingOptions p;
+  if (a.Length() == 2)
+    Password(a.Env(), a[1], p);
+  return Number(a.Env(), Driver(a)->writer_.GetImagePagesCount(
+                              LegacyString(a.Env(), a[0]), p));
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::GetImageType(const ARGS_TYPE& args) {
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-	if (args.Length() != 1 ||
-		!args[0]->IsString())
-	{
-		THROW_EXCEPTION("wrong arguments, pass 1 argument. a path to an image");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-	}
-
-	PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFHummus::EHummusImageType imageType = pdfWriter->mPDFWriter.GetImageType(*UTF_8_VALUE(args[0]->TO_STRING()),0);
-
-    switch(imageType)
-    {
-        case PDFHummus::ePDF:
-        {
-            SET_FUNCTION_RETURN_VALUE(NEW_STRING("PDF"))
-            break;
-        }
-        case PDFHummus::eJPG:
-        {
-            SET_FUNCTION_RETURN_VALUE(NEW_STRING("JPEG"))
-            break;
-        }
-        case PDFHummus::eTIFF:
-        {
-            SET_FUNCTION_RETURN_VALUE(NEW_STRING("TIFF"))
-            break;
-        }
-        case PDFHummus::ePNG:
-        {
-            SET_FUNCTION_RETURN_VALUE(NEW_STRING("PNG"))
-            break;
-        }
-        default:
-        {
-            SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-        }
-    }
+napi_value PDFWriterDriver::GetImageType(const CallbackArgs &a) {
+  if (a.Length() != 1 || !Type(a.Env(), a[0], napi_string))
+    return ThrowError(a.Env(),
+                      "wrong arguments, pass 1 argument. a path to an image");
+  switch (Driver(a)->writer_.GetImageType(LegacyString(a.Env(), a[0]), 0)) {
+  case ePDF:
+    return String(a.Env(), "PDF");
+  case eJPG:
+    return String(a.Env(), "JPEG");
+  case eTIFF:
+    return String(a.Env(), "TIFF");
+  case ePNG:
+    return String(a.Env(), "PNG");
+  default:
+    return Undefined(a.Env());
+  }
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::GetModifiedFileParser(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    PDFParser* parser = &(pdfWriter->mPDFWriter.GetModifiedFileParser());
-    if(!parser->GetTrailer()) // checking for the trailer should be a good indication to whether this parser is relevant
-    {
-		THROW_EXCEPTION("unable to create modified parser...possibly a file is not being modified by this writer...");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewPDFReader(args);
-    ObjectWrap::Unwrap<PDFReaderDriver>(newInstance->TO_OBJECT())->SetFromOwnedParser(parser);
-    SET_FUNCTION_RETURN_VALUE(newInstance)
+napi_value PDFWriterDriver::GetModifiedFileParser(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  PDFParser *p = &d->writer_.GetModifiedFileParser();
+  if (!p->GetTrailer())
+    return ThrowError(a.Env(), "unable to create modified parser...possibly a "
+                               "file is not being modified by this writer...");
+  napi_value v = d->holder->GetNewPDFReader();
+  PDFReaderDriver *reader = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &reader))
+    return nullptr;
+  reader->SetFromOwnedParser(p);
+  return v;
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::GetModifiedInputFile(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    InputFile* inputFile = &(pdfWriter->mPDFWriter.GetModifiedInputFile());
-    if(!inputFile->GetInputStream())
-    {
-		THROW_EXCEPTION("unable to create modified input file...possibly a file is not being modified by this writer...");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewInputFile(args);
-    ObjectWrap::Unwrap<InputFileDriver>(newInstance->TO_OBJECT())->SetFromOwnedFile(inputFile);
-    SET_FUNCTION_RETURN_VALUE(newInstance)
+napi_value PDFWriterDriver::GetModifiedInputFile(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  InputFile *f = &d->writer_.GetModifiedInputFile();
+  if (!f->GetInputStream())
+    return ThrowError(a.Env(),
+                      "unable to create modified input file...possibly a file "
+                      "is not being modified by this writer...");
+  napi_value v = d->holder->GetNewInputFile();
+  InputFileDriver *file = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &file))
+    return nullptr;
+  file->SetFromOwnedFile(f);
+  return v;
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::GetOutputFile(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    OutputFile* outputFile = &(pdfWriter->mPDFWriter.GetOutputFile());
-    if(!outputFile->GetOutputStream())
-    {
-		THROW_EXCEPTION("unable to get output file. probably pdf writing hasn't started, or the output is not to a file");
-		SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    Local<Value> newInstance = pdfWriter->holder->GetNewOutputFile(args);
-    ObjectWrap::Unwrap<OutputFileDriver>(newInstance->TO_OBJECT())->SetFromOwnedFile(outputFile);
-    SET_FUNCTION_RETURN_VALUE(newInstance)
+napi_value PDFWriterDriver::GetOutputFile(const CallbackArgs &a) {
+  auto *d = Driver(a);
+  OutputFile *f = &d->writer_.GetOutputFile();
+  if (!f->GetOutputStream())
+    return ThrowError(a.Env(),
+                      "unable to get output file. probably pdf writing hasn't "
+                      "started, or the output is not to a file");
+  napi_value v = d->holder->GetNewOutputFile();
+  OutputFileDriver *file = nullptr;
+  if (!ObjectWrap::UnwrapNew(a.Env(), v, &file))
+    return nullptr;
+  file->SetFromOwnedFile(f);
+  return v;
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::RegisterAnnotationReferenceForNextPageWrite(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    if(args.Length() != 1 ||
-       !args[0]->IsNumber())
-    {
-        THROW_EXCEPTION("wrong arguments,  pass an object ID for an annotation to register");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    pdfWriter->mPDFWriter.GetDocumentContext().RegisterAnnotationReferenceForNextPageWrite(TO_UINT32(args[0])->Value());
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
+napi_value PDFWriterDriver::RegisterAnnotationReferenceForNextPageWrite(
+    const CallbackArgs &a) {
+  if (a.Length() != 1 || !Type(a.Env(), a[0], napi_number))
+    return ThrowError(
+        a.Env(),
+        "wrong arguments,  pass an object ID for an annotation to register");
+  Driver(a)
+      ->writer_.GetDocumentContext()
+      .RegisterAnnotationReferenceForNextPageWrite(ToUint32(a.Env(), a[0]));
+  return a.This();
 }
-
-METHOD_RETURN_TYPE PDFWriterDriver::RequireCatalogUpdate(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-    CREATE_ESCAPABLE_SCOPE;
-
-    PDFWriterDriver* pdfWriter = ObjectWrap::Unwrap<PDFWriterDriver>(args.This());
-
-    pdfWriter->mIsCatalogUpdateRequired = true;
-
-    SET_FUNCTION_RETURN_VALUE(UNDEFINED)
+napi_value PDFWriterDriver::RequireCatalogUpdate(const CallbackArgs &a) {
+  Driver(a)->catalogUpdateRequired_ = true;
+  return Undefined(a.Env());
 }
-
-/*
-    From now on, extensions event triggers.
-    got the following events for now:
-
-    OnPageWrite: {
-                    page:PDFPage,
-                    pageDictionaryContext:DictionaryContext
-                }
-    OnResourcesWrite {
-                resources: ResourcesDictionary
-                pageResourcesDictionaryContext: DictionaryContext
-    }
-    OnResourceDictionaryWrite {
-                resourceDictionaryName: string
-                resourceDictionary: DictionaryContext
-    }
-    OnCatalogWrite {
-                catalogDictionaryContext: DictionaryContext
-    }
-*/
-
-PDFHummus::EStatusCode PDFWriterDriver::OnPageWrite(
-                        PDFPage* inPage,
-                        DictionaryContext* inPageDictionaryContext,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext) {
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    Local<Object> params = NEW_OBJECT;
-
-	params->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("page"),this->holder->GetInstanceFor(inPage));
-	params->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("pageDictionaryContext"), this->holder->GetInstanceFor(inPageDictionaryContext));
-    return triggerEvent("OnPageWrite",params);
+napi_value WrapDictionary(ConstructorsHolder *h, napi_env e,
+                          DictionaryContext *d) {
+  napi_value v = h->GetNewDictionaryContext();
+  DictionaryContextDriver *driver = nullptr;
+  if (!ObjectWrap::UnwrapNew(e, v, &driver))
+    return nullptr;
+  driver->DictionaryContextInstance = d;
+  return v;
 }
-PDFHummus::EStatusCode PDFWriterDriver::OnResourcesWrite(
-                        ResourcesDictionary* inResources,
-                        DictionaryContext* inPageResourcesDictionaryContext,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext) {
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    Local<Object> params = NEW_OBJECT;
-
-	params->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("resources"),this->holder->GetInstanceFor(inResources));
-	params->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("pageResourcesDictionaryContext"),this->holder->GetInstanceFor(inPageResourcesDictionaryContext));
-    return triggerEvent("OnResourcesWrite",params);
+EStatusCode PDFWriterDriver::OnPageWrite(PDFPage *p, DictionaryContext *d,
+                                         ObjectsContext *, DocumentContext *) {
+  napi_value o = Object(env_);
+  if (!o)
+    return eFailure;
+  napi_value pv = holder->GetNewPDFPage();
+  PDFPageDriver *pd = nullptr;
+  if (!ObjectWrap::UnwrapNew(env_, pv, &pd))
+    return eFailure;
+  if (pd->mOwnsPage)
+    delete pd->mPDFPage;
+  pd->mPDFPage = p;
+  pd->mOwnsPage = false;
+  napi_value dictionary = WrapDictionary(holder, env_, d);
+  if (!dictionary || !Set(env_, o, "page", pv) ||
+      !Set(env_, o, "pageDictionaryContext", dictionary))
+    return eFailure;
+  return TriggerEvent("OnPageWrite", o);
 }
-
-PDFHummus::EStatusCode PDFWriterDriver::OnResourceDictionaryWrite(
-                        DictionaryContext* inResourceDictionary,
-                        const std::string& inResourceDictionaryName,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext) {
-     CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    Local<Object> params = NEW_OBJECT;
-
-	params->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("resourceDictionaryName"),NEW_STRING(inResourceDictionaryName.c_str()));
-	params->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("resourceDictionary"),this->holder->GetInstanceFor(inResourceDictionary));
-    return triggerEvent("OnResourceDictionaryWrite",params);
+EStatusCode PDFWriterDriver::OnResourcesWrite(ResourcesDictionary *r,
+                                              DictionaryContext *d,
+                                              ObjectsContext *,
+                                              DocumentContext *) {
+  napi_value o = Object(env_);
+  if (!o)
+    return eFailure;
+  napi_value rv = holder->GetNewResourcesDictionary();
+  ResourcesDictionaryDriver *resources = nullptr;
+  if (!ObjectWrap::UnwrapNew(env_, rv, &resources))
+    return eFailure;
+  resources->ResourcesDictionaryInstance = r;
+  napi_value dictionary = WrapDictionary(holder, env_, d);
+  if (!dictionary || !Set(env_, o, "resources", rv) ||
+      !Set(env_, o, "pageResourcesDictionaryContext", dictionary))
+    return eFailure;
+  return TriggerEvent("OnResourcesWrite", o);
 }
-
-PDFHummus::EStatusCode PDFWriterDriver::OnFormXObjectWrite(
-                        ObjectIDType inFormXObjectID,
-                        ObjectIDType inFormXObjectResourcesDictionaryID,
-                        DictionaryContext* inFormDictionaryContext,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext) {
-
-    return PDFHummus::eSuccess;
+EStatusCode PDFWriterDriver::OnResourceDictionaryWrite(DictionaryContext *d,
+                                                       const std::string &n,
+                                                       ObjectsContext *,
+                                                       DocumentContext *) {
+  napi_value o = Object(env_);
+  if (!o)
+    return eFailure;
+  napi_value dictionary = WrapDictionary(holder, env_, d);
+  napi_value name = String(env_, n);
+  if (!dictionary || !name ||
+      !Set(env_, o, "resourceDictionaryName", name) ||
+      !Set(env_, o, "resourceDictionary", dictionary))
+    return eFailure;
+  return TriggerEvent("OnResourceDictionaryWrite", o);
 }
-PDFHummus::EStatusCode PDFWriterDriver::OnJPEGImageXObjectWrite(
-                        ObjectIDType inImageXObjectID,
-                        DictionaryContext* inImageDictionaryContext,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        JPEGImageHandler* inJPGImageHandler) {
-
-    return PDFHummus::eSuccess;
+EStatusCode PDFWriterDriver::OnCatalogWrite(CatalogInformation *,
+                                            DictionaryContext *d,
+                                            ObjectsContext *,
+                                            DocumentContext *) {
+  napi_value o = Object(env_);
+  if (!o)
+    return eFailure;
+  napi_value dictionary = WrapDictionary(holder, env_, d);
+  if (!dictionary || !Set(env_, o, "catalogDictionaryContext", dictionary))
+    return eFailure;
+  return TriggerEvent("OnCatalogWrite", o);
 }
-PDFHummus::EStatusCode PDFWriterDriver::OnTIFFImageXObjectWrite(
-                        ObjectIDType inImageXObjectID,
-                        DictionaryContext* inImageDictionaryContext,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        TIFFImageHandler* inTIFFImageHandler) {
-
-    return PDFHummus::eSuccess;
+EStatusCode PDFWriterDriver::TriggerEvent(const std::string &n, napi_value p) {
+  napi_value self = self_.Get();
+  napi_value f = Get(env_, self, "triggerDocumentExtensionEvent");
+  if (!f || Type(env_, f, napi_undefined))
+    return eFailure;
+  return Call(env_, self, f, {String(env_, n), p}) ? eSuccess : eFailure;
 }
-
-PDFHummus::EStatusCode PDFWriterDriver::triggerEvent(const std::string& inEventName, v8::Local<v8::Object> inParams) {
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-	Local<Value> value = THIS_HANDLE->Get(GET_CURRENT_CONTEXT, NEW_STRING("triggerDocumentExtensionEvent")).ToLocalChecked();
-    if(value->IsUndefined())
-        return PDFHummus::eFailure;
-    Local<Function> func = Local<Function>::Cast(value);
-    Local<Value> args[2];
-    args[0] = NEW_STRING(inEventName.c_str());
-    args[1] = inParams;
-	func->Call(GET_CURRENT_CONTEXT, THIS_HANDLE, 2, args).ToLocalChecked();
-    return PDFHummus::eSuccess;
+#define SUCCESS_METHOD(signature)                                              \
+  EStatusCode PDFWriterDriver::signature { return eSuccess; }
+SUCCESS_METHOD(OnFormXObjectWrite(ObjectIDType, ObjectIDType,
+                                  DictionaryContext *, ObjectsContext *,
+                                  DocumentContext *))
+SUCCESS_METHOD(OnJPEGImageXObjectWrite(ObjectIDType, DictionaryContext *,
+                                       ObjectsContext *, DocumentContext *,
+                                       JPEGImageHandler *))
+SUCCESS_METHOD(OnTIFFImageXObjectWrite(ObjectIDType, DictionaryContext *,
+                                       ObjectsContext *, DocumentContext *,
+                                       TIFFImageHandler *))
+SUCCESS_METHOD(OnPDFParsingComplete(ObjectsContext *, DocumentContext *,
+                                    PDFDocumentHandler *))
+SUCCESS_METHOD(OnBeforeCreateXObjectFromPage(PDFDictionary *, ObjectsContext *,
+                                             DocumentContext *,
+                                             PDFDocumentHandler *))
+SUCCESS_METHOD(OnAfterCreateXObjectFromPage(PDFFormXObject *, PDFDictionary *,
+                                            ObjectsContext *, DocumentContext *,
+                                            PDFDocumentHandler *))
+SUCCESS_METHOD(OnBeforeCreatePageFromPage(PDFDictionary *, ObjectsContext *,
+                                          DocumentContext *,
+                                          PDFDocumentHandler *))
+SUCCESS_METHOD(OnAfterCreatePageFromPage(PDFPage *, PDFDictionary *,
+                                         ObjectsContext *, DocumentContext *,
+                                         PDFDocumentHandler *))
+SUCCESS_METHOD(OnBeforeMergePageFromPage(PDFPage *, PDFDictionary *,
+                                         ObjectsContext *, DocumentContext *,
+                                         PDFDocumentHandler *))
+SUCCESS_METHOD(OnAfterMergePageFromPage(PDFPage *, PDFDictionary *,
+                                        ObjectsContext *, DocumentContext *,
+                                        PDFDocumentHandler *))
+SUCCESS_METHOD(OnPDFCopyingComplete(ObjectsContext *, DocumentContext *,
+                                    PDFDocumentHandler *))
+#undef SUCCESS_METHOD
+bool PDFWriterDriver::IsCatalogUpdateRequiredForModifiedFile(PDFParser *) {
+  return catalogUpdateRequired_;
 }
-
-
-PDFHummus::EStatusCode PDFWriterDriver::OnCatalogWrite(
-                        CatalogInformation* inCatalogInformation,
-                        DictionaryContext* inCatalogDictionaryContext,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext) {
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    Local<Object> params = NEW_OBJECT;
-
-    // this is the only important one
-	params->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("catalogDictionaryContext"),this->holder->GetInstanceFor(inCatalogDictionaryContext));
-    return triggerEvent("OnCatalogWrite",params);
-}
-
-
-PDFHummus::EStatusCode PDFWriterDriver::OnPDFParsingComplete(
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        PDFDocumentHandler* inPDFDocumentHandler) {
-
-    return PDFHummus::eSuccess;
-}
-PDFHummus::EStatusCode PDFWriterDriver::OnBeforeCreateXObjectFromPage(
-                        PDFDictionary* inPageObjectDictionary,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        PDFDocumentHandler* inPDFDocumentHandler) {
-
-    return PDFHummus::eSuccess;
-}
-PDFHummus::EStatusCode PDFWriterDriver::OnAfterCreateXObjectFromPage(
-                        PDFFormXObject* iPageObjectResultXObject,
-                        PDFDictionary* inPageObjectDictionary,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        PDFDocumentHandler* inPDFDocumentHandler) {
-
-    return PDFHummus::eSuccess;
-}
-PDFHummus::EStatusCode PDFWriterDriver::OnBeforeCreatePageFromPage(
-                        PDFDictionary* inPageObjectDictionary,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        PDFDocumentHandler* inPDFDocumentHandler) {
-
-    return PDFHummus::eSuccess;
-}
-PDFHummus::EStatusCode PDFWriterDriver::OnAfterCreatePageFromPage(
-                        PDFPage* iPageObjectResultPage,
-                        PDFDictionary* inPageObjectDictionary,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        PDFDocumentHandler* inPDFDocumentHandler) {
-
-    return PDFHummus::eSuccess;
-}
-PDFHummus::EStatusCode PDFWriterDriver::OnBeforeMergePageFromPage(
-                        PDFPage* inTargetPage,
-                        PDFDictionary* inPageObjectDictionary,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        PDFDocumentHandler* inPDFDocumentHandler) {
-
-    return PDFHummus::eSuccess;
-}
-PDFHummus::EStatusCode PDFWriterDriver::OnAfterMergePageFromPage(
-                        PDFPage* inTargetPage,
-                        PDFDictionary* inPageObjectDictionary,
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        PDFDocumentHandler* inPDFDocumentHandler) {
-
-    return PDFHummus::eSuccess;
-}
-PDFHummus::EStatusCode PDFWriterDriver::OnPDFCopyingComplete(
-                        ObjectsContext* inPDFWriterObjectContext,
-                        PDFHummus::DocumentContext* inDocumentContext,
-                        PDFDocumentHandler* inPDFDocumentHandler) {
-
-    return PDFHummus::eSuccess;
-}
-bool PDFWriterDriver::IsCatalogUpdateRequiredForModifiedFile(PDFParser* inModifiderFileParser) {
-
-    return mIsCatalogUpdateRequired;
-}
-
-PDFHummus::EStatusCode PDFWriterDriver::setupListenerIfOK(PDFHummus::EStatusCode inCode) {
-    if(inCode == PDFHummus::eSuccess) {
-        mPDFWriter.GetDocumentContext().AddDocumentContextExtender(this);
-        mIsStarted = true;
-    }
-    return inCode;
+EStatusCode PDFWriterDriver::Setup(EStatusCode s) {
+  if (s == eSuccess) {
+    writer_.GetDocumentContext().AddDocumentContextExtender(this);
+    started_ = true;
+  } else {
+    delete writeProxy_;
+    writeProxy_ = nullptr;
+    delete readProxy_;
+    readProxy_ = nullptr;
+    if (logProxy_)
+      Trace::DefaultTrace().SetLogSettings("", false, false);
+    delete logProxy_;
+    logProxy_ = nullptr;
+  }
+  return s;
 }

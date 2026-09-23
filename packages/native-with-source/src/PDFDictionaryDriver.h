@@ -1,42 +1,19 @@
-/*
- Source File : PDFDictionaryDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
 
-#include "nodes.h"
-#include "PDFObjectDriver.h"
-#include "PDFObjectCast.h"
 #include "PDFDictionary.h"
+#include "PDFObjectCast.h"
+#include "PDFObjectDriver.h"
 
-class PDFDictionaryDriver : public PDFObjectDriver
-{
+class PDFDictionaryDriver : public PDFObjectDriver {
 public:
-    DEC_SUBORDINATE_INIT(Init)
-	
-    
-    PDFObjectCastPtr<PDFDictionary> TheObject;
-    
-    virtual PDFObject* GetObject();
+  static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
+  PDFObject *GetObject() override;
+
+  PDFObjectCastPtr<PDFDictionary> TheObject;
+
 private:
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToJSObject(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE QueryObject(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE Exists(const ARGS_TYPE& args);
+  static napi_value New(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToJSObject(const muhammara::napi::CallbackArgs &args);
+  static napi_value QueryObject(const muhammara::napi::CallbackArgs &args);
+  static napi_value Exists(const muhammara::napi::CallbackArgs &args);
 };

@@ -1,434 +1,185 @@
-/*
- Source File : InfoDictinaryDriver.cpp
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #include "InfoDictionaryDriver.h"
+
+#include "ConstructorsHolder.h"
 #include "InfoDictionary.h"
 #include "PDFDateDriver.h"
-#include "PDFDate.h"
 #include "PDFTextString.h"
-#include "ConstructorsHolder.h"
+#include <cstring>
 
-using namespace v8;
+using namespace muhammara::napi;
+
+namespace {
+const char *kUninitialized =
+    "info dictionary driver not initialized. use the document context object "
+    "to get a valid info dictionary";
+InfoDictionaryDriver *Driver(const CallbackArgs &args) {
+  return ObjectWrap::Unwrap<InfoDictionaryDriver>(args.Env(), args.This());
+}
+PDFTextString *TextField(InfoDictionary *info, const char *name) {
+  if (!strcmp(name, "title"))
+    return &info->Title;
+  if (!strcmp(name, "author"))
+    return &info->Author;
+  if (!strcmp(name, "subject"))
+    return &info->Subject;
+  if (!strcmp(name, "keywords"))
+    return &info->Keywords;
+  if (!strcmp(name, "creator"))
+    return &info->Creator;
+  return &info->Producer;
+}
+} // namespace
 
 InfoDictionaryDriver::InfoDictionaryDriver()
-{
-    InfoDictionaryInstance = NULL;
+    : InfoDictionaryInstance(nullptr), holder(nullptr) {}
+bool InfoDictionaryDriver::Init(ModuleState &state, napi_value exports) {
+  ClassBuilder b(state, "InfoDictionary", New);
+  b.Method("addAdditionalInfoEntry", AddAdditionalInfoEntry)
+      .Method("removeAdditionalInfoEntry", RemoveAdditionalInfoEntry)
+      .Method("clearAdditionalInfoEntries", ClearAdditionalInfoEntries)
+      .Method("getAdditionalInfoEntry", GetAdditionalInfoEntry)
+      .Method("getAdditionalInfoEntries", GetAdditionalInfoEntries)
+      .Method("setCreationDate", SetCreationDate)
+      .Method("setModDate", SetModDate);
+  const char *fields[] = {"title",    "author",  "subject",
+                          "keywords", "creator", "producer"};
+  for (const char *field : fields)
+    b.Accessor(field, GetText, SetText, const_cast<char *>(field));
+  b.Accessor("trapped", GetTrapped, SetTrapped);
+  return b.Define(exports, false) != nullptr;
 }
-
-DEF_SUBORDINATE_INIT(InfoDictionaryDriver::Init)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-	Local<FunctionTemplate> t = NEW_FUNCTION_TEMPLATE_EXTERNAL(New);
-
-	t->SetClassName(NEW_STRING("InfoDictionary"));
-	t->InstanceTemplate()->SetInternalFieldCount(1);
-
-	SET_PROTOTYPE_METHOD(t, "addAdditionalInfoEntry", AddAdditionalInfoEntry);
-	SET_PROTOTYPE_METHOD(t, "removeAdditionalInfoEntry", RemoveAdditionalInfoEntry);
-	SET_PROTOTYPE_METHOD(t, "clearAdditionalInfoEntries", ClearAdditionalInfoEntries);
-	SET_PROTOTYPE_METHOD(t, "getAdditionalInfoEntry", GetAdditionalInfoEntry);
-	SET_PROTOTYPE_METHOD(t, "getAdditionalInfoEntries", GetAdditionalInfoEntries);
-	SET_PROTOTYPE_METHOD(t, "setCreationDate", SetCreationDate);
-	SET_PROTOTYPE_METHOD(t, "setModDate", SetModDate);
-	SET_ACCESSOR_METHODS(t, "title", GetTitle, SetTitle);
-	SET_ACCESSOR_METHODS(t, "author", GetAuthor, SetAuthor);
-	SET_ACCESSOR_METHODS(t, "subject", GetSubject, SetSubject);
-	SET_ACCESSOR_METHODS(t, "keywords", GetKeywords, SetKeywords);
-	SET_ACCESSOR_METHODS(t, "creator", GetCreator, SetCreator);
-	SET_ACCESSOR_METHODS(t, "producer", GetProducer, SetProducer);
-	SET_ACCESSOR_METHODS(t, "trapped", GetTrapped, SetTrapped);
-
-    // save in factory
-	EXPOSE_EXTERNAL_FOR_INIT(ConstructorsHolder, holder)
-    SET_CONSTRUCTOR(holder->InfoDictionary_constructor, t); 
+napi_value InfoDictionaryDriver::New(const CallbackArgs &args) {
+  auto *driver = new InfoDictionaryDriver();
+  driver->holder = &ModuleState::Get(args.Env())->Constructors();
+  if (!driver->Wrap(args.Env(), args.This())) {
+    delete driver;
+    return nullptr;
+  }
+  return args.This();
 }
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::New(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    EXPOSE_EXTERNAL_ARGS(ConstructorsHolder, externalHolder)
-    
-    InfoDictionaryDriver* driver = new InfoDictionaryDriver();
-    driver->holder = externalHolder;
-    driver->Wrap(args.This());
-	SET_FUNCTION_RETURN_VALUE(args.This())
+napi_value InfoDictionaryDriver::GetText(const CallbackArgs &args) {
+  auto *driver = Driver(args);
+  if (!driver->InfoDictionaryInstance)
+    return ThrowError(args.Env(), kUninitialized);
+  return String(args.Env(), TextField(driver->InfoDictionaryInstance,
+                                      static_cast<const char *>(args.Data()))
+                                ->ToUTF8String());
 }
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetTitle(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-        SET_ACCESSOR_RETURN_VALUE(UNDEFINED)
-    }
-
-	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Title.ToUTF8String().c_str()))
+napi_value InfoDictionaryDriver::SetText(const CallbackArgs &args) {
+  auto *driver = Driver(args);
+  if (!driver->InfoDictionaryInstance)
+    return ThrowError(args.Env(), kUninitialized);
+  std::string value = LegacyString(args.Env(), args[0]);
+  if (HasPendingException(args.Env()))
+    return nullptr;
+  TextField(driver->InfoDictionaryInstance,
+            static_cast<const char *>(args.Data()))
+      ->FromUTF8(value);
+  return Undefined(args.Env());
 }
-
-void InfoDictionaryDriver::SetTitle(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
-{
-	CREATE_ISOLATE_CONTEXT;
-	
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-    
-    infoDictionaryDriver->InfoDictionaryInstance->Title.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
+napi_value InfoDictionaryDriver::GetTrapped(const CallbackArgs &args) {
+  auto *driver = Driver(args);
+  return driver->InfoDictionaryInstance
+             ? Number(args.Env(), driver->InfoDictionaryInstance->Trapped)
+             : ThrowError(args.Env(), kUninitialized);
 }
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetAuthor(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-		SET_ACCESSOR_RETURN_VALUE(UNDEFINED)
-    }
-    
-	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Author.ToUTF8String().c_str()))
+napi_value InfoDictionaryDriver::SetTrapped(const CallbackArgs &args) {
+  auto *driver = Driver(args);
+  if (!driver->InfoDictionaryInstance)
+    return ThrowError(args.Env(), kUninitialized);
+  driver->InfoDictionaryInstance->Trapped =
+      static_cast<EInfoTrapped>(ToUint32(args.Env(), args[0]));
+  return Undefined(args.Env());
 }
-
-void InfoDictionaryDriver::SetAuthor(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
-{
-	CREATE_ISOLATE_CONTEXT;
-	
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-    
-    infoDictionaryDriver->InfoDictionaryInstance->Author.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
+static napi_value SetDate(const CallbackArgs &args, bool creation) {
+  auto *driver = Driver(args);
+  if (!driver->InfoDictionaryInstance)
+    return ThrowError(args.Env(), kUninitialized);
+  std::vector<napi_value> values;
+  for (size_t i = 0; i < args.Length(); ++i)
+    values.push_back(args[i]);
+  napi_value value = driver->holder->GetNewPDFDate(values);
+  PDFDateDriver *dateDriver = nullptr;
+  if (!ObjectWrap::UnwrapNew(args.Env(), value, &dateDriver))
+    return nullptr;
+  PDFDate date = *dateDriver->getInstance();
+  if (creation)
+    driver->InfoDictionaryInstance->CreationDate = date;
+  else
+    driver->InfoDictionaryInstance->ModDate = date;
+  return Undefined(args.Env());
 }
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetSubject(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-		SET_ACCESSOR_RETURN_VALUE(UNDEFINED)
-    }
-    
-	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Subject.ToUTF8String().c_str()))
+napi_value InfoDictionaryDriver::SetCreationDate(const CallbackArgs &args) {
+  return SetDate(args, true);
 }
-
-void InfoDictionaryDriver::SetSubject(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
-{
-	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-    
-    infoDictionaryDriver->InfoDictionaryInstance->Subject.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
+napi_value InfoDictionaryDriver::SetModDate(const CallbackArgs &args) {
+  return SetDate(args, false);
 }
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetKeywords(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-		SET_ACCESSOR_RETURN_VALUE(UNDEFINED)
-    }
-    
-	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Keywords.ToUTF8String().c_str()))
+napi_value
+InfoDictionaryDriver::AddAdditionalInfoEntry(const CallbackArgs &args) {
+  auto *d = Driver(args);
+  if (!d->InfoDictionaryInstance)
+    return ThrowError(args.Env(), kUninitialized);
+  if (args.Length() != 2 || !IsType(args.Env(), args[0], napi_string) ||
+      !IsType(args.Env(), args[1], napi_string))
+    return ThrowError(
+        args.Env(),
+        "wrong arguments. please provide two strings - key and value ");
+  PDFTextString value;
+  value.FromUTF8(LegacyString(args.Env(), args[1]));
+  d->InfoDictionaryInstance->AddAdditionalInfoEntry(
+      LegacyString(args.Env(), args[0]), value);
+  return Undefined(args.Env());
 }
-
-void InfoDictionaryDriver::SetKeywords(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
-{
-	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-    
-    infoDictionaryDriver->InfoDictionaryInstance->Keywords.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
+napi_value
+InfoDictionaryDriver::RemoveAdditionalInfoEntry(const CallbackArgs &args) {
+  auto *d = Driver(args);
+  if (!d->InfoDictionaryInstance)
+    return ThrowError(args.Env(), kUninitialized);
+  if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
+    return ThrowError(
+        args.Env(),
+        "wrong arguments. please provide key of the entry to remove ");
+  d->InfoDictionaryInstance->RemoveAdditionalInfoEntry(
+      LegacyString(args.Env(), args[0]));
+  return Undefined(args.Env());
 }
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetCreator(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-		SET_ACCESSOR_RETURN_VALUE(UNDEFINED)
-    }
-    
-	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Creator.ToUTF8String().c_str()))
+napi_value
+InfoDictionaryDriver::ClearAdditionalInfoEntries(const CallbackArgs &args) {
+  auto *d = Driver(args);
+  if (!d->InfoDictionaryInstance)
+    return ThrowError(args.Env(), kUninitialized);
+  d->InfoDictionaryInstance->ClearAdditionalInfoEntries();
+  return Undefined(args.Env());
 }
-
-void InfoDictionaryDriver::SetCreator(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
-{
-	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-    
-    infoDictionaryDriver->InfoDictionaryInstance->Creator.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
+napi_value
+InfoDictionaryDriver::GetAdditionalInfoEntry(const CallbackArgs &args) {
+  auto *d = Driver(args);
+  if (!d->InfoDictionaryInstance)
+    return ThrowError(args.Env(), kUninitialized);
+  if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
+    return ThrowError(
+        args.Env(),
+        "wrong arguments. please provide key of the entry to return ");
+  return String(args.Env(),
+                d->InfoDictionaryInstance
+                    ->GetAdditionalInfoEntry(LegacyString(args.Env(), args[0]))
+                    .ToUTF8String());
 }
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetProducer(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-   
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-		SET_ACCESSOR_RETURN_VALUE(UNDEFINED)
-    }
-    
-	SET_ACCESSOR_RETURN_VALUE(NEW_STRING(infoDictionaryDriver->InfoDictionaryInstance->Producer.ToUTF8String().c_str()))
+napi_value
+InfoDictionaryDriver::GetAdditionalInfoEntries(const CallbackArgs &args) {
+  auto *d = Driver(args);
+  if (!d->InfoDictionaryInstance)
+    return ThrowError(args.Env(), kUninitialized);
+  if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
+    return ThrowError(
+        args.Env(),
+        "wrong arguments. please provide key of the entry to return ");
+  napi_value result = Object(args.Env());
+  MapIterator<StringToPDFTextString> it =
+      d->InfoDictionaryInstance->GetAdditionaEntriesIterator();
+  while (it.MoveNext())
+    Set(args.Env(), result, it.GetKey().c_str(),
+        String(args.Env(), it.GetValue().ToUTF8String()));
+  return result;
 }
-
-void InfoDictionaryDriver::SetProducer(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
-{
-	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-    
-    infoDictionaryDriver->InfoDictionaryInstance->Producer.FromUTF8(*UTF_8_VALUE(value->TO_STRING()));
-}
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetTrapped(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-		SET_ACCESSOR_RETURN_VALUE(UNDEFINED)
-    }
-    
-	SET_ACCESSOR_RETURN_VALUE(NEW_NUMBER(infoDictionaryDriver->InfoDictionaryInstance->Trapped))
-}
-
-void InfoDictionaryDriver::SetTrapped(SET_ACCESSOR_METHOD_NAME_TYPE property, Local<Value> value, const PROPERTY_SETTER_TYPE &info)
-{
-	CREATE_ISOLATE_CONTEXT;
-	InfoDictionaryDriver* infoDictionaryDriver = ObjectWrap::Unwrap<InfoDictionaryDriver>(PROPERTY_HOLDER(info));
-    
-    if(!infoDictionaryDriver->InfoDictionaryInstance)
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-    
-    infoDictionaryDriver->InfoDictionaryInstance->Trapped = (EInfoTrapped)(TO_UINT32(value)->Value());
-}
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::SetCreationDate(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* driver = ObjectWrap::Unwrap<InfoDictionaryDriver>(args.This());
-    if(!driver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    
-    Local<Value> dataDriverValue = driver->holder->GetNewPDFDate(args);
-    if(dataDriverValue.IsEmpty())
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    PDFDateDriver* dateDriver = ObjectWrap::Unwrap<PDFDateDriver>(dataDriverValue->TO_OBJECT());
-
-    driver->InfoDictionaryInstance->CreationDate =  *(dateDriver->getInstance());
-    
-    SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-}
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::SetModDate(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* driver = ObjectWrap::Unwrap<InfoDictionaryDriver>(args.This());
-    if(!driver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    
-    Local<Value> dataDriverValue = driver->holder->GetNewPDFDate(args);
-    if(dataDriverValue.IsEmpty())
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    PDFDateDriver* dateDriver = ObjectWrap::Unwrap<PDFDateDriver>(dataDriverValue->TO_OBJECT());
-    
-    driver->InfoDictionaryInstance->ModDate =  *(dateDriver->getInstance());
-    
-    SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-}
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::AddAdditionalInfoEntry(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* driver = ObjectWrap::Unwrap<InfoDictionaryDriver>(args.This());
-    if(!driver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args.Length() != 2 ||
-       !args[0]->IsString() ||
-       !args[1]->IsString())
-    {
-		THROW_EXCEPTION("wrong arguments. please provide two strings - key and value ");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    PDFTextString textString;
-    textString.FromUTF8(*UTF_8_VALUE(args[1]->TO_STRING()));
-    
-    driver->InfoDictionaryInstance->AddAdditionalInfoEntry(*UTF_8_VALUE(args[0]->TO_STRING()), textString);
-    
-    SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-}
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::RemoveAdditionalInfoEntry(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* driver = ObjectWrap::Unwrap<InfoDictionaryDriver>(args.This());
-    if(!driver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args.Length() != 1 ||
-       !args[0]->IsString())
-    {
-		THROW_EXCEPTION("wrong arguments. please provide key of the entry to remove ");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    driver->InfoDictionaryInstance->RemoveAdditionalInfoEntry(*UTF_8_VALUE(args[0]->TO_STRING()));
-    
-    SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-}
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::ClearAdditionalInfoEntries(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* driver = ObjectWrap::Unwrap<InfoDictionaryDriver>(args.This());
-    if(!driver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    driver->InfoDictionaryInstance->ClearAdditionalInfoEntries();
-    
-    SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-}
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetAdditionalInfoEntry(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* driver = ObjectWrap::Unwrap<InfoDictionaryDriver>(args.This());
-    if(!driver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args.Length() != 1 ||
-       !args[0]->IsString())
-    {
-		THROW_EXCEPTION("wrong arguments. please provide key of the entry to return ");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    PDFTextString testString = driver->InfoDictionaryInstance->GetAdditionalInfoEntry(*UTF_8_VALUE(args[0]->TO_STRING()));
-    
-    SET_FUNCTION_RETURN_VALUE(NEW_STRING(testString.ToUTF8String().c_str()))
-}
-
-METHOD_RETURN_TYPE InfoDictionaryDriver::GetAdditionalInfoEntries(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    InfoDictionaryDriver* driver = ObjectWrap::Unwrap<InfoDictionaryDriver>(args.This());
-    if(!driver->InfoDictionaryInstance)
-    {
-		THROW_EXCEPTION("info dictionary driver not initialized. use the document context object to get a valid info dictionary");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    if(args.Length() != 1 ||
-       !args[0]->IsString())
-    {
-		THROW_EXCEPTION("wrong arguments. please provide key of the entry to return ");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    Local<Object> anObject = NEW_OBJECT;
-   
-    MapIterator<StringToPDFTextString> it = driver->InfoDictionaryInstance->GetAdditionaEntriesIterator();
-
-    while(it.MoveNext())
-        anObject->Set(GET_CURRENT_CONTEXT, NEW_STRING(it.GetKey().c_str()),NEW_STRING(it.GetValue().ToUTF8String().c_str()));
-    
-    SET_FUNCTION_RETURN_VALUE(anObject)
-}
-
-

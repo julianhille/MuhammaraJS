@@ -123,4 +123,81 @@ describe("HighLevelContentContext", function () {
       fs.rmSync(tempDirectory, { recursive: true, force: true });
     }
   });
+
+  it("does not emit partial drawPath operators", function () {
+    var invalidPath = path.join(
+      os.tmpdir(),
+      "muhammara-invalid-composite-path.pdf",
+    );
+    var pdfWriter = require("@muhammara/native-with-source").createWriter(
+      invalidPath,
+      { compress: false },
+    );
+    var page = pdfWriter.createPage(0, 0, 595, 842);
+    var cxt = pdfWriter.startPageContentContext(page);
+
+    var optionReads = [];
+    expect(function () {
+      cxt.drawPath(
+        [
+          [10, 20],
+          [Symbol("invalid x"), 40],
+        ],
+        {},
+      );
+    }).to.throw(TypeError);
+    expect(function () {
+      cxt.drawPath(
+        [
+          [50, 60],
+          [70, 80],
+        ],
+        {
+          get color() {
+            optionReads.push("color");
+            return "red";
+          },
+          get width() {
+            optionReads.push("width");
+            return Symbol("invalid width");
+          },
+        },
+      );
+    }).to.throw(TypeError);
+    expect(optionReads).to.deep.equal(["color", "width"]);
+    expect(function () {
+      cxt.drawPath(90, 100, 110, 120, { color: Symbol("invalid color") });
+    }).to.throw(TypeError);
+    expect(function () {
+      cxt.drawPath(130, 140, 150, 160, {
+        color: "blue",
+        get close() {
+          throw new Error("invalid close");
+        },
+      });
+    }).to.throw("invalid close");
+    var typeReads = 0;
+    expect(function () {
+      cxt.drawPath(170, 180, 190, 200, {
+        get type() {
+          if (++typeReads === 2) throw new Error("invalid type");
+          return "stroke";
+        },
+      });
+    }).to.throw("invalid type");
+    pdfWriter.writePage(page);
+    pdfWriter.end();
+
+    try {
+      var contents = fs.readFileSync(invalidPath, "latin1");
+      expect(contents).not.to.contain("10 20 m");
+      expect(contents).not.to.contain("1 0 0 RG");
+      expect(contents).not.to.contain("90 100 m");
+      expect(contents).not.to.contain("130 140 m");
+      expect(contents).not.to.contain("170 180 m");
+      expect(contents).not.to.contain("0 0 1 RG");
+    } finally {
+      fs.rmSync(invalidPath, { force: true });
+    }
+  });
 });

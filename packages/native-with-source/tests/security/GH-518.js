@@ -54,4 +54,27 @@ describe("GH-518", function () {
     }, /Unable to start parsing PDF file/);
     assert.strictEqual(stream.returnedOversizedRead, true);
   });
+
+  it("stops decoding a stream read after an element conversion fails", function () {
+    var laterElementRead = false;
+    var stream = new OversizedReadStream(Buffer.from("%PDF-1.4"));
+    stream.read = function () {
+      this.position = this.buffer.length;
+      var result = [0x25, Symbol("invalid byte")];
+      Object.defineProperty(result, 2, {
+        configurable: true,
+        enumerable: true,
+        get: function () {
+          laterElementRead = true;
+          return 0x44;
+        },
+      });
+      return result;
+    };
+
+    assert.throws(function () {
+      muhammara.createReader(stream);
+    }, /Unable to start parsing PDF file/);
+    assert.strictEqual(laterElementRead, false);
+  });
 });

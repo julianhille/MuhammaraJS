@@ -1,41 +1,22 @@
-/*
- Source File : UsedFontDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
 
-#include "nodes.h"
 #include "PDFDate.h"
+#include "napi/NapiSupport.h"
 
-class PDFDateDriver : public node::ObjectWrap
-{
+class PDFDateDriver : public muhammara::napi::ObjectWrap {
 public:
-    DEC_SUBORDINATE_INIT(Init)
-    
-    PDFDate* getInstance();
-    
-private:
-    PDFDate mDate;
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToString(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE SetToCurrentTime(const ARGS_TYPE& args);
-    static int GetIntValueFromDateFunction(v8::Local<v8::Date> inDate, const char* inFunctionName);
-    static unsigned int GetUIntValueFromDateFunction(v8::Local<v8::Date> inDate, const char* inFunctionName);
+  static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
+  PDFDate *getInstance();
 
+private:
+  PDFDate mDate;
+
+  static napi_value New(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToString(const muhammara::napi::CallbackArgs &args);
+  static napi_value SetToCurrentTime(const muhammara::napi::CallbackArgs &args);
+  static int GetIntValueFromDateFunction(napi_env env, napi_value date,
+                                         const char *functionName);
+  static unsigned int GetUIntValueFromDateFunction(napi_env env,
+                                                   napi_value date,
+                                                   const char *functionName);
 };

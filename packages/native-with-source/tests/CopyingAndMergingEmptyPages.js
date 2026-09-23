@@ -1,4 +1,5 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("chai").assert;
 var emptyFileName = __dirname + "/output/sampleEmptyFileForCopying.pdf";
 
 describe("CopyingAndMergingEmptyPage", function () {
@@ -32,6 +33,29 @@ describe("CopyingAndMergingEmptyPage", function () {
       .S();
 
     pdfWriter.writePage(page).end();
+  });
+
+  it("defaults form creation to the media box", function () {
+    var pdfWriter = muhammara.createWriter(
+      __dirname + "/output/CreateFormWithDefaultBox.pdf",
+    );
+    var formIDs = pdfWriter.createFormXObjectsFromPDF(emptyFileName);
+
+    assert.lengthOf(formIDs, 1);
+    pdfWriter.end();
+  });
+
+  it("rejects page objects forged from the native prototype", function () {
+    var pdfWriter = muhammara.createWriter(
+      __dirname + "/output/RejectForgedPage.pdf",
+    );
+    var page = pdfWriter.createPage(0, 0, 595, 842);
+    var forgedPage = Object.create(Object.getPrototypeOf(page));
+
+    assert.throws(function () {
+      pdfWriter.startPageContentContext(forgedPage);
+    }, "Wrong arguments, provide a page as the single parameter");
+    pdfWriter.end();
   });
 
   it("should be able to create page from empty page", function () {

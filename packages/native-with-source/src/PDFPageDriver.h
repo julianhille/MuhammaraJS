@@ -1,63 +1,33 @@
-/*
- Source File : PDFPageDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
-
-#include "nodes.h"
-
 #include "PDFPage.h"
-
+#include "napi/NapiSupport.h"
 class PageContentContext;
 class ConstructorsHolder;
-
-class PDFPageDriver : public node::ObjectWrap
-{
+class PDFPageDriver : public muhammara::napi::ObjectWrap {
 public:
-    virtual ~PDFPageDriver();
-    
-    DEC_SUBORDINATE_INIT(Init)
-    
-    
-    PDFPage* GetPage(){return mPDFPage;}
-    
-    PageContentContext* ContentContext;
+  PDFPageDriver();
+  ~PDFPageDriver() override;
+  static bool Init(muhammara::napi::ModuleState &, napi_value);
+  PDFPage *GetPage() { return mPDFPage; }
+  PageContentContext *ContentContext;
+  ConstructorsHolder *holder;
+  PDFPage *mPDFPage;
+  bool mOwnsPage;
 
-    ConstructorsHolder* holder;
-    PDFPage* mPDFPage;
-    bool mOwnsPage;   
-    
 private:
-    PDFPageDriver();
-        
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetMediaBox(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-    static void SetMediaBox(SET_ACCESSOR_METHOD_NAME_TYPE property,v8::Local<v8::Value> value,const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetBleedBox(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-    static void SetBleedBox(SET_ACCESSOR_METHOD_NAME_TYPE property,v8::Local<v8::Value> value,const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetCropBox(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-    static void SetCropBox(SET_ACCESSOR_METHOD_NAME_TYPE property,v8::Local<v8::Value> value,const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetTrimBox(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-    static void SetTrimBox(SET_ACCESSOR_METHOD_NAME_TYPE property,v8::Local<v8::Value> value,const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetArtBox(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-    static void SetArtBox(SET_ACCESSOR_METHOD_NAME_TYPE property,v8::Local<v8::Value> value,const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetRotate(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-    static void SetRotate(SET_ACCESSOR_METHOD_NAME_TYPE property,v8::Local<v8::Value> value,const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetResourcesDictionary(const ARGS_TYPE& args);
+  static napi_value New(const muhammara::napi::CallbackArgs &);
+  static napi_value GetMediaBox(const muhammara::napi::CallbackArgs &);
+  static napi_value SetMediaBox(const muhammara::napi::CallbackArgs &);
+  static napi_value GetBleedBox(const muhammara::napi::CallbackArgs &);
+  static napi_value SetBleedBox(const muhammara::napi::CallbackArgs &);
+  static napi_value GetCropBox(const muhammara::napi::CallbackArgs &);
+  static napi_value SetCropBox(const muhammara::napi::CallbackArgs &);
+  static napi_value GetTrimBox(const muhammara::napi::CallbackArgs &);
+  static napi_value SetTrimBox(const muhammara::napi::CallbackArgs &);
+  static napi_value GetArtBox(const muhammara::napi::CallbackArgs &);
+  static napi_value SetArtBox(const muhammara::napi::CallbackArgs &);
+  static napi_value GetRotate(const muhammara::napi::CallbackArgs &);
+  static napi_value SetRotate(const muhammara::napi::CallbackArgs &);
+  static napi_value
+  GetResourcesDictionary(const muhammara::napi::CallbackArgs &);
 };

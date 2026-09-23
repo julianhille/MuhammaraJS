@@ -1,4 +1,5 @@
 var assert = require("chai").assert;
+var muhammara = require("@muhammara/native-with-source");
 
 describe("TiffSpecialsTest", function () {
   it("should complete without error", function () {
@@ -126,5 +127,59 @@ describe("TiffSpecialsTest", function () {
     // ---
 
     pdfWriter.end();
+  });
+
+  it("rejects invalid colors before processing the TIFF", function () {
+    var output = __dirname + "/output/TiffSpecialsInvalidColors.pdf";
+    var image = __dirname + "/TestMaterials/images/tiff/jim___ah.tif";
+    var pdfWriter = muhammara.createWriter(output);
+    var objectsContext = pdfWriter.getObjectsContext();
+    var objectIdBeforeValidation = objectsContext.allocateNewObjectID();
+    var invalidOptions = [
+      { bwTreatment: { oneColor: [1, 2] } },
+      { grayscaleTreatment: { oneColor: [1, 2] } },
+      { grayscaleTreatment: { zeroColor: [1, 2] } },
+    ];
+
+    invalidOptions.forEach(function (options) {
+      var error = assert.throws(function () {
+        pdfWriter.createFormXObjectFromTIFF(image, options);
+      }, /array of either 3 or 4 colors/);
+      assert.instanceOf(error, TypeError);
+    });
+
+    assert.throws(function () {
+      pdfWriter.createFormXObjectFromTIFF(image, {
+        bwTreatment: {
+          oneColor: [
+            0,
+            {
+              valueOf: function () {
+                throw new Error("TIFF color coercion failed");
+              },
+            },
+            0,
+          ],
+        },
+      });
+    }, /TIFF color coercion failed/);
+
+    var objectIdAfterValidation = objectsContext.allocateNewObjectID();
+    assert.equal(
+      objectIdAfterValidation,
+      objectIdBeforeValidation + 1,
+      "invalid TIFF options must not allocate PDF objects",
+    );
+    [objectIdBeforeValidation, objectIdAfterValidation].forEach(function (id) {
+      var form = pdfWriter.createFormXObject(0, 0, 10, 10, id);
+      pdfWriter.endFormXObject(form);
+    });
+
+    pdfWriter.writePage(pdfWriter.createPage(0, 0, 100, 100));
+    pdfWriter.end();
+
+    var reader = muhammara.createReader(output);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
   });
 });

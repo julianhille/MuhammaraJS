@@ -1,4 +1,32 @@
 describe("TextMeasurementsTest", function () {
+  it("snapshots glyph array length before coercing elements", function () {
+    var assert = require("assert");
+    var pdfWriter = require("@muhammara/native-with-source").createWriter(
+      __dirname + "/output/TextMeasurementsGlyphLength.pdf",
+    );
+    var font = pdfWriter.getFontForFile(
+      __dirname + "/TestMaterials/fonts/arial.ttf",
+    );
+    var glyphs = [
+      {
+        valueOf: function () {
+          glyphs.push(2);
+          return 1;
+        },
+      },
+    ];
+
+    try {
+      assert.deepStrictEqual(
+        font.calculateTextDimensions(glyphs, 12),
+        font.calculateTextDimensions([1], 12),
+      );
+      assert.strictEqual(glyphs.length, 2);
+    } finally {
+      pdfWriter._abort();
+    }
+  });
+
   it("should complete without error", function () {
     var assert = require("assert");
     var pdfWriter = require("@muhammara/native-with-source").createWriter(

@@ -1,45 +1,20 @@
-/*
- Source File : ByteWriterDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
 
-#include "nodes.h"
+#include "napi/NapiSupport.h"
 
 class IByteWriter;
 
-class ByteWriterDriver : public node::ObjectWrap
-{
+class ByteWriterDriver : public muhammara::napi::ObjectWrap {
 public:
-    virtual ~ByteWriterDriver();
-    
-    DEC_SUBORDINATE_INIT(Init)
+  ~ByteWriterDriver() override;
+  static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
+  void SetStream(IByteWriter *writer, bool owns);
+  IByteWriter *GetStream();
 
-    void SetStream(IByteWriter* inReader,bool inOwns);
-    IByteWriter* GetStream();
-    
-    
 private:
-    ByteWriterDriver();
-    
-    IByteWriter* mInstance;
-    bool mOwns;
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE Write(const ARGS_TYPE& args);
+  ByteWriterDriver();
+  static napi_value New(const muhammara::napi::CallbackArgs &args);
+  static napi_value Write(const muhammara::napi::CallbackArgs &args);
+  IByteWriter *mInstance;
+  bool mOwns;
 };

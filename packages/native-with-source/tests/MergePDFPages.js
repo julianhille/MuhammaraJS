@@ -1,4 +1,5 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("chai").assert;
 
 describe("MergePDFPages", function () {
   describe("OnlyMerge", function () {
@@ -181,6 +182,25 @@ describe("MergePDFPages", function () {
 
       contentContext.Q();
       pdfWriter.writePage(page).end();
+    });
+
+    it("stops merging when the callback throws", function () {
+      var pdfWriter = muhammara.createWriter(
+        __dirname + "/output/MergeCallbackFailure.pdf",
+      );
+      var page = pdfWriter.createPage(0, 0, 595, 842);
+
+      assert.throws(function () {
+        pdfWriter.mergePDFPagesToPage(
+          page,
+          __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+          { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 1]] },
+          function () {
+            throw new Error("stop merging");
+          },
+        );
+      }, "stop merging");
+      pdfWriter._abort();
     });
   });
 
