@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Replace runtime-specific Node.js and Electron native binaries with Node-API 8
+  prebuilds shared by every supported runtime. Standard npm installs and public
+  package imports require no changes, but custom binary mirrors, direct archive
+  downloads, and tooling that uses `binding/muhammara.node` must replace
+  `node-v{abi}-{platform}-{arch}-{libc}.tar.gz` with
+  `napi-v8-{platform}-{arch}-{libc}.tar.gz` and use
+  `binding/napi-v8/muhammara.node`. See the
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#14-update-native-binary-tooling)
+  and [breaking changes](packages/native/docs/breaking-changes.md) page
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  [#504](https://github.com/julianhille/MuhammaraJS/issues/504)
 - Require a Recipe text `size`, or its `fontSize` alias, greater than zero and
   throw `RangeError` naming the option and the value otherwise. `text()`
   clamped a negative size to 1pt, drew nothing visible for zero, and
@@ -55,6 +66,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
   writer dictionaries and related parser, encryption, and stream ownership
   defects on native and Wasm builds.
+- Reject invalid TIFF color arrays before processing the image instead of
+  continuing with fallback colors or terminating the process during conversion
+  [#752](https://github.com/julianhille/MuhammaraJS/issues/752)
 - Fix native documentation examples that could not run as written: `endPDF()`
   discarded the Recipe instance in the Add Clickable URL Links how-to because
   native `endPDF()` returns nothing without a callback; a migration-guide
@@ -139,6 +153,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Build seven canonical native prebuilds and reuse them across supported Node.js
+  and Electron compatibility-boundary tests, including native ARM64 musl tests
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Update GitHub Actions to their current releases to remove deprecated Node.js
   action runtimes [#700](https://github.com/julianhille/MuhammaraJS/issues/700)
 - Declare native Recipe `fill()`, `stroke()`, and `fillAndStroke()` without a

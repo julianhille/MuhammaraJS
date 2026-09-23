@@ -13,12 +13,12 @@ one to fetch.
 ## Install The Target Platform's Prebuilt
 
 The install script delegates to `@mapbox/node-pre-gyp`, which selects the
-download from four settings: `target` (the Node.js version), `target_platform`,
+Node-API 8 download from three target settings: `target_platform`,
 `target_arch`, and `target_libc`. Set them as environment variables and install
-normally:
+normally. The same archive supports every Node.js version in the package's
+supported range:
 
 ```sh
-npm_config_target=22.19.0 \
 npm_config_target_platform=linux \
 npm_config_target_arch=x64 \
 npm_config_target_libc=glibc \
@@ -28,7 +28,6 @@ npm install @muhammara/native
 On Windows PowerShell:
 
 ```powershell
-$env:npm_config_target = "22.19.0"
 $env:npm_config_target_platform = "linux"
 $env:npm_config_target_arch = "x64"
 $env:npm_config_target_libc = "glibc"
@@ -38,23 +37,13 @@ npm install @muhammara/native
 The bundle that install produces is ready to zip and upload. Nothing is copied
 or replaced afterwards.
 
-### Selecting The Node.js Version
+### Node.js Versions Share One Binary
 
-`npm_config_target` decides which Node.js ABI is downloaded, so the local
-Node.js version does not have to match the Lambda runtime. Omit it and the ABI
-of the Node.js performing the install is used instead.
-
-node-pre-gyp maps the requested version to an ABI through a bundled table that
-does not list every patch release. For a version it does not know it falls back
-to the newest release of the same major and says so:
-
-```
-Warning: node-pre-gyp could not find exact match for 22.19.0
-Warning: but node-pre-gyp successfully choose 22.0.0 as ABI compatible target
-```
-
-That warning is expected and harmless. The ABI is stable across a Node.js major
-version, so the fallback resolves to the same binary.
+MuhammaraJS targets Node-API 8 rather than a runtime-specific Node.js ABI.
+`npm_config_target` is therefore unnecessary for selecting its prebuild: Node.js
+20, 22, 24, and later supported releases use the same archive for a given
+platform, architecture, and libc. For example, every supported Linux x64 Lambda
+runtime uses `napi-v8-linux-x64-glibc.tar.gz`.
 
 ### The Installed Tree Is A Deployment Artifact
 
@@ -65,7 +54,7 @@ apart in any workflow that also runs tests locally.
 
 ### A Note On npm Deprecation Warnings
 
-npm 11 does not recognize these four settings as its own configuration and
+npm 11 does not recognize these three settings as its own configuration and
 warns about each one, whether it receives them from the environment, from
 command-line flags such as `--target_arch=x64`, or from an `.npmrc` file:
 
@@ -80,10 +69,10 @@ npm's configuration system.
 
 ## Match The Runtime
 
-| Lambda runtime | Node.js major | Node.js ABI |
-| -------------- | ------------- | ----------- |
-| `nodejs20.x`   | 20            | 115         |
-| `nodejs22.x`   | 22            | 127         |
+| Lambda runtime | Node.js major | Node-API prebuild            |
+| -------------- | ------------- | ---------------------------- |
+| `nodejs20.x`   | 20            | `napi-v8-linux-{arch}-glibc` |
+| `nodejs22.x`   | 22            | `napi-v8-linux-{arch}-glibc` |
 
 The function's architecture setting maps directly to `target_arch`: `x86_64` is
 `x64`, and `arm64` is `arm64`.
@@ -152,11 +141,11 @@ longer uses. Use the overrides above instead.
 ## Binary Resolution Examples
 
 The overrides on this page were verified on Linux x64. For example,
-`target_platform=win32` produced a Windows PE32+ binary from
-`node-v141-win32-x64-unknown.tar.gz`; `target=20.9.0` with `target_platform=linux`
-produced `node-v115-linux-x64-glibc.tar.gz`; and `target=22.19.0` with
-`target_arch=arm64` resolved through the crosswalk fallback to `node-v127` and
-produced an ELF aarch64 binary.
+`target_platform=win32` selects a Windows PE32+ binary from
+`napi-v8-win32-x64-unknown.tar.gz`, while `target_platform=linux` with
+`target_arch=arm64` selects `napi-v8-linux-arm64-glibc.tar.gz` and produces an
+ELF aarch64 binary. The Node.js version running npm does not change either
+filename.
 
 AWS runtime details are current as of this page's last revision and are
 maintained by AWS, not by this project.

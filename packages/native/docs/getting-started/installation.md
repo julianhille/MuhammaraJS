@@ -18,6 +18,10 @@ Both packages contain the same API and native prebuild metadata.
 normally by npm. `@muhammara/native` intentionally does not fetch or cache a
 source fallback.
 
+Official binaries target Node-API 8. Each operating system, architecture, and
+libc combination has one prebuild shared by all supported Node.js and Electron
+versions, rather than a separate binary for each runtime ABI.
+
 ## Install As An Npm Alias
 
 Keep an existing `require("@muhammara/native")` import while selecting the
@@ -106,17 +110,20 @@ npm's normal cache.
 
 ## Prebuilt Support Matrix
 
-Prebuilt binaries are published with release tags for the combinations built by
-the release workflow. Install normally with npm when your runtime is listed. For
-any other platform, architecture, runtime, or libc combination, install
+Prebuilt binaries are published with release tags for the platform combinations
+built by the release workflow. Because one Node-API 8 binary is shared across
+compatible Node.js and Electron releases, CI tests the oldest and newest runtime
+at each supported range boundary rather than every intermediate release. Install
+normally with npm when your runtime is listed. For any other platform,
+architecture, runtime, or libc combination, install
 `@muhammara/native-with-source` to build locally.
 
-| Runtime  | Versions built        | Operating system and architecture | Prebuilt binary    |
+| Runtime  | Supported versions    | Operating system and architecture | Prebuilt binary    |
 | -------- | --------------------- | --------------------------------- | ------------------ |
-| Node.js  | 20, 22, 24, 25, 26    | Linux glibc x64 and arm64         | Yes                |
-| Node.js  | 20, 22, 24, 25, 26    | Linux musl x64 and arm64          | Yes                |
-| Node.js  | 20, 22, 24, 25, 26    | macOS x64 and arm64               | Yes                |
-| Node.js  | 20, 22, 24, 25, 26    | Windows x64                       | Yes                |
+| Node.js  | 20, 22, 24, >=25      | Linux glibc x64 and arm64         | Yes                |
+| Node.js  | 20, 22, 24, >=25      | Linux musl x64 and arm64          | Yes                |
+| Node.js  | 20, 22, 24, >=25      | macOS x64 and arm64               | Yes                |
+| Node.js  | 20, 22, 24, >=25      | Windows x64                       | Yes                |
 | Node.js  | Any other combination | Any                               | Use source package |
 | Electron | 36.0 through 44.0     | Linux x64                         | Yes                |
 | Electron | 36.0 through 44.0     | macOS arm64                       | Yes                |
@@ -133,9 +140,9 @@ coverage.
 The binary is selected for the machine running the install, not for the machine
 that will run the application. Installing on Windows or macOS and deploying that
 `node_modules` directory to a Linux target such as AWS Lambda ships an
-unloadable binary. Set `npm_config_target`, `npm_config_target_platform`,
-`npm_config_target_arch`, and `npm_config_target_libc` to install a different
-Node.js version's or platform's published binary instead; see
+unloadable binary. Set `npm_config_target_platform`, `npm_config_target_arch`,
+and `npm_config_target_libc` to install another platform's published binary
+instead; the Node-API 8 archive is shared by every supported Node.js version. See
 [Deploy To AWS Lambda](../how-to/deploy-to-aws-lambda.md) for the runtime
 mapping and the constraints that apply.
 

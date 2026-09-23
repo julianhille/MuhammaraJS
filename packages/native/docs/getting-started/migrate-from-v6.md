@@ -474,10 +474,35 @@ recipe.text("Hello", 72, 72, size > 0 ? { size: size } : {});
 `null` and `undefined` still select the default, so an optional property that
 is simply absent needs no change.
 
+## 14. Update Native Binary Tooling
+
+v7 uses one Node-API 8 binary across all supported Node.js and Electron
+versions. An ordinary npm install and public package import need no change beyond
+the package rename described above. The native binary metadata, archive name,
+and installed path do change:
+
+|                   | v6                                                | v7                                        |
+| ----------------- | ------------------------------------------------- | ----------------------------------------- |
+| Prebuild archive  | `node-v{abi}-{platform}-{arch}-{libc}.tar.gz`     | `napi-v8-{platform}-{arch}-{libc}.tar.gz` |
+| Installed addon   | `binding/muhammara.node`                          | `binding/napi-v8/muhammara.node`          |
+| Runtime selection | Separate archive for each Node.js or Electron ABI | One archive for every Node-API 8+ runtime |
+
+Update custom binary mirrors and direct-download deployment scripts to carry
+the `napi-v8-*` archives. Stop copying or importing the addon through a
+hard-coded `binding/muhammara.node` path; import the package so `node-pre-gyp`
+resolves its declared module path. Tooling that intentionally inspects the
+binary can read `binary.module_path`, `binary.package_name`, and
+`binary.napi_versions` from the selected package's `package.json` rather than
+duplicating these values.
+
+The real `napi_versions: [8]` metadata also allows package analyzers such as
+Turbopack to identify the addon as Node-API compatible.
+
 ## What Does Not Change
 
 - Supported Node.js versions.
-- Native binary metadata and the `node-pre-gyp` install flow.
+- The public JavaScript API and package entry points.
+- The `node-pre-gyp` install flow for native prebuilds.
 
 ## Version 6 Status
 

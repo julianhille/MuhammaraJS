@@ -4,6 +4,17 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Native prebuilds now use Node-API 8 and are named
+  `napi-v8-{platform}-{arch}-{libc}.tar.gz` instead of
+  `node-v{abi}-{platform}-{arch}-{libc}.tar.gz`. The installed addon now lives
+  at `binding/napi-v8/muhammara.node` instead of
+  `binding/muhammara.node`. Standard npm installs and
+  `require("@muhammara/native")` calls continue to work, but custom mirrors,
+  direct archive downloads, deployment scripts, and direct addon imports that
+  assume the old names or path must use the Node-API names instead. See
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#14-update-native-binary-tooling)
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  [#504](https://github.com/julianhille/MuhammaraJS/issues/504).
 - Recipe HTML text keeps text outside any element on one line with its
   neighboring inline elements, and keeps one space between them: `x <b>a</b> y`
   renders as one line `x a y`, as it already did inside `<p>`. Previously each
