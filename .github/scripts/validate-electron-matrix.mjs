@@ -5,89 +5,20 @@ var workflow = readFileSync(
   new URL("../workflows/ci-native.yml", import.meta.url),
   "utf8",
 );
-var jobNames = [
-  "build-electron-legacy",
-  "build-electron-38-39",
-  "build-electron-40-41",
-  "build-electron",
+var bindingGyp = readFileSync(
+  new URL("../../packages/native-with-source/binding.gyp", import.meta.url),
+  "utf8",
+);
+var expectedCases = [
+  ["ubuntu-22.04", "linux", "x64", "36.0.0", "22.14.0"],
+  ["ubuntu-22.04", "linux", "x64", "44.0.0", "24.18.1"],
+  ["macos-15", "darwin", "x64", "36.0.0", "22.14.0"],
+  ["macos-15", "darwin", "x64", "38.1.0", "22.19.0"],
+  ["macos-15", "darwin", "arm64", "36.0.0", "22.14.0"],
+  ["macos-15", "darwin", "arm64", "44.0.0", "24.18.1"],
+  ["windows-2022", "win32", "x64", "36.0.0", "22.14.0"],
+  ["windows-2022", "win32", "x64", "44.0.0", "24.18.1"],
 ];
-var expectedVersions = new Map([
-  ["36.0.0", "22.14.0"],
-  ["36.1.0", "22.14.0"],
-  ["36.2.0", "22.15.0"],
-  ["36.3.0", "22.15.1"],
-  ["36.4.0", "22.15.1"],
-  ["36.5.0", "22.16.0"],
-  ["36.6.0", "22.16.0"],
-  ["36.7.0", "22.17.0"],
-  ["36.8.0", "22.18.0"],
-  ["36.9.0", "22.19.0"],
-  ["37.0.0", "22.16.0"],
-  ["37.1.0", "22.16.0"],
-  ["37.2.0", "22.17.0"],
-  ["37.3.0", "22.18.0"],
-  ["37.4.0", "22.18.0"],
-  ["37.5.0", "22.19.0"],
-  ["38.0.0", "22.18.0"],
-  ["38.1.0", "22.19.0"],
-  ["38.2.2", "22.19.0"],
-  ["38.3.0", "22.20.0"],
-  ["38.4.0", "22.20.0"],
-  ["38.5.0", "22.20.0"],
-  ["38.6.0", "22.21.1"],
-  ["38.7.2", "22.21.1"],
-  ["38.8.6", "22.22.0"],
-  ["39.0.0", "22.20.0"],
-  ["39.1.2", "22.21.1"],
-  ["39.2.7", "22.21.1"],
-  ["39.3.0", "22.21.1"],
-  ["39.4.0", "22.22.0"],
-  ["39.5.2", "22.22.0"],
-  ["39.6.1", "22.22.0"],
-  ["39.7.0", "22.22.0"],
-  ["39.8.10", "22.22.1"],
-  ["40.0.0", "24.11.1"],
-  ["40.1.0", "24.11.1"],
-  ["40.2.1", "24.11.1"],
-  ["40.3.0", "24.13.0"],
-  ["40.4.1", "24.13.0"],
-  ["40.5.0", "24.13.1"],
-  ["40.6.1", "24.13.1"],
-  ["40.7.0", "24.14.0"],
-  ["40.8.5", "24.14.0"],
-  ["40.9.3", "24.14.1"],
-  ["40.10.6", "24.15.0"],
-  ["41.0.4", "24.14.0"],
-  ["41.1.1", "24.14.0"],
-  ["41.2.2", "24.14.1"],
-  ["41.3.0", "24.15.0"],
-  ["41.4.0", "24.15.0"],
-  ["41.5.2", "24.15.0"],
-  ["41.6.1", "24.15.0"],
-  ["41.7.2", "24.15.0"],
-  ["41.8.0", "24.16.0"],
-  ["41.9.2", "24.17.0"],
-  ["41.10.7", "24.18.0"],
-  ["42.0.1", "24.15.0"],
-  ["42.1.0", "24.15.0"],
-  ["42.2.0", "24.15.0"],
-  ["42.3.3", "24.15.0"],
-  ["42.4.1", "24.16.0"],
-  ["42.5.2", "24.17.0"],
-  ["42.6.2", "24.18.0"],
-  ["42.7.1", "24.18.0"],
-  ["42.8.1", "24.18.1"],
-  ["42.9.3", "24.18.1"],
-  ["42.10.1", "24.18.1"],
-  ["43.0.0", "24.17.0"],
-  ["43.1.1", "24.18.0"],
-  ["43.2.0", "24.18.0"],
-  ["43.3.0", "24.18.1"],
-  ["43.4.1", "24.18.1"],
-  ["44.0.0", "24.18.1"],
-]);
-var versions = [];
-var nodeVersions = new Map();
 
 /**
  * Return one top-level job from the native workflow.
@@ -105,54 +36,18 @@ function getJob(name) {
   return nextJob === -1 ? remainder : remainder.slice(0, nextJob);
 }
 
-for (var jobName of jobNames) {
-  var job = getJob(jobName);
-  var matrixMatch = job.match(
-    /        electron:\n((?:          - \d+\.\d+\.\d+\n)+)        include:/,
-  );
-  assert.ok(matrixMatch, `Missing Electron matrix in ${jobName}`);
-
-  var matrixVersions = Array.from(
-    matrixMatch[1].matchAll(/          - (\d+\.\d+\.\d+)/g),
-    (match) => match[1],
-  );
-  var mappedVersions = Array.from(
-    job.matchAll(
-      /          - electron: (\d+\.\d+\.\d+)\n            node: (\d+\.\d+\.\d+)/g,
-    ),
-  );
-
-  assert.deepEqual(
-    mappedVersions.map((match) => match[1]).sort(),
-    matrixVersions.sort(),
-    `${jobName} must map every Electron version to exactly one Node version`,
-  );
-  for (var mapping of mappedVersions) {
-    nodeVersions.set(mapping[1], mapping[2]);
-  }
-  versions.push(...matrixVersions);
-}
-
-assert.deepEqual(
-  versions.toSorted(),
-  Array.from(expectedVersions.keys()).sort(),
-  "Electron matrix must contain the validated newest patch for every supported minor",
+var electronJob = getJob("test-electron");
+var cases = Array.from(
+  electronJob.matchAll(
+    /          - os: (\S+)\n            platform: (\S+)\n            architecture: (\S+)\n            architecture_node: \S+\n            libc: \S+\n            electron: (\d+\.\d+\.\d+)\n            node: (\d+\.\d+\.\d+)/g,
+  ),
+  (match) => match.slice(1),
 );
 assert.deepEqual(
-  nodeVersions,
-  expectedVersions,
-  "Electron versions must use their validated Node runtime",
+  cases,
+  expectedCases,
+  "Electron CI must test the supported Node-API compatibility boundaries",
 );
-
-var minors = new Map();
-for (var version of versions) {
-  var minor = version.split(".").slice(0, 2).join(".");
-  assert.ok(
-    !minors.has(minor),
-    `Electron ${minor} has multiple patch builds: ${minors.get(minor)} and ${version}`,
-  );
-  minors.set(minor, version);
-}
 
 var nativePackage = JSON.parse(
   readFileSync(
@@ -166,17 +61,87 @@ var sourcePackage = JSON.parse(
     "utf8",
   ),
 );
+var workflowVersionMatch = workflow.match(/^  NAPI_VERSION: (\d+)$/m);
+assert.ok(workflowVersionMatch, "Native CI must declare NAPI_VERSION");
+var napiVersion = Number(workflowVersionMatch[1]);
 
 assert.equal(
   nativePackage.binary.package_name,
   sourcePackage.binary.package_name,
   "Native packages must use the same prebuild filename",
 );
+assert.equal(
+  nativePackage.binary.module_path,
+  sourcePackage.binary.module_path,
+  "Native packages must use the same installed binding path",
+);
+for (var packageManifest of [nativePackage, sourcePackage]) {
+  assert.ok(
+    packageManifest.binary.package_name.includes("{napi_build_version}"),
+    `${packageManifest.name} must identify the Node-API build version`,
+  );
+  assert.ok(
+    !packageManifest.binary.package_name.includes("{node_abi}"),
+    `${packageManifest.name} must not identify a runtime-specific ABI`,
+  );
+  assert.deepEqual(
+    packageManifest.binary.napi_versions,
+    [napiVersion],
+    `${packageManifest.name} must match the CI Node-API version`,
+  );
+  assert.ok(
+    packageManifest.binary.module_path.includes("{napi_build_version}"),
+    `${packageManifest.name} must version its installed binding path`,
+  );
+}
+assert.match(
+  bindingGyp,
+  new RegExp(`'napi_build_version%': ${napiVersion}(?:,|\\s)`),
+  "binding.gyp must match the CI Node-API version",
+);
 assert.ok(
-  nativePackage.binary.package_name.includes("{node_abi}"),
-  "Electron prebuild filenames must preserve the major.minor ABI label",
+  workflow.includes("prebuild-napi-v${{ env.NAPI_VERSION }}-"),
+  "CI artifact names must identify the Node-API version",
+);
+assert.doesNotMatch(
+  workflow,
+  /^\s+name: prebuild-(?!napi-v)/m,
+  "CI must not publish an unversioned prebuild artifact",
+);
+
+var muslBuild = getJob("build-prebuild-musl");
+assert.match(
+  muslBuild,
+  /runner: ubuntu-22\.04\n\s+architecture: arm64\n\s+image: dockcross\/linux-arm64-musl/,
+  "ARM64 musl must cross-build in Dockcross on an x64 runner",
+);
+assert.match(
+  muslBuild,
+  /if: matrix\.architecture == 'arm64'\n\s+run: npm run package --workspace=@muhammara\/native-with-source -- --target_arch=arm64 --target_libc=musl/,
+  "Cross-built ARM64 addons must be packaged without host load-testing",
+);
+var muslTests = getJob("test-node-musl");
+assert.doesNotMatch(
+  muslTests,
+  /ubuntu-22\.04-arm/,
+  "Job-level Alpine containers cannot run JavaScript actions on ARM64",
+);
+var armMuslTests = getJob("test-node-musl-arm64");
+assert.match(armMuslTests, /runs-on: ubuntu-22\.04-arm/);
+assert.doesNotMatch(armMuslTests, /^    container:/m);
+assert.match(armMuslTests, /node: \[20\.19\.0, 26\.8\.1\]/);
+assert.match(armMuslTests, /docker exec musl-tests npm ci --ignore-scripts/);
+assert.match(armMuslTests, /docker exec musl-tests npm test/);
+assert.match(
+  armMuslTests,
+  /docker exec musl-tests node \.github\/scripts\/prepare-native-prebuild\.mjs verify/,
+);
+assert.match(
+  getJob("publish"),
+  /test-node-musl-arm64,/,
+  "Publishing must wait for native ARM64 musl tests",
 );
 
 console.log(
-  `Validated ${versions.length} Electron builds with one patch per minor.`,
+  `Validated ${cases.length} Electron Node-API boundary checks and musl build/test separation.`,
 );
