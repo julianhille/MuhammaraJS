@@ -24,6 +24,8 @@
 #include "PDFDocumentCopyingContext.h"
 #include "PDFWriter.h"
 
+#include <memory>
+
 using namespace PDFHummus;
 
 
@@ -46,42 +48,20 @@ EStatusCode PDFPageMergingHelper::MergePageContent(PDFDocumentCopyingContext* in
 
 EStatusCode PDFPageMergingHelper::MergePageContent(PDFWriter* inWriter,const std::string& inPDFFilePath,unsigned long inPageIndex)
 {
-    EStatusCode status = eSuccess;
-    
-    do 
-    {
-        PDFDocumentCopyingContext* copyingContext = inWriter->CreatePDFCopyingContext(inPDFFilePath);
-        
-        if(!copyingContext)
-        {
-            status = eFailure;
-            break;
-        }
-        
-        status = MergePageContent(copyingContext,inPageIndex);
-        
-    } while (false);
-    
-    return status;
+    std::unique_ptr<PDFDocumentCopyingContext> copyingContext(inWriter->CreatePDFCopyingContext(inPDFFilePath));
+
+    if(!copyingContext)
+        return eFailure;
+
+    return MergePageContent(copyingContext.get(),inPageIndex);
 }
 
 EStatusCode PDFPageMergingHelper::MergePageContent(PDFWriter* inWriter,IByteReaderWithPosition* inPDFStream,unsigned long inPageIndex)
 {
-    EStatusCode status = eSuccess;
-    
-    do 
-    {
-        PDFDocumentCopyingContext* copyingContext = inWriter->CreatePDFCopyingContext(inPDFStream);
-        
-        if(!copyingContext)
-        {
-            status = eFailure;
-            break;
-        }
-        
-        status = MergePageContent(copyingContext,inPageIndex);
-        
-    } while (false);
-    
-    return status;    
+    std::unique_ptr<PDFDocumentCopyingContext> copyingContext(inWriter->CreatePDFCopyingContext(inPDFStream));
+
+    if(!copyingContext)
+        return eFailure;
+
+    return MergePageContent(copyingContext.get(),inPageIndex);
 }

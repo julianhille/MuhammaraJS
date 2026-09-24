@@ -86,6 +86,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Release copying contexts created by `PDFPageMergingHelper` after file- and
+  stream-based merges instead of retaining their parser and source resources
+  [#759](https://github.com/julianhille/MuhammaraJS/issues/759)
 - Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
   writer dictionaries and related parser, encryption, and stream ownership
   defects on native and Wasm builds.
