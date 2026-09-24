@@ -955,7 +955,7 @@ export function createWriterToModifyFactory({
                 throw new Error("Encrypted PDF input is not supported in Wasm");
               throw new Error("Unable to merge PDF pages from input bytes");
             }
-            if (callback) callback();
+            if (callback) Reflect.apply(callback, globalThis, []);
             return this;
           } finally {
             module._free(errorPointer);

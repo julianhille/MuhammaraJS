@@ -6,6 +6,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Align `mergePDFPagesToPage` callback receivers with native: strict callbacks now receive `globalThis` instead of `undefined`. Use `callback.bind(undefined)` if an undefined receiver is required.
+
 - Treat low-level shape `type: null` as an unknown type, ending the path without
   painting instead of stroking with stale graphics state, matching native.
   Omit `type` or pass `"stroke"` to draw an outline; see

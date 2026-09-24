@@ -2,6 +2,10 @@
 
 ## Version 1.x
 
+- Merge callbacks now receive `globalThis` as `this`, matching native, instead
+  of `undefined` in strict functions. Code relying on an undefined receiver
+  should pass `callback.bind(undefined)` explicitly.
+
 - Low-level shape `type: null` now ends the path without painting, matching
   native, instead of drawing an outline using the previous stroke color and
   width. Omit `type` or pass `"stroke"` if you want an outline. See

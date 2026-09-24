@@ -2302,7 +2302,7 @@ export function createWriterFactory({
           }
           // Wasm cannot re-enter JavaScript during the synchronous native merge.
           // Invoke the browser callback once the full merge has completed.
-          if (callback) callback();
+          if (callback) Reflect.apply(callback, globalThis, []);
           return writer;
         } finally {
           module._free(errorPointer);

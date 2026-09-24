@@ -2,6 +2,11 @@
 
 ## Writer Lifecycle
 
+`mergePDFPagesToPage` (including its async variant) invokes its optional callback
+with no arguments and `globalThis` as `this`, matching native on fresh and
+modifying writers. Bound functions retain their bound receiver; arrow functions
+retain their lexical `this`.
+
 Finish drawing before calling `writer.end()`. After finalization, disposal, or
 a finalization failure, stateful writer methods throw
 `Error("PDF writer has ended")`, matching native. Async methods reject their

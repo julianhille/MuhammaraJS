@@ -870,6 +870,7 @@ declare namespace muhammara {
       source: FilePath | ReadStream,
       options?: AppendOptions,
     ): number[];
+    /** Calls the optional callback with no arguments and globalThis as its receiver. */
     mergePDFPagesToPage(
       page: PDFPage,
       file: FilePath | PDFRStreamForFile,

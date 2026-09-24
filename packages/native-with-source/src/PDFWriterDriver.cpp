@@ -686,7 +686,12 @@ public:
                                        ObjectsContext *, DocumentContext *,
                                        PDFDocumentHandler *) override {
     napi_value fn = callback.Get();
-    return !fn || Call(env, Undefined(env), fn) ? eSuccess : eFailure;
+    if (!fn)
+      return eSuccess;
+    napi_value receiver;
+    if (!Check(env, napi_get_global(env, &receiver)))
+      return eFailure;
+    return Call(env, receiver, fn) ? eSuccess : eFailure;
   }
   napi_env env;
   Reference callback;

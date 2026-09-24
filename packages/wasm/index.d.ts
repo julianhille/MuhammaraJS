@@ -1334,6 +1334,7 @@ export interface PDFWriter {
     source: AsyncByteSource,
     options?: PageRangeOptions,
   ): Promise<number[]>;
+  /** Calls the optional callback with no arguments and globalThis as its receiver. */
   mergePDFPagesToPage(
     page: PDFPage,
     source: ByteSource,
