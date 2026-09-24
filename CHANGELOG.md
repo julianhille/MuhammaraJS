@@ -75,6 +75,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add Electron 44.4.5 as the newest tested compatibility boundary on Linux x64,
+  macOS arm64, and Windows x64
+  [#753](https://github.com/julianhille/MuhammaraJS/issues/753)
 - Add regression coverage for `retrieveJPGImageInformation`, the `compress`
   writer option's effect on output bytes, and the low-level `ri`, `i`, `gs`,
   `CS`, `cs`, `SC`, `SCN`, `sc`, and `scn` content-stream operators, closing

@@ -302,7 +302,7 @@ jobs:
             architecture: x64
             architecture_node: x64
             libc: glibc
-            electron: 44.0.0
+            electron: 44.4.5
             node: 24.18.1
           - os: macos-15
             platform: darwin
@@ -330,7 +330,7 @@ jobs:
             architecture: arm64
             architecture_node: arm64
             libc: unknown
-            electron: 44.0.0
+            electron: 44.4.5
             node: 24.18.1
           - os: windows-2022
             platform: win32
@@ -344,7 +344,7 @@ jobs:
             architecture: x64
             architecture_node: x64
             libc: unknown
-            electron: 44.0.0
+            electron: 44.4.5
             node: 24.18.1
     runs-on: ${{ matrix.os }}
     steps:
