@@ -9,6 +9,11 @@
                 'USE_BUNDLED=TRUE'
             ],
             'conditions': [
+                ['OS=="linux"', {
+                    'defines': [
+                        'PDFHUMMUS_HAVE_GETENTROPY=1'
+                    ]
+                }],
                 ['OS=="mac"', {
                    'xcode_settings': {
                        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
