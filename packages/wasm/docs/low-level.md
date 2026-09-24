@@ -73,5 +73,7 @@ Task-oriented low-level guides:
 
 - [Preview, Download, or Upload a PDF](how-to/serve-a-pdf-response.md)
 - [Find Text Positions](how-to/find-text-positions.md)
+- [Inspect PDF Objects](how-to/inspect-pdf-objects.md)
+- [Read PDF Bookmarks](how-to/read-bookmarks.md)
 - [Add Clickable URL Links](how-to/add-url-links.md)
 - [Set Page Boxes](how-to/set-page-boxes.md)

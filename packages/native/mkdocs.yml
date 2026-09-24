@@ -96,6 +96,8 @@ nav:
           - Watermark Every Page: how-to/watermark-pdfs.md
           - Delete Pages From A PDF: how-to/delete-pages.md
           - Find Text Positions: how-to/find-text-positions.md
+          - Inspect PDF Objects: how-to/inspect-pdf-objects.md
+          - Read PDF Bookmarks: how-to/read-bookmarks.md
           - Add Clickable URL Links: how-to/add-url-links.md
           - Change PDF Passwords: how-to/change-pdf-passwords.md
           - Add Metadata to an Existing PDF: how-to/add-metadata-to-existing-pdfs.md
