@@ -66,6 +66,11 @@ void Trace::SetLogSettings(IByteWriter* inLogStream,bool inShouldLog)
 	}
 }
 
+bool Trace::IsLogStream(IByteWriter* inLogStream) const
+{
+	return mShouldLog && mLogStream == inLogStream;
+}
+
 
 void Trace::TraceToLog(const char* inFormat,...)
 {
@@ -107,4 +112,3 @@ void Trace::TraceToLog(const char* inFormat,va_list inList)
 	}
 
 }
-

@@ -115,13 +115,13 @@ function checkEndedWriter(directory, mode) {
 }
 
 /**
- * Continue a shut-down writer with a JavaScript object as its log target.
+ * Continue a named shut-down writer with a JavaScript object as its log target.
  * Returns the writer together with the chunks the process-global trace writes
  * into that object.
  */
-function continueWithLogStream(directory) {
-  var outputPath = path.join(directory, "logged.pdf");
-  var statePath = path.join(directory, "logged-state.txt");
+function continueWithLogStream(directory, name) {
+  var outputPath = path.join(directory, name + ".pdf");
+  var statePath = path.join(directory, name + "-state.txt");
   var source = muhammara.createWriter(outputPath);
   source.writePage(source.createPage(0, 0, 200, 200));
   source.shutdown(statePath);
@@ -180,7 +180,7 @@ describe("UseAfterEndTest", function () {
           path.join(os.tmpdir(), "muhammara-writer-log-"),
         );
         try {
-          var logged = continueWithLogStream(directory);
+          var logged = continueWithLogStream(directory, "logged");
 
           traceAFailure(directory);
           assert.isAbove(
@@ -210,6 +210,79 @@ describe("UseAfterEndTest", function () {
         }
       },
     );
+  });
+
+  ["end", "abort"].forEach(function (mode) {
+    ["stream", "file"].forEach(function (destination) {
+      it(
+        "preserves a newer " +
+          destination +
+          " logger when an older writer " +
+          mode +
+          "s",
+        function () {
+          var directory = fs.mkdtempSync(
+            path.join(os.tmpdir(), "muhammara-overlapping-writer-log-"),
+          );
+          var older;
+          var newer;
+          try {
+            older = continueWithLogStream(directory, "older");
+            traceAFailure(directory);
+            assert.isAbove(
+              older.written.length,
+              0,
+              "the older writer's log stream should initially be active",
+            );
+
+            var logPath = path.join(directory, "newer.log");
+            if (destination === "stream") {
+              newer = continueWithLogStream(directory, "newer");
+            } else {
+              newer = {
+                writer: muhammara.createWriter(
+                  path.join(directory, "newer.pdf"),
+                  { log: logPath },
+                ),
+              };
+            }
+
+            if (mode === "end") {
+              older.writer.end();
+            } else {
+              older.writer._abort();
+            }
+
+            var writtenBeforeTrace =
+              destination === "stream"
+                ? newer.written.length
+                : fs.existsSync(logPath)
+                  ? fs.statSync(logPath).size
+                  : 0;
+            traceAFailure(directory);
+            var writtenAfterTrace =
+              destination === "stream"
+                ? newer.written.length
+                : fs.existsSync(logPath)
+                  ? fs.statSync(logPath).size
+                  : 0;
+            assert.isAbove(
+              writtenAfterTrace,
+              writtenBeforeTrace,
+              "the newer writer's logger should remain active",
+            );
+          } finally {
+            if (older) older.writer._abort();
+            if (newer) newer.writer._abort();
+            var reset = muhammara.createWriter(
+              path.join(directory, "reset-trace.pdf"),
+            );
+            reset._abort();
+            fs.rmSync(directory, { recursive: true, force: true });
+          }
+        },
+      );
+    });
   });
 
   it("should reject all PDF reader use after end", function () {

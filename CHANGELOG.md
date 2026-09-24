@@ -91,6 +91,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Preserve a newer writer's stream or file logger when an overlapping writer
+  with an older stream logger ends or aborts
+  [#757](https://github.com/julianhille/MuhammaraJS/issues/757)
 - Prefer `getentropy()` for native Linux CSPRNG calls when OpenSSL is unavailable [#742](https://github.com/julianhille/MuhammaraJS/issues/742)
 - Release copying contexts created by `PDFPageMergingHelper` after file- and
   stream-based merges instead of retaining their parser and source resources
