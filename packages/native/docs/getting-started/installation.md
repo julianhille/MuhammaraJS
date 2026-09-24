@@ -125,10 +125,10 @@ architecture, runtime, or libc combination, install
 | Node.js  | 20, 22, 24, >=25      | macOS x64 and arm64               | Yes                |
 | Node.js  | 20, 22, 24, >=25      | Windows x64                       | Yes                |
 | Node.js  | Any other combination | Any                               | Use source package |
-| Electron | 36.0 through 44.0     | Linux x64                         | Yes                |
-| Electron | 36.0 through 44.0     | macOS arm64                       | Yes                |
+| Electron | 36.0 through 44.4.5   | Linux x64                         | Yes                |
+| Electron | 36.0 through 44.4.5   | macOS arm64                       | Yes                |
 | Electron | 36.0 through 38.1     | macOS x64                         | Yes                |
-| Electron | 36.0 through 44.0     | Windows x64                       | Yes                |
+| Electron | 36.0 through 44.4.5   | Windows x64                       | Yes                |
 | Electron | Any other combination | Any                               | Use source package |
 
 Windows arm64 and Linux arm64 Electron builds are not part of the current
