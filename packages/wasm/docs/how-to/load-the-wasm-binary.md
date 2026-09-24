@@ -17,7 +17,7 @@ and compiles the module while it downloads:
 import { createRecipe } from "@muhammara/wasm";
 
 var wasmUrl =
-  "https://cdn.example.com/muhammara-wasm/1.0.0-beta.3/muhammara-wasm.wasm";
+  "https://cdn.example.com/muhammara-wasm/1.0.0-beta.4/muhammara-wasm.wasm";
 
 var Recipe = await createRecipe({
   locateFile: (path) => (path.endsWith(".wasm") ? wasmUrl : path),
@@ -54,7 +54,7 @@ version in the cache name so an upgrade never pairs new JavaScript with an old
 binary:
 
 ```javascript
-var cache = await caches.open("muhammara-wasm-1.0.0-beta.3");
+var cache = await caches.open("muhammara-wasm-1.0.0-beta.4");
 var cached = await cache.match(wasmUrl);
 if (!cached) {
   await cache.add(wasmUrl);
