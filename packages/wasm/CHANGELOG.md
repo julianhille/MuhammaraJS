@@ -6,6 +6,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
+  Previously callers could continue after a failed append and produce a
+  corrupted document; create a fresh writer and retry with valid source bytes.
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Align `mergePDFPagesToPage` callback receivers with native: strict callbacks now receive `globalThis` instead of `undefined`. Use `callback.bind(undefined)` if an undefined receiver is required.
 
 - Treat low-level shape `type: null` as an unknown type, ending the path without

@@ -4,6 +4,9 @@ Use `appendPDFPagesFromPDF` to append source pages to the output document. Use
 `mergePDFPagesToPage` when source page content must be placed on an existing
 target page.
 
+An `appendPDFPagesFromPDF` failure ends the writer because the failed copy can
+leave partial output. Create a fresh writer and retry with a valid source.
+
 For more control, create a copying context:
 
 ```javascript

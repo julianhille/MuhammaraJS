@@ -21,13 +21,18 @@ describe("AppendSpecialPagesTest", function () {
       reader.end();
       return total + pageCount;
     }, 0);
-    var pdfWriter = muhammara.createWriter(outputPath);
+    var failedWriter = muhammara.createWriter(outputPath);
 
     assert.throws(function () {
-      pdfWriter.appendPDFPagesFromPDF(
+      failedWriter.appendPDFPagesFromPDF(
         __dirname + "/TestMaterials/Protected.pdf",
       );
     }, /unable to append page, make sure it's fine/i);
+    assert.throws(function () {
+      failedWriter.createPage(0, 0, 100, 100);
+    }, /PDF writer has ended/);
+
+    var pdfWriter = muhammara.createWriter(outputPath);
     sourceFiles.forEach(function (sourceFile) {
       pdfWriter.appendPDFPagesFromPDF(
         __dirname + "/TestMaterials/" + sourceFile,

@@ -2,6 +2,10 @@
 
 ## Version 1.x
 
+- `appendPDFPagesFromPDF()` now ends its writer when appending fails. Previously
+  callers could continue and produce a corrupted document; create a fresh
+  writer and retry with valid source bytes.
+
 - Merge callbacks now receive `globalThis` as `this`, matching native, instead
   of `undefined` in strict functions. Code relying on an undefined receiver
   should pass `callback.bind(undefined)` explicitly.

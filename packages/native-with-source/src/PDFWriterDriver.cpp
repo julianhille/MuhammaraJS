@@ -677,10 +677,12 @@ napi_value PDFWriterDriver::AppendPDFPagesFromPDF(const CallbackArgs &a) {
     r = d->writer_.AppendPDFPagesFromPDF(&s, range, ObjectIDTypeList(), p);
   } else
     r = d->writer_.AppendPDFPagesFromPDF(LegacyString(a.Env(), a[0]), range,
-                                         ObjectIDTypeList(), p);
-  if (r.first != eSuccess)
+                                          ObjectIDTypeList(), p);
+  if (r.first != eSuccess) {
+    Abort(a);
     return ThrowTypeError(a.Env(),
                           "unable to append page, make sure it's fine");
+  }
   napi_value out = Array(a.Env(), r.second.size());
   uint32_t i = 0;
   for (auto id : r.second)

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
+  Previously callers could continue after a failed append and produce a
+  corrupted document; create a fresh writer and retry with a valid source.
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Reject custom-stream `getCurrentPosition()` results that convert to non-finite
   numbers or fall outside `[-2^63, 2^63)` with `TypeError`, preventing corrupt
   PDF offsets. Return the actual finite byte position within that range; numeric

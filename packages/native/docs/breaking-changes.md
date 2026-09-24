@@ -4,6 +4,9 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- `appendPDFPagesFromPDF()` now ends its writer when appending fails. Previously
+  callers could continue and produce a corrupted document; create a fresh
+  writer and retry with a valid source.
 - Custom-stream `getCurrentPosition()` results now throw `TypeError` if numeric
   conversion produces a non-finite value or a value outside `[-2^63, 2^63)`.
   Previously these values could produce corrupt PDF offsets. Return the actual
