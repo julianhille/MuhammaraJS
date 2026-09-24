@@ -76,6 +76,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
   writer dictionaries and related parser, encryption, and stream ownership
   defects on native and Wasm builds.
+- Correct `PDFWriterToContinueOptions.log` typings to accept synchronous `ByteWriter` log streams as well as file paths [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+- Detach a `createWriterToContinue()` stream log target when the writer ends.
+  The stream stayed installed in the shared trace after `end()` or `_abort()`
+  released it, so the next warning from any reader or writer wrote through
+  freed memory and terminated the process.
 - Reject invalid TIFF color arrays before processing the image instead of
   continuing with fallback colors or terminating the process during conversion
   [#752](https://github.com/julianhille/MuhammaraJS/issues/752)

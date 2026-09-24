@@ -44,7 +44,13 @@ there is no additional Recipe method for it.
 Later, `createWriterToContinue(pdfPath, restartStateFile, options)` resumes that
 document. This path-based workflow is specific to the native package; it is not
 available in Wasm. `options.modifiedFilePath` writes the resumed output to a
-different path, and `options.log` configures writer logging.
+different path, and `options.log` configures writer logging. For continuation,
+`log` accepts a log file path or a synchronous `ByteWriter` object whose
+`write(bytes: number[]): number` method returns the number of bytes written.
+The log writer does not need `getCurrentPosition()`. A `PDFWStreamForBuffer`
+can capture the log in memory; a Node.js `Writable` must be adapted to the
+[synchronous byte-stream contract](streams.md). Logging uses the process-global
+trace while the resumed writer is active and is detached when it is retired.
 
 ```javascript
 var writer = muhammara.createWriter("output.pdf");

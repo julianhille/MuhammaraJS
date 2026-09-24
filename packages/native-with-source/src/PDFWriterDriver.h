@@ -146,6 +146,7 @@ private:
   PDFHummus::EStatusCode Setup(PDFHummus::EStatusCode);
   PDFHummus::EStatusCode TriggerEvent(const std::string &, napi_value);
   void Retire();
+  void ReleaseLogProxy();
   bool startedWithStream_;
   bool catalogUpdateRequired_;
   bool started_;

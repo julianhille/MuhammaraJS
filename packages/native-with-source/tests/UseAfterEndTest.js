@@ -114,6 +114,37 @@ function checkEndedWriter(directory, mode) {
   }, /Provide 1 argument which is a date/);
 }
 
+/**
+ * Continue a shut-down writer with a JavaScript object as its log target.
+ * Returns the writer together with the chunks the process-global trace writes
+ * into that object.
+ */
+function continueWithLogStream(directory) {
+  var outputPath = path.join(directory, "logged.pdf");
+  var statePath = path.join(directory, "logged-state.txt");
+  var source = muhammara.createWriter(outputPath);
+  source.writePage(source.createPage(0, 0, 200, 200));
+  source.shutdown(statePath);
+
+  var written = [];
+  var writer = muhammara.createWriterToContinue(outputPath, statePath, {
+    log: {
+      write: function (bytes) {
+        written.push(bytes);
+        return bytes.length;
+      },
+    },
+  });
+  return { writer: writer, written: written };
+}
+
+/** Make the process-global trace emit, from code unrelated to any writer. */
+function traceAFailure(directory) {
+  assert.throws(function () {
+    muhammara.createReader(path.join(directory, "missing.pdf"));
+  });
+}
+
 describe("UseAfterEndTest", function () {
   [
     "file",
@@ -134,6 +165,46 @@ describe("UseAfterEndTest", function () {
         );
         try {
           checkEndedWriter(directory, mode);
+        } finally {
+          fs.rmSync(directory, { recursive: true, force: true });
+        }
+      },
+    );
+  });
+
+  ["end", "abort"].forEach(function (mode) {
+    it(
+      "detaches a log stream from the global trace on writer " + mode,
+      function () {
+        var directory = fs.mkdtempSync(
+          path.join(os.tmpdir(), "muhammara-writer-log-"),
+        );
+        try {
+          var logged = continueWithLogStream(directory);
+
+          traceAFailure(directory);
+          assert.isAbove(
+            logged.written.length,
+            0,
+            "a live writer's log stream should receive trace output",
+          );
+          var writtenWhileLive = logged.written.length;
+
+          if (mode === "end") {
+            logged.writer.end();
+          } else {
+            logged.writer._abort();
+          }
+
+          // The trace keeps a raw pointer to the native proxy behind this
+          // stream. Tracing once the proxy has been freed wrote through freed
+          // memory and aborted the process.
+          traceAFailure(directory);
+          assert.equal(
+            logged.written.length,
+            writtenWhileLive,
+            "an ended writer's log stream should receive nothing further",
+          );
         } finally {
           fs.rmSync(directory, { recursive: true, force: true });
         }

@@ -293,7 +293,8 @@ declare namespace muhammara {
   export interface PDFWriterToContinueOptions {
     modifiedFilePath?: string;
     modifiedStream?: PDFRStreamForFile; // TODO
-    log?: string;
+    /** Log file path or synchronous byte writer returning the number of bytes written. */
+    log?: string | ByteWriter;
   }
 
   export interface PDFRecryptOptions extends PDFWriterOptions {

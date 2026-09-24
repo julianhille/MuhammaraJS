@@ -56,7 +56,7 @@ PDFWriterDriver::~PDFWriterDriver() {
     Retire();
   delete writeProxy_;
   delete readProxy_;
-  delete logProxy_;
+  ReleaseLogProxy();
 }
 template <napi_value (*Method)(const CallbackArgs &)>
 napi_value PDFWriterDriver::Active(const CallbackArgs &a) {
@@ -123,8 +123,7 @@ void PDFWriterDriver::Retire() {
   writeProxy_ = nullptr;
   delete readProxy_;
   readProxy_ = nullptr;
-  delete logProxy_;
-  logProxy_ = nullptr;
+  ReleaseLogProxy();
   started_ = false;
   lifecycle_->End();
 }
@@ -148,6 +147,7 @@ napi_value PDFWriterDriver::Abort(const CallbackArgs &a) {
   d->writeProxy_ = nullptr;
   delete d->readProxy_;
   d->readProxy_ = nullptr;
+  d->ReleaseLogProxy();
   d->started_ = false;
   d->lifecycle_->End();
   return a.This();
@@ -887,11 +887,21 @@ napi_value PDFWriterDriver::CreatePDFDate(const CallbackArgs &a) {
 PDFWriter *PDFWriterDriver::GetWriter() { return &writer_; }
 void PDFWriterDriver::SetLogStream(napi_env e, napi_value stream,
                                    LogConfiguration &c) {
-  delete logProxy_;
+  ReleaseLogProxy();
   logProxy_ = new ObjectByteWriter(e, stream);
   c.ShouldLog = true;
   c.LogFileLocation = "";
   c.LogStream = logProxy_;
+}
+// The proxy is handed to the process-global trace, which keeps a raw pointer to
+// it. Detach it there before freeing it, or the next trace of any writer writes
+// through freed memory.
+void PDFWriterDriver::ReleaseLogProxy() {
+  if (!logProxy_)
+    return;
+  Trace::DefaultTrace().SetLogSettings("", false, false);
+  delete logProxy_;
+  logProxy_ = nullptr;
 }
 napi_value PDFWriterDriver::GetImageDimensions(const CallbackArgs &a) {
   if (a.Length() < 1 || a.Length() > 3 ||
@@ -1132,10 +1142,7 @@ EStatusCode PDFWriterDriver::Setup(EStatusCode s) {
     writeProxy_ = nullptr;
     delete readProxy_;
     readProxy_ = nullptr;
-    if (logProxy_)
-      Trace::DefaultTrace().SetLogSettings("", false, false);
-    delete logProxy_;
-    logProxy_ = nullptr;
+    ReleaseLogProxy();
   }
   return s;
 }

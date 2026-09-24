@@ -1,6 +1,29 @@
 import muhammara = require("@muhammara/native");
 import nativeCore = require("@muhammara/native-core");
 
+var continuationOptions: muhammara.PDFWriterToContinueOptions = {
+  log: {
+    /** Accept synchronous log bytes and report the number written. */
+    write(bytes: number[]): number {
+      return bytes.length;
+    },
+  },
+};
+muhammara.createWriterToContinue(
+  "output.pdf",
+  "state.txt",
+  continuationOptions,
+);
+muhammara.createWriterToContinue("output.pdf", "state.txt", {
+  log: "writer.log",
+});
+muhammara.createWriterToContinue("output.pdf", "state.txt", {
+  log: new muhammara.PDFWStreamForBuffer(),
+});
+// @ts-expect-error Log streams must return a byte count, not a Node Writable boolean.
+var invalidContinuationLog: muhammara.ByteWriter = { write: () => true };
+void invalidContinuationLog;
+
 declare const writer: muhammara.PDFWriter;
 declare const recipe: muhammara.Recipe;
 declare const objects: muhammara.ObjectsContext;
