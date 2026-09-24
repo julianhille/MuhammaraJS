@@ -85,7 +85,8 @@ emcmake cmake -S /src/packages/wasm -B /build -DCMAKE_BUILD_TYPE="$MUHAMMARA_WAS
 cmake --build /build --target muhammara-wasm --parallel
 cp /build/muhammara-wasm.js /build/muhammara-wasm.wasm /out/
 if [ "$MUHAMMARA_WASM_BUILD_TESTS" = ON ]; then
-  cmake --build /build --target objects-context-cleanup-test --parallel
+  cmake --build /build --target objects-context-cleanup-test pdf-page-merging-helper-cleanup-test --parallel
   node /build/objects-context-cleanup-test.js
+  node /build/pdf-page-merging-helper-cleanup-test.js
 fi
 if command -v ccache >/dev/null 2>&1; then ccache --show-stats; fi'

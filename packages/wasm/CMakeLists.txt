@@ -42,8 +42,16 @@ if(MUHAMMARA_BUILD_CPP_TESTS)
     ../native-with-source/tests/cpp/ObjectsContextCleanupTest.cpp
   )
   target_link_libraries(objects-context-cleanup-test PRIVATE PDFHummus::PDFWriter)
+  add_executable(pdf-page-merging-helper-cleanup-test
+    ../native-with-source/tests/cpp/PDFPageMergingHelperCleanupTest.cpp
+  )
+  target_link_libraries(pdf-page-merging-helper-cleanup-test PRIVATE PDFHummus::PDFWriter)
   if(EMSCRIPTEN)
     target_link_options(objects-context-cleanup-test PRIVATE
+      "-sENVIRONMENT=node"
+      "-sEXIT_RUNTIME=1"
+    )
+    target_link_options(pdf-page-merging-helper-cleanup-test PRIVATE
       "-sENVIRONMENT=node"
       "-sEXIT_RUNTIME=1"
     )
