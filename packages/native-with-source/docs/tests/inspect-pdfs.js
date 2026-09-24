@@ -6,6 +6,8 @@ var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var detectBlankPages = require("../../../native/docs/examples/detect-blank-pages");
 var findTextPositions = require("../../../native/docs/examples/find-text-positions");
+var inspectPageXObjects = require("../../../native/docs/examples/inspect-pdf-objects");
+var readBookmarks = require("../../../native/docs/examples/read-bookmarks");
 
 describe("Documentation examples for reading pages", function () {
   var outputDirectory;
@@ -44,6 +46,33 @@ describe("Documentation examples for reading pages", function () {
     writer.end();
   }
 
+  function writeOutlinedPdf(inputPath) {
+    var objects = [
+      "<< /Type /Catalog /Pages 2 0 R /Outlines 5 0 R >>",
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << /XObject << /Im1 4 0 R >> >> >>",
+      "<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8 /Length 1 >>\nstream\nx\nendstream",
+      "<< /Type /Outlines /First 6 0 R /Last 6 0 R /Count 1 >>",
+      "<< /Title (Chapter 1) /Parent 5 0 R /Dest [3 0 R /Fit] >>",
+    ];
+    var output = "%PDF-1.4\n";
+    var offsets = [0];
+
+    objects.forEach(function (object, index) {
+      offsets.push(Buffer.byteLength(output));
+      output += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    });
+
+    var xrefPosition = Buffer.byteLength(output);
+    output += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+    offsets.slice(1).forEach(function (offset) {
+      output += `${String(offset).padStart(10, "0")} 00000 n \n`;
+    });
+    output += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefPosition}\n%%EOF\n`;
+
+    fs.writeFileSync(inputPath, output);
+  }
+
   it("detects blank pages", function () {
     var inputPath = path.join(outputDirectory, "pages.pdf");
     writeSamplePdf(inputPath);
@@ -77,5 +106,23 @@ describe("Documentation examples for reading pages", function () {
       { x: 25, y: 50, fontSize: 12, fontResource: "FN1" },
     ]);
     assert.deepEqual(findTextPositions(inputPath, 2, "missing"), []);
+  });
+
+  it("inspects page XObjects", function () {
+    var inputPath = path.join(outputDirectory, "outlined.pdf");
+    writeOutlinedPdf(inputPath);
+
+    assert.deepEqual(inspectPageXObjects(inputPath, 0), [
+      { name: "Im1", objectId: 4, subtype: "Image" },
+    ]);
+  });
+
+  it("reads direct-destination bookmarks", function () {
+    var inputPath = path.join(outputDirectory, "outlined.pdf");
+    writeOutlinedPdf(inputPath);
+
+    assert.deepEqual(readBookmarks(inputPath), [
+      { title: "Chapter 1", page: 1, children: [] },
+    ]);
   });
 });
