@@ -53,6 +53,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Fix the low-level drawing `type` declaration to accept the documented
+  `null`, which ends the path without painting
+  [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
 - Correct `mergePDFPagesToPage()` callback types to expose their `globalThis` receiver [#756](https://github.com/julianhille/MuhammaraJS/issues/756)
 - Prefer `getentropy()` for Wasm CSPRNG calls when available [#742](https://github.com/julianhille/MuhammaraJS/issues/742)
 - Release copying contexts created by `PDFPageMergingHelper` after file- and
@@ -200,6 +203,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Narrow `DrawPathOptions.type` from an arbitrary string to the exported
+  `DrawingPathType` (`"stroke" | "fill" | "clip" | null`), matching native.
+  Unsupported paint modes neither paint nor clip, so they are now a compile
+  error rather than silently unpainted geometry; pass a supported type
+  [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
 - Resolve table header styles independently of body styles, matching native.
   Headers that inherited a body font, size, or color can change appearance;
   set those properties explicitly in `header` to retain the intended style

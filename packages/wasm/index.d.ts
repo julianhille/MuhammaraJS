@@ -792,11 +792,18 @@ export interface AnnotationOptions {
   open?: boolean;
   opacity?: number;
 }
+/**
+ * Paint operation a drawing helper finishes its path with. `"stroke"` is the
+ * default when `type` is omitted, `"fill"` fills the path, and `"clip"`
+ * intersects the clipping region without painting; scope it with q()/Q().
+ * `null` selects no paint operation and ends the path unpainted.
+ */
+export type DrawingPathType = "stroke" | "fill" | "clip" | null;
+
 export interface DrawPathOptions {
   color?: number | string;
   colorspace?: "rgb" | "gray" | "cmyk";
-  /** "stroke" (default), "fill", or "clip". Clip ends the path without painting. */
-  type?: "fill" | string;
+  type?: DrawingPathType;
   width?: number;
   close?: boolean;
 }

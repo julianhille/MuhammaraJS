@@ -37,6 +37,11 @@ ignores `width` and `close`, and applies a supplied `color` only to the
 non-stroking graphics state, matching native. Omit `type` or use `"stroke"` for
 an outline; `null` does not select the default.
 
+The TypeScript declarations expose these four values as `DrawingPathType`, so a
+misspelled paint mode fails to compile instead of producing unpainted geometry.
+The runtime still tolerates any other value for compatibility, but it is not a
+supported input.
+
 These helpers validate coordinates and snapshot drawing options before emitting
 geometry or graphics-state operators. `writeText` likewise reads its font, size,
 color, and underline options before starting text output. Throwing option

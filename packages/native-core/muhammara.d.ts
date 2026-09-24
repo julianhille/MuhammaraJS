@@ -108,9 +108,16 @@ declare namespace muhammara {
     color?: string | number;
   }
 
+  /**
+   * Paint operation a drawing helper finishes its path with. `"stroke"` is the
+   * default when `type` is omitted, `"fill"` fills the path, and `"clip"`
+   * intersects the clipping region without painting; scope it with q()/Q().
+   * `null` selects no paint operation and ends the path unpainted.
+   */
+  export type DrawingPathType = "stroke" | "fill" | "clip" | null;
+
   export interface GraphicOptions extends ColorOptions {
-    /** "clip" intersects the clipping region without painting; scope with q()/Q(). */
-    type?: "stroke" | "fill" | "clip";
+    type?: DrawingPathType;
     width?: number;
     close?: boolean;
   }
