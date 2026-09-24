@@ -5,6 +5,7 @@ root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 image=emscripten/emsdk:3.1.74@sha256:af45409f3199d88db4b1b03af0098532c8fb33a375ac257463eeb0a622870d06
 sanitize=${MUHAMMARA_WASM_SANITIZE:-OFF}
 buildType=${MUHAMMARA_WASM_BUILD_TYPE:-Release}
+buildTests=${MUHAMMARA_WASM_BUILD_TESTS:-OFF}
 # Sanitizer and normal builds use incompatible objects, so they never share a
 # CMake tree or a compiler cache.
 configuration=$(printf '%s' "$buildType-sanitize-$sanitize" | tr 'A-Z' 'a-z')
@@ -75,11 +76,16 @@ docker run --rm \
   --mount "type=bind,src=$dist,dst=/out" \
   -e MUHAMMARA_WASM_BUILD_TYPE="$buildType" \
   -e MUHAMMARA_WASM_SANITIZE="$sanitize" \
+  -e MUHAMMARA_WASM_BUILD_TESTS="$buildTests" \
   "$@" \
   -w /build \
   "$toolchain" \
   sh -c 'set -eu
-emcmake cmake -S /src/packages/wasm -B /build -DCMAKE_BUILD_TYPE="$MUHAMMARA_WASM_BUILD_TYPE" -DMUHAMMARA_WASM_SANITIZE="$MUHAMMARA_WASM_SANITIZE" -DPDFHUMMUS_NO_OPENSSL=ON
+emcmake cmake -S /src/packages/wasm -B /build -DCMAKE_BUILD_TYPE="$MUHAMMARA_WASM_BUILD_TYPE" -DMUHAMMARA_WASM_SANITIZE="$MUHAMMARA_WASM_SANITIZE" -DMUHAMMARA_BUILD_CPP_TESTS="$MUHAMMARA_WASM_BUILD_TESTS" -DPDFHUMMUS_NO_OPENSSL=ON
 cmake --build /build --target muhammara-wasm --parallel
 cp /build/muhammara-wasm.js /build/muhammara-wasm.wasm /out/
+if [ "$MUHAMMARA_WASM_BUILD_TESTS" = ON ]; then
+  cmake --build /build --target objects-context-cleanup-test --parallel
+  node /build/objects-context-cleanup-test.js
+fi
 if command -v ccache >/dev/null 2>&1; then ccache --show-stats; fi'

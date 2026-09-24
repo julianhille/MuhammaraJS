@@ -85,11 +85,13 @@ LayeredGlyphsDrawingContext.cpp
 LinearGradientShadingPatternWritingTask.cpp
 Log.cpp
 MD5Generator.cpp
+RandomGenerator.cpp
 RC4.cpp
 ObjectsContext.cpp
 OpenTypeFileInput.cpp
 OpenTypePrimitiveReader.cpp
 OutputBufferedStream.cpp
+OutputConsoleStream.cpp
 OutputFile.cpp
 OutputFileStream.cpp
 OutputFlateDecodeStream.cpp
@@ -287,6 +289,7 @@ LinearGradientShadingPatternWritingTask.h
 Log.h
 MapIterator.h
 MD5Generator.h
+RandomGenerator.h
 RC4.h
 MyStringBuf.h
 ObjectsBasicTypes.h
@@ -295,6 +298,7 @@ ObjectsContextExtenderAdapter.h
 OpenTypeFileInput.h
 OpenTypePrimitiveReader.h
 OutputBufferedStream.h
+OutputConsoleStream.h
 OutputFile.h
 OutputFileStream.h
 OutputFlateDecodeStream.h
@@ -468,6 +472,17 @@ else(PDFHUMMUS_NO_OPENSSL)
     endif()
 endif(PDFHUMMUS_NO_OPENSSL)
 
+# bcrypt (Windows CSPRNG fallback for RandomGenerator)
+if(WIN32 AND NOT PDFHUMMUS_NO_BCRYPT)
+    target_link_libraries(PDFWriter bcrypt)
+else()
+    target_compile_definitions(PDFWriter PRIVATE PDFHUMMUS_NO_BCRYPT=1)
+endif()
+
+if(PDFHUMMUS_HAVE_GETENTROPY)
+    target_compile_definitions(PDFWriter PRIVATE PDFHUMMUS_HAVE_GETENTROPY=1)
+endif()
+
 target_include_directories(PDFWriter
     INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -586,6 +601,7 @@ EPDFVersion.h
 EStatusCode.h
 MyStringBuf.h
 SafeBufferMacrosDefs.h
+SafeParse.h
 )
 
 source_group(Infrastructure\\Encoding FILES
@@ -604,6 +620,8 @@ WinAnsiEncoding.h
 source_group(Infrastructure\\Encryption FILES
 MD5Generator.cpp
 MD5Generator.h
+RandomGenerator.cpp
+RandomGenerator.h
 RC4.cpp
 RC4.h
 )
@@ -665,6 +683,8 @@ IOBasicTypes.h
 IReadPositionProvider.h
 OutputBufferedStream.cpp
 OutputBufferedStream.h
+OutputConsoleStream.cpp
+OutputConsoleStream.h
 OutputFile.cpp
 OutputFile.h
 OutputFileStream.cpp
@@ -932,6 +952,8 @@ PSBool.cpp
 PSBool.h
 Type1Input.cpp
 Type1Input.h
+Type1PSTokens.cpp
+Type1PSTokens.h
 Type1ToCFFEmbeddedFontWriter.cpp
 Type1ToCFFEmbeddedFontWriter.h
 Type1ToType2Converter.cpp

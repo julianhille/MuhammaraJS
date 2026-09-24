@@ -16,7 +16,7 @@ vendored source tree.
 
 | Library   | Version or baseline                                                    | License                          |
 | --------- | ---------------------------------------------------------------------- | -------------------------------- |
-| PDFWriter | [v4.9.0](https://github.com/galkahana/PDF-Writer/tree/v4.9.0) baseline | Apache License 2.0               |
+| PDFWriter | [v4.9.1](https://github.com/galkahana/PDF-Writer/tree/v4.9.1) baseline | Apache License 2.0               |
 | FreeType  | 2.13.0                                                                 | FreeType License                 |
 | LibAesgm  | Brian Gladman AES snapshot, copyright 1998-2013                        | Brian Gladman permissive license |
 | LibJpeg   | IJG JPEG 9d                                                            | Independent JPEG Group license   |

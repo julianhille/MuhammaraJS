@@ -98,8 +98,8 @@ jobs:
         run: npm run wasm:build
         env:
           MUHAMMARA_WASM_SANITIZE: ON
-      - run: node ./scripts/run-mocha.mjs tests/integration/MemoryLifecycle.test.mjs
-        working-directory: packages/wasm
+          MUHAMMARA_WASM_BUILD_TESTS: ON
+      - run: npm run wasm:test
   deploy-development-example:
     needs: [build, test, sanitizer]
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'

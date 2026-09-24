@@ -24,6 +24,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
+  writer dictionaries and related parser, encryption, and stream ownership
+  defects.
 - Fix Wasm documentation examples that could not run as written: the Edit Or
   Remove An Existing Annotation how-to never defined `annotationId` and its
   removal example reused a writer and copying context an earlier block had

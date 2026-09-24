@@ -545,10 +545,10 @@ EStatusCode STATIC_DecodeRead(InputPFBDecodeStream* inThis,Byte& outByte)
 	return inThis->ReadDecodedByte(outByte);
 }
 
-static const int CONSTANT_1 = 52845;
-static const int CONSTANT_2 = 22719;
-static const int RANDOMIZER_INIT = 55665;
-static const int RANDOMIZER_MODULU_VAL = 65536;
+static const unsigned int CONSTANT_1 = 52845;
+static const unsigned int CONSTANT_2 = 22719;
+static const unsigned int RANDOMIZER_INIT = 55665;
+static const unsigned int RANDOMIZER_MODULU_VAL = 65536;
 
 EStatusCode InputPFBDecodeStream::InitializeBinaryDecode()
 {
@@ -586,7 +586,7 @@ EStatusCode InputPFBDecodeStream::ReadDecodedByte(Byte& outByte)
 Byte InputPFBDecodeStream::DecodeByte(Byte inByteToDecode)
 {
 	Byte result = (Byte)(inByteToDecode ^ (mRandomizer >> 8));
-	mRandomizer = (unsigned short)(((unsigned int)(inByteToDecode + mRandomizer) * CONSTANT_1 + CONSTANT_2) % RANDOMIZER_MODULU_VAL);
+	mRandomizer = (unsigned short)(((inByteToDecode + mRandomizer)* CONSTANT_1 + CONSTANT_2) % RANDOMIZER_MODULU_VAL);
 	return result;
 }
 

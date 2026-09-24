@@ -52,6 +52,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
+  writer dictionaries and related parser, encryption, and stream ownership
+  defects on native and Wasm builds.
 - Fix native documentation examples that could not run as written: `endPDF()`
   discarded the Recipe instance in the Add Clickable URL Links how-to because
   native `endPDF()` returns nothing without a callback; a migration-guide
