@@ -29,9 +29,9 @@ napi_value DocumentContextDriver::GetInfoDictionary(const CallbackArgs &args) {
   auto *driver =
       ObjectWrap::Unwrap<DocumentContextDriver>(args.Env(), args.This());
   if (!driver->DocumentContextInstance) {
-    return ThrowError(args.Env(),
-                      "document context driver not initialized. use the "
-                      "pdfwriter to get the current document context");
+    return ThrowTypeError(args.Env(),
+                          "document context driver not initialized. use the "
+                          "pdfwriter to get the current document context");
   }
   napi_value result = driver->holder->New("InfoDictionary");
   InfoDictionaryDriver *info = nullptr;

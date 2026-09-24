@@ -19,13 +19,13 @@ bool ReadBox(const CallbackArgs &a, const char *error, PDFRectangle &out) {
   napi_value v = a[0];
   uint32_t length = 0;
   if (!IsArray(a.Env(), v)) {
-    ThrowError(a.Env(), error);
+    ThrowTypeError(a.Env(), error);
     return false;
   }
   if (!Length(a.Env(), v, &length))
     return false;
   if (length != 4) {
-    ThrowError(a.Env(), error);
+    ThrowTypeError(a.Env(), error);
     return false;
   }
   double values[4];
@@ -111,7 +111,7 @@ napi_value PDFPageDriver::GetRotate(const CallbackArgs &a) {
 }
 napi_value PDFPageDriver::SetRotate(const CallbackArgs &a) {
   if (!IsType(a.Env(), a[0], napi_number))
-    return ThrowError(a.Env(), "Rotation is not set to a number");
+    return ThrowTypeError(a.Env(), "Rotation is not set to a number");
   D(a)->mPDFPage->SetRotate(ToUint32(a.Env(), a[0]));
   return Undefined(a.Env());
 }

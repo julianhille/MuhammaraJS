@@ -35,8 +35,8 @@ IByteWriter *ByteWriterDriver::GetStream() { return mInstance; }
 
 napi_value ByteWriterDriver::Write(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsArray(args.Env(), args[0]))
-    return ThrowError(args.Env(),
-                      "Wrong arguments. pass an array of bytes to write");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments. pass an array of bytes to write");
   uint32_t length = 0;
   if (!Length(args.Env(), args[0], &length))
     return nullptr;

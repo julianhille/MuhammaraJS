@@ -31,8 +31,8 @@ napi_value UsedFontDriver::New(const CallbackArgs &args) {
 napi_value UsedFontDriver::GetFontMetrics(const CallbackArgs &args) {
   if (args.Length() > 1 ||
       (args.Length() && !IsType(args.Env(), args[0], napi_number)))
-    return ThrowError(args.Env(),
-                      "Wrong arguments, optionally provide a font size");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments, optionally provide a font size");
   long fontSize = args.Length() ? ToUint32(args.Env(), args[0]) : 1;
   auto *driver = ObjectWrap::Unwrap<UsedFontDriver>(args.Env(), args.This());
   FT_Face face = *driver->UsedFont->GetFreeTypeFont();
@@ -41,7 +41,7 @@ napi_value UsedFontDriver::GetFontMetrics(const CallbackArgs &args) {
   if (FT_New_Size(face, &newSize) || FT_Activate_Size(newSize) ||
       FT_Set_Char_Size(face, 0, 64 * fontSize, 72, 72)) {
     FT_Activate_Size(oldSize);
-    return ThrowError(args.Env(), "Unknown font error");
+    return ThrowTypeError(args.Env(), "Unknown font error");
   }
   napi_value result = Object(args.Env());
   napi_value pixels = Object(args.Env());
@@ -61,7 +61,7 @@ napi_value UsedFontDriver::GetFontMetrics(const CallbackArgs &args) {
   Set(args.Env(), result, "max_advance",
       Number(args.Env(), newSize->metrics.max_advance));
   if (FT_Activate_Size(oldSize) || FT_Done_Size(newSize))
-    return ThrowError(args.Env(), "Unknown font error");
+    return ThrowTypeError(args.Env(), "Unknown font error");
   return result;
 }
 
@@ -70,9 +70,9 @@ napi_value UsedFontDriver::CalculateTextDimensions(const CallbackArgs &args) {
       (!IsType(args.Env(), args[0], napi_string) &&
        !IsArray(args.Env(), args[0])) ||
       (args.Length() == 2 && !IsType(args.Env(), args[1], napi_number)))
-    return ThrowError(args.Env(),
-                      "Wrong arguments, provide a string or array of glyph "
-                      "indexes, and optionally also a font size");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments, provide a string or array of glyph "
+                          "indexes, and optionally also a font size");
   long fontSize = args.Length() == 2 ? ToUint32(args.Env(), args[1]) : 1;
   auto *driver = ObjectWrap::Unwrap<UsedFontDriver>(args.Env(), args.This());
   FreeTypeFaceWrapper *wrapper = driver->UsedFont->GetFreeTypeFont();

@@ -135,7 +135,7 @@ napi_value PDFWriterDriver::End(const CallbackArgs &a) {
                                              : d->writer_.EndPDF();
   d->Retire();
   return status == eSuccess ? a.This()
-                            : ThrowError(a.Env(), "Unable to end PDF");
+                            : ThrowTypeError(a.Env(), "Unable to end PDF");
 }
 napi_value PDFWriterDriver::Abort(const CallbackArgs &a) {
   auto *d = Driver(a);
@@ -162,28 +162,28 @@ napi_value PDFWriterDriver::WritePage(const CallbackArgs &a) {
 napi_value PDFWriterDriver::WritePageAndReturnID(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (a.Length() != 1 || !d->holder->IsPDFPageInstance(a[0]))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(), "Wrong arguments, provide a page as the single parameter");
   auto *p = ObjectWrap::Unwrap<PDFPageDriver>(a.Env(), a[0]);
   if (!p)
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(), "Wrong arguments, provide a page as the single parameter");
   if (p->ContentContext &&
       d->writer_.EndPageContentContext(p->ContentContext) != eSuccess)
-    return ThrowError(a.Env(), "Unable to finalize page context");
+    return ThrowTypeError(a.Env(), "Unable to finalize page context");
   p->ContentContext = nullptr;
   auto r = d->writer_.WritePageAndReturnPageID(p->GetPage());
   return r.first == eSuccess ? Number(a.Env(), r.second)
-                             : ThrowError(a.Env(), "Unable to write page");
+                             : ThrowTypeError(a.Env(), "Unable to write page");
 }
 napi_value PDFWriterDriver::StartPageContentContext(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (a.Length() != 1 || !d->holder->IsPDFPageInstance(a[0]))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(), "Wrong arguments, provide a page as the single parameter");
   auto *p = ObjectWrap::Unwrap<PDFPageDriver>(a.Env(), a[0]);
   if (!p)
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(), "Wrong arguments, provide a page as the single parameter");
   napi_value v = d->holder->GetNewPageContentContext();
   PageContentContextDriver *c = nullptr;
@@ -197,17 +197,18 @@ napi_value PDFWriterDriver::StartPageContentContext(const CallbackArgs &a) {
 napi_value PDFWriterDriver::PausePageContentContext(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (a.Length() != 1 || !d->holder->IsPageContentContextInstance(a[0]))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "Wrong arguments, provide a page context as the single parameter");
   auto *c = ObjectWrap::Unwrap<PageContentContextDriver>(a.Env(), a[0]);
   if (!c)
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "Wrong arguments, provide a page context as the single parameter");
   if (!c->ContentContext)
-    return ThrowError(a.Env(), "paused context not initialized, please create "
-                               "one using pdfWriter.startPageContentContext");
+    return ThrowTypeError(a.Env(),
+                          "paused context not initialized, please create "
+                          "one using pdfWriter.startPageContentContext");
   d->writer_.PausePageContentContext(c->ContentContext);
   return a.This();
 }
@@ -216,7 +217,7 @@ napi_value PDFWriterDriver::CreateFormXObject(const CallbackArgs &a) {
       !Type(a.Env(), a[0], napi_number) || !Type(a.Env(), a[1], napi_number) ||
       !Type(a.Env(), a[2], napi_number) || !Type(a.Env(), a[3], napi_number) ||
       (a.Length() == 5 && !Type(a.Env(), a[4], napi_number)))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "wrong arguments, pass 4 coordinates of the form rectangle and an "
         "optional 5th agument which is the forward reference ID");
@@ -235,12 +236,12 @@ napi_value PDFWriterDriver::CreateFormXObject(const CallbackArgs &a) {
 napi_value PDFWriterDriver::EndFormXObject(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (a.Length() != 1 || !d->holder->IsFormXObjectInstance(a[0]))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(), "Wrong arguments, provide a form as the single parameter");
   auto *f = ObjectWrap::Unwrap<FormXObjectDriver>(a.Env(), a[0]);
   if (!f)
-    return ThrowError(a.Env(),
-                      "Wrong arguments, provide a form as the single parameter");
+    return ThrowTypeError(
+        a.Env(), "Wrong arguments, provide a form as the single parameter");
   d->writer_.EndFormXObject(f->FormXObject);
   return a.This();
 }
@@ -249,10 +250,10 @@ static napi_value FormImage(const CallbackArgs &a, const char *kind) {
   if ((a.Length() != 1 && a.Length() != 2) ||
       (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
       (a.Length() == 2 && !Type(a.Env(), a[1], napi_number)))
-    return ThrowError(a.Env(),
-                      "wrong arguments, pass 1 argument that is the path to "
-                      "the image or an image stream. Optionally pass an object "
-                      "ID for a forward reference image");
+    return ThrowTypeError(
+        a.Env(), "wrong arguments, pass 1 argument that is the path to "
+                 "the image or an image stream. Optionally pass an object "
+                 "ID for a forward reference image");
   PDFFormXObject *f = nullptr;
   ObjectIDType id = a.Length() == 2 ? ToInt32(a.Env(), a[1]) : 0;
   if (IsObject(a.Env(), a[0])) {
@@ -273,12 +274,12 @@ static napi_value FormImage(const CallbackArgs &a, const char *kind) {
              : d->GetWriter()->CreateFormXObjectFromPNGFile(path);
   }
   if (!f)
-    return ThrowError(a.Env(),
-                      !strcmp(kind, "JPG")
-                          ? "unable to create form xobject. verify that the "
-                            "target is an existing jpg file/stream"
-                          : "unable to create form xobject. verify that the "
-                            "target is an existing png file/stream");
+    return ThrowTypeError(
+        a.Env(), !strcmp(kind, "JPG")
+                     ? "unable to create form xobject. verify that the "
+                       "target is an existing jpg file/stream"
+                     : "unable to create form xobject. verify that the "
+                       "target is an existing png file/stream");
   napi_value v = d->holder->GetNewFormXObject();
   FormXObjectDriver *form = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &form)) {
@@ -296,7 +297,7 @@ napi_value PDFWriterDriver::CreateFormXObjectFromPNG(const CallbackArgs &a) {
 }
 napi_value PDFWriterDriver::RetrieveJPGImageInformation(const CallbackArgs &a) {
   if (a.Length() != 1 || !Type(a.Env(), a[0], napi_string))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "wrong arguments, pass 1 argument that is the path to the image");
   auto info = Driver(a)
@@ -304,7 +305,7 @@ napi_value PDFWriterDriver::RetrieveJPGImageInformation(const CallbackArgs &a) {
                   .GetJPEGImageHandler()
                   .RetrieveImageInformation(LegacyString(a.Env(), a[0]));
   if (!info.first)
-    return ThrowError(a.Env(), "unable to retrieve image information");
+    return ThrowTypeError(a.Env(), "unable to retrieve image information");
   napi_value o = Object(a.Env());
   Set(a.Env(), o, "samplesWidth", Number(a.Env(), info.second.SamplesWidth));
   Set(a.Env(), o, "samplesHeight", Number(a.Env(), info.second.SamplesHeight));
@@ -340,7 +341,7 @@ napi_value PDFWriterDriver::GetFontForFile(const CallbackArgs &a) {
        !Type(a.Env(), a[1], napi_number)) ||
       (a.Length() == 3 && (!Type(a.Env(), a[1], napi_string) ||
                            !Type(a.Env(), a[2], napi_number))))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(), "wrong arguments, pass 1 argument that is the path to the "
                  "font file, with option to a 2nd parameter for another path "
                  "in case of type 1 font. another optional argument may follow "
@@ -358,7 +359,7 @@ napi_value PDFWriterDriver::GetFontForFile(const CallbackArgs &a) {
   else
     f = d->writer_.GetFontForFile(p);
   if (!f)
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(), "unable to create font object. verify that the target is an "
                  "existing and supported font type (ttf,otf,type1,dfont,ttc)");
   napi_value v = d->holder->GetNewUsedFont();
@@ -372,7 +373,7 @@ napi_value PDFWriterDriver::AttachURLLinktoCurrentPage(const CallbackArgs &a) {
   if (a.Length() != 5 || !Type(a.Env(), a[0], napi_string) ||
       !Type(a.Env(), a[1], napi_number) || !Type(a.Env(), a[2], napi_number) ||
       !Type(a.Env(), a[3], napi_number) || !Type(a.Env(), a[4], napi_number))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "wrong arguments, pass a url, and 4 numbers (left,bottom,right,top) "
         "for the rectangle valid for clicking");
@@ -382,20 +383,21 @@ napi_value PDFWriterDriver::AttachURLLinktoCurrentPage(const CallbackArgs &a) {
                    ToDouble(a.Env(), a[3]), ToDouble(a.Env(), a[4])));
   return s == eSuccess
              ? a.This()
-             : ThrowError(a.Env(),
-                          "unable to attach link to current page. will happen "
-                          "if the input URL may not be encoded to ascii7");
+             : ThrowTypeError(
+                   a.Env(),
+                   "unable to attach link to current page. will happen "
+                   "if the input URL may not be encoded to ascii7");
 }
 napi_value PDFWriterDriver::Shutdown(const CallbackArgs &a) {
   if (a.Length() != 1 || !Type(a.Env(), a[0], napi_string))
-    return ThrowError(a.Env(),
-                      "wrong arguments, pass a path to save the state file to");
+    return ThrowTypeError(
+        a.Env(), "wrong arguments, pass a path to save the state file to");
   EStatusCode s = Driver(a)->writer_.Shutdown(LegacyString(a.Env(), a[0]));
   Abort(a);
   return s == eSuccess
              ? a.This()
-             : ThrowError(a.Env(), "unable to save state file. verify that "
-                                   "path is not occupied");
+             : ThrowTypeError(a.Env(), "unable to save state file. verify that "
+                                       "path is not occupied");
 }
 PDFHummus::EStatusCode PDFWriterDriver::StartPDF(const std::string &p,
                                                  EPDFVersion v,
@@ -472,7 +474,7 @@ napi_value PDFWriterDriver::CreateFormXObjectFromTIFF(const CallbackArgs &a) {
       (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
       (a.Length() == 2 && !IsObject(a.Env(), a[1]) &&
        !Type(a.Env(), a[1], napi_number)))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(), "wrong arguments, pass 1 argument that is the path to the "
                  "image, and optionally an options object or object ID");
   auto *d = Driver(a);
@@ -538,8 +540,9 @@ napi_value PDFWriterDriver::CreateFormXObjectFromTIFF(const CallbackArgs &a) {
            : d->writer_.CreateFormXObjectFromTIFFFile(path, p);
   }
   if (!f)
-    return ThrowError(a.Env(), "unable to create form xobject. verify that the "
-                               "target is an existing tiff file");
+    return ThrowTypeError(a.Env(),
+                          "unable to create form xobject. verify that the "
+                          "target is an existing tiff file");
   napi_value v = d->holder->GetNewFormXObject();
   FormXObjectDriver *form = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &form)) {
@@ -553,7 +556,7 @@ napi_value PDFWriterDriver::CreateImageXObjectFromJPG(const CallbackArgs &a) {
   if ((a.Length() != 1 && a.Length() != 2) ||
       (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
       (a.Length() == 2 && !Type(a.Env(), a[1], napi_number)))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "wrong arguments, pass 1 argument that is the path to the image. pass "
         "another optional argument of a forward reference object ID");
@@ -570,8 +573,9 @@ napi_value PDFWriterDriver::CreateImageXObjectFromJPG(const CallbackArgs &a) {
            : d->writer_.CreateImageXObjectFromJPGFile(p);
   }
   if (!x)
-    return ThrowError(a.Env(), "unable to create image xobject. verify that "
-                               "the target is an existing jpg file");
+    return ThrowTypeError(a.Env(),
+                          "unable to create image xobject. verify that "
+                          "the target is an existing jpg file");
   napi_value v = d->holder->GetNewImageXObject();
   ImageXObjectDriver *image = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &image)) {
@@ -620,23 +624,26 @@ bool PDFWriterDriver::ObjectToPageRange(napi_env e, napi_value o,
       if (!Get(e, a, i, &item) || !IsArray(e, item) ||
           !Length(e, item, &itemLength)) {
         if (!HasPendingException(e))
-          ThrowError(e, "wrong argument for specificRanges. it should be an "
-                        "array of arrays. each subarray should be of the length "
-                        "of 2, signifying begining page and ending page numbers");
+          ThrowTypeError(
+              e, "wrong argument for specificRanges. it should be an "
+                 "array of arrays. each subarray should be of the length "
+                 "of 2, signifying begining page and ending page numbers");
         return false;
       }
       if (itemLength != 2 || !Get(e, item, uint32_t{0}, &first) ||
           !Get(e, item, uint32_t{1}, &second)) {
         if (!HasPendingException(e))
-          ThrowError(e, "wrong argument for specificRanges. it should be an "
-                        "array of arrays. each subarray should be of the length "
-                        "of 2, signifying begining page and ending page numbers");
+          ThrowTypeError(
+              e, "wrong argument for specificRanges. it should be an "
+                 "array of arrays. each subarray should be of the length "
+                 "of 2, signifying begining page and ending page numbers");
         return false;
       }
       if (!Type(e, first, napi_number) || !Type(e, second, napi_number)) {
-        ThrowError(e, "wrong argument for specificRanges. it should be an "
-                      "array of arrays. each subarray should be of the length "
-                      "of 2, signifying begining page and ending page numbers");
+        ThrowTypeError(
+            e, "wrong argument for specificRanges. it should be an "
+               "array of arrays. each subarray should be of the length "
+               "of 2, signifying begining page and ending page numbers");
         return false;
       }
       r.mSpecificRanges.push_back(
@@ -652,9 +659,9 @@ napi_value PDFWriterDriver::AppendPDFPagesFromPDF(const CallbackArgs &a) {
   if (a.Length() < 1 || a.Length() > 2 ||
       (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
       (a.Length() == 2 && !IsObject(a.Env(), a[1])))
-    return ThrowError(a.Env(),
-                      "wrong arguments, pass a path for file to append pages "
-                      "from or a stream object, optionally an options object");
+    return ThrowTypeError(
+        a.Env(), "wrong arguments, pass a path for file to append pages "
+                 "from or a stream object, optionally an options object");
   auto *d = Driver(a);
   PDFPageRange range;
   PDFParsingOptions p;
@@ -672,7 +679,8 @@ napi_value PDFWriterDriver::AppendPDFPagesFromPDF(const CallbackArgs &a) {
     r = d->writer_.AppendPDFPagesFromPDF(LegacyString(a.Env(), a[0]), range,
                                          ObjectIDTypeList(), p);
   if (r.first != eSuccess)
-    return ThrowError(a.Env(), "unable to append page, make sure it's fine");
+    return ThrowTypeError(a.Env(),
+                          "unable to append page, make sure it's fine");
   napi_value out = Array(a.Env(), r.second.size());
   uint32_t i = 0;
   for (auto id : r.second)
@@ -699,18 +707,18 @@ public:
 napi_value PDFWriterDriver::MergePDFPagesToPage(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (a.Length() < 2)
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "Too few arguments. Pass a page object, a path to pages source file or "
         "an IByteReaderWithPosition, and two optional: configuration object "
         "and callback function that will be called between pages merging");
   if (!d->holder->IsPDFPageInstance(a[0]))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(), "Invalid arguments. First argument must be a page object");
   if (!Type(a.Env(), a[1], napi_string) && !IsObject(a.Env(), a[1]))
-    return ThrowError(a.Env(),
-                      "Invalid arguments. Second argument must be either an "
-                      "input stream or a path to a pages source file.");
+    return ThrowTypeError(
+        a.Env(), "Invalid arguments. Second argument must be either an "
+                 "input stream or a path to a pages source file.");
   PDFPageRange range;
   PDFParsingOptions p;
   napi_value cb = nullptr;
@@ -743,7 +751,7 @@ napi_value PDFWriterDriver::MergePDFPagesToPage(const CallbackArgs &a) {
     d->writer_.GetDocumentContext().RemoveDocumentContextExtender(caller.get());
   return s == eSuccess
              ? a.This()
-             : ThrowError(
+             : ThrowTypeError(
                    a.Env(),
                    "unable to append to page, make sure source file exists");
 }
@@ -751,7 +759,7 @@ napi_value PDFWriterDriver::CreatePDFCopyingContext(const CallbackArgs &a) {
   if (a.Length() < 1 || a.Length() > 2 ||
       (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
       (a.Length() == 2 && !IsObject(a.Env(), a[1])))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "wrong arguments, pass a path to a PDF file to create copying context "
         "for or a stream object, and then an optional options object");
@@ -766,7 +774,7 @@ napi_value PDFWriterDriver::CreatePDFCopyingContext(const CallbackArgs &a) {
     if (d->holder->IsPDFReaderInstance(a[0])) {
       auto *r = ObjectWrap::Unwrap<PDFReaderDriver>(a.Env(), a[0]);
       if (!r->GetParser())
-        return ThrowError(a.Env(), "PDF reader has ended");
+        return ThrowTypeError(a.Env(), "PDF reader has ended");
       owner = r->GetLifecycle();
       c = d->writer_.GetDocumentContext().CreatePDFCopyingContext(
           r->GetParser());
@@ -778,8 +786,9 @@ napi_value PDFWriterDriver::CreatePDFCopyingContext(const CallbackArgs &a) {
     c = d->writer_.CreatePDFCopyingContext(LegacyString(a.Env(), a[0]), p);
   if (!c) {
     delete proxy;
-    return ThrowError(a.Env(), "unable to create copying context. verify that "
-                               "the target is an existing PDF file");
+    return ThrowTypeError(a.Env(),
+                          "unable to create copying context. verify that "
+                          "the target is an existing PDF file");
   }
   napi_value v = d->holder->GetNewDocumentCopyingContext();
   DocumentCopyingContextDriver *cd = nullptr;
@@ -802,7 +811,7 @@ napi_value PDFWriterDriver::CreateFormXObjectsFromPDF(const CallbackArgs &a) {
       (a.Length() >= 3 && !IsObject(a.Env(), a[2])) ||
       (a.Length() >= 4 && !IsArray(a.Env(), a[3])) ||
       (a.Length() == 5 && !IsArray(a.Env(), a[4])))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "wrong arguments, pass a path to the file, and optionals - a box "
         "enumerator or actual 4 numbers box, a range object, a matrix for the "
@@ -854,7 +863,7 @@ napi_value PDFWriterDriver::CreateFormXObjectsFromPDF(const CallbackArgs &a) {
             : ePDFPageBoxMediaBox,
         mp, extra, p);
   if (r.first != eSuccess)
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "unable to create forms from file. make sure the file exists, and that "
         "the input page range is valid (well, if you provided one..m'k?");
@@ -869,7 +878,7 @@ PDFWriterDriver::CreatePDFCopyingContextForModifiedFile(const CallbackArgs &a) {
   auto *d = Driver(a);
   auto *c = d->writer_.CreatePDFCopyingContextForModifiedFile();
   if (!c)
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "unable to create copying context for modified file...possibly a file "
         "is not being modified by this writer...");
@@ -913,10 +922,10 @@ napi_value PDFWriterDriver::GetImageDimensions(const CallbackArgs &a) {
       (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
       (a.Length() >= 2 && !Type(a.Env(), a[1], napi_number)) ||
       (a.Length() == 3 && !IsObject(a.Env(), a[2])))
-    return ThrowError(a.Env(),
-                      "wrong arguments, pass 1 to 3 arguments. a path to an "
-                      "image or a stream object, an optional image index (for "
-                      "multi-image files), and an options object");
+    return ThrowTypeError(
+        a.Env(), "wrong arguments, pass 1 to 3 arguments. a path to an "
+                 "image or a stream object, an optional image index (for "
+                 "multi-image files), and an options object");
   auto *d = Driver(a);
   PDFParsingOptions p;
   if (a.Length() == 3)
@@ -939,9 +948,9 @@ napi_value PDFWriterDriver::GetImageDimensions(const CallbackArgs &a) {
 napi_value PDFWriterDriver::GetImagePagesCount(const CallbackArgs &a) {
   if (a.Length() < 1 || a.Length() > 2 || !Type(a.Env(), a[0], napi_string) ||
       (a.Length() == 2 && !IsObject(a.Env(), a[1])))
-    return ThrowError(a.Env(),
-                      "wrong arguments, pass 1 argument and an optional one. a "
-                      "path to an image, and an options object");
+    return ThrowTypeError(
+        a.Env(), "wrong arguments, pass 1 argument and an optional one. a "
+                 "path to an image, and an options object");
   PDFParsingOptions p;
   if (a.Length() == 2)
     Password(a.Env(), a[1], p);
@@ -950,8 +959,8 @@ napi_value PDFWriterDriver::GetImagePagesCount(const CallbackArgs &a) {
 }
 napi_value PDFWriterDriver::GetImageType(const CallbackArgs &a) {
   if (a.Length() != 1 || !Type(a.Env(), a[0], napi_string))
-    return ThrowError(a.Env(),
-                      "wrong arguments, pass 1 argument. a path to an image");
+    return ThrowTypeError(
+        a.Env(), "wrong arguments, pass 1 argument. a path to an image");
   switch (Driver(a)->writer_.GetImageType(LegacyString(a.Env(), a[0]), 0)) {
   case ePDF:
     return String(a.Env(), "PDF");
@@ -969,8 +978,9 @@ napi_value PDFWriterDriver::GetModifiedFileParser(const CallbackArgs &a) {
   auto *d = Driver(a);
   PDFParser *p = &d->writer_.GetModifiedFileParser();
   if (!p->GetTrailer())
-    return ThrowError(a.Env(), "unable to create modified parser...possibly a "
-                               "file is not being modified by this writer...");
+    return ThrowTypeError(a.Env(),
+                          "unable to create modified parser...possibly a "
+                          "file is not being modified by this writer...");
   napi_value v = d->holder->GetNewPDFReader();
   PDFReaderDriver *reader = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &reader))
@@ -982,9 +992,9 @@ napi_value PDFWriterDriver::GetModifiedInputFile(const CallbackArgs &a) {
   auto *d = Driver(a);
   InputFile *f = &d->writer_.GetModifiedInputFile();
   if (!f->GetInputStream())
-    return ThrowError(a.Env(),
-                      "unable to create modified input file...possibly a file "
-                      "is not being modified by this writer...");
+    return ThrowTypeError(
+        a.Env(), "unable to create modified input file...possibly a file "
+                 "is not being modified by this writer...");
   napi_value v = d->holder->GetNewInputFile();
   InputFileDriver *file = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &file))
@@ -996,9 +1006,9 @@ napi_value PDFWriterDriver::GetOutputFile(const CallbackArgs &a) {
   auto *d = Driver(a);
   OutputFile *f = &d->writer_.GetOutputFile();
   if (!f->GetOutputStream())
-    return ThrowError(a.Env(),
-                      "unable to get output file. probably pdf writing hasn't "
-                      "started, or the output is not to a file");
+    return ThrowTypeError(
+        a.Env(), "unable to get output file. probably pdf writing hasn't "
+                 "started, or the output is not to a file");
   napi_value v = d->holder->GetNewOutputFile();
   OutputFileDriver *file = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &file))
@@ -1009,7 +1019,7 @@ napi_value PDFWriterDriver::GetOutputFile(const CallbackArgs &a) {
 napi_value PDFWriterDriver::RegisterAnnotationReferenceForNextPageWrite(
     const CallbackArgs &a) {
   if (a.Length() != 1 || !Type(a.Env(), a[0], napi_number))
-    return ThrowError(
+    return ThrowTypeError(
         a.Env(),
         "wrong arguments,  pass an object ID for an annotation to register");
   Driver(a)

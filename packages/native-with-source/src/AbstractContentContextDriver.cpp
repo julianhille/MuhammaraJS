@@ -164,7 +164,7 @@ bool IsString(const CallbackArgs &args, size_t index) {
 }
 
 napi_value WrongArguments(napi_env env, const char *message) {
-  return ThrowError(env, message);
+  return ThrowTypeError(env, message);
 }
 
 double GetUnderlineThicknessFactor(FreeTypeFaceWrapper *wrapper) {
@@ -239,7 +239,7 @@ napi_value AbstractContentContextDriver::Operator(const CallbackArgs &args) {
                               ? "Null content context. Please create a context "
                                 "using pdfWriter.startPageContentContext(page)"
                               : "Null content context. Please create a context";
-    return ThrowError(args.Env(), message);
+    return ThrowTypeError(args.Env(), message);
   }
 
   AbstractContentContext *context = driver->GetContext();
@@ -474,8 +474,8 @@ napi_value AbstractContentContextDriver::Operator(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::Dash(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if (args.Length() != 2 || !IsArray(args.Env(), args[0]) || !IsNumber(args, 1))
     return WrongArguments(args.Env(),
                           "Wrong Argument, please provide 2 parameters - array "
@@ -501,9 +501,9 @@ napi_value AbstractContentContextDriver::Dash(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::SetOpacity(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context using "
-                      "pdfWriter.startPageContentContext(page)");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context using "
+                          "pdfWriter.startPageContentContext(page)");
   double opacity = args.Length() == 1 && IsNumber(args, 0)
                        ? ToDouble(args.Env(), args[0])
                        : -1;
@@ -518,8 +518,8 @@ napi_value AbstractContentContextDriver::SetOpacity(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::Color(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   ColorOp op = static_cast<ColorOp>(reinterpret_cast<intptr_t>(args.Data()));
   bool patternOperator = op == ColorOp::SCN || op == ColorOp::scn;
   if (!patternOperator && args.Length() == 0)
@@ -578,8 +578,8 @@ napi_value AbstractContentContextDriver::Color(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::DoXObject(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext() || !driver->mResourcesDictionary)
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if (args.Length() != 1)
     return WrongArguments(args.Env(), "Invalid arguments. pass an xobject");
 
@@ -619,8 +619,8 @@ napi_value AbstractContentContextDriver::DoXObject(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::Tf(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if (args.Length() != 2 ||
       (!driver->holder->IsUsedFontInstance(args[0]) && !IsString(args, 0)) ||
       !IsNumber(args, 1))
@@ -691,8 +691,8 @@ bool AbstractContentContextDriver::ArrayToGlyphsList(
 napi_value AbstractContentContextDriver::Tj(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if ((args.Length() != 1 && args.Length() != 2) ||
       (!IsString(args, 0) && !IsArray(args.Env(), args[0])) ||
       (args.Length() == 2 && !IsObject(args.Env(), args[1])))
@@ -723,8 +723,8 @@ napi_value AbstractContentContextDriver::Tj(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::Quote(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if ((args.Length() != 1 && args.Length() != 2) ||
       (!IsString(args, 0) && !IsArray(args.Env(), args[0])) ||
       (args.Length() == 2 && !IsObject(args.Env(), args[1])))
@@ -755,8 +755,8 @@ napi_value AbstractContentContextDriver::Quote(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::DoubleQuote(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if ((args.Length() != 3 && args.Length() != 4) || !IsNumber(args, 0) ||
       !IsNumber(args, 1) ||
       (!IsString(args, 2) && !IsArray(args.Env(), args[2])) ||
@@ -791,8 +791,8 @@ napi_value AbstractContentContextDriver::DoubleQuote(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::TJ(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
 
   bool hasStrings = false;
   bool hasOptions = args.Length() > 0 && !IsString(args, args.Length() - 1) &&
@@ -1000,8 +1000,8 @@ void AbstractContentContextDriver::SetRGBColor(unsigned long colorValue,
 napi_value AbstractContentContextDriver::DrawPath(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if ((args.Length() == 1 && !IsArray(args.Env(), args[0])) ||
       args.Length() < 2)
     return WrongArguments(
@@ -1090,8 +1090,8 @@ napi_value AbstractContentContextDriver::DrawPath(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::DrawCircle(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if (args.Length() < 3)
     return WrongArguments(args.Env(),
                           "Wrong Arguments, please provide x and y coordinates "
@@ -1126,8 +1126,8 @@ napi_value AbstractContentContextDriver::DrawCircle(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::DrawSquare(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if (args.Length() < 3)
     return WrongArguments(
         args.Env(), "Wrong Arguments, please provide bottom left coordinates, "
@@ -1150,8 +1150,8 @@ napi_value
 AbstractContentContextDriver::DrawRectangle(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if (args.Length() < 4)
     return WrongArguments(
         args.Env(), "Wrong Arguments, please provide bottom left coordinates, "
@@ -1200,8 +1200,8 @@ bool AbstractContentContextDriver::ReadFont(napi_env env,
 napi_value AbstractContentContextDriver::WriteText(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if (args.Length() < 3)
     return WrongArguments(
         args.Env(),
@@ -1274,8 +1274,8 @@ napi_value AbstractContentContextDriver::WriteText(const CallbackArgs &args) {
 napi_value AbstractContentContextDriver::DrawImage(const CallbackArgs &args) {
   AbstractContentContextDriver *driver = Driver(args);
   if (!driver->GetContext())
-    return ThrowError(args.Env(),
-                      "Null content context. Please create a context");
+    return ThrowTypeError(args.Env(),
+                          "Null content context. Please create a context");
   if (args.Length() < 3 || !IsNumber(args, 0) || !IsNumber(args, 1) ||
       !IsString(args, 2) ||
       (args.Length() >= 4 && !IsObject(args.Env(), args[3])))

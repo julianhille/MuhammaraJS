@@ -20,7 +20,7 @@ bool StringOrBytes(const CallbackArgs &args, std::string &out) {
 bool OneNumber(const CallbackArgs &args, const char *error) {
   if (args.Length() == 1 && IsType(args.Env(), args[0], napi_number))
     return true;
-  ThrowError(args.Env(), error);
+  ThrowTypeError(args.Env(), error);
   return false;
 }
 } // namespace
@@ -110,8 +110,9 @@ napi_value ObjectsContextDriver::WriteNumber(const CallbackArgs &a) {
 napi_value ObjectsContextDriver::EndArray(const CallbackArgs &a) {
   if ((a.Length() != 0 && a.Length() != 1) ||
       (a.Length() == 1 && !IsType(a.Env(), a[0], napi_number)))
-    return ThrowError(a.Env(), "wrong arguments, pass 1 optional argument that "
-                               "defined the array ending");
+    return ThrowTypeError(a.Env(),
+                          "wrong arguments, pass 1 optional argument that "
+                          "defined the array ending");
   if (a.Length())
     Driver(a)->ObjectsContextInstance->EndArray(
         static_cast<ETokenSeparator>(ToUint32(a.Env(), a[0])));
@@ -126,13 +127,14 @@ napi_value ObjectsContextDriver::EndLine(const CallbackArgs &a) {
 napi_value ObjectsContextDriver::EndDictionary(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (a.Length() != 1 || !d->holder->IsDictionaryContextInstance(a[0]))
-    return ThrowError(a.Env(),
-                      "Wrong arguments. Please provide a dictionary to end");
+    return ThrowTypeError(
+        a.Env(), "Wrong arguments. Please provide a dictionary to end");
   auto *dict = ObjectWrap::Unwrap<DictionaryContextDriver>(a.Env(), a[0]);
   if (d->ObjectsContextInstance->EndDictionary(
           dict->DictionaryContextInstance) != PDFHummus::eSuccess)
-    return ThrowError(a.Env(), "Inconsistent ending of dictionary. Wrong "
-                               "nesting of startDictionary and endDictionary");
+    return ThrowTypeError(a.Env(),
+                          "Inconsistent ending of dictionary. Wrong "
+                          "nesting of startDictionary and endDictionary");
   return a.This();
 }
 napi_value ObjectsContextDriver::EndIndirectObject(const CallbackArgs &a) {
@@ -144,8 +146,9 @@ ObjectsContextDriver::WriteIndirectObjectReference(const CallbackArgs &a) {
   if ((a.Length() != 1 && a.Length() != 2) ||
       !IsType(a.Env(), a[0], napi_number) ||
       (a.Length() == 2 && !IsType(a.Env(), a[1], napi_number)))
-    return ThrowError(a.Env(), "wrong arguments. Provide object ID to write "
-                               "reference for and optionally a version number");
+    return ThrowTypeError(a.Env(),
+                          "wrong arguments. Provide object ID to write "
+                          "reference for and optionally a version number");
   if (a.Length() == 1)
     Driver(a)->ObjectsContextInstance->WriteIndirectObjectReference(
         ToUint32(a.Env(), a[0]));
@@ -157,8 +160,9 @@ ObjectsContextDriver::WriteIndirectObjectReference(const CallbackArgs &a) {
 napi_value ObjectsContextDriver::StartNewIndirectObject(const CallbackArgs &a) {
   if ((a.Length() != 0 && a.Length() != 1) ||
       (a.Length() == 1 && !IsType(a.Env(), a[0], napi_number)))
-    return ThrowError(a.Env(), "wrong arguments, pass no arguments, or pass 1 "
-                               "argument that is an object ID");
+    return ThrowTypeError(a.Env(),
+                          "wrong arguments, pass no arguments, or pass 1 "
+                          "argument that is an object ID");
   if (!a.Length())
     return Number(a.Env(),
                   Driver(a)->ObjectsContextInstance->StartNewIndirectObject());
@@ -177,7 +181,7 @@ ObjectsContextDriver::StartModifiedIndirectObject(const CallbackArgs &a) {
 #define STRING_WRITER(Method, Native, Error)                                   \
   napi_value ObjectsContextDriver::Method(const CallbackArgs &a) {             \
     if (a.Length() != 1 || !IsType(a.Env(), a[0], napi_string))                \
-      return ThrowError(a.Env(), Error);                                       \
+      return ThrowTypeError(a.Env(), Error);                                   \
     Driver(a)->ObjectsContextInstance->Native(LegacyString(a.Env(), a[0]));    \
     return a.This();                                                           \
   }
@@ -191,8 +195,8 @@ STRING_WRITER(WriteComment, WriteComment,
 napi_value ObjectsContextDriver::WriteLiteralString(const CallbackArgs &a) {
   if (a.Length() != 1 ||
       (!IsType(a.Env(), a[0], napi_string) && !IsArray(a.Env(), a[0])))
-    return ThrowError(a.Env(), "wrong arguments, pass 1 argument that is a "
-                               "literal string (string) or an array");
+    return ThrowTypeError(a.Env(), "wrong arguments, pass 1 argument that is a "
+                                   "literal string (string) or an array");
   std::string value;
   if (!StringOrBytes(a, value))
     return nullptr;
@@ -202,8 +206,8 @@ napi_value ObjectsContextDriver::WriteLiteralString(const CallbackArgs &a) {
 napi_value ObjectsContextDriver::WriteHexString(const CallbackArgs &a) {
   if (a.Length() != 1 ||
       (!IsType(a.Env(), a[0], napi_string) && !IsArray(a.Env(), a[0])))
-    return ThrowError(a.Env(), "wrong arguments, pass 1 argument that is a "
-                               "literal string (string) or an array");
+    return ThrowTypeError(a.Env(), "wrong arguments, pass 1 argument that is a "
+                                   "literal string (string) or an array");
   std::string value;
   if (!StringOrBytes(a, value))
     return nullptr;
@@ -212,16 +216,16 @@ napi_value ObjectsContextDriver::WriteHexString(const CallbackArgs &a) {
 }
 napi_value ObjectsContextDriver::WriteBoolean(const CallbackArgs &a) {
   if (a.Length() != 1 || !IsType(a.Env(), a[0], napi_boolean))
-    return ThrowError(a.Env(),
-                      "wrong arguments, pass 1 argument that is a boolean");
+    return ThrowTypeError(a.Env(),
+                          "wrong arguments, pass 1 argument that is a boolean");
   Driver(a)->ObjectsContextInstance->WriteBoolean(ToBoolean(a.Env(), a[0]));
   return a.This();
 }
 napi_value ObjectsContextDriver::SetCompressStreams(const CallbackArgs &a) {
   if (a.Length() != 1 || !IsType(a.Env(), a[0], napi_boolean))
-    return ThrowError(a.Env(),
-                      "wrong arguments, pass 1 argument that is a boolean, "
-                      "determining whether streams are to be compressed");
+    return ThrowTypeError(a.Env(),
+                          "wrong arguments, pass 1 argument that is a boolean, "
+                          "determining whether streams are to be compressed");
   Driver(a)->ObjectsContextInstance->SetCompressStreams(
       ToBoolean(a.Env(), a[0]));
   return a.This();
@@ -230,8 +234,9 @@ static napi_value StartStream(const CallbackArgs &a, bool filtered) {
   auto *d = Driver(a);
   if ((a.Length() != 0 && a.Length() != 1) ||
       (a.Length() == 1 && !d->holder->IsDictionaryContextInstance(a[0])))
-    return ThrowError(a.Env(), "wrong arguments, please provide no arguments "
-                               "or an optional stream dictionary");
+    return ThrowTypeError(a.Env(),
+                          "wrong arguments, please provide no arguments "
+                          "or an optional stream dictionary");
   DictionaryContext *dict =
       a.Length() ? ObjectWrap::Unwrap<DictionaryContextDriver>(a.Env(), a[0])
                        ->DictionaryContextInstance
@@ -259,7 +264,7 @@ ObjectsContextDriver::StartUnfilteredPDFStream(const CallbackArgs &a) {
 napi_value ObjectsContextDriver::EndPDFStream(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (a.Length() != 1 || !d->holder->IsPDFStreamInstance(a[0]))
-    return ThrowError(a.Env(), "wrong arguments, provide a stream to end");
+    return ThrowTypeError(a.Env(), "wrong arguments, provide a stream to end");
   d->ObjectsContextInstance->EndPDFStream(
       ObjectWrap::Unwrap<PDFStreamDriver>(a.Env(), a[0])->PDFStreamInstance);
   return a.This();

@@ -37,8 +37,8 @@ IByteWriterWithPosition *ByteWriterWithPositionDriver::GetStream() {
 }
 napi_value ByteWriterWithPositionDriver::Write(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsArray(args.Env(), args[0]))
-    return ThrowError(args.Env(),
-                      "Wrong arguments. pass an array of bytes to write");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments. pass an array of bytes to write");
   auto *driver =
       ObjectWrap::Unwrap<ByteWriterWithPositionDriver>(args.Env(), args.This());
   uint32_t size = 0;

@@ -80,7 +80,7 @@ bool ReadNumberArray(napi_env env, napi_value value, double (&out)[N],
     if (!Length(env, value, &length))
       return false;
     if (length != N) {
-      ThrowError(env, error);
+      ThrowTypeError(env, error);
       return false;
     }
   }

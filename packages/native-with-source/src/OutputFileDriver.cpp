@@ -52,26 +52,26 @@ napi_value OutputFileDriver::OpenFileJS(const CallbackArgs &args) {
   if ((args.Length() != 1 && args.Length() != 2) ||
       !IsType(args.Env(), args[0], napi_string) ||
       (args.Length() == 2 && !IsType(args.Env(), args[1], napi_boolean)))
-    return ThrowError(args.Env(),
-                      "wrong arguments. please provide a string for the file "
-                      "path and optional boolean flag to determine whether "
-                      "this file is opened for appending");
+    return ThrowTypeError(
+        args.Env(), "wrong arguments. please provide a string for the file "
+                    "path and optional boolean flag to determine whether "
+                    "this file is opened for appending");
   auto *driver = ObjectWrap::Unwrap<OutputFileDriver>(args.Env(), args.This());
   if (!driver)
-    return ThrowError(args.Env(),
-                      "no driver created...please create one through Hummus");
+    return ThrowTypeError(
+        args.Env(), "no driver created...please create one through Hummus");
   if (driver->OpenFile(LegacyString(args.Env(), args[0]),
                        args.Length() == 2 && ToBoolean(args.Env(), args[1])) !=
       PDFHummus::eSuccess)
-    return ThrowError(args.Env(),
-                      "can't open file. make sure path is not busy");
+    return ThrowTypeError(args.Env(),
+                          "can't open file. make sure path is not busy");
   return Undefined(args.Env());
 }
 napi_value OutputFileDriver::CloseFile(const CallbackArgs &args) {
   auto *driver = ObjectWrap::Unwrap<OutputFileDriver>(args.Env(), args.This());
   if (!driver)
-    return ThrowError(args.Env(),
-                      "no driver created...please create one through Hummus");
+    return ThrowTypeError(
+        args.Env(), "no driver created...please create one through Hummus");
   if (driver->outputFile_)
     driver->outputFile_->CloseFile();
   return Undefined(args.Env());
@@ -79,8 +79,8 @@ napi_value OutputFileDriver::CloseFile(const CallbackArgs &args) {
 napi_value OutputFileDriver::GetFilePath(const CallbackArgs &args) {
   auto *driver = ObjectWrap::Unwrap<OutputFileDriver>(args.Env(), args.This());
   if (!driver)
-    return ThrowError(args.Env(),
-                      "no driver created...please create one through Hummus");
+    return ThrowTypeError(
+        args.Env(), "no driver created...please create one through Hummus");
   return driver->outputFile_ && driver->outputFile_->GetOutputStream()
              ? String(args.Env(), driver->outputFile_->GetFilePath())
              : Undefined(args.Env());
@@ -88,8 +88,8 @@ napi_value OutputFileDriver::GetFilePath(const CallbackArgs &args) {
 napi_value OutputFileDriver::GetOutputStream(const CallbackArgs &args) {
   auto *driver = ObjectWrap::Unwrap<OutputFileDriver>(args.Env(), args.This());
   if (!driver)
-    return ThrowError(args.Env(),
-                      "no driver created...please create one through Hummus");
+    return ThrowTypeError(
+        args.Env(), "no driver created...please create one through Hummus");
   if (!driver->outputFile_ || !driver->outputFile_->GetOutputStream())
     return Undefined(args.Env());
   napi_value value = driver->holder->GetNewByteWriterWithPosition();

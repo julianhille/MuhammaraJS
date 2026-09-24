@@ -35,7 +35,7 @@ PDFPageInputDriver *PDFPageInputDriver::GetPage(const CallbackArgs &args) {
   auto *driver =
       ObjectWrap::Unwrap<PDFPageInputDriver>(args.Env(), args.This());
   if (!driver->PageInput) {
-    ThrowError(
+    ThrowTypeError(
         args.Env(),
         "page input not initialized. create one using the PDFReader.parsePage");
     return nullptr;

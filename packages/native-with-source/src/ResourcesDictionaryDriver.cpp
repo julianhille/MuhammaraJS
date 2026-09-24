@@ -37,7 +37,7 @@ napi_value ResourcesDictionaryDriver::New(const CallbackArgs &args) {
 #define ID_MAPPING(Method, NativeMethod, Message)                              \
   napi_value ResourcesDictionaryDriver::Method(const CallbackArgs &args) {     \
     if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number))       \
-      return ThrowError(args.Env(), Message);                                  \
+      return ThrowTypeError(args.Env(), Message);                              \
     auto *driver = ObjectWrap::Unwrap<ResourcesDictionaryDriver>(args.Env(),   \
                                                                  args.This()); \
     return String(args.Env(),                                                  \
@@ -67,8 +67,9 @@ ID_MAPPING(AddShadingMapping, AddShadingMapping,
 napi_value
 ResourcesDictionaryDriver::AddImageXObjectMapping(const CallbackArgs &args) {
   if (args.Length() != 1)
-    return ThrowError(args.Env(), "wrong arguments, pass 1 argument which is "
-                                  "the image xobject or its ID");
+    return ThrowTypeError(args.Env(),
+                          "wrong arguments, pass 1 argument which is "
+                          "the image xobject or its ID");
   auto *driver =
       ObjectWrap::Unwrap<ResourcesDictionaryDriver>(args.Env(), args.This());
   if (driver->holder->IsImageXObjectInstance(args[0])) {
@@ -81,7 +82,7 @@ ResourcesDictionaryDriver::AddImageXObjectMapping(const CallbackArgs &args) {
     return String(args.Env(),
                   driver->ResourcesDictionaryInstance->AddImageXObjectMapping(
                       ToUint32(args.Env(), args[0])));
-  return ThrowError(
+  return ThrowTypeError(
       args.Env(),
       "wrong arguments, pass 1 argument which is the image xobject or its ID");
 }
@@ -89,7 +90,7 @@ ResourcesDictionaryDriver::AddImageXObjectMapping(const CallbackArgs &args) {
 napi_value
 ResourcesDictionaryDriver::AddProcsetResource(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "wrong arguments, pass 1 argument which is the procset name");
   auto *driver =

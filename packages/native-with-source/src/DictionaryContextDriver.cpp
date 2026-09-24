@@ -10,8 +10,9 @@ DictionaryContextDriver *GetDriver(const CallbackArgs &args) {
   auto *driver =
       ObjectWrap::Unwrap<DictionaryContextDriver>(args.Env(), args.This());
   if (!driver->DictionaryContextInstance) {
-    ThrowError(args.Env(), "dictinoarycontext object not initialized, create "
-                           "using objectscontext.startDictionary");
+    ThrowTypeError(args.Env(),
+                   "dictinoarycontext object not initialized, create "
+                   "using objectscontext.startDictionary");
     return nullptr;
   }
   return driver;
@@ -50,7 +51,8 @@ napi_value DictionaryContextDriver::New(const CallbackArgs &args) {
 
 napi_value DictionaryContextDriver::WriteKey(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
-    return ThrowError(args.Env(), "Wrong arguments, provide a string to write");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments, provide a string to write");
   auto *driver = GetDriver(args);
   if (!driver)
     return nullptr;
@@ -61,7 +63,8 @@ napi_value DictionaryContextDriver::WriteKey(const CallbackArgs &args) {
 
 napi_value DictionaryContextDriver::WriteNameValue(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
-    return ThrowError(args.Env(), "Wrong arguments, provide a string to write");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments, provide a string to write");
   auto *driver = GetDriver(args);
   if (!driver)
     return nullptr;
@@ -80,7 +83,7 @@ DictionaryContextDriver::WriteRectangleValue(const CallbackArgs &args) {
   if (arrayForm && !Length(args.Env(), args[0], &length))
     return nullptr;
   if ((!arrayForm && !numberForm) || (arrayForm && length != 4))
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "Wrong arguments, provide an array of 4 numbers, or 4 numbers");
   auto *driver = GetDriver(args);
@@ -103,8 +106,9 @@ napi_value
 DictionaryContextDriver::WriteLiteralStringValue(const CallbackArgs &args) {
   if (args.Length() != 1 || (!IsType(args.Env(), args[0], napi_string) &&
                              !IsArray(args.Env(), args[0])))
-    return ThrowError(args.Env(), "wrong arguments, pass 1 argument that is a "
-                                  "literal string (string) or an array");
+    return ThrowTypeError(args.Env(),
+                          "wrong arguments, pass 1 argument that is a "
+                          "literal string (string) or an array");
   auto *driver = GetDriver(args);
   if (!driver)
     return nullptr;
@@ -118,8 +122,8 @@ DictionaryContextDriver::WriteLiteralStringValue(const CallbackArgs &args) {
 napi_value
 DictionaryContextDriver::WriteBooleanValue(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_boolean))
-    return ThrowError(args.Env(),
-                      "Wrong arguments, provide a boolean to write");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments, provide a boolean to write");
   auto *driver = GetDriver(args);
   if (!driver)
     return nullptr;
@@ -131,8 +135,8 @@ DictionaryContextDriver::WriteBooleanValue(const CallbackArgs &args) {
 napi_value
 DictionaryContextDriver::WriteObjectReferenceValue(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number))
-    return ThrowError(args.Env(),
-                      "Wrong arguments, provide an object id to write");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments, provide an object id to write");
   auto *driver = GetDriver(args);
   if (!driver)
     return nullptr;
@@ -143,7 +147,8 @@ DictionaryContextDriver::WriteObjectReferenceValue(const CallbackArgs &args) {
 
 napi_value DictionaryContextDriver::WriteNumberValue(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number))
-    return ThrowError(args.Env(), "Wrong arguments, provide a number to write");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments, provide a number to write");
   auto *driver = GetDriver(args);
   if (!driver)
     return nullptr;

@@ -60,7 +60,7 @@ napi_value InfoDictionaryDriver::New(const CallbackArgs &args) {
 napi_value InfoDictionaryDriver::GetText(const CallbackArgs &args) {
   auto *driver = Driver(args);
   if (!driver->InfoDictionaryInstance)
-    return ThrowError(args.Env(), kUninitialized);
+    return ThrowTypeError(args.Env(), kUninitialized);
   return String(args.Env(), TextField(driver->InfoDictionaryInstance,
                                       static_cast<const char *>(args.Data()))
                                 ->ToUTF8String());
@@ -68,7 +68,7 @@ napi_value InfoDictionaryDriver::GetText(const CallbackArgs &args) {
 napi_value InfoDictionaryDriver::SetText(const CallbackArgs &args) {
   auto *driver = Driver(args);
   if (!driver->InfoDictionaryInstance)
-    return ThrowError(args.Env(), kUninitialized);
+    return ThrowTypeError(args.Env(), kUninitialized);
   std::string value = LegacyString(args.Env(), args[0]);
   if (HasPendingException(args.Env()))
     return nullptr;
@@ -81,12 +81,12 @@ napi_value InfoDictionaryDriver::GetTrapped(const CallbackArgs &args) {
   auto *driver = Driver(args);
   return driver->InfoDictionaryInstance
              ? Number(args.Env(), driver->InfoDictionaryInstance->Trapped)
-             : ThrowError(args.Env(), kUninitialized);
+             : ThrowTypeError(args.Env(), kUninitialized);
 }
 napi_value InfoDictionaryDriver::SetTrapped(const CallbackArgs &args) {
   auto *driver = Driver(args);
   if (!driver->InfoDictionaryInstance)
-    return ThrowError(args.Env(), kUninitialized);
+    return ThrowTypeError(args.Env(), kUninitialized);
   driver->InfoDictionaryInstance->Trapped =
       static_cast<EInfoTrapped>(ToUint32(args.Env(), args[0]));
   return Undefined(args.Env());
@@ -94,7 +94,7 @@ napi_value InfoDictionaryDriver::SetTrapped(const CallbackArgs &args) {
 static napi_value SetDate(const CallbackArgs &args, bool creation) {
   auto *driver = Driver(args);
   if (!driver->InfoDictionaryInstance)
-    return ThrowError(args.Env(), kUninitialized);
+    return ThrowTypeError(args.Env(), kUninitialized);
   std::vector<napi_value> values;
   for (size_t i = 0; i < args.Length(); ++i)
     values.push_back(args[i]);
@@ -119,10 +119,10 @@ napi_value
 InfoDictionaryDriver::AddAdditionalInfoEntry(const CallbackArgs &args) {
   auto *d = Driver(args);
   if (!d->InfoDictionaryInstance)
-    return ThrowError(args.Env(), kUninitialized);
+    return ThrowTypeError(args.Env(), kUninitialized);
   if (args.Length() != 2 || !IsType(args.Env(), args[0], napi_string) ||
       !IsType(args.Env(), args[1], napi_string))
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "wrong arguments. please provide two strings - key and value ");
   PDFTextString value;
@@ -135,9 +135,9 @@ napi_value
 InfoDictionaryDriver::RemoveAdditionalInfoEntry(const CallbackArgs &args) {
   auto *d = Driver(args);
   if (!d->InfoDictionaryInstance)
-    return ThrowError(args.Env(), kUninitialized);
+    return ThrowTypeError(args.Env(), kUninitialized);
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "wrong arguments. please provide key of the entry to remove ");
   d->InfoDictionaryInstance->RemoveAdditionalInfoEntry(
@@ -148,7 +148,7 @@ napi_value
 InfoDictionaryDriver::ClearAdditionalInfoEntries(const CallbackArgs &args) {
   auto *d = Driver(args);
   if (!d->InfoDictionaryInstance)
-    return ThrowError(args.Env(), kUninitialized);
+    return ThrowTypeError(args.Env(), kUninitialized);
   d->InfoDictionaryInstance->ClearAdditionalInfoEntries();
   return Undefined(args.Env());
 }
@@ -156,9 +156,9 @@ napi_value
 InfoDictionaryDriver::GetAdditionalInfoEntry(const CallbackArgs &args) {
   auto *d = Driver(args);
   if (!d->InfoDictionaryInstance)
-    return ThrowError(args.Env(), kUninitialized);
+    return ThrowTypeError(args.Env(), kUninitialized);
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "wrong arguments. please provide key of the entry to return ");
   return String(args.Env(),
@@ -170,9 +170,9 @@ napi_value
 InfoDictionaryDriver::GetAdditionalInfoEntries(const CallbackArgs &args) {
   auto *d = Driver(args);
   if (!d->InfoDictionaryInstance)
-    return ThrowError(args.Env(), kUninitialized);
+    return ThrowTypeError(args.Env(), kUninitialized);
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "wrong arguments. please provide key of the entry to return ");
   napi_value result = Object(args.Env());

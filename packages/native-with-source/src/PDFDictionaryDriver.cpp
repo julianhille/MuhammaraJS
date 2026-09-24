@@ -43,8 +43,8 @@ napi_value PDFDictionaryDriver::ToJSObject(const CallbackArgs &args) {
 
 napi_value PDFDictionaryDriver::Exists(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string)) {
-    return ThrowError(args.Env(),
-                      "wrong arguments, pass 1 argument which is a string key");
+    return ThrowTypeError(
+        args.Env(), "wrong arguments, pass 1 argument which is a string key");
   }
   auto *driver =
       ObjectWrap::Unwrap<PDFDictionaryDriver>(args.Env(), args.This());
@@ -55,14 +55,14 @@ napi_value PDFDictionaryDriver::Exists(const CallbackArgs &args) {
 
 napi_value PDFDictionaryDriver::QueryObject(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string)) {
-    return ThrowError(args.Env(),
-                      "wrong arguments, pass 1 argument which is a string key");
+    return ThrowTypeError(
+        args.Env(), "wrong arguments, pass 1 argument which is a string key");
   }
   std::string key = muhammara::napi::LegacyString(args.Env(), args[0]);
   auto *driver =
       ObjectWrap::Unwrap<PDFDictionaryDriver>(args.Env(), args.This());
   if (!driver->TheObject->Exists(key)) {
-    return ThrowError(args.Env(), "key not found");
+    return ThrowTypeError(args.Env(), "key not found");
   }
   RefCountPtr<PDFObject> object = driver->TheObject->QueryDirectObject(key);
   return driver->holder->GetInstanceFor(object.GetPtr());

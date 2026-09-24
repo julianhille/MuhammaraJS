@@ -64,7 +64,7 @@ bool ReadCreationOptions(napi_env env, napi_value options, EPDFVersion &version,
     int32_t value = ToInt32(env, Get(env, options, "version"));
     if ((!allowUndefinedVersion || value != ePDFVersionUndefined) &&
         (value < ePDFVersion10 || ePDFVersionMax < value)) {
-      ThrowError(
+      ThrowTypeError(
           env,
           "Wrong argument for PDF version, please provide a valid PDF version");
       return false;
@@ -99,15 +99,15 @@ bool ReadCreationOptions(napi_env env, napi_value options, EPDFVersion &version,
 
 napi_value CreateWriter(const CallbackArgs &args) {
   if (args.Length() < 1 || args.Length() > 2)
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "Wrong number of arguments, Provide one argument stating the location "
         "of the output file, and an optional options object");
   if (!IsType(args.Env(), args[0], napi_string) &&
       !IsObject(args.Env(), args[0]))
-    return ThrowError(args.Env(),
-                      "Wrong arguments, please provide a path to a file as the "
-                      "first argument or a stream object");
+    return ThrowTypeError(
+        args.Env(), "Wrong arguments, please provide a path to a file as the "
+                    "first argument or a stream object");
   auto &constructors = ModuleState::Get(args.Env())->Constructors();
   napi_value instance = constructors.GetNewPDFWriter();
   PDFWriterDriver *driver = nullptr;
@@ -126,8 +126,9 @@ napi_value CreateWriter(const CallbackArgs &args) {
                              creation);
   return status == eSuccess
              ? instance
-             : ThrowError(args.Env(), "Unable to create PDF file, make sure "
-                                      "that output file target is available");
+             : ThrowTypeError(args.Env(),
+                              "Unable to create PDF file, make sure "
+                              "that output file target is available");
 }
 
 napi_value CreateWriterToContinue(const CallbackArgs &args) {
@@ -136,7 +137,7 @@ napi_value CreateWriterToContinue(const CallbackArgs &args) {
        !IsObject(args.Env(), args[0])) ||
       !IsType(args.Env(), args[1], napi_string) ||
       (args.Length() == 3 && !IsObject(args.Env(), args[2])))
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "Wrong arguments, provide 2 strings - path to file to continue, and "
         "path to state file (provided to the previous shutdown call. You may "
@@ -178,9 +179,10 @@ napi_value CreateWriterToContinue(const CallbackArgs &args) {
                            LegacyString(args.Env(), args[1]), alternative, log);
   return status == eSuccess
              ? instance
-             : ThrowError(args.Env(),
-                          "Unable to continue PDF file, make sure that output "
-                          "file target is available and state file exists");
+             : ThrowTypeError(
+                   args.Env(),
+                   "Unable to continue PDF file, make sure that output "
+                   "file target is available and state file exists");
 }
 
 napi_value CreateWriterToModify(const CallbackArgs &args) {
@@ -191,7 +193,7 @@ napi_value CreateWriterToModify(const CallbackArgs &args) {
       (IsObject(args.Env(), args[0]) &&
        (args.Length() < 2 || !IsObject(args.Env(), args[1]) ||
         args.Length() > 3)))
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "Wrong arguments, please path a path to modified file, or a pair of "
         "stream - first for the source, and second for destination. in "
@@ -225,7 +227,7 @@ napi_value CreateWriterToModify(const CallbackArgs &args) {
                          log, creation);
   return status == eSuccess
              ? instance
-             : ThrowError(
+             : ThrowTypeError(
                    args.Env(),
                    "Unable to modify PDF file, make sure that output file "
                    "target is available and that it is not protected");
@@ -233,24 +235,24 @@ napi_value CreateWriterToModify(const CallbackArgs &args) {
 
 napi_value Recrypt(const CallbackArgs &args) {
   if (args.Length() < 2 || args.Length() > 3)
-    return ThrowError(args.Env(),
-                      "Wrong number of arguments, Provide one argument stating "
-                      "the location of the source file, a second one for the "
-                      "destination file, and an optional options object");
+    return ThrowTypeError(
+        args.Env(), "Wrong number of arguments, Provide one argument stating "
+                    "the location of the source file, a second one for the "
+                    "destination file, and an optional options object");
   if (!IsType(args.Env(), args[0], napi_string) &&
       !IsObject(args.Env(), args[0]))
-    return ThrowError(args.Env(),
-                      "Wrong arguments, please provide a path to a file as the "
-                      "first argument or a stream object");
+    return ThrowTypeError(
+        args.Env(), "Wrong arguments, please provide a path to a file as the "
+                    "first argument or a stream object");
   if (!IsType(args.Env(), args[1], napi_string) &&
       !IsObject(args.Env(), args[1]))
-    return ThrowError(args.Env(),
-                      "Wrong arguments, please provide a path to a file as the "
-                      "second argument or a stream object");
+    return ThrowTypeError(
+        args.Env(), "Wrong arguments, please provide a path to a file as the "
+                    "second argument or a stream object");
   if (IsObject(args.Env(), args[0]) != IsObject(args.Env(), args[1]))
-    return ThrowError(args.Env(),
-                      "Wrong arguments, please either provide two paths or two "
-                      "stream objects for the first two arguments");
+    return ThrowTypeError(
+        args.Env(), "Wrong arguments, please either provide two paths or two "
+                    "stream objects for the first two arguments");
   EPDFVersion version = ePDFVersionUndefined;
   PDFCreationSettings creation(true, true);
   LogConfiguration log = LogConfiguration::DefaultLogConfiguration();
@@ -276,9 +278,9 @@ napi_value Recrypt(const CallbackArgs &args) {
         LegacyString(args.Env(), args[1]), log, creation, version);
   return status == eSuccess
              ? Undefined(args.Env())
-             : ThrowError(args.Env(),
-                          "Unable to recrypt files, check that input and "
-                          "output files are clear and arguments are coool");
+             : ThrowTypeError(args.Env(),
+                              "Unable to recrypt files, check that input and "
+                              "output files are clear and arguments are coool");
 }
 
 napi_value CreateReader(const CallbackArgs &args) {
@@ -286,7 +288,7 @@ napi_value CreateReader(const CallbackArgs &args) {
       (!IsType(args.Env(), args[0], napi_string) &&
        !IsObject(args.Env(), args[0])) ||
       (args.Length() >= 2 && !IsObject(args.Env(), args[1]))) {
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(), "Wrong arguments, provide 1 string - path to file read, or "
                     "a read stream object, and optionally an options object");
   }
@@ -309,18 +311,18 @@ napi_value CreateReader(const CallbackArgs &args) {
           : driver->StartPDFParsing(args.Env(), args[0], options);
   return status == PDFHummus::eSuccess
              ? instance
-             : ThrowError(args.Env(), "Unable to start parsing PDF file");
+             : ThrowTypeError(args.Env(), "Unable to start parsing PDF file");
 }
 
 napi_value GetTypeLabel(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number)) {
-    return ThrowError(args.Env(), "Wrong arguments, provide a single "
-                                  "enumerator value of a PDF Object type");
+    return ThrowTypeError(args.Env(), "Wrong arguments, provide a single "
+                                      "enumerator value of a PDF Object type");
   }
   uint32_t value = ToUint32(args.Env(), args[0]);
   if (value > PDFObject::ePDFObjectSymbol) {
-    return ThrowError(args.Env(), "Wrong arguments, provide a single "
-                                  "enumerator value of a PDF Object type");
+    return ThrowTypeError(args.Env(), "Wrong arguments, provide a single "
+                                      "enumerator value of a PDF Object type");
   }
   return String(args.Env(), PDFObject::scPDFObjectTypeLabel(
                                 static_cast<PDFObject::EPDFObjectType>(value)));

@@ -47,8 +47,8 @@ IByteReaderWithPosition *ByteReaderWithPositionDriver::GetStream() {
 
 napi_value ByteReaderWithPositionDriver::Read(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number))
-    return ThrowError(args.Env(),
-                      "Wrong arguments. pass the number of bytes to read");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments. pass the number of bytes to read");
   auto *driver =
       ObjectWrap::Unwrap<ByteReaderWithPositionDriver>(args.Env(), args.This());
   IOBasicTypes::LongBufferSizeType size = ToUint32(args.Env(), args[0]);
@@ -72,8 +72,8 @@ ByteReaderWithPositionDriver::GetCurrentPosition(const CallbackArgs &args) {
 
 napi_value ByteReaderWithPositionDriver::Skip(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number))
-    return ThrowError(args.Env(),
-                      "Wrong arguments. pass the number of bytes to skip");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments. pass the number of bytes to skip");
   auto *driver =
       ObjectWrap::Unwrap<ByteReaderWithPositionDriver>(args.Env(), args.This());
   driver->mInstance->Skip(ToUint32(args.Env(), args[0]));
@@ -82,7 +82,7 @@ napi_value ByteReaderWithPositionDriver::Skip(const CallbackArgs &args) {
 
 napi_value ByteReaderWithPositionDriver::SetPosition(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number))
-    return ThrowError(args.Env(), "Wrong arguments. pass the position");
+    return ThrowTypeError(args.Env(), "Wrong arguments. pass the position");
   auto *driver =
       ObjectWrap::Unwrap<ByteReaderWithPositionDriver>(args.Env(), args.This());
   driver->mInstance->SetPosition(ToUint32(args.Env(), args[0]));
@@ -92,7 +92,7 @@ napi_value ByteReaderWithPositionDriver::SetPosition(const CallbackArgs &args) {
 napi_value
 ByteReaderWithPositionDriver::SetPositionFromEnd(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number))
-    return ThrowError(args.Env(), "Wrong arguments. pass the position");
+    return ThrowTypeError(args.Env(), "Wrong arguments. pass the position");
   auto *driver =
       ObjectWrap::Unwrap<ByteReaderWithPositionDriver>(args.Env(), args.This());
   driver->mInstance->SetPositionFromEnd(ToUint32(args.Env(), args[0]));

@@ -45,14 +45,14 @@ napi_value PDFArrayDriver::GetLength(const CallbackArgs &args) {
 
 napi_value PDFArrayDriver::QueryObject(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number)) {
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "wrong arguments, pass 1 argument which is an index in the array");
   }
   auto *driver = ObjectWrap::Unwrap<PDFArrayDriver>(args.Env(), args.This());
   uint32_t index = ToUint32(args.Env(), args[0]);
   if (index >= driver->TheObject->GetLength()) {
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "wrong arguments, pass 1 argument which is a valid index in the array");
   }

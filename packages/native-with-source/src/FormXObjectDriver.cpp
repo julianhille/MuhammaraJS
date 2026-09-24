@@ -33,8 +33,8 @@ napi_value FormXObjectDriver::New(const CallbackArgs &a) {
 napi_value FormXObjectDriver::GetID(const CallbackArgs &a) {
   auto *d = ObjectWrap::Unwrap<FormXObjectDriver>(a.Env(), a.This());
   if (!d->FormXObject)
-    return ThrowError(a.Env(), "form object not initialized, create using "
-                               "pdfWriter.CreateFormXObject");
+    return ThrowTypeError(a.Env(), "form object not initialized, create using "
+                                   "pdfWriter.CreateFormXObject");
   return Number(a.Env(), d->FormXObject->GetObjectID());
 }
 napi_value FormXObjectDriver::GetContentContext(const CallbackArgs &a) {

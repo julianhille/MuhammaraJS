@@ -37,8 +37,8 @@ IByteReader *ByteReaderDriver::GetStream() { return mInstance; }
 
 napi_value ByteReaderDriver::Read(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number)) {
-    return ThrowError(args.Env(),
-                      "Wrong arguments. pass the number of bytes to read");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments. pass the number of bytes to read");
   }
   auto *driver = ObjectWrap::Unwrap<ByteReaderDriver>(args.Env(), args.This());
   IOBasicTypes::LongBufferSizeType size = ToUint32(args.Env(), args[0]);

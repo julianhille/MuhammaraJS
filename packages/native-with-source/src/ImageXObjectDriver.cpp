@@ -27,8 +27,9 @@ napi_value ImageXObjectDriver::GetID(const CallbackArgs &args) {
   auto *driver =
       ObjectWrap::Unwrap<ImageXObjectDriver>(args.Env(), args.This());
   if (!driver->ImageXObject) {
-    return ThrowError(args.Env(), "image object not initialized, create using "
-                                  "pdfWriter.createFormXObject");
+    return ThrowTypeError(args.Env(),
+                          "image object not initialized, create using "
+                          "pdfWriter.createFormXObject");
   }
   return Number(args.Env(), driver->ImageXObject->GetImageObjectID());
 }

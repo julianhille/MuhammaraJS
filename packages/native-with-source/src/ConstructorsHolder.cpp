@@ -204,8 +204,8 @@ ConstructorsHolder::GetNewPDFDate(const std::vector<napi_value> &arguments,
   }
   if (arguments.size() != 1 || (!IsDate(Env(), arguments[0]) &&
                                 !IsType(Env(), arguments[0], napi_string))) {
-    return ThrowError(Env(),
-                      "Wrong arguments. Provide 1 argument which is a date");
+    return ThrowTypeError(
+        Env(), "Wrong arguments. Provide 1 argument which is a date");
   }
   return New("PDFDate", arguments);
 }

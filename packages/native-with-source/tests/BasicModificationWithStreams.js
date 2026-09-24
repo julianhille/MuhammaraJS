@@ -301,6 +301,16 @@ describe("BasicModificationWithStreams", function () {
     }
   });
 
+  it("should throw TypeError for missing stream arguments", function () {
+    ["createWriter", "createReader", "createWriterToModify"].forEach(
+      function (method) {
+        chai
+          .expect(muhammara[method].bind(undefined))
+          .to.throw(TypeError, /arguments/i);
+      },
+    );
+  });
+
   it("null for stream should throw an error and not crash", function () {
     var res = new muhammara.PDFStreamForResponse(null);
     chai

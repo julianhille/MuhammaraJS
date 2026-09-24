@@ -125,7 +125,7 @@ napi_value PDFReaderDriver::New(const CallbackArgs &args) {
 PDFReaderDriver *PDFReaderDriver::GetActiveReader(const CallbackArgs &args) {
   auto *reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.Env(), args.This());
   if (!reader->mPDFReader || !reader->mLifecycle->IsActive()) {
-    ThrowError(args.Env(), "PDF reader has ended");
+    ThrowTypeError(args.Env(), "PDF reader has ended");
     return nullptr;
   }
   return reader;
@@ -170,8 +170,8 @@ napi_value PDFReaderDriver::QueryDictionaryObject(const CallbackArgs &args) {
     return nullptr;
   if (args.Length() != 2 || !reader->holder->IsPDFDictionaryInstance(args[0]) ||
       !IsType(args.Env(), args[1], napi_string))
-    return ThrowError(args.Env(),
-                      "Wrong arguments. Provide a dictionary and a string");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments. Provide a dictionary and a string");
   auto *dictionary =
       ObjectWrap::Unwrap<PDFDictionaryDriver>(args.Env(), args[0]);
   RefCountPtr<PDFObject> object = reader->mPDFReader->QueryDictionaryObject(
@@ -186,8 +186,8 @@ napi_value PDFReaderDriver::QueryArrayObject(const CallbackArgs &args) {
     return nullptr;
   if (args.Length() != 2 || !reader->holder->IsPDFArrayInstance(args[0]) ||
       !IsType(args.Env(), args[1], napi_number))
-    return ThrowError(args.Env(),
-                      "Wrong arguments. Provide an array and an index");
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments. Provide an array and an index");
   auto *array = ObjectWrap::Unwrap<PDFArrayDriver>(args.Env(), args[0]);
   RefCountPtr<PDFObject> object = reader->mPDFReader->QueryArrayObject(
       array->TheObject.GetPtr(), ToUint32(args.Env(), args[1]));
@@ -258,13 +258,13 @@ napi_value PDFReaderDriver::ParseNewObject(const CallbackArgs &args) {
   if (!reader)
     return nullptr;
   if (args.Length() != 1)
-    return ThrowError(args.Env(), "Wrong arguments. Provide an Object ID");
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide an Object ID");
   unsigned long objectID;
   if (!ReadIndexArgument(args.Env(), args[0], objectID))
-    return ThrowError(args.Env(), kObjectIDError);
+    return ThrowTypeError(args.Env(), kObjectIDError);
   RefCountPtr<PDFObject> object = reader->mPDFReader->ParseNewObject(objectID);
   if (!object)
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "Unable to read object. Most probably object ID is wrong (or some file "
         "read issue...but i'd first check that ID. if i were you)");
@@ -276,10 +276,10 @@ napi_value PDFReaderDriver::GetPageObjectID(const CallbackArgs &args) {
   if (!reader)
     return nullptr;
   if (args.Length() != 1)
-    return ThrowError(args.Env(), "Wrong arguments. Provide a page index");
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide a page index");
   unsigned long index;
   if (!ReadIndexArgument(args.Env(), args[0], index))
-    return ThrowError(args.Env(), kPageIndexError);
+    return ThrowTypeError(args.Env(), kPageIndexError);
   return Number(args.Env(), reader->mPDFReader->GetPageObjectID(index));
 }
 
@@ -288,15 +288,16 @@ napi_value PDFReaderDriver::ParsePageDictionary(const CallbackArgs &args) {
   if (!reader)
     return nullptr;
   if (args.Length() != 1)
-    return ThrowError(args.Env(), "Wrong arguments. Provide a page index");
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide a page index");
   unsigned long index;
   if (!ReadIndexArgument(args.Env(), args[0], index))
-    return ThrowError(args.Env(), kPageIndexError);
+    return ThrowTypeError(args.Env(), kPageIndexError);
   RefCountPtr<PDFDictionary> object = reader->mPDFReader->ParsePage(index);
   return object.GetPtr()
              ? reader->holder->GetInstanceFor(object.GetPtr())
-             : ThrowError(args.Env(),
-                          "Unable to read page, parhaps page index is wrong");
+             : ThrowTypeError(
+                   args.Env(),
+                   "Unable to read page, parhaps page index is wrong");
 }
 
 napi_value PDFReaderDriver::ParsePage(const CallbackArgs &args) {
@@ -304,13 +305,13 @@ napi_value PDFReaderDriver::ParsePage(const CallbackArgs &args) {
   if (!reader)
     return nullptr;
   if (args.Length() != 1)
-    return ThrowError(args.Env(), "Wrong arguments. Provide a page index");
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide a page index");
   unsigned long index;
   if (!ReadIndexArgument(args.Env(), args[0], index))
-    return ThrowError(args.Env(), kPageIndexError);
+    return ThrowTypeError(args.Env(), kPageIndexError);
   RefCountPtr<PDFDictionary> object = reader->mPDFReader->ParsePage(index);
   if (!object)
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(), "Unable to read page, page index is wrong or page is null");
   napi_value instance = reader->holder->GetNewPDFPageInput();
   PDFPageInputDriver *page = nullptr;
@@ -326,18 +327,18 @@ napi_value PDFReaderDriver::ExtractPageText(const CallbackArgs &args) {
   if (!reader)
     return nullptr;
   if (args.Length() < 1 || args.Length() > 2)
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "Wrong arguments. Provide a page index and optional extraction limits");
   unsigned long index;
   if (!ReadIndexArgument(args.Env(), args[0], index))
-    return ThrowError(args.Env(), kPageIndexError);
+    return ThrowTypeError(args.Env(), kPageIndexError);
   PDFExtractionLimits limits;
   if (!ReadExtractionLimits(args, 1, limits))
     return nullptr;
   RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
   if (!page)
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(), "Unable to read page, page index is wrong or page is null");
   std::vector<PDFTextElement> elements;
   if (!PDFTextExtractor().Extract(reader->mPDFReader, page.GetPtr(), elements,
@@ -367,18 +368,18 @@ napi_value PDFReaderDriver::ExtractPageContentItems(const CallbackArgs &args) {
   if (!reader)
     return nullptr;
   if (args.Length() < 1 || args.Length() > 2)
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(),
         "Wrong arguments. Provide a page index and optional extraction limits");
   unsigned long index;
   if (!ReadIndexArgument(args.Env(), args[0], index))
-    return ThrowError(args.Env(), kPageIndexError);
+    return ThrowTypeError(args.Env(), kPageIndexError);
   PDFExtractionLimits limits;
   if (!ReadExtractionLimits(args, 1, limits))
     return nullptr;
   RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
   if (!page)
-    return ThrowError(
+    return ThrowTypeError(
         args.Env(), "Unable to read page, page index is wrong or page is null");
   std::vector<PDFPageContentItem> items;
   if (!PDFTextExtractor().ExtractPageContentItems(reader->mPDFReader,
@@ -400,14 +401,14 @@ napi_value PDFReaderDriver::GetXrefEntry(const CallbackArgs &args) {
   if (!reader)
     return nullptr;
   if (args.Length() != 1)
-    return ThrowError(args.Env(), "Wrong arguments. Provide an Object ID");
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide an Object ID");
   unsigned long objectID;
   if (!ReadIndexArgument(args.Env(), args[0], objectID))
-    return ThrowError(args.Env(), kObjectIDError);
+    return ThrowTypeError(args.Env(), kObjectIDError);
   XrefEntryInput *entry = reader->mPDFReader->GetXrefEntry(objectID);
   if (!entry)
-    return ThrowError(args.Env(), "Unable to read object xref entry, page "
-                                  "index is wrong or page is null");
+    return ThrowTypeError(args.Env(), "Unable to read object xref entry, page "
+                                      "index is wrong or page is null");
   napi_value result = Object(args.Env());
   Set(args.Env(), result, "objectPosition",
       Number(args.Env(), entry->mObjectPosition));
@@ -420,7 +421,7 @@ static PDFStreamInputDriver *GetStreamInput(const CallbackArgs &args,
                                             PDFReaderDriver *reader) {
   if (args.Length() != 1 ||
       !reader->holder->IsPDFStreamInputInstance(args[0])) {
-    ThrowError(args.Env(), "Wrong arguments. provide a PDF stream input");
+    ThrowTypeError(args.Env(), "Wrong arguments. provide a PDF stream input");
     return nullptr;
   }
   return ObjectWrap::Unwrap<PDFStreamInputDriver>(args.Env(), args[0]);
@@ -486,7 +487,7 @@ PDFReaderDriver::StartReadingObjectsFromStreams(const CallbackArgs &args) {
   if (!reader)
     return nullptr;
   if (args.Length() != 1 || !reader->holder->IsPDFArrayInstance(args[0]))
-    return ThrowError(args.Env(), "Wrong arguments. provide a PDF array");
+    return ThrowTypeError(args.Env(), "Wrong arguments. provide a PDF array");
   auto *array = ObjectWrap::Unwrap<PDFArrayDriver>(args.Env(), args[0]);
   napi_value result = reader->holder->GetNewPDFObjectParser();
   PDFObjectParserDriver *driver = nullptr;
