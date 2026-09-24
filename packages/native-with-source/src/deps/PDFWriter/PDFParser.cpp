@@ -1287,7 +1287,6 @@ EStatusCode PDFParser::ParsePreviousFileDirectory(LongFilePositionType inXrefPos
 {
 	EStatusCode status = PDFHummus::eSuccess;
 
-	*outTrailer = NULL;
 	*outReadTableSize = inXrefSize;
 
 	MovePositionInStream(inXrefPosition);
@@ -1312,6 +1311,7 @@ EStatusCode PDFParser::ParsePreviousFileDirectory(LongFilePositionType inXrefPos
 			status = ParseTrailerDictionary(&trailerDictionary);
 			if (status != PDFHummus::eSuccess)
 				break;
+
 			RefCountPtr<PDFDictionary> trailer(trailerDictionary);
 
 			bool hasPrev = trailer->Exists("Prev");
@@ -1385,11 +1385,6 @@ EStatusCode PDFParser::ParsePreviousFileDirectory(LongFilePositionType inXrefPos
 			NotifyIndirectObjectEnd(xrefStream.GetPtr());
 
 			RefCountPtr<PDFDictionary> trailer(xrefStream->QueryStreamDictionary());
-			if(!trailer)
-			{
-				status = PDFHummus::eFailure;
-				break;
-			}
 
 			status = ParseXrefFromXrefStream(inXrefTable,inXrefSize,xrefStream.GetPtr(),outReadTableSize);
 			if(status != PDFHummus::eSuccess)
@@ -1943,14 +1938,22 @@ PDFObject* PDFParser::ParseExistingInDirectStreamObject(ObjectIDType inObjectId)
 			break;
 		}
 
-		// when parsing the header, should be at position already..so don't skip if already there [using GetCurrentPosition to see if parsed some]
-		if(mXrefTable[inObjectId].mRivision != 0 || skipperStream.GetCurrentPosition() == 0)
+		LongFilePositionType objectPositionInStream = objectStreamHeader[mXrefTable[inObjectId].mRivision].mObjectOffset +
+													  firstStreamObjectPosition->GetValue();
+
+		// header parsing above may have overshot the object's position. if so, reopen the stream from scratch
+		// so we can still reach it, rather than skipping to a position we've already passed.
+		if(!skipperStream.CanSkipTo(objectPositionInStream))
 		{
-			LongFilePositionType objectPositionInStream = objectStreamHeader[mXrefTable[inObjectId].mRivision].mObjectOffset +
-														  firstStreamObjectPosition->GetValue();
-			skipperStream.SkipTo(objectPositionInStream);
-			mObjectParser.ResetReadState();
+			delete objectSource;
+			objectSource = CreateInputStreamReader(objectStream.GetPtr());
+			skipperStream.Assign(objectSource);
+			MovePositionInStream(objectStream->GetStreamContentStart());
+			mObjectParser.SetReadStream(&skipperStream,&skipperStream);
 		}
+
+		skipperStream.SkipTo(objectPositionInStream);
+		mObjectParser.ResetReadState();
 
 		mDecryptionHelper.PauseDecryption(); // objects within objects stream already enjoy the object stream protection, and so are no longer encrypted
 		NotifyIndirectObjectStart(inObjectId,0);
@@ -2086,7 +2089,7 @@ IByteReader* PDFParser::CreateInputStreamReader(PDFStreamInput* inStream)
 					createStatus = CreateFilterForStream(result,filterObjectItem.GetPtr(), !decodeParamsItem ? NULL: decodeParamsItem.GetPtr(), inStream);
 				}
 
-				if(createStatus.first != eSuccess || !createStatus.second)
+				if(createStatus.first != eSuccess)
 				{
 					status = PDFHummus::eFailure;
 					break;
@@ -2100,7 +2103,7 @@ IByteReader* PDFParser::CreateInputStreamReader(PDFStreamInput* inStream)
 			PDFObjectCastPtr<PDFDictionary> decodeParams(QueryDictionaryObject(streamDictionary.GetPtr(),"DecodeParms"));
 
 			EStatusCodeAndIByteReader createStatus = CreateFilterForStream(result,(PDFName*)filterObject.GetPtr(), !decodeParams ? NULL: decodeParams.GetPtr(), inStream);
-			if(createStatus.first != eSuccess || !createStatus.second)
+			if(createStatus.first != eSuccess)
 			{
 				status = PDFHummus::eFailure;
 				break;
@@ -2333,6 +2336,11 @@ EStatusCodeAndIByteReader PDFParser::CreateFilterForStream(IByteReader* inStream
 		}
 	}while(false);
 
+	// null should not be returned in case of success, which means one of the branches actually failed but didn't note so. 
+	// iron this out by verifying that's not null
+	if(NULL == result && eSuccess == status)
+		status = eFailure;
+
 	return EStatusCodeAndIByteReader(status,result);
 
 }
@@ -2479,6 +2487,8 @@ IByteReaderWithPosition* PDFParser::GetParserStream()
 {
     return &mStream;
 }
+
+
 
 
 

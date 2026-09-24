@@ -1,63 +1,39 @@
 #include "PDFObjectParserDriver.h"
-#include "PDFObjectParser.h"
-#include "PDFObjectDriver.h"
-#include "RefCountPtr.h"
-#include "PDFObject.h"
+
 #include "ConstructorsHolder.h"
+#include "PDFObject.h"
+#include "PDFObjectParser.h"
+#include "RefCountPtr.h"
 
-using namespace v8;
-
-
+using namespace muhammara::napi;
 
 PDFObjectParserDriver::PDFObjectParserDriver()
-{
-    PDFObjectParserInstance = NULL;
-}
-
+    : PDFObjectParserInstance(nullptr), holder(nullptr) {}
 PDFObjectParserDriver::~PDFObjectParserDriver() {
-	delete PDFObjectParserInstance;
+  delete PDFObjectParserInstance;
 }
 
-DEF_SUBORDINATE_INIT(PDFObjectParserDriver::Init)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-	Local<FunctionTemplate> t = NEW_FUNCTION_TEMPLATE_EXTERNAL(New);
-
-	t->SetClassName(NEW_STRING("PDFObjectParserDriver"));
-	t->InstanceTemplate()->SetInternalFieldCount(1);
-
-	SET_PROTOTYPE_METHOD(t, "parseNewObject", ParseNewObject);
-
-    // save in factory
-	EXPOSE_EXTERNAL_FOR_INIT(ConstructorsHolder, holder)
-    SET_CONSTRUCTOR(holder->PDFObjectParser_constructor, t);  	
-	SET_CONSTRUCTOR_TEMPLATE(holder->PDFObjectParser_constructor_template,t);
+bool PDFObjectParserDriver::Init(ModuleState &state, napi_value exports) {
+  ClassBuilder builder(state, "PDFObjectParserDriver", New);
+  builder.Method("parseNewObject", ParseNewObject);
+  return builder.Define(exports, false) != nullptr;
 }
 
-METHOD_RETURN_TYPE PDFObjectParserDriver::New(const ARGS_TYPE& args)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-	EXPOSE_EXTERNAL_ARGS(ConstructorsHolder, externalHolder)
-
-    PDFObjectParserDriver* driver = new PDFObjectParserDriver();
-    driver->holder = externalHolder;
-	driver->Wrap(args.This());
-	SET_FUNCTION_RETURN_VALUE(args.This())
+napi_value PDFObjectParserDriver::New(const CallbackArgs &args) {
+  auto *driver = new PDFObjectParserDriver();
+  driver->holder = &ModuleState::Get(args.Env())->Constructors();
+  if (!driver->Wrap(args.Env(), args.This())) {
+    delete driver;
+    return nullptr;
+  }
+  return args.This();
 }
 
-METHOD_RETURN_TYPE PDFObjectParserDriver::ParseNewObject(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFObjectParserDriver* self = ObjectWrap::Unwrap<PDFObjectParserDriver>(args.This());
-    
-    RefCountPtr<PDFObject> newObject = self->PDFObjectParserInstance->ParseNewObject();
-    
-    if(!newObject)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    else
-        SET_FUNCTION_RETURN_VALUE(self->holder->GetInstanceFor(newObject.GetPtr()))
+napi_value PDFObjectParserDriver::ParseNewObject(const CallbackArgs &args) {
+  auto *driver =
+      ObjectWrap::Unwrap<PDFObjectParserDriver>(args.Env(), args.This());
+  RefCountPtr<PDFObject> object =
+      driver->PDFObjectParserInstance->ParseNewObject();
+  return object.GetPtr() ? driver->holder->GetInstanceFor(object.GetPtr())
+                         : Undefined(args.Env());
 }

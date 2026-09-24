@@ -474,10 +474,61 @@ recipe.text("Hello", 72, 72, size > 0 ? { size: size } : {});
 `null` and `undefined` still select the default, so an optional property that
 is simply absent needs no change.
 
+## 14. Update Native Binary Tooling
+
+v7 uses one Node-API 8 binary across all supported Node.js and Electron
+versions. An ordinary npm install and public package import need no change beyond
+the package rename described above. The native binary metadata, archive name,
+and installed path do change:
+
+|                   | v6                                                | v7                                        |
+| ----------------- | ------------------------------------------------- | ----------------------------------------- |
+| Prebuild archive  | `node-v{abi}-{platform}-{arch}-{libc}.tar.gz`     | `napi-v8-{platform}-{arch}-{libc}.tar.gz` |
+| Installed addon   | `binding/muhammara.node`                          | `binding/napi-v8/muhammara.node`          |
+| Runtime selection | Separate archive for each Node.js or Electron ABI | One archive for every Node-API 8+ runtime |
+
+Update custom binary mirrors and direct-download deployment scripts to carry
+the `napi-v8-*` archives. Stop copying or importing the addon through a
+hard-coded `binding/muhammara.node` path; import the package so `node-pre-gyp`
+resolves its declared module path. Tooling that intentionally inspects the
+binary can read `binary.module_path`, `binary.package_name`, and
+`binary.napi_versions` from the selected package's `package.json` rather than
+duplicating these values.
+
+The real `napi_versions: [8]` metadata also allows package analyzers such as
+Turbopack to identify the addon as Node-API compatible.
+
+## 15. Check Low-Level Clipping Options
+
+The `drawPath`, `drawCircle`, `drawSquare`, and `drawRectangle` helpers now
+interpret `type: "clip"` as clipping without painting. Previously that spelling
+did not apply a clip, while unknown strings incorrectly entered the clip branch.
+Replace misspelled or unsupported types with `"clip"` when clipping is intended,
+or `"stroke"`/`"fill"` when drawing an outline or filled shape is intended.
+
+Clipping now ends the path (`W n`). Do not rely on a later painting operator to
+paint that same path: draw the shape again with a painting type if necessary.
+Save graphics state with `q()` before the clip, draw the content that should be
+clipped, then restore it with `Q()` so later content is unaffected. See
+[Draw Primitives](../low-level/drawing-primitives.md).
+
+Drawing helpers and `writeText()` also convert their inputs before emitting
+operators. If an option getter or numeric conversion throws, correct the input
+and retry; failed calls no longer leave partial drawing output in the stream.
+
+Coordinates, dimensions, stroke widths, and `writeText()` font sizes must
+convert to finite numbers. Replace `NaN` and infinities with finite values and
+reduce values whose circle or underline calculations overflow. Finite numeric
+coercions remain supported. Supply at least two complete coordinate pairs to
+`drawPath()`; malformed pairs and extra arguments now throw instead of silently
+drawing a prefix. A failed call emits no operators and can be retried after
+correcting the input.
+
 ## What Does Not Change
 
 - Supported Node.js versions.
-- Native binary metadata and the `node-pre-gyp` install flow.
+- The public JavaScript API and package entry points.
+- The `node-pre-gyp` install flow for native prebuilds.
 
 ## Version 6 Status
 

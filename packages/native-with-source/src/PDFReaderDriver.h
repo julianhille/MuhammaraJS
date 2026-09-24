@@ -1,84 +1,67 @@
-/*
- Source File : PDFReaderDriver
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
 
-#include "nodes.h"
 #include "DriverLifecycle.h"
-
-#include "PDFParser.h"
 #include "InputFile.h"
+#include "PDFParser.h"
+#include "napi/NapiSupport.h"
 
 class ObjectByteReaderWithPosition;
 class ConstructorsHolder;
 
-class PDFReaderDriver : public node::ObjectWrap
-{
+class PDFReaderDriver : public muhammara::napi::ObjectWrap {
 public:
-    virtual ~PDFReaderDriver();
+  ~PDFReaderDriver() override;
+  static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
+  PDFHummus::EStatusCode StartPDFParsing(const std::string &path,
+                                         const PDFParsingOptions &options);
+  PDFHummus::EStatusCode StartPDFParsing(napi_env env, napi_value stream,
+                                         const PDFParsingOptions &options);
+  void SetFromOwnedParser(PDFParser *parser,
+                          DriverLifecycle ownerLifecycle = DriverLifecycle());
+  PDFParser *GetParser();
+  DriverLifecycle GetLifecycle();
 
-    DEC_SUBORDINATE_INIT(Init)
+  ConstructorsHolder *holder;
 
-	
-    
-    // two methods to create parser - owned, from file, or not owned, from another pointer
-    PDFHummus::EStatusCode StartPDFParsing(const std::string& inParsedFilePath,const PDFParsingOptions& inParsingOptions);
-    PDFHummus::EStatusCode StartPDFParsing(v8::Local<v8::Object> inStreamObject,const PDFParsingOptions& inParsingOptions);
-    void SetFromOwnedParser(PDFParser* inParser, DriverLifecycle inOwnerLifecycle = DriverLifecycle());
-    PDFParser* GetParser();
-    DriverLifecycle GetLifecycle();
-    
-
-	ConstructorsHolder* holder;
 private:
-    PDFReaderDriver();
-    static PDFReaderDriver* GetActiveReader(const ARGS_TYPE& args);
-    
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE End(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetPDFLevel(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetPagesCount(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE QueryDictionaryObject(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE QueryArrayObject(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetTrailer(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ParseNewObject(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetPageObjectID(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ParsePageDictionary(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ParsePage(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ExtractPageText(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ExtractPageContentItems(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetObjectsCount(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE IsEncrypted(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetXrefSize(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetXrefEntry(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetXrefPosition(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetParserStream(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE StartReadingFromStream(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE StartReadingFromStreamForPlainCopying(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE StartReadingObjectsFromStream(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE StartReadingObjectsFromStreams(const ARGS_TYPE& args);
-    
-    bool mStartedWithStream;
-    ObjectByteReaderWithPosition* mReadStreamProxy;
-    bool mOwnsParser;
-    PDFParser* mPDFReader;
-    InputFile mPDFFile;
-    DriverLifecycle mLifecycle;
+  PDFReaderDriver();
+  static PDFReaderDriver *
+  GetActiveReader(const muhammara::napi::CallbackArgs &args);
+  static napi_value New(const muhammara::napi::CallbackArgs &args);
+  static napi_value End(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetPDFLevel(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetPagesCount(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  QueryDictionaryObject(const muhammara::napi::CallbackArgs &args);
+  static napi_value QueryArrayObject(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetTrailer(const muhammara::napi::CallbackArgs &args);
+  static napi_value ParseNewObject(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetPageObjectID(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  ParsePageDictionary(const muhammara::napi::CallbackArgs &args);
+  static napi_value ParsePage(const muhammara::napi::CallbackArgs &args);
+  static napi_value ExtractPageText(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  ExtractPageContentItems(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetObjectsCount(const muhammara::napi::CallbackArgs &args);
+  static napi_value IsEncrypted(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetXrefSize(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetXrefEntry(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetXrefPosition(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetParserStream(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  StartReadingFromStream(const muhammara::napi::CallbackArgs &args);
+  static napi_value StartReadingFromStreamForPlainCopying(
+      const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  StartReadingObjectsFromStream(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  StartReadingObjectsFromStreams(const muhammara::napi::CallbackArgs &args);
+
+  bool mStartedWithStream;
+  ObjectByteReaderWithPosition *mReadStreamProxy;
+  bool mOwnsParser;
+  PDFParser *mPDFReader;
+  InputFile mPDFFile;
+  DriverLifecycle mLifecycle;
 };

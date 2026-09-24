@@ -60,6 +60,25 @@ async function usesLowLevelSurface() {
   var context = writer.startPageContentContext(page);
   context
     .q()
+    .drawRectangle(0, 0, 50, 50, { type: "clip" })
+    .drawCircle(25, 25, 10, { type: "clip" })
+    .drawSquare(0, 0, 20, { type: "clip", close: true })
+    .drawPath(0, 0, 20, 20, { type: "clip", close: true })
+    .drawPath(
+      [
+        [0, 0],
+        [20, 20],
+      ],
+      { width: 2 },
+    )
+    .writeText("Finite geometry", 10, 20, {
+      font,
+      size: 12,
+      underline: true,
+    })
+    .Q();
+  context
+    .q()
     .d([1, 2])
     .rg(1, 0, 0)
     .m(0, 0)

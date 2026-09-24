@@ -4,6 +4,41 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- `appendPDFPagesFromPDF()` now ends its writer when appending fails. Previously
+  callers could continue and produce a corrupted document; create a fresh
+  writer and retry with a valid source.
+- Custom-stream `getCurrentPosition()` results now throw `TypeError` if numeric
+  conversion produces a non-finite value or a value outside `[-2^63, 2^63)`.
+  Previously these values could produce corrupt PDF offsets. Return the actual
+  finite byte position within that range. Numeric strings and other successful
+  number coercions remain supported. See the
+  [stream contract](low-level/custom-streams.md)
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750).
+- Low-level shape helpers now honor `type: "clip"`, ending the path with `W n`
+  without painting it. Previously `"clip"` did nothing and unrecognized types
+  incorrectly clipped. Unknown types now end the path without painting. Use `"clip"` explicitly and scope it with `q()`/`Q()`;
+  use `"stroke"` or `"fill"` when painting is intended. See the
+  [drawing migration](getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+- Shape helpers and `writeText()` now finish input conversion before emitting
+  operators. Failed getters or coercions no longer leave partial graphics/text
+  output; correct the input and retry rather than relying on that partial output.
+  Coordinates, dimensions, stroke widths, and text sizes must convert to finite
+  numbers; calculated circle and underline geometry must also remain finite.
+  `drawPath()` requires at least two complete pairs and rejects malformed or
+  extra arguments instead of drawing a prefix. Replace `NaN`/infinities with
+  finite values, reduce overflowing geometry, and supply complete pairs. See
+  the [drawing migration](getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+- Native prebuilds now use Node-API 8 and are named
+  `napi-v8-{platform}-{arch}-{libc}.tar.gz` instead of
+  `node-v{abi}-{platform}-{arch}-{libc}.tar.gz`. The installed addon now lives
+  at `binding/napi-v8/muhammara.node` instead of
+  `binding/muhammara.node`. Standard npm installs and
+  `require("@muhammara/native")` calls continue to work, but custom mirrors,
+  direct archive downloads, deployment scripts, and direct addon imports that
+  assume the old names or path must use the Node-API names instead. See
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#14-update-native-binary-tooling)
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  [#504](https://github.com/julianhille/MuhammaraJS/issues/504).
 - Recipe HTML text keeps text outside any element on one line with its
   neighboring inline elements, and keeps one space between them: `x <b>a</b> y`
   renders as one line `x a y`, as it already did inside `<p>`. Previously each

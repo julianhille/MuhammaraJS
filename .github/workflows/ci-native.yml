@@ -16,6 +16,7 @@ on:
       - "packages/native-core/**"
       - "packages/native-with-source/**"
       - ".github/actions/setup-native-build-cache/**"
+      - ".github/scripts/**"
       - "package.json"
       - "package-lock.json"
   workflow_dispatch:
@@ -27,8 +28,12 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  NAPI_VERSION: 8
+
 jobs:
   packed-source-fallback:
+    needs: build-prebuild-glibc
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v7
@@ -44,8 +49,7 @@ jobs:
       - run: npm run native:test:types && npm run native-with-source:test:types
       - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
       - name: Verify OpenSSL is statically linked
-        run: if readelf -d packages/native-with-source/binding/muhammara.node | grep -Eiq 'lib(crypto|ssl)'; then exit 1; fi
-      - run: npm run package --workspace=@muhammara/native-with-source
+        run: if readelf -d packages/native-with-source/binding/napi-v${{ env.NAPI_VERSION }}/muhammara.node | grep -Eiq 'lib(crypto|ssl)'; then exit 1; fi
       - run: mkdir -p packages && npm pack --workspace=@muhammara/native-core --pack-destination packages && npm pack --workspace=@muhammara/native-with-source --pack-destination packages && npm pack --workspace=@muhammara/native --pack-destination packages
       - name: Verify native package contents
         run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-[0-9]*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
@@ -64,6 +68,16 @@ jobs:
           test -f /tmp/muhammara-electron-alias/node_modules/@muhammara/native/build/Release/muhammara.node
       - name: Verify slim package excludes source-build inputs
         run: mkdir -p /tmp/muhammara-slim-package && npm install --ignore-scripts --prefix /tmp/muhammara-slim-package ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-[0-9]*.tgz && test "$(node -p "require('/tmp/muhammara-slim-package/node_modules/@muhammara/native/package.json').name")" = "@muhammara/native" && test ! -d /tmp/muhammara-slim-package/node_modules/@muhammara/native/src && test ! -e /tmp/muhammara-slim-package/node_modules/@muhammara/native/binding.gyp
+      - uses: actions/download-artifact@v8
+        with:
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-linux-x64-glibc
+          path: canonical-prebuild
+      - name: Stage canonical prebuild for the package installer
+        run: |
+          version="$(node -p "require('./packages/native/package.json').version")"
+          destination="packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/native-v$version"
+          mkdir -p "$destination"
+          cp canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-x64-glibc.tar.gz "$destination/"
       - name: Install slim package from a matching prebuild
         run: |
           python3 -m http.server 8080 --directory packages/native-with-source/build/stage >/tmp/muhammara-prebuild-server.log 2>&1 &
@@ -109,20 +123,20 @@ jobs:
       - name: Run tests with the sanitizer runtime preloaded
         working-directory: packages/native-with-source
         run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R tap --recursive ./tests --timeout 15000
-  build-musl-arm:
+  build-prebuild-glibc:
     strategy:
       fail-fast: false
       matrix:
-        node: [20.19.0, 22.19.0, 24.0.0, 25.0.0, 26.8.1]
         include:
-          - architecture: arm64
-            architecture_node: x64
-            target_architecture: arm64
+          - runner: ubuntu-22.04
+            architecture: x64
+            extra_compile_flags: ""
+          - runner: ubuntu-22.04-arm
+            architecture: arm64
             extra_compile_flags: -march=armv8-a
-          - python_version: 3
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     container:
-      image: dockcross/linux-arm64-musl
+      image: gcc:11-bullseye
       credentials:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
@@ -130,490 +144,253 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node }}
-          architecture: ${{ matrix.architecture_node }}
-      - run: apt-get install -y ccache perl python${{ matrix.python_version }}
+          node-version: 20.19.0
+          architecture: ${{ matrix.architecture }}
+      - name: Install build tools from the Debian archive
+        run: |
+          sed -i -e '/bullseye-security/d' \
+                 -e 's|deb.debian.org|archive.debian.org|g' \
+                 /etc/apt/sources.list
+          echo 'Acquire::Check-Valid-Until "0";' > /etc/apt/apt.conf.d/99no-check-valid-until
+          apt-get update && apt-get install -y ccache
       - uses: ./.github/actions/setup-native-build-cache
         with:
-          key: native-musl-arm-${{ matrix.node }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
-          restore-keys: native-musl-arm-${{ matrix.node }}-
-      - run: node --version
-      - run: npm --version
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - name: Restore npm download cache
-        uses: actions/cache@v6
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-musl-arm-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install --workspace=@muhammara/native-with-source --build-from-source
+          key: native-prebuild-napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-prebuild-napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc-
+      - run: npm ci --ignore-scripts
+      - name: Build canonical Node-API ${{ env.NAPI_VERSION }} prebuild
+        run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
         env:
           npm_config_arch: ${{ matrix.architecture }}
-          npm_config_target_arch: ${{ matrix.target_architecture }}
+          npm_config_target_arch: ${{ matrix.architecture }}
+          npm_config_target_libc: glibc
           CFLAGS: ${{ matrix.extra_compile_flags }}
-          npm_config_target_libc: musl
-          npm_config_unsafe_perm: true
-      # - run: npm run test, this is not an arm64 machine so we can not test.
-      - run: npm run package --workspace=@muhammara/native-with-source -- --target_libc=musl --target_arch=${{ matrix.target_architecture }}
+      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage --target_arch=${{ matrix.architecture }} --target_libc=glibc
+      - run: node .github/scripts/prepare-native-prebuild.mjs stage packages/native-with-source/build/stage napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc.tar.gz canonical-upload
       - uses: actions/upload-artifact@v7
         with:
-          overwrite: true
-          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
-          name: bindings-node-musl-arm-${{ matrix.node }}
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc
+          path: canonical-upload/napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc.tar.gz
           if-no-files-found: error
-  build-musl:
+
+  build-prebuild-musl:
     strategy:
       fail-fast: false
       matrix:
-        node: [20.19.0, 22.19.0, 24.0.0, 25.0.0, 26.8.1]
         include:
-          - python_version: 3
-    runs-on: ubuntu-latest
+          - runner: ubuntu-22.04
+            architecture: x64
+            image: node:20.19.0-alpine
+          - runner: ubuntu-22.04
+            architecture: arm64
+            image: dockcross/linux-arm64-musl
+    runs-on: ${{ matrix.runner }}
     container:
-      image: node:${{ matrix.node }}-alpine
+      image: ${{ matrix.image }}
       credentials:
         username: "${{ secrets.DOCKER_USERNAME }}"
         password: "${{ secrets.DOCKER_PASSWORD }}"
     steps:
       - uses: actions/checkout@v7
-      - run: apk update
-      - run: apk add --no-cache ccache make gcc jq g++ linux-headers perl python${{ matrix.python_version }} tar
+      - uses: actions/setup-node@v7
+        if: matrix.architecture == 'arm64'
+        with:
+          node-version: 20.19.0
+          architecture: x64
+      - name: Install Alpine build tools
+        if: matrix.architecture == 'x64'
+        run: apk add --no-cache ccache make gcc g++ linux-headers perl python3
+      - name: Install Dockcross build tools
+        if: matrix.architecture == 'arm64'
+        run: apt-get update && apt-get install -y ccache perl python3
       - uses: ./.github/actions/setup-native-build-cache
         with:
-          key: native-musl-${{ matrix.node }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
-          restore-keys: native-musl-${{ matrix.node }}-
-      - run: node --version
-      - run: npm --version
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - name: Restore npm download cache
-        uses: actions/cache@v6
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-musl-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install --workspace=@muhammara/native-with-source --build-from-source
+          key: native-prebuild-napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl-container-v2-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-prebuild-napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl-container-v2-
+      - run: npm ci --ignore-scripts
+      - name: Build canonical Node-API ${{ env.NAPI_VERSION }} prebuild
+        run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
         env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_target_arch: ${{ matrix.architecture }}
           npm_config_target_libc: musl
-          npm_config_unsafe_perm: true
-      - run: npm run test
-      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage --target_libc=musl
+      - name: Package and load-test the native x64 prebuild
+        if: matrix.architecture == 'x64'
+        run: npm run package --workspace=@muhammara/native-with-source -- testpackage --target_arch=x64 --target_libc=musl
+      # The cross-built addon cannot be loaded by the x64 host Node.
+      # test-node-musl-arm64 runs this exact archive on native ARM64 Alpine.
+      - name: Package the cross-built ARM64 prebuild
+        if: matrix.architecture == 'arm64'
+        run: npm run package --workspace=@muhammara/native-with-source -- --target_arch=arm64 --target_libc=musl
+      - run: node .github/scripts/prepare-native-prebuild.mjs stage packages/native-with-source/build/stage napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl.tar.gz canonical-upload
       - uses: actions/upload-artifact@v7
         with:
-          overwrite: true
-          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
-          name: bindings-node-musl-${{ matrix.node }}
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl
+          path: canonical-upload/napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl.tar.gz
           if-no-files-found: error
-  build-electron-legacy:
+
+  build-prebuild-desktop:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-15, windows-2022]
-        architecture: [x64, arm64]
-        electron:
-          - 36.0.0
-          - 36.1.0
-          - 36.2.0
-          - 36.3.0
-          - 36.4.0
-          - 36.5.0
-          - 36.6.0
-          - 36.7.0
-          - 36.8.0
-          - 36.9.0
-          - 37.0.0
-          - 37.1.0
-          - 37.2.0
-          - 37.3.0
-          - 37.4.0
-          - 37.5.0
-          - 38.0.0
-          - 38.1.0
         include:
-          - electron_mocha_version: ^13
-            python_version: "3.10"
-          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
-          - architecture: arm64
-            architecture_node: arm64
-            target_architecture: arm64
-          - architecture: x64
+          - runner: macos-15
+            platform: darwin
+            architecture: x64
             architecture_node: x64
-            target_architecture: x64
-          - electron: 36.0.0
-            node: 22.14.0
-          - electron: 36.1.0
-            node: 22.14.0
-          - electron: 36.2.0
-            node: 22.15.0
-          - electron: 36.3.0
-            node: 22.15.1
-          - electron: 36.4.0
-            node: 22.15.1
-          - electron: 36.5.0
-            node: 22.16.0
-          - electron: 36.6.0
-            node: 22.16.0
-          - electron: 36.7.0
-            node: 22.17.0
-          - electron: 36.8.0
-            node: 22.18.0
-          - electron: 36.9.0
-            node: 22.19.0
-          - electron: 37.0.0
-            node: 22.16.0
-          - electron: 37.1.0
-            node: 22.16.0
-          - electron: 37.2.0
-            node: 22.17.0
-          - electron: 37.3.0
-            node: 22.18.0
-          - electron: 37.4.0
-            node: 22.18.0
-          - electron: 37.5.0
-            node: 22.19.0
-          - electron: 38.0.0
-            node: 22.18.0
-          - electron: 38.1.0
-            node: 22.19.0
-        exclude:
-          - os: ubuntu-22.04
+            libc: unknown
+          - runner: macos-15
+            platform: darwin
             architecture: arm64
-          - os: windows-2022
-            architecture: arm64
-    runs-on: ${{ matrix.os }}
-    steps: &build-electron-steps
-      - name: Set up GCC
-        uses: egor-tensin/setup-gcc@v2
-        with:
-          version: 11
-          platform: ${{matrix.architecture}}
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
+            architecture_node: arm64
+            libc: unknown
+          - runner: windows-2022
+            platform: win32
+            architecture: x64
+            architecture_node: x64
+            libc: unknown
+    runs-on: ${{ matrix.runner }}
+    steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python_version }}
+          python-version: "3.10"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20.19.0
+          architecture: ${{ matrix.architecture_node }}
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-prebuild-napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-prebuild-napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-
+      - name: Disable Node.js LTO (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value "npm_config_enable_thin_lto=false"
+          Add-Content -Path $env:GITHUB_ENV -Value "npm_config_enable_lto=false"
+      - run: npm ci --ignore-scripts
+      - name: Build canonical Node-API ${{ env.NAPI_VERSION }} prebuild
+        run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+        env:
+          npm_config_arch: ${{ matrix.architecture }}
+          npm_config_target_arch: ${{ matrix.architecture }}
+          npm_config_target_libc: ${{ matrix.libc }}
+          npm_config_python: python3.10
+      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage --target_arch=${{ matrix.architecture }} --target_libc=${{ matrix.libc }}
+      - run: node .github/scripts/prepare-native-prebuild.mjs stage packages/native-with-source/build/stage napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}.tar.gz canonical-upload
+      - uses: actions/upload-artifact@v7
+        with:
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}
+          path: canonical-upload/napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}.tar.gz
+          if-no-files-found: error
+  test-electron:
+    needs: [build-prebuild-glibc, build-prebuild-desktop]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+            architecture: x64
+            architecture_node: x64
+            libc: glibc
+            electron: 36.0.0
+            node: 22.14.0
+          - os: ubuntu-22.04
+            platform: linux
+            architecture: x64
+            architecture_node: x64
+            libc: glibc
+            electron: 44.0.0
+            node: 24.18.1
+          - os: macos-15
+            platform: darwin
+            architecture: x64
+            architecture_node: x64
+            libc: unknown
+            electron: 36.0.0
+            node: 22.14.0
+          - os: macos-15
+            platform: darwin
+            architecture: x64
+            architecture_node: x64
+            libc: unknown
+            electron: 38.1.0
+            node: 22.19.0
+          - os: macos-15
+            platform: darwin
+            architecture: arm64
+            architecture_node: arm64
+            libc: unknown
+            electron: 36.0.0
+            node: 22.14.0
+          - os: macos-15
+            platform: darwin
+            architecture: arm64
+            architecture_node: arm64
+            libc: unknown
+            electron: 44.0.0
+            node: 24.18.1
+          - os: windows-2022
+            platform: win32
+            architecture: x64
+            architecture_node: x64
+            libc: unknown
+            electron: 36.0.0
+            node: 22.14.0
+          - os: windows-2022
+            platform: win32
+            architecture: x64
+            architecture_node: x64
+            libc: unknown
+            electron: 44.0.0
+            node: 24.18.1
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - uses: ./.github/actions/setup-native-build-cache
-        with:
-          key: native-electron-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.electron }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
-          restore-keys: native-electron-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.electron }}-
-      - run: node --version
-      - run: npm --version
-      - name: Install Linux build and test tools
+      - name: Install Linux test tools
         if: ${{ matrix.os == 'ubuntu-22.04' }}
-        run: sudo apt-get update && sudo apt-get install -y perl xvfb x11-xserver-utils
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        shell: bash
-        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - name: Restore npm download cache
-        uses: actions/cache@v6
+        run: sudo apt-get update && sudo apt-get install -y xvfb x11-xserver-utils
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v8
         with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-electron-${{ matrix.target_architecture }}-${{ matrix.architecture }}-${{ matrix.electron }}-${{ hashFiles('**/package-lock.json') }}
-      - run: |
-          npm install --workspace=@muhammara/native-with-source --cpu=${{ matrix.architecture }} --build-from-source
-        env:
-          npm_config_arch: ${{ matrix.architecture }}
-          npm_config_target_arch: ${{ matrix.target_architecture }}
-          npm_config_target: ${{ matrix.electron }}
-          npm_config_disturl: https://artifacts.electronjs.org/headers/dist
-          npm_config_runtime: electron
-          npm_config_python: python${{ matrix.python_version }}
-          CFLAGS: ${{ matrix.extra_compile_flags }}
-      - name: Install electron
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}
+          path: canonical-prebuild
+      - name: Install canonical prebuild
+        run: node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}.tar.gz napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}.tar.gz
+      - name: Install Electron
         run: |
-          npm install --workspace=@muhammara/native-with-source --no-save --cpu=${{ matrix.architecture }} electron@${{ matrix.electron }} electron-mocha@${{ matrix.electron_mocha_version }}
+          npm install --workspace=@muhammara/native-with-source --no-save --ignore-scripts --cpu=${{ matrix.architecture }} electron@${{ matrix.electron }} electron-mocha@^13
+          node node_modules/electron/install.js
         env:
           npm_config_arch: ${{ matrix.architecture }}
-          npm_config_target_arch: ${{ matrix.target_architecture }}
-          npm_config_target: ${{ matrix.electron }}
-          npm_config_disturl: https://artifacts.electronjs.org/headers/dist
-          npm_config_runtime: electron
-          npm_config_python: python${{ matrix.python_version }}
-          CFLAGS: ${{ matrix.extra_compile_flags }}
+          npm_config_target_arch: ${{ matrix.architecture }}
+      - run: node .github/scripts/prepare-native-prebuild.mjs verify
       - name: Run test with Xvfb
         if: ${{ runner.os == 'Linux' }}
         run: xvfb-run --auto-servernum npm run test:electron
       - name: Run test
         if: ${{ runner.os != 'Linux' }}
         run: npm run test:electron
-      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
-        env:
-          npm_config_runtime: electron
-          npm_config_target: ${{ matrix.electron }}
-      - uses: actions/upload-artifact@v7
-        with:
-          overwrite: true
-          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
-          name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.electron}}
-          if-no-files-found: error
 
-  build-electron-38-39:
+  test-node-glibc:
+    needs: build-prebuild-glibc
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-15, windows-2022]
-        architecture: [x64, arm64]
-        electron:
-          - 38.2.2
-          - 38.3.0
-          - 38.4.0
-          - 38.5.0
-          - 38.6.0
-          - 38.7.2
-          - 38.8.6
-          - 39.0.0
-          - 39.1.2
-          - 39.2.7
-          - 39.3.0
-          - 39.4.0
-          - 39.5.2
-          - 39.6.1
-          - 39.7.0
-          - 39.8.10
+        runner: [ubuntu-22.04, ubuntu-22.04-arm]
+        node: [20.19.0, 26.8.1]
         include:
-          - electron_mocha_version: ^13
-            python_version: "3.10"
-          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
-          - architecture: arm64
-            architecture_node: arm64
-            target_architecture: arm64
-          - architecture: x64
-            architecture_node: x64
-            target_architecture: x64
-          - electron: 38.2.2
-            node: 22.19.0
-          - electron: 38.3.0
-            node: 22.20.0
-          - electron: 38.4.0
-            node: 22.20.0
-          - electron: 38.5.0
-            node: 22.20.0
-          - electron: 38.6.0
-            node: 22.21.1
-          - electron: 38.7.2
-            node: 22.21.1
-          - electron: 38.8.6
-            node: 22.22.0
-          - electron: 39.0.0
-            node: 22.20.0
-          - electron: 39.1.2
-            node: 22.21.1
-          - electron: 39.2.7
-            node: 22.21.1
-          - electron: 39.3.0
-            node: 22.21.1
-          - electron: 39.4.0
-            node: 22.22.0
-          - electron: 39.5.2
-            node: 22.22.0
-          - electron: 39.6.1
-            node: 22.22.0
-          - electron: 39.7.0
-            node: 22.22.0
-          - electron: 39.8.10
-            node: 22.22.1
-        exclude:
-          - os: ubuntu-22.04
-            architecture: arm64
-          - os: windows-2022
-            architecture: arm64
-          - os: macos-15
+          - runner: ubuntu-22.04
             architecture: x64
-    runs-on: ${{ matrix.os }}
-    steps: *build-electron-steps
-  build-electron-40-41:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-22.04, macos-15, windows-2022]
-        architecture: [x64, arm64]
-        electron:
-          - 40.0.0
-          - 40.1.0
-          - 40.2.1
-          - 40.3.0
-          - 40.4.1
-          - 40.5.0
-          - 40.6.1
-          - 40.7.0
-          - 40.8.5
-          - 40.9.3
-          - 40.10.6
-          - 41.0.4
-          - 41.1.1
-          - 41.2.2
-          - 41.3.0
-          - 41.4.0
-          - 41.5.2
-          - 41.6.1
-          - 41.7.2
-          - 41.8.0
-          - 41.9.2
-          - 41.10.7
-        include:
-          - electron_mocha_version: ^13
-            python_version: "3.10"
-          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
-          - architecture: arm64
-            architecture_node: arm64
-            target_architecture: arm64
-          - architecture: x64
-            architecture_node: x64
-            target_architecture: x64
-          - electron: 40.0.0
-            node: 24.11.1
-          - electron: 40.1.0
-            node: 24.11.1
-          - electron: 40.2.1
-            node: 24.11.1
-          - electron: 40.3.0
-            node: 24.13.0
-          - electron: 40.4.1
-            node: 24.13.0
-          - electron: 40.5.0
-            node: 24.13.1
-          - electron: 40.6.1
-            node: 24.13.1
-          - electron: 40.7.0
-            node: 24.14.0
-          - electron: 40.8.5
-            node: 24.14.0
-          - electron: 40.9.3
-            node: 24.14.1
-          - electron: 40.10.6
-            node: 24.15.0
-          - electron: 41.0.4
-            node: 24.14.0
-          - electron: 41.1.1
-            node: 24.14.0
-          - electron: 41.2.2
-            node: 24.14.1
-          - electron: 41.3.0
-            node: 24.15.0
-          - electron: 41.4.0
-            node: 24.15.0
-          - electron: 41.5.2
-            node: 24.15.0
-          - electron: 41.6.1
-            node: 24.15.0
-          - electron: 41.7.2
-            node: 24.15.0
-          - electron: 41.8.0
-            node: 24.16.0
-          - electron: 41.9.2
-            node: 24.17.0
-          - electron: 41.10.7
-            node: 24.18.0
-        exclude:
-          - os: ubuntu-22.04
+          - runner: ubuntu-22.04-arm
             architecture: arm64
-          - os: windows-2022
-            architecture: arm64
-          - os: macos-15
-            architecture: x64
-    runs-on: ${{ matrix.os }}
-    steps: *build-electron-steps
-  build-electron:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-22.04, macos-15, windows-2022]
-        architecture: [x64, arm64]
-        electron:
-          - 42.0.1
-          - 42.1.0
-          - 42.2.0
-          - 42.3.3
-          - 42.4.1
-          - 42.5.2
-          - 42.6.2
-          - 42.7.1
-          - 42.8.1
-          - 42.9.3
-          - 42.10.1
-          - 43.0.0
-          - 43.1.1
-          - 43.2.0
-          - 43.3.0
-          - 43.4.1
-          - 44.0.0
-        include:
-          - electron_mocha_version: ^13
-            python_version: "3.10"
-          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
-          - architecture: arm64
-            architecture_node: arm64
-            target_architecture: arm64
-          - architecture: x64
-            architecture_node: x64
-            target_architecture: x64
-          - electron: 42.0.1
-            node: 24.15.0
-          - electron: 42.1.0
-            node: 24.15.0
-          - electron: 42.2.0
-            node: 24.15.0
-          - electron: 42.3.3
-            node: 24.15.0
-          - electron: 42.4.1
-            node: 24.16.0
-          - electron: 42.5.2
-            node: 24.17.0
-          - electron: 42.6.2
-            node: 24.18.0
-          - electron: 42.7.1
-            node: 24.18.0
-          - electron: 42.8.1
-            node: 24.18.1
-          - electron: 42.9.3
-            node: 24.18.1
-          - electron: 42.10.1
-            node: 24.18.1
-          - electron: 43.0.0
-            node: 24.17.0
-          - electron: 43.1.1
-            node: 24.18.0
-          - electron: 43.2.0
-            node: 24.18.0
-          - electron: 43.3.0
-            node: 24.18.1
-          - electron: 43.4.1
-            node: 24.18.1
-          - electron: 44.0.0
-            node: 24.18.1
-        exclude:
-          - os: ubuntu-22.04
-            architecture: arm64
-          - os: windows-2022
-            architecture: arm64
-          - os: macos-15
-            architecture: x64
-    runs-on: ${{ matrix.os }}
-    steps: *build-electron-steps
-
-  build-node-linux:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-22.04, ubuntu-22.04-arm]
-        node: [20.19.0, 22.19.0, 24.0.0, 25.2.0, 26.8.1]
-        include:
-          - os: ubuntu-22.04
-            architecture: x64
-            architecture_node: x64
-            target_architecture: x64
-          - os: ubuntu-22.04-arm
-            architecture: arm64
-            architecture_node: arm64
-            target_architecture: arm64
-            extra_compile_flags: -march=armv8-a
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     container:
       image: gcc:11-bullseye
       credentials:
@@ -624,128 +401,133 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
-          architecture: ${{ matrix.architecture_node }}
-      - name: Install build tools from the Debian archive
-        run: |
-          # Debian 11 LTS ended 2026-08-31. deb.debian.org is dropping bullseye
-          # pool files while its indexes still advertise them, so pin to the
-          # archive. bullseye-security is not on archive.debian.org yet, so drop
-          # it -- this container is an ephemeral builder and ships nothing
-          # (OpenSSL is built from source and statically linked).
-          # perl is not installed here: it ships with the image already and
-          # OpenSSL's build needs it. The musl and dockcross jobs still install
-          # it explicitly because their images do not carry it.
-          sed -i -e '/bullseye-security/d' \
-                 -e 's|deb.debian.org|archive.debian.org|g' \
-                 /etc/apt/sources.list
-          echo 'Acquire::Check-Valid-Until "0";' > /etc/apt/apt.conf.d/99no-check-valid-until
-          apt-get update && apt-get install -y ccache
-      - uses: ./.github/actions/setup-native-build-cache
+          architecture: ${{ matrix.architecture }}
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v8
         with:
-          key: native-node-linux-${{ matrix.target_architecture }}-${{ matrix.node }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
-          restore-keys: native-node-linux-${{ matrix.target_architecture }}-${{ matrix.node }}-
-      - run: node --version
-      - run: npm --version
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        shell: bash
-        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - name: Restore npm download cache
-        uses: actions/cache@v6
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install --workspace=@muhammara/native-with-source --build-from-source
-        env:
-          npm_config_arch: ${{ matrix.architecture }}
-          npm_config_target_arch: ${{ matrix.target_architecture }}
-          CFLAGS: ${{ matrix.extra_compile_flags }}
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc
+          path: canonical-prebuild
+      - run: node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc.tar.gz napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc.tar.gz
       - run: npm run test
-      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
-      - uses: actions/upload-artifact@v7
-        with:
-          overwrite: true
-          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
-          name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.node}}
-          if-no-files-found: error
-  build-node:
+      - run: node .github/scripts/prepare-native-prebuild.mjs verify
+
+  test-node-musl:
+    needs: build-prebuild-musl
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, windows-2022]
-        node: [20.19.0, 22.19.0, 24.0.0, 25.2.0, 26.8.1]
-        architecture: [x64, arm64]
+        runner: [ubuntu-22.04]
+        node: [20.19.0, 26.8.1]
         include:
-          - python_version: "3.10"
-          - architecture: x64
-            architecture_node: x64
-            target_architecture: x64
-          # macos-15 runners are Apple Silicon, so arm64 builds and tests natively.
-          - architecture: arm64
-            architecture_node: arm64
-            target_architecture: arm64
-        exclude:
-          - os: windows-2022
-            architecture: arm64
-    runs-on: ${{ matrix.os }}
+          - runner: ubuntu-22.04
+            architecture: x64
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: node:${{ matrix.node }}-alpine
+      credentials:
+        username: "${{ secrets.DOCKER_USERNAME }}"
+        password: "${{ secrets.DOCKER_PASSWORD }}"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v8
         with:
-          python-version: ${{ matrix.python_version }}
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl
+          path: canonical-prebuild
+      - run: node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl.tar.gz napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl.tar.gz
+      - run: npm run test
+      - run: node .github/scripts/prepare-native-prebuild.mjs verify
+
+  test-node-musl-arm64:
+    needs: build-prebuild-musl
+    runs-on: ubuntu-22.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20.19.0, 26.8.1]
+    steps:
+      # JavaScript actions run on Ubuntu; only the test commands run in Alpine.
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-linux-arm64-musl
+          path: canonical-prebuild
+      - name: Log in to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          if test -n "$DOCKER_USERNAME" && test -n "$DOCKER_PASSWORD"; then
+            echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+          fi
+      - name: Start native ARM64 Alpine test container
+        run: docker run --detach --name musl-tests --volume "$PWD:/workspace" --workdir /workspace node:${{ matrix.node }}-alpine sleep infinity
+      - name: Install test dependencies without rebuilding
+        run: docker exec musl-tests npm ci --ignore-scripts
+      - name: Install the canonical ARM64 musl prebuild
+        run: docker exec musl-tests node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-arm64-musl.tar.gz napi-v${{ env.NAPI_VERSION }}-linux-arm64-musl.tar.gz
+      - name: Run native tests in Alpine
+        run: docker exec musl-tests npm test
+      - name: Verify the tested prebuild is unchanged
+        run: docker exec musl-tests node .github/scripts/prepare-native-prebuild.mjs verify
+      - name: Remove the Alpine test container
+        if: always()
+        run: docker rm --force musl-tests
+
+  test-node-desktop:
+    needs: build-prebuild-desktop
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [darwin-x64, darwin-arm64, win32-x64]
+        node: [20.19.0, 26.8.1]
+        include:
+          - target: darwin-x64
+            runner: macos-15
+            platform: darwin
+            architecture: x64
+            architecture_node: x64
+            libc: unknown
+          - target: darwin-arm64
+            runner: macos-15
+            platform: darwin
+            architecture: arm64
+            architecture_node: arm64
+            libc: unknown
+          - target: win32-x64
+            runner: windows-2022
+            platform: win32
+            architecture: x64
+            architecture_node: x64
+            libc: unknown
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.architecture_node }}
-      - uses: ./.github/actions/setup-native-build-cache
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v8
         with:
-          key: native-node-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.node }}-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
-          restore-keys: native-node-${{ runner.os }}-${{ matrix.target_architecture }}-${{ matrix.node }}-
-      - run: node --version
-      - run: npm --version
-      - name: Disable Node.js LTO (Windows)
-        if: ${{ matrix.os == 'windows-2022' }}
-        shell: powershell
-        run: |
-          # Node 26's ThinLTO settings target clang-cl and lld, not MSVC.
-          Add-Content -Path $env:GITHUB_ENV -Value "npm_config_enable_thin_lto=false"
-          Add-Content -Path $env:GITHUB_ENV -Value "npm_config_enable_lto=false"
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        shell: bash
-        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-      - name: Restore npm download cache
-        uses: actions/cache@v6
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ matrix.architecture }}-${{ matrix.target_architecture }}-${{matrix.node}}-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install --workspace=@muhammara/native-with-source --build-from-source
-        env:
-          npm_config_arch: ${{ matrix.architecture }}
-          npm_config_target_arch: ${{ matrix.target_architecture }}
-          npm_config_python: python${{ matrix.python_version }}
-          CFLAGS: ${{ matrix.extra_compile_flags }}
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}
+          path: canonical-prebuild
+      - run: node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}.tar.gz napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}.tar.gz
       - run: npm run test
-      - run: npm run package --workspace=@muhammara/native-with-source -- testpackage
-      - uses: actions/upload-artifact@v7
-        with:
-          overwrite: true
-          path: packages/native-with-source/build/stage/julianhille/MuhammaraJS/releases/download/**/*.gz
-          name: bindings-electron-${{ matrix.os }}-${{ matrix.target_architecture }}-${{matrix.node}}
-          if-no-files-found: error
+      - run: node .github/scripts/prepare-native-prebuild.mjs verify
   publish:
     needs:
       [
         packed-source-fallback,
         sanitizer,
-        build-musl,
-        build-musl-arm,
-        build-electron-legacy,
-        build-electron-38-39,
-        build-electron-40-41,
-        build-electron,
-        build-node-linux,
-        build-node,
+        build-prebuild-glibc,
+        build-prebuild-musl,
+        build-prebuild-desktop,
+        test-electron,
+        test-node-glibc,
+        test-node-musl,
+        test-node-musl-arm64,
+        test-node-desktop,
       ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/native-v')
@@ -762,17 +544,19 @@ jobs:
         with:
           python-version: "3.12"
       - run: npm ci --ignore-scripts
-      - run: sudo apt-get update && sudo apt-get install -y perl
       - run: python -m pip install -r packages/native/docs/requirements.txt
-      - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+      - uses: actions/download-artifact@v8
+        with:
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-linux-x64-glibc
+          path: canonical-prebuild
+      - run: node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-x64-glibc.tar.gz napi-v${{ env.NAPI_VERSION }}-linux-x64-glibc.tar.gz
       - run: npm run test:codestyle
       - run: npm run docs:check
       - uses: actions/download-artifact@v8
         with:
-          pattern: bindings-*
-          path: builds/bindings
-        id: upload-release-asset
-      - run: ls -lah builds/bindings/
+          pattern: prebuild-napi-v${{ env.NAPI_VERSION }}-*
+          path: builds/release
+          merge-multiple: true
       - name: Verify package version
         run: test "$(node -p "require('./packages/native-core/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native-with-source/package.json').version")" = "${GITHUB_REF_NAME#native-v}"
       - id: npm-tag
@@ -783,20 +567,21 @@ jobs:
             *-rc.*) echo "value=rc" >> "$GITHUB_OUTPUT" ;;
             *) echo "value=latest" >> "$GITHUB_OUTPUT" ;;
           esac
-      - name: Collect prebuilds
+      - name: Verify canonical release prebuilds
         run: |
-          # Electron patch releases that share an ABI stage the same tarball
-          # name, and a release cannot hold one asset name twice.
-          mkdir -p builds/release
-          find builds/bindings -type f -print0 | sort -z |
-            while IFS= read -r -d '' file; do
-              target="builds/release/$(basename "$file")"
-              if test -e "$target"; then
-                echo "Skipping duplicate $(basename "$file")"
-                continue
-              fi
-              cp "$file" "$target"
-            done
+          expected=(
+            napi-v${NAPI_VERSION}-linux-x64-glibc.tar.gz
+            napi-v${NAPI_VERSION}-linux-arm64-glibc.tar.gz
+            napi-v${NAPI_VERSION}-linux-x64-musl.tar.gz
+            napi-v${NAPI_VERSION}-linux-arm64-musl.tar.gz
+            napi-v${NAPI_VERSION}-darwin-x64-unknown.tar.gz
+            napi-v${NAPI_VERSION}-darwin-arm64-unknown.tar.gz
+            napi-v${NAPI_VERSION}-win32-x64-unknown.tar.gz
+          )
+          test "$(find builds/release -maxdepth 1 -type f -name '*.tar.gz' | wc -l)" -eq "${#expected[@]}"
+          for filename in "${expected[@]}"; do
+            test -f "builds/release/$filename"
+          done
           ls -lah builds/release/
       - name: Create release and upload prebuilds
         uses: softprops/action-gh-release@v3

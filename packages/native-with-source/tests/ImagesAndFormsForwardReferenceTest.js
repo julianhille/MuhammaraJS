@@ -1,4 +1,6 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("chai").assert;
+var fs = require("fs");
 
 describe("ImagesAndFormsForwardReferenceTest", function () {
   it("should complete without error", function () {
@@ -20,6 +22,7 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
     page.getResourcesDictionary().addProcsetResource(muhammara.KProcsetImageB);
     page.getResourcesDictionary().addProcsetResource(muhammara.KProcsetImageC);
     page.getResourcesDictionary().addProcsetResource(muhammara.KProcsetImageI);
+    page.getResourcesDictionary().addProcsetResource("Legacy\0Ignored");
 
     pageContentContext.Q().q().cm(1, 0, 0, 1, 0, 400);
 
@@ -81,5 +84,12 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
       .Q();
     pdfWriter.endFormXObject(xobjectForm);
     pdfWriter.end();
+
+    var output = fs.readFileSync(
+      __dirname + "/output/ImagesAndFormsForwardReferenceTest.PDF",
+      "latin1",
+    );
+    assert.include(output, "/Legacy");
+    assert.notInclude(output, "Ignored");
   });
 });

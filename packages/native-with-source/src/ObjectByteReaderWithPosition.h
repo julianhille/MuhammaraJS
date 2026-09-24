@@ -1,46 +1,27 @@
-/*
- Source File : ObjectByteReaderWithPosition.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
 
-#include "nodes.h"
 #include "IByteReaderWithPosition.h"
+#include "napi/NapiSupport.h"
 
-
-class ObjectByteReaderWithPosition : public IByteReaderWithPosition
-{
+class ObjectByteReaderWithPosition : public IByteReaderWithPosition {
 public:
-    
-    ObjectByteReaderWithPosition(v8::Local<v8::Object> inObject);
-    virtual ~ObjectByteReaderWithPosition();
-    
-    
-    // IByteReaderWithPosition implementation
-	virtual IOBasicTypes::LongBufferSizeType Read(IOBasicTypes::Byte* inBuffer,IOBasicTypes::LongBufferSizeType inBufferSize);
-	virtual bool NotEnded();
-	virtual void SetPosition(LongFilePositionType inOffsetFromStart);
-	virtual void SetPositionFromEnd(LongFilePositionType inOffsetFromEnd);
-	virtual LongFilePositionType GetCurrentPosition();
-	virtual void Skip(LongBufferSizeType inSkipSize);
-	virtual void MoveStartPosition(LongFilePositionType inStartPosition);
+  ObjectByteReaderWithPosition(napi_env env, napi_value object);
+  ~ObjectByteReaderWithPosition() override = default;
 
-    
+  IOBasicTypes::LongBufferSizeType
+  Read(IOBasicTypes::Byte *buffer,
+       IOBasicTypes::LongBufferSizeType bufferSize) override;
+  bool NotEnded() override;
+  void SetPosition(LongFilePositionType offsetFromStart) override;
+  void SetPositionFromEnd(LongFilePositionType offsetFromEnd) override;
+  LongFilePositionType GetCurrentPosition() override;
+  void Skip(LongBufferSizeType skipSize) override;
+  void MoveStartPosition(LongFilePositionType startPosition);
+
 private:
-    v8::Persistent<v8::Object> mObject;
+  napi_value CallMethod(const char *name,
+                        const std::vector<napi_value> &arguments = {});
+
+  napi_env env_;
+  muhammara::napi::Reference object_;
 };

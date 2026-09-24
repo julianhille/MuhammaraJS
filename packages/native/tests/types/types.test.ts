@@ -1,6 +1,29 @@
 import muhammara = require("@muhammara/native");
 import nativeCore = require("@muhammara/native-core");
 
+var continuationOptions: muhammara.PDFWriterToContinueOptions = {
+  log: {
+    /** Accept synchronous log bytes and report the number written. */
+    write(bytes: number[]): number {
+      return bytes.length;
+    },
+  },
+};
+muhammara.createWriterToContinue(
+  "output.pdf",
+  "state.txt",
+  continuationOptions,
+);
+muhammara.createWriterToContinue("output.pdf", "state.txt", {
+  log: "writer.log",
+});
+muhammara.createWriterToContinue("output.pdf", "state.txt", {
+  log: new muhammara.PDFWStreamForBuffer(),
+});
+// @ts-expect-error Log streams must return a byte count, not a Node Writable boolean.
+var invalidContinuationLog: muhammara.ByteWriter = { write: () => true };
+void invalidContinuationLog;
+
 declare const writer: muhammara.PDFWriter;
 declare const recipe: muhammara.Recipe;
 declare const objects: muhammara.ObjectsContext;
@@ -10,6 +33,19 @@ var context: muhammara.PageContentContext =
 var api: typeof muhammara = nativeCore.createMuhammara({});
 
 context.m(0, 0).l(100, 100).S();
+context
+  .drawPath(
+    [
+      [0, 0],
+      [20, 20],
+    ],
+    { width: 2 },
+  )
+  .writeText("Finite geometry", 10, 20, {
+    font: writer.getFontForFile("font.ttf"),
+    size: 12,
+    underline: true,
+  });
 context.c(0, 0, 1, 1, 2, 2).S();
 context.drawCircle(10, 10, 5).drawSquare(10, 10, 5);
 api.createWriter("output.pdf");

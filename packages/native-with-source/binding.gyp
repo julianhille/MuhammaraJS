@@ -1,6 +1,7 @@
 {
     'variables': {
-        'muhammara_source_root%': 'src'
+        'muhammara_source_root%': 'src',
+        'napi_build_version%': 8
     },
     'targets': [
     {
@@ -12,6 +13,7 @@
                '<(muhammara_source_root)/deps/PDFWriter/binding.gyp:pdfwriter'
             ],
             "defines": [
+            'NAPI_VERSION=8',
             'USE_BUNDLED=TRUE'
             ],
             'defines!': [
@@ -75,6 +77,7 @@
                 }]
             ],
            'sources': [
+                 '<(muhammara_source_root)/napi/NapiSupport.cpp',
                  '<(muhammara_source_root)/ConstructorsHolder.cpp',
                  '<(muhammara_source_root)/PDFStreamDriver.cpp',
                  '<(muhammara_source_root)/DictionaryContextDriver.cpp',

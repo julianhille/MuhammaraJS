@@ -1,45 +1,19 @@
-/*
- Source File : PDFArrayDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
 
-#include "nodes.h"
-#include "PDFObjectDriver.h"
-#include "PDFObjectCast.h"
 #include "PDFArray.h"
+#include "PDFObjectCast.h"
+#include "PDFObjectDriver.h"
 
-class PDFArrayDriver : public PDFObjectDriver
-{
+class PDFArrayDriver : public PDFObjectDriver {
 public:
+  static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
+  PDFObject *GetObject() override;
 
-    DEC_SUBORDINATE_INIT(Init)
-    
-    
-    PDFObjectCastPtr<PDFArray> TheObject;
-    
-    virtual PDFObject* GetObject();
+  PDFObjectCastPtr<PDFArray> TheObject;
+
 private:
-    
-    
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToJSArray(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE QueryObject(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetLength(const ARGS_TYPE& args);
+  static napi_value New(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToJSArray(const muhammara::napi::CallbackArgs &args);
+  static napi_value QueryObject(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetLength(const muhammara::napi::CallbackArgs &args);
 };

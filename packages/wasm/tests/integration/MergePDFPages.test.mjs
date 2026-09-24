@@ -175,6 +175,8 @@ describe("MergePDFPages", function () {
     var callbacks = 0;
     assert.equal(
       writer.mergePDFPagesToPage(page, source, function () {
+        assert.equal(this, globalThis);
+        assert.equal(arguments.length, 0);
         callbacks += 1;
         writer.attachURLLinktoCurrentPage("https://example.com", 0, 0, 1, 1);
       }),
@@ -192,6 +194,7 @@ describe("MergePDFPages", function () {
           specificRanges: [[1, 1]],
         },
         function () {
+          assert.equal(this, globalThis);
           callbacks += 1;
         },
       ),

@@ -1,47 +1,22 @@
-/*
- Source File : ByteWriterWithPositionDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
 
-#include "nodes.h"
+#include "napi/NapiSupport.h"
 
 class IByteWriterWithPosition;
 
-class ByteWriterWithPositionDriver : public node::ObjectWrap
-{
+class ByteWriterWithPositionDriver : public muhammara::napi::ObjectWrap {
 public:
-    virtual ~ByteWriterWithPositionDriver();
-    
-    DEC_SUBORDINATE_INIT(Init)
-    
-    void SetStream(IByteWriterWithPosition* inReader,bool inOwns);
-    IByteWriterWithPosition* GetStream();
-    
-    
+  ~ByteWriterWithPositionDriver() override;
+  static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
+  void SetStream(IByteWriterWithPosition *stream, bool owns);
+  IByteWriterWithPosition *GetStream();
+
 private:
-    ByteWriterWithPositionDriver();
-    
-    IByteWriterWithPosition* mInstance;
-    bool mOwns;
-    
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE Write(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetCurrentPosition(const ARGS_TYPE& args);
+  ByteWriterWithPositionDriver();
+  static napi_value New(const muhammara::napi::CallbackArgs &args);
+  static napi_value Write(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  GetCurrentPosition(const muhammara::napi::CallbackArgs &args);
+  IByteWriterWithPosition *instance_;
+  bool owns_;
 };

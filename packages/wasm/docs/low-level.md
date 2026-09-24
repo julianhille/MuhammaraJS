@@ -2,16 +2,53 @@
 
 ## Writer Lifecycle
 
+`mergePDFPagesToPage` (including its async variant) invokes its optional callback
+with no arguments and `globalThis` as `this`, matching native on fresh and
+modifying writers. Bound functions retain their bound receiver; arrow functions
+retain their lexical `this`.
+
 Finish drawing before calling `writer.end()`. After finalization, disposal, or
 a finalization failure, stateful writer methods throw
 `Error("PDF writer has ended")`, matching native. Async methods reject their
 promises with the same error. Create a new writer for further output and
 consume borrowed resources before ending their writer.
 
+`appendPDFPagesFromPDF` also ends the writer when an underlying PDF append
+fails. Create a fresh writer and retry with valid source bytes.
+
 `createPDFDate()` and `createPDFTextString()` create independent values and
 remain usable after cleanup. `dispose()` is idempotent; Wasm `end()` still
 throws on a second call, whereas native `end()` is a no-op. Recipe uses the
 writer guard internally, so there is no additional Recipe method for it.
+
+## Drawing Helpers And Clipping
+
+Page and form contexts on new and modifying writers expose `drawPath`,
+`drawCircle`, `drawSquare`, and `drawRectangle`. Their `type` option accepts
+`"stroke"` (the default), `"fill"`, or `"clip"`. Clipping intersects the current
+clipping region without painting the shape and emits `W n` to end the path.
+`close: true` closes the path first. Scope the clip with `q()` before defining it
+and `Q()` after the drawing it should affect. Unknown types neither paint nor
+clip and end the path with `n`, preventing later drawing from painting their
+geometry. Pass a supported type explicitly.
+
+An explicit `type: null` is also unrecognized: it ends the path without painting,
+ignores `width` and `close`, and applies a supplied `color` only to the
+non-stroking graphics state, matching native. Omit `type` or use `"stroke"` for
+an outline; `null` does not select the default.
+
+These helpers validate coordinates and snapshot drawing options before emitting
+geometry or graphics-state operators. `writeText` likewise reads its font, size,
+color, and underline options before starting text output. Throwing option
+getters propagate their original exception without partial output from the
+call. Wasm still requires finite numeric coordinates and a font from the same
+writer; native retains its historical numeric coercions.
+
+Stroke widths and text sizes must also be finite. Circle control points and
+underline endpoints are checked for overflow before drawing. Paths must contain
+at least two complete finite coordinate pairs, without holes or extra
+arguments. Invalid calls throw without emitting operators; correct the values
+and retry on the same context.
 
 ## Create A PDF
 

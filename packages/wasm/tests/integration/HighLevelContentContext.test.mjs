@@ -5,6 +5,441 @@ import { createMuhammaraWasm } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("HighLevelContentContext", function () {
+  /** Create the same page/form contexts exposed by fresh and modifying writers. */
+  async function drawingTarget(mode) {
+    var muhammara = await createMuhammaraWasm();
+    muhammara.registerFont(
+      "arial",
+      new Uint8Array(await readFile("tests/TestMaterials/fonts/arial.ttf")),
+    );
+    var writer;
+    if (mode.startsWith("modified")) {
+      var original = muhammara.createWriter();
+      original.writePage(original.createPage(0, 0, 100, 100));
+      writer = muhammara.createWriterToModify(original.end(), {
+        compress: false,
+      });
+    } else writer = muhammara.createWriter({ compress: false });
+    writer.getObjectsContext().setCompressStreams(false);
+    var form = mode.endsWith("form")
+      ? writer.createFormXObject(0, 0, 100, 100)
+      : null;
+    var page = form ? null : writer.createPage(0, 0, 100, 100);
+    return {
+      writer,
+      context: form
+        ? form.getContentContext()
+        : writer.startPageContentContext(page),
+      /** Finalize the context and decode its uncompressed PDF output. */
+      finish() {
+        if (form) {
+          writer.endFormXObject(form);
+          writer.writePage(writer.createPage(0, 0, 100, 100));
+        } else writer.writePage(page);
+        return new TextDecoder().decode(writer.end());
+      },
+    };
+  }
+
+  for (var mode of ["page", "form", "modified-page", "modified-form"]) {
+    // Pass the value into the callback factory because this suite uses var.
+    addDrawingTests(mode);
+  }
+
+  /** Exercise failure atomicity and clipping on every writer context. */
+  function addDrawingTests(mode) {
+    it(
+      "discards null-type shapes without changing stroke state on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var context = target.context;
+        for (var [name, values] of [
+          ["drawCircle", [10, 20, 5]],
+          ["drawSquare", [10, 20, 5]],
+          ["drawRectangle", [10, 20, 5, 6]],
+          ["drawPath", [10, 20, 30, 40]],
+          [
+            "drawPath",
+            [
+              [
+                [10, 20],
+                [30, 40],
+              ],
+            ],
+          ],
+        ]) {
+          for (var close of [false, true]) {
+            context.q().RG(0, 0, 1).w(3);
+            assert.equal(
+              context[name](...values, {
+                type: null,
+                color: "red",
+                width: 7,
+                close,
+              }),
+              context,
+            );
+            context.drawRectangle(51, 52, 53, 54, { type: "fill" });
+            context.drawRectangle(61, 62, 63, 64, {}).Q();
+          }
+        }
+        var output = target.finish();
+        var segments = [
+          ...output.matchAll(/q\s+(0 0 1 RG\s+3 w\s+[\s\S]*?)\s+Q/g),
+        ];
+        assert.equal(segments.length, 10);
+        for (var segment of segments) {
+          assert.match(segment[1], /\b1 0 0 rg\s/);
+          assert.match(
+            segment[1],
+            /\bn\s+51 52 53 54 re\s+f\s+61 62 63 64 re\s+S$/,
+          );
+          assert.equal((segment[1].match(/\bS\b/g) || []).length, 1);
+          assert.doesNotMatch(segment[1], /\b(?:7 w|h|s|W)\b/);
+        }
+      },
+    );
+
+    it(
+      "distinguishes default, recognized and unknown path types on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var cases = [
+          [{}, "S"],
+          [{ type: undefined }, "S"],
+          [{ type: "stroke", close: true }, "s"],
+          [{ type: "fill" }, "f"],
+          [{ type: "clip", close: true }, "h\\s+W\\s+n"],
+          [{ type: null }, "n"],
+          [{ type: false }, "n"],
+          [{ type: 0 }, "n"],
+          [{ type: "" }, "n"],
+          [{ type: "unknown", close: true }, "n"],
+        ];
+        for (var [options] of cases)
+          target.context.q().drawRectangle(1, 2, 3, 4, options).Q();
+        var output = target.finish();
+        var segments = [...output.matchAll(/q\s+(1 2 3 4 re[\s\S]*?)\s+Q/g)];
+        assert.equal(segments.length, cases.length);
+        cases.forEach(function (entry, index) {
+          assert.match(
+            segments[index][1],
+            new RegExp("^1 2 3 4 re\\s+" + entry[1] + "$"),
+          );
+        });
+      },
+    );
+
+    it(
+      "preserves null-type accessor order and failure atomicity on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var events = [];
+        var failure = new Error("null type sentinel");
+        var fail = true;
+        var options = {
+          /** Record both legacy type reads, failing before output on the second. */
+          get type() {
+            events.push("type");
+            if (fail && events.length === 3) throw failure;
+            return null;
+          },
+          /** Record the color read between the type reads. */
+          get color() {
+            events.push("color");
+            return "red";
+          },
+          /** Null is non-stroking, so width must never be evaluated. */
+          get width() {
+            throw new Error("unexpected width read");
+          },
+          /** Record closing only after both type reads succeed. */
+          get close() {
+            events.push("close");
+            return true;
+          },
+        };
+        target.context.q();
+        assert.throws(
+          () => target.context.drawRectangle(1, 2, 3, 4, options),
+          (error) => error === failure,
+        );
+        assert.deepEqual(events, ["type", "color", "type"]);
+        target.context.Q().q();
+        events.length = 0;
+        fail = false;
+        target.context.drawRectangle(1, 2, 3, 4, options).Q();
+        assert.deepEqual(events, ["type", "color", "type", "close"]);
+        var output = target.finish();
+        assert.match(output, /\b1 0 0 rg\s/);
+        assert.match(
+          output.replace(/1 0 0 rg\s+/g, ""),
+          /q\s+Q\s+q\s+1 2 3 4 re\s+n\s+Q/,
+        );
+      },
+    );
+
+    it(
+      "rejects non-finite drawing and incomplete paths atomically on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var context = target.context;
+        var font = target.writer.getFontForBytes("arial");
+        var options = { color: "red", width: 2 };
+        context.q();
+        for (var invalid of [NaN, Infinity, -Infinity]) {
+          for (var [name, coordinates] of [
+            ["drawCircle", [10, 20, 5]],
+            ["drawSquare", [10, 20, 5]],
+            ["drawRectangle", [10, 20, 5, 6]],
+            ["drawPath", [10, 20, 30, 40]],
+          ]) {
+            for (var index = 0; index < coordinates.length; ++index) {
+              var values = coordinates.slice();
+              values[index] = invalid;
+              assert.throws(() => context[name](...values, options), /finite/);
+            }
+            assert.throws(
+              () =>
+                context[name](...coordinates, { color: "red", width: invalid }),
+              /finite/,
+            );
+          }
+          for (var index = 0; index < 4; ++index) {
+            var points = [
+              [10, 20],
+              [30, 40],
+            ];
+            points[Math.floor(index / 2)][index % 2] = invalid;
+            assert.throws(() => context.drawPath(points, options), /finite/);
+          }
+          assert.throws(() =>
+            context.writeText("rejected", invalid, 20, { font, color: "red" }),
+          );
+          assert.throws(() =>
+            context.writeText("rejected", 10, invalid, { font, color: "red" }),
+          );
+          assert.throws(() =>
+            context.writeText("rejected", 10, 20, {
+              font,
+              size: invalid,
+              color: "red",
+            }),
+          );
+        }
+        for (var args of [
+          [10, 20, 30, options],
+          [10, 20, 30, 40, 50, options],
+          [10, 20, "garbage", 40, options],
+          [10, 20, 30, 40, "garbage", options],
+          [[[10, 20], [30]], options],
+          [
+            [
+              [10, 20],
+              [30, 40, 50],
+            ],
+            options,
+          ],
+          [[[10, 20], new Array(2)], options],
+          [[[10, 20], , [30, 40]], options],
+          [
+            [
+              [10, 20],
+              [30, 40],
+            ],
+            options,
+            50,
+          ],
+        ])
+          assert.throws(() => context.drawPath(...args));
+        for (var center of [Number.MAX_VALUE, -Number.MAX_VALUE]) {
+          for (var radius of [Number.MAX_VALUE, -Number.MAX_VALUE]) {
+            assert.throws(
+              () => context.drawCircle(center, 0, radius, options),
+              /finite/,
+            );
+            assert.throws(
+              () => context.drawCircle(0, center, radius, options),
+              /finite/,
+            );
+          }
+        }
+        var measure = font.calculateTextDimensions;
+        /** Supply finite metrics whose placement overflows the underline endpoint. */
+        font.calculateTextDimensions = function () {
+          return { width: Number.MAX_VALUE, yMin: 0 };
+        };
+        try {
+          assert.throws(
+            () =>
+              context.writeText("MMMMMMMM", Number.MAX_VALUE, 20, {
+                font,
+                size: 12,
+                underline: true,
+                color: "red",
+              }),
+            /finite/,
+          );
+        } finally {
+          font.calculateTextDimensions = measure;
+        }
+        context.Q().drawRectangle(1, 2, 3, 4, {});
+        var output = target.finish();
+        assert.match(output, /q\s+Q\s+1 2 3 4 re\s+S/);
+        assert.doesNotMatch(output, /\b(?:nan|[-+]?inf(?:inity)?)\b/i);
+      },
+    );
+
+    it(
+      "snapshots path coordinates before output on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var failure = new Error("coordinate sentinel");
+        var reads = 0;
+        var fail = true;
+        var points = [
+          [10, 20],
+          [30, 40],
+        ];
+        Object.defineProperty(points[1], 1, {
+          /** Fail the first attempt; later reads must use the captured coordinate. */
+          get: function () {
+            if (fail) throw failure;
+            if (++reads > 1) throw new Error("coordinate read twice");
+            return 40;
+          },
+        });
+        target.context.q();
+        assert.throws(
+          () => target.context.drawPath(points, { color: "red", width: 2 }),
+          (error) => error === failure,
+        );
+        target.context.Q();
+        fail = false;
+        target.context.drawPath(points, {});
+        assert.equal(reads, 1);
+        assert.match(target.finish(), /q\s+Q\s+10 20 m\s+30 40 l\s+S/);
+      },
+    );
+
+    it(
+      "validates all shapes and text before output on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var context = target.context;
+        var font = target.writer.getFontForBytes("arial");
+        var failure = new Error("option sentinel");
+        context.q();
+        for (var [name, values] of [
+          ["drawCircle", [10, 20, 5]],
+          ["drawSquare", [10, 20, 5]],
+          ["drawRectangle", [10, 20, 5, 6]],
+          [
+            "drawPath",
+            [
+              [
+                [10, 20],
+                [30, 40],
+              ],
+            ],
+          ],
+        ]) {
+          for (var key of ["color", "width", "type", "close"]) {
+            var options = { color: "red", width: 2 };
+            Object.defineProperty(options, key, {
+              get() {
+                throw failure;
+              },
+            });
+            assert.throws(
+              () => context[name](...values, options),
+              (error) => error === failure,
+            );
+          }
+          assert.throws(
+            () =>
+              context[name](...values, {
+                color: "red",
+                width: Symbol("width"),
+              }),
+            TypeError,
+          );
+          assert.throws(
+            () => context[name](...values, { color: Symbol("color") }),
+            TypeError,
+          );
+          var reads = 0;
+          assert.throws(
+            () =>
+              context[name](...values, {
+                get type() {
+                  if (++reads === 2) throw failure;
+                  return "stroke";
+                },
+              }),
+            (error) => error === failure,
+          );
+        }
+        for (var key of ["font", "size", "color", "underline"]) {
+          var options = { font, size: 12, color: "red" };
+          Object.defineProperty(options, key, {
+            get() {
+              throw failure;
+            },
+          });
+          assert.throws(
+            () => context.writeText("text", 10, 20, options),
+            (error) => error === failure,
+          );
+        }
+        assert.throws(
+          () => context.writeText("text", Symbol("x"), 20, { font }),
+          TypeError,
+        );
+        assert.throws(
+          () =>
+            context.writeText("text", 10, 20, { font, color: Symbol("color") }),
+          TypeError,
+        );
+        assert.throws(
+          () =>
+            context.writeText("text", 10, 20, { font, size: Symbol("size") }),
+          RangeError,
+        );
+        context.Q().drawRectangle(1, 2, 3, 4, {});
+        assert.match(target.finish(), /q\s+Q\s+1 2 3 4 re\s+S/);
+      },
+    );
+
+    it(
+      "clips without painting and ignores unknown path types on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var context = target.context;
+        context
+          .q()
+          .drawRectangle(10, 20, 30, 40, { type: "clip" })
+          .drawSquare(10, 20, 30, { type: "clip", close: true })
+          .drawCircle(50, 50, 10, { type: "clip" })
+          .drawPath(
+            [
+              [0, 0],
+              [10, 10],
+            ],
+            { type: "clip", close: true },
+          )
+          .Q()
+          .drawRectangle(1, 2, 3, 4, { type: "clipp" })
+          .drawRectangle(5, 6, 7, 8, { type: "fill" });
+        var output = target.finish();
+        assert.equal((output.match(/\bW\s+n\b/g) || []).length, 4);
+        assert.match(output, /10 20 30 40 re\s+W\s+n/);
+        assert.match(output, /10 20 30 30 re\s+h\s+W\s+n/);
+        assert.match(output, /1 2 3 4 re\s+n\s+5 6 7 8 re\s+f/);
+      },
+    );
+  }
+
   it("draws shapes and text with byte-registered fonts", async function () {
     var muhammara = await createMuhammaraWasm();
     muhammara.registerFont(

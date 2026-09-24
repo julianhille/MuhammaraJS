@@ -78,7 +78,8 @@ describe("ModifierWriterParity", function () {
     var mergePage = mergeWriter.createPage(0, 0, 100, 100);
     var called = false;
     mergeWriter.startPageContentContext(mergePage).q().Q();
-    mergeWriter.mergePDFPagesToPage(mergePage, source, () => {
+    mergeWriter.mergePDFPagesToPage(mergePage, source, function () {
+      assert.equal(this, globalThis);
       called = true;
     });
     mergeWriter.writePage(mergePage);

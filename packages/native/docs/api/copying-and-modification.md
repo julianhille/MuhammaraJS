@@ -9,6 +9,11 @@ provide writer-level document composition. `createPDFCopyingContext` creates a
 `DocumentCopyingContext` for page-level append/merge, form creation, source
 reader access, and advanced object copying.
 
+`mergePDFPagesToPage` invokes its optional callback synchronously with no
+arguments and the global object (`globalThis`) as `this`, including for strict
+functions. Bound functions retain their bound receiver; arrow functions retain
+their lexical `this`.
+
 Advanced copying methods include `copyObject`, `copyDirectObjectWithDeepCopy`,
 `copyNewObjectsForDirectObject`, and `replaceSourceObjects`.
 

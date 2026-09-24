@@ -65,10 +65,13 @@
   },
   "binary": {
     "module_name": "muhammara",
-    "module_path": "./binding",
+    "module_path": "./binding/napi-v{napi_build_version}",
     "remote_path": "julianhille/MuhammaraJS/releases/download/native-v{version}",
     "host": "https://github.com",
-    "package_name": "{node_abi}-{platform}-{arch}-{libc}.tar.gz"
+    "package_name": "napi-v{napi_build_version}-{platform}-{arch}-{libc}.tar.gz",
+    "napi_versions": [
+      8
+    ]
   },
   "publishConfig": {
     "access": "public",

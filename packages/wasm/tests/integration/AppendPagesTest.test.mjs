@@ -59,6 +59,9 @@ describe("AppendPagesTest", function () {
       () => writer.appendPDFPagesFromPDF(new Uint8Array([1, 2, 3])),
       /Unable to append PDF pages/,
     );
+    assert.throws(() => writer.createPage(), /writer has ended/);
+
+    writer = muhammara.createWriter();
     assert.throws(
       () => writer.appendPDFPagesFromPDF(sourcePdf(1), { password: "nope" }),
       /passwords are not supported/,
@@ -82,6 +85,7 @@ describe("AppendPagesTest", function () {
       () => writer.appendPDFPagesFromPDF(protectedPdf),
       /Encrypted PDF input/,
     );
+    writer = muhammara.createWriter();
     var page = writer.createPage();
     writer.startPageContentContext(page);
     assert.throws(

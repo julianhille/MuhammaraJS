@@ -2,6 +2,18 @@ var muhammara = require("@muhammara/native-with-source"),
   assert = require("chai").assert;
 
 describe("PagesBoxes", function () {
+  it("does not change a page box when an element conversion fails", function () {
+    var page = new muhammara.PDFPage(0, 0, 595, 842);
+
+    assert.throws(function () {
+      page.mediaBox = {};
+    }, "Media box is set to a value which is not a 4 numbers array");
+    assert.throws(function () {
+      page.mediaBox = [1, 2, Symbol("invalid coordinate"), 4];
+    }, TypeError);
+    assert.deepEqual(page.mediaBox, [0, 0, 595, 842]);
+  });
+
   it("should complete without error", function () {
     var pdfWriter = muhammara.createWriter(
       __dirname + "/output/PageBoxes.pdf",

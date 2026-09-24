@@ -1,44 +1,18 @@
-/*
- Source File : PDFLiteralStringDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
 
-#include "nodes.h"
-#include "PDFObjectDriver.h"
-#include "PDFObjectCast.h"
 #include "PDFLiteralString.h"
+#include "PDFObjectCast.h"
+#include "PDFObjectDriver.h"
 
-class PDFLiteralStringDriver : public PDFObjectDriver
-{
+class PDFLiteralStringDriver : public PDFObjectDriver {
 public:
-	DEC_SUBORDINATE_INIT(Init)
-	
-    
-    PDFObjectCastPtr<PDFLiteralString> TheObject;
-    
-    virtual PDFObject* GetObject();
+  static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
+  PDFObject *GetObject() override;
+  PDFObjectCastPtr<PDFLiteralString> TheObject;
+
 private:
-    
-    
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetValue(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-	static METHOD_RETURN_TYPE ToText(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToBytesArray(const ARGS_TYPE& args);
+  static napi_value New(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetValue(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToText(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToBytesArray(const muhammara::napi::CallbackArgs &args);
 };

@@ -1,817 +1,512 @@
-/*
- Source File : PDFWriterDriver.cpp
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #include "PDFReaderDriver.h"
-#include "PDFPageInputDriver.h"
-#include "PDFDictionaryDriver.h"
-#include "PDFObjectDriver.h"
-#include "PDFObjectParserDriver.h"
-#include "RefCountPtr.h"
-#include "PDFDictionary.h"
-#include "PDFArrayDriver.h"
-#include "PDFArray.h"
-#include "PDFPageInput.h"
-#include "PDFStreamInputDriver.h"
+
 #include "ByteReaderDriver.h"
 #include "ByteReaderWithPositionDriver.h"
-#include "ObjectByteReaderWithPosition.h"
 #include "ConstructorsHolder.h"
+#include "ObjectByteReaderWithPosition.h"
+#include "PDFArrayDriver.h"
+#include "PDFDictionaryDriver.h"
+#include "PDFObjectParserDriver.h"
+#include "PDFPageInput.h"
+#include "PDFPageInputDriver.h"
+#include "PDFStreamInputDriver.h"
+#include "RefCountPtr.h"
 #include "text-extraction/PDFTextExtractor.h"
 
 #include <cmath>
-#include <string>
 
-using namespace v8;
+using namespace muhammara::napi;
 
-namespace
-{
-const char* scPageIndexError = "Page index must be a non-negative integer";
-const char* scObjectIDError = "Object ID must be a non-negative integer";
+namespace {
+const char *kPageIndexError = "Page index must be a non-negative integer";
+const char *kObjectIDError = "Object ID must be a non-negative integer";
 
-// Page indices and object IDs are unsigned in PDFWriter. Accepting whatever a
-// v8 number can hold and coercing it with TO_UINT32 turns -1 into 4294967295
-// and 1.5 into 1, so validate the argument up front and let the caller throw.
-bool ReadIndexArgument(const Local<Value>& inValue, unsigned long& outIndex)
-{
-    if(!inValue->IsNumber())
-        return false;
+bool ReadIndexArgument(napi_env env, napi_value value, unsigned long &index) {
+  if (!IsType(env, value, napi_number))
+    return false;
+  double raw = ToDouble(env, value);
+  if (!(raw >= 0) || raw > 4294967295.0 || raw != std::floor(raw))
+    return false;
+  index = static_cast<unsigned long>(raw);
+  return true;
+}
 
-    double raw = inValue.As<Number>()->Value();
-    if(!(raw >= 0) || raw > 4294967295.0 || raw != std::floor(raw))
-        return false;
-
-    outIndex = static_cast<unsigned long>(raw);
+bool ReadExtractionLimits(const CallbackArgs &args, size_t index,
+                          PDFExtractionLimits &limits) {
+  if (args.Length() <= index || IsType(args.Env(), args[index], napi_undefined))
     return true;
-}
-
-// Mirrors the Wasm reader's limits validation so both backends accept the same
-// object and reject the same values. Absent or undefined fields keep the
-// built-in ceiling; PDFExtractionLimits::Clamp() then caps anything higher.
-bool ReadExtractionLimits(Isolate* isolate, const ARGS_TYPE& args, int inIndex, PDFExtractionLimits& outLimits)
-{
-    if(args.Length() <= inIndex || args[inIndex]->IsUndefined())
-        return true;
-
-    if(!args[inIndex]->IsObject() || args[inIndex]->IsArray())
-    {
-        isolate->ThrowException(Exception::TypeError(NEW_STRING("Extraction limits must be an object")));
-        return false;
+  if (!IsObject(args.Env(), args[index]) || IsArray(args.Env(), args[index])) {
+    ThrowTypeError(args.Env(), "Extraction limits must be an object");
+    return false;
+  }
+  const char *names[] = {"maxElements", "maxOperands", "maxTextBytes",
+                         "maxParsedObjects"};
+  size_t *targets[] = {&limits.maxElements, &limits.maxOperands,
+                       &limits.maxTextBytes, &limits.maxParsedObjects};
+  for (size_t i = 0; i < 4; ++i) {
+    napi_value value = Get(args.Env(), args[index], names[i]);
+    if (!value)
+      return false;
+    if (IsType(args.Env(), value, napi_undefined))
+      continue;
+    double raw = IsType(args.Env(), value, napi_number)
+                     ? ToDouble(args.Env(), value)
+                     : 0;
+    if (!IsType(args.Env(), value, napi_number) || raw != std::floor(raw) ||
+        raw <= 0 || raw > 4294967295.0) {
+      std::string message =
+          std::string(names[i]) + " must be a positive 32-bit integer";
+      ThrowRangeError(args.Env(), message.c_str());
+      return false;
     }
-
-    Local<Context> context = GET_CURRENT_CONTEXT;
-    Local<Object> limits = args[inIndex].As<Object>();
-
-    const char* names[] = {"maxElements", "maxOperands", "maxTextBytes", "maxParsedObjects"};
-    size_t* targets[] = {
-        &outLimits.maxElements,
-        &outLimits.maxOperands,
-        &outLimits.maxTextBytes,
-        &outLimits.maxParsedObjects
-    };
-
-    for(size_t i = 0; i < 4; ++i)
-    {
-        Local<Value> value;
-        // A failed Get means the property getter threw. Leave that exception
-        // pending and stop; treating it as an absent field would keep calling
-        // into V8 with an exception already on the isolate.
-        if(!limits->Get(context, NEW_STRING(names[i])).ToLocal(&value))
-            return false;
-        if(value->IsUndefined())
-            continue;
-
-        double raw = 0;
-        if(!value->IsNumber() || !value->NumberValue(context).To(&raw) ||
-           raw != std::floor(raw) || raw <= 0 || raw > 4294967295.0)
-        {
-            std::string message = std::string(names[i]) + " must be a positive 32-bit integer";
-            isolate->ThrowException(Exception::RangeError(NEW_STRING(message.c_str())));
-            return false;
-        }
-        *targets[i] = static_cast<size_t>(raw);
-    }
-    return true;
-}
+    *targets[i] = static_cast<size_t>(raw);
+  }
+  return true;
 }
 
-
+napi_value OneByteString(napi_env env, const std::string &value) {
+  napi_value result = nullptr;
+  Check(env,
+        napi_create_string_latin1(env, value.data(), value.size(), &result));
+  return result;
+}
+} // namespace
 
 PDFReaderDriver::PDFReaderDriver()
-{
-    mStartedWithStream = false;
-    mPDFReader = NULL;
-    mReadStreamProxy = NULL;
+    : holder(nullptr), mStartedWithStream(false), mReadStreamProxy(nullptr),
+      mOwnsParser(false), mPDFReader(nullptr),
+      mLifecycle(new DriverLifecycleState()) {}
+
+PDFReaderDriver::~PDFReaderDriver() {
+  mLifecycle->End();
+  delete mReadStreamProxy;
+  if (mOwnsParser)
+    delete mPDFReader;
+}
+
+bool PDFReaderDriver::Init(ModuleState &state, napi_value exports) {
+  ClassBuilder builder(state, "PDFReader", New);
+  builder.Method("getPDFLevel", GetPDFLevel)
+      .Method("end", End)
+      .Method("getPagesCount", GetPagesCount)
+      .Method("getTrailer", GetTrailer)
+      .Method("queryDictionaryObject", QueryDictionaryObject)
+      .Method("queryArrayObject", QueryArrayObject)
+      .Method("parseNewObject", ParseNewObject)
+      .Method("getPageObjectID", GetPageObjectID)
+      .Method("parsePageDictionary", ParsePageDictionary)
+      .Method("parsePage", ParsePage)
+      .Method("extractPageText", ExtractPageText)
+      .Method("extractPageContentItems", ExtractPageContentItems)
+      .Method("getObjectsCount", GetObjectsCount)
+      .Method("isEncrypted", IsEncrypted)
+      .Method("getXrefSize", GetXrefSize)
+      .Method("getXrefEntry", GetXrefEntry)
+      .Method("getXrefPosition", GetXrefPosition)
+      .Method("startReadingFromStream", StartReadingFromStream)
+      .Method("startReadingFromStreamForPlainCopying",
+              StartReadingFromStreamForPlainCopying)
+      .Method("startReadingObjectsFromStream", StartReadingObjectsFromStream)
+      .Method("startReadingObjectsFromStreams", StartReadingObjectsFromStreams)
+      .Method("getParserStream", GetParserStream);
+  return builder.Define(exports, false) != nullptr;
+}
+
+napi_value PDFReaderDriver::New(const CallbackArgs &args) {
+  auto *reader = new PDFReaderDriver();
+  reader->holder = &ModuleState::Get(args.Env())->Constructors();
+  if (!reader->Wrap(args.Env(), args.This())) {
+    delete reader;
+    return nullptr;
+  }
+  return args.This();
+}
+
+PDFReaderDriver *PDFReaderDriver::GetActiveReader(const CallbackArgs &args) {
+  auto *reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.Env(), args.This());
+  if (!reader->mPDFReader || !reader->mLifecycle->IsActive()) {
+    ThrowTypeError(args.Env(), "PDF reader has ended");
+    return nullptr;
+  }
+  return reader;
+}
+
+napi_value PDFReaderDriver::End(const CallbackArgs &args) {
+  auto *reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.Env(), args.This());
+  reader->mLifecycle->End();
+  delete reader->mReadStreamProxy;
+  reader->mReadStreamProxy = nullptr;
+  if (reader->mOwnsParser) {
+    delete reader->mPDFReader;
+    reader->mOwnsParser = false;
+  }
+  reader->mPDFReader = nullptr;
+  reader->mPDFFile.CloseFile();
+  return args.This();
+}
+
+#define ACTIVE_NUMBER_METHOD(Name, Expression)                                 \
+  napi_value PDFReaderDriver::Name(const CallbackArgs &args) {                 \
+    auto *reader = GetActiveReader(args);                                      \
+    return reader ? Number(args.Env(), (Expression)) : nullptr;                \
+  }
+
+ACTIVE_NUMBER_METHOD(GetPDFLevel, reader->mPDFReader->GetPDFLevel())
+ACTIVE_NUMBER_METHOD(GetPagesCount, reader->mPDFReader->GetPagesCount())
+ACTIVE_NUMBER_METHOD(GetObjectsCount, reader->mPDFReader->GetObjectsCount())
+ACTIVE_NUMBER_METHOD(GetXrefSize, reader->mPDFReader->GetXrefSize())
+ACTIVE_NUMBER_METHOD(GetXrefPosition, reader->mPDFReader->GetXrefPosition())
+#undef ACTIVE_NUMBER_METHOD
+
+napi_value PDFReaderDriver::IsEncrypted(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  return reader ? Boolean(args.Env(), reader->mPDFReader->IsEncrypted())
+                : nullptr;
+}
+
+napi_value PDFReaderDriver::QueryDictionaryObject(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() != 2 || !reader->holder->IsPDFDictionaryInstance(args[0]) ||
+      !IsType(args.Env(), args[1], napi_string))
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments. Provide a dictionary and a string");
+  auto *dictionary =
+      ObjectWrap::Unwrap<PDFDictionaryDriver>(args.Env(), args[0]);
+  RefCountPtr<PDFObject> object = reader->mPDFReader->QueryDictionaryObject(
+      dictionary->TheObject.GetPtr(), LegacyString(args.Env(), args[1]));
+  return object.GetPtr() ? reader->holder->GetInstanceFor(object.GetPtr())
+                         : Undefined(args.Env());
+}
+
+napi_value PDFReaderDriver::QueryArrayObject(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() != 2 || !reader->holder->IsPDFArrayInstance(args[0]) ||
+      !IsType(args.Env(), args[1], napi_number))
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments. Provide an array and an index");
+  auto *array = ObjectWrap::Unwrap<PDFArrayDriver>(args.Env(), args[0]);
+  RefCountPtr<PDFObject> object = reader->mPDFReader->QueryArrayObject(
+      array->TheObject.GetPtr(), ToUint32(args.Env(), args[1]));
+  return object.GetPtr() ? reader->holder->GetInstanceFor(object.GetPtr())
+                         : Undefined(args.Env());
+}
+
+napi_value PDFReaderDriver::GetTrailer(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  PDFDictionary *trailer = reader->mPDFReader->GetTrailer();
+  return trailer ? reader->holder->GetInstanceFor(trailer)
+                 : Undefined(args.Env());
+}
+
+PDFHummus::EStatusCode
+PDFReaderDriver::StartPDFParsing(napi_env env, napi_value stream,
+                                 const PDFParsingOptions &options) {
+  if (!mPDFReader && !mOwnsParser) {
+    mPDFReader = new PDFParser();
+    mOwnsParser = true;
+  }
+  delete mReadStreamProxy;
+  mStartedWithStream = true;
+  mReadStreamProxy = new ObjectByteReaderWithPosition(env, stream);
+  mPDFReader->ResetParser();
+  return mPDFReader->StartPDFParsing(mReadStreamProxy, options);
+}
+
+PDFHummus::EStatusCode
+PDFReaderDriver::StartPDFParsing(const std::string &path,
+                                 const PDFParsingOptions &options) {
+  if (!mPDFReader && !mOwnsParser) {
+    mPDFReader = new PDFParser();
+    mOwnsParser = true;
+  }
+  delete mReadStreamProxy;
+  mReadStreamProxy = nullptr;
+  mStartedWithStream = false;
+  mPDFReader->ResetParser();
+  if (mPDFFile.OpenFile(path) != PDFHummus::eSuccess)
+    return PDFHummus::eFailure;
+  return mPDFReader->StartPDFParsing(mPDFFile.GetInputStream(), options);
+}
+
+void PDFReaderDriver::SetFromOwnedParser(PDFParser *parser,
+                                         DriverLifecycle ownerLifecycle) {
+  if (mOwnsParser) {
+    delete mPDFReader;
     mOwnsParser = false;
-    mLifecycle = DriverLifecycle(new DriverLifecycleState());
-}
-
-PDFReaderDriver::~PDFReaderDriver()
-{
-    mLifecycle->End();
     delete mReadStreamProxy;
-    if(mOwnsParser)
-        delete mPDFReader;
-}
-
-PDFReaderDriver* PDFReaderDriver::GetActiveReader(const ARGS_TYPE& args)
-{
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
-    if(!reader->mPDFReader || !reader->mLifecycle->IsActive())
-    {
-        Isolate* isolate = Isolate::GetCurrent();
-        THROW_EXCEPTION("PDF reader has ended");
-        return NULL;
-    }
-    return reader;
-}
-
-DEF_SUBORDINATE_INIT(PDFReaderDriver::Init)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-	Local<FunctionTemplate> t = NEW_FUNCTION_TEMPLATE_EXTERNAL(New);
-
-	t->SetClassName(NEW_STRING("PDFReader"));
-	t->InstanceTemplate()->SetInternalFieldCount(1);
-
-	SET_PROTOTYPE_METHOD(t, "getPDFLevel", GetPDFLevel);
-	SET_PROTOTYPE_METHOD(t, "end", End);
-	SET_PROTOTYPE_METHOD(t, "getPagesCount", GetPagesCount);
-	SET_PROTOTYPE_METHOD(t, "getTrailer", GetTrailer);
-	SET_PROTOTYPE_METHOD(t, "queryDictionaryObject", QueryDictionaryObject);
-	SET_PROTOTYPE_METHOD(t, "queryArrayObject", QueryArrayObject);
-	SET_PROTOTYPE_METHOD(t, "parseNewObject", ParseNewObject);
-	SET_PROTOTYPE_METHOD(t, "getPageObjectID", GetPageObjectID);
-	SET_PROTOTYPE_METHOD(t, "parsePageDictionary", ParsePageDictionary);
-	SET_PROTOTYPE_METHOD(t, "parsePage", ParsePage);
-	SET_PROTOTYPE_METHOD(t, "extractPageText", ExtractPageText);
-	SET_PROTOTYPE_METHOD(t, "extractPageContentItems", ExtractPageContentItems);
-	SET_PROTOTYPE_METHOD(t, "getObjectsCount", GetObjectsCount);
-	SET_PROTOTYPE_METHOD(t, "isEncrypted", IsEncrypted);
-	SET_PROTOTYPE_METHOD(t, "getXrefSize", GetXrefSize);
-	SET_PROTOTYPE_METHOD(t, "getXrefEntry", GetXrefEntry);
-	SET_PROTOTYPE_METHOD(t, "getXrefPosition", GetXrefPosition);
-	SET_PROTOTYPE_METHOD(t, "startReadingFromStream", StartReadingFromStream);
-	SET_PROTOTYPE_METHOD(t, "startReadingFromStreamForPlainCopying", StartReadingFromStreamForPlainCopying);
-	SET_PROTOTYPE_METHOD(t, "startReadingObjectsFromStream", StartReadingObjectsFromStream);
-	SET_PROTOTYPE_METHOD(t, "startReadingObjectsFromStreams", StartReadingObjectsFromStreams);
-	SET_PROTOTYPE_METHOD(t, "getParserStream", GetParserStream);
-
-    // save in factory
-	EXPOSE_EXTERNAL_FOR_INIT(ConstructorsHolder, holder)
-    SET_CONSTRUCTOR(holder->PDFReader_constructor, t);    
-    SET_CONSTRUCTOR_TEMPLATE(holder->PDFReader_constructor_template, t);    
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::New(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    EXPOSE_EXTERNAL_ARGS(ConstructorsHolder, externalHolder)
-    
-    PDFReaderDriver* reader = new PDFReaderDriver();
-
-    reader->holder = externalHolder; 
-    reader->Wrap(args.This());
-    
-	SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::End(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-    CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.This());
-
-    reader->mLifecycle->End();
-
-    delete reader->mReadStreamProxy;
-    reader->mReadStreamProxy = NULL;
-    if(reader->mOwnsParser)
-    {
-        delete reader->mPDFReader;
-        reader->mOwnsParser = false;
-    }
-    reader->mPDFReader = NULL;
-    reader->mPDFFile.CloseFile();
-
-    SET_FUNCTION_RETURN_VALUE(args.This())
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::GetPDFLevel(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-    CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetPDFLevel()))
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::GetPagesCount(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-    CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-	SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetPagesCount()))
-}
-
-
-METHOD_RETURN_TYPE PDFReaderDriver::QueryDictionaryObject(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    if(args.Length() != 2 ||
-       !reader->holder->IsPDFDictionaryInstance(args[0]) ||
-       !args[1]->IsString())
-    {
- 		THROW_EXCEPTION("Wrong arguments. Provide a dictionary and a string");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-
-    PDFDictionaryDriver* dictionary = ObjectWrap::Unwrap<PDFDictionaryDriver>(args[0]->TO_OBJECT());
-    
-    RefCountPtr<PDFObject> object = reader->mPDFReader->QueryDictionaryObject(dictionary->TheObject.GetPtr(),*UTF_8_VALUE(args[1]->TO_STRING()));
-    if(!object)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-        
-    SET_FUNCTION_RETURN_VALUE(reader->holder->GetInstanceFor(object.GetPtr()))
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::QueryArrayObject(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    if(args.Length() != 2 ||
-       !reader->holder->IsPDFArrayInstance(args[0]) ||
-       !args[1]->IsNumber())
-    {
- 		THROW_EXCEPTION("Wrong arguments. Provide an array and an index");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    PDFArrayDriver* driver = ObjectWrap::Unwrap<PDFArrayDriver>(args[0]->TO_OBJECT());
-    
-    RefCountPtr<PDFObject> object = reader->mPDFReader->QueryArrayObject(driver->TheObject.GetPtr(),TO_UINT32(args[1])->Value());
-    if(!object)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    
-    SET_FUNCTION_RETURN_VALUE(reader->holder->GetInstanceFor(object.GetPtr()))
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::GetTrailer(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
- 
-    PDFDictionary* trailer = reader->mPDFReader->GetTrailer();
-    
-    if(!trailer)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    
-    SET_FUNCTION_RETURN_VALUE(reader->holder->GetInstanceFor(trailer))
-}
-
-PDFHummus::EStatusCode PDFReaderDriver::StartPDFParsing(v8::Local<v8::Object> inStreamObject,const PDFParsingOptions& inParsingOptions)
-{
-    if(!mPDFReader && !mOwnsParser)
-    {
-        mPDFReader = new PDFParser();
-        mOwnsParser = true;
-    }
-    if(mReadStreamProxy)
-    {
-        delete mReadStreamProxy;
-        mReadStreamProxy = NULL;
-    }
-    
-    mStartedWithStream = true;
-    mReadStreamProxy = new ObjectByteReaderWithPosition(inStreamObject);
-    mPDFReader->ResetParser();
-    return mPDFReader->StartPDFParsing(mReadStreamProxy,inParsingOptions);
-}
-
-PDFHummus::EStatusCode PDFReaderDriver::StartPDFParsing(const std::string& inParsedFilePath,const PDFParsingOptions& inParsingOptions)
-{
-    if(!mPDFReader && !mOwnsParser)
-    {
-        mPDFReader = new PDFParser();
-        mOwnsParser = true;
-    }
-    if(mReadStreamProxy)
-    {
-        delete mReadStreamProxy;
-        mReadStreamProxy = NULL;
-    }
-    
-    
+    mReadStreamProxy = nullptr;
     mStartedWithStream = false;
-    mPDFReader->ResetParser();
-    if(mPDFFile.OpenFile(inParsedFilePath) != PDFHummus::eSuccess)
-        return PDFHummus::eFailure;
-    return mPDFReader->StartPDFParsing(mPDFFile.GetInputStream(),inParsingOptions);
+    mPDFFile.CloseFile();
+  }
+  mPDFReader = parser;
+  mLifecycle->SetOwner(ownerLifecycle);
 }
 
-void PDFReaderDriver::SetFromOwnedParser(PDFParser* inParser, DriverLifecycle inOwnerLifecycle)
-{
-    if(mOwnsParser)
-    {
-        delete mPDFReader;
-        mOwnsParser = false;
-        delete mReadStreamProxy;
-        mStartedWithStream = false;
-        mPDFFile.CloseFile();
-    }
-    mPDFReader = inParser;
-    mLifecycle->SetOwner(inOwnerLifecycle);
+PDFParser *PDFReaderDriver::GetParser() {
+  return mLifecycle->IsActive() ? mPDFReader : nullptr;
+}
+DriverLifecycle PDFReaderDriver::GetLifecycle() { return mLifecycle; }
+
+napi_value PDFReaderDriver::ParseNewObject(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() != 1)
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide an Object ID");
+  unsigned long objectID;
+  if (!ReadIndexArgument(args.Env(), args[0], objectID))
+    return ThrowTypeError(args.Env(), kObjectIDError);
+  RefCountPtr<PDFObject> object = reader->mPDFReader->ParseNewObject(objectID);
+  if (!object)
+    return ThrowTypeError(
+        args.Env(),
+        "Unable to read object. Most probably object ID is wrong (or some file "
+        "read issue...but i'd first check that ID. if i were you)");
+  return reader->holder->GetInstanceFor(object.GetPtr());
 }
 
-PDFParser* PDFReaderDriver::GetParser()
-{
-    return mLifecycle->IsActive() ? mPDFReader : NULL;
+napi_value PDFReaderDriver::GetPageObjectID(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() != 1)
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide a page index");
+  unsigned long index;
+  if (!ReadIndexArgument(args.Env(), args[0], index))
+    return ThrowTypeError(args.Env(), kPageIndexError);
+  return Number(args.Env(), reader->mPDFReader->GetPageObjectID(index));
 }
 
-DriverLifecycle PDFReaderDriver::GetLifecycle()
-{
-    return mLifecycle;
+napi_value PDFReaderDriver::ParsePageDictionary(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() != 1)
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide a page index");
+  unsigned long index;
+  if (!ReadIndexArgument(args.Env(), args[0], index))
+    return ThrowTypeError(args.Env(), kPageIndexError);
+  RefCountPtr<PDFDictionary> object = reader->mPDFReader->ParsePage(index);
+  return object.GetPtr()
+             ? reader->holder->GetInstanceFor(object.GetPtr())
+             : ThrowTypeError(
+                   args.Env(),
+                   "Unable to read page, parhaps page index is wrong");
 }
 
-METHOD_RETURN_TYPE PDFReaderDriver::ParseNewObject(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    if(args.Length() != 1)
-    {
-        THROW_EXCEPTION("Wrong arguments. Provide an Object ID");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    unsigned long objectID;
-    if(!ReadIndexArgument(args[0], objectID))
-    {
-        THROW_EXCEPTION(scObjectIDError);
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    RefCountPtr<PDFObject> newObject = reader->mPDFReader->ParseNewObject(objectID);
-    
-    if(!newObject)
-    {
- 		THROW_EXCEPTION("Unable to read object. Most probably object ID is wrong (or some file read issue...but i'd first check that ID. if i were you)");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    SET_FUNCTION_RETURN_VALUE(reader->holder->GetInstanceFor(newObject.GetPtr()))
+napi_value PDFReaderDriver::ParsePage(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() != 1)
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide a page index");
+  unsigned long index;
+  if (!ReadIndexArgument(args.Env(), args[0], index))
+    return ThrowTypeError(args.Env(), kPageIndexError);
+  RefCountPtr<PDFDictionary> object = reader->mPDFReader->ParsePage(index);
+  if (!object)
+    return ThrowTypeError(
+        args.Env(), "Unable to read page, page index is wrong or page is null");
+  napi_value instance = reader->holder->GetNewPDFPageInput();
+  PDFPageInputDriver *page = nullptr;
+  if (!ObjectWrap::UnwrapNew(args.Env(), instance, &page))
+    return nullptr;
+  page->PageInput = new PDFPageInput(reader->mPDFReader, object);
+  page->PageInputDictionary = object.GetPtr();
+  return instance;
 }
 
-METHOD_RETURN_TYPE PDFReaderDriver::GetPageObjectID(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    
-    if(args.Length() != 1)
-    {
-        THROW_EXCEPTION("Wrong arguments. Provide a page index");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    unsigned long index;
-    if(!ReadIndexArgument(args[0], index))
-    {
-        THROW_EXCEPTION(scPageIndexError);
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetPageObjectID(index)))
+napi_value PDFReaderDriver::ExtractPageText(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() < 1 || args.Length() > 2)
+    return ThrowTypeError(
+        args.Env(),
+        "Wrong arguments. Provide a page index and optional extraction limits");
+  unsigned long index;
+  if (!ReadIndexArgument(args.Env(), args[0], index))
+    return ThrowTypeError(args.Env(), kPageIndexError);
+  PDFExtractionLimits limits;
+  if (!ReadExtractionLimits(args, 1, limits))
+    return nullptr;
+  RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
+  if (!page)
+    return ThrowTypeError(
+        args.Env(), "Unable to read page, page index is wrong or page is null");
+  std::vector<PDFTextElement> elements;
+  if (!PDFTextExtractor().Extract(reader->mPDFReader, page.GetPtr(), elements,
+                                  limits))
+    return ThrowError(args.Env(),
+                      "Page content exceeds text extraction limits");
+  napi_value result = Array(args.Env(), elements.size());
+  for (size_t i = 0; i < elements.size(); ++i) {
+    napi_value element = Object(args.Env());
+    Set(args.Env(), element, "content",
+        OneByteString(args.Env(), elements[i].content));
+    Set(args.Env(), element, "fontResource",
+        String(args.Env(), elements[i].fontResource));
+    Set(args.Env(), element, "fontSize",
+        Number(args.Env(), elements[i].fontSize));
+    napi_value matrix = Array(args.Env(), 6);
+    for (uint32_t j = 0; j < 6; ++j)
+      Set(args.Env(), matrix, j, Number(args.Env(), elements[i].textMatrix[j]));
+    Set(args.Env(), element, "textMatrix", matrix);
+    Set(args.Env(), result, i, element);
+  }
+  return result;
 }
 
-
-METHOD_RETURN_TYPE PDFReaderDriver::ParsePageDictionary(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    
-    if(args.Length() != 1)
-    {
-        THROW_EXCEPTION("Wrong arguments. Provide a page index");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    unsigned long index;
-    if(!ReadIndexArgument(args[0], index))
-    {
-        THROW_EXCEPTION(scPageIndexError);
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    RefCountPtr<PDFDictionary> newObject = reader->mPDFReader->ParsePage(index);
-    
-    if(!newObject)
-    {
- 		THROW_EXCEPTION("Unable to read page, parhaps page index is wrong");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    else {
-        SET_FUNCTION_RETURN_VALUE(reader->holder->GetInstanceFor(newObject.GetPtr()))
-    }
+napi_value PDFReaderDriver::ExtractPageContentItems(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() < 1 || args.Length() > 2)
+    return ThrowTypeError(
+        args.Env(),
+        "Wrong arguments. Provide a page index and optional extraction limits");
+  unsigned long index;
+  if (!ReadIndexArgument(args.Env(), args[0], index))
+    return ThrowTypeError(args.Env(), kPageIndexError);
+  PDFExtractionLimits limits;
+  if (!ReadExtractionLimits(args, 1, limits))
+    return nullptr;
+  RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
+  if (!page)
+    return ThrowTypeError(
+        args.Env(), "Unable to read page, page index is wrong or page is null");
+  std::vector<PDFPageContentItem> items;
+  if (!PDFTextExtractor().ExtractPageContentItems(reader->mPDFReader,
+                                                  page.GetPtr(), items, limits))
+    return ThrowError(args.Env(),
+                      "Page content exceeds item extraction limits");
+  napi_value result = Array(args.Env(), items.size());
+  for (size_t i = 0; i < items.size(); ++i) {
+    napi_value item = Object(args.Env());
+    Set(args.Env(), item, "type", Number(args.Env(), items[i].type));
+    Set(args.Env(), item, "operation", String(args.Env(), items[i].operation));
+    Set(args.Env(), result, i, item);
+  }
+  return result;
 }
 
-METHOD_RETURN_TYPE PDFReaderDriver::ParsePage(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    
-    if(args.Length() != 1)
-    {
-        THROW_EXCEPTION("Wrong arguments. Provide a page index");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    unsigned long index;
-    if(!ReadIndexArgument(args[0], index))
-    {
-        THROW_EXCEPTION(scPageIndexError);
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    RefCountPtr<PDFDictionary> newObject = reader->mPDFReader->ParsePage(index);
-    
-    if(!newObject)
-    {
- 		THROW_EXCEPTION("Unable to read page, page index is wrong or page is null");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    else {
-        Local<Value> newInstance = reader->holder->GetNewPDFPageInput(args);
-        ObjectWrap::Unwrap<PDFPageInputDriver>(newInstance->TO_OBJECT())->PageInput = new PDFPageInput(reader->mPDFReader,newObject);
-        ObjectWrap::Unwrap<PDFPageInputDriver>(newInstance->TO_OBJECT())->PageInputDictionary = newObject.GetPtr();
-        SET_FUNCTION_RETURN_VALUE(newInstance)
-    }
+napi_value PDFReaderDriver::GetXrefEntry(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() != 1)
+    return ThrowTypeError(args.Env(), "Wrong arguments. Provide an Object ID");
+  unsigned long objectID;
+  if (!ReadIndexArgument(args.Env(), args[0], objectID))
+    return ThrowTypeError(args.Env(), kObjectIDError);
+  XrefEntryInput *entry = reader->mPDFReader->GetXrefEntry(objectID);
+  if (!entry)
+    return ThrowTypeError(args.Env(), "Unable to read object xref entry, page "
+                                      "index is wrong or page is null");
+  napi_value result = Object(args.Env());
+  Set(args.Env(), result, "objectPosition",
+      Number(args.Env(), entry->mObjectPosition));
+  Set(args.Env(), result, "revision", Number(args.Env(), entry->mRivision));
+  Set(args.Env(), result, "type", Number(args.Env(), entry->mType));
+  return result;
 }
 
-METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageText(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-    CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    if(args.Length() < 1 || args.Length() > 2)
-    {
-        THROW_EXCEPTION("Wrong arguments. Provide a page index and optional extraction limits");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    unsigned long index;
-    if(!ReadIndexArgument(args[0], index))
-    {
-        THROW_EXCEPTION(scPageIndexError);
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFExtractionLimits limits;
-    if(!ReadExtractionLimits(isolate, args, 1, limits))
-    {
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
-    if(!page)
-    {
-        THROW_EXCEPTION("Unable to read page, page index is wrong or page is null");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    std::vector<PDFTextElement> elements;
-    if(!PDFTextExtractor().Extract(reader->mPDFReader, page.GetPtr(), elements, limits))
-    {
-        isolate->ThrowException(Exception::Error(NEW_STRING("Page content exceeds text extraction limits")));
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    Local<Array> result = NEW_ARRAY(elements.size());
-    for(size_t i = 0; i < elements.size(); ++i)
-    {
-        Local<Object> element = NEW_OBJECT;
-        element->Set(GET_CURRENT_CONTEXT, NEW_STRING("content"), String::NewFromOneByte(isolate, reinterpret_cast<const uint8_t*>(elements[i].content.data()), v8::NewStringType::kNormal, static_cast<int>(elements[i].content.size())).ToLocalChecked());
-        element->Set(GET_CURRENT_CONTEXT, NEW_STRING("fontResource"), NEW_STRING(elements[i].fontResource.c_str()));
-        element->Set(GET_CURRENT_CONTEXT, NEW_STRING("fontSize"), NEW_NUMBER(elements[i].fontSize));
-        Local<Array> textMatrix = NEW_ARRAY(6);
-        for(size_t j = 0; j < 6; ++j)
-            textMatrix->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(j), NEW_NUMBER(elements[i].textMatrix[j]));
-        element->Set(GET_CURRENT_CONTEXT, NEW_STRING("textMatrix"), textMatrix);
-        result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(i), element);
-    }
-    SET_FUNCTION_RETURN_VALUE(result)
+static PDFStreamInputDriver *GetStreamInput(const CallbackArgs &args,
+                                            PDFReaderDriver *reader) {
+  if (args.Length() != 1 ||
+      !reader->holder->IsPDFStreamInputInstance(args[0])) {
+    ThrowTypeError(args.Env(), "Wrong arguments. provide a PDF stream input");
+    return nullptr;
+  }
+  return ObjectWrap::Unwrap<PDFStreamInputDriver>(args.Env(), args[0]);
 }
 
-METHOD_RETURN_TYPE PDFReaderDriver::ExtractPageContentItems(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-    CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    if(args.Length() < 1 || args.Length() > 2)
-    {
-        THROW_EXCEPTION("Wrong arguments. Provide a page index and optional extraction limits");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    unsigned long index;
-    if(!ReadIndexArgument(args[0], index))
-    {
-        THROW_EXCEPTION(scPageIndexError);
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    PDFExtractionLimits limits;
-    if(!ReadExtractionLimits(isolate, args, 1, limits))
-    {
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    RefCountPtr<PDFDictionary> page(reader->mPDFReader->ParsePage(index));
-    if(!page)
-    {
-        THROW_EXCEPTION("Unable to read page, page index is wrong or page is null");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    std::vector<PDFPageContentItem> items;
-    if(!PDFTextExtractor().ExtractPageContentItems(reader->mPDFReader, page.GetPtr(), items, limits))
-    {
-        isolate->ThrowException(Exception::Error(NEW_STRING("Page content exceeds item extraction limits")));
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    Local<Array> result = NEW_ARRAY(items.size());
-    for(size_t i = 0; i < items.size(); ++i)
-    {
-        Local<Object> item = NEW_OBJECT;
-        item->Set(GET_CURRENT_CONTEXT, NEW_STRING("type"), NEW_NUMBER(items[i].type));
-        item->Set(GET_CURRENT_CONTEXT, NEW_STRING("operation"), NEW_STRING(items[i].operation.c_str()));
-        result->Set(GET_CURRENT_CONTEXT, NEW_NUMBER(i), item);
-    }
-    SET_FUNCTION_RETURN_VALUE(result)
+napi_value PDFReaderDriver::StartReadingFromStream(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  auto *stream = GetStreamInput(args, reader);
+  if (!stream)
+    return nullptr;
+  napi_value result = reader->holder->GetNewByteReader();
+  ByteReaderDriver *driver = nullptr;
+  if (!ObjectWrap::UnwrapNew(args.Env(), result, &driver))
+    return nullptr;
+  driver->SetStream(reader->mPDFReader->StartReadingFromStream(
+                        stream->TheObject.GetPtr()),
+                    true);
+  return result;
 }
 
-METHOD_RETURN_TYPE PDFReaderDriver::GetObjectsCount(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetObjectsCount()))
+napi_value PDFReaderDriver::StartReadingFromStreamForPlainCopying(
+    const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  auto *stream = GetStreamInput(args, reader);
+  if (!stream)
+    return nullptr;
+  napi_value result = reader->holder->GetNewByteReader();
+  ByteReaderDriver *driver = nullptr;
+  if (!ObjectWrap::UnwrapNew(args.Env(), result, &driver))
+    return nullptr;
+  driver->SetStream(
+      reader->mPDFReader->StartReadingFromStreamForPlainCopying(
+          stream->TheObject.GetPtr()),
+      true);
+  return result;
 }
 
-METHOD_RETURN_TYPE PDFReaderDriver::IsEncrypted(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    SET_FUNCTION_RETURN_VALUE(NEW_BOOLEAN(reader->mPDFReader->IsEncrypted()))
+napi_value
+PDFReaderDriver::StartReadingObjectsFromStream(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  auto *stream = GetStreamInput(args, reader);
+  if (!stream)
+    return nullptr;
+  napi_value result = reader->holder->GetNewPDFObjectParser();
+  PDFObjectParserDriver *driver = nullptr;
+  if (!ObjectWrap::UnwrapNew(args.Env(), result, &driver))
+    return nullptr;
+  driver->PDFObjectParserInstance =
+      reader->mPDFReader->StartReadingObjectsFromStream(
+          stream->TheObject.GetPtr());
+  return result;
 }
 
-METHOD_RETURN_TYPE PDFReaderDriver::GetXrefSize(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetXrefSize()))
+napi_value
+PDFReaderDriver::StartReadingObjectsFromStreams(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  if (args.Length() != 1 || !reader->holder->IsPDFArrayInstance(args[0]))
+    return ThrowTypeError(args.Env(), "Wrong arguments. provide a PDF array");
+  auto *array = ObjectWrap::Unwrap<PDFArrayDriver>(args.Env(), args[0]);
+  napi_value result = reader->holder->GetNewPDFObjectParser();
+  PDFObjectParserDriver *driver = nullptr;
+  if (!ObjectWrap::UnwrapNew(args.Env(), result, &driver))
+    return nullptr;
+  driver->PDFObjectParserInstance =
+      reader->mPDFReader->StartReadingObjectsFromStreams(
+          array->TheObject.GetPtr());
+  return result;
 }
 
-METHOD_RETURN_TYPE PDFReaderDriver::GetXrefEntry(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    
-    if(args.Length() != 1)
-    {
-        THROW_EXCEPTION("Wrong arguments. Provide an Object ID");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-
-    unsigned long objectID;
-    if(!ReadIndexArgument(args[0], objectID))
-    {
-        THROW_EXCEPTION(scObjectIDError);
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    XrefEntryInput* xrefEntry = reader->mPDFReader->GetXrefEntry(objectID);
-    if(!xrefEntry)
-    {
- 		THROW_EXCEPTION("Unable to read object xref entry, page index is wrong or page is null");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)   
-    }
-    
-    Local<Object> anObject = NEW_OBJECT;
-    
-    anObject->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("objectPosition"),NEW_NUMBER(xrefEntry->mObjectPosition));
-    anObject->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("revision"),NEW_NUMBER(xrefEntry->mRivision));
-    anObject->Set(GET_CURRENT_CONTEXT, NEW_SYMBOL("type"),NEW_NUMBER(xrefEntry->mType));
-
-    SET_FUNCTION_RETURN_VALUE(anObject)
-}
-
-
-METHOD_RETURN_TYPE PDFReaderDriver::GetXrefPosition(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    SET_FUNCTION_RETURN_VALUE(NEW_NUMBER(reader->mPDFReader->GetXrefPosition()))
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::StartReadingFromStream(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    if(args.Length() != 1 ||
-       !reader->holder->IsPDFStreamInputInstance(args[0]))
-    {
- 		THROW_EXCEPTION("Wrong arguments. provide a PDF stream input");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    PDFStreamInputDriver* streamInput = ObjectWrap::Unwrap<PDFStreamInputDriver>(args[0]->TO_OBJECT());
-    
-    IByteReader* byteReader = reader->mPDFReader->StartReadingFromStream(streamInput->TheObject.GetPtr());
-    
-    Local<Value> driver = reader->holder->GetNewByteReader(args);  
-    ObjectWrap::Unwrap<ByteReaderDriver>(driver->TO_OBJECT())->SetStream(byteReader,true);
-    
-    SET_FUNCTION_RETURN_VALUE(driver)
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::StartReadingFromStreamForPlainCopying(const ARGS_TYPE& args) {
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    if(args.Length() != 1 ||
-       !reader->holder->IsPDFStreamInputInstance(args[0]))
-    {
- 		THROW_EXCEPTION("Wrong arguments. provide a PDF stream input");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    PDFStreamInputDriver* streamInput = ObjectWrap::Unwrap<PDFStreamInputDriver>(args[0]->TO_OBJECT());
-    
-    IByteReader* byteReader = reader->mPDFReader->StartReadingFromStreamForPlainCopying(streamInput->TheObject.GetPtr());
-    
-    Local<Value> driver = reader->holder->GetNewByteReader(args);        
-    ObjectWrap::Unwrap<ByteReaderDriver>(driver->TO_OBJECT())->SetStream(byteReader,true);
-    
-    SET_FUNCTION_RETURN_VALUE(driver)
-}
-	
-METHOD_RETURN_TYPE PDFReaderDriver::StartReadingObjectsFromStream(const ARGS_TYPE& args) {
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    if(args.Length() != 1 ||
-       !reader->holder->IsPDFStreamInputInstance(args[0]))
-    {
- 		THROW_EXCEPTION("Wrong arguments. provide a PDF stream input");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    PDFStreamInputDriver* streamInput = ObjectWrap::Unwrap<PDFStreamInputDriver>(args[0]->TO_OBJECT());
-    
-    PDFObjectParser* objectReader = reader->mPDFReader->StartReadingObjectsFromStream(streamInput->TheObject.GetPtr());
-    
-    Local<Value> driver = reader->holder->GetNewPDFObjectParser(args);
-    ObjectWrap::Unwrap<PDFObjectParserDriver>(driver->TO_OBJECT())->PDFObjectParserInstance= objectReader;
-    
-    SET_FUNCTION_RETURN_VALUE(driver)
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::StartReadingObjectsFromStreams(const ARGS_TYPE& args) {
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    if(args.Length() != 1 ||
-       !reader->holder->IsPDFArrayInstance(args[0]))
-    {
- 		THROW_EXCEPTION("Wrong arguments. provide a PDF array");
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-    }
-    
-    PDFArrayDriver* arrayInput = ObjectWrap::Unwrap<PDFArrayDriver>(args[0]->TO_OBJECT());
-    
-    PDFObjectParser* objectReader = reader->mPDFReader->StartReadingObjectsFromStreams(arrayInput->TheObject.GetPtr());
-    
-    Local<Value> driver = reader->holder->GetNewPDFObjectParser(args);
-    ObjectWrap::Unwrap<PDFObjectParserDriver>(driver->TO_OBJECT())->PDFObjectParserInstance= objectReader;
-    
-    SET_FUNCTION_RETURN_VALUE(driver)
-}
-
-METHOD_RETURN_TYPE PDFReaderDriver::GetParserStream(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    PDFReaderDriver* reader = GetActiveReader(args);
-    if(!reader)
-        SET_FUNCTION_RETURN_VALUE(UNDEFINED)
-
-    Local<Value> driver = reader->holder->GetNewByteReaderWithPosition(args);
-    ObjectWrap::Unwrap<ByteReaderWithPositionDriver>(driver->TO_OBJECT())->SetStream(reader->mPDFReader->GetParserStream(),false);
-    
-    SET_FUNCTION_RETURN_VALUE(driver)
+napi_value PDFReaderDriver::GetParserStream(const CallbackArgs &args) {
+  auto *reader = GetActiveReader(args);
+  if (!reader)
+    return nullptr;
+  napi_value result = reader->holder->GetNewByteReaderWithPosition();
+  ByteReaderWithPositionDriver *driver = nullptr;
+  if (!ObjectWrap::UnwrapNew(args.Env(), result, &driver))
+    return nullptr;
+  driver->SetStream(reader->mPDFReader->GetParserStream(), false);
+  return result;
 }

@@ -25,5 +25,8 @@ describe("AppendPagesTest", function () {
         __dirname + "/TestMaterials/appendbreaks.pdf",
       ),
     ).to.throw("unable to append");
+    expect(() => pdfWriter.createPage(0, 0, 100, 100)).to.throw(
+      "PDF writer has ended",
+    );
   });
 });

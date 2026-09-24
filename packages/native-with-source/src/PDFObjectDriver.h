@@ -1,60 +1,35 @@
-/*
- Source File : PDFObjectDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #pragma once
 
-#include "nodes.h"
-
+#include "napi/NapiSupport.h"
 
 class PDFObject;
 class ConstructorsHolder;
 
-class PDFObjectDriver : public node::ObjectWrap
-{
+class PDFObjectDriver : public muhammara::napi::ObjectWrap {
 public:
-    
-    
-    static void Init(v8::Local<v8::FunctionTemplate>& ioDriverTemplate);
-    
-    virtual PDFObject* GetObject() = 0;
+  static void AddMethods(muhammara::napi::ClassBuilder &builder);
+  virtual PDFObject *GetObject() = 0;
 
-	ConstructorsHolder* holder;
+  ConstructorsHolder *holder = nullptr;
 
 private:
-    
-    
-	static METHOD_RETURN_TYPE GetType(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFIndirectObjectReference(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFArray(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFDictionary(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFStream(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFBoolean(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFLiteralString(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFHexString(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFNull(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFName(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFInteger(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFReal(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ToPDFSymbol(const ARGS_TYPE& args);
-    // return number for pdf numbers (real and integer) and null for non numbers
-	static METHOD_RETURN_TYPE ToNumber(const ARGS_TYPE& args);
-    // strings (relevant for: names, literal string, hex string, real, integer, symbol, boolean)
-	static METHOD_RETURN_TYPE ToString(const ARGS_TYPE& args);
-    
+  static napi_value GetType(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  ToPDFIndirectObjectReference(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFArray(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFDictionary(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFStream(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFBoolean(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  ToPDFLiteralString(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFHexString(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFNull(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFName(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFInteger(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFReal(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToPDFSymbol(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToNumber(const muhammara::napi::CallbackArgs &args);
+  static napi_value ToString(const muhammara::napi::CallbackArgs &args);
+  static napi_value Convert(const muhammara::napi::CallbackArgs &args,
+                            int expectedType);
 };

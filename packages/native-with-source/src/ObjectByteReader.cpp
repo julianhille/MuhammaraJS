@@ -1,75 +1,44 @@
-/*
- Source File : ObjectByteReader.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #include "ObjectByteReader.h"
 
-using namespace v8;
+#include <algorithm>
 
-ObjectByteReader::ObjectByteReader(Local<Object> inObject)
-{
-	CREATE_ISOLATE_CONTEXT;
-	
-	SET_PERSISTENT_OBJECT(mObject, Object, inObject);
+using namespace muhammara::napi;
+
+ObjectByteReader::ObjectByteReader(napi_env env, napi_value object)
+    : env_(env), object_(env, object) {}
+
+napi_value
+ObjectByteReader::CallMethod(const char *name,
+                             const std::vector<napi_value> &arguments) {
+  return muhammara::napi::CallMethod(env_, object_.Get(), name, arguments);
 }
 
-ObjectByteReader::~ObjectByteReader()
-{
-	DISPOSE_PERSISTENT(mObject);
+IOBasicTypes::LongBufferSizeType
+ObjectByteReader::Read(IOBasicTypes::Byte *buffer,
+                       IOBasicTypes::LongBufferSizeType size) {
+  napi_value result = CallMethod("read", {Number(env_, size)});
+  if (!result || !IsArray(env_, result))
+    return 0;
+  uint32_t arrayLength = 0;
+  if (!Length(env_, result, &arrayLength))
+    return 0;
+  IOBasicTypes::LongBufferSizeType length = arrayLength;
+  if (length > size)
+    length = size;
+  std::vector<IOBasicTypes::Byte> bytes(length);
+  for (IOBasicTypes::LongBufferSizeType i = 0; i < length; ++i) {
+    napi_value value = nullptr;
+    uint32_t byte = 0;
+    if (!Get(env_, result, static_cast<uint32_t>(i), &value) ||
+        !CoerceToUint32(env_, value, &byte))
+      return 0;
+    bytes[i] = static_cast<IOBasicTypes::Byte>(byte);
+  }
+  std::copy(bytes.begin(), bytes.end(), buffer);
+  return length;
 }
 
-IOBasicTypes::LongBufferSizeType ObjectByteReader::Read(IOBasicTypes::Byte* inBuffer,IOBasicTypes::LongBufferSizeType inBufferSize)
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-	Local<Value> value = OBJECT_FROM_PERSISTENT(mObject)->Get(GET_CURRENT_CONTEXT, NEW_STRING("read")).ToLocalChecked();
-
-    if(value->IsUndefined())
-        return 0;
-    Local<Function> func = Local<Function>::Cast(value);
-    
-    Local<Value> args[1];
-    args[0] = NEW_NUMBER(inBufferSize);
-    
-	Local<Value> result = func->Call(GET_CURRENT_CONTEXT, OBJECT_FROM_PERSISTENT(mObject), 1, args).ToLocalChecked();
-    
-    if(!result->IsArray())
-        return 0;
-    
-    IOBasicTypes::LongBufferSizeType bufferLength = result->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, v8::NEW_STRING("length")).ToLocalChecked()->TO_UINT32Value();
-    if(bufferLength > inBufferSize)
-        bufferLength = inBufferSize;
-    for(IOBasicTypes::LongBufferSizeType i=0;i < bufferLength;++i)
-        inBuffer[i] = (IOBasicTypes::Byte)(TO_UINT32(result->TO_OBJECT()->Get(GET_CURRENT_CONTEXT, (uint32_t)i).ToLocalChecked())->Value());
-    
-    return bufferLength;
-}
-
-bool ObjectByteReader::NotEnded()
-{
-	CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-
-	Local<Value> value = OBJECT_FROM_PERSISTENT(mObject)->Get(GET_CURRENT_CONTEXT, NEW_STRING("notEnded")).ToLocalChecked();
-    if(value->IsUndefined())
-        return true;
-    Local<Function> func = Local<Function>::Cast(value);
-    
-	return (func->Call(GET_CURRENT_CONTEXT,  OBJECT_FROM_PERSISTENT(mObject), 0, NULL).ToLocalChecked()->TO_BOOLEAN()->Value());
+bool ObjectByteReader::NotEnded() {
+  napi_value result = CallMethod("notEnded");
+  return result ? ToBoolean(env_, result) : true;
 }

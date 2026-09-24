@@ -1,78 +1,39 @@
-/*
- Source File : PDFIndirectObjectReferenceDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
 #include "PDFIndirectObjectReferenceDriver.h"
-#include "RefCountPtr.h"
-#include "ConstructorsHolder.h"
-using namespace v8;
 
+using namespace muhammara::napi;
 
-
-DEF_SUBORDINATE_INIT(PDFIndirectObjectReferenceDriver::Init)
-{
-	CREATE_ISOLATE_CONTEXT;
-
-	Local<FunctionTemplate> t = NEW_FUNCTION_TEMPLATE_EXTERNAL(New);
-
-	t->SetClassName(NEW_STRING("PDFIndirectObjectReference"));
-	t->InstanceTemplate()->SetInternalFieldCount(1);
-
-	SET_PROTOTYPE_METHOD(t, "getObjectID", GetObjectID);
-	SET_PROTOTYPE_METHOD(t, "getVersion", GetVersion);
-	PDFObjectDriver::Init(t);
-
-    // save in factory
-	EXPOSE_EXTERNAL_FOR_INIT(ConstructorsHolder, holder)
-    SET_CONSTRUCTOR(holder->PDFIndirectObjectReference_constructor, t); 	
-	SET_CONSTRUCTOR_TEMPLATE(holder->PDFIndirectObjectReference_constructor_template, t);
+bool PDFIndirectObjectReferenceDriver::Init(ModuleState &state,
+                                            napi_value exports) {
+  ClassBuilder builder(state, "PDFIndirectObjectReference", New);
+  builder.Method("getObjectID", GetObjectID).Method("getVersion", GetVersion);
+  PDFObjectDriver::AddMethods(builder);
+  return builder.Define(exports, false) != nullptr;
 }
 
-METHOD_RETURN_TYPE PDFIndirectObjectReferenceDriver::New(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    EXPOSE_EXTERNAL_ARGS(ConstructorsHolder, externalHolder)
-    PDFIndirectObjectReferenceDriver* driver = new PDFIndirectObjectReferenceDriver();
-	driver->holder = externalHolder;
-    driver->Wrap(args.This());
-	SET_FUNCTION_RETURN_VALUE( args.This())
+napi_value PDFIndirectObjectReferenceDriver::New(const CallbackArgs &args) {
+  auto *driver = new PDFIndirectObjectReferenceDriver();
+  driver->holder = &ModuleState::Get(args.Env())->Constructors();
+  if (!driver->Wrap(args.Env(), args.This())) {
+    delete driver;
+    return nullptr;
+  }
+  return args.This();
 }
 
-PDFObject* PDFIndirectObjectReferenceDriver::GetObject()
-{
-    return TheObject.GetPtr();
+PDFObject *PDFIndirectObjectReferenceDriver::GetObject() {
+  return TheObject.GetPtr();
 }
 
-METHOD_RETURN_TYPE PDFIndirectObjectReferenceDriver::GetObjectID(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    Local<Number> result = NEW_NUMBER(ObjectWrap::Unwrap<PDFIndirectObjectReferenceDriver>(args.This())->TheObject->mObjectID);
-    SET_FUNCTION_RETURN_VALUE(result)
+napi_value
+PDFIndirectObjectReferenceDriver::GetObjectID(const CallbackArgs &args) {
+  auto *driver = ObjectWrap::Unwrap<PDFIndirectObjectReferenceDriver>(
+      args.Env(), args.This());
+  return Number(args.Env(), driver->TheObject->mObjectID);
 }
 
-METHOD_RETURN_TYPE PDFIndirectObjectReferenceDriver::GetVersion(const ARGS_TYPE& args)
-{
-    CREATE_ISOLATE_CONTEXT;
-	CREATE_ESCAPABLE_SCOPE;
-    
-    Local<Number> result = NEW_NUMBER(ObjectWrap::Unwrap<PDFIndirectObjectReferenceDriver>(args.This())->TheObject->mVersion);
-    SET_FUNCTION_RETURN_VALUE(result)
+napi_value
+PDFIndirectObjectReferenceDriver::GetVersion(const CallbackArgs &args) {
+  auto *driver = ObjectWrap::Unwrap<PDFIndirectObjectReferenceDriver>(
+      args.Env(), args.This());
+  return Number(args.Env(), driver->TheObject->mVersion);
 }

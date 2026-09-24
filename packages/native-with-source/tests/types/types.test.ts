@@ -1,9 +1,52 @@
 import muhammara = require("@muhammara/native-with-source");
 
+var continuationOptions: muhammara.PDFWriterToContinueOptions = {
+  log: {
+    /** Accept synchronous log bytes and report the number written. */
+    write(bytes: number[]): number {
+      return bytes.length;
+    },
+  },
+};
+muhammara.createWriterToContinue(
+  "output.pdf",
+  "state.txt",
+  continuationOptions,
+);
+muhammara.createWriterToContinue("output.pdf", "state.txt", {
+  log: "writer.log",
+});
+muhammara.createWriterToContinue("output.pdf", "state.txt", {
+  log: new muhammara.PDFWStreamForBuffer(),
+});
+// @ts-expect-error Log streams must return a byte count, not a Node Writable boolean.
+var invalidContinuationLog: muhammara.ByteWriter = { write: () => true };
+void invalidContinuationLog;
+
 declare const writer: muhammara.PDFWriter;
 
 var page: muhammara.PDFPage = writer.createPage(0, 0, 595, 842);
 writer.startPageContentContext(page).c(0, 0, 1, 1, 2, 2).S();
+writer
+  .startPageContentContext(page)
+  .q()
+  .drawRectangle(0, 0, 50, 50, { type: "clip" })
+  .drawCircle(25, 25, 10, { type: "clip" })
+  .drawSquare(0, 0, 20, { type: "clip", close: true })
+  .drawPath(0, 0, 20, 20, { type: "clip", close: true })
+  .drawPath(
+    [
+      [0, 0],
+      [20, 20],
+    ],
+    { width: 2 },
+  )
+  .writeText("Finite geometry", 10, 20, {
+    font: writer.getFontForFile("font.ttf"),
+    size: 12,
+    underline: true,
+  })
+  .Q();
 
 declare const recipe: muhammara.Recipe;
 recipe
@@ -684,3 +727,13 @@ void trianglePosition;
 void invalidColorspace;
 void invalidPermission;
 recipe.deletePage(1).deletePage([2, 3]);
+
+declare const callableReadStream: (() => void) & muhammara.ReadStream;
+declare const callableWriteStream: (() => void) & muhammara.WriteStream;
+var callableStreamWriter: muhammara.PDFWriter = muhammara.createWriterToModify(
+  callableReadStream,
+  callableWriteStream,
+);
+void callableStreamWriter;
+void muhammara.createWriter(callableWriteStream);
+void muhammara.createReader(callableReadStream);

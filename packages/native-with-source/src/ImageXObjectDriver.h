@@ -1,42 +1,20 @@
-/*
- Source File : ImageXObjectDriver
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
-
 #pragma once
-#include "nodes.h"
 
-#include "PDFPage.h"
+#include "napi/NapiSupport.h"
 
 class PDFImageXObject;
+class ConstructorsHolder;
 
-class ImageXObjectDriver : public node::ObjectWrap
-{
+class ImageXObjectDriver : public muhammara::napi::ObjectWrap {
 public:
-    virtual ~ImageXObjectDriver();
-    
-    DEC_SUBORDINATE_INIT(Init)
-    
-    PDFImageXObject* ImageXObject;
-    
+  ImageXObjectDriver();
+  ~ImageXObjectDriver() override;
+  static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
+
+  PDFImageXObject *ImageXObject;
+  ConstructorsHolder *holder;
+
 private:
-    ImageXObjectDriver();
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetID(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE& info);
+  static napi_value New(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetID(const muhammara::napi::CallbackArgs &args);
 };

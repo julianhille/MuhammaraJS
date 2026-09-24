@@ -129,9 +129,13 @@ describe("PDFParser", function () {
           method + "(" + String(index) + ")",
         );
       });
-      assert.throws(function () {
-        pdfReader[method]();
-      }, /Wrong arguments/);
+      assert.throws(
+        function () {
+          pdfReader[method]();
+        },
+        TypeError,
+        /Wrong arguments/,
+      );
     });
 
     // Valid indices keep working, and out of range ones still report the read

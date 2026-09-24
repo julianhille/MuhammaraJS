@@ -1,4 +1,5 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("chai").assert;
 
 describe("MergePDFPages", function () {
   describe("OnlyMerge", function () {
@@ -172,6 +173,9 @@ describe("MergePDFPages", function () {
         __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
         { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 1]] },
         function () {
+          "use strict";
+          assert.strictEqual(this, globalThis);
+          assert.strictEqual(arguments.length, 0);
           if (0 == pageIndex) {
             contentContext.Q().q().cm(0.5, 0, 0, 0.5, 0, 421);
           }
@@ -181,6 +185,26 @@ describe("MergePDFPages", function () {
 
       contentContext.Q();
       pdfWriter.writePage(page).end();
+      assert.strictEqual(pageIndex, 2);
+    });
+
+    it("stops merging when the callback throws", function () {
+      var pdfWriter = muhammara.createWriter(
+        __dirname + "/output/MergeCallbackFailure.pdf",
+      );
+      var page = pdfWriter.createPage(0, 0, 595, 842);
+
+      assert.throws(function () {
+        pdfWriter.mergePDFPagesToPage(
+          page,
+          __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+          { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 1]] },
+          function () {
+            throw new Error("stop merging");
+          },
+        );
+      }, "stop merging");
+      pdfWriter._abort();
     });
   });
 

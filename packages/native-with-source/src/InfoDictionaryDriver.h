@@ -1,67 +1,32 @@
-/*
- Source File : InfoDictionaryDriver.h
- 
- 
- Copyright 2013 Gal Kahana HummusJS
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- 
- */
-
 #pragma once
-#include "nodes.h"
+
+#include "napi/NapiSupport.h"
 
 class InfoDictionary;
-class ConstructorsHolder;
 
-class InfoDictionaryDriver : public node::ObjectWrap
-{
+class InfoDictionaryDriver : public muhammara::napi::ObjectWrap {
 public:
-    
-	DEC_SUBORDINATE_INIT(Init)
-    
-    InfoDictionary* InfoDictionaryInstance;
+  static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
+  InfoDictionary *InfoDictionaryInstance;
+  ConstructorsHolder *holder;
 
-	ConstructorsHolder* holder;
-    
 private:
-    InfoDictionaryDriver();
-    
-	static METHOD_RETURN_TYPE New(const ARGS_TYPE& args);
-
-	static METHOD_RETURN_TYPE GetTitle(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-    static void SetTitle(SET_ACCESSOR_METHOD_NAME_TYPE property,v8::Local<v8::Value> value,const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetAuthor(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-	static void SetAuthor(SET_ACCESSOR_METHOD_NAME_TYPE property, v8::Local<v8::Value> value, const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetSubject(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-	static void SetSubject(SET_ACCESSOR_METHOD_NAME_TYPE property, v8::Local<v8::Value> value, const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetKeywords(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-	static void SetKeywords(SET_ACCESSOR_METHOD_NAME_TYPE property, v8::Local<v8::Value> value, const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetCreator(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-	static void SetCreator(SET_ACCESSOR_METHOD_NAME_TYPE property, v8::Local<v8::Value> value, const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetProducer(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-	static void SetProducer(SET_ACCESSOR_METHOD_NAME_TYPE property, v8::Local<v8::Value> value, const PROPERTY_SETTER_TYPE &info);
-	static METHOD_RETURN_TYPE GetTrapped(SET_ACCESSOR_METHOD_NAME_TYPE property, const PROPERTY_TYPE &info);
-	static void SetTrapped(SET_ACCESSOR_METHOD_NAME_TYPE property, v8::Local<v8::Value> value, const PROPERTY_SETTER_TYPE &info);
-
-
-    // for dates i'm giving only setters. it's too bording to provide readers. you are the ones setting it for @#$@# sake.
-	static METHOD_RETURN_TYPE SetCreationDate(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE SetModDate(const ARGS_TYPE& args);
-
-	static METHOD_RETURN_TYPE AddAdditionalInfoEntry(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE RemoveAdditionalInfoEntry(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE ClearAdditionalInfoEntries(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetAdditionalInfoEntry(const ARGS_TYPE& args);
-	static METHOD_RETURN_TYPE GetAdditionalInfoEntries(const ARGS_TYPE& args);
+  InfoDictionaryDriver();
+  static napi_value New(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetText(const muhammara::napi::CallbackArgs &args);
+  static napi_value SetText(const muhammara::napi::CallbackArgs &args);
+  static napi_value GetTrapped(const muhammara::napi::CallbackArgs &args);
+  static napi_value SetTrapped(const muhammara::napi::CallbackArgs &args);
+  static napi_value SetCreationDate(const muhammara::napi::CallbackArgs &args);
+  static napi_value SetModDate(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  AddAdditionalInfoEntry(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  RemoveAdditionalInfoEntry(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  ClearAdditionalInfoEntries(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  GetAdditionalInfoEntry(const muhammara::napi::CallbackArgs &args);
+  static napi_value
+  GetAdditionalInfoEntries(const muhammara::napi::CallbackArgs &args);
 };

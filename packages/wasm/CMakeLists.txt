@@ -16,6 +16,8 @@ set(PDFHummus_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 # OpenSSL-backed encryption is deliberately excluded from this target.
 set(PDFHUMMUS_NO_OPENSSL ON)
 
+option(MUHAMMARA_BUILD_CPP_TESTS "Build shared PDFWriter lifecycle tests" OFF)
+
 set(MUHAMMARA_NATIVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../native-with-source/src)
 add_subdirectory(${MUHAMMARA_NATIVE_SOURCE_DIR}/deps/LibAesgm LibAesgm)
 add_subdirectory(${MUHAMMARA_NATIVE_SOURCE_DIR}/deps/Zlib Zlib)
@@ -34,6 +36,19 @@ add_executable(muhammara-wasm
   src/wasm_api_copying.cpp
 )
 target_link_libraries(muhammara-wasm PRIVATE PDFHummus::PDFWriter)
+
+if(MUHAMMARA_BUILD_CPP_TESTS)
+  add_executable(objects-context-cleanup-test
+    ../native-with-source/tests/cpp/ObjectsContextCleanupTest.cpp
+  )
+  target_link_libraries(objects-context-cleanup-test PRIVATE PDFHummus::PDFWriter)
+  if(EMSCRIPTEN)
+    target_link_options(objects-context-cleanup-test PRIVATE
+      "-sENVIRONMENT=node"
+      "-sEXIT_RUNTIME=1"
+    )
+  endif()
+endif()
 
 if(EMSCRIPTEN)
   set_target_properties(muhammara-wasm PROPERTIES SUFFIX ".js")
