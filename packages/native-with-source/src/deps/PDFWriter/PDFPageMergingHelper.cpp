@@ -59,7 +59,6 @@ EStatusCode PDFPageMergingHelper::MergePageContent(PDFWriter* inWriter,const std
         }
         
         status = MergePageContent(copyingContext,inPageIndex);
-        delete copyingContext;
         
     } while (false);
     
@@ -81,7 +80,6 @@ EStatusCode PDFPageMergingHelper::MergePageContent(PDFWriter* inWriter,IByteRead
         }
         
         status = MergePageContent(copyingContext,inPageIndex);
-        delete copyingContext;
         
     } while (false);
     
