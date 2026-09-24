@@ -727,3 +727,13 @@ void trianglePosition;
 void invalidColorspace;
 void invalidPermission;
 recipe.deletePage(1).deletePage([2, 3]);
+
+declare const callableReadStream: (() => void) & muhammara.ReadStream;
+declare const callableWriteStream: (() => void) & muhammara.WriteStream;
+var callableStreamWriter: muhammara.PDFWriter = muhammara.createWriterToModify(
+  callableReadStream,
+  callableWriteStream,
+);
+void callableStreamWriter;
+void muhammara.createWriter(callableWriteStream);
+void muhammara.createReader(callableReadStream);

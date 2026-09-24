@@ -97,9 +97,13 @@ bool IsDate(napi_env env, napi_value value) {
   return Check(env, napi_is_date(env, value, &result)) && result;
 }
 
+// Mirrors the legacy V8 `Value::IsObject()`, which reported functions as
+// objects. Callers use it for structural checks such as stream arguments, so
+// callable objects carrying the expected methods must keep passing.
 bool IsObject(napi_env env, napi_value value) {
   napi_valuetype type = napi_undefined;
-  return Check(env, napi_typeof(env, value, &type)) && type == napi_object;
+  return Check(env, napi_typeof(env, value, &type)) &&
+         (type == napi_object || type == napi_function);
 }
 
 bool IsType(napi_env env, napi_value value, napi_valuetype type) {
