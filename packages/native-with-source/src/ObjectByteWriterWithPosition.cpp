@@ -41,7 +41,12 @@ ObjectByteWriterWithPosition::GetCurrentPosition() {
   if (!function || IsType(env_, function, napi_undefined))
     return 1;
   napi_value result = Call(env_, object, function);
-  return result ? static_cast<IOBasicTypes::LongFilePositionType>(
-                      ToDouble(env_, result))
-                : 0;
+  if (!result)
+    return 0;
+  double position = 0;
+  if (!CoerceToFilePosition(env_, result,
+                            "getCurrentPosition must return a finite number",
+                            &position))
+    return 0;
+  return static_cast<IOBasicTypes::LongFilePositionType>(position);
 }

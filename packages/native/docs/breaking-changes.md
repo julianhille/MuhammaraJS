@@ -4,6 +4,13 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Custom-stream `getCurrentPosition()` results now throw `TypeError` if numeric
+  conversion produces a non-finite value or a value outside `[-2^63, 2^63)`.
+  Previously these values could produce corrupt PDF offsets. Return the actual
+  finite byte position within that range. Numeric strings and other successful
+  number coercions remain supported. See the
+  [stream contract](low-level/custom-streams.md)
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750).
 - Low-level shape helpers now honor `type: "clip"`, ending the path with `W n`
   without painting it. Previously `"clip"` did nothing and unrecognized types
   incorrectly clipped. Unknown types now end the path without painting. Use `"clip"` explicitly and scope it with `q()`/`Q()`;

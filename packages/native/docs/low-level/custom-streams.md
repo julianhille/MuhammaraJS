@@ -8,6 +8,11 @@ Reader inputs require random access: `read`, `notEnded`, `setPosition`,
 is available before passing it to a synchronous reader, image, or PDF-copying
 operation.
 
+`getCurrentPosition` must report a finite number. Values are converted with
+JavaScript number semantics, so a numeric string works, but `NaN`, infinities,
+and offsets outside the signed 64-bit range `[-2^63, 2^63)` throw a `TypeError` instead of
+writing a corrupt offset into the PDF.
+
 `PDFRStreamForFile` and `PDFWStreamForFile` are file-backed implementations.
 `PDFStreamForResponse` adapts a writable HTTP response; see
 [Serve A PDF Response](../how-to/serve-a-pdf-response.md) for its lifecycle.

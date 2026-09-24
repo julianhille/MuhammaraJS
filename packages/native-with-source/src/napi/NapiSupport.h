@@ -47,6 +47,10 @@ std::string CoerceToString(napi_env env, napi_value value);
 double ToDouble(napi_env env, napi_value value);
 double CoerceToDouble(napi_env env, napi_value value);
 bool CoerceToDouble(napi_env env, napi_value value, double *result);
+// Coerces with JavaScript ToNumber semantics, then rejects results a 64-bit
+// file offset cannot represent; callers retain API-specific messages.
+bool CoerceToFilePosition(napi_env env, napi_value value, const char *error,
+                          double *result);
 int32_t ToInt32(napi_env env, napi_value value);
 int32_t CoerceToInt32(napi_env env, napi_value value);
 bool CoerceToInt32(napi_env env, napi_value value, int32_t *result);

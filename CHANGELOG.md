@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Reject custom-stream `getCurrentPosition()` results that convert to non-finite
+  numbers or fall outside `[-2^63, 2^63)` with `TypeError`, preventing corrupt
+  PDF offsets. Return the actual finite byte position within that range; numeric
+  coercion remains supported. See the
+  [stream contract](packages/native/docs/low-level/custom-streams.md)
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750).
 - Correct low-level shape `type: "clip"` to clip without painting and end the
   path; unrecognized types end the path without painting or clipping. Use `"clip"` explicitly with
   `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the

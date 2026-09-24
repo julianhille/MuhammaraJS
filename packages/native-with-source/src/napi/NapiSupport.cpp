@@ -1,5 +1,6 @@
 #include "napi/NapiSupport.h"
 
+#include <cmath>
 #include <utility>
 
 namespace muhammara {
@@ -204,6 +205,18 @@ bool CoerceToDouble(napi_env env, napi_value value, double* result) {
   *result = 0;
   return Check(env, napi_coerce_to_number(env, value, &coerced)) &&
          Check(env, napi_get_value_double(env, coerced, result));
+}
+
+bool CoerceToFilePosition(napi_env env, napi_value value, const char *error,
+                          double *result) {
+  if (!CoerceToDouble(env, value, result))
+    return false;
+  // 2^63, the exclusive bound of the 64-bit offsets PDFWriter counts in.
+  const double limit = 9223372036854775808.0;
+  if (std::isfinite(*result) && *result >= -limit && *result < limit)
+    return true;
+  ThrowTypeError(env, error);
+  return false;
 }
 
 int32_t ToInt32(napi_env env, napi_value value) {

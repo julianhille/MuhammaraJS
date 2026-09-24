@@ -53,7 +53,14 @@ void ObjectByteReaderWithPosition::SetPositionFromEnd(
 
 LongFilePositionType ObjectByteReaderWithPosition::GetCurrentPosition() {
   napi_value result = CallMethod("getCurrentPosition");
-  return result ? static_cast<LongFilePositionType>(ToDouble(env_, result)) : 1;
+  if (!result)
+    return 1;
+  double position = 0;
+  if (!CoerceToFilePosition(env_, result,
+                            "getCurrentPosition must return a finite number",
+                            &position))
+    return 0;
+  return static_cast<LongFilePositionType>(position);
 }
 
 void ObjectByteReaderWithPosition::Skip(LongBufferSizeType size) {
