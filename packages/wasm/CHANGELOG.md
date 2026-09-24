@@ -4,6 +4,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Add a guide for annotating known text regions in existing PDFs with Underline
+  or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
+
 ### Breaking Changes
 
 - Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
