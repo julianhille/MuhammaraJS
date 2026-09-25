@@ -11,6 +11,15 @@
   [Migrate Vector Stroke Bounds](migrate-vector-stroke-bounds.md)
   [#743](https://github.com/julianhille/MuhammaraJS/issues/743).
 
+- `PDFRStreamForBuffer#read()`, and the `ByteReader` and
+  `ByteReaderWithPosition` adapters built on it, now return a `Uint8Array`
+  instead of an array of numbers, matching native, where the same streams return
+  a `Buffer`. Code that calls array methods such as `concat`, `push`, or
+  `splice` on the result, or compares it with a plain array, now misbehaves or
+  throws, and TypeScript code typing the result as `number[]` fails to compile.
+  Use typed-array operations, or `Array.from(bytes)` where an array is required
+  [#324](https://github.com/julianhille/MuhammaraJS/issues/324).
+
 - `appendPDFPagesFromPDF()` now ends its writer or modifier when appending
   fails. Previously callers could continue and produce a corrupted document;
   create a fresh writer and retry with valid source bytes.

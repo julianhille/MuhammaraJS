@@ -8,10 +8,10 @@ describe("ShutdownRestartTest", function () {
     var buffer = bytes.buffer.slice(0);
 
     var source = new muhammara.PDFRStreamForBuffer(buffer);
-    assert.deepEqual(source.read(2), [1, 2]);
+    assert.deepEqual(source.read(2), new Uint8Array([1, 2]));
     assert.equal(source.getCurrentPosition(), 2);
     source.setPositionFromEnd(1);
-    assert.deepEqual(source.read(1), [3]);
+    assert.deepEqual(source.read(1), new Uint8Array([3]));
 
     var sink = new muhammara.PDFWStreamForBuffer();
     assert.equal(sink.write(buffer), 3);

@@ -3,7 +3,7 @@ import muhammara = require("@muhammara/native-with-source");
 var continuationOptions: muhammara.PDFWriterToContinueOptions = {
   log: {
     /** Accept synchronous log bytes and report the number written. */
-    write(bytes: number[]): number {
+    write(bytes: Buffer): number {
       return bytes.length;
     },
   },
@@ -758,3 +758,43 @@ var callableStreamWriter: muhammara.PDFWriter = muhammara.createWriterToModify(
 void callableStreamWriter;
 void muhammara.createWriter(callableWriteStream);
 void muhammara.createReader(callableReadStream);
+
+// JavaScript streams receive written bytes as Buffers and may return read
+// bytes as a Uint8Array or an array of byte values.
+var bufferWriteStream: muhammara.WriteStream = {
+  /** Accept one chunk of output bytes. */
+  write(bytes: Buffer): number {
+    return bytes.length;
+  },
+  /** Report the number of bytes written so far. */
+  getCurrentPosition(): number {
+    return 0;
+  },
+};
+void muhammara.createWriter(bufferWriteStream);
+var legacyWriteStream = {
+  /** Accept output bytes in the removed number-array form. */
+  write(bytes: number[]): number {
+    return bytes.concat([]).length;
+  },
+  /** Report the number of bytes written so far. */
+  getCurrentPosition(): number {
+    return 0;
+  },
+};
+// @ts-expect-error Write streams receive Buffers, not arrays of numbers.
+void muhammara.createWriter(legacyWriteStream);
+var readBytes: Buffer = new muhammara.PDFRStreamForBuffer(
+  Buffer.from("%PDF-"),
+).read(5);
+void readBytes;
+declare const customReadStream: muhammara.ReadStream;
+var customRead: Uint8Array | number[] = customReadStream.read(5);
+void customRead;
+
+// Built-in write streams still accept arrays of byte values from direct callers.
+const builtInWriteStream = new muhammara.PDFWStreamForBuffer();
+const builtInWrittenCount: number =
+  builtInWriteStream.write([37, 80]) +
+  builtInWriteStream.write(Buffer.from("DF"));
+void builtInWrittenCount;

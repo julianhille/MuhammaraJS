@@ -9,8 +9,9 @@ ObjectByteWriterWithPosition::ObjectByteWriterWithPosition(napi_env env,
 IOBasicTypes::LongBufferSizeType
 ObjectByteWriterWithPosition::Write(const IOBasicTypes::Byte *buffer,
                                     IOBasicTypes::LongBufferSizeType size) {
-  napi_value array = BytesToArray(env_, buffer, size);
-  if (!array)
+  HandleScope scope(env_);
+  napi_value bytes = BytesToBuffer(env_, buffer, size);
+  if (!bytes)
     return 0;
   napi_value object = object_.Get();
   napi_value function = Get(env_, object, "write");
@@ -18,7 +19,7 @@ ObjectByteWriterWithPosition::Write(const IOBasicTypes::Byte *buffer,
     ThrowTypeError(env_, "write is not a function, it should be you know...");
     return 0;
   }
-  napi_value result = Call(env_, object, function, {array});
+  napi_value result = Call(env_, object, function, {bytes});
   if (!result)
     return 0;
   if (IsType(env_, result, napi_undefined)) {
@@ -36,6 +37,7 @@ ObjectByteWriterWithPosition::Write(const IOBasicTypes::Byte *buffer,
 
 IOBasicTypes::LongFilePositionType
 ObjectByteWriterWithPosition::GetCurrentPosition() {
+  HandleScope scope(env_);
   napi_value object = object_.Get();
   napi_value function = Get(env_, object, "getCurrentPosition");
   if (!function || IsType(env_, function, napi_undefined))

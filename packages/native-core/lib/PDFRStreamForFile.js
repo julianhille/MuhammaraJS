@@ -12,13 +12,10 @@ function PDFRStreamForFile(inPath) {
 }
 
 PDFRStreamForFile.prototype.read = function (inAmount) {
-  var buffer = Buffer.alloc(inAmount * 2);
+  var buffer = Buffer.alloc(inAmount);
   var bytesRead = fs.readSync(this.rs, buffer, 0, inAmount, this.rposition);
-  var arr = [];
-
-  for (var i = 0; i < bytesRead; ++i) arr.push(buffer[i]);
   this.rposition += bytesRead;
-  return arr;
+  return buffer.subarray(0, bytesRead);
 };
 
 PDFRStreamForFile.prototype.notEnded = function () {

@@ -48,13 +48,29 @@ declare namespace muhammara {
     options?: PDFRecryptOptions,
   ): void;
 
+  /**
+   * A JavaScript output stream. `write` receives each chunk as a `Buffer` the
+   * stream owns and may keep, and returns the number of bytes it accepted.
+   */
   export interface WriteStream {
-    write(inBytesArray: any[]): number;
+    write(inBytes: Buffer): number;
     getCurrentPosition(): number;
   }
 
+  /**
+   * A JavaScript log sink. `write` receives each chunk as a `Buffer` the sink
+   * owns and may keep, and returns the number of bytes it accepted.
+   */
+  export interface LogStream {
+    write(inBytes: Buffer): number;
+  }
+
+  /**
+   * A JavaScript input stream. `read` returns at most `inAmount` bytes as a
+   * `Uint8Array` (a `Buffer` qualifies) or an array of byte values.
+   */
   export interface ReadStream {
-    read(inAmount: number): number[];
+    read(inAmount: number): Uint8Array | number[];
     notEnded(): boolean;
     setPosition(inPosition: number): void;
     setPositionFromEnd(inPosition: number): void;
@@ -96,11 +112,13 @@ declare namespace muhammara {
 
   export interface PDFRStreamForFile extends ReadStream {
     new (inPath: FilePath): PDFRStreamForFile;
+    read(inAmount: number): Buffer;
     close(inCallback?: () => void): void;
   }
 
   export interface PDFRStreamForBuffer extends ReadStream {
     new (buffer: Buffer): PDFRStreamForBuffer;
+    read(inAmount: number): Buffer;
   }
 
   export interface ColorOptions {
@@ -277,15 +295,21 @@ declare namespace muhammara {
 
   export interface PDFWStreamForFile extends WriteStream {
     new (inPath: string): PDFWStreamForFile;
+    /** Also accepts an array of byte values when called directly. */
+    write(inBytes: Buffer | number[]): number;
     close(inCallback?: () => void): void;
   }
 
   export interface PDFStreamForResponse extends WriteStream {
     new (res: NodeJS.WritableStream): PDFStreamForResponse;
+    /** Also accepts an array of byte values when called directly. */
+    write(inBytes: Buffer | number[]): number;
   }
 
   export interface PDFWStreamForBuffer extends WriteStream {
     new (): PDFWStreamForBuffer;
+    /** Also accepts an array of byte values when called directly. */
+    write(inBytes: Buffer | number[]): number;
     buffer: Buffer | null;
   }
 
@@ -301,7 +325,7 @@ declare namespace muhammara {
     modifiedFilePath?: string;
     modifiedStream?: PDFRStreamForFile; // TODO
     /** Log file path or synchronous byte writer returning the number of bytes written. */
-    log?: string | ByteWriter;
+    log?: string | LogStream;
   }
 
   export interface PDFRecryptOptions extends PDFWriterOptions {
@@ -461,7 +485,7 @@ declare namespace muhammara {
   }
 
   export interface ByteWriter {
-    write(buffer: number[]): number;
+    write(buffer: Uint8Array | number[]): number;
   }
 
   export interface ByteReader {
@@ -684,7 +708,7 @@ declare namespace muhammara {
   }
 
   export interface ByteWriterWithPosition {
-    write(bytes: Array<number>): number;
+    write(bytes: Uint8Array | number[]): number;
     getCurrentPosition(): number;
   }
 

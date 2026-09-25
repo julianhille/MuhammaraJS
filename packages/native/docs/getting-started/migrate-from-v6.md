@@ -524,6 +524,38 @@ coercions remain supported. Supply at least two complete coordinate pairs to
 drawing a prefix. A failed call emits no operators and can be retried after
 correcting the input.
 
+## 16. Accept Buffers In Custom Streams
+
+Custom write streams passed to `createWriter`, `createWriterToModify`,
+`recrypt`, or the `log` option now receive each chunk as a `Buffer` instead of
+an array of numbers. The built-in `PDFRStreamForFile` and `PDFRStreamForBuffer`
+also return `Buffer` chunks from `read()`. This makes large in-memory and
+Buffer-mode `Recipe` work several times faster and far smaller
+[#324](https://github.com/julianhille/MuhammaraJS/issues/324).
+
+Streams that only read `bytes.length`, index bytes, or pass the chunk to
+`Buffer.from()` keep working. Code that relies on array methods does not:
+
+```javascript
+// v6: bytes was an array of numbers.
+write: function (bytes) {
+  this.data = this.data.concat(bytes);
+  return bytes.length;
+},
+
+// v7: bytes is a Buffer, which may be kept after write() returns.
+write: function (bytes) {
+  this.chunks.push(bytes);
+  return bytes.length;
+},
+```
+
+Replace `concat`, `push(...bytes)`, `splice`, and `Array.isArray` checks with
+Buffer operations, or call `Array.from(bytes)` where an array is still needed.
+TypeScript implementations of `WriteStream` or the `log` option must declare
+`write(bytes: Buffer)`. Custom read streams may keep returning arrays; returning
+a `Uint8Array` or `Buffer` is now also accepted and faster.
+
 ## What Does Not Change
 
 - Supported Node.js versions.

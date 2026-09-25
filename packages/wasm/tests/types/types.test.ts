@@ -156,6 +156,12 @@ async function usesLowLevelSurface() {
   reader.end();
   var sourceBlob = new Blob([source.buffer as ArrayBuffer]);
   var input = new muhammara.PDFRStreamForBuffer(source);
+  var firstBytes: Uint8Array = input.read(5);
+  // @ts-expect-error PDFRStreamForBuffer reads return Uint8Arrays, not number arrays.
+  var firstByteArray: number[] = input.read(5);
+  void firstBytes;
+  void firstByteArray;
+  input.setPosition(0);
   var output = new muhammara.PDFWStreamForBuffer();
   output.write(source);
   output.buffer;

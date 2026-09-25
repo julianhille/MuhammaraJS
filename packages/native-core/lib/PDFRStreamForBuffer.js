@@ -12,12 +12,12 @@ function PDFRStreamForBuffer(buffer) {
 }
 
 PDFRStreamForBuffer.prototype.read = function (inAmount) {
-  var amountToRead = inAmount;
-  var arr = Array.from(
-    this.buffer.subarray(this.rposition, this.rposition + amountToRead),
+  // Copy, so callers cannot change the source through the returned chunk.
+  var bytes = Buffer.from(
+    this.buffer.subarray(this.rposition, this.rposition + inAmount),
   );
-  this.rposition += amountToRead;
-  return arr;
+  this.rposition += inAmount;
+  return bytes;
 };
 
 PDFRStreamForBuffer.prototype.notEnded = function () {
