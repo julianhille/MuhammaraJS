@@ -16,6 +16,12 @@ set(PDFHummus_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 # OpenSSL-backed encryption is deliberately excluded from this target.
 set(PDFHUMMUS_NO_OPENSSL ON)
 
+# Prefer the kernel CSPRNG when the Emscripten target exposes getentropy().
+if(UNIX)
+  include(CheckSymbolExists)
+  check_symbol_exists(getentropy "unistd.h" PDFHUMMUS_HAVE_GETENTROPY)
+endif()
+
 option(MUHAMMARA_BUILD_CPP_TESTS "Build shared PDFWriter lifecycle tests" OFF)
 
 set(MUHAMMARA_NATIVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../native-with-source/src)
