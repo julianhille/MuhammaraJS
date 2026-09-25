@@ -2,6 +2,13 @@
 
 ## Version 1.x
 
+- Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()` strokes
+  now remain inside the requested bounds, matching native. They previously
+  extended outward by half the line width. Most layouts need no change; callers
+  that intentionally relied on the overshoot can preserve it by separating the
+  fill and stroke and expanding only the stroke geometry. See
+  [Migrate Vector Stroke Bounds](migrate-vector-stroke-bounds.md).
+
 - `appendPDFPagesFromPDF()` now ends its writer or modifier when appending
   fails. Previously callers could continue and produce a corrupted document;
   create a fresh writer and retry with valid source bytes.

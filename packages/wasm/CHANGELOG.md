@@ -14,6 +14,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Keep Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()`
+  strokes inside the requested bounds, matching native. Wasm previously centered
+  strokes on the requested boundary, extending them outward by half the line
+  width. Adjust layouts that relied on that overshoot; see
+  [Migrate Vector Stroke Bounds](docs/migrate-vector-stroke-bounds.md)
+  [#743](https://github.com/julianhille/MuhammaraJS/issues/743)
 - Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
   Previously callers could continue after a failed append and produce a
   corrupted document; create a fresh writer and retry with valid source bytes.
@@ -38,6 +44,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Add a guide for annotating known text regions in existing PDFs with Underline
+  or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
 - Add Recipe `text()` options `underline`, `strikeOut`, and `squiggly` as
   structured text-markup annotations alongside `highlight`, with per-annotation
   `text`, `color`, `opacity`, and `replies`, shared `title`, `date`, `subject`,
