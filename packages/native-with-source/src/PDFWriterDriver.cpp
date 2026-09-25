@@ -910,12 +910,12 @@ void PDFWriterDriver::SetLogStream(napi_env e, napi_value stream,
   c.LogStream = logProxy_;
 }
 // The proxy is handed to the process-global trace, which keeps a raw pointer to
-// it. Detach it there before freeing it, or the next trace of any writer writes
-// through freed memory.
+// it. Detach it before freeing it only if a newer writer has not replaced it.
 void PDFWriterDriver::ReleaseLogProxy() {
   if (!logProxy_)
     return;
-  Trace::DefaultTrace().SetLogSettings("", false, false);
+  if (Trace::DefaultTrace().IsLogStream(logProxy_))
+    Trace::DefaultTrace().SetLogSettings("", false, false);
   delete logProxy_;
   logProxy_ = nullptr;
 }

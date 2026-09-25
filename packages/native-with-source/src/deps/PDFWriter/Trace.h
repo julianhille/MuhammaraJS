@@ -43,6 +43,7 @@ public:
 
 	void SetLogSettings(const std::string& inLogFilePath,bool inShouldLog,bool inPlaceUTF8Bom);
 	void SetLogSettings(IByteWriter* inLogStream,bool inShouldLog);
+	bool IsLogStream(IByteWriter* inLogStream) const;
 
 	void TraceToLog(const char* inFormat,...);
 	void TraceToLog(const char* inFormat,va_list inList);
@@ -70,6 +71,5 @@ private:
 #define TRACE_LOG3(FORMAT,ARG1,ARG2,ARG3) Trace::DefaultTrace().TraceToLog(FORMAT,ARG1,ARG2,ARG3)
 #define TRACE_LOG4(FORMAT,ARG1,ARG2,ARG3,ARG4) Trace::DefaultTrace().TraceToLog(FORMAT,ARG1,ARG2,ARG3,ARG4)
 #define TRACE_LOG5(FORMAT,ARG1,ARG2,ARG3,ARG4,ARG5) Trace::DefaultTrace().TraceToLog(FORMAT,ARG1,ARG2,ARG3,ARG4,ARG5)
-
 
 
