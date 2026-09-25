@@ -111,7 +111,8 @@ position to the available byte range. A writer adapter exposes `buffer`,
 
 Stream readers returned by `startReadingFromStream()`,
 `startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
-`getSourceDocumentStream()` allocate Wasm resources. Call their idempotent
+`getSourceDocumentStream()` return each `read(amount)` as a `Uint8Array` and
+allocate Wasm resources. Call their idempotent
 `dispose()` method as soon as reading finishes. Disposing one of these byte
 readers does not end its parent PDF reader; ending the parent remains fallback
 cleanup for byte readers that were not disposed explicitly.

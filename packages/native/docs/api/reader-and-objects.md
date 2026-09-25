@@ -64,4 +64,5 @@ For a complete reader workflow, see [Read PDFs](../low-level/read-pdfs.md).
 `startReadingObjectsFromStream`, and `startReadingObjectsFromStreams` expose
 raw parser internals for specialized low-level processing. They are not stable
 general-purpose reading workflows; use the page and object methods above unless
-you need to build a PDF parser integration.
+you need to build a PDF parser integration. The byte readers they return
+deliver each `read(amount)` as a `Buffer`.

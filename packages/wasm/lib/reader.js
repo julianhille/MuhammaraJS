@@ -395,7 +395,7 @@ export function createReaderFactory({
           if (!Number.isInteger(amount) || amount < 0 || amount > 0x7fffffff) {
             throw new RangeError("read requires a non-negative integer");
           }
-          if (amount === 0) return [];
+          if (amount === 0) return new Uint8Array();
           var bytesPointer = module._malloc(amount);
           try {
             var length = module._muhammara_wasm_byte_reader_read(
@@ -404,9 +404,7 @@ export function createReaderFactory({
               amount,
             );
             if (length < 0) throw new Error("Unable to read PDF stream");
-            return Array.from(
-              module.HEAPU8.slice(bytesPointer, bytesPointer + length),
-            );
+            return module.HEAPU8.slice(bytesPointer, bytesPointer + length);
           } finally {
             module._free(bytesPointer);
           }

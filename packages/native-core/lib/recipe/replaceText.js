@@ -307,7 +307,7 @@ function readContentStream(recipe, objectId) {
   var chunks = [];
 
   while (streamReader.notEnded()) {
-    chunks.push(Buffer.from(streamReader.read(65536)));
+    chunks.push(streamReader.read(65536));
   }
   return Buffer.concat(chunks).toString("latin1");
 }

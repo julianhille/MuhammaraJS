@@ -22,8 +22,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [Migrate Vector Stroke Bounds](docs/migrate-vector-stroke-bounds.md)
   [#743](https://github.com/julianhille/MuhammaraJS/issues/743)
 - Return a `Uint8Array` instead of an array of numbers from
-  `PDFRStreamForBuffer#read()` and the `ByteReader` and `ByteReaderWithPosition`
-  adapters, matching native. Replace array methods on the result with
+  `PDFRStreamForBuffer#read()`, the `ByteReader` and `ByteReaderWithPosition`
+  adapters, and the byte readers returned by `startReadingFromStream()`,
+  `startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
+  `getSourceDocumentStream()`, matching native. Replace array methods on the result with
   typed-array operations, or wrap it in `Array.from()`
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
 - Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.

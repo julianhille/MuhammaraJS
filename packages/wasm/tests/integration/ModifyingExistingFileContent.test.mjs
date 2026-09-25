@@ -34,7 +34,10 @@ describe("ModifyingExistingFileContent", function () {
     assert.equal(typeof parser.getXrefEntry(pageId).objectPosition, "number");
     assert.equal(parser.getXrefEntry(pageId).position, undefined);
     parserStream.setPosition(0);
-    assert.deepEqual(parserStream.read(5), [37, 80, 68, 70, 45]);
+    assert.deepEqual(
+      parserStream.read(5),
+      new Uint8Array([37, 80, 68, 70, 45]),
+    );
 
     assert.equal(parser.end(), parser);
     assert.equal(parser.end(), parser);

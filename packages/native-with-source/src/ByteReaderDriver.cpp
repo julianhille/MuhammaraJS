@@ -46,7 +46,7 @@ napi_value ByteReaderDriver::Read(const CallbackArgs &args) {
   IOBasicTypes::LongBufferSizeType size = ToUint32(args.Env(), args[0]);
   std::vector<IOBasicTypes::Byte> buffer(size);
   size = driver->mInstance->Read(buffer.data(), static_cast<int>(size));
-  return BytesToArray(args.Env(), buffer.data(), size);
+  return BytesToBuffer(args.Env(), buffer.data(), size);
 }
 
 napi_value ByteReaderDriver::NotEnded(const CallbackArgs &args) {

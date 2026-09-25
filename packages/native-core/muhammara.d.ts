@@ -489,12 +489,12 @@ declare namespace muhammara {
   }
 
   export interface ByteReader {
-    read(length: number): Array<number>;
+    read(length: number): Buffer;
     notEnded(): boolean;
   }
 
   export interface ByteReaderWithPosition {
-    read(length: number): Array<number>;
+    read(length: number): Buffer;
     notEnded(): boolean;
     getCurrentPosition(): number;
     skip(length: number): this;

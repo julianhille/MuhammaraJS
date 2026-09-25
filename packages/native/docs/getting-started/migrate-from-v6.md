@@ -529,7 +529,9 @@ correcting the input.
 Custom write streams passed to `createWriter`, `createWriterToModify`,
 `recrypt`, or the `log` option now receive each chunk as a `Buffer` instead of
 an array of numbers. The built-in `PDFRStreamForFile` and `PDFRStreamForBuffer`
-also return `Buffer` chunks from `read()`. This makes large in-memory and
+also return `Buffer` chunks from `read()`, and so do the byte readers returned
+by `startReadingFromStream()`, `startReadingFromStreamForPlainCopying()`,
+`getParserStream()`, and `getSourceDocumentStream()`. This makes large in-memory and
 Buffer-mode `Recipe` work several times faster and far smaller
 [#324](https://github.com/julianhille/MuhammaraJS/issues/324).
 

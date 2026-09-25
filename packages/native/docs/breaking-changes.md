@@ -6,7 +6,10 @@ This page collects the compatibility changes formerly maintained in the README.
 
 - Custom write streams, including `log` targets, now receive each chunk as a
   `Buffer` instead of an array of numbers, and `PDFRStreamForFile#read()` and
-  `PDFRStreamForBuffer#read()` return a `Buffer`. Code that calls array methods
+  `PDFRStreamForBuffer#read()` return a `Buffer`, as does `read()` on the byte
+  readers from `startReadingFromStream()`,
+  `startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
+  `getSourceDocumentStream()`. Code that calls array methods
   such as `concat`, `push`, or `splice` on those bytes, or checks
   `Array.isArray`, now misbehaves or throws, and TypeScript implementations
   declaring `write(bytes: number[])` fail to compile. Use Buffer operations, or

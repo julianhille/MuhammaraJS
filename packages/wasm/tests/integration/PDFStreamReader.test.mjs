@@ -93,16 +93,16 @@ describe("PDFReader stream byte readers", function () {
 
     parserStream.setPosition(0);
     assert.equal(parserStream.getCurrentPosition(), 0);
-    assert.deepEqual(parserStream.read(5), Array.from(text("%PDF-")));
+    assert.deepEqual(parserStream.read(5), text("%PDF-"));
     assert.equal(parserStream.getCurrentPosition(), 5);
     parserStream.skip(2);
     assert.equal(parserStream.getCurrentPosition(), 7);
     parserStream.setPositionFromEnd(0);
     assert.equal(parserStream.getCurrentPosition(), bytes.length);
-    assert.deepEqual(parserStream.read(1), []);
+    assert.deepEqual(parserStream.read(1), new Uint8Array());
     assert.equal(parserStream.notEnded(), false);
     parserStream.setPositionFromEnd(5);
-    assert.deepEqual(parserStream.read(5), Array.from(text("%%EOF")));
+    assert.deepEqual(parserStream.read(5), text("%%EOF"));
     assert.equal(parserStream.notEnded(), false);
     assert.throws(() => parserStream.setPosition(-1), /non-negative integer/);
     assert.throws(() => parserStream.skip(-1), /non-negative integer/);
@@ -133,18 +133,18 @@ describe("PDFReader stream byte readers", function () {
     var stream = reader.parseNewObject(4).toPDFStream();
     var decoded = reader.startReadingFromStream(stream);
 
-    assert.deepEqual(decoded.read(7), Array.from(decodedBytes.slice(0, 7)));
+    assert.deepEqual(decoded.read(7), decodedBytes.slice(0, 7));
     assert.equal(decoded.notEnded(), true);
-    assert.deepEqual(decoded.read(100), Array.from(decodedBytes.slice(7)));
+    assert.deepEqual(decoded.read(100), decodedBytes.slice(7));
     assert.equal(decoded.notEnded(), false);
-    assert.deepEqual(decoded.read(1), []);
+    assert.deepEqual(decoded.read(1), new Uint8Array());
     decoded.dispose();
     assert.throws(() => decoded.notEnded(), /PDF byte reader has ended/);
 
     var plain = reader.startReadingFromStreamForPlainCopying(stream);
-    assert.deepEqual(plain.read(100), Array.from(flateBytes));
+    assert.deepEqual(plain.read(100), flateBytes);
     assert.equal(plain.notEnded(), false);
-    assert.deepEqual(plain.read(1), []);
+    assert.deepEqual(plain.read(1), new Uint8Array());
     plain.dispose();
     reader.end();
   });

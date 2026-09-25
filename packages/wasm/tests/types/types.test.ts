@@ -313,6 +313,8 @@ async function usesLowLevelSurface() {
     function () {},
   );
   var parser = modifier.getModifiedFileParser();
+  var parserBytes: Uint8Array = parser.getParserStream().read(5);
+  void parserBytes;
   var pageInput = parser.parsePage(0);
   pageInput.getDictionary().toJSObject();
   pageInput.getMediaBox();

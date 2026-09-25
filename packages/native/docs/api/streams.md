@@ -3,7 +3,8 @@
 MuhammaraJS uses synchronous byte-stream interfaces rather than Node.js
 `Readable` and `Writable` streams for its native APIs.
 
-- `ByteReader`: `read(amount)` and `notEnded()`.
+- `ByteReader`: `read(amount)` and `notEnded()`. Readers created by the
+  library return each chunk as a `Buffer`.
 - `ByteReaderWithPosition`: adds `setPosition`, `setPositionFromEnd`, `skip`,
   and `getCurrentPosition`.
 - `ByteWriter`: `write(bytes)`, accepting a `Uint8Array` (a `Buffer` qualifies)

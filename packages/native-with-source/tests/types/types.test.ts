@@ -791,6 +791,12 @@ void readBytes;
 declare const customReadStream: muhammara.ReadStream;
 var customRead: Uint8Array | number[] = customReadStream.read(5);
 void customRead;
+declare const pdfStreamReader: muhammara.ByteReader;
+var pdfStreamBytes: Buffer = pdfStreamReader.read(16);
+void pdfStreamBytes;
+// @ts-expect-error PDF stream readers return Buffers, not number arrays.
+var pdfStreamByteArray: number[] = pdfStreamReader.read(16);
+void pdfStreamByteArray;
 
 // Built-in write streams still accept arrays of byte values from direct callers.
 const builtInWriteStream = new muhammara.PDFWStreamForBuffer();

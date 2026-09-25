@@ -12,7 +12,9 @@
   [#743](https://github.com/julianhille/MuhammaraJS/issues/743).
 
 - `PDFRStreamForBuffer#read()`, and the `ByteReader` and
-  `ByteReaderWithPosition` adapters built on it, now return a `Uint8Array`
+  `ByteReaderWithPosition` adapters built on it, and the byte readers from
+  `startReadingFromStream()`, `startReadingFromStreamForPlainCopying()`,
+  `getParserStream()`, and `getSourceDocumentStream()` now return a `Uint8Array`
   instead of an array of numbers, matching native, where the same streams return
   a `Buffer`. Code that calls array methods such as `concat`, `push`, or
   `splice` on the result, or compares it with a plain array, now misbehaves or

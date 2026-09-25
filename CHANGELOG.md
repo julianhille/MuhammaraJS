@@ -21,8 +21,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Breaking Changes
 
 - Deliver custom write stream and `log` chunks as `Buffer`s instead of arrays
-  of numbers, and return `Buffer`s from `PDFRStreamForFile#read()` and
-  `PDFRStreamForBuffer#read()`. Code using array methods on those bytes, or
+  of numbers, and return `Buffer`s from `PDFRStreamForFile#read()`,
+  `PDFRStreamForBuffer#read()`, and the byte readers returned by
+  `startReadingFromStream()`, `startReadingFromStreamForPlainCopying()`,
+  `getParserStream()`, and `getSourceDocumentStream()`. Code using array methods on those bytes, or
   TypeScript streams declaring `write(bytes: number[])`, must switch to Buffer
   operations; see the
   [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#16-accept-buffers-in-custom-streams)

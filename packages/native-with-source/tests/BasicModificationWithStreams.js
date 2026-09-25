@@ -455,7 +455,9 @@ describe("BasicModificationWithStreams", function () {
           var streamReader = reader.startReadingFromStream(
             reader.parseNewObject(objectID),
           );
-          return Buffer.from(streamReader.read(64)).toString("latin1");
+          var bytes = streamReader.read(64);
+          chai.expect(Buffer.isBuffer(bytes)).to.equal(true);
+          return bytes.toString("latin1");
         }),
       )
       .to.deep.equal(["uint8 bytes", "array bytes"]);
