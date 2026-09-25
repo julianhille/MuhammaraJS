@@ -21,6 +21,7 @@ describe("Replace text", function () {
       )
       .Tm(1, 0, 0, 1, 20, 30)
       .Tj("Before")
+      .writeFreeCode("(caf\u00e9) Tj (1x5) Tj\n")
       .ET()
       .writeFreeCode("% caf\u00e9\n");
     writer.writePage(page);
@@ -33,13 +34,24 @@ describe("Replace text", function () {
     expect(() => recipe.replaceText("Before", "After", 0)).to.throw(
       "replaceText expects a positive integer page number",
     );
-    recipe.replaceText("Before", "After", 1).endPDF();
+    expect(() => recipe.replaceText("Before", "\u20ac", 1)).to.throw(
+      TypeError,
+      "replaceText supports only Latin-1 text and replacement strings",
+    );
+    expect(() => recipe.replaceText("\u20ac", "After", 1)).to.throw(
+      TypeError,
+      "replaceText supports only Latin-1 text and replacement strings",
+    );
+    recipe
+      .replaceText("1.5", "x", 1)
+      .replaceText("Before", "$&After", 1)
+      .endPDF();
 
     var reader = muhammara.createReader(output);
     var text = reader.extractPageText(0);
 
-    expect(text).to.have.lengthOf(1);
-    expect(text[0].content).to.equal("After");
+    expect(text).to.have.lengthOf(3);
+    expect(text[0].content).to.equal("$&After");
     expect(text[0].textMatrix).to.deep.equal([1, 0, 0, 1, 20, 30]);
 
     var contents = reader.queryDictionaryObject(
@@ -53,6 +65,9 @@ describe("Replace text", function () {
     }
     expect(
       Buffer.concat(chunks).includes(Buffer.from("% caf\u00e9\n")),
+    ).to.equal(true);
+    expect(
+      Buffer.concat(chunks).includes(Buffer.from("(caf\u00e9) Tj (1x5) Tj\n")),
     ).to.equal(true);
     reader.end();
   });

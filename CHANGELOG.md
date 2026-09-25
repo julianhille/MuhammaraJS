@@ -100,6 +100,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Clamp `PDFRStreamForFile` and `PDFRStreamForBuffer` seek methods to the
   available bytes, allowing PDFs smaller than the parser's trailer window to be
   read through built-in streams [#784](https://github.com/julianhille/MuhammaraJS/issues/784)
+- Make `Recipe#replaceText()` match `text` literally and insert `replacement`
+  verbatim. Regular-expression characters such as `.` and `$&` no longer
+  change what is matched or written, and characters above U+00FF now throw a
+  `TypeError` instead of being written as corrupted bytes
+  [#785](https://github.com/julianhille/MuhammaraJS/issues/785)
 - Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
   rewrites it; they were previously re-encoded as UTF-8, corrupting other
   strings and inline image data on the page.

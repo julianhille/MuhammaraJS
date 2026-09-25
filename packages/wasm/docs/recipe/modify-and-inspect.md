@@ -102,6 +102,10 @@ operations or encoded without a direct character mapping is not replaced.
 Pages with multiple content streams are rejected; no match leaves the page
 unchanged.
 
+`text` and `replacement` are matched and written as-is, one byte per
+character, so both must be Latin-1 (U+0000 to U+00FF); other characters throw a
+`TypeError`. Content outside the replaced operands keeps its exact bytes.
+
 ## Remove Text
 
 `removeText(pageNumber, options)` drops every text-showing operator (`Tj`,
