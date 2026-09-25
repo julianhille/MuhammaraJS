@@ -91,6 +91,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Prevent a crash or hang when `appendPDFPagesFromPDF()` fails on a modifying
+  writer with a malformed source such as a PDF with a broken page tree
+  [#769](https://github.com/julianhille/MuhammaraJS/issues/769)
 - Fix the low-level drawing `type` declaration to accept the documented
   `null`, which ends the path without painting. The option is now the exported
   `DrawingPathType` (`"stroke" | "fill" | "clip" | null`) so unsupported paint
