@@ -91,6 +91,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Fix the low-level drawing `type` declaration to accept the documented
+  `null`, which ends the path without painting. The option is now the exported
+  `DrawingPathType` (`"stroke" | "fill" | "clip" | null`) so unsupported paint
+  modes stay a compile error instead of silently producing unpainted geometry
+  [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
 - Correct `mergePDFPagesToPage()` callback types to allow no return value and expose their `globalThis` receiver [#756](https://github.com/julianhille/MuhammaraJS/issues/756)
 - Prefer `getentropy()` for native Linux CSPRNG calls when OpenSSL is unavailable [#742](https://github.com/julianhille/MuhammaraJS/issues/742)
 - Release copying contexts created by `PDFPageMergingHelper` after file- and

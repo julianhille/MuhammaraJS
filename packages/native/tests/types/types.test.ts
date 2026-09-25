@@ -24,6 +24,12 @@ muhammara.createWriterToContinue("output.pdf", "state.txt", {
 var invalidContinuationLog: muhammara.ByteWriter = { write: () => true };
 void invalidContinuationLog;
 
+var pathTypes: muhammara.DrawingPathType[] = ["stroke", "fill", "clip", null];
+void pathTypes;
+// @ts-expect-error Drawing paint modes are a closed set.
+var invalidPathType: muhammara.DrawingPathType = "future-paint-mode";
+void invalidPathType;
+
 declare const writer: muhammara.PDFWriter;
 declare const recipe: muhammara.Recipe;
 declare const objects: muhammara.ObjectsContext;
@@ -39,6 +45,12 @@ var api: typeof muhammara = nativeCore.createMuhammara({});
 
 context.m(0, 0).l(100, 100).S();
 context
+  .drawRectangle(0, 0, 50, 50, { type: "stroke" })
+  .drawCircle(25, 25, 10, { type: "fill" })
+  .drawSquare(0, 0, 20, { type: "clip", close: true })
+  .drawRectangle(0, 0, 20, 20, { type: null })
+  // @ts-expect-error Unknown paint modes are not supported inputs; they silently leave the path unpainted.
+  .drawCircle(25, 25, 10, { type: "future-paint-mode" })
   .drawPath(
     [
       [0, 0],
