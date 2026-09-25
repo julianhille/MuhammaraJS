@@ -6,6 +6,41 @@ function escapePDFLiteralString(value) {
 }
 
 /**
+ * Escape a string for literal use inside a regular expression.
+ *
+ * @param {string} value Raw string.
+ * @returns {string} Escaped pattern source.
+ */
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Build the literal `(...) Tj` pattern and replacement operand for
+ * `replaceText`. Both strings are written one byte per character, so
+ * characters above U+00FF are rejected rather than truncated.
+ *
+ * @param {string} text Text to replace.
+ * @param {string} replacement Replacement text.
+ * @returns {{pattern: RegExp, operand: string}} Match pattern and operand.
+ * @throws {TypeError} If either string has a character above U+00FF.
+ */
+function literalReplacement(text, replacement) {
+  if (/[^\u0000-\u00ff]/.test(text + replacement)) {
+    throw new TypeError(
+      "replaceText supports only Latin-1 text and replacement strings",
+    );
+  }
+  return {
+    pattern: new RegExp(
+      "\\(" + escapeRegExp(escapePDFLiteralString(text)) + "\\)(\\s+Tj\\b)",
+      "g",
+    ),
+    operand: "(" + escapePDFLiteralString(replacement) + ")",
+  };
+}
+
+/**
  * Check whether a content-stream character is PDF whitespace.
  *
  * @param {string} character One character.
@@ -395,6 +430,10 @@ function assertPageNumber(recipe, pageNumber, methodName) {
  * @param {string} text Text to replace.
  * @param {string} replacement Replacement text.
  * @param {number} pageNumber One-based page number.
+ * @returns {Recipe} The Recipe instance.
+ * @throws {TypeError} If text or replacement is not a Latin-1 string, or if
+ * the page number is not a positive integer.
+ * @throws {Error} If the page does not have one indirect content stream.
  */
 exports.replaceText = function replaceText(text, replacement, pageNumber) {
   if (typeof text !== "string" || typeof replacement !== "string") {
@@ -403,6 +442,7 @@ exports.replaceText = function replaceText(text, replacement, pageNumber) {
   if (!Number.isInteger(pageNumber) || pageNumber < 1) {
     throw new TypeError("replaceText expects a positive integer page number");
   }
+  var literal = literalReplacement(text, replacement);
 
   var pageIndex = pageNumber - 1;
   var page = this.pdfReader.parsePage(pageIndex).getDictionary();
@@ -417,14 +457,9 @@ exports.replaceText = function replaceText(text, replacement, pageNumber) {
 
   var contentsObjectId = contents.toPDFIndirectObjectReference().getObjectID();
   var source = readContentStream(this, contentsObjectId);
-  var textPattern = new RegExp(
-    "\\(" + escapePDFLiteralString(text) + "\\)(\\s+Tj\\b)",
-    "g",
-  );
-  var replaced = source.replace(
-    textPattern,
-    "(" + escapePDFLiteralString(replacement) + ")$1",
-  );
+  var replaced = source.replace(literal.pattern, function (_, operator) {
+    return literal.operand + operator;
+  });
 
   if (replaced === source) {
     return this;

@@ -63,6 +63,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Clamp `PDFRStreamForBuffer` seek methods to the available bytes, matching
   native built-in stream behavior for PDFs smaller than the parser's trailer
   window [#784](https://github.com/julianhille/MuhammaraJS/issues/784)
+- Make `Recipe#replaceText()` match `text` literally and insert `replacement`
+  verbatim. Regular-expression characters such as `.` and `$&` no longer
+  change what is matched or written, and characters above U+00FF now throw a
+  `TypeError` instead of being written as corrupted bytes
+  [#785](https://github.com/julianhille/MuhammaraJS/issues/785)
 - Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
   rewrites it; they were previously re-encoded as UTF-8, corrupting other
   strings and inline image data on the page.
