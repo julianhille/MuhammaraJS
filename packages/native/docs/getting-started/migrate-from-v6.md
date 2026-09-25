@@ -13,6 +13,36 @@ For Node.js applications the migration is a dependency rename, an import rename,
 a page-box constant update, a TypeScript Recipe declaration update, and a check
 that a prebuilt binary still exists for your platform.
 
+## Why Upgrade
+
+v7 passes PDF bytes between the native addon and JavaScript as `Buffer` chunks
+instead of arrays of numbers
+[#324](https://github.com/julianhille/MuhammaraJS/issues/324). Workflows that
+keep PDFs in memory or write through JavaScript streams become much faster and
+use far less memory. Workflows that read and write file paths are unchanged.
+
+Editing a 48 MB PDF:
+
+| Operation                                               | `muhammara` 6.0.6 | `@muhammara/native` 7 |
+| ------------------------------------------------------- | ----------------- | --------------------- |
+| Buffer-mode `Recipe`: edit every page, then `endPDF()`  | 6.4 s, 656 MB     | 0.40 s, 258 MB        |
+| `createWriterToModify()` from a Buffer into a JS stream | 7.3 s, 559 MB     | 0.10 s, 255 MB        |
+| File-path `Recipe`: edit every page, then `endPDF()`    | 0.21 s, 92 MB     | 0.21 s, 117 MB        |
+| `recrypt()` between file paths                          | 0.35 s, 69 MB     | 0.33 s, 71 MB         |
+
+Encrypting with `recrypt()` from a `PDFRStreamForBuffer` into a
+`PDFWStreamForBuffer` grew quadratically with file size in v6, because RC4
+output reached JavaScript one byte at a time:
+
+| PDF size | `muhammara` 6.0.6            | `@muhammara/native` 7 |
+| -------- | ---------------------------- | --------------------- |
+| 0.48 MB  | 13.4 s, 172 MB               | 0.01 s, 72 MB         |
+| 0.96 MB  | 60.4 s, 201 MB               | 0.01 s, 75 MB         |
+| 4.8 MB   | did not finish in 10 minutes | 0.06 s, 90 MB         |
+
+Measured on Linux x64 with Node.js 25 against generated, uncompressed PDFs.
+Times and peak resident memory are the median of three runs.
+
 ## 1. Choose The Replacement Package
 
 | v6 usage                                                                                  | v7 package                      |
