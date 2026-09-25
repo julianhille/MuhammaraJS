@@ -26,11 +26,17 @@ PDFRStreamForFile.prototype.notEnded = function () {
 };
 
 PDFRStreamForFile.prototype.setPosition = function (inPosition) {
-  this.rposition = this.mStartPosition + inPosition;
+  this.rposition = Math.min(
+    Math.max(this.mStartPosition + inPosition, 0),
+    this.fileSize,
+  );
 };
 
 PDFRStreamForFile.prototype.setPositionFromEnd = function (inPosition) {
-  this.rposition = this.fileSize - inPosition;
+  this.rposition = Math.min(
+    Math.max(this.fileSize - inPosition, 0),
+    this.fileSize,
+  );
 };
 
 PDFRStreamForFile.prototype.skip = function (inAmount) {

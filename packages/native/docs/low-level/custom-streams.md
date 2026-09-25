@@ -18,7 +18,9 @@ writing a corrupt offset into the PDF.
 [Serve A PDF Response](../how-to/serve-a-pdf-response.md) for its lifecycle.
 
 `PDFRStreamForBuffer` accepts an in-memory `Buffer` for reader and copying
-inputs. `PDFWStreamForBuffer` accumulates writer output in its `buffer` field:
+inputs. Its `setPosition()` and `setPositionFromEnd()` methods, and those on
+`PDFRStreamForFile`, clamp the resulting position to the available byte range.
+`PDFWStreamForBuffer` accumulates writer output in its `buffer` field:
 
 ```javascript
 var muhammara = require("@muhammara/native");

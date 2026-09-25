@@ -1,8 +1,44 @@
 var expect = require("chai").expect;
+var fs = require("fs");
 var path = require("path");
 var muhammara = require("..");
 
 describe("PDFReader stream byte readers", function () {
+  it("reads a PDF smaller than the parser trailer window through built-in streams", function () {
+    var tinyPath = path.join(__dirname, "output/PDFStreamReaderTiny.pdf");
+    var writer = muhammara.createWriter(tinyPath);
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    writer.end();
+
+    var bytes = fs.readFileSync(tinyPath);
+    expect(bytes.length).to.be.below(1024);
+
+    var fileStream = new muhammara.PDFRStreamForFile(tinyPath);
+    var streams = [fileStream, new muhammara.PDFRStreamForBuffer(bytes)];
+    try {
+      streams.forEach(function (stream) {
+        stream.setPosition(-1);
+        expect(stream.getCurrentPosition()).to.equal(0);
+        stream.setPosition(bytes.length + 1);
+        expect(stream.getCurrentPosition()).to.equal(bytes.length);
+        stream.setPositionFromEnd(-1);
+        expect(stream.getCurrentPosition()).to.equal(bytes.length);
+        stream.setPositionFromEnd(1024);
+        expect(stream.getCurrentPosition()).to.equal(0);
+        stream.setPosition(0);
+
+        var reader = muhammara.createReader(stream);
+        try {
+          expect(reader.getPagesCount()).to.equal(1);
+        } finally {
+          reader.end();
+        }
+      });
+    } finally {
+      fileStream.close();
+    }
+  });
+
   // appendbreaks.pdf object 19 has an indirect /Length resolving to a dictionary.
   [
     {

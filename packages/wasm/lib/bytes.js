@@ -53,13 +53,19 @@ export class PDFRStreamForBuffer {
   setPosition(position) {
     if (!Number.isInteger(position))
       throw new TypeError("Position must be an integer");
-    this.rposition = this.mStartPosition + position;
+    this.rposition = Math.min(
+      Math.max(this.mStartPosition + position, 0),
+      this.fileSize,
+    );
   }
 
   setPositionFromEnd(position) {
     if (!Number.isInteger(position))
       throw new TypeError("Position must be an integer");
-    this.rposition = this.fileSize - position;
+    this.rposition = Math.min(
+      Math.max(this.fileSize - position, 0),
+      this.fileSize,
+    );
   }
 
   skip(amount) {
