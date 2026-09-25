@@ -94,6 +94,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Fix `Recipe#endPDF()` throwing `Node-API call failed` when the source PDF
+  Info dictionary has a `/Trapped` entry; the entry is now kept.
+  [#779](https://github.com/julianhille/MuhammaraJS/issues/779)
 - Clamp `PDFRStreamForFile` and `PDFRStreamForBuffer` seek methods to the
   available bytes, allowing PDFs smaller than the parser's trailer window to be
   read through built-in streams [#784](https://github.com/julianhille/MuhammaraJS/issues/784)

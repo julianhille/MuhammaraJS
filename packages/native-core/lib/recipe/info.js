@@ -1,6 +1,13 @@
 const fs = require("fs");
 const muhammara = require("../muhammara");
 var { recipeInfoKeys, standardInfoKeys } = require("../recipe-info");
+
+var trappedValues = {
+  True: muhammara.EInfoTrappedTrue,
+  False: muhammara.EInfoTrappedFalse,
+  Unknown: muhammara.EInfoTrappedUnknown,
+};
+
 /**
  * @name info
  * @desc Add standard and custom PDF information, or retrieve existing PDF information. Custom keys retain their spelling when written; array values are joined with a comma and space.
@@ -130,7 +137,9 @@ exports._writeInfo = function _writeInfo() {
 
       switch (key) {
         case "trapped":
-          infoDictionary.trapped = oldInfo.trapped;
+          if (trappedValues[oldInfo.trapped] !== undefined) {
+            infoDictionary.trapped = trappedValues[oldInfo.trapped];
+          }
           break;
         case "creationDate":
           infoDictionary.setCreationDate(oldInfo.creationDate);
