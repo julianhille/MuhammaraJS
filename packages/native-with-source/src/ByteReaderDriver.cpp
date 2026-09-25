@@ -41,6 +41,8 @@ napi_value ByteReaderDriver::Read(const CallbackArgs &args) {
                           "Wrong arguments. pass the number of bytes to read");
   }
   auto *driver = ObjectWrap::Unwrap<ByteReaderDriver>(args.Env(), args.This());
+  if (!driver->mInstance)
+    return ThrowError(args.Env(), "Byte reader has no stream");
   IOBasicTypes::LongBufferSizeType size = ToUint32(args.Env(), args[0]);
   std::vector<IOBasicTypes::Byte> buffer(size);
   size = driver->mInstance->Read(buffer.data(), static_cast<int>(size));
@@ -49,5 +51,7 @@ napi_value ByteReaderDriver::Read(const CallbackArgs &args) {
 
 napi_value ByteReaderDriver::NotEnded(const CallbackArgs &args) {
   auto *driver = ObjectWrap::Unwrap<ByteReaderDriver>(args.Env(), args.This());
+  if (!driver->mInstance)
+    return ThrowError(args.Env(), "Byte reader has no stream");
   return Boolean(args.Env(), driver->mInstance->NotEnded());
 }
