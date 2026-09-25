@@ -10,8 +10,8 @@ function getFirstContentStream(pdf) {
   return zlib.inflateSync(pdf.subarray(start, end)).toString();
 }
 
-/** Collects decoded page and Form XObject content streams. */
-function getContentStreams(reader, pageIndex) {
+/** Collects decoded painting blocks from a page and its Form XObjects. */
+function getPaintBlocks(reader, pageIndex) {
   const page = reader.parsePage(pageIndex).getDictionary();
   const contents = reader.queryDictionaryObject(page, "Contents");
   const streams =
@@ -32,14 +32,15 @@ function getContentStreams(reader, pageIndex) {
       streams.push(reader.queryDictionaryObject(forms, name));
     });
   }
-  return streams
-    .map((stream) => {
-      const input = reader.startReadingFromStream(stream.toPDFStream());
-      const chunks = [];
-      while (input.notEnded()) chunks.push(Buffer.from(input.read(4096)));
-      return Buffer.concat(chunks).toString("latin1");
-    })
-    .join("\n");
+  return streams.flatMap((stream) => {
+    const input = reader.startReadingFromStream(stream.toPDFStream());
+    const chunks = [];
+    while (input.notEnded()) chunks.push(Buffer.from(input.read(4096)));
+    const content = Buffer.concat(chunks).toString("latin1");
+    return (content.match(/q\r?\n[\s\S]*?\r?\nQ/g) || [content]).filter(
+      (block) => /(?:^|\r?\n)(?:f|S)\r?\n/.test(block),
+    );
+  });
 }
 
 describe("Vector", () => {
@@ -299,9 +300,16 @@ describe("Vector", () => {
       stroke: "#ff0000",
       lineWidth: 10,
     };
+    const inheritedOptions = Object.create(options);
+    Object.defineProperty(inheritedOptions, "unused", {
+      enumerable: true,
+      get() {
+        throw new Error("Unused option getter must not be evaluated");
+      },
+    });
     new Recipe(Buffer.from("new"))
       .createPage(100, 60)
-      .rectangle(0, 0, 100, 60, options)
+      .rectangle(0, 0, 100, 60, inheritedOptions)
       .endPage()
       .createPage(100, 60)
       .rectangle(0, 0, 100, 60, { ...options, borderRadius: 10 })
@@ -318,6 +326,12 @@ describe("Vector", () => {
       .createPage(80, 80)
       .pie(40, 40, 40, 0, 90, options)
       .endPage()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, {
+        stroke: "#ff0000",
+        lineWidth: 10,
+      })
+      .endPage()
       .endPDF((pdf) => {
         const reader = muhammara.createReader(
           new muhammara.PDFRStreamForBuffer(pdf),
@@ -332,13 +346,25 @@ describe("Vector", () => {
             [/\b40 40 m\s+80 40 l\b/, /\b40 40 m\s+75 40 l\b/],
           ];
           expectedGeometry.forEach((geometry, pageIndex) => {
-            const content = getContentStreams(reader, pageIndex);
-            assert.match(content, geometry[0]);
-            assert.match(content, geometry[1]);
-            assert.match(content, /(?:^|\r?\n)f\r?\n/);
-            assert.match(content, /(?:^|\r?\n)S\r?\n/);
-            assert.notMatch(content, /(?:^|\r?\n)B\r?\n/);
+            const blocks = getPaintBlocks(reader, pageIndex);
+            const fillBlock = blocks.find((block) =>
+              /(?:^|\r?\n)f\r?\n/.test(block),
+            );
+            const strokeBlock = blocks.find((block) =>
+              /(?:^|\r?\n)S\r?\n/.test(block),
+            );
+            assert.lengthOf(blocks, 2);
+            assert.match(fillBlock, geometry[0]);
+            assert.match(strokeBlock, geometry[1]);
+            assert.match(strokeBlock, /(?:^|\r?\n)10 w\r?\n/);
+            assert.notMatch(blocks.join("\n"), /(?:^|\r?\n)B\r?\n/);
           });
+          const strokeOnlyBlocks = getPaintBlocks(reader, 6);
+          assert.lengthOf(strokeOnlyBlocks, 1);
+          assert.match(strokeOnlyBlocks[0], /\b5 5 90 50 re\b/);
+          assert.match(strokeOnlyBlocks[0], /(?:^|\r?\n)10 w\r?\n/);
+          assert.match(strokeOnlyBlocks[0], /(?:^|\r?\n)S\r?\n/);
+          assert.notMatch(strokeOnlyBlocks[0], /(?:^|\r?\n)(?:f|B)\r?\n/);
         } finally {
           reader.end();
         }

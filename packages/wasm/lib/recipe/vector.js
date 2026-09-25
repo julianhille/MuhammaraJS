@@ -31,18 +31,23 @@ export function createVectorMethods(runtime) {
     var fill = options.fill;
     var stroke = options.stroke || options.color || options.colour;
     if (fill !== undefined) {
-      var fillOptions = {
-        ...options,
-        stroke: undefined,
-        color: undefined,
-        colour: undefined,
-      };
+      var fillOptions = Object.create(options, {
+        fill: { value: fill },
+        stroke: { value: undefined },
+        color: { value: undefined },
+        colour: { value: undefined },
+      });
       recipe._beginPath(fillOptions, x, y);
       drawPath(0);
       recipe._finishPath(fillOptions);
     }
     if (stroke !== undefined || fill === undefined) {
-      var strokeOptions = { ...options, fill: undefined };
+      var strokeOptions = Object.create(options, {
+        fill: { value: undefined },
+        stroke: { value: stroke },
+        color: { value: undefined },
+        colour: { value: undefined },
+      });
       var style = recipe._beginPath(strokeOptions, x, y);
       drawPath(style.width / 2);
       recipe._finishPath(strokeOptions);
