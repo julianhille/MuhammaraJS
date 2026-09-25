@@ -1,5 +1,6 @@
 // Byte-first port of PDFReader.startReadingFromStream behavior.
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
 
 var encoder = new TextEncoder();
@@ -156,5 +157,60 @@ describe("PDFReader stream byte readers", function () {
       /PDF reader has ended/,
     );
     foreignReader.end();
+  });
+
+  // appendbreaks.pdf object 19 has an indirect /Length resolving to a dictionary.
+  [
+    {
+      method: "startReadingFromStream",
+      read: function (reader, stream) {
+        var streamReader = reader.startReadingFromStream(stream);
+        while (streamReader.notEnded()) streamReader.read(65536);
+      },
+      message: "Unable to read PDF stream",
+    },
+    {
+      method: "startReadingFromStreamForPlainCopying",
+      read: function (reader, stream) {
+        var streamReader = reader.startReadingFromStreamForPlainCopying(stream);
+        while (streamReader.notEnded()) streamReader.read(65536);
+      },
+      message: "Unable to read PDF stream",
+    },
+    {
+      method: "startReadingObjectsFromStream",
+      read: function (reader, stream) {
+        var parser = reader.startReadingObjectsFromStream(stream);
+        while (parser.parseNewObject()) {}
+      },
+      message: "Unable to read PDF stream objects",
+    },
+  ].forEach(function (testCase) {
+    it(
+      testCase.method +
+        " throws instead of crashing on a stream whose indirect Length is not a number",
+      async function () {
+        var muhammara = await createMuhammaraWasm();
+        var reader = muhammara.createReader(
+          new Uint8Array(
+            await readFile(
+              new URL(
+                "../../../native-with-source/tests/TestMaterials/appendbreaks.pdf",
+                import.meta.url,
+              ),
+            ),
+          ),
+        );
+        try {
+          assert.throws(
+            () =>
+              testCase.read(reader, reader.parseNewObject(19).toPDFStream()),
+            { message: testCase.message },
+          );
+        } finally {
+          reader.end();
+        }
+      },
+    );
   });
 });

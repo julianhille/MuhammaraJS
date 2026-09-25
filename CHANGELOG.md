@@ -97,6 +97,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
   rewrites it; they were previously re-encoded as UTF-8, corrupting other
   strings and inline image data on the page.
+- Throw `Unable to read PDF stream` from `startReadingFromStream()` and
+  `startReadingFromStreamForPlainCopying()`, and `Unable to read PDF stream
+objects` from `startReadingObjectsFromStream()`, when a stream cannot be
+  read, such as one whose indirect `/Length` is not a number, instead of
+  crashing the process [#778](https://github.com/julianhille/MuhammaraJS/issues/778)
 - Fix Recipe character-spacing measurements for retained boundary whitespace
   and non-BMP Unicode text, preventing incorrect wrapping and horizontal
   alignment [#543](https://github.com/julianhille/MuhammaraJS/issues/543)

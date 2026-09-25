@@ -438,9 +438,11 @@ napi_value PDFReaderDriver::StartReadingFromStream(const CallbackArgs &args) {
   ByteReaderDriver *driver = nullptr;
   if (!ObjectWrap::UnwrapNew(args.Env(), result, &driver))
     return nullptr;
-  driver->SetStream(reader->mPDFReader->StartReadingFromStream(
-                        stream->TheObject.GetPtr()),
-                    true);
+  IByteReader *streamReader =
+      reader->mPDFReader->StartReadingFromStream(stream->TheObject.GetPtr());
+  if (!streamReader)
+    return ThrowError(args.Env(), "Unable to read PDF stream");
+  driver->SetStream(streamReader, true);
   return result;
 }
 
@@ -456,10 +458,12 @@ napi_value PDFReaderDriver::StartReadingFromStreamForPlainCopying(
   ByteReaderDriver *driver = nullptr;
   if (!ObjectWrap::UnwrapNew(args.Env(), result, &driver))
     return nullptr;
-  driver->SetStream(
+  IByteReader *streamReader =
       reader->mPDFReader->StartReadingFromStreamForPlainCopying(
-          stream->TheObject.GetPtr()),
-      true);
+          stream->TheObject.GetPtr());
+  if (!streamReader)
+    return ThrowError(args.Env(), "Unable to read PDF stream");
+  driver->SetStream(streamReader, true);
   return result;
 }
 
@@ -475,9 +479,12 @@ PDFReaderDriver::StartReadingObjectsFromStream(const CallbackArgs &args) {
   PDFObjectParserDriver *driver = nullptr;
   if (!ObjectWrap::UnwrapNew(args.Env(), result, &driver))
     return nullptr;
-  driver->PDFObjectParserInstance =
+  PDFObjectParser *objectsParser =
       reader->mPDFReader->StartReadingObjectsFromStream(
           stream->TheObject.GetPtr());
+  if (!objectsParser)
+    return ThrowError(args.Env(), "Unable to read PDF stream objects");
+  driver->PDFObjectParserInstance = objectsParser;
   return result;
 }
 
