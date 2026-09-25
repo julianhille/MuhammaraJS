@@ -1,3 +1,4 @@
+import { standardInfoKeys } from "../recipe-info.js";
 import { mediumSizes } from "./parameters.js";
 import { pageRecord } from "./page-record.js";
 import { PAGE_CONTEXT_STATE } from "./context-state.js";
@@ -811,6 +812,12 @@ export function createPageMethods(
           ?.toJSObject();
         if (info) {
           Object.entries(info).forEach(([key, value]) => {
+            if (key === "Trapped") {
+              if (typeof value.value === "string") {
+                sourceInfo.trapped = value.value;
+              }
+              return;
+            }
             var text = value.toPDFLiteralString?.()?.toText?.();
             if (!text) return;
             sourceInfo[
@@ -867,6 +874,10 @@ export function createPageMethods(
       this.writer = createWriterToModify(bytes, {
         version: this._version,
         compress: this.options.compress !== false,
+      });
+      var info = this.writer.getDocumentContext().getInfoDictionary();
+      standardInfoKeys.forEach((key) => {
+        if (sourceInfo[key]) info[key] = sourceInfo[key];
       });
       this._sourceMode = true;
       this._isNewPDF = false;
