@@ -56,6 +56,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Keep the source `/Trapped`, `CreationDate`, `Title`, `Author`, `Subject`,
+  and `Keywords` Info entries when a Recipe saves an existing PDF; they were
+  silently dropped. `info()` still overrides them.
+  [#779](https://github.com/julianhille/MuhammaraJS/issues/779)
 - Clamp `PDFRStreamForBuffer` seek methods to the available bytes, matching
   native built-in stream behavior for PDFs smaller than the parser's trailer
   window [#784](https://github.com/julianhille/MuhammaraJS/issues/784)

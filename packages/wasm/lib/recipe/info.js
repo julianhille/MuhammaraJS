@@ -1,4 +1,11 @@
+import { constants } from "../constants.js";
 import { writableInfoKeys } from "../recipe-info.js";
+
+var trappedValues = {
+  True: constants.EInfoTrappedTrue,
+  False: constants.EInfoTrappedFalse,
+  Unknown: constants.EInfoTrappedUnknown,
+};
 
 /** Creates Recipe document-information methods. */
 export function createInfoMethods({ call, withString }) {
@@ -89,7 +96,12 @@ export function createInfoMethods({ call, withString }) {
             info.addAdditionalInfoEntry(sourceKey, this._sourceInfo[key]);
           }
         });
+        var trapped = trappedValues[this._sourceInfo?.trapped];
+        if (trapped !== undefined) info.trapped = trapped;
         if (this._isNewPDF) info.setCreationDate(now);
+        else if (this._sourceInfo?.creationDate) {
+          info.setCreationDate(this._sourceInfo.creationDate);
+        }
         info.setModDate(now);
         info.producer =
           "MuhammaraJS (https://github.com/julianhille/MuhammaraJS)";

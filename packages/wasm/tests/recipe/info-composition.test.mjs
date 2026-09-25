@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
@@ -28,6 +29,104 @@ describe("Recipe byte metadata and composition", function () {
     assert.match(output, /\/IRT \d+ 0 R/);
     assert.match(output, /\/QuadPoints \[/);
     assert.match(output, /\/Subtype \/Square/);
+  });
+
+  it("keeps the source Trapped entry when saving", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var source = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/Linearized.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+
+    var output = new Recipe(source).endPDF();
+    writeOutput("keep-trapped-info", output);
+
+    var reader = muhammara.createReader(output);
+    var info = reader.queryDictionaryObject(reader.getTrailer(), "Info");
+    var dictionary = info.toPDFDictionary();
+    assert.equal(dictionary.queryObject("Trapped").value, "False");
+    assert.ok(dictionary.queryObject("CreationDate").toText());
+    reader.end();
+  });
+
+  [
+    ["True", "True"],
+    ["False", "False"],
+    // PDFWriter omits /Trapped when it is Unknown, the PDF default.
+    ["Unknown", undefined],
+  ].forEach(([sourceValue, expected]) => {
+    it(`keeps the source Trapped ${sourceValue} entry when saving`, async function () {
+      var Recipe = await getRecipe();
+      var muhammara = await createMuhammaraWasm();
+      var source = new Uint8Array(
+        await readFile(
+          new URL(
+            `../../../native-with-source/tests/TestMaterials/Trapped${sourceValue}.pdf`,
+            import.meta.url,
+          ),
+        ),
+      );
+
+      var output = new Recipe(source).endPDF();
+      writeOutput(`keep-trapped-${sourceValue}`, output);
+
+      var reader = muhammara.createReader(output);
+      var dictionary = reader
+        .queryDictionaryObject(reader.getTrailer(), "Info")
+        .toPDFDictionary();
+      assert.equal(
+        dictionary.exists("Trapped")
+          ? dictionary.queryObject("Trapped").value
+          : undefined,
+        expected,
+      );
+      assert.equal(
+        dictionary.queryObject("CreationDate").toText(),
+        "D:20200102030405+00'00'",
+      );
+      assert.equal(
+        dictionary.queryObject("Title").toText(),
+        `Trapped ${sourceValue}`,
+      );
+      assert.equal(dictionary.queryObject("Author").toText(), "Source Author");
+      assert.equal(
+        dictionary.queryObject("Subject").toText(),
+        "Source Subject",
+      );
+      assert.equal(
+        dictionary.queryObject("Keywords").toText(),
+        "source, keywords",
+      );
+      reader.end();
+    });
+  });
+
+  it("lets info() override the source Title when saving", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var source = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/TrappedTrue.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+
+    var output = new Recipe(source).info({ title: "override" }).endPDF();
+    writeOutput("override-source-title", output);
+
+    var reader = muhammara.createReader(output);
+    var dictionary = reader
+      .queryDictionaryObject(reader.getTrailer(), "Info")
+      .toPDFDictionary();
+    assert.equal(dictionary.queryObject("Title").toText(), "override");
+    reader.end();
   });
 
   it("keeps byte composition and metadata in memory", async function () {
