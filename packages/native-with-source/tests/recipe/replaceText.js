@@ -21,7 +21,8 @@ describe("Replace text", function () {
       )
       .Tm(1, 0, 0, 1, 20, 30)
       .Tj("Before")
-      .ET();
+      .ET()
+      .writeFreeCode("% caf\u00e9\n");
     writer.writePage(page);
     writer.end();
 
@@ -40,6 +41,19 @@ describe("Replace text", function () {
     expect(text).to.have.lengthOf(1);
     expect(text[0].content).to.equal("After");
     expect(text[0].textMatrix).to.deep.equal([1, 0, 0, 1, 20, 30]);
+
+    var contents = reader.queryDictionaryObject(
+      reader.parsePage(0).getDictionary(),
+      "Contents",
+    );
+    var streamReader = reader.startReadingFromStream(contents);
+    var chunks = [];
+    while (streamReader.notEnded()) {
+      chunks.push(Buffer.from(streamReader.read(65536)));
+    }
+    expect(
+      Buffer.concat(chunks).includes(Buffer.from("% caf\u00e9\n")),
+    ).to.equal(true);
     reader.end();
   });
 });

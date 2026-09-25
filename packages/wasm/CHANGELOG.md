@@ -8,6 +8,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 - Add a guide for annotating known text regions in existing PDFs with Underline
   or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
+- Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
+  an existing page, for example before adding a new OCR text layer, and a
+  guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
 
 ### Breaking Changes
 
@@ -53,6 +56,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
+  rewrites it; they were previously re-encoded as UTF-8, corrupting other
+  strings and inline image data on the page.
 - Fix Recipe character-spacing measurements for retained boundary whitespace
   and non-BMP Unicode text, preventing incorrect wrapping and horizontal
   alignment [#543](https://github.com/julianhille/MuhammaraJS/issues/543)

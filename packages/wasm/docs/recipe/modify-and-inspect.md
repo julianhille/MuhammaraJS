@@ -101,3 +101,28 @@ Matching operates on literal content-stream strings. Text split across show
 operations or encoded without a direct character mapping is not replaced.
 Pages with multiple content streams are rejected; no match leaves the page
 unchanged.
+
+## Remove Text
+
+`removeText(pageNumber, options)` drops every text-showing operator (`Tj`,
+`TJ`, `'`, `"`) from an existing page, for example before placing a fresh OCR
+text layer. Graphics, images, and marked content stay in place, and all of the
+page's content streams are handled. `pageNumber` is a required one-based page
+number.
+
+```js
+var outputBytes = new Recipe(sourceBytes)
+  .removeText(1, { forms: true })
+  .endPDF();
+```
+
+With `{ forms: true }`, text inside the Form XObjects the page paints is removed
+too, including text that an earlier `editPage()` added. Without it, only the
+page's own content streams change. Annotation appearances, such as form field
+values, are never changed.
+
+The source streams are rewritten in place: a content stream or form shared with
+another page loses its text there as well. Text added with `editPage()` in the
+same Recipe is kept, whichever call comes first. Like page deletion, removal is
+an incremental update, so the old text bytes can remain in the returned data;
+do not use it to redact sensitive content.

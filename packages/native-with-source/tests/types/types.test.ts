@@ -170,6 +170,11 @@ void pageBox;
 recipe.replaceText("Before", "After", 1);
 // @ts-expect-error replaceText requires a one-based page number.
 recipe.replaceText("Before", "After");
+recipe.removeText(1).removeText(2, { forms: true });
+// @ts-expect-error removeText requires a one-based page number.
+recipe.removeText();
+// @ts-expect-error forms must be a boolean.
+recipe.removeText(1, { forms: "yes" });
 recipe.rotateContent(45, 10, 20);
 recipe.lineStyle({
   width: 1,
