@@ -15,9 +15,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 ### Breaking Changes
 
 - Keep Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()`
-  strokes inside the requested bounds, matching native. Wasm previously centered
-  strokes on the requested boundary, extending them outward by half the line
-  width. Adjust layouts that relied on that overshoot; see
+  strokes inside positive requested bounds large enough to contain the line
+  width, matching native. Wasm previously centered strokes on the requested
+  boundary, extending them outward by half the line width. Adjust layouts that
+  relied on that overshoot; see
   [Migrate Vector Stroke Bounds](docs/migrate-vector-stroke-bounds.md)
   [#743](https://github.com/julianhille/MuhammaraJS/issues/743)
 - Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.

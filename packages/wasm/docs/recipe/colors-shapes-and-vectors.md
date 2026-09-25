@@ -36,10 +36,13 @@ point arrays, and `circle()`, `rectangle()`, `ellipse()`, `arc()`, `pie()`,
 `n_gon()`, `star()`, `triangle()`, and `arrow()` for common geometry. `pie()`
 closes its arc at the center so it can be filled as a wedge.
 
-For `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()`, the requested
-dimensions include the complete stroke: Recipe insets the stroke centerline by
-half its width so the outer edge stays inside those bounds. The fill still uses
-the full requested dimensions. Polygon strokes remain centered on their path.
+For `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()`, positive
+requested dimensions that are each at least the line width include the complete
+stroke: Recipe insets the stroke centerline by half its width so the outer edge
+stays inside those bounds. The fill still uses the full requested dimensions.
+Smaller or negative geometry follows native PDF path behavior and is not
+guaranteed to stay inside the requested bounds. Polygon strokes remain centered
+on their path.
 
 `lineStyle()` changes subsequent strokes on the current page. It accepts
 `width` (or `lineWidth`), numeric PDF `cap` and `join` values, `miterLimit`,

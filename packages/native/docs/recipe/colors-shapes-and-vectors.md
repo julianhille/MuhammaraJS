@@ -35,10 +35,12 @@ rotation, rotation origin, skew, dash, and line properties. See
 [Create A Pie Chart](../how-to/create-pie-charts.md) for a filled-wedge chart
 example.
 
-For `circle`, `ellipse`, `rectangle`, `arc`, and `pie`, the requested dimensions
-include the complete stroke: Recipe insets the stroke centerline by half its
-width so the outer edge stays inside those bounds. The fill still uses the full
-requested dimensions. Polygon strokes remain centered on their path.
+For `circle`, `ellipse`, `rectangle`, `arc`, and `pie`, positive requested
+dimensions that are each at least the line width include the complete stroke:
+Recipe insets the stroke centerline by half its width so the outer edge stays
+inside those bounds. The fill still uses the full requested dimensions. Smaller
+or negative geometry follows native PDF path behavior and is not guaranteed to
+stay inside the requested bounds. Polygon strokes remain centered on their path.
 
 Use `opacity(value)` to set both fill and stroke alpha for subsequent drawing;
 `value` must be a finite number from `0` (transparent) through `1` (opaque).
