@@ -13,7 +13,11 @@ This page collects the compatibility changes formerly maintained in the README.
   such as `concat`, `push`, or `splice` on those bytes, or checks
   `Array.isArray`, now misbehaves or throws, and TypeScript implementations
   declaring `write(bytes: number[])` fail to compile. Use Buffer operations, or
-  `Array.from(bytes)` where an array is required. See
+  `Array.from(bytes)` where an array is required. Output also arrives in
+  batched chunks of up to 64 KiB, with the last one delivered when the writer
+  ends; do not expect one `write` call per PDF token. `write` must return the
+  full chunk length: returning less now fails the writer (creation, later
+  writes, `end()`, and `shutdown()` throw) instead of being ignored. See
   [Accept Buffers in custom streams](getting-started/migrate-from-v6.md#16-accept-buffers-in-custom-streams)
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324).
 - `appendPDFPagesFromPDF()` now ends its writer when appending fails. Previously

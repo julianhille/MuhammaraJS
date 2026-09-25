@@ -552,6 +552,16 @@ write: function (bytes) {
 },
 ```
 
+Output is batched into chunks of up to 64 KiB, and the final chunk is delivered
+when the writer ends, `recrypt()` returns, or the writer is shut down or
+aborted. Read the collected output after those calls rather than while pages
+are still being written.
+
+`write` must return the full length of the chunk it received. In v6 a smaller
+return value was ignored; now it fails the writer: creating it, later writes,
+`end()`, and `shutdown()` throw. Return `bytes.length` once the chunk is
+accepted, and throw from `write` to report a real failure.
+
 Replace `concat`, `push(...bytes)`, `splice`, and `Array.isArray` checks with
 Buffer operations, or call `Array.from(bytes)` where an array is still needed.
 TypeScript implementations of `WriteStream` or the `log` option must declare

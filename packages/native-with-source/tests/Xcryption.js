@@ -81,6 +81,48 @@ describe("Xcryption", function () {
     });
   });
 
+  // https://github.com/julianhille/MuhammaraJS/issues/324
+  describe("Encrypt PDF into a JavaScript stream", function () {
+    it("batches encrypted output instead of writing byte by byte", function () {
+      var sourceWriter = new muhammara.PDFWStreamForBuffer();
+      var writer = muhammara.createWriter(sourceWriter, { compress: false });
+      for (var i = 0; i < 5; ++i) {
+        var page = writer.createPage(0, 0, 595, 842);
+        writer
+          .startPageContentContext(page)
+          .writeFreeCode("0 0 m 10 10 l S\n".repeat(5000));
+        writer.writePage(page);
+      }
+      writer.end();
+
+      var chunks = [];
+      var position = 0;
+      muhammara.recrypt(
+        new muhammara.PDFRStreamForBuffer(sourceWriter.buffer),
+        {
+          write: function (bytes) {
+            chunks.push(bytes);
+            position += bytes.length;
+            return bytes.length;
+          },
+          getCurrentPosition: function () {
+            return position;
+          },
+        },
+        { userPassword: "user1", ownerPassword: "owner1" },
+      );
+
+      // RC4 encrypts one byte per write; ~400 KB must not become ~400k calls.
+      assert.ok(chunks.length < 100, chunks.length + " writes");
+      var reader = muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(Buffer.concat(chunks)),
+        { password: "user1" },
+      );
+      assert.equal(reader.isEncrypted(), true);
+      assert.equal(reader.getPagesCount(), 5);
+    });
+  });
+
   describe("Encrypt PDF With a Different Password", function () {
     it("should complete without error", function () {
       muhammara.recrypt(

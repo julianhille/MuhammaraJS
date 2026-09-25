@@ -3,7 +3,12 @@
 `createWriter` can write to an object with `write(bytes)` and
 `getCurrentPosition()` methods. `write` receives each chunk as a `Buffer` and
 must return the number of bytes written. The chunk is a copy the stream owns, so
-it can be kept or queued after `write` returns:
+it can be kept or queued after `write` returns. Small writes are batched into
+chunks of up to 64 KiB, and the last chunk arrives when the writer ends, so a
+stream observed mid-way may not yet hold every byte written so far. An error
+thrown by `write` surfaces from the call that flushes that chunk. Returning
+fewer bytes than the chunk holds is a failure, not a partial write to retry:
+creating the writer, later writes, `end()`, and `shutdown()` then throw:
 
 ```javascript
 var muhammara = require("@muhammara/native");

@@ -15,7 +15,7 @@ Custom writer and reader input objects must implement the matching interfaces.
 Reader inputs are synchronous and random access, so all input bytes must be
 available before the native operation begins. Custom writer `write(bytes)`
 methods receive a `Buffer` they may keep and must return the number of bytes
-written. Custom reader `read(amount)` methods return a `Uint8Array` or an array
+written; returning fewer than the chunk holds fails the writer. Custom reader `read(amount)` methods return a `Uint8Array` or an array
 of byte values.
 
 ```javascript

@@ -429,6 +429,98 @@ describe("BasicModificationWithStreams", function () {
   });
 
   // https://github.com/julianhille/MuhammaraJS/issues/324
+  it("fails end() when the batched tail of the output is not written", function () {
+    var position = 0;
+    var failTail = false;
+    var writer = muhammara.createWriter({
+      write: function (bytes) {
+        if (failTail) return 0;
+        position += bytes.length;
+        return bytes.length;
+      },
+      getCurrentPosition: function () {
+        return position;
+      },
+    });
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    failTail = true;
+    chai.expect(writer.end.bind(writer)).to.throw(/Unable to end PDF/);
+  });
+
+  // https://github.com/julianhille/MuhammaraJS/issues/324
+  it("fails shutdown() when the batched tail of the output is not written", function () {
+    var position = 0;
+    var failTail = false;
+    var writer = muhammara.createWriter({
+      write: function (bytes) {
+        if (failTail) return 0;
+        position += bytes.length;
+        return bytes.length;
+      },
+      getCurrentPosition: function () {
+        return position;
+      },
+    });
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    failTail = true;
+    chai
+      .expect(
+        writer.shutdown.bind(
+          writer,
+          __dirname + "/output/ShutdownUnwrittenTailState.txt",
+        ),
+      )
+      .to.throw(/unable to save state file/);
+  });
+
+  // https://github.com/julianhille/MuhammaraJS/issues/324
+  it("fails creation when the header cannot be written", function () {
+    chai
+      .expect(
+        muhammara.createWriter.bind(undefined, {
+          write: function () {
+            return 0;
+          },
+          getCurrentPosition: function () {
+            return 0;
+          },
+        }),
+      )
+      .to.throw(/Unable to create PDF/);
+  });
+
+  // https://github.com/julianhille/MuhammaraJS/issues/324
+  it("fails every later write after one lost batch", function () {
+    var position = 0;
+    var failNext = false;
+    var writer = muhammara.createWriter({
+      write: function (bytes) {
+        if (failNext) {
+          failNext = false;
+          return 0;
+        }
+        position += bytes.length;
+        return bytes.length;
+      },
+      getCurrentPosition: function () {
+        return position;
+      },
+    });
+    failNext = true;
+    var page = writer.createPage(0, 0, 100, 100);
+    // More than one 64 KiB batch, so a batch is delivered before end().
+    writer
+      .startPageContentContext(page)
+      .writeFreeCode("0 0 m 10 10 l S\n".repeat(10000));
+    // The lost batch fails every later write, so the page cannot complete.
+    chai
+      .expect(writer.writePage.bind(writer, page))
+      .to.throw(/Unable to finalize page context/);
+    chai.expect(failNext).to.equal(false);
+    chai.expect(writer.end.bind(writer)).to.throw(/Unable to end PDF/);
+  });
+
+  // https://github.com/julianhille/MuhammaraJS/issues/324
   it("writes Uint8Arrays and byte arrays into PDF streams", function () {
     var output = new muhammara.PDFWStreamForBuffer();
     var writer = muhammara.createWriter(output);
