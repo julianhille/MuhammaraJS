@@ -104,7 +104,9 @@ modifyingWriter.replaceObject(0, contentsId, replacementId, {
 
 `PDFRStreamForBuffer`, `PDFWStreamForBuffer`, and the `ByteReader`/`ByteWriter`
 aliases are byte adapters, not Node or Web streams. A writer adapter exposes
-`buffer`, `toUint8Array()`, `toArrayBuffer()`, and `toBlob()`.
+`buffer`, `toUint8Array()`, `toArrayBuffer()`, and `toBlob()`. Reader adapter
+`setPosition()` and `setPositionFromEnd()` calls clamp the resulting position to
+the available byte range.
 
 Stream readers returned by `startReadingFromStream()`,
 `startReadingFromStreamForPlainCopying()`, `getParserStream()`, and

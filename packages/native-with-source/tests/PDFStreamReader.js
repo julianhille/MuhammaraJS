@@ -17,15 +17,22 @@ describe("PDFReader stream byte readers", function () {
     var streams = [fileStream, new muhammara.PDFRStreamForBuffer(bytes)];
     try {
       streams.forEach(function (stream) {
-        stream.setPositionFromEnd(1024);
+        stream.setPosition(-1);
         expect(stream.getCurrentPosition()).to.equal(0);
         stream.setPosition(bytes.length + 1);
         expect(stream.getCurrentPosition()).to.equal(bytes.length);
+        stream.setPositionFromEnd(-1);
+        expect(stream.getCurrentPosition()).to.equal(bytes.length);
+        stream.setPositionFromEnd(1024);
+        expect(stream.getCurrentPosition()).to.equal(0);
         stream.setPosition(0);
 
         var reader = muhammara.createReader(stream);
-        expect(reader.getPagesCount()).to.equal(1);
-        reader.end();
+        try {
+          expect(reader.getPagesCount()).to.equal(1);
+        } finally {
+          reader.end();
+        }
       });
     } finally {
       fileStream.close();
