@@ -124,6 +124,10 @@ describe("AppendPagesTest", function () {
       new Uint8Array(await readFile("tests/TestMaterials/Protected.pdf")),
       "Encrypted PDF input is not supported in Wasm",
     );
+    assertModifierEndedAfterAppendFailure(
+      new Uint8Array(await readFile("tests/TestMaterials/appendbreaks.pdf")),
+      "Unable to append PDF pages from input bytes",
+    );
   });
 
   it("ends modifiers after asynchronous native append failures", async function () {
