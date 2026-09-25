@@ -209,6 +209,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Rework the npm README: it explains how the MuhammaraJS packages fit together, when to use a native package instead, and adds tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
 - Narrow `DrawPathOptions.type` from an arbitrary string to the exported
   `DrawingPathType` (`"stroke" | "fill" | "clip" | null`), matching native.
   Unsupported paint modes neither paint nor clip, so they are now a compile
