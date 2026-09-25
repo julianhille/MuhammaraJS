@@ -1343,13 +1343,13 @@ export interface PDFWriter {
   mergePDFPagesToPage(
     page: PDFPage,
     source: ByteSource,
-    callback: () => void,
+    callback: (this: typeof globalThis) => void,
   ): this;
   mergePDFPagesToPage(
     page: PDFPage,
     source: ByteSource,
     options: PageRangeOptions,
-    callback: () => void,
+    callback: (this: typeof globalThis) => void,
   ): this;
   mergePDFPagesToPageAsync(
     page: PDFPage,
@@ -1359,13 +1359,13 @@ export interface PDFWriter {
   mergePDFPagesToPageAsync(
     page: PDFPage,
     source: AsyncByteSource,
-    callback: () => void,
+    callback: (this: typeof globalThis) => void,
   ): Promise<this>;
   mergePDFPagesToPageAsync(
     page: PDFPage,
     source: AsyncByteSource,
     options: PageRangeOptions,
-    callback: () => void,
+    callback: (this: typeof globalThis) => void,
   ): Promise<this>;
   getDocumentContext(): DocumentContext;
   createPDFTextString(value?: string | ByteSource | number[]): PDFTextString;
@@ -1600,13 +1600,13 @@ export interface PDFModifier {
   mergePDFPagesToPage(
     page: PDFPage,
     source: ByteSource,
-    callback: () => void,
+    callback: (this: typeof globalThis) => void,
   ): this;
   mergePDFPagesToPage(
     page: PDFPage,
     source: ByteSource,
     options: PageRangeOptions,
-    callback: () => void,
+    callback: (this: typeof globalThis) => void,
   ): this;
   mergePDFPagesToPageAsync(
     page: PDFPage,
@@ -1616,13 +1616,13 @@ export interface PDFModifier {
   mergePDFPagesToPageAsync(
     page: PDFPage,
     source: AsyncByteSource,
-    callback: () => void,
+    callback: (this: typeof globalThis) => void,
   ): Promise<this>;
   mergePDFPagesToPageAsync(
     page: PDFPage,
     source: AsyncByteSource,
     options: PageRangeOptions,
-    callback: () => void,
+    callback: (this: typeof globalThis) => void,
   ): Promise<this>;
   getImageDimensions(
     image: string | ByteSource,

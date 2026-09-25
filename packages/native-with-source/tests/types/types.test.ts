@@ -26,6 +26,11 @@ void invalidContinuationLog;
 declare const writer: muhammara.PDFWriter;
 
 var page: muhammara.PDFPage = writer.createPage(0, 0, 595, 842);
+writer.mergePDFPagesToPage(page, "source.pdf", function () {
+  var callbackThis: typeof globalThis = this;
+  void callbackThis;
+});
+writer.mergePDFPagesToPage(page, "source.pdf", {}, function () {});
 writer.startPageContentContext(page).c(0, 0, 1, 1, 2, 2).S();
 writer
   .startPageContentContext(page)

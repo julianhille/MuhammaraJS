@@ -53,6 +53,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Correct `mergePDFPagesToPage()` callback types to expose their `globalThis` receiver [#756](https://github.com/julianhille/MuhammaraJS/issues/756)
 - Prefer `getentropy()` for Wasm CSPRNG calls when available [#742](https://github.com/julianhille/MuhammaraJS/issues/742)
 - Release copying contexts created by `PDFPageMergingHelper` after file- and
   stream-based merges instead of retaining their parser and source resources

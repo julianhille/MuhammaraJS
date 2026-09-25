@@ -28,6 +28,11 @@ declare const writer: muhammara.PDFWriter;
 declare const recipe: muhammara.Recipe;
 declare const objects: muhammara.ObjectsContext;
 var page: muhammara.PDFPage = writer.createPage(0, 0, 595, 842);
+writer.mergePDFPagesToPage(page, "source.pdf", function () {
+  var callbackThis: typeof globalThis = this;
+  void callbackThis;
+});
+writer.mergePDFPagesToPage(page, "source.pdf", {}, function () {});
 var context: muhammara.PageContentContext =
   writer.startPageContentContext(page);
 var api: typeof muhammara = nativeCore.createMuhammara({});
