@@ -1,10 +1,7 @@
-/** Calculates spacing between retained characters while preserving non-breaking spaces. */
+/** Calculates spacing between retained Unicode characters. */
 export function charSpacing(text, charSpace = 0) {
-  var trimmed = String(text).replace(
-    /^(?:(?!\u00a0)\s)+|(?:(?!\u00a0)\s)+$/g,
-    "",
-  );
-  return trimmed.length ? (trimmed.length - 1) * charSpace : 0;
+  var characterCount = Array.from(String(text)).length;
+  return characterCount ? (characterCount - 1) * charSpace : 0;
 }
 
 /** A measurable text fragment used by Recipe layout. */
