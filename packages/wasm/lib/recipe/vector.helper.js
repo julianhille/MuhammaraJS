@@ -101,6 +101,7 @@ export function createVectorHelpers(runtime) {
         dashPhase: style.phase,
       });
       this._setOpacity(style.opacity);
+      return style;
     },
     /**
      * Paints the current path and restores the saved graphics state.

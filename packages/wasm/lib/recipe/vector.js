@@ -25,6 +25,31 @@ export function createVectorMethods(runtime) {
       );
     }
   }
+
+  /** Paints a nominal fill and a shape-specific inset stroke. */
+  function paintInsetShape(recipe, options, x, y, drawPath) {
+    var fill = options.fill;
+    var stroke = options.stroke || options.color || options.colour;
+    if (fill !== undefined) {
+      var fillOptions = {
+        ...options,
+        stroke: undefined,
+        color: undefined,
+        colour: undefined,
+      };
+      recipe._beginPath(fillOptions, x, y);
+      drawPath(0);
+      recipe._finishPath(fillOptions);
+    }
+    if (stroke !== undefined || fill === undefined) {
+      var strokeOptions = { ...options, fill: undefined };
+      var style = recipe._beginPath(strokeOptions, x, y);
+      drawPath(style.width / 2);
+      recipe._finishPath(strokeOptions);
+    }
+    return recipe;
+  }
+
   return {
     /**
      * Draws a rectangle.
@@ -48,25 +73,28 @@ export function createVectorMethods(runtime) {
     rectangle: function (x, y, width, height, options = {}) {
       if (options.borderRadius)
         return this._roundedRectangle(x, y, width, height, options);
-      this._beginPath(options, x, y);
       var point = options.useGivenCoords
         ? { nx: x, ny: y }
         : this._calibrateCoordinate(x, y, 0, -height);
-      if (this._pageContext) {
-        this._pageContext.re(point.nx, point.ny, width, height);
-        var result = this._finishPath(options);
-        addLink(this, options, x, y, width, height);
-        return result;
-      }
-      runtime.call(
-        "_muhammara_wasm_recipe_rectangle_path",
-        this._recipe,
-        point.nx,
-        point.ny,
-        width,
-        height,
-      );
-      var result = this._finishPath(options);
+      var recipe = this;
+      var result = paintInsetShape(this, options, x, y, function (inset) {
+        var pathX = point.nx + inset;
+        var pathY = point.ny + inset;
+        var pathWidth = width - inset * 2;
+        var pathHeight = height - inset * 2;
+        if (recipe._pageContext) {
+          recipe._pageContext.re(pathX, pathY, pathWidth, pathHeight);
+        } else {
+          runtime.call(
+            "_muhammara_wasm_recipe_rectangle_path",
+            recipe._recipe,
+            pathX,
+            pathY,
+            pathWidth,
+            pathHeight,
+          );
+        }
+      });
       addLink(this, options, x, y, width, height);
       return result;
     },
@@ -87,55 +115,57 @@ export function createVectorMethods(runtime) {
         source[3] ?? source[1] ?? source[0],
       ].map((radius) => Math.max(0, Number(radius) || 0));
       var [topLeft, topRight, bottomRight, bottomLeft] = radii;
-      this._beginPath(options, x, y);
       var point = options.useGivenCoords
         ? { nx: x, ny: y }
         : this._calibrateCoordinate(x, y, 0, -height);
-      x = point.nx;
-      var bottom = point.ny;
-      var right = x + width;
-      var top = bottom + height;
-      var k = 0.551784;
-      this._movePdf(x + bottomLeft, bottom)
-        ._linePdf(right - bottomRight, bottom)
-        ._curvePdf(
-          right - bottomRight + bottomRight * k,
-          bottom,
-          right,
-          bottom + bottomRight - bottomRight * k,
-          right,
-          bottom + bottomRight,
-        )
-        ._linePdf(right, top - topRight)
-        ._curvePdf(
-          right,
-          top - topRight + topRight * k,
-          right - topRight + topRight * k,
-          top,
-          right - topRight,
-          top,
-        )
-        ._linePdf(x + topLeft, top)
-        ._curvePdf(
-          x + topLeft - topLeft * k,
-          top,
-          x,
-          top - topLeft + topLeft * k,
-          x,
-          top - topLeft,
-        )
-        ._linePdf(x, bottom + bottomLeft)
-        ._curvePdf(
-          x,
-          bottom + bottomLeft - bottomLeft * k,
-          x + bottomLeft - bottomLeft * k,
-          bottom,
-          x + bottomLeft,
-          bottom,
-        );
-      if (this._pageContext) this._pageContext.h();
-      else runtime.call("_muhammara_wasm_recipe_close_path", this._recipe);
-      var result = this._finishPath(options);
+      var recipe = this;
+      var result = paintInsetShape(this, options, x, y, function (inset) {
+        var left = point.nx + inset;
+        var bottom = point.ny + inset;
+        var right = point.nx + width - inset;
+        var top = point.ny + height - inset;
+        var k = 0.551784;
+        recipe
+          ._movePdf(left + bottomLeft, bottom)
+          ._linePdf(right - bottomRight, bottom)
+          ._curvePdf(
+            right - bottomRight + bottomRight * k,
+            bottom,
+            right,
+            bottom + bottomRight - bottomRight * k,
+            right,
+            bottom + bottomRight,
+          )
+          ._linePdf(right, top - topRight)
+          ._curvePdf(
+            right,
+            top - topRight + topRight * k,
+            right - topRight + topRight * k,
+            top,
+            right - topRight,
+            top,
+          )
+          ._linePdf(left + topLeft, top)
+          ._curvePdf(
+            left + topLeft - topLeft * k,
+            top,
+            left,
+            top - topLeft + topLeft * k,
+            left,
+            top - topLeft,
+          )
+          ._linePdf(left, bottom + bottomLeft)
+          ._curvePdf(
+            left,
+            bottom + bottomLeft - bottomLeft * k,
+            left + bottomLeft - bottomLeft * k,
+            bottom,
+            left + bottomLeft,
+            bottom,
+          );
+        if (recipe._pageContext) recipe._pageContext.h();
+        else runtime.call("_muhammara_wasm_recipe_close_path", recipe._recipe);
+      });
       addLink(this, options, linkX, linkY, width, height);
       return result;
     },
@@ -156,7 +186,48 @@ export function createVectorMethods(runtime) {
      * @throws {TypeError} If the requested color space is unknown.
      */
     circle: function (x, y, radius, options = {}) {
-      return this.ellipse(x, y, radius, radius, options);
+      var point = this._calibrateCoordinate(x, y);
+      var recipe = this;
+      var result = paintInsetShape(this, options, x, y, function (inset) {
+        var pathRadius = radius - inset;
+        var handle = pathRadius * 0.551784;
+        recipe
+          ._movePdf(point.nx - pathRadius, point.ny)
+          ._curvePdf(
+            point.nx - pathRadius,
+            point.ny - handle,
+            point.nx - handle,
+            point.ny - pathRadius,
+            point.nx,
+            point.ny - pathRadius,
+          )
+          ._curvePdf(
+            point.nx + handle,
+            point.ny - pathRadius,
+            point.nx + pathRadius,
+            point.ny - handle,
+            point.nx + pathRadius,
+            point.ny,
+          )
+          ._curvePdf(
+            point.nx + pathRadius,
+            point.ny + handle,
+            point.nx + handle,
+            point.ny + pathRadius,
+            point.nx,
+            point.ny + pathRadius,
+          )
+          ._curvePdf(
+            point.nx - handle,
+            point.ny + pathRadius,
+            point.nx - pathRadius,
+            point.ny + handle,
+            point.nx - pathRadius,
+            point.ny,
+          );
+      });
+      addLink(this, options, x - radius, y - radius, radius * 2, radius * 2);
+      return result;
     },
     /**
      * Draws an ellipse centered at `(cx, cy)` in Recipe's top-left coordinate system.
@@ -180,13 +251,43 @@ export function createVectorMethods(runtime) {
       var x = point.nx;
       var y = point.ny;
       var k = 0.551784;
-      this._beginPath(options, cx, cy);
-      this._movePdf(x - rx, y)
-        ._curvePdf(x - rx, y - ry * k, x - rx * k, y - ry, x, y - ry)
-        ._curvePdf(x + rx * k, y - ry, x + rx, y - ry * k, x + rx, y)
-        ._curvePdf(x + rx, y + ry * k, x + rx * k, y + ry, x, y + ry)
-        ._curvePdf(x - rx * k, y + ry, x - rx, y + ry * k, x - rx, y);
-      var result = this._finishPath(options);
+      var recipe = this;
+      var result = paintInsetShape(this, options, cx, cy, function (inset) {
+        recipe
+          ._movePdf(x - rx + inset, y)
+          ._curvePdf(
+            x - rx + inset,
+            y - ry * k,
+            x - rx * k,
+            y - ry + inset,
+            x,
+            y - ry + inset,
+          )
+          ._curvePdf(
+            x + rx * k,
+            y - ry + inset,
+            x + rx - inset,
+            y - ry * k,
+            x + rx - inset,
+            y,
+          )
+          ._curvePdf(
+            x + rx - inset,
+            y + ry * k,
+            x + rx * k,
+            y + ry - inset,
+            x,
+            y + ry - inset,
+          )
+          ._curvePdf(
+            x - rx * k,
+            y + ry - inset,
+            x - rx + inset,
+            y + ry * k,
+            x - rx + inset,
+            y,
+          );
+      });
       addLink(this, options, cx - rx, cy - ry, rx * 2, ry * 2);
       return result;
     },
@@ -210,22 +311,24 @@ export function createVectorMethods(runtime) {
      * @throws {TypeError} If the requested color space is unknown.
      */
     arc: function (x, y, radius, startAngle = 0, endAngle = 360, options = {}) {
-      this._beginPath(options, x, y);
       var point = this._calibrateCoordinate(x, y);
-      curve(
-        this,
-        point.nx,
-        point.ny,
-        radius,
-        (-startAngle * Math.PI) / 180,
-        (-endAngle * Math.PI) / 180,
-      );
-      if (options.sector) {
-        this._linePdf(point.nx, point.ny);
-        if (this._pageContext) this._pageContext.h();
-        else runtime.call("_muhammara_wasm_recipe_close_path", this._recipe);
-      }
-      var result = this._finishPath(options);
+      var recipe = this;
+      var result = paintInsetShape(this, options, x, y, function (inset) {
+        curve(
+          recipe,
+          point.nx,
+          point.ny,
+          radius - inset,
+          (-startAngle * Math.PI) / 180,
+          (-endAngle * Math.PI) / 180,
+        );
+        if (options.sector) {
+          recipe._linePdf(point.nx, point.ny);
+          if (recipe._pageContext) recipe._pageContext.h();
+          else
+            runtime.call("_muhammara_wasm_recipe_close_path", recipe._recipe);
+        }
+      });
       addLink(this, options, x - radius, y - radius, radius * 2, radius * 2);
       return result;
     },

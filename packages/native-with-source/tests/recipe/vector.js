@@ -1,12 +1,45 @@
 const path = require("path");
 const assert = require("chai").assert;
 const zlib = require("zlib");
-const Recipe = require("@muhammara/native-with-source").Recipe;
+const muhammara = require("@muhammara/native-with-source");
+const Recipe = muhammara.Recipe;
 
 function getFirstContentStream(pdf) {
   const start = pdf.indexOf("stream\r\n") + "stream\r\n".length;
   const end = pdf.indexOf("\r\nendstream", start);
   return zlib.inflateSync(pdf.subarray(start, end)).toString();
+}
+
+/** Collects decoded page and Form XObject content streams. */
+function getContentStreams(reader, pageIndex) {
+  const page = reader.parsePage(pageIndex).getDictionary();
+  const contents = reader.queryDictionaryObject(page, "Contents");
+  const streams =
+    contents.getType() === muhammara.ePDFObjectArray
+      ? contents
+          .toPDFArray()
+          .toJSArray()
+          .map((reference) =>
+            reader.parseNewObject(
+              reference.toPDFIndirectObjectReference().getObjectID(),
+            ),
+          )
+      : [contents];
+  const resources = reader.queryDictionaryObject(page, "Resources");
+  if (resources.exists("XObject")) {
+    const forms = reader.queryDictionaryObject(resources, "XObject");
+    Object.keys(forms.toJSObject()).forEach((name) => {
+      streams.push(reader.queryDictionaryObject(forms, name));
+    });
+  }
+  return streams
+    .map((stream) => {
+      const input = reader.startReadingFromStream(stream.toPDFStream());
+      const chunks = [];
+      while (input.notEnded()) chunks.push(Buffer.from(input.read(4096)));
+      return Buffer.concat(chunks).toString("latin1");
+    })
+    .join("\n");
 }
 
 describe("Vector", () => {
@@ -256,6 +289,59 @@ describe("Vector", () => {
       .endPage()
       .endPDF((pdf) => {
         assert.match(getFirstContentStream(pdf), /\r?\nh\r?\n[\s\S]*?S\r?\n/);
+        done();
+      });
+  });
+
+  it("insets vector strokes within the requested bounds", (done) => {
+    const options = {
+      fill: "#000000",
+      stroke: "#ff0000",
+      lineWidth: 10,
+    };
+    new Recipe(Buffer.from("new"))
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, options)
+      .endPage()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, { ...options, borderRadius: 10 })
+      .endPage()
+      .createPage(80, 80)
+      .circle(40, 40, 40, options)
+      .endPage()
+      .createPage(80, 40)
+      .ellipse(40, 20, 40, 20, options)
+      .endPage()
+      .createPage(80, 80)
+      .arc(40, 40, 40, 0, 90, options)
+      .endPage()
+      .createPage(80, 80)
+      .pie(40, 40, 40, 0, 90, options)
+      .endPage()
+      .endPDF((pdf) => {
+        const reader = muhammara.createReader(
+          new muhammara.PDFRStreamForBuffer(pdf),
+        );
+        try {
+          const expectedGeometry = [
+            [/\b0 0 100 60 re\b/, /\b5 5 90 50 re\b/],
+            [/\b0 50 m\b/, /\b5 45 m\b/],
+            [/\b0 40 m\b/, /\b5 40 m\b/],
+            [/\b0 20 m\b/, /\b5 20 m\b/],
+            [/\b80 40 m\b/, /\b75 40 m\b/],
+            [/\b40 40 m\s+80 40 l\b/, /\b40 40 m\s+75 40 l\b/],
+          ];
+          expectedGeometry.forEach((geometry, pageIndex) => {
+            const content = getContentStreams(reader, pageIndex);
+            assert.match(content, geometry[0]);
+            assert.match(content, geometry[1]);
+            assert.match(content, /(?:^|\r?\n)f\r?\n/);
+            assert.match(content, /(?:^|\r?\n)S\r?\n/);
+            assert.notMatch(content, /(?:^|\r?\n)B\r?\n/);
+          });
+        } finally {
+          reader.end();
+        }
         done();
       });
   });

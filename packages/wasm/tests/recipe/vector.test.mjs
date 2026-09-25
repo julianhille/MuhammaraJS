@@ -13,6 +13,38 @@ function getFirstContentStream(pdf) {
   return inflateSync(bytes.subarray(start, end)).toString();
 }
 
+/** Collects decoded page and Form XObject content streams. */
+function getContentStreams(muhammara, reader, pageIndex) {
+  var page = reader.parsePage(pageIndex).getDictionary();
+  var contents = reader.queryDictionaryObject(page, "Contents");
+  var streams =
+    contents.getType() === muhammara.ePDFObjectArray
+      ? contents
+          .toPDFArray()
+          .toJSArray()
+          .map((reference) =>
+            reader.parseNewObject(
+              reference.toPDFIndirectObjectReference().getObjectID(),
+            ),
+          )
+      : [contents];
+  var resources = reader.queryDictionaryObject(page, "Resources");
+  if (resources.exists("XObject")) {
+    var forms = reader.queryDictionaryObject(resources, "XObject");
+    Object.keys(forms.toJSObject()).forEach(function (name) {
+      streams.push(reader.queryDictionaryObject(forms, name));
+    });
+  }
+  return streams
+    .map(function (stream) {
+      var input = reader.startReadingFromStream(stream.toPDFStream());
+      var bytes = [];
+      while (input.notEnded()) bytes.push(...input.read(4096));
+      return new TextDecoder("latin1").decode(new Uint8Array(bytes));
+    })
+    .join("\n");
+}
+
 describe("Recipe vector", function () {
   it("creates vector shapes, transforms, and images", async function () {
     var Recipe = await getRecipe();
@@ -95,5 +127,82 @@ describe("Recipe vector", function () {
 
     writeOutput("vector-pie-wedge", pdf);
     assert.match(getFirstContentStream(pdf), /\r?\nh\r?\n[\s\S]*?S\r?\n/);
+  });
+
+  it("insets vector strokes within the requested bounds", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var options = {
+      fill: "#000000",
+      stroke: "#ff0000",
+      lineWidth: 10,
+    };
+    var pdf = new Recipe()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, options)
+      .endPage()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, { ...options, borderRadius: 10 })
+      .endPage()
+      .createPage(80, 80)
+      .circle(40, 40, 40, options)
+      .endPage()
+      .createPage(80, 40)
+      .ellipse(40, 20, 40, 20, options)
+      .endPage()
+      .createPage(80, 80)
+      .arc(40, 40, 40, 0, 90, options)
+      .endPage()
+      .createPage(80, 80)
+      .pie(40, 40, 40, 0, 90, options)
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(pdf);
+    try {
+      var expectedGeometry = [
+        [/\b0 0 100 60 re\b/, /\b5 5 90 50 re\b/],
+        [/\b10 0 m\b/, /\b15 5 m\b/],
+        [/\b0 40 m\b/, /\b5 40 m\b/],
+        [/\b0 20 m\b/, /\b5 20 m\b/],
+        [/\b80 40 m\b/, /\b75 40 m\b/],
+        [/\b80 40 m\b/, /\b75 40 m\b/],
+      ];
+      expectedGeometry.forEach(function (geometry, pageIndex) {
+        var content = getContentStreams(muhammara, reader, pageIndex);
+        assert.match(content, geometry[0]);
+        assert.match(content, geometry[1]);
+        assert.match(content, /(?:^|\r?\n)f\r?\n/);
+        assert.match(content, /(?:^|\r?\n)S\r?\n/);
+        assert.doesNotMatch(content, /(?:^|\r?\n)B\r?\n/);
+      });
+    } finally {
+      reader.end();
+    }
+  });
+
+  it("insets vector strokes while editing an existing page", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var source = new Recipe().createPage(100, 60).endPage().endPDF();
+    var pdf = new Recipe(source)
+      .editPage(1)
+      .rectangle(0, 0, 100, 60, {
+        fill: "#000000",
+        stroke: "#ff0000",
+        lineWidth: 10,
+      })
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(pdf);
+    try {
+      var content = getContentStreams(muhammara, reader, 0);
+      assert.match(content, /\b0 0 100 60 re\b/);
+      assert.match(content, /\b5 5 90 50 re\b/);
+      assert.match(content, /(?:^|\r?\n)f\r?\n/);
+      assert.match(content, /(?:^|\r?\n)S\r?\n/);
+      assert.doesNotMatch(content, /(?:^|\r?\n)B\r?\n/);
+    } finally {
+      reader.end();
+    }
   });
 });
