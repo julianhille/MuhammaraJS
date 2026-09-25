@@ -37,6 +37,64 @@ describe("Modify", () => {
       })
       .endPDF(done);
   });
+  it("keeps the source Trapped entry when saving", () => {
+    const muhammara = require("@muhammara/native-with-source");
+    const src = path.join(__dirname, "../TestMaterials/Linearized.pdf");
+    const output = path.join(__dirname, "../output/keep trapped info.pdf");
+
+    new Recipe(src, output).endPDF();
+
+    const reader = muhammara.createReader(output);
+    const info = reader.queryDictionaryObject(reader.getTrailer(), "Info");
+    assert.equal(info.queryObject("Trapped").value, "False");
+    assert.ok(info.queryObject("CreationDate").toText());
+    reader.end();
+  });
+  [
+    ["True", "True"],
+    ["False", "False"],
+    // PDFWriter omits /Trapped when it is Unknown, the PDF default.
+    ["Unknown", undefined],
+  ].forEach(([source, expected]) => {
+    it(`keeps the source Trapped ${source} entry when saving`, () => {
+      const muhammara = require("@muhammara/native-with-source");
+      const src = path.join(__dirname, `../TestMaterials/Trapped${source}.pdf`);
+      const output = path.join(
+        __dirname,
+        `../output/keep trapped ${source}.pdf`,
+      );
+
+      new Recipe(src, output).endPDF();
+
+      const reader = muhammara.createReader(output);
+      const info = reader.queryDictionaryObject(reader.getTrailer(), "Info");
+      assert.equal(
+        info.exists("Trapped") ? info.queryObject("Trapped").value : undefined,
+        expected,
+      );
+      assert.equal(
+        info.queryObject("CreationDate").toText(),
+        "D:20200102030405+00'00'",
+      );
+      assert.equal(info.queryObject("Title").toText(), `Trapped ${source}`);
+      assert.equal(info.queryObject("Author").toText(), "Source Author");
+      assert.equal(info.queryObject("Subject").toText(), "Source Subject");
+      assert.equal(info.queryObject("Keywords").toText(), "source, keywords");
+      reader.end();
+    });
+  });
+  it("lets info() override the source Title when saving", () => {
+    const muhammara = require("@muhammara/native-with-source");
+    const src = path.join(__dirname, "../TestMaterials/TrappedTrue.pdf");
+    const output = path.join(__dirname, "../output/override source title.pdf");
+
+    new Recipe(src, output).info({ title: "override" }).endPDF();
+
+    const reader = muhammara.createReader(output);
+    const info = reader.queryDictionaryObject(reader.getTrailer(), "Info");
+    assert.equal(info.queryObject("Title").toText(), "override");
+    reader.end();
+  });
   it("print pdf structure", (done) => {
     const file = "test3";
     const src = path.join(__dirname, `../TestMaterials/recipe/${file}.pdf`);
