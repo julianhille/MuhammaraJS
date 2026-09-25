@@ -57,6 +57,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `null`, which ends the path without painting
   [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
 - Correct `mergePDFPagesToPage()` callback types to expose their `globalThis` receiver [#756](https://github.com/julianhille/MuhammaraJS/issues/756)
+- Retire modifying writers after malformed or encrypted PDF append failures so
+  callers cannot continue with partially mutated writer state
+  [#758](https://github.com/julianhille/MuhammaraJS/issues/758)
 - Prefer `getentropy()` for Wasm CSPRNG calls when available [#742](https://github.com/julianhille/MuhammaraJS/issues/742)
 - Release copying contexts created by `PDFPageMergingHelper` after file- and
   stream-based merges instead of retaining their parser and source resources

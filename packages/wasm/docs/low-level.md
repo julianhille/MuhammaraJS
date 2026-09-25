@@ -13,8 +13,8 @@ a finalization failure, stateful writer methods throw
 promises with the same error. Create a new writer for further output and
 consume borrowed resources before ending their writer.
 
-`appendPDFPagesFromPDF` also ends the writer when an underlying PDF append
-fails. Create a fresh writer and retry with valid source bytes.
+`appendPDFPagesFromPDF` also ends a writer or modifier when an underlying PDF
+append fails. Create a fresh writer and retry with valid source bytes.
 
 `createPDFDate()` and `createPDFTextString()` create independent values and
 remain usable after cleanup. `dispose()` is idempotent; Wasm `end()` still

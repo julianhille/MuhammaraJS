@@ -99,4 +99,71 @@ describe("AppendPagesTest", function () {
       /has ended/,
     );
   });
+
+  /** Asserts that a native modifier append failure makes the modifier terminal. */
+  function assertModifierEndedAfterAppendFailure(source, expectedMessage) {
+    var writer = muhammara.createWriterToModify(sourcePdf(1));
+    assert.throws(() => writer.appendPDFPagesFromPDF(source), {
+      message: expectedMessage,
+    });
+    assert.throws(() => writer.createPage(), {
+      message: "PDF writer has ended",
+    });
+    assert.throws(() => writer.end(), { message: "PDF writer has ended" });
+    assert.throws(() => writer.appendPDFPagesFromPDF(sourcePdf(1)), {
+      message: "PDF writer has ended",
+    });
+  }
+
+  it("ends modifiers after synchronous native append failures", async function () {
+    assertModifierEndedAfterAppendFailure(
+      new Uint8Array([1, 2, 3]),
+      "Unable to append PDF pages from input bytes",
+    );
+    assertModifierEndedAfterAppendFailure(
+      new Uint8Array(await readFile("tests/TestMaterials/Protected.pdf")),
+      "Encrypted PDF input is not supported in Wasm",
+    );
+  });
+
+  it("ends modifiers after asynchronous native append failures", async function () {
+    var protectedPdf = new Uint8Array(
+      await readFile("tests/TestMaterials/Protected.pdf"),
+    );
+    for (var [source, expectedMessage] of [
+      [
+        new Uint8Array([1, 2, 3]),
+        "Unable to append PDF pages from input bytes",
+      ],
+      [protectedPdf, "Encrypted PDF input is not supported in Wasm"],
+    ]) {
+      var writer = muhammara.createWriterToModify(sourcePdf(1));
+      await assert.rejects(
+        () => writer.appendPDFPagesFromPDFAsync(new Blob([source])),
+        { message: expectedMessage },
+      );
+      assert.throws(() => writer.createPage(), {
+        message: "PDF writer has ended",
+      });
+      assert.throws(() => writer.end(), { message: "PDF writer has ended" });
+      assert.throws(() => writer.appendPDFPagesFromPDF(sourcePdf(1)), {
+        message: "PDF writer has ended",
+      });
+    }
+  });
+
+  it("keeps modifiers open after JavaScript append validation failures", function () {
+    var source = sourcePdf(1);
+    var writer = muhammara.createWriterToModify(source);
+    assert.throws(
+      () =>
+        writer.appendPDFPagesFromPDF(source, {
+          type: muhammara.eRangeTypeSpecific,
+          specificRanges: [[1, 0]],
+        }),
+      /specificRanges/,
+    );
+    assert.equal(writer.appendPDFPagesFromPDF(source).length, 1);
+    assert.ok(writer.end() instanceof Uint8Array);
+  });
 });

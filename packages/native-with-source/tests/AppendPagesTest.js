@@ -29,4 +29,37 @@ describe("AppendPagesTest", function () {
       "PDF writer has ended",
     );
   });
+
+  it("should retire modifiers after append failures", function () {
+    var sources = [
+      {
+        name: "Malformed",
+        value: new muhammara.PDFRStreamForBuffer(Buffer.from([1, 2, 3])),
+      },
+      {
+        name: "Protected",
+        value: __dirname + "/TestMaterials/Protected.pdf",
+      },
+    ];
+    for (var source of sources) {
+      var pdfWriter = muhammara.createWriterToModify(
+        __dirname + "/TestMaterials/Original.pdf",
+        {
+          modifiedFilePath:
+            __dirname + "/output/AppendPagesModify" + source.name + ".pdf",
+        },
+      );
+      expect(() => pdfWriter.appendPDFPagesFromPDF(source.value)).to.throw(
+        "unable to append",
+      );
+      expect(() => pdfWriter.createPage(0, 0, 100, 100)).to.throw(
+        "PDF writer has ended",
+      );
+      expect(() =>
+        pdfWriter.appendPDFPagesFromPDF(
+          __dirname + "/TestMaterials/Original.pdf",
+        ),
+      ).to.throw("PDF writer has ended");
+    }
+  });
 });
