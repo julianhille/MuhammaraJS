@@ -94,6 +94,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Clamp `PDFRStreamForFile` and `PDFRStreamForBuffer` positions to the available
+  bytes, allowing PDFs smaller than the parser's trailer window to be read
+  through built-in streams [#784](https://github.com/julianhille/MuhammaraJS/issues/784)
 - Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
   rewrites it; they were previously re-encoded as UTF-8, corrupting other
   strings and inline image data on the page.

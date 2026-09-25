@@ -56,6 +56,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Clamp `PDFRStreamForBuffer` positions to the available bytes, matching native
+  built-in stream behavior for PDFs smaller than the parser's trailer window
+  [#784](https://github.com/julianhille/MuhammaraJS/issues/784)
 - Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
   rewrites it; they were previously re-encoded as UTF-8, corrupting other
   strings and inline image data on the page.

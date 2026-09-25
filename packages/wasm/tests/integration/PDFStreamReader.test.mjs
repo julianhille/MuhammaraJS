@@ -59,6 +59,25 @@ function buildFlatePdf() {
 }
 
 describe("PDFReader stream byte readers", function () {
+  it("clamps built-in stream positions to the available PDF bytes", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    var bytes = writer.end();
+    assert.ok(bytes.length < 1024);
+
+    var stream = new muhammara.PDFRStreamForBuffer(bytes);
+    stream.setPositionFromEnd(1024);
+    assert.equal(stream.getCurrentPosition(), 0);
+    stream.setPosition(bytes.length + 1);
+    assert.equal(stream.getCurrentPosition(), bytes.length);
+    stream.setPosition(0);
+
+    var reader = muhammara.createReader(stream);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
+  });
+
   it("provides a reader-owned random-access parser byte handle", async function () {
     var muhammara = await createMuhammaraWasm();
     var bytes = buildFlatePdf();
