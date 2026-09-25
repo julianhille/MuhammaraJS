@@ -9,8 +9,9 @@ including zero, a negative number, and `NaN`, throws a `RangeError` naming the
 option and the value, as it does on native, because such a size draws nothing
 readable and measures to nonsensical metrics. Pass `null`, `undefined`, or
 neither option to select the default.
-Character spacing ignores leading and trailing breakable whitespace but counts
-non-breaking spaces, including U+00A0 at either boundary.
+Character-spacing measurements include retained leading and trailing whitespace
+and count each Unicode code point once, so non-BMP characters do not add an
+extra spacing interval.
 
 ```js
 import { createRecipe } from "@muhammara/wasm";

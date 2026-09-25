@@ -410,7 +410,7 @@ describe("HTML to TextObjects", function () {
       "character spacing must be emitted for styled HTML runs",
     );
     assert.ok(
-      Math.abs(spacedRuns[1].textMatrix[4] - (20 + alphaWidth + 10)) < 0.001,
+      Math.abs(spacedRuns[1].textMatrix[4] - (20 + alphaWidth + 5)) < 0.001,
       "styled whitespace boundaries must retain every character-space interval",
     );
 

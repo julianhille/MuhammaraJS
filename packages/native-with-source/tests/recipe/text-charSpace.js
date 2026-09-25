@@ -4,11 +4,16 @@ const { Word } = require("@muhammara/native-core/lib/recipe/text.helper");
 const path = require("path");
 
 describe("Text", () => {
-  it("counts non-breaking spaces at text boundaries", () => {
+  it("counts spacing between retained Unicode characters", () => {
     const options = { charSpace: 2 };
 
-    assert.equal(new Word(" ab ", options).charSpacing, 2);
+    assert.equal(new Word(" ab", options).charSpacing, 4);
+    assert.equal(new Word("ab ", options).charSpacing, 4);
+    assert.equal(new Word("a b", options).charSpacing, 4);
+    assert.equal(new Word(" ab ", options).charSpacing, 6);
     assert.equal(new Word("\u00a0ab\u00a0", options).charSpacing, 6);
+    assert.equal(new Word("\u{1f600}", options).charSpacing, 0);
+    assert.equal(new Word("A\u{1f600}B", options).charSpacing, 4);
   });
 
   it("Simple text", (done) => {
@@ -24,8 +29,18 @@ facilisis risus eu lacinia. Sed eu leo in turpis fringilla hendrerit.";
     let y = 40;
     let w = 180;
 
+    recipe.createPage("letter");
+    const boundaryPlain = recipe.textDimensions(" ab ");
+    const boundarySpaced = recipe.textDimensions(" ab ", { charSpace: 2 });
+    const unicodePlain = recipe.textDimensions("A\u{1f600}B");
+    const unicodeSpaced = recipe.textDimensions("A\u{1f600}B", {
+      charSpace: 2,
+    });
+
+    assert.equal(boundarySpaced.xMax, boundaryPlain.xMax + 6);
+    assert.equal(unicodeSpaced.xMax, unicodePlain.xMax + 4);
+
     recipe
-      .createPage("letter")
       .text("charSpace: 0", x + 40, y - 20, { color: "red" })
       .text("charSpace: 1", x + 45 + w, y - 20, { color: "blue" })
       .text("charSpace: 2", x + 50 + w * 2, y - 20, { color: "green" })

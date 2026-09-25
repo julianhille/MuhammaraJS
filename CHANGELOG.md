@@ -91,6 +91,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Fix Recipe character-spacing measurements for retained boundary whitespace
+  and non-BMP Unicode text, preventing incorrect wrapping and horizontal
+  alignment [#543](https://github.com/julianhille/MuhammaraJS/issues/543)
 - Prevent a crash or hang when `appendPDFPagesFromPDF()` fails on a modifying
   writer with a malformed source such as a PDF with a broken page tree
   [#769](https://github.com/julianhille/MuhammaraJS/issues/769)

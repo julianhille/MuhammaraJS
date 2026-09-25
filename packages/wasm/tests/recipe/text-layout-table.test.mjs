@@ -13,7 +13,27 @@ describe("Recipe text layout and tables", function () {
       size: 12,
       charSpace: 2,
     });
+    var boundaryPlain = recipe.textDimensions(" ab ", {
+      font: "arial",
+      size: 12,
+    });
+    var boundarySpaced = recipe.textDimensions(" ab ", {
+      font: "arial",
+      size: 12,
+      charSpace: 2,
+    });
+    var unicodePlain = recipe.textDimensions("A\u{1f600}B", {
+      font: "arial",
+      size: 12,
+    });
+    var unicodeSpaced = recipe.textDimensions("A\u{1f600}B", {
+      font: "arial",
+      size: 12,
+      charSpace: 2,
+    });
     assert.equal(spaced.width, plain.width + 4);
+    assert.equal(boundarySpaced.width, boundaryPlain.width + 6);
+    assert.equal(unicodeSpaced.width, unicodePlain.width + 4);
     recipe.text("centered text wraps here", 20, 20, {
       font: "arial",
       size: 14,
