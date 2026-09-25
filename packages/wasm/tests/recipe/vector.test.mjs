@@ -177,7 +177,7 @@ describe("Recipe vector", function () {
     try {
       var expectedGeometry = [
         [/\b0 0 100 60 re\b/, /\b5 5 90 50 re\b/],
-        [/\b10 0 m\b/, /\b15 5 m\b/],
+        [/\b10 0 m\b/, /\b10 5 m\b/],
         [/\b0 40 m\b/, /\b5 40 m\b/],
         [/\b0 20 m\b/, /\b5 20 m\b/],
         [/\b80 40 m\b/, /\b75 40 m\b/],
@@ -254,7 +254,7 @@ describe("Recipe vector", function () {
     try {
       var expectedGeometry = [
         [/\b0 0 100 60 re\b/, /\b5 5 90 50 re\b/],
-        [/\b10 0 m\b/, /\b15 5 m\b/],
+        [/\b10 0 m\b/, /\b10 5 m\b/],
         [/\b0 40 m\b/, /\b5 40 m\b/],
         [/\b0 20 m\b/, /\b5 20 m\b/],
         [/\b80 40 m\b/, /\b75 40 m\b/],
@@ -273,6 +273,63 @@ describe("Recipe vector", function () {
         assert.match(strokeBlock, geometry[1]);
         assert.match(strokeBlock, /(?:^|\r?\n)10 w\r?\n/);
         assert.doesNotMatch(blocks.join("\n"), /(?:^|\r?\n)B\r?\n/);
+      });
+    } finally {
+      reader.end();
+    }
+  });
+
+  it("keeps thick inset strokes concentric and non-inverted", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var options = { fill: "#000000", stroke: "#ff0000", lineWidth: 10 };
+    var thick = { fill: "#000000", stroke: "#ff0000", lineWidth: 30 };
+    var pdf = new Recipe()
+      .createPage(80, 40)
+      .ellipse(40, 20, 40, 20, options)
+      .endPage()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, { ...options, borderRadius: 10 })
+      .endPage()
+      .createPage(20, 20)
+      .circle(10, 10, 10, thick)
+      .endPage()
+      .createPage(20, 20)
+      .arc(10, 10, 10, 0, 90, thick)
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(pdf);
+    try {
+      var strokeBlock = function (pageIndex) {
+        return getPaintBlocks(muhammara, reader, pageIndex).find(
+          function (block) {
+            return /(?:^|\r?\n)S\r?\n/.test(block);
+          },
+        );
+      };
+      var k = 0.551784;
+      var firstCurve = strokeBlock(0)
+        .match(/((?:-?[\d.]+\s+){6})c\b/)[1]
+        .trim()
+        .split(/\s+/)
+        .map(Number);
+      [5, 20 - 15 * k, 40 - 35 * k, 5, 40, 5].forEach(function (value, index) {
+        assert.ok(
+          Math.abs(firstCurve[index] - value) < 0.01,
+          `ellipse curve operand ${index}: ${firstCurve[index]} != ${value}`,
+        );
+      });
+      assert.match(strokeBlock(1), /\b10 5 m\b/);
+      assert.match(strokeBlock(1), /\b90 5 l\b/);
+      [2, 3].forEach(function (pageIndex) {
+        // An over-wide stroke collapses the path onto the center point.
+        var operands = strokeBlock(pageIndex)
+          .match(/(?:-?[\d.]+\s+)+[mc]\b/g)
+          .join(" ")
+          .match(/-?[\d.]+/g)
+          .map(Number);
+        assert.ok(operands.length > 0);
+        assert.deepEqual(new Set(operands), new Set([10]));
       });
     } finally {
       reader.end();

@@ -339,7 +339,7 @@ describe("Vector", () => {
         try {
           const expectedGeometry = [
             [/\b0 0 100 60 re\b/, /\b5 5 90 50 re\b/],
-            [/\b0 50 m\b/, /\b5 45 m\b/],
+            [/\b0 50 m\b/, /\b5 50 m\b/],
             [/\b0 40 m\b/, /\b5 40 m\b/],
             [/\b0 20 m\b/, /\b5 20 m\b/],
             [/\b80 40 m\b/, /\b75 40 m\b/],
@@ -365,6 +365,59 @@ describe("Vector", () => {
           assert.match(strokeOnlyBlocks[0], /(?:^|\r?\n)10 w\r?\n/);
           assert.match(strokeOnlyBlocks[0], /(?:^|\r?\n)S\r?\n/);
           assert.notMatch(strokeOnlyBlocks[0], /(?:^|\r?\n)(?:f|B)\r?\n/);
+        } finally {
+          reader.end();
+        }
+        done();
+      });
+  });
+
+  it("keeps thick inset strokes concentric and non-inverted", (done) => {
+    const options = { fill: "#000000", stroke: "#ff0000", lineWidth: 10 };
+    const thick = { fill: "#000000", stroke: "#ff0000", lineWidth: 30 };
+    new Recipe(Buffer.from("new"))
+      .createPage(80, 40)
+      .ellipse(40, 20, 40, 20, options)
+      .endPage()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, { ...options, borderRadius: 10 })
+      .endPage()
+      .createPage(20, 20)
+      .circle(10, 10, 10, thick)
+      .endPage()
+      .createPage(20, 20)
+      .arc(10, 10, 10, 0, 90, thick)
+      .endPage()
+      .endPDF((pdf) => {
+        const reader = muhammara.createReader(
+          new muhammara.PDFRStreamForBuffer(pdf),
+        );
+        try {
+          const strokeBlock = (pageIndex) =>
+            getPaintBlocks(reader, pageIndex).find((block) =>
+              /(?:^|\r?\n)S\r?\n/.test(block),
+            );
+          const k = 0.551784;
+          const firstCurve = strokeBlock(0)
+            .match(/((?:-?[\d.]+\s+){6})c\b/)[1]
+            .trim()
+            .split(/\s+/)
+            .map(Number);
+          [5, 20 - 15 * k, 40 - 35 * k, 5, 40, 5].forEach((value, index) => {
+            assert.closeTo(firstCurve[index], value, 0.01);
+          });
+          assert.match(strokeBlock(1), /\b5 50 m\b/);
+          assert.match(strokeBlock(1), /\b90 55 l\b/);
+          [2, 3].forEach((pageIndex) => {
+            // An over-wide stroke collapses the path onto the center point.
+            const operands = strokeBlock(pageIndex)
+              .match(/(?:-?[\d.]+\s+)+[mc]\b/g)
+              .join(" ")
+              .match(/-?[\d.]+/g)
+              .map(Number);
+            assert.isNotEmpty(operands);
+            assert.sameMembers([...new Set(operands)], [10]);
+          });
         } finally {
           reader.end();
         }

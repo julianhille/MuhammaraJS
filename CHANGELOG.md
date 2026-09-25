@@ -105,6 +105,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   read, such as one whose indirect `/Length` is not a number, instead of
   crashing the process [#778](https://github.com/julianhille/MuhammaraJS/issues/778)
+- Keep Recipe `rectangle()` rounded-corner strokes concentric with the fill by
+  shrinking corner radii with the stroke inset, draw `ellipse()` strokes as a
+  true inset ellipse, and collapse `circle()`, `ellipse()`, `rectangle()`, and
+  `arc()` strokes wider than the shape onto it instead of drawing them inverted
+  [#743](https://github.com/julianhille/MuhammaraJS/issues/743)
 - Fix Recipe character-spacing measurements for retained boundary whitespace
   and non-BMP Unicode text, preventing incorrect wrapping and horizontal
   alignment [#543](https://github.com/julianhille/MuhammaraJS/issues/543)

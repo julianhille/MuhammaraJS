@@ -83,10 +83,12 @@ export function createVectorMethods(runtime) {
         : this._calibrateCoordinate(x, y, 0, -height);
       var recipe = this;
       var result = paintInsetShape(this, options, x, y, function (inset) {
-        var pathX = point.nx + inset;
-        var pathY = point.ny + inset;
-        var pathWidth = width - inset * 2;
-        var pathHeight = height - inset * 2;
+        var insetX = Math.min(inset, width / 2);
+        var insetY = Math.min(inset, height / 2);
+        var pathX = point.nx + insetX;
+        var pathY = point.ny + insetY;
+        var pathWidth = width - insetX * 2;
+        var pathHeight = height - insetY * 2;
         if (recipe._pageContext) {
           recipe._pageContext.re(pathX, pathY, pathWidth, pathHeight);
         } else {
@@ -119,16 +121,20 @@ export function createVectorMethods(runtime) {
         source[2] ?? source[0],
         source[3] ?? source[1] ?? source[0],
       ].map((radius) => Math.max(0, Number(radius) || 0));
-      var [topLeft, topRight, bottomRight, bottomLeft] = radii;
       var point = options.useGivenCoords
         ? { nx: x, ny: y }
         : this._calibrateCoordinate(x, y, 0, -height);
       var recipe = this;
       var result = paintInsetShape(this, options, x, y, function (inset) {
+        inset = Math.min(inset, width / 2, height / 2);
         var left = point.nx + inset;
         var bottom = point.ny + inset;
         var right = point.nx + width - inset;
         var top = point.ny + height - inset;
+        // Keep the inset corners concentric with the nominal corners.
+        var [topLeft, topRight, bottomRight, bottomLeft] = radii.map((radius) =>
+          Math.max(0, radius - inset),
+        );
         var k = 0.551784;
         recipe
           ._movePdf(left + bottomLeft, bottom)
@@ -194,7 +200,7 @@ export function createVectorMethods(runtime) {
       var point = this._calibrateCoordinate(x, y);
       var recipe = this;
       var result = paintInsetShape(this, options, x, y, function (inset) {
-        var pathRadius = radius - inset;
+        var pathRadius = Math.max(0, radius - inset);
         var handle = pathRadius * 0.551784;
         recipe
           ._movePdf(point.nx - pathRadius, point.ny)
@@ -258,38 +264,40 @@ export function createVectorMethods(runtime) {
       var k = 0.551784;
       var recipe = this;
       var result = paintInsetShape(this, options, cx, cy, function (inset) {
+        var pathRx = Math.max(0, rx - inset);
+        var pathRy = Math.max(0, ry - inset);
         recipe
-          ._movePdf(x - rx + inset, y)
+          ._movePdf(x - pathRx, y)
           ._curvePdf(
-            x - rx + inset,
-            y - ry * k,
-            x - rx * k,
-            y - ry + inset,
+            x - pathRx,
+            y - pathRy * k,
+            x - pathRx * k,
+            y - pathRy,
             x,
-            y - ry + inset,
+            y - pathRy,
           )
           ._curvePdf(
-            x + rx * k,
-            y - ry + inset,
-            x + rx - inset,
-            y - ry * k,
-            x + rx - inset,
+            x + pathRx * k,
+            y - pathRy,
+            x + pathRx,
+            y - pathRy * k,
+            x + pathRx,
             y,
           )
           ._curvePdf(
-            x + rx - inset,
-            y + ry * k,
-            x + rx * k,
-            y + ry - inset,
+            x + pathRx,
+            y + pathRy * k,
+            x + pathRx * k,
+            y + pathRy,
             x,
-            y + ry - inset,
+            y + pathRy,
           )
           ._curvePdf(
-            x - rx * k,
-            y + ry - inset,
-            x - rx + inset,
-            y + ry * k,
-            x - rx + inset,
+            x - pathRx * k,
+            y + pathRy,
+            x - pathRx,
+            y + pathRy * k,
+            x - pathRx,
             y,
           );
       });
@@ -323,7 +331,7 @@ export function createVectorMethods(runtime) {
           recipe,
           point.nx,
           point.ny,
-          radius - inset,
+          Math.max(0, radius - inset),
           (-startAngle * Math.PI) / 180,
           (-endAngle * Math.PI) / 180,
         );
