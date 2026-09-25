@@ -102,7 +102,8 @@ describe("AppendPagesTest", function () {
         }
       }
     `;
-    var result = childProcess.spawnSync(process.execPath, ["-e", script], {
+    var nodeExecutable = process.env.npm_node_execpath || "node";
+    var result = childProcess.spawnSync(nodeExecutable, ["-e", script], {
       encoding: "utf8",
       timeout: 10000,
     });
