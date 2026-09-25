@@ -142,6 +142,10 @@ napi_value PDFWriterDriver::Abort(const CallbackArgs &a) {
   if (!d || !d->started_)
     return a.This();
   d->writer_.GetDocumentContext().RemoveDocumentContextExtender(d);
+  // A failed append can leave dictionaries open. Release them while the
+  // output stream is still alive: their destructors write to it, and
+  // Reset() closes the stream before cleaning up the objects context.
+  d->writer_.GetObjectsContext().Cleanup();
   d->writer_.Reset();
   delete d->writeProxy_;
   d->writeProxy_ = nullptr;
