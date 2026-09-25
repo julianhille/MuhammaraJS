@@ -652,7 +652,7 @@ export function createRecipeFactory({
     createAnnotationMethods({ module, withString, withDoubles, colorValue }),
     createInfoMethods({ call, withString }),
     createSecurityMethods(),
-    createReplaceTextMethods(encoder),
+    createReplaceTextMethods(),
   );
 
   // Composition modules receive closures rather than reaching into Recipe state.
