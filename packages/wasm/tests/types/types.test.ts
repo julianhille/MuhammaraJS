@@ -162,14 +162,21 @@ async function usesLowLevelSurface() {
   completedForm.getContentContext();
   var mergeWriter = muhammara.createWriter();
   var mergePage = mergeWriter.createPage();
-  mergeWriter.mergePDFPagesToPage(mergePage, source, () => {});
-  mergeWriter.mergePDFPagesToPage(mergePage, source, {}, () => {});
-  await mergeWriter.mergePDFPagesToPageAsync(mergePage, sourceBlob, () => {});
+  mergeWriter.mergePDFPagesToPage(mergePage, source, function () {
+    var callbackThis: typeof globalThis = this;
+    void callbackThis;
+  });
+  mergeWriter.mergePDFPagesToPage(mergePage, source, {}, function () {});
+  await mergeWriter.mergePDFPagesToPageAsync(
+    mergePage,
+    sourceBlob,
+    function () {},
+  );
   await mergeWriter.mergePDFPagesToPageAsync(
     mergePage,
     sourceBlob,
     {},
-    () => {},
+    function () {},
   );
   await mergeWriter.createFormXObjectsFromPDFAsync(sourceBlob);
   await mergeWriter.createFormXObjectFromTIFFAsync(new Blob());
@@ -271,14 +278,21 @@ async function usesLowLevelSurface() {
   });
   await modifier.createFormXObjectFromTIFFAsync(sourceBlob);
   await modifier.createFormXObjectFromTIFFBytesAsync(sourceBlob);
-  modifier.mergePDFPagesToPage(modifiedPage, source, () => {});
-  modifier.mergePDFPagesToPage(modifiedPage, source, {}, () => {});
-  await modifier.mergePDFPagesToPageAsync(modifiedPage, sourceBlob, () => {});
+  modifier.mergePDFPagesToPage(modifiedPage, source, function () {
+    var callbackThis: typeof globalThis = this;
+    void callbackThis;
+  });
+  modifier.mergePDFPagesToPage(modifiedPage, source, {}, function () {});
+  await modifier.mergePDFPagesToPageAsync(
+    modifiedPage,
+    sourceBlob,
+    function () {},
+  );
   await modifier.mergePDFPagesToPageAsync(
     modifiedPage,
     sourceBlob,
     {},
-    () => {},
+    function () {},
   );
   var parser = modifier.getModifiedFileParser();
   var pageInput = parser.parsePage(0);

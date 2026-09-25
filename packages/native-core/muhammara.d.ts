@@ -802,7 +802,7 @@ declare namespace muhammara {
 
   export interface AppendOptions extends MergeOptions {}
 
-  export type inInterPagesCallback = () => {};
+  export type inInterPagesCallback = (this: typeof globalThis) => void;
 
   /** Stateful methods require an active writer and throw Error("PDF writer has ended") after cleanup. */
   export interface PDFWriter {
