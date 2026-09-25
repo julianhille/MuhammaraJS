@@ -53,6 +53,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Fix Recipe character-spacing measurements for retained boundary whitespace
+  and non-BMP Unicode text, preventing incorrect wrapping and horizontal
+  alignment [#543](https://github.com/julianhille/MuhammaraJS/issues/543)
 - Fix the low-level drawing `type` declaration to accept the documented
   `null`, which ends the path without painting
   [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
