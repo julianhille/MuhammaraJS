@@ -864,10 +864,15 @@ export function createWriterToModifyFactory({
               errorPointer,
               countPointer,
             );
-            if (module.HEAP32[errorPointer >>> 2] === 2)
+            var errorCode = module.HEAP32[errorPointer >>> 2];
+            if (errorCode === 2) {
+              dispose();
               throw new Error("Encrypted PDF input is not supported in Wasm");
-            if (module.HEAP32[errorPointer >>> 2] !== 0)
+            }
+            if (errorCode !== 0) {
+              dispose();
               throw new Error("Unable to append PDF pages from input bytes");
+            }
             try {
               return ids
                 ? Array.from(
