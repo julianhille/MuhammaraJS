@@ -43,6 +43,7 @@ nav:
   - Getting Started:
       - Browser Setup: browser-setup.md
       - Byte Assets, Blob, and File Input: byte-assets.md
+      - Migrate Vector Stroke Bounds: migrate-vector-stroke-bounds.md
   - Browser Examples: browser-examples.md
   - High-Level Recipe:
       - Overview: recipe/index.md

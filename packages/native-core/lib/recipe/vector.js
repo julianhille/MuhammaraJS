@@ -83,7 +83,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
           .drawCircle(
             radius,
             radius,
-            radius - pathOptions.width / 2,
+            Math.max(0, radius - pathOptions.width / 2),
             pathOptions,
           );
 
@@ -186,23 +186,25 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
         if (options.borderRadius) {
           ctx.w(pathOptions.width).d(pathOptions.dash, pathOptions.dashPhase);
 
+          const inset = Math.min(margin / 2, width / 2, height / 2);
           drawRoundedRectangle(
             ctx,
-            margin / 2,
-            margin / 2,
-            width - margin,
-            height - margin,
+            inset,
+            inset,
+            width - inset * 2,
+            height - inset * 2,
             options.borderRadius,
+            inset,
           );
           ctx.S();
         } else {
           ctx
             .d(pathOptions.dash, pathOptions.dashPhase)
             .drawRectangle(
-              margin / 2,
-              margin / 2,
-              width - margin,
-              height - margin,
+              Math.min(margin / 2, width / 2),
+              Math.min(margin / 2, height / 2),
+              Math.max(0, width - margin),
+              Math.max(0, height - margin),
               pathOptions,
             );
         }
@@ -218,7 +220,15 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   return this;
 };
 
-function drawRoundedRectangle(ctx, left, bottom, width, height, radii) {
+function drawRoundedRectangle(
+  ctx,
+  left,
+  bottom,
+  width,
+  height,
+  radii,
+  inset = 0,
+) {
   let radius = [];
 
   // populate radius array accordingly.
@@ -244,6 +254,8 @@ function drawRoundedRectangle(ctx, left, bottom, width, height, radii) {
         break;
     }
   }
+  // Keep inset corners concentric with the nominal corners.
+  radius = radius.map((value) => Math.max(0, value - inset));
   const K = 0.551784;
   const right = left + width;
   const top = bottom + height;
@@ -322,8 +334,8 @@ exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
 
   const drawEllipse = (ctx, x, y, w, h) => {
     const magic = 0.551784; // from https://www.tinaja.com/glib/ellipse4.pdf
-    const ox = rx * magic; // control point offset horizontal
-    const oy = ry * magic; // control point offset horizontal
+    const ox = (w / 2) * magic; // control point offset horizontal
+    const oy = (h / 2) * magic; // control point offset vertical
     const xe = x + w; // x-end, opposite corner from origin
     const ye = y + h; // y-end, opposite corner from origin
     const xm = rx; // x-middle of enclosing rectangle
@@ -381,10 +393,10 @@ exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
         // ... requires adjusting the internal drawing to accomodate line thickness.
         drawEllipse(
           ctx,
-          margin,
-          margin,
-          width - pathOptions.width,
-          height - pathOptions.width,
+          Math.min(margin, rx),
+          Math.min(margin, ry),
+          Math.max(0, width - pathOptions.width),
+          Math.max(0, height - pathOptions.width),
         );
         ctx.S();
       },
@@ -537,7 +549,15 @@ exports.arc = function arc(
         ctx.w(pathOptions.width).d(pathOptions.dash, pathOptions.dashPhase);
 
         // ... requires adjusting the internal drawing to accomodate line thickness.
-        drawArc(ctx, radius, radius, radius - margin, sAng, eAng, sector);
+        drawArc(
+          ctx,
+          radius,
+          radius,
+          Math.max(0, radius - margin),
+          sAng,
+          eAng,
+          sector,
+        );
         if (sector) {
           ctx.h();
         } // close off path to create a circle sector.

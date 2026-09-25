@@ -13,6 +13,41 @@ function getFirstContentStream(pdf) {
   return inflateSync(bytes.subarray(start, end)).toString();
 }
 
+/** Collects decoded painting blocks from a page and its Form XObjects. */
+function getPaintBlocks(muhammara, reader, pageIndex) {
+  var page = reader.parsePage(pageIndex).getDictionary();
+  var contents = reader.queryDictionaryObject(page, "Contents");
+  var streams =
+    contents.getType() === muhammara.ePDFObjectArray
+      ? contents
+          .toPDFArray()
+          .toJSArray()
+          .map((reference) =>
+            reader.parseNewObject(
+              reference.toPDFIndirectObjectReference().getObjectID(),
+            ),
+          )
+      : [contents];
+  var resources = reader.queryDictionaryObject(page, "Resources");
+  if (resources.exists("XObject")) {
+    var forms = reader.queryDictionaryObject(resources, "XObject");
+    Object.keys(forms.toJSObject()).forEach(function (name) {
+      streams.push(reader.queryDictionaryObject(forms, name));
+    });
+  }
+  return streams.flatMap(function (stream) {
+    var input = reader.startReadingFromStream(stream.toPDFStream());
+    var bytes = [];
+    while (input.notEnded()) bytes.push(...input.read(4096));
+    var content = new TextDecoder("latin1").decode(new Uint8Array(bytes));
+    return (content.match(/q\r?\n[\s\S]*?\r?\nQ/g) || [content]).filter(
+      function (block) {
+        return /(?:^|\r?\n)(?:f|S)\r?\n/.test(block);
+      },
+    );
+  });
+}
+
 describe("Recipe vector", function () {
   it("creates vector shapes, transforms, and images", async function () {
     var Recipe = await getRecipe();
@@ -95,5 +130,209 @@ describe("Recipe vector", function () {
 
     writeOutput("vector-pie-wedge", pdf);
     assert.match(getFirstContentStream(pdf), /\r?\nh\r?\n[\s\S]*?S\r?\n/);
+  });
+
+  it("insets vector strokes within the requested bounds", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var options = {
+      fill: "#000000",
+      stroke: "#ff0000",
+      lineWidth: 10,
+    };
+    var inheritedOptions = Object.create(options);
+    Object.defineProperty(inheritedOptions, "unused", {
+      enumerable: true,
+      get: function () {
+        throw new Error("Unused option getter must not be evaluated");
+      },
+    });
+    var pdf = new Recipe()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, inheritedOptions)
+      .endPage()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, { ...options, borderRadius: 10 })
+      .endPage()
+      .createPage(80, 80)
+      .circle(40, 40, 40, options)
+      .endPage()
+      .createPage(80, 40)
+      .ellipse(40, 20, 40, 20, options)
+      .endPage()
+      .createPage(80, 80)
+      .arc(40, 40, 40, 0, 90, options)
+      .endPage()
+      .createPage(80, 80)
+      .pie(40, 40, 40, 0, 90, options)
+      .endPage()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, {
+        stroke: "#ff0000",
+        lineWidth: 10,
+      })
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(pdf);
+    try {
+      var expectedGeometry = [
+        [/\b0 0 100 60 re\b/, /\b5 5 90 50 re\b/],
+        [/\b10 0 m\b/, /\b10 5 m\b/],
+        [/\b0 40 m\b/, /\b5 40 m\b/],
+        [/\b0 20 m\b/, /\b5 20 m\b/],
+        [/\b80 40 m\b/, /\b75 40 m\b/],
+        [/\b80 40 m\b/, /\b75 40 m\b/],
+      ];
+      expectedGeometry.forEach(function (geometry, pageIndex) {
+        var blocks = getPaintBlocks(muhammara, reader, pageIndex);
+        var fillBlock = blocks.find(function (block) {
+          return /(?:^|\r?\n)f\r?\n/.test(block);
+        });
+        var strokeBlock = blocks.find(function (block) {
+          return /(?:^|\r?\n)S\r?\n/.test(block);
+        });
+        assert.equal(blocks.length, 2);
+        assert.match(fillBlock, geometry[0]);
+        assert.match(strokeBlock, geometry[1]);
+        assert.match(strokeBlock, /(?:^|\r?\n)10 w\r?\n/);
+        assert.doesNotMatch(blocks.join("\n"), /(?:^|\r?\n)B\r?\n/);
+      });
+      var strokeOnlyBlocks = getPaintBlocks(muhammara, reader, 6);
+      assert.equal(strokeOnlyBlocks.length, 1);
+      assert.match(strokeOnlyBlocks[0], /\b5 5 90 50 re\b/);
+      assert.match(strokeOnlyBlocks[0], /(?:^|\r?\n)10 w\r?\n/);
+      assert.match(strokeOnlyBlocks[0], /(?:^|\r?\n)S\r?\n/);
+      assert.doesNotMatch(strokeOnlyBlocks[0], /(?:^|\r?\n)(?:f|B)\r?\n/);
+    } finally {
+      reader.end();
+    }
+  });
+
+  it("insets vector strokes while editing an existing page", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var source = new Recipe()
+      .createPage(100, 60)
+      .endPage()
+      .createPage(100, 60)
+      .endPage()
+      .createPage(80, 80)
+      .endPage()
+      .createPage(80, 40)
+      .endPage()
+      .createPage(80, 80)
+      .endPage()
+      .createPage(80, 80)
+      .endPage()
+      .endPDF();
+    var options = {
+      fill: "#000000",
+      stroke: "#ff0000",
+      lineWidth: 10,
+    };
+    var pdf = new Recipe(source)
+      .editPage(1)
+      .rectangle(0, 0, 100, 60, options)
+      .endPage()
+      .editPage(2)
+      .rectangle(0, 0, 100, 60, { ...options, borderRadius: 10 })
+      .endPage()
+      .editPage(3)
+      .circle(40, 40, 40, options)
+      .endPage()
+      .editPage(4)
+      .ellipse(40, 20, 40, 20, options)
+      .endPage()
+      .editPage(5)
+      .arc(40, 40, 40, 0, 90, options)
+      .endPage()
+      .editPage(6)
+      .pie(40, 40, 40, 0, 90, options)
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(pdf);
+    try {
+      var expectedGeometry = [
+        [/\b0 0 100 60 re\b/, /\b5 5 90 50 re\b/],
+        [/\b10 0 m\b/, /\b10 5 m\b/],
+        [/\b0 40 m\b/, /\b5 40 m\b/],
+        [/\b0 20 m\b/, /\b5 20 m\b/],
+        [/\b80 40 m\b/, /\b75 40 m\b/],
+        [/\b80 40 m\b/, /\b75 40 m\b/],
+      ];
+      expectedGeometry.forEach(function (geometry, pageIndex) {
+        var blocks = getPaintBlocks(muhammara, reader, pageIndex);
+        var fillBlock = blocks.find(function (block) {
+          return /(?:^|\r?\n)f\r?\n/.test(block);
+        });
+        var strokeBlock = blocks.find(function (block) {
+          return /(?:^|\r?\n)S\r?\n/.test(block);
+        });
+        assert.equal(blocks.length, 2);
+        assert.match(fillBlock, geometry[0]);
+        assert.match(strokeBlock, geometry[1]);
+        assert.match(strokeBlock, /(?:^|\r?\n)10 w\r?\n/);
+        assert.doesNotMatch(blocks.join("\n"), /(?:^|\r?\n)B\r?\n/);
+      });
+    } finally {
+      reader.end();
+    }
+  });
+
+  it("keeps thick inset strokes concentric and non-inverted", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var options = { fill: "#000000", stroke: "#ff0000", lineWidth: 10 };
+    var thick = { fill: "#000000", stroke: "#ff0000", lineWidth: 30 };
+    var pdf = new Recipe()
+      .createPage(80, 40)
+      .ellipse(40, 20, 40, 20, options)
+      .endPage()
+      .createPage(100, 60)
+      .rectangle(0, 0, 100, 60, { ...options, borderRadius: 10 })
+      .endPage()
+      .createPage(20, 20)
+      .circle(10, 10, 10, thick)
+      .endPage()
+      .createPage(20, 20)
+      .arc(10, 10, 10, 0, 90, thick)
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(pdf);
+    try {
+      var strokeBlock = function (pageIndex) {
+        return getPaintBlocks(muhammara, reader, pageIndex).find(
+          function (block) {
+            return /(?:^|\r?\n)S\r?\n/.test(block);
+          },
+        );
+      };
+      var k = 0.551784;
+      var firstCurve = strokeBlock(0)
+        .match(/((?:-?[\d.]+\s+){6})c\b/)[1]
+        .trim()
+        .split(/\s+/)
+        .map(Number);
+      [5, 20 - 15 * k, 40 - 35 * k, 5, 40, 5].forEach(function (value, index) {
+        assert.ok(
+          Math.abs(firstCurve[index] - value) < 0.01,
+          `ellipse curve operand ${index}: ${firstCurve[index]} != ${value}`,
+        );
+      });
+      assert.match(strokeBlock(1), /\b10 5 m\b/);
+      assert.match(strokeBlock(1), /\b90 5 l\b/);
+      [2, 3].forEach(function (pageIndex) {
+        // An over-wide stroke collapses the path onto the center point.
+        var operands = strokeBlock(pageIndex)
+          .match(/(?:-?[\d.]+\s+)+[mc]\b/g)
+          .join(" ")
+          .match(/-?[\d.]+/g)
+          .map(Number);
+        assert.ok(operands.length > 0);
+        assert.deepEqual(new Set(operands), new Set([10]));
+      });
+    } finally {
+      reader.end();
+    }
   });
 });
