@@ -8,8 +8,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 - Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
   Previously callers could continue after a failed append and produce a
-   corrupted document; create a fresh writer and retry with valid source bytes.
-   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  corrupted document; create a fresh writer and retry with valid source bytes.
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 
 ## [1.0.0-beta.4] - 2026-09-24
 
@@ -32,6 +32,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   reduce coordinates or sizes that overflow. Return stable option
   values and correct invalid inputs before retrying; see
   [breaking changes](docs/breaking-changes.md).
+
 ### Added
 
 - Add Recipe `text()` options `underline`, `strikeOut`, and `squiggly` as
