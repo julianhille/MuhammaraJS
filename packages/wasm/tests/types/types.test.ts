@@ -607,6 +607,11 @@ async function usesLowLevelSurface() {
   byteRecipe.replaceText("Before", "After", 1);
   // @ts-expect-error replaceText requires a one-based page number.
   byteRecipe.replaceText("Before", "After");
+  byteRecipe.removeText(1).removeText(1, { forms: true });
+  // @ts-expect-error removeText requires a one-based page number.
+  byteRecipe.removeText();
+  // @ts-expect-error forms must be a boolean.
+  byteRecipe.removeText(1, { forms: "yes" });
   byteRecipe.getPageInfo();
   byteRecipe.getCurrentPageInfo()?.rotate;
   byteRecipe

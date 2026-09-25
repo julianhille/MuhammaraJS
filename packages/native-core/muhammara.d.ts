@@ -928,6 +928,11 @@ declare namespace muhammara {
     scope?: "global";
   }
 
+  export interface RemoveTextOptions {
+    /** Also remove text from the Form XObjects the page paints, including nested forms. Defaults to `false`. */
+    forms?: boolean;
+  }
+
   export interface RecipePageInfo {
     width: number;
     height: number;
@@ -1631,6 +1636,8 @@ declare namespace muhammara {
     deletePage(pageNumbers: number | number[]): Recipe;
 
     replaceText(text: string, replacement: string, pageNumber: number): Recipe;
+    /** Removes shown text from an existing page's content streams, and optionally its Form XObjects. */
+    removeText(pageNumber: number, options?: RemoveTextOptions): Recipe;
 
     pageInfo(pageNumber: number): RecipePageInfo;
     getCurrentPageInfo(): RecipePageInfo | null;

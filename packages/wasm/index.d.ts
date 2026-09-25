@@ -484,6 +484,10 @@ export interface RecipeStructure {
   objects: number;
 }
 export type RecipeStructureFormat = "string" | "json" | { json?: boolean };
+export interface RemoveTextOptions {
+  /** Also remove text from the Form XObjects the page paints, including nested forms. Defaults to `false`. */
+  forms?: boolean;
+}
 export interface RecipePageInfo {
   pageNumber: number;
   mediaBox: PDFRectangle;
@@ -554,6 +558,8 @@ export interface Recipe {
   editPage(pageNumber: number): this;
   /** Replaces literal `(...) Tj` operands in an existing page's single content stream. */
   replaceText(text: string, replacement: string, pageNumber: number): this;
+  /** Removes shown text from an existing page's content streams, and optionally its Form XObjects. */
+  removeText(pageNumber: number, options?: RemoveTextOptions): this;
   deletePage(pageNumbers: number | number[]): this;
   pauseContext(): this;
   resumeContext(): this;

@@ -6,6 +6,7 @@ var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var editAnnotation = require("../../../native/docs/examples/edit-annotation");
 var deletePages = require("../../../native/docs/examples/delete-pages");
+var replaceTextLayer = require("../../../native/docs/examples/replace-text-layer");
 
 var fontPath = path.join(
   __dirname,
@@ -155,6 +156,52 @@ describe("Documentation examples", function () {
     assert.deepStrictEqual(text[0].textMatrix, [1, 0, 0, 1, 20, 30]);
     reader.end();
   });
+  it("replaces a page's text layer", function () {
+    var outputPath = path.join(outputDirectory, "replaced-text-layer.pdf");
+
+    replaceTextLayer(sourcePath, outputPath, [
+      { page: 1, text: "OCR", x: 20, y: 30, size: 12 },
+    ]);
+
+    var reader = muhammara.createReader(outputPath);
+    try {
+      var page = reader.parsePage(0).getDictionary();
+      var contents = reader.queryDictionaryObject(page, "Contents");
+      var streams = contents.toJSArray().map(function (entry) {
+        return reader.parseNewObject(entry.getObjectID());
+      });
+      var xObjects = reader
+        .queryDictionaryObject(
+          reader.queryDictionaryObject(page, "Resources"),
+          "XObject",
+        )
+        .toJSObject();
+      var readStream = function (stream) {
+        var streamReader = reader.startReadingFromStream(stream);
+        var chunks = [];
+        while (streamReader.notEnded()) {
+          chunks.push(Buffer.from(streamReader.read(65536)));
+        }
+        return Buffer.concat(chunks).toString("latin1");
+      };
+
+      assert.deepStrictEqual(reader.extractPageText(0), []);
+      assert.notMatch(streams.map(readStream).join("\n"), /\bTj\b/);
+      assert.match(
+        Object.keys(xObjects)
+          .map(function (name) {
+            return readStream(
+              reader.parseNewObject(xObjects[name].getObjectID()),
+            );
+          })
+          .join("\n"),
+        /\bTj\b/,
+      );
+    } finally {
+      reader.end();
+    }
+  });
+
   it("edits an existing annotation without losing its other keys", async function () {
     var annotatedPath = path.join(outputDirectory, "annotated.pdf");
     var outputPath = path.join(outputDirectory, "edited-annotation.pdf");

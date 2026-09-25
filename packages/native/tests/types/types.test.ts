@@ -82,6 +82,11 @@ context.J(api.LineCapStyle.LINECAP_BUTT).j(2);
 objects.endArray(api.ETokenSeparator.eTokenSeparatorEndLine);
 recipe.read();
 recipe.deletePage(1).deletePage([2, 3]);
+recipe.removeText(1).removeText(2, { forms: true });
+// @ts-expect-error removeText requires a one-based page number.
+recipe.removeText();
+// @ts-expect-error forms must be a boolean.
+recipe.removeText(1, { forms: "yes" });
 recipe
   .link("https://example.com", 100, 200, 160, 24)
   .comment("Please review.", 300, 100, {

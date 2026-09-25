@@ -23,7 +23,8 @@ describe("Replace text", function () {
       .Tf(writer.getFontForBytes("replace-text-font"), 12)
       .Tm(1, 0, 0, 1, 20, 30)
       .Tj("Before")
-      .ET();
+      .ET()
+      .writeFreeCode("% caf\u00e9\n");
     writer.writePage(page);
     var source = writer.end();
 
@@ -36,6 +37,26 @@ describe("Replace text", function () {
     assert.equal(text.length, 1);
     assert.equal(text[0].content, "After");
     assert.deepEqual(text[0].textMatrix, [1, 0, 0, 1, 20, 30]);
+
+    var contents = reader
+      .parsePage(0)
+      .getDictionary()
+      .toPDFDictionary()
+      .queryObject("Contents");
+    var streamReader = reader.startReadingFromStream(
+      reader
+        .parseNewObject(contents.toPDFIndirectObjectReference().getObjectID())
+        .toPDFStream(),
+    );
+    var content = [];
+    while (streamReader.notEnded()) {
+      content.push(...new Uint8Array(streamReader.read(65536)));
+    }
+    streamReader.dispose?.();
+    assert.ok(
+      Buffer.from(content).includes(Buffer.from("% caf\u00e9\n")),
+      "non-ASCII content bytes are preserved",
+    );
     reader.end();
     muhammara.unregisterFont("replace-text-font");
     muhammara.disposeAssets();

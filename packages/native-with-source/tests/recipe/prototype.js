@@ -102,6 +102,7 @@ describe("Recipe prototype", function () {
       "rectangle",
       "register",
       "registerFont",
+      "removeText",
       "replaceText",
       "resumeContext",
       "rotate",
