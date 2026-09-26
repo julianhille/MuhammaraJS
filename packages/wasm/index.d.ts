@@ -840,6 +840,11 @@ export interface AnnotationOptions {
  * `null` selects no paint operation and ends the path unpainted.
  */
 export type DrawingPathType = "stroke" | "fill" | "clip" | null;
+export declare const DrawingPathType: {
+  readonly STROKE: "stroke";
+  readonly FILL: "fill";
+  readonly CLIP: "clip";
+};
 /** PDF line cap style for `J()`: 0 butt, 1 round, 2 projecting square. */
 export type LineCapStyle = 0 | 1 | 2;
 /** Info dictionary `/Trapped` state: the `EInfoTrapped*` constants. */

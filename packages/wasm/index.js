@@ -27,6 +27,7 @@ import {
   ImageFitPolicy,
   PageBox,
   TextEncoding,
+  DrawingPathType,
 } from "./lib/value-sets.js";
 
 export {
@@ -35,6 +36,7 @@ export {
   ByteWriter,
   ByteWriterWithPosition,
   DeviceColorSpace,
+  DrawingPathType,
   ImageFitPolicy,
   PageBox,
   PDFRStreamForBuffer,

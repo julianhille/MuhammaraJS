@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   createMuhammaraWasm,
   DeviceColorSpace,
+  DrawingPathType,
   ImageFitPolicy,
   PageBox,
   TextEncoding,
@@ -105,4 +106,5 @@ var EXPORTED_VALUE_SETS = [
   [ImageFitPolicy, ["always", "overflow"]],
   [PageBox, ["media", "crop", "bleed", "trim", "art"]],
   [TextEncoding, ["text", "code", "hex"]],
+  [DrawingPathType, ["stroke", "fill", "clip"]],
 ];

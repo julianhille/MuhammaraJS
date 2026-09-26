@@ -40,3 +40,10 @@ export var RecipeColorSpace = Object.freeze({
   ...DeviceColorSpace,
   SEPARATION: "separation",
 });
+
+/** Paint operation that finishes a low-level drawing helper path. */
+export var DrawingPathType = Object.freeze({
+  STROKE: "stroke",
+  FILL: "fill",
+  CLIP: "clip",
+});

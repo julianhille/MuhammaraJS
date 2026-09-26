@@ -1,4 +1,4 @@
-import { DeviceColorSpace } from "./value-sets.js";
+import { DeviceColorSpace, DrawingPathType } from "./value-sets.js";
 
 /** Reject overflowing derived geometry before any operator is emitted. */
 export function validateDrawingGeometry(values) {
@@ -33,7 +33,7 @@ export function readDrawingOptions(
 ) {
   options = options || {};
   var setupType = options.type;
-  var stroke = setupType === undefined || setupType === "stroke";
+  var stroke = setupType === undefined || setupType === DrawingPathType.STROKE;
   var color = readColor(options, colorValue);
   var width = stroke ? options.width : undefined;
   if (width !== undefined && !Number.isFinite(width)) {
@@ -41,7 +41,7 @@ export function readDrawingOptions(
   }
   // Preserve the second getter read, but do not turn an explicit null into stroke.
   var type = options.type;
-  if (type === undefined) type = "stroke";
+  if (type === undefined) type = DrawingPathType.STROKE;
   var close = Boolean(options.close);
   return { ...color, width, type, close, stroke };
 }
