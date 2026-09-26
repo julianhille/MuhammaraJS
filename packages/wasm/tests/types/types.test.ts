@@ -793,3 +793,15 @@ async function usesAlignedDeclarations() {
 }
 
 void usesAlignedDeclarations;
+
+async function usesNamedValueSets() {
+  var muhammara = await createMuhammaraWasm();
+  var writer = muhammara.createWriter();
+  var context = writer.startPageContentContext(writer.createPage());
+  void context;
+  context.J(2);
+  // @ts-expect-error PDF line caps are 0 to 2.
+  context.J(3);
+}
+
+void usesNamedValueSets;

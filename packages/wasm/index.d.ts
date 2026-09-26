@@ -815,6 +815,8 @@ export interface AnnotationOptions {
  * `null` selects no paint operation and ends the path unpainted.
  */
 export type DrawingPathType = "stroke" | "fill" | "clip" | null;
+/** PDF line cap style for `J()`: 0 butt, 1 round, 2 projecting square. */
+export type LineCapStyle = 0 | 1 | 2;
 
 export interface DrawPathOptions {
   color?: number | string;
@@ -1025,7 +1027,7 @@ export interface ContentContext {
   Q(): this;
   cm(...matrix: PDFMatrix): this;
   w(value: number): this;
-  J(value: number): this;
+  J(value: LineCapStyle): this;
   j(value: number): this;
   M(value: number): this;
   d(dash: number[], phase?: number): this;
