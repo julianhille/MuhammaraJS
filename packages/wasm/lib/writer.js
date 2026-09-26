@@ -839,6 +839,10 @@ export function createWriterFactory({
       },
     };
 
+    /**
+     * Creates the content context of the current page.
+     * @returns {ContentContext} The page content context.
+     */
     function contentContext() {
       function operator(name, code, args = [], integers = false) {
         requireActiveContext(context);
