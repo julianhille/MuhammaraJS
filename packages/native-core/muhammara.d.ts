@@ -291,6 +291,11 @@ declare namespace muhammara {
   export type PDFImageType = "JPG" | "PDF" | "PNG" | "TIFF";
 
   export interface PDFRStreamForFile extends ReadStream {
+    /**
+     * Opens a file for reading.
+     * @param inPath - The file path.
+     * @throws {Error} If the file cannot be opened or read.
+     */
     new (inPath: FilePath): PDFRStreamForFile;
     /**
      * Reads the next bytes from the file.
