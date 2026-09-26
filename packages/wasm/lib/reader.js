@@ -788,6 +788,11 @@ export function createReaderFactory({
         }
         return id;
       },
+      /**
+       * Reads the header PDF version.
+       * @returns {number} The version, such as 1.7.
+       * @throws {Error} If the reader has ended.
+       */
       getPDFLevel: function () {
         requireReader();
         return module._muhammara_wasm_reader_get_pdf_level(reader);
