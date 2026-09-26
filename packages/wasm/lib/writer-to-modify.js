@@ -1055,6 +1055,11 @@ export function createWriterToModifyFactory({
          */
         text: (...args) =>
           module._muhammara_wasm_modifier_show_text_operator(modifier, ...args),
+        /**
+         * Runs a native glyph text-showing operator.
+         * @param {...number} args - Operator kind, spacing, and glyph pointer and count.
+         * @returns {boolean} Whether the operator was written.
+         */
         glyphs: (...args) =>
           module._muhammara_wasm_modifier_show_glyphs_operator(
             modifier,
