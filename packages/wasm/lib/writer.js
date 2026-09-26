@@ -2940,6 +2940,15 @@ export function createWriterFactory({
       return images.get(name);
     }
 
+    /**
+     * Runs a callback with the path of a registered image or of temporarily stored bytes.
+     * @param {string|ByteSource} value - Registered image name or image bytes.
+     * @param {string} label - Name used in byte errors.
+     * @param {string} [expectedType] - Required RegisteredImageFormat for a name.
+     * @param {function(string): *} callback - Receives the virtual path.
+     * @returns {*} The callback result.
+     * @throws {TypeError} If the name is not registered or the bytes are unsupported.
+     */
     function withImagePathOrBytes(value, label, expectedType, callback) {
       if (typeof value === "string")
         return callback(imagePath(value, expectedType));
