@@ -173,6 +173,11 @@ export function createReaderFactory({
             throw new Error("PDF object parser has ended");
           return module._muhammara_wasm_object_get_type(handle);
         },
+        /**
+         * Formats the object value as text.
+         * @returns {string} The value; names without their slash.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         toString: function () {
           object.getType();
           return objectString(handle);
