@@ -1072,6 +1072,18 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     pausePageContentContext(pageContextContext: PageContentContext): this;
+    /**
+     * Starts a form XObject. Draw on its content context, then call
+     * endFormXObject().
+     * @param left - The bounding box left edge.
+     * @param bottom - The bounding box bottom edge.
+     * @param right - The bounding box right edge.
+     * @param top - The bounding box top edge.
+     * @param objectId - A forward-reference object ID reserved earlier.
+     * @returns The form.
+     * @throws {TypeError} If the arguments are not four or five numbers.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObject(
       left: number,
       bottom: number,
