@@ -1974,6 +1974,13 @@ export function createWriterFactory({
             checkOperatorRange("Tr", renderingMode, 7, "text rendering mode");
             return operator("Tr", 39, [renderingMode], true);
           },
+          /**
+           * Sets the text rise (`Ts`).
+           * @param {number} fontRise - Baseline shift in unscaled text space units.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           Ts: function (fontRise) {
             return operator("Ts", 40, [fontRise]);
           },
