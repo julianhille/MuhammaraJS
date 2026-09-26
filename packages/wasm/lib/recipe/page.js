@@ -152,7 +152,13 @@ function walkPageTree(tree, visit) {
   }
 }
 
-/** Adds retained Pages-node object IDs to a set. @private */
+/**
+ * Adds retained Pages-node object IDs to a set.
+ * @private
+ * @param {object} tree - Page-tree root.
+ * @param {Set<number>} objectIDs - Receives the IDs.
+ * @returns {void}
+ */
 function collectPageTreeObjectIDs(tree, objectIDs) {
   walkPageTree(tree, (node) => {
     if (node.children) objectIDs.add(node.objectID);
