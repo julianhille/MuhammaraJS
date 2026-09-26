@@ -466,6 +466,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     w(lineWidth: Width): this;
+    /**
+     * Sets the line cap style; operator J.
+     * @param lineCapStyle - A LineCapStyle value.
+     * @returns This context.
+     * @throws {TypeError} If lineCapStyle is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     J(lineCapStyle: LineCapStyle): this;
     j(lineJoinStyle: LineJoinStyle): this;
     M(miterLimit: number): this;
