@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Accept a form XObject object ID in `doXObject()`, as Wasm does
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Default the `d()` dash phase to 0 when it is omitted, as Wasm does
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Accept a `Uint8Array` (or `Buffer`) from custom read streams and in the

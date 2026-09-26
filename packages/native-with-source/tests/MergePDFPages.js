@@ -272,6 +272,26 @@ describe("MergePDFPages", function () {
         /\[ 3 1 \] 0 d/,
       );
     });
+
+    it("places a form XObject by its object ID", function () {
+      var outputPath = __dirname + "/output/DoXObjectById.pdf";
+      var pdfWriter = muhammara.createWriter(outputPath, { compress: false });
+      var formIds = pdfWriter.createFormXObjectsFromPDF(
+        __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+        muhammara.ePDFPageBoxMediaBox,
+      );
+      var page = pdfWriter.createPage(0, 0, 595, 842);
+      var context = pdfWriter.startPageContentContext(page);
+      context.doXObject(formIds[0]);
+      assert.throws(function () {
+        context.doXObject(1.5);
+      }, /positive integer/);
+      pdfWriter.writePage(page).end();
+      assert.match(
+        require("fs").readFileSync(outputPath, "latin1"),
+        /\/Fm1 Do/,
+      );
+    });
   });
 
   describe("MergeFromStream", function () {

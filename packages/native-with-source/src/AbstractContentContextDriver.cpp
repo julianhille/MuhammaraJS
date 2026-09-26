@@ -587,6 +587,15 @@ napi_value AbstractContentContextDriver::DoXObject(const CallbackArgs &args) {
 
   if (IsString(args, 0)) {
     driver->GetContext()->Do(LegacyString(args.Env(), args[0]));
+  } else if (IsNumber(args, 0)) {
+    // A form XObject object ID, as returned by createFormXObjectsFromPDF.
+    double id = ToDouble(args.Env(), args[0]);
+    if (!(id >= 1 && id <= 4294967295.0 && id == std::floor(id)))
+      return WrongArguments(args.Env(),
+                            "Wrong arguments, a form xobject ID must be a "
+                            "positive integer");
+    driver->GetContext()->Do(driver->mResourcesDictionary->AddFormXObjectMapping(
+        static_cast<ObjectIDType>(id)));
   } else if (driver->holder->IsFormXObjectInstance(args[0])) {
     FormXObjectDriver *form =
         ObjectWrap::Unwrap<FormXObjectDriver>(args.Env(), args[0]);

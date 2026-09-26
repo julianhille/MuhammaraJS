@@ -225,7 +225,10 @@ declare namespace muhammara {
     k(c: number, m: number, y: number, k: number): this;
     W(): this;
     WStar(): this;
-    doXObject(xObject: string | FormXObject | ImageXObject): this;
+    /** A resource name, an XObject, or a form XObject object ID. */
+    doXObject(
+      xObject: string | FormXObjectId | FormXObject | ImageXObject,
+    ): this;
     Tc(characterSpace: number): this;
     Tw(wordSpace: number): this;
     Tz(horizontalScaling: number): this;
