@@ -86,6 +86,12 @@ export function createRecipeFactory({
   var pdfs = new Map();
   var state = { nextFont: 0, nextImage: 0, nextPdf: 0 };
 
+  /**
+   * Resolves the registered font path for text options, registering the default font on first use.
+   * @param {object} [options={}] - Text options with `font`, `bold`, and `italic`.
+   * @returns {string} Virtual path of the font.
+   * @throws {Error} If the font is not registered.
+   */
   function resolveFont(options = {}) {
     var name = options.font || defaultFont?.name;
     if (
