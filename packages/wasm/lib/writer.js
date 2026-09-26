@@ -583,6 +583,10 @@ export function createWriterFactory({
     var directImagePaths = [];
     var lifecycle = createChildLifecycle();
 
+    /**
+     * Releases the native writer, its children, and stored assets. Idempotent.
+     * @returns {void}
+     */
     function dispose() {
       if (disposed) return;
       disposed = true;
