@@ -1861,6 +1861,16 @@ export function createWriterFactory({
           RG: function (red, green, blue) {
             return operator("RG", 27, [red, green, blue]);
           },
+          /**
+           * Sets the stroking CMYK color (`K`).
+           * @param {number} cyan - Cyan from 0 to 1.
+           * @param {number} magenta - Magenta from 0 to 1.
+           * @param {number} yellow - Yellow from 0 to 1.
+           * @param {number} black - Black from 0 to 1.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           K: function (cyan, magenta, yellow, black) {
             return operator("K", 29, [cyan, magenta, yellow, black]);
           },
