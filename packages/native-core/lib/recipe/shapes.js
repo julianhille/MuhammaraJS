@@ -1639,6 +1639,11 @@ const Line = class Line {
   //  y = -----------------------------------------------     ---------------
   //          (x2 - x1)(y4 - y3) - (x4 - x3)(y2 - y1)         b1(a2) - b2(a1)
 
+  /**
+   * The intersection with another line.
+   * @param {Line} CD - The other line.
+   * @returns {Point|null} The intersection, or null for parallel lines.
+   */
   intersect(CD) {
     let A = this._pt1,
       B = this._pt2;
