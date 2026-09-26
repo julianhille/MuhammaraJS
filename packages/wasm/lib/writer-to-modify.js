@@ -277,6 +277,13 @@ export function createWriterToModifyFactory({
              */
             getWriteStream: function () {
               return {
+                /**
+                 * Appends raw bytes to the page content stream.
+                 * @param {ByteSource} bytes - Bytes to append.
+                 * @returns {number} The number of bytes written.
+                 * @throws {TypeError} If `bytes` is not a supported byte source.
+                 * @throws {Error} If the content context is no longer active or the write fails.
+                 */
                 write: function (bytes) {
                   requireContext(result);
                   return writeNativeBytes(
