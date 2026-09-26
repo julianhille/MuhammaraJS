@@ -3354,6 +3354,12 @@ export function createWriterToModifyFactory({
           },
         };
       },
+      /**
+       * Writes the active new page, ending its content context.
+       * @param {PDFPage} nextPage - The active page.
+       * @returns {this} The modifier.
+       * @throws {Error} If the modifier ended, `nextPage` is not active, or writing fails.
+       */
       writePage: function (nextPage) {
         requireOpen();
         if (nextPage !== page)
