@@ -1234,6 +1234,11 @@ export function createWriterFactory({
         TStar: function () {
           return operator("TStar", 43);
         },
+        /**
+         * Saves the graphics state (`q`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         q: function () {
           return operator("q", 17);
         },
