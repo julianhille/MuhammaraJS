@@ -1212,6 +1212,15 @@ function clipTextToBox(textObjs, availableHeight) {
   };
 }
 
+/**
+ * The PDF position of a text box, after its alignment offset.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {Object} textBox - The laid-out text box.
+ * @param {Object} pathOptions - The resolved text options.
+ * @returns {number[]} The [x, y] PDF position.
+ * @throws {TypeError} If no page is active.
+ */
 function getTextBoxPosition(self, textBox, pathOptions) {
   const { offsetX, offsetY } = self._getTextBoxOffset(textBox, pathOptions);
   const { nx, ny } = self._calibrateCoordinate(
