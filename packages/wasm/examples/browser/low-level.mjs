@@ -39,6 +39,12 @@ function registerAssets(muhammara, assets) {
   if (assets.tiff) muhammara.registerImage("example-tiff", assets.tiff, "tiff");
 }
 
+/**
+ * Registers the JPEG through the Blob-accepting async API.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional assets.
+ * @returns {Promise<void>} Resolves after registration.
+ */
 async function registerAsyncAssets(muhammara, assets) {
   if (assets.jpeg)
     await muhammara.registerImageAsync(
