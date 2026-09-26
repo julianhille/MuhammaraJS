@@ -606,6 +606,27 @@ describe("Recipe annotation parity", function () {
     assert.equal(readAnnotations(reader, 1).length, 1);
   });
 
+  it("writes the declared annotation flags", async function () {
+    var recipe = new muhammara.Recipe("new", output)
+      .createPage(200, 200)
+      .annot(10, 10, "Square", {
+        width: 5,
+        height: 5,
+        flag: muhammara.Recipe.AnnotFlag.LOCKED_CONTENTS,
+      })
+      .annot(20, 10, "Square", { width: 5, height: 5, flag: "ReadOnly" });
+    await new Promise(function (resolve) {
+      recipe.endPage().endPDF(resolve);
+    });
+    reader = muhammara.createReader(output);
+    assert.deepEqual(
+      readAnnotations(reader).map(
+        (annotation) => annotation.dictionary.F.value,
+      ),
+      [512, 64],
+    );
+  });
+
   it("writes lower-case markup subtypes with their PDF casing and color", async function () {
     var recipe = new muhammara.Recipe("new", output)
       .createPage(200, 200)

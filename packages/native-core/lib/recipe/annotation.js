@@ -1,4 +1,4 @@
-const { AnnotSubtype, AnnotIcon } = require("../recipe-constants");
+const { AnnotSubtype, AnnotIcon, AnnotFlag } = require("../recipe-constants");
 
 /**
  * Encodes annotation text as a PDF text string, so characters outside
@@ -477,31 +477,33 @@ exports._getTextMarkupAnnotationSubtype =
  * Get Flag Bit by Name
  * @description 12.5.3 Annotation Flags
  * @private
- * @param {string} name
+ * @param {Recipe.AnnotFlag|string} name - A `Recipe.AnnotFlag` value, matched
+ *   case-insensitively.
+ * @returns {number} The flag bit, or 0 for an empty or unknown name.
  */
 function getFlagBitNumberByName(name) {
-  switch (name.toLowerCase()) {
-    case "invisible":
+  switch (String(name).toLowerCase()) {
+    case AnnotFlag.INVISIBLE:
       return 1;
-    case "hidden":
+    case AnnotFlag.HIDDEN:
       return 2;
-    case "print":
+    case AnnotFlag.PRINT:
       return 4;
-    case "nozoom":
+    case AnnotFlag.NO_ZOOM:
       return 8;
-    case "norotate":
+    case AnnotFlag.NO_ROTATE:
       return 16;
-    case "noview":
+    case AnnotFlag.NO_VIEW:
       return 32;
-    case "readonly":
+    case AnnotFlag.READ_ONLY:
       return 64;
-    case "locked":
+    case AnnotFlag.LOCKED:
       return 128;
-    case "togglenoview":
+    case AnnotFlag.TOGGLE_NO_VIEW:
       return 256;
-    // 1.7+
-    // case 'lockedcontents':
-    //     return 512;
+    // PDF 1.7
+    case AnnotFlag.LOCKED_CONTENTS:
+      return 512;
     default:
       return 0;
   }

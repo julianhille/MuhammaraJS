@@ -134,6 +134,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Write the `lockedcontents` annotation flag, which the types accepted but
+  Recipe wrote as no flag [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Write `Recipe#annot()` subtypes given in another casing, such as
   `"highlight"`, with their PDF name and default markup color; they were
   written as invalid lower-case names with a black color [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
