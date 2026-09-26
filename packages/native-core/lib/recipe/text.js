@@ -1232,6 +1232,16 @@ function getTextBoxPosition(self, textBox, pathOptions) {
   return [nx, ny];
 }
 
+/**
+ * Draw the text box border and background from its style.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number} nx - The PDF x of the box.
+ * @param {number} ny - The PDF y of the first line.
+ * @param {Object} textBox - The laid-out text box with its style.
+ * @param {Object} pathOptions - The resolved text options, for rotation.
+ * @returns {void}
+ */
 function drawTextBox(self, nx, ny, textBox, pathOptions) {
   const textBoxWidth = textBox.width; //+ textBox.paddingLeft + textBox.paddingRight;
   let borderRadius = textBox.style ? textBox.style.borderRadius : 0;
