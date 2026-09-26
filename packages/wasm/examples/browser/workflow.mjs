@@ -86,6 +86,11 @@ export function validateObjectUrlLifecycle() {
       created.push(value);
       return value;
     },
+    /**
+     * Records a revoked fake object URL.
+     * @param {string} value - The URL.
+     * @returns {void}
+     */
     revokeObjectURL(value) {
       revoked.push(value);
     },
