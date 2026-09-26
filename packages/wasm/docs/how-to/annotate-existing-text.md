@@ -21,7 +21,7 @@ var matches;
 
 try {
   matches = reader.extractPageText(pageIndex).filter(function (element) {
-    return element.content === "Draft";
+    return element.text === "Draft";
   });
 } finally {
   reader.end();
@@ -52,11 +52,11 @@ reader's `textMatrix` uses PDF's bottom-left coordinates, while Recipe uses a
 top-left origin; the `page.height - y - fontSize` conversion above applies to
 unrotated pages only.
 
-`extractPageText()` reports a text operation's content, origin, font resource,
-and font size. It does not decode every font character map or calculate glyph
-bounds, so it cannot accurately derive `width` for arbitrary PDFs. This pattern
-is appropriate for a controlled template where the target text and its bounds
-are known. For arbitrary documents, obtain glyph bounds from another layout or
-text-analysis tool before creating the annotation. See [Find Text Positions In
-A PDF](find-text-positions.md) for the extractor's complete limitations, and
-[Add Review Annotations](add-review-annotations.md) for annotation options.
+`extractPageText()` reports a text operation's decoded `text`, raw `content`,
+origin, font resource, and font size. It does not calculate glyph bounds, so it
+cannot accurately derive `width` for arbitrary PDFs. This pattern is appropriate
+for a controlled template where the target text and its bounds are known. For
+arbitrary documents, obtain glyph bounds from another layout or text-analysis
+tool before creating the annotation. See [Find Text Positions In A
+PDF](find-text-positions.md) for the extractor's complete limitations, and [Add
+Review Annotations](add-review-annotations.md) for annotation options.

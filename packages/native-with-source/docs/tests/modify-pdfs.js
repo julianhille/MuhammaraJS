@@ -32,6 +32,8 @@ function writeSourcePdf(sourcePath) {
     .Tf(writer.getFontForFile(fontPath), 12)
     .Tm(1, 0, 0, 1, 20, 30)
     .Tj("Before")
+    .Tm(1, 0, 0, 1, 20, 60)
+    .Tj("After")
     .ET();
   writer.writePage(page);
   writer.end();
@@ -151,8 +153,8 @@ describe("Documentation examples", function () {
     var reader = muhammara.createReader(outputPath);
     var text = reader.extractPageText(0);
 
-    assert.strictEqual(text.length, 1);
-    assert.strictEqual(text[0].content, "After");
+    assert.strictEqual(text.length, 2);
+    assert.strictEqual(text[0].text, "After");
     assert.deepStrictEqual(text[0].textMatrix, [1, 0, 0, 1, 20, 30]);
     reader.end();
   });

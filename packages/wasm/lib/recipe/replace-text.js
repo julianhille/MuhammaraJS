@@ -1,4 +1,5 @@
 import { constants } from "../constants.js";
+import { createPageFontLookup } from "../font-text.js";
 
 var ePDFObjectArray = constants.ePDFObjectArray;
 var ePDFObjectIndirectObjectReference =
@@ -16,6 +17,9 @@ var PdfOperator = Object.freeze({
   PAINT_XOBJECT: "Do",
   INLINE_IMAGE_DATA: "ID",
   END_INLINE_IMAGE: "EI",
+  SET_FONT: "Tf",
+  SAVE_STATE: "q",
+  RESTORE_STATE: "Q",
 });
 
 // PDF dictionary keys and names this module reads.
@@ -220,47 +224,189 @@ function decodeName(token) {
 }
 
 /**
- * Escapes backslashes and parentheses for a PDF literal string.
- * @param {string} value - Text.
- * @returns {string} The escaped text.
+ * Decode the bytes of a literal string token such as `(caf\\351)`.
+ *
+ * @param {string} token Literal string token including parentheses.
+ * @returns {string} Operand bytes, one character per byte.
  */
-function escapePDFLiteralString(value) {
-  return value.replace(/([\\()])/g, "\\$1");
+function literalStringBytes(token) {
+  var escapes = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f" };
+  return token
+    .slice(1, -1)
+    .replace(/\r\n?/g, "\n")
+    .replace(/\\([0-7]{1,3}|\n|[\s\S])/g, function (_, escape) {
+      if (/^[0-7]/.test(escape)) {
+        return String.fromCharCode(parseInt(escape, 8) & 0xff);
+      }
+      if (escape === "\n") return "";
+      return escapes[escape] || escape;
+    });
 }
 
 /**
- * Escape a string for literal use inside a regular expression.
+ * Decode the bytes of a hex string token such as `<0048>`.
  *
- * @param {string} value Raw string.
- * @returns {string} Escaped pattern source.
+ * @param {string} token Hex string token including angle brackets.
+ * @returns {string} Operand bytes, one character per byte.
  */
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function hexStringBytes(token) {
+  var hex = token.slice(1, -1).replace(/[^0-9A-Fa-f]/g, "");
+  if (hex.length % 2) hex += "0";
+  return hex.replace(/../g, function (pair) {
+    return String.fromCharCode(parseInt(pair, 16));
+  });
 }
 
 /**
- * Build the literal `(...) Tj` pattern and replacement operand for
- * `replaceText`. Both strings are written one byte per character, so
- * characters above U+00FF are rejected rather than truncated.
+ * Write operand bytes as a string token in the same form as `original`.
  *
- * @param {string} text Text to replace.
- * @param {string} replacement Replacement text.
- * @returns {{pattern: RegExp, operand: string}} Match pattern and operand.
- * @throws {TypeError} If either string has a character above U+00FF.
+ * @param {string} bytes Operand bytes, one character per byte.
+ * @param {string} original Original literal or hex string token.
+ * @returns {string} Literal or hex string token.
  */
-function literalReplacement(text, replacement) {
-  if (/[^\u0000-\u00ff]/.test(text + replacement)) {
-    throw new TypeError(
-      "replaceText supports only Latin-1 text and replacement strings",
+function stringToken(bytes, original) {
+  if (original[0] === "<") {
+    return (
+      "<" +
+      bytes.replace(/[\s\S]/g, function (character) {
+        return ("0" + character.charCodeAt(0).toString(16).toUpperCase()).slice(
+          -2,
+        );
+      }) +
+      ">"
     );
   }
-  return {
-    pattern: new RegExp(
-      "\\(" + escapeRegExp(escapePDFLiteralString(text)) + "\\)(\\s+Tj\\b)",
-      "g",
-    ),
-    operand: "(" + escapePDFLiteralString(replacement) + ")",
-  };
+  return (
+    "(" +
+    bytes.replace(/[\\()]|[\x00-\x1f]/g, function (character) {
+      if (/[\\()]/.test(character)) return "\\" + character;
+      return "\\" + ("00" + character.charCodeAt(0).toString(8)).slice(-3);
+    }) +
+    ")"
+  );
+}
+
+/**
+ * Replace the operands of `Tj` operators whose text, decoded through the
+ * active font, equals `text`. Everything else is kept byte for byte.
+ *
+ * @param {string} source Latin-1 content stream.
+ * @param {string} text Text to replace.
+ * @param {string} replacement Replacement text.
+ * @param {function(string): object} fonts Font codec lookup by resource
+ * name.
+ * @returns {string} Latin-1 content stream.
+ * @throws {Error} If a matched font has no glyph for a replacement
+ * character.
+ */
+function replaceShownText(source, text, replacement, fonts) {
+  var result = "";
+  var copied = 0;
+  var operands = [];
+  var depth = 0;
+  var index = 0;
+  var font = null;
+  var fontStack = [];
+  var encoded = new Map();
+
+  while (index < source.length) {
+    var character = source[index];
+    var start = index;
+
+    if (isWhitespace(character)) {
+      index++;
+      continue;
+    }
+    if (character === "%") {
+      while (
+        index < source.length &&
+        source[index] !== "\n" &&
+        source[index] !== "\r"
+      ) {
+        index++;
+      }
+      continue;
+    }
+    if (character === "(") {
+      index = skipLiteralString(source, index);
+    } else if (character === "<" && source[index + 1] === "<") {
+      depth++;
+      index += 2;
+    } else if (character === ">" && source[index + 1] === ">") {
+      depth--;
+      index += 2;
+    } else if (character === "<") {
+      index = source.indexOf(">", index);
+      index = index === -1 ? source.length : index + 1;
+    } else if (character === "[" || character === "{") {
+      depth++;
+      index++;
+    } else if (character === "]" || character === "}") {
+      depth--;
+      index++;
+    } else if (character === "/") {
+      index++;
+      while (!endsRegularToken(source.charAt(index))) index++;
+    } else {
+      while (!endsRegularToken(source.charAt(index))) index++;
+      if (index === start) index++;
+    }
+
+    var token = source.slice(start, index);
+    var isOperator =
+      depth <= 0 &&
+      /^[A-Za-z'"*]/.test(token) &&
+      !Object.values(PdfKeyword).includes(token);
+
+    if (!isOperator) {
+      if (depth <= 0) operands.push({ token: token, start: start, end: index });
+      continue;
+    }
+
+    if (token === PdfOperator.INLINE_IMAGE_DATA)
+      index = skipInlineImageData(source, index);
+    if (token === PdfOperator.SAVE_STATE) fontStack.push(font);
+    if (token === PdfOperator.RESTORE_STATE && fontStack.length)
+      font = fontStack.pop();
+    if (
+      token === PdfOperator.SET_FONT &&
+      operands.length === 2 &&
+      operands[0].token[0] === "/"
+    ) {
+      font = decodeName(operands[0].token);
+    }
+    if (
+      token === PdfOperator.SHOW_TEXT &&
+      operands.length === 1 &&
+      /^(\(|<(?!<))/.test(operands[0].token)
+    ) {
+      var operand = operands[0];
+      var codec = fonts(font);
+      var bytes =
+        operand.token[0] === "("
+          ? literalStringBytes(operand.token)
+          : hexStringBytes(operand.token);
+      if (codec.decode(bytes) === text) {
+        if (!encoded.has(codec)) {
+          try {
+            encoded.set(codec, codec.encode(replacement));
+          } catch (error) {
+            throw new Error(
+              "replaceText cannot write the replacement: " + error.message,
+            );
+          }
+        }
+        result +=
+          source.slice(copied, operand.start) +
+          stringToken(encoded.get(codec), operand.token);
+        copied = operand.end;
+      }
+    }
+    operands = [];
+    depth = 0;
+  }
+
+  return result + source.slice(copied);
 }
 
 /**
@@ -472,8 +618,17 @@ function collectForms(parser, names, resources, forms) {
 export function createReplaceTextMethods() {
   return {
     /**
-     * Replaces literal text-showing operands in a page's single content stream.
-     * Matching content is replaced in the output; no match leaves it unchanged.
+     * Replaces text shown with `Tj` in a page's single content stream. Each
+     * operand is decoded through the font selected by `Tf` (its `/ToUnicode`
+     * CMap, then its `/Encoding` and `/Differences`), and a match is compared
+     * with `text`. The replacement is encoded through the same font and
+     * written back as a literal or hex string, like the original operand.
+     * Only whole `Tj` operands match; `TJ`, `'`, and `"` operands and text
+     * split across operators are left unchanged. No match leaves the page
+     * unchanged.
+     *
+     * The replacement can only use glyphs the font already has. Embedded
+     * subset fonts usually carry just the glyphs of their original text.
      *
      * @name replaceText
      * @function
@@ -482,9 +637,10 @@ export function createReplaceTextMethods() {
      * @param {string} replacement Replacement text.
      * @param {number} pageNumber One-based page number.
      * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If text or replacement is not a Latin-1 string, or
-     * if the page number is not a positive integer.
-     * @throws {Error} If the page does not have one indirect content stream.
+     * @throws {TypeError} If text or replacement is not a string, or if the
+     * page number is not a positive integer.
+     * @throws {Error} If the page does not have one indirect content stream,
+     * or the matched font has no glyph for a replacement character.
      */
     replaceText: function (text, replacement, pageNumber) {
       if (typeof text !== "string" || typeof replacement !== "string") {
@@ -495,7 +651,6 @@ export function createReplaceTextMethods() {
           "replaceText expects a positive integer page number",
         );
       }
-      var literal = literalReplacement(text, replacement);
 
       var parser = this.writer.getModifiedFileParser();
       var contentsObjectId;
@@ -519,14 +674,19 @@ export function createReplaceTextMethods() {
         while (streamReader.notEnded()) {
           source += oneByteString(streamReader.read(65536));
         }
+        streamReader.dispose();
+        streamReader = null;
+        var replaced = replaceShownText(
+          source,
+          text,
+          replacement,
+          createPageFontLookup(parser, constants, pageNumber - 1),
+        );
       } finally {
         streamReader?.dispose();
         parser.end();
       }
 
-      var replaced = source.replace(literal.pattern, function (_, operator) {
-        return literal.operand + operator;
-      });
       if (replaced === source) return this;
 
       var objectsContext = this.writer.getObjectsContext();
