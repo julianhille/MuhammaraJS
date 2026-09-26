@@ -1068,6 +1068,11 @@ export function createReaderFactory({
           getBleedBox: function () {
             return getBox(3);
           },
+          /**
+           * Reads the art box, which defaults to the crop box.
+           * @returns {PDFRectangle} The box.
+           * @throws {Error} If the reader has ended or the box cannot be read.
+           */
           getArtBox: function () {
             return getBox(4);
           },
