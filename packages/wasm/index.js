@@ -32,6 +32,7 @@ import {
   RecipeHorizontalAlignment,
   RecipeVerticalAlignment,
   RecipeTextAlignment,
+  RecipeTriangleTrait,
 } from "./lib/value-sets.js";
 
 export {
@@ -48,6 +49,7 @@ export {
   RecipeHorizontalAlignment,
   RecipeTextAlignment,
   RecipeTextWrap,
+  RecipeTriangleTrait,
   RecipeVerticalAlignment,
   TextEncoding,
 };

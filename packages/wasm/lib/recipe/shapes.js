@@ -1,3 +1,4 @@
+import { RecipeTriangleTrait } from "../value-sets.js";
 function radians(angle) {
   return (angle * Math.PI) / 180;
 }
@@ -62,17 +63,17 @@ function distance(first, second) {
 function triangleGeometry(x, y, traitID, traits) {
   var a, b, c;
   var vertices;
-  if (traitID === "vtx") {
+  if (traitID === RecipeTriangleTrait.VTX) {
     vertices = [traits[0], traits[1], traits[2]];
     a = distance(vertices[0], vertices[1]);
     b = distance(vertices[2], vertices[1]);
     c = distance(vertices[2], vertices[0]);
   } else {
-    if (traitID === "sss") [a, b, c] = traits;
-    else if (traitID === "sas") {
+    if (traitID === RecipeTriangleTrait.SSS) [a, b, c] = traits;
+    else if (traitID === RecipeTriangleTrait.SAS) {
       [a, , b] = traits;
       c = Math.sqrt(a ** 2 + b ** 2 - 2 * a * b * Math.cos(radians(traits[1])));
-    } else if (traitID === "asa") {
+    } else if (traitID === RecipeTriangleTrait.ASA) {
       var angleC = 180 - traits[0] - traits[2];
       if (angleC <= 0)
         throw new Error(

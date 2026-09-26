@@ -77,3 +77,11 @@ export var RecipeTextAlignment = Object.freeze({
   RIGHT: "right",
   JUSTIFY: "justify",
 });
+
+/** How Recipe triangle() traits define the triangle: sides, angles, or vertices. */
+export var RecipeTriangleTrait = Object.freeze({
+  SSS: "sss",
+  SAS: "sas",
+  ASA: "asa",
+  VTX: "vtx",
+});

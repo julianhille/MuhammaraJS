@@ -8,6 +8,7 @@ import {
   RecipeHorizontalAlignment,
   RecipeTextAlignment,
   RecipeTextWrap,
+  RecipeTriangleTrait,
   RecipeVerticalAlignment,
   TextEncoding,
 } from "../index.js";
@@ -115,4 +116,5 @@ var EXPORTED_VALUE_SETS = [
   [RecipeHorizontalAlignment, ["left", "center", "right"]],
   [RecipeVerticalAlignment, ["top", "center", "bottom"]],
   [RecipeTextAlignment, ["left", "center", "right", "justify"]],
+  [RecipeTriangleTrait, ["sss", "sas", "asa", "vtx"]],
 ];

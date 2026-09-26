@@ -210,6 +210,12 @@ export type RecipeCaseInsensitive<Value extends string> =
 export type RecipeTriangleTrait = RecipeCaseInsensitive<
   "sss" | "sas" | "asa" | "vtx"
 >;
+export declare const RecipeTriangleTrait: {
+  readonly SSS: "sss";
+  readonly SAS: "sas";
+  readonly ASA: "asa";
+  readonly VTX: "vtx";
+};
 export type RecipeTriangleMeasurementTrait = RecipeCaseInsensitive<
   "sss" | "sas" | "asa"
 >;
