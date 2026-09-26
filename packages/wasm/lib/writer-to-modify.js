@@ -3155,6 +3155,12 @@ export function createWriterToModifyFactory({
         }
         return startContext();
       },
+      /**
+       * Ends the current content stream so objects can be written before the page continues.
+       * @param {ContentContext} value - Active page content context.
+       * @returns {this} The modifier.
+       * @throws {Error} If `value` is not active or cannot be paused.
+       */
       pausePageContentContext: function (value) {
         requireContext(value);
         if (!page || !module._muhammara_wasm_modifier_pause_page(modifier))
