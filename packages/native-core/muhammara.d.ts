@@ -3951,6 +3951,12 @@ declare namespace muhammara {
      */
     info(options?: Recipe.InfoOptions): Recipe;
 
+    /**
+     * @param key - The key
+     * @param value - The value; other values are converted with toString().
+     * @returns The recipe instance.
+     * @throws {TypeError} If the key or value is null or undefined.
+     */
     custom(key: string, value: string): Recipe;
 
     insertPage(
