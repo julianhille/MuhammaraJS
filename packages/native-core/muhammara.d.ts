@@ -622,6 +622,14 @@ declare namespace muhammara {
      *   cannot be read.
      */
     parsePageDictionary(pageIndex: number): PDFDictionary;
+    /**
+     * Parses a page with helpers for its boxes and rotation.
+     * @param pageIndex - The zero-based page index.
+     * @returns The page.
+     * @throws {TypeError} If the reader has ended.
+     * @throws {TypeError} If pageIndex is not a non-negative integer or the page
+     *   cannot be read.
+     */
     parsePage(pageIndex: number): PDFPageInput;
     /**
      * Returns text-showing operations in PDF content-stream drawing order.
