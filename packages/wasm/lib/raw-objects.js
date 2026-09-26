@@ -481,6 +481,12 @@ export function createRawObjectsContext({
           throw new Error("Unable to start array");
         return this;
       },
+      /**
+       * Ends the current array.
+       * @param {ETokenSeparator} [separator=eTokenSeparatorNone] - Token written after `]`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended, the separator is not an `eTokenSeparator*` constant, or no array is open.
+       */
       endArray: function (separator = constants.eTokenSeparatorNone) {
         requireContext();
         if (
