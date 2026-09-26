@@ -246,8 +246,8 @@ export function createWriterToModifyFactory({
         n: function () {
           return operator("n", 9);
         },
-        m: function (...args) {
-          return operator("m", 10, args);
+        m: function (x, y) {
+          return operator("m", 10, [x, y]);
         },
         l: function (...args) {
           return operator("l", 11, args);
@@ -1432,7 +1432,7 @@ export function createWriterToModifyFactory({
               ["TStar", 43],
               ["S", 5],
               ["f", 6],
-              ["m", 10],
+              ["m", 10, 2],
               ["l", 11],
               ["re", 16],
               ["rg", 26],
@@ -1453,8 +1453,10 @@ export function createWriterToModifyFactory({
               ["Tw", 36],
               ["TL", 38],
               ["Ts", 40],
-            ].forEach(([name, code]) => {
+            ].forEach(([name, code, arity = 0]) => {
               context[name] = function (...args) {
+                // Missing operands become undefined and fail the finite check.
+                args.length = Math.max(args.length, arity);
                 return operator(code, ...args);
               };
             });

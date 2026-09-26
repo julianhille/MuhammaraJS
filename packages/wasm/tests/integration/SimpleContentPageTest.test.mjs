@@ -150,4 +150,49 @@ describe("SimpleContentPageTest", function () {
       /writer has ended/,
     );
   });
+
+  it("rejects incomplete or out-of-range operator calls on every content context", async function () {
+    var muhammara = await createMuhammaraWasm();
+    for (var [kind, context] of Object.entries(
+      everyContentContext(muhammara),
+    )) {
+      for (var [operator, args] of INVALID_OPERATOR_CALLS) {
+        assert.throws(
+          () => context[operator](...args),
+          TypeError,
+          `${kind}.${operator}(${args.join(", ")})`,
+        );
+      }
+    }
+  });
 });
+
+// Calls that must throw on every content context. A missing operand would
+// otherwise be written as `nan` and corrupt the content stream.
+var INVALID_OPERATOR_CALLS = [["m", [1]]];
+
+/**
+ * Opens one content context of every Wasm kind.
+ *
+ * @param {object} muhammara Initialized Wasm module.
+ * @returns {Record<string, object>} Writer page, writer form, modifier page,
+ *   page modifier, and modifier form contexts, keyed by kind.
+ */
+function everyContentContext(muhammara) {
+  var blank = muhammara.createBlankPdf(100, 100);
+  var writer = muhammara.createWriter();
+  var modifier = muhammara.createWriterToModify(blank);
+  var pageModifier = muhammara
+    .createWriterToModify(blank)
+    .createPageModifier(0)
+    .startContext();
+  return {
+    writerPage: writer.startPageContentContext(writer.createPage(0, 0, 9, 9)),
+    writerForm: writer.createFormXObject(0, 0, 9, 9).getContentContext(),
+    modifierPage: modifier.startPageContentContext(
+      modifier.createPage(0, 0, 9, 9),
+    ),
+    pageModifier: pageModifier.getContext(),
+    modifierForm: modifier.createFormXObject(0, 0, 9, 9).getContentContext(),
+  };
+}
