@@ -335,4 +335,34 @@ describe("Recipe vector", function () {
       reader.end();
     }
   });
+
+  it("strokes every line segment, and no empty one, on an edited page", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var source = new Recipe().createPage(200, 200).endPage().endPDF();
+    var pdf = new Recipe(source)
+      .editPage(1)
+      .line(
+        [
+          [20, 20],
+          [180, 20],
+          [180, 100],
+        ],
+        { stroke: "#ff0000", lineWidth: 6 },
+      )
+      .endPage()
+      .endPDF();
+    writeOutput("line-edit", pdf);
+    var reader = muhammara.createReader(pdf);
+    var points = getPaintBlocks(muhammara, reader, 0).flatMap(function (block) {
+      return [...block.matchAll(/(\S+) (\S+) [ml]\b/g)].map(function (match) {
+        return match.slice(1).map(Number);
+      });
+    });
+    assert.deepEqual(points, [
+      [20, 180],
+      [180, 180],
+      [180, 100],
+    ]);
+  });
 });
