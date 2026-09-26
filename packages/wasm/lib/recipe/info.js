@@ -7,7 +7,11 @@ var trappedValues = {
   Unknown: constants.EInfoTrappedUnknown,
 };
 
-/** Creates Recipe document-information methods. */
+/**
+ * Creates Recipe document-information methods.
+ * @param {{call: Function, withString: Function}} dependencies - Export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createInfoMethods({ call, withString }) {
   function pdfDate(date) {
     var offset = -date.getTimezoneOffset();
