@@ -1486,6 +1486,18 @@ function bindTextToLine(line, textObjects, wordCount, totalTextWidth) {
   return [wordCount, totalTextWidth];
 }
 
+/**
+ * Break one text layout object into lines that fit the text box, continuing
+ * any unfinished flowed lines.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {Object} [textObject] - The text layout object.
+ * @param {Object} pathOptions - The resolved text options.
+ * @param {Object} [textBox] - The text box; line and baseline heights are set in place.
+ * @returns {{toWriteTextObjects: Object[], paragraphHeight: number}} The runs,
+ *   including the carried-over flowed ones, and the paragraph height.
+ * @throws {Error} If the font cannot be loaded.
+ */
 function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
   const toWriteTextObjects = [...self._previousTextObjects];
   let text =
@@ -1616,7 +1628,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
         }
       } else {
         // remove any trailing space on previous word so right justification works appropriately
-        if (previousWord && textBox.wrap === "auto") {
+        if (previousWord && textBox.wrap === TextWrap.AUTO) {
           newLine.replaceLastWord(previousWord.value.trim());
         }
 
@@ -1645,7 +1657,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
       }
 
       // now deal with text line wrap (what happens to text that doesn't fit in line)
-      if (textBox.wrap !== "auto") {
+      if (textBox.wrap !== TextWrap.AUTO) {
         flushLine = true;
         elideNonFittingText(textBox, newLine, word, pathOptions);
 
@@ -1719,7 +1731,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
     }
   }
 
-  let isLastLine = alignHorizontal === "justify" && !self._flow;
+  let isLastLine = alignHorizontal === TextAlign.JUSTIFY && !self._flow;
 
   if (!flushLine) {
     [wordCount, totalTextWidth] = bindTextToLine(
