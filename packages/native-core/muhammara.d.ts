@@ -759,6 +759,13 @@ declare namespace muhammara {
   }
 
   export interface ByteReader {
+    /**
+     * Reads the next bytes.
+     * @param length - The maximum number of bytes to read.
+     * @returns The bytes read; shorter than requested at the end.
+     * @throws {TypeError} If length is not a single number.
+     * @throws {Error} If the reader has no stream.
+     */
     read(length: number): Buffer;
     notEnded(): boolean;
   }
