@@ -460,6 +460,9 @@ exports.Column = class Column {
   set position(pos) {
     [this._x, this._y] = pos;
   }
+  /**
+   * @returns {number} The gap after the column.
+   */
   get gap() {
     return this._gap;
   }
