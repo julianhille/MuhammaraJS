@@ -970,19 +970,7 @@ export function createWriterFactory({
           return operator("Q", 18);
         },
         k: function (cyan, magenta, yellow, black) {
-          requireActiveContext(context);
-          if (
-            !module._muhammara_wasm_recipe_cmyk_fill(
-              recipe,
-              cyan,
-              magenta,
-              yellow,
-              black,
-            )
-          ) {
-            throw new Error("Unable to set fill color");
-          }
-          return context;
+          return operator("k", 28, [cyan, magenta, yellow, black]);
         },
         G: function (gray) {
           requireActiveContext(context);
@@ -1423,8 +1411,8 @@ export function createWriterFactory({
           Ts: function (fontRise) {
             return operator("Ts", 40, [fontRise]);
           },
-          k: function (...args) {
-            return operator("k", 28, args);
+          k: function (cyan, magenta, yellow, black) {
+            return operator("k", 28, [cyan, magenta, yellow, black]);
           },
           G: function (value) {
             return operator("G", 25, [value]);
