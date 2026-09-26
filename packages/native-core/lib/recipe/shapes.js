@@ -806,6 +806,10 @@ const Triangle = class Triangle {
     return this._perimeter;
   }
 
+  /**
+   * The area, by Heron's formula.
+   * @returns {number} The area.
+   */
   get area() {
     if (!this._area) {
       // Heron's formula
