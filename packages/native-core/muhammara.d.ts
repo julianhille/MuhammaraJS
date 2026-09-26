@@ -1220,6 +1220,10 @@ declare namespace muhammara {
      * @returns This object; undefined when it is not an array.
      */
     toPDFArray(): PDFArray | undefined;
+    /**
+     * Returns this object typed as a dictionary.
+     * @returns This object; undefined when it is not a dictionary.
+     */
     toPDFDictionary(): PDFDictionary | undefined;
     toPDFStream(): PDFStream | undefined;
     toPDFBoolean(): PDFBoolean | undefined;
