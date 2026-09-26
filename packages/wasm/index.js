@@ -112,6 +112,14 @@ async function createRuntime(options) {
     throw new TypeError("wasmBinary must be a Uint8Array or ArrayBuffer");
   }
   var module = await createModule(moduleOptions);
+  /**
+   * Copies byte input and enforces `maxInputBytes`.
+   * @param {ByteSource} value - Bytes.
+   * @param {string} [label] - Name used in error messages.
+   * @returns {Uint8Array} A copy of the bytes.
+   * @throws {TypeError} If `value` is not a synchronous byte source.
+   * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+   */
   function normalizeBytes(value, label) {
     var bytes = normalizeByteSource(value, label);
     if (bytes.length > maxInputBytes) {
