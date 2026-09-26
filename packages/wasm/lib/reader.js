@@ -287,6 +287,11 @@ export function createReaderFactory({
         },
       });
       if (object.getType() === constants.ePDFObjectArray) {
+        /**
+         * Counts the array items.
+         * @returns {number} The item count.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         object.getLength = function () {
           object.getType();
           requireReader();
