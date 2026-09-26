@@ -3896,6 +3896,15 @@ declare namespace muhammara {
      */
     encrypt(options?: Recipe.EncryptOptions): Recipe;
 
+    /**
+     * Register a custom font
+     * @param fontName - The font name used in text, matched case-insensitively; defaults to ''.
+     * @param fontSrcPath - The path to the font file; defaults to ''.
+     * @param type - The style this file provides,; defaults to 'regular'.
+     *   one of the `Recipe.FontStyle` values or its short form r, b, i or bi.
+     *   Any other value registers the regular style.
+     * @returns The recipe instance.
+     */
     registerFont(
       fontName: string,
       fontSrcPath: string,
