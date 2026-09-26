@@ -80,6 +80,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Reject `setCreationDate()`, `setModDate()`, and the text Info properties
+  of a finished `createWriterToModify()` modifier with the "PDF writer has
+  ended" error, and keep the previous Info value when a property assignment
+  throws [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Fix `drawRectangle()`, `drawSquare()`, `drawCircle()` and `drawPath()`
   emitting the color and line width inside the path object, which PDF forbids;
   they are now set before the path, as native does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)

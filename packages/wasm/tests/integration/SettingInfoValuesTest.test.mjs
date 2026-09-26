@@ -84,4 +84,26 @@ describe("SettingInfoValuesTest", function () {
     writer.writePage(writer.createPage(0, 0, 10, 10));
     assert.match(infoDictionary(writer.end()), /\/Trapped \/True/);
   });
+
+  it("rejects Info changes after the writer or modifier ends", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var modifier = muhammara.createWriterToModify(
+      muhammara.createBlankPdf(10, 10),
+    );
+    var infos = [writer, modifier].map((target) => {
+      var info = target.getDocumentContext().getInfoDictionary();
+      info.title = "kept";
+      return info;
+    });
+    writer.writePage(writer.createPage(0, 0, 10, 10));
+    writer.end();
+    modifier.end();
+    for (var info of infos) {
+      assert.throws(() => info.setCreationDate(new Date()), /has ended/);
+      assert.throws(() => info.setModDate(new Date()), /has ended/);
+      assert.throws(() => (info.title = "changed"), /has ended/);
+      assert.equal(info.title, "kept");
+    }
+  });
 });

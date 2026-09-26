@@ -721,17 +721,6 @@ export function createWriterToModifyFactory({
             throw new Error("Unable to set font");
           return result;
         },
-        Tj: function (text) {
-          requireContext(result);
-          if (typeof text !== "string")
-            throw new TypeError("Tj requires a string");
-          return withString(text, (pointer) => {
-            if (!module._muhammara_wasm_modifier_show_text(modifier, pointer)) {
-              throw new Error("Unable to show text");
-            }
-            return result;
-          });
-        },
         writeText: function (text, x, y, options = {}) {
           options = readTextOptions(options, colorValue);
           if (
@@ -979,6 +968,7 @@ export function createWriterToModifyFactory({
         return Object.fromEntries(additionalInfo);
       },
       setCreationDate: function (value) {
+        requireOpen();
         var date = normalizePDFDate(value);
         withString(date, (pointer) => {
           if (
@@ -988,6 +978,7 @@ export function createWriterToModifyFactory({
         });
       },
       setModDate: function (value) {
+        requireOpen();
         var date = normalizePDFDate(value);
         withString(date, (pointer) => {
           if (
@@ -1005,8 +996,9 @@ export function createWriterToModifyFactory({
             return value;
           },
           set: function (nextValue) {
-            value = String(nextValue);
-            setInfo(key, value);
+            nextValue = String(nextValue);
+            setInfo(key, nextValue);
+            value = nextValue;
           },
         });
       },
