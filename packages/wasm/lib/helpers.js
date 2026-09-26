@@ -114,6 +114,13 @@ export function createHelpers(module) {
     });
   }
 
+  /**
+   * Installs the color space, graphics state, and rendering operators on a content context.
+   * @param {object} context - Content context to extend.
+   * @param {function(): void} requireContext - Throws when the context is inactive.
+   * @param {Function} call - Native call taking `(code, namePointer, componentsPointer, count, hasPattern)`.
+   * @returns {void}
+   */
   function addStructuredContentOperators(context, requireContext, call) {
     function nameOperator(name, code, value) {
       requireContext();
