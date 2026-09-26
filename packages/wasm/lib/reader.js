@@ -630,6 +630,13 @@ export function createReaderFactory({
           }
           return byteReader;
         };
+        /**
+         * Moves to a position counted back from the end.
+         * @param {number} position - Byte offset from the end.
+         * @returns {PositionedPDFByteReader} The byte reader.
+         * @throws {RangeError} If `position` is not a non-negative integer.
+         * @throws {Error} If the reader or byte reader has ended or the position cannot be set.
+         */
         byteReader.setPositionFromEnd = function (position) {
           requireByteReader();
           requirePosition(position, "setPositionFromEnd");
