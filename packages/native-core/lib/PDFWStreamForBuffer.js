@@ -53,6 +53,10 @@ PDFWStreamForBuffer.prototype.write = function (inBytes) {
   return 0;
 };
 
+/**
+ * Returns the number of bytes written so far.
+ * @returns {number} The current byte offset.
+ */
 PDFWStreamForBuffer.prototype.getCurrentPosition = function () {
   return this.position;
 };
