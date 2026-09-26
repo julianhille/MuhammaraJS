@@ -314,6 +314,13 @@ export function createRawObjectsContext({
             module._muhammara_wasm_pdf_stream_get_write_stream(stream);
           if (!writer) throw new Error("Unable to get PDF stream writer");
           return {
+            /**
+             * Appends bytes to the stream content.
+             * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} bytes - Bytes to write.
+             * @returns {number} Number of bytes written.
+             * @throws {TypeError} If `bytes` is not a supported byte source.
+             * @throws {Error} If the stream is no longer active.
+             */
             write: (bytes) => {
               if (activeStream !== stream)
                 throw new Error("PDF stream is no longer active");
