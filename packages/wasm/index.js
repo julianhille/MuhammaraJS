@@ -346,6 +346,14 @@ async function createRuntime(options) {
         extension,
       );
     },
+    /**
+     * Registers PDF bytes for methods that accept a registered PDF name.
+     * @param {string} name - Non-empty PDF name.
+     * @param {ByteSource} bytes - PDF bytes.
+     * @returns {void}
+     * @throws {TypeError} If `name` is empty or the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerPdf: function (name, bytes) {
       requireAssetName(name);
       bytes = normalizeBytes(bytes, "PDF bytes");
