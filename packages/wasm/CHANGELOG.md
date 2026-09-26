@@ -11,6 +11,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
   an existing page, for example before adding a new OCR text layer, and a
   guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
+- Export frozen value sets for finite string options, each with a same-named
+  type: `DeviceColorSpace`, `DrawingPathType`, `ImageFitPolicy`, `PageBox`,
+  `TextEncoding`, `ObjectReplacementScope`, and the Recipe sets
+  `RecipeArrowAnchor`, `RecipeArrowType`, `RecipeFontStyle`,
+  `RecipeHorizontalAlignment`, `RecipeLineCap`, `RecipeLineJoin`,
+  `RecipePageLayout`, `RecipeStructureFormat`, `RecipeTableRowParity`,
+  `RecipeTextAlignment`, `RecipeTextWrap`, `RecipeTrianglePosition`,
+  `RecipeTriangleTrait`, and `RecipeVerticalAlignment` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ### Breaking Changes
 
@@ -278,6 +286,16 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Check `J()`, `j()` and `Tr()` operands on every content context: a line cap
   or line join must be 0 to 2 and a text rendering mode 0 to 7, otherwise a
   `RangeError` is thrown. `j(3)`, previously accepted, now throws [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Type finite option values by name: `J()`, `j()`, and `Tr()` take
+  `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
+  `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,
+  `getXrefEntry().type`, `addProcsetResource()`, and the page-box arguments of
+  `createFormXObjectFromPDFPage()` and `createFormXObjectsFromPDF()` use
+  `EInfoTrapped`, `ETokenSeparator`, `PDFObjectType`, `XrefEntryType`,
+  `ProcsetName`, and `PDFPageBoxType`, and the matching constants carry their
+  literal values. Recipe image `align`, previously any string, takes the
+  alignment keywords. Code passing an out-of-set literal now fails `tsc` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Reject inherited object keys such as `toString` as `getPageBox()` box names [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Rework the npm README: it explains how the MuhammaraJS packages fit together, when to use a native package instead, and adds tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
 - Narrow `DrawPathOptions.type` from an arbitrary string to the exported
   `DrawingPathType` (`"stroke" | "fill" | "clip" | null`), matching native.
