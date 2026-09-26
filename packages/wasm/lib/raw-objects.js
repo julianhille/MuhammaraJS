@@ -109,6 +109,14 @@ export function createRawObjectsContext({
           throw new Error("Dictionary context is no longer active");
         }
       }
+      /**
+       * Writes a name, string, or keyword value for the current key.
+       * @param {number} type - Native token kind.
+       * @param {string|Uint8Array|ArrayBuffer} value - Value text or string bytes.
+       * @returns {DictionaryContext} The dictionary context.
+       * @throws {TypeError} If `value` has the wrong type.
+       * @throws {Error} If the dictionary is inactive or the value cannot be written.
+       */
       function writeValue(type, value) {
         requireDictionary();
         if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
