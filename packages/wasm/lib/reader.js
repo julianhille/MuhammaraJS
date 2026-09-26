@@ -263,6 +263,11 @@ export function createReaderFactory({
         };
       });
       Object.defineProperty(object, "value", {
+        /**
+         * Reads the object's JavaScript value.
+         * @returns {string|number|boolean|undefined} A boolean, number, or string form of the value.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         get: function () {
           var type = object.getType();
           if (type === constants.ePDFObjectBoolean) {
