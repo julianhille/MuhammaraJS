@@ -1445,6 +1445,9 @@ const Point = class Point {
   get x() {
     return this._x;
   }
+  /**
+   * @returns {number} The y coordinate.
+   */
   get y() {
     return this._y;
   }
