@@ -53,6 +53,14 @@ export function createRawObjectsContext({
       });
     }
 
+    /**
+     * Writes a name, literal string, hex string, or keyword token.
+     * @param {number} type - Native token kind; 1 literal and 2 hex also accept bytes.
+     * @param {string|Uint8Array|ArrayBuffer} value - Token text or string bytes.
+     * @returns {void}
+     * @throws {TypeError} If `value` has the wrong type for `type`.
+     * @throws {Error} If the writer has ended or the token cannot be written.
+     */
     function writeObjectString(type, value) {
       requireContext();
       if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
