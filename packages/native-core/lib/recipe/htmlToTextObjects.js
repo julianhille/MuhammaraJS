@@ -5,9 +5,12 @@ const DOMParser = require("@xmldom/xmldom").DOMParser;
  * @name htmlToTextObjects
  * @function
  * @memberof Recipe#
- * @param {string} htmlCodes - The HTML source.
+ * @param {string} htmlCodes - The HTML source. Tag names are matched case-insensitively.
  * @param {Object} [options] - Text options used to initialize the objects.
- * @returns {Object[]} The parsed text layout objects.
+ * @param {string} [options.font] - The font of every object.
+ * @param {number} [options.size] - The base font size of every object.
+ * @returns {Object[]} The parsed text layout objects: one per child node,
+ *   each with its value, tag, style flags, link, font size ratio and childs.
  */
 exports.htmlToTextObjects = function (htmlCodes, options = {}) {
   const nodes = new DOMParser().parseFromString(
