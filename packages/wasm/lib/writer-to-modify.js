@@ -2807,6 +2807,15 @@ export function createWriterToModifyFactory({
           _modifier: modifier,
           _owner: owner,
           _font: font,
+          /**
+           * Measures text or glyphs set in this font.
+           * @param {string|number[]} text - Text, or glyph IDs.
+           * @param {number} [size=1] - Positive font size.
+           * @returns {TextDimensions} Bounding box and advance in user space units.
+           * @throws {TypeError} If `text` is invalid, or `size` is not positive.
+           * @throws {Error} If the font cannot measure the text.
+           * @throws {Error} If the modifier has ended.
+           */
           calculateTextDimensions: function (text, size = 1) {
             requireOpen();
             return measureFontText(
