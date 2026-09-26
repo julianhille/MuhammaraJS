@@ -488,6 +488,11 @@ export function createReaderFactory({
             module._free(lengthPointer);
           }
         };
+        /**
+         * Decodes the string as a PDF text string.
+         * @returns {string} Text from PDFDocEncoding or UTF-16BE bytes.
+         * @throws {Error} If the reader or parser has ended.
+         */
         object.toText = function () {
           return textStringValue(object.toBytesArray());
         };
