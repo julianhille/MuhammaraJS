@@ -24,6 +24,11 @@ function annotationFlags(flag) {
   return bits[flag.toLowerCase()];
 }
 
+/**
+ * Formats a date as a UTC PDF date.
+ * @param {string|Date} [value] - Date.
+ * @returns {string} `D:YYYYMMDDHHmmSSZ`, the original text when it is not a date, or empty.
+ */
 function annotationDate(value) {
   if (!value) return "";
   var date = new Date(value);
