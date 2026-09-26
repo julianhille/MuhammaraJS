@@ -625,6 +625,11 @@ async function usesLowLevelSurface() {
       replies: [{ text: "reply" }],
     })
     .annot(0, 0, "Square", { width: 10, height: 10, flag: "print" })
+    .annot(0, 0, Recipe.AnnotSubtype.HIGHLIGHT, {
+      width: 10,
+      height: 10,
+      flag: Recipe.AnnotFlag.LOCKED_CONTENTS,
+    })
     .annot(100, 200, "Highlight", { width: 200, height: 14, opacity: 0.45 })
     .annot(100, 230, "Highlight", { width: 200, height: 14, opacity: 0 })
     .info({

@@ -290,10 +290,41 @@ export type RecipeAnnotationFlag =
   | "noview"
   | "readonly"
   | "locked"
-  | "togglenoview";
+  | "togglenoview"
+  | "lockedcontents";
 /** Standard icon name for Recipe text annotations. */
 export type RecipeAnnotationIcon =
   "Comment" | "Key" | "Note" | "Help" | "NewParagraph" | "Paragraph" | "Insert";
+/** Annotation subtype for `annot()`; known subtypes match case-insensitively. */
+export type RecipeAnnotationSubtype =
+  | "Text"
+  | "Link"
+  | "FreeText"
+  | "Line"
+  | "Square"
+  | "Circle"
+  | "Polygon"
+  | "PolyLine"
+  | "Highlight"
+  | "Underline"
+  | "Squiggly"
+  | "StrikeOut"
+  | "Caret"
+  | "Stamp"
+  | "Ink"
+  | "Popup"
+  | "FileAttachment"
+  | "Sound"
+  | "Movie"
+  | "Screen"
+  | "Widget"
+  | "PrinterMark"
+  | "TrapNet"
+  | "Watermark"
+  | "3D"
+  | "Redact"
+  | "Projection"
+  | "RichMedia";
 export interface RecipeAnnotationOptions {
   text?: string;
   contents?: string;
@@ -787,7 +818,7 @@ export interface Recipe {
   annot(
     x: RecipeCoordinate,
     y: RecipeCoordinate,
-    subtype: string,
+    subtype: RecipeAnnotationSubtype,
     options?: RecipeAnnotationOptions,
   ): this;
   info(): Record<string, unknown>;

@@ -86,6 +86,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Write known Recipe `annot()` subtypes with their PDF casing, as native does:
+  `annot(x, y, "highlight")` wrote an invalid `/highlight` subtype with a green
+  instead of a yellow default color [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Throw "PDF writer has ended" from `calculateTextDimensions()` and
   `getFontMetrics()` of a font whose writer or modifier ended, instead of a
   misleading argument error, and keep a modifier's `createPDFTextString()` and
@@ -335,6 +338,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Define `Glyph` as a list of `[glyphId, unicodeCodePoint]` pairs, as native
   does; `Tj()`, `Quote()`, `DoubleQuote()`, and `TJ()` take `Glyph` where they took
   `Glyph[]`. Code that annotated one pair as `Glyph` should use `[number, number]` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Type the Recipe `annot()` subtype as `RecipeAnnotationSubtype`, the native
+  `AnnotSubtype` values, and add `lockedcontents` to `RecipeAnnotationFlag` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take
   `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
   `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,
