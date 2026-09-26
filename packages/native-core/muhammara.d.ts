@@ -828,7 +828,15 @@ declare namespace muhammara {
       characterSpacing: number,
       text: string | Glyph,
     ): this;
-    /** Pass the TJ array items as separate arguments: strings with numeric kerning adjustments, optionally followed by options. */
+    /**
+     * Shows text with kerning adjustments; operator TJ. Pass the array items
+     * as separate arguments: strings with numeric adjustments in thousandths of
+     * text space, optionally followed by options.
+     * @param items - The strings or glyphs and adjustments.
+     * @returns This context.
+     * @throws {TypeError} If an item is not a string, glyph list or number.
+     * @throws {TypeError} If there is no content context.
+     */
     TJ(...items: (string | number)[]): this;
     TJ(
       ...items: [string | number, ...(string | number)[], TextRenderOptions]
