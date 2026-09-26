@@ -205,6 +205,12 @@ function runInWorker(byteAssets, selectedExample) {
   });
 }
 
+/**
+ * Activates an example tab unless a run is active.
+ * @param {string} selectedId - Example id.
+ * @param {boolean} [focus=false] - Move keyboard focus to the tab.
+ * @returns {void}
+ */
 function selectExample(selectedId, focus = false) {
   var selected = examples.get(selectedId);
   if (!selected || active) return;
