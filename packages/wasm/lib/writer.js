@@ -3883,6 +3883,17 @@ export function createWriterFactory({
         if (!handle) throw new Error("Unable to create TIFF form XObject");
         return new FormXObject(handle, true, objectId || undefined);
       },
+      /**
+       * Creates a form XObject from TIFF bytes; alias of `createFormXObjectFromTIFF()`.
+       * @param {string|ByteSource} image - Registered TIFF name, or TIFF bytes.
+       * @param {TIFFOptions} [options] - Page index, reserved object ID, and
+       * black-and-white or grayscale treatment.
+       * @returns {FormXObject} The completed form.
+       * @throws {TypeError} If an option or treatment color is invalid, the name is not a
+       * registered TIFF, or the bytes are unsupported.
+       * @throws {RangeError} If `pageIndex` or `objectId` is invalid.
+       * @throws {Error} If the writer ended or the form cannot be created.
+       */
       createFormXObjectFromTIFFBytes: function (image, options) {
         return this.createFormXObjectFromTIFF(image, options);
       },
