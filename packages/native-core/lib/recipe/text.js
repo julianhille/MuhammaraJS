@@ -1159,6 +1159,15 @@ function getTextBoxHeight(textObjs) {
   return height;
 }
 
+/**
+ * Keep the complete lines that fit a height.
+ * @private
+ * @param {Object[]} textObjs - The laid-out runs.
+ * @param {number} availableHeight - The height available for text.
+ * @returns {{textObjects: Object[], linesWritten: number, clipped: boolean,
+ *   remainder: string}} The fitting runs, their line count, whether lines were
+ *   dropped, and the dropped text with its line breaks.
+ */
 function clipTextToBox(textObjs, availableHeight) {
   const lines = [];
   let line = [];
