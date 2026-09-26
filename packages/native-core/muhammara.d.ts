@@ -1028,6 +1028,15 @@ declare namespace muhammara {
     ): this;
     /** Finalize once; repeated calls return this writer. A failed finalization also ends the writer. */
     end(): PDFWriter;
+    /**
+     * Creates a page, optionally with its media box. Write it with writePage().
+     * @param x - The media box left edge.
+     * @param y - The media box bottom edge.
+     * @param width - The media box width.
+     * @param height - The media box height.
+     * @returns The new page.
+     * @throws {Error} If the writer has ended.
+     */
     createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
     writePage(page: PDFPage): this;
