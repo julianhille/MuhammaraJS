@@ -841,6 +841,10 @@ declare namespace muhammara {
   }
 
   export interface DocumentCopyingContext {
+    /**
+     * Ends the copying context and releases its source; later calls throw.
+     * @returns This context.
+     */
     end(): DocumentCopyingContext;
     createFormXObjectFromPDFPage(
       sourcePageIndex: number,
