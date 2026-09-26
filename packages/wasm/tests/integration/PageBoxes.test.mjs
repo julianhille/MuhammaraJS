@@ -26,6 +26,7 @@ describe("PageBoxes", function () {
     assert.deepEqual(reader.getPageBox(0, "bleed"), [2, 2, 593, 840]);
     assert.deepEqual(reader.getPageBox(0, "trim"), [3, 3, 592, 839]);
     assert.deepEqual(reader.getPageBox(0, "art"), [4, 4, 591, 838]);
+    assert.throws(() => reader.getPageBox(0, "toString"), /Unknown page box/);
     assert.equal(reader.getPageInfo(0).rotate, 90);
     reader.end();
   });

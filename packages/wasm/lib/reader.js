@@ -1,3 +1,4 @@
+import { PageBox } from "./value-sets.js";
 /** Rejects page indices and object IDs the native reader would silently wrap. */
 function requireIndex(value, label) {
   if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
@@ -940,10 +941,17 @@ export function createReaderFactory({
           module._free(resultPointer);
         }
       },
-      getPageBox: function (index, box = "media") {
+      getPageBox: function (index, box = PageBox.MEDIA) {
         requireReader();
-        var boxIndexes = { media: 0, crop: 1, trim: 2, bleed: 3, art: 4 };
-        if (!(box in boxIndexes)) {
+        // Box codes of the reader export, not the ePDFPageBox constants.
+        var boxIndexes = {
+          [PageBox.MEDIA]: 0,
+          [PageBox.CROP]: 1,
+          [PageBox.TRIM]: 2,
+          [PageBox.BLEED]: 3,
+          [PageBox.ART]: 4,
+        };
+        if (!Object.hasOwn(boxIndexes, box)) {
           throw new RangeError(`Unknown page box: ${box}`);
         }
         var resultPointer = module._malloc(32);

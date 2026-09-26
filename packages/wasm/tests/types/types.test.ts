@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  PDFRectangle,
   PDFPageBoxType,
   ImageFitPolicy,
   DeviceColorSpace,
@@ -890,6 +891,10 @@ async function usesNamedValueSets() {
   copying.createFormXObjectFromPDFPage(0, muhammara.ePDFPageBoxTrimBox);
   // @ts-expect-error Page boxes are the ePDFPageBox constants.
   copying.createFormXObjectFromPDFPage(0, 5);
+  var trimBox: PDFRectangle = parsed.getPageBox(0, "trim");
+  void trimBox;
+  // @ts-expect-error Page boxes are media, crop, bleed, trim, or art.
+  parsed.getPageBox(0, "page");
 }
 
 void usesNamedValueSets;

@@ -22,3 +22,12 @@ export var TextEncoding = Object.freeze({
   CODE: "code",
   HEX: "hex",
 });
+
+/** Page box names for `PDFPage` box properties and `PDFReader#getPageBox()`. */
+export var PageBox = Object.freeze({
+  MEDIA: "media",
+  CROP: "crop",
+  BLEED: "bleed",
+  TRIM: "trim",
+  ART: "art",
+});
