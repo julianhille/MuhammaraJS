@@ -4623,6 +4623,29 @@ declare namespace muhammara {
       sides?: number | Recipe.NGonOptions,
       options?: Recipe.NGonOptions,
     ): Recipe;
+    /**
+     * Draw an N pointed star
+     * @param cx - x-coordinate of center point of regular polygon
+     * @param cy - y-coordinate of center point of regular polygon
+     * @param radius - The radius, distance from the center to a star point.
+     * @param points - number of points on star, at least 5; or; defaults to 5.
+     *   the options when the point count is omitted.
+     * @param options - The options
+     * @param options.color - HexColor or DecimalColor
+     * @param options.stroke - HexColor or DecimalColor
+     * @param options.fill - HexColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @param options.skewX - the angle skew off the x-axis
+     * @param options.skewY - the angle skew off the y-axis.
+     * @param options.link - Make the star's bounding square open this URL.
+     * @param options.debug - Also draw the circumscribed circle and center.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     star(
       cx: number,
       cy: number,
