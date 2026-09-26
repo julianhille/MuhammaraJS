@@ -1984,6 +1984,16 @@ export function createWriterFactory({
           Ts: function (fontRise) {
             return operator("Ts", 40, [fontRise]);
           },
+          /**
+           * Sets the nonstroking CMYK color (`k`).
+           * @param {number} cyan - Cyan from 0 to 1.
+           * @param {number} magenta - Magenta from 0 to 1.
+           * @param {number} yellow - Yellow from 0 to 1.
+           * @param {number} black - Black from 0 to 1.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           k: function (cyan, magenta, yellow, black) {
             return operator("k", 28, [cyan, magenta, yellow, black]);
           },
