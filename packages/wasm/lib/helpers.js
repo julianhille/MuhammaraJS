@@ -74,6 +74,16 @@ export function createHelpers(module) {
     }
   }
 
+  /**
+   * Writes normalized bytes through a native byte writer.
+   * @param {object} module - Emscripten module.
+   * @param {function(number, number): number} write - Native write; negative when the writer is gone.
+   * @param {ByteSource} bytes - Bytes to write.
+   * @param {string} [label="ByteWriter input"] - Name used in byte errors.
+   * @returns {number} The number of bytes written.
+   * @throws {TypeError} If `bytes` is not a supported byte source.
+   * @throws {Error} If the writer is no longer active.
+   */
   function writeNativeBytes(module, write, bytes, label = "ByteWriter input") {
     bytes = normalizeBytes(bytes, label);
     return withBytes(bytes, (pointer) => {
