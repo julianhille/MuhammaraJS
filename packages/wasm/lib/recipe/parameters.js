@@ -68,7 +68,12 @@ export function recipeVersion(version) {
     : 17;
 }
 
-/** Initializes mutable state for a newly created Recipe instance. */
+/**
+ * Initializes mutable state for a newly created Recipe instance.
+ * @param {Recipe} recipe - Recipe instance.
+ * @param {RecipeOptions} options - Recipe options.
+ * @returns {void}
+ */
 export function initializeRecipe(recipe, options) {
   recipe.options = options;
   recipe.default = {
