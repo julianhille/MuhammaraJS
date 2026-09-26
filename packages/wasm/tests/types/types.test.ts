@@ -829,6 +829,8 @@ async function usesNamedValueSets() {
   void muhammara.getTypeLabel(muhammara.ePDFObjectStream);
   // @ts-expect-error Labels exist only for the ePDFObject constants.
   muhammara.getTypeLabel(12);
+  var rootType: PDFObjectType | null = parsed.getTrailerEntryType("Root");
+  void rootType;
 }
 
 void usesNamedValueSets;

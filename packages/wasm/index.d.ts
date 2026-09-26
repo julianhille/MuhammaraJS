@@ -1299,7 +1299,7 @@ export interface PDFReader {
     revision: number;
     type: number;
   };
-  getTrailerEntryType(key: string): number | null;
+  getTrailerEntryType(key: string): PDFObjectType | null;
   getTrailer(): PDFDictionary;
   queryDictionaryObject(
     dictionary: PDFDictionary,
