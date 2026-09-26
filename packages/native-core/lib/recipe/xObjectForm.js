@@ -149,6 +149,11 @@ exports.xObjectForm = class xObjectForm {
     return this;
   }
 
+  /**
+   * Set the stroke color in the form, including separation colors.
+   * @param {Object} colorModel - The color model from _transformColor().
+   * @returns {Object} The form.
+   */
   stroke(colorModel) {
     const ctx = this.getContentContext();
     switch (colorModel.colorspace) {
@@ -156,7 +161,7 @@ exports.xObjectForm = class xObjectForm {
         Color.stroke(ctx, colorModel);
         break;
 
-      case "separation":
+      case Colorspace.SEPARATION:
         ctx.CS(this.getCsName(colorModel.colorspaceId));
         ctx.SCN(1);
         break;
