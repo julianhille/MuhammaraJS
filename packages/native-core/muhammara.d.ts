@@ -576,6 +576,14 @@ declare namespace muhammara {
      * @throws {TypeError} If the reader has ended.
      */
     getTrailer(): PDFDictionary;
+    /**
+     * Returns a dictionary value, resolving an indirect reference.
+     * @param dictionary - The dictionary to read.
+     * @param name - The key, without a leading slash.
+     * @returns The value; undefined when the key is missing.
+     * @throws {TypeError} If the reader has ended or the arguments are not a
+     *   dictionary and a string.
+     */
     queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
     queryArrayObject(
       objectList: PDFArray,
