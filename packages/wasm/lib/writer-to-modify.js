@@ -1453,6 +1453,15 @@ export function createWriterToModifyFactory({
           callback,
         );
       },
+      /**
+       * Reads the dimensions of an image or PDF page.
+       * @param {string|ByteSource} image - Registered image or PDF name, or bytes.
+       * @param {number} [imageIndex=0] - Page or TIFF frame index.
+       * @returns {{width: number, height: number}} Size in points.
+       * @throws {RangeError} If `imageIndex` is not a 32-bit unsigned integer.
+       * @throws {TypeError} If the name is not registered or the bytes are unsupported.
+       * @throws {Error} If the modifier ended or the dimensions cannot be read.
+       */
       getImageDimensions: function (image, imageIndex = 0) {
         requireOpen();
         if (
