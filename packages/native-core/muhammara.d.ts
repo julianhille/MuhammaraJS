@@ -1963,6 +1963,11 @@ declare namespace muhammara {
       targetForm: FormXObject,
       sourcePageIndex: number,
     ): void;
+    /**
+     * Returns the reader of the source document.
+     * @returns The source document reader.
+     * @throws {TypeError} If the copying context has ended.
+     */
     getSourceDocumentParser(): PDFReader;
     /**
      * Writes a source object at the current output position, copying the
