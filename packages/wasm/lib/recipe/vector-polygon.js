@@ -1,4 +1,8 @@
-/** Creates Recipe polygon drawing methods. */
+/**
+ * Creates Recipe polygon drawing methods.
+ * @param {object} runtime - Module and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createPolygonMethods(runtime) {
   return {
     /**
