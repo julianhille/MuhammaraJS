@@ -3040,6 +3040,17 @@ export function createWriterFactory({
       return value;
     }
 
+    /**
+     * Appends pages of a source PDF as new pages.
+     * @param {ByteSource} source - Source PDF bytes.
+     * @param {PageRangeOptions} [options={}] - Pages to append; all by default.
+     * @returns {number[]} Object IDs of the appended pages.
+     * @throws {TypeError} If `options` is not an object or holds a password.
+     * @throws {RangeError} If `type` is not an ERangeType constant, or
+     * `specificRanges` is empty for a specific range or holds an invalid range.
+     * @throws {Error} If a page is active, the writer ended, or the source is encrypted
+     * or unreadable; a failed append disposes the writer.
+     */
     function appendPDFPagesFromPDF(source, options = {}) {
       requireOpenWriter();
       if (currentPage) {
