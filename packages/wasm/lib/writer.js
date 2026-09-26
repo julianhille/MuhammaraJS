@@ -87,6 +87,15 @@ export function createWriterSupport({
     return path;
   }
 
+  /**
+   * Validates drawImage options and flattens them for the native call.
+   * @param {DrawImageOptions} [options] - Page index and a matrix or fit transformation.
+   * @returns {object} `index`, `method` (0 none, 1 matrix, 2 fit), `matrix`,
+   * `width`, `height`, `proportional`, and native `fit` (0 always, 1 overflow).
+   * @throws {TypeError} If an option is unknown, a Node-only option is passed, or
+   * a value has the wrong type or is not an ImageFitPolicy.
+   * @throws {RangeError} If `index` is not a 32-bit unsigned integer or the fit box is not positive.
+   */
   function imageDrawOptions(options) {
     if (options === undefined) {
       return {
