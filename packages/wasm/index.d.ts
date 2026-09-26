@@ -58,7 +58,9 @@ export type RecipeFontStyle =
 export type RecipeCoordinate = number | "center";
 export type RecipePosition = [number, number];
 /** Device color spaces Recipe draws with in WebAssembly. */
-export type RecipeDeviceColorSpace = "rgb" | "gray" | "cmyk";
+/** Device color space of a drawing or Recipe color option. */
+export type DeviceColorSpace = "rgb" | "gray" | "cmyk";
+export type RecipeDeviceColorSpace = DeviceColorSpace;
 /**
  * Every Recipe color space, including Separation. WebAssembly Recipe keeps
  * Separation entries in `knownColors` but throws when asked to draw with them.
@@ -841,7 +843,7 @@ export type TextRenderingMode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface DrawPathOptions {
   color?: number | string;
-  colorspace?: "rgb" | "gray" | "cmyk";
+  colorspace?: DeviceColorSpace;
   type?: DrawingPathType;
   width?: number;
   close?: boolean;

@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  DeviceColorSpace,
   ImageType,
   PageRangeOptions,
   ERangeType,
@@ -862,6 +863,10 @@ async function usesNamedValueSets() {
   var modifierAsyncImageType: Promise<ImageType | undefined> =
     modifierForTypes.getImageTypeAsync(new Uint8Array());
   void modifierAsyncImageType;
+  var drawColorspace: DeviceColorSpace = "cmyk";
+  context.drawRectangle(0, 0, 1, 1, { color: 0, colorspace: drawColorspace });
+  // @ts-expect-error Colorspaces are rgb, gray, or cmyk.
+  context.drawRectangle(0, 0, 1, 1, { color: 0, colorspace: "hsl" });
 }
 
 void usesNamedValueSets;

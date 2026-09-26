@@ -1,3 +1,5 @@
+import { DeviceColorSpace } from "./value-sets.js";
+
 /** Reject overflowing derived geometry before any operator is emitted. */
 export function validateDrawingGeometry(values) {
   if (!values.every(Number.isFinite))
@@ -16,8 +18,8 @@ function readColor(options, colorValue) {
   var value = options.color;
   if (value === undefined) return {};
   var color = colorValue(value) >>> 0;
-  var colorspace = options.colorspace || "rgb";
-  if (!["rgb", "gray", "cmyk"].includes(colorspace)) {
+  var colorspace = options.colorspace || DeviceColorSpace.RGB;
+  if (!Object.values(DeviceColorSpace).includes(colorspace)) {
     throw new TypeError("colorspace must be rgb, gray, or cmyk");
   }
   return { color, colorspace };
@@ -77,13 +79,13 @@ export function readTextOptions(options, colorValue) {
 export function applyDrawingColor(context, options, stroke) {
   if (!options || options.color === undefined) return;
   var color = options.color;
-  if (options.colorspace === "gray") {
+  if (options.colorspace === DeviceColorSpace.GRAY) {
     var gray = (color & 0xff) / 255;
     if (stroke) context.G(gray);
     else context.g(gray);
     return;
   }
-  if (options.colorspace === "cmyk") {
+  if (options.colorspace === DeviceColorSpace.CMYK) {
     var components = [
       ((color >> 24) & 0xff) / 255,
       ((color >> 16) & 0xff) / 255,
