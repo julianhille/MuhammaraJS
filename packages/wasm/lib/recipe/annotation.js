@@ -85,6 +85,8 @@ function assertAnnotationValues(
 /**
  * Converts annotation text fields like native Recipe. Contents and icon names
  * omit falsy values; titles and subjects preserve zero and false as strings.
+ * @param {object} options - Annotation options.
+ * @returns {object} New options with string text fields.
  */
 function annotationText(options) {
   var result = { ...options };
