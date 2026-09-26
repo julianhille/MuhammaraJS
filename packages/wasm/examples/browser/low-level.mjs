@@ -74,6 +74,13 @@ function rawExampleObject(writer) {
   return id;
 }
 
+/**
+ * Draws the low-level example page.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {import("../../index.js").PDFWriter} writer - Writer.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional assets.
+ * @returns {{annotationId: number, metrics: object}} The annotation ID and font metrics.
+ */
 function drawPage(muhammara, writer, assets) {
   var page = new muhammara.PDFPage(0, 0, 595, 842);
   page.cropBox = [18, 18, 577, 824];
