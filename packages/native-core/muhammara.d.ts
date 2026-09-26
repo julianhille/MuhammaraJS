@@ -1250,6 +1250,10 @@ declare namespace muhammara {
      * @returns This object; undefined when it is not the null object.
      */
     toPDFNull(): PDFNull | undefined;
+    /**
+     * Returns this object typed as a name.
+     * @returns This object; undefined when it is not a name.
+     */
     toPDFName(): PDFName | undefined;
     toPDFInteger(): PDFInteger | undefined;
     toPDFReal(): PDFReal | undefined;
