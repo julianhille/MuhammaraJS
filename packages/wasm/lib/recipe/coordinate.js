@@ -1,3 +1,7 @@
+import {
+  RecipeHorizontalAlignment,
+  RecipeVerticalAlignment,
+} from "../value-sets.js";
 /** Recipe coordinate conversion methods. */
 export var coordinateMethods = {
   /**
@@ -10,8 +14,8 @@ export var coordinateMethods = {
     );
     if (!page) return [x, y];
     return [
-      x === "center" ? page.width / 2 : x,
-      y === "center" ? page.height / 2 : y,
+      x === RecipeHorizontalAlignment.CENTER ? page.width / 2 : x,
+      y === RecipeVerticalAlignment.CENTER ? page.height / 2 : y,
     ];
   },
 
