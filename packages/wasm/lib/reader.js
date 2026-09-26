@@ -1443,6 +1443,10 @@ export function createReaderFactory({
           module._free(resultPointer);
         }
       },
+      /**
+       * Releases the reader, its byte readers, and its input file; later calls do nothing.
+       * @returns {this} The reader.
+       */
       end: function () {
         if (reader) {
           try {
