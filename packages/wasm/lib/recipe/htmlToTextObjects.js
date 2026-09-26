@@ -78,7 +78,11 @@ export function htmlToTextObjects(html, options = {}) {
       push({ value: "\n", styles: current() });
     }
   };
-  /** Emits a pending list marker and clears its continuation state. */
+  /**
+   * Emits a pending list marker and clears its continuation state.
+   * @param {{value: string, indent: number}} item - List item.
+   * @returns {void}
+   */
   var pushItem = (item) => {
     push({ value: item.value, indent: item.indent, styles: current() });
     item.markerPending = false;
