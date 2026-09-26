@@ -3814,6 +3814,16 @@ declare namespace muhammara {
       options?: Recipe.CommentOptions,
     ): Recipe;
 
+    /**
+     * Add a clickable URL link to the current page.
+     * @param url - The URL to open.
+     * @param x - The top-left x coordinate.
+     * @param y - The top-left y coordinate.
+     * @param width - The link width.
+     * @param height - The link height.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     link(
       url: string,
       x: Recipe.RecipeCoordinate,
