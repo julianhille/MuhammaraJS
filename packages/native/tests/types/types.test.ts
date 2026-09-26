@@ -993,3 +993,6 @@ annotationRecipe.text("boxed", 10, 10, {
     textAlign: `${muhammara.Recipe.TextAlign.JUSTIFY} ${muhammara.Recipe.VerticalAlign.BOTTOM}`,
   },
 });
+
+const fillPath: muhammara.DrawingPathType = muhammara.DrawingPathType.FILL;
+void fillPath;

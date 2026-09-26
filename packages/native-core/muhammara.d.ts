@@ -138,7 +138,14 @@ declare namespace muhammara {
    * intersects the clipping region without painting; scope it with q()/Q().
    * `null` selects no paint operation and ends the path unpainted.
    */
-  export type DrawingPathType = "stroke" | "fill" | "clip" | null;
+  /** Paint operations for the `type` option of the drawing helpers. */
+  export const DrawingPathType: {
+    readonly STROKE: "stroke";
+    readonly FILL: "fill";
+    readonly CLIP: "clip";
+  };
+  export type DrawingPathType =
+    (typeof DrawingPathType)[keyof typeof DrawingPathType] | null;
 
   export interface GraphicOptions extends ColorOptions {
     type?: DrawingPathType;

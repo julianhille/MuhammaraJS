@@ -73,6 +73,11 @@ exports.createMuhammara = function createMuhammara(muhammara) {
   muhammara.PDFRStreamForFile = require("./lib/PDFRStreamForFile");
   muhammara.PDFRStreamForBuffer = require("./lib/PDFRStreamForBuffer");
   muhammara.PDFWStreamForBuffer = require("./lib/PDFWStreamForBuffer");
+  muhammara.DrawingPathType = Object.freeze({
+    STROKE: "stroke",
+    FILL: "fill",
+    CLIP: "clip",
+  });
   muhammara.LineCapStyle = Object.freeze({
     LINECAP_BUTT: 0,
     LINECAP_ROUND: 1,
