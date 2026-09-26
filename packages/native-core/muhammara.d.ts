@@ -1540,6 +1540,12 @@ declare namespace muhammara {
      * Shares `extractPageText`'s budget and clamping. `limits.maxTextBytes` is
      * accepted for signature parity but has no effect here, because items carry
      * an operator name rather than extracted text.
+     * @param pageIndex - The zero-based page index.
+     * @param limits - Tighter extraction limits.
+     * @returns The content items in drawing order.
+     * @throws {TypeError} If the arguments are not a page index and an optional
+     *   limits object, or the page cannot be read.
+     * @throws {Error} If the page exceeds the extraction limits.
      */
     extractPageContentItems(
       pageIndex: number,
