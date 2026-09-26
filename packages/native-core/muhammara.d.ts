@@ -4778,6 +4778,15 @@ declare namespace muhammara {
      *   output file cannot be written.
      */
     structure(output: string): Recipe;
+    /**
+     * Convert HTML into Recipe text layout objects.
+     * @param htmlCodes - The HTML source. Tag names are matched case-insensitively.
+     * @param options - Text options used to initialize the objects.
+     * @param options.font - The font of every object.
+     * @param options.size - The base font size of every object.
+     * @returns The parsed text layout objects: one per child node,
+     *   each with its value, tag, style flags, link, font size ratio and childs.
+     */
     htmlToTextObjects(
       htmlCodes: string,
       options?: Recipe.TextOptions,
