@@ -4038,6 +4038,17 @@ declare namespace muhammara {
      * @throws {Error} If the page cannot be written.
      */
     endPage(): Recipe;
+    /**
+     * Set a page box on the active new page.
+     * @param box - An `ePDFPageBox*` constant.
+     * @param left - The PDF left coordinate.
+     * @param bottom - The PDF bottom coordinate.
+     * @param right - The PDF right coordinate.
+     * @param top - The PDF top coordinate.
+     * @returns The recipe instance.
+     * @throws {RangeError} If the page box constant is unknown.
+     * @throws {TypeError} If no page is active.
+     */
     setPageBox(
       box: PDFPageBoxType,
       left: number,
