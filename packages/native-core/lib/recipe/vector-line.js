@@ -1,4 +1,5 @@
 const muhammara = require("../muhammara");
+const { Colorspace } = require("../recipe-constants");
 
 /**
  * move the current position to target position
@@ -40,11 +41,27 @@ exports.moveTo = function moveTo(x, y) {
  * @param {number} [options.miterLimit] - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
  */
 exports.lineTo = function lineTo(x, y, options = {}) {
-  const fromX = this._position.x;
-  const fromY = this._position.y;
+  const from = [this._position.x, this._position.y];
   const { nx, ny } = this._calibrateCoordinate(x, y);
-  const context = this.pageContext;
+  this._strokePolyline([from, [nx, ny]], options);
+  this.moveTo(x, y);
+  return this;
+};
+
+/**
+ * Stroke one path through PDF points, so segments meet at the line join
+ * instead of overlapping, and a Separation line writes one form.
+ * @private
+ * @param {number[][]} points - Two or more [x, y] points in PDF coordinates.
+ * @param {Object} options - The line options of `lineTo()` and `line()`.
+ * @returns {void}
+ * @throws {TypeError} If no page is active.
+ */
+exports._strokePolyline = function _strokePolyline(points, options) {
+  // _getPathOptions() may pause the page to write graphics states, and an
+  // edited page resumes into a new context, so read the context afterwards.
   const pathOptions = this._getPathOptions(options);
+  const context = this.pageContext;
   pathOptions.type = muhammara.DrawingPathType.STROKE;
 
   if (pathOptions.stroke !== undefined) {
@@ -52,16 +69,41 @@ exports.lineTo = function lineTo(x, y, options = {}) {
     pathOptions.colorspace = pathOptions.strokeModel.colorspace;
   }
 
-  context
-    .q()
-    .J(pathOptions.lineCap)
-    .j(pathOptions.lineJoin)
-    .d(pathOptions.dash, pathOptions.dashPhase)
-    .M(pathOptions.miterLimit)
-    .drawPath(fromX, fromY, nx, ny, pathOptions)
-    .Q();
-  this.moveTo(x, y);
-  return this;
+  const colorModel = pathOptions.strokeModel || pathOptions.colorModel;
+  const drawLine = (ctx, originX, originY) =>
+    ctx
+      .J(pathOptions.lineCap)
+      .j(pathOptions.lineJoin)
+      .d(pathOptions.dash, pathOptions.dashPhase)
+      .M(pathOptions.miterLimit)
+      .drawPath(
+        ...points.flatMap(([px, py]) => [px - originX, py - originY]),
+        this._devicePathOptions(pathOptions),
+      );
+
+  if (colorModel.colorspace === Colorspace.SEPARATION) {
+    // A Separation color space is a resource, so draw through a form XObject
+    // as the other shapes do; the padding keeps caps and miter joins inside.
+    const padding = pathOptions.width * Math.max(1, pathOptions.miterLimit);
+    const xs = points.map((point) => point[0]);
+    const ys = points.map((point) => point[1]);
+    const left = Math.min(...xs) - padding;
+    const bottom = Math.min(...ys) - padding;
+    this._drawObject(
+      this,
+      left,
+      bottom,
+      Math.max(...xs) - Math.min(...xs) + padding * 2,
+      Math.max(...ys) - Math.min(...ys) + padding * 2,
+      {},
+      (ctx, xObject) => {
+        this._setSeparationColor(xObject, colorModel, true);
+        drawLine(ctx, left, bottom);
+      },
+    );
+  } else {
+    drawLine(context.q(), 0, 0).Q();
+  }
 };
 
 /**
@@ -94,16 +136,18 @@ exports.line = function line(coordinates = [], options = {}) {
     ];
     options = lineOptions;
   }
-  coordinates.forEach((coordinate, index) => {
-    if (index === 0) {
-      this.moveTo(coordinate[0], coordinate[1]);
-      if (this.editingPage) {
-        // hack to force out first line when editing page
-        this.lineTo(coordinate[0], coordinate[1], options);
-      }
-    } else {
-      this.lineTo(coordinate[0], coordinate[1], options);
-    }
-  });
-  return this;
+  if (coordinates.length < 2) {
+    if (coordinates.length) this.moveTo(coordinates[0][0], coordinates[0][1]);
+    return this;
+  }
+  // Stroke every segment as one path, as Wasm does.
+  this._strokePolyline(
+    coordinates.map(([x, y]) => {
+      const { nx, ny } = this._calibrateCoordinate(x, y);
+      return [nx, ny];
+    }),
+    options,
+  );
+  const [lastX, lastY] = coordinates[coordinates.length - 1];
+  return this.moveTo(lastX, lastY);
 };

@@ -74,6 +74,10 @@ void invalidPathType;
 
 async function usesLowLevelSurface() {
   var muhammara = await createMuhammaraWasm();
+  var cmyk: RecipeDeviceColorSpace = DeviceColorSpaces.CMYK;
+  void cmyk;
+  // @ts-expect-error DeviceColorSpace has no Separation member.
+  void DeviceColorSpaces.SEPARATION;
   muhammara.registerFont("font", new Uint8Array());
   await muhammara.registerFontAsync("font-async", new Blob());
   var writer = muhammara.createWriter({
@@ -362,6 +366,11 @@ async function usesLowLevelSurface() {
   modifier.replaceObject(0, parser.getPageObjectID(0), 11, { scope: "global" });
   modifier.end();
   var Recipe = await createRecipe();
+  var spot: RecipeColorSpace = Recipe.Colorspace.SEPARATION;
+  new Recipe({ colorspace: Recipe.Colorspace.SEPARATION })
+    .createPage()
+    .chroma("Spot", "#ff8000", spot)
+    .rectangle(0, 0, 10, 10, { fill: "Spot", colorspace: spot });
   Recipe.registerFont("regular", new Uint8Array(), "regular");
   await Recipe.registerFontAsync("bold", new Blob(), "bold");
   Recipe.registerImage("image", new Uint8Array(), "png");
@@ -704,10 +713,15 @@ function usesRecipeDeclarations(
 ) {
   recipe.chroma("brand", "#001122", deviceColorSpace);
   recipe.chroma("inferred", "#001122", "");
-  // @ts-expect-error Separation colors are unsupported in WebAssembly Recipe.
   recipe.chroma("spot", [0, 255, 0, 0], colorSpace);
-  // @ts-expect-error Separation colors are unsupported in WebAssembly Recipe.
   recipe.rectangle(0, 0, 10, 10, { colorspace: "separation" });
+  recipe.text("Spot", 0, 0, {
+    color: "#ff8000",
+    colorspace: "separation",
+    colorName: "Orange",
+  });
+  // @ts-expect-error Unknown Recipe colorspace.
+  recipe.chroma("lab", "#001122", "lab");
 
   recipe.register("describe", extension);
   recipe.register(function summarize(this: Recipe, count: number) {

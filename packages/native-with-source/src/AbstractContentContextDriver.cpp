@@ -887,7 +887,8 @@ bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
     napi_value color = nullptr;
     if (!Get(env, maybeOptions, "color", &color))
       return false;
-    if (IsType(env, color, napi_string)) {
+    bool isStringColor = IsType(env, color, napi_string);
+    if (isStringColor) {
       std::string colorName = LegacyString(env, color);
       if (HasPendingException(env))
         return false;
@@ -901,16 +902,35 @@ bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
       if (!CoerceToInt32(env, color, &numericColor))
         return false;
       options.colorValue = static_cast<unsigned long>(numericColor);
-      bool hasColorSpace = Has(env, maybeOptions, "colorspace");
-      if (HasPendingException(env))
+    }
+    // Validate the colorspace for every color, as Wasm does. A color name or
+    // #rrggbb string is RGB, so only a number can be read as gray or CMYK.
+    bool hasColorSpace = Has(env, maybeOptions, "colorspace");
+    if (HasPendingException(env))
+      return false;
+    if (hasColorSpace) {
+      napi_value colorSpace = nullptr;
+      if (!Get(env, maybeOptions, "colorspace", &colorSpace))
         return false;
-      if (hasColorSpace) {
-        napi_value colorSpace = nullptr;
-        if (!Get(env, maybeOptions, "colorspace", &colorSpace))
-          return false;
+      if (!IsType(env, colorSpace, napi_undefined) &&
+          !IsType(env, colorSpace, napi_null)) {
         options.colorSpace = LegacyString(env, colorSpace);
         if (HasPendingException(env))
           return false;
+        // An empty colorspace means RGB, as an omitted one does and as in Wasm.
+        if (options.colorSpace.empty())
+          options.colorSpace = "rgb";
+        if (options.colorSpace != "rgb" && options.colorSpace != "gray" &&
+            options.colorSpace != "cmyk") {
+          ThrowTypeError(env, "colorspace must be rgb, gray, or cmyk");
+          return false;
+        }
+        if (isStringColor && options.colorSpace != "rgb") {
+          ThrowTypeError(env,
+                         "only a numeric color can use the gray or cmyk "
+                         "colorspace");
+          return false;
+        }
       }
     }
   }

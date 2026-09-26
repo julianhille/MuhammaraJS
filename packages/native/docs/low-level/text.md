@@ -16,7 +16,8 @@ context.writeText("Hello, world", 72, 720, {
 ```
 
 `size`, not `fontSize`, controls the font size. Supported color spaces are
-`rgb`, `cmyk`, and `gray`. Use `q()` and `Q()` to scope graphics-state changes,
+`rgb`, `cmyk`, and `gray`; a `gray` or `cmyk` color must be a number, as in
+[Draw Primitives](drawing-primitives.md). Use `q()` and `Q()` to scope graphics-state changes,
 such as `setOpacity(0.5)`.
 
 Use `font.calculateTextDimensions(text, size)` when positioning needs the text

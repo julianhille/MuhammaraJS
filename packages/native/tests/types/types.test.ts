@@ -111,6 +111,11 @@ var info: muhammara.Recipe.InfoOptions = {
   Labels: ["one", "two"],
 };
 recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });
+var existingInfo: Record<string, string> | undefined = recipe.info();
+void existingInfo;
+// @ts-expect-error info() without options returns the Info record, not the Recipe.
+recipe.info().custom("ReportId", "X-000");
+recipe.rectangle(10, 10, 100, 40, { useGivenCoords: true });
 recipe.lineStyle({
   width: 1,
   lineWidth: 2,
@@ -463,6 +468,18 @@ var colorspace: muhammara.Recipe.Colorspace = "separation";
 var recipeOptions: muhammara.Recipe.RecipeOptions = {
   colorspace: "separation",
 };
+// A Separation ink named for a color given by value, on shapes and text.
+recipe
+  .circle(120, 40, 20, {
+    fill: [0, 255, 0, 0],
+    colorspace: "separation",
+    colorName: "SpotGreen",
+  })
+  .text("Spot", 10, 80, {
+    color: [0, 255, 0, 0],
+    colorspace: "separation",
+    colorName: "SpotGreen",
+  });
 var dynamicColorspace: string = "gray";
 var optionalColorspace: string | undefined = dynamicColorspace;
 function applyColorspaces(
@@ -473,8 +490,11 @@ function applyColorspaces(
 ): void {
   recipe.chroma("brand", "#ff0000", device);
   recipe.chroma("spot", [0, 255, 0, 0], color);
+  // @ts-expect-error A plain string is not a Recipe colorspace.
   recipe.chroma("dynamic", "#00", dynamic);
+  // @ts-expect-error A plain string is not a Recipe colorspace.
   recipe.chroma("optional", "#00", optional);
+  recipe.chroma("checked", "#00", dynamic as muhammara.Recipe.Colorspace);
 }
 function applyRecipeOptions(options: muhammara.Recipe.RecipeOptions): void {
   new muhammara.Recipe("new", null, options);
@@ -889,6 +909,7 @@ void extraInfo;
 void alignmentWriter
   .getDocumentContext()
   .getInfoDictionary()
+  // @ts-expect-error getAdditionalInfoEntries() takes no key.
   .getAdditionalInfoEntries("ignored");
 
 const alignmentCopy = alignmentWriter.createPDFCopyingContext("source.pdf");

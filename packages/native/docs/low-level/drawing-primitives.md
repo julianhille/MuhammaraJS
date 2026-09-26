@@ -6,6 +6,12 @@ stroke `width`. Pass an RGB color as a 24-bit number, a CSS color name, or a
 `#rrggbb` string. `writeText()` accepts the same color forms. Any other color
 string throws a `TypeError` before anything is drawn.
 
+For `colorspace: "gray"` or `"cmyk"`, pass the color as a number: one byte for
+gray and `0xCCMMYYKK` for CMYK. A color name or `#rrggbb` string is RGB, so
+combining it with gray or CMYK throws
+`TypeError: only a numeric color can use the gray or cmyk colorspace`. See
+[Draw in Gray and CMYK](../how-to/draw-in-gray-and-cmyk.md).
+
 ```javascript
 var context = pdfWriter.startPageContentContext(page);
 

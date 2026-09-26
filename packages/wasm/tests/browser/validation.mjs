@@ -501,14 +501,10 @@ export async function runValidation() {
     "recipe chroma path loader is unavailable",
   );
   assertThrows(
-    () => colorRecipe.chroma("spot", "#000000", "separation"),
-    "recipe Separation colors are unavailable",
-  );
-  assertThrows(
     () => new Recipe("input.pdf"),
     "recipe path input is unavailable",
   );
-  assertions += 3;
+  assertions += 2;
 
   var parityRecipe = new Recipe({ compress: false }).createPage(240, 220);
   var layoutOverflows = 0;

@@ -106,6 +106,7 @@ nav:
           - Add Content to Rotated Pages: how-to/add-content-to-rotated-pages.md
           - Place and Transform Images: how-to/place-and-transform-images.md
           - Set Page Boxes: how-to/set-page-boxes.md
+          - Draw in Gray and CMYK: how-to/draw-in-gray-and-cmyk.md
       - Project Documentation:
           - Breaking Changes: breaking-changes.md
           - Contributing Documentation: contributing.md

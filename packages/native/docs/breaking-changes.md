@@ -27,6 +27,46 @@ This page collects the compatibility changes formerly maintained in the README.
   `TypeError: Annotation colors need one, three, or four numbers from 0 to 255`.
   Pass one, three, or four numbers from 0 to 255; three-number arrays are
   unchanged [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
+- Recipe `line()` strokes all of its points as one path, as in
+  `@muhammara/wasm`; 6.x stroked every segment as its own path. Segments now
+  meet at the `lineJoin` instead of overlapping their caps, so corners drawn
+  with `butt` caps are closed and a translucent line no longer darkens where
+  segments overlap. A Separation line writes one form XObject instead of one
+  per segment. To keep separate segments, draw each with its own `moveTo()`
+  and `lineTo()`
+  [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+
+- An unknown colorspace throws a `TypeError`, as in `@muhammara/wasm`. The
+  low-level drawing and `writeText()` color options throw
+  `TypeError: colorspace must be rgb, gray, or cmyk` for a numeric or named
+  `color`; in 6.x a numeric color drew without setting a color and a named
+  color ignored the colorspace. Recipe `chroma()`, text and drawing options throw
+  `TypeError: Unknown colorspace: <name>`; in 6.x `chroma()` threw a plain
+  `Error` and a named color in an unknown colorspace failed with
+  `Cannot read properties of undefined`. The declarations of
+  `ColorOptions.colorspace` and the `Recipe#chroma()` colorspace no longer
+  accept any `string`, so `tsc` reports a value typed `string`. Pass a
+  `DeviceColorSpace` or `Recipe.Colorspace` value; see
+  [Type Colorspaces](getting-started/migrate-from-v6.md#type-colorspaces) [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+- The low-level drawing helpers and `writeText()` throw
+  `TypeError: only a numeric color can use the gray or cmyk colorspace` for a
+  color name or `#rrggbb` string with `colorspace: "gray"` or `"cmyk"`, as in
+  `@muhammara/wasm`. Such a color is RGB; in 6.x it drew in RGB and the
+  colorspace was ignored. Drop `colorspace` for a string color, or pass the
+  gray or CMYK color as a number; see
+  [Draw in Gray and CMYK](how-to/draw-in-gray-and-cmyk.md) [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+- `InfoDictionary#getAdditionalInfoEntries()` is declared without its ignored
+  `key` parameter, so `getAdditionalInfoEntries("Company")` fails `tsc` with
+  `Expected 0 arguments`. The call always returned every entry; drop the
+  argument and read the key from the result [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+- `WriteTextOptions` no longer declares `strikeOut` and `lineWidth`, which
+  `writeText()` never read. Passing them fails `tsc` with an excess-property
+  error; remove them, draw the line with `drawPath()`, or use the Recipe
+  `text()` `strikeOut` option [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+- `Recipe#info()` without options is typed `Record<string, string> | undefined`
+  instead of `Recipe`, matching what it returns. Chaining Recipe calls on it
+  fails `tsc` (and threw at runtime before); use `info(options)` to write
+  information and chain from that [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
 - Recipe `annot()` and `comment()` throw
   `Error: Unknown annotation flag (<name>)` when the `flag` option is not a
   `Recipe.AnnotFlag` value, such as a misspelled name. In 6.x the annotation was

@@ -2,6 +2,24 @@ const muhammara = require("../muhammara");
 const fs = require("fs");
 const { Colorspace, ChromaCommand } = require("../recipe-constants");
 
+/**
+ * Register a color under a name as an own property, so any name, including
+ * `__proto__`, is stored and later found by an own-property lookup.
+ * @private
+ * @param {Object} colors - The colors of one colorspace.
+ * @param {string} name - The color name.
+ * @param {string} value - The color value.
+ * @returns {void}
+ */
+function setKnownColor(colors, name, value) {
+  Object.defineProperty(colors, name, {
+    value,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+}
+
 this.knownColors = {
   // knownColors.colorspace.colorName = value
   rgb: {
@@ -61,18 +79,19 @@ this.knownColors = {
  * @throws {Error} If the file to load cannot be read or is not valid JSON.
  * @throws {Error} If a loaded color definition has an unrecognized colorspace.
  * @throws {Error} If a color value has an invalid size.
- * @throws {Error} If the colorspace is unknown.
+ * @throws {TypeError} If the colorspace is unknown.
  */
 exports.chroma = function chroma(name, value, colorspace = "") {
   if (name) {
     if (name === ChromaCommand.LOAD) {
       let newColors = JSON.parse(fs.readFileSync(value));
       // Add new colors to existing colorspaces
-      for (let cs in newColors) {
-        if (this.knownColors[cs]) {
-          Object.assign(this.knownColors[cs], newColors[cs]);
-        } else {
+      for (const cs of Object.keys(newColors)) {
+        if (!Object.values(Colorspace).includes(cs)) {
           throw new Error(`Unrecognized colorspace: ${cs}`);
+        }
+        for (const [colorName, color] of Object.entries(newColors[cs])) {
+          setKnownColor(this.knownColors[cs], colorName, color);
         }
       }
     } else {
@@ -102,11 +121,11 @@ exports.chroma = function chroma(name, value, colorspace = "") {
         };
         colorspace = colorSpaces[`${value.length}`];
       } else if (!Object.values(Colorspace).includes(colorspace)) {
-        throw new Error(`Unknown colorspace: ${colorspace}.`);
+        throw new TypeError(`Unknown colorspace: ${colorspace}`);
       }
 
       if (colorspace) {
-        this.knownColors[colorspace][name] = value;
+        setKnownColor(this.knownColors[colorspace], name, value);
       }
     }
   }
@@ -126,10 +145,11 @@ exports.chroma = function chroma(name, value, colorspace = "") {
 function createColorSpaces(self, colorName, color) {
   const deviceCS = { 1: "DeviceGray", 3: "DeviceRGB", 4: "DeviceCMYK" };
   const altCS = deviceCS[`${color.length}`];
-  // Cache per Recipe: the IDs belong to this Recipe's PDF writer.
-  self.colorSpaces = self.colorSpaces || {};
-  self.colorSpaces[altCS] = self.colorSpaces[altCS] || {};
-  let colorSpaceID = self.colorSpaces[altCS][colorName];
+  // Cache per Recipe: the IDs belong to this Recipe's PDF writer. A Map keyed
+  // like Wasm's keeps ink names such as "__proto__" from hitting inherited keys.
+  self.colorSpaces = self.colorSpaces || new Map();
+  const key = `${altCS}:${colorName}`;
+  let colorSpaceID = self.colorSpaces.get(key);
 
   if (!colorSpaceID) {
     const transformFunction = tintTransform(self, color);
@@ -145,7 +165,7 @@ function createColorSpaces(self, colorName, color) {
       .endArray(muhammara.eTokenSeparatorEndLine)
       .endIndirectObject();
     self.resumeContext();
-    self.colorSpaces[altCS][colorName] = colorSpaceID;
+    self.colorSpaces.set(key, colorSpaceID);
   }
 
   return colorSpaceID;
@@ -348,9 +368,13 @@ function percentToHex(code) {
  * @param {string} [opt.colorName] - The name to record the color under.
  * @returns {number|Object} The color as a number, or the color model when
  *   `opt.wantColorModel` is set. Invalid values fall back to the default color.
+ * @throws {TypeError} If `opt.colorspace` is not a `Recipe.Colorspace` value.
  */
 exports._transformColor = function _transformColor(code = "", opt = {}) {
   this.knownColors = this.knownColors || {};
+  if (opt.colorspace && !Object.values(Colorspace).includes(opt.colorspace)) {
+    throw new TypeError(`Unknown colorspace: ${opt.colorspace}`);
+  }
   let colorspace = opt.colorspace || Colorspace.RGB;
   let wantColorModel = opt.wantColorModel || false;
   let colorName = opt.colorName || "";
@@ -364,7 +388,10 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   } else if (code.startsWith("%")) {
     code = percentToHex(code.replace("%", ""));
   } else if (code !== "") {
-    let color = this.knownColors[colorspace][code]; // assuming code is a color name
+    // A color name counts only when registered, not an inherited key such as
+    // "constructor".
+    const colors = this.knownColors[colorspace];
+    let color = Object.hasOwn(colors, code) ? colors[code] : undefined;
     if (!color) {
       color = "";
       code = defaultColor;
@@ -406,7 +433,7 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
 
   if (wantColorModel) {
     transformation = toColorModel(this, code, colorspace, colorName);
-    if (colorName && !this.knownColors[colorspace][colorName]) {
+    if (colorName && !Object.hasOwn(this.knownColors[colorspace], colorName)) {
       this.chroma(colorName, code, colorspace);
     }
   } else {

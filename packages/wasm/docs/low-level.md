@@ -36,6 +36,12 @@ Pass an RGB `color` to these helpers or `writeText()` as a 24-bit number, a
 CSS color name in any case, or a `#rrggbb` string. Any other color string, including
 hex without the `#`, throws a `TypeError` before anything is drawn.
 
+For `colorspace: "gray"` or `"cmyk"`, pass the color as a number: one byte for
+gray and `0xCCMMYYKK` for CMYK. A color name, `#rrggbb` string, or `[r, g, b]`
+array is RGB, so combining it with gray or CMYK throws
+`TypeError: only a numeric color can use the gray or cmyk colorspace`, as in
+native. See [Draw in Gray and CMYK](how-to/draw-in-gray-and-cmyk.md).
+
 An explicit `type: null` ends the path without painting,
 ignores `width` and `close`, and applies a supplied `color` only to the
 non-stroking graphics state, matching native. Omit `type` or use `"stroke"` for

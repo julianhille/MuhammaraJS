@@ -424,4 +424,70 @@ describe("Vector", () => {
         done();
       });
   });
+
+  it("strokes every line segment, and no empty one, on an edited page", () => {
+    const source = path.join(__dirname, "../output/line-edit-source.pdf");
+    const output = path.join(__dirname, "../output/line-edit.pdf");
+    new Recipe("new", source).createPage(200, 200).endPage().endPDF();
+    new Recipe(source, output)
+      .editPage(1)
+      .line(
+        [
+          [20, 20],
+          [180, 20],
+          [180, 100],
+        ],
+        { stroke: "#ff0000", lineWidth: 6 },
+      )
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    // One path through every point, as Wasm draws it.
+    const points = getPaintBlocks(reader, 0).flatMap((block) =>
+      [...block.matchAll(/(\S+) (\S+) [ml]\b/g)].map((match) =>
+        match.slice(1).map(Number),
+      ),
+    );
+    assert.deepEqual(points, [
+      [20, 180],
+      [180, 180],
+      [180, 100],
+    ]);
+  });
+
+  it("strokes a Separation line through every point as one path", () => {
+    const output = path.join(__dirname, "../output/line-separation.pdf");
+    new Recipe("new", output)
+      .createPage(200, 200)
+      .chroma("Spot", [255, 128, 0], "separation")
+      .line(
+        [
+          [20, 20],
+          [180, 20],
+          [180, 100],
+        ],
+        { stroke: "Spot", colorspace: "separation" },
+      )
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    const content = getPaintBlocks(reader, 0).join("\n");
+    // One path selects the ink once, instead of one form per segment.
+    assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 1);
+    assert.equal(content.match(/\S+ \S+ [ml]\b/g)?.length, 3);
+  });
+
+  it("draws nothing for a line with fewer than two points", () => {
+    const output = path.join(__dirname, "../output/line-short.pdf");
+    new Recipe("new", output)
+      .createPage(200, 200)
+      .line([])
+      .line([[20, 20]])
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    // Nothing is drawn, so native writes the page without content.
+    const page = reader.parsePage(0).getDictionary();
+    assert.ok(!page.exists("Contents") || !getPaintBlocks(reader, 0).length);
+  });
 });

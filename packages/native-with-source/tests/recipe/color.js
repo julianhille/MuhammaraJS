@@ -419,4 +419,74 @@ describe("Color", () => {
       .endPage()
       .endPDF(done);
   });
+
+  it("rejects unknown colorspaces", () => {
+    const assert = require("assert");
+    const output = path.join(__dirname, "../output/unknown-colorspace.pdf");
+    const recipe = new Recipe("new", output).createPage("A4");
+    const unknown = { name: "TypeError", message: "Unknown colorspace: lab" };
+    assert.throws(() => recipe.chroma("brand", "#ff0000", "lab"), unknown);
+    assert.throws(
+      () => recipe.text("Lab", 10, 10, { color: "#ff0000", colorspace: "lab" }),
+      unknown,
+    );
+    assert.throws(
+      () =>
+        recipe.rectangle(10, 10, 20, 20, { fill: "brand", colorspace: "lab" }),
+      unknown,
+    );
+    ["__proto__", "constructor", "toString"].forEach((colorspace) => {
+      const inherited = {
+        name: "TypeError",
+        message: `Unknown colorspace: ${colorspace}`,
+      };
+      assert.throws(
+        () => recipe.chroma("polluted", "#ff0000", colorspace),
+        inherited,
+      );
+      assert.throws(
+        () => recipe.rectangle(10, 10, 20, 20, { fill: "#ff0000", colorspace }),
+        inherited,
+      );
+    });
+    assert.equal({}.polluted, undefined);
+    recipe.endPage().endPDF(() => {});
+  });
+
+  it("keeps registered colors per Recipe and ignores inherited names", () => {
+    const assert = require("assert");
+    const fs = require("fs");
+    const output = path.join(__dirname, "../output/color-own-names.pdf");
+    const recipe = new Recipe("new", output).createPage(200, 200);
+    const other = new Recipe("new", output);
+    recipe.chroma("__proto__", "#123456").chroma("brand", "#654321");
+    // Colors registered on one Recipe stay in that Recipe.
+    assert.equal(other.knownColors.rgb.brand, undefined);
+    assert.equal(Object.hasOwn(other.knownColors.rgb, "__proto__"), false);
+    // An inherited key is no color name; "__proto__" is a registered one.
+    recipe
+      .rectangle(10, 10, 20, 20, { fill: "constructor" })
+      .rectangle(40, 10, 20, 20, { fill: "__proto__" })
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    const content = [];
+    for (let id = 1; id < reader.getXrefSize(); id++) {
+      const object = reader.parseNewObject(id);
+      if (!object || object.getType() !== muhammara.ePDFObjectStream) continue;
+      const input = reader.startReadingFromStream(object.toPDFStream());
+      const bytes = [];
+      while (input.notEnded()) bytes.push(...input.read(4096));
+      content.push(Buffer.from(bytes).toString("latin1"));
+    }
+    assert.match(content.join("\n"), /0\.070588 0\.203922 0\.337255 rg/);
+    // A loaded color file cannot name an inherited key as a colorspace.
+    const colorFile = path.join(__dirname, "../output/color-proto.json");
+    fs.writeFileSync(colorFile, '{"__proto__": {"polluted": "ff0000"}}');
+    assert.throws(
+      () => new Recipe("new", output).chroma("!load", colorFile),
+      /Unrecognized colorspace: __proto__/,
+    );
+    assert.equal({}.polluted, undefined);
+  });
 });

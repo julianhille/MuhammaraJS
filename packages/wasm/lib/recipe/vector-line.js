@@ -66,7 +66,10 @@ export function createLineMethods(runtime) {
      * @param {number} [endY] - The end Y coordinate in the numeric form.
      * @param {RecipePathOptions} [options] - Path painting and transformation options.
      * @returns {Recipe} The recipe instance.
-     * @throws {TypeError} If fewer than two coordinate pairs are supplied or the color space is unknown.
+     * With fewer than two coordinate pairs nothing is drawn, as in native; a
+     * single pair only moves the current position.
+     *
+     * @throws {TypeError} If the color space is unknown.
      * @throws {Error} If no target page is available or an unsupported color is requested.
      */
     line: function (startX, startY, endX, endY, options = {}) {
@@ -77,12 +80,16 @@ export function createLineMethods(runtime) {
             [endX, endY],
           ];
       options = Array.isArray(startX) ? startY || {} : options;
-      if (points.length < 2)
-        throw new TypeError("A line needs at least two coordinate pairs");
-      this._beginPath(options, points[0][0], points[0][1]);
+      if (points.length < 2) {
+        if (points.length) this.moveTo(...points[0]);
+        return this;
+      }
+      // Lines only stroke; prepare the same colors _finishPath() will set.
+      var strokeOptions = { ...options, fill: undefined };
+      this._beginPath(strokeOptions, points[0][0], points[0][1]);
       this.moveTo(...points[0]);
       points.slice(1).forEach((point) => this.lineTo(...point));
-      return this._finishPath({ ...options, fill: undefined });
+      return this._finishPath(strokeOptions);
     },
   };
 }

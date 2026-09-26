@@ -115,9 +115,11 @@ exports.polygon = function polygon(coordinates = [], options = {}) {
   }
 
   if (options.stroke || options.color || !options.fill) {
-    if (pathOptions.stroke !== undefined) {
-      colorModel = pathOptions.strokeModel;
-    }
+    // The fill above may have replaced colorModel; stroke with `color`.
+    colorModel =
+      pathOptions.stroke !== undefined
+        ? pathOptions.strokeModel
+        : pathOptions.colorModel;
 
     this._drawObject(
       this,

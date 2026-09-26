@@ -56,9 +56,14 @@ exports.circle = function circle(x, y, radius, options = {}) {
       diameter,
       pathOptions,
       (ctx, xObject) => {
-        ctx
-          .gs(xObject.getGsName(pathOptions.fillGsId))
-          .drawCircle(radius, radius, radius, pathOptions);
+        ctx.gs(xObject.getGsName(pathOptions.fillGsId));
+        this._setSeparationColor(xObject, pathOptions.fillModel, false);
+        ctx.drawCircle(
+          radius,
+          radius,
+          radius,
+          this._devicePathOptions(pathOptions),
+        );
       },
     );
   }
@@ -82,13 +87,18 @@ exports.circle = function circle(x, y, radius, options = {}) {
       pathOptions,
       (ctx, xObject) => {
         ctx.gs(xObject.getGsName(pathOptions.strokeGsId));
+        this._setSeparationColor(
+          xObject,
+          pathOptions.strokeModel || pathOptions.colorModel,
+          true,
+        );
         ctx
           .d(pathOptions.dash, pathOptions.dashPhase)
           .drawCircle(
             radius,
             radius,
             Math.max(0, radius - pathOptions.width / 2),
-            pathOptions,
+            this._devicePathOptions(pathOptions),
           );
 
         // ... requires adjusting the internal drawing to accomodate line thickness.
@@ -123,6 +133,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * The numbering starts from the top, left corner, and goes clockwise around the text box.
  * Missing values in the array are filled in by opposite corner values.
  * @param {string} [options.link] - Make the rectangle open this URL.
+ * @param {boolean} [options.useGivenCoords] - Take x and y as PDF coordinates of the bottom-left corner.
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
@@ -159,7 +170,13 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
           drawRoundedRectangle(ctx, 0, 0, width, height, options.borderRadius);
           ctx.f();
         } else {
-          ctx.drawRectangle(0, 0, width, height, pathOptions);
+          ctx.drawRectangle(
+            0,
+            0,
+            width,
+            height,
+            this._devicePathOptions(pathOptions),
+          );
         }
       },
     );
@@ -168,11 +185,13 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   if (options.stroke || options.color || !options.fill) {
     pathOptions.type = muhammara.DrawingPathType.STROKE;
 
-    if (pathOptions.stroke !== undefined) {
-      pathOptions.color = pathOptions.stroke;
-      pathOptions.colorspace = pathOptions.strokeModel.colorspace;
-      colorModel = pathOptions.strokeModel;
-    }
+    // The fill above may have replaced the color; stroke with `color`.
+    colorModel =
+      pathOptions.stroke !== undefined
+        ? pathOptions.strokeModel
+        : pathOptions.colorModel;
+    pathOptions.color = colorModel.color;
+    pathOptions.colorspace = colorModel.colorspace;
 
     // To honor the given width and height of the rectangle ...
 
@@ -211,7 +230,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
               Math.min(margin / 2, height / 2),
               Math.max(0, width - margin),
               Math.max(0, height - margin),
-              pathOptions,
+              this._devicePathOptions(pathOptions),
             );
         }
       },
@@ -392,9 +411,11 @@ exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
   }
 
   if (options.stroke || options.color || !options.fill) {
-    if (pathOptions.stroke !== undefined) {
-      colorModel = pathOptions.strokeModel;
-    }
+    // The fill above may have replaced colorModel; stroke with `color`.
+    colorModel =
+      pathOptions.stroke !== undefined
+        ? pathOptions.strokeModel
+        : pathOptions.colorModel;
 
     // To honor the given width and height of the enclosing rectangle ...
 
@@ -564,9 +585,11 @@ exports.arc = function arc(
   }
 
   if (options.stroke || options.color || !options.fill) {
-    if (pathOptions.stroke !== undefined) {
-      colorModel = pathOptions.strokeModel;
-    }
+    // The fill above may have replaced colorModel; stroke with `color`.
+    colorModel =
+      pathOptions.stroke !== undefined
+        ? pathOptions.strokeModel
+        : pathOptions.colorModel;
 
     // To honor the given width and height of the enclosing rectangle ...
 

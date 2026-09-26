@@ -6,6 +6,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Throw `TypeError: only a numeric color can use the gray or cmyk colorspace`
+  from the low-level drawing helpers and `writeText()` for a color name,
+  `#rrggbb` string, or `[r, g, b]` array with `colorspace: "gray"` or
+  `"cmyk"`, as native does. Such a color is RGB, but it was read as gray or
+  CMYK, so `{ color: "red", colorspace: "gray" }` drew black. Drop
+  `colorspace`, or pass the gray or CMYK color as a number, see
+  [Draw in Gray and CMYK](docs/how-to/draw-in-gray-and-cmyk.md) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw a `TypeError` for a hex color string without the leading `#`, such as
   `"ff0000"`, or an empty string in the low-level drawing helpers,
   `writeText()`, and `CompactModifier` shapes and text, matching native.
@@ -63,6 +70,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Accept every CSS color name, in any case, in the low-level drawing helpers,
   `writeText()`, `CompactModifier`, and Recipe annotations, matching native.
   Previously only seven names were known, each in a single spelling [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+- Draw Recipe Separation (spot) colors, as native Recipe does: register an ink
+  with `chroma(name, value, "separation")` or pass `colorName` with a
+  `separation` color, and shapes, lines and text paint it at full tint with
+  `value` as the alternate device color. These calls previously threw
+  [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Accept native's `password` option in `createReader()` and
   `createReaderAsync()` to open encrypted PDFs [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Encrypt PDFs written by `createWriter()` with native's `userPassword`,
@@ -109,6 +121,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Register a Recipe color named `__proto__` with `chroma()` or `colorName`; the
+  name was silently dropped [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+- Reject inherited object keys such as `__proto__` and `constructor` as a
+  Recipe colorspace with `TypeError: Unknown colorspace: <name>`, as native
+  does. `chroma(name, value, "__proto__")` wrote the color onto
+  `Object.prototype`, and other keys failed later with an unrelated error [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw a `TypeError` for a source `password` in `createPDFCopyingContext()`
   and `createPDFCopyingContextAsync()`, as the append and form APIs already do,
   instead of ignoring it; decrypt the source with `recrypt()` first [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
@@ -347,6 +365,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Draw nothing for a Recipe `line()` with fewer than two coordinate pairs, as
+  native does, instead of throwing a `TypeError`; a single pair moves the
+  current position [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Declare the Recipe `metadata` property, accept a `boolean` in
   `movedown()`, a `number` or options in the third `n_gon()` and `star()`
   argument, and `string | Glyph` in `Tj()`, `Quote()`, and `DoubleQuote()`, as

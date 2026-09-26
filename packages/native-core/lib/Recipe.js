@@ -43,6 +43,14 @@ class Recipe {
     this.options = Object.assign({}, options, this.encryptOptions);
     this.current = {};
     this.current.defaultFontSize = 14;
+    // Each Recipe registers colors in its own copy of the defaults, as Wasm
+    // does; the prototype keeps the defaults unchanged.
+    this.knownColors = Object.fromEntries(
+      Object.entries(this.knownColors).map(([space, colors]) => [
+        space,
+        { ...colors },
+      ]),
+    );
 
     if (this.isBufferSrc) {
       this.outStream = new streams.WritableStream();

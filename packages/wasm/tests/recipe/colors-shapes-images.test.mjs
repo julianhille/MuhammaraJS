@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { createMuhammaraWasm } from "../../index.js";
+import { createMuhammaraWasm, DeviceColorSpace } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
 
@@ -47,6 +47,122 @@ describe("Recipe colors, shapes, and images", function () {
       : contents;
     assert.ok(contentObject.toPDFStream() || contentObject.toPDFArray());
     reader.end();
+  });
+
+  it("exposes frozen colorspace constants valued as in native", async function () {
+    var Recipe = await getRecipe();
+    assert.deepEqual(Recipe.Colorspace, {
+      RGB: "rgb",
+      CMYK: "cmyk",
+      GRAY: "gray",
+      SEPARATION: "separation",
+    });
+    assert.deepEqual(DeviceColorSpace, {
+      RGB: "rgb",
+      GRAY: "gray",
+      CMYK: "cmyk",
+    });
+    assert.ok(Object.isFrozen(Recipe.Colorspace));
+    assert.ok(Object.isFrozen(DeviceColorSpace));
+  });
+
+  it("draws the gray and CMYK how-to colors", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({ compress: false });
+    var page = writer.createPage(0, 0, 595, 842);
+    writer
+      .startPageContentContext(page)
+      .drawRectangle(72, 700, 100, 50, {
+        type: "fill",
+        colorspace: DeviceColorSpace.GRAY,
+        color: 0x80,
+      })
+      .drawRectangle(200, 700, 100, 50, {
+        type: "fill",
+        colorspace: DeviceColorSpace.CMYK,
+        color: 0x00ff0000,
+      })
+      .drawRectangle(328, 700, 100, 50, { type: "fill", color: "teal" });
+    writer.writePage(page);
+    var lowLevel = new TextDecoder("latin1").decode(writer.end());
+    assert.match(lowLevel, /0\.50\d* g/);
+    assert.match(lowLevel, /0 1 0 0 k/);
+    assert.match(lowLevel, /0 0\.50\d* 0\.50\d* rg/);
+    var recipe = new TextDecoder("latin1").decode(
+      new Recipe({ compress: false })
+        .createPage(595, 842)
+        .rectangle(72, 72, 100, 50, { fill: "#80" })
+        .rectangle(200, 72, 100, 50, { fill: "#00ff0000" })
+        .rectangle(328, 72, 100, 50, { fill: [0, 0, 0, 255] })
+        .endPage()
+        .endPDF(),
+    );
+    assert.match(recipe, /0\.50\d* g/);
+    assert.match(recipe, /0 1 0 0 k/);
+    assert.match(recipe, /0 0 0 1 k/);
+  });
+
+  it("rejects unknown colorspaces", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe().createPage(300, 300);
+    var unknown = { name: "TypeError", message: "Unknown colorspace: lab" };
+    assert.throws(() => recipe.chroma("brand", "#ff0000", "lab"), unknown);
+    assert.throws(
+      () => recipe.text("Lab", 10, 10, { color: "#ff0000", colorspace: "lab" }),
+      unknown,
+    );
+    assert.throws(
+      () =>
+        recipe.rectangle(10, 10, 20, 20, { fill: "brand", colorspace: "lab" }),
+      unknown,
+    );
+    ["__proto__", "constructor", "toString"].forEach((colorspace) => {
+      var inherited = {
+        name: "TypeError",
+        message: `Unknown colorspace: ${colorspace}`,
+      };
+      assert.throws(
+        () => recipe.chroma("polluted", "#ff0000", colorspace),
+        inherited,
+      );
+      assert.throws(
+        () => recipe.rectangle(10, 10, 20, 20, { fill: "#ff0000", colorspace }),
+        inherited,
+      );
+    });
+    assert.equal({}.polluted, undefined);
+    recipe.endPage().endPDF();
+  });
+
+  it("keeps registered colors per Recipe and ignores inherited names", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var recipe = new Recipe({ compress: false }).createPage(200, 200);
+    var other = new Recipe();
+    recipe.chroma("__proto__", "#123456").chroma("brand", "#654321");
+    // Colors registered on one Recipe stay in that Recipe.
+    assert.equal(other.knownColors.rgb.brand, undefined);
+    assert.equal(Object.hasOwn(other.knownColors.rgb, "__proto__"), false);
+    // An inherited key is no color name; "__proto__" is a registered one.
+    var bytes = recipe
+      .rectangle(10, 10, 20, 20, { fill: "constructor" })
+      .rectangle(40, 10, 20, 20, { fill: "__proto__" })
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(bytes);
+    var content = [];
+    for (var id = 1; id < reader.getXrefSize(); id++) {
+      var object = reader.parseNewObject(id);
+      if (!object || object.getType() !== muhammara.ePDFObjectStream) continue;
+      var input = reader.startReadingFromStream(object.toPDFStream());
+      var chunks = [];
+      while (input.notEnded()) chunks.push(...input.read(4096));
+      content.push(new TextDecoder("latin1").decode(new Uint8Array(chunks)));
+    }
+    reader.end();
+    assert.match(content.join("\n"), /0\.070588 0\.203922 0\.337255 rg/);
+    other.endPDF();
   });
 
   it("places registered byte images with fit, alignment, transforms, and reuse", async function () {
@@ -188,14 +304,204 @@ describe("Recipe colors, shapes, and images", function () {
     reader.end();
   });
 
-  it("rejects unsupported chroma loaders and Separation colors", async function () {
+  it("rejects the unsupported chroma loader", async function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe().createPage();
     assert.throws(() => recipe.chroma("!load", "colors.json"), /!load/);
-    assert.throws(
-      () => recipe.chroma("spot", "#000000", "separation"),
-      /separation colors are unsupported/i,
-    );
     recipe.endPage().endPDF();
+  });
+
+  it("names Separation inks freely and keeps the first color of a shared ink", async function () {
+    var Recipe = await getRecipe();
+    var raw = new TextDecoder("latin1").decode(
+      new Recipe({ compress: false })
+        .createPage(200, 200)
+        .chroma("__proto__", "#ff0000", "separation")
+        .chroma("constructor", "#0000ff", "separation")
+        .rectangle(10, 10, 20, 20, {
+          fill: "__proto__",
+          colorspace: "separation",
+        })
+        .rectangle(40, 10, 20, 20, {
+          fill: "constructor",
+          colorspace: "separation",
+        })
+        // A stroke resolves before the fill, so its color is the ink
+        // alternate, as in native.
+        .rectangle(70, 10, 40, 40, {
+          fill: "#ff0000",
+          stroke: "#00ff00",
+          colorName: "ink",
+          colorspace: "separation",
+        })
+        .endPage()
+        .endPDF(),
+    );
+    assert.equal(raw.match(/\/Separation \/__proto__ \/DeviceRGB/g)?.length, 1);
+    assert.equal(
+      raw.match(/\/Separation \/constructor \/DeviceRGB/g)?.length,
+      1,
+    );
+    assert.equal(raw.match(/\/Separation \/ink \/DeviceRGB/g)?.length, 1);
+    assert.match(raw, /\/C1 \[ 0 1 0 \]/);
+  });
+
+  it("strokes a filled shape with its color, not the fill", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var colors = { fill: "#ff0000", color: "#0000ff" };
+    var bytes = new Recipe({ compress: false })
+      .createPage(300, 300)
+      .rectangle(10, 10, 40, 40, colors)
+      .circle(100, 30, 20, colors)
+      .ellipse(160, 30, 20, 10, colors)
+      .arc(220, 30, 20, 0, 90, colors)
+      .polygon(
+        [
+          [10, 100],
+          [50, 100],
+          [30, 140],
+        ],
+        colors,
+      )
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(bytes);
+    var content = [];
+    for (var id = 1; id < reader.getXrefSize(); id++) {
+      var object = reader.parseNewObject(id);
+      if (!object || object.getType() !== muhammara.ePDFObjectStream) continue;
+      var input = reader.startReadingFromStream(object.toPDFStream());
+      var chunks = [];
+      while (input.notEnded()) chunks.push(...input.read(4096));
+      content.push(new TextDecoder("latin1").decode(new Uint8Array(chunks)));
+    }
+    reader.end();
+    var all = content.join("\n");
+    // Every shape fills red and strokes its border blue; native's rectangle
+    // sets each color twice.
+    assert.ok(all.match(/\b1 0 0 rg\b/g)?.length >= 5);
+    assert.ok(all.match(/\b0 0 1 RG\b/g)?.length >= 5);
+    assert.doesNotMatch(all, /\b1 0 0 RG\b/);
+  });
+
+  ["new", "source", "edited"].forEach(function (mode) {
+    it(`draws separation colors on ${mode} pages`, async function () {
+      var Recipe = await getRecipe();
+      var muhammara = await createMuhammaraWasm();
+      var source = new Recipe().createPage(200, 200).endPage().endPDF();
+      var recipe =
+        mode === "new"
+          ? new Recipe({ compress: false }).createPage(200, 200)
+          : mode === "source"
+            ? new Recipe(source).createPage(200, 200)
+            : new Recipe(source).editPage(1);
+      recipe
+        .chroma("SpotOrange", [255, 128, 0], "separation")
+        .rectangle(10, 10, 40, 40, {
+          fill: "SpotOrange",
+          colorspace: "separation",
+        })
+        .line(10, 60, 60, 60, {
+          stroke: "SpotOrange",
+          colorspace: "separation",
+        })
+        .text("Spot", 10, 80, { color: "SpotOrange", colorspace: "separation" })
+        .text("<u>Under</u>", 80, 80, {
+          html: true,
+          color: "SpotOrange",
+          colorspace: "separation",
+        })
+        .circle(120, 40, 20, {
+          fill: [0, 255, 0, 0],
+          colorspace: "separation",
+          colorName: "SpotGreen",
+        })
+        .text("<u>Value</u>", 80, 110, {
+          html: true,
+          color: [0, 255, 0, 0],
+          colorspace: "separation",
+          colorName: "SpotGreen",
+        })
+        .rectangle(10, 120, 40, 40, {
+          fill: "#0000ff",
+          colorspace: "separation",
+        })
+        // Neither a fill nor a stroke: the default color strokes as the
+        // colorName ink.
+        .line(10, 180, 60, 180, {
+          colorspace: "separation",
+          colorName: "SpotDefault",
+        })
+        .endPage();
+      var bytes = recipe.endPDF();
+      writeOutput(`colors-separation-${mode}`, bytes);
+      var raw = new TextDecoder("latin1").decode(bytes);
+      assert.equal(
+        raw.match(/\/Separation \/SpotOrange \/DeviceRGB/g)?.length,
+        1,
+      );
+      assert.equal(
+        raw.match(/\/Separation \/SpotGreen \/DeviceCMYK/g)?.length,
+        1,
+      );
+      assert.equal(recipe.knownColors.separation.SpotGreen, "00ff0000");
+      // colorName names only the painted color; no second definition of the
+      // ink with the default alternate.
+      assert.equal(raw.match(/\/Separation \/SpotGreen\b/g)?.length, 1);
+      assert.equal(
+        raw.match(/\/Separation \/SpotDefault \/DeviceRGB/g)?.length,
+        1,
+      );
+
+      var reader = muhammara.createReader(bytes);
+      var page = reader.parsePage(mode === "source" ? 1 : 0).getDictionary();
+      var contents = reader.queryDictionaryObject(page, "Contents");
+      var streams =
+        contents.getType() === muhammara.ePDFObjectArray
+          ? contents
+              .toPDFArray()
+              .toJSArray()
+              .map((reference) =>
+                reader.parseNewObject(
+                  reference.toPDFIndirectObjectReference().getObjectID(),
+                ),
+              )
+          : [contents];
+      // Edited pages draw into form XObjects placed on the page.
+      var resources = reader.queryDictionaryObject(page, "Resources");
+      var xObjects = reader.queryDictionaryObject(resources, "XObject");
+      Object.values(xObjects ? xObjects.toJSObject() : {}).forEach(
+        (reference) =>
+          streams.push(
+            reader.parseNewObject(
+              reference.toPDFIndirectObjectReference().getObjectID(),
+            ),
+          ),
+      );
+      var decoded = streams.map((stream) => {
+        var input = reader.startReadingFromStream(stream.toPDFStream());
+        var chunks = [];
+        while (input.notEnded()) chunks.push(...input.read(4096));
+        return new TextDecoder("latin1").decode(new Uint8Array(chunks));
+      });
+      var content = decoded.join("\n");
+      reader.end();
+      // Writing a color space mid-path would split the path across content
+      // streams, which edited pages place as separate forms.
+      decoded.forEach((stream) =>
+        assert.equal(
+          stream.match(/\bq\b/g)?.length,
+          stream.match(/\bQ\b/g)?.length,
+        ),
+      );
+      // Fills, the texts and the colorName circle select a Separation color
+      // at full tint; both lines and both underlines stroke one, including
+      // the underline of a spot color given by value with colorName.
+      assert.equal(content.match(/\/\S+ cs\s+1 scn/g)?.length, 5);
+      assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 4);
+      // A value without an ink name keeps its device color.
+      assert.match(content, /0 0 1 rg/);
+    });
   });
 });

@@ -1,6 +1,6 @@
 const { xObjectForm } = require("./xObjectForm");
 const { resolveFontSize } = require("./utils");
-const { LineCap, LineJoin } = require("../recipe-constants");
+const { Colorspace, LineCap, LineJoin } = require("../recipe-constants");
 
 /**
  * Resolve drawing and text options into path options: font, size, colors
@@ -91,9 +91,13 @@ exports._getPathOptions = function _getPathOptions(
     pathOptions.fill = pathOptions.fillModel.color;
   }
 
+  // A fill or stroke replaces the default color. Resolving that default under
+  // colorName would write an unused Separation color space for the ink.
+  const paintsColor =
+    options.color || options.colour || (!options.fill && !options.stroke);
   pathOptions.colorModel = this._transformColor(
     options.color || options.colour,
-    colorOpts,
+    paintsColor ? colorOpts : { ...colorOpts, colorName: undefined },
   );
   pathOptions.color = pathOptions.colorModel.color;
   pathOptions.colorspace = pathOptions.colorModel.colorspace;
@@ -292,6 +296,40 @@ exports._setScalingTransform = function _setScalingTransform(context, options) {
   if (options.ratio) {
     context.cm(options.ratio[0], 0, 0, options.ratio[1], 0, 0);
   }
+};
+
+/**
+ * Options for a low-level drawing call. A separation color is not a device
+ * color: the caller sets it on the form XObject, so the low-level call gets
+ * neither its color nor its colorspace.
+ * @private
+ * @param {Object} pathOptions - The path options.
+ * @returns {Object} The path options, or a copy without color and colorspace
+ *   for a separation color.
+ */
+exports._devicePathOptions = function _devicePathOptions(pathOptions) {
+  if (pathOptions.colorspace !== Colorspace.SEPARATION) return pathOptions;
+  const { color, colorspace, ...deviceOptions } = pathOptions;
+  return deviceOptions;
+};
+
+/**
+ * Select a Separation color in a form XObject. Device colors are left to the
+ * low-level drawing call, so their output is unchanged.
+ * @private
+ * @param {Object} xObject - The form the color is selected in.
+ * @param {Object} [colorModel] - The color model from _transformColor().
+ * @param {boolean} stroke - Select the stroking instead of the fill color.
+ * @returns {void}
+ */
+exports._setSeparationColor = function _setSeparationColor(
+  xObject,
+  colorModel,
+  stroke,
+) {
+  if (!colorModel || colorModel.colorspace !== Colorspace.SEPARATION) return;
+  if (stroke) xObject.stroke(colorModel);
+  else xObject.fill(colorModel);
 };
 
 /**
