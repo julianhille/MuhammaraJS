@@ -4,6 +4,11 @@ var fs = require("fs");
     PDFWStreamForFile is an implementation of a write stream using the supplied file path.
 */
 
+/**
+ * Creates a write stream to a file, replacing an existing one.
+ * @constructor
+ * @param {string} inPath - The file path.
+ */
 function PDFWStreamForFile(inPath) {
   this.ws = fs.createWriteStream(inPath);
   this.position = 0;
