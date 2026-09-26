@@ -22,7 +22,13 @@ export function snapshotDrawingPoints(points) {
   });
 }
 
-/** Snapshot color conversion before a content context emits any operators. */
+/**
+ * Snapshots a color option before a content context emits operators.
+ * @param {object} options - Options with `color` and `colorspace`.
+ * @param {function(*): number} colorValue - Converts a color option to a number.
+ * @returns {{color?: number, colorspace?: DeviceColorSpace}} The color, or an empty object without one.
+ * @throws {TypeError} If the color is invalid or `colorspace` is not a DeviceColorSpace value.
+ */
 function readColor(options, colorValue) {
   var value = options.color;
   if (value === undefined) return {};
