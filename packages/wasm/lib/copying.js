@@ -4,6 +4,12 @@
  * @returns {{copyingObjectOperations: Function}} The helpers.
  */
 export function createCopyingHelpers({ module }) {
+  /**
+   * Creates the object-copying methods shared by every copying context.
+   * @param {number} copying - Native copying context.
+   * @param {function(): void} requireCopying - Throws when the context or its owner has ended.
+   * @returns {CopyingObjectOperations} The methods.
+   */
   function copyingObjectOperations(copying, requireCopying) {
     function requireObjectId(value, label) {
       if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
