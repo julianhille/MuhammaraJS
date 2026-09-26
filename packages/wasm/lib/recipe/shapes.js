@@ -39,6 +39,15 @@ function drawingLineWidth(options) {
     : 0;
 }
 
+/**
+ * Computes the vertices of a regular polygon inset by half its stroke.
+ * @param {number} sides - Side count.
+ * @param {number} x - Center x.
+ * @param {number} y - Center y.
+ * @param {number} radius - Outer radius.
+ * @param {object} [options={}] - Shape options.
+ * @returns {number[][]} The vertices, starting at the top.
+ */
 function ngon(sides, x, y, radius, options = {}) {
   var angle = 360 / sides;
   var start = sides % 2 ? 270 : 270 - angle / 2;
