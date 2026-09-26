@@ -458,6 +458,13 @@ exports._endDictionary = function _endDictionary(pageNumber) {
   return this.dictionaryObject;
 };
 
+/**
+ * Match a text markup annotation subtype case-insensitively.
+ * @private
+ * @param {string} [subtype] - The subtype to look up.
+ * @returns {string|undefined} The matching `Recipe.AnnotSubtype` markup
+ *   value, or undefined when the subtype is not a text markup annotation.
+ */
 exports._getTextMarkupAnnotationSubtype =
   function _getTextMarkupAnnotationSubtype(subtype = "") {
     const matchedSubtype = this.textMarkupAnnotations.find((item) => {

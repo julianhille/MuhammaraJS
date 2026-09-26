@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const streams = require("memory-streams");
 var { standardInfoKeys } = require("./recipe-info");
+var { AnnotSubtype } = require("./recipe-constants");
 
 /**
  * @name Recipe
@@ -56,10 +57,10 @@ class Recipe {
     this.logFile = "muhammara-error.log";
 
     this.textMarkupAnnotations = [
-      "Highlight",
-      "Underline",
-      "StrikeOut",
-      "Squiggly",
+      AnnotSubtype.HIGHLIGHT,
+      AnnotSubtype.UNDERLINE,
+      AnnotSubtype.STRIKE_OUT,
+      AnnotSubtype.SQUIGGLY,
     ];
 
     this.annotationsToWrite = [];
