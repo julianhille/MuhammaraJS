@@ -32,6 +32,14 @@ declare namespace muhammara {
     input: FilePath | WriteStream,
     options?: PDFWriterOptions,
   ): PDFWriter;
+  /**
+   * Starts an incremental update of a PDF file, in place or into
+   * options.modifiedFilePath.
+   * @param inFile - The PDF path.
+   * @param options - The output path, version, compression, log and encryption.
+   * @returns The writer; call end() to append the update.
+   * @throws {TypeError} If the arguments are wrong or the PDF cannot be read.
+   */
   export function createWriterToModify(
     inFile: FilePath,
     options?: PDFWriterToModifyOptions,
