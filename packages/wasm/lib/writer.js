@@ -1931,6 +1931,13 @@ export function createWriterFactory({
           Tc: function (characterSpace) {
             return operator("Tc", 35, [characterSpace]);
           },
+          /**
+           * Sets the word spacing (`Tw`).
+           * @param {number} wordSpace - Extra space per ASCII space in unscaled text space units.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           Tw: function (wordSpace) {
             return operator("Tw", 36, [wordSpace]);
           },
