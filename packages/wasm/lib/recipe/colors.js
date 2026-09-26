@@ -17,6 +17,11 @@ export var knownColors = {
   },
 };
 
+/**
+ * Converts a Recipe color to its hex digits without a prefix.
+ * @param {RecipeColor} value - `[r, g, b]` or `[c, m, y, k]` from 0 to 255, `#hex`, `%hex`, or a number.
+ * @returns {string} Hex digits; empty for unsupported values.
+ */
 function hex(value) {
   if (Array.isArray(value))
     return value
