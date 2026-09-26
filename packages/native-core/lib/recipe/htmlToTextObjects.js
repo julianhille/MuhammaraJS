@@ -85,12 +85,18 @@ function needsLineBreaker(tagName = "") {
  * block element, or at the start of a block. Only such text drops its
  * leading whitespace; text that follows inline content keeps one space.
  * @private
+ * @param {Object} node - The DOM text node.
+ * @returns {boolean} True when the text begins a visual line.
  */
 function startsLine(node) {
   const previous = node.previousSibling;
   if (previous) {
     const tag = (previous.tagName || "").toLowerCase();
-    return tag === "br" || needsLineBreaker(tag) || ["ul", "ol"].includes(tag);
+    return (
+      tag === HtmlTag.BR ||
+      needsLineBreaker(tag) ||
+      [HtmlTag.UL, HtmlTag.OL].includes(tag)
+    );
   }
   const parent = node.parentNode;
   const parentTag = (
@@ -99,7 +105,7 @@ function startsLine(node) {
   if (
     !parent ||
     !parentTag ||
-    parentTag === "html" ||
+    parentTag === HtmlTag.HTML ||
     needsLineBreaker(parentTag)
   ) {
     return true;
