@@ -114,18 +114,26 @@ exports._registerFont = function _registerFont(
   return this;
 };
 
+/**
+ * Pick the registered font file for the family and bold/italic options,
+ * falling back to Helvetica when the family, style or file is unavailable.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {Object} [options] - Text options: font, and bold/isBold, italic/isItalic.
+ * @returns {string} The font file path.
+ */
 function _getFontFile(self, options = {}) {
   let fontFile;
   // Need to choose appropriate file based on bold/italic considerations
   // Note, if this is not done explicitly, the font dimensions will be incorrect.
   let type =
     (options.bold || options.isBold) && (options.italic || options.isItalic)
-      ? "bi"
+      ? FontSlot.BOLD_ITALIC
       : options.italic || options.isItalic
-        ? "i"
+        ? FontSlot.ITALIC
         : options.bold || options.isBold
-          ? "b"
-          : "r";
+          ? FontSlot.BOLD
+          : FontSlot.REGULAR;
 
   if (options.font) {
     const fontFamily = self.fonts[options.font.toLowerCase()];
@@ -140,7 +148,7 @@ function _getFontFile(self, options = {}) {
   }
 
   if (!fontFile) {
-    fontFile = self.fonts["helvetica"]["r"]; // use default font when otherwise unavailable.
+    fontFile = self.fonts["helvetica"][FontSlot.REGULAR]; // use default font when otherwise unavailable.
   }
 
   return fontFile;
