@@ -195,6 +195,11 @@ exports.Line = class Line {
     return toWidth <= this.width;
   }
 
+  /**
+   * Replace the final word and mark the new one as last.
+   * @param {Word|string} wordObject - The replacement word.
+   * @returns {void}
+   */
   replaceLastWord(wordObject) {
     if (typeof wordObject === "string") {
       wordObject = new Word(wordObject, this._pathOptions);
