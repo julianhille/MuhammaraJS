@@ -436,6 +436,9 @@ exports.Column = class Column {
   get x() {
     return this._x;
   }
+  /**
+   * @param {number} x - The new x coordinate.
+   */
   set x(x) {
     this._x = x;
   }
