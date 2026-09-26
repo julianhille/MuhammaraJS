@@ -588,6 +588,11 @@ export function createReaderFactory({
             module._free(bytesPointer);
           }
         },
+        /**
+         * Reports whether unread bytes remain.
+         * @returns {boolean} Whether more bytes can be read.
+         * @throws {Error} If the reader or byte reader has ended.
+         */
         notEnded: function () {
           requireByteReader();
           return Boolean(module._muhammara_wasm_byte_reader_not_ended(handle));
