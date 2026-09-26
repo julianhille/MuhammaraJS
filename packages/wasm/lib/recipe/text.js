@@ -1081,7 +1081,12 @@ export function createTextMethods({ drawText, measure, module }) {
           var justify =
             horizontal === RecipeTextAlignment.JUSTIFY && !entry.last && width;
           var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
-          /** Reports whether this fragment owns an expandable justification gap. */
+          /**
+           * Reports whether this fragment owns an expandable justification gap.
+           * @param {{text: string, marker?: boolean}} part - Fragment.
+           * @param {number} index - Fragment index.
+           * @returns {boolean} Whether justification may widen the gap after it.
+           */
           var hasGapAfter = (part, index) =>
             justify &&
             !part.marker &&
