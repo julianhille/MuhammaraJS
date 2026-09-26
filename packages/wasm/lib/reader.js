@@ -162,6 +162,11 @@ export function createReaderFactory({
         _handle: handle,
         _readerOwner: readerOwner,
         _copyingContext: copyingContext,
+        /**
+         * Reads the object type.
+         * @returns {PDFObjectType} One of the `ePDFObject*` constants.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         getType: function () {
           requireReader();
           if (parser && parser.ended)
