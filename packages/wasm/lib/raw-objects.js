@@ -643,6 +643,13 @@ export function createRawObjectsContext({
         }
         return this;
       },
+      /**
+       * Starts a stream, compressed when stream compression is on.
+       * @param {DictionaryContext} [dictionary] - Active stream dictionary to finish; `/Length` and `/Filter` are added.
+       * @returns {PDFStream} The active stream.
+       * @throws {TypeError} If `dictionary` is not the active dictionary.
+       * @throws {Error} If the writer has ended or the stream cannot be started.
+       */
       startPDFStream: function (dictionary) {
         requireContext();
         if (
