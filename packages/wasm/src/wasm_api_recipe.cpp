@@ -794,18 +794,6 @@ WASM_EXPORT int muhammara_wasm_recipe_clip_rectangle(
          recipe->context->n() == PDFHummus::eSuccess;
 }
 
-int muhammara_wasm_recipe_cmyk_fill(WasmRecipe* recipe, double cyan,
-                                    double magenta, double yellow,
-                                    double black) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->k(cyan, magenta, yellow, black) == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_gray_stroke(WasmRecipe* recipe, double gray) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->G(gray) == PDFHummus::eSuccess;
-}
-
 int muhammara_wasm_recipe_line_width(WasmRecipe* recipe, double width) {
   return recipe != nullptr && recipe->context != nullptr && width >= 0 &&
          recipe->context->w(width) == PDFHummus::eSuccess;
