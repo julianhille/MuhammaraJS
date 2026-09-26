@@ -234,6 +234,14 @@ function flipped(vertices, x, y, flipX, flipY) {
   ]);
 }
 
+/**
+ * Rotates vertices around a point.
+ * @param {number[][]} vertices - Vertices.
+ * @param {number} x - Center x.
+ * @param {number} y - Center y.
+ * @param {number} angle - Degrees.
+ * @returns {number[][]} New vertices, or the input for no rotation.
+ */
 function rotated(vertices, x, y, angle) {
   if (!angle) return vertices;
   var cosine = Math.cos(radians(angle));
