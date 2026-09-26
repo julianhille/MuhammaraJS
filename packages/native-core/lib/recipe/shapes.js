@@ -1426,6 +1426,10 @@ const Arrow = class Arrow {
  * @private
  */
 const Point = class Point {
+  /**
+   * @param {number|number[]} x - The x, or an [x, y] array.
+   * @param {number} [y] - The y when x is a number.
+   */
   constructor(x, y) {
     if (Array.isArray(x)) {
       this._x = x[0];
