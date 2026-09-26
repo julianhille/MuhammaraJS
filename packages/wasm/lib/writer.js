@@ -3594,6 +3594,13 @@ export function createWriterFactory({
           imageIndex,
         );
       },
+      /**
+       * Detects the format of an image or PDF.
+       * @param {string|ByteSource} image - Registered image name, or bytes.
+       * @returns {PDFImageType|undefined} The format, or undefined when unknown.
+       * @throws {TypeError} If the name is not registered or the bytes are unsupported.
+       * @throws {Error} If the writer has ended.
+       */
       getImageType: function (image) {
         var type = withImagePathOrBytes(
           image,
