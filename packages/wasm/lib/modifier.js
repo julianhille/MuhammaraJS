@@ -232,6 +232,11 @@ export function createModifierFactory({
         }
         return this;
       },
+      /**
+       * Writes the modified PDF and releases the modifier.
+       * @returns {Uint8Array} The modified PDF bytes.
+       * @throws {Error} If the modifier has ended, the PDF cannot be written, or it exceeds the output limit.
+       */
       end: function () {
         requireOpenModifier();
         var lengthPointer = module._malloc(4);
