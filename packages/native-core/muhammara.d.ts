@@ -4077,6 +4077,17 @@ declare namespace muhammara {
      */
     deletePage(pageNumbers: number | number[]): Recipe;
 
+    /**
+     * Replace literal text-showing operands in a page's single content stream.
+     *
+     * @param text - Text to replace.
+     * @param replacement - Replacement text.
+     * @param pageNumber - One-based page number.
+     * @returns The Recipe instance.
+     * @throws {TypeError} If text or replacement is not a Latin-1 string, or if
+     * the page number is not a positive integer.
+     * @throws {Error} If the page does not have one indirect content stream.
+     */
     replaceText(text: string, replacement: string, pageNumber: number): Recipe;
     /** Removes shown text from an existing page's content streams, and optionally its Form XObjects. */
     removeText(pageNumber: number, options?: RemoveTextOptions): Recipe;
