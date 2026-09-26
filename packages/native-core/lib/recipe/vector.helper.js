@@ -155,6 +155,16 @@ exports._getDistance = function _getDistance(coordA, coordB) {
 
 exports._getTransformParams = getTransformParams;
 
+/**
+ * The transformation matrix that rotates content around an origin.
+ * @private
+ * @param {number} inAngle - The rotation in degrees.
+ * @param {number} x - The origin x.
+ * @param {number} y - The origin y.
+ * @param {number} offsetX - The content x relative to the origin.
+ * @param {number} offsetY - The content y relative to the origin.
+ * @returns {number[]} The [a, b, c, d, e, f] matrix.
+ */
 function getTransformParams(inAngle, x, y, offsetX, offsetY) {
   const theta = toRadians(inAngle);
   const cosTheta = Math.cos(theta);
