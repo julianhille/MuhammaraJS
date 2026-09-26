@@ -338,6 +338,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     s(): this;
+    /**
+     * Strokes the path; operator S.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     S(): this;
     f(): this;
     F(): this;
