@@ -207,6 +207,13 @@ function centerForTriangle(vertices, sides) {
   };
 }
 
+/**
+ * Moves vertices by an offset.
+ * @param {number[][]} vertices - Vertices.
+ * @param {number} dx - Horizontal offset.
+ * @param {number} dy - Vertical offset.
+ * @returns {number[][]} New vertices.
+ */
 function translated(vertices, dx, dy) {
   return vertices.map((point) => [point[0] + dx, point[1] + dy]);
 }
