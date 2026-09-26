@@ -30,7 +30,10 @@ export function permission(flags = "print") {
     }, 0);
 }
 
-/** Creates Recipe security methods matching native Recipe encryption options. */
+/**
+ * Creates Recipe security methods matching native Recipe encryption options.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createSecurityMethods() {
   function getEncryptOptions(options, addPermissions = true) {
     var encryptOptions = {};
