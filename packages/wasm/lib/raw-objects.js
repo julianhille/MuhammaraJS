@@ -713,6 +713,11 @@ export function createRawObjectsContext({
         indirectObjectClosedByStream = true;
         return this;
       },
+      /**
+       * Starts writing raw bytes directly into the PDF output.
+       * @returns {ByteWriteStream} A writer with `write()` and `getCurrentPosition()`.
+       * @throws {Error} If the writer has ended or the context cannot be started.
+       */
       startFreeContext: function () {
         requireContext();
         var writer = module._muhammara_wasm_objects_start_free_context(handle);
