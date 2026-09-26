@@ -36,6 +36,11 @@ Object.defineProperty(PDFWStreamForBuffer.prototype, "buffer", {
   },
 });
 
+/**
+ * Collects a copy of the bytes.
+ * @param {Buffer|Uint8Array|number[]} inBytes - The bytes to write.
+ * @returns {number} The number of bytes written.
+ */
 PDFWStreamForBuffer.prototype.write = function (inBytes) {
   if (inBytes.length > 0) {
     // Copy, so a caller reusing its buffer cannot change collected output,
