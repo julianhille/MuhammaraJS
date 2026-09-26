@@ -3972,6 +3972,10 @@ export function createWriterToModifyFactory({
           dispose();
         }
       },
+      /**
+       * Discards the modifier without producing a PDF. Idempotent.
+       * @returns {void}
+       */
       dispose: function () {
         dispose();
       },
