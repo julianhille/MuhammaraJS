@@ -449,6 +449,12 @@ export function createRawObjectsContext({
         activeDictionary = dictionary;
         return dictionaryContext(dictionary);
       },
+      /**
+       * Ends the active dictionary.
+       * @param {DictionaryContext} dictionary - The dictionary from `startDictionary()`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or `dictionary` is not the active one.
+       */
       endDictionary: function (dictionary) {
         requireContext();
         if (
