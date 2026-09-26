@@ -146,6 +146,12 @@ async function createRuntime(options) {
     }
     return normalizeBytes(await normalizeByteSourceAsync(value, label), label);
   }
+  /**
+   * Rejects PDF output larger than `maxOutputBytes`.
+   * @param {number} length - Output size in bytes.
+   * @returns {void}
+   * @throws {RangeError} If `length` exceeds `maxOutputBytes`.
+   */
   function assertOutputSize(length) {
     if (length > maxOutputBytes) {
       throw new RangeError("PDF output exceeds maxOutputBytes");
