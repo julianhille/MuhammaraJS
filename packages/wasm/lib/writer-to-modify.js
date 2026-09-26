@@ -3477,6 +3477,11 @@ export function createWriterToModifyFactory({
             sourceParsers.push(parser);
             return parser;
           },
+          /**
+           * Returns a positioned reader over the source PDF bytes.
+           * @returns {PositionedPDFByteReader} The byte reader.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           getSourceDocumentStream: function () {
             requireCopying();
             var parser = this.getSourceDocumentParser();
