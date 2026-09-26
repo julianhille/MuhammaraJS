@@ -1,6 +1,10 @@
 import { constants } from "./constants.js";
 
-/** Creates the byte-first equivalent of native `muhammara.recrypt`. */
+/**
+ * Creates the byte-first equivalent of native `recrypt`.
+ * @param {object} dependencies - Module, constants, and byte helpers.
+ * @returns {Function} `recrypt(bytes, options)`.
+ */
 export function createRecrypt({
   module,
   normalizeBytes,
