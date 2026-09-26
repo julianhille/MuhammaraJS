@@ -4374,6 +4374,23 @@ declare namespace muhammara {
      */
     lineTo(x: number, y: number, options?: Recipe.LineToOptions): Recipe;
 
+    /**
+     * Draw a line through coordinate pairs, or from (startX, startY) to
+     * (endX, endY) when called as `line(startX, startY, endX, endY, options?)`.
+     * @param coordinates - The array of coordinate [[x,y], [m,n]], or the start x
+     * @param options - The options, or the start y in the four-number form
+     * @returns The recipe instance.
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - how transparent should line be, from 0: invisible to 1: opaque
+     * @param options.dash - The dash pattern [dashSize, gapSize] or [dashAndGapSize]
+     * @param options.dashPhase - distance into dash pattern at which to start dash (default: 0, immediately)
+     * @param options.lineCap - open line end style, a `Recipe.LineCap` value (default: 'round')
+     * @param options.lineJoin - joined line end style, a `Recipe.LineJoin` value (default: 'round')
+     * @param options.miterLimit - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
+     * @throws {TypeError} If no page is active.
+     */
     line(coordinates: number[][], options?: Recipe.LineOptions): Recipe;
     line(
       startX: number,
