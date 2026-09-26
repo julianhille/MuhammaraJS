@@ -653,7 +653,8 @@ declare namespace muhammara {
     SC(...colorComponents: number[]): this;
     /**
      * Sets the stroke color, optionally with a pattern; operator SCN. Pass
-     * the components as arguments or as one array, then an optional pattern name.
+     * the components as arguments or as one array, then an optional pattern name. A pattern
+     * name alone selects a colored (PaintType 1) pattern.
      * @param parameters - The components and an optional pattern name.
      * @returns This context.
      * @throws {TypeError} If the arguments are neither components nor components and a pattern name.
@@ -662,6 +663,7 @@ declare namespace muhammara {
     SCN(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////SCN(...colorComponents: number[], patternName?: string): this;
     SCN(colorComponents: number[], patternName?: string): this;
+    SCN(patternName: string): this;
     /**
      * Sets the fill color in the current color space; operator sc.
      * @param colorComponents - The components, each 0 to 1.
@@ -672,7 +674,8 @@ declare namespace muhammara {
     sc(...colorComponents: number[]): this;
     /**
      * Sets the fill color, optionally with a pattern; operator scn. Pass the
-     * components as arguments or as one array, then an optional pattern name.
+     * components as arguments or as one array, then an optional pattern name. A pattern
+     * name alone selects a colored (PaintType 1) pattern.
      * @param parameters - The components and an optional pattern name.
      * @returns This context.
      * @throws {TypeError} If the arguments are neither components nor components and a pattern name.
@@ -681,6 +684,7 @@ declare namespace muhammara {
     scn(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////scn(...colorComponents: number[], patternName?: string): this;
     scn(colorComponents: number[], patternName?: string): this;
+    scn(patternName: string): this;
     /**
      * Sets a gray stroke color; operator G.
      * @param gray - The gray level, 0 (black) to 1 (white).

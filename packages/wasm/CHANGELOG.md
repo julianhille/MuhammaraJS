@@ -108,6 +108,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   native does; it was called with the options object [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Measure `UsedFont#calculateTextDimensions()` at the exact font size; a
   fractional size such as `10.5` was truncated to `10` [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
+- Accept a pattern name alone in `SCN` and `scn`, emitting `/P0 SCN` to select a
+  colored (PaintType 1) tiling pattern instead of throwing [#797](https://github.com/julianhille/MuhammaraJS/issues/797)
 - Accept a spread array in the `TJ()` type declaration, so
   `context.TJ(...parts)` compiles; an empty call still throws at runtime
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)

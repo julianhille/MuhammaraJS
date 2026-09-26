@@ -95,6 +95,7 @@ async function usesLowLevelSurface() {
   metrics.max_advance;
   writer.requireCatalogUpdate();
   var context = writer.startPageContentContext(page);
+  context.SCN("P0").scn("P0");
   context
     .q()
     .drawRectangle(0, 0, 50, 50, { type: "clip" })

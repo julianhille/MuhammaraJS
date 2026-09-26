@@ -531,17 +531,20 @@ napi_value AbstractContentContextDriver::Color(const CallbackArgs &args) {
   if (patternOperator &&
       (args.Length() == 0 ||
        (args.Length() == 1 &&
-        !(IsNumber(args, 0) || IsArray(args.Env(), args[0]))) ||
+        !(IsNumber(args, 0) || IsArray(args.Env(), args[0]) ||
+          IsString(args, 0))) ||
        (args.Length() > 1 && !(IsNumber(args, args.Length() - 1) ||
                                IsArray(args.Env(), args[args.Length() - 1]) ||
                                IsString(args, args.Length() - 1)))))
     return WrongArguments(
         args.Env(),
-        "Wrong Arguments, please provide at least one color component or a "
-        "list of color components and optional a pattern name");
+        "Wrong Arguments, please provide at least one color component, a "
+        "list of color components and optional a pattern name, or a pattern "
+        "name alone");
 
   bool hasPattern = patternOperator && IsString(args, args.Length() - 1);
-  bool arrayForm = IsArray(args.Env(), args[0]);
+  bool arrayForm = args.Length() > (hasPattern ? 1 : 0) &&
+                   IsArray(args.Env(), args[0]);
   uint32_t length =
       static_cast<uint32_t>(args.Length() - (hasPattern ? 1 : 0));
   if (arrayForm && !Length(args.Env(), args[0], &length))

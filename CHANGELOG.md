@@ -168,7 +168,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Measure `UsedFont#calculateTextDimensions()` at the exact font size; a
   fractional size such as `10.5` was truncated to `10` [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
-
+- Accept a pattern name alone in `SCN` and `scn`, emitting `/P0 SCN` to select a
+  colored (PaintType 1) tiling pattern instead of throwing [#797](https://github.com/julianhille/MuhammaraJS/issues/797)
 - Place the link of a Recipe `circle()`, `ellipse()`, `arc()` or `pie()`
   drawn at `"center"` coordinates; its rectangle was computed from the string
   and came out invalid [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
