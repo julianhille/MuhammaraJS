@@ -3227,6 +3227,11 @@ export function createWriterToModifyFactory({
               throw new Error("No context created");
             return context;
           },
+          /**
+           * Returns the resources dictionary of the modified page.
+           * @returns {ResourcesDictionary} The resources dictionary.
+           * @throws {Error} If the modifier ended, no context was started, or the resources cannot be read.
+           */
           getResourcesDictionary: function () {
             requireOpen();
             if (!modifierPage || !context) {
