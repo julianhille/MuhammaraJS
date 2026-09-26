@@ -68,6 +68,13 @@ export class PDFRStreamForBuffer {
     return this.rposition < this.fileSize;
   }
 
+  /**
+   * Moves to a position relative to the start position, clamped to the bytes.
+   *
+   * @param {number} position Offset from the start position.
+   * @returns {void}
+   * @throws {TypeError} If `position` is not an integer.
+   */
   setPosition(position) {
     if (!Number.isInteger(position))
       throw new TypeError("Position must be an integer");
