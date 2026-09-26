@@ -168,6 +168,9 @@ exports.Line = class Line {
     }
   }
 
+  /**
+   * @returns {Word|undefined} The final word, or undefined for an empty line.
+   */
   get lastWord() {
     return this.wordObjects[this.wordObjects.length - 1];
   }
