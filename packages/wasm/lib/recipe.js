@@ -540,8 +540,10 @@ export function createRecipeFactory({
           .BT()
           .Tf(this.writer.getFontForBytes(fontPath), fontSize)
           .Tc(characterSpacing);
-        if (fill.colorspace === "gray") editContext.g(...fill.values);
-        else if (fill.colorspace === "cmyk") editContext.k(...fill.values);
+        if (fill.colorspace === DeviceColorSpace.GRAY)
+          editContext.g(...fill.values);
+        else if (fill.colorspace === DeviceColorSpace.CMYK)
+          editContext.k(...fill.values);
         else editContext.rg(...fill.values);
         editContext.Tm(1, 0, 0, 1, point.nx, point.ny).Tj(String(value)).ET();
       } else {
