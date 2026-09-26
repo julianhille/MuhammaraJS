@@ -31,7 +31,11 @@ var annotationId = annotationIds.find((id) => {
     .parseNewObject(id)
     .toPDFDictionary()
     .toJSObject().Contents;
-  return contents && contents.toText() === "Original comment";
+  // Contents is a literal or hex string; narrow it before decoding.
+  var text = (
+    contents?.toPDFLiteralString() ?? contents?.toPDFHexString()
+  )?.toText();
+  return text === "Original comment";
 });
 
 reader.end();
