@@ -5,7 +5,10 @@ import {
 
 var wasmUrl = new URL("../../dist/muhammara-wasm.wasm", import.meta.url);
 
-/** Explicitly resolves the package's WebAssembly binary in pages and Workers. */
+/**
+ * Explicitly resolves the package's WebAssembly binary in pages and Workers.
+ * @returns {import("../../index.js").MuhammaraWasmOptions} Emscripten options with `locateFile`.
+ */
 export function moduleOptions() {
   return {
     locateFile(path) {
