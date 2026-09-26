@@ -492,6 +492,13 @@ declare namespace muhammara {
     M(miterLimit: number): this;
     /** The dash phase defaults to 0. */
     d(dashArray: number[], dashPhase?: number): this;
+    /**
+     * Sets the rendering intent; operator ri.
+     * @param renderingIntentName - The intent, for example Perceptual.
+     * @returns This context.
+     * @throws {TypeError} If renderingIntentName is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     ri(renderingIntentName: string): this;
     i(flatness: number): this;
     gs(graphicStateName: string): this;
