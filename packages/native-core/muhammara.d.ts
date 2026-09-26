@@ -667,6 +667,13 @@ declare namespace muhammara {
       text: string | number[],
       fontSize?: number,
     ): TextDimension;
+    /**
+     * Returns the font metrics scaled to a font size.
+     * @param fontSize - The font size; 1 when omitted.
+     * @returns The ascent, descent and related metrics.
+     * @throws {TypeError} If more than one argument is given or the metrics
+     *   cannot be read.
+     */
     getFontMetrics(fontSize?: number): FontMetrics;
   }
 
