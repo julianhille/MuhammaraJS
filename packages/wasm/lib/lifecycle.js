@@ -1,4 +1,7 @@
-/** Creates a tracker that disposes owned child resources together. */
+/**
+ * Creates a tracker that disposes owned child resources together.
+ * @returns {{track: Function, untrack: Function, hasChildren: Function, disposeChildren: Function}} The tracker.
+ */
 export function createChildLifecycle() {
   var children = new Set();
   return {
