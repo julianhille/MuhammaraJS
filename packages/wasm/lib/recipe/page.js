@@ -1122,7 +1122,12 @@ export function createPageMethods(
       return this;
     },
 
-    /** Applies queued page deletions during finalization. @private */
+    /**
+     * Applies queued page deletions during finalization.
+     * @private
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the page tree or page labels cannot be rewritten safely.
+     */
     _deletePages: function () {
       if (!this._deletedPages?.size) return this;
 
