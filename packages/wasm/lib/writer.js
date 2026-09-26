@@ -1,5 +1,9 @@
 import { createChildLifecycle } from "./lifecycle.js";
-import { ImageFitPolicy, PDFImageType } from "./value-sets.js";
+import {
+  ImageFitPolicy,
+  PDFImageType,
+  RegisteredImageFormat,
+} from "./value-sets.js";
 import { isPageBoxType } from "./constants.js";
 import {
   readTextOptions,
@@ -3178,7 +3182,11 @@ export function createWriterFactory({
 
     function createImageForm(name, expectedType, objectId) {
       var path = imagePath(name, expectedType);
-      var types = { jpeg: 0, png: 1, tiff: 2 };
+      var types = {
+        [RegisteredImageFormat.JPEG]: 0,
+        [RegisteredImageFormat.PNG]: 1,
+        [RegisteredImageFormat.TIFF]: 2,
+      };
       var handle = withString(path, (pointer) =>
         module._muhammara_wasm_writer_create_image_form(
           recipe,
@@ -3413,7 +3421,9 @@ export function createWriterFactory({
         requireOpenWriter();
         var bytes;
         if (typeof image === "string") {
-          bytes = module.FS.readFile(imagePath(image, "jpeg"));
+          bytes = module.FS.readFile(
+            imagePath(image, RegisteredImageFormat.JPEG),
+          );
         } else {
           bytes = normalizeBytes(image, "JPEG bytes");
         }
@@ -3468,7 +3478,7 @@ export function createWriterFactory({
         );
       },
       createImageXObjectFromJPGBytes: function (name, objectId) {
-        var path = imagePath(name, "jpeg");
+        var path = imagePath(name, RegisteredImageFormat.JPEG);
         var handle = withString(path, (pointer) =>
           module._muhammara_wasm_writer_create_jpg_image(
             recipe,
@@ -3480,10 +3490,10 @@ export function createWriterFactory({
         return new ImageXObject(handle);
       },
       createFormXObjectFromJPGBytes: function (name, objectId) {
-        return createImageForm(name, "jpeg", objectId);
+        return createImageForm(name, RegisteredImageFormat.JPEG, objectId);
       },
       createFormXObjectFromPNGBytes: function (name, objectId) {
-        return createImageForm(name, "png", objectId);
+        return createImageForm(name, RegisteredImageFormat.PNG, objectId);
       },
       createFormXObjectFromTIFF: function (image, options = {}) {
         if (!options || typeof options !== "object" || Array.isArray(options)) {
@@ -3535,25 +3545,29 @@ export function createWriterFactory({
           throw new RangeError("TIFF pageIndex must be a non-negative integer");
         }
         var objectId = optionalObjectId(options.objectId);
-        var handle = withImagePathOrBytes(image, "TIFF bytes", "tiff", (path) =>
-          withString(path, (pointer) =>
-            module._muhammara_wasm_writer_create_tiff_form(
-              recipe,
-              pointer,
-              pageIndex,
-              objectId,
-              bwTreatment ? 1 : 0,
-              bwTreatment?.asImageMask === true ? 1 : 0,
-              bwColor.components,
-              ...bwColor.values,
-              grayscaleTreatment ? 1 : 0,
-              grayscaleTreatment?.asColorMap === true ? 1 : 0,
-              grayscaleOneColor.components,
-              ...grayscaleOneColor.values,
-              grayscaleZeroColor.components,
-              ...grayscaleZeroColor.values,
+        var handle = withImagePathOrBytes(
+          image,
+          "TIFF bytes",
+          RegisteredImageFormat.TIFF,
+          (path) =>
+            withString(path, (pointer) =>
+              module._muhammara_wasm_writer_create_tiff_form(
+                recipe,
+                pointer,
+                pageIndex,
+                objectId,
+                bwTreatment ? 1 : 0,
+                bwTreatment?.asImageMask === true ? 1 : 0,
+                bwColor.components,
+                ...bwColor.values,
+                grayscaleTreatment ? 1 : 0,
+                grayscaleTreatment?.asColorMap === true ? 1 : 0,
+                grayscaleOneColor.components,
+                ...grayscaleOneColor.values,
+                grayscaleZeroColor.components,
+                ...grayscaleZeroColor.values,
+              ),
             ),
-          ),
         );
         if (!handle) throw new Error("Unable to create TIFF form XObject");
         return new FormXObject(handle, true, objectId || undefined);

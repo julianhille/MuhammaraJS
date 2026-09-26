@@ -165,3 +165,10 @@ export var PDFImageType = Object.freeze({
   TIFF: "TIFF",
   PNG: "PNG",
 });
+
+/** Format of an image registered by name; internal, not exported. */
+export var RegisteredImageFormat = Object.freeze({
+  JPEG: "jpeg",
+  PNG: "png",
+  TIFF: "tiff",
+});

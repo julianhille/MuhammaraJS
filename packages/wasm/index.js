@@ -44,6 +44,7 @@ import {
   RecipeFontStyle,
   ObjectReplacementScope,
   PDFImageType,
+  RegisteredImageFormat,
 } from "./lib/value-sets.js";
 
 export {
@@ -233,10 +234,10 @@ async function createRuntime(options) {
       imageTypes.set(
         name,
         /jpe?g/i.test(extension)
-          ? "jpeg"
+          ? RegisteredImageFormat.JPEG
           : /png/i.test(extension)
-            ? "png"
-            : "tiff",
+            ? RegisteredImageFormat.PNG
+            : RegisteredImageFormat.TIFF,
       );
     },
     registerImageAsync: async function (name, bytes, extension) {

@@ -1,4 +1,8 @@
-import { ObjectReplacementScope, PDFImageType } from "./value-sets.js";
+import {
+  ObjectReplacementScope,
+  PDFImageType,
+  RegisteredImageFormat,
+} from "./value-sets.js";
 import { createChildLifecycle } from "./lifecycle.js";
 import { isPageBoxType } from "./constants.js";
 import {
@@ -946,7 +950,7 @@ export function createWriterToModifyFactory({
         requireOpen();
         var imageBytes =
           typeof image === "string"
-            ? module.FS.readFile(imagePath(image, "jpeg"))
+            ? module.FS.readFile(imagePath(image, RegisteredImageFormat.JPEG))
             : normalizeBytes(image, "JPEG bytes");
         var valuesPointer = module._malloc(14 * 8);
         try {
@@ -1002,25 +1006,29 @@ export function createWriterToModifyFactory({
       },
       createImageXObjectFromJPGBytes: function (name, objectId) {
         requireOpen();
-        var handle = withString(imagePath(name, "jpeg"), (pointer) =>
-          module._muhammara_wasm_modifier_create_jpg_image(
-            modifier,
-            pointer,
-            optionalObjectId(objectId),
-          ),
+        var handle = withString(
+          imagePath(name, RegisteredImageFormat.JPEG),
+          (pointer) =>
+            module._muhammara_wasm_modifier_create_jpg_image(
+              modifier,
+              pointer,
+              optionalObjectId(objectId),
+            ),
         );
         if (!handle) throw new Error("Unable to create JPEG image XObject");
         return { id: module._muhammara_wasm_image_get_object_id(handle) };
       },
       createFormXObjectFromJPGBytes: function (name, objectId) {
         requireOpen();
-        var handle = withString(imagePath(name, "jpeg"), (pointer) =>
-          module._muhammara_wasm_modifier_create_image_form(
-            modifier,
-            pointer,
-            0,
-            optionalObjectId(objectId),
-          ),
+        var handle = withString(
+          imagePath(name, RegisteredImageFormat.JPEG),
+          (pointer) =>
+            module._muhammara_wasm_modifier_create_image_form(
+              modifier,
+              pointer,
+              0,
+              optionalObjectId(objectId),
+            ),
         );
         if (!handle) throw new Error("Unable to create image form XObject");
         return {
@@ -1029,13 +1037,15 @@ export function createWriterToModifyFactory({
       },
       createFormXObjectFromPNGBytes: function (name, objectId) {
         requireOpen();
-        var handle = withString(imagePath(name, "png"), (pointer) =>
-          module._muhammara_wasm_modifier_create_image_form(
-            modifier,
-            pointer,
-            1,
-            optionalObjectId(objectId),
-          ),
+        var handle = withString(
+          imagePath(name, RegisteredImageFormat.PNG),
+          (pointer) =>
+            module._muhammara_wasm_modifier_create_image_form(
+              modifier,
+              pointer,
+              1,
+              optionalObjectId(objectId),
+            ),
         );
         if (!handle) throw new Error("Unable to create image form XObject");
         return {
@@ -1206,25 +1216,29 @@ export function createWriterToModifyFactory({
         if (!Number.isInteger(pageIndex) || pageIndex < 0)
           throw new RangeError("TIFF pageIndex must be a non-negative integer");
         var objectId = optionalObjectId(options.objectId);
-        var handle = withImagePathOrBytes(image, "TIFF bytes", "tiff", (path) =>
-          withString(path, (pointer) =>
-            module._muhammara_wasm_modifier_create_tiff_form(
-              modifier,
-              pointer,
-              pageIndex,
-              objectId,
-              bwTreatment ? 1 : 0,
-              bwTreatment?.asImageMask === true ? 1 : 0,
-              bwColor.components,
-              ...bwColor.values,
-              grayscaleTreatment ? 1 : 0,
-              grayscaleTreatment?.asColorMap === true ? 1 : 0,
-              grayscaleOneColor.components,
-              ...grayscaleOneColor.values,
-              grayscaleZeroColor.components,
-              ...grayscaleZeroColor.values,
+        var handle = withImagePathOrBytes(
+          image,
+          "TIFF bytes",
+          RegisteredImageFormat.TIFF,
+          (path) =>
+            withString(path, (pointer) =>
+              module._muhammara_wasm_modifier_create_tiff_form(
+                modifier,
+                pointer,
+                pageIndex,
+                objectId,
+                bwTreatment ? 1 : 0,
+                bwTreatment?.asImageMask === true ? 1 : 0,
+                bwColor.components,
+                ...bwColor.values,
+                grayscaleTreatment ? 1 : 0,
+                grayscaleTreatment?.asColorMap === true ? 1 : 0,
+                grayscaleOneColor.components,
+                ...grayscaleOneColor.values,
+                grayscaleZeroColor.components,
+                ...grayscaleZeroColor.values,
+              ),
             ),
-          ),
         );
         if (!handle) throw new Error("Unable to create TIFF form XObject");
         return {
