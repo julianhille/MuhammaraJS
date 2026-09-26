@@ -3,9 +3,10 @@
  * @name moveTo
  * @function
  * @memberof Recipe#
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|"center"} x - The coordinate x
+ * @param {number|"center"} y - The coordinate y
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.moveTo = function moveTo(x, y) {
   const { nx, ny } = this._calibrateCoordinate(x, y);
