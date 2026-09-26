@@ -268,6 +268,13 @@ export function createRawObjectsContext({
           }
           return this;
         },
+        /**
+         * Writes a rectangle array value.
+         * @param {...(number|PDFRectangle)} values - Left, bottom, right, and top, or one array of them.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If there are not four finite coordinates.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeRectangleValue: function (...values) {
           requireDictionary();
           if (values.length === 1) values = values[0];
