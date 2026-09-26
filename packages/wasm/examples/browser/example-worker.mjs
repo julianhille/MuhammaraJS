@@ -11,6 +11,13 @@ self.onmessage = async (event) => {
     var result = await runBrowserExample({
       exampleId: event.data.exampleId,
       assets: event.data.assets,
+      /**
+       * Forwards progress to the page.
+       * @param {string} message - Status text.
+       * @param {number} percent - Progress from 0 to 100.
+       * @param {object} [details] - Summary data.
+       * @returns {void}
+       */
       progress(message, percent, details) {
         postMessage({ type: "progress", message, percent, details });
       },
