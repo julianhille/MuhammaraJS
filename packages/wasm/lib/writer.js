@@ -2777,6 +2777,11 @@ export function createWriterFactory({
                 form._handle,
                 ...args,
               ),
+            /**
+             * Runs the native `TJ` operator on this form.
+             * @param {...number} args - Encoding and the encoded item pointers.
+             * @returns {boolean} Whether the operator was written.
+             */
             tj: (...args) =>
               module._muhammara_wasm_writer_form_show_tj(
                 recipe,
