@@ -466,6 +466,13 @@ export function createWriterToModifyFactory({
           checkOperatorRange("j", value, 2, "line join");
           return operator("j", 22, [value]);
         },
+        /**
+         * Sets the miter limit (`M`).
+         * @param {number} value - Miter limit.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         M: function (value) {
           return operator("M", 23, [value]);
         },
