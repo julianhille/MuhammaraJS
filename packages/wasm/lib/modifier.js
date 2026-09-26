@@ -11,6 +11,13 @@ export function createModifierFactory({
   removeFile,
   assertOutputSize,
 }) {
+  /**
+   * Opens a PDF for compact page drawing.
+   * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} bytes - PDF to modify.
+   * @returns {CompactModifier} A modifier; finish it with `end()` or release it with `dispose()`.
+   * @throws {TypeError} If `bytes` is not a supported byte source.
+   * @throws {Error} If the PDF cannot be opened for modification.
+   */
   function createModifier(bytes) {
     bytes = normalizeBytes(bytes, "PDF input");
     var path = `/pdfs/${state.nextPdf++}.pdf`;
