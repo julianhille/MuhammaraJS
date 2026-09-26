@@ -180,7 +180,11 @@ function writeSourceAnnotation(writer, subtype, rectangle, options) {
   return id;
 }
 
-/** Creates Recipe annotation methods. */
+/**
+ * Creates Recipe annotation methods.
+ * @param {{module: object, withString: Function, withDoubles: Function, colorValue: Function}} dependencies - Module and helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createAnnotationMethods({
   module,
   withString,
