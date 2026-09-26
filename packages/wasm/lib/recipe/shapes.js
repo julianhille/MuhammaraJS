@@ -268,6 +268,17 @@ function extend(first, second, length) {
   ];
 }
 
+/**
+ * Draws triangle construction aids for `options.debug`.
+ * @param {Recipe} recipe - Recipe instance.
+ * @param {number} x - Placement x.
+ * @param {number} y - Placement y.
+ * @param {number[][]} vertices - Vertices.
+ * @param {{a: number, b: number, c: number}} sides - Side lengths.
+ * @param {RecipeTrianglePosition} position - Center used for placement.
+ * @param {object} options - Shape options.
+ * @returns {void}
+ */
 function debugTriangle(recipe, x, y, vertices, sides, position, options) {
   var centers = centerForTriangle(vertices, sides);
   recipe.circle(x, y, 2, { color: "red", width: 0.5 });
