@@ -4703,6 +4703,23 @@ declare namespace muhammara {
       traits: Recipe.MutableTriangleVertices,
       options: Recipe.TriangleVertexOptions,
     ): Recipe;
+    /**
+     * Draw an arrow
+     * @param x - x-coordinate position
+     * @param y - y-coordinate position
+     * @param options - arrow and polygon options
+     * @param options.type - indicates the type of arrow head to produce,; defaults to 0.
+     * a `Recipe.ArrowType` value or its number (0-'triangle', 1-'dart', 2-'kite').
+     * Note, that the value of base offset in head option overrides this value.
+     * @param options.head - ] defines the length, width and base offset of arrow head; defaults to [10,20,0.
+     * A single number can be used to assign both the length and width of arrow, giving the base offset value as zero.
+     * @param options.shaft - ] defines the length and width of the arrow shaft; defaults to [10,10.
+     * @param options.double - indicate double headed arrow production; defaults to false.
+     * @param options.at - position and/or rotate at the `Recipe.ArrowAt` head or tail of arrow instead of at center.
+     * @param options.debug - Draw the drop point; 2 also labels the reference points.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     arrow(x: number, y: number, options?: Recipe.ArrowOptions): Recipe;
     chroma<ColorspaceValue extends string | undefined = undefined>(
       name: string,
