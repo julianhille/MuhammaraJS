@@ -24,6 +24,12 @@ export function createCopyingHelpers({ module }) {
       }
     }
 
+    /**
+     * Rejects a parsed object that does not come from this copying context's source.
+     * @param {PDFObject} object - Parsed object.
+     * @returns {void}
+     * @throws {TypeError} If `object` belongs to another source.
+     */
     function requireSourceObject(object) {
       if (!object || object._copyingContext !== copying) {
         throw new TypeError(
