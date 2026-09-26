@@ -1457,6 +1457,12 @@ declare namespace muhammara {
   }
 
   export interface ByteWriterWithPosition {
+    /**
+     * Writes bytes at the current position.
+     * @param bytes - The bytes to write.
+     * @returns The number of bytes written.
+     * @throws {TypeError} If bytes is not a single Uint8Array or byte array.
+     */
     write(bytes: Uint8Array | number[]): number;
     getCurrentPosition(): number;
   }
