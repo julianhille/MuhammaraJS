@@ -252,6 +252,13 @@ export function createHelpers(module) {
     context.cs = function (name) {
       return nameOperator("cs", 4, name);
     };
+    /**
+     * Sets the stroking color in the current color space (`SC`).
+     * @param {...number} components - Color components.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If no components are given or one is not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.SC = function (...components) {
       if (!components.length)
         throw new TypeError("SC requires numeric components");
