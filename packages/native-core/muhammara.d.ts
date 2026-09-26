@@ -4099,6 +4099,10 @@ declare namespace muhammara {
      * @throws {TypeError} If the page is unknown.
      */
     pageInfo(pageNumber: number): RecipePageInfo;
+    /**
+     * Get information about the current page.
+     * @returns The current page information, or null when no page has been created or edited.
+     */
     getCurrentPageInfo(): RecipePageInfo | null;
 
     margins(): Required<Recipe.RecipeMargins>;
