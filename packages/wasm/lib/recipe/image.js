@@ -3,7 +3,11 @@ import {
   RecipeHorizontalAlignment,
   RecipeVerticalAlignment,
 } from "../value-sets.js";
-/** Creates Recipe image placement methods. */
+/**
+ * Creates Recipe image placement methods.
+ * @param {object} runtime - Module and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createImageMethods(runtime) {
   function placement(recipe, path, x, y, options) {
     var dimensions = recipe._imageDimensions(path);
