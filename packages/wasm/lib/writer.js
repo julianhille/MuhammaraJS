@@ -3737,6 +3737,15 @@ export function createWriterFactory({
           await normalizeBytesAsync(image, "JPEG bytes"),
         );
       },
+      /**
+       * Creates an image XObject from a registered JPEG.
+       * @param {string} name - Registered JPEG name.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {ImageXObject} The image.
+       * @throws {TypeError} If the name is not a registered JPEG.
+       * @throws {RangeError} If `objectId` is invalid.
+       * @throws {Error} If the writer ended or the image cannot be created.
+       */
       createImageXObjectFromJPGBytes: function (name, objectId) {
         var path = imagePath(name, RegisteredImageFormat.JPEG);
         var handle = withString(path, (pointer) =>
