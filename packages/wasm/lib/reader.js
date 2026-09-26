@@ -219,6 +219,11 @@ export function createReaderFactory({
             ? object
             : undefined;
         },
+        /**
+         * Narrows the object to a stream.
+         * @returns {PDFStreamInput|undefined} This object when it is a stream.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         toPDFStream: function () {
           return object.getType() === constants.ePDFObjectStream
             ? object
