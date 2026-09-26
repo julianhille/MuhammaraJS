@@ -73,6 +73,13 @@ function polygonOptions(options, x, y) {
   return result;
 }
 
+/**
+ * Adds a link over the bounding box of a shape when `options.link` is set.
+ * @param {Recipe} recipe - Recipe instance.
+ * @param {object} options - Shape options.
+ * @param {number[][]} points - Shape vertices.
+ * @returns {void}
+ */
 function addLink(recipe, options, points) {
   if (!options.link) return;
   var xs = points.map((point) => point[0]);
