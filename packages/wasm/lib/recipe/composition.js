@@ -316,7 +316,11 @@ export function createEndPDF({
   };
 }
 
-/** Creates a function that splits a registered PDF into one-page outputs. */
+/**
+ * Creates a function that splits a registered PDF into one-page outputs.
+ * @param {object} dependencies - Module, PDF registry, and Recipe factory.
+ * @returns {Function} The split method.
+ */
 export function createSplitPdf({
   module,
   pdfs,
