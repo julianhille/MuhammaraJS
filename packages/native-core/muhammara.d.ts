@@ -558,6 +558,11 @@ declare namespace muhammara {
      * @returns This reader.
      */
     end(): PDFReader;
+    /**
+     * Returns the PDF version from the file header, for example 1.7.
+     * @returns The PDF version.
+     * @throws {TypeError} If the reader has ended.
+     */
     getPDFLevel(): number;
     getPagesCount(): number;
     getTrailer(): PDFDictionary;
