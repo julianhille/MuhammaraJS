@@ -1906,6 +1906,18 @@ export function createWriterFactory({
           Q: function () {
             return operator("Q", 18);
           },
+          /**
+           * Concatenates a matrix to the current transformation matrix (`cm`).
+           * @param {number} a - Matrix component `a`.
+           * @param {number} b - Matrix component `b`.
+           * @param {number} c - Matrix component `c`.
+           * @param {number} d - Matrix component `d`.
+           * @param {number} e - Matrix component `e`.
+           * @param {number} f - Matrix component `f`.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           cm: function (a, b, c, d, e, f) {
             return operator("cm", 19, [a, b, c, d, e, f]);
           },
