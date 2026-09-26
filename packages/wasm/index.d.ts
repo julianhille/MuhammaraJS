@@ -819,6 +819,8 @@ export type DrawingPathType = "stroke" | "fill" | "clip" | null;
 export type LineCapStyle = 0 | 1 | 2;
 /** Info dictionary `/Trapped` state: the `EInfoTrapped*` constants. */
 export type EInfoTrapped = 0 | 1 | 2;
+/** Token written after an array by `endArray()`: the `eTokenSeparator*` constants. */
+export type ETokenSeparator = 0 | 1 | 2;
 /** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
 export type LineJoinStyle = 0 | 1 | 2;
 /**
@@ -985,7 +987,7 @@ export interface ObjectsContext {
   startDictionary(): DictionaryContext;
   endDictionary(dictionary: DictionaryContext): this;
   startArray(): this;
-  endArray(separator?: number): this;
+  endArray(separator?: ETokenSeparator): this;
   writeNumber(value: number): this;
   writeIndirectObjectReference(id: number, generation?: number): this;
   writeBoolean(value: boolean): this;
@@ -1838,9 +1840,9 @@ export interface MuhammaraWasm {
   readonly ePDFPageContentItemPath: 1;
   readonly ePDFPageContentItemXObject: 2;
   readonly ePDFPageContentItemShading: 3;
-  readonly eTokenSeparatorSpace: number;
-  readonly eTokenSeparatorEndLine: number;
-  readonly eTokenSeparatorNone: number;
+  readonly eTokenSeparatorSpace: 0;
+  readonly eTokenSeparatorEndLine: 1;
+  readonly eTokenSeparatorNone: 2;
   readonly eXrefEntryExisting: number;
   readonly eXrefEntryDelete: number;
   readonly eXrefEntryStreamObject: number;

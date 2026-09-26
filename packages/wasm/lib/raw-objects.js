@@ -364,9 +364,11 @@ export function createRawObjectsContext({
       endArray: function (separator = constants.eTokenSeparatorNone) {
         requireContext();
         if (
-          !Number.isInteger(separator) ||
-          separator < 0 ||
-          separator > 2 ||
+          ![
+            constants.eTokenSeparatorSpace,
+            constants.eTokenSeparatorEndLine,
+            constants.eTokenSeparatorNone,
+          ].includes(separator) ||
           !module._muhammara_wasm_objects_end_array(handle, separator)
         ) {
           throw new Error("Unable to end array");

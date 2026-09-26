@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  ETokenSeparator,
   EInfoTrapped,
   DrawingPathType,
   PDFPageContentItemType,
@@ -815,6 +816,11 @@ async function usesNamedValueSets() {
   void trapped;
   // @ts-expect-error Trapped accepts only the EInfoTrapped constants.
   info.trapped = 3;
+  var objects = writer.getObjectsContext();
+  var separator: ETokenSeparator = muhammara.eTokenSeparatorEndLine;
+  objects.startArray().endArray(separator);
+  // @ts-expect-error Separators are the eTokenSeparator constants.
+  objects.startArray().endArray(3);
 }
 
 void usesNamedValueSets;
