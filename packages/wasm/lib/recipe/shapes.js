@@ -117,6 +117,16 @@ function distance(first, second) {
   return Math.hypot(first[0] - second[0], first[1] - second[1]);
 }
 
+/**
+ * Builds triangle vertices and side lengths from vertices, sides, or angles.
+ * @param {number} x - Placement x.
+ * @param {number} y - Placement y.
+ * @param {RecipeTriangleTrait} traitID - How `traits` describe the triangle.
+ * @param {Array} traits - Vertices, side lengths, or sides and angles.
+ * @returns {{vertices: number[][], sides: {a: number, b: number, c: number}}} The geometry.
+ * @throws {Error} If the trait kind is unknown, the angles sum to 180 or more, or
+ * the sides violate the triangle inequality.
+ */
 function triangleGeometry(x, y, traitID, traits) {
   var a, b, c;
   var vertices;
