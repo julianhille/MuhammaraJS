@@ -141,6 +141,11 @@ export function createReaderFactory({
       }
     }
 
+    /**
+     * Decodes UTF-8 key bytes.
+     * @param {Uint8Array} bytes - Encoded bytes.
+     * @returns {string} The decoded text.
+     */
     function objectStringBytes(bytes) {
       return new TextDecoder().decode(bytes);
     }
