@@ -4123,6 +4123,10 @@ declare namespace muhammara {
       top?: number,
       bottom?: number,
     ): Recipe;
+    /**
+     * Get the document information dictionary.
+     * @returns The document information dictionary.
+     */
     getPageInfo(): InfoDictionary;
     pauseContext(): Recipe;
     resumeContext(): Recipe;
