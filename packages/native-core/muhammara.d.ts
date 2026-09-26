@@ -4445,6 +4445,29 @@ declare namespace muhammara {
       options?: Recipe.CircleOptions,
     ): Recipe;
 
+    /**
+     * Draw a rectangle
+     * @param x - The coordinate x of the top-left corner
+     * @param y - The coordinate y of the top-left corner
+     * @param width - The width
+     * @param height - The height
+     * @param options - The options
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param options.fill - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @param options.borderRadius - Radius size for rounded corners.
+     * When a one to four number array can be used to give specific sizees to each corner.
+     * The numbering starts from the top, left corner, and goes clockwise around the text box.
+     * Missing values in the array are filled in by opposite corner values.
+     * @param options.link - Make the rectangle open this URL.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     rectangle(
       x: Recipe.RecipeCoordinate,
       y: Recipe.RecipeCoordinate,
