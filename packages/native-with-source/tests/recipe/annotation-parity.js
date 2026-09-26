@@ -606,6 +606,22 @@ describe("Recipe annotation parity", function () {
     assert.equal(readAnnotations(reader, 1).length, 1);
   });
 
+  it("writes lower-case markup subtypes with their PDF casing and color", async function () {
+    var recipe = new muhammara.Recipe("new", output)
+      .createPage(200, 200)
+      .annot(10, 10, "highlight", { width: 50, height: 10 });
+    await new Promise(function (resolve) {
+      recipe.endPage().endPDF(resolve);
+    });
+    reader = muhammara.createReader(output);
+    var dictionary = readAnnotations(reader)[0].dictionary;
+    assert.equal(dictionary.Subtype.value, "Highlight");
+    assert.deepEqual(
+      dictionary.C.toJSArray().map((value) => value.value),
+      [1, 1, 0],
+    );
+  });
+
   it('centers a link at "center" coordinates', async function () {
     var recipe = new muhammara.Recipe("new", output)
       .createPage(200, 200)

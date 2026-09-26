@@ -152,7 +152,25 @@ exports.annot = function annot(
  */
 exports._attachNonMarkupAnnot = function _attachNonMarkupAnnot() {};
 
+/**
+ * Write one queued annotation, or a reply to one, as an indirect object and
+ * register it on its page.
+ * @private
+ * @param {Recipe.AnnotSubtype} subtype - The annotation subtype.
+ * @param {Object} [args] - The queued x, y, width, height, text, options, and
+ *   for a reply the reply entry.
+ * @param {number} pageNumber - The one-based page number.
+ * @param {number} [ref] - The object ID of the annotation a reply answers.
+ * @returns {number} The object ID of the written annotation.
+ * @throws {TypeError} If the page number is unknown.
+ */
 exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
+  // Write known subtypes with their PDF casing; the markup check below
+  // already matches them case-insensitively.
+  subtype =
+    Object.values(AnnotSubtype).find(
+      (known) => known.toLowerCase() === String(subtype).toLowerCase(),
+    ) || subtype;
   const { x, y, width, height, options, reply } = args;
   let { text } = args;
   this._startDictionary(pageNumber);
@@ -284,16 +302,16 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
     border = border || 0;
     if (!color) {
       switch (subtype) {
-        case "Highlight":
+        case AnnotSubtype.HIGHLIGHT:
           color = [255, 255, 0];
           break;
-        case "StrikeOut":
+        case AnnotSubtype.STRIKE_OUT:
           color = [255, 0, 0];
           break;
-        case "Underline":
+        case AnnotSubtype.UNDERLINE:
           color = [0, 255, 0];
           break;
-        case "Squiggly":
+        case AnnotSubtype.SQUIGGLY:
           color = [0, 255, 0];
           break;
         default:

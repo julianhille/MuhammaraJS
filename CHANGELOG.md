@@ -134,6 +134,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Write `Recipe#annot()` subtypes given in another casing, such as
+  `"highlight"`, with their PDF name and default markup color; they were
+  written as invalid lower-case names with a black color [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix `Recipe#read(inSrc)` reading the Recipe's own Buffer source instead of
   `inSrc`, and failing when `inSrc` is a Buffer [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Apply the Recipe `version` option to new PDFs written to a Buffer; it was
