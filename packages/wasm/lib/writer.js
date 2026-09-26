@@ -1751,6 +1751,11 @@ export function createWriterFactory({
           y: function (x1, y1, x2, y2) {
             return operator("y", 14, [x1, y1, x2, y2]);
           },
+          /**
+           * Closes the current subpath (`h`).
+           * @returns {this} The content context, for chaining.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           h: function () {
             return operator("h", 15);
           },
