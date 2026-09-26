@@ -493,6 +493,12 @@ declare namespace muhammara {
      * @throws {TypeError} If patternObjectId is not a single number.
      */
     addPatternMapping(patternObjectId: number): string;
+    /**
+     * Adds a marked-content property list to the resources and returns its resource name.
+     * @param propertyObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If propertyObjectId is not a single number.
+     */
     addPropertyMapping(propertyObjectId: number): string;
     addXObjectMapping(xObjectId: number): string;
     addShadingMapping(xObjectId: number): string;
