@@ -1469,6 +1469,9 @@ const Point = class Point {
   set y(yy) {
     this._y = yy;
   }
+  /**
+   * @param {number[]} pnt - The new [x, y] array.
+   */
   set point(pnt) {
     [this._x, this._y] = pnt;
   }
