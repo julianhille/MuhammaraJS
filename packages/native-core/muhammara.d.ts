@@ -3959,6 +3959,17 @@ declare namespace muhammara {
      */
     custom(key: string, value: string): Recipe;
 
+    /**
+     * Insert a page from the other pdf
+     * @param afterPageNumber - The one-based page number to insert after; 0 inserts before the first page.
+     * @param pdfSrc - The path for the other pdf
+     * @param srcPageNumber - The one-based page number to be inserted from the other pdf.
+     * @returns The recipe instance. Pages are inserted by `endPDF()`;
+     *   Buffer sources do not support insertion.
+     * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+     * @throws {Error} If afterPageNumber is not a number.
+     * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
+     */
     insertPage(
       afterPageNumber: number,
       pdfSrc: string,
