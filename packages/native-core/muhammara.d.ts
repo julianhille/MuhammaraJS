@@ -1752,6 +1752,13 @@ declare namespace muhammara {
     lineTo(x: number, y: number, options?: Recipe.LineToOptions): Recipe;
 
     line(coordinates: number[][], options?: Recipe.LineOptions): Recipe;
+    line(
+      startX: number,
+      startY: number,
+      endX: number,
+      endY: number,
+      options?: Recipe.LineOptions,
+    ): Recipe;
 
     polygon(coordinates: number[][], options?: Recipe.PolygonOptions): Recipe;
 

@@ -406,4 +406,37 @@ describe("Regular Polygons, Stars, Arrows", () => {
       .endPage()
       .endPDF(done);
   });
+
+  it("draws the same line from four numbers as from coordinate pairs", () => {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const draw = (name, drawLine) => {
+      const output = path.join(__dirname, `../output/${name}.pdf`);
+      drawLine(new Recipe("new", output).createPage(200, 200))
+        .endPage()
+        .endPDF();
+      const reader = muhammara.createReader(output);
+      const stream = reader
+        .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+        .toPDFStream();
+      const bytes = reader.startReadingFromStream(stream).read(10000);
+      reader.end();
+      return Buffer.from(bytes).toString("latin1");
+    };
+    const options = { stroke: "#ff0000", lineWidth: 2 };
+    const pairs = draw("line-pairs", (recipe) =>
+      recipe.line(
+        [
+          [10, 20],
+          [110, 120],
+        ],
+        options,
+      ),
+    );
+    const numbers = draw("line-numbers", (recipe) =>
+      recipe.line(10, 20, 110, 120, options),
+    );
+    assert.equal(numbers, pairs);
+    assert.match(numbers, / l\b/);
+  });
 });

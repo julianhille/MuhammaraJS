@@ -62,12 +62,13 @@ exports.lineTo = function lineTo(x, y, options = {}) {
 };
 
 /**
- * Draw a line
+ * Draw a line through coordinate pairs, or from (startX, startY) to
+ * (endX, endY) when called as `line(startX, startY, endX, endY, options?)`.
  * @name line
  * @function
  * @memberof Recipe#
- * @param {number[]} coordinates - The array of coordinate [[x,y], [m,n]]
- * @param {Object} [options] - The options
+ * @param {number[][]|number} coordinates - The array of coordinate [[x,y], [m,n]], or the start x
+ * @param {Object} [options] - The options, or the start y in the four-number form
  * @returns {Recipe} The recipe instance.
  * @param {string|number[]} [options.color] - HexColor, PercentColor or DecimalColor
  * @param {string|number[]} [options.stroke] - HexColor, PercentColor or DecimalColor
@@ -79,6 +80,15 @@ exports.lineTo = function lineTo(x, y, options = {}) {
  * @param {string} [options.lineJoin] - joined line end style, 'miter', 'round', or 'bevel' (default: 'round')
  * @param {number} [options.miterLimit] - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)*/
 exports.line = function line(coordinates = [], options = {}) {
+  if (typeof coordinates === "number") {
+    // line(startX, startY, endX, endY, options?), as in Wasm.
+    const [startX, startY, endX, endY, lineOptions = {}] = arguments;
+    coordinates = [
+      [startX, startY],
+      [endX, endY],
+    ];
+    options = lineOptions;
+  }
   coordinates.forEach((coordinate, index) => {
     if (index === 0) {
       this.moveTo(coordinate[0], coordinate[1]);

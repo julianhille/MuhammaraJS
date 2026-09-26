@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Accept `Recipe#line(startX, startY, endX, endY, options?)`, as Wasm does
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Accept a `PDFDate` in `InfoDictionary#setCreationDate()` and
   `setModDate()`, as Wasm does [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Default the `createFormXObjectFromPDFPage()` page box to the media box,
