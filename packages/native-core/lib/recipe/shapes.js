@@ -1384,6 +1384,10 @@ const Arrow = class Arrow {
   get tip() {
     return this._tip;
   }
+  /**
+   * The reverse head of a double arrow.
+   * @returns {Kite|null} The reverse head, or null.
+   */
   get nock() {
     return this._nock;
   }
