@@ -87,10 +87,11 @@ describe("Modify", () => {
   it("writes the requested PDF version to a new Buffer PDF", () => {
     const recipe = new Recipe(Buffer.from("new"), null, { version: 1.4 });
     recipe.createPage(100, 100).endPage();
-    recipe.endPDF((outBuffer) => {
-      assert.equal(outBuffer.subarray(0, 8).toString(), "%PDF-1.4");
+    let outBuffer;
+    recipe.endPDF((buffer) => {
+      outBuffer = buffer;
     });
-    assert.equal(Recipe.Colorspace.SEPARATION, "separation");
+    assert.equal(outBuffer.subarray(0, 8).toString(), "%PDF-1.4");
   });
 
   it("reads another PDF instead of the Buffer source", () => {
