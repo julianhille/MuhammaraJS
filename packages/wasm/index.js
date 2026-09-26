@@ -402,6 +402,10 @@ async function createRuntime(options) {
     unregisterPdf: function (name) {
       return unregisterAsset(pdfs, name);
     },
+    /**
+     * Removes every registered font, image, and PDF.
+     * @returns {void}
+     */
     disposeAssets: function () {
       new Set([
         ...fonts.values(),
