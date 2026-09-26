@@ -222,6 +222,13 @@ export function createRawObjectsContext({
           }
           return this;
         },
+        /**
+         * Writes an indirect object reference value with generation 0.
+         * @param {number} objectId - Positive object ID.
+         * @returns {this} The dictionary context.
+         * @throws {RangeError} If `objectId` is not a positive integer.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeObjectReferenceValue: function (objectId) {
           requireDictionary();
           if (!Number.isInteger(objectId) || objectId <= 0)
