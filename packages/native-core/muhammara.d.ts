@@ -4561,6 +4561,13 @@ declare namespace muhammara {
      * @throws {TypeError} If no page is active.
      */
     lineStyle(options?: Recipe.LineStyleOptions): Recipe;
+    /**
+     * Set the line width.
+     *
+     * @param width - The line width.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     lineWidth(width: number): Recipe;
     /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */
     opacity(opacity: number): Recipe;
