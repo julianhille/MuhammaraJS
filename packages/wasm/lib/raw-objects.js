@@ -353,6 +353,13 @@ export function createRawObjectsContext({
         if (!objectId) throw new Error("Unable to allocate object ID");
         return objectId;
       },
+      /**
+       * Starts an indirect object, with a new or a previously allocated ID.
+       * @param {number} [objectId] - ID from `allocateNewObjectID()`.
+       * @returns {number|this} The new object ID when `objectId` is omitted; otherwise the context.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the writer has ended or the object cannot be started.
+       */
       startNewIndirectObject: function (objectId) {
         requireContext();
         if (
