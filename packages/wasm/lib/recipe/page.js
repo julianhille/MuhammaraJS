@@ -479,7 +479,13 @@ function readPageLabel(parser, value) {
   };
 }
 
-/** Writes indirect objects for normalized page-label values. @private */
+/**
+ * Writes indirect objects for normalized page-label values.
+ * @private
+ * @param {ObjectsContext} objectsContext - Objects context.
+ * @param {object[]} entries - Normalized entries.
+ * @returns {{pageIndex: number, objectID: number}[]} The written objects.
+ */
 function writePageLabelObjects(objectsContext, entries) {
   return entries.map((entry) => {
     var objectID = objectsContext.startNewIndirectObject();
