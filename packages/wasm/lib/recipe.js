@@ -346,6 +346,15 @@ export function createRecipeFactory({
     /**
      * Applies a PDF transformation matrix to the active context.
      * @private
+     * @param {number} a - Matrix component `a`.
+     * @param {number} b - Matrix component `b`.
+     * @param {number} c - Matrix component `c`.
+     * @param {number} d - Matrix component `d`.
+     * @param {number} e - Matrix component `e`.
+     * @param {number} f - Matrix component `f`.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If a component is not finite.
+     * @throws {Error} If the matrix cannot be applied.
      */
     _transform(a, b, c, d, e, f) {
       if (this._pageContext)
