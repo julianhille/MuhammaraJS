@@ -209,6 +209,9 @@ exports.Line = class Line {
     wordObject.lastWord();
   }
 
+  /**
+   * @returns {Word[]} The words of the line.
+   */
   get words() {
     return this.wordObjects;
   }
