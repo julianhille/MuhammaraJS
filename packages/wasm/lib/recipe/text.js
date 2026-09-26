@@ -578,6 +578,14 @@ export function createTextMethods({ drawText, measure, module }) {
    * drawn line. Only the outer text() options request annotations; HTML
    * `<u>` and `<s>` styles stay visual decoration, as in native Recipe.
    * An optional clip rectangle limits the annotation to visible line bounds.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {object} options - text() options with `highlight`, `underline`, `strikeOut`, or `squiggly`.
+   * @param {number} x - Line left.
+   * @param {number} baseline - Line baseline.
+   * @param {number} width - Line width; nothing is added for 0.
+   * @param {boolean} [validateOnly=false] - Validate the options without writing.
+   * @param {{x: number, y: number, width: number, height: number}} [clip] - Visible box.
+   * @returns {void}
    */
   function addTextMarkup(
     recipe,
