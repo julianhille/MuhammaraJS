@@ -882,6 +882,10 @@ async function usesNamedValueSets() {
   writer.createFormXObjectsFromPDF("source", 5);
   void writer.createFormXObjectsFromPDFAsync(new Uint8Array(), cropBox);
   modifierForTypes.createFormXObjectsFromPDF("source", cropBox);
+  void modifierForTypes.createFormXObjectsFromPDFAsync(
+    new Uint8Array(),
+    cropBox,
+  );
 }
 
 void usesNamedValueSets;
