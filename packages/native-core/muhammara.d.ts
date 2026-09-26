@@ -1084,6 +1084,11 @@ declare namespace muhammara {
      * @returns The content context.
      */
     getContentContext(): XObjectContentContext;
+    /**
+     * Misspelled alias of getResourcesDictionary().
+     * @deprecated Use getResourcesDictionary().
+     * @returns The resources dictionary.
+     */
     getResourcesDictinary(): ResourcesDictionary;
     getResourcesDictionary(): ResourcesDictionary;
     getContentStream(): PDFStream;
