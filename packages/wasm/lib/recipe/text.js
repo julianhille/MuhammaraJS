@@ -82,7 +82,11 @@ function startsWithBreakableSpace(value) {
   return value[0] !== "\u00a0" && /^\s/.test(value);
 }
 
-/** Reports whether wrapping may occur at the end of a string. */
+/**
+ * Reports whether wrapping may occur at the end of a string.
+ * @param {string} value - Text.
+ * @returns {boolean} Whether it ends with breakable whitespace.
+ */
 function endsWithBreakableSpace(value) {
   return value[value.length - 1] !== "\u00a0" && /\s$/.test(value);
 }
