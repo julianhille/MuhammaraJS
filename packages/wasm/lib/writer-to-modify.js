@@ -3576,6 +3576,16 @@ export function createWriterToModifyFactory({
             }
             return this;
           },
+          /**
+           * Creates a form XObject from a source page.
+           * @param {number} index - Zero-based source page index.
+           * @param {PDFPageBoxType|PDFRectangle} [pageBox=ePDFPageBoxMediaBox] - Box used as the form bounds, or a rectangle.
+           * @param {PDFMatrix} [transformation] - Form matrix.
+           * @returns {number} Object ID of the form.
+           * @throws {TypeError} If a rectangle or matrix is not finite.
+           * @throws {RangeError} If `index` or `pageBox` is invalid or the form cannot be created.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           createFormXObjectFromPDFPage: function (
             index,
             pageBox = constants.ePDFPageBoxMediaBox,
