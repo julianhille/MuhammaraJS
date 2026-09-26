@@ -784,6 +784,10 @@ declare namespace muhammara {
   }
 
   export interface PDFArray extends PDFObject {
+    /**
+     * Returns the items, without resolving indirect references.
+     * @returns The items as PDF objects.
+     */
     toJSArray(): Array<any>;
     queryObject(index: number): any;
     getLength(): number;
