@@ -212,6 +212,13 @@ export function createHelpers(module) {
     context.ri = function (name) {
       return nameOperator("ri", 0, name);
     };
+    /**
+     * Sets the flatness tolerance (`i`).
+     * @param {number} flatness - Tolerance from 0 to 100.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `flatness` is not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.i = function (flatness) {
       return componentOperator("i", 1, [flatness]);
     };
