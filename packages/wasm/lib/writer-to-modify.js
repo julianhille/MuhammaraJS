@@ -1,4 +1,5 @@
 import { createChildLifecycle } from "./lifecycle.js";
+import { isPageBoxType } from "./constants.js";
 import {
   readTextOptions,
   validateDrawingGeometry,
@@ -1045,7 +1046,7 @@ export function createWriterToModifyFactory({
         requireOpen();
         var cropBox = Array.isArray(pageBox) ? pageBox : undefined;
         if (cropBox) pageBox = constants.ePDFPageBoxMediaBox;
-        if (!Number.isInteger(pageBox) || pageBox < 0 || pageBox > 4)
+        if (!isPageBoxType(pageBox))
           throw new RangeError("A valid page box is required");
         if (
           !options ||

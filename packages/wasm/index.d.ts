@@ -1714,7 +1714,7 @@ export interface PDFModifier {
   ): ModifierCompletedFormXObject;
   createFormXObjectsFromPDF(
     source: string | ByteSource,
-    pageBox?: number | PDFRectangle,
+    pageBox?: PDFPageBoxType | PDFRectangle,
     options?: PDFFormOptions,
   ): number[];
   createFormXObjectsFromPDFAsync(
