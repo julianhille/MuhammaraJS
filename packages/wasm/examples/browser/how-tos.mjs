@@ -381,6 +381,10 @@ async function pageBoxesExample() {
   }
 }
 
+/**
+ * Builds the browser example for a gray form XObject.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function formGrayExample() {
   var muhammara = await createMuhammaraWasm();
   var writer = muhammara.createWriter({ compress: false });
