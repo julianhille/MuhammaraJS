@@ -3647,6 +3647,11 @@ export function createWriterToModifyFactory({
             }
             return this;
           },
+          /**
+           * Ends the copying context and releases its source.
+           * @returns {this} The copying context.
+           * @throws {Error} If the context already ended or cannot be ended.
+           */
           end: function () {
             requireCopying();
             sourceParsers.forEach((parser) => parser._end());
