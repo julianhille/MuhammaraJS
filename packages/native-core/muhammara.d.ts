@@ -1333,6 +1333,13 @@ declare namespace muhammara {
       imagePath: FilePath,
       options?: { password?: string },
     ): number;
+    /**
+     * Detects the type of an image file.
+     * @param imagePath - The image path.
+     * @returns The type; undefined when it is not a supported image.
+     * @throws {TypeError} If imagePath is not a single argument.
+     * @throws {Error} If the writer has ended.
+     */
     getImageType(imagePath: FilePath): PDFImageType | undefined;
     getModifiedFileParser(): PDFReader;
     getModifiedInputFile(): InputFile;
