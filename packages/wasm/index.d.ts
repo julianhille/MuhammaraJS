@@ -61,6 +61,8 @@ export type RecipePosition = [number, number];
 /** Device color space of a drawing or Recipe color option. */
 export type DeviceColorSpace = "rgb" | "gray" | "cmyk";
 export type RecipeDeviceColorSpace = DeviceColorSpace;
+/** How `drawImage()` fits an image: always scale, or only shrink when it overflows. */
+export type ImageFitPolicy = "always" | "overflow";
 /**
  * Every Recipe color space, including Separation. WebAssembly Recipe keeps
  * Separation entries in `knownColors` but throws when asked to draw with them.
@@ -861,7 +863,7 @@ export interface DrawImageOptions {
         width: number;
         height: number;
         proportional?: boolean;
-        fit?: "always" | "overflow";
+        fit?: ImageFitPolicy;
       };
 }
 export interface TIFFOptions {

@@ -9,3 +9,9 @@ export var DeviceColorSpace = Object.freeze({
   GRAY: "gray",
   CMYK: "cmyk",
 });
+
+/** How `drawImage()` fits an image into its bounding box. */
+export var ImageFitPolicy = Object.freeze({
+  ALWAYS: "always",
+  OVERFLOW: "overflow",
+});

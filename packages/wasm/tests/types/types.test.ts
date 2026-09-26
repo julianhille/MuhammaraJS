@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  ImageFitPolicy,
   DeviceColorSpace,
   ImageType,
   PageRangeOptions,
@@ -867,6 +868,10 @@ async function usesNamedValueSets() {
   context.drawRectangle(0, 0, 1, 1, { color: 0, colorspace: drawColorspace });
   // @ts-expect-error Colorspaces are rgb, gray, or cmyk.
   context.drawRectangle(0, 0, 1, 1, { color: 0, colorspace: "hsl" });
+  var fitPolicy: ImageFitPolicy = "overflow";
+  context.drawImage(0, 0, "logo", {
+    transformation: { width: 10, height: 10, fit: fitPolicy },
+  });
 }
 
 void usesNamedValueSets;

@@ -1,4 +1,5 @@
 import { createChildLifecycle } from "./lifecycle.js";
+import { ImageFitPolicy } from "./value-sets.js";
 import {
   readTextOptions,
   validateDrawingGeometry,
@@ -163,7 +164,7 @@ export function createWriterSupport({
     }
     if (
       transformation.fit !== undefined &&
-      !["always", "overflow"].includes(transformation.fit)
+      !Object.values(ImageFitPolicy).includes(transformation.fit)
     ) {
       throw new TypeError("drawImage fit must be always or overflow");
     }
@@ -171,7 +172,7 @@ export function createWriterSupport({
     result.width = transformation.width;
     result.height = transformation.height;
     result.proportional = transformation.proportional || false;
-    result.fit = transformation.fit === "always" ? 0 : 1;
+    result.fit = transformation.fit === ImageFitPolicy.ALWAYS ? 0 : 1;
     return result;
   }
 
