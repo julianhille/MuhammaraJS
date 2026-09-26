@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { createMuhammaraWasm } from "../../index.js";
+import { createMuhammaraWasm, DeviceColorSpace } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
 
@@ -47,6 +47,23 @@ describe("Recipe colors, shapes, and images", function () {
       : contents;
     assert.ok(contentObject.toPDFStream() || contentObject.toPDFArray());
     reader.end();
+  });
+
+  it("exposes frozen colorspace constants valued as in native", async function () {
+    var Recipe = await getRecipe();
+    assert.deepEqual(Recipe.Colorspace, {
+      RGB: "rgb",
+      CMYK: "cmyk",
+      GRAY: "gray",
+      SEPARATION: "separation",
+    });
+    assert.deepEqual(DeviceColorSpace, {
+      RGB: "rgb",
+      GRAY: "gray",
+      CMYK: "cmyk",
+    });
+    assert.ok(Object.isFrozen(Recipe.Colorspace));
+    assert.ok(Object.isFrozen(DeviceColorSpace));
   });
 
   it("rejects unknown colorspaces", async function () {
