@@ -4528,6 +4528,17 @@ declare namespace muhammara {
       endAngle?: number,
       options?: Recipe.EllipseOptions,
     ): Recipe;
+    /**
+     * Draw a closed sector of a circle.
+     * @param x - the x coordinate of the pie center point
+     * @param y - the y coordinate of the pie center point
+     * @param radius - the distance from the center point to the arc
+     * @param startAngle - the start of the arc in degree units; defaults to 0.
+     * @param endAngle - the end of the arc in degree units; defaults to 360.
+     * @param options - The path options.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     pie(
       x: Recipe.RecipeCoordinate,
       y: Recipe.RecipeCoordinate,
