@@ -992,6 +992,12 @@ export function createReaderFactory({
         var page = module._muhammara_wasm_reader_parse_page(reader, index);
         if (!page) throw new RangeError(`Unable to read page ${index}`);
 
+        /**
+         * Reads a page box by the page export's box code.
+         * @param {number} box - 0 media, 1 crop, 2 trim, 3 bleed, 4 art.
+         * @returns {PDFRectangle} The box.
+         * @throws {Error} If the reader has ended or the box cannot be read.
+         */
         function getBox(box) {
           requireReader();
           var resultPointer = module._malloc(32);
