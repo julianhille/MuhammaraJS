@@ -269,6 +269,14 @@ async function createRuntime(options) {
     ByteWriterWithPosition,
     PDFRStreamForBuffer,
     PDFWStreamForBuffer,
+    /**
+     * Registers font bytes for `getFontForBytes()`; a name registered again is replaced.
+     * @param {string} name - Non-empty font name.
+     * @param {ByteSource} bytes - Font bytes.
+     * @returns {string} The virtual path of the font.
+     * @throws {TypeError} If `name` is empty or the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerFont: function (name, bytes) {
       requireAssetName(name);
       bytes = normalizeBytes(bytes, "Font bytes");
