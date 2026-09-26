@@ -1421,6 +1421,13 @@ export interface PDFXrefEntry {
   revision: number;
   type: XrefEntryType;
 }
+/** Media box, rotation, and unrotated size read by `PDFReader#getPageInfo()`. */
+export interface PDFPageGeometry {
+  mediaBox: PDFRectangle;
+  rotate: number;
+  width: number;
+  height: number;
+}
 export interface PDFReader {
   getPagesCount(): number;
   getPageObjectID(index: number): number;
@@ -1472,12 +1479,7 @@ export interface PDFReader {
   getParserStream(): PositionedPDFByteReader;
   /** Available on readers obtained from a document copying context. */
   getSourceDocumentStream(): PositionedPDFByteReader;
-  getPageInfo(index: number): {
-    mediaBox: PDFRectangle;
-    rotate: number;
-    width: number;
-    height: number;
-  };
+  getPageInfo(index: number): PDFPageGeometry;
   getPageBox(index: number, box?: PageBox): PDFRectangle;
   end(): this;
 }

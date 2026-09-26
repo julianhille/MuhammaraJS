@@ -1363,8 +1363,17 @@ export function createReaderFactory({
           },
         };
       },
+      /**
+       * Reads a page's media box and rotation.
+       * @param {number} index - Zero-based page index.
+       * @returns {PDFPageGeometry} The media box, rotation, and unrotated size.
+       * @throws {TypeError} If `index` is not a non-negative integer.
+       * @throws {RangeError} If the page does not exist.
+       * @throws {Error} If the reader has ended.
+       */
       getPageInfo: function (index) {
         requireReader();
+        requireIndex(index, "Page index");
         var resultPointer = module._malloc(40);
         try {
           if (

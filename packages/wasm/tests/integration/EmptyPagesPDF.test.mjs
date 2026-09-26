@@ -69,6 +69,8 @@ describe("EmptyPagesPDF", function () {
       height: 842,
     });
     assert.deepEqual(reader.getPageBox(0, "crop"), [0, 0, 595, 842]);
+    assert.throws(() => reader.getPageInfo(0.5), /Page index/);
+    assert.throws(() => reader.getPageInfo("0"), /Page index/);
     reader.end();
     var version20Writer = muhammara.createWriter({
       version: muhammara.ePDFVersion20,

@@ -7,6 +7,7 @@ import {
   TextEncoding as TextEncodings,
 } from "../../index.js";
 import type {
+  PDFPageGeometry,
   PDFXrefEntry,
   ObjectReplacementOptions,
   RecipePageLayout,
@@ -973,6 +974,8 @@ async function usesNamedValueSets() {
   dictionaryObjects.writeHexString(readStream);
   var xrefEntry: PDFXrefEntry = parsed.getXrefEntry(1);
   void xrefEntry;
+  var geometry: PDFPageGeometry = parsed.getPageInfo(0);
+  void geometry;
 }
 
 void usesNamedValueSets;
