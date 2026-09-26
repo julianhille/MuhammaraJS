@@ -924,6 +924,12 @@ declare namespace muhammara {
      * @throws {TypeError} If value is not a single number.
      */
     writeNumber(value: number): this;
+    /**
+     * Writes the end of an array.
+     * @param endType - The separator after the array; a space when omitted.
+     * @returns This context.
+     * @throws {TypeError} If endType is given and is not a number.
+     */
     endArray(endType?: ETokenSeparator): this;
     endLine(): this;
     endDictionary(dictionary: DictionaryContext): this;
