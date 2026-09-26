@@ -315,6 +315,10 @@ async function htmlListsExample() {
   }
 }
 
+/**
+ * Builds the browser example for page boxes.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function pageBoxesExample() {
   var muhammara = await createMuhammaraWasm();
   var writer = muhammara.createWriter({ compress: false });
