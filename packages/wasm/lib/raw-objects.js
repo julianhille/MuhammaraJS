@@ -301,6 +301,11 @@ export function createRawObjectsContext({
     function streamContext(stream) {
       var result = {
         _handle: stream,
+        /**
+         * Opens a writer for the stream's content.
+         * @returns {ByteWriteStream} A writer that fails once the stream has ended.
+         * @throws {Error} If the writer has ended, the stream is not active, or no writer is available.
+         */
         getWriteStream: function () {
           requireContext();
           if (activeStream !== stream)
