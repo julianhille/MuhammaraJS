@@ -114,6 +114,18 @@ function boundingBox(coords) {
   return boundBox;
 }
 
+/**
+ * The vertices of a regular polygon, inset by half the line width so the
+ * stroke stays inside the radius. Sets `options.deltaYY` for odd-sided
+ * rotation, and `options.rotationOrigin` when `rotationVertice` is given.
+ * @private
+ * @param {number} sides - The number of sides.
+ * @param {number} cx - The center x.
+ * @param {number} cy - The center y.
+ * @param {number} radius - The distance from the center to a vertex.
+ * @param {Object} [options] - The n_gon() options; updated in place.
+ * @returns {number[][]} The [x, y] vertices.
+ */
 function _n_gon(sides, cx, cy, radius, options = {}) {
   let lineWidth = 0;
 
