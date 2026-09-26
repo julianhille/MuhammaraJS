@@ -2141,6 +2141,14 @@ export function createWriterToModifyFactory({
               if (form._ended)
                 throw new Error("Form XObject content has ended");
             }
+            /**
+             * Applies one numeric content operator to this form.
+             * @param {number} code - Native operator code.
+             * @param {...number} args - Operands; a missing operand is `undefined` and rejected.
+             * @returns {ContentContext} The content context.
+             * @throws {TypeError} If an operand is not finite.
+             * @throws {Error} If the modifier or form ended or the operator fails.
+             */
             function operator(code, ...args) {
               requireFormContent();
               if (!args.every(Number.isFinite))
