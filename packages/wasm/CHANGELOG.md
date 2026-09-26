@@ -14,7 +14,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Export the frozen `LineCapStyle` and `ETokenSeparator` objects that native
   exports, with the same member names, for `J()` and `endArray()` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Export frozen value sets for finite string options, each with a same-named
-  type: `DeviceColorSpace`, `DrawingPathType`, `ImageFitPolicy`, `PageBox`,
+  type: `DeviceColorSpace`, `DrawingPathType`, `ImageFit`, `PageBox`,
   `PDFImageType`, `TextEncoding`, `ObjectReplacementScope`, and the Recipe sets
   `RecipeAnnotationFlag`, `RecipeAnnotationIcon`, `RecipeArrowAnchor`, `RecipeArrowType`, `RecipeFontStyle`,
   `RecipeHorizontalAlignment`, `RecipeLineCap`, `RecipeLineJoin`,

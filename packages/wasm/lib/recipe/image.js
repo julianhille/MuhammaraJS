@@ -1,5 +1,5 @@
 import {
-  ImageFitPolicy,
+  ImageFit,
   RecipeHorizontalAlignment,
   RecipeVerticalAlignment,
 } from "../value-sets.js";
@@ -93,7 +93,7 @@ export function createImageMethods(runtime) {
               width: box.width,
               height: box.height,
               proportional: options.keepAspectRatio !== false,
-              fit: ImageFitPolicy.ALWAYS,
+              fit: ImageFit.ALWAYS,
             },
           },
         );

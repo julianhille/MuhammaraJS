@@ -89,8 +89,8 @@ export declare const DeviceColorSpace: {
 /** Device color spaces Recipe draws with in WebAssembly. */
 export type RecipeDeviceColorSpace = DeviceColorSpace;
 /** How `drawImage()` fits an image: always scale, or only shrink when it overflows. */
-export type ImageFitPolicy = "always" | "overflow";
-export declare const ImageFitPolicy: {
+export type ImageFit = "always" | "overflow";
+export declare const ImageFit: {
   readonly ALWAYS: "always";
   readonly OVERFLOW: "overflow";
 };
@@ -1030,7 +1030,7 @@ export interface DrawImageOptions {
         width: number;
         height: number;
         proportional?: boolean;
-        fit?: ImageFitPolicy;
+        fit?: ImageFit;
       };
 }
 export interface TIFFOptions {

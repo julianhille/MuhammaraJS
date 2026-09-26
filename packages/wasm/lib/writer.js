@@ -1,6 +1,6 @@
 import { createChildLifecycle } from "./lifecycle.js";
 import {
-  ImageFitPolicy,
+  ImageFit,
   PageBox,
   PDFImageType,
   RegisteredImageFormat,
@@ -99,7 +99,7 @@ export function createWriterSupport({
    * @returns {object} `index`, `method` (0 none, 1 matrix, 2 fit), `matrix`,
    * `width`, `height`, `proportional`, and native `fit` (0 always, 1 overflow).
    * @throws {TypeError} If an option is unknown, a Node-only option is passed, or
-   * a value has the wrong type or is not an ImageFitPolicy.
+   * a value has the wrong type or is not an ImageFit.
    * @throws {RangeError} If `index` is not a 32-bit unsigned integer or the fit box is not positive.
    */
   function imageDrawOptions(options) {
@@ -193,7 +193,7 @@ export function createWriterSupport({
     }
     if (
       transformation.fit !== undefined &&
-      !Object.values(ImageFitPolicy).includes(transformation.fit)
+      !Object.values(ImageFit).includes(transformation.fit)
     ) {
       throw new TypeError("drawImage fit must be always or overflow");
     }
@@ -201,7 +201,7 @@ export function createWriterSupport({
     result.width = transformation.width;
     result.height = transformation.height;
     result.proportional = transformation.proportional || false;
-    result.fit = transformation.fit === ImageFitPolicy.ALWAYS ? 0 : 1;
+    result.fit = transformation.fit === ImageFit.ALWAYS ? 0 : 1;
     return result;
   }
 

@@ -11,7 +11,7 @@ export var DeviceColorSpace = Object.freeze({
 });
 
 /** How `drawImage()` fits an image into its bounding box. */
-export var ImageFitPolicy = Object.freeze({
+export var ImageFit = Object.freeze({
   ALWAYS: "always",
   OVERFLOW: "overflow",
 });

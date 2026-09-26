@@ -1,4 +1,4 @@
-import { ImageFitPolicy, RecipeStructureFormat } from "../value-sets.js";
+import { ImageFit, RecipeStructureFormat } from "../value-sets.js";
 import { constants } from "../constants.js";
 import { endActivePage } from "./page.js";
 
@@ -175,7 +175,7 @@ export function createCompositionMethods({
               width,
               height,
               proportional: options.keepAspectRatio !== false,
-              fit: ImageFitPolicy.ALWAYS,
+              fit: ImageFit.ALWAYS,
             },
           },
         );

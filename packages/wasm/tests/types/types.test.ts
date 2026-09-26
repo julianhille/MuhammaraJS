@@ -7,7 +7,7 @@ import {
   createMuhammaraWasm,
   createRecipe,
   DeviceColorSpace as DeviceColorSpaces,
-  ImageFitPolicy as ImageFitPolicies,
+  ImageFit as ImageFitPolicies,
   PageBox as PageBoxes,
   TextEncoding as TextEncodings,
 } from "../../index.js";
@@ -28,7 +28,7 @@ import type {
   PageBox,
   PDFRectangle,
   PDFPageBoxType,
-  ImageFitPolicy,
+  ImageFit,
   DeviceColorSpace,
   PageRangeOptions,
   ERangeType,
@@ -893,7 +893,7 @@ async function usesNamedValueSets() {
   context.drawRectangle(0, 0, 1, 1, { color: 0, colorspace: drawColorspace });
   // @ts-expect-error Colorspaces are rgb, gray, or cmyk.
   context.drawRectangle(0, 0, 1, 1, { color: 0, colorspace: "hsl" });
-  var fitPolicy: ImageFitPolicy = "overflow";
+  var fitPolicy: ImageFit = "overflow";
   context.drawImage(0, 0, "logo", {
     transformation: { width: 10, height: 10, fit: fitPolicy },
   });
@@ -919,7 +919,7 @@ async function usesNamedValueSets() {
   // @ts-expect-error Page boxes are media, crop, bleed, trim, or art.
   parsed.getPageBox(0, "page");
   var exportedColorspace: DeviceColorSpace = DeviceColorSpaces.CMYK;
-  var exportedFit: ImageFitPolicy = ImageFitPolicies.OVERFLOW;
+  var exportedFit: ImageFit = ImageFitPolicies.OVERFLOW;
   var exportedBox: PageBox = PageBoxes.TRIM;
   var exportedEncoding: TextEncoding = TextEncodings.HEX;
   void [exportedColorspace, exportedFit, exportedBox, exportedEncoding];

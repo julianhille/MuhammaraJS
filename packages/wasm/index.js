@@ -24,7 +24,7 @@ import { createRecipeFactory } from "./lib/recipe.js";
 import { createRecrypt } from "./lib/recrypt.js";
 import {
   DeviceColorSpace,
-  ImageFitPolicy,
+  ImageFit,
   PageBox,
   TextEncoding,
   DrawingPathType,
@@ -59,7 +59,7 @@ export {
   DeviceColorSpace,
   DrawingPathType,
   ETokenSeparator,
-  ImageFitPolicy,
+  ImageFit,
   LineCapStyle,
   ObjectReplacementScope,
   PageBox,

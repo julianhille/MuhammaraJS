@@ -4,7 +4,7 @@ import {
   DeviceColorSpace,
   DrawingPathType,
   ETokenSeparator,
-  ImageFitPolicy,
+  ImageFit,
   LineCapStyle,
   ObjectReplacementScope,
   PageBox,
@@ -134,7 +134,7 @@ describe("EmptyPagesPDF", function () {
 // Every exported value set and the string values it must carry.
 var EXPORTED_VALUE_SETS = [
   [DeviceColorSpace, ["rgb", "gray", "cmyk"]],
-  [ImageFitPolicy, ["always", "overflow"]],
+  [ImageFit, ["always", "overflow"]],
   [PageBox, ["media", "crop", "bleed", "trim", "art"]],
   [TextEncoding, ["text", "code", "hex"]],
   [DrawingPathType, ["stroke", "fill", "clip"]],
