@@ -121,6 +121,13 @@ export function createRawObjectsContext({
           });
           return this;
         },
+        /**
+         * Writes a name value.
+         * @param {string} value - Name without the leading slash.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `value` is not a string.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeNameValue: function (value) {
           if (typeof value !== "string")
             throw new TypeError("Name value must be a string");
