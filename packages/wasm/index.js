@@ -286,6 +286,15 @@ async function createRuntime(options) {
       replaceAsset(fonts, name, path);
       return path;
     },
+    /**
+     * Registers font bytes after reading an asynchronous byte source.
+     * @async
+     * @param {string} name - Non-empty font name.
+     * @param {AsyncByteSource} bytes - Font bytes, Blob, or File.
+     * @returns {Promise<string>} The virtual path of the font.
+     * @throws {TypeError} If `name` is empty or the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerFontAsync: async function (name, bytes) {
       return this.registerFont(
         name,
