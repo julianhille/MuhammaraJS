@@ -1263,6 +1263,10 @@ const Kite = class Kite {
   get K() {
     return [this._K.x, this._K.y];
   }
+  /**
+   * Point I, the head tip.
+   * @returns {number[]} The [x, y] point.
+   */
   get I() {
     return [this._I.x, this._I.y];
   }
