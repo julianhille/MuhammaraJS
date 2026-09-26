@@ -175,6 +175,10 @@ exports.Line = class Line {
     return this.wordObjects[this.wordObjects.length - 1];
   }
 
+  /**
+   * @param {string} text - The text.
+   * @returns {number} The width character spacing adds to the text.
+   */
   charSpacing(text) {
     return charSpacing(text, this._pathOptions.charSpace);
   }
