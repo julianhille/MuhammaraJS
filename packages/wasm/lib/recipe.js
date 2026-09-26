@@ -1,3 +1,4 @@
+import { DeviceColorSpace } from "./value-sets.js";
 import { coordinateMethods } from "./recipe/coordinate.js";
 import {
   colorModel,
@@ -44,7 +45,11 @@ import { standardInfoKeys } from "./recipe-info.js";
  */
 function textColor(model) {
   return {
-    space: ["gray", "rgb", "cmyk"].indexOf(model.colorspace),
+    space: [
+      DeviceColorSpace.GRAY,
+      DeviceColorSpace.RGB,
+      DeviceColorSpace.CMYK,
+    ].indexOf(model.colorspace),
     value: model.values.reduce(
       (packed, component) => packed * 256 + Math.round(component * 255),
       0,
