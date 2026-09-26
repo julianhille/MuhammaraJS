@@ -50,7 +50,15 @@ export function createVectorMethods(runtime) {
     }
   }
 
-  /** Paints a nominal fill and a shape-specific inset stroke. */
+  /**
+   * Paints a nominal fill and a shape-specific inset stroke.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {object} options - Shape options.
+   * @param {number} x - Rotation origin x.
+   * @param {number} y - Rotation origin y.
+   * @param {function(number): void} drawPath - Emits the path inset by the given amount.
+   * @returns {Recipe} The Recipe instance.
+   */
   function paintInsetShape(recipe, options, x, y, drawPath) {
     var fill = options.fill;
     var stroke = options.stroke || options.color || options.colour;
