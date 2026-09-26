@@ -17,6 +17,7 @@ describe("Recipe prototype", function () {
       "_createExtGStates",
       "_createWriter",
       "_deletePages",
+      "_devicePathOptions",
       "_drawObject",
       "_encrypt",
       "_endDictionary",

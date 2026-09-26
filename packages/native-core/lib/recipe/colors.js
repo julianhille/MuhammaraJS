@@ -61,7 +61,7 @@ this.knownColors = {
  * @throws {Error} If the file to load cannot be read or is not valid JSON.
  * @throws {Error} If a loaded color definition has an unrecognized colorspace.
  * @throws {Error} If a color value has an invalid size.
- * @throws {Error} If the colorspace is unknown.
+ * @throws {TypeError} If the colorspace is unknown.
  */
 exports.chroma = function chroma(name, value, colorspace = "") {
   if (name) {
@@ -102,7 +102,7 @@ exports.chroma = function chroma(name, value, colorspace = "") {
         };
         colorspace = colorSpaces[`${value.length}`];
       } else if (!Object.values(Colorspace).includes(colorspace)) {
-        throw new Error(`Unknown colorspace: ${colorspace}.`);
+        throw new TypeError(`Unknown colorspace: ${colorspace}`);
       }
 
       if (colorspace) {
@@ -348,9 +348,13 @@ function percentToHex(code) {
  * @param {string} [opt.colorName] - The name to record the color under.
  * @returns {number|Object} The color as a number, or the color model when
  *   `opt.wantColorModel` is set. Invalid values fall back to the default color.
+ * @throws {TypeError} If `opt.colorspace` is not a `Recipe.Colorspace` value.
  */
 exports._transformColor = function _transformColor(code = "", opt = {}) {
   this.knownColors = this.knownColors || {};
+  if (opt.colorspace && !Object.values(Colorspace).includes(opt.colorspace)) {
+    throw new TypeError(`Unknown colorspace: ${opt.colorspace}`);
+  }
   let colorspace = opt.colorspace || Colorspace.RGB;
   let wantColorModel = opt.wantColorModel || false;
   let colorName = opt.colorName || "";

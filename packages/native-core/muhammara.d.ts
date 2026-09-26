@@ -341,8 +341,8 @@ declare namespace muhammara {
     (typeof DeviceColorSpace)[keyof typeof DeviceColorSpace];
 
   export interface ColorOptions {
-    /** A DeviceColorSpace value; other strings are accepted for compatibility. */
-    colorspace?: DeviceColorSpace | (string & {});
+    /** A DeviceColorSpace value. */
+    colorspace?: DeviceColorSpace;
     color?: string | number;
   }
 
@@ -1066,8 +1066,6 @@ declare namespace muhammara {
 
   export interface WriteTextOptions extends FontOptions, ColorOptions {
     underline?: boolean;
-    strikeOut?: boolean;
-    lineWidth?: number;
   }
 
   export interface XObjectContentContext extends AbstractContentContext {}
@@ -1898,7 +1896,7 @@ declare namespace muhammara {
      * @throws {TypeError} If the dictionary was not obtained from a document
      *   context.
      */
-    getAdditionalInfoEntries(key?: string): { [key: string]: string };
+    getAdditionalInfoEntries(): { [key: string]: string };
     /**
      * Sets the creation date.
      * @param date - The date, a PDF date string, or a PDFDate to copy.
@@ -2981,17 +2979,15 @@ declare namespace muhammara {
      * Passes a colorspace argument through when it is valid, and otherwise
      * resolves to the accepted set so the compiler names the valid values
      * instead of reporting the bare `never` the optional parameter would
-     * collapse to. A plain `string` stays accepted for runtime-computed values.
+     * collapse to.
      */
     type ValidColorspace<Value extends string | undefined> = [Value] extends [
       undefined,
     ]
       ? Value
-      : string extends Exclude<Value, undefined>
+      : Exclude<Value, undefined> extends Colorspace | ""
         ? Value
-        : Exclude<Value, undefined> extends Colorspace | ""
-          ? Value
-          : Colorspace | "";
+        : Colorspace | "";
     type ExtensionCallback<
       Arguments extends unknown[] = never[],
       Result = unknown,
@@ -3618,6 +3614,8 @@ declare namespace muhammara {
     interface RectangleOptions
       extends DrawingOptions, TransformOptions, LinkFillOptions {
       borderRadius?: BorderRadius;
+      /** Take `x` and `y` as PDF coordinates of the bottom-left corner instead of Recipe top-left coordinates. */
+      useGivenCoords?: boolean;
     }
 
     interface LineStyleOptions {
@@ -4077,7 +4075,14 @@ declare namespace muhammara {
      *   A new PDF has no existing information, so the call without options returns undefined.
      * @throws {Error} If the source information cannot be read.
      */
-    info(options?: Recipe.InfoOptions): Recipe;
+    info(options: Recipe.InfoOptions): Recipe;
+    /**
+     * Read the existing information dictionary of the source PDF.
+     * @returns The information keyed by lower-cased entry name, or undefined
+     *   for a new PDF or a source without an Info dictionary.
+     * @throws {Error} If the source information cannot be read.
+     */
+    info(): Record<string, string> | undefined;
 
     /**
      * @param key - The key
@@ -4603,6 +4608,7 @@ declare namespace muhammara {
      * The numbering starts from the top, left corner, and goes clockwise around the text box.
      * Missing values in the array are filled in by opposite corner values.
      * @param options.link - Make the rectangle open this URL.
+     * @param options.useGivenCoords - Take x and y as PDF coordinates of the bottom-left corner.
      * @returns The recipe instance.
      * @throws {TypeError} If no page is active.
      */
@@ -4893,7 +4899,7 @@ declare namespace muhammara {
      * @throws {Error} If the file to load cannot be read or is not valid JSON.
      * @throws {Error} If a loaded color definition has an unrecognized colorspace.
      * @throws {Error} If a color value has an invalid size.
-     * @throws {Error} If the colorspace is unknown.
+     * @throws {TypeError} If the colorspace is unknown.
      */
     chroma<ColorspaceValue extends string | undefined = undefined>(
       name: string,

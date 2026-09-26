@@ -49,6 +49,23 @@ describe("Recipe colors, shapes, and images", function () {
     reader.end();
   });
 
+  it("rejects unknown colorspaces", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe().createPage(300, 300);
+    var unknown = { name: "TypeError", message: "Unknown colorspace: lab" };
+    assert.throws(() => recipe.chroma("brand", "#ff0000", "lab"), unknown);
+    assert.throws(
+      () => recipe.text("Lab", 10, 10, { color: "#ff0000", colorspace: "lab" }),
+      unknown,
+    );
+    assert.throws(
+      () =>
+        recipe.rectangle(10, 10, 20, 20, { fill: "brand", colorspace: "lab" }),
+      unknown,
+    );
+    recipe.endPage().endPDF();
+  });
+
   it("places registered byte images with fit, alignment, transforms, and reuse", async function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe({ compress: false }).createPage(300, 300);
