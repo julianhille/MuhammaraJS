@@ -493,7 +493,11 @@ export function createWriterSupport({
   };
 }
 
-/** Creates the low-level PDF writer factory. */
+/**
+ * Creates the low-level PDF writer factory.
+ * @param {object} dependencies - Module, constants, value types, and shared helpers.
+ * @returns {object} Writer factory; its `createWriter(options)` opens a writer.
+ */
 export function createWriterFactory({
   module,
   constants,
