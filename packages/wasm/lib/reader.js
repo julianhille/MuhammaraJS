@@ -500,6 +500,14 @@ export function createReaderFactory({
       return object;
     }
 
+    /**
+     * Opens a byte reader over a stream's content.
+     * @param {PDFStreamInput} stream - Stream parsed by this reader.
+     * @param {boolean} plainCopying - Whether to read the raw, still encoded bytes.
+     * @returns {PDFByteReader} The byte reader.
+     * @throws {TypeError} If `stream` is not a stream from this reader.
+     * @throws {Error} If the reader has ended or the stream cannot be read.
+     */
     function startReadingFromStream(stream, plainCopying) {
       requireReader();
       if (
