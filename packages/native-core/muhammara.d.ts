@@ -1205,6 +1205,10 @@ declare namespace muhammara {
   }
 
   export interface PDFObject {
+    /**
+     * Returns the object type.
+     * @returns The type, one of the ePDFObject* constants.
+     */
     getType(): PDFObjectType;
     toPDFIndirectObjectReference(): PDFIndirectObjectReference | undefined;
     toPDFArray(): PDFArray | undefined;
