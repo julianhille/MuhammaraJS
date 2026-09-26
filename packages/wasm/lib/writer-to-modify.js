@@ -261,6 +261,11 @@ export function createWriterToModifyFactory({
           if (!page) throw new Error("Form XObject has no associated page");
           return page;
         },
+        /**
+         * Returns the page content stream being written.
+         * @returns {PDFStream} The stream; `getWriteStream()` exposes a byte writer.
+         * @throws {Error} If the content context is no longer active.
+         */
         getCurrentPageContentStream: function () {
           requireContext(result);
           if (!page) throw new Error("Form XObject has no page content stream");
