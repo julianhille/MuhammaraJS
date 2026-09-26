@@ -62,6 +62,11 @@ PDFRStreamForBuffer.prototype.setPositionFromEnd = function (inPosition) {
   );
 };
 
+/**
+ * Advances the position without reading.
+ * @param {number} inAmount - The number of bytes to skip.
+ * @returns {void}
+ */
 PDFRStreamForBuffer.prototype.skip = function (inAmount) {
   this.rposition += inAmount;
 };
