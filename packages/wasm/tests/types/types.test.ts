@@ -25,7 +25,7 @@ import type {
   PDFPageBoxType,
   ImageFitPolicy,
   DeviceColorSpace,
-  ImageType,
+  PDFImageType,
   PageRangeOptions,
   ERangeType,
   XrefEntryType,
@@ -872,19 +872,18 @@ async function usesNamedValueSets() {
     specificRanges: [[0, 0]],
   };
   void [rangeType, ranges];
-  var imageType: ImageType | undefined = writer.getImageType("logo");
+  var imageType: PDFImageType | undefined = writer.getImageType("logo");
   void imageType;
-  var asyncImageType: Promise<ImageType | undefined> = writer.getImageTypeAsync(
-    new Uint8Array(),
-  );
+  var asyncImageType: Promise<PDFImageType | undefined> =
+    writer.getImageTypeAsync(new Uint8Array());
   void asyncImageType;
   var modifierForTypes = muhammara.createWriterToModify(
     muhammara.createBlankPdf(10, 10),
   );
-  var modifierImageType: ImageType | undefined =
+  var modifierImageType: PDFImageType | undefined =
     modifierForTypes.getImageType("logo");
   void modifierImageType;
-  var modifierAsyncImageType: Promise<ImageType | undefined> =
+  var modifierAsyncImageType: Promise<PDFImageType | undefined> =
     modifierForTypes.getImageTypeAsync(new Uint8Array());
   void modifierAsyncImageType;
   var drawColorspace: DeviceColorSpace = "cmyk";

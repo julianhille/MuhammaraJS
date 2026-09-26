@@ -951,7 +951,7 @@ export type ProcsetName = "ImageB" | "ImageC" | "ImageI" | "PDF" | "Text";
 /** Page range selection kind: the `eRangeType*` constants. */
 export type ERangeType = 0 | 1;
 /** Image or document format reported by `getImageType()`. */
-export type ImageType = "PDF" | "JPG" | "TIFF" | "PNG";
+export type PDFImageType = "PDF" | "JPG" | "TIFF" | "PNG";
 /** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
 export type LineJoinStyle = 0 | 1 | 2;
 /**
@@ -1587,8 +1587,8 @@ export interface PDFWriter {
     image: AsyncByteSource,
     imageIndex?: number,
   ): Promise<ImageDimensions>;
-  getImageType(image: string | ByteSource): ImageType | undefined;
-  getImageTypeAsync(image: AsyncByteSource): Promise<ImageType | undefined>;
+  getImageType(image: string | ByteSource): PDFImageType | undefined;
+  getImageTypeAsync(image: AsyncByteSource): Promise<PDFImageType | undefined>;
   getImagePagesCount(image: string | ByteSource): number;
   getImagePagesCountAsync(image: AsyncByteSource): Promise<number>;
   retrieveJPGImageInformation(image: string | ByteSource): JPGImageInformation;
@@ -1821,8 +1821,8 @@ export interface PDFModifier {
     image: AsyncByteSource,
     imageIndex?: number,
   ): Promise<ImageDimensions>;
-  getImageType(image: string | ByteSource): ImageType | undefined;
-  getImageTypeAsync(image: AsyncByteSource): Promise<ImageType | undefined>;
+  getImageType(image: string | ByteSource): PDFImageType | undefined;
+  getImageTypeAsync(image: AsyncByteSource): Promise<PDFImageType | undefined>;
   getImagePagesCount(image: string | ByteSource): number;
   getImagePagesCountAsync(image: AsyncByteSource): Promise<number>;
   retrieveJPGImageInformation(image: string | ByteSource): JPGImageInformation;
