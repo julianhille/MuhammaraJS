@@ -58,6 +58,11 @@ function textColor(model) {
   };
 }
 
+/**
+ * Creates the high-level Recipe PDF composition factory.
+ * @param {object} dependencies - Module, default font, byte helpers, and low-level factories.
+ * @returns {Function} The Recipe class.
+ */
 export function createRecipeFactory({
   defaultFont,
   module,
