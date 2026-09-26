@@ -145,6 +145,14 @@ function showResult() {
   download.hidden = false;
 }
 
+/**
+ * Runs an example in a module Worker.
+ * @param {import("./lifecycle.mjs").ExampleAssets} byteAssets - Assets to transfer.
+ * @param {string} selectedExample - Example id.
+ * @returns {Promise<object>} The example result.
+ * @throws {DOMException} If the run is cancelled.
+ * @throws {Error} If the Worker reports an error.
+ */
 function runInWorker(byteAssets, selectedExample) {
   return new Promise((resolve, reject) => {
     var worker = new Worker("./example-worker.mjs", { type: "module" });
