@@ -535,6 +535,14 @@ export function createWriterFactory({
   removeFile,
   assertOutputSize,
 }) {
+  /**
+   * Opens an in-memory PDF writer.
+   * @param {WriterOptions} [options={}] - PDF version and stream compression.
+   * @returns {PDFWriter} The writer; call `end()` for the bytes or `dispose()` to discard it.
+   * @throws {TypeError} If `options` is not an object or `compress` is not a boolean.
+   * @throws {RangeError} If `version` is not a supported `ePDFVersion*` constant.
+   * @throws {Error} If the native writer cannot be created.
+   */
   function createWriter(options = {}) {
     if (!options || typeof options !== "object") {
       throw new TypeError("createWriter options must be an object");
