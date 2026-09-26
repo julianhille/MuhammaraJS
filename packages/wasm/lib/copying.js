@@ -16,6 +16,13 @@ export function createCopyingHelpers({ module }) {
     }
 
     return {
+      /**
+       * Copies a source object, and the objects it references, into the output.
+       * @param {number} sourceObjectId - Object ID in the source document.
+       * @returns {number} Object ID of the copy in the output.
+       * @throws {RangeError} If the ID is not an unsigned 32-bit integer or the object cannot be copied.
+       * @throws {Error} If the copying context has ended.
+       */
       copyObject: function (sourceObjectId) {
         requireCopying();
         requireObjectId(sourceObjectId, "Source object ID");
