@@ -1886,6 +1886,13 @@ export function createWriterFactory({
         );
       }
 
+      /**
+       * Reads vertical metrics scaled to a font size.
+       * @param {number} [size=1] - Positive font size.
+       * @returns {FontMetrics} Pixels per em, ascender, descender, height, and maximum advance.
+       * @throws {TypeError} If the writer ended or `size` is not positive.
+       * @throws {Error} If the metrics cannot be read.
+       */
       getFontMetrics(size = 1) {
         if (ended || !Number.isFinite(size) || size <= 0) {
           throw new TypeError("A positive font size is required");
