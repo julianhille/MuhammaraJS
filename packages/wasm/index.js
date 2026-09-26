@@ -186,6 +186,12 @@ async function createRuntime(options) {
     registry.set(name, path);
     if (previous && previous !== path) helpers.removeFile(previous);
   }
+  /**
+   * Removes a registered asset and its file.
+   * @param {Map<string, string>} registry - Font, image, or PDF registry.
+   * @param {string} name - Asset name.
+   * @returns {boolean} Whether an asset was removed.
+   */
   function unregisterAsset(registry, name) {
     var path = registry.get(name);
     if (!path) return false;
