@@ -541,6 +541,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     cs(colorSpaceName: string): this;
+    /**
+     * Sets the stroke color in the current color space; operator SC.
+     * @param colorComponents - The components, each 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If no component is given.
+     * @throws {TypeError} If there is no content context.
+     */
     SC(...colorComponents: number[]): this;
     SCN(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////SCN(...colorComponents: number[], patternName?: string): this;
