@@ -702,8 +702,8 @@ export function createWriterFactory({
         h: function () {
           return operator("h", 15);
         },
-        cm: function (...args) {
-          return operator("cm", 19, args);
+        cm: function (a, b, c, d, e, f) {
+          return operator("cm", 19, [a, b, c, d, e, f]);
         },
         J: function (value) {
           if (!Number.isInteger(value) || value < 0 || value > 2) {
@@ -1402,8 +1402,8 @@ export function createWriterFactory({
           Q: function () {
             return operator("Q", 18);
           },
-          cm: function (...args) {
-            return operator("cm", 19, args);
+          cm: function (a, b, c, d, e, f) {
+            return operator("cm", 19, [a, b, c, d, e, f]);
           },
           Tc: function (characterSpace) {
             return operator("Tc", 35, [characterSpace]);

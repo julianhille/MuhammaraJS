@@ -273,8 +273,8 @@ export function createWriterToModifyFactory({
         Q: function () {
           return operator("Q", 18);
         },
-        cm: function (...args) {
-          return operator("cm", 19, args);
+        cm: function (a, b, c, d, e, f) {
+          return operator("cm", 19, [a, b, c, d, e, f]);
         },
         w: function (value) {
           return operator("w", 20, [value]);
@@ -1447,7 +1447,7 @@ export function createWriterToModifyFactory({
               ["M", 23],
               ["W", 30],
               ["WStar", 31],
-              ["cm", 19],
+              ["cm", 19, 6],
               ["Tm", 34],
               ["Tc", 35],
               ["Tw", 36],
