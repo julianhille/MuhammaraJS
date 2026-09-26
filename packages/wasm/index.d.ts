@@ -1509,7 +1509,7 @@ export interface PDFWriter {
   endFormXObject(form: FormXObject): this;
   createFormXObjectsFromPDF(
     source: string | ByteSource,
-    pageBox?: number | PDFRectangle,
+    pageBox?: PDFPageBoxType | PDFRectangle,
     options?: PDFFormOptions,
   ): number[];
   createFormXObjectsFromPDFAsync(

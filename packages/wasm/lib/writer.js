@@ -1,5 +1,6 @@
 import { createChildLifecycle } from "./lifecycle.js";
 import { ImageFitPolicy } from "./value-sets.js";
+import { isPageBoxType } from "./constants.js";
 import {
   readTextOptions,
   validateDrawingGeometry,
@@ -2480,7 +2481,7 @@ export function createWriterFactory({
           cropBox = pageBox;
           pageBox = constants.ePDFPageBoxMediaBox;
         }
-        if (!Number.isInteger(pageBox) || pageBox < 0 || pageBox > 4) {
+        if (!isPageBoxType(pageBox)) {
           throw new RangeError("A valid page box is required");
         }
         if (!options || typeof options !== "object" || Array.isArray(options)) {

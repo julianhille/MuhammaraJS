@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  PDFPageBoxType,
   ImageFitPolicy,
   DeviceColorSpace,
   ImageType,
@@ -875,6 +876,10 @@ async function usesNamedValueSets() {
   context.BT().Tj("text", { encoding: "hex" }).ET();
   // @ts-expect-error Encodings are text, code, or hex.
   context.Tj("text", { encoding: "utf8" });
+  var cropBox: PDFPageBoxType = muhammara.ePDFPageBoxCropBox;
+  writer.createFormXObjectsFromPDF("source", cropBox);
+  // @ts-expect-error Page boxes are the ePDFPageBox constants.
+  writer.createFormXObjectsFromPDF("source", 5);
 }
 
 void usesNamedValueSets;

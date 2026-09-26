@@ -71,3 +71,18 @@ export var constants = {
     return labels[type];
   },
 };
+
+/**
+ * Checks whether a value is one of the `ePDFPageBox*` constants.
+ * @param {*} value - Candidate page box.
+ * @returns {boolean} Whether `value` selects a page box.
+ */
+export function isPageBoxType(value) {
+  return [
+    constants.ePDFPageBoxMediaBox,
+    constants.ePDFPageBoxCropBox,
+    constants.ePDFPageBoxBleedBox,
+    constants.ePDFPageBoxTrimBox,
+    constants.ePDFPageBoxArtBox,
+  ].includes(value);
+}
