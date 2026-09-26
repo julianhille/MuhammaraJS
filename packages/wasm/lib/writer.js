@@ -279,6 +279,13 @@ export function createWriterSupport({
       }
     }
     return {
+      /**
+       * Adds a procedure set name to `/ProcSet`.
+       * @param {ProcsetName} name - Procedure set, such as `KProcsetText`.
+       * @returns {void}
+       * @throws {TypeError} If `name` is not a non-empty string.
+       * @throws {Error} If the owner is closed or the procset cannot be added.
+       */
       addProcsetResource: function (name) {
         requireOpen();
         if (typeof name !== "string" || !name) {
