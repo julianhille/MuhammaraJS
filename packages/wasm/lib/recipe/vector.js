@@ -4,6 +4,16 @@
  * @returns {object} Methods mixed into Recipe.prototype.
  */
 export function createVectorMethods(runtime) {
+  /**
+   * Adds a link over a shape when `options.link` is set.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {object} options - Shape options; `useGivenCoords` selects PDF coordinates.
+   * @param {number} x - Left.
+   * @param {number} y - Top, or bottom for PDF coordinates.
+   * @param {number} width - Width.
+   * @param {number} height - Height.
+   * @returns {void}
+   */
   function addLink(recipe, options, x, y, width, height) {
     if (!options.link) return;
     if (options.useGivenCoords)
