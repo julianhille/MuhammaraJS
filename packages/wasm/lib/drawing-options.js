@@ -86,7 +86,13 @@ export function finishDrawingPath(context, options) {
   return context.n();
 }
 
-/** Snapshot text options, including underline accessors, before BT. */
+/**
+ * Snapshots text options, including underline accessors, before `BT`.
+ * @param {WriteTextOptions} options - Font, size, color, and underline.
+ * @param {function(*): number} colorValue - Converts a color option to a number.
+ * @returns {object} `font`, `size`, `underline`, and the color, or `options` itself when it is not an object.
+ * @throws {TypeError} If the color or color space is invalid.
+ */
 export function readTextOptions(options, colorValue) {
   if (!options || typeof options !== "object") return options;
   var font = options.font;
