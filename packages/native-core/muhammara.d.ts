@@ -568,6 +568,14 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     sc(...colorComponents: number[]): this;
+    /**
+     * Sets the fill color, optionally with a pattern; operator scn. Pass the
+     * components as arguments or as one array, then an optional pattern name.
+     * @param parameters - The components and an optional pattern name.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are neither components nor components and a pattern name.
+     * @throws {TypeError} If there is no content context.
+     */
     scn(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////scn(...colorComponents: number[], patternName?: string): this;
     scn(colorComponents: number[], patternName?: string): this;
