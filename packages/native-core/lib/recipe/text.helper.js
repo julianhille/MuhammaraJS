@@ -337,7 +337,10 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
  * @param {string} [options.font='helvetica'] - name of font from which measurements are to be taken
  * @param {number} [options.size=14] - size of font to be used in taking measurements
  * @param {number} [options.charSpace=0] - character spacing being applied to the given text.
+ * @param {boolean} [options.bold] - Measure with the bold style of the font.
+ * @param {boolean} [options.italic] - Measure with the italic style of the font.
  * @returns {Object} measurement components of given text: width, height, xMin, xMax, yMin, yMax
+ * @throws {Error} If the font file cannot be loaded.
  */
 exports.textDimensions = function textDimensions(text, options = {}) {
   const font = this._getFont(options);
