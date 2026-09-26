@@ -3321,6 +3321,11 @@ export function createWriterToModifyFactory({
               options,
             );
           },
+          /**
+           * Ends the content context; call `writePage()` afterwards.
+           * @returns {this} The page modifier.
+           * @throws {Error} If the modifier ended, the context is not active, or it cannot be ended.
+           */
           endContext: function () {
             requireOpen();
             requireContext(context);
