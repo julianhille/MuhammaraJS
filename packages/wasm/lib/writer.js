@@ -1790,6 +1790,17 @@ export function createWriterFactory({
         );
         return context;
       };
+      /**
+       * Draws an image after reading an asynchronous byte source.
+       * @async
+       * @param {number} x - Left position.
+       * @param {number} y - Bottom position.
+       * @param {string|AsyncByteSource} image - Registered name, bytes, Blob, or File.
+       * @param {DrawImageOptions} [options] - Page index and transformation.
+       * @returns {Promise<this>} Resolves to the content context.
+       * @throws {TypeError} If a coordinate, option, or byte source is invalid.
+       * @throws {Error} If the asset is unknown, the context is inactive, or drawing fails.
+       */
       context.drawImageAsync = async function (x, y, image, options) {
         return context.drawImage(
           x,
