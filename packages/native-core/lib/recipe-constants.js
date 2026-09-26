@@ -275,7 +275,31 @@ var ArrowType = Object.freeze({
   KITE: "kite",
 });
 
+/**
+ * Line cap styles for the `lineCap` options.
+ * @readonly
+ * @enum {string}
+ */
+var LineCap = Object.freeze({
+  BUTT: "butt",
+  ROUND: "round",
+  SQUARE: "square",
+});
+
+/**
+ * Line join styles for the `lineJoin` options.
+ * @readonly
+ * @enum {string}
+ */
+var LineJoin = Object.freeze({
+  MITER: "miter",
+  ROUND: "round",
+  BEVEL: "bevel",
+});
+
 module.exports = {
+  LineCap,
+  LineJoin,
   ArrowAt,
   ArrowType,
   TriangleTrait,

@@ -974,3 +974,14 @@ annotationRecipe.arrow(100, 100, {
   at: muhammara.Recipe.ArrowAt.HEAD,
   type: muhammara.Recipe.ArrowType.KITE,
 });
+
+annotationRecipe.line(
+  [
+    [0, 0],
+    [10, 10],
+  ],
+  {
+    lineCap: muhammara.Recipe.LineCap.ROUND,
+    lineJoin: muhammara.Recipe.LineJoin.BEVEL,
+  },
+);

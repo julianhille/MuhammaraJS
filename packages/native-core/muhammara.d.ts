@@ -1680,6 +1680,18 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** Line cap styles for the `lineCap` options. */
+    static readonly LineCap: {
+      readonly BUTT: "butt";
+      readonly ROUND: "round";
+      readonly SQUARE: "square";
+    };
+    /** Line join styles for the `lineJoin` options. */
+    static readonly LineJoin: {
+      readonly MITER: "miter";
+      readonly ROUND: "round";
+      readonly BEVEL: "bevel";
+    };
     /** The arrow point placed at the `arrow()` coordinates. */
     static readonly ArrowAt: {
       readonly HEAD: "head";

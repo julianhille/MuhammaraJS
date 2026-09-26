@@ -1,5 +1,6 @@
 var { htmlToTextObjects } = require("./htmlToTextObjects");
 var { cloneOptions: clone } = require("./utils");
+var { LineCap } = require("../recipe-constants");
 
 /**
  * Convert a table cell style into text options: a copy of the options with
@@ -60,7 +61,19 @@ function getCellHeight(self, text, column, options) {
   );
 }
 
-/** Draws a completed table segment without duplicating its bottom edge. */
+/**
+ * Draw the border of a completed table segment without duplicating its
+ * bottom edge.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number} x - The segment left.
+ * @param {number} y - The segment top.
+ * @param {number} width - The segment width.
+ * @param {number} height - The segment height; nothing is drawn when 0.
+ * @param {number[]} rowLines - The y of every row bottom.
+ * @param {Object} options - The table options; `border` enables drawing.
+ * @returns {void}
+ */
 function drawTableBorder(self, x, y, width, height, rowLines, options) {
   // A segment without rows has nothing to enclose.
   if (!options.border || height <= 0) {
@@ -70,7 +83,7 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
     {},
     options.border === true ? {} : options.border,
     // Keep borders from extending outside of the enclosing box.
-    { lineCap: "butt" },
+    { lineCap: LineCap.BUTT },
   );
   if (!borderOptions.width) {
     borderOptions.width = 0.5;
