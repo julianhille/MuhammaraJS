@@ -62,7 +62,11 @@ function tableTextOptions(options) {
   return result;
 }
 
-/** Uses a column's `cell` as its only body text box, like native columns. */
+/**
+ * Uses a column's `cell` as its only body text box, like native columns.
+ * @param {object} options - Column options.
+ * @returns {object} New options with `textBox`.
+ */
 function columnCellOptions(options) {
   var result = { ...options, textBox: { ...options.cell } };
   delete result.cell;
