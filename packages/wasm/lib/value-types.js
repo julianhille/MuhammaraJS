@@ -154,6 +154,10 @@ export function createValueTypes({ module, withString, withBytes }) {
       this._value = value === undefined ? "" : normalizePDFDate(value);
     }
 
+    /**
+     * Formats the date.
+     * @returns {string} A PDF date such as `D:20240102030405+01'00'`, or an empty string.
+     */
     toString() {
       return this._value;
     }
