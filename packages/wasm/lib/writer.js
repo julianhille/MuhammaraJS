@@ -739,6 +739,13 @@ export function createWriterFactory({
           }
         });
       },
+      /**
+       * Sets `/ModDate`.
+       * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+       * @returns {void}
+       * @throws {TypeError} If `value` is not a valid date.
+       * @throws {Error} If the writer has ended or the date cannot be parsed or set.
+       */
       setModDate: function (value) {
         requireOpenWriter();
         var date = normalizePDFDate(value);
