@@ -1,3 +1,4 @@
+import { ImageFitPolicy } from "../value-sets.js";
 import { constants } from "../constants.js";
 import { endActivePage } from "./page.js";
 
@@ -170,7 +171,7 @@ export function createCompositionMethods({
               width,
               height,
               proportional: options.keepAspectRatio !== false,
-              fit: "always",
+              fit: ImageFitPolicy.ALWAYS,
             },
           },
         );
