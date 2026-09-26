@@ -71,8 +71,13 @@ function appendPDFPageFromPDFWithAnnotations(
  * Append PDF Pages with annotations.
  *
  * @param {any} pdfWriter - Hummus writer.
- * @param {string|any} sourcePDFPath - The path for the output pdfs or Reader stream.
+ * @param {string|any} sourcePDFPath - The source PDF path or read stream.
+ * @param {Object} [options] - The options.
+ * @param {number[][]} [options.specificRanges] - Zero-based inclusive
+ *   [start, end] page ranges; all pages when omitted.
  * @private
+ * @returns {void}
+ * @throws {Error} If the source cannot be read or a page does not exist.
  */
 function appendPDFPagesFromPDFWithAnnotations(
   pdfWriter,
