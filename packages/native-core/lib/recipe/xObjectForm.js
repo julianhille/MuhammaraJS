@@ -79,6 +79,12 @@ exports.xObjectForm = class xObjectForm {
     return xObject;
   }
 
+  /**
+   * Store a value on the form, such as its Recipe cache key.
+   * @param {string} key - The key.
+   * @param {*} value - The value.
+   * @returns {void}
+   */
   set(key, value) {
     this._values = this._values || {};
     this._values[key] = value;
