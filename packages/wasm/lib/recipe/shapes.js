@@ -107,6 +107,12 @@ function starPath(vertices) {
   );
 }
 
+/**
+ * Measures the distance between two points.
+ * @param {number[]} first - `[x, y]`.
+ * @param {number[]} second - `[x, y]`.
+ * @returns {number} The distance.
+ */
 function distance(first, second) {
   return Math.hypot(first[0] - second[0], first[1] - second[1]);
 }
