@@ -38,7 +38,11 @@ export function htmlToTextObjects(html, options = {}) {
   ]);
   var tags = /<\/?[^>]+>|[^<]+/g;
   var match;
-  /** Reports whether a token contains more than collapsible formatting whitespace. */
+  /**
+   * Reports whether a token contains more than collapsible formatting whitespace.
+   * @param {string} value - Token.
+   * @returns {boolean} Whether it has text.
+   */
   var hasText = (value) => /[^ \t\r\n\f\v]/.test(value);
   var onlyFormattingBeforeFirstList =
     firstListIndex !== -1 &&
