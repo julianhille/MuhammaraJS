@@ -1341,6 +1341,11 @@ export function createReaderFactory({
         if (!handle) throw new Error("Unable to read PDF stream objects");
         var parser = { handle, ended: false };
         return {
+          /**
+           * Parses the next object or operator across the streams.
+           * @returns {PDFObject|undefined} The object, or undefined at the end.
+           * @throws {Error} If the reader or this parser has ended.
+           */
           parseNewObject: function () {
             requireReader();
             if (parser.ended) throw new Error("PDF object parser has ended");
