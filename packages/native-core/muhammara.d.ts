@@ -1031,6 +1031,13 @@ declare namespace muhammara {
      * @throws {TypeError} If compress is not a single boolean.
      */
     setCompressStreams(compress: boolean): this;
+    /**
+     * Starts a stream that is compressed when compression is on.
+     * @param dictionaryContext - A started stream dictionary to add Length and
+     *   Filter to; a new one when omitted.
+     * @returns The stream; write to its write stream, then call endPDFStream().
+     * @throws {TypeError} If dictionaryContext is given and is not a dictionary context.
+     */
     startPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
     startUnfilteredPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
     endPDFStream(stream: PDFStream): this;
