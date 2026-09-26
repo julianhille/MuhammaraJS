@@ -319,6 +319,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `createFormXObjectsFromPDF()` throw a `RangeError` for a `type` that is not
   an `eRangeType*` constant, an empty specific range, or an invalid range,
   where they previously used every page or threw a `TypeError` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Throw from `createBlankPdf()` for a non-finite or non-positive size, which
+  previously produced a zero-width page, and from the low-level
+  `registerFont()`, `registerImage()`, and `registerPdf()` for an empty or
+  non-string name, as Recipe registration does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take
   `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
   `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,

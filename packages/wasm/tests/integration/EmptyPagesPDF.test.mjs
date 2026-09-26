@@ -97,6 +97,15 @@ describe("EmptyPagesPDF", function () {
       ),
     );
     var blankPdf = muhammara.createBlankPdf(595, 842);
+    assert.throws(() => muhammara.createBlankPdf(NaN, 10), TypeError);
+    assert.throws(() => muhammara.createBlankPdf("10", 10), TypeError);
+    assert.throws(() => muhammara.createBlankPdf(0, 10), RangeError);
+    for (var register of ["registerFont", "registerImage", "registerPdf"]) {
+      assert.throws(
+        () => muhammara[register]("", blankPdf, "png"),
+        /non-empty strings/,
+      );
+    }
     var modified = muhammara
       .createModifier(blankPdf)
       .startPage(0)

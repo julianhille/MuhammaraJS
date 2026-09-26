@@ -134,6 +134,17 @@ async function createRuntime(options) {
   var imageTypes = new Map();
   var pdfs = new Map();
   var helpers = createHelpers(module);
+  /**
+   * Rejects an asset name that cannot be looked up again.
+   * @param {*} name - Candidate asset name.
+   * @returns {void}
+   * @throws {TypeError} If `name` is not a non-empty string.
+   */
+  function requireAssetName(name) {
+    if (typeof name !== "string" || !name) {
+      throw new TypeError("Asset names must be non-empty strings");
+    }
+  }
   function replaceAsset(registry, name, path) {
     var previous = registry.get(name);
     registry.set(name, path);
@@ -213,6 +224,7 @@ async function createRuntime(options) {
     PDFRStreamForBuffer,
     PDFWStreamForBuffer,
     registerFont: function (name, bytes) {
+      requireAssetName(name);
       bytes = normalizeBytes(bytes, "Font bytes");
       var path = `/fonts/${state.nextAsset++}.font`;
       module.FS.mkdirTree("/fonts");
@@ -227,6 +239,7 @@ async function createRuntime(options) {
       );
     },
     registerImage: function (name, bytes, extension) {
+      requireAssetName(name);
       bytes = normalizeBytes(bytes, "Image bytes");
       if (!/^(jpe?g|png|tiff?)$/i.test(extension || "")) {
         throw new TypeError("Image extensions must be jpeg, png, or tiff");
@@ -252,6 +265,7 @@ async function createRuntime(options) {
       );
     },
     registerPdf: function (name, bytes) {
+      requireAssetName(name);
       bytes = normalizeBytes(bytes, "PDF bytes");
       var path = `/pdfs/${state.nextPdf++}.pdf`;
       module.FS.mkdirTree("/pdfs");
@@ -286,6 +300,16 @@ async function createRuntime(options) {
       pdfs.clear();
     },
     createBlankPdf: function (width, height) {
+      if (![width, height].every(Number.isFinite)) {
+        throw new TypeError(
+          "createBlankPdf requires a finite width and height",
+        );
+      }
+      if (width <= 0 || height <= 0) {
+        throw new RangeError(
+          "createBlankPdf requires a positive width and height",
+        );
+      }
       var lengthPointer = module._malloc(4);
       try {
         var pdfPointer = module._muhammara_wasm_create_blank_pdf(
