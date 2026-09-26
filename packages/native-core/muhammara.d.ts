@@ -102,6 +102,10 @@ declare namespace muhammara {
      * @returns True while the end has not been reached.
      */
     notEnded(): boolean;
+    /**
+     * Moves to a position relative to the start position.
+     * @param inPosition - The byte offset from the start position.
+     */
     setPosition(inPosition: number): void;
     setPositionFromEnd(inPosition: number): void;
     skip(inAmount: number): void;
