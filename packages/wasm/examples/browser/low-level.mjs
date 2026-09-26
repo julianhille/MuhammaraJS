@@ -344,6 +344,13 @@ async function compose(muhammara, source) {
   }
 }
 
+/**
+ * Runs the low-level writer, modifier, and reader example.
+ * @param {import("./lifecycle.mjs").ExampleOptions} [options] - Assets, signal, and progress.
+ * @returns {Promise<object>} The composed bytes, source, modified bytes, and summary.
+ * @throws {Error} If a check fails.
+ * @throws {DOMException} If the run is cancelled.
+ */
 export async function runLowLevelExample({
   assets = {},
   signal,
