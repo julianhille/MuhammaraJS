@@ -3758,6 +3758,15 @@ export function createWriterFactory({
         if (!handle) throw new Error("Unable to create JPEG image XObject");
         return new ImageXObject(handle);
       },
+      /**
+       * Creates a completed form XObject that draws a registered JPEG.
+       * @param {string} name - Registered JPEG name.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {FormXObject} The form.
+       * @throws {TypeError} If the name is not a registered JPEG.
+       * @throws {RangeError} If `objectId` is invalid.
+       * @throws {Error} If the writer ended or the form cannot be created.
+       */
       createFormXObjectFromJPGBytes: function (name, objectId) {
         return createImageForm(name, RegisteredImageFormat.JPEG, objectId);
       },
