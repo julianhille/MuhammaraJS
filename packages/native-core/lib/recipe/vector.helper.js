@@ -1,6 +1,18 @@
 const { xObjectForm } = require("./xObjectForm");
 const { resolveFontSize } = require("./utils");
 
+/**
+ * Resolve drawing and text options into path options: font, size, colors
+ * and color models, line style, opacity graphics states, rotation, skew and
+ * dash. Clamps `options.opacity` to 0..1 in place.
+ * @private
+ * @param {Object} [options] - The drawing or text options.
+ * @param {number} originX - The PDF x of the default rotation origin.
+ * @param {number} originY - The PDF y of the default rotation origin.
+ * @returns {Object} The resolved path options.
+ * @throws {RangeError} If a given font size is not greater than zero.
+ * @throws {Error} If the font cannot be loaded.
+ */
 exports._getPathOptions = function _getPathOptions(
   options = {},
   originX,
