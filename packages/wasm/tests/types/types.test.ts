@@ -880,6 +880,7 @@ async function usesNamedValueSets() {
   writer.createFormXObjectsFromPDF("source", cropBox);
   // @ts-expect-error Page boxes are the ePDFPageBox constants.
   writer.createFormXObjectsFromPDF("source", 5);
+  void writer.createFormXObjectsFromPDFAsync(new Uint8Array(), cropBox);
 }
 
 void usesNamedValueSets;

@@ -1514,7 +1514,7 @@ export interface PDFWriter {
   ): number[];
   createFormXObjectsFromPDFAsync(
     source: AsyncByteSource,
-    pageBox?: number | PDFRectangle,
+    pageBox?: PDFPageBoxType | PDFRectangle,
     options?: PDFFormOptions,
   ): Promise<number[]>;
   createPDFCopyingContext(source: ByteSource): DocumentCopyingContext;
