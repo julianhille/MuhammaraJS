@@ -2158,6 +2158,14 @@ export function createWriterFactory({
         context.Tm = function (a, b, c, d, e, f) {
           return operator("Tm", 34, [a, b, c, d, e, f]);
         };
+        /**
+         * Moves to the start of the next text line, offset from the current one (`Td`).
+         * @param {number} x - Horizontal offset.
+         * @param {number} y - Vertical offset.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         context.Td = function (x, y) {
           return operator("Td", 41, [x, y]);
         };
