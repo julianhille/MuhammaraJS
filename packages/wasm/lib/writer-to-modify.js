@@ -1255,6 +1255,10 @@ export function createWriterToModifyFactory({
     ];
     var trapped = constants.EInfoTrappedUnknown;
     Object.defineProperty(infoDictionary, "trapped", {
+      /**
+       * Reads `/Trapped`.
+       * @returns {EInfoTrapped} The trapped state; `EInfoTrappedUnknown` by default.
+       */
       get: function () {
         return trapped;
       },
