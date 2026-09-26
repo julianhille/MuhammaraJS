@@ -754,6 +754,14 @@ var runners = {
   "replace-text": replaceTextExample,
 };
 
+/**
+ * Runs one how-to example.
+ * @param {string} id - How-to id from `HOW_TO_EXAMPLES`.
+ * @param {import("./lifecycle.mjs").ExampleOptions} [options={}] - Assets, signal, and progress.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If `id` is unknown.
+ * @throws {DOMException} If the run is cancelled.
+ */
 export async function runHowToExample(id, options = {}) {
   var runner = runners[id];
   if (!runner) throw new Error(`Unknown browser example: ${id}`);
