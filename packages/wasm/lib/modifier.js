@@ -153,6 +153,16 @@ export function createModifierFactory({
         }
         return this;
       },
+      /**
+       * Writes text in PDF coordinates with a font registered on the module.
+       * @param {string} value - Text to write.
+       * @param {number} x - Baseline start x.
+       * @param {number} y - Baseline y.
+       * @param {CompactModifierTextOptions} options - Registered `font` name, `fontSize` (default 12), and `color`.
+       * @returns {this} The modifier.
+       * @throws {TypeError} If the color is not a ColorValue.
+       * @throws {Error} If the modifier has ended, the font is not registered, or writing fails.
+       */
       text: function (value, x, y, options = {}) {
         requireOpenModifier();
         var fontPath = fonts.get(options.font);

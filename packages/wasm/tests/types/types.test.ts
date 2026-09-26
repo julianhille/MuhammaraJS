@@ -952,6 +952,7 @@ async function usesNamedValueSets() {
   compact.rectangle(0, 0, 5, 5, { fill: [1, 2] });
   compact.circle(5, 5, 2, { stroke: "#00ff00" });
   compact.line(0, 0, 5, 5, { color: [0, 0, 255], lineWidth: 2 });
+  compact.text("hi", 1, 1, { font: "arial", color: 0 });
 }
 
 void usesNamedValueSets;

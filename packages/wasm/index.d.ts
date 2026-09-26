@@ -1869,6 +1869,12 @@ export interface CompactModifierLineOptions {
   stroke?: ColorValue;
   lineWidth?: number;
 }
+/** Font and color for CompactModifier.text(); `font` names a registered font. */
+export interface CompactModifierTextOptions {
+  font: string;
+  fontSize?: number;
+  color?: ColorValue;
+}
 export interface CompactModifier {
   startPage(index: number): this;
   rectangle(
@@ -1895,7 +1901,7 @@ export interface CompactModifier {
     value: string,
     x: number,
     y: number,
-    options: { font: string; fontSize?: number; color?: RecipeColor },
+    options: CompactModifierTextOptions,
   ): this;
   image(
     name: string,
