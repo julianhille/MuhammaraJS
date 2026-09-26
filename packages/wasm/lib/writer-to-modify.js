@@ -317,6 +317,14 @@ export function createWriterToModifyFactory({
         n: function () {
           return operator("n", 9);
         },
+        /**
+         * Begins a new subpath at a point (`m`).
+         * @param {number} x - Point x.
+         * @param {number} y - Point y.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         m: function (x, y) {
           return operator("m", 10, [x, y]);
         },
