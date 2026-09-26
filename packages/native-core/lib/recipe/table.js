@@ -1,7 +1,14 @@
 var { htmlToTextObjects } = require("./htmlToTextObjects");
 var { cloneOptions: clone } = require("./utils");
 
-/** Converts a table cell style into text options. */
+/**
+ * Convert a table cell style into text options: a copy of the options with
+ * the cell entry moved to `textBox`.
+ * @private
+ * @param {Object} options - The table, header, row or column options.
+ * @param {string} [cell='cell'] - The key holding the cell style, "cell" or "hcell".
+ * @returns {Object} The text options.
+ */
 function getCellOptions(options, cell = "cell") {
   var cellOptions = clone(options);
 
