@@ -216,6 +216,9 @@ exports.Line = class Line {
     return this.wordObjects;
   }
 
+  /**
+   * @returns {number} The width of one space, measured as "o".
+   */
   get spaceWidth() {
     return this._pathOptions.font.calculateTextDimensions("o", this.size).width;
   }
