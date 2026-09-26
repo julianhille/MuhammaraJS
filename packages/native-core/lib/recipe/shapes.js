@@ -170,7 +170,8 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * @param {number} cx - x-coordinate of center point of regular polygon
  * @param {number} cy - y-coordinate of center point of regular polygon
  * @param {number} radius - The radius, distance from the center of the polygon to a vertice.
- * @param {number} [sides=3] - the number of sides of the regular polygon
+ * @param {number|Object} [sides=3] - the number of sides of the regular polygon, at least 3;
+ *   or the options when the side count is omitted.
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - HexColor or DecimalColor
  * @param {string|number[]} [options.stroke] - HexColor or DecimalColor
@@ -183,7 +184,10 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * @param {number} [options.rotationVertice] - the number of the vertice to be used as rotation origin
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.
+ * @param {string} [options.link] - Make the polygon's bounding square open this URL.
+ * @param {boolean} [options.debug] - Also draw the circumscribed circle and center.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
   const MIN_SIDES = 3;
