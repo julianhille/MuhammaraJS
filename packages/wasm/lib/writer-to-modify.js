@@ -401,6 +401,11 @@ export function createWriterToModifyFactory({
         re: function (x, y, width, height) {
           return operator("re", 16, [x, y, width, height]);
         },
+        /**
+         * Saves the graphics state (`q`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         q: function () {
           return operator("q", 17);
         },
