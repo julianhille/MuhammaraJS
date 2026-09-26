@@ -674,6 +674,13 @@ declare namespace muhammara {
      * @throws {TypeError} If the reader has ended.
      */
     getXrefSize(): number;
+    /**
+     * Returns the cross-reference entry of an object.
+     * @param objectId - The object ID.
+     * @returns The entry: byte position, revision and entry type.
+     * @throws {TypeError} If the reader has ended, objectId is not a non-negative
+     *   integer, or it is out of range.
+     */
     getXrefEntry(objectId: number): {
       objectPosition: number;
       revision: number;
