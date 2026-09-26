@@ -1543,6 +1543,9 @@ const Line = class Line {
     return this._midPoint;
   }
 
+  /**
+   * @returns {number} The segment length.
+   */
   get length() {
     if (!this._length) {
       this._length = Math.sqrt(
