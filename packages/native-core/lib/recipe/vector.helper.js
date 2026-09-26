@@ -310,6 +310,25 @@ exports._devicePathOptions = function _devicePathOptions(pathOptions) {
 };
 
 /**
+ * Select a Separation color in a form XObject. Device colors are left to the
+ * low-level drawing call, so their output is unchanged.
+ * @private
+ * @param {Object} xObject - The form the color is selected in.
+ * @param {Object} [colorModel] - The color model from _transformColor().
+ * @param {boolean} stroke - Select the stroking instead of the fill color.
+ * @returns {void}
+ */
+exports._setSeparationColor = function _setSeparationColor(
+  xObject,
+  colorModel,
+  stroke,
+) {
+  if (!colorModel || colorModel.colorspace !== Colorspace.SEPARATION) return;
+  if (stroke) xObject.stroke(colorModel);
+  else xObject.fill(colorModel);
+};
+
+/**
  * Draw content through a form XObject, creating it with the callback unless
  * `options.xObject` supplies one, then place it with rotation, skew and
  * scaling.

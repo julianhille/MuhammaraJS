@@ -467,8 +467,15 @@ exports.text = function text(text = "", x, y, options = {}) {
         if (options.underline) {
           const underlineY = y - options.textHeight * 0.1;
           const width = options.lineWidth;
+          ctx.q();
+          if (options.colorModel.xObject) {
+            this._setSeparationColor(
+              options.colorModel.xObject,
+              options.colorModel,
+              true,
+            );
+          }
           ctx
-            .q()
             .drawPath(
               x,
               underlineY,
@@ -485,8 +492,15 @@ exports.text = function text(text = "", x, y, options = {}) {
         if (options.strikeOut) {
           const strikeOutY = y + options.textHeight * 0.2;
           const width = options.lineWidth;
+          ctx.q();
+          if (options.colorModel.xObject) {
+            this._setSeparationColor(
+              options.colorModel.xObject,
+              options.colorModel,
+              true,
+            );
+          }
           ctx
-            .q()
             .drawPath(
               x,
               strikeOutY,

@@ -49,6 +49,7 @@ describe("Recipe prototype", function () {
       "_setParameters",
       "_setRotationContext",
       "_setScalingTransform",
+      "_setSeparationColor",
       "_setSkewContext",
       "_startDictionary",
       "_transformColor",

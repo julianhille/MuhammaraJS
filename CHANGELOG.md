@@ -191,6 +191,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   fractional size such as `10.5` was truncated to `10` [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Accept a pattern name alone in `SCN` and `scn`, emitting `/P0 SCN` to select a
   colored (PaintType 1) tiling pattern instead of throwing [#797](https://github.com/julianhille/MuhammaraJS/issues/797)
+- Paint Recipe separation colors in `circle()`, `line()`, `lineTo()` and HTML
+  underline and strike-out lines; they were drawn in black, while rectangles,
+  ellipses, polygons and text already used the Separation color space
+  [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Declare the `useGivenCoords` option of `Recipe#rectangle()`, which the
   runtime already honors, as Wasm does [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Place the link of a Recipe `circle()`, `ellipse()`, `arc()` or `pie()`
