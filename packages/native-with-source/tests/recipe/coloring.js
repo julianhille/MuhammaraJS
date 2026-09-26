@@ -296,6 +296,12 @@ describe("Coloring", () => {
           colorspace: "separation",
           colorName: "SpotGreen",
         })
+        .text("<u>Value</u>", 80, 110, {
+          html: true,
+          color: [0, 255, 0, 0],
+          colorspace: "separation",
+          colorName: "SpotGreen",
+        })
         .rectangle(10, 120, 40, 40, {
           fill: "#0000ff",
           colorspace: "separation",
@@ -314,8 +320,8 @@ describe("Coloring", () => {
       assert.equal(recipe.knownColors.separation.SpotGreen, "00ff0000");
 
       // Every separation drawing is a form XObject that selects its color:
-      // fills, both texts and the colorName circle with cs, the line and the
-      // underline with CS. The #0000ff rectangle keeps its device color.
+      // fills, the texts and the colorName circle with cs, the line and both
+      // underlines with CS. The #0000ff rectangle keeps its device color.
       const reader = muhammara.createReader(output);
       const content = [];
       for (let id = 1; id < reader.getXrefSize(); id++) {
@@ -337,9 +343,9 @@ describe("Coloring", () => {
         content.push(Buffer.from(bytes).toString("latin1"));
       }
       const all = content.join("\n");
-      assert.equal(all.match(/\/\S+ cs\s+1 scn/g)?.length, 4);
+      assert.equal(all.match(/\/\S+ cs\s+1 scn/g)?.length, 5);
       // line() strokes only its segments, with no zero-length first one.
-      assert.equal(all.match(/\/\S+ CS\s+1 SCN/g)?.length, 2);
+      assert.equal(all.match(/\/\S+ CS\s+1 SCN/g)?.length, 3);
       assert.match(all, /0 0 1 rg/);
     });
   });
