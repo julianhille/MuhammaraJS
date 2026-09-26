@@ -878,6 +878,11 @@ export function createWriterFactory({
           requireActiveContext(context);
           return currentPage;
         },
+        /**
+         * Returns the page content stream being written.
+         * @returns {object} The stream; `getWriteStream()` exposes a byte writer.
+         * @throws {Error} If the content context or its stream is no longer active.
+         */
         getCurrentPageContentStream: function () {
           requireActiveContext(context);
           var stream = module._muhammara_wasm_page_content_get_stream(recipe);
