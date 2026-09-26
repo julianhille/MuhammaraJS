@@ -445,6 +445,12 @@ declare namespace muhammara {
   }
 
   export interface ResourcesDictionary {
+    /**
+     * Adds a form XObject to the resources and returns its resource name.
+     * @param formXObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If formXObjectId is not a single number.
+     */
     addFormXObjectMapping(formXObjectId: FormXObjectId): string;
     addImageXObjectMapping(imageXObject: ImageXObject | number): string;
     addProcsetResource(procSetName: string): void;
