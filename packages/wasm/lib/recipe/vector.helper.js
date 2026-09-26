@@ -40,6 +40,15 @@ export function createVectorHelpers(runtime) {
       ...values,
     );
   }
+  /**
+   * Sets the fill or stroke color from a Recipe color.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {RecipeColor} value - Color.
+   * @param {object} options - Options with `colorspace`.
+   * @param {boolean} stroke - Set the stroking color.
+   * @returns {void}
+   * @throws {TypeError} If the color or color space is invalid.
+   */
   function setColor(recipe, value, options, stroke) {
     var model = colorModel(recipe, value, options);
     if (model.colorspace === DeviceColorSpace.RGB)
