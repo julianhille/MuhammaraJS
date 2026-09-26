@@ -4044,6 +4044,14 @@ export function createWriterFactory({
         }
         var selectedRanges =
           rangeType === constants.eRangeTypeSpecific ? ranges : [];
+        /**
+         * Validates a fixed-length array of finite numbers.
+         * @param {string} name - Option name for error messages.
+         * @param {*} value - Candidate array.
+         * @param {number} length - Required length.
+         * @returns {number[]} `value`.
+         * @throws {TypeError} If `value` has another length or a non-finite entry.
+         */
         function finiteNumbers(name, value, length) {
           if (
             !Array.isArray(value) ||
