@@ -90,6 +90,12 @@ declare namespace muhammara {
    * `Uint8Array` (a `Buffer` qualifies) or an array of byte values.
    */
   export interface ReadStream {
+    /**
+     * Reads the next bytes and advances the position by the amount read.
+     * Implement it on a custom input stream.
+     * @param inAmount - The maximum number of bytes to read.
+     * @returns The bytes read; shorter than requested at the end.
+     */
     read(inAmount: number): Uint8Array | number[];
     notEnded(): boolean;
     setPosition(inPosition: number): void;
