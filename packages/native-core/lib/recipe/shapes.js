@@ -217,6 +217,12 @@ exports.n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
   return this;
 };
 
+/**
+ * Reorder polygon vertices into a star path by skipping vertices.
+ * @private
+ * @param {number[][]} ngon - The polygon vertices.
+ * @returns {number[][]} The star path.
+ */
 function _oddStar(ngon) {
   let starPath = [];
   let points = ngon.length;
