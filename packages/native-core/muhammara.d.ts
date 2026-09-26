@@ -846,6 +846,16 @@ declare namespace muhammara {
      * @returns This context.
      */
     end(): DocumentCopyingContext;
+    /**
+     * Creates a form XObject from a source page.
+     * @param sourcePageIndex - The zero-based source page index.
+     * @param ePDFPageBox - The page box to use, or an explicit [left, bottom,
+     *   right, top].
+     * @param transformation - The form matrix.
+     * @returns The form object ID.
+     * @throws {TypeError} If the arguments are wrong or the page does not exist.
+     * @throws {TypeError} If the copying context has ended.
+     */
     createFormXObjectFromPDFPage(
       sourcePageIndex: number,
       /** Defaults to the media box. */
