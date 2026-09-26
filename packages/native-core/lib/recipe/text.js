@@ -1836,16 +1836,17 @@ function adjustcolumnPosition(columns, x, y) {
  * @function
  * @memberof Recipe#
  * @param {number|string} id - The identifier to be associated with the layout. (See 'text' layout option)
- * @param {number} x - The coordinate x used to position text columns on page. When zero, left margin used.
- * @param {number} y - The coordinate y used to position text columns on page. When zero, top margin used.
- * @param {number} width - The width of a text column. When zero, space between left and right margin used.
- * @param {number} height - The height of a text column. When zero, space between top and bottom margin used.
+ * @param {number} [x] - The coordinate x used to position text columns on page. When zero or omitted, left margin used.
+ * @param {number} [y] - The coordinate y used to position text columns on page. When zero or omitted, top margin used.
+ * @param {number} [width] - The width of a text column. When zero or omitted, space between left and right margin used.
+ * @param {number} [height] - The height of a text column. When zero or omitted, space between top and bottom margin used.
  * @param {object} [options] - The options.
  * @param {number} [options.columns] - Represents the number of columns in which to divide the given width.
  * @param {number} [options.gap=18] - Defines the separation between layout columns, units in points.
  * @param {boolean} [options.reset] - True indicates that the a new layout should be produced for the given
  * layout id, so any previous layout associated with the given id will be lost.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If width or height is omitted while no page is active.
  */
 exports.layout = function layout(id, x, y, width, height, options = {}) {
   this._layouts = this._layouts || {};
