@@ -1,4 +1,5 @@
 const path = require("path");
+const { writeOutput } = require("../helpers/testOutput");
 const fs = require("fs");
 const assert = require("chai").assert;
 const Recipe = require("@muhammara/native-with-source").Recipe;
@@ -28,10 +29,7 @@ describe("Modify", () => {
       .endPage()
       .endPDF((outBuffer) => {
         assert(outBuffer instanceof Buffer);
-        fs.writeFileSync(
-          path.join(__dirname, "../output/createWithBuffer.pdf"),
-          outBuffer,
-        );
+        writeOutput("createWithBuffer", outBuffer);
         done();
       });
   });
@@ -81,10 +79,7 @@ describe("Modify", () => {
       .endPage()
       .endPDF((outBuffer) => {
         assert(outBuffer instanceof Buffer);
-        fs.writeFileSync(
-          path.join(__dirname, "../output/createWithNewBuffer.pdf"),
-          outBuffer,
-        );
+        writeOutput("createWithNewBuffer", outBuffer);
         done();
       });
   });

@@ -1,5 +1,6 @@
 var assert = require("node:assert/strict");
 var muhammara = require("@muhammara/native-with-source");
+var { writeOutput } = require("../helpers/testOutput");
 
 function readExtGStates(reader) {
   var page = reader.parsePage(0).getDictionary();
@@ -41,6 +42,7 @@ describe("Recipe opacity", function () {
       .endPDF(function (output) {
         return output;
       });
+    writeOutput("opacity-fill-and-stroke", bytes);
     var reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );

@@ -1,6 +1,7 @@
 var assert = require("node:assert/strict");
 var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
+var { writeOutput } = require("../helpers/testOutput");
 var Recipe = muhammara.Recipe;
 
 describe("Recipe text default-size parity", function () {
@@ -37,6 +38,10 @@ describe("Recipe text default-size parity", function () {
         },
       );
       var bytes = recipe.endPage().endPDF((output) => output);
+      writeOutput(
+        `text-defaults-sizes-${editing ? "editing" : "creating"}`,
+        bytes,
+      );
       var reader = muhammara.createReader(
         new muhammara.PDFRStreamForBuffer(bytes),
       );
@@ -111,6 +116,7 @@ describe("Recipe text default-size parity", function () {
         .endPage();
     });
     var bytes = recipe.endPDF((output) => output);
+    writeOutput("text-defaults-wrapped-table", bytes);
     var reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -192,6 +198,10 @@ describe("Recipe text color parity", function () {
         recipe.text("Hello", 20, 20, options).endPage();
       });
       var bytes = recipe.endPDF((output) => output);
+      writeOutput(
+        `text-color-parity-${editing ? "editing" : "creating"}`,
+        bytes,
+      );
       var reader = muhammara.createReader(
         new muhammara.PDFRStreamForBuffer(bytes),
       );
@@ -297,6 +307,7 @@ describe("Recipe text size validation", function () {
       .text("Kept", 72, 72, { font: "arial" })
       .endPage()
       .endPDF((output) => output);
+    writeOutput("text-size-rejected-leaves-no-output", bytes);
     var reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -332,6 +343,7 @@ describe("Recipe text size validation", function () {
     );
     recipe.text("Hello", 72, 72, { font: "arial" });
     var bytes = recipe.endPage().endPDF((output) => output);
+    writeOutput("text-size-omitted-defaults", bytes);
     var reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -364,6 +376,9 @@ describe("Recipe text size validation", function () {
       recipe.textDimensions("Hello", { font: "arial", size: Infinity });
       recipe.text("Hello", 72, 72, { font: "arial", size: Infinity });
     });
-    recipe.endPage().endPDF((output) => output);
+    writeOutput(
+      "text-size-infinite-accepted",
+      recipe.endPage().endPDF((output) => output),
+    );
   });
 });

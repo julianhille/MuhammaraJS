@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createRecipe } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe graphics state", function () {
   it("rotates subsequent content around a Recipe coordinate", async function () {
@@ -10,6 +11,7 @@ describe("Recipe graphics state", function () {
       .rectangle(0, 0, 10, 10, { fill: "#000000" })
       .endPage()
       .endPDF();
+    writeOutput("graphics-state-rotate", bytes);
     var content = new TextDecoder().decode(bytes);
     assert.match(content, /1 0 0 1 30 260 cm/);
     assert.match(content, /0 1 -1 0 0 0 cm/);
