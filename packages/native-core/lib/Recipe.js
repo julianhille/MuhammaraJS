@@ -471,6 +471,11 @@ class Recipe {
   }
 }
 
+/**
+ * Install every method exported by lib/recipe/*.js on the Recipe prototype.
+ * @returns {void}
+ * @throws {string} If two recipe modules export the same member.
+ */
 function loadPrototypes() {
   const ignores = ["utils.js", "xObjectForm.js"];
   fs.readdirSync(path.join(__dirname, "recipe"))
