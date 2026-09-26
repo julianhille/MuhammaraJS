@@ -74,10 +74,19 @@ exports._loadFonts = function _loadFonts(fontSrcPath) {
   }
 };
 
+/**
+ * Record a font file for a family and style.
+ * @private
+ * @param {string} fontName - The family name, stored lower-cased.
+ * @param {string} fontSrcPath - The font file path.
+ * @param {Recipe.FontStyle|string} [type='regular'] - A `Recipe.FontStyle`
+ *   value or its short form; anything else is stored as regular.
+ * @returns {Recipe} The recipe instance.
+ */
 exports._registerFont = function _registerFont(
   fontName,
   fontSrcPath,
-  type = "regular",
+  type = FontStyle.REGULAR,
 ) {
   this.fonts = this.fonts || {};
   let family = fontName.toLowerCase();
@@ -85,19 +94,19 @@ exports._registerFont = function _registerFont(
 
   switch (type) {
     default:
-      font.r = fontSrcPath;
+      font[FontSlot.REGULAR] = fontSrcPath;
       break;
-    case "bold":
-    case "b":
-      font.b = fontSrcPath;
+    case FontStyle.BOLD:
+    case FontSlot.BOLD:
+      font[FontSlot.BOLD] = fontSrcPath;
       break;
-    case "italic":
-    case "i":
-      font.i = fontSrcPath;
+    case FontStyle.ITALIC:
+    case FontSlot.ITALIC:
+      font[FontSlot.ITALIC] = fontSrcPath;
       break;
-    case "bold-italic":
-    case "bi":
-      font.bi = fontSrcPath;
+    case FontStyle.BOLD_ITALIC:
+    case FontSlot.BOLD_ITALIC:
+      font[FontSlot.BOLD_ITALIC] = fontSrcPath;
       break;
   }
   this.fonts[family] = font;
