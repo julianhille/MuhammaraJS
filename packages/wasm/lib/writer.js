@@ -1058,8 +1058,8 @@ export function createWriterFactory({
          * @throws {TypeError} If an operand is missing or not finite.
          * @throws {Error} If the content context is no longer active or the operator fails.
          */
-        v: function (x1, y1, x2, y2) {
-          return operator("v", 13, [x1, y1, x2, y2]);
+        v: function (x2, y2, x3, y3) {
+          return operator("v", 13, [x2, y2, x3, y3]);
         },
         /**
          * Appends a cubic Bezier curve whose second control point is the end point (`y`).
@@ -1071,8 +1071,8 @@ export function createWriterFactory({
          * @throws {TypeError} If an operand is missing or not finite.
          * @throws {Error} If the content context is no longer active or the operator fails.
          */
-        y: function (x1, y1, x2, y2) {
-          return operator("y", 14, [x1, y1, x2, y2]);
+        y: function (x1, y1, x3, y3) {
+          return operator("y", 14, [x1, y1, x3, y3]);
         },
         /**
          * Closes the current subpath (`h`).
@@ -2136,8 +2136,8 @@ export function createWriterFactory({
            * @throws {TypeError} If an operand is missing or not finite.
            * @throws {Error} If the content context is no longer active or the operator fails.
            */
-          v: function (x1, y1, x2, y2) {
-            return operator("v", 13, [x1, y1, x2, y2]);
+          v: function (x2, y2, x3, y3) {
+            return operator("v", 13, [x2, y2, x3, y3]);
           },
           /**
            * Appends a cubic Bezier curve whose second control point is the end point (`y`).
@@ -2149,8 +2149,8 @@ export function createWriterFactory({
            * @throws {TypeError} If an operand is missing or not finite.
            * @throws {Error} If the content context is no longer active or the operator fails.
            */
-          y: function (x1, y1, x2, y2) {
-            return operator("y", 14, [x1, y1, x2, y2]);
+          y: function (x1, y1, x3, y3) {
+            return operator("y", 14, [x1, y1, x3, y3]);
           },
           /**
            * Closes the current subpath (`h`).
@@ -2405,8 +2405,8 @@ export function createWriterFactory({
            * @throws {TypeError} If an operand is missing or not finite.
            * @throws {Error} If the content context is no longer active or the operator fails.
            */
-          G: function (value) {
-            return operator("G", 25, [value]);
+          G: function (gray) {
+            return operator("G", 25, [gray]);
           },
           /**
            * Sets the line width (`w`).
@@ -2415,8 +2415,8 @@ export function createWriterFactory({
            * @throws {TypeError} If an operand is missing or not finite.
            * @throws {Error} If the content context is no longer active or the operator fails.
            */
-          w: function (value) {
-            return operator("w", 20, [value]);
+          w: function (width) {
+            return operator("w", 20, [width]);
           },
           /**
            * Begins a new subpath at a point (`m`).

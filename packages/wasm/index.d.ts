@@ -1167,20 +1167,20 @@ export interface ContentContext {
     x3: number,
     y3: number,
   ): this;
-  v(x1: number, y1: number, x2: number, y2: number): this;
-  y(x1: number, y1: number, x2: number, y2: number): this;
+  v(x2: number, y2: number, x3: number, y3: number): this;
+  y(x1: number, y1: number, x3: number, y3: number): this;
   h(): this;
   re(x: number, y: number, width: number, height: number): this;
   q(): this;
   Q(): this;
   cm(...matrix: PDFMatrix): this;
-  w(value: number): this;
+  w(lineWidth: number): this;
   J(value: LineCapStyle): this;
   j(value: LineJoinStyle): this;
   M(value: number): this;
   d(dash: number[], phase?: number): this;
   g(value: number): this;
-  G(value: number): this;
+  G(gray: number): this;
   rg(red: number, green: number, blue: number): this;
   RG(red: number, green: number, blue: number): this;
   k(cyan: number, magenta: number, yellow: number, black: number): this;

@@ -262,11 +262,11 @@ export function createWriterToModifyFactory({
         c: function (x1, y1, x2, y2, x3, y3) {
           return operator("c", 12, [x1, y1, x2, y2, x3, y3]);
         },
-        v: function (x1, y1, x2, y2) {
-          return operator("v", 13, [x1, y1, x2, y2]);
+        v: function (x2, y2, x3, y3) {
+          return operator("v", 13, [x2, y2, x3, y3]);
         },
-        y: function (x1, y1, x2, y2) {
-          return operator("y", 14, [x1, y1, x2, y2]);
+        y: function (x1, y1, x3, y3) {
+          return operator("y", 14, [x1, y1, x3, y3]);
         },
         h: function () {
           return operator("h", 15);
@@ -283,8 +283,8 @@ export function createWriterToModifyFactory({
         cm: function (a, b, c, d, e, f) {
           return operator("cm", 19, [a, b, c, d, e, f]);
         },
-        w: function (value) {
-          return operator("w", 20, [value]);
+        w: function (width) {
+          return operator("w", 20, [width]);
         },
         J: function (value) {
           checkOperatorRange("J", value, 2, "line cap");
@@ -300,8 +300,8 @@ export function createWriterToModifyFactory({
         g: function (value) {
           return operator("g", 24, [value]);
         },
-        G: function (value) {
-          return operator("G", 25, [value]);
+        G: function (gray) {
+          return operator("G", 25, [gray]);
         },
         rg: function (red, green, blue) {
           return operator("rg", 26, [red, green, blue]);
