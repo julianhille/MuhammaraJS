@@ -1,7 +1,34 @@
 const muhammara = require("../muhammara");
 const { PAGE_CONTEXT_STATE } = require("./utils");
 
-/** Builds the retained page tree while marking deleted leaf pages. @private */
+// PDF dictionary keys and names the page-tree and page-label code reads.
+const PdfName = Object.freeze({
+  PAGES: "Pages",
+  KIDS: "Kids",
+  COUNT: "Count",
+  PARENT: "Parent",
+  PAGE_LABELS: "PageLabels",
+  LIMITS: "Limits",
+  NUMS: "Nums",
+});
+
+/**
+ * Build the retained page tree while marking deleted leaf pages.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {number} objectID - The object ID of the Pages node to read.
+ * @param {Set<number>} deletedPages - One-based page numbers to delete.
+ * @param {Set<number>} modifiedPageIDs - Object IDs of pages edited in this Recipe.
+ * @param {Object} pageState - Running state: pageNumber, deletedPageIDs and
+ *   retainedPageIDs, updated as leaves are visited.
+ * @param {number} [generation=0] - The generation of the node's reference.
+ * @param {Set<number>} [visited] - Pages nodes already read, to reject cycles.
+ * @param {number} [depth=0] - The nesting depth, limited to 1000.
+ * @returns {Object} The node: objectID, generation, values, retained
+ *   children, retained page count and whether it changed.
+ * @throws {Error} If the page tree is cyclic, too deep or inconsistent, or a
+ *   modified page has a nonzero generation.
+ */
 function readPageTree(
   parser,
   objectID,
@@ -36,7 +63,7 @@ function readPageTree(
       throw new Error("deletePage requires a valid page tree");
     }
     const type = childValues.Type.toPDFName().value;
-    if (type === "Pages") {
+    if (type === PdfName.PAGES) {
       return readPageTree(
         parser,
         childID,
