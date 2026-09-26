@@ -3,6 +3,13 @@ import { throwIfCancelled } from "./lifecycle.mjs";
 
 var encoder = new TextEncoder();
 
+/**
+ * Fails the low-level example when a check does not hold.
+ * @param {*} condition - Checked value.
+ * @param {string} message - Failure description.
+ * @returns {void}
+ * @throws {Error} If `condition` is falsy.
+ */
 function assert(condition, message) {
   if (!condition) throw new Error(`Low-level validation failed: ${message}`);
 }
