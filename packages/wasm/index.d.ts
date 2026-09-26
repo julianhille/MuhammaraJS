@@ -223,6 +223,14 @@ export type RecipeTriangleVertexTrait = RecipeCaseInsensitive<"vtx">;
 export type RecipeTrianglePosition = RecipeCaseInsensitive<
   "a" | "b" | "c" | "centroid" | "circumcenter" | "incenter"
 >;
+export declare const RecipeTrianglePosition: {
+  readonly A: "a";
+  readonly B: "b";
+  readonly C: "c";
+  readonly CENTROID: "centroid";
+  readonly CIRCUMCENTER: "circumcenter";
+  readonly INCENTER: "incenter";
+};
 /** Three sides, or sides and angles in degrees, selected by the trait. */
 export type RecipeTriangleMeasurements = readonly [number, number, number];
 export type RecipeTriangleVertices = readonly [

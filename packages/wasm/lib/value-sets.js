@@ -85,3 +85,13 @@ export var RecipeTriangleTrait = Object.freeze({
   ASA: "asa",
   VTX: "vtx",
 });
+
+/** Triangle point that Recipe triangle() places at its coordinates. */
+export var RecipeTrianglePosition = Object.freeze({
+  A: "a",
+  B: "b",
+  C: "c",
+  CENTROID: "centroid",
+  CIRCUMCENTER: "circumcenter",
+  INCENTER: "incenter",
+});

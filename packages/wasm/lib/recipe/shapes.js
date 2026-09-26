@@ -1,4 +1,4 @@
-import { RecipeTriangleTrait } from "../value-sets.js";
+import { RecipeTrianglePosition, RecipeTriangleTrait } from "../value-sets.js";
 function radians(angle) {
   return (angle * Math.PI) / 180;
 }
@@ -167,11 +167,11 @@ function extend(first, second, length) {
 function debugTriangle(recipe, x, y, vertices, sides, position, options) {
   var centers = centerForTriangle(vertices, sides);
   recipe.circle(x, y, 2, { color: "red", width: 0.5 });
-  if (position === "circumcenter")
+  if (position === RecipeTrianglePosition.CIRCUMCENTER)
     recipe.circle(x, y, centers.circumradius, { color: "green", width: 0.5 });
-  if (position === "incenter")
+  if (position === RecipeTrianglePosition.INCENTER)
     recipe.circle(x, y, centers.inradius, { color: "green", width: 0.5 });
-  if (position === "centroid") {
+  if (position === RecipeTrianglePosition.CENTROID) {
     var B = vertices[0],
       C = vertices[1],
       A = vertices[2];
