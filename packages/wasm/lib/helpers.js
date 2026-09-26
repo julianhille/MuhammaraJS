@@ -399,13 +399,15 @@ export function createHelpers(module) {
   }
 
   /**
-   * Marshals TJ items into temporary WASM buffers.
+   * Marshals TJ items into temporary Wasm buffers.
    *
    * @param {Array} items Text strings, spacing numbers, or glyph lists.
    * @param {Function} callback Receives pointers in fixed order: types, numbers,
    * string offsets, strings, glyph offsets, glyphs, then the item count and the
    * lengths of the string offset, string, glyph offset, and glyph buffers.
    * @returns {*} The callback result before all temporary buffers are freed.
+   * @throws {TypeError} If `items` is empty, a number is not finite, or a glyph list is invalid.
+   * @throws {RangeError} If the items exceed the item, string, or glyph limits.
    */
   function withTJItems(items, callback) {
     if (!items.length)
