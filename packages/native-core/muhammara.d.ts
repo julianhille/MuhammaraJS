@@ -4259,6 +4259,21 @@ declare namespace muhammara {
     movedown(lines?: number, returnCoords?: false): Recipe;
     movedown(lines: number, returnCoords: true): number[];
     movedown(lines?: number, returnCoords?: boolean): Recipe | number[];
+    /**
+     * Define text column layout
+     * @param id - The identifier to be associated with the layout. (See 'text' layout option)
+     * @param x - The coordinate x used to position text columns on page. When zero or omitted, left margin used.
+     * @param y - The coordinate y used to position text columns on page. When zero or omitted, top margin used.
+     * @param width - The width of a text column. When zero or omitted, space between left and right margin used.
+     * @param height - The height of a text column. When zero or omitted, space between top and bottom margin used.
+     * @param options - The options.
+     * @param options.columns - Represents the number of columns in which to divide the given width.
+     * @param options.gap - Defines the separation between layout columns, units in points; defaults to 18.
+     * @param options.reset - True indicates that the a new layout should be produced for the given
+     * layout id, so any previous layout associated with the given id will be lost.
+     * @returns The recipe instance.
+     * @throws {TypeError} If width or height is omitted while no page is active.
+     */
     layout(
       id: string | number,
       x?: number,
