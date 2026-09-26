@@ -4105,6 +4105,16 @@ declare namespace muhammara {
      */
     getCurrentPageInfo(): RecipePageInfo | null;
 
+    /**
+     * Set/Get current page margins.
+     * @param left - Left margin width or an object holding margin properties to be set.
+     * Valid margin property names are: left, right, top, bottom.
+     * @param right - Right margin width.
+     * @param top - Top margin height.
+     * @param bottom - Bottom margin height.
+     * @returns When parameters are given, the value returned is the recipe handle. When no
+     * parameters given, the return value is the current page margin object.
+     */
     margins(): Required<Recipe.RecipeMargins>;
     margins(margins: Recipe.RecipeMargins): Recipe;
     margins(
