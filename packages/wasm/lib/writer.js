@@ -720,6 +720,11 @@ export function createWriterFactory({
         BStar: function () {
           return operator("BStar", 3);
         },
+        /**
+         * Closes and strokes the current path (`s`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         s: function () {
           return operator("s", 4);
         },
