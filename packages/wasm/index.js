@@ -45,6 +45,8 @@ import {
   ObjectReplacementScope,
   PDFImageType,
   RegisteredImageFormat,
+  ETokenSeparator,
+  LineCapStyle,
 } from "./lib/value-sets.js";
 
 export {
@@ -54,7 +56,9 @@ export {
   ByteWriterWithPosition,
   DeviceColorSpace,
   DrawingPathType,
+  ETokenSeparator,
   ImageFitPolicy,
+  LineCapStyle,
   ObjectReplacementScope,
   PageBox,
   PDFImageType,

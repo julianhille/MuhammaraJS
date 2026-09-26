@@ -172,3 +172,17 @@ export var RegisteredImageFormat = Object.freeze({
   PNG: "png",
   TIFF: "tiff",
 });
+
+/** PDF line cap styles for `J()`, with the native member names. */
+export var LineCapStyle = Object.freeze({
+  LINECAP_BUTT: 0,
+  LINECAP_ROUND: 1,
+  LINECAP_SQUARE: 2,
+});
+
+/** Tokens `endArray()` writes after an array, with the native member names. */
+export var ETokenSeparator = Object.freeze({
+  eTokenSeparatorSpace: 0,
+  eTokenSeparatorEndLine: 1,
+  eTokenSeparatorNone: 2,
+});

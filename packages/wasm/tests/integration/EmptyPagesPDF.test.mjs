@@ -3,7 +3,9 @@ import {
   createMuhammaraWasm,
   DeviceColorSpace,
   DrawingPathType,
+  ETokenSeparator,
   ImageFitPolicy,
+  LineCapStyle,
   ObjectReplacementScope,
   PageBox,
   PDFImageType,
@@ -147,4 +149,6 @@ var EXPORTED_VALUE_SETS = [
   ],
   [ObjectReplacementScope, ["global"]],
   [PDFImageType, ["PDF", "JPG", "TIFF", "PNG"]],
+  [LineCapStyle, [0, 1, 2]],
+  [ETokenSeparator, [0, 1, 2]],
 ];

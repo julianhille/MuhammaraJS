@@ -11,6 +11,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
   an existing page, for example before adding a new OCR text layer, and a
   guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
+- Export the frozen `LineCapStyle` and `ETokenSeparator` objects that native
+  exports, with the same member names, for `J()` and `endArray()` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Export frozen value sets for finite string options, each with a same-named
   type: `DeviceColorSpace`, `DrawingPathType`, `ImageFitPolicy`, `PageBox`,
   `PDFImageType`, `TextEncoding`, `ObjectReplacementScope`, and the Recipe sets

@@ -938,10 +938,20 @@ export declare const DrawingPathType: {
 };
 /** PDF line cap style for `J()`: 0 butt, 1 round, 2 projecting square. */
 export type LineCapStyle = 0 | 1 | 2;
+export declare const LineCapStyle: {
+  readonly LINECAP_BUTT: 0;
+  readonly LINECAP_ROUND: 1;
+  readonly LINECAP_SQUARE: 2;
+};
 /** Info dictionary `/Trapped` state: the `EInfoTrapped*` constants. */
 export type EInfoTrapped = 0 | 1 | 2;
 /** Token written after an array by `endArray()`: the `eTokenSeparator*` constants. */
 export type ETokenSeparator = 0 | 1 | 2;
+export declare const ETokenSeparator: {
+  readonly eTokenSeparatorSpace: 0;
+  readonly eTokenSeparatorEndLine: 1;
+  readonly eTokenSeparatorNone: 2;
+};
 /** Parsed PDF object type: the `ePDFObject*` constants. */
 export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 /** Cross-reference entry kind: the `eXrefEntry*` constants. */

@@ -1,4 +1,6 @@
 import {
+  ETokenSeparator,
+  LineCapStyle,
   PDFImageType,
   createMuhammaraWasm,
   createRecipe,
@@ -30,7 +32,6 @@ import type {
   ERangeType,
   XrefEntryType,
   PDFObjectType,
-  ETokenSeparator,
   EInfoTrapped,
   DrawingPathType,
   PDFPageContentItemType,
@@ -977,6 +978,10 @@ async function usesNamedValueSets() {
   void geometry;
   var namedImageType: PDFImageType = PDFImageType.JPG;
   void namedImageType;
+  var namedLineCap: LineCapStyle = LineCapStyle.LINECAP_ROUND;
+  void namedLineCap;
+  var namedSeparator: ETokenSeparator = ETokenSeparator.eTokenSeparatorNone;
+  void namedSeparator;
 }
 
 void usesNamedValueSets;
