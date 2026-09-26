@@ -1245,6 +1245,10 @@ declare namespace muhammara {
      * @returns This object; undefined when it is not a hex string.
      */
     toPDFHexString(): PDFHexString | undefined;
+    /**
+     * Returns this object typed as the null object.
+     * @returns This object; undefined when it is not the null object.
+     */
     toPDFNull(): PDFNull | undefined;
     toPDFName(): PDFName | undefined;
     toPDFInteger(): PDFInteger | undefined;
