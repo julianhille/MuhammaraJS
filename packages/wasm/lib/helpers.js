@@ -555,6 +555,16 @@ export function createHelpers(module) {
     context.Quote = function (text, options) {
       return show(1, text, options);
     };
+    /**
+     * Sets word and character spacing, moves to the next line, and shows text (`"`).
+     * @param {number} wordSpace - Word spacing.
+     * @param {number} characterSpace - Character spacing.
+     * @param {string|Glyph[]} text - Text, or glyph entries.
+     * @param {TextOptions} [options] - Text encoding; only for string text.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If a spacing is not finite, or `options` is invalid or given with glyphs.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.DoubleQuote = function (wordSpace, characterSpace, text, options) {
       return show(2, text, options, wordSpace, characterSpace);
     };
