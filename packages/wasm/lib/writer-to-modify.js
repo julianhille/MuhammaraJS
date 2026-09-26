@@ -562,6 +562,11 @@ export function createWriterToModifyFactory({
         WStar: function () {
           return operator("WStar", 31);
         },
+        /**
+         * Begins a text object (`BT`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         BT: function () {
           return operator("BT", 32);
         },
