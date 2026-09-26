@@ -301,7 +301,10 @@ exports.Column = class Column {
     if (!this._options.header || typeof this._options.header === "boolean") {
       this._options.header = {
         bold: true,
-        textBox: { padding: 2, textAlign: "center center" },
+        textBox: {
+          padding: 2,
+          textAlign: `${HorizontalAlign.CENTER} ${VerticalAlign.CENTER}`,
+        },
       };
     }
 
