@@ -3724,6 +3724,14 @@ export function createWriterFactory({
           module._free(valuesPointer);
         }
       },
+      /**
+       * Reads JPEG information after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} image - JPEG bytes, Blob, or File.
+       * @returns {Promise<JPGImageInformation>} The information.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the writer ended or the JPEG cannot be read.
+       */
       retrieveJPGImageInformationAsync: async function (image) {
         return this.retrieveJPGImageInformation(
           await normalizeBytesAsync(image, "JPEG bytes"),
