@@ -87,6 +87,11 @@ export class Column {
   get position() {
     return [this.x, this.y];
   }
+  /**
+   * Moves the column origin.
+   * @param {number[]} value - `[x, y]`.
+   * @returns {void}
+   */
   set position(value) {
     [this.x, this.y] = value;
   }
