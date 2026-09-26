@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   instead of any string, still accepting other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Add frozen `DeviceColorSpace`, `PageBox`, `PDFImageType`, and `EEncoding`
   objects, named and valued as in `@muhammara/wasm`; `ColorOptions.colorspace`
-  suggests the `DeviceColorSpace` values and still accepts other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+  accepts only the `DeviceColorSpace` values [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Add `DrawingPathType` constants for the `type` option of the low-level
   drawing helpers [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare the arguments the native `PDFWriter` already accepts: TIFF options
@@ -60,6 +60,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Throw a `TypeError` for an unknown colorspace, as `@muhammara/wasm` does.
+  The low-level drawing and `writeText()` color options throw
+  `colorspace must be rgb, gray, or cmyk` instead of drawing without a color,
+  and Recipe `chroma()`, text and drawing options throw
+  `Unknown colorspace: <name>` instead of a plain `Error` or an unrelated
+  `TypeError`. The declarations no longer accept any string for
+  `ColorOptions.colorspace` or the `Recipe#chroma()` colorspace, so a value
+  typed `string` fails `tsc`; use `DeviceColorSpace` or `Recipe.Colorspace`
+  values, and see the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#type-colorspaces) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+- Remove the `key` parameter from the `InfoDictionary#getAdditionalInfoEntries()`
+  declaration; the runtime ignored it and always returned every entry. Calls
+  that pass a key fail `tsc`; drop the argument and pick the entry from the
+  returned object [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+- Remove `strikeOut` and `lineWidth` from the `WriteTextOptions` declaration;
+  `writeText()` never read them, so `{ strikeOut: true }` drew nothing. Passing
+  them fails `tsc`; draw a line with `drawPath()` or use the Recipe `text()`
+  `strikeOut` option instead [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+- Type `Recipe#info()` without options as `Record<string, string> | undefined`,
+  the Info record it returns, instead of `Recipe`. Code that chained on it
+  fails `tsc` and failed at runtime before; call `info(options)` to write
+  information [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw `Error: Unknown annotation flag (<name>)` from Recipe `annot()` and
   `comment()` for a `flag` that is not a `Recipe.AnnotFlag` value, instead of
   silently writing no flag bits, as `@muhammara/wasm` does. Numeric bit masks
@@ -170,6 +191,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   fractional size such as `10.5` was truncated to `10` [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Accept a pattern name alone in `SCN` and `scn`, emitting `/P0 SCN` to select a
   colored (PaintType 1) tiling pattern instead of throwing [#797](https://github.com/julianhille/MuhammaraJS/issues/797)
+- Declare the `useGivenCoords` option of `Recipe#rectangle()`, which the
+  runtime already honors, as Wasm does [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Place the link of a Recipe `circle()`, `ellipse()`, `arc()` or `pie()`
   drawn at `"center"` coordinates; its rectangle was computed from the string
   and came out invalid [#792](https://github.com/julianhille/MuhammaraJS/issues/792)

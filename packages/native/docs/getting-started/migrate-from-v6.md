@@ -332,9 +332,33 @@ recipe.text("Spot color", 40, 40, {
 });
 ```
 
-`Recipe.chroma()` continues to accept dynamic strings for compatibility, but
-known invalid literals such as `"lab"` now fail `tsc` because the runtime throws
-for them. Use `"rgb"`, `"gray"`, `"cmyk"`, or `"separation"`.
+`Recipe.chroma()` and the low-level `ColorOptions.colorspace` no longer
+accept a value typed `string`, and an unknown colorspace such as `"lab"` throws
+a `TypeError` at runtime: `Unknown colorspace: lab` from Recipe, and
+`colorspace must be rgb, gray, or cmyk` from the low-level drawing and
+`writeText()` options. Narrow computed values before passing them:
+
+```typescript
+var colorspaces: readonly string[] = Object.values(muhammara.Recipe.Colorspace);
+
+function isColorspace(value: string): value is muhammara.Recipe.Colorspace {
+  return colorspaces.includes(value);
+}
+
+if (isColorspace(configuredColorspace)) {
+  recipe.chroma("brand", "#ff0000", configuredColorspace);
+}
+```
+
+For low-level options, use `muhammara.DeviceColorSpace` values:
+
+```typescript
+context.drawRectangle(10, 10, 100, 40, {
+  type: "fill",
+  color: 0xff000000,
+  colorspace: muhammara.DeviceColorSpace.CMYK,
+});
+```
 
 ### Type Arrows And Triangles
 

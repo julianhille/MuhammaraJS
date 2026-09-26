@@ -1,6 +1,6 @@
 const { xObjectForm } = require("./xObjectForm");
 const { resolveFontSize } = require("./utils");
-const { LineCap, LineJoin } = require("../recipe-constants");
+const { Colorspace, LineCap, LineJoin } = require("../recipe-constants");
 
 /**
  * Resolve drawing and text options into path options: font, size, colors
@@ -292,6 +292,21 @@ exports._setScalingTransform = function _setScalingTransform(context, options) {
   if (options.ratio) {
     context.cm(options.ratio[0], 0, 0, options.ratio[1], 0, 0);
   }
+};
+
+/**
+ * Options for a low-level drawing call. A separation color is not a device
+ * color: the caller sets it on the form XObject, so the low-level call gets
+ * neither its color nor its colorspace.
+ * @private
+ * @param {Object} pathOptions - The path options.
+ * @returns {Object} The path options, or a copy without color and colorspace
+ *   for a separation color.
+ */
+exports._devicePathOptions = function _devicePathOptions(pathOptions) {
+  if (pathOptions.colorspace !== Colorspace.SEPARATION) return pathOptions;
+  const { color, colorspace, ...deviceOptions } = pathOptions;
+  return deviceOptions;
 };
 
 /**

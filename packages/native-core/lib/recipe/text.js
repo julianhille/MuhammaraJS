@@ -469,7 +469,13 @@ exports.text = function text(text = "", x, y, options = {}) {
           const width = options.lineWidth;
           ctx
             .q()
-            .drawPath(x, underlineY, x + width, underlineY, options)
+            .drawPath(
+              x,
+              underlineY,
+              x + width,
+              underlineY,
+              this._devicePathOptions(options),
+            )
             .Q();
         }
       };
@@ -481,7 +487,13 @@ exports.text = function text(text = "", x, y, options = {}) {
           const width = options.lineWidth;
           ctx
             .q()
-            .drawPath(x, strikeOutY, x + width, strikeOutY, options)
+            .drawPath(
+              x,
+              strikeOutY,
+              x + width,
+              strikeOutY,
+              this._devicePathOptions(options),
+            )
             .Q();
         }
       };

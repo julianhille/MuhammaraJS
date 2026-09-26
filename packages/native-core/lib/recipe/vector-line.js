@@ -58,7 +58,7 @@ exports.lineTo = function lineTo(x, y, options = {}) {
     .j(pathOptions.lineJoin)
     .d(pathOptions.dash, pathOptions.dashPhase)
     .M(pathOptions.miterLimit)
-    .drawPath(fromX, fromY, nx, ny, pathOptions)
+    .drawPath(fromX, fromY, nx, ny, this._devicePathOptions(pathOptions))
     .Q();
   this.moveTo(x, y);
   return this;
