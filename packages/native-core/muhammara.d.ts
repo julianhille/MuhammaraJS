@@ -4592,6 +4592,30 @@ declare namespace muhammara {
      * @returns The recipe instance.
      */
     fillAndStroke(): Recipe;
+    /**
+     * Draw an N-sided regular polygon
+     * @param cx - x-coordinate of center point of regular polygon
+     * @param cy - y-coordinate of center point of regular polygon
+     * @param radius - The radius, distance from the center of the polygon to a vertice.
+     * @param sides - the number of sides of the regular polygon, at least 3;; defaults to 3.
+     *   or the options when the side count is omitted.
+     * @param options - The options
+     * @param options.color - HexColor or DecimalColor
+     * @param options.stroke - HexColor or DecimalColor
+     * @param options.fill - HexColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360; defaults to 0.
+     * @param options.rotationOrigin - ] - [originX, originY]; defaults to [cx,cy.
+     * @param options.rotationVertice - the number of the vertice to be used as rotation origin
+     * @param options.skewX - the angle skew off the x-axis
+     * @param options.skewY - the angle skew off the y-axis.
+     * @param options.link - Make the polygon's bounding square open this URL.
+     * @param options.debug - Also draw the circumscribed circle and center.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     n_gon(
       cx: number,
       cy: number,
