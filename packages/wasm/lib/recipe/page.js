@@ -165,7 +165,16 @@ function collectPageTreeObjectIDs(tree, objectIDs) {
   });
 }
 
-/** Rejects page-tree objects that cannot be rewritten safely. @private */
+/**
+ * Rejects page-tree objects that cannot be rewritten safely.
+ * @private
+ * @param {object} tree - Page-tree root.
+ * @param {object|null} pageLabels - Prepared page labels.
+ * @param {PDFIndirectObjectReference} root - Catalog reference.
+ * @param {PDFModifier} writer - Modifier.
+ * @returns {void}
+ * @throws {Error} If a changed object has a nonzero generation.
+ */
 function assertSupportedModifiedGenerations(tree, pageLabels, root, writer) {
   walkPageTree(tree, (node) => {
     if (!node.children) return;
