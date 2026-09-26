@@ -418,6 +418,9 @@ exports.Column = class Column {
     }
   }
 
+  /**
+   * @returns {number} The column width.
+   */
   get width() {
     return this._width;
   }
