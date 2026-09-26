@@ -3,6 +3,12 @@ var fs = require("fs");
     PDFRStreamForFile is an implementation of a read stream using the supplied file path.
 */
 
+/**
+ * Opens a file for reading.
+ * @constructor
+ * @param {string} inPath - The file path.
+ * @throws {Error} If the file cannot be opened or read.
+ */
 function PDFRStreamForFile(inPath) {
   this.rs = fs.openSync(inPath, "r");
   this.path = inPath;
