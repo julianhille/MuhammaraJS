@@ -80,7 +80,7 @@ function hex(value) {
  * @param {Recipe} recipe - Recipe instance with known colors.
  * @param {RecipeColor} value - Color value or registered name.
  * @param {object} [options={}] - Options with `colorspace` and `colorName`.
- * @returns {{colorspace: RecipeColorSpace, values: number[], name: string, alternate?: DeviceColorSpace}} Components from 0 to 1.
+ * @returns {{colorspace: RecipeColorSpace, values: number[], name: string, alternate: (DeviceColorSpace|undefined)}} Components from 0 to 1.
  * @throws {TypeError} If the color space is unknown.
  */
 export function colorModel(recipe, value, options = {}) {
