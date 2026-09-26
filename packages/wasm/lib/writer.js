@@ -3980,6 +3980,18 @@ export function createWriterFactory({
         form._ended = true;
         return this;
       },
+      /**
+       * Creates one form XObject per source PDF page.
+       * @param {string|ByteSource} source - Registered PDF name, or PDF bytes.
+       * @param {PDFPageBoxType|PDFRectangle} [pageBox=ePDFPageBoxMediaBox] - Box used as
+       * the form bounds, or an explicit rectangle.
+       * @param {PDFFormOptions} [options={}] - Pages, transformation, and additional object IDs to copy.
+       * @returns {number[]} Object IDs of the forms.
+       * @throws {TypeError} If `options` is not an object, holds a password, or a rectangle
+       * or matrix is not finite.
+       * @throws {RangeError} If `pageBox`, the page range, or an object ID is invalid.
+       * @throws {Error} If the writer ended, the PDF is not registered, or the forms cannot be created.
+       */
       createFormXObjectsFromPDF: function (
         source,
         pageBox = constants.ePDFPageBoxMediaBox,
