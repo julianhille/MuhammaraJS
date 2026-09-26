@@ -177,6 +177,17 @@ export function installDrawingHelpers(context, colorValue) {
     return finishDrawingPath(context, options);
   }
 
+  /**
+   * Draws a rectangle.
+   * @param {number} x - Lower-left x.
+   * @param {number} y - Lower-left y.
+   * @param {number} width - Width.
+   * @param {number} height - Height.
+   * @param {DrawPathOptions} [options] - Color, width, paint type, and close flag.
+   * @returns {this} The content context, for chaining.
+   * @throws {TypeError} If a coordinate or option is invalid.
+   * @throws {Error} If the content context is no longer active.
+   */
   context.drawRectangle = function (x, y, width, height, options) {
     if (![x, y, width, height].every(Number.isFinite)) {
       throw new TypeError("drawRectangle requires four finite coordinates");
