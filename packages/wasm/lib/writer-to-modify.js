@@ -18,7 +18,11 @@ import {
   strokeUnderline,
 } from "./drawing-options.js";
 
-/** Creates a factory for writers that modify an existing PDF. */
+/**
+ * Creates the byte-first PDF modifier factory.
+ * @param {object} dependencies - Module, constants, value types, and shared helpers.
+ * @returns {Function} `createWriterToModify(bytes, options)`.
+ */
 export function createWriterToModifyFactory({
   module,
   constants,
