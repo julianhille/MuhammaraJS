@@ -643,6 +643,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     W(): this;
+    /**
+     * Clips to the path (even-odd); operator W*. Follow it with n.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     WStar(): this;
     /** A resource name, an XObject, or a form XObject object ID. */
     doXObject(
