@@ -84,6 +84,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Accept an image XObject from `createImageXObjectFromJPGBytes()` in
+  `addImageXObjectMapping()`, as native does; it accepted only an object ID [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Accept an array of byte values in `writeLiteralString()`, `writeHexString()`,
   `writeLiteralStringValue()`, and `PDFWStreamForBuffer.write()`, as native
   does, and in the Wasm-only `writeHexStringValue()`, instead of throwing;

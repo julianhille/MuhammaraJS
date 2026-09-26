@@ -172,6 +172,12 @@ describe("ModifierContentContext", function () {
       colorSpace: resources.addColorSpaceMapping(3),
       pattern: resources.addPatternMapping(4),
     };
+    assert.match(
+      resources.addImageXObjectMapping(
+        modifier.createImageXObjectFromJPGBytes("jpg"),
+      ),
+      /^Im/,
+    );
     assert.equal(
       context
         .q()

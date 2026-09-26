@@ -204,6 +204,13 @@ describe("FormXObjectTest", function () {
     var tiffForm = writer.createFormXObjectFromTIFFBytes("tiff");
     var form = writer.createFormXObject(0, 0, 200, 100);
     assert.ok(jpgImage.id > 0);
+    var resources = page.getResourcesDictionary();
+    assert.match(resources.addImageXObjectMapping(jpgImage), /^Im/);
+    assert.throws(
+      () => resources.addImageXObjectMapping({ id: jpgImage.id }),
+      /Resource object ID must be positive/,
+      "only images created by a writer or modifier are accepted",
+    );
     assert.ok(jpgForm.id > 0);
     assert.ok(form.id > 0);
     var formContext = form.getContentContext();

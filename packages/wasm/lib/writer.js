@@ -7,6 +7,7 @@ import {
   RegisteredImageFormat,
 } from "./value-sets.js";
 import { isPageBoxType } from "./constants.js";
+import { imageXObjects } from "./image-xobjects.js";
 import { selectedPageRanges } from "./page-ranges.js";
 import {
   readTextOptions,
@@ -363,13 +364,16 @@ export function createWriterSupport({
        */
       addFormXObjectMapping: (objectId) => addMapping(6, objectId),
       /**
-       * Maps a image XObject object into the resources dictionary.
-       * @param {number} objectId - Indirect object ID of the image XObject.
+       * Maps an image XObject into the resources dictionary.
+       * @param {number|ImageXObject|ModifierImageXObject} image - Indirect
+       *   object ID of the image XObject, or an image created by a writer or
+       *   modifier, as native accepts.
        * @returns {string} The resource name to use in content operators.
-       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {RangeError} If `image` is neither an image XObject nor a positive integer.
        * @throws {Error} If the owner is closed or the mapping fails.
        */
-      addImageXObjectMapping: (objectId) => addMapping(7, objectId),
+      addImageXObjectMapping: (image) =>
+        addMapping(7, imageXObjects.has(image) ? image.id : image),
       /**
        * Maps a shading object into the resources dictionary.
        * @param {number} objectId - Indirect object ID of the shading.
@@ -1938,6 +1942,7 @@ export function createWriterFactory({
         this._recipe = recipe;
         this._owner = owner;
         this.id = module._muhammara_wasm_image_get_object_id(handle);
+        imageXObjects.add(this);
       }
     }
 

@@ -5,6 +5,7 @@ import {
 } from "./value-sets.js";
 import { createChildLifecycle } from "./lifecycle.js";
 import { isPageBoxType } from "./constants.js";
+import { imageXObjects } from "./image-xobjects.js";
 import { selectedPageRanges } from "./page-ranges.js";
 import {
   readTextOptions,
@@ -1687,9 +1688,11 @@ export function createWriterToModifyFactory({
             ),
         );
         if (!handle) throw new Error("Unable to create JPEG image XObject");
-        return completedXObject(
+        var image = completedXObject(
           module._muhammara_wasm_image_get_object_id(handle),
         );
+        imageXObjects.add(image);
+        return image;
       },
       /**
        * Creates a completed form XObject that draws a registered JPEG.

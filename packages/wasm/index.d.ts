@@ -1523,7 +1523,10 @@ export interface ResourcesDictionary {
   addPropertyMapping(id: number): string;
   addXObjectMapping(id: number): string;
   addFormXObjectMapping(id: number): string;
-  addImageXObjectMapping(id: number): string;
+  /** Pass an object ID, or an image XObject created by a writer or modifier, as in native. */
+  addImageXObjectMapping(
+    image: number | ImageXObject | ModifierImageXObject,
+  ): string;
   addShadingMapping(id: number): string;
 }
 export interface DictionaryContext {

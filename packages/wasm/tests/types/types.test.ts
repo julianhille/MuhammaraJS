@@ -802,6 +802,10 @@ async function usesAlignedDeclarations() {
   var writer = muhammara.createWriter();
   var page = writer.createPage();
   page.getResourcesDictionary().addFormXObjectMapping(1);
+  // Image XObjects map directly, as in native.
+  page
+    .getResourcesDictionary()
+    .addImageXObjectMapping(writer.createImageXObjectFromJPGBytes("jpg"));
   var context = writer.startPageContentContext(page);
   context
     .drawPath(0, 0, 10, 10)
