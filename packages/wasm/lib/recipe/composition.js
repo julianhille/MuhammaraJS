@@ -1,4 +1,4 @@
-import { ImageFit, RecipeStructureFormat } from "../value-sets.js";
+import { ImageFit, StructureFormat } from "../value-sets.js";
 import { constants } from "../constants.js";
 import { endActivePage } from "./page.js";
 
@@ -394,11 +394,11 @@ export function createStructure() {
    * encryption, and indirect-object counts for JSON output.
    * @throws {Error} If the Recipe cannot be finished.
    */
-  return function (format = RecipeStructureFormat.STRING) {
+  return function (format = StructureFormat.STRING) {
     var bytes = this.endPDF();
     var text = new TextDecoder().decode(bytes);
     var objects = (text.match(/\n\d+ \d+ obj\b/g) || []).length;
-    if (format === RecipeStructureFormat.JSON || format?.json) {
+    if (format === StructureFormat.JSON || format?.json) {
       return {
         pages: this._outputPages || this._pages.length,
         encrypted: /\/Encrypt\b/.test(text),

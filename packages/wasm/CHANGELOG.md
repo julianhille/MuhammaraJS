@@ -15,12 +15,16 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   exports, with the same member names, for `J()` and `endArray()` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Export frozen value sets for finite string options, each with a same-named
   type: `DeviceColorSpace`, `DrawingPathType`, `ImageFit`, `PageBox`,
-  `PDFImageType`, `EEncoding`, `ObjectReplacementScope`, and the Recipe sets
-  `RecipeAnnotationFlag`, `RecipeAnnotationIcon`, `RecipeArrowAnchor`, `RecipeArrowType`, `RecipeFontStyle`,
-  `RecipeHorizontalAlignment`, `RecipeLineCap`, `RecipeLineJoin`,
-  `RecipePageLayout`, `RecipeStructureFormat`, `RecipeTableRowParity`,
-  `RecipeTextAlignment`, `RecipeTextWrap`, `RecipeTrianglePosition`,
-  `RecipeTriangleTrait`, and `RecipeVerticalAlignment` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+  `PDFImageType`, `EEncoding`, and `ObjectReplacementScope` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Add native's Recipe value constants as static properties with the native names
+  and members, for example `Recipe.TextWrap.ELLIPSIS` and
+  `Recipe.AnnotFlag.LOCKED_CONTENTS`: `TextWrap`, `TextAlign`, `TableRowNth`,
+  `LineCap`, `LineJoin`, `ArrowAt`, `ArrowType`, `TriangleTrait`,
+  `TrianglePosition`, `PageLayout`, `PageSize`, `HorizontalAlign`,
+  `VerticalAlign`, `FontStyle`, `Permission`, `Coordinate`, `Colorspace`,
+  `AnnotSubtype`, `AnnotFlag`, `ChromaCommand`, and `AnnotIcon`, plus the
+  Wasm-only `StructureFormat`. The annotation `flag` option now accepts
+  `lockedcontents` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ### Breaking Changes
 
@@ -324,7 +328,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `registerFont()`, `registerImage()`, and `registerPdf()` for an empty or
   non-string name, as Recipe registration does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type the Recipe annotation `flag` option as `RecipeAnnotationFlag | number` and
-  `icon` as `RecipeAnnotationIcon`, as native does, instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+  `icon` as `RecipeAnnotationIcon` instead of any string, matching native's
+  `AnnotFlag` and `AnnotIcon` values [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Rename the text encoding type to `EEncoding`, as native names it; `TextEncoding`
   remains as a deprecated alias [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Define `Glyph` as a list of `[glyphId, unicodeCodePoint]` pairs, as native

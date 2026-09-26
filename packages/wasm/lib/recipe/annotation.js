@@ -1,4 +1,4 @@
-import { RecipeAnnotationFlag } from "../value-sets.js";
+import { AnnotFlag } from "../value-sets.js";
 /**
  * Converts an annotation flag name or bit mask to flag bits.
  * @param {RecipeAnnotationFlag|number} [flag] - Flag name, in any case, or a non-negative bit mask.
@@ -7,15 +7,16 @@ import { RecipeAnnotationFlag } from "../value-sets.js";
  */
 function annotationFlags(flag) {
   var bits = {
-    [RecipeAnnotationFlag.INVISIBLE]: 1,
-    [RecipeAnnotationFlag.HIDDEN]: 2,
-    [RecipeAnnotationFlag.PRINT]: 4,
-    [RecipeAnnotationFlag.NO_ZOOM]: 8,
-    [RecipeAnnotationFlag.NO_ROTATE]: 16,
-    [RecipeAnnotationFlag.NO_VIEW]: 32,
-    [RecipeAnnotationFlag.READ_ONLY]: 64,
-    [RecipeAnnotationFlag.LOCKED]: 128,
-    [RecipeAnnotationFlag.TOGGLE_NO_VIEW]: 256,
+    [AnnotFlag.INVISIBLE]: 1,
+    [AnnotFlag.HIDDEN]: 2,
+    [AnnotFlag.PRINT]: 4,
+    [AnnotFlag.NO_ZOOM]: 8,
+    [AnnotFlag.NO_ROTATE]: 16,
+    [AnnotFlag.NO_VIEW]: 32,
+    [AnnotFlag.READ_ONLY]: 64,
+    [AnnotFlag.LOCKED]: 128,
+    [AnnotFlag.TOGGLE_NO_VIEW]: 256,
+    [AnnotFlag.LOCKED_CONTENTS]: 512,
   };
   if (flag === undefined || flag === "") return 0;
   if (Number.isSafeInteger(flag) && flag >= 0) return flag;

@@ -1,5 +1,5 @@
 import { fontStyleKey } from "./font.js";
-import { RecipeFontStyle } from "../value-sets.js";
+import { FontStyle } from "../value-sets.js";
 /**
  * Creates Recipe asset registration and removal methods.
  * @param {object} dependencies - Module, registries, byte helpers, and writer font hooks.
@@ -166,7 +166,7 @@ export function createRegistrationMethods({
      * @param {RecipeFontStyle} [type="regular"] Font family style to remove.
      * @returns {boolean} Whether a matching registered style was removed.
      */
-    unregisterFont: function (name, type = RecipeFontStyle.REGULAR) {
+    unregisterFont: function (name, type = FontStyle.REGULAR) {
       var key = String(name).toLowerCase();
       var family = fonts.get(key);
       if (!family) return false;

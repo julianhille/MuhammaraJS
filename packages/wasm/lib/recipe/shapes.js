@@ -1,8 +1,8 @@
 import {
-  RecipeArrowAnchor,
-  RecipeArrowType,
-  RecipeTrianglePosition,
-  RecipeTriangleTrait,
+  ArrowAt,
+  ArrowType,
+  TrianglePosition,
+  TriangleTrait,
 } from "../value-sets.js";
 /**
  * Converts degrees to radians.
@@ -130,17 +130,17 @@ function distance(first, second) {
 function triangleGeometry(x, y, traitID, traits) {
   var a, b, c;
   var vertices;
-  if (traitID === RecipeTriangleTrait.VTX) {
+  if (traitID === TriangleTrait.VTX) {
     vertices = [traits[0], traits[1], traits[2]];
     a = distance(vertices[0], vertices[1]);
     b = distance(vertices[2], vertices[1]);
     c = distance(vertices[2], vertices[0]);
   } else {
-    if (traitID === RecipeTriangleTrait.SSS) [a, b, c] = traits;
-    else if (traitID === RecipeTriangleTrait.SAS) {
+    if (traitID === TriangleTrait.SSS) [a, b, c] = traits;
+    else if (traitID === TriangleTrait.SAS) {
       [a, , b] = traits;
       c = Math.sqrt(a ** 2 + b ** 2 - 2 * a * b * Math.cos(radians(traits[1])));
-    } else if (traitID === RecipeTriangleTrait.ASA) {
+    } else if (traitID === TriangleTrait.ASA) {
       var angleC = 180 - traits[0] - traits[2];
       if (angleC <= 0)
         throw new Error(
@@ -282,11 +282,11 @@ function extend(first, second, length) {
 function debugTriangle(recipe, x, y, vertices, sides, position, options) {
   var centers = centerForTriangle(vertices, sides);
   recipe.circle(x, y, 2, { color: "red", width: 0.5 });
-  if (position === RecipeTrianglePosition.CIRCUMCENTER)
+  if (position === TrianglePosition.CIRCUMCENTER)
     recipe.circle(x, y, centers.circumradius, { color: "green", width: 0.5 });
-  if (position === RecipeTrianglePosition.INCENTER)
+  if (position === TrianglePosition.INCENTER)
     recipe.circle(x, y, centers.inradius, { color: "green", width: 0.5 });
-  if (position === RecipeTrianglePosition.CENTROID) {
+  if (position === TrianglePosition.CENTROID) {
     var B = vertices[0],
       C = vertices[1],
       A = vertices[2];
@@ -503,11 +503,11 @@ export function createShapeMethods() {
       if (baseOffset === 0 && options.type) {
         var types = {
           0: 0,
-          [RecipeArrowType.TRIANGLE]: 0,
+          [ArrowType.TRIANGLE]: 0,
           1: 0.5,
-          [RecipeArrowType.DART]: 0.5,
+          [ArrowType.DART]: 0.5,
           2: -1,
-          [RecipeArrowType.KITE]: -1,
+          [ArrowType.KITE]: -1,
         };
         if (types[options.type] !== undefined)
           baseOffset = types[options.type] * headLength;
@@ -516,12 +516,11 @@ export function createShapeMethods() {
       if (options.at && options.rotation && !options.rotationOrigin)
         drawOptions.rotationOrigin = [x, y];
       if (options.double) {
-        if (options.at === RecipeArrowAnchor.HEAD) x -= headLength;
-        else if (options.at === RecipeArrowAnchor.TAIL)
-          x += shaftLength + headLength;
+        if (options.at === ArrowAt.HEAD) x -= headLength;
+        else if (options.at === ArrowAt.TAIL) x += shaftLength + headLength;
         else x += shaftLength / 2;
-      } else if (options.at === RecipeArrowAnchor.HEAD) x -= headLength;
-      else if (options.at === RecipeArrowAnchor.TAIL) x += shaftLength;
+      } else if (options.at === ArrowAt.HEAD) x -= headLength;
+      else if (options.at === ArrowAt.TAIL) x += shaftLength;
       else x += (shaftLength - headLength) / 2;
       var halfHead = headWidth / 2,
         halfShaft = shaftWidth / 2;
@@ -613,7 +612,7 @@ export function createShapeMethods() {
       var traitID = (
         options.traitID ||
         options.traitsID ||
-        RecipeTriangleTrait.SSS
+        TriangleTrait.SSS
       ).toLowerCase();
       var geometry = triangleGeometry(x, y, traitID, traits);
       var position = options.position
@@ -621,11 +620,11 @@ export function createShapeMethods() {
         : "default";
       var centers = centerForTriangle(geometry.vertices, geometry);
       var target =
-        position === RecipeTrianglePosition.A
+        position === TrianglePosition.A
           ? geometry.vertices[2]
-          : position === RecipeTrianglePosition.B || position === "default"
+          : position === TrianglePosition.B || position === "default"
             ? geometry.vertices[0]
-            : position === RecipeTrianglePosition.C
+            : position === TrianglePosition.C
               ? geometry.vertices[1]
               : centers[position] || geometry.vertices[0];
       var vertices =

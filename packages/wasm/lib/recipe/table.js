@@ -1,8 +1,8 @@
 import {
-  RecipeLineCap,
-  RecipeTableRowParity,
-  RecipeTextAlignment,
-  RecipeVerticalAlignment,
+  LineCap,
+  TableRowNth,
+  TextAlign,
+  VerticalAlign,
 } from "../value-sets.js";
 /**
  * Reports whether a style value is a plain object whose keys can merge.
@@ -178,7 +178,7 @@ export function createTableMethods() {
         var border = {
           ...(options.border === true ? {} : options.border),
           // Keep borders from extending outside of the enclosing box.
-          lineCap: RecipeLineCap.BUTT,
+          lineCap: LineCap.BUTT,
         };
         if (!border.width) border.width = 0.5;
         this.rectangle(x, tableTop, tableWidth, currentY - tableTop, border);
@@ -223,7 +223,7 @@ export function createTableMethods() {
                 bold: true,
                 textBox: {
                   padding: 2,
-                  textAlign: `${RecipeTextAlignment.CENTER} ${RecipeVerticalAlignment.CENTER}`,
+                  textAlign: `${TextAlign.CENTER} ${VerticalAlign.CENTER}`,
                 },
               },
         );
@@ -278,9 +278,8 @@ export function createTableMethods() {
         var rowOptions =
           options.row &&
           (!options.row.nth ||
-            (options.row.nth === RecipeTableRowParity.EVEN &&
-              (row + 1) % 2 === 0) ||
-            (options.row.nth === RecipeTableRowParity.ODD && (row + 1) % 2))
+            (options.row.nth === TableRowNth.EVEN && (row + 1) % 2 === 0) ||
+            (options.row.nth === TableRowNth.ODD && (row + 1) % 2))
             ? options.row
             : {};
         // Resolve every cell once: the renderer runs once per cell, and its

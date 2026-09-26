@@ -1,8 +1,4 @@
-import {
-  ImageFit,
-  RecipeHorizontalAlignment,
-  RecipeVerticalAlignment,
-} from "../value-sets.js";
+import { ImageFit, HorizontalAlign, VerticalAlign } from "../value-sets.js";
 /**
  * Creates Recipe image placement methods.
  * @param {object} runtime - Module and export helpers.
@@ -36,10 +32,10 @@ export function createImageMethods(runtime) {
       else height = width / ratio;
     }
     var align = String(options.align || "").split(" ");
-    if (align[0] === RecipeHorizontalAlignment.CENTER) x -= width / 2;
-    else if (align[0] === RecipeHorizontalAlignment.RIGHT) x += width / 2;
-    if (align[1] === RecipeVerticalAlignment.CENTER) y -= height / 2;
-    else if (align[1] === RecipeVerticalAlignment.BOTTOM) y += height / 2;
+    if (align[0] === HorizontalAlign.CENTER) x -= width / 2;
+    else if (align[0] === HorizontalAlign.RIGHT) x += width / 2;
+    if (align[1] === VerticalAlign.CENTER) y -= height / 2;
+    else if (align[1] === VerticalAlign.BOTTOM) y += height / 2;
     return { x, y, width, height };
   }
   return {

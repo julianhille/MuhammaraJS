@@ -1,4 +1,4 @@
-import { RecipeFontStyle } from "../value-sets.js";
+import { FontStyle, FontStyleKey } from "../value-sets.js";
 /**
  * Picks the registry key for bold and italic text options.
  * @param {object} [options={}] - `bold`/`isBold` and `italic`/`isItalic`.
@@ -7,24 +7,24 @@ import { RecipeFontStyle } from "../value-sets.js";
 function fontStyle(options = {}) {
   return (options.bold || options.isBold) &&
     (options.italic || options.isItalic)
-    ? RecipeFontStyle.BI
+    ? FontStyleKey.BI
     : options.italic || options.isItalic
-      ? RecipeFontStyle.I
+      ? FontStyleKey.I
       : options.bold || options.isBold
-        ? RecipeFontStyle.B
-        : RecipeFontStyle.R;
+        ? FontStyleKey.B
+        : FontStyleKey.R;
 }
 
 /** Registry key for every RecipeFontStyle spelling. */
 var FONT_STYLE_KEYS = {
-  [RecipeFontStyle.REGULAR]: RecipeFontStyle.R,
-  [RecipeFontStyle.R]: RecipeFontStyle.R,
-  [RecipeFontStyle.BOLD]: RecipeFontStyle.B,
-  [RecipeFontStyle.B]: RecipeFontStyle.B,
-  [RecipeFontStyle.ITALIC]: RecipeFontStyle.I,
-  [RecipeFontStyle.I]: RecipeFontStyle.I,
-  [RecipeFontStyle.BOLD_ITALIC]: RecipeFontStyle.BI,
-  [RecipeFontStyle.BI]: RecipeFontStyle.BI,
+  [FontStyle.REGULAR]: FontStyleKey.R,
+  [FontStyleKey.R]: FontStyleKey.R,
+  [FontStyle.BOLD]: FontStyleKey.B,
+  [FontStyleKey.B]: FontStyleKey.B,
+  [FontStyle.ITALIC]: FontStyleKey.I,
+  [FontStyleKey.I]: FontStyleKey.I,
+  [FontStyle.BOLD_ITALIC]: FontStyleKey.BI,
+  [FontStyleKey.BI]: FontStyleKey.BI,
 };
 
 /**
@@ -33,7 +33,7 @@ var FONT_STYLE_KEYS = {
  * @returns {string} `r`, `b`, `i`, or `bi`; unknown styles resolve to `r`.
  */
 export function fontStyleKey(type) {
-  return FONT_STYLE_KEYS[String(type).toLowerCase()] || RecipeFontStyle.R;
+  return FONT_STYLE_KEYS[String(type).toLowerCase()] || FontStyleKey.R;
 }
 
 /**
@@ -47,12 +47,7 @@ export function fontStyleKey(type) {
  * cleanup of that replaced path.
  * @throws {TypeError} If `name` is empty or not a string.
  */
-export function registerFont(
-  fonts,
-  name,
-  path,
-  type = RecipeFontStyle.REGULAR,
-) {
+export function registerFont(fonts, name, path, type = FontStyle.REGULAR) {
   if (typeof name !== "string" || !name) {
     throw new TypeError("Font names must be non-empty strings");
   }

@@ -1,8 +1,8 @@
 import {
-  RecipeHorizontalAlignment,
-  RecipeTextAlignment,
-  RecipeTextWrap,
-  RecipeVerticalAlignment,
+  HorizontalAlign,
+  TextAlign,
+  TextWrap,
+  VerticalAlign,
 } from "../value-sets.js";
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
@@ -117,12 +117,12 @@ function lines(value, width, measure, options, wrap) {
             width;
         if (fits || !line) {
           line = next;
-        } else if (wrap === RecipeTextWrap.AUTO || wrap === true) {
+        } else if (wrap === TextWrap.AUTO || wrap === true) {
           result.push({ text: trimBreakableEnd(line), last: false });
           line = word;
-        } else if (wrap === RecipeTextWrap.CLIP) {
+        } else if (wrap === TextWrap.CLIP) {
           line = next;
-        } else if (wrap === RecipeTextWrap.ELLIPSIS) {
+        } else if (wrap === TextWrap.ELLIPSIS) {
           line = ellipsize(line || word, width, measure, options);
           truncated = true;
         } else {
@@ -131,7 +131,7 @@ function lines(value, width, measure, options, wrap) {
       });
       if (line || !result.length) {
         result.push({
-          text: wrap === RecipeTextWrap.CLIP ? line : trimBreakableEnd(line),
+          text: wrap === TextWrap.CLIP ? line : trimBreakableEnd(line),
           last: true,
         });
       }
@@ -253,7 +253,7 @@ function htmlLines(source, width, measure, options, wrap) {
   var flush = (last, force = false) => {
     // lines() trims every line it emits; keep trailing spaces out of the
     // measured width so alignment and justification stay correct.
-    while (wrap !== RecipeTextWrap.CLIP && parts.length) {
+    while (wrap !== TextWrap.CLIP && parts.length) {
       var tail = parts[parts.length - 1];
       tail.text = trimBreakableEnd(tail.text);
       if (tail.text) break;
@@ -321,16 +321,16 @@ function htmlLines(source, width, measure, options, wrap) {
             breakBefore &&
             htmlPartsWidth(candidate, measure, options) > width
           ) {
-            if (wrap === RecipeTextWrap.AUTO || wrap === true) {
+            if (wrap === TextWrap.AUTO || wrap === true) {
               flush(false);
               if (!hasText(word)) return;
               word = linePrefix + word;
               linePrefix = "";
-            } else if (wrap === RecipeTextWrap.ELLIPSIS) {
+            } else if (wrap === TextWrap.ELLIPSIS) {
               ellipsizeHtmlParts(parts, width, measure, options);
               truncated = true;
               return;
-            } else if (wrap !== RecipeTextWrap.CLIP) {
+            } else if (wrap !== TextWrap.CLIP) {
               truncated = true;
               return;
             }
@@ -732,18 +732,14 @@ export function createTextMethods({ drawText, measure, module }) {
             availableWidth,
             measureText,
             textOptions,
-            box.wrap === false
-              ? RecipeTextWrap.ELLIPSIS
-              : box.wrap || RecipeTextWrap.AUTO,
+            box.wrap === false ? TextWrap.ELLIPSIS : box.wrap || TextWrap.AUTO,
           )
         : lines(
             value,
             availableWidth,
             measureText,
             textOptions,
-            box.wrap === false
-              ? RecipeTextWrap.ELLIPSIS
-              : box.wrap || RecipeTextWrap.AUTO,
+            box.wrap === false ? TextWrap.ELLIPSIS : box.wrap || TextWrap.AUTO,
           );
       return (
         box.height ||
@@ -869,9 +865,7 @@ export function createTextMethods({ drawText, measure, module }) {
       // this text call, so a later invalid subtype cannot leave partial output.
       addTextMarkup(this, { ...options, fontSize }, x, y, 1, true);
       var wrap =
-        box.wrap === false
-          ? RecipeTextWrap.ELLIPSIS
-          : box.wrap || RecipeTextWrap.AUTO;
+        box.wrap === false ? TextWrap.ELLIPSIS : box.wrap || TextWrap.AUTO;
       /**
        * Measures a fragment with the current Recipe font state.
        * @param {string} text - Text.
@@ -945,12 +939,10 @@ export function createTextMethods({ drawText, measure, module }) {
           : dimensions(this, entry.text, options).width;
       var widestEntry = Math.max(...entries.map(entryWidth), 0);
       var naturalWidth = width || widestEntry;
-      if (topAlign[0] === RecipeHorizontalAlignment.CENTER)
-        x -= naturalWidth / 2;
-      else if (topAlign[0] === RecipeHorizontalAlignment.RIGHT)
-        x -= naturalWidth;
-      if (topAlign[1] === RecipeVerticalAlignment.CENTER) y -= height / 2;
-      else if (topAlign[1] === RecipeVerticalAlignment.BOTTOM) y -= height;
+      if (topAlign[0] === HorizontalAlign.CENTER) x -= naturalWidth / 2;
+      else if (topAlign[0] === HorizontalAlign.RIGHT) x -= naturalWidth;
+      if (topAlign[1] === VerticalAlign.CENTER) y -= height / 2;
+      else if (topAlign[1] === VerticalAlign.BOTTOM) y -= height;
       if (box.style)
         this.rectangle(
           x,
@@ -963,9 +955,9 @@ export function createTextMethods({ drawText, measure, module }) {
       var currentY =
         y +
         top +
-        (vertical === RecipeVerticalAlignment.CENTER
+        (vertical === VerticalAlign.CENTER
           ? (height - contentHeight) / 2
-          : vertical === RecipeVerticalAlignment.BOTTOM
+          : vertical === VerticalAlign.BOTTOM
             ? height - contentHeight
             : 0);
       var columnIndex = 0;
@@ -1013,13 +1005,13 @@ export function createTextMethods({ drawText, measure, module }) {
           : entryDimensions.width;
         var horizontal = box.textAlign?.split(" ")[0];
         var isJustifiedLine =
-          horizontal === RecipeTextAlignment.JUSTIFY && !entry.last && width;
+          horizontal === TextAlign.JUSTIFY && !entry.last && width;
         var drawX =
           x +
           left +
-          (horizontal === RecipeTextAlignment.CENTER
+          (horizontal === TextAlign.CENTER
             ? (width - left - right - textWidth) / 2
-            : horizontal === RecipeTextAlignment.RIGHT
+            : horizontal === TextAlign.RIGHT
               ? width - right - textWidth
               : 0);
         var baseline = currentY + lineHeight;
@@ -1028,7 +1020,7 @@ export function createTextMethods({ drawText, measure, module }) {
         }
         var linkX = drawX;
         var linkWidth = textWidth;
-        var clipping = wrap === RecipeTextWrap.CLIP && width;
+        var clipping = wrap === TextWrap.CLIP && width;
         var clip = clipping
           ? {
               x: x + left,
@@ -1079,7 +1071,7 @@ export function createTextMethods({ drawText, measure, module }) {
         }
         if (entry.parts) {
           var justify =
-            horizontal === RecipeTextAlignment.JUSTIFY && !entry.last && width;
+            horizontal === TextAlign.JUSTIFY && !entry.last && width;
           var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
           /**
            * Reports whether this fragment owns an expandable justification gap.

@@ -1,3 +1,4 @@
+import { recipeConstants } from "./recipe/constants.js";
 import { DeviceColorSpace } from "./value-sets.js";
 import { coordinateMethods } from "./recipe/coordinate.js";
 import {
@@ -913,5 +914,6 @@ export function createRecipeFactory({
     },
   );
 
+  Object.assign(Recipe, recipeConstants);
   return Recipe;
 }

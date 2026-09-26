@@ -1,8 +1,4 @@
-import {
-  DeviceColorSpace,
-  RecipeLineCap,
-  RecipeLineJoin,
-} from "../value-sets.js";
+import { DeviceColorSpace, LineCap, LineJoin } from "../value-sets.js";
 import { colorModel } from "./colors.js";
 
 /**
@@ -83,19 +79,15 @@ export function createVectorHelpers(runtime) {
         cap:
           options.lineCap === undefined
             ? (lineStyle.cap ?? -1)
-            : [
-                RecipeLineCap.BUTT,
-                RecipeLineCap.ROUND,
-                RecipeLineCap.SQUARE,
-              ].indexOf(options.lineCap),
+            : [LineCap.BUTT, LineCap.ROUND, LineCap.SQUARE].indexOf(
+                options.lineCap,
+              ),
         join:
           options.lineJoin === undefined
             ? (lineStyle.join ?? -1)
-            : [
-                RecipeLineJoin.MITER,
-                RecipeLineJoin.ROUND,
-                RecipeLineJoin.BEVEL,
-              ].indexOf(options.lineJoin),
+            : [LineJoin.MITER, LineJoin.ROUND, LineJoin.BEVEL].indexOf(
+                options.lineJoin,
+              ),
         miter: Number.isFinite(options.miterLimit)
           ? options.miterLimit
           : (lineStyle.miterLimit ?? 1.414),

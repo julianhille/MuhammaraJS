@@ -7,10 +7,10 @@ size and a font owned by the same writer. Wasm `J()`, `j()` and `Tr()` reject
 operands outside the PDF ranges (0 to 2, 0 to 2, and 0 to 7); native writes
 any value. These existing validation differences are retained for compatibility.
 
-The exported value-set constants (`DeviceColorSpace`, `TextEncoding`,
-`PageBox`, the `Recipe*` sets, and the others listed in the changelog) exist
-only in `@muhammara/wasm` so far; native accepts the same string values but
-does not export the constant objects yet.
+Recipe value constants are static properties with the native names and members
+(`Recipe.TextWrap`, `Recipe.AnnotFlag`, and so on). Wasm has no `Recipe.Source`,
+because it has no `"new"` output-path sentinel, and adds `Recipe.StructureFormat`
+for its byte-returning `structure()`.
 
 The WebAssembly Recipe text, HTML, layout, and table APIs are static ESM modules
 with injected in-memory Recipe state. They run in browsers and module Workers;

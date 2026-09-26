@@ -4,6 +4,47 @@ import { createRecipe, createMuhammaraWasm } from "../../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe foundation", function () {
+  it("exposes the native Recipe value constants as frozen statics", async function () {
+    var Recipe = await createRecipe();
+    // Same names and members as native Recipe; StructureFormat is Wasm-only.
+    for (var name of [
+      "TextWrap",
+      "TextAlign",
+      "TableRowNth",
+      "LineCap",
+      "LineJoin",
+      "ArrowAt",
+      "ArrowType",
+      "TriangleTrait",
+      "TrianglePosition",
+      "PageLayout",
+      "PageSize",
+      "HorizontalAlign",
+      "VerticalAlign",
+      "FontStyle",
+      "Permission",
+      "Coordinate",
+      "Colorspace",
+      "AnnotSubtype",
+      "AnnotFlag",
+      "ChromaCommand",
+      "AnnotIcon",
+      "StructureFormat",
+    ]) {
+      assert.ok(Object.isFrozen(Recipe[name]), name);
+    }
+    assert.equal(Recipe.TextWrap.ELLIPSIS, "ellipsis");
+    assert.equal(Recipe.AnnotFlag.LOCKED_CONTENTS, "lockedcontents");
+    assert.equal(Recipe.PageSize.A4, "a4");
+    assert.equal(Recipe.ChromaCommand.LOAD, "!load");
+    assert.deepEqual(Object.values(Recipe.FontStyle), [
+      "regular",
+      "bold",
+      "italic",
+      "bold-italic",
+    ]);
+  });
+
   it("uses Letter defaults, incremental margins, and named page sizes", async function () {
     var Recipe = await createRecipe();
     var recipe = new Recipe();

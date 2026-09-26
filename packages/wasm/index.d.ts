@@ -76,16 +76,6 @@ export interface PDFRecryptOptions {
 }
 export type RecipeFontStyle =
   "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
-export declare const RecipeFontStyle: {
-  readonly REGULAR: "regular";
-  readonly BOLD: "bold";
-  readonly ITALIC: "italic";
-  readonly BOLD_ITALIC: "bold-italic";
-  readonly R: "r";
-  readonly B: "b";
-  readonly I: "i";
-  readonly BI: "bi";
-};
 export type RecipeCoordinate = number | "center";
 export type RecipePosition = [number, number];
 /** Device color space of a drawing or Recipe color option. */
@@ -159,18 +149,8 @@ export type RecipeExtension<
 > = (this: Recipe, ...args: Arguments) => Result;
 /** Recipe path line cap: butt, round, or projecting square. */
 export type RecipeLineCap = "butt" | "round" | "square";
-export declare const RecipeLineCap: {
-  readonly BUTT: "butt";
-  readonly ROUND: "round";
-  readonly SQUARE: "square";
-};
 /** Recipe path line join: miter, round, or bevel. */
 export type RecipeLineJoin = "miter" | "round" | "bevel";
-export declare const RecipeLineJoin: {
-  readonly MITER: "miter";
-  readonly ROUND: "round";
-  readonly BEVEL: "bevel";
-};
 export interface RecipePathOptions {
   /** Make the rendered path's bounding rectangle open this URL. */
   link?: string;
@@ -222,16 +202,7 @@ export interface RecipeNGonOptions extends RecipePathOptions {
   rotationVertice?: number;
 }
 export type RecipeArrowType = 0 | 1 | 2 | "triangle" | "dart" | "kite";
-export declare const RecipeArrowType: {
-  readonly TRIANGLE: "triangle";
-  readonly DART: "dart";
-  readonly KITE: "kite";
-};
 export type RecipeArrowAnchor = "head" | "tail";
-export declare const RecipeArrowAnchor: {
-  readonly HEAD: "head";
-  readonly TAIL: "tail";
-};
 export interface RecipeArrowOptions extends RecipePathOptions {
   head?:
     | number
@@ -252,12 +223,6 @@ export type RecipeCaseInsensitive<Value extends string> =
 export type RecipeTriangleTrait = RecipeCaseInsensitive<
   "sss" | "sas" | "asa" | "vtx"
 >;
-export declare const RecipeTriangleTrait: {
-  readonly SSS: "sss";
-  readonly SAS: "sas";
-  readonly ASA: "asa";
-  readonly VTX: "vtx";
-};
 export type RecipeTriangleMeasurementTrait = RecipeCaseInsensitive<
   "sss" | "sas" | "asa"
 >;
@@ -265,14 +230,6 @@ export type RecipeTriangleVertexTrait = RecipeCaseInsensitive<"vtx">;
 export type RecipeTrianglePosition = RecipeCaseInsensitive<
   "a" | "b" | "c" | "centroid" | "circumcenter" | "incenter"
 >;
-export declare const RecipeTrianglePosition: {
-  readonly A: "a";
-  readonly B: "b";
-  readonly C: "c";
-  readonly CENTROID: "centroid";
-  readonly CIRCUMCENTER: "circumcenter";
-  readonly INCENTER: "incenter";
-};
 /** Three sides, or sides and angles in degrees, selected by the trait. */
 export type RecipeTriangleMeasurements = readonly [number, number, number];
 export type RecipeTriangleVertices = readonly [
@@ -334,29 +291,9 @@ export type RecipeAnnotationFlag =
   | "readonly"
   | "locked"
   | "togglenoview";
-export declare const RecipeAnnotationFlag: {
-  readonly INVISIBLE: "invisible";
-  readonly HIDDEN: "hidden";
-  readonly PRINT: "print";
-  readonly NO_ZOOM: "nozoom";
-  readonly NO_ROTATE: "norotate";
-  readonly NO_VIEW: "noview";
-  readonly READ_ONLY: "readonly";
-  readonly LOCKED: "locked";
-  readonly TOGGLE_NO_VIEW: "togglenoview";
-};
 /** Standard icon name for Recipe text annotations. */
 export type RecipeAnnotationIcon =
   "Comment" | "Key" | "Note" | "Help" | "NewParagraph" | "Paragraph" | "Insert";
-export declare const RecipeAnnotationIcon: {
-  readonly COMMENT: "Comment";
-  readonly KEY: "Key";
-  readonly NOTE: "Note";
-  readonly HELP: "Help";
-  readonly NEW_PARAGRAPH: "NewParagraph";
-  readonly PARAGRAPH: "Paragraph";
-  readonly INSERT: "Insert";
-};
 export interface RecipeAnnotationOptions {
   text?: string;
   contents?: string;
@@ -390,34 +327,12 @@ export interface RecipeOverlayOptions {
 }
 /** Horizontal placement keyword for Recipe text and images. */
 export type RecipeHorizontalAlignment = "left" | "center" | "right";
-export declare const RecipeHorizontalAlignment: {
-  readonly LEFT: "left";
-  readonly CENTER: "center";
-  readonly RIGHT: "right";
-};
 /** Vertical placement keyword for Recipe text, images, and text boxes. */
 export type RecipeVerticalAlignment = "top" | "center" | "bottom";
-export declare const RecipeVerticalAlignment: {
-  readonly TOP: "top";
-  readonly CENTER: "center";
-  readonly BOTTOM: "bottom";
-};
 /** Horizontal alignment of the lines inside a Recipe text box. */
 export type RecipeTextAlignment = RecipeHorizontalAlignment | "justify";
-export declare const RecipeTextAlignment: {
-  readonly LEFT: "left";
-  readonly CENTER: "center";
-  readonly RIGHT: "right";
-  readonly JUSTIFY: "justify";
-};
 /** How a Recipe text box handles text that does not fit its width. */
 export type RecipeTextWrap = "auto" | "clip" | "trim" | "ellipsis";
-export declare const RecipeTextWrap: {
-  readonly AUTO: "auto";
-  readonly CLIP: "clip";
-  readonly TRIM: "trim";
-  readonly ELLIPSIS: "ellipsis";
-};
 export interface RecipeTextBox {
   width?: number;
   height?: number;
@@ -581,10 +496,6 @@ export type RecipeTableRow = Record<string, unknown>;
 /** Table options. Like native Recipe, a table-level `cell` is not accepted; style cells per column or row. */
 /** Which Recipe table rows a `row` style applies to. */
 export type RecipeTableRowParity = "even" | "odd";
-export declare const RecipeTableRowParity: {
-  readonly EVEN: "even";
-  readonly ODD: "odd";
-};
 export interface RecipeTableOptions<
   RecordType extends object = RecipeTableRow,
 > extends Omit<RecipeTextOptions, "overflow" | "cell"> {
@@ -633,20 +544,12 @@ export interface RecipeStructure {
   objects: number;
 }
 export type RecipeStructureFormat = "string" | "json" | { json?: boolean };
-export declare const RecipeStructureFormat: {
-  readonly STRING: "string";
-  readonly JSON: "json";
-};
 export interface RemoveTextOptions {
   /** Also remove text from the Form XObjects the page paints, including nested forms. Defaults to `false`. */
   forms?: boolean;
 }
 /** Orientation of a Recipe page, from its rotated width and height. */
 export type RecipePageLayout = "portrait" | "landscape";
-export declare const RecipePageLayout: {
-  readonly PORTRAIT: "portrait";
-  readonly LANDSCAPE: "landscape";
-};
 export interface RecipePageInfo {
   pageNumber: number;
   mediaBox: PDFRectangle;
@@ -903,6 +806,225 @@ export interface Recipe {
   dispose(): void;
 }
 export interface RecipeConstructor {
+  /** How text that does not fit a text-box line is handled. */
+  readonly TextWrap: {
+    readonly AUTO: "auto";
+    readonly CLIP: "clip";
+    readonly TRIM: "trim";
+    readonly ELLIPSIS: "ellipsis";
+  };
+  /** Horizontal alignments of text inside a text box. */
+  readonly TextAlign: {
+    readonly LEFT: "left";
+    readonly CENTER: "center";
+    readonly RIGHT: "right";
+    readonly JUSTIFY: "justify";
+  };
+  /** Which table rows the `row` options apply to. */
+  readonly TableRowNth: {
+    readonly EVEN: "even";
+    readonly ODD: "odd";
+  };
+  /** Line cap styles for the `lineCap` options. */
+  readonly LineCap: {
+    readonly BUTT: "butt";
+    readonly ROUND: "round";
+    readonly SQUARE: "square";
+  };
+  /** Line join styles for the `lineJoin` options. */
+  readonly LineJoin: {
+    readonly MITER: "miter";
+    readonly ROUND: "round";
+    readonly BEVEL: "bevel";
+  };
+  /** The arrow point placed at the `arrow()` coordinates. */
+  readonly ArrowAt: {
+    readonly HEAD: "head";
+    readonly TAIL: "tail";
+  };
+  /** Arrow head shapes for the `arrow()` type option. */
+  readonly ArrowType: {
+    readonly TRIANGLE: "triangle";
+    readonly DART: "dart";
+    readonly KITE: "kite";
+  };
+  /** How `triangle()` traits define the triangle. */
+  readonly TriangleTrait: {
+    readonly SSS: "sss";
+    readonly SAS: "sas";
+    readonly ASA: "asa";
+    readonly VTX: "vtx";
+  };
+  /** The triangle point placed at the `triangle()` coordinates. */
+  readonly TrianglePosition: {
+    readonly A: "a";
+    readonly B: "b";
+    readonly C: "c";
+    readonly CENTROID: "centroid";
+    readonly CIRCUMCENTER: "circumcenter";
+    readonly INCENTER: "incenter";
+  };
+  /** Page orientations reported in page metadata. */
+  readonly PageLayout: {
+    readonly PORTRAIT: "portrait";
+    readonly LANDSCAPE: "landscape";
+  };
+  /** Named page sizes for `createPage()`. */
+  readonly PageSize: {
+    readonly EXECUTIVE: "executive";
+    readonly FOLIO: "folio";
+    readonly LEGAL: "legal";
+    readonly LETTER: "letter";
+    readonly LEDGER: "ledger";
+    readonly TABLOID: "tabloid";
+    readonly A0: "a0";
+    readonly A1: "a1";
+    readonly A2: "a2";
+    readonly A3: "a3";
+    readonly A4: "a4";
+    readonly A5: "a5";
+    readonly A6: "a6";
+    readonly A7: "a7";
+    readonly A8: "a8";
+    readonly A9: "a9";
+    readonly A10: "a10";
+    readonly B0: "b0";
+    readonly B1: "b1";
+    readonly B2: "b2";
+    readonly B3: "b3";
+    readonly B4: "b4";
+    readonly B5: "b5";
+    readonly B6: "b6";
+    readonly B7: "b7";
+    readonly B8: "b8";
+    readonly B9: "b9";
+    readonly B10: "b10";
+    readonly C0: "c0";
+    readonly C1: "c1";
+    readonly C2: "c2";
+    readonly C3: "c3";
+    readonly C4: "c4";
+    readonly C5: "c5";
+    readonly C6: "c6";
+    readonly C7: "c7";
+    readonly C8: "c8";
+    readonly C9: "c9";
+    readonly C10: "c10";
+    readonly RA0: "ra0";
+    readonly RA1: "ra1";
+    readonly RA2: "ra2";
+    readonly RA3: "ra3";
+    readonly RA4: "ra4";
+    readonly SRA0: "sra0";
+    readonly SRA1: "sra1";
+    readonly SRA2: "sra2";
+    readonly SRA3: "sra3";
+    readonly SRA4: "sra4";
+  };
+  /** Horizontal alignments. */
+  readonly HorizontalAlign: {
+    readonly LEFT: "left";
+    readonly CENTER: "center";
+    readonly RIGHT: "right";
+  };
+  /** Vertical alignments. */
+  readonly VerticalAlign: {
+    readonly TOP: "top";
+    readonly CENTER: "center";
+    readonly BOTTOM: "bottom";
+  };
+  /** Font styles for `registerFont()`. */
+  readonly FontStyle: {
+    readonly REGULAR: "regular";
+    readonly BOLD: "bold";
+    readonly ITALIC: "italic";
+    readonly BOLD_ITALIC: "bold-italic";
+  };
+  /** User access permission names for `permission()`. */
+  readonly Permission: {
+    readonly PRINT: "print";
+    readonly MODIFY: "modify";
+    readonly COPY: "copy";
+    readonly EDIT: "edit";
+    readonly FILL_FORM: "fillform";
+    readonly EXTRACT: "extract";
+    readonly ASSEMBLE: "assemble";
+    readonly PRINT_BEST: "printbest";
+  };
+  /** Named coordinates, accepted wherever a `RecipeCoordinate` is. */
+  readonly Coordinate: {
+    readonly CENTER: "center";
+  };
+  /** Colorspaces accepted by the `colorspace` options. */
+  readonly Colorspace: {
+    readonly RGB: "rgb";
+    readonly CMYK: "cmyk";
+    readonly GRAY: "gray";
+    readonly SEPARATION: "separation";
+  };
+  /** Annotation subtypes for `annot()`. */
+  readonly AnnotSubtype: {
+    readonly TEXT: "Text";
+    readonly LINK: "Link";
+    readonly FREE_TEXT: "FreeText";
+    readonly LINE: "Line";
+    readonly SQUARE: "Square";
+    readonly CIRCLE: "Circle";
+    readonly POLYGON: "Polygon";
+    readonly POLY_LINE: "PolyLine";
+    readonly HIGHLIGHT: "Highlight";
+    readonly UNDERLINE: "Underline";
+    readonly SQUIGGLY: "Squiggly";
+    readonly STRIKE_OUT: "StrikeOut";
+    readonly CARET: "Caret";
+    readonly STAMP: "Stamp";
+    readonly INK: "Ink";
+    readonly POPUP: "Popup";
+    readonly FILE_ATTACHMENT: "FileAttachment";
+    readonly SOUND: "Sound";
+    readonly MOVIE: "Movie";
+    readonly SCREEN: "Screen";
+    readonly WIDGET: "Widget";
+    readonly PRINTER_MARK: "PrinterMark";
+    readonly TRAP_NET: "TrapNet";
+    readonly WATERMARK: "Watermark";
+    readonly THREE_D: "3D";
+    readonly REDACT: "Redact";
+    readonly PROJECTION: "Projection";
+    readonly RICH_MEDIA: "RichMedia";
+  };
+  /** Annotation flag names for the `flag` options. */
+  readonly AnnotFlag: {
+    readonly INVISIBLE: "invisible";
+    readonly HIDDEN: "hidden";
+    readonly PRINT: "print";
+    readonly NO_ZOOM: "nozoom";
+    readonly NO_ROTATE: "norotate";
+    readonly NO_VIEW: "noview";
+    readonly READ_ONLY: "readonly";
+    readonly LOCKED: "locked";
+    readonly TOGGLE_NO_VIEW: "togglenoview";
+    readonly LOCKED_CONTENTS: "lockedcontents";
+  };
+  /** Special `chroma()` names that run a command instead of naming a color. */
+  readonly ChromaCommand: {
+    readonly LOAD: "!load";
+  };
+  /** Text annotation icons for the `icon` option. */
+  readonly AnnotIcon: {
+    readonly COMMENT: "Comment";
+    readonly KEY: "Key";
+    readonly NOTE: "Note";
+    readonly HELP: "Help";
+    readonly NEW_PARAGRAPH: "NewParagraph";
+    readonly PARAGRAPH: "Paragraph";
+    readonly INSERT: "Insert";
+  };
+  /** Output formats of `structure()`; Wasm-only. */
+  readonly StructureFormat: {
+    readonly STRING: "string";
+    readonly JSON: "json";
+  };
   new (options?: RecipeOptions): Recipe;
   new (source: ByteSource, options?: RecipeOptions): Recipe;
   registerFont(name: string, bytes: ByteSource, style?: RecipeFontStyle): void;

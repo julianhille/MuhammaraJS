@@ -1,6 +1,4 @@
 import {
-  RecipeAnnotationFlag,
-  RecipeAnnotationIcon,
   ETokenSeparator,
   LineCapStyle,
   PDFImageType,
@@ -12,6 +10,9 @@ import {
   EEncoding as EEncodings,
 } from "../../index.js";
 import type {
+  RecipeAnnotationFlag,
+  RecipeAnnotationIcon,
+  RecipeConstructor,
   Glyph,
   EEncoding,
   PDFPageGeometry,
@@ -833,6 +834,7 @@ void usesAlignedDeclarations;
 
 async function usesNamedValueSets() {
   var muhammara = await createMuhammaraWasm();
+  var recipeClass: RecipeConstructor = await createRecipe();
   var writer = muhammara.createWriter();
   var context = writer.startPageContentContext(writer.createPage());
   void context;
@@ -988,9 +990,13 @@ async function usesNamedValueSets() {
   void namedLineCap;
   var namedSeparator: ETokenSeparator = ETokenSeparator.eTokenSeparatorNone;
   void namedSeparator;
-  var namedFlag: RecipeAnnotationFlag = RecipeAnnotationFlag.PRINT;
+  var namedFlag: RecipeAnnotationFlag = recipeClass.AnnotFlag.PRINT;
   void namedFlag;
-  var namedIcon: RecipeAnnotationIcon = RecipeAnnotationIcon.COMMENT;
+  var namedIcon: RecipeAnnotationIcon = recipeClass.AnnotIcon.COMMENT;
+  var textAlign: RecipeTextAlignment = recipeClass.TextAlign.JUSTIFY;
+  void textAlign;
+  var pageSize: string = recipeClass.PageSize.A4;
+  void pageSize;
   void namedIcon;
   var glyphRun: Glyph = [
     [1, 65],
