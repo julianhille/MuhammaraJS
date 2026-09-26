@@ -542,6 +542,12 @@ async function imageTransformExample(assets) {
   }
 }
 
+/**
+ * Builds the browser example for a table.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If a required asset is missing.
+ */
 async function tableExample(assets) {
   var Recipe = await createRecipe({ defaultFont: assets.font });
   var recipe = new Recipe({ compress: false });
