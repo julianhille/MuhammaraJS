@@ -8,7 +8,8 @@ This page collects the compatibility changes formerly maintained in the README.
   glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
   array. In 6.x such items were skipped silently, so `TJ(["ab", -100, "c"])`
   drew nothing. Pass the `TJ` items as separate arguments:
-  `TJ("ab", -100, "c")` [#792](https://github.com/julianhille/MuhammaraJS/issues/792).
+  `TJ("ab", -100, "c")`. `TJ("a", -1, glyphs)` also throws now instead of
+  dropping the final glyph list as if it were options [#792](https://github.com/julianhille/MuhammaraJS/issues/792).
 - The TypeScript declarations of `toPDF*()` and `toNumber()` on PDF objects
   now include `undefined`, which they return for a different object type.
   Strict builds that use the result directly fail with `Object is possibly

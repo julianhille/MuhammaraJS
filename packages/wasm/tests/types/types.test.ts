@@ -107,8 +107,8 @@ async function usesLowLevelSurface() {
     .Q();
   // @ts-expect-error Glyphs do not accept string encoding options.
   context.Tj([[1, 65]], { encoding: "hex" });
-  // @ts-expect-error TJ requires at least one text or spacing item.
-  context.TJ();
+  const kernedParts: (string | number)[] = ["kern", -40, "ed"];
+  context.TJ(...kernedParts);
   // @ts-expect-error TJ options must be the final item.
   context.TJ({ encoding: "text" }, "text");
   await context.drawImageAsync(0, 0, new Blob());

@@ -22,11 +22,12 @@ such as `setOpacity(0.5)`.
 Use `font.calculateTextDimensions(text, size)` when positioning needs the text
 bounds.
 
-For kerned text, pass the `TJ` array items as separate arguments: strings or
-glyph lists, with numeric adjustments in thousandths of a text space unit, and
-an optional final options object, for example
-`context.TJ("W", 120, "orld", { encoding: "text" })`. Glyph lists are arrays of
-`[glyphId, unicodeCodePoint]` pairs; other items throw a `TypeError`.
+For kerned text, pass the `TJ` array items as separate arguments: either
+strings or glyph lists, not both in one call, with numeric adjustments in
+thousandths of a text space unit. String calls take an optional final options
+object, for example `context.TJ("W", 120, "orld", { encoding: "text" })`. Glyph
+lists are arrays of `[glyphId, unicodeCodePoint]` pairs; other items throw a
+`TypeError`.
 
 `writeText` reads and converts text, coordinates, font size, color, and underline
 options before emitting `BT` or changing graphics state. If a getter or

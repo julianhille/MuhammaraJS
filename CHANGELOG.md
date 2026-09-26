@@ -24,7 +24,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   a glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
   array. Previously such items were skipped, so `TJ(["ab", -100, "c"])` wrote
   an empty `[ () ] TJ`; pass the `TJ` items as separate arguments instead:
-  `TJ("ab", -100, "c")` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+  `TJ("ab", -100, "c")`. `TJ()` with text items also throws when a glyph list
+  comes last instead of treating it as the options object and dropping it [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare `toPDF*()` and `toNumber()` on PDF objects as possibly returning
   `undefined`, which they do for a different object type. Strict TypeScript
   code that uses the result directly now fails to compile; check the result or

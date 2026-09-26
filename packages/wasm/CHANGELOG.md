@@ -72,6 +72,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Accept a spread array in the `TJ()` type declaration, so
+  `context.TJ(...parts)` compiles; an empty call still throws at runtime
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Keep the source `/Trapped`, `CreationDate`, `Title`, `Author`, `Subject`,
   and `Keywords` Info entries when a Recipe saves an existing PDF; they were
   silently dropped. `info()` still overrides them.

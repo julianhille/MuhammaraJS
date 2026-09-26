@@ -140,6 +140,9 @@ describe("SimpleTextUsageTest", function () {
         /glyph text requires \[glyphId, unicodeCodePoint\] pairs/,
       );
     });
+    assert.throws(function () {
+      context.TJ("a", -1, [[36, 65]]);
+    }, /either string\/glyphs list or number/);
     context.TJ("ab", -100, "c").ET();
     writer.writePage(page).end();
   });

@@ -797,6 +797,7 @@ napi_value AbstractContentContextDriver::TJ(const CallbackArgs &args) {
   bool hasStrings = false;
   bool hasOptions = args.Length() > 0 && !IsString(args, args.Length() - 1) &&
                     !IsNumber(args, args.Length() - 1) &&
+                    !IsArray(args.Env(), args[args.Length() - 1]) &&
                     IsObject(args.Env(), args[args.Length() - 1]);
   for (size_t i = 0; i < args.Length() && !hasStrings; ++i)
     hasStrings = IsString(args, i);

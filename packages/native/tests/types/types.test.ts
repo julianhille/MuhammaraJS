@@ -857,6 +857,9 @@ alignmentContext
   .ET();
 const unionText = "text" as string | muhammara.Glyph;
 alignmentContext.Tj(unionText).Quote(unionText).DoubleQuote(1, 2, unionText);
+const kernedParts: (string | number)[] = ["kern", -40, "ed"];
+const kernedGlyphs: (muhammara.Glyph | number)[] = [[[36, 65]], -40];
+alignmentContext.TJ(...kernedParts).TJ(...kernedGlyphs);
 // @ts-expect-error TJ items are separate arguments, not one array.
 alignmentContext.TJ(["ab", -100, "c"]);
 

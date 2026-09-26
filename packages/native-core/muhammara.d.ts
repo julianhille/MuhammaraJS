@@ -261,12 +261,12 @@ declare namespace muhammara {
       text: string | Glyph,
     ): this;
     /** Pass the TJ array items as separate arguments: strings with numeric kerning adjustments, optionally followed by options. */
-    TJ(...items: [string | number, ...(string | number)[]]): this;
+    TJ(...items: (string | number)[]): this;
     TJ(
       ...items: [string | number, ...(string | number)[], TextRenderOptions]
     ): this;
     /** Glyph variant: glyph lists with numeric kerning adjustments. */
-    TJ(...items: [Glyph | number, ...(Glyph | number)[]]): this;
+    TJ(...items: (Glyph | number)[]): this;
     writeFreeCode(freeCode: string): this;
     /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
