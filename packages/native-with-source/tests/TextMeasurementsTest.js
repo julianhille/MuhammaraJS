@@ -27,6 +27,33 @@ describe("TextMeasurementsTest", function () {
     }
   });
 
+  it("measures fractional font sizes exactly", function () {
+    var assert = require("assert");
+    var pdfWriter = require("@muhammara/native-with-source").createWriter(
+      __dirname + "/output/TextMeasurementsFractionalSize.pdf",
+    );
+    var font = pdfWriter.getFontForFile(
+      __dirname + "/TestMaterials/fonts/arial.ttf",
+    );
+
+    try {
+      var fractional = font.calculateTextDimensions("Hi gy", 10.5);
+      var unit = font.calculateTextDimensions("Hi gy", 1);
+      assert.ok(Math.abs(fractional.width - unit.width * 10.5) < 1e-9);
+      assert.ok(Math.abs(fractional.yMin - unit.yMin * 10.5) < 1e-9);
+      assert.ok(
+        fractional.width > font.calculateTextDimensions("Hi gy", 10).width,
+      );
+      [0, -5, NaN, Infinity].forEach(function (size) {
+        assert.throws(function () {
+          font.calculateTextDimensions("Hi gy", size);
+        }, TypeError);
+      });
+    } finally {
+      pdfWriter._abort();
+    }
+  });
+
   it("should complete without error", function () {
     var assert = require("assert");
     var pdfWriter = require("@muhammara/native-with-source").createWriter(

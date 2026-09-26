@@ -563,18 +563,10 @@ WASM_EXPORT PDFUsedFont* muhammara_wasm_writer_get_font_for_bytes(
 WASM_EXPORT int muhammara_wasm_writer_font_text_dimensions(
     WasmRecipe* recipe, PDFUsedFont* font, const char* text, double fontSize,
     double* values) {
-  if (!hasFont(recipe, font) || text == nullptr || values == nullptr || fontSize <= 0) {
+  if (!hasFont(recipe, font)) {
     return 0;
   }
-  PDFUsedFont::TextMeasures measures =
-      font->CalculateTextDimensions(text, static_cast<long>(fontSize));
-  values[0] = measures.xMin;
-  values[1] = measures.yMin;
-  values[2] = measures.xMax;
-  values[3] = measures.yMax;
-  values[4] = measures.width;
-  values[5] = measures.height;
-  return 1;
+  return measureTextDimensions(font, text, fontSize, values) ? 1 : 0;
 }
 
 WASM_EXPORT int muhammara_wasm_writer_font_glyph_dimensions(
@@ -884,23 +876,11 @@ int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
 int muhammara_wasm_recipe_text_dimensions(WasmRecipe* recipe, const char* text,
                                           const char* fontPath, double fontSize,
                                           double* values) {
-  if (recipe == nullptr || text == nullptr || fontPath == nullptr || values == nullptr ||
-      fontSize <= 0) {
+  if (recipe == nullptr || fontPath == nullptr) {
     return 0;
   }
   PDFUsedFont* font = recipe->writer.GetFontForFile(fontPath);
-  if (font == nullptr) {
-    return 0;
-  }
-  PDFUsedFont::TextMeasures measures =
-      font->CalculateTextDimensions(text, static_cast<long>(fontSize));
-  values[0] = measures.xMin;
-  values[1] = measures.yMin;
-  values[2] = measures.xMax;
-  values[3] = measures.yMax;
-  values[4] = measures.width;
-  values[5] = measures.height;
-  return 1;
+  return measureTextDimensions(font, text, fontSize, values) ? 1 : 0;
 }
 
 int muhammara_wasm_recipe_image(WasmRecipe* recipe, const char* imagePath,

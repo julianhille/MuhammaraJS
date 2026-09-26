@@ -106,6 +106,20 @@ describe("SimpleTextUsageTest", function () {
     var helvetica = writer.getFontForBytes("helvetica-pfb", "helvetica-pfm");
     var dimensions = arial.calculateTextDimensions("Hello World", 14);
     var metrics = arial.getFontMetrics(14);
+    var fractional = arial.calculateTextDimensions("Hi gy", 10.5);
+    var unit = arial.calculateTextDimensions("Hi gy", 1);
+
+    assert.ok(Math.abs(fractional.width - unit.width * 10.5) < 1e-9);
+    assert.ok(Math.abs(fractional.yMin - unit.yMin * 10.5) < 1e-9);
+    assert.ok(
+      fractional.width > arial.calculateTextDimensions("Hi gy", 10).width,
+    );
+    [0, -5, NaN, Infinity].forEach((size) => {
+      assert.throws(
+        () => arial.calculateTextDimensions("Hi gy", size),
+        TypeError,
+      );
+    });
 
     assert.ok(dimensions.width > 0);
     assert.ok(dimensions.height > 0);

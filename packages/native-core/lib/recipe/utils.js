@@ -106,7 +106,8 @@ function appendPDFPagesFromPDFWithAnnotations(
 
 /**
  * Resolves a text font size from `size`, its `fontSize` alias, or a fallback,
- * rejecting a size that is not greater than zero. Zero and negative sizes have
+ * rejecting a size that is not a finite number greater than zero. Zero,
+ * negative, and infinite sizes have
  * no usable meaning: they draw nothing readable and measure to nonsensical font
  * metrics, so they are reported as invalid input naming the option and the
  * value. Omitting both options, or passing `null` or `undefined`, selects the
@@ -114,7 +115,8 @@ function appendPDFPagesFromPDFWithAnnotations(
  * @param {Object} [options] - Options holding `size` or `fontSize`.
  * @param {number} [fallback] - Size used when neither option is given.
  * @returns {number} The resolved font size in PDF points.
- * @throws {RangeError} If the given size is not greater than zero.
+ * @throws {RangeError} If the given size is not a finite number greater than
+ *   zero.
  */
 function resolveFontSize(options = {}, fallback) {
   const name = options.size == null ? "fontSize" : "size";
@@ -122,7 +124,7 @@ function resolveFontSize(options = {}, fallback) {
   if (size == null) {
     return fallback;
   }
-  if (!(size > 0)) {
+  if (!(size > 0) || size === Infinity) {
     throw new RangeError(
       `Text ${name} must be a number greater than zero, received ${size}`,
     );

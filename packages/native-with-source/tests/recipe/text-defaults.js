@@ -370,15 +370,14 @@ describe("Recipe text size validation", function () {
     recipe.endPage().endPDF((output) => output);
   });
 
-  it("accepts an infinite size without throwing", function () {
+  it("rejects an infinite size", function () {
     var recipe = newRecipe().createPage("letter");
-    assert.doesNotThrow(function () {
+    assert.throws(function () {
       recipe.textDimensions("Hello", { font: "arial", size: Infinity });
-      recipe.text("Hello", 72, 72, { font: "arial", size: Infinity });
-    });
-    writeOutput(
-      "text-size-infinite-accepted",
-      recipe.endPage().endPDF((output) => output),
-    );
+    }, /Text size must be a number greater than zero, received Infinity/);
+    assert.throws(function () {
+      recipe.text("Hello", 72, 72, { font: "arial", fontSize: Infinity });
+    }, /Text fontSize must be a number greater than zero, received Infinity/);
+    recipe.endPage().endPDF((output) => output);
   });
 });

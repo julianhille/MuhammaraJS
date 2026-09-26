@@ -202,7 +202,8 @@ This page collects the compatibility changes formerly maintained in the README.
   previously clamped a negative size to 1pt, drew nothing visible for zero, and
   `textDimensions()` measured with those values, returning nonsensical metrics
   such as a width of 2147483645.5 for `size: -5`. Zero and `NaN` previously fell
-  back to the 14pt default in some paths, hiding the mistake. Pass a size
+  back to the 14pt default in some paths, hiding the mistake, and `Infinity`
+  wrote an invalid `inf` font size into the page. Pass a finite size
   greater than zero, or omit the option — `null` and `undefined` still select
   the 14pt default. See
   [Migrate from v6 to v7](getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)

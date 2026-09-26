@@ -166,6 +166,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Measure `UsedFont#calculateTextDimensions()` at the exact font size; a
+  fractional size such as `10.5` was truncated to `10` [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
+
 - Place the link of a Recipe `circle()`, `ellipse()`, `arc()` or `pie()`
   drawn at `"center"` coordinates; its rectangle was computed from the string
   and came out invalid [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
@@ -346,6 +349,12 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Changed
 
+- Reject an infinite Recipe text `size`, or its `fontSize` alias, with the
+  `RangeError` other invalid sizes get; it used to write an invalid `inf` font
+  size into the page [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
+- Throw a `TypeError` from `UsedFont#calculateTextDimensions()` when the font
+  size is not a finite positive number, as `@muhammara/wasm` does; a negative
+  size used to wrap to a huge integer and `NaN` measured as size 0 [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Declare `DocumentCopyingContext#getSourceDocumentParser()` without
   parameters in the TypeScript types, matching the runtime, which never used
   them [#320](https://github.com/julianhille/MuhammaraJS/issues/320)

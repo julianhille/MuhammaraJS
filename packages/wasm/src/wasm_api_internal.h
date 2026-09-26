@@ -222,6 +222,26 @@ static bool hasFont(WasmRecipe* recipe, PDFUsedFont* font) {
              recipe->fonts.end();
 }
 
+// Measures text at an exact, possibly fractional, font size into values
+// (xMin, yMin, xMax, yMax, width, height). PDFUsedFont takes an integer size,
+// so measure at 1000 (exact font units) and scale.
+static bool measureTextDimensions(PDFUsedFont* font, const char* text,
+                                  double fontSize, double* values) {
+  if (font == nullptr || text == nullptr || values == nullptr ||
+      !std::isfinite(fontSize) || fontSize <= 0) {
+    return false;
+  }
+  PDFUsedFont::TextMeasures measures = font->CalculateTextDimensions(text, 1000);
+  double scale = fontSize / 1000.0;
+  values[0] = measures.xMin * scale;
+  values[1] = measures.yMin * scale;
+  values[2] = measures.xMax * scale;
+  values[3] = measures.yMax * scale;
+  values[4] = measures.width * scale;
+  values[5] = measures.height * scale;
+  return true;
+}
+
 class WasmReader {
  public:
   InputFile input;
