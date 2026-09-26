@@ -3106,6 +3106,36 @@ declare namespace muhammara {
       | "sra4"
       | (string & {});
 
+    /** A `Recipe.TextWrap` value. */
+    type TextWrap = "auto" | "clip" | "trim" | "ellipsis";
+    /** A `Recipe.TableRowNth` value. */
+    type TableRowNth = "even" | "odd";
+    /** A `Recipe.LineCap` value. */
+    type LineCap = "butt" | "round" | "square";
+    /** A `Recipe.LineJoin` value. */
+    type LineJoin = "miter" | "round" | "bevel";
+    /** A `Recipe.ArrowAt` value. */
+    type ArrowAt = "head" | "tail";
+    /** A `Recipe.ArrowType` value. */
+    type ArrowType = "triangle" | "dart" | "kite";
+    /** A `Recipe.PageLayout` value. */
+    type PageLayout = "portrait" | "landscape";
+    /** A `Recipe.FontStyle` value. */
+    type FontStyle = "regular" | "bold" | "italic" | "bold-italic";
+    /** A `Recipe.Permission` value. */
+    type Permission = PermissionName;
+    /** A `Recipe.Coordinate` value. */
+    type Coordinate = "center";
+    /** A `Recipe.AnnotFlag` value. */
+    type AnnotFlag = AnnotOptionsFlag;
+    /** A `Recipe.AnnotIcon` value. */
+    type AnnotIcon = AnnotOptionsIcon;
+    /** A `Recipe.ChromaCommand` value. */
+    type ChromaCommand = "!load";
+    /** A `Recipe.Source` value. */
+    type Source = "new";
+    /** The low-level `DeviceColorSpace` values; same as `DeviceColorspace`. */
+    type DeviceColorSpace = DeviceColorspace;
     type HorizontalAlign = "left" | "center" | "right";
     type VerticalAlign = "top" | "center" | "bottom";
     type TextAlign = "left" | "center" | "right" | "justify";
@@ -3244,7 +3274,7 @@ declare namespace muhammara {
     interface MetadataPage {
       pageNumber: number;
       mediaBox: number[];
-      layout: "portrait" | "landscape";
+      layout: PageLayout;
       rotate: number;
       width: number;
       height: number;
@@ -3301,7 +3331,7 @@ declare namespace muhammara {
       minHeight?: number;
       padding?: number | readonly number[];
       lineHeight?: number;
-      wrap?: boolean | "auto" | "clip" | "trim" | "ellipsis";
+      wrap?: boolean | TextWrap;
       /** `Recipe.TextAlign`, optionally followed by a space and `Recipe.VerticalAlign`. */
       textAlign?: TextBoxAlign;
       clipIfExceedsBox?: boolean;
@@ -3339,7 +3369,8 @@ declare namespace muhammara {
       size?: number;
       bold?: boolean;
       italic?: boolean;
-      align?: string;
+      /** `Recipe.HorizontalAlign`, optionally followed by a space and `Recipe.VerticalAlign`. */
+      align?: ImageAlign;
       highlight?: boolean | TextMarkupOptions;
       underline?: boolean | TextMarkupOptions;
       strikeOut?: boolean | TextMarkupOptions;
@@ -3451,7 +3482,7 @@ declare namespace muhammara {
       header?:
         boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
       border?: boolean | PolygonOptions;
-      row?: TextOptions & { nth?: "even" | "odd"; cell?: TextBox };
+      row?: TextOptions & { nth?: TableRowNth; cell?: TextBox };
       /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
       overflow?: (
         this: Recipe,
@@ -3492,8 +3523,8 @@ declare namespace muhammara {
     }
 
     interface PathOptions extends DrawingOptions {
-      lineCap?: "butt" | "round" | "square";
-      lineJoin?: "miter" | "round" | "bevel";
+      lineCap?: LineCap;
+      lineJoin?: LineJoin;
       miterLimit?: number;
     }
 
@@ -3536,8 +3567,8 @@ declare namespace muhammara {
         | readonly [number, number, number];
       shaft?: number | readonly [number] | readonly [number, number];
       double?: boolean;
-      type?: 0 | 1 | 2 | "triangle" | "dart" | "kite";
-      at?: "head" | "tail";
+      type?: 0 | 1 | 2 | ArrowType;
+      at?: ArrowAt;
     }
 
     interface TriangleBaseOptions extends ShapeOptions {

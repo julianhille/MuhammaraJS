@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add a `Recipe.<Name>` type for every Recipe value set, for example
+  `Recipe.TextWrap`, `Recipe.LineCap`, and `Recipe.AnnotFlag`, and use them for
+  the matching options; the text `align` option is typed as alignment keywords
+  instead of any string, still accepting other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Add frozen `DeviceColorSpace`, `PageBox`, `PDFImageType`, and `EEncoding`
   objects, named and valued as in `@muhammara/wasm`; `ColorOptions.colorspace`
   suggests the `DeviceColorSpace` values and still accepts other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)

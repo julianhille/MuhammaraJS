@@ -853,3 +853,49 @@ void dictionaryEntries;
 declare const signatureLiteral: muhammara.PDFLiteralString;
 var literalBytes: number[] = signatureLiteral.toBytesArray();
 void literalBytes;
+
+// Every Recipe value set has a same-named type for its values.
+var recipeWrap: muhammara.Recipe.TextWrap = muhammara.Recipe.TextWrap.ELLIPSIS;
+var recipeRowNth: muhammara.Recipe.TableRowNth =
+  muhammara.Recipe.TableRowNth.ODD;
+var recipeCap: muhammara.Recipe.LineCap = muhammara.Recipe.LineCap.ROUND;
+var recipeJoin: muhammara.Recipe.LineJoin = muhammara.Recipe.LineJoin.BEVEL;
+var recipeArrowAt: muhammara.Recipe.ArrowAt = muhammara.Recipe.ArrowAt.TAIL;
+var recipeArrowType: muhammara.Recipe.ArrowType =
+  muhammara.Recipe.ArrowType.KITE;
+var recipeLayout: muhammara.Recipe.PageLayout =
+  muhammara.Recipe.PageLayout.LANDSCAPE;
+var recipeFontStyle: muhammara.Recipe.FontStyle =
+  muhammara.Recipe.FontStyle.BOLD_ITALIC;
+var recipePermission: muhammara.Recipe.Permission =
+  muhammara.Recipe.Permission.COPY;
+var recipeCoordinate: muhammara.Recipe.Coordinate =
+  muhammara.Recipe.Coordinate.CENTER;
+var recipeFlag: muhammara.Recipe.AnnotFlag =
+  muhammara.Recipe.AnnotFlag.LOCKED_CONTENTS;
+var recipeIcon: muhammara.Recipe.AnnotIcon = muhammara.Recipe.AnnotIcon.NOTE;
+var recipeChroma: muhammara.Recipe.ChromaCommand =
+  muhammara.Recipe.ChromaCommand.LOAD;
+var recipeSource: muhammara.Recipe.Source = muhammara.Recipe.Source.NEW;
+var recipeDeviceColorSpace: muhammara.Recipe.DeviceColorSpace = "cmyk";
+var recipeTextOptions: muhammara.Recipe.TextOptions = {
+  align: `${muhammara.Recipe.HorizontalAlign.CENTER} ${muhammara.Recipe.VerticalAlign.TOP}`,
+};
+void [
+  recipeWrap,
+  recipeRowNth,
+  recipeCap,
+  recipeJoin,
+  recipeArrowAt,
+  recipeArrowType,
+  recipeLayout,
+  recipeFontStyle,
+  recipePermission,
+  recipeCoordinate,
+  recipeFlag,
+  recipeIcon,
+  recipeChroma,
+  recipeSource,
+  recipeDeviceColorSpace,
+  recipeTextOptions,
+];
