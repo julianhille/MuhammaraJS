@@ -653,12 +653,24 @@ exports.triangle = function triangle(x, y, traits, options = {}) {
 //        /_____\
 //       B   c   A
 
+/**
+ * A triangle solved from side lengths, angles or vertices, with vertex B at
+ * (x, y) and side c along the x axis unless vertices are given.
+ * @private
+ */
 const Triangle = class Triangle {
+  /**
+   * @param {number} x - The x of vertex B.
+   * @param {number} y - The y of vertex B.
+   * @param {Recipe.TriangleTrait} traitID - How `traits` define the triangle, case-insensitive.
+   * @param {Array} traits - Three side lengths and/or angles in degrees, or three [x, y] vertices.
+   * @throws {Error} If the traits do not define a valid triangle or the trait is unknown.
+   */
   constructor(x, y, traitID, traits) {
     let a, b, c, angA, angB, angC;
     let sss, BC, AC, AB;
     switch (traitID.toLowerCase()) {
-      case "sss":
+      case TriangleTrait.SSS:
         sss = traits.slice().sort((a, b) => {
           return a - b;
         });
@@ -671,12 +683,12 @@ const Triangle = class Triangle {
         [a, b, c] = traits;
         break;
 
-      case "sas":
+      case TriangleTrait.SAS:
         [a, angC, b] = traits;
         c = Math.sqrt(a * a + b * b - 2 * a * b * Math.cos(toRadians(angC)));
         break;
 
-      case "asa":
+      case TriangleTrait.ASA:
         [angB, c, angA] = traits;
         angC = 180 - angA - angB;
         if (angC <= 0) {
@@ -688,7 +700,7 @@ const Triangle = class Triangle {
         b = (c * Math.sin(toRadians(angB))) / Math.sin(toRadians(angC));
         break;
 
-      case "vtx":
+      case TriangleTrait.VTX:
         this._B = traits[0];
         this._C = traits[1];
         this._A = traits[2];
