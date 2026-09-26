@@ -699,6 +699,13 @@ export function createWriterFactory({
         }
         additionalInfo.clear();
       },
+      /**
+       * Reads a custom Info dictionary entry.
+       * @param {string} key - Entry name.
+       * @returns {string} The value, or an empty string when unset.
+       * @throws {TypeError} If `key` is not a string.
+       * @throws {Error} If the writer has ended.
+       */
       getAdditionalInfoEntry: function (key) {
         requireOpenWriter();
         if (typeof key !== "string")
