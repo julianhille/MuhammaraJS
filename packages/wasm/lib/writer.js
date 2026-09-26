@@ -4543,6 +4543,12 @@ export function createWriterFactory({
             throw new Error("Unable to set page box");
           }
         };
+        /**
+         * Writes `/Rotate` to the active native page.
+         * @param {number} rotation - Multiple of 90 degrees.
+         * @returns {void}
+         * @throws {Error} If the rotation cannot be set.
+         */
         page._setNativeRotation = function (rotation) {
           if (
             !module._muhammara_wasm_recipe_set_page_rotation(recipe, rotation)
