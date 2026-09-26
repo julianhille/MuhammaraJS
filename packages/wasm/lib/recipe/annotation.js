@@ -49,6 +49,13 @@ function richText(value) {
 /**
  * Rejects annotation geometry and appearance values that cannot be written as
  * a valid PDF annotation, identically for new and edited pages.
+ * @param {number[]} rectangle - `[left, bottom, right, top]`.
+ * @param {number} borderWidth - Border width.
+ * @param {number[]} borderDash - Dash pattern.
+ * @param {number[]} quadPoints - Quad points, eight per quadrilateral.
+ * @param {number} opacity - Opacity from 0 to 1.
+ * @returns {void}
+ * @throws {TypeError} If a value is not finite, negative, or malformed.
  */
 function assertAnnotationValues(
   rectangle,
