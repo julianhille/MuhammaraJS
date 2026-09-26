@@ -509,6 +509,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     i(flatness: number): this;
+    /**
+     * Applies a graphics state resource; operator gs.
+     * @param graphicStateName - The ExtGState resource name.
+     * @returns This context.
+     * @throws {TypeError} If graphicStateName is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     gs(graphicStateName: string): this;
     setOpacity(opacity: number): this;
     CS(colorSpaceName: string): this;
