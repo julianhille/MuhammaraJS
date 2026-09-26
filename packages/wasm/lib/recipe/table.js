@@ -4,7 +4,11 @@ import {
   RecipeTextAlignment,
   RecipeVerticalAlignment,
 } from "../value-sets.js";
-/** Reports whether a style value is a plain object whose keys can merge. */
+/**
+ * Reports whether a style value is a plain object whose keys can merge.
+ * @param {*} value - Candidate.
+ * @returns {boolean} Whether it is a plain object.
+ */
 function isPlainObject(value) {
   if (!value || typeof value !== "object") return false;
   var prototype = Object.getPrototypeOf(value);
