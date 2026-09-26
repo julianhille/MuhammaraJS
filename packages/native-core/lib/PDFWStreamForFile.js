@@ -10,11 +10,13 @@ function PDFWStreamForFile(inPath) {
   this.path = inPath;
 }
 
-PDFWStreamForFile.prototype.write = function (inBytesArray) {
-  if (inBytesArray.length > 0) {
-    this.ws.write(Buffer.from(inBytesArray));
-    this.position += inBytesArray.length;
-    return inBytesArray.length;
+PDFWStreamForFile.prototype.write = function (inBytes) {
+  // Arrays of byte values are still accepted from direct callers.
+  if (!Buffer.isBuffer(inBytes)) inBytes = Buffer.from(inBytes);
+  if (inBytes.length > 0) {
+    this.ws.write(inBytes);
+    this.position += inBytes.length;
+    return inBytes.length;
   } else return 0;
 };
 

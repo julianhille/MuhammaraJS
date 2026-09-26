@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Accept a `Uint8Array` (or `Buffer`) from custom read streams and in the
+  `write()` method of PDF stream writers such as `getWriteStream()`, alongside
+  arrays of byte values [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
 - Add a guide for annotating known text regions in existing PDFs with Underline
   or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
 - Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
@@ -17,6 +20,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Deliver custom write stream and `log` chunks as `Buffer`s instead of arrays
+  of numbers, and return `Buffer`s from `PDFRStreamForFile#read()`,
+  `PDFRStreamForBuffer#read()`, and the byte readers returned by
+  `startReadingFromStream()`, `startReadingFromStreamForPlainCopying()`,
+  `getParserStream()`, and `getSourceDocumentStream()`. Code using array methods on those bytes, or
+  TypeScript streams declaring `write(bytes: number[])`, must switch to Buffer
+  operations. Output arrives in batched chunks of up to 64 KiB, with the last
+  one delivered when the writer ends, and `write` must return the full chunk
+  length: returning less now fails the writer instead of being ignored. See the
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#16-accept-buffers-in-custom-streams)
+  [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
 - Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
   Previously callers could continue after a failed append and produce a
   corrupted document; create a fresh writer and retry with a valid source.
@@ -118,6 +132,13 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   true inset ellipse, and collapse `circle()`, `ellipse()`, `rectangle()`, and
   `arc()` strokes wider than the shape onto it instead of drawing them inverted
   [#743](https://github.com/julianhille/MuhammaraJS/issues/743)
+- Keep memory bounded and throughput high while PDF bytes pass through
+  JavaScript streams. Modifying a 48 MB PDF with a Buffer-mode `Recipe` drops
+  from about 2.2 GB and 16 seconds to about 300 MB and half a second.
+  Encrypting into a JavaScript stream with `recrypt()` batches RC4 output
+  instead of making one call per byte: a 48 MB PDF now takes under a second
+  instead of running out of memory or taking tens of minutes, and
+  `PDFWStreamForBuffer` no longer copies its whole contents on every write [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
 - Fix Recipe character-spacing measurements for retained boundary whitespace
   and non-BMP Unicode text, preventing incorrect wrapping and horizontal
   alignment [#543](https://github.com/julianhille/MuhammaraJS/issues/543)

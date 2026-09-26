@@ -57,7 +57,10 @@ describe("DocumentCopyingContext source parser", function () {
       contents.getDictionary().toPDFDictionary().exists("Length"),
       true,
     );
-    assert.deepEqual(parser.startReadingFromStream(contents).read(2), [49, 48]);
+    assert.deepEqual(
+      parser.startReadingFromStream(contents).read(2),
+      new Uint8Array([49, 48]),
+    );
     assert.equal(
       parser.startReadingFromStreamForPlainCopying(contents).read(2).length,
       2,
@@ -71,14 +74,20 @@ describe("DocumentCopyingContext source parser", function () {
     );
     var parserStream = parser.getParserStream();
     parserStream.setPosition(0);
-    assert.deepEqual(parserStream.read(5), [37, 80, 68, 70, 45]);
+    assert.deepEqual(
+      parserStream.read(5),
+      new Uint8Array([37, 80, 68, 70, 45]),
+    );
     assert.equal(typeof parserStream.getCurrentPosition(), "number");
     parserStream.dispose();
     assert.throws(() => parserStream.read(1), /PDF byte reader has ended/);
 
     var sourceStream = copying.getSourceDocumentStream();
     sourceStream.setPosition(0);
-    assert.deepEqual(sourceStream.read(5), [37, 80, 68, 70, 45]);
+    assert.deepEqual(
+      sourceStream.read(5),
+      new Uint8Array([37, 80, 68, 70, 45]),
+    );
     assert.equal(typeof sourceStream.skip(1).getCurrentPosition(), "number");
     sourceStream.dispose();
     assert.throws(() => sourceStream.read(1), /PDF byte reader has ended/);

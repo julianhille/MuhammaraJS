@@ -188,6 +188,13 @@ describe("UseAfterEndTest", function () {
             0,
             "a live writer's log stream should receive trace output",
           );
+          logged.written.forEach(function (chunk) {
+            assert.instanceOf(
+              chunk,
+              Buffer,
+              "log chunks are delivered as Buffers",
+            );
+          });
           var writtenWhileLive = logged.written.length;
 
           if (mode === "end") {

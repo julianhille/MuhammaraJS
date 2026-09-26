@@ -1,18 +1,44 @@
+/*
+    PDFWStreamForBuffer is an implementation of a write stream that collects
+    the written bytes in memory. Read the result from its `buffer` property.
+*/
 function PDFWStreamForBuffer() {
-  this.buffer = null;
+  this.chunks = [];
+  this.joined = null;
   this.position = 0;
 }
 
-PDFWStreamForBuffer.prototype.write = function (inBytesArray) {
-  if (inBytesArray.length > 0) {
-    if (!this.buffer) {
-      this.buffer = Buffer.from(inBytesArray);
-    } else {
-      this.buffer = Buffer.concat([this.buffer, Buffer.from(inBytesArray)]);
-    }
+Object.defineProperty(PDFWStreamForBuffer.prototype, "buffer", {
+  /**
+   * The bytes written so far, or null before the first write. Chunks are
+   * joined on first access instead of on every write.
+   * @returns {Buffer|null} The written bytes.
+   */
+  get: function () {
+    if (this.chunks.length === 0) return this.joined;
+    this.joined = this.joined
+      ? Buffer.concat([this.joined].concat(this.chunks))
+      : Buffer.concat(this.chunks);
+    this.chunks = [];
+    return this.joined;
+  },
+  /**
+   * Replaces the collected bytes.
+   * @param {Buffer|null} value - The new contents.
+   */
+  set: function (value) {
+    this.chunks = [];
+    this.joined = value;
+  },
+});
 
-    this.position += inBytesArray.length;
-    return inBytesArray.length;
+PDFWStreamForBuffer.prototype.write = function (inBytes) {
+  if (inBytes.length > 0) {
+    // Copy, so a caller reusing its buffer cannot change collected output,
+    // and so arrays of byte values keep working.
+    this.chunks.push(Buffer.from(inBytes));
+    this.position += inBytes.length;
+    return inBytes.length;
   }
 
   return 0;

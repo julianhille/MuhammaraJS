@@ -8,16 +8,16 @@ describe("InputFileTest", function () {
     var muhammara = await createMuhammaraWasm();
     var bytes = new Uint8Array([10, 20, 30, 40]);
     var reader = new muhammara.ByteReader(bytes);
-    assert.deepEqual(reader.read(2), [10, 20]);
+    assert.deepEqual(reader.read(2), new Uint8Array([10, 20]));
     assert.equal(reader.notEnded(), true);
-    assert.deepEqual(reader.read(10), [30, 40]);
+    assert.deepEqual(reader.read(10), new Uint8Array([30, 40]));
     assert.equal(reader.notEnded(), false);
     var positionedReader = new muhammara.ByteReaderWithPosition(bytes);
     positionedReader.setPosition(1);
     assert.equal(positionedReader.getCurrentPosition(), 1);
-    assert.deepEqual(positionedReader.read(2), [20, 30]);
+    assert.deepEqual(positionedReader.read(2), new Uint8Array([20, 30]));
     positionedReader.setPositionFromEnd(1);
-    assert.deepEqual(positionedReader.read(1), [40]);
+    assert.deepEqual(positionedReader.read(1), new Uint8Array([40]));
 
     var byteWriter = new muhammara.ByteWriter();
     assert.equal(byteWriter.write(new Uint8Array([1, 2])), 2);

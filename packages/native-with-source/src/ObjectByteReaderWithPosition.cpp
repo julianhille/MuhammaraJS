@@ -1,7 +1,5 @@
 #include "ObjectByteReaderWithPosition.h"
 
-#include <algorithm>
-
 using namespace muhammara::napi;
 
 ObjectByteReaderWithPosition::ObjectByteReaderWithPosition(napi_env env,
@@ -15,43 +13,35 @@ napi_value ObjectByteReaderWithPosition::CallMethod(
 
 IOBasicTypes::LongBufferSizeType ObjectByteReaderWithPosition::Read(
     IOBasicTypes::Byte *buffer, IOBasicTypes::LongBufferSizeType bufferSize) {
+  HandleScope scope(env_);
   napi_value result = CallMethod("read", {Number(env_, bufferSize)});
-  if (!result || !IsArray(env_, result))
+  if (!result)
     return 0;
-  uint32_t arrayLength = 0;
-  if (!Length(env_, result, &arrayLength))
+  size_t length = 0;
+  if (!ReadStreamChunk(env_, result, buffer, bufferSize, &length))
     return 0;
-  IOBasicTypes::LongBufferSizeType length = arrayLength;
-  if (length > bufferSize)
-    length = bufferSize;
-  std::vector<IOBasicTypes::Byte> bytes(length);
-  for (IOBasicTypes::LongBufferSizeType i = 0; i < length; ++i) {
-    napi_value value = nullptr;
-    uint32_t byte = 0;
-    if (!Get(env_, result, static_cast<uint32_t>(i), &value) ||
-        !CoerceToUint32(env_, value, &byte))
-      return 0;
-    bytes[i] = static_cast<IOBasicTypes::Byte>(byte);
-  }
-  std::copy(bytes.begin(), bytes.end(), buffer);
   return length;
 }
 
 bool ObjectByteReaderWithPosition::NotEnded() {
+  HandleScope scope(env_);
   napi_value result = CallMethod("notEnded");
   return result ? ToBoolean(env_, result) : true;
 }
 
 void ObjectByteReaderWithPosition::SetPosition(LongFilePositionType offset) {
+  HandleScope scope(env_);
   CallMethod("setPosition", {Number(env_, offset)});
 }
 
 void ObjectByteReaderWithPosition::SetPositionFromEnd(
     LongFilePositionType offset) {
+  HandleScope scope(env_);
   CallMethod("setPositionFromEnd", {Number(env_, offset)});
 }
 
 LongFilePositionType ObjectByteReaderWithPosition::GetCurrentPosition() {
+  HandleScope scope(env_);
   napi_value result = CallMethod("getCurrentPosition");
   if (!result)
     return 1;
@@ -64,10 +54,12 @@ LongFilePositionType ObjectByteReaderWithPosition::GetCurrentPosition() {
 }
 
 void ObjectByteReaderWithPosition::Skip(LongBufferSizeType size) {
+  HandleScope scope(env_);
   CallMethod("skip", {Number(env_, size)});
 }
 
 void ObjectByteReaderWithPosition::MoveStartPosition(
     LongFilePositionType position) {
+  HandleScope scope(env_);
   CallMethod("moveStartPosition", {Number(env_, position)});
 }

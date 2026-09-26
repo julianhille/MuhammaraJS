@@ -21,6 +21,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   relied on that overshoot; see
   [Migrate Vector Stroke Bounds](docs/migrate-vector-stroke-bounds.md)
   [#743](https://github.com/julianhille/MuhammaraJS/issues/743)
+- Return a `Uint8Array` instead of an array of numbers from
+  `PDFRStreamForBuffer#read()`, the `ByteReader` and `ByteReaderWithPosition`
+  adapters, and the byte readers returned by `startReadingFromStream()`,
+  `startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
+  `getSourceDocumentStream()`, matching native. Replace array methods on the result with
+  typed-array operations, or wrap it in `Array.from()`
+  [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
 - Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
   Previously callers could continue after a failed append and produce a
   corrupted document; create a fresh writer and retry with valid source bytes.
@@ -80,6 +87,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
   rewrites it; they were previously re-encoded as UTF-8, corrupting other
   strings and inline image data on the page.
+- Stop `PDFWStreamForBuffer` from copying all previously written bytes on every
+  write, which made building large outputs quadratic
+  [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
 - Fix Recipe character-spacing measurements for retained boundary whitespace
   and non-BMP Unicode text, preventing incorrect wrapping and horizontal
   alignment [#543](https://github.com/julianhille/MuhammaraJS/issues/543)

@@ -38,7 +38,7 @@ var objectsContext = writer.getObjectsContext();
 var replacementId = objectsContext.startNewIndirectObject();
 var replacement = objectsContext.startPDFStream();
 
-replacement.getWriteStream().write(Array.from(Buffer.from("BT ET")));
+replacement.getWriteStream().write(Buffer.from("BT ET"));
 objectsContext.endPDFStream(replacement).endIndirectObject();
 writer.replaceObject(0, contentsId, replacementId);
 ```

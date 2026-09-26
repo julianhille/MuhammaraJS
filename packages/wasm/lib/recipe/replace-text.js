@@ -331,7 +331,7 @@ function readContentStream(parser, objectId) {
   var source = "";
   try {
     while (streamReader.notEnded()) {
-      source += oneByteString(new Uint8Array(streamReader.read(65536)));
+      source += oneByteString(streamReader.read(65536));
     }
   } finally {
     streamReader.dispose?.();
@@ -461,7 +461,7 @@ export function createReplaceTextMethods() {
         var stream = parser.parseNewObject(contentsObjectId).toPDFStream();
         streamReader = parser.startReadingFromStream(stream);
         while (streamReader.notEnded()) {
-          source += oneByteString(new Uint8Array(streamReader.read(65536)));
+          source += oneByteString(streamReader.read(65536));
         }
       } finally {
         streamReader?.dispose();

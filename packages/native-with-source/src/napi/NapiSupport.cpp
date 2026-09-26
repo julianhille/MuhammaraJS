@@ -1,6 +1,8 @@
 #include "napi/NapiSupport.h"
 
+#include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <utility>
 
 namespace muhammara {
@@ -305,6 +307,70 @@ napi_value BytesToArray(napi_env env, const unsigned char *bytes, size_t length)
       return nullptr;
   }
   return array;
+}
+
+napi_value BytesToBuffer(napi_env env, const unsigned char *bytes,
+                         size_t length) {
+  napi_value buffer = nullptr;
+  if (!Check(env, napi_create_buffer_copy(env, length, bytes, nullptr, &buffer)))
+    return nullptr;
+  return buffer;
+}
+
+bool ByteSourceLength(napi_env env, napi_value value, size_t *length) {
+  *length = 0;
+  bool isTypedArray = false;
+  if (!Check(env, napi_is_typedarray(env, value, &isTypedArray)))
+    return false;
+  if (isTypedArray) {
+    napi_typedarray_type type;
+    if (!Check(env, napi_get_typedarray_info(env, value, &type, length, nullptr,
+                                             nullptr, nullptr)))
+      return false;
+    return type == napi_uint8_array || type == napi_uint8_clamped_array;
+  }
+  if (!IsArray(env, value))
+    return false;
+  uint32_t arrayLength = 0;
+  if (!Length(env, value, &arrayLength))
+    return false;
+  *length = arrayLength;
+  return true;
+}
+
+bool ReadStreamChunk(napi_env env, napi_value value, unsigned char *out,
+                     size_t capacity, size_t *written) {
+  *written = 0;
+  size_t length = 0;
+  if (!ByteSourceLength(env, value, &length))
+    return false;
+  size_t count = std::min(length, capacity);
+  bool isTypedArray = false;
+  if (!Check(env, napi_is_typedarray(env, value, &isTypedArray)))
+    return false;
+  if (isTypedArray) {
+    void *data = nullptr;
+    if (!Check(env, napi_get_typedarray_info(env, value, nullptr, nullptr,
+                                             &data, nullptr, nullptr)))
+      return false;
+    if (count > 0)
+      std::memcpy(out, data, count);
+    *written = count;
+    return true;
+  }
+  // Coerce every element before touching out, so a failure leaves it intact.
+  std::vector<unsigned char> bytes(count);
+  for (size_t i = 0; i < count; ++i) {
+    napi_value element = nullptr;
+    uint32_t byte = 0;
+    if (!Get(env, value, static_cast<uint32_t>(i), &element) ||
+        !CoerceToUint32(env, element, &byte))
+      return false;
+    bytes[i] = static_cast<unsigned char>(byte);
+  }
+  std::copy(bytes.begin(), bytes.end(), out);
+  *written = count;
+  return true;
 }
 
 napi_value CallMethod(napi_env env, napi_value receiver, const char *name,

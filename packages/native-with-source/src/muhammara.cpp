@@ -272,6 +272,8 @@ napi_value Recrypt(const CallbackArgs &args) {
     ObjectByteReaderWithPosition r(args.Env(), args[0]);
     ObjectByteWriterWithPosition w(args.Env(), args[1]);
     status = PDFWriter::RecryptPDF(&r, password, &w, log, creation, version);
+    if (w.Flush() != eSuccess && status == eSuccess)
+      status = eFailure;
   } else
     status = PDFWriter::RecryptPDF(
         LegacyString(args.Env(), args[0]), password,

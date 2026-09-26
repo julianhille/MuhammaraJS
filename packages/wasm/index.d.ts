@@ -865,7 +865,8 @@ export interface JPGImageInformation {
 
 export class PDFRStreamForBuffer {
   constructor(bytes: ByteSource);
-  read(amount: number): number[];
+  /** Returns a copy of at most `amount` bytes from the current position. */
+  read(amount: number): Uint8Array;
   notEnded(): boolean;
   setPosition(position: number): void;
   setPositionFromEnd(position: number): void;
@@ -1151,7 +1152,8 @@ export interface InfoDictionary {
 }
 
 export interface PDFByteReader {
-  read(amount: number): number[];
+  /** Returns a copy of at most `amount` decoded or raw stream bytes. */
+  read(amount: number): Uint8Array;
   notEnded(): boolean;
   /** Immediately releases this Wasm stream reader without ending its parent PDF reader. */
   dispose(): this;

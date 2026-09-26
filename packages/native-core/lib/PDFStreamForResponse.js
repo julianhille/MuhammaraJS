@@ -7,11 +7,13 @@ function PDFStreamForResponse(inResponse) {
   this.position = 0;
 }
 
-PDFStreamForResponse.prototype.write = function (inBytesArray) {
-  if (inBytesArray.length > 0) {
-    this.response.write(Buffer.from(inBytesArray));
-    this.position += inBytesArray.length;
-    return inBytesArray.length;
+PDFStreamForResponse.prototype.write = function (inBytes) {
+  // Arrays of byte values are still accepted from direct callers.
+  if (!Buffer.isBuffer(inBytes)) inBytes = Buffer.from(inBytes);
+  if (inBytes.length > 0) {
+    this.response.write(inBytes);
+    this.position += inBytes.length;
+    return inBytes.length;
   } else return 0;
 };
 

@@ -103,14 +103,16 @@ modifyingWriter.replaceObject(0, contentsId, replacementId, {
 ```
 
 `PDFRStreamForBuffer`, `PDFWStreamForBuffer`, and the `ByteReader`/`ByteWriter`
-aliases are byte adapters, not Node or Web streams. A writer adapter exposes
-`buffer`, `toUint8Array()`, `toArrayBuffer()`, and `toBlob()`. Reader adapter
-`setPosition()` and `setPositionFromEnd()` calls clamp the resulting position to
-the available byte range.
+aliases are byte adapters, not Node or Web streams. A reader adapter's
+`read(amount)` returns a copy of at most `amount` bytes as a `Uint8Array`, and
+its `setPosition()` and `setPositionFromEnd()` calls clamp the resulting
+position to the available byte range. A writer adapter exposes `buffer`,
+`toUint8Array()`, `toArrayBuffer()`, and `toBlob()`.
 
 Stream readers returned by `startReadingFromStream()`,
 `startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
-`getSourceDocumentStream()` allocate Wasm resources. Call their idempotent
+`getSourceDocumentStream()` return each `read(amount)` as a `Uint8Array` and
+allocate Wasm resources. Call their idempotent
 `dispose()` method as soon as reading finishes. Disposing one of these byte
 readers does not end its parent PDF reader; ending the parent remains fallback
 cleanup for byte readers that were not disposed explicitly.

@@ -145,7 +145,8 @@ private:
   static bool ObjectToPageRange(napi_env, napi_value, PDFPageRange &);
   PDFHummus::EStatusCode Setup(PDFHummus::EStatusCode);
   PDFHummus::EStatusCode TriggerEvent(const std::string &, napi_value);
-  void Retire();
+  // Returns false when buffered output could not be delivered.
+  bool Retire();
   void ReleaseLogProxy();
   bool startedWithStream_;
   bool catalogUpdateRequired_;

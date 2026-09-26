@@ -29,6 +29,29 @@ describe("Documentation examples", function () {
     reader.end();
   });
 
+  it("writes a PDF to a custom stream", function () {
+    var chunks = [];
+    var position = 0;
+    var writer = muhammara.createWriter({
+      write: function (bytes) {
+        chunks.push(bytes);
+        position += bytes.length;
+        return bytes.length;
+      },
+      getCurrentPosition: function () {
+        return position;
+      },
+    });
+    writer.writePage(writer.createPage(0, 0, 595, 842));
+    writer.end();
+    var pdfBuffer = Buffer.concat(chunks);
+
+    var reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(pdfBuffer),
+    );
+    assert.strictEqual(reader.getPagesCount(), 1);
+  });
+
   it("creates a Recipe PDF", function () {
     var outputPath = path.join(outputDirectory, "recipe.pdf");
     var Recipe = require("@muhammara/native").Recipe;

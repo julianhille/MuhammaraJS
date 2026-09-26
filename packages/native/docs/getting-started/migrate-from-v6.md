@@ -13,6 +13,36 @@ For Node.js applications the migration is a dependency rename, an import rename,
 a page-box constant update, a TypeScript Recipe declaration update, and a check
 that a prebuilt binary still exists for your platform.
 
+## Why Upgrade
+
+v7 passes PDF bytes between the native addon and JavaScript as `Buffer` chunks
+instead of arrays of numbers
+[#324](https://github.com/julianhille/MuhammaraJS/issues/324). Workflows that
+keep PDFs in memory or write through JavaScript streams become much faster and
+use far less memory. Workflows that read and write file paths are unchanged.
+
+Editing a 48 MB PDF:
+
+| Operation                                               | `muhammara` 6.0.6 | `@muhammara/native` 7 |
+| ------------------------------------------------------- | ----------------- | --------------------- |
+| Buffer-mode `Recipe`: edit every page, then `endPDF()`  | 6.4 s, 656 MB     | 0.40 s, 258 MB        |
+| `createWriterToModify()` from a Buffer into a JS stream | 7.3 s, 559 MB     | 0.10 s, 255 MB        |
+| File-path `Recipe`: edit every page, then `endPDF()`    | 0.21 s, 92 MB     | 0.21 s, 117 MB        |
+| `recrypt()` between file paths                          | 0.35 s, 69 MB     | 0.33 s, 71 MB         |
+
+Encrypting with `recrypt()` from a `PDFRStreamForBuffer` into a
+`PDFWStreamForBuffer` grew quadratically with file size in v6, because RC4
+output reached JavaScript one byte at a time:
+
+| PDF size | `muhammara` 6.0.6            | `@muhammara/native` 7 |
+| -------- | ---------------------------- | --------------------- |
+| 0.48 MB  | 13.4 s, 172 MB               | 0.01 s, 72 MB         |
+| 0.96 MB  | 60.4 s, 201 MB               | 0.01 s, 75 MB         |
+| 4.8 MB   | did not finish in 10 minutes | 0.06 s, 90 MB         |
+
+Measured on Linux x64 with Node.js 25 against generated, uncompressed PDFs.
+Times and peak resident memory are the median of three runs.
+
 ## 1. Choose The Replacement Package
 
 | v6 usage                                                                                  | v7 package                      |
@@ -523,6 +553,50 @@ coercions remain supported. Supply at least two complete coordinate pairs to
 `drawPath()`; malformed pairs and extra arguments now throw instead of silently
 drawing a prefix. A failed call emits no operators and can be retried after
 correcting the input.
+
+## 16. Accept Buffers In Custom Streams
+
+Custom write streams passed to `createWriter`, `createWriterToModify`,
+`recrypt`, or the `log` option now receive each chunk as a `Buffer` instead of
+an array of numbers. The built-in `PDFRStreamForFile` and `PDFRStreamForBuffer`
+also return `Buffer` chunks from `read()`, and so do the byte readers returned
+by `startReadingFromStream()`, `startReadingFromStreamForPlainCopying()`,
+`getParserStream()`, and `getSourceDocumentStream()`. This makes large in-memory and
+Buffer-mode `Recipe` work several times faster and far smaller
+[#324](https://github.com/julianhille/MuhammaraJS/issues/324).
+
+Streams that only read `bytes.length`, index bytes, or pass the chunk to
+`Buffer.from()` keep working. Code that relies on array methods does not:
+
+```javascript
+// v6: bytes was an array of numbers.
+write: function (bytes) {
+  this.data = this.data.concat(bytes);
+  return bytes.length;
+},
+
+// v7: bytes is a Buffer, which may be kept after write() returns.
+write: function (bytes) {
+  this.chunks.push(bytes);
+  return bytes.length;
+},
+```
+
+Output is batched into chunks of up to 64 KiB, and the final chunk is delivered
+when the writer ends, `recrypt()` returns, or the writer is shut down or
+aborted. Read the collected output after those calls rather than while pages
+are still being written.
+
+`write` must return the full length of the chunk it received. In v6 a smaller
+return value was ignored; now it fails the writer: creating it, later writes,
+`end()`, and `shutdown()` throw. Return `bytes.length` once the chunk is
+accepted, and throw from `write` to report a real failure.
+
+Replace `concat`, `push(...bytes)`, `splice`, and `Array.isArray` checks with
+Buffer operations, or call `Array.from(bytes)` where an array is still needed.
+TypeScript implementations of `WriteStream` or the `log` option must declare
+`write(bytes: Buffer)`. Custom read streams may keep returning arrays; returning
+a `Uint8Array` or `Buffer` is now also accepted and faster.
 
 ## What Does Not Change
 

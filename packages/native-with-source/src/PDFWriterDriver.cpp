@@ -52,6 +52,9 @@ PDFWriterDriver::PDFWriterDriver()
       writeProxy_(nullptr), readProxy_(nullptr), logProxy_(nullptr),
       env_(nullptr) {}
 PDFWriterDriver::~PDFWriterDriver() {
+  // A finalizer must not call into JavaScript, so unwritten output is dropped.
+  if (writeProxy_)
+    writeProxy_->DiscardPending();
   if (started_)
     Retire();
   delete writeProxy_;
@@ -117,8 +120,11 @@ napi_value PDFWriterDriver::New(const CallbackArgs &a) {
   }
   return a.This();
 }
-void PDFWriterDriver::Retire() {
+bool PDFWriterDriver::Retire() {
   writer_.GetDocumentContext().RemoveDocumentContextExtender(this);
+  // The last batch usually holds the xref and trailer, so a short write here
+  // must fail end() rather than leave a silently truncated PDF.
+  bool flushed = !writeProxy_ || writeProxy_->Flush() == eSuccess;
   delete writeProxy_;
   writeProxy_ = nullptr;
   delete readProxy_;
@@ -126,6 +132,7 @@ void PDFWriterDriver::Retire() {
   ReleaseLogProxy();
   started_ = false;
   lifecycle_->End();
+  return flushed;
 }
 napi_value PDFWriterDriver::End(const CallbackArgs &a) {
   auto *d = Driver(a);
@@ -133,7 +140,8 @@ napi_value PDFWriterDriver::End(const CallbackArgs &a) {
     return a.This();
   EStatusCode status = d->startedWithStream_ ? d->writer_.EndPDFForStream()
                                              : d->writer_.EndPDF();
-  d->Retire();
+  if (!d->Retire())
+    status = eFailure;
   return status == eSuccess ? a.This()
                             : ThrowTypeError(a.Env(), "Unable to end PDF");
 }
@@ -147,6 +155,8 @@ napi_value PDFWriterDriver::Abort(const CallbackArgs &a) {
   // Reset() closes the stream before cleaning up the objects context.
   d->writer_.GetObjectsContext().Cleanup();
   d->writer_.Reset();
+  if (d->writeProxy_)
+    d->writeProxy_->Flush();
   delete d->writeProxy_;
   d->writeProxy_ = nullptr;
   delete d->readProxy_;
@@ -396,7 +406,12 @@ napi_value PDFWriterDriver::Shutdown(const CallbackArgs &a) {
   if (a.Length() != 1 || !Type(a.Env(), a[0], napi_string))
     return ThrowTypeError(
         a.Env(), "wrong arguments, pass a path to save the state file to");
-  EStatusCode s = Driver(a)->writer_.Shutdown(LegacyString(a.Env(), a[0]));
+  auto *d = Driver(a);
+  EStatusCode s = d->writer_.Shutdown(LegacyString(a.Env(), a[0]));
+  // The saved state points past the batched bytes, so they must arrive before
+  // shutdown can report success.
+  if (d->writeProxy_ && d->writeProxy_->Flush() != eSuccess)
+    s = eFailure;
   Abort(a);
   return s == eSuccess
              ? a.This()
@@ -1155,10 +1170,19 @@ bool PDFWriterDriver::IsCatalogUpdateRequiredForModifiedFile(PDFParser *) {
   return catalogUpdateRequired_;
 }
 EStatusCode PDFWriterDriver::Setup(EStatusCode s) {
+  // Deliver the header now, so a broken output stream fails at creation
+  // rather than at the first 64 KiB boundary or end().
+  if (s == eSuccess && writeProxy_ && writeProxy_->Flush() != eSuccess) {
+    writer_.GetObjectsContext().Cleanup();
+    writer_.Reset();
+    s = eFailure;
+  }
   if (s == eSuccess) {
     writer_.GetDocumentContext().AddDocumentContextExtender(this);
     started_ = true;
   } else {
+    if (writeProxy_)
+      writeProxy_->Flush();
     delete writeProxy_;
     writeProxy_ = nullptr;
     delete readProxy_;

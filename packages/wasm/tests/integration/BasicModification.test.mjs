@@ -77,4 +77,39 @@ describe("BasicModification", function () {
     );
     assert.throws(() => pageModifier.getContext(), /has ended/);
   });
+
+  // https://github.com/julianhille/MuhammaraJS/issues/324
+  it("returns Uint8Array chunks from PDFRStreamForBuffer reads", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = new TextEncoder().encode("%PDF-1.7");
+    var stream = new muhammara.PDFRStreamForBuffer(source);
+    var bytes = stream.read(5);
+
+    assert.ok(bytes instanceof Uint8Array);
+    assert.equal(new TextDecoder().decode(bytes), "%PDF-");
+    assert.equal(stream.getCurrentPosition(), 5);
+    // The chunk is a copy; changing it must not change later reads.
+    bytes[0] = 0;
+    stream.setPosition(0);
+    assert.equal(stream.read(1)[0], 0x25);
+  });
+
+  // https://github.com/julianhille/MuhammaraJS/issues/324
+  it("joins PDFWStreamForBuffer chunks into its buffer on access", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var encoder = new TextEncoder();
+    var decoder = new TextDecoder();
+    var stream = new muhammara.PDFWStreamForBuffer();
+
+    assert.equal(stream.buffer.length, 0);
+    assert.equal(stream.write(encoder.encode("ab")), 2);
+    assert.equal(stream.write(new Uint8Array()), 0);
+    assert.equal(stream.write(encoder.encode("cd").buffer), 2);
+    assert.equal(decoder.decode(stream.buffer), "abcd");
+    stream.write(encoder.encode("e"));
+    assert.equal(decoder.decode(stream.toUint8Array()), "abcde");
+    assert.equal(stream.getCurrentPosition(), 5);
+    stream.buffer = encoder.encode("x");
+    assert.equal(decoder.decode(stream.buffer), "x");
+  });
 });

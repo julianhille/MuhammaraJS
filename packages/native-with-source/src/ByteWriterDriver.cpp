@@ -34,21 +34,14 @@ void ByteWriterDriver::SetStream(IByteWriter *writer, bool owns) {
 IByteWriter *ByteWriterDriver::GetStream() { return mInstance; }
 
 napi_value ByteWriterDriver::Write(const CallbackArgs &args) {
-  if (args.Length() != 1 || !IsArray(args.Env(), args[0]))
-    return ThrowTypeError(args.Env(),
-                          "Wrong arguments. pass an array of bytes to write");
-  uint32_t length = 0;
-  if (!Length(args.Env(), args[0], &length))
-    return nullptr;
+  size_t length = 0;
+  if (args.Length() != 1 || !ByteSourceLength(args.Env(), args[0], &length))
+    return ThrowTypeError(
+        args.Env(), "Wrong arguments. pass a Uint8Array or an array of bytes");
   std::vector<IOBasicTypes::Byte> buffer(length);
-  for (uint32_t i = 0; i < length; ++i) {
-    napi_value value = nullptr;
-    uint32_t byte = 0;
-    if (!Get(args.Env(), args[0], i, &value) ||
-        !CoerceToUint32(args.Env(), value, &byte))
-      return nullptr;
-    buffer[i] = static_cast<IOBasicTypes::Byte>(byte);
-  }
+  size_t copied = 0;
+  if (!ReadStreamChunk(args.Env(), args[0], buffer.data(), length, &copied))
+    return nullptr;
   auto *driver = ObjectWrap::Unwrap<ByteWriterDriver>(args.Env(), args.This());
-  return Number(args.Env(), driver->mInstance->Write(buffer.data(), length));
+  return Number(args.Env(), driver->mInstance->Write(buffer.data(), copied));
 }

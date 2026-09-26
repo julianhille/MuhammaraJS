@@ -68,6 +68,16 @@ napi_value Call(napi_env env, napi_value receiver, napi_value function,
 // Shared binding conversions; callers retain API-specific validation messages.
 bool StringOrBytes(napi_env env, napi_value value, std::string &out);
 napi_value BytesToArray(napi_env env, const unsigned char *bytes, size_t length);
+// Copies the bytes, so JavaScript may keep the Buffer after the call returns.
+napi_value BytesToBuffer(napi_env env, const unsigned char *bytes,
+                         size_t length);
+// Length of a Uint8Array (Buffer included) or array of numbers used as bytes.
+// False for any other value.
+bool ByteSourceLength(napi_env env, napi_value value, size_t *length);
+// Copies at most capacity bytes from a Uint8Array (Buffer included) or an array
+// of numbers returned by a JavaScript read stream. False for any other value.
+bool ReadStreamChunk(napi_env env, napi_value value, unsigned char *out,
+                     size_t capacity, size_t *written);
 napi_value CallMethod(napi_env env, napi_value receiver, const char *name,
                       const std::vector<napi_value> &arguments = {});
 // A null error means the caller already validated the array length.
@@ -114,6 +124,26 @@ private:
   napi_value thisValue_;
   void *data_;
   bool valid_;
+};
+
+// Releases the handles created while it is alive. Native code that calls into
+// JavaScript repeatedly within one outer call (stream bridges) would otherwise
+// keep every intermediate value reachable until that outer call returns.
+class HandleScope {
+public:
+  explicit HandleScope(napi_env env) : env_(env), scope_(nullptr) {
+    napi_open_handle_scope(env_, &scope_);
+  }
+  HandleScope(const HandleScope &) = delete;
+  HandleScope &operator=(const HandleScope &) = delete;
+  ~HandleScope() {
+    if (scope_)
+      napi_close_handle_scope(env_, scope_);
+  }
+
+private:
+  napi_env env_;
+  napi_handle_scope scope_;
 };
 
 class Reference {

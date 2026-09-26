@@ -307,7 +307,7 @@ function readContentStream(recipe, objectId) {
   var chunks = [];
 
   while (streamReader.notEnded()) {
-    chunks.push(Buffer.from(streamReader.read(65536)));
+    chunks.push(streamReader.read(65536));
   }
   return Buffer.concat(chunks).toString("latin1");
 }
@@ -325,9 +325,7 @@ function replaceContentStream(recipe, pageIndex, objectId, content) {
   var replacementObjectId = objectsContext.startNewIndirectObject();
   var replacementStream = objectsContext.startUnfilteredPDFStream();
 
-  replacementStream
-    .getWriteStream()
-    .write(Array.from(Buffer.from(content, "latin1")));
+  replacementStream.getWriteStream().write(Buffer.from(content, "latin1"));
   objectsContext.endPDFStream(replacementStream).endIndirectObject();
   recipe.writer.replaceObject(pageIndex, objectId, replacementObjectId);
 }
@@ -358,7 +356,7 @@ function rewriteStream(recipe, copyingContext, objectId, content) {
   });
 
   var stream = objectsContext.startUnfilteredPDFStream(dictionary);
-  stream.getWriteStream().write(Array.from(Buffer.from(content, "latin1")));
+  stream.getWriteStream().write(Buffer.from(content, "latin1"));
   objectsContext.endPDFStream(stream).endIndirectObject();
 }
 
