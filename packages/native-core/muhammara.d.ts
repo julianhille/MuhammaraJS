@@ -767,6 +767,11 @@ declare namespace muhammara {
      * @throws {Error} If the reader has no stream.
      */
     read(length: number): Buffer;
+    /**
+     * Tells whether bytes remain.
+     * @returns True while the end has not been reached.
+     * @throws {Error} If the reader has no stream.
+     */
     notEnded(): boolean;
   }
 
