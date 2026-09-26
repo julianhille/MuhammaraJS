@@ -678,10 +678,7 @@ declare namespace muhammara {
       sourcePage: PDFPage,
       targetPageNumber: number,
     ): void;
-    getSourceDocumentParser(
-      input: FilePath | ReadStream,
-      options?: PDFReaderOptions,
-    ): PDFReader;
+    getSourceDocumentParser(): PDFReader;
     copyDirectObjectAsIs(objectToCopy: PDFObject): void;
     copyObject(objectId: number): number;
     copyDirectObjectWithDeepCopy(objectToCopy: PDFObject): Array<number>;

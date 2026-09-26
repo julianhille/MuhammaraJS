@@ -250,6 +250,9 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Changed
 
+- Declare `DocumentCopyingContext#getSourceDocumentParser()` without
+  parameters in the TypeScript types, matching the runtime, which never used
+  them [#320](https://github.com/julianhille/MuhammaraJS/issues/320)
 - Link `bcrypt.lib` explicitly in the Windows native build, where OpenSSL seeds
   AES initialization vectors from `BCryptGenRandom`
   [#663](https://github.com/julianhille/MuhammaraJS/issues/663)
