@@ -448,6 +448,9 @@ exports.Column = class Column {
   get y() {
     return this._y;
   }
+  /**
+   * @returns {number[]} The column [x, y] position.
+   */
   get position() {
     return [this._x, this._y];
   }
