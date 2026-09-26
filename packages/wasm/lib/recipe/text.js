@@ -654,7 +654,17 @@ export function createTextMethods({ drawText, measure, module }) {
     });
   }
 
-  /** Draws a highlight rectangle using the same transform as its text. */
+  /**
+   * Draws a highlight rectangle using the same transform as its text.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {number} x - Left.
+   * @param {number} y - Top.
+   * @param {number} width - Width.
+   * @param {number} height - Height.
+   * @param {object} options - Rotation and skew options.
+   * @param {{color?: string, opacity?: number}} hilite - Highlight color and opacity.
+   * @returns {void}
+   */
   function drawHilite(recipe, x, y, width, height, options, hilite) {
     withTextTransform(recipe, options, () => {
       recipe.rectangle(x, y, width, height, {
