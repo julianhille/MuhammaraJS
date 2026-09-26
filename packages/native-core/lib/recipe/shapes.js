@@ -1340,6 +1340,10 @@ const Kite = class Kite {
     return this._TE;
   }
 
+  /**
+   * The head shape.
+   * @returns {Recipe.ArrowType} The `Recipe.ArrowType` value.
+   */
   get type() {
     return this._type;
   }
