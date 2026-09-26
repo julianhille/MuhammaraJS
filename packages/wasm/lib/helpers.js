@@ -371,6 +371,13 @@ export function createHelpers(module) {
     throw new TypeError("text encoding must be text, code, or hex");
   }
 
+  /**
+   * Runs a callback with glyph pairs copied into Wasm memory as 32-bit integers.
+   * @param {Glyph[]} glyphs - `[glyphId, unicodeCodePoint]` pairs.
+   * @param {function(number): *} callback - Receives the pointer.
+   * @returns {*} The callback result.
+   * @throws {TypeError} If an entry is not a pair of non-negative integers.
+   */
   function withGlyphs(glyphs, callback) {
     if (
       !Array.isArray(glyphs) ||
