@@ -4681,6 +4681,13 @@ export function createWriterFactory({
       },
     };
 
+    /**
+     * Ends the active page, starting it first when needed, and clears its hooks.
+     * @param {PDFPage} page - Page to write.
+     * @param {function(): number} endPage - Native end call; returns nonzero on success.
+     * @returns {number} The `endPage` result.
+     * @throws {Error} If the writer ended, another page is active, or the page cannot be written.
+     */
     function writePage(page, endPage) {
       requireOpenWriter();
       if (!(page instanceof PDFPage) || (currentPage && page !== currentPage)) {
