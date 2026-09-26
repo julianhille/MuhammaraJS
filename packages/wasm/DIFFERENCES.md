@@ -7,6 +7,13 @@ size and a font owned by the same writer. Flat Wasm `drawPath()` requires a
 trailing options object; native also accepts complete flat pairs without it.
 These existing validation differences are retained for compatibility.
 
+Wasm glyph text requires every glyph list item to be exactly one
+`[glyphId, unicodeCodePoint]` pair of non-negative integers; native also
+accepts a bare `[glyphId]` or several code points per glyph and coerces the
+values. One Wasm `TJ()` call may mix strings and glyph lists, and an empty
+call throws; native `TJ()` takes either strings or glyph lists and throws a
+`TypeError` for a mix.
+
 The WebAssembly Recipe text, HTML, layout, and table APIs are static ESM modules
 with injected in-memory Recipe state. They run in browsers and module Workers;
 they never load Node modules, filesystem paths, or Recipe plugins.
