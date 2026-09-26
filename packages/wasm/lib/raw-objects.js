@@ -101,6 +101,13 @@ export function createRawObjectsContext({
       }
       return {
         _handle: dictionary,
+        /**
+         * Writes a dictionary key; follow it with one value.
+         * @param {string} key - Key name without the leading slash.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `key` is not a string.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeKey: function (key) {
           requireDictionary();
           if (typeof key !== "string")
