@@ -377,6 +377,14 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     m(x: PosX, y: PosY): this;
+    /**
+     * Adds a line to the path; operator l.
+     * @param x - The x coordinate.
+     * @param y - The y coordinate.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 2 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     l(x: PosX, y: PosY): this;
     c(x1: PosX, y1: PosY, x2: PosX, y2: PosY, x3: PosX, y3: PosY): this;
     v(x2: PosX, y2: PosY, x3: PosX, y3: PosY): this;
