@@ -362,6 +362,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     fStar(): this;
+    /**
+     * Ends the path without painting it, for clipping; operator n.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     n(): this;
     m(x: PosX, y: PosY): this;
     l(x: PosX, y: PosY): this;
