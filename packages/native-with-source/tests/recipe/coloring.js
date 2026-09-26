@@ -321,11 +321,8 @@ describe("Coloring", () => {
       }
       const all = content.join("\n");
       assert.equal(all.match(/\/\S+ cs\s+1 scn/g)?.length, 4);
-      // On edited pages line() also strokes a zero-length first segment.
-      assert.equal(
-        all.match(/\/\S+ CS\s+1 SCN/g)?.length,
-        mode === "edited" ? 3 : 2,
-      );
+      // line() strokes only its segments, with no zero-length first one.
+      assert.equal(all.match(/\/\S+ CS\s+1 SCN/g)?.length, 2);
       assert.match(all, /0 0 1 rg/);
     });
   });

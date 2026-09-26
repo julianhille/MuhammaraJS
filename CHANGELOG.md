@@ -191,6 +191,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   fractional size such as `10.5` was truncated to `10` [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Accept a pattern name alone in `SCN` and `scn`, emitting `/P0 SCN` to select a
   colored (PaintType 1) tiling pattern instead of throwing [#797](https://github.com/julianhille/MuhammaraJS/issues/797)
+- Draw the first segment of a Recipe `line()` on an edited page; it went to a
+  content stream that had already ended, and a zero-length segment drawn to
+  work around that could show as a dot at the line's start
+  [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Paint Recipe separation colors in `circle()`, `line()`, `lineTo()` and HTML
   underline and strike-out lines; they were drawn in black, while rectangles,
   ellipses, polygons and text already used the Separation color space

@@ -44,8 +44,10 @@ exports.lineTo = function lineTo(x, y, options = {}) {
   const fromX = this._position.x;
   const fromY = this._position.y;
   const { nx, ny } = this._calibrateCoordinate(x, y);
-  const context = this.pageContext;
+  // _getPathOptions() may pause the page to write graphics states, and an
+  // edited page resumes into a new context, so read the context afterwards.
   const pathOptions = this._getPathOptions(options);
+  const context = this.pageContext;
   pathOptions.type = muhammara.DrawingPathType.STROKE;
 
   if (pathOptions.stroke !== undefined) {
@@ -126,10 +128,6 @@ exports.line = function line(coordinates = [], options = {}) {
   coordinates.forEach((coordinate, index) => {
     if (index === 0) {
       this.moveTo(coordinate[0], coordinate[1]);
-      if (this.editingPage) {
-        // hack to force out first line when editing page
-        this.lineTo(coordinate[0], coordinate[1], options);
-      }
     } else {
       this.lineTo(coordinate[0], coordinate[1], options);
     }
