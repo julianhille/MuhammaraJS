@@ -750,6 +750,10 @@ const Triangle = class Triangle {
   get A() {
     return this._A;
   }
+  /**
+   * Vertex B, the left end of the base.
+   * @returns {number[]} The [x, y] point.
+   */
   get B() {
     return this._B;
   }
