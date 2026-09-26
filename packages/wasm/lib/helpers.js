@@ -177,6 +177,15 @@ export function createHelpers(module) {
       );
     }
 
+    /**
+     * Reads `SCN`/`scn` arguments: components, or one component array, then an optional pattern name.
+     * @param {string} name - Operator name for error messages.
+     * @param {number} code - Native operator code.
+     * @param {Array} args - Call arguments; a trailing string is removed as the pattern.
+     * @returns {object} The content context.
+     * @throws {TypeError} If no finite components are given or the array form has extra arguments.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     function patternComponents(name, code, args) {
       var pattern = typeof args.at(-1) === "string" ? args.pop() : undefined;
       var values = Array.isArray(args[0]) ? args[0] : args;
