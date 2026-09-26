@@ -173,7 +173,7 @@ function htmlLines(source, width, measure, options, wrap) {
   var flush = (last, force = false) => {
     // lines() trims every line it emits; keep trailing spaces out of the
     // measured width so alignment and justification stay correct.
-    while (wrap !== "clip" && parts.length) {
+    while (wrap !== RecipeTextWrap.CLIP && parts.length) {
       var tail = parts[parts.length - 1];
       tail.text = trimBreakableEnd(tail.text);
       if (tail.text) break;
@@ -241,16 +241,16 @@ function htmlLines(source, width, measure, options, wrap) {
             breakBefore &&
             htmlPartsWidth(candidate, measure, options) > width
           ) {
-            if (wrap === "auto" || wrap === true) {
+            if (wrap === RecipeTextWrap.AUTO || wrap === true) {
               flush(false);
               if (!hasText(word)) return;
               word = linePrefix + word;
               linePrefix = "";
-            } else if (wrap === "ellipsis") {
+            } else if (wrap === RecipeTextWrap.ELLIPSIS) {
               ellipsizeHtmlParts(parts, width, measure, options);
               truncated = true;
               return;
-            } else if (wrap !== "clip") {
+            } else if (wrap !== RecipeTextWrap.CLIP) {
               truncated = true;
               return;
             }
