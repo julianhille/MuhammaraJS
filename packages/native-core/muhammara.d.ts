@@ -662,6 +662,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the reader has ended.
      */
     getObjectsCount(): number;
+    /**
+     * Tells whether the PDF is encrypted.
+     * @returns True when the PDF is encrypted.
+     * @throws {TypeError} If the reader has ended.
+     */
     isEncrypted(): boolean;
     getXrefSize(): number;
     getXrefEntry(objectId: number): {
