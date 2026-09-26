@@ -1921,6 +1921,13 @@ export function createWriterFactory({
           cm: function (a, b, c, d, e, f) {
             return operator("cm", 19, [a, b, c, d, e, f]);
           },
+          /**
+           * Sets the character spacing (`Tc`).
+           * @param {number} characterSpace - Extra space per glyph in unscaled text space units.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           Tc: function (characterSpace) {
             return operator("Tc", 35, [characterSpace]);
           },
