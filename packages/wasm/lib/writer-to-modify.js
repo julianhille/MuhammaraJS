@@ -1995,6 +1995,16 @@ export function createWriterToModifyFactory({
           options,
         );
       },
+      /**
+       * Alias of `createFormXObjectFromTIFFAsync()`.
+       * @async
+       * @param {AsyncByteSource} image - TIFF bytes, Blob, or File.
+       * @param {TIFFOptions} [options] - Page index, object ID, and treatments.
+       * @returns {Promise<FormXObject>} The completed form.
+       * @throws {TypeError} If an option or the bytes are invalid.
+       * @throws {RangeError} If `pageIndex` or `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObjectFromTIFFBytesAsync: async function (image, options) {
         return this.createFormXObjectFromTIFFAsync(image, options);
       },
