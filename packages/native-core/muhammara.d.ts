@@ -851,7 +851,15 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     writeFreeCode(freeCode: string): this;
-    /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
+    /**
+     * Draws a path through points. Pass x, y numbers as arguments or one array
+     * of [x, y] pairs, then optional options. Invalid input emits no operators.
+     * @param parameters - The coordinates and optional options.
+     * @returns This context.
+     * @throws {TypeError} If fewer than two complete finite coordinate pairs are
+     *   given.
+     * @throws {TypeError} If there is no content context.
+     */
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////drawPath(...xyPairs: number[], options: GraphicOptions): this;
     drawPath(xyPairs: Array<[number, number]>, options: GraphicOptions): this;
