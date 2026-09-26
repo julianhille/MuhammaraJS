@@ -1477,6 +1477,10 @@ const Point = class Point {
   }
 };
 
+/**
+ * A line segment between two points.
+ * @private
+ */
 const Line = class Line {
   constructor(x1, y1, x2, y2) {
     // Allow user to supply Points or Arrays instead of individual coordinates
