@@ -2127,6 +2127,11 @@ export function createWriterFactory({
             return context;
           },
         };
+        /**
+         * Begins a text object (`BT`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         context.BT = function () {
           return operator("BT", 32);
         };
