@@ -1421,6 +1421,10 @@ const Arrow = class Arrow {
   }
 };
 
+/**
+ * A mutable 2D point.
+ * @private
+ */
 const Point = class Point {
   constructor(x, y) {
     if (Array.isArray(x)) {
