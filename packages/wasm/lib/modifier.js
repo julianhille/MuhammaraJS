@@ -220,6 +220,11 @@ export function createModifierFactory({
           return this;
         });
       },
+      /**
+       * Finishes drawing on the current page.
+       * @returns {this} The modifier.
+       * @throws {Error} If the modifier has ended or the page cannot be finished.
+       */
       endPage: function () {
         requireOpenModifier();
         if (!module._muhammara_wasm_modifier_end_page(modifier)) {
