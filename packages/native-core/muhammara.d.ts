@@ -1235,6 +1235,10 @@ declare namespace muhammara {
      * @returns This object; undefined when it is not a boolean.
      */
     toPDFBoolean(): PDFBoolean | undefined;
+    /**
+     * Returns this object typed as a literal string.
+     * @returns This object; undefined when it is not a literal string.
+     */
     toPDFLiteralString(): PDFLiteralString | undefined;
     toPDFHexString(): PDFHexString | undefined;
     toPDFNull(): PDFNull | undefined;
