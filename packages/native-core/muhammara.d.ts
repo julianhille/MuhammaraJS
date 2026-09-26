@@ -607,6 +607,10 @@ declare namespace muhammara {
     trimBox?: PDFBox;
     artBox?: PDFBox;
     rotate?: number;
+    /**
+     * Returns the page resources.
+     * @returns The resources dictionary.
+     */
     getResourcesDictionary(): ResourcesDictionary;
   }
 
