@@ -683,4 +683,41 @@ describe("Text", () => {
       .endPage()
       .endPDF(done);
   });
+
+  it("keeps hilited text on edited pages", () => {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const source = path.join(__dirname, "../output/hilite-edit-source.pdf");
+    const output = path.join(__dirname, "../output/hilite-edit.pdf");
+    new Recipe("new", source).createPage(200, 200).endPage().endPDF();
+    // The hilite rectangle pauses the edited page, which resumes into a new
+    // content context; the text must be written to that one.
+    new Recipe(source, output)
+      .editPage(1)
+      .text("Hilited", 10, 10, { hilite: true })
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    let textObjects = 0;
+    for (let id = 1; id < reader.getXrefSize(); id++) {
+      const object = reader.parseNewObject(id);
+      if (!object || object.getType() !== muhammara.ePDFObjectStream) continue;
+      const dictionary = object.toPDFStream().getDictionary();
+      if (
+        !dictionary.exists("Subtype") ||
+        dictionary.queryObject("Subtype").value !== "Form"
+      ) {
+        continue;
+      }
+      const input = reader.startReadingFromStream(object.toPDFStream());
+      const bytes = [];
+      while (input.notEnded()) bytes.push(...input.read(4096));
+      textObjects += (
+        Buffer.from(bytes)
+          .toString("latin1")
+          .match(/\bBT\b/g) || []
+      ).length;
+    }
+    assert.equal(textObjects, 1);
+  });
 });

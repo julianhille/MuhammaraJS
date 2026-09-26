@@ -219,6 +219,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Stop writing a second, unused Separation color space for a `colorName` ink
   when a Recipe shape paints a `fill` or `stroke` and no `color`; it defined
   the ink again with the default color as its alternate [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+- Keep the text of a Recipe `text()` call with `hilite` on an edited page; it
+  went to a content stream that drawing the hilite had already ended [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Draw the first segment of a Recipe `line()` on an edited page; it went to a
   content stream that had already ended, and a zero-length segment drawn to
   work around that could show as a dot at the line's start

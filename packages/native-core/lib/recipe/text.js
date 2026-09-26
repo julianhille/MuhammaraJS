@@ -432,7 +432,6 @@ exports.text = function text(text = "", x, y, options = {}) {
         break;
     }
 
-    let context = this.pageContext;
     let currentY = textYpos - textBox.paddingTop;
     let boxTop = currentY;
     let currentLineID;
@@ -562,7 +561,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         }
       };
 
-      const writeText = (context, x, y, wto) => {
+      const writeText = (x, y, wto) => {
         const options = wto.writeOptions;
         const { lineWidth, lineHeight, text, baseline } = wto;
         let next_x = 0;
@@ -618,6 +617,9 @@ exports.text = function text(text = "", x, y, options = {}) {
           options.colorspace !== Colorspace.SEPARATION &&
           (options.rotation === 0 || options.rotation === undefined)
         ) {
+          // Read the context here: a hilite rectangle or an earlier line may
+          // have paused an edited page, which resumes into a new context.
+          const context = this.pageContext;
           context.q();
 
           if (_justify) {
@@ -782,7 +784,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         toWriteContents.forEach((content) => {
           const x = next_x || getStartX(content.startX, content);
           const y = currentY;
-          next_x = writeText(context, x, y, content);
+          next_x = writeText(x, y, content);
           queueTextLink(content, x, y, next_x);
         });
         // The line offset from the last line in the
@@ -840,7 +842,6 @@ exports.text = function text(text = "", x, y, options = {}) {
             updateTextBox(this._columns[columnIndex - 1]);
             updateVertical = false;
           }
-          context = this.pageContext; // in case user changed page
         }
 
         if (updateVertical) {
@@ -880,7 +881,7 @@ exports.text = function text(text = "", x, y, options = {}) {
           const content = toWriteContents[ii];
           const x = next_x || getStartX(content.startX, content);
           const y = currentY;
-          next_x = writeText(context, x, y, content);
+          next_x = writeText(x, y, content);
           queueTextLink(content, x, y, next_x);
         }
 
