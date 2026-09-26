@@ -280,6 +280,13 @@ exports._setSkewContext = function _setSkewTransform(context, options) {
   }
 };
 
+/**
+ * Apply a [scaleX, scaleY] ratio to a content context.
+ * @private
+ * @param {Object} context - The content context.
+ * @param {Object} options - The path options: ratio.
+ * @returns {void}
+ */
 exports._setScalingTransform = function _setScalingTransform(context, options) {
   if (options.ratio) {
     context.cm(options.ratio[0], 0, 0, options.ratio[1], 0, 0);
