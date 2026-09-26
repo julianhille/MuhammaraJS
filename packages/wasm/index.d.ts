@@ -1863,6 +1863,12 @@ export interface CompactModifierShapeOptions {
   fill?: ColorValue;
   stroke?: ColorValue;
 }
+/** Line color and width for CompactModifier.line(); `stroke` wins over `color`. */
+export interface CompactModifierLineOptions {
+  color?: ColorValue;
+  stroke?: ColorValue;
+  lineWidth?: number;
+}
 export interface CompactModifier {
   startPage(index: number): this;
   rectangle(
@@ -1883,7 +1889,7 @@ export interface CompactModifier {
     startY: number,
     endX: number,
     endY: number,
-    options?: { color?: RecipeColor; stroke?: RecipeColor; lineWidth?: number },
+    options?: CompactModifierLineOptions,
   ): this;
   text(
     value: string,

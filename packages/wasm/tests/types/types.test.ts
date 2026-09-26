@@ -951,6 +951,7 @@ async function usesNamedValueSets() {
   // @ts-expect-error Low-level colors take three components.
   compact.rectangle(0, 0, 5, 5, { fill: [1, 2] });
   compact.circle(5, 5, 2, { stroke: "#00ff00" });
+  compact.line(0, 0, 5, 5, { color: [0, 0, 255], lineWidth: 2 });
 }
 
 void usesNamedValueSets;

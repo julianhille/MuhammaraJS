@@ -125,6 +125,17 @@ export function createModifierFactory({
         }
         return this;
       },
+      /**
+       * Draws a line in PDF coordinates.
+       * @param {number} startX - Start x.
+       * @param {number} startY - Start y.
+       * @param {number} endX - End x.
+       * @param {number} endY - End y.
+       * @param {CompactModifierLineOptions} [options] - `stroke` or `color`, and `lineWidth` (default 1).
+       * @returns {this} The modifier.
+       * @throws {TypeError} If the color is not a ColorValue.
+       * @throws {Error} If the modifier has ended or drawing fails.
+       */
       line: function (startX, startY, endX, endY, options = {}) {
         requireOpenModifier();
         if (
