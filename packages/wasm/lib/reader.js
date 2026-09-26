@@ -1286,6 +1286,11 @@ export function createReaderFactory({
       startReadingFromStreamForPlainCopying: function (stream) {
         return startReadingFromStream(stream, true);
       },
+      /**
+       * Opens a positioned reader over the whole PDF file.
+       * @returns {PositionedPDFByteReader} The byte reader.
+       * @throws {Error} If the reader has ended or the stream is unavailable.
+       */
       getParserStream: function () {
         requireReader();
         var handle = module._muhammara_wasm_reader_get_parser_stream(reader);
