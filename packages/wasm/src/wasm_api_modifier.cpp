@@ -583,11 +583,6 @@ WASM_EXPORT int muhammara_wasm_modifier_do_form_object_id(WasmModifier* modifier
   return modifier->context->Do(name) == PDFHummus::eSuccess;
 }
 
-WASM_EXPORT int muhammara_wasm_modifier_show_text(WasmModifier* modifier, const char* text) {
-  return modifier != nullptr && modifier->context != nullptr && text != nullptr &&
-                 modifier->context->Tj(text) == PDFHummus::eSuccess;
-}
-
 WASM_EXPORT int muhammara_wasm_modifier_show_text_operator(
     WasmModifier* modifier, int operation, int encoding, double wordSpace,
     double characterSpace, const char* text, unsigned int textLength) {
@@ -819,13 +814,6 @@ WASM_EXPORT int muhammara_wasm_modifier_form_set_font_name(
                  form->modifier == modifier && form->form != nullptr && !form->ended &&
                  name != nullptr && std::isfinite(fontSize) && fontSize > 0 &&
                  form->form->GetContentContext()->TfLow(name, fontSize) == PDFHummus::eSuccess;
-}
-
-WASM_EXPORT int muhammara_wasm_modifier_form_show_text(
-    WasmModifier* modifier, WasmForm* form, const char* text) {
-  return modifier != nullptr && !modifier->finished && form != nullptr &&
-                 form->modifier == modifier && form->form != nullptr && !form->ended &&
-                  text != nullptr && form->form->GetContentContext()->Tj(text) == PDFHummus::eSuccess;
 }
 
 WASM_EXPORT int muhammara_wasm_modifier_form_show_text_operator(
