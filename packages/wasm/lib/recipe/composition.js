@@ -377,7 +377,10 @@ export function createSplitPdf({
   };
 }
 
-/** Creates a function that reports basic structure for the finished PDF. */
+/**
+ * Creates a function that reports basic structure for the finished PDF.
+ * @returns {Function} The structure method.
+ */
 export function createStructure() {
   /**
    * Reports basic structure for the finished PDF.
