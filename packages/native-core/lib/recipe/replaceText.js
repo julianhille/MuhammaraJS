@@ -11,6 +11,19 @@ var PdfOperator = Object.freeze({
   INLINE_IMAGE_DATA: "ID",
 });
 
+// PDF dictionary keys and names this module reads.
+var PdfName = Object.freeze({
+  PARENT: "Parent",
+  RESOURCES: "Resources",
+  CONTENTS: "Contents",
+  LENGTH: "Length",
+  FILTER: "Filter",
+  DECODE_PARMS: "DecodeParms",
+  XOBJECT: "XObject",
+  SUBTYPE: "Subtype",
+  FORM: "Form",
+});
+
 // Content-stream keywords that are operands, not operators.
 var PdfKeyword = Object.freeze({
   TRUE: "true",
@@ -282,6 +295,7 @@ function lookup(recipe, dictionary, key) {
  *
  * @param {Recipe} recipe Recipe with an open source reader.
  * @param {number} pageIndex Zero-based page index.
+ * @private
  * @returns {{streamIds: number[], resources: object|null}} Page content.
  * @throws {Error} If `Contents` holds a direct stream.
  */
@@ -292,12 +306,14 @@ function pageContent(recipe, pageIndex) {
   for (
     var node = page;
     node && !resources;
-    node = lookup(recipe, node, "Parent")
+    node = lookup(recipe, node, PdfName.PARENT)
   ) {
-    resources = lookup(recipe, node, "Resources");
+    resources = lookup(recipe, node, PdfName.RESOURCES);
   }
 
-  var contents = page.exists("Contents") ? page.queryObject("Contents") : null;
+  var contents = page.exists(PdfName.CONTENTS)
+    ? page.queryObject(PdfName.CONTENTS)
+    : null;
   var resolved = resolve(recipe, contents);
   var entries = [];
   if (contents && resolved.getType() === muhammara.ePDFObjectArray) {
