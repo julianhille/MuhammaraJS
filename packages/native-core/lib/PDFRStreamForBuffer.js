@@ -71,6 +71,10 @@ PDFRStreamForBuffer.prototype.skip = function (inAmount) {
   this.rposition += inAmount;
 };
 
+/**
+ * Returns the position relative to the start position.
+ * @returns {number} The current byte offset.
+ */
 PDFRStreamForBuffer.prototype.getCurrentPosition = function () {
   return this.rposition - this.mStartPosition;
 };
