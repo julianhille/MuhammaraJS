@@ -4468,6 +4468,16 @@ export function createWriterFactory({
           await normalizeBytesAsync(sourceBytes, "PDF input"),
         );
       },
+      /**
+       * Creates a page with a media box; A4 by default.
+       * @param {number} [left=0] - Media box left.
+       * @param {number} [bottom=0] - Media box bottom.
+       * @param {number} [right=595] - Media box right, greater than `left`.
+       * @param {number} [top=842] - Media box top, greater than `bottom`.
+       * @returns {PDFPage} The page; start it with `startPageContentContext()`.
+       * @throws {RangeError} If the media box is not finite or empty.
+       * @throws {Error} If the writer has ended.
+       */
       createPage: function (left = 0, bottom = 0, right = 595, top = 842) {
         requireOpenWriter();
         var page = new PDFPage(left, bottom, right, top);
