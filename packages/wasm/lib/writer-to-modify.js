@@ -3004,6 +3004,11 @@ export function createWriterToModifyFactory({
         }
         return objectsContext;
       },
+      /**
+       * Returns a reader over the PDF being modified.
+       * @returns {PDFReader} The reader; it ends with the modifier.
+       * @throws {Error} If the modifier ended or the parser cannot be created.
+       */
       getModifiedFileParser: function () {
         requireOpen();
         var parser =
