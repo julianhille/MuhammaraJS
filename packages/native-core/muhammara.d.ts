@@ -912,6 +912,10 @@ declare namespace muhammara {
      * @returns The dictionary context for writing keys and values.
      */
     startDictionary(): DictionaryContext;
+    /**
+     * Writes the start of an array. End it with endArray().
+     * @returns This context.
+     */
     startArray(): this;
     writeNumber(value: number): this;
     endArray(endType?: ETokenSeparator): this;
