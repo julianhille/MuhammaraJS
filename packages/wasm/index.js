@@ -457,6 +457,15 @@ async function createRuntime(options) {
       }
     },
     createReader,
+    /**
+     * Opens a reader after reading an asynchronous byte source.
+     * @async
+     * @param {AsyncByteSource} bytes - PDF bytes, Blob, or File.
+     * @returns {Promise<PDFReader>} The reader.
+     * @throws {TypeError} If the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     * @throws {Error} If the PDF cannot be parsed.
+     */
     createReaderAsync: async function (bytes) {
       return this.createReader(await normalizeBytesAsync(bytes, "PDF input"));
     },
