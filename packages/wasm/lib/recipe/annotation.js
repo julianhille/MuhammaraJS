@@ -1,4 +1,4 @@
-import { AnnotFlag } from "../value-sets.js";
+import { AnnotFlag, AnnotIcon, AnnotSubtype } from "../value-sets.js";
 /**
  * Converts an annotation flag name or bit mask to flag bits.
  * @param {RecipeAnnotationFlag|number} [flag] - Flag name, in any case, or a non-negative bit mask.
@@ -332,7 +332,11 @@ export function createAnnotationMethods({
      * @throws {TypeError} If the options cannot form a valid PDF annotation.
      */
     comment: function (text = "", x, y, options = {}) {
-      return this.annot(x, y, "Text", { icon: "Comment", ...options, text });
+      return this.annot(x, y, AnnotSubtype.TEXT, {
+        icon: AnnotIcon.COMMENT,
+        ...options,
+        text,
+      });
     },
     /**
      * Queues an annotation on the active page.
@@ -356,6 +360,11 @@ export function createAnnotationMethods({
         throw new Error("Annotations require an active page");
       if (typeof subtype !== "string" || !subtype)
         throw new TypeError("Annotation subtype is required");
+      // Write known subtypes with their PDF casing, as native does.
+      subtype =
+        Object.values(AnnotSubtype).find(
+          (known) => known.toLowerCase() === subtype.toLowerCase(),
+        ) || subtype;
       var annotation = { x, y, subtype, options: { ...options } };
       // Reject invalid options here, so they never enter the queue and block
       // every later endPage() call.
@@ -399,17 +408,17 @@ export function createAnnotationMethods({
             [bottom, width, height] = [bottom - width, height, width];
         }
         var markup = [
-          "highlight",
-          "underline",
-          "strikeout",
-          "squiggly",
-        ].includes(annotation.subtype.toLowerCase());
+          AnnotSubtype.HIGHLIGHT,
+          AnnotSubtype.UNDERLINE,
+          AnnotSubtype.STRIKE_OUT,
+          AnnotSubtype.SQUIGGLY,
+        ].includes(annotation.subtype);
         var color = annotationColor(options.color);
         if (markup && !color.length)
           color = annotationColor(
-            annotation.subtype === "Highlight"
+            annotation.subtype === AnnotSubtype.HIGHLIGHT
               ? [255, 255, 0]
-              : annotation.subtype === "StrikeOut"
+              : annotation.subtype === AnnotSubtype.STRIKE_OUT
                 ? [255, 0, 0]
                 : [0, 255, 0],
           );

@@ -4,6 +4,25 @@ import { getRecipe } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe annotation", function () {
+  it("writes known subtypes with their PDF casing and markup colors", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe({ compress: false });
+    recipe
+      .createPage(200, 200)
+      .annot(20, 20, "highlight", { width: 50, height: 10 })
+      .annot(20, 60, Recipe.AnnotSubtype.SQUARE, {
+        width: 10,
+        height: 10,
+        flag: Recipe.AnnotFlag.LOCKED_CONTENTS,
+      })
+      .endPage();
+    var output = new TextDecoder("latin1").decode(recipe.endPDF());
+    assert.match(output, /\/Subtype\s*\/Highlight/);
+    assert.doesNotMatch(output, /\/Subtype\s*\/highlight/);
+    assert.match(output, /\/C\s*\[\s*1 1 0\s*\]/);
+    assert.match(output, /\/F\s+512\b/);
+  });
+
   it("writes links, comments, and square annotations", async function () {
     var Recipe = await getRecipe();
     var pdf = new Recipe()

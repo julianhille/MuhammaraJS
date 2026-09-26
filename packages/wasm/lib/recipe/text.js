@@ -1,4 +1,5 @@
 import {
+  AnnotSubtype,
   HorizontalAlign,
   TextAlign,
   TextWrap,
@@ -567,10 +568,10 @@ export function createTextMethods({ drawText, measure, module }) {
   }
 
   var textMarkupSubtypes = {
-    highlight: "Highlight",
-    underline: "Underline",
-    strikeOut: "StrikeOut",
-    squiggly: "Squiggly",
+    highlight: AnnotSubtype.HIGHLIGHT,
+    underline: AnnotSubtype.UNDERLINE,
+    strikeOut: AnnotSubtype.STRIKE_OUT,
+    squiggly: AnnotSubtype.SQUIGGLY,
   };
 
   /**
