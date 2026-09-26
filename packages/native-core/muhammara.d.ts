@@ -1592,6 +1592,10 @@ declare namespace muhammara {
   }
 
   export interface PageContentContext extends AbstractContentContext {
+    /**
+     * Returns the content stream being written.
+     * @returns The stream.
+     */
     getCurrentPageContentStream(): PDFStream;
     getAssociatedPage(): PDFPage;
   }
