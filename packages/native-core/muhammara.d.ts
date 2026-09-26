@@ -4250,6 +4250,12 @@ declare namespace muhammara {
      * @throws {Error} If the font file cannot be loaded.
      */
     textDimensions(text: string, options?: Recipe.TextOptions): TextDimension;
+    /**
+     *  Move text positioning down N lines in text box
+     * @param lines - the number of lines to reposition x and y coordinates; defaults to 1.
+     * @param returnCoords - indicate whether or not to return [x,y] coordinates; defaults to false.
+     * @returns - when returnCoord false, the recipe object, when true, the new [x,y] coordinates.
+     */
     movedown(lines?: number, returnCoords?: false): Recipe;
     movedown(lines: number, returnCoords: true): number[];
     movedown(lines?: number, returnCoords?: boolean): Recipe | number[];
