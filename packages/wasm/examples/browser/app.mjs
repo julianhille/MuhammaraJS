@@ -85,6 +85,10 @@ async function fileBytes(name) {
   return file ? new Uint8Array(await file.arrayBuffer()) : undefined;
 }
 
+/**
+ * Reads every optional asset input.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleAssets>} The chosen assets.
+ */
 async function assets() {
   return {
     font: await fileBytes("font"),
