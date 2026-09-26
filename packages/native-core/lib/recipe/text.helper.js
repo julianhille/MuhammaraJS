@@ -442,6 +442,9 @@ exports.Column = class Column {
   set x(x) {
     this._x = x;
   }
+  /**
+   * @returns {number} The column y coordinate.
+   */
   get y() {
     return this._y;
   }
