@@ -1271,6 +1271,7 @@ function drawTextBox(self, nx, ny, textBox, pathOptions) {
  * @param {Object[]} wto is a write object
  * @param {Object} textBox holds text box properties
  * @param {Function} [position] used to place given word at a postion on the line
+ * @returns {number} The x where the next run on the line starts.
  */
 function justify(left, x, wto, textBox, position) {
   // For some reason, textWidth is smaller than lineWidth. My suspicions lie in the fact
