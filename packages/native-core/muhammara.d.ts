@@ -570,6 +570,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the reader has ended.
      */
     getPagesCount(): number;
+    /**
+     * Returns the trailer dictionary.
+     * @returns The trailer; undefined when the file has none.
+     * @throws {TypeError} If the reader has ended.
+     */
     getTrailer(): PDFDictionary;
     queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
     queryArrayObject(
