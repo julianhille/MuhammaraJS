@@ -3026,6 +3026,11 @@ export function createWriterToModifyFactory({
       getDocumentContext: function () {
         requireOpen();
         return {
+          /**
+           * Returns the document Info dictionary.
+           * @returns {InfoDictionary} The Info dictionary.
+           * @throws {Error} If the modifier has ended.
+           */
           getInfoDictionary: function () {
             requireOpen();
             return infoDictionary;
