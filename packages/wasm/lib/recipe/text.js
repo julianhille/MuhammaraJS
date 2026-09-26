@@ -930,7 +930,11 @@ export function createTextMethods({ drawText, measure, module }) {
       );
       var height = box.height || contentHeight;
       var topAlign = options.align?.split(" ") || [];
-      /** Measures a line with per-fragment HTML styles when present. */
+      /**
+       * Measures a line with per-fragment HTML styles when present.
+       * @param {{text?: string, parts?: object[]}} entry - Laid-out line.
+       * @returns {number} The width in points.
+       */
       var entryWidth = (entry) =>
         entry.parts
           ? htmlPartsWidth(
