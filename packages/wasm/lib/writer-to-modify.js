@@ -3720,6 +3720,11 @@ export function createWriterToModifyFactory({
           if (copyingEnded) throw new Error("PDF copying context has ended");
         }
         return {
+          /**
+           * Returns a reader over the source PDF.
+           * @returns {PDFReader} The reader; it ends with the copying context.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           getSourceDocumentParser: function () {
             requireCopying();
             var parser = createReader(
