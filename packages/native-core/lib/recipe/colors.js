@@ -450,6 +450,13 @@ function hexToArray(hex) {
   }, []);
 }
 
+/**
+ * Split an RGB color number into its 0 to 255 components.
+ * @private
+ * @param {number} bigint - The color as 0xRRGGBB.
+ * @returns {{r: number, g: number, b: number}} The components; black for 0 or
+ *   a missing value.
+ */
 exports._colorNumberToRGB = (bigint) => {
   if (!bigint) {
     return {
