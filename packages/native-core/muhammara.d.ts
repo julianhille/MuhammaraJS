@@ -1341,6 +1341,12 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     getImageType(imagePath: FilePath): PDFImageType | undefined;
+    /**
+     * Returns a reader of the PDF being modified.
+     * @returns The reader.
+     * @throws {TypeError} If the writer does not modify a PDF.
+     * @throws {Error} If the writer has ended.
+     */
     getModifiedFileParser(): PDFReader;
     getModifiedInputFile(): InputFile;
     getOutputFile(): OutputFile;
