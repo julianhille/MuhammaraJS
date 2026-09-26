@@ -1062,8 +1062,17 @@ declare namespace muhammara {
   }
 
   export interface PDFStreamForResponse extends WriteStream {
+    /**
+     * Creates a write stream that writes to an HTTP response.
+     * @param res - The response, or any writable stream.
+     */
     new (res: NodeJS.WritableStream): PDFStreamForResponse;
-    /** Also accepts an array of byte values when called directly. */
+    /**
+     * Writes bytes to the response.
+     * @param inBytes - The bytes to write; an array of byte values is also
+     *   accepted when called directly.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer | number[]): number;
   }
 
