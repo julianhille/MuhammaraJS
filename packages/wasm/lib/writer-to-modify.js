@@ -2663,6 +2663,13 @@ export function createWriterToModifyFactory({
         };
         return form;
       },
+      /**
+       * Finishes a form XObject created by this modifier.
+       * @param {ModifierFormXObject} form - Open form.
+       * @returns {this} The modifier.
+       * @throws {TypeError} If `form` is not an open form from this modifier.
+       * @throws {Error} If the modifier ended or the form cannot be finished.
+       */
       endFormXObject: function (form) {
         requireOpen();
         if (
