@@ -195,6 +195,7 @@ var INVALID_OPERATOR_CALLS = [
   ["Tr", []],
   ["Tr", [8]],
   ["Tr", [-1]],
+  ["M", []],
 ];
 
 /**
