@@ -8,6 +8,11 @@ operands outside the PDF ranges (0 to 2, 0 to 2, and 0 to 7); native writes
 any value. These existing validation differences are retained for compatibility. The drawing
 helpers' `type` option throws a `TypeError` in Wasm for a value that is not a
 `DrawingPathType` value or `null`; native ends such a path unpainted.
+`createWriter` encrypts with native's `userPassword`, `ownerPassword`, and
+`userProtectionFlag` options. Wasm throws a `TypeError` for a password that is
+not a string, where native ignores it, and throws for PDF 2.0 encryption
+(AES-256 is unavailable), for native's `log` file option, and for encryption
+options on `createWriterToModify`; encrypt modified bytes with `recrypt`.
 String writers and `PDFWStreamForBuffer.write()` accept an array of byte
 values on both ends; Wasm throws a `TypeError` for an item that is not an
 integer from 0 to 255, where native coerces it to a byte.

@@ -44,6 +44,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Encrypt PDFs written by `createWriter()` with native's `userPassword`,
+  `ownerPassword`, and `userProtectionFlag` options. These options were
+  silently ignored and produced an unencrypted PDF; `log`, PDF 2.0
+  encryption, and encryption options on `createWriterToModify()` now throw [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Add a guide for annotating known text regions in existing PDFs with Underline
   or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
 - Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from

@@ -547,12 +547,56 @@ export function createWriterFactory({
   assertOutputSize,
 }) {
   /**
+   * Reads native's writer encryption options. A string `userPassword`
+   * enables encryption; `ownerPassword` and `userProtectionFlag` (4 by
+   * default) apply only with it, as in native.
+   * @param {WriterOptions} options - Writer options.
+   * @param {number} version - The writer's PDF version.
+   * @returns {{userPassword: string, ownerPassword: string, userProtectionFlag: number}|null}
+   *   The encryption settings, or `null` when the PDF is not encrypted.
+   * @throws {TypeError} If a password is not a string, `userProtectionFlag`
+   *   is not an integer, or `log` is set, which needs a file system.
+   * @throws {Error} If encryption is requested for PDF 2.0, which needs AES-256.
+   */
+  function writerEncryption(options, version) {
+    if (options.log !== undefined) {
+      throw new TypeError(
+        "createWriter log files are unavailable in WebAssembly",
+      );
+    }
+    var { userPassword, ownerPassword, userProtectionFlag } = options;
+    if (userPassword !== undefined && typeof userPassword !== "string")
+      throw new TypeError("createWriter userPassword must be a string");
+    if (ownerPassword !== undefined && typeof ownerPassword !== "string")
+      throw new TypeError("createWriter ownerPassword must be a string");
+    if (
+      userProtectionFlag !== undefined &&
+      !Number.isInteger(userProtectionFlag)
+    )
+      throw new TypeError("createWriter userProtectionFlag must be an integer");
+    if (userPassword === undefined) return null;
+    if (version === constants.ePDFVersion20) {
+      throw new Error(
+        "PDF 2.0 encryption needs AES-256, which is unavailable in WebAssembly",
+      );
+    }
+    return {
+      userPassword,
+      ownerPassword: ownerPassword ?? "",
+      userProtectionFlag: userProtectionFlag ?? 4,
+    };
+  }
+
+  /**
    * Opens an in-memory PDF writer.
-   * @param {WriterOptions} [options={}] - PDF version and stream compression.
+   * @param {WriterOptions} [options={}] - PDF version, stream compression, and
+   *   native's `userPassword`, `ownerPassword`, and `userProtectionFlag`
+   *   encryption options.
    * @returns {PDFWriter} The writer; call `end()` for the bytes or `dispose()` to discard it.
-   * @throws {TypeError} If `options` is not an object or `compress` is not a boolean.
+   * @throws {TypeError} If `options` is not an object, `compress` is not a
+   *   boolean, an encryption option has the wrong type, or `log` is set.
    * @throws {RangeError} If `version` is not a supported `ePDFVersion*` constant.
-   * @throws {Error} If the native writer cannot be created.
+   * @throws {Error} If PDF 2.0 encryption is requested or the native writer cannot be created.
    */
   function createWriter(options = {}) {
     if (!options || typeof options !== "object") {
@@ -581,10 +625,23 @@ export function createWriterFactory({
     if (typeof compress !== "boolean") {
       throw new TypeError("createWriter compress must be a boolean");
     }
-    var recipe = module._muhammara_wasm_recipe_create_with_options(
-      version,
-      compress ? 1 : 0,
-    );
+    var encryption = writerEncryption(options, version);
+    var recipe = encryption
+      ? withString(encryption.userPassword, (user) =>
+          withString(encryption.ownerPassword, (owner) =>
+            module._muhammara_wasm_recipe_create_encrypted(
+              version,
+              compress ? 1 : 0,
+              user,
+              owner,
+              encryption.userProtectionFlag,
+            ),
+          ),
+        )
+      : module._muhammara_wasm_recipe_create_with_options(
+          version,
+          compress ? 1 : 0,
+        );
     var currentPage = null;
     var owner = {};
     var currentContext = null;

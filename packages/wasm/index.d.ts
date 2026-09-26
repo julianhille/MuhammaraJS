@@ -61,6 +61,15 @@ export interface WriterOptions {
   /** Enables Flate compression for streams. Defaults to true. */
   compress?: boolean;
 }
+/** `createWriter()` options, including native's encryption options. */
+export interface CreateWriterOptions extends WriterOptions {
+  /** Encrypts the PDF with this user password, as in native. PDF 2.0 throws. */
+  userPassword?: string;
+  /** Owner password of an encrypted PDF; ignored without `userPassword`. */
+  ownerPassword?: string;
+  /** Permission flags of an encrypted PDF; 4 (print) by default. */
+  userProtectionFlag?: number;
+}
 /** Options accepted by the byte-first equivalent of native `recrypt`. */
 export interface PDFRecryptOptions {
   password?: string;
@@ -820,7 +829,7 @@ export type TransformationObject = Exclude<
 export type ImageOptions = DrawImageOptions;
 export type MergeOptions = PageRangeOptions;
 export type AppendOptions = PageRangeOptions;
-export type PDFWriterOptions = WriterOptions;
+export type PDFWriterOptions = CreateWriterOptions;
 export type PDFWriterToModifyOptions = WriterOptions;
 export type AbstractContentContext = ContentContext;
 export type PageContentContext = ContentContext;
@@ -2374,7 +2383,7 @@ export interface MuhammaraWasm {
   ByteReaderWithPosition: typeof ByteReaderWithPosition;
   ByteWriter: typeof ByteWriter;
   ByteWriterWithPosition: typeof ByteWriterWithPosition;
-  createWriter(options?: WriterOptions): PDFWriter;
+  createWriter(options?: CreateWriterOptions): PDFWriter;
   recrypt(
     source: ByteSource,
     options?: PDFRecryptOptions,

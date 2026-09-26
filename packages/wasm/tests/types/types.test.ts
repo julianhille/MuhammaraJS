@@ -11,6 +11,7 @@ import {
 } from "../../index.js";
 import type {
   RecipeConstructor,
+  PDFWriterOptions,
   Glyph,
   EEncoding,
   PDFPageGeometry,
@@ -876,6 +877,20 @@ async function usesAlignedDeclarations() {
 }
 
 void usesAlignedDeclarations;
+
+async function usesWriterEncryption() {
+  var muhammara = await createMuhammaraWasm();
+  const options: PDFWriterOptions = {
+    userPassword: "user",
+    ownerPassword: "owner",
+    userProtectionFlag: 4,
+  };
+  muhammara.createWriter(options);
+  // @ts-expect-error A modifier does not take encryption options.
+  muhammara.createWriterToModify(new Uint8Array(), { userPassword: "user" });
+}
+
+void usesWriterEncryption;
 
 async function usesNamedValueSets() {
   var muhammara = await createMuhammaraWasm();

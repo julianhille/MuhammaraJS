@@ -93,6 +93,18 @@ export function createWriterToModifyFactory({
       );
     if (typeof compress !== "boolean")
       throw new TypeError("createWriterToModify compress must be a boolean");
+    for (var unsupported of [
+      "userPassword",
+      "ownerPassword",
+      "userProtectionFlag",
+      "log",
+    ]) {
+      if (options[unsupported] !== undefined) {
+        throw new TypeError(
+          `createWriterToModify ${unsupported} is unavailable in WebAssembly; use recrypt() on the result`,
+        );
+      }
+    }
     var path = `/pdfs/${state.nextPdf++}.pdf`;
     module.FS.mkdirTree("/pdfs");
     module.FS.writeFile(path, bytes);
