@@ -887,7 +887,18 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     drawSquare(x: PosX, y: PosY, l: number, options?: GraphicOptions): this;
-    /** Coordinates and dimensions must be finite. */
+    /**
+     * Draws a rectangle.
+     * @param x - The left edge.
+     * @param y - The bottom edge.
+     * @param w - The width.
+     * @param h - The height.
+     * @param options - The paint type, color and line width.
+     * @returns This context.
+     * @throws {TypeError} If fewer than 4 arguments are given or a value is not
+     *   finite.
+     * @throws {TypeError} If there is no content context.
+     */
     drawRectangle(
       x: PosX,
       y: PosY,
