@@ -1965,6 +1965,17 @@ export function createWriterToModifyFactory({
             module._muhammara_wasm_modifier_form_get_object_id(handle),
         );
       },
+      /**
+       * Creates a form XObject from TIFF bytes; alias of `createFormXObjectFromTIFF()`.
+       * @param {string|ByteSource} image - Registered TIFF name, or TIFF bytes.
+       * @param {TIFFOptions} [options] - Page index, reserved object ID, and
+       * black-and-white or grayscale treatment.
+       * @returns {ModifierCompletedFormXObject} The completed form.
+       * @throws {TypeError} If an option or treatment color is invalid, the name is not a
+       * registered TIFF, or the bytes are unsupported.
+       * @throws {RangeError} If `pageIndex` or `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObjectFromTIFFBytes: function (image, options) {
         return this.createFormXObjectFromTIFF(image, options);
       },
