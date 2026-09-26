@@ -122,6 +122,15 @@ export function createHelpers(module) {
    * @returns {void}
    */
   function addStructuredContentOperators(context, requireContext, call) {
+    /**
+     * Applies an operator whose operand is a resource name.
+     * @param {string} name - Operator name for error messages.
+     * @param {number} code - Native operator code.
+     * @param {string} value - Resource name.
+     * @returns {object} The content context.
+     * @throws {TypeError} If `value` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     function nameOperator(name, code, value) {
       requireContext();
       if (typeof value !== "string") {
