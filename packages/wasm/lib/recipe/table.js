@@ -18,6 +18,9 @@ function isPlainObject(value) {
 /**
  * Merges nested text styles like native Recipe without mutating either side.
  * Plain objects merge key by key; arrays and other values replace.
+ * @param {object} [left={}] - Base styles.
+ * @param {object} [right={}] - Overrides.
+ * @returns {object} New merged styles.
  */
 function merge(left = {}, right = {}) {
   var result = { ...left };
