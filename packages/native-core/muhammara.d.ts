@@ -3999,6 +3999,22 @@ declare namespace muhammara {
       options?: Recipe.OverlayOptions,
     ): Recipe;
 
+    /**
+     * Create a new page, specifying either actual width and height, or the name
+     * of a supported page size (eg. 'letter', 'letter-size')
+     * '-size' will be removed from string but is discouraged to use.
+     * @param pageWidth - The page width, or a `Recipe.PageSize` name.
+     * Known named medium sizes: executive, folio, legal, letter, ledger, tabloid, a0-a10, b0-b10, c0-c10, ra0-ra4, sra0-sra4.
+     * Unknown names use the default letter size.
+     * @param pageHeight - The page height, or rotation (90) when page size name given.
+     * @param margins - page margin definitions.
+     * @param margins.left - Left margin.
+     * @param margins.right - Right margin.
+     * @param margins.top - Top margin.
+     * @param margins.bottom - Bottom margin.
+     * @returns The recipe instance.
+     * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+     */
     createPage(
       pageWidth?: number,
       pageHeight?: number,
