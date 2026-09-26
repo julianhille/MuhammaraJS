@@ -341,6 +341,11 @@ export function createRawObjectsContext({
           activeIndirectObject
         );
       },
+      /**
+       * Reserves an object ID for a later `startNewIndirectObject(id)`.
+       * @returns {number} The new object ID.
+       * @throws {Error} If the writer has ended or no ID can be allocated.
+       */
       allocateNewObjectID: function () {
         requireContext();
         var objectId =
