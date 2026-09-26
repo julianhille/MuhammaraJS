@@ -30,17 +30,23 @@ const Color = class Color {
     }
   }
 
+  /**
+   * Set the stroke color.
+   * @param {Object} ctx - The content context.
+   * @param {Object} colorModel - The color model from _transformColor().
+   * @returns {void}
+   */
   static stroke(ctx, colorModel) {
     switch (colorModel.colorspace) {
-      case "rgb":
+      case Colorspace.RGB:
         ctx.RG(colorModel.r, colorModel.g, colorModel.b);
         break;
 
-      case "cmyk":
+      case Colorspace.CMYK:
         ctx.K(colorModel.c, colorModel.m, colorModel.y, colorModel.k);
         break;
 
-      case "gray":
+      case Colorspace.GRAY:
         ctx.G(colorModel.gray);
         break;
     }
