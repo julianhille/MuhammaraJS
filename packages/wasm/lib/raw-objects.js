@@ -347,6 +347,11 @@ export function createRawObjectsContext({
       };
     }
 
+    /**
+     * Wraps a native PDF stream being written.
+     * @param {number} stream - Native stream.
+     * @returns {PDFStream} The stream.
+     */
     function streamContext(stream) {
       var result = {
         _handle: stream,
