@@ -1370,6 +1370,11 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     registerAnnotationReferenceForNextPageWrite(annotationId: number): this;
+    /**
+     * Makes a modified PDF write a new catalog when it ends, so catalog
+     * changes from extensions are kept.
+     * @throws {Error} If the writer has ended.
+     */
     requireCatalogUpdate(): void;
 
     /* Js Extensions (in muhammara.js) */
