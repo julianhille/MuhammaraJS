@@ -139,7 +139,12 @@ function lines(value, width, measure, options, wrap) {
   return result;
 }
 
-/** Compares two shallow HTML style objects for equivalent entries. */
+/**
+ * Compares two shallow HTML style objects for equivalent entries.
+ * @param {object} [left] - Styles.
+ * @param {object} [right] - Styles.
+ * @returns {boolean} Whether both have the same entries.
+ */
 function sameStyles(left, right) {
   var leftEntries = Object.entries(left || {});
   var rightEntries = Object.entries(right || {});
