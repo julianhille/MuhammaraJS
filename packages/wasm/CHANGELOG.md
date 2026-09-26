@@ -16,7 +16,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Export frozen value sets for finite string options, each with a same-named
   type: `DeviceColorSpace`, `DrawingPathType`, `ImageFitPolicy`, `PageBox`,
   `PDFImageType`, `TextEncoding`, `ObjectReplacementScope`, and the Recipe sets
-  `RecipeArrowAnchor`, `RecipeArrowType`, `RecipeFontStyle`,
+  `RecipeAnnotationFlag`, `RecipeAnnotationIcon`, `RecipeArrowAnchor`, `RecipeArrowType`, `RecipeFontStyle`,
   `RecipeHorizontalAlignment`, `RecipeLineCap`, `RecipeLineJoin`,
   `RecipePageLayout`, `RecipeStructureFormat`, `RecipeTableRowParity`,
   `RecipeTextAlignment`, `RecipeTextWrap`, `RecipeTrianglePosition`,
@@ -323,6 +323,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   previously produced a zero-width page, and from the low-level
   `registerFont()`, `registerImage()`, and `registerPdf()` for an empty or
   non-string name, as Recipe registration does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Type the Recipe annotation `flag` option as `RecipeAnnotationFlag | number` and
+  `icon` as `RecipeAnnotationIcon`, as native does, instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take
   `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
   `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,

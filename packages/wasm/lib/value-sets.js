@@ -186,3 +186,27 @@ export var ETokenSeparator = Object.freeze({
   eTokenSeparatorEndLine: 1,
   eTokenSeparatorNone: 2,
 });
+
+/** Annotation flag names for Recipe annotation `flag`; letter case is ignored. */
+export var RecipeAnnotationFlag = Object.freeze({
+  INVISIBLE: "invisible",
+  HIDDEN: "hidden",
+  PRINT: "print",
+  NO_ZOOM: "nozoom",
+  NO_ROTATE: "norotate",
+  NO_VIEW: "noview",
+  READ_ONLY: "readonly",
+  LOCKED: "locked",
+  TOGGLE_NO_VIEW: "togglenoview",
+});
+
+/** Standard icon names for Recipe text annotations. */
+export var RecipeAnnotationIcon = Object.freeze({
+  COMMENT: "Comment",
+  KEY: "Key",
+  NOTE: "Note",
+  HELP: "Help",
+  NEW_PARAGRAPH: "NewParagraph",
+  PARAGRAPH: "Paragraph",
+  INSERT: "Insert",
+});

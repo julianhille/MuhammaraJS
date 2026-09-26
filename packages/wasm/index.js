@@ -47,6 +47,8 @@ import {
   RegisteredImageFormat,
   ETokenSeparator,
   LineCapStyle,
+  RecipeAnnotationFlag,
+  RecipeAnnotationIcon,
 } from "./lib/value-sets.js";
 
 export {
@@ -64,6 +66,8 @@ export {
   PDFImageType,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
+  RecipeAnnotationFlag,
+  RecipeAnnotationIcon,
   RecipeArrowAnchor,
   RecipeArrowType,
   RecipeFontStyle,

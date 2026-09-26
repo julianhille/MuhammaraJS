@@ -1,4 +1,6 @@
 import {
+  RecipeAnnotationFlag,
+  RecipeAnnotationIcon,
   ETokenSeparator,
   LineCapStyle,
   PDFImageType,
@@ -982,6 +984,10 @@ async function usesNamedValueSets() {
   void namedLineCap;
   var namedSeparator: ETokenSeparator = ETokenSeparator.eTokenSeparatorNone;
   void namedSeparator;
+  var namedFlag: RecipeAnnotationFlag = RecipeAnnotationFlag.PRINT;
+  void namedFlag;
+  var namedIcon: RecipeAnnotationIcon = RecipeAnnotationIcon.COMMENT;
+  void namedIcon;
 }
 
 void usesNamedValueSets;

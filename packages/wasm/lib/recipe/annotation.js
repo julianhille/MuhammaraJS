@@ -1,14 +1,15 @@
+import { RecipeAnnotationFlag } from "../value-sets.js";
 function annotationFlags(flag) {
   var bits = {
-    invisible: 1,
-    hidden: 2,
-    print: 4,
-    nozoom: 8,
-    norotate: 16,
-    noview: 32,
-    readonly: 64,
-    locked: 128,
-    togglenoview: 256,
+    [RecipeAnnotationFlag.INVISIBLE]: 1,
+    [RecipeAnnotationFlag.HIDDEN]: 2,
+    [RecipeAnnotationFlag.PRINT]: 4,
+    [RecipeAnnotationFlag.NO_ZOOM]: 8,
+    [RecipeAnnotationFlag.NO_ROTATE]: 16,
+    [RecipeAnnotationFlag.NO_VIEW]: 32,
+    [RecipeAnnotationFlag.READ_ONLY]: 64,
+    [RecipeAnnotationFlag.LOCKED]: 128,
+    [RecipeAnnotationFlag.TOGGLE_NO_VIEW]: 256,
   };
   if (flag === undefined || flag === "") return 0;
   if (Number.isSafeInteger(flag) && flag >= 0) return flag;

@@ -314,20 +314,54 @@ export interface RecipeLineStyleOptions {
   dash?: number[];
   dashPhase?: number;
 }
+/** Annotation flag name for Recipe annotation `flag`; letter case is ignored. */
+export type RecipeAnnotationFlag =
+  | "invisible"
+  | "hidden"
+  | "print"
+  | "nozoom"
+  | "norotate"
+  | "noview"
+  | "readonly"
+  | "locked"
+  | "togglenoview";
+export declare const RecipeAnnotationFlag: {
+  readonly INVISIBLE: "invisible";
+  readonly HIDDEN: "hidden";
+  readonly PRINT: "print";
+  readonly NO_ZOOM: "nozoom";
+  readonly NO_ROTATE: "norotate";
+  readonly NO_VIEW: "noview";
+  readonly READ_ONLY: "readonly";
+  readonly LOCKED: "locked";
+  readonly TOGGLE_NO_VIEW: "togglenoview";
+};
+/** Standard icon name for Recipe text annotations. */
+export type RecipeAnnotationIcon =
+  "Comment" | "Key" | "Note" | "Help" | "NewParagraph" | "Paragraph" | "Insert";
+export declare const RecipeAnnotationIcon: {
+  readonly COMMENT: "Comment";
+  readonly KEY: "Key";
+  readonly NOTE: "Note";
+  readonly HELP: "Help";
+  readonly NEW_PARAGRAPH: "NewParagraph";
+  readonly PARAGRAPH: "Paragraph";
+  readonly INSERT: "Insert";
+};
 export interface RecipeAnnotationOptions {
   text?: string;
   contents?: string;
   title?: string;
   subject?: string;
   date?: string | Date;
-  icon?: string;
+  icon?: RecipeAnnotationIcon;
   name?: string;
   color?: RecipeColor;
   border?: number | { width?: number; dash?: number[] };
   borderWidth?: number;
   borderDash?: number[];
   quadPoints?: number[];
-  flag?: string | number;
+  flag?: RecipeAnnotationFlag | number;
   flags?: number;
   open?: boolean;
   opacity?: number;

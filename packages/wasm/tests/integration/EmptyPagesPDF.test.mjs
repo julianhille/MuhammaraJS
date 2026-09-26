@@ -9,6 +9,8 @@ import {
   ObjectReplacementScope,
   PageBox,
   PDFImageType,
+  RecipeAnnotationFlag,
+  RecipeAnnotationIcon,
   RecipeArrowAnchor,
   RecipeArrowType,
   RecipeFontStyle,
@@ -160,4 +162,22 @@ var EXPORTED_VALUE_SETS = [
   [PDFImageType, ["PDF", "JPG", "TIFF", "PNG"]],
   [LineCapStyle, [0, 1, 2]],
   [ETokenSeparator, [0, 1, 2]],
+  [
+    RecipeAnnotationFlag,
+    [
+      "invisible",
+      "hidden",
+      "print",
+      "nozoom",
+      "norotate",
+      "noview",
+      "readonly",
+      "locked",
+      "togglenoview",
+    ],
+  ],
+  [
+    RecipeAnnotationIcon,
+    ["Comment", "Key", "Note", "Help", "NewParagraph", "Paragraph", "Insert"],
+  ],
 ];
