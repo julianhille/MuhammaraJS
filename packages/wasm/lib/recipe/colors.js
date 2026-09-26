@@ -55,7 +55,15 @@ function colorSpaceForCode(code) {
   }[code.length];
 }
 
-/** Resolves a Recipe color value to a native color-space model. */
+/**
+ * Resolves a Recipe color value to a native color-space model.
+ * @param {Recipe} recipe - Recipe instance with known colors.
+ * @param {RecipeColor} value - Color value or registered name.
+ * @param {object} [options={}] - Options with `colorspace`.
+ * @returns {{colorspace: DeviceColorSpace, values: number[]}} Components from 0 to 1.
+ * @throws {TypeError} If the color space is unknown.
+ * @throws {Error} If a Separation color space is requested.
+ */
 export function colorModel(recipe, value, options = {}) {
   var colorspace = options.colorspace || recipe.options.colorspace || "";
   var name = "";
