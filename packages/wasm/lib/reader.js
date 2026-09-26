@@ -405,6 +405,11 @@ export function createReaderFactory({
             parser,
           );
         };
+        /**
+         * Locates the stream data in the PDF file.
+         * @returns {number} Byte offset of the first content byte.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         object.getStreamContentStart = function () {
           object.getType();
           requireReader();
