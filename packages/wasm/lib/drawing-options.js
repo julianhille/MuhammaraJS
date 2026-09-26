@@ -195,6 +195,16 @@ export function installDrawingHelpers(context, colorValue) {
     options = readDrawingOptions(options, colorValue);
     return drawWithOptions(options, () => context.re(x, y, width, height));
   };
+  /**
+   * Draws a square.
+   * @param {number} x - Lower-left x.
+   * @param {number} y - Lower-left y.
+   * @param {number} edge - Edge length.
+   * @param {DrawPathOptions} [options] - Color, width, paint type, and close flag.
+   * @returns {this} The content context, for chaining.
+   * @throws {TypeError} If a coordinate or option is invalid.
+   * @throws {Error} If the content context is no longer active.
+   */
   context.drawSquare = function (x, y, edge, options) {
     if (![x, y, edge].every(Number.isFinite)) {
       throw new TypeError("drawSquare requires three finite coordinates");
