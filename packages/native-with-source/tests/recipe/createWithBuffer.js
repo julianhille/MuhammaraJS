@@ -92,4 +92,21 @@ describe("Modify", () => {
     });
     assert.equal(Recipe.Colorspace.SEPARATION, "separation");
   });
+
+  it("reads another PDF instead of the Buffer source", () => {
+    const other = path.join(
+      __dirname,
+      "../TestMaterials/BasicTIFFImagesTest.PDF",
+    );
+    const recipe = new Recipe(
+      fs.readFileSync(path.join(__dirname, "../TestMaterials/Original.pdf")),
+    );
+    const ownPages = recipe.read().pages;
+    assert.notEqual(recipe.read(other).pages, ownPages);
+    assert.equal(
+      recipe.read(fs.readFileSync(other)).pages,
+      recipe.read(other).pages,
+    );
+    assert.equal(recipe.metadata.pages, ownPages);
+  });
 });

@@ -172,10 +172,12 @@ class Recipe {
   }
 
   /**
-   * Read PDF metadata.
-   * @param {string|Buffer} [inSrc] - An optional PDF source to read instead of the recipe source.
+   * Read PDF metadata: the page count and, keyed by one-based page number,
+   * each page's media box, rotation, layout and size.
+   * @param {string|Buffer} [inSrc] - A PDF path or Buffer to read instead of
+   *   the recipe source. Reading another PDF does not change the recipe state.
    * @returns {Object} The PDF metadata.
-   * @throws {Error} If the PDF cannot be read.
+   * @throws {Error} If the PDF cannot be read or has no pages.
    */
   read(inSrc) {
     const isForExternal = inSrc ? true : false;
@@ -183,8 +185,8 @@ class Recipe {
     let isAdopted = false;
     try {
       let src = isForExternal ? inSrc : this.src;
-      if (this.isBufferSrc) {
-        src = new muhammara.PDFRStreamForBuffer(this.src);
+      if (src instanceof Buffer) {
+        src = new muhammara.PDFRStreamForBuffer(src);
       }
       pdfReader = muhammara.createReader(src, this.encryptOptions);
       const pages = pdfReader.getPagesCount();

@@ -131,6 +131,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Fix `Recipe#read(inSrc)` reading the Recipe's own Buffer source instead of
+  `inSrc`, and failing when `inSrc` is a Buffer [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Apply the Recipe `version` option to new PDFs written to a Buffer; it was
   ignored and those PDFs were always version 1.7 [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix native type declarations that rejected working calls or accepted failing
