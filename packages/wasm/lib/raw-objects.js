@@ -197,6 +197,13 @@ export function createRawObjectsContext({
           }
           return this;
         },
+        /**
+         * Writes a boolean value.
+         * @param {boolean} value - Value to write.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `value` is not a boolean.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeBooleanValue: function (value) {
           requireDictionary();
           if (typeof value !== "boolean")
