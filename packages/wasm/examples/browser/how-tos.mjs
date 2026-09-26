@@ -652,6 +652,12 @@ async function passwordsExample() {
   }
 }
 
+/**
+ * Builds the browser example for text replacement.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If a required asset is missing.
+ */
 async function replaceTextExample(assets) {
   assertAsset(
     assets.font,
