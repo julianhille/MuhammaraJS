@@ -150,6 +150,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the modifier was not created with a writer.
      */
     getContext(): XObjectContentContext;
+    /**
+     * Ends the content stream started by startContext().
+     * @returns This modifier.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     endContext(): this;
     attachURLLinktoCurrentPage(
       inUrl: string,
