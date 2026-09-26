@@ -931,6 +931,10 @@ declare namespace muhammara {
      * @throws {TypeError} If endType is given and is not a number.
      */
     endArray(endType?: ETokenSeparator): this;
+    /**
+     * Writes a line break.
+     * @returns This context.
+     */
     endLine(): this;
     endDictionary(dictionary: DictionaryContext): this;
     endIndirectObject(): this;
