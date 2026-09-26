@@ -199,6 +199,11 @@ export function createReaderFactory({
             module._free(pointer);
           }
         },
+        /**
+         * Narrows the object to an array.
+         * @returns {PDFArray|undefined} This object when it is an array.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         toPDFArray: function () {
           return object.getType() === constants.ePDFObjectArray
             ? object
