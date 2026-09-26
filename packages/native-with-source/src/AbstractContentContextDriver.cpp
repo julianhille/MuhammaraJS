@@ -476,10 +476,11 @@ napi_value AbstractContentContextDriver::Dash(const CallbackArgs &args) {
   if (!driver->GetContext())
     return ThrowTypeError(args.Env(),
                           "Null content context. Please create a context");
-  if (args.Length() != 2 || !IsArray(args.Env(), args[0]) || !IsNumber(args, 1))
+  if (args.Length() < 1 || args.Length() > 2 || !IsArray(args.Env(), args[0]) ||
+      (args.Length() == 2 && !IsNumber(args, 1)))
     return WrongArguments(args.Env(),
-                          "Wrong Argument, please provide 2 parameters - array "
-                          "for dash pattern and dash phase number");
+                          "Wrong Argument, please provide an array for dash "
+                          "pattern and an optional dash phase number");
 
   uint32_t length = 0;
   if (!Length(args.Env(), args[0], &length))
@@ -493,8 +494,9 @@ napi_value AbstractContentContextDriver::Dash(const CallbackArgs &args) {
       return nullptr;
     dashArray[i] = dash;
   }
+  // The phase defaults to 0, as in Wasm.
   driver->GetContext()->d(dashArray.data(), length,
-                          ToInt32(args.Env(), args[1]));
+                          args.Length() == 2 ? ToInt32(args.Env(), args[1]) : 0);
   return args.This();
 }
 

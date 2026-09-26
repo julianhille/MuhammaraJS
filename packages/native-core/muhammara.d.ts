@@ -201,7 +201,8 @@ declare namespace muhammara {
     J(lineCapStyle: LineCapStyle): this;
     j(lineJoinStyle: LineJoinStyle): this;
     M(miterLimit: number): this;
-    d(dashArray: number[], dashPhase: number): this;
+    /** The dash phase defaults to 0. */
+    d(dashArray: number[], dashPhase?: number): this;
     ri(renderingIntentName: string): this;
     i(flatness: number): this;
     gs(graphicStateName: string): this;

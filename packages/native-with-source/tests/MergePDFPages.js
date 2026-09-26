@@ -260,6 +260,18 @@ describe("MergePDFPages", function () {
       copyingContext.end();
       pdfWriter.end();
     });
+
+    it("defaults the dash phase to 0", function () {
+      var outputPath = __dirname + "/output/DashPhaseDefault.pdf";
+      var pdfWriter = muhammara.createWriter(outputPath, { compress: false });
+      var page = pdfWriter.createPage(0, 0, 100, 100);
+      pdfWriter.startPageContentContext(page).d([3, 1]);
+      pdfWriter.writePage(page).end();
+      assert.match(
+        require("fs").readFileSync(outputPath, "latin1"),
+        /\[ 3 1 \] 0 d/,
+      );
+    });
   });
 
   describe("MergeFromStream", function () {
