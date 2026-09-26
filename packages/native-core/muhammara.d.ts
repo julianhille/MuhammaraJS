@@ -686,6 +686,11 @@ declare namespace muhammara {
       revision: number;
       type: number;
     };
+    /**
+     * Returns the byte position of the last cross-reference section.
+     * @returns The byte position.
+     * @throws {TypeError} If the reader has ended.
+     */
     getXrefPosition(): number;
     startReadingFromStream(inputStream: PDFStreamInput): ByteReader;
     startReadingFromStreamForPlainCopying(
