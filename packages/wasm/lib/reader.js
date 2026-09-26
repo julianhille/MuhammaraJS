@@ -1044,6 +1044,11 @@ export function createReaderFactory({
           getMediaBox: function () {
             return getBox(0);
           },
+          /**
+           * Reads the crop box, which defaults to the media box.
+           * @returns {PDFRectangle} The box.
+           * @throws {Error} If the reader has ended or the box cannot be read.
+           */
           getCropBox: function () {
             return getBox(1);
           },
