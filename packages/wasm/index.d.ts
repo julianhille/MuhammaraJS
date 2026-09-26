@@ -1694,11 +1694,15 @@ export interface ContentContext {
   SCN(...components: [number, ...number[]]): this;
   SCN(...componentsAndPattern: [number, ...number[], string]): this;
   SCN(components: number[], pattern?: string): this;
+  /** A pattern name alone selects a colored (PaintType 1) pattern. */
+  SCN(pattern: string): this;
   sc(...components: number[]): this;
   /** Color components, optionally followed by a pattern name. */
   scn(...components: [number, ...number[]]): this;
   scn(...componentsAndPattern: [number, ...number[], string]): this;
   scn(components: number[], pattern?: string): this;
+  /** A pattern name alone selects a colored (PaintType 1) pattern. */
+  scn(pattern: string): this;
   doXObject(xObject: string | number | FormXObject | ImageXObject): this;
   /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
   drawPath(points: [number, number][], options?: DrawPathOptions): this;
