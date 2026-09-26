@@ -517,6 +517,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     gs(graphicStateName: string): this;
+    /**
+     * Sets the fill and stroke opacity through a graphics state resource.
+     * @param opacity - The opacity, 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If opacity is not a single number from 0 to 1.
+     * @throws {TypeError} If there is no content context.
+     */
     setOpacity(opacity: number): this;
     CS(colorSpaceName: string): this;
     cs(colorSpaceName: string): this;
