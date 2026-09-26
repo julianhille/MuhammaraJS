@@ -63,6 +63,12 @@ function odd(n) {
   return n % 2 !== 0;
 }
 
+/**
+ * Convert degrees to radians.
+ * @private
+ * @param {number} angle - The angle in degrees.
+ * @returns {number} The angle in radians.
+ */
 function toRadians(angle) {
   return angle * (Math.PI / 180);
 }
