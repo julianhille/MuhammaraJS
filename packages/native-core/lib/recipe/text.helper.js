@@ -158,6 +158,10 @@ exports.Line = class Line {
     }
   }
 
+  /**
+   * Mark the final word as the last of the line.
+   * @returns {void}
+   */
   markLastWord() {
     if (this.wordObjects.length > 0) {
       this.wordObjects[this.wordObjects.length - 1].lastWord();
