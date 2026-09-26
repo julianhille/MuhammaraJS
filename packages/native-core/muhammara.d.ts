@@ -975,6 +975,12 @@ declare namespace muhammara {
      * @throws {TypeError} If objectId is not a single number.
      */
     startModifiedIndirectObject(objectId: FormXObjectId): this;
+    /**
+     * Marks an object as free in the cross-reference table.
+     * @param objectId - The object ID.
+     * @returns This context.
+     * @throws {TypeError} If objectId is not a single number.
+     */
     deleteObject(objectId: FormXObjectId): this;
     writeName(name: string): this;
     writeLiteralString(literal: string | number[]): this;
