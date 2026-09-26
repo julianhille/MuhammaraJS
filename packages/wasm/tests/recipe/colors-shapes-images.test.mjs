@@ -80,6 +80,21 @@ describe("Recipe colors, shapes, and images", function () {
         recipe.rectangle(10, 10, 20, 20, { fill: "brand", colorspace: "lab" }),
       unknown,
     );
+    ["__proto__", "constructor", "toString"].forEach((colorspace) => {
+      var inherited = {
+        name: "TypeError",
+        message: `Unknown colorspace: ${colorspace}`,
+      };
+      assert.throws(
+        () => recipe.chroma("polluted", "#ff0000", colorspace),
+        inherited,
+      );
+      assert.throws(
+        () => recipe.rectangle(10, 10, 20, 20, { fill: "#ff0000", colorspace }),
+        inherited,
+      );
+    });
+    assert.equal({}.polluted, undefined);
     recipe.endPage().endPDF();
   });
 

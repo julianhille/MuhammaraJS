@@ -48,6 +48,16 @@ export var knownColors = {
 };
 
 /**
+ * Reports whether a value is a Recipe colorspace. Checking the `Colorspace`
+ * values, as native does, keeps inherited keys such as `__proto__` out.
+ * @param {string} colorspace - The requested colorspace.
+ * @returns {boolean} Whether it is a `Colorspace` value.
+ */
+function isColorspace(colorspace) {
+  return Object.values(Colorspace).includes(colorspace);
+}
+
+/**
  * Converts a Recipe color to its hex digits without a prefix.
  * @param {RecipeColor} value - `[r, g, b]` or `[c, m, y, k]` from 0 to 255, `#hex`, `%hex`, or a number.
  * @returns {string} Hex digits; empty for unsupported values.
@@ -85,6 +95,8 @@ function hex(value) {
  */
 export function colorModel(recipe, value, options = {}) {
   var colorspace = options.colorspace || recipe.options.colorspace || "";
+  if (colorspace && !isColorspace(colorspace))
+    throw new TypeError(`Unknown colorspace: ${colorspace}`);
   var name = "";
   var registered = false;
   if (
@@ -93,15 +105,14 @@ export function colorModel(recipe, value, options = {}) {
     !value.startsWith("%")
   ) {
     name = value;
-    var known = (recipe.knownColors[colorspace || Colorspace.RGB] || {})[value];
-    registered = known !== undefined;
+    var colors = recipe.knownColors[colorspace || Colorspace.RGB];
+    registered = Object.hasOwn(colors, value);
+    var known = registered ? colors[value] : undefined;
     value = known || value;
   }
   var code = hex(value || "");
   if (!colorspace)
     colorspace = deviceColorspaceByLength[code.length] || Colorspace.RGB;
-  if (!(colorspace in recipe.knownColors))
-    throw new TypeError(`Unknown colorspace: ${colorspace}`);
   var separationName = registered ? name : options.colorName || "";
   var separation =
     colorspace === Colorspace.SEPARATION && separationName !== "";
@@ -115,7 +126,10 @@ export function colorModel(recipe, value, options = {}) {
   }
   var values = code.match(/../g).map((part) => Number.parseInt(part, 16) / 255);
   if (separation) {
-    if (!registered && !(separationName in recipe.knownColors.separation))
+    if (
+      !registered &&
+      !Object.hasOwn(recipe.knownColors.separation, separationName)
+    )
       recipe.knownColors.separation[separationName] = code;
     return {
       colorspace: Colorspace.SEPARATION,
@@ -338,7 +352,7 @@ export function createColorMethods() {
           "Color value has incorrect size for gray, rgb, or cmyk colorspaces",
         );
       colorspace = colorspace || deviceColorspaceByLength[code.length];
-      if (!(colorspace in this.knownColors))
+      if (!isColorspace(colorspace))
         throw new TypeError(`Unknown colorspace: ${colorspace}`);
       this.knownColors[colorspace][name] = code;
       return this;

@@ -95,6 +95,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Reject inherited object keys such as `__proto__` and `constructor` as a
+  Recipe colorspace with `TypeError: Unknown colorspace: <name>`, as native
+  does. `chroma(name, value, "__proto__")` wrote the color onto
+  `Object.prototype`, and other keys failed later with an unrelated error [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw a `TypeError` for a source `password` in `createPDFCopyingContext()`
   and `createPDFCopyingContextAsync()`, as the append and form APIs already do,
   instead of ignoring it; decrypt the source with `recrypt()` first [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
