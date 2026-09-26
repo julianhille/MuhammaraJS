@@ -878,6 +878,10 @@ const Triangle = class Triangle {
     return this._circumcenter;
   }
 
+  /**
+   * Move the incenter point, keeping its radius.
+   * @param {number[]} center - The new [x, y] point.
+   */
   set incenter(center) {
     this._incenter = {
       point: new Point(center[0], center[1]),
