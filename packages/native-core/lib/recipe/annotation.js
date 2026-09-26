@@ -144,6 +144,12 @@ exports.annot = function annot(
 
 // TODO: allow non-markup annots to be associated with markup annotations
 // Link, Popup, Movie, Widget, Screen, PrinterMark, TrapNet, Watermark, 3D
+/**
+ * Placeholder for associating non-markup annotations with markup ones; it
+ * currently does nothing.
+ * @private
+ * @returns {void}
+ */
 exports._attachNonMarkupAnnot = function _attachNonMarkupAnnot() {};
 
 exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
