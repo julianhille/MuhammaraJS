@@ -79,9 +79,11 @@ exports.lineTo = function lineTo(x, y, options = {}) {
  * @param {number} [options.opacity] - how transparent should line be, from 0: invisible to 1: opaque
  * @param {number[]} [options.dash] - The dash pattern [dashSize, gapSize] or [dashAndGapSize]
  * @param {number} [options.dashPhase] - distance into dash pattern at which to start dash (default: 0, immediately)
- * @param {string} [options.lineCap] -  open line end style, 'butt', 'round', or 'square' (default: 'round')
- * @param {string} [options.lineJoin] - joined line end style, 'miter', 'round', or 'bevel' (default: 'round')
- * @param {number} [options.miterLimit] - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)*/
+ * @param {Recipe.LineCap} [options.lineCap] -  open line end style, a `Recipe.LineCap` value (default: 'round')
+ * @param {Recipe.LineJoin} [options.lineJoin] - joined line end style, a `Recipe.LineJoin` value (default: 'round')
+ * @param {number} [options.miterLimit] - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
+ * @throws {TypeError} If no page is active.
+ */
 exports.line = function line(coordinates = [], options = {}) {
   if (typeof coordinates === "number") {
     // line(startX, startY, endX, endY, options?), as in Wasm.
