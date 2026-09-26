@@ -700,6 +700,13 @@ declare namespace muhammara {
      * @throws {Error} If the stream cannot be read.
      */
     startReadingFromStream(inputStream: PDFStreamInput): ByteReader;
+    /**
+     * Opens a stream's contents as stored, decrypted but not decoded.
+     * @param inputStream - The stream to read.
+     * @returns A reader over the stored bytes.
+     * @throws {TypeError} If the reader has ended or inputStream is not a stream.
+     * @throws {Error} If the stream cannot be read.
+     */
     startReadingFromStreamForPlainCopying(
       inputStream: PDFStreamInput,
     ): ByteReader;
