@@ -2008,6 +2008,17 @@ export function createWriterToModifyFactory({
       createFormXObjectFromTIFFBytesAsync: async function (image, options) {
         return this.createFormXObjectFromTIFFAsync(image, options);
       },
+      /**
+       * Starts a form XObject; draw through `getContentContext()`, then call `end()`.
+       * @param {number} left - Bounding box left.
+       * @param {number} bottom - Bounding box bottom.
+       * @param {number} right - Bounding box right, greater than `left`.
+       * @param {number} top - Bounding box top, greater than `bottom`.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {ModifierFormXObject} The open form.
+       * @throws {RangeError} If the rectangle is invalid or `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObject: function (left, bottom, right, top, objectId) {
         requireOpen();
         if (
