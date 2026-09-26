@@ -562,6 +562,13 @@ export function createReaderFactory({
       }
 
       var byteReader = {
+        /**
+         * Reads the next bytes.
+         * @param {number} amount - Maximum byte count.
+         * @returns {Uint8Array} A copy of at most `amount` bytes.
+         * @throws {RangeError} If `amount` is not an integer from 0 to 2^31 - 1.
+         * @throws {Error} If the reader or byte reader has ended or reading fails.
+         */
         read: function (amount) {
           requireByteReader();
           if (!Number.isInteger(amount) || amount < 0 || amount > 0x7fffffff) {
