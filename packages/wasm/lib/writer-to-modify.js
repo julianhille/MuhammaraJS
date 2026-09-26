@@ -208,6 +208,12 @@ export function createWriterToModifyFactory({
       if (ended || !modifier) throw new Error("PDF writer has ended");
     }
 
+    /**
+     * Rejects use of an inactive page content context.
+     * @param {object} value - Content context being used.
+     * @returns {void}
+     * @throws {Error} If the modifier ended or `value` is not the active context.
+     */
     function requireContext(value) {
       requireOpen();
       if (context !== value)
