@@ -701,6 +701,9 @@ export function createTextMethods({ drawText, measure, module }) {
     /**
      * Measures the height required by an internal text box.
      * @private
+     * @param {string} value - Text or HTML.
+     * @param {object} [options={}] - Text options with `textBox` or `cell`.
+     * @returns {number} The height in points.
      */
     _measureTextBoxHeight(value, options = {}) {
       var box = options.textBox || options.cell || {};
