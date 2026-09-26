@@ -850,6 +850,10 @@ const Triangle = class Triangle {
 
   // The intersection of the perpendicular bisectors of
   // each side midpoint defines the circumcenter.
+  /**
+   * The center and radius of the circumscribed circle.
+   * @returns {{point: Point, radius: number}} The circumcircle.
+   */
   get circumcenter() {
     if (!this._circumcenter) {
       // Algorithm in use is defining a circle from three noncolinear planar points
