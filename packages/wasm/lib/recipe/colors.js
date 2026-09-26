@@ -125,9 +125,8 @@ export function createColorMethods() {
         throw new TypeError(
           "Color value has incorrect size for gray, rgb, or cmyk colorspaces",
         );
-      colorspace =
-        colorspace || { 2: "gray", 6: "rgb", 8: "cmyk" }[code.length];
-      if (colorspace === "separation") {
+      colorspace = colorspace || colorSpaceForCode(code);
+      if (colorspace === RecipeColorSpace.SEPARATION) {
         throw new Error(
           "Recipe separation colors are unsupported in WebAssembly; use low-level writer resources.",
         );
