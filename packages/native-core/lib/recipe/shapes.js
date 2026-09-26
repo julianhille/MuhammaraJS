@@ -1392,6 +1392,11 @@ const Arrow = class Arrow {
     return this._nock;
   }
 
+  /**
+   * Move the shaft end so it meets a dart or kite head.
+   * @param {Point} pointTR - Where the top edge of the shaft meets the head.
+   * @returns {void}
+   */
   joinShaft(pointTR) {
     this._connectAt_tr.x = pointTR.x;
     this._connectAt_br.x = pointTR.x;
