@@ -98,6 +98,11 @@ export function createRawObjectsContext({
      * @returns {DictionaryContext} The dictionary context.
      */
     function dictionaryContext(dictionary) {
+      /**
+       * Rejects use of a dictionary that is no longer the active one.
+       * @returns {void}
+       * @throws {Error} If the writer ended or the dictionary is not active.
+       */
       function requireDictionary() {
         requireContext();
         if (activeDictionary !== dictionary) {
