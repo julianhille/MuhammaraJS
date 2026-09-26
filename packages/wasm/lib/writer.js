@@ -2052,6 +2052,11 @@ export function createWriterFactory({
           re: function (x, y, width, height) {
             return operator("re", 16, [x, y, width, height]);
           },
+          /**
+           * Fills the current path using the nonzero winding rule (`f`).
+           * @returns {this} The content context, for chaining.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           f: function () {
             return operator("f", 6);
           },
