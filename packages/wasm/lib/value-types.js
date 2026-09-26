@@ -162,6 +162,10 @@ export function createValueTypes({ module, withString, withBytes }) {
       return this._value;
     }
 
+    /**
+     * Sets the date to now, in the local time zone.
+     * @returns {this} The date.
+     */
     setToCurrentTime() {
       this._value = normalizePDFDate(new Date());
       return this;
