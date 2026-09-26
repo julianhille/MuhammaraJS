@@ -112,6 +112,10 @@ declare namespace muhammara {
      * @param inPosition - The number of bytes before the end.
      */
     setPositionFromEnd(inPosition: number): void;
+    /**
+     * Advances the position without reading.
+     * @param inAmount - The number of bytes to skip.
+     */
     skip(inAmount: number): void;
     getCurrentPosition(): number;
     moveStartPosition(inPosition: number): void;
