@@ -447,7 +447,14 @@ function resolvePageLabelObject(parser, value) {
   return resolved;
 }
 
-/** Reads a page-label dictionary into a serializable value. @private */
+/**
+ * Reads a page-label dictionary into a serializable value.
+ * @private
+ * @param {PDFReader} parser - Source parser.
+ * @param {PDFObject} value - Page-label dictionary.
+ * @returns {{style?: string, prefix?: object, start?: number}} The label.
+ * @throws {Error} If `value` is not a dictionary.
+ */
 function readPageLabel(parser, value) {
   var dictionary = value?.toPDFDictionary();
   if (!dictionary) {
