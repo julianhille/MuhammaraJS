@@ -98,4 +98,27 @@ describe("StructuredContentOperators", function () {
     assertOperators(reader);
     reader.end();
   });
+
+  it("selects a colored pattern by name alone", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var page = writer.createPage(0, 0, 100, 100);
+    var context = writer.startPageContentContext(page);
+    var pattern = page.getResourcesDictionary().addPatternMapping(12);
+    assert.equal(context.SCN(pattern).scn(pattern), context);
+    writer.writePage(page);
+    var reader = muhammara.createReader(writer.end());
+
+    var tokens = [];
+    for (var objectId = 1; objectId < reader.getXrefSize(); ++objectId) {
+      var object = reader.parseNewObject(objectId);
+      if (!object || object.getType() !== muhammara.ePDFObjectStream) continue;
+      var parser = reader.startReadingObjectsFromStream(object.toPDFStream());
+      for (var parsed; (parsed = parser.parseNewObject());) {
+        tokens.push(parsed.toString());
+      }
+    }
+    assert.deepEqual(tokens.slice(0, 4), [pattern, "SCN", pattern, "scn"]);
+    reader.end();
+  });
 });

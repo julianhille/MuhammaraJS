@@ -190,13 +190,13 @@ export function createHelpers(module) {
       var pattern = typeof args.at(-1) === "string" ? args.pop() : undefined;
       var values = Array.isArray(args[0]) ? args[0] : args;
       if (
-        args.length === 0 ||
+        (args.length === 0 && pattern === undefined) ||
         (Array.isArray(args[0]) && args.length !== 1) ||
         !Array.isArray(values) ||
         !values.every(Number.isFinite)
       ) {
         throw new TypeError(
-          `${name} requires numeric components and an optional pattern name`,
+          `${name} requires numeric components, an optional pattern name, or a pattern name alone`,
         );
       }
       return componentOperator(name, code, values, pattern);

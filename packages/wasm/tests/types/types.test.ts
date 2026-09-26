@@ -95,6 +95,7 @@ async function usesLowLevelSurface() {
   metrics.max_advance;
   writer.requireCatalogUpdate();
   var context = writer.startPageContentContext(page);
+  context.SCN("P0").scn("P0");
   context
     .q()
     .drawRectangle(0, 0, 50, 50, { type: "clip" })
@@ -817,8 +818,8 @@ async function usesAlignedDeclarations() {
     .SCN(1, 0, 0)
     .SCN(1, 0, 0, "P0")
     .scn([1, 0, 0], "P0");
-  // @ts-expect-error A pattern name needs color components.
-  context.SCN("P0");
+  // @ts-expect-error A pattern array needs no trailing components.
+  context.SCN([1, 0, 0], "P0", 1);
   var font = writer.getFontForBytes("arial");
   var glyphWidth: number = font.calculateTextDimensions([43, 76], 12).width;
   void glyphWidth;

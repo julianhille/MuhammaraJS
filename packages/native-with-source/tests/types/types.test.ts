@@ -56,6 +56,7 @@ writer.mergePDFPagesToPage(page, "source.pdf", function () {
 });
 writer.mergePDFPagesToPage(page, "source.pdf", {}, function () {});
 writer.startPageContentContext(page).c(0, 0, 1, 1, 2, 2).S();
+writer.startPageContentContext(page).SCN("P0").scn("P0");
 writer
   .startPageContentContext(page)
   .q()
