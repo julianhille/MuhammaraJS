@@ -717,6 +717,7 @@ exports.lineWidth = function lineWidth(width) {
  * @memberof Recipe#
  * @param {number} value - The requested opacity from 0 (transparent) to 1 (opaque).
  * @returns {Recipe} The recipe instance.
+ * @throws {RangeError} If the value is not a finite number from 0 to 1.
  */
 exports.opacity = function opacity(value) {
   if (!Number.isFinite(value) || value < 0 || value > 1) {
