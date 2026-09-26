@@ -9,7 +9,8 @@ export type ByteSource = Uint8Array | ArrayBuffer | PDFRStreamForBuffer;
 export type AsyncByteSource = ByteSource | BlobLike;
 export type PDFRectangle = [number, number, number, number];
 export type PDFMatrix = [number, number, number, number, number, number];
-export type Glyph = [number, number];
+/** Glyph entries shown without text encoding: `[glyphId, unicodeCodePoint]` pairs. */
+export type Glyph = Array<[number, number]>;
 /** How text-showing operators encode string text: the `EEncoding` values. */
 export type EEncoding = "text" | "code" | "hex";
 export declare const EEncoding: {
@@ -1248,24 +1249,20 @@ export interface ContentContext {
   Ts(value: number): this;
   Tf(font: PDFUsedFont | string, size: number): this;
   Tj(text: string, options?: TextOptions): this;
-  Tj(glyphs: Glyph[]): this;
+  Tj(glyphs: Glyph): this;
   Quote(text: string, options?: TextOptions): this;
-  Quote(glyphs: Glyph[]): this;
+  Quote(glyphs: Glyph): this;
   DoubleQuote(
     wordSpace: number,
     characterSpace: number,
     text: string,
     options?: TextOptions,
   ): this;
-  DoubleQuote(wordSpace: number, characterSpace: number, glyphs: Glyph[]): this;
+  DoubleQuote(wordSpace: number, characterSpace: number, glyphs: Glyph): this;
   TJ(
     ...items:
-      | [string | number | Glyph[], ...(string | number | Glyph[])[]]
-      | [
-          string | number | Glyph[],
-          ...(string | number | Glyph[])[],
-          TextOptions,
-        ]
+      | [string | number | Glyph, ...(string | number | Glyph)[]]
+      | [string | number | Glyph, ...(string | number | Glyph)[], TextOptions]
   ): this;
   ri(name: string): this;
   i(value: number): this;

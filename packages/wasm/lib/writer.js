@@ -1364,7 +1364,7 @@ export function createWriterFactory({
         },
         /**
          * Shows text (`Tj`).
-         * @param {string|Glyph[]} text - Text, or glyph entries to show without encoding.
+         * @param {string|Glyph} text - Text, or glyph entries to show without encoding.
          * @param {TextOptions} [options] - Text encoding; only for string text.
          * @returns {this} The content context, for chaining.
          * @throws {TypeError} If `options` is not an options object, has an unknown encoding, or is given with glyphs.
@@ -1411,7 +1411,7 @@ export function createWriterFactory({
         },
         /**
          * Moves to the next line and shows text (`'`).
-         * @param {string|Glyph[]} text - Text, or glyph entries.
+         * @param {string|Glyph} text - Text, or glyph entries.
          * @param {TextOptions} [options] - Text encoding; only for string text.
          * @returns {this} The content context, for chaining.
          * @throws {TypeError} If `options` is invalid or given with glyphs.
@@ -1457,7 +1457,7 @@ export function createWriterFactory({
          * Sets word and character spacing, moves to the next line, and shows text (`"`).
          * @param {number} wordSpace - Word spacing.
          * @param {number} characterSpace - Character spacing.
-         * @param {string|Glyph[]} text - Text, or glyph entries.
+         * @param {string|Glyph} text - Text, or glyph entries.
          * @param {TextOptions} [options] - Text encoding; only for string text.
          * @returns {this} The content context, for chaining.
          * @throws {TypeError} If a spacing is not finite, or `options` is invalid or given with glyphs.
@@ -1504,7 +1504,7 @@ export function createWriterFactory({
         },
         /**
          * Shows text with individual glyph positioning (`TJ`).
-         * @param {...(string|number|Glyph[]|TextOptions)} items - Strings or glyph arrays and
+         * @param {...(string|number|Glyph|TextOptions)} items - Strings or glyph arrays and
          * kerning adjustments in thousandths of text space; a trailing options object sets the encoding.
          * @returns {this} The content context, for chaining.
          * @throws {TypeError} If an item or the encoding is invalid.
@@ -2701,7 +2701,7 @@ export function createWriterFactory({
         };
         /**
          * Shows text (`Tj`).
-         * @param {string|Glyph[]} text - Text, or glyph entries to show without encoding.
+         * @param {string|Glyph} text - Text, or glyph entries to show without encoding.
          * @param {TextOptions} [options] - Text encoding; only for string text.
          * @returns {this} The content context, for chaining.
          * @throws {TypeError} If `options` is not an options object, has an unknown encoding, or is given with glyphs.

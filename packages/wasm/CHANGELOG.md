@@ -327,6 +327,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `icon` as `RecipeAnnotationIcon`, as native does, instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Rename the text encoding type to `EEncoding`, as native names it; `TextEncoding`
   remains as a deprecated alias [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Define `Glyph` as a list of `[glyphId, unicodeCodePoint]` pairs, as native
+  does; `Tj()`, `Quote()`, `DoubleQuote()`, and `TJ()` take `Glyph` where they took
+  `Glyph[]`. Code that annotated one pair as `Glyph` should use `[number, number]` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take
   `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
   `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,

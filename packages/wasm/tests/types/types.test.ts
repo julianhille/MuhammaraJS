@@ -12,6 +12,7 @@ import {
   EEncoding as EEncodings,
 } from "../../index.js";
 import type {
+  Glyph,
   EEncoding,
   PDFPageGeometry,
   PDFXrefEntry,
@@ -991,6 +992,11 @@ async function usesNamedValueSets() {
   void namedFlag;
   var namedIcon: RecipeAnnotationIcon = RecipeAnnotationIcon.COMMENT;
   void namedIcon;
+  var glyphRun: Glyph = [
+    [1, 65],
+    [2, 66],
+  ];
+  void glyphRun;
 }
 
 void usesNamedValueSets;

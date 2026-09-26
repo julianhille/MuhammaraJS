@@ -370,7 +370,7 @@ export function createHelpers(module) {
 
   /**
    * Runs a callback with glyph pairs copied into Wasm memory as 32-bit integers.
-   * @param {Glyph[]} glyphs - `[glyphId, unicodeCodePoint]` pairs.
+   * @param {Glyph} glyphs - `[glyphId, unicodeCodePoint]` pairs.
    * @param {function(number): *} callback - Receives the pointer.
    * @returns {*} The callback result.
    * @throws {TypeError} If an entry is not a pair of non-negative integers.
@@ -497,7 +497,7 @@ export function createHelpers(module) {
     /**
      * Shows text or glyphs with one of the quote operators.
      * @param {number} operation - 1 for `'`, 2 for `"`.
-     * @param {string|Glyph[]} text - Text or glyph entries.
+     * @param {string|Glyph} text - Text or glyph entries.
      * @param {TextOptions} [options] - Text encoding; only for string text.
      * @param {number} [wordSpace=0] - Word spacing for `"`.
      * @param {number} [characterSpace=0] - Character spacing for `"`.
@@ -543,7 +543,7 @@ export function createHelpers(module) {
     }
     /**
      * Moves to the next line and shows text (`'`).
-     * @param {string|Glyph[]} text - Text, or glyph entries.
+     * @param {string|Glyph} text - Text, or glyph entries.
      * @param {TextOptions} [options] - Text encoding; only for string text.
      * @returns {this} The content context, for chaining.
      * @throws {TypeError} If `options` is invalid or given with glyphs.
@@ -556,7 +556,7 @@ export function createHelpers(module) {
      * Sets word and character spacing, moves to the next line, and shows text (`"`).
      * @param {number} wordSpace - Word spacing.
      * @param {number} characterSpace - Character spacing.
-     * @param {string|Glyph[]} text - Text, or glyph entries.
+     * @param {string|Glyph} text - Text, or glyph entries.
      * @param {TextOptions} [options] - Text encoding; only for string text.
      * @returns {this} The content context, for chaining.
      * @throws {TypeError} If a spacing is not finite, or `options` is invalid or given with glyphs.
@@ -567,7 +567,7 @@ export function createHelpers(module) {
     };
     /**
      * Shows text with individual glyph positioning (`TJ`).
-     * @param {...(string|number|Glyph[]|TextOptions)} items - Strings or glyph arrays and
+     * @param {...(string|number|Glyph|TextOptions)} items - Strings or glyph arrays and
      * kerning adjustments; a trailing options object sets the encoding.
      * @returns {this} The content context, for chaining.
      * @throws {TypeError} If an item or the encoding is invalid.
