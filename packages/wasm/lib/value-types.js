@@ -119,6 +119,10 @@ export function createValueTypes({ module, withString, withBytes }) {
       }
     }
 
+    /**
+     * Reads the encoded PDF text string bytes.
+     * @returns {number[]} The bytes, PDFDocEncoding or UTF-16BE with a byte order mark.
+     */
     toBytesArray() {
       return Array.from(this._bytes);
     }
