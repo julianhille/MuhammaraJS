@@ -826,6 +826,7 @@ exports.rotate = function rotate(rotation) {
  * @param {number} top - The PDF top coordinate.
  * @returns {Recipe} The recipe instance.
  * @throws {RangeError} If the page box constant is unknown.
+ * @throws {TypeError} If no page is active.
  */
 exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
   const boxes = {
@@ -849,7 +850,7 @@ exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
       mediaBox: pageBox,
       width,
       height,
-      layout: width > height ? "landscape" : "portrait",
+      layout: width > height ? PageLayout.LANDSCAPE : PageLayout.PORTRAIT,
     });
   }
   return this;
