@@ -952,6 +952,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the copying context has ended.
      */
     replaceSourceObjects(replaceMap: { [key: string]: number }): void;
+    /**
+     * Returns the stream the source PDF is read from.
+     * @returns The positioned byte reader.
+     * @throws {TypeError} If the copying context has ended.
+     */
     getSourceDocumentStream(): ByteReaderWithPosition;
   }
 
