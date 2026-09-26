@@ -7,6 +7,8 @@ require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var editAnnotation = require("../../../native/docs/examples/edit-annotation");
 var deletePages = require("../../../native/docs/examples/delete-pages");
 var replaceTextLayer = require("../../../native/docs/examples/replace-text-layer");
+var annotateExistingText = require("../../../native/docs/examples/annotate-existing-text");
+var replacePageText = require("../../../native/docs/examples/replace-text");
 
 var fontPath = path.join(
   __dirname,
@@ -32,6 +34,36 @@ function writeSourcePdf(sourcePath) {
     .Tf(writer.getFontForFile(fontPath), 12)
     .Tm(1, 0, 0, 1, 20, 30)
     .Tj("Before")
+    .Tm(1, 0, 0, 1, 20, 60)
+    .Tj("After")
+    .ET();
+  writer.writePage(page);
+  writer.end();
+}
+
+/**
+ * Writes a page with text in a simple font (`FN1`) and, for characters outside
+ * WinAnsi, a composite font (`FN2`).
+ *
+ * @param {string} statusPath Output PDF path.
+ * @returns {void}
+ */
+function writeStatusPdf(statusPath) {
+  var writer = muhammara.createWriter(statusPath);
+  var page = writer.createPage(0, 0, 200, 200);
+
+  writer
+    .startPageContentContext(page)
+    .BT()
+    .Tf(writer.getFontForFile(fontPath), 12)
+    .Tm(1, 0, 0, 1, 20, 30)
+    .Tj("Draft")
+    .Tm(1, 0, 0, 1, 20, 60)
+    .Tj("Status: in Prüfung")
+    .Tm(1, 0, 0, 1, 20, 90)
+    .Tj("Status: geprüft")
+    .Tm(1, 0, 0, 1, 20, 120)
+    .Tj("Größe Ω")
     .ET();
   writer.writePage(page);
   writer.end();
@@ -151,8 +183,8 @@ describe("Documentation examples", function () {
     var reader = muhammara.createReader(outputPath);
     var text = reader.extractPageText(0);
 
-    assert.strictEqual(text.length, 1);
-    assert.strictEqual(text[0].content, "After");
+    assert.strictEqual(text.length, 2);
+    assert.strictEqual(text[0].text, "After");
     assert.deepStrictEqual(text[0].textMatrix, [1, 0, 0, 1, 20, 30]);
     reader.end();
   });
@@ -259,6 +291,64 @@ describe("Documentation examples", function () {
 
     assert.strictEqual(remaining.length, 1);
     assert.strictEqual(remaining[0].contents, "Keep me");
+  });
+
+  it("annotates existing text, including composite-font text", function () {
+    var statusPath = path.join(outputDirectory, "status.pdf");
+    var outputPath = path.join(outputDirectory, "annotated-text.pdf");
+    writeStatusPdf(statusPath);
+
+    assert.strictEqual(
+      annotateExistingText(statusPath, outputPath, 1, "Größe Ω", 50),
+      1,
+    );
+    assert.deepStrictEqual(
+      readAnnotations(outputPath).map(function (annotation) {
+        return [annotation.subtype, annotation.contents];
+      }),
+      [["Underline", "Reviewed"]],
+    );
+  });
+
+  it("replaces non-ASCII text and reports missing glyphs", function () {
+    var statusPath = path.join(outputDirectory, "status.pdf");
+    var outputPath = path.join(outputDirectory, "status-approved.pdf");
+    writeStatusPdf(statusPath);
+
+    assert.strictEqual(
+      replacePageText(
+        statusPath,
+        outputPath,
+        1,
+        "Status: in Prüfung",
+        "Status: geprüft",
+      ),
+      1,
+    );
+    var reader = muhammara.createReader(outputPath);
+    var text = reader.extractPageText(0);
+    reader.end();
+    assert.deepStrictEqual(
+      text.map(function (element) {
+        return element.text;
+      }),
+      ["Draft", "Status: geprüft", "Status: geprüft", "Größe Ω"],
+    );
+    assert.deepStrictEqual(text[1].textMatrix, [1, 0, 0, 1, 20, 60]);
+
+    assert.strictEqual(
+      replacePageText(statusPath, outputPath, 1, "missing", "Draft"),
+      0,
+    );
+    assert.throws(function () {
+      replacePageText(
+        statusPath,
+        outputPath,
+        1,
+        "Status: in Prüfung",
+        "Status: abgelehnt",
+      );
+    }, 'replaceText cannot write the replacement: font FN1 has no glyph for "b", "l", "h"');
   });
 
   it("deletes selected pages", function () {

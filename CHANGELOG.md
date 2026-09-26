@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add a decoded Unicode `text` field to `PDFReader#extractPageText()`
+  elements, decoded through the font's `/ToUnicode` CMap, `/Encoding`, and
+  `/Differences`; `content` keeps the raw character codes, and
+  `{ decodeText: false }` skips decoding
+  [#788](https://github.com/julianhille/MuhammaraJS/issues/788)
 - Add a `Recipe.<Name>` type for every Recipe value set, for example
   `Recipe.TextWrap`, `Recipe.LineCap`, and `Recipe.AnnotFlag`, and use them for
   the matching options; the text `align` option is typed as alignment keywords
@@ -51,6 +56,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Accept a `Uint8Array` (or `Buffer`) from custom read streams and in the
   `write()` method of PDF stream writers such as `getWriteStream()`, alongside
   arrays of byte values [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
+- Add a guide for replacing text in an existing PDF with `replaceText()`,
+  including what to do when nothing matches or the font lacks a glyph
+  [#788](https://github.com/julianhille/MuhammaraJS/issues/788)
 - Add a guide for annotating known text regions in existing PDFs with Underline
   or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
 - Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
@@ -315,10 +323,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Clamp `PDFRStreamForFile` and `PDFRStreamForBuffer` seek methods to the
   available bytes, allowing PDFs smaller than the parser's trailer window to be
   read through built-in streams [#784](https://github.com/julianhille/MuhammaraJS/issues/784)
+- Match `Recipe#replaceText()` through the page font instead of raw Latin-1
+  bytes, so it replaces text written with composite fonts (hex glyph IDs, used
+  for all non-ASCII text Muhammara writes) and with `/Differences` encodings,
+  and accepts any Unicode `text` and `replacement`. A replacement needing a
+  glyph the font does not have throws an `Error` naming the missing
+  characters instead of writing codes that render blank or as wrong glyphs; a
+  font that cannot be read or has a malformed `/Widths` array throws too, and a
+  page that does not exist throws a `RangeError`
+  [#788](https://github.com/julianhille/MuhammaraJS/issues/788)
 - Make `Recipe#replaceText()` match `text` literally and insert `replacement`
   verbatim. Regular-expression characters such as `.` and `$&` no longer
-  change what is matched or written, and characters above U+00FF now throw a
-  `TypeError` instead of being written as corrupted bytes
+  change what is matched or written
   [#785](https://github.com/julianhille/MuhammaraJS/issues/785)
 - Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
   rewrites it; they were previously re-encoded as UTF-8, corrupting other

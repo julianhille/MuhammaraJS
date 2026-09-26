@@ -214,6 +214,8 @@ recipe.setPageBox(pageBox, 10, 20, 585, 822);
 recipe.setPageBox(muhammara.ePDFPageBoxMediaBox, 0, 0, 595, 842);
 void pageBox;
 recipe.replaceText("Before", "After", 1);
+// Text is matched and written through the page font, so any Unicode string works.
+recipe.replaceText("Größe Ω", "Ω Größe", 1);
 // @ts-expect-error replaceText requires a one-based page number.
 recipe.replaceText("Before", "After");
 recipe.removeText(1).removeText(2, { forms: true });
@@ -942,3 +944,33 @@ void [
   recipeDeviceColorSpace,
   recipeTextOptions,
 ];
+
+var textReader = muhammara.createReader("input.pdf");
+var textElement: muhammara.PDFTextElement = textReader.extractPageText(0)[0];
+var decodedText: string = textElement.text;
+var rawContent: string = textElement.content;
+void [decodedText, rawContent];
+
+// decodeText: false skips decoding, so the elements have no text.
+const rawElements: muhammara.PDFRawTextElement[] = textReader.extractPageText(
+  0,
+  undefined,
+  { decodeText: false },
+);
+// @ts-expect-error Elements extracted without decoding have no text.
+void rawElements[0].text;
+const decodedElements: muhammara.PDFTextElement[] = textReader.extractPageText(
+  0,
+  { maxElements: 5 },
+  { decodeText: true },
+);
+declare const decodeChoice: boolean;
+const maybeDecoded: muhammara.PDFRawTextElement[] = textReader.extractPageText(
+  0,
+  undefined,
+  { decodeText: decodeChoice },
+);
+const extractionOptions: muhammara.PDFTextExtractionOptions = {
+  decodeText: false,
+};
+void [rawElements, decodedElements, maybeDecoded, extractionOptions];

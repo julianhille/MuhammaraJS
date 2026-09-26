@@ -197,3 +197,42 @@ under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 ```
+
+## Adobe Glyph List
+
+`lib/glyph-list.js` holds a table derived from the Adobe Glyph List 2.0
+(`glyphlist.txt`, September 20, 2002), which maps glyph names to Unicode. The
+table re-encodes the list and normalizes its values to NFC; it is not a copy or
+version of the Adobe document.
+
+```
+Copyright (c) 1997,1998,2002,2007 Adobe Systems Incorporated
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this documentation file to use, copy, publish, distribute,
+sublicense, and/or sell copies of the documentation, and to permit
+others to do the same, provided that:
+- No modification, editing or other alteration of this document is
+allowed; and
+- The above copyright notice and this permission notice shall be
+included in all copies of the documentation.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this documentation file, to create their own derivative works
+from the content of this document to use, copy, publish, distribute,
+sublicense, and/or sell the derivative works, and to permit others to do
+the same, provided that the derived work is not represented as being a
+copy or version of this document.
+
+Adobe shall not be liable to any party for any loss of revenue or profit
+or for indirect, incidental, special, consequential, or other similar
+damages, whether based on tort (including without limitation negligence
+or strict liability), contract or other legal or equitable grounds even
+if Adobe has been advised or had reason to know of the possibility of
+such damages. The Adobe materials are provided on an "AS IS" basis.
+Adobe specifically disclaims all express, statutory, or implied
+warranties relating to the Adobe materials, including but not limited to
+those concerning merchantability or fitness for a particular purpose or
+non-infringement of any third party rights regarding the Adobe
+materials.
+```

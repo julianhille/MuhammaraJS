@@ -1,26 +1,19 @@
 import { constants } from "../constants.js";
+import * as contentStream from "../content-stream.js";
+import { createPageFontLookup } from "../font-text.js";
+
+var PdfOperator = contentStream.PdfOperator;
+var TokenKind = contentStream.TokenKind;
+var decodeName = contentStream.decodeName;
+var forEachOperation = contentStream.forEachOperation;
+var tokenKind = contentStream.tokenKind;
 
 var ePDFObjectArray = constants.ePDFObjectArray;
 var ePDFObjectIndirectObjectReference =
   constants.ePDFObjectIndirectObjectReference;
 
-var WHITESPACE = "\0\t\n\f\r ";
-var DELIMITERS = "()<>[]{}/%";
-
-// Content-stream operators this module interprets.
-var PdfOperator = Object.freeze({
-  SHOW_TEXT: "Tj",
-  SHOW_TEXT_ARRAY: "TJ",
-  NEXT_LINE_SHOW_TEXT: "'",
-  SPACING_NEXT_LINE_SHOW_TEXT: '"',
-  PAINT_XOBJECT: "Do",
-  INLINE_IMAGE_DATA: "ID",
-  END_INLINE_IMAGE: "EI",
-});
-
 // PDF dictionary keys and names this module reads.
 var PdfName = Object.freeze({
-  PARENT: "Parent",
   RESOURCES: "Resources",
   CONTENTS: "Contents",
   LENGTH: "Length",
@@ -31,85 +24,11 @@ var PdfName = Object.freeze({
   FORM: "Form",
 });
 
-// Content-stream keywords that are operands, not operators.
-var PdfKeyword = Object.freeze({
-  TRUE: "true",
-  FALSE: "false",
-  NULL: "null",
-});
-
-/**
- * Check whether a content-stream character is PDF whitespace.
- *
- * @param {string} character One character.
- * @returns {boolean} True for PDF whitespace.
- */
-function isWhitespace(character) {
-  return character !== "" && WHITESPACE.includes(character);
-}
-
-/**
- * Check whether a content-stream character ends a regular token.
- *
- * @param {string} character One character, or an empty string at the end.
- * @returns {boolean} True for whitespace, delimiters, and the end of input.
- */
-function endsRegularToken(character) {
-  return (
-    character === "" ||
-    isWhitespace(character) ||
-    DELIMITERS.includes(character)
-  );
-}
-
-/**
- * Find the end of a literal string that starts at `start`.
- *
- * @param {string} source Latin-1 content stream.
- * @param {number} start Offset of the opening parenthesis.
- * @returns {number} Offset after the closing parenthesis.
- */
-function skipLiteralString(source, start) {
-  var depth = 0;
-  for (var index = start; index < source.length; index++) {
-    var character = source[index];
-    if (character === "\\") {
-      index++;
-    } else if (character === "(") {
-      depth++;
-    } else if (character === ")") {
-      depth--;
-      if (depth === 0) return index + 1;
-    }
-  }
-  return source.length;
-}
-
-/**
- * Find the end of inline image data after its `ID` operator.
- *
- * @param {string} source Latin-1 content stream.
- * @param {number} start Offset directly after `ID`.
- * @returns {number} Offset after the closing `EI` operator.
- */
-function skipInlineImageData(source, start) {
-  for (var index = start + 1; index < source.length - 1; index++) {
-    if (
-      source[index] === PdfOperator.END_INLINE_IMAGE[0] &&
-      source[index + 1] === PdfOperator.END_INLINE_IMAGE[1] &&
-      isWhitespace(source[index - 1]) &&
-      endsRegularToken(source.charAt(index + 2))
-    ) {
-      return index + 2;
-    }
-  }
-  return source.length;
-}
-
 /**
  * Remove text-showing operators from a page content stream. `'` and `"`
  * keep their line advance and spacing effects as `T*`, `Tw`, and `Tc`.
  *
+ * @private
  * @param {string} source Latin-1 content stream.
  * @returns {{content: string, xObjectNames: string[]}} Latin-1 content
  * stream without shown text, and the XObject names it paints with `Do`.
@@ -118,89 +37,45 @@ function removeTextShowingOperators(source) {
   var result = "";
   var xObjectNames = [];
   var operandStart = 0;
-  var operands = [];
-  var depth = 0;
-  var index = 0;
 
-  while (index < source.length) {
-    var character = source[index];
-    var start = index;
-
-    if (isWhitespace(character)) {
-      index++;
-      continue;
+  /**
+   * Copy one operation, dropping shown text.
+   *
+   * @private
+   * @param {{operator: string, operands: Array<{token: string}>, end:
+   * number}} operation Content-stream operation.
+   * @returns {void}
+   */
+  function removeOperation(operation) {
+    var operator = operation.operator;
+    var operands = [];
+    for (var index = 0; index < operation.operands.length; index++) {
+      operands.push(operation.operands[index].token);
     }
-    if (character === "%") {
-      while (
-        index < source.length &&
-        source[index] !== "\n" &&
-        source[index] !== "\r"
-      ) {
-        index++;
-      }
-      continue;
-    }
-    if (character === "(") {
-      index = skipLiteralString(source, index);
-    } else if (character === "<" && source[index + 1] === "<") {
-      depth++;
-      index += 2;
-    } else if (character === ">" && source[index + 1] === ">") {
-      depth--;
-      index += 2;
-    } else if (character === "<") {
-      index = source.indexOf(">", index);
-      index = index === -1 ? source.length : index + 1;
-    } else if (character === "[" || character === "{") {
-      depth++;
-      index++;
-    } else if (character === "]" || character === "}") {
-      depth--;
-      index++;
-    } else if (character === "/") {
-      index++;
-      while (!endsRegularToken(source.charAt(index))) index++;
-    } else {
-      while (!endsRegularToken(source.charAt(index))) index++;
-      if (index === start) index++;
-    }
-
-    var token = source.slice(start, index);
-    var isOperator =
-      depth <= 0 &&
-      /^[A-Za-z'"*]/.test(token) &&
-      token !== PdfKeyword.TRUE &&
-      token !== PdfKeyword.FALSE &&
-      token !== PdfKeyword.NULL;
-
-    if (!isOperator) {
-      if (depth <= 0) operands.push(token);
-      continue;
-    }
-
-    if (token === PdfOperator.INLINE_IMAGE_DATA)
-      index = skipInlineImageData(source, index);
-    if (token === PdfOperator.PAINT_XOBJECT && /^\//.test(operands[0])) {
+    if (
+      operator === PdfOperator.PAINT_XOBJECT &&
+      operands.length &&
+      tokenKind(operands[0]) === TokenKind.NAME
+    ) {
       xObjectNames.push(decodeName(operands[0]));
     }
 
     if (
-      token === PdfOperator.SHOW_TEXT ||
-      token === PdfOperator.SHOW_TEXT_ARRAY
+      operator === PdfOperator.SHOW_TEXT ||
+      operator === PdfOperator.SHOW_TEXT_ARRAY
     ) {
       result += " ";
-    } else if (token === PdfOperator.NEXT_LINE_SHOW_TEXT) {
+    } else if (operator === PdfOperator.NEXT_LINE_SHOW_TEXT) {
       result += " T*";
-    } else if (token === PdfOperator.SPACING_NEXT_LINE_SHOW_TEXT) {
+    } else if (operator === PdfOperator.SPACING_NEXT_LINE_SHOW_TEXT) {
       result += " " + operands[0] + " Tw " + operands[1] + " Tc T*";
     } else {
-      result += source.slice(operandStart, index);
+      result += source.slice(operandStart, operation.end);
     }
-    operandStart = index;
-    operands = [];
-    depth = 0;
+    operandStart = operation.end;
   }
 
+  forEachOperation(source, removeOperation);
   return {
     content: result + source.slice(operandStart),
     xObjectNames: xObjectNames,
@@ -208,72 +83,76 @@ function removeTextShowingOperators(source) {
 }
 
 /**
- * Decode a content-stream name token such as `/Fm#201`.
+ * Replace the operands of `Tj` operators whose text, decoded through the
+ * active font, equals `text`. Everything else is kept byte for byte.
  *
- * @param {string} token Name token including the leading slash.
- * @returns {string} Name without the slash, with `#xx` escapes decoded.
- */
-function decodeName(token) {
-  return token.slice(1).replace(/#([0-9A-Fa-f]{2})/g, function (_, hex) {
-    return String.fromCharCode(parseInt(hex, 16));
-  });
-}
-
-/**
- * Escapes backslashes and parentheses for a PDF literal string.
- * @param {string} value - Text.
- * @returns {string} The escaped text.
- */
-function escapePDFLiteralString(value) {
-  return value.replace(/([\\()])/g, "\\$1");
-}
-
-/**
- * Escape a string for literal use inside a regular expression.
- *
- * @param {string} value Raw string.
- * @returns {string} Escaped pattern source.
- */
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Build the literal `(...) Tj` pattern and replacement operand for
- * `replaceText`. Both strings are written one byte per character, so
- * characters above U+00FF are rejected rather than truncated.
- *
+ * @private
+ * @param {string} source Latin-1 content stream.
  * @param {string} text Text to replace.
  * @param {string} replacement Replacement text.
- * @returns {{pattern: RegExp, operand: string}} Match pattern and operand.
- * @throws {TypeError} If either string has a character above U+00FF.
+ * @param {function(string): object} fonts Font codec lookup by resource
+ * name.
+ * @returns {string} Latin-1 content stream.
+ * @throws {Error} If a matched font has no glyph for a replacement
+ * character.
  */
-function literalReplacement(text, replacement) {
-  if (/[^\u0000-\u00ff]/.test(text + replacement)) {
-    throw new TypeError(
-      "replaceText supports only Latin-1 text and replacement strings",
-    );
-  }
-  return {
-    pattern: new RegExp(
-      "\\(" + escapeRegExp(escapePDFLiteralString(text)) + "\\)(\\s+Tj\\b)",
-      "g",
-    ),
-    operand: "(" + escapePDFLiteralString(replacement) + ")",
-  };
-}
-
-/**
- * Maps bytes one-to-one to a string of code units 0 to 255.
- * @param {Uint8Array} bytes - Bytes.
- * @returns {string} The string.
- */
-function oneByteString(bytes) {
+function replaceShownText(source, text, replacement, fonts) {
   var result = "";
-  for (var offset = 0; offset < bytes.length; offset += 0x8000) {
-    result += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  var copied = 0;
+  var font = null;
+  var fontStack = [];
+  var encoded = new Map();
+
+  /**
+   * Track the font and rewrite one matching `Tj` operand.
+   *
+   * @private
+   * @param {{operator: string, operands: Array<{token: string, start:
+   * number, end: number}>}} operation Content-stream operation.
+   * @returns {void}
+   */
+  function replaceOperation(operation) {
+    var operator = operation.operator;
+    var operands = operation.operands;
+    if (operator === PdfOperator.SAVE_STATE) fontStack.push(font);
+    if (operator === PdfOperator.RESTORE_STATE && fontStack.length) {
+      font = fontStack.pop();
+    }
+    if (
+      operator === PdfOperator.SET_FONT &&
+      operands.length === 2 &&
+      tokenKind(operands[0].token) === TokenKind.NAME
+    ) {
+      font = decodeName(operands[0].token);
+    }
+    var kind = operands.length === 1 ? tokenKind(operands[0].token) : null;
+    if (
+      operator !== PdfOperator.SHOW_TEXT ||
+      (kind !== TokenKind.LITERAL_STRING && kind !== TokenKind.HEX_STRING)
+    ) {
+      return;
+    }
+    var operand = operands[0];
+    var codec = fonts(font);
+    var bytes = contentStream.stringBytes(operand.token);
+    if (codec.decode(bytes) !== text) return;
+    if (!encoded.has(codec)) {
+      try {
+        encoded.set(codec, codec.encode(replacement));
+      } catch (error) {
+        throw new Error(
+          "replaceText cannot write the replacement: " + error.message,
+        );
+      }
+    }
+    result +=
+      source.slice(copied, operand.start) +
+      contentStream.stringToken(encoded.get(codec), kind);
+    copied = operand.end;
   }
-  return result;
+
+  forEachOperation(source, replaceOperation);
+  return result + source.slice(copied);
 }
 
 /**
@@ -331,14 +210,7 @@ function lookup(parser, dictionary, key) {
  */
 function pageContent(parser, pageIndex) {
   var page = parser.parsePage(pageIndex).getDictionary().toPDFDictionary();
-  var resources = null;
-  for (
-    var node = page;
-    node && !resources;
-    node = lookup(parser, node, PdfName.PARENT)?.toPDFDictionary()
-  ) {
-    resources = lookup(parser, node, PdfName.RESOURCES)?.toPDFDictionary();
-  }
+  var resources = contentStream.inheritedResources(parser, constants, page);
 
   var contents = page.exists(PdfName.CONTENTS)
     ? page.queryObject(PdfName.CONTENTS)
@@ -373,17 +245,10 @@ function pageContent(parser, pageIndex) {
  * @returns {string} Decoded stream bytes, one character per byte.
  */
 function readContentStream(parser, objectId) {
-  var stream = parser.parseNewObject(objectId).toPDFStream();
-  var streamReader = parser.startReadingFromStream(stream);
-  var source = "";
-  try {
-    while (streamReader.notEnded()) {
-      source += oneByteString(streamReader.read(65536));
-    }
-  } finally {
-    streamReader.dispose?.();
-  }
-  return source;
+  return contentStream.readStreamString(
+    parser,
+    parser.parseNewObject(objectId).toPDFStream(),
+  );
 }
 
 /**
@@ -472,8 +337,17 @@ function collectForms(parser, names, resources, forms) {
 export function createReplaceTextMethods() {
   return {
     /**
-     * Replaces literal text-showing operands in a page's single content stream.
-     * Matching content is replaced in the output; no match leaves it unchanged.
+     * Replaces text shown with `Tj` in a page's single content stream. Each
+     * operand is decoded through the font selected by `Tf` (its `/ToUnicode`
+     * CMap, then its `/Encoding` and `/Differences`), and a match is compared
+     * with `text`. The replacement is encoded through the same font and
+     * written back as a literal or hex string, like the original operand.
+     * Only whole `Tj` operands match; `TJ`, `'`, and `"` operands and text
+     * split across operators are left unchanged. No match leaves the page
+     * unchanged.
+     *
+     * The replacement can only use glyphs the font already has. Embedded
+     * subset fonts usually carry just the glyphs of their original text.
      *
      * @name replaceText
      * @function
@@ -482,9 +356,12 @@ export function createReplaceTextMethods() {
      * @param {string} replacement Replacement text.
      * @param {number} pageNumber One-based page number.
      * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If text or replacement is not a Latin-1 string, or
-     * if the page number is not a positive integer.
-     * @throws {Error} If the page does not have one indirect content stream.
+     * @throws {TypeError} If text or replacement is not a string, or if the
+     * page number is not a positive integer.
+     * @throws {RangeError} If the source document has no such page.
+     * @throws {Error} If the page does not have one indirect content stream, or
+     * the matched font cannot be read, has a malformed `/Widths` array, or has
+     * no glyph for a replacement character.
      */
     replaceText: function (text, replacement, pageNumber) {
       if (typeof text !== "string" || typeof replacement !== "string") {
@@ -495,13 +372,21 @@ export function createReplaceTextMethods() {
           "replaceText expects a positive integer page number",
         );
       }
-      var literal = literalReplacement(text, replacement);
+      if (typeof this.writer?.getModifiedFileParser !== "function") {
+        throw new RangeError(
+          "replaceText page " + pageNumber + " does not exist",
+        );
+      }
 
       var parser = this.writer.getModifiedFileParser();
       var contentsObjectId;
-      var source = "";
-      var streamReader;
+      var source;
       try {
+        if (pageNumber > parser.getPagesCount()) {
+          throw new RangeError(
+            "replaceText page " + pageNumber + " does not exist",
+          );
+        }
         var page = parser
           .parsePage(pageNumber - 1)
           .getDictionary()
@@ -514,19 +399,17 @@ export function createReplaceTextMethods() {
           throw new Error("replaceText supports pages with one content stream");
         }
         contentsObjectId = reference.getObjectID();
-        var stream = parser.parseNewObject(contentsObjectId).toPDFStream();
-        streamReader = parser.startReadingFromStream(stream);
-        while (streamReader.notEnded()) {
-          source += oneByteString(streamReader.read(65536));
-        }
+        source = readContentStream(parser, contentsObjectId);
+        var replaced = replaceShownText(
+          source,
+          text,
+          replacement,
+          createPageFontLookup(parser, constants, pageNumber - 1),
+        );
       } finally {
-        streamReader?.dispose();
         parser.end();
       }
 
-      var replaced = source.replace(literal.pattern, function (_, operator) {
-        return literal.operand + operator;
-      });
       if (replaced === source) return this;
 
       var objectsContext = this.writer.getObjectsContext();

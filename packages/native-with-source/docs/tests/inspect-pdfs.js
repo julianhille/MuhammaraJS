@@ -40,6 +40,8 @@ describe("Documentation examples for reading pages", function () {
       .Tf(font, 12)
       .Tm(1, 0, 0, 1, 25, 50)
       .Tj("locate me")
+      .Tm(1, 0, 0, 1, 25, 80)
+      .Tj("Größe Ω")
       .ET();
     writer.writePage(textPage);
 
@@ -104,6 +106,11 @@ describe("Documentation examples for reading pages", function () {
 
     assert.deepEqual(findTextPositions(inputPath, 2, "locate me"), [
       { x: 25, y: 50, fontSize: 12, fontResource: "FN1" },
+    ]);
+    // Non-ASCII text is written through a composite font resource as two-byte
+    // glyph IDs; the example matches it through the decoded `text`.
+    assert.deepEqual(findTextPositions(inputPath, 2, "Größe Ω"), [
+      { x: 25, y: 80, fontSize: 12, fontResource: "FN2" },
     ]);
     assert.deepEqual(findTextPositions(inputPath, 2, "missing"), []);
   });

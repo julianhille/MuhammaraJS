@@ -1,6 +1,63 @@
 "use strict";
 
 var path = require("path");
+var fontText = require("./lib/font-text");
+
+// Addons whose reader already decodes text, so a second createMuhammara call
+// on the same addon does not wrap it twice.
+var decodingAddons = new WeakSet();
+
+/**
+ * Make `extractPageText()` add decoded Unicode `text` to each element. The
+ * addon exports its reader class for this step only; the export is removed
+ * again so `PDFReader` stays out of the public API.
+ *
+ * @param {object} muhammara The native addon.
+ * @returns {void}
+ * @throws {Error} If the addon does not export its reader class, so decoded
+ * text would silently be missing.
+ */
+function decodeExtractedText(muhammara) {
+  if (decodingAddons.has(muhammara)) return;
+  var PDFReader = muhammara.PDFReader;
+  if (typeof PDFReader !== "function") {
+    throw new Error(
+      "The muhammara native addon does not export PDFReader; rebuild it from this version's sources",
+    );
+  }
+  delete muhammara.PDFReader;
+  decodingAddons.add(muhammara);
+
+  var extractPageText = PDFReader.prototype.extractPageText;
+  /**
+   * Extract a page's text operations with their decoded Unicode `text`.
+   *
+   * @param {number} pageIndex Zero-based page index.
+   * @param {object} [limits] Extraction limits.
+   * @param {{decodeText?: boolean}} [options] Extraction options;
+   * `decodeText: false` skips decoding and leaves out `text`.
+   * @returns {Array<object>} Text elements.
+   * @throws {TypeError} If `options` is not an object or `decodeText` is not a
+   * boolean.
+   */
+  PDFReader.prototype.extractPageText = function (pageIndex, limits, options) {
+    var decode = fontText.decodeTextOption(options);
+    // Forward only the arguments the addon accepts, exactly as given.
+    var elements = extractPageText.apply(
+      this,
+      Array.prototype.slice.call(arguments, 0, 2),
+    );
+    return decode
+      ? fontText.decodeTextElements(
+          this,
+          muhammara,
+          pageIndex,
+          elements,
+          limits,
+        )
+      : elements;
+  };
+}
 
 /**
  * Attach the shared JavaScript API to an implementation package's loaded addon.
@@ -94,6 +151,7 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     copyingContext.end();
     return this;
   };
+  decodeExtractedText(muhammara);
   muhammara.PDFStreamForResponse = require("./lib/PDFStreamForResponse");
   muhammara.PDFWStreamForFile = require("./lib/PDFWStreamForFile");
   muhammara.PDFRStreamForFile = require("./lib/PDFRStreamForFile");

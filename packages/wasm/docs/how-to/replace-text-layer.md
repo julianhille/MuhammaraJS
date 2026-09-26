@@ -43,3 +43,6 @@ Limits:
   page loses its text there too.
 - The result is an incremental update. The old text bytes can remain in the
   returned data, so this is not redaction.
+
+To change a few words and keep the page's own fonts instead, see [Replace Text
+In An Existing PDF](replace-text.md).

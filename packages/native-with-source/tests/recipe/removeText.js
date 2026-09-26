@@ -186,6 +186,20 @@ describe("Remove text", function () {
     expect(readFormContents(output)).to.match(/\bTj\b/);
   });
 
+  it("removes text on a page whose page tree has a /Parent cycle", function () {
+    var output = path.join(__dirname, "../output/Remove text cycle.pdf");
+    new Recipe(
+      path.join(__dirname, "../TestMaterials/FontMalformed.pdf"),
+      output,
+    )
+      .removeText(1, { forms: true })
+      .endPDF();
+
+    var reader = muhammara.createReader(output);
+    expect(reader.extractPageText(0)).to.deep.equal([]);
+    reader.end();
+  });
+
   it("validates the page number", function () {
     var source = path.join(__dirname, "../output/Remove text source.pdf");
     var output = path.join(__dirname, "../output/Remove text invalid.pdf");

@@ -36,8 +36,8 @@ low-level PDF objects. `parsePage(index)` exposes page boxes and rotation;
 such as `toPDFDictionary()` or `toPDFArray()`.
 
 `extractPageText(pageIndex, limits?)` enumerates text-showing operations with
-their text matrix and active font state, and
-`extractPageContentItems(pageIndex, limits?)` reports page-marking operations
-without reading text. Neither provides general visual-text or
+their decoded Unicode text, raw character codes, text matrix, and active font
+state, and `extractPageContentItems(pageIndex, limits?)` reports page-marking
+operations without reading text. Neither provides general visual-text or
 image-extraction. See [Find Text Positions](../how-to/find-text-positions.md)
 for extraction examples and limits.

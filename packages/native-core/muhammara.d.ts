@@ -1338,15 +1338,41 @@ declare namespace muhammara {
     height: number;
   }
 
-  /** A text-showing operation in a page content stream. */
-  export interface PDFTextElement {
-    /** Raw character codes from the content stream. Unicode decoding requires a font ToUnicode CMap. */
+  /**
+   * A text-showing operation in a page content stream, as returned when
+   * `extractPageText()` is called with `{ decodeText: false }`.
+   */
+  export interface PDFRawTextElement {
+    /** Raw character codes from the content stream, one byte per code unit. */
     content: string;
     /** The page resource name selected by the most recent Tf operation. */
     fontResource: string;
     fontSize: number;
     /** The text-to-page matrix after applying the active graphics CTM: [a, b, c, d, e, f]. */
     textMatrix: [number, number, number, number, number, number];
+  }
+
+  /** A text-showing operation in a page content stream, with decoded text. */
+  export interface PDFTextElement extends PDFRawTextElement {
+    /**
+     * `content` decoded to Unicode through the active font: its `/ToUnicode`
+     * CMap, then its simple-font `/Encoding` and `/Differences`. Codes the font
+     * does not map become U+FFFD, as do codes of fonts whose built-in encoding
+     * cannot be read, the Symbol and ZapfDingbats standard fonts, embedded Type
+     * 1 fonts without `/Encoding`, and Type 3 fonts, unless `/ToUnicode` or
+     * `/Differences` maps them, and every byte shown without a font or with a
+     * font that cannot be resolved or read.
+     */
+    text: string;
+  }
+
+  /** Options for `PDFReader#extractPageText()`. */
+  export interface PDFTextExtractionOptions {
+    /**
+     * Decode each element's `text` through its font. Defaults to true; false
+     * leaves `text` out and skips reading the page's fonts.
+     */
+    decodeText?: boolean;
   }
 
   /** A content-stream operation that produces a page mark. */
@@ -1555,8 +1581,13 @@ declare namespace muhammara {
      */
     parsePage(pageIndex: number): PDFPageInput;
     /**
-     * Returns text-showing operations in PDF content-stream drawing order.
-     * Does not decode font character maps or calculate glyph bounds.
+     * Returns text-showing operations in PDF content-stream drawing order. Each
+     * element's `text` is decoded through the active font and `content` keeps
+     * the raw character codes. Glyph bounds are not calculated. Font decoding
+     * caches each font per reader but charges every call the font's cost: it
+     * ignores a `/ToUnicode` CMap over 4 MiB or beyond 32 MiB per call, and
+     * counts the PDF objects it reads against `maxParsedObjects` on their own,
+     * so results never depend on earlier calls.
      *
      * Throws when the page exceeds the extraction budget. `limits` may only
      * tighten the defaults: higher values are clamped to the built-in ceilings
@@ -1564,16 +1595,29 @@ declare namespace muhammara {
      * 16 MiB of text.
      * @param pageIndex - The zero-based page index.
      * @param limits - Tighter extraction limits.
+     * @param options - `{ decodeText: false }` skips font decoding and leaves
+     *   `text` out.
      * @returns The text elements in drawing order.
-     * @throws {TypeError} If the arguments are not a page index and an optional
-     *   limits object, or the page cannot be read.
+     * @throws {TypeError} If the arguments are not a page index, an optional
+     *   limits object, and optional options, or the page cannot be read.
      * @throws {RangeError} If a limit is not a positive 32-bit integer.
      * @throws {Error} If the page exceeds the extraction limits.
      */
     extractPageText(
       pageIndex: number,
       limits?: PDFExtractionLimits,
+      options?: PDFTextExtractionOptions & { decodeText?: true },
     ): PDFTextElement[];
+    extractPageText(
+      pageIndex: number,
+      limits: PDFExtractionLimits | undefined,
+      options: PDFTextExtractionOptions & { decodeText: false },
+    ): PDFRawTextElement[];
+    extractPageText(
+      pageIndex: number,
+      limits?: PDFExtractionLimits,
+      options?: PDFTextExtractionOptions,
+    ): PDFRawTextElement[];
     /**
      * Returns every direct content-stream operation that produces a page mark.
      * White-on-white content is included; non-painting operations are excluded.
@@ -4220,15 +4264,24 @@ declare namespace muhammara {
     deletePage(pageNumbers: number | number[]): Recipe;
 
     /**
-     * Replace literal text-showing operands in a page's single content stream.
+     * Replace text shown with `Tj` in a page's single content stream. Each
+     * operand is decoded through the font selected by `Tf` and compared with
+     * `text`; a match is rewritten with `replacement`, encoded through the same
+     * font in the operand's original literal or hex form. `TJ`, `'`, and `"`
+     * operands and text split across operators are not replaced.
      *
-     * @param text - Text to replace.
-     * @param replacement - Replacement text.
+     * @param text - Text to replace, as any Unicode string.
+     * @param replacement - Replacement text. It can only use glyphs the font
+     * already has; embedded subset fonts usually carry just their original
+     * text's glyphs.
      * @param pageNumber - One-based page number.
      * @returns The Recipe instance.
-     * @throws {TypeError} If text or replacement is not a Latin-1 string, or if
-     * the page number is not a positive integer.
-     * @throws {Error} If the page does not have one indirect content stream.
+     * @throws {TypeError} If text or replacement is not a string, or if the
+     * page number is not a positive integer.
+     * @throws {RangeError} If the source document has no such page.
+     * @throws {Error} If the page does not have one indirect content stream, or
+     * the matched font cannot be read, has a malformed `/Widths` array, or has
+     * no glyph for a replacement character.
      */
     replaceText(text: string, replacement: string, pageNumber: number): Recipe;
     /**

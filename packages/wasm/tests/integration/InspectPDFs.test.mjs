@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
@@ -175,6 +176,37 @@ function readBookmarks(muhammara, bytes) {
   }
 }
 
+/**
+ * Finds text positions as the find-text-positions how-to does.
+ *
+ * @param {object} muhammara Loaded Wasm API.
+ * @param {Blob} pdfFile Source PDF.
+ * @param {string} target Text to locate on the first page.
+ * @returns {Promise<Array<{x: number, y: number, fontSize: number, fontResource: string}>>} Positions.
+ */
+async function findTextPositions(muhammara, pdfFile, target) {
+  var reader = await muhammara.createReaderAsync(pdfFile);
+
+  try {
+    var positions = reader
+      .extractPageText(0)
+      .filter(function (element) {
+        return element.text === target;
+      })
+      .map(function (element) {
+        return {
+          x: element.textMatrix[4],
+          y: element.textMatrix[5],
+          fontSize: element.fontSize,
+          fontResource: element.fontResource,
+        };
+      });
+  } finally {
+    reader.end();
+  }
+  return positions;
+}
+
 describe("InspectPDFs documentation workflows", function () {
   it("inspects XObjects and reads direct-destination bookmarks", async function () {
     var muhammara = await createMuhammaraWasm();
@@ -187,5 +219,50 @@ describe("InspectPDFs documentation workflows", function () {
     assert.deepEqual(readBookmarks(muhammara, bytes), [
       { title: "Chapter 1", page: 1, children: [] },
     ]);
+  });
+
+  it("finds text positions, including non-ASCII text", async function () {
+    var muhammara = await createMuhammaraWasm();
+    muhammara.registerFont(
+      "find-text-font",
+      new Uint8Array(
+        await readFile(
+          new URL(
+            "../../../native-with-source/tests/TestMaterials/fonts/arial.ttf",
+            import.meta.url,
+          ),
+        ),
+      ),
+    );
+    var writer = muhammara.createWriter();
+    var page = writer.createPage(0, 0, 200, 200);
+    writer
+      .startPageContentContext(page)
+      .BT()
+      .Tf(writer.getFontForBytes("find-text-font"), 12)
+      .Tm(1, 0, 0, 1, 25, 50)
+      .Tj("locate me")
+      .Tm(1, 0, 0, 1, 25, 80)
+      .Tj("Größe Ω")
+      .ET();
+    writer.writePage(page);
+    var bytes = writer.end();
+    writeOutput("InspectPDFs-find-text-positions", bytes);
+    var pdfFile = new Blob([bytes], { type: "application/pdf" });
+
+    assert.deepEqual(await findTextPositions(muhammara, pdfFile, "locate me"), [
+      { x: 25, y: 50, fontSize: 12, fontResource: "FN1" },
+    ]);
+    // Non-ASCII text is written through a composite font resource as two-byte
+    // glyph IDs; the how-to matches it through the decoded `text`.
+    assert.deepEqual(await findTextPositions(muhammara, pdfFile, "Größe Ω"), [
+      { x: 25, y: 80, fontSize: 12, fontResource: "FN2" },
+    ]);
+    assert.deepEqual(
+      await findTextPositions(muhammara, pdfFile, "missing"),
+      [],
+    );
+    muhammara.unregisterFont("find-text-font");
+    muhammara.disposeAssets();
   });
 });

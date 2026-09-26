@@ -1,8 +1,8 @@
 # Find Text Positions In A PDF
 
 Use `PDFReader.extractPageText(pageIndex)` to enumerate text-showing operations,
-then filter their content. Reader pages are zero-based and positions use PDF's
-bottom-left coordinate system.
+then filter their decoded `text`. Reader pages are zero-based and positions use
+PDF's bottom-left coordinate system.
 
 ```javascript
 import { createMuhammaraWasm } from "@muhammara/wasm";
@@ -15,7 +15,7 @@ try {
   var positions = reader
     .extractPageText(0)
     .filter(function (element) {
-      return element.content === target;
+      return element.text === target;
     })
     .map(function (element) {
       return {
@@ -34,12 +34,20 @@ Each result is a PDF text-showing operation in direct content-stream order.
 `textMatrix` is `[a, b, c, d, e, f]`; `e` and `f` are its origin in page
 coordinates. The matrix combines explicit text positioning through `BT`, `Tm`,
 `Td`, `TD`, `TL`, `T*`, `'`, and `"` with the active graphics transformation
-from `cm`; its first four values retain rotation, scale, or skew. Content is raw
-PDF string data. The extractor does not decode every font character map,
-calculate glyph bounds or glyph-driven matrix advances, or descend into Form
-XObjects such as appended content created by `Recipe.editPage()`. Adjacent
-text-showing operations without an explicit positioning operator retain the
-same matrix. This is not a general visual full-text search or glyph-bounds API.
+from `cm`; its first four values retain rotation, scale, or skew. `text` is the
+string decoded through the active font: the font's `/ToUnicode` CMap first, then
+a simple font's `/Encoding` and `/Differences`; codes the font does not map
+become U+FFFD, as do codes of fonts whose built-in encoding cannot be read, the
+Symbol and ZapfDingbats standard fonts, embedded Type 1 fonts without
+`/Encoding`, and Type 3 fonts, unless `/ToUnicode` or `/Differences` maps them,
+and every byte of text shown without a font or with a font that cannot be
+resolved or read. `content` keeps the raw character codes, for example two-byte
+glyph IDs for text written with a composite font. A phrase split across
+operations does not match as a whole. The extractor does not calculate glyph
+bounds or glyph-driven matrix advances, or descend into Form XObjects such as
+appended content created by `Recipe.editPage()`. Adjacent text-showing
+operations without an explicit positioning operator retain the same matrix. This
+is not a general visual full-text search or glyph-bounds API.
 
 The browser example's **Find text** tab runs this search on an uploaded PDF, or
 on a built-in sample when none is chosen, and highlights each match. It
@@ -69,6 +77,16 @@ reader.end();
 | `maxParsedObjects` | 1000000             |
 
 A page that exceeds the budget throws rather than returning partial results.
+
+Decoding `text` also reads the page's fonts. The PDF objects it reads count
+against `maxParsedObjects` on their own, and exceeding it throws the same error.
+Fonts are cached per reader, but each call still counts a cached font's objects
+and CMap bytes, so results never depend on earlier calls. A `/ToUnicode` CMap
+larger than 4 MiB, or beyond 32 MiB of CMaps in one call, is ignored and that
+font decodes through its `/Encoding` instead. A font that cannot be read decodes
+to U+FFFD rather than failing the call. When you only need positions or raw
+`content`, pass `{ decodeText: false }` as the third argument to skip reading
+fonts; the elements then have no `text`.
 
 ## Detect page marks without reading text
 

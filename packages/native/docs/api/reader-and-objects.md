@@ -19,9 +19,11 @@ The reader provides document information with `getPDFLevel`, `getPagesCount`,
 `parseNewObject`, `queryDictionaryObject`, and `queryArrayObject`.
 
 `extractPageText(pageIndex, limits?)` returns content-stream text operations in
-drawing order. Each `PDFTextElement` includes raw `content`, `fontResource`,
-`fontSize`, and a six-value `textMatrix`; it does not decode font character maps
-or compute glyph bounds.
+drawing order. Each `PDFTextElement` includes `text` decoded to Unicode through
+the active font, the raw character codes as `content`, `fontResource`,
+`fontSize`, and a six-value `textMatrix`; it does not compute glyph bounds. See
+[Find Text Positions](../how-to/find-text-positions.md) for how `text` is
+decoded.
 
 `extractPageContentItems(pageIndex, limits?)` returns every direct
 content-stream operation that puts a mark on the page as `{ type, operation }`,

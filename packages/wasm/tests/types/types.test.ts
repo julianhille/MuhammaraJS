@@ -32,6 +32,9 @@ import type {
   EInfoTrapped,
   DrawingPathType,
   PDFPageContentItemType,
+  PDFRawTextElement,
+  PDFTextElement,
+  PDFTextExtractionOptions,
   RecipeArcOptions,
   RecipeArrowOptions,
   RecipeColorSpace,
@@ -170,6 +173,25 @@ async function usesLowLevelSurface() {
   var reader = muhammara.createReader(source);
   var textElement = reader.extractPageText(0)[0];
   textElement.content;
+  var decodedText: string = textElement.text;
+  decodedText.normalize();
+  // decodeText: false skips decoding, so the elements have no text.
+  var rawElements: PDFRawTextElement[] = reader.extractPageText(0, undefined, {
+    decodeText: false,
+  });
+  // @ts-expect-error Elements extracted without decoding have no text.
+  rawElements[0].text;
+  var decodedElements: PDFTextElement[] = reader.extractPageText(
+    0,
+    { maxElements: 5 },
+    { decodeText: true },
+  );
+  var decodeChoice = Math.random() > 0.5;
+  var maybeDecoded: PDFRawTextElement[] = reader.extractPageText(0, undefined, {
+    decodeText: decodeChoice,
+  });
+  var extractionOptions: PDFTextExtractionOptions = { decodeText: false };
+  void [rawElements, decodedElements, maybeDecoded, extractionOptions];
   textElement.fontResource;
   textElement.fontSize;
   textElement.textMatrix[5];
@@ -660,6 +682,8 @@ async function usesLowLevelSurface() {
   recipe.endPage().endPDF();
   var byteRecipe = new Recipe(source, { compress: false });
   byteRecipe.replaceText("Before", "After", 1);
+  // Text is matched and written through the page font, so any Unicode string works.
+  byteRecipe.replaceText("Größe Ω", "Ω Größe", 1);
   // @ts-expect-error replaceText requires a one-based page number.
   byteRecipe.replaceText("Before", "After");
   byteRecipe.removeText(1).removeText(1, { forms: true });
