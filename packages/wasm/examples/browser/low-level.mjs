@@ -26,6 +26,12 @@ function exactArrayBuffer(bytes) {
   );
 }
 
+/**
+ * Registers the synchronous byte assets.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional assets.
+ * @returns {void}
+ */
 function registerAssets(muhammara, assets) {
   if (assets.font)
     muhammara.registerFont("example-font", exactArrayBuffer(assets.font));
