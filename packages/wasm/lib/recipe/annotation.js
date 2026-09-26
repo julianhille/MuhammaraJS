@@ -242,6 +242,14 @@ export function createAnnotationMethods({
      * @function
      * @memberof Recipe#
      * @private
+     * @param {string} url - ASCII URL.
+     * @param {number} left - PDF left.
+     * @param {number} bottom - PDF bottom.
+     * @param {number} width - Width.
+     * @param {number} height - Height.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If there is no active page or the link cannot be written.
+     * @throws {TypeError} If the URL is not a string or the rectangle is not finite.
      */
     _linkPdf: function (url, left, bottom, width, height) {
       if (!this._pageHeight) throw new Error("Links require an active page");
