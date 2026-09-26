@@ -436,6 +436,11 @@ export function createRawObjectsContext({
         }
         return this;
       },
+      /**
+       * Starts a dictionary; only this dictionary accepts keys until it ends.
+       * @returns {DictionaryContext} The active dictionary.
+       * @throws {Error} If the writer has ended or the dictionary cannot be started.
+       */
       startDictionary: function () {
         requireContext();
         var dictionary =
