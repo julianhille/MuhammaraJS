@@ -653,6 +653,13 @@ declare namespace muhammara {
     doXObject(
       xObject: string | FormXObjectId | FormXObject | ImageXObject,
     ): this;
+    /**
+     * Sets the character spacing; operator Tc.
+     * @param characterSpace - The extra space per character in text space units.
+     * @returns This context.
+     * @throws {TypeError} If characterSpace is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Tc(characterSpace: number): this;
     Tw(wordSpace: number): this;
     Tz(horizontalScaling: number): this;
