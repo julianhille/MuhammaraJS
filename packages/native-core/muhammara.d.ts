@@ -1254,16 +1254,28 @@ declare namespace muhammara {
       source: FilePath | ReadStream,
       options?: AppendOptions,
     ): number[];
-    /** Calls the optional callback with no arguments and globalThis as its receiver. */
+    /**
+     * Draws pages of another PDF onto a page. The optional callback runs
+     * between pages, with no arguments and globalThis as its receiver.
+     * @param page - The target page.
+     * @param file - The PDF path or a read stream.
+     * @param options - The page range and the source password.
+     * @param callback - Called between merged pages.
+     * @returns This writer.
+     * @throws {TypeError} If page is not a page, file is neither a path nor a
+     *   stream, or the pages cannot be merged.
+     * @throws {RangeError} If the page range is invalid.
+     * @throws {Error} If the writer has ended.
+     */
     mergePDFPagesToPage(
       page: PDFPage,
-      file: FilePath | PDFRStreamForFile,
+      file: FilePath | ReadStream,
       options?: MergeOptions,
       callback?: inInterPagesCallback,
     ): this;
     mergePDFPagesToPage(
       page: PDFPage,
-      file: FilePath | PDFRStreamForFile,
+      file: FilePath | ReadStream,
       callback?: inInterPagesCallback,
     ): this;
     /**
