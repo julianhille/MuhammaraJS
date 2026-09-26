@@ -626,6 +626,16 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     K(c: number, m: number, y: number, k: number): this;
+    /**
+     * Sets a CMYK fill color; operator k.
+     * @param c - Cyan, 0 to 1.
+     * @param m - Magenta, 0 to 1.
+     * @param y - Yellow, 0 to 1.
+     * @param k - Black, 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 4 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     k(c: number, m: number, y: number, k: number): this;
     W(): this;
     WStar(): this;
