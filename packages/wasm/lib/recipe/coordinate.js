@@ -72,6 +72,13 @@ export var coordinateMethods = {
   /**
    * Converts Recipe coordinates for annotations on rotated pages.
    * @private
+   * @param {number} x - Recipe x.
+   * @param {number} y - Recipe y.
+   * @param {number} [offsetX=0] - Horizontal offset.
+   * @param {number} [offsetY=0] - Vertical offset.
+   * @param {number} [pageNumber] - One-based page; the active page by default.
+   * @returns {{nx: number, ny: number}} PDF coordinates.
+   * @throws {Error} When no target page is available.
    */
   _calibrateCoordinateForAnnots: function (
     x,
