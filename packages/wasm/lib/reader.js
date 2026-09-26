@@ -385,6 +385,11 @@ export function createReaderFactory({
         };
       }
       if (object.getType() === constants.ePDFObjectStream) {
+        /**
+         * Reads the stream dictionary.
+         * @returns {PDFDictionary} The dictionary.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         object.getDictionary = function () {
           object.getType();
           return wrapObject(
