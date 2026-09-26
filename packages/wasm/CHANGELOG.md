@@ -90,6 +90,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Throw a `TypeError` for a source `password` in `createPDFCopyingContext()`
+  and `createPDFCopyingContextAsync()`, as the append and form APIs already do,
+  instead of ignoring it; decrypt the source with `recrypt()` first [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Stop `createReader()` from treating a second argument as an internal
   reader handle, which read unrelated memory; it now takes native's options
   object and throws a `TypeError` for anything else [#794](https://github.com/julianhille/MuhammaraJS/issues/794)

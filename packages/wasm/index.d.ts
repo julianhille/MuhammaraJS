@@ -2098,9 +2098,14 @@ export interface PDFWriter {
     pageBox?: PDFPageBoxType | PDFRectangle,
     options?: PDFFormOptions,
   ): Promise<number[]>;
-  createPDFCopyingContext(source: ByteSource): DocumentCopyingContext;
+  /** A source `password` throws; decrypt the source with `recrypt()` first. */
+  createPDFCopyingContext(
+    source: ByteSource,
+    options?: PDFReaderOptions,
+  ): DocumentCopyingContext;
   createPDFCopyingContextAsync(
     source: AsyncByteSource,
+    options?: PDFReaderOptions,
   ): Promise<DocumentCopyingContext>;
   createPage(
     left?: number,
@@ -2311,9 +2316,14 @@ export interface PDFModifier {
     pageBox?: PDFPageBoxType | PDFRectangle,
     options?: PDFFormOptions,
   ): Promise<number[]>;
-  createPDFCopyingContext(source: ByteSource): DocumentCopyingContext;
+  /** A source `password` throws; decrypt the source with `recrypt()` first. */
+  createPDFCopyingContext(
+    source: ByteSource,
+    options?: PDFReaderOptions,
+  ): DocumentCopyingContext;
   createPDFCopyingContextAsync(
     source: AsyncByteSource,
+    options?: PDFReaderOptions,
   ): Promise<DocumentCopyingContext>;
   createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
   end(): Uint8Array<ArrayBuffer>;

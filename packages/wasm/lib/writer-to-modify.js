@@ -3425,12 +3425,17 @@ export function createWriterToModifyFactory({
       /**
        * Opens a source PDF for copying pages and objects into this modifier.
        * @param {ByteSource} sourceBytes - Source PDF bytes.
+       * @param {PDFReaderOptions} [options] - Native's source options; a
+       *   `password` is unsupported in Wasm.
        * @returns {DocumentCopyingContext} The copying context; call `end()` when done.
-       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {TypeError} If the bytes are unsupported or `options` has a `password`.
        * @throws {Error} If the modifier ended or the source cannot be opened.
        */
-      createPDFCopyingContext: function (sourceBytes) {
+      createPDFCopyingContext: function (sourceBytes, options = {}) {
         requireOpen();
+        if (options && typeof options === "object" && "password" in options) {
+          throw new TypeError("PDF passwords are not supported in Wasm");
+        }
         sourceBytes = normalizeBytes(sourceBytes, "PDF input");
         var sourcePath = `/pdfs/${state.nextPdf++}.pdf`;
         module.FS.writeFile(sourcePath, sourceBytes);
@@ -3688,11 +3693,16 @@ export function createWriterToModifyFactory({
        * Opens a copying context after reading an asynchronous byte source.
        * @async
        * @param {AsyncByteSource} sourceBytes - PDF bytes, Blob, or File.
+       * @param {PDFReaderOptions} [options] - Native's source options; a
+       *   `password` is unsupported in Wasm.
        * @returns {Promise<DocumentCopyingContext>} The copying context.
-       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {TypeError} If the bytes are unsupported or `options` has a `password`.
        * @throws {Error} If the modifier ended or the source cannot be opened.
        */
-      createPDFCopyingContextAsync: async function (sourceBytes) {
+      createPDFCopyingContextAsync: async function (sourceBytes, options) {
+        if (options && typeof options === "object" && "password" in options) {
+          throw new TypeError("PDF passwords are not supported in Wasm");
+        }
         return this.createPDFCopyingContext(
           await normalizeBytesAsync(sourceBytes, "PDF input"),
         );
