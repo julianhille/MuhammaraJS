@@ -209,7 +209,11 @@ export function createTableMethods() {
         cellOptionsValue.textBox?.padding === undefined
           ? merge(cellOptionsValue, { textBox: { padding: 2 } })
           : cellOptionsValue;
-      /** Resolves header styles identically for measurement and drawing. */
+      /**
+       * Resolves header styles identically for measurement and drawing.
+       * @param {object} column - Column definition.
+       * @returns {object} Header text options.
+       */
       var headerOptions = (column) => {
         var header = merge(
           { textBox: {} },
