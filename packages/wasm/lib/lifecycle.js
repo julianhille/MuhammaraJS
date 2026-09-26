@@ -5,6 +5,11 @@
 export function createChildLifecycle() {
   var children = new Set();
   return {
+    /**
+     * Registers a child cleanup.
+     * @param {function(): void} cleanup - Releases the child.
+     * @returns {void}
+     */
     track: function (cleanup) {
       children.add(cleanup);
     },
