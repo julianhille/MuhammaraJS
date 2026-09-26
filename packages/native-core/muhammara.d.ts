@@ -1348,6 +1348,12 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     getModifiedFileParser(): PDFReader;
+    /**
+     * Returns the input file of the PDF being modified.
+     * @returns The input file.
+     * @throws {TypeError} If the writer does not modify a PDF.
+     * @throws {Error} If the writer has ended.
+     */
     getModifiedInputFile(): InputFile;
     getOutputFile(): OutputFile;
     registerAnnotationReferenceForNextPageWrite(annotationId: number): this;
