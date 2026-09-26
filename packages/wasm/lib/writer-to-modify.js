@@ -2122,6 +2122,11 @@ export function createWriterToModifyFactory({
               },
             };
           },
+          /**
+           * Returns a content context that writes to this form.
+           * @returns {ContentContext} The form content context.
+           * @throws {Error} If the modifier or the form has ended.
+           */
           getContentContext: function () {
             requireOpen();
             if (form._ended)
