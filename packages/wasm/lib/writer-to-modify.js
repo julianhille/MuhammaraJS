@@ -3374,6 +3374,12 @@ export function createWriterToModifyFactory({
         nextPage._getNativeResources = null;
         return this;
       },
+      /**
+       * Writes the active new page and returns its object ID.
+       * @param {PDFPage} nextPage - The active page.
+       * @returns {number} Object ID of the page.
+       * @throws {Error} If the modifier ended, `nextPage` is not active, or writing fails.
+       */
       writePageAndReturnID: function (nextPage) {
         requireOpen();
         if (nextPage !== page)
