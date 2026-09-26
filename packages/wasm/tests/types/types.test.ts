@@ -954,6 +954,13 @@ async function usesNamedValueSets() {
   compact.line(0, 0, 5, 5, { color: [0, 0, 255], lineWidth: 2 });
   compact.text("hi", 1, 1, { font: "arial", color: 0 });
   context.drawCircle(5, 5, 2, { color: [255, 0, 0], type: "fill" });
+  var readStream = new muhammara.PDFRStreamForBuffer(new Uint8Array());
+  var dictionaryObjects = writer.getObjectsContext();
+  dictionaryObjects.startNewIndirectObject();
+  var dictionary = dictionaryObjects.startDictionary();
+  dictionary.writeKey("A").writeLiteralStringValue(new Uint8Array([65]));
+  // @ts-expect-error Read streams are not string bytes.
+  dictionary.writeLiteralStringValue(readStream);
 }
 
 void usesNamedValueSets;

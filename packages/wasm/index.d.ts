@@ -1094,7 +1094,7 @@ export interface ResourcesDictionary {
 export interface DictionaryContext {
   writeKey(key: string): this;
   writeNameValue(value: string): this;
-  writeLiteralStringValue(value: string | ByteSource): this;
+  writeLiteralStringValue(value: string | Uint8Array | ArrayBuffer): this;
   writeHexStringValue(value: string | ByteSource): this;
   writeNumberValue(value: number): this;
   writeBooleanValue(value: boolean): this;
