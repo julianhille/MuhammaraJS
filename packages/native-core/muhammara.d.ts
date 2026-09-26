@@ -1026,6 +1026,11 @@ declare namespace muhammara {
   }
 
   export interface DocumentContext {
+    /**
+     * Returns the document information dictionary written with the PDF.
+     * @returns The info dictionary.
+     * @throws {TypeError} If the context was not created by a writer.
+     */
     getInfoDictionary(): InfoDictionary;
   }
 
