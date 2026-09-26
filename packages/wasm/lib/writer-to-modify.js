@@ -3936,6 +3936,12 @@ export function createWriterToModifyFactory({
           },
         };
       },
+      /**
+       * Finishes the modified PDF, releases the modifier, and returns the bytes.
+       * @returns {Uint8Array} The PDF bytes.
+       * @throws {Error} If the modifier ended, a page or objects-context operation is active,
+       * the PDF cannot be finished, or it exceeds the output limit.
+       */
       end: function () {
         requireOpen();
         if (page || context)
