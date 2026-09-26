@@ -292,6 +292,18 @@ describe("MergePDFPages", function () {
         /\/Fm1 Do/,
       );
     });
+
+    it("defaults the copied page box to the media box", function () {
+      var pdfWriter = muhammara.createWriter(
+        __dirname + "/output/FormFromPageDefaultBox.pdf",
+      );
+      var copyingContext = pdfWriter.createPDFCopyingContext(
+        __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+      );
+      assert.isAbove(copyingContext.createFormXObjectFromPDFPage(0), 0);
+      copyingContext.end();
+      pdfWriter.end();
+    });
   });
 
   describe("MergeFromStream", function () {

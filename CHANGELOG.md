@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Default the `createFormXObjectFromPDFPage()` page box to the media box,
+  as Wasm does [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Accept a form XObject object ID in `doXObject()`, as Wasm does
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Default the `d()` dash phase to 0 when it is omitted, as Wasm does

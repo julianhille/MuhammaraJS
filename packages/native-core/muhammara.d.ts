@@ -712,7 +712,8 @@ declare namespace muhammara {
     end(): DocumentCopyingContext;
     createFormXObjectFromPDFPage(
       sourcePageIndex: number,
-      ePDFPageBox: PDFPageBoxType | PDFBox,
+      /** Defaults to the media box. */
+      ePDFPageBox?: PDFPageBoxType | PDFBox,
       transformation?: TransformationMatrix,
     ): number;
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
