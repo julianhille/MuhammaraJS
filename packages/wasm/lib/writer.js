@@ -4672,6 +4672,10 @@ export function createWriterFactory({
           dispose();
         }
       },
+      /**
+       * Discards the writer without producing a PDF. Idempotent.
+       * @returns {void}
+       */
       dispose: function () {
         dispose();
       },
