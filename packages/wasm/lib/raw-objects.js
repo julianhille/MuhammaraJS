@@ -394,6 +394,13 @@ export function createRawObjectsContext({
         activeIndirectObject = false;
         return this;
       },
+      /**
+       * Starts a replacement for an existing object of a modified PDF.
+       * @param {number} objectId - ID of the object to replace.
+       * @returns {this} The objects context.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the writer has ended or the object cannot be replaced.
+       */
       startModifiedIndirectObject: function (objectId) {
         requireContext();
         if (!Number.isInteger(objectId) || objectId <= 0) {
