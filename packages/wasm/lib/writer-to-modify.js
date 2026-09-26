@@ -1366,6 +1366,17 @@ export function createWriterToModifyFactory({
           options,
         );
       },
+      /**
+       * Merges pages of a source PDF into a target page.
+       * @param {PDFPage} targetPage - Page being written.
+       * @param {ByteSource} source - Source PDF bytes.
+       * @param {PageRangeOptions|Function} [options] - Pages to merge, or the callback.
+       * @param {Function} [callback] - Called after the merge completes.
+       * @returns {this} The modifier.
+       * @throws {TypeError} If the page, options, or callback is invalid.
+       * @throws {RangeError} If the page range is invalid.
+       * @throws {Error} If another page is active, the modifier ended, or the source is unreadable.
+       */
       mergePDFPagesToPage: function (target, source, options = {}, callback) {
         requireOpen();
         if (typeof options === "function") {
