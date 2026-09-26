@@ -73,7 +73,11 @@ function hasText(value) {
   return /(?:\S|\u00a0)/.test(value);
 }
 
-/** Reports whether wrapping may occur at the start of a string. */
+/**
+ * Reports whether wrapping may occur at the start of a string.
+ * @param {string} value - Text.
+ * @returns {boolean} Whether it starts with breakable whitespace.
+ */
 function startsWithBreakableSpace(value) {
   return value[0] !== "\u00a0" && /^\s/.test(value);
 }
