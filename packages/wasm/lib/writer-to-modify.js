@@ -3533,6 +3533,14 @@ export function createWriterToModifyFactory({
             }
             return objectId;
           },
+          /**
+           * Appends an inclusive range of source pages.
+           * @param {number} start - First zero-based page index.
+           * @param {number} end - Last page index, not less than `start`.
+           * @returns {this} The copying context.
+           * @throws {RangeError} If the range is invalid or a page cannot be appended.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           appendPDFPagesFromPDF: function (start, end) {
             requireCopying();
             if (
