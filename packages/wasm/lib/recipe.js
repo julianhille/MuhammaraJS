@@ -504,6 +504,10 @@ export function createRecipeFactory({
     /**
      * Moves the active native PDF path.
      * @private
+     * @param {number} x - PDF x.
+     * @param {number} y - PDF y.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the operator fails.
      */
     _movePdf(x, y) {
       if (this._pageContext) return this._pageContext.m(x, y) && this;
