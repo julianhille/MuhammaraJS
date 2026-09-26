@@ -3018,6 +3018,11 @@ export function createWriterToModifyFactory({
         modifiedReaders.push(reader);
         return reader;
       },
+      /**
+       * Returns the document context.
+       * @returns {DocumentContext} Access to the Info dictionary.
+       * @throws {Error} If the modifier has ended.
+       */
       getDocumentContext: function () {
         requireOpen();
         return {
