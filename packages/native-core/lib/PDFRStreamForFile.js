@@ -17,6 +17,11 @@ function PDFRStreamForFile(inPath) {
   this.mStartPosition = 0;
 }
 
+/**
+ * Reads the next bytes and advances the position by the amount read.
+ * @param {number} inAmount - The maximum number of bytes to read.
+ * @returns {Buffer} The bytes read; shorter than requested at the end.
+ */
 PDFRStreamForFile.prototype.read = function (inAmount) {
   var buffer = Buffer.alloc(inAmount);
   var bytesRead = fs.readSync(this.rs, buffer, 0, inAmount, this.rposition);
