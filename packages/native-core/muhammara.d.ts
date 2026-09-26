@@ -1597,6 +1597,10 @@ declare namespace muhammara {
      * @returns The stream.
      */
     getCurrentPageContentStream(): PDFStream;
+    /**
+     * Returns the page this context draws on.
+     * @returns The page.
+     */
     getAssociatedPage(): PDFPage;
   }
 
