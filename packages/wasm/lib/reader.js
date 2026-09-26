@@ -1052,6 +1052,11 @@ export function createReaderFactory({
           getCropBox: function () {
             return getBox(1);
           },
+          /**
+           * Reads the trim box, which defaults to the crop box.
+           * @returns {PDFRectangle} The box.
+           * @throws {Error} If the reader has ended or the box cannot be read.
+           */
           getTrimBox: function () {
             return getBox(2);
           },
