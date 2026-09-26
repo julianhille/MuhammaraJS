@@ -1054,6 +1054,11 @@ declare namespace muhammara {
      * @throws {TypeError} If stream is not a stream.
      */
     endPDFStream(stream: PDFStream): this;
+    /**
+     * Gives direct access to the output, for bytes the other methods cannot
+     * write. End it with endFreeContext().
+     * @returns A writer at the current output position.
+     */
     startFreeContext(): ByteWriterWithPosition;
     endFreeContext(): this;
   }
