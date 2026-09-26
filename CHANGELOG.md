@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Add `DrawingPathType` constants for the `type` option of the low-level
   drawing helpers [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the arguments the native `PDFWriter` already accepts: TIFF options
+  for `createFormXObjectFromTIFF()`, the image index and password of
+  `getImageDimensions()`, a `PDFReader` source and password for
+  `createPDFCopyingContext()`, and any read stream for the JPEG, PNG, TIFF and
+  merge methods [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Add `ObjectReplacementScope` constants for the `scope` option of
   `PDFWriter#replaceObject()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare the `text`, `border`, `color` and `followOriginalPageRotation`
