@@ -204,6 +204,11 @@ export class PDFWStreamForBuffer {
     return this.position;
   }
 
+  /**
+   * Copies the written bytes.
+   *
+   * @returns {Uint8Array} An owned copy of the bytes.
+   */
   toUint8Array() {
     return new Uint8Array(this.buffer);
   }
