@@ -4,6 +4,7 @@ import {
   DeviceColorSpace,
   DrawingPathType,
   ImageFitPolicy,
+  ObjectReplacementScope,
   PageBox,
   RecipeArrowAnchor,
   RecipeArrowType,
@@ -141,4 +142,5 @@ var EXPORTED_VALUE_SETS = [
     RecipeFontStyle,
     ["regular", "bold", "italic", "bold-italic", "r", "b", "i", "bi"],
   ],
+  [ObjectReplacementScope, ["global"]],
 ];

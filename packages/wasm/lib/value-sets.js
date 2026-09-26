@@ -152,3 +152,8 @@ export var RecipeFontStyle = Object.freeze({
   I: "i",
   BI: "bi",
 });
+
+/** Where `replaceObject()` replaces references: `global` means every page. */
+export var ObjectReplacementScope = Object.freeze({
+  GLOBAL: "global",
+});

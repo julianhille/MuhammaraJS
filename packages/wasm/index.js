@@ -42,6 +42,7 @@ import {
   RecipePageLayout,
   RecipeStructureFormat,
   RecipeFontStyle,
+  ObjectReplacementScope,
 } from "./lib/value-sets.js";
 
 export {
@@ -52,6 +53,7 @@ export {
   DeviceColorSpace,
   DrawingPathType,
   ImageFitPolicy,
+  ObjectReplacementScope,
   PageBox,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,

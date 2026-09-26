@@ -7,6 +7,7 @@ import {
   TextEncoding as TextEncodings,
 } from "../../index.js";
 import type {
+  ObjectReplacementOptions,
   RecipePageLayout,
   RecipeTableRowParity,
   RecipeLineJoin,
@@ -943,6 +944,8 @@ async function usesNamedValueSets() {
   void rowParity;
   var pageLayout: RecipePageLayout = "landscape";
   void pageLayout;
+  var replacement: ObjectReplacementOptions = { scope: "global" };
+  modifierForTypes.replaceObject(0, 1, 2, replacement);
 }
 
 void usesNamedValueSets;

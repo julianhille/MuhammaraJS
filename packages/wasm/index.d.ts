@@ -1683,6 +1683,14 @@ export interface ModifierImageXObject {
 export interface ModifierCompletedFormXObject {
   readonly id: number;
 }
+/** Where `replaceObject()` replaces references: `global` means every page. */
+export type ObjectReplacementScope = "global";
+export declare const ObjectReplacementScope: {
+  readonly GLOBAL: "global";
+};
+export interface ObjectReplacementOptions {
+  scope?: ObjectReplacementScope;
+}
 export interface PDFModifier {
   createFormXObject(
     left: number,
@@ -1730,7 +1738,7 @@ export interface PDFModifier {
     pageIndex: number,
     sourceObjectId: number,
     replacementObjectId: number,
-    options?: { scope?: "global" },
+    options?: ObjectReplacementOptions,
   ): this;
   getObjectsContext(): ObjectsContext;
   getModifiedFileParser(): PDFReader;

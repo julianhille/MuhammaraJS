@@ -1,3 +1,4 @@
+import { ObjectReplacementScope } from "./value-sets.js";
 import { createChildLifecycle } from "./lifecycle.js";
 import { isPageBoxType } from "./constants.js";
 import {
@@ -1926,7 +1927,7 @@ export function createWriterToModifyFactory({
             "Page index and object IDs must be unsigned 32-bit integers; object IDs must be positive",
           );
         }
-        if (options && options.scope === "global") {
+        if (options && options.scope === ObjectReplacementScope.GLOBAL) {
           var parser = this.getModifiedFileParser();
           var pageCount = parser.getPagesCount();
 
