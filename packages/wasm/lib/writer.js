@@ -850,6 +850,14 @@ export function createWriterFactory({
         M: function (value) {
           return operator("M", 23, [value]);
         },
+        /**
+         * Sets the dash pattern (`d`).
+         * @param {number[]} dash - Alternating dash and gap lengths; empty for a solid line.
+         * @param {number} [phase=0] - Offset into the pattern.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `dash` is not an array of finite numbers or `phase` is not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         d: function (dash, phase = 0) {
           requireActiveContext(context);
           if (
