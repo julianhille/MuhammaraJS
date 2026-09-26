@@ -3578,6 +3578,16 @@ export function createWriterFactory({
       getImageDimensions: function (image, imageIndex) {
         return getImageDimensions(image, imageIndex);
       },
+      /**
+       * Reads image dimensions after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} image - Image or PDF bytes, Blob, or File.
+       * @param {number} [imageIndex=0] - Page or TIFF frame index.
+       * @returns {Promise<{width: number, height: number}>} Size in points.
+       * @throws {RangeError} If `imageIndex` is invalid.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the writer ended or the dimensions cannot be read.
+       */
       getImageDimensionsAsync: async function (image, imageIndex) {
         return getImageDimensions(
           await normalizeBytesAsync(image, "Image bytes"),
