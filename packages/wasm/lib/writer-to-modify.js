@@ -2919,7 +2919,13 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to require catalog update");
         }
       },
-      /** Attaches a newly written PageLabels object to the catalog. @private */
+      /**
+       * Points the catalog `/PageLabels` at an object written by Recipe.
+       * @param {number} objectId - Page labels dictionary object ID.
+       * @returns {void}
+       * @throws {RangeError} If `objectId` is not positive or cannot be set.
+       * @throws {Error} If the modifier has ended.
+       */
       _setPageLabelsObject: function (objectId) {
         requireOpen();
         if (
