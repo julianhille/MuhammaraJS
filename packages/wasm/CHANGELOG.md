@@ -15,7 +15,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   exports, with the same member names, for `J()` and `endArray()` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Export frozen value sets for finite string options, each with a same-named
   type: `DeviceColorSpace`, `DrawingPathType`, `ImageFit`, `PageBox`,
-  `PDFImageType`, `TextEncoding`, `ObjectReplacementScope`, and the Recipe sets
+  `PDFImageType`, `EEncoding`, `ObjectReplacementScope`, and the Recipe sets
   `RecipeAnnotationFlag`, `RecipeAnnotationIcon`, `RecipeArrowAnchor`, `RecipeArrowType`, `RecipeFontStyle`,
   `RecipeHorizontalAlignment`, `RecipeLineCap`, `RecipeLineJoin`,
   `RecipePageLayout`, `RecipeStructureFormat`, `RecipeTableRowParity`,
@@ -325,6 +325,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   non-string name, as Recipe registration does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type the Recipe annotation `flag` option as `RecipeAnnotationFlag | number` and
   `icon` as `RecipeAnnotationIcon`, as native does, instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Rename the text encoding type to `EEncoding`, as native names it; `TextEncoding`
+  remains as a deprecated alias [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take
   `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
   `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,

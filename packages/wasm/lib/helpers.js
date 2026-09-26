@@ -1,5 +1,5 @@
 import { normalizeBytes } from "./bytes.js";
-import { TextEncoding } from "./value-sets.js";
+import { EEncoding } from "./value-sets.js";
 import { isPageBoxType } from "./constants.js";
 
 /**
@@ -352,22 +352,19 @@ export function createHelpers(module) {
 
   /**
    * Maps text options to the native encoding code.
-   * @param {TextOptions} [options] - Options with an optional TextEncoding.
+   * @param {TextOptions} [options] - Options with an optional EEncoding.
    * @returns {number} 0 text, 1 code, or 2 hex.
-   * @throws {TypeError} If `options` is not an options object or the encoding is not a TextEncoding value.
+   * @throws {TypeError} If `options` is not an options object or the encoding is not a EEncoding value.
    */
   function textEncoding(options) {
     if (options === undefined) return 0;
     if (!options || typeof options !== "object" || Array.isArray(options)) {
       throw new TypeError("text options must be an options object");
     }
-    if (
-      options.encoding === undefined ||
-      options.encoding === TextEncoding.TEXT
-    )
+    if (options.encoding === undefined || options.encoding === EEncoding.TEXT)
       return 0;
-    if (options.encoding === TextEncoding.CODE) return 1;
-    if (options.encoding === TextEncoding.HEX) return 2;
+    if (options.encoding === EEncoding.CODE) return 1;
+    if (options.encoding === EEncoding.HEX) return 2;
     throw new TypeError("text encoding must be text, code, or hex");
   }
 

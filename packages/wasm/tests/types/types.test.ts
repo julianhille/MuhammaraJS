@@ -9,9 +9,10 @@ import {
   DeviceColorSpace as DeviceColorSpaces,
   ImageFit as ImageFitPolicies,
   PageBox as PageBoxes,
-  TextEncoding as TextEncodings,
+  EEncoding as EEncodings,
 } from "../../index.js";
 import type {
+  EEncoding,
   PDFPageGeometry,
   PDFXrefEntry,
   ObjectReplacementOptions,
@@ -921,7 +922,9 @@ async function usesNamedValueSets() {
   var exportedColorspace: DeviceColorSpace = DeviceColorSpaces.CMYK;
   var exportedFit: ImageFit = ImageFitPolicies.OVERFLOW;
   var exportedBox: PageBox = PageBoxes.TRIM;
-  var exportedEncoding: TextEncoding = TextEncodings.HEX;
+  var exportedEncoding: EEncoding = EEncodings.HEX;
+  var legacyEncoding: TextEncoding = EEncodings.TEXT;
+  void legacyEncoding;
   void [exportedColorspace, exportedFit, exportedBox, exportedEncoding];
   var wrapMode: RecipeTextWrap = "ellipsis";
   var wrapBox: RecipeTextBox = { width: 10, wrap: wrapMode };

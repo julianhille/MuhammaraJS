@@ -17,7 +17,7 @@ export var ImageFit = Object.freeze({
 });
 
 /** How `Tj()`, `Quote()`, `DoubleQuote()`, and `TJ()` encode string text. */
-export var TextEncoding = Object.freeze({
+export var EEncoding = Object.freeze({
   TEXT: "text",
   CODE: "code",
   HEX: "hex",

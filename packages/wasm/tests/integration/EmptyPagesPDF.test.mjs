@@ -25,7 +25,7 @@ import {
   RecipeTrianglePosition,
   RecipeTriangleTrait,
   RecipeVerticalAlignment,
-  TextEncoding,
+  EEncoding,
 } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
@@ -136,7 +136,7 @@ var EXPORTED_VALUE_SETS = [
   [DeviceColorSpace, ["rgb", "gray", "cmyk"]],
   [ImageFit, ["always", "overflow"]],
   [PageBox, ["media", "crop", "bleed", "trim", "art"]],
-  [TextEncoding, ["text", "code", "hex"]],
+  [EEncoding, ["text", "code", "hex"]],
   [DrawingPathType, ["stroke", "fill", "clip"]],
   [RecipeTextWrap, ["auto", "clip", "trim", "ellipsis"]],
   [RecipeHorizontalAlignment, ["left", "center", "right"]],

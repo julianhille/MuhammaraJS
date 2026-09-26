@@ -10,12 +10,15 @@ export type AsyncByteSource = ByteSource | BlobLike;
 export type PDFRectangle = [number, number, number, number];
 export type PDFMatrix = [number, number, number, number, number, number];
 export type Glyph = [number, number];
-export type TextEncoding = "text" | "code" | "hex";
-export declare const TextEncoding: {
+/** How text-showing operators encode string text: the `EEncoding` values. */
+export type EEncoding = "text" | "code" | "hex";
+export declare const EEncoding: {
   readonly TEXT: "text";
   readonly CODE: "code";
   readonly HEX: "hex";
 };
+/** @deprecated Use `EEncoding`, the native name. */
+export type TextEncoding = EEncoding;
 export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
 export declare const PageBox: {
   readonly MEDIA: "media";
@@ -919,7 +922,7 @@ export interface RecipeConstructor {
   permission(flags?: RecipePermission): number;
 }
 export interface TextOptions {
-  encoding?: TextEncoding;
+  encoding?: EEncoding;
 }
 export type PageRange = [start: number, end: number];
 export type PageRangeOptions =

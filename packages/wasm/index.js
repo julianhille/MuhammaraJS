@@ -26,7 +26,6 @@ import {
   DeviceColorSpace,
   ImageFit,
   PageBox,
-  TextEncoding,
   DrawingPathType,
   RecipeTextWrap,
   RecipeHorizontalAlignment,
@@ -49,6 +48,7 @@ import {
   LineCapStyle,
   RecipeAnnotationFlag,
   RecipeAnnotationIcon,
+  EEncoding,
 } from "./lib/value-sets.js";
 
 export {
@@ -58,6 +58,7 @@ export {
   ByteWriterWithPosition,
   DeviceColorSpace,
   DrawingPathType,
+  EEncoding,
   ETokenSeparator,
   ImageFit,
   LineCapStyle,
@@ -82,7 +83,6 @@ export {
   RecipeTrianglePosition,
   RecipeTriangleTrait,
   RecipeVerticalAlignment,
-  TextEncoding,
 };
 
 /**
