@@ -442,6 +442,14 @@ export function createWriterToModifyFactory({
         w: function (width) {
           return operator("w", 20, [width]);
         },
+        /**
+         * Sets the line cap style (`J`).
+         * @param {LineCapStyle} value - 0 butt, 1 round, or 2 projecting square.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `value` is missing or not an integer.
+         * @throws {RangeError} If `value` is not 0, 1, or 2.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         J: function (value) {
           checkOperatorRange("J", value, 2, "line cap");
           return operator("J", 21, [value]);
