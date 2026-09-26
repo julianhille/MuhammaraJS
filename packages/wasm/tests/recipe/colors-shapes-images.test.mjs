@@ -98,6 +98,36 @@ describe("Recipe colors, shapes, and images", function () {
     recipe.endPage().endPDF();
   });
 
+  it("keeps registered colors per Recipe and ignores inherited names", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var recipe = new Recipe({ compress: false }).createPage(200, 200);
+    var other = new Recipe();
+    recipe.chroma("__proto__", "#123456").chroma("brand", "#654321");
+    // Colors registered on one Recipe stay in that Recipe.
+    assert.equal(other.knownColors.rgb.brand, undefined);
+    assert.equal(Object.hasOwn(other.knownColors.rgb, "__proto__"), false);
+    // An inherited key is no color name; "__proto__" is a registered one.
+    var bytes = recipe
+      .rectangle(10, 10, 20, 20, { fill: "constructor" })
+      .rectangle(40, 10, 20, 20, { fill: "__proto__" })
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(bytes);
+    var content = [];
+    for (var id = 1; id < reader.getXrefSize(); id++) {
+      var object = reader.parseNewObject(id);
+      if (!object || object.getType() !== muhammara.ePDFObjectStream) continue;
+      var input = reader.startReadingFromStream(object.toPDFStream());
+      var chunks = [];
+      while (input.notEnded()) chunks.push(...input.read(4096));
+      content.push(new TextDecoder("latin1").decode(new Uint8Array(chunks)));
+    }
+    reader.end();
+    assert.match(content.join("\n"), /0\.070588 0\.203922 0\.337255 rg/);
+    other.endPDF();
+  });
+
   it("places registered byte images with fit, alignment, transforms, and reuse", async function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe({ compress: false }).createPage(300, 300);

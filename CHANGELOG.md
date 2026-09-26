@@ -222,6 +222,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   fractional size such as `10.5` was truncated to `10` [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Accept a pattern name alone in `SCN` and `scn`, emitting `/P0 SCN` to select a
   colored (PaintType 1) tiling pattern instead of throwing [#797](https://github.com/julianhille/MuhammaraJS/issues/797)
+- Keep colors registered with Recipe `chroma()` in the Recipe that registered
+  them, as `@muhammara/wasm` does; every Recipe in the process shared one color
+  table, so a name registered on one Recipe changed the colors of all others [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+- Treat an inherited object key such as `constructor` as an unknown Recipe
+  color name instead of failing with `color.startsWith is not a function`,
+  register any `chroma()` name including `__proto__`, and reject a
+  `chroma("!load", file)` file that names `__proto__` as a colorspace instead
+  of writing its colors onto `Object.prototype` [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Stroke the border of a Recipe `rectangle()`, `ellipse()`, `arc()`, `pie()` or
   `polygon()` given both `fill` and `color` in `color`, as `@muhammara/wasm`
   does; it was stroked in the fill color [#799](https://github.com/julianhille/MuhammaraJS/issues/799)

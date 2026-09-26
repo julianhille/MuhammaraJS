@@ -114,6 +114,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Register a Recipe color named `__proto__` with `chroma()` or `colorName`; the
+  name was silently dropped [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Reject inherited object keys such as `__proto__` and `constructor` as a
   Recipe colorspace with `TypeError: Unknown colorspace: <name>`, as native
   does. `chroma(name, value, "__proto__")` wrote the color onto

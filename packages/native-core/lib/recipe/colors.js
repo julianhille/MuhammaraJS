@@ -2,6 +2,24 @@ const muhammara = require("../muhammara");
 const fs = require("fs");
 const { Colorspace, ChromaCommand } = require("../recipe-constants");
 
+/**
+ * Register a color under a name as an own property, so any name, including
+ * `__proto__`, is stored and later found by an own-property lookup.
+ * @private
+ * @param {Object} colors - The colors of one colorspace.
+ * @param {string} name - The color name.
+ * @param {string} value - The color value.
+ * @returns {void}
+ */
+function setKnownColor(colors, name, value) {
+  Object.defineProperty(colors, name, {
+    value,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+}
+
 this.knownColors = {
   // knownColors.colorspace.colorName = value
   rgb: {
@@ -68,11 +86,12 @@ exports.chroma = function chroma(name, value, colorspace = "") {
     if (name === ChromaCommand.LOAD) {
       let newColors = JSON.parse(fs.readFileSync(value));
       // Add new colors to existing colorspaces
-      for (let cs in newColors) {
-        if (this.knownColors[cs]) {
-          Object.assign(this.knownColors[cs], newColors[cs]);
-        } else {
+      for (const cs of Object.keys(newColors)) {
+        if (!Object.values(Colorspace).includes(cs)) {
           throw new Error(`Unrecognized colorspace: ${cs}`);
+        }
+        for (const [colorName, color] of Object.entries(newColors[cs])) {
+          setKnownColor(this.knownColors[cs], colorName, color);
         }
       }
     } else {
@@ -106,7 +125,7 @@ exports.chroma = function chroma(name, value, colorspace = "") {
       }
 
       if (colorspace) {
-        this.knownColors[colorspace][name] = value;
+        setKnownColor(this.knownColors[colorspace], name, value);
       }
     }
   }
@@ -368,7 +387,10 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   } else if (code.startsWith("%")) {
     code = percentToHex(code.replace("%", ""));
   } else if (code !== "") {
-    let color = this.knownColors[colorspace][code]; // assuming code is a color name
+    // A color name counts only when registered, not an inherited key such as
+    // "constructor".
+    const colors = this.knownColors[colorspace];
+    let color = Object.hasOwn(colors, code) ? colors[code] : undefined;
     if (!color) {
       color = "";
       code = defaultColor;
@@ -410,7 +432,7 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
 
   if (wantColorModel) {
     transformation = toColorModel(this, code, colorspace, colorName);
-    if (colorName && !this.knownColors[colorspace][colorName]) {
+    if (colorName && !Object.hasOwn(this.knownColors[colorspace], colorName)) {
       this.chroma(colorName, code, colorspace);
     }
   } else {

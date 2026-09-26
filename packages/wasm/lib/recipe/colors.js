@@ -48,6 +48,23 @@ export var knownColors = {
 };
 
 /**
+ * Registers a color under a name as an own property, so any name, including
+ * `__proto__`, is stored and later found by an own-property lookup.
+ * @param {object} colors - The colors of one colorspace.
+ * @param {string} name - The color name.
+ * @param {string} code - The hex color code.
+ * @returns {void}
+ */
+function setKnownColor(colors, name, code) {
+  Object.defineProperty(colors, name, {
+    value: code,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+}
+
+/**
  * Reports whether a value is a Recipe colorspace. Checking the `Colorspace`
  * values, as native does, keeps inherited keys such as `__proto__` out.
  * @param {string} colorspace - The requested colorspace.
@@ -130,7 +147,7 @@ export function colorModel(recipe, value, options = {}) {
       !registered &&
       !Object.hasOwn(recipe.knownColors.separation, separationName)
     )
-      recipe.knownColors.separation[separationName] = code;
+      setKnownColor(recipe.knownColors.separation, separationName, code);
     return {
       colorspace: Colorspace.SEPARATION,
       alternate: colorspace,
@@ -368,7 +385,7 @@ export function createColorMethods() {
       colorspace = colorspace || deviceColorspaceByLength[code.length];
       if (!isColorspace(colorspace))
         throw new TypeError(`Unknown colorspace: ${colorspace}`);
-      this.knownColors[colorspace][name] = code;
+      setKnownColor(this.knownColors[colorspace], name, code);
       return this;
     },
   };
