@@ -1337,7 +1337,14 @@ declare namespace muhammara {
   }
 
   export interface UsedFont {
-    /** Measure a string, or a list of glyph ids. The font size defaults to 1. */
+    /**
+     * Measures a string, or a list of glyph ids.
+     * @param text - The text, or the glyph ids.
+     * @param fontSize - The font size; 1 when omitted.
+     * @returns The bounding box of the text at that size.
+     * @throws {TypeError} If text is not a string or glyph id array, or
+     *   fontSize is not a number.
+     */
     calculateTextDimensions(
       text: string | number[],
       fontSize?: number,
