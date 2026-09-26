@@ -1517,6 +1517,9 @@ const Line = class Line {
     }
   }
 
+  /**
+   * @returns {boolean} True when both points share the same x.
+   */
   get isVertical() {
     return this._pt1.x === this._pt2.x;
   }
