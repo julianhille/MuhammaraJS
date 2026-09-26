@@ -257,6 +257,7 @@ function inspect(muhammara, bytes, expectedPages, rawId, annotationId) {
  * @param {Uint8Array} source - PDF bytes.
  * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional assets.
  * @returns {Uint8Array} The modified PDF.
+ * @throws {Error} If modifying fails; the modifier is disposed first.
  */
 function modify(muhammara, source, assets) {
   var modifier = muhammara.createWriterToModify(source, { compress: false });
@@ -293,6 +294,7 @@ function modify(muhammara, source, assets) {
  * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
  * @param {Uint8Array} source - PDF bytes.
  * @returns {Promise<Uint8Array>} The composed PDF.
+ * @throws {Error} If composing fails; the writer is disposed first.
  */
 async function compose(muhammara, source) {
   var writer = muhammara.createWriter({ compress: true });
