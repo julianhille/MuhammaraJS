@@ -855,6 +855,8 @@ alignmentContext
   .TJ("ab", -100, "c", { encoding: "code" })
   .TJ([[36, 65]], -100, [[37, 66]])
   .ET();
+const unionText = "text" as string | muhammara.Glyph;
+alignmentContext.Tj(unionText).Quote(unionText).DoubleQuote(1, 2, unionText);
 // @ts-expect-error TJ items are separate arguments, not one array.
 alignmentContext.TJ(["ab", -100, "c"]);
 
@@ -880,6 +882,10 @@ const extraInfo: { [key: string]: string } = alignmentWriter
   .getInfoDictionary()
   .getAdditionalInfoEntries();
 void extraInfo;
+void alignmentWriter
+  .getDocumentContext()
+  .getInfoDictionary()
+  .getAdditionalInfoEntries("ignored");
 
 const alignmentCopy = alignmentWriter.createPDFCopyingContext("source.pdf");
 const mergeTarget = alignmentWriter.createFormXObject(0, 0, 595, 842);

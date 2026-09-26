@@ -83,4 +83,10 @@ describe("Recipe position parity", function () {
     assert.deepEqual(recipe.position, { x: 0, y: 0 });
     writeOutput("position-parity-new-page", recipe.endPage().endPDF());
   });
+
+  it("moves the text cursor down from the page origin before any text", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe().createPage(600, 800);
+    assert.deepEqual(recipe.movedown(1, true), [0, 14]);
+  });
 });

@@ -240,8 +240,10 @@ declare namespace muhammara {
     Tf(fontReferenced: UsedFont | string, fontSize: number): this;
     Tj(text: string, options?: TextRenderOptions): this;
     Tj(glyphs: Glyph): this;
+    Tj(text: string | Glyph): this;
     Quote(text: string, options?: TextRenderOptions): this;
     Quote(glyphs: Glyph): this;
+    Quote(text: string | Glyph): this;
     DoubleQuote(
       wordSpacing: number,
       characterSpacing: number,
@@ -252,6 +254,11 @@ declare namespace muhammara {
       wordSpacing: number,
       characterSpacing: number,
       glyphs: Glyph,
+    ): this;
+    DoubleQuote(
+      wordSpacing: number,
+      characterSpacing: number,
+      text: string | Glyph,
     ): this;
     /** Pass the TJ array items as separate arguments: strings with numeric kerning adjustments, optionally followed by options. */
     TJ(...items: [string | number, ...(string | number)[]]): this;
@@ -671,7 +678,8 @@ declare namespace muhammara {
     removeAdditionalInfoEntry(key: string): void;
     clearAdditionalInfoEntries(): void;
     getAdditionalInfoEntry(key: string): string;
-    getAdditionalInfoEntries(): { [key: string]: string };
+    /** @param key Ignored; kept so 6.x calls that passed a key still compile. */
+    getAdditionalInfoEntries(key?: string): { [key: string]: string };
     setCreationDate(date: string | Date): void;
     setModDate(date: string | Date): void;
 
