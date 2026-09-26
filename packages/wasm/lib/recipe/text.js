@@ -174,7 +174,11 @@ function fragmentOptions(options, styles = {}, fontSize) {
   };
 }
 
-/** Coalesces adjacent HTML fragments that use equivalent styles. */
+/**
+ * Coalesces adjacent HTML fragments that use equivalent styles.
+ * @param {{text: string, styles: object}[]} parts - Fragments.
+ * @returns {{text: string, styles: object}[]} New grouped fragments.
+ */
 function groupedHtmlParts(parts) {
   return parts.reduce((groups, part) => {
     var previous = groups[groups.length - 1];
