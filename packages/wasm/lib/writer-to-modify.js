@@ -476,6 +476,13 @@ export function createWriterToModifyFactory({
         M: function (value) {
           return operator("M", 23, [value]);
         },
+        /**
+         * Sets the nonstroking gray color (`g`).
+         * @param {number} value - Gray level from 0 to 1.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         g: function (value) {
           return operator("g", 24, [value]);
         },
