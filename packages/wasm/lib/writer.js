@@ -1435,8 +1435,8 @@ export function createWriterFactory({
           m: function (x, y) {
             return operator("m", 10, [x, y]);
           },
-          l: function (...args) {
-            return operator("l", 11, args);
+          l: function (x, y) {
+            return operator("l", 11, [x, y]);
           },
           re: function (...args) {
             return operator("re", 16, args);

@@ -169,7 +169,10 @@ describe("SimpleContentPageTest", function () {
 
 // Calls that must throw on every content context. A missing operand would
 // otherwise be written as `nan` and corrupt the content stream.
-var INVALID_OPERATOR_CALLS = [["m", [1]]];
+var INVALID_OPERATOR_CALLS = [
+  ["m", [1]],
+  ["l", [1]],
+];
 
 /**
  * Opens one content context of every Wasm kind.
