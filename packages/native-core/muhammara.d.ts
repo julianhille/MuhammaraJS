@@ -899,6 +899,12 @@ declare namespace muhammara {
      * @throws {TypeError} If literal is not a single string or array.
      */
     writeLiteralStringValue(literal: Array<number> | string): this;
+    /**
+     * Writes a boolean as the value of the last key.
+     * @param boolValue - The value.
+     * @returns This dictionary context.
+     * @throws {TypeError} If boolValue is not a single boolean.
+     */
     writeBooleanValue(boolValue: boolean): this;
     writeNumberValue(value: number): this;
     writeObjectReferenceValue(objectId: number): this;
