@@ -961,6 +961,9 @@ async function usesNamedValueSets() {
   dictionary.writeKey("A").writeLiteralStringValue(new Uint8Array([65]));
   // @ts-expect-error Read streams are not string bytes.
   dictionary.writeLiteralStringValue(readStream);
+  dictionary.writeKey("B").writeHexStringValue(new ArrayBuffer(1));
+  // @ts-expect-error Read streams are not string bytes.
+  dictionary.writeHexStringValue(readStream);
 }
 
 void usesNamedValueSets;

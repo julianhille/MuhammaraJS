@@ -1095,7 +1095,7 @@ export interface DictionaryContext {
   writeKey(key: string): this;
   writeNameValue(value: string): this;
   writeLiteralStringValue(value: string | Uint8Array | ArrayBuffer): this;
-  writeHexStringValue(value: string | ByteSource): this;
+  writeHexStringValue(value: string | Uint8Array | ArrayBuffer): this;
   writeNumberValue(value: number): this;
   writeBooleanValue(value: boolean): this;
   writeObjectReferenceValue(id: number): this;

@@ -154,6 +154,13 @@ export function createRawObjectsContext({
           writeValue(1, value);
           return this;
         },
+        /**
+         * Writes a hexadecimal string value.
+         * @param {string|Uint8Array|ArrayBuffer} value - Text, or raw string bytes.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `value` is neither a string nor bytes.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeHexStringValue: function (value) {
           if (
             typeof value !== "string" &&
