@@ -814,3 +814,8 @@ void builtInWrittenCount;
 declare const signatureWriter: muhammara.PDFWriter;
 declare const signatureStream: muhammara.ReadStream;
 void signatureWriter.createFormXObjectFromJPG(signatureStream);
+void signatureWriter.createFormXObjectFromTIFF("image.tif", {
+  pageIndex: 1,
+  bwTreatment: { asImageMask: true, oneColor: [255, 128, 0] },
+  grayscaleTreatment: { asColorMap: true, zeroColor: [0, 0, 0, 255] },
+});

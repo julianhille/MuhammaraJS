@@ -998,6 +998,30 @@ declare namespace muhammara {
     upperRightY: number,
   ];
 
+  /** RGB (3 numbers) or CMYK (4 numbers) color components, 0 to 255. */
+  export type TIFFColor =
+    | [r: number, g: number, b: number]
+    | [c: number, m: number, y: number, k: number];
+
+  /** Options for `createFormXObjectFromTIFF()`. */
+  export interface TIFFUsageOptions {
+    /** The zero-based page of a multi-page TIFF. */
+    pageIndex?: number;
+    /** How black-and-white images are drawn. */
+    bwTreatment?: {
+      /** Draw the image as a stencil mask in oneColor. */
+      asImageMask?: boolean;
+      oneColor?: TIFFColor;
+    };
+    /** How grayscale images are drawn. */
+    grayscaleTreatment?: {
+      /** Map gray values between zeroColor and oneColor. */
+      asColorMap?: boolean;
+      oneColor?: TIFFColor;
+      zeroColor?: TIFFColor;
+    };
+  }
+
   export interface MergeOptions {
     password?: string;
     type?: eRangeType;
@@ -1147,9 +1171,18 @@ declare namespace muhammara {
     ): this;
     /** Save continuation state and retire this writer, including when saving fails. */
     shutdown(outputFilePath: FilePath): this;
+    /**
+     * Creates a form XObject showing a TIFF image.
+     * @param filePath - The image path or a read stream.
+     * @param objectId - A forward-reference object ID, or TIFF options.
+     * @returns The form.
+     * @throws {TypeError} If the arguments are wrong, a color is not 3 or 4
+     *   numbers, or the image cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObjectFromTIFF(
-      filePath: FilePath | PDFRStreamForFile,
-      objectId?: FormXObjectId,
+      filePath: FilePath | ReadStream,
+      objectId?: FormXObjectId | TIFFUsageOptions,
     ): FormXObject;
     createImageXObjectFromJPG(
       filePath: FilePath | PDFRStreamForFile,
