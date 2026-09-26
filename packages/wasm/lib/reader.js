@@ -806,6 +806,11 @@ export function createReaderFactory({
         requireReader();
         return module._muhammara_wasm_reader_get_objects_count(reader);
       },
+      /**
+       * Reports whether the document is encrypted.
+       * @returns {boolean} Whether an `/Encrypt` dictionary is present.
+       * @throws {Error} If the reader has ended.
+       */
       isEncrypted: function () {
         requireReader();
         return Boolean(module._muhammara_wasm_reader_is_encrypted(reader));
