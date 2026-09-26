@@ -229,6 +229,26 @@ describe("Recipe text layout and tables", function () {
     reader.end();
   });
 
+  it("rounds a text-box border of borderRadius true by 5, as native does", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe().createPage(220, 120);
+    var style = { stroke: "#000000", borderRadius: true };
+    var radii = [];
+    var rectangle = recipe.rectangle;
+    recipe.rectangle = function (x, y, width, height, options) {
+      radii.push(options.borderRadius);
+      return rectangle.apply(this, arguments);
+    };
+    recipe.text("boxed", 10, 20, {
+      font: "arial",
+      size: 12,
+      textBox: { width: 100, style },
+    });
+    assert.deepEqual(radii, [5]);
+    assert.equal(style.borderRadius, true, "the caller's style is unchanged");
+    recipe.endPage().endPDF();
+  });
+
   it("clips complete text-box lines and reports the remainder", async function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe().createPage(220, 120);

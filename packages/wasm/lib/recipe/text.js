@@ -950,7 +950,9 @@ export function createTextMethods({ drawText, measure, module }) {
           y,
           width || widestEntry + left + right,
           height,
-          box.style,
+          box.style.borderRadius === true
+            ? { ...box.style, borderRadius: 5 }
+            : box.style,
         );
       var vertical = box.textAlign?.split(" ")[1];
       var currentY =
