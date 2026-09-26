@@ -665,6 +665,11 @@ export function createReaderFactory({
           }
           return byteReader;
         };
+        /**
+         * Reads the current position.
+         * @returns {number} Byte offset.
+         * @throws {Error} If the reader or byte reader has ended or the position cannot be read.
+         */
         byteReader.getCurrentPosition = function () {
           requireByteReader();
           var position =
