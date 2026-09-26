@@ -419,6 +419,10 @@ async function formGrayExample() {
   }
 }
 
+/**
+ * Builds the browser example for a rotated page.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function rotatedPageExample() {
   var muhammara = await createMuhammaraWasm();
   var Recipe = await createRecipe();
