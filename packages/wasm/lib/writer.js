@@ -3782,6 +3782,17 @@ export function createWriterFactory({
       createFormXObjectFromPNGBytes: function (name, objectId) {
         return createImageForm(name, RegisteredImageFormat.PNG, objectId);
       },
+      /**
+       * Creates a form XObject from a TIFF page.
+       * @param {string|ByteSource} image - Registered TIFF name, or TIFF bytes.
+       * @param {TIFFOptions} [options={}] - Page index, reserved object ID, and
+       * black-and-white or grayscale treatment.
+       * @returns {FormXObject} The completed form.
+       * @throws {TypeError} If an option or treatment color is invalid, the name is not a
+       * registered TIFF, or the bytes are unsupported.
+       * @throws {RangeError} If `pageIndex` or `objectId` is invalid.
+       * @throws {Error} If the writer ended or the form cannot be created.
+       */
       createFormXObjectFromTIFF: function (image, options = {}) {
         if (!options || typeof options !== "object" || Array.isArray(options)) {
           throw new TypeError("TIFF options must be an object");
