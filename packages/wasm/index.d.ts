@@ -827,6 +827,8 @@ export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 export type XrefEntryType = 0 | 1 | 2 | 3;
 /** Procedure set name for `addProcsetResource()`: the `KProcset*`/`kProcset*` constants. */
 export type ProcsetName = "ImageB" | "ImageC" | "ImageI" | "PDF" | "Text";
+/** Page range selection kind: the `eRangeType*` constants. */
+export type ERangeType = 0 | 1;
 /** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
 export type LineJoinStyle = 0 | 1 | 2;
 /**
@@ -1823,8 +1825,8 @@ export interface MuhammaraWasm {
   readonly KProcsetImageI: "ImageI";
   readonly kProcsetPDF: "PDF";
   readonly kProcsetText: "Text";
-  readonly eRangeTypeAll: number;
-  readonly eRangeTypeSpecific: number;
+  readonly eRangeTypeAll: 0;
+  readonly eRangeTypeSpecific: 1;
   readonly ePDFPageBoxMediaBox: 0;
   readonly ePDFPageBoxCropBox: 1;
   readonly ePDFPageBoxBleedBox: 2;

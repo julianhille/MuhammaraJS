@@ -1,5 +1,7 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  PageRangeOptions,
+  ERangeType,
   XrefEntryType,
   PDFObjectType,
   ETokenSeparator,
@@ -838,6 +840,12 @@ async function usesNamedValueSets() {
   procsetResources.addProcsetResource(muhammara.kProcsetText);
   // @ts-expect-error Procsets are the KProcset constants.
   procsetResources.addProcsetResource("Pdf");
+  var rangeType: ERangeType = muhammara.eRangeTypeSpecific;
+  var ranges: PageRangeOptions = {
+    type: muhammara.eRangeTypeSpecific,
+    specificRanges: [[0, 0]],
+  };
+  void [rangeType, ranges];
 }
 
 void usesNamedValueSets;
