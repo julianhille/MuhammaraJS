@@ -113,6 +113,11 @@ export class PDFRStreamForBuffer {
     this.rposition += amount;
   }
 
+  /**
+   * Reads the position relative to the start position.
+   *
+   * @returns {number} The current offset.
+   */
   getCurrentPosition() {
     return this.rposition - this.mStartPosition;
   }
