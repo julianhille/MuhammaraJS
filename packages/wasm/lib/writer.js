@@ -3253,6 +3253,16 @@ export function createWriterFactory({
       });
     }
 
+    /**
+     * Creates a completed form XObject that draws a registered image.
+     * @param {string} name - Registered image name.
+     * @param {string} expectedType - Required RegisteredImageFormat.
+     * @param {number} [objectId] - Reserved object ID.
+     * @returns {FormXObject} The form.
+     * @throws {TypeError} If the name is not registered or has another format.
+     * @throws {RangeError} If `objectId` is invalid.
+     * @throws {Error} If the form cannot be created.
+     */
     function createImageForm(name, expectedType, objectId) {
       var path = imagePath(name, expectedType);
       var types = {
