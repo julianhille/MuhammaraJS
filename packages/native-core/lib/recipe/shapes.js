@@ -83,6 +83,15 @@ function toDegrees(radians) {
   return radians * (180 / Math.PI);
 }
 
+/**
+ * The end point of a segment from a start point, length and angle.
+ * @private
+ * @param {number} x - The start x.
+ * @param {number} y - The start y.
+ * @param {number} l - The segment length.
+ * @param {number} angle - The direction in degrees.
+ * @returns {number[]} The end point [x, y].
+ */
 function endPoint(x, y, l, angle) {
   const radians = toRadians(angle);
   return [x + l * Math.cos(radians), y + l * Math.sin(radians)];
