@@ -2967,23 +2967,6 @@ export function createWriterFactory({
       }
     }
 
-    function withPdfPathOrBytes(value, callback) {
-      if (typeof value === "string") {
-        var registeredPath = pdfs.get(value);
-        if (!registeredPath) throw new Error(`Unknown PDF: ${value}`);
-        return callback(registeredPath);
-      }
-      var bytes = normalizeBytes(value, "PDF input");
-      var path = `/pdfs/${state.nextPdf++}.pdf`;
-      module.FS.mkdirTree("/pdfs");
-      module.FS.writeFile(path, bytes);
-      try {
-        return callback(path);
-      } finally {
-        module.FS.unlink(path);
-      }
-    }
-
     function optionalObjectId(value) {
       if (value === undefined) return 0;
       if (!Number.isSafeInteger(value) || value <= 0 || value > 0xffffffff) {
