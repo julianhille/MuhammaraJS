@@ -79,6 +79,12 @@ PDFRStreamForBuffer.prototype.getCurrentPosition = function () {
   return this.rposition - this.mStartPosition;
 };
 
+/**
+ * Sets the offset that later positions are counted from, for PDF data that
+ * does not begin at byte zero.
+ * @param {number} inPosition - The absolute byte offset of the start.
+ * @returns {void}
+ */
 PDFRStreamForBuffer.prototype.moveStartPosition = function (inPosition) {
   this.mStartPosition = inPosition;
 };
