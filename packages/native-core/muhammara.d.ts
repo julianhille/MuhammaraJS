@@ -871,7 +871,15 @@ declare namespace muhammara {
      * @throws {TypeError} If the copying context has ended.
      */
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
-    appendPDFPageFromPDF(sourcePageNumber: number): number; // stream start bytes?
+    /**
+     * Appends a source page as a new page.
+     * @param sourcePageNumber - The zero-based source page index.
+     * @returns The object ID of the new page.
+     * @throws {TypeError} If the argument is not a number or the page does not
+     *   exist.
+     * @throws {TypeError} If the copying context has ended.
+     */
+    appendPDFPageFromPDF(sourcePageNumber: number): number;
     mergePDFPageToFormXObject(
       targetForm: FormXObject,
       sourcePageIndex: number,
