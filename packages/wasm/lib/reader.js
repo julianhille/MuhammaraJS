@@ -1276,6 +1276,13 @@ export function createReaderFactory({
       startReadingFromStream: function (stream) {
         return startReadingFromStream(stream, false);
       },
+      /**
+       * Opens a reader over a stream's raw, still encoded content.
+       * @param {PDFStreamInput} stream - Stream parsed by this reader.
+       * @returns {PDFByteReader} The byte reader.
+       * @throws {TypeError} If `stream` is not a stream from this reader.
+       * @throws {Error} If the reader has ended or the stream cannot be read.
+       */
       startReadingFromStreamForPlainCopying: function (stream) {
         return startReadingFromStream(stream, true);
       },
