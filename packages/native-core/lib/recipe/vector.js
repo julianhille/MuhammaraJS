@@ -327,8 +327,8 @@ function drawRoundedRectangle(
  * @name ellipse
  * @function
  * @memberof Recipe#
- * @param {number} cx x-coordinate of center point of ellipse
- * @param {number} cy y-coordinate of center point of ellipse
+ * @param {number|"center"} cx x-coordinate of center point of ellipse
+ * @param {number|"center"} cy y-coordinate of center point of ellipse
  * @param {number} rx radius length from the center point along x-axis
  * @param {number} ry radius length from the center point along y-axis
  * @param {Object} [options]
@@ -341,8 +341,10 @@ function drawRoundedRectangle(
  * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
+  [cx, cy] = this._centrify(cx, cy);
   const { nx, ny } = this._calibrateCoordinate(cx, cy);
 
   const pathOptions = this._getPathOptions(options, nx, ny);

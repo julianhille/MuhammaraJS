@@ -2090,8 +2090,8 @@ declare namespace muhammara {
     ): Recipe;
 
     ellipse(
-      cx: number,
-      cy: number,
+      cx: Recipe.RecipeCoordinate,
+      cy: Recipe.RecipeCoordinate,
       rx: number,
       ry: number,
       options?: Recipe.EllipseOptions,
