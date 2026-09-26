@@ -13,6 +13,11 @@ var trappedValues = {
  * @returns {object} Methods mixed into Recipe.prototype.
  */
 export function createInfoMethods({ call, withString }) {
+  /**
+   * Formats a Date as a local-time PDF date.
+   * @param {Date} date - Date.
+   * @returns {string} `D:YYYYMMDDHHmmSS+HH'mm'`.
+   */
   function pdfDate(date) {
     var offset = -date.getTimezoneOffset();
     var sign = offset < 0 ? "-" : "+";
