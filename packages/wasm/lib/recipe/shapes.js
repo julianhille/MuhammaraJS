@@ -218,6 +218,15 @@ function translated(vertices, dx, dy) {
   return vertices.map((point) => [point[0] + dx, point[1] + dy]);
 }
 
+/**
+ * Mirrors vertices around a point.
+ * @param {number[][]} vertices - Vertices.
+ * @param {number} x - Mirror center x.
+ * @param {number} y - Mirror center y.
+ * @param {boolean} flipX - Mirror across the horizontal axis.
+ * @param {boolean} flipY - Mirror across the vertical axis.
+ * @returns {number[][]} New vertices.
+ */
 function flipped(vertices, x, y, flipX, flipY) {
   return vertices.map((point) => [
     flipY ? 2 * x - point[0] : point[0],
