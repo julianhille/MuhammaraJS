@@ -251,6 +251,11 @@ export function createReaderFactory({
         "Real",
         "Symbol",
       ].forEach((name) => {
+        /**
+         * Narrows the object to the scalar type in the method name.
+         * @returns {PDFObject|undefined} This object when its type matches.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         object[`toPDF${name}`] = function () {
           return object.getType() === constants[`ePDFObject${name}`]
             ? object
