@@ -420,6 +420,13 @@ function flipX(y, ngon) {
   return object;
 }
 
+/**
+ * Mirror points across a vertical line. The point arrays are changed in place.
+ * @private
+ * @param {number} x - The x of the mirror line.
+ * @param {number[][]} ngon - The [x, y] points.
+ * @returns {number[][]} A new list holding the mirrored points.
+ */
 function flipY(x, ngon) {
   let object = ngon.slice();
   for (const coord of object) {
