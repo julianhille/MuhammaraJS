@@ -626,6 +626,13 @@ export function createRawObjectsContext({
         module._muhammara_wasm_objects_end_line(handle);
         return this;
       },
+      /**
+       * Turns Flate compression of later streams on or off.
+       * @param {boolean} value - Whether to compress.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a boolean or cannot be applied.
+       * @throws {Error} If the writer has ended.
+       */
       setCompressStreams: function (value) {
         requireContext();
         if (
