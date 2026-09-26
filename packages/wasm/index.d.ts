@@ -823,6 +823,8 @@ export type EInfoTrapped = 0 | 1 | 2;
 export type ETokenSeparator = 0 | 1 | 2;
 /** Parsed PDF object type: the `ePDFObject*` constants. */
 export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+/** Cross-reference entry kind: the `eXrefEntry*` constants. */
+export type XrefEntryType = 0 | 1 | 2 | 3;
 /** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
 export type LineJoinStyle = 0 | 1 | 2;
 /**
@@ -1297,7 +1299,7 @@ export interface PDFReader {
   getXrefEntry(id: number): {
     objectPosition: number;
     revision: number;
-    type: number;
+    type: XrefEntryType;
   };
   getTrailerEntryType(key: string): PDFObjectType | null;
   getTrailer(): PDFDictionary;
@@ -1845,10 +1847,10 @@ export interface MuhammaraWasm {
   readonly eTokenSeparatorSpace: 0;
   readonly eTokenSeparatorEndLine: 1;
   readonly eTokenSeparatorNone: 2;
-  readonly eXrefEntryExisting: number;
-  readonly eXrefEntryDelete: number;
-  readonly eXrefEntryStreamObject: number;
-  readonly eXrefEntryUndefined: number;
+  readonly eXrefEntryExisting: 0;
+  readonly eXrefEntryDelete: 1;
+  readonly eXrefEntryStreamObject: 2;
+  readonly eXrefEntryUndefined: 3;
   readonly EInfoTrappedTrue: 0;
   readonly EInfoTrappedFalse: 1;
   readonly EInfoTrappedUnknown: 2;

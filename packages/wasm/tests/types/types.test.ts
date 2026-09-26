@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  XrefEntryType,
   PDFObjectType,
   ETokenSeparator,
   EInfoTrapped,
@@ -831,6 +832,8 @@ async function usesNamedValueSets() {
   muhammara.getTypeLabel(12);
   var rootType: PDFObjectType | null = parsed.getTrailerEntryType("Root");
   void rootType;
+  var entryType: XrefEntryType = parsed.getXrefEntry(1).type;
+  void (entryType === muhammara.eXrefEntryExisting);
 }
 
 void usesNamedValueSets;
