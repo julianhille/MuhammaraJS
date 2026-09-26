@@ -65,6 +65,12 @@ export class ObjectUrlStore {
     this.current = undefined;
   }
 
+  /**
+   * Replaces the current object URL with one for new bytes.
+   * @param {Uint8Array} bytes - File bytes.
+   * @param {string} [type="application/pdf"] - MIME type.
+   * @returns {string} The new object URL.
+   */
   replace(bytes, type = "application/pdf") {
     this.revoke();
     this.current = this.urlApi.createObjectURL(new Blob([bytes], { type }));
