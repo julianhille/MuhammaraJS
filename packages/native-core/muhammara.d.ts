@@ -989,6 +989,12 @@ declare namespace muhammara {
      * @throws {TypeError} If name is not a single string.
      */
     writeName(name: string): this;
+    /**
+     * Writes a literal string, escaping it as needed.
+     * @param literal - The text, or its byte values.
+     * @returns This context.
+     * @throws {TypeError} If literal is not a single string or array.
+     */
     writeLiteralString(literal: string | number[]): this;
     writeHexString(hex: string | number[]): this;
     writeBoolean(bool: boolean): this;
