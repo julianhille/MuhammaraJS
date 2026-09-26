@@ -1010,6 +1010,12 @@ declare namespace muhammara {
      * @throws {TypeError} If bool is not a single boolean.
      */
     writeBoolean(bool: boolean): this;
+    /**
+     * Writes a keyword, such as a content-stream operator, unescaped.
+     * @param keyword - The keyword.
+     * @returns This context.
+     * @throws {TypeError} If keyword is not a single string.
+     */
     writeKeyword(keyword: string): this;
     writeComment(comment: string): this;
     setCompressStreams(compress: boolean): this;
