@@ -1,6 +1,10 @@
 import { fontStyleKey } from "./font.js";
 import { RecipeFontStyle } from "../value-sets.js";
-/** Creates Recipe asset registration and removal methods. */
+/**
+ * Creates Recipe asset registration and removal methods.
+ * @param {object} dependencies - Module, registries, byte helpers, and writer font hooks.
+ * @returns {object} Static methods assigned to Recipe.
+ */
 export function createRegistrationMethods({
   module,
   normalizeBytes,
