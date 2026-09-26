@@ -75,6 +75,11 @@ function report(message, percent = 0, details) {
   if (details) output.textContent = JSON.stringify(details, null, 2);
 }
 
+/**
+ * Reads the file chosen in a form input.
+ * @param {string} name - Input name.
+ * @returns {Promise<Uint8Array|undefined>} The bytes, or undefined when no file is chosen.
+ */
 async function fileBytes(name) {
   var file = form.elements[name].files[0];
   return file ? new Uint8Array(await file.arrayBuffer()) : undefined;
