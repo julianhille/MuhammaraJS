@@ -335,6 +335,12 @@ export function createReaderFactory({
         };
       }
       if (object.getType() === constants.ePDFObjectDictionary) {
+        /**
+         * Checks for a key.
+         * @param {string} key - Key without the leading slash.
+         * @returns {boolean} Whether the dictionary has the key; false for a non-string.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         object.exists = function (key) {
           object.getType();
           return typeof key === "string" && objectKeys(handle).includes(key);
