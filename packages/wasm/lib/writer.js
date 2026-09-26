@@ -669,6 +669,13 @@ export function createWriterFactory({
             freeCode,
           );
         },
+        /**
+         * Sets fill and stroke opacity through an ExtGState resource.
+         * @param {number} opacity - Opacity from 0 to 1.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `opacity` is not a finite number from 0 to 1.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         setOpacity: function (opacity) {
           requireActiveContext(context);
           if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1) {
