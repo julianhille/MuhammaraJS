@@ -427,6 +427,18 @@ exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
   return this;
 };
 
+/**
+ * Append a circular arc path built from Bézier segments.
+ * @private
+ * @param {Object} ctx - The content context.
+ * @param {number} x - The center x.
+ * @param {number} y - The center y.
+ * @param {number} radius - The radius.
+ * @param {number} startAngle - The start angle in degrees.
+ * @param {number} endAngle - The end angle in degrees.
+ * @param {boolean} [fromCenter=false] - Start the path at the center, for a sector.
+ * @returns {void}
+ */
 function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
   const TWO_PI = 2.0 * Math.PI;
   const HALF_PI = 0.5 * Math.PI;
