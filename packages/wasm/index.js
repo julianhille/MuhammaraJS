@@ -329,6 +329,16 @@ async function createRuntime(options) {
             : RegisteredImageFormat.TIFF,
       );
     },
+    /**
+     * Registers an image after reading an asynchronous byte source.
+     * @async
+     * @param {string} name - Non-empty image name.
+     * @param {AsyncByteSource} bytes - Image bytes, Blob, or File.
+     * @param {string} extension - `jpg`, `jpeg`, `png`, `tif`, or `tiff`.
+     * @returns {Promise<void>} Resolves after the image is registered.
+     * @throws {TypeError} If `name` is empty, the bytes are unsupported, or the extension is unknown.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerImageAsync: async function (name, bytes, extension) {
       return this.registerImage(
         name,
