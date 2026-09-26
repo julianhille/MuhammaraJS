@@ -1076,6 +1076,11 @@ export function createReaderFactory({
           getArtBox: function () {
             return getBox(4);
           },
+          /**
+           * Reads the page rotation.
+           * @returns {number} Degrees, a multiple of 90.
+           * @throws {Error} If the reader has ended or the rotation cannot be read.
+           */
           getRotate: function () {
             requireReader();
             var valuePointer = module._malloc(4);
