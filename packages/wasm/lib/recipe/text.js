@@ -244,7 +244,12 @@ function htmlLines(source, width, measure, options, wrap) {
   var linePrefix = "";
   var continuationPrefix = "";
   var truncated = false;
-  /** Emits the accumulated fragments and prepares the next line prefix. */
+  /**
+   * Emits the accumulated fragments and prepares the next line prefix.
+   * @param {boolean} last - Whether the line ends a paragraph.
+   * @param {boolean} [force=false] - Emit even an empty line.
+   * @returns {void}
+   */
   var flush = (last, force = false) => {
     // lines() trims every line it emits; keep trailing spaces out of the
     // measured width so alignment and justification stay correct.
