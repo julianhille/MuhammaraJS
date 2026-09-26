@@ -64,7 +64,13 @@ export function registerFont(
   return previous;
 }
 
-/** Resolves the best registered font path for the requested style. */
+/**
+ * Resolves the best registered font path for the requested style.
+ * @param {Map<string, object>} fonts - Font families keyed by lower-case name.
+ * @param {object} [options={}] - `font`, `bold`, and `italic`.
+ * @returns {string} Virtual path of the matching style, or of any registered style.
+ * @throws {Error} If the family is not registered.
+ */
 export function getFont(fonts, options = {}) {
   var family = fonts.get(String(options.font || "").toLowerCase());
   if (!family) throw new Error(`Unknown font: ${options.font || "(none)"}`);
