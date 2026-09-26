@@ -370,6 +370,15 @@ exports.textDimensions = function textDimensions(text, options = {}) {
  * @param {Object} [options] - The column options.
  */
 exports.Column = class Column {
+  /**
+   * @param {number} x - The x coordinate.
+   * @param {number} y - The y coordinate.
+   * @param {number} width - The column width.
+   * @param {number} [height] - The column height; unlimited when omitted.
+   * @param {string} [text=''] - The column heading; defaults to the field.
+   * @param {string} [field=''] - The associated data field.
+   * @param {Object} [options] - The column options; `cell` becomes the text box.
+   */
   constructor(x, y, width, height, text = "", field = "", options = {}) {
     this._x = x;
     this._y = y;
