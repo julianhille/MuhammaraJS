@@ -180,6 +180,13 @@ export class PDFWStreamForBuffer {
     this.joined = value;
   }
 
+  /**
+   * Appends a copy of the bytes.
+   *
+   * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} bytes Bytes to append.
+   * @returns {number} Number of bytes written.
+   * @throws {TypeError} If `bytes` is not a supported byte source.
+   */
   write(bytes) {
     bytes = normalizeBytes(bytes, "PDFWStreamForBuffer input");
     if (bytes.length === 0) return 0;
