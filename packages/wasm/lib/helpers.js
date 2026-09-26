@@ -202,6 +202,13 @@ export function createHelpers(module) {
       return componentOperator(name, code, values, pattern);
     }
 
+    /**
+     * Sets the color rendering intent (`ri`).
+     * @param {string} name - Intent, such as `Perceptual`.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `name` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.ri = function (name) {
       return nameOperator("ri", 0, name);
     };
