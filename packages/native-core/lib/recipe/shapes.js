@@ -1557,6 +1557,9 @@ const Line = class Line {
     return this._length;
   }
 
+  /**
+   * @returns {number} The slope; Infinity for a vertical line.
+   */
   get slope() {
     if (!this._slope) {
       this._slope =
