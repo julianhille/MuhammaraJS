@@ -613,6 +613,14 @@ export function createWriterToModifyFactory({
         Tw: function (wordSpace) {
           return operator("Tw", 36, [wordSpace]);
         },
+        /**
+         * Sets the horizontal text scaling (`Tz`).
+         * @param {number} horizontalScaling - Integer percentage; 100 is normal width.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {TypeError} If `horizontalScaling` is not an integer.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Tz: function (horizontalScaling) {
           return operator("Tz", 37, [horizontalScaling], true);
         },
