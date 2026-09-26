@@ -29,9 +29,11 @@ function cloneOptions(value) {
  * Append PDF Page with annotations.
  *
  * @param {any} pdfWriter - Hummus writer.
- * @param {string|any} sourcePDFPath - The path for the output pdfs or Reader stream.
- * @param {number} pageNumber - page number.
+ * @param {string|any} sourcePDFPath - The source PDF path or read stream.
+ * @param {number} pageNumber - The zero-based page index.
  * @private
+ * @returns {void}
+ * @throws {Error} If the source cannot be read or the page does not exist.
  */
 function appendPDFPageFromPDFWithAnnotations(
   pdfWriter,
