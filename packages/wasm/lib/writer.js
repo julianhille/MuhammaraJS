@@ -618,7 +618,12 @@ export function createWriterFactory({
       if (ended) throw new Error("PDF writer has ended");
     }
 
-    /** Guard a writer method while preserving asynchronous rejection semantics. */
+    /**
+     * Guards a writer method while preserving asynchronous rejection semantics.
+     * @param {Function} method - Method to wrap.
+     * @param {boolean} asynchronous - Whether the wrapper returns a promise that rejects.
+     * @returns {Function} The guarded method.
+     */
     function withActiveWriter(method, asynchronous) {
       if (asynchronous) {
         /** Reject calls on a finalized writer before normalizing async inputs. */
