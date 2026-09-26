@@ -3046,6 +3046,13 @@ export function createWriterToModifyFactory({
       createPDFTextString: function (value) {
         return new PDFTextString(value);
       },
+      /**
+       * Creates a PDF date.
+       * @param {string|Date|PDFDate} [value] - Date; empty when omitted.
+       * @returns {PDFDate} The date.
+       * @throws {TypeError} If `value` is not a valid date.
+       * @throws {Error} If a date string cannot be parsed.
+       */
       createPDFDate: function (value) {
         return new PDFDate(value);
       },
