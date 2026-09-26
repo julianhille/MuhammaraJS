@@ -2644,6 +2644,11 @@ export function createWriterToModifyFactory({
             installDrawingHelpers(context, colorValue);
             return context;
           },
+          /**
+           * Finishes the form so it can be placed with `doXObject()`.
+           * @returns {this} The form.
+           * @throws {Error} If the modifier ended, the form already ended, or it cannot be finished.
+           */
           end: function () {
             requireOpen();
             if (
