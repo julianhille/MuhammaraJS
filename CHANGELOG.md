@@ -250,6 +250,9 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Changed
 
+- Link `bcrypt.lib` explicitly in the Windows native build, where OpenSSL seeds
+  AES initialization vectors from `BCryptGenRandom`
+  [#663](https://github.com/julianhille/MuhammaraJS/issues/663)
 - Rework the npm READMEs of `@muhammara/native`, `@muhammara/native-with-source`, and `@muhammara/native-core`: each explains how the MuhammaraJS packages fit together, when to use the Wasm package instead, supported platforms, and tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
 - Build seven canonical native prebuilds and reuse them across supported Node.js
   and Electron compatibility-boundary tests, including native ARM64 musl tests
