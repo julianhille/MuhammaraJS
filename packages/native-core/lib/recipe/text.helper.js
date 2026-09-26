@@ -122,6 +122,10 @@ exports.Line = class Line {
     this.wordObjects = [];
   }
 
+  /**
+   * Replace the line ID; falsy values are ignored.
+   * @param {number} id - The new ID.
+   */
   set lineID(id) {
     if (id) {
       this._lineID = id;
