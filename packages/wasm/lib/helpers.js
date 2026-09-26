@@ -26,6 +26,12 @@ export function createHelpers(module) {
     return pointer;
   };
   var encoder = new TextEncoder();
+  /**
+   * Deletes a virtual file; a missing file is ignored.
+   * @param {string} [path] - Virtual file system path.
+   * @returns {void}
+   * @throws {Error} If an existing file cannot be removed.
+   */
   function removeFile(path) {
     if (!path) return;
     try {
