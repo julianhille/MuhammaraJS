@@ -478,6 +478,9 @@ exports.Column = class Column {
   get field() {
     return this._field;
   }
+  /**
+   * @returns {string} The column heading.
+   */
   get text() {
     return this._text;
   }
