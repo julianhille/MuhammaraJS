@@ -72,6 +72,18 @@ exports._merge = function merge(target, source) {
   return Object.assign({}, target, source);
 };
 
+/**
+ * Resolve the text position and options for text(): a call without
+ * coordinates continues the flow or starts at the margins, a call with them
+ * starts a new text box; previous options are merged in.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number|"center"|Object} [x] - The x coordinate, or the options.
+ * @param {number|"center"} [y] - The y coordinate.
+ * @param {Object} [options] - The text options.
+ * @returns {Object} The merged text options.
+ * @throws {TypeError} If no page is active.
+ */
 function _initOptions(self, x = {}, y, options = {}) {
   // This allows user to skip providing x/y coordinates
   if (typeof x === "object") {
