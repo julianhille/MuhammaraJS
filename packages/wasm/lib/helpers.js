@@ -497,6 +497,17 @@ export function createHelpers(module) {
    * @returns {void}
    */
   function addTextShowingOperators(context, requireContext, api) {
+    /**
+     * Shows text or glyphs with one of the quote operators.
+     * @param {number} operation - 1 for `'`, 2 for `"`.
+     * @param {string|Glyph[]} text - Text or glyph entries.
+     * @param {TextOptions} [options] - Text encoding; only for string text.
+     * @param {number} [wordSpace=0] - Word spacing for `"`.
+     * @param {number} [characterSpace=0] - Character spacing for `"`.
+     * @returns {object} The content context.
+     * @throws {TypeError} If a spacing is not finite, or `options` is invalid or given with glyphs.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     function show(operation, text, options, wordSpace = 0, characterSpace = 0) {
       requireContext();
       if (![wordSpace, characterSpace].every(Number.isFinite)) {
