@@ -900,3 +900,9 @@ void [
   recipeDeviceColorSpace,
   recipeTextOptions,
 ];
+
+var textReader = muhammara.createReader("input.pdf");
+var textElement: muhammara.PDFTextElement = textReader.extractPageText(0)[0];
+var decodedText: string = textElement.text;
+var rawContent: string = textElement.content;
+void [decodedText, rawContent];

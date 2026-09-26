@@ -1339,8 +1339,14 @@ declare namespace muhammara {
 
   /** A text-showing operation in a page content stream. */
   export interface PDFTextElement {
-    /** Raw character codes from the content stream. Unicode decoding requires a font ToUnicode CMap. */
+    /** Raw character codes from the content stream, one byte per code unit. */
     content: string;
+    /**
+     * `content` decoded to Unicode through the active font: its `/ToUnicode`
+     * CMap, then its simple-font `/Encoding` and `/Differences`. Codes the font
+     * does not map become U+FFFD.
+     */
+    text: string;
     /** The page resource name selected by the most recent Tf operation. */
     fontResource: string;
     fontSize: number;

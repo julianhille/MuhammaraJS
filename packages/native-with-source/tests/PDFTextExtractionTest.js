@@ -35,6 +35,62 @@ describe("PDFTextExtraction", function () {
     assert.deepEqual(elements[1].textMatrix, [1, 0, 0, 1, 25, 75]);
   });
 
+  it("decodes Unicode text through the page font", function () {
+    var output = __dirname + "/output/PDFTextExtractionDecoded.pdf";
+    var writer = muhammara.createWriter(output);
+    var page = writer.createPage(0, 0, 200, 200);
+    var font = writer.getFontForFile(
+      __dirname + "/TestMaterials/fonts/arial.ttf",
+    );
+    writer
+      .startPageContentContext(page)
+      .writeFreeCode("BT (no font) Tj ET\n")
+      .BT()
+      .Tf(font, 12)
+      .Tj("plain")
+      .Tj("café Ωmega")
+      .ET();
+    writer.writePage(page).end();
+
+    var reader = muhammara.createReader(output);
+    var elements = reader.extractPageText(0);
+    reader.end();
+
+    assert.deepEqual(
+      elements.map(function (element) {
+        return element.text;
+      }),
+      ["no font", "plain", "café Ωmega"],
+    );
+    assert.equal(elements[2].content.length, 20, "content keeps raw codes");
+
+    var differences = __dirname + "/TestMaterials/FontDifferences.pdf";
+    reader = muhammara.createReader(differences);
+    assert.deepEqual(
+      reader.extractPageText(0).map(function (element) {
+        return [element.content, element.text];
+      }),
+      [
+        ["cafB", "café"],
+        ["A of B", "Ω of é"],
+      ],
+    );
+    reader.end();
+
+    var modifier = muhammara.createWriterToModify(differences, {
+      modifiedFilePath: __dirname + "/output/PDFTextExtractionModified.pdf",
+    });
+    var parser = modifier.getModifiedFileParser();
+    assert.equal(parser.extractPageText(0)[0].text, "café");
+    var copyingContext = modifier.createPDFCopyingContextForModifiedFile();
+    assert.equal(
+      copyingContext.getSourceDocumentParser().extractPageText(0)[1].text,
+      "Ω of é",
+    );
+    copyingContext.end();
+    modifier.end();
+  });
+
   it("skips inline image payloads", function () {
     var output = __dirname + "/output/PDFTextExtractionInlineImage.pdf";
     var writer = muhammara.createWriter(output);

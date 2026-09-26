@@ -10,7 +10,7 @@ function findTextPositions(inputPath, pageIndex, text) {
     return reader
       .extractPageText(pageIndex, { maxTextBytes: 1024 * 1024 })
       .filter(function (element) {
-        return element.content === text;
+        return element.text === text;
       })
       .map(function (element) {
         return {

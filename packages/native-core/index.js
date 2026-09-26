@@ -1,6 +1,75 @@
 "use strict";
 
 var path = require("path");
+var fontText = require("./lib/font-text");
+
+/**
+ * Make `extractPageText()` add decoded Unicode `text` to each element. The
+ * addon does not export its reader class, so the shared reader prototype is
+ * patched the first time a reader or copying context is handed out.
+ *
+ * @param {object} muhammara The native addon.
+ */
+function patchReaderFactories(muhammara) {
+  /**
+   * Patch the reader prototype once.
+   *
+   * @param {object} reader A reader returned by the addon.
+   * @returns {object} The same reader.
+   */
+  function patchReader(reader) {
+    var prototype = reader && Object.getPrototypeOf(reader);
+    if (!prototype || prototype.extractPageText.decodesText) return reader;
+    var extractPageText = prototype.extractPageText;
+    prototype.extractPageText = function (pageIndex) {
+      return fontText.decodeTextElements(
+        this,
+        muhammara,
+        pageIndex,
+        extractPageText.apply(this, arguments),
+      );
+    };
+    prototype.extractPageText.decodesText = true;
+    return reader;
+  }
+
+  /**
+   * Patch a copying context prototype so its source parser is patched too.
+   *
+   * @param {object} context A copying context returned by the addon.
+   * @returns {object} The same context.
+   */
+  function patchCopyingContext(context) {
+    var prototype = context && Object.getPrototypeOf(context);
+    if (!prototype || prototype.getSourceDocumentParser.patchesReader) {
+      return context;
+    }
+    var getSourceDocumentParser = prototype.getSourceDocumentParser;
+    prototype.getSourceDocumentParser = function () {
+      return patchReader(getSourceDocumentParser.apply(this, arguments));
+    };
+    prototype.getSourceDocumentParser.patchesReader = true;
+    return context;
+  }
+
+  var createReader = muhammara.createReader;
+  muhammara.createReader = function () {
+    return patchReader(createReader.apply(this, arguments));
+  };
+  var writer = muhammara.PDFWriter.prototype;
+  var getModifiedFileParser = writer.getModifiedFileParser;
+  writer.getModifiedFileParser = function () {
+    return patchReader(getModifiedFileParser.apply(this, arguments));
+  };
+  ["createPDFCopyingContext", "createPDFCopyingContextForModifiedFile"].forEach(
+    function (name) {
+      var create = writer[name];
+      writer[name] = function () {
+        return patchCopyingContext(create.apply(this, arguments));
+      };
+    },
+  );
+}
 
 /**
  * Attach the shared JavaScript API to an implementation package's loaded addon.
@@ -94,6 +163,7 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     copyingContext.end();
     return this;
   };
+  patchReaderFactories(muhammara);
   muhammara.PDFStreamForResponse = require("./lib/PDFStreamForResponse");
   muhammara.PDFWStreamForFile = require("./lib/PDFWStreamForFile");
   muhammara.PDFRStreamForFile = require("./lib/PDFRStreamForFile");
