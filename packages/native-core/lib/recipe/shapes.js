@@ -1482,6 +1482,13 @@ const Point = class Point {
  * @private
  */
 const Line = class Line {
+  /**
+   * @param {number|number[]|Point} x1 - The first x, or the first point.
+   * @param {number|number[]|Point} y1 - The first y, or the second point.
+   * @param {number} [x2] - The second x when numbers are given.
+   * @param {number} [y2] - The second y when numbers are given.
+   * @throws {Error} If the first argument is a point and the second is not.
+   */
   constructor(x1, y1, x2, y2) {
     // Allow user to supply Points or Arrays instead of individual coordinates
     if (
