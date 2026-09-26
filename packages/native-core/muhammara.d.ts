@@ -1020,6 +1020,11 @@ declare namespace muhammara {
      *   context.
      */
     removeAdditionalInfoEntry(key: string): void;
+    /**
+     * Removes every custom info entry.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
     clearAdditionalInfoEntries(): void;
     getAdditionalInfoEntry(key: string): string;
     /** @param key Ignored; kept so 6.x calls that passed a key still compile. */
