@@ -883,6 +883,11 @@ export function createReaderFactory({
           return type < 0 ? null : type;
         });
       },
+      /**
+       * Reads the trailer dictionary.
+       * @returns {PDFDictionary} The trailer.
+       * @throws {Error} If the reader has ended.
+       */
       getTrailer: function () {
         requireReader();
         return wrapObject(module._muhammara_wasm_reader_get_trailer(reader));
