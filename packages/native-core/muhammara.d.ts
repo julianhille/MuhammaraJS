@@ -1294,6 +1294,12 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
+    /**
+     * Creates a PDF text string, encoded as PDFDocEncoding or UTF-16 as needed.
+     * Works after the writer has ended.
+     * @param value - The text, or its UTF-16 code units.
+     * @returns The text string.
+     */
     createPDFTextString(value?: string | number[]): PDFTextString;
     createPDFDate(value?: string | Date): PDFDate;
     getImageDimensions(
