@@ -718,7 +718,12 @@ export function createTextMethods({ drawText, measure, module }) {
         }).height;
       var availableWidth = width ? width - left - right : 0;
       var textOptions = { ...options, fontSize };
-      /** Measures a fragment with the current Recipe font state. */
+      /**
+       * Measures a fragment with the current Recipe font state.
+       * @param {string} text - Text.
+       * @param {object} partOptions - Text options.
+       * @returns {TextDimensions} Bounds and width.
+       */
       var measureText = (text, partOptions) =>
         dimensions(this, text, partOptions);
       var entries = options.html
