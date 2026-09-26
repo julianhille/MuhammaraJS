@@ -152,17 +152,14 @@ export function createVectorHelpers(runtime) {
      * @throws {TypeError} If a color is invalid.
      */
     _finishPath: function (options = {}) {
-      var fill = options.fill;
-      var stroke = options.stroke || options.color || options.colour;
-      pathColors(options).forEach((color) =>
+      var colors = pathColors(options);
+      colors.forEach((color) =>
         setColor(this, color.value, options, color.stroke),
       );
-      if (
-        fill !== undefined &&
-        (stroke !== undefined || options.color !== undefined)
-      )
-        operator(this, 1);
-      else operator(this, fill !== undefined ? 6 : 5);
+      // Paint what was colored: B for both, f for a fill, S for a stroke.
+      var fills = colors.some((color) => !color.stroke);
+      var strokes = colors.some((color) => color.stroke);
+      operator(this, fills && strokes ? 1 : fills ? 6 : 5);
       this._restore();
       return this;
     },

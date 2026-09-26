@@ -179,6 +179,7 @@ export function pathColors(options) {
 export function createSeparationMethods({
   module,
   rawObjectsContext,
+  resourcesDictionary,
   withString,
   withDoubles,
 }) {
@@ -205,25 +206,6 @@ export function createSeparationMethods({
     objects.endDictionary(dictionary);
     objects.endIndirectObject();
     return id;
-  }
-
-  /** Reads and frees a resource name returned by the native mapping. */
-  function mapColorspace(resources, objectId) {
-    var result = module._muhammara_wasm_resources_add_mapping(
-      resources,
-      2,
-      objectId,
-    );
-    if (!result) throw new Error("Unable to add color space resource");
-    try {
-      var length = 0;
-      while (module.HEAPU8[result + length]) length += 1;
-      return new TextDecoder().decode(
-        module.HEAPU8.subarray(result, result + length),
-      );
-    } finally {
-      module._muhammara_wasm_free(result);
-    }
   }
 
   return {
@@ -286,7 +268,11 @@ export function createSeparationMethods({
      * @private
      */
     _prepareSeparationColors: function (options = {}) {
-      pathColors(options).forEach(({ value }) => {
+      var colors = pathColors(options);
+      // Resolve in native's order, a given stroke before the fill, so the
+      // color that first names an ink sets its alternate on both ends.
+      if (options.stroke) colors.reverse();
+      colors.forEach(({ value }) => {
         var model = colorModel(this, value, options);
         if (model.colorspace === Colorspace.SEPARATION)
           this._separationColorspace(model);
@@ -312,7 +298,9 @@ export function createSeparationMethods({
         this._recipe,
       );
       if (!handle) throw new Error("Unable to get page resources");
-      var resourceName = mapColorspace(handle, id);
+      var resourceName = resourcesDictionary(handle, () => {
+        if (!this._recipe) throw new Error("Recipe has been disposed");
+      }).addColorSpaceMapping(id);
       withString(resourceName, (namePointer) => {
         if (
           !module._muhammara_wasm_recipe_structured_operator(

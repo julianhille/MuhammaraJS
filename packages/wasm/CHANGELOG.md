@@ -365,6 +365,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Draw nothing for a Recipe `line()` with fewer than two coordinate pairs, as
+  native does, instead of throwing a `TypeError`; a single pair moves the
+  current position [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Declare the Recipe `metadata` property, accept a `boolean` in
   `movedown()`, a `number` or options in the third `n_gon()` and `star()`
   argument, and `string | Glyph` in `Tj()`, `Quote()`, and `DoubleQuote()`, as

@@ -264,6 +264,41 @@ describe("Coloring", () => {
     assert.match(draw("separation-second"), /\/Separation/);
   });
 
+  it("names Separation inks freely and keeps the first color of a shared ink", () => {
+    const assert = require("node:assert/strict");
+    const fs = require("fs");
+    const output = path.join(__dirname, "../output/separation-ink-names.pdf");
+    new Recipe("new", output, { compress: false })
+      .createPage(200, 200)
+      .chroma("__proto__", "#ff0000", "separation")
+      .chroma("constructor", "#0000ff", "separation")
+      .rectangle(10, 10, 20, 20, {
+        fill: "__proto__",
+        colorspace: "separation",
+      })
+      .rectangle(40, 10, 20, 20, {
+        fill: "constructor",
+        colorspace: "separation",
+      })
+      // A stroke resolves before the fill, so its color is the ink alternate.
+      .rectangle(70, 10, 40, 40, {
+        fill: "#ff0000",
+        stroke: "#00ff00",
+        colorName: "ink",
+        colorspace: "separation",
+      })
+      .endPage()
+      .endPDF();
+    const raw = fs.readFileSync(output, "latin1");
+    assert.equal(raw.match(/\/Separation \/__proto__ \/DeviceRGB/g)?.length, 1);
+    assert.equal(
+      raw.match(/\/Separation \/constructor \/DeviceRGB/g)?.length,
+      1,
+    );
+    assert.equal(raw.match(/\/Separation \/ink \/DeviceRGB/g)?.length, 1);
+    assert.match(raw, /\/C1 \[ 0 1 0 \]/);
+  });
+
   it("strokes a filled shape with its color, not the fill", () => {
     const assert = require("node:assert/strict");
     const output = path.join(__dirname, "../output/fill-and-color.pdf");

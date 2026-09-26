@@ -389,4 +389,17 @@ describe("Recipe vector", function () {
     assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 1);
     assert.equal(content.match(/\S+ \S+ [ml]\b/g)?.length, 3);
   });
+
+  it("draws nothing for a line with fewer than two points", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var pdf = new Recipe({ compress: false })
+      .createPage(200, 200)
+      .line([])
+      .line([[20, 20]])
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(pdf);
+    assert.deepEqual(getPaintBlocks(muhammara, reader, 0), []);
+  });
 });

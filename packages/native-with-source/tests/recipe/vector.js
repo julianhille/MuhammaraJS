@@ -476,4 +476,18 @@ describe("Vector", () => {
     assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 1);
     assert.equal(content.match(/\S+ \S+ [ml]\b/g)?.length, 3);
   });
+
+  it("draws nothing for a line with fewer than two points", () => {
+    const output = path.join(__dirname, "../output/line-short.pdf");
+    new Recipe("new", output)
+      .createPage(200, 200)
+      .line([])
+      .line([[20, 20]])
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    // Nothing is drawn, so native writes the page without content.
+    const page = reader.parsePage(0).getDictionary();
+    assert.ok(!page.exists("Contents") || !getPaintBlocks(reader, 0).length);
+  });
 });

@@ -145,10 +145,11 @@ exports.chroma = function chroma(name, value, colorspace = "") {
 function createColorSpaces(self, colorName, color) {
   const deviceCS = { 1: "DeviceGray", 3: "DeviceRGB", 4: "DeviceCMYK" };
   const altCS = deviceCS[`${color.length}`];
-  // Cache per Recipe: the IDs belong to this Recipe's PDF writer.
-  self.colorSpaces = self.colorSpaces || {};
-  self.colorSpaces[altCS] = self.colorSpaces[altCS] || {};
-  let colorSpaceID = self.colorSpaces[altCS][colorName];
+  // Cache per Recipe: the IDs belong to this Recipe's PDF writer. A Map keyed
+  // like Wasm's keeps ink names such as "__proto__" from hitting inherited keys.
+  self.colorSpaces = self.colorSpaces || new Map();
+  const key = `${altCS}:${colorName}`;
+  let colorSpaceID = self.colorSpaces.get(key);
 
   if (!colorSpaceID) {
     const transformFunction = tintTransform(self, color);
@@ -164,7 +165,7 @@ function createColorSpaces(self, colorName, color) {
       .endArray(muhammara.eTokenSeparatorEndLine)
       .endIndirectObject();
     self.resumeContext();
-    self.colorSpaces[altCS][colorName] = colorSpaceID;
+    self.colorSpaces.set(key, colorSpaceID);
   }
 
   return colorSpaceID;

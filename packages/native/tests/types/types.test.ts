@@ -468,6 +468,18 @@ var colorspace: muhammara.Recipe.Colorspace = "separation";
 var recipeOptions: muhammara.Recipe.RecipeOptions = {
   colorspace: "separation",
 };
+// A Separation ink named for a color given by value, on shapes and text.
+recipe
+  .circle(120, 40, 20, {
+    fill: [0, 255, 0, 0],
+    colorspace: "separation",
+    colorName: "SpotGreen",
+  })
+  .text("Spot", 10, 80, {
+    color: [0, 255, 0, 0],
+    colorspace: "separation",
+    colorName: "SpotGreen",
+  });
 var dynamicColorspace: string = "gray";
 var optionalColorspace: string | undefined = dynamicColorspace;
 function applyColorspaces(

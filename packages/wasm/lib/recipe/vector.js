@@ -62,6 +62,10 @@ export function createVectorMethods(runtime) {
   function paintInsetShape(recipe, options, x, y, drawPath) {
     var fill = options.fill;
     var stroke = options.stroke || options.color || options.colour;
+    // The fill and the stroke are separate paths; prepare both Separation
+    // colors first, in native's order, so a shared colorName ink gets the same
+    // alternate on both ends.
+    recipe._prepareSeparationColors(options);
     if (fill !== undefined) {
       var fillOptions = Object.create(options, {
         fill: { value: fill },

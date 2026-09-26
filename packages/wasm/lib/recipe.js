@@ -83,6 +83,7 @@ export function createRecipeFactory({
   withString,
   withDoubles,
   rawObjectsContext,
+  resourcesDictionary,
   assertOutputSize,
 }) {
   var fonts = new Map();
@@ -749,6 +750,7 @@ export function createRecipeFactory({
     createSeparationMethods({
       module,
       rawObjectsContext,
+      resourcesDictionary,
       withString,
       withDoubles,
     }),

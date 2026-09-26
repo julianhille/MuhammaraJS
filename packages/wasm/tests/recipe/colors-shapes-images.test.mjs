@@ -311,6 +311,41 @@ describe("Recipe colors, shapes, and images", function () {
     recipe.endPage().endPDF();
   });
 
+  it("names Separation inks freely and keeps the first color of a shared ink", async function () {
+    var Recipe = await getRecipe();
+    var raw = new TextDecoder("latin1").decode(
+      new Recipe({ compress: false })
+        .createPage(200, 200)
+        .chroma("__proto__", "#ff0000", "separation")
+        .chroma("constructor", "#0000ff", "separation")
+        .rectangle(10, 10, 20, 20, {
+          fill: "__proto__",
+          colorspace: "separation",
+        })
+        .rectangle(40, 10, 20, 20, {
+          fill: "constructor",
+          colorspace: "separation",
+        })
+        // A stroke resolves before the fill, so its color is the ink
+        // alternate, as in native.
+        .rectangle(70, 10, 40, 40, {
+          fill: "#ff0000",
+          stroke: "#00ff00",
+          colorName: "ink",
+          colorspace: "separation",
+        })
+        .endPage()
+        .endPDF(),
+    );
+    assert.equal(raw.match(/\/Separation \/__proto__ \/DeviceRGB/g)?.length, 1);
+    assert.equal(
+      raw.match(/\/Separation \/constructor \/DeviceRGB/g)?.length,
+      1,
+    );
+    assert.equal(raw.match(/\/Separation \/ink \/DeviceRGB/g)?.length, 1);
+    assert.match(raw, /\/C1 \[ 0 1 0 \]/);
+  });
+
   it("strokes a filled shape with its color, not the fill", async function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();

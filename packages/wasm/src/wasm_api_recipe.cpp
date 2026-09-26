@@ -835,8 +835,9 @@ int muhammara_wasm_recipe_set_opacity(WasmRecipe* recipe, double opacity) {
          opacity <= 1 && recipe->context->SetOpacity(opacity) == PDFHummus::eSuccess;
 }
 
-// colorSpace is 0 for gray, 1 for RGB, or 2 for CMYK. color packs one byte
-// per component in PDFWriter's order: 0xGG, 0xRRGGBB, or 0xCCMMYYKK.
+// colorSpace is 0 for gray, 1 for RGB, 2 for CMYK, or 3 to keep the current
+// fill color, such as a Separation color. color packs one byte per component
+// in PDFWriter's order: 0xGG, 0xRRGGBB, or 0xCCMMYYKK; code 3 ignores it.
 int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
                                const char* text, const char* fontPath,
                                double fontSize, int colorSpace,
@@ -869,8 +870,8 @@ int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
     status = recipe->context->BT();
     if (status == PDFHummus::eSuccess) {
       recipe->context->Tf(font, fontSize);
-      recipe->context->Tm(1, 0, 0, 1, x, y);
-      status = recipe->context->Tj(text);
+      status = recipe->context->Tm(1, 0, 0, 1, x, y);
+      if (status == PDFHummus::eSuccess) status = recipe->context->Tj(text);
       PDFHummus::EStatusCode endTextStatus = recipe->context->ET();
       if (status == PDFHummus::eSuccess) status = endTextStatus;
     }

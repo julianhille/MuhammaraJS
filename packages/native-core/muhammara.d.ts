@@ -3355,6 +3355,8 @@ declare namespace muhammara {
       /** Text fill color: `#gg`, `#rrggbb`, `#ccmmyykk`, `%r,g,b` percentages, a 0-255 component array, or a name registered with `chroma()`. Missing or unknown colors use `#1777d1`. */
       color?: Color;
       colorspace?: Colorspace;
+      /** The Separation ink name of a `"separation"` color given by value. */
+      colorName?: string;
       flow?: boolean;
       overflow?: TextOverflowCallback;
       layout?: number | string;
@@ -3514,6 +3516,8 @@ declare namespace muhammara {
       color?: Color;
       stroke?: Color;
       colorspace?: Colorspace;
+      /** The Separation ink name of a `"separation"` color given by value. */
+      colorName?: string;
       lineWidth?: number;
       width?: number;
       opacity?: number;

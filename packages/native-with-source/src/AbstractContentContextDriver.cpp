@@ -917,13 +917,15 @@ bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
         options.colorSpace = LegacyString(env, colorSpace);
         if (HasPendingException(env))
           return false;
-        if (!options.colorSpace.empty() && options.colorSpace != "rgb" &&
-            options.colorSpace != "gray" && options.colorSpace != "cmyk") {
+        // An empty colorspace means RGB, as an omitted one does and as in Wasm.
+        if (options.colorSpace.empty())
+          options.colorSpace = "rgb";
+        if (options.colorSpace != "rgb" && options.colorSpace != "gray" &&
+            options.colorSpace != "cmyk") {
           ThrowTypeError(env, "colorspace must be rgb, gray, or cmyk");
           return false;
         }
-        if (isStringColor && !options.colorSpace.empty() &&
-            options.colorSpace != "rgb") {
+        if (isStringColor && options.colorSpace != "rgb") {
           ThrowTypeError(env,
                          "only a numeric color can use the gray or cmyk "
                          "colorspace");
