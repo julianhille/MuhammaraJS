@@ -122,6 +122,13 @@ export class PDFRStreamForBuffer {
     return this.rposition - this.mStartPosition;
   }
 
+  /**
+   * Sets the origin that `setPosition()` and `getCurrentPosition()` use.
+   *
+   * @param {number} position Absolute start offset.
+   * @returns {void}
+   * @throws {TypeError} If `position` is not an integer.
+   */
   moveStartPosition(position) {
     if (!Number.isInteger(position))
       throw new TypeError("Position must be an integer");
