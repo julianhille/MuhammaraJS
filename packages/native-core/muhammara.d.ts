@@ -746,6 +746,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     Tm(a: number, b: number, c: number, d: number, e: number, f: number): this;
+    /**
+     * Moves to the start of the next line; operator T*.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     TStar(): this;
     Tf(fontReferenced: UsedFont | string, fontSize: number): this;
     Tj(text: string, options?: TextRenderOptions): this;
