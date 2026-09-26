@@ -100,6 +100,13 @@ export class PDFRStreamForBuffer {
     );
   }
 
+  /**
+   * Advances the position without reading; not clamped, as in native.
+   *
+   * @param {number} amount Number of bytes to skip.
+   * @returns {void}
+   * @throws {TypeError} If `amount` is not an integer.
+   */
   skip(amount) {
     if (!Number.isInteger(amount))
       throw new TypeError("Skip amount must be an integer");
