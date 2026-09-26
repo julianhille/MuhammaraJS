@@ -56,6 +56,13 @@ export function createModifierFactory({
       if (ended || !modifier) throw new Error("PDF modifier has ended");
     }
     return {
+      /**
+       * Starts drawing on an existing page.
+       * @param {number} index - Zero-based page index.
+       * @returns {this} The modifier.
+       * @throws {RangeError} If the page cannot be modified.
+       * @throws {Error} If the modifier has ended.
+       */
       startPage: function (index) {
         requireOpenModifier();
         if (!module._muhammara_wasm_modifier_start_page(modifier, index, 0)) {
