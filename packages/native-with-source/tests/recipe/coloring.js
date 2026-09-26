@@ -1,5 +1,6 @@
 const path = require("path");
 const Recipe = require("@muhammara/native-with-source").Recipe;
+const muhammara = require("@muhammara/native-with-source");
 
 describe("Coloring", () => {
   it("Using Names", (done) => {
@@ -268,6 +269,11 @@ describe("Coloring", () => {
           colorspace: "separation",
         })
         .text("Spot", 10, 80, { color: "SpotOrange", colorspace: "separation" })
+        .text("<u>Under</u>", 80, 80, {
+          html: true,
+          color: "SpotOrange",
+          colorspace: "separation",
+        })
         .circle(120, 40, 20, {
           fill: [0, 255, 0, 0],
           colorspace: "separation",
@@ -289,6 +295,38 @@ describe("Coloring", () => {
         1,
       );
       assert.equal(recipe.knownColors.separation.SpotGreen, "00ff0000");
+
+      // Every separation drawing is a form XObject that selects its color:
+      // fills, both texts and the colorName circle with cs, the line and the
+      // underline with CS. The #0000ff rectangle keeps its device color.
+      const reader = muhammara.createReader(output);
+      const content = [];
+      for (let id = 1; id < reader.getXrefSize(); id++) {
+        const object = reader.parseNewObject(id);
+        if (!object || object.getType() !== muhammara.ePDFObjectStream) {
+          continue;
+        }
+        const stream = object.toPDFStream();
+        const dictionary = stream.getDictionary();
+        if (
+          !dictionary.exists("Subtype") ||
+          dictionary.queryObject("Subtype").value !== "Form"
+        ) {
+          continue;
+        }
+        const input = reader.startReadingFromStream(stream);
+        const bytes = [];
+        while (input.notEnded()) bytes.push(...input.read(4096));
+        content.push(Buffer.from(bytes).toString("latin1"));
+      }
+      const all = content.join("\n");
+      assert.equal(all.match(/\/\S+ cs\s+1 scn/g)?.length, 4);
+      // On edited pages line() also strokes a zero-length first segment.
+      assert.equal(
+        all.match(/\/\S+ CS\s+1 SCN/g)?.length,
+        mode === "edited" ? 3 : 2,
+      );
+      assert.match(all, /0 0 1 rg/);
     });
   });
 });

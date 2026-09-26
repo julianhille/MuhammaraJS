@@ -234,6 +234,11 @@ describe("Recipe colors, shapes, and images", function () {
           colorspace: "separation",
         })
         .text("Spot", 10, 80, { color: "SpotOrange", colorspace: "separation" })
+        .text("<u>Under</u>", 80, 80, {
+          html: true,
+          color: "SpotOrange",
+          colorspace: "separation",
+        })
         .circle(120, 40, 20, {
           fill: [0, 255, 0, 0],
           colorspace: "separation",
@@ -291,10 +296,10 @@ describe("Recipe colors, shapes, and images", function () {
         })
         .join("\n");
       reader.end();
-      // Fills, the text and the colorName circle select a Separation color at
-      // full tint; the line strokes one.
-      assert.equal(content.match(/\/\S+ cs\s+1 scn/g)?.length, 3);
-      assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 1);
+      // Fills, both texts and the colorName circle select a Separation color
+      // at full tint; the line and the underline stroke one.
+      assert.equal(content.match(/\/\S+ cs\s+1 scn/g)?.length, 4);
+      assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 2);
       // A value without an ink name keeps its device color.
       assert.match(content, /0 0 1 rg/);
     });

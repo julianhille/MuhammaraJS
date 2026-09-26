@@ -1,4 +1,5 @@
 const muhammara = require("../muhammara");
+const { Colorspace } = require("../recipe-constants");
 
 /**
  * move the current position to target position
@@ -52,14 +53,42 @@ exports.lineTo = function lineTo(x, y, options = {}) {
     pathOptions.colorspace = pathOptions.strokeModel.colorspace;
   }
 
-  context
-    .q()
-    .J(pathOptions.lineCap)
-    .j(pathOptions.lineJoin)
-    .d(pathOptions.dash, pathOptions.dashPhase)
-    .M(pathOptions.miterLimit)
-    .drawPath(fromX, fromY, nx, ny, this._devicePathOptions(pathOptions))
-    .Q();
+  const colorModel = pathOptions.strokeModel || pathOptions.colorModel;
+  const drawLine = (ctx, originX, originY) =>
+    ctx
+      .J(pathOptions.lineCap)
+      .j(pathOptions.lineJoin)
+      .d(pathOptions.dash, pathOptions.dashPhase)
+      .M(pathOptions.miterLimit)
+      .drawPath(
+        fromX - originX,
+        fromY - originY,
+        nx - originX,
+        ny - originY,
+        this._devicePathOptions(pathOptions),
+      );
+
+  if (colorModel.colorspace === Colorspace.SEPARATION) {
+    // A Separation color space is a resource, so draw through a form XObject
+    // as the other shapes do; the padding keeps the line caps inside it.
+    const padding = pathOptions.width;
+    const left = Math.min(fromX, nx) - padding;
+    const bottom = Math.min(fromY, ny) - padding;
+    this._drawObject(
+      this,
+      left,
+      bottom,
+      Math.abs(nx - fromX) + padding * 2,
+      Math.abs(ny - fromY) + padding * 2,
+      {},
+      (ctx, xObject) => {
+        this._setSeparationColor(xObject, colorModel, true);
+        drawLine(ctx, left, bottom);
+      },
+    );
+  } else {
+    drawLine(context.q(), 0, 0).Q();
+  }
   this.moveTo(x, y);
   return this;
 };

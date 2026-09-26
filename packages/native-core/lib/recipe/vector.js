@@ -56,14 +56,14 @@ exports.circle = function circle(x, y, radius, options = {}) {
       diameter,
       pathOptions,
       (ctx, xObject) => {
-        ctx
-          .gs(xObject.getGsName(pathOptions.fillGsId))
-          .drawCircle(
-            radius,
-            radius,
-            radius,
-            this._devicePathOptions(pathOptions),
-          );
+        ctx.gs(xObject.getGsName(pathOptions.fillGsId));
+        this._setSeparationColor(xObject, pathOptions.fillModel, false);
+        ctx.drawCircle(
+          radius,
+          radius,
+          radius,
+          this._devicePathOptions(pathOptions),
+        );
       },
     );
   }
@@ -87,6 +87,11 @@ exports.circle = function circle(x, y, radius, options = {}) {
       pathOptions,
       (ctx, xObject) => {
         ctx.gs(xObject.getGsName(pathOptions.strokeGsId));
+        this._setSeparationColor(
+          xObject,
+          pathOptions.strokeModel || pathOptions.colorModel,
+          true,
+        );
         ctx
           .d(pathOptions.dash, pathOptions.dashPhase)
           .drawCircle(
