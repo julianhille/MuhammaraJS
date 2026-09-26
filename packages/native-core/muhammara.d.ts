@@ -1003,6 +1003,12 @@ declare namespace muhammara {
      * @throws {TypeError} If hex is not a single string or array.
      */
     writeHexString(hex: string | number[]): this;
+    /**
+     * Writes a boolean.
+     * @param bool - The value.
+     * @returns This context.
+     * @throws {TypeError} If bool is not a single boolean.
+     */
     writeBoolean(bool: boolean): this;
     writeKeyword(keyword: string): this;
     writeComment(comment: string): this;
