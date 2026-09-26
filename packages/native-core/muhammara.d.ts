@@ -311,6 +311,10 @@ declare namespace muhammara {
   }
 
   export interface PDFRStreamForBuffer extends ReadStream {
+    /**
+     * Creates a read stream over a buffer.
+     * @param buffer - The bytes to read.
+     */
     new (buffer: Buffer): PDFRStreamForBuffer;
     /**
      * Reads a copy of the next bytes.
