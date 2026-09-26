@@ -155,6 +155,11 @@ class Recipe {
     return version;
   }
 
+  /**
+   * The current drawing position in Recipe coordinates, where y grows downward
+   * from the top edge of the page.
+   * @returns {{x: number, y: number}} The current position.
+   */
   get position() {
     const { ox, oy } = this._reverseCoordinate(
       this._position.x,
