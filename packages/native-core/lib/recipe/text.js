@@ -1381,6 +1381,17 @@ function elideNonFittingText(textBox, line, word, pathOptions) {
   }
 }
 
+/**
+ * Turn a finished line into a laid-out run and record the line.
+ * @private
+ * @param {Line[]} lines - The finished lines; the line is appended.
+ * @param {Line} line - The line.
+ * @param {number} lineID - The ID tying the first HTML line to its group.
+ * @param {Object} textBox - The laid-out text box.
+ * @param {Object} [options] - html, lastLine, lineComplete, wordCount,
+ *   totalTextWidth and writeOptions.
+ * @returns {Object} The run: text, line metrics and justification data.
+ */
 function makeTextObject(lines, line, lineID, textBox, options = {}) {
   const lineHeight = line.height;
   const spaceSz =
