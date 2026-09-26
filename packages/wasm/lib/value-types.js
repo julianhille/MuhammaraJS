@@ -272,6 +272,10 @@ export function createValueTypes({ module, withString, withBytes }) {
     return this._getNativeResources();
   };
   Object.defineProperty(PDFPage.prototype, "rotate", {
+    /**
+     * Reads `/Rotate`.
+     * @returns {number|undefined} The rotation in degrees, or undefined when unset.
+     */
     get: function () {
       return this._rotation;
     },
