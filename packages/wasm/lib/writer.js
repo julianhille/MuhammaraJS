@@ -1957,6 +1957,16 @@ export function createWriterFactory({
           throw new Error("Form XObject content is not writable");
         }
         var form = this;
+        /**
+         * Applies one numeric content operator to this form.
+         * @param {string} name - Operator name for error messages.
+         * @param {number} code - Native operator code.
+         * @param {number[]} [args=[]] - Operands; a missing operand is `undefined` and rejected.
+         * @param {boolean} [integers=false] - Whether operands must be integers.
+         * @returns {ContentContext} The content context.
+         * @throws {TypeError} If an operand is not finite, or not an integer when required.
+         * @throws {Error} If the form ended or the operator fails.
+         */
         function operator(name, code, args = [], integers = false) {
           if (ended || form._ended) {
             throw new Error("Form XObject content has ended");
