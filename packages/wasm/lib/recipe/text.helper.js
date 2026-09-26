@@ -1,4 +1,9 @@
-/** Calculates spacing between retained Unicode characters. */
+/**
+ * Calculates spacing between retained Unicode characters.
+ * @param {string} text - Text.
+ * @param {number} [charSpace=0] - Spacing per character gap.
+ * @returns {number} Total spacing.
+ */
 export function charSpacing(text, charSpace = 0) {
   var characterCount = Array.from(String(text)).length;
   return characterCount ? (characterCount - 1) * charSpace : 0;
