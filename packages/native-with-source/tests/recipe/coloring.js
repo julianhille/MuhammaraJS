@@ -306,6 +306,12 @@ describe("Coloring", () => {
           fill: "#0000ff",
           colorspace: "separation",
         })
+        // Neither a fill nor a stroke: the default color strokes as the
+        // colorName ink.
+        .line(10, 180, 60, 180, {
+          colorspace: "separation",
+          colorName: "SpotDefault",
+        })
         .endPage()
         .endPDF();
       const raw = fs.readFileSync(output, "latin1");
@@ -318,9 +324,13 @@ describe("Coloring", () => {
         1,
       );
       assert.equal(recipe.knownColors.separation.SpotGreen, "00ff0000");
+      assert.equal(
+        raw.match(/\/Separation \/SpotDefault \/DeviceRGB/g)?.length,
+        1,
+      );
 
       // Every separation drawing is a form XObject that selects its color:
-      // fills, the texts and the colorName circle with cs, the line and both
+      // fills, the texts and the colorName circle with cs, both lines and both
       // underlines with CS. The #0000ff rectangle keeps its device color.
       const reader = muhammara.createReader(output);
       const content = [];
@@ -343,9 +353,15 @@ describe("Coloring", () => {
         content.push(Buffer.from(bytes).toString("latin1"));
       }
       const all = content.join("\n");
+      content.forEach((stream) =>
+        assert.equal(
+          stream.match(/\bq\b/g)?.length,
+          stream.match(/\bQ\b/g)?.length,
+        ),
+      );
       assert.equal(all.match(/\/\S+ cs\s+1 scn/g)?.length, 5);
       // line() strokes only its segments, with no zero-length first one.
-      assert.equal(all.match(/\/\S+ CS\s+1 SCN/g)?.length, 3);
+      assert.equal(all.match(/\/\S+ CS\s+1 SCN/g)?.length, 4);
       assert.match(all, /0 0 1 rg/);
     });
   });
