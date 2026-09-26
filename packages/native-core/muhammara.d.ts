@@ -870,6 +870,12 @@ declare namespace muhammara {
   }
 
   export interface DictionaryContext {
+    /**
+     * Writes a dictionary key.
+     * @param key - The key, without a leading slash.
+     * @returns This dictionary context.
+     * @throws {TypeError} If key is not a single string.
+     */
     writeKey(key: string): DictionaryContext;
     writeNameValue(nameValue: string): this;
     writeRectangleValue(values: Array<number>): this;
