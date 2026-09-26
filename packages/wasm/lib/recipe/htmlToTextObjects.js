@@ -65,7 +65,11 @@ export function htmlToTextObjects(html, options = {}) {
     }
     objects.push(object);
   };
-  /** Appends a styled newline, optionally preserving consecutive explicit breaks. */
+  /**
+   * Appends a styled newline, optionally preserving consecutive explicit breaks.
+   * @param {boolean} [force=false] - Append even after another newline.
+   * @returns {void}
+   */
   var lineBreak = (force = false) => {
     if (
       objects.length &&
