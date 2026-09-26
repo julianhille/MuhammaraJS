@@ -601,6 +601,13 @@ export function createReaderFactory({
         dispose: disposeByteReader,
       };
       if (positioned) {
+        /**
+         * Rejects a negative or non-integer position.
+         * @param {*} value - Candidate position or amount.
+         * @param {string} label - Method name for the error message.
+         * @returns {void}
+         * @throws {RangeError} If `value` is not a non-negative safe integer.
+         */
         function requirePosition(value, label) {
           if (!Number.isSafeInteger(value) || value < 0) {
             throw new RangeError(`${label} requires a non-negative integer`);
