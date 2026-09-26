@@ -483,17 +483,8 @@ WASM_EXPORT PDFUsedFont* muhammara_wasm_modifier_get_font_for_bytes(WasmModifier
 WASM_EXPORT int muhammara_wasm_modifier_font_text_dimensions(
     WasmModifier* modifier, PDFUsedFont* font, const char* text, double fontSize,
     double* values) {
-  if (modifier == nullptr || modifier->finished || font == nullptr || text == nullptr ||
-      values == nullptr || !std::isfinite(fontSize) || fontSize <= 0) return 0;
-  PDFUsedFont::TextMeasures measures =
-      font->CalculateTextDimensions(text, static_cast<long>(fontSize));
-  values[0] = measures.xMin;
-  values[1] = measures.yMin;
-  values[2] = measures.xMax;
-  values[3] = measures.yMax;
-  values[4] = measures.width;
-  values[5] = measures.height;
-  return 1;
+  if (modifier == nullptr || modifier->finished) return 0;
+  return measureTextDimensions(font, text, fontSize, values) ? 1 : 0;
 }
 
 WASM_EXPORT int muhammara_wasm_modifier_font_glyph_dimensions(

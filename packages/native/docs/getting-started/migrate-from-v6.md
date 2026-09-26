@@ -498,7 +498,8 @@ v7 Recipe `text()` and `textDimensions()` require a `size`, or its `fontSize`
 alias, greater than zero and throw `RangeError` naming the option and the value
 otherwise. In v6, a negative size was clamped to 1pt while drawing and measured
 as given, so `textDimensions("Hello", { size: -5 })` reported a width of
-2147483645.5, and zero or `NaN` quietly fell back to the 14pt default.
+2147483645.5, zero or `NaN` quietly fell back to the 14pt default, and
+`Infinity` wrote an invalid `inf` font size into the page. Pass a finite size.
 
 A computed size is the usual source of these values. Guard it, or leave the
 option out to keep the 14pt default:

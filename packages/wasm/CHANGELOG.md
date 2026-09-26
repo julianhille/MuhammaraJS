@@ -106,6 +106,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   native does, instead of drawing square corners [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Call the Recipe `text()` `overflow` callback with the Recipe as `this`, as
   native does; it was called with the options object [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Measure `UsedFont#calculateTextDimensions()` at the exact font size; a
+  fractional size such as `10.5` was truncated to `10` [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Accept a spread array in the `TJ()` type declaration, so
   `context.TJ(...parts)` compiles; an empty call still throws at runtime
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
@@ -402,6 +404,9 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
   literal values. Recipe image `align`, previously any string, takes the
   alignment keywords. Code passing an out-of-set literal now fails `tsc` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Reject inherited object keys such as `toString` as `getPageBox()` box names [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Reject an infinite Recipe text `size`, or its `fontSize` alias, with the
+  `RangeError` other invalid sizes get; it used to write an invalid `inf` font
+  size into the page [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Rework the npm README: it explains how the MuhammaraJS packages fit together, when to use a native package instead, and adds tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
 - Narrow `DrawPathOptions.type` from an arbitrary string to the exported
   `DrawingPathType` (`"stroke" | "fill" | "clip" | null`), matching native.

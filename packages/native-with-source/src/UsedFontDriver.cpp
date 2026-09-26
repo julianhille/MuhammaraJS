@@ -3,6 +3,7 @@
 #include "PDFUsedFont.h"
 #include "UnicodeString.h"
 
+#include <cmath>
 #include <list>
 
 #include FT_GLYPH_H
@@ -73,7 +74,11 @@ napi_value UsedFontDriver::CalculateTextDimensions(const CallbackArgs &args) {
     return ThrowTypeError(args.Env(),
                           "Wrong arguments, provide a string or array of glyph "
                           "indexes, and optionally also a font size");
-  long fontSize = args.Length() == 2 ? ToUint32(args.Env(), args[1]) : 1;
+  double fontSize = args.Length() == 2 ? ToDouble(args.Env(), args[1]) : 1;
+  if (!std::isfinite(fontSize) || fontSize <= 0)
+    return ThrowTypeError(args.Env(),
+                          "Wrong arguments, provide a string or array of glyph "
+                          "indexes, and optionally also a font size");
   auto *driver = ObjectWrap::Unwrap<UsedFontDriver>(args.Env(), args.This());
   FreeTypeFaceWrapper *wrapper = driver->UsedFont->GetFreeTypeFont();
   FT_Face face = *wrapper;
