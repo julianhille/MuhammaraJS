@@ -2082,8 +2082,8 @@ declare namespace muhammara {
     ): Recipe;
 
     rectangle(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       width: number,
       height: number,
       options?: Recipe.RectangleOptions,

@@ -105,8 +105,8 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * @name rectangle
  * @function
  * @memberof Recipe#
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|"center"} x - The coordinate x of the top-left corner
+ * @param {number|"center"} y - The coordinate y of the top-left corner
  * @param {number} width - The width
  * @param {number} height - The height
  * @param {Object} [options] - The options
@@ -122,7 +122,9 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * When a one to four number array can be used to give specific sizees to each corner.
  * The numbering starts from the top, left corner, and goes clockwise around the text box.
  * Missing values in the array are filled in by opposite corner values.
+ * @param {string} [options.link] - Make the rectangle open this URL.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   const { nx, ny } = options.useGivenCoords
@@ -134,7 +136,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   pathOptions.useGivenCoords = options.useGivenCoords;
 
   if (options.fill) {
-    pathOptions.type = "fill";
+    pathOptions.type = muhammara.DrawingPathType.FILL;
 
     if (pathOptions.fill !== undefined) {
       pathOptions.color = pathOptions.fill;
@@ -164,7 +166,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   }
 
   if (options.stroke || options.color || !options.fill) {
-    pathOptions.type = "stroke";
+    pathOptions.type = muhammara.DrawingPathType.STROKE;
 
     if (pathOptions.stroke !== undefined) {
       pathOptions.color = pathOptions.stroke;
