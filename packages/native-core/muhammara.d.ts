@@ -1024,6 +1024,12 @@ declare namespace muhammara {
      * @throws {TypeError} If comment is not a single string.
      */
     writeComment(comment: string): this;
+    /**
+     * Sets whether later streams are Flate compressed.
+     * @param compress - True to compress.
+     * @returns This context.
+     * @throws {TypeError} If compress is not a single boolean.
+     */
     setCompressStreams(compress: boolean): this;
     startPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
     startUnfilteredPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
