@@ -144,6 +144,16 @@ export function createHelpers(module) {
       });
     }
 
+    /**
+     * Applies an operator whose operands are color components and an optional pattern.
+     * @param {string} name - Operator name for error messages.
+     * @param {number} code - Native operator code.
+     * @param {number[]} values - Components.
+     * @param {string} [pattern] - Pattern resource name.
+     * @returns {object} The content context.
+     * @throws {TypeError} If a component is not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     function componentOperator(name, code, values, pattern) {
       requireContext();
       if (!values.every(Number.isFinite)) {
