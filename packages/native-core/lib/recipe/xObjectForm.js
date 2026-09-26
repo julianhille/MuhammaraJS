@@ -61,6 +61,11 @@ exports.Color = Color;
  * @private
  */
 exports.xObjectForm = class xObjectForm {
+  /**
+   * @param {Object} pdfWriter - The PDF writer.
+   * @param {number} [width=100] - The form width.
+   * @param {number} [height=100] - The form height.
+   */
   constructor(pdfWriter, width = 100, height = 100) {
     const xObject = pdfWriter.createFormXObject(0, 0, width, height);
     xObject.pdfWriter = pdfWriter;
