@@ -50,6 +50,13 @@ export var coordinateMethods = {
   /**
    * Converts bottom-left PDF coordinates to top-left Recipe coordinates.
    * @private
+   * @param {number} x - PDF x.
+   * @param {number} y - PDF y.
+   * @param {number} [offsetX=0] - Horizontal offset.
+   * @param {number} [offsetY=0] - Vertical offset.
+   * @param {number} [pageNumber] - One-based page; the active page by default.
+   * @returns {{ox: number, oy: number}} Recipe coordinates.
+   * @throws {Error} When no target page is available.
    */
   _reverseCoordinate: function (x, y, offsetX = 0, offsetY = 0, pageNumber) {
     var page = this.pageInfo(
