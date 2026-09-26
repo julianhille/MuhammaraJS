@@ -295,8 +295,13 @@ class Recipe {
    * rethrow the original error.
    * @function
    * @memberof Recipe
-   * @param {function} [callback] - The callback function.
-   * @returns {*} The callback result, if a callback is provided.
+   * @param {function((Buffer|string)=): *} [callback] - Called when the PDF is
+   *   finished: with the output Buffer for a Buffer source without an output
+   *   path, with the output path for a Buffer source with one, and without an
+   *   argument for a path source.
+   * @returns {*} The callback result, or undefined without a callback.
+   * @throws {Error} If pages are being deleted while a page is still open.
+   * @throws {Error} If finalization fails; later calls rethrow the same error.
    */
   endPDF(callback) {
     if (this.endError) {
