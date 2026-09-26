@@ -553,6 +553,10 @@ declare namespace muhammara {
   }
 
   export interface PDFReader {
+    /**
+     * Ends the reader and closes its file; later calls throw. Safe to repeat.
+     * @returns This reader.
+     */
     end(): PDFReader;
     getPDFLevel(): number;
     getPagesCount(): number;
