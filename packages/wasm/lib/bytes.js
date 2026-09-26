@@ -59,6 +59,11 @@ export class PDFRStreamForBuffer {
     return result;
   }
 
+  /**
+   * Reports whether unread bytes remain.
+   *
+   * @returns {boolean} Whether the position is before the end.
+   */
   notEnded() {
     return this.rposition < this.fileSize;
   }
