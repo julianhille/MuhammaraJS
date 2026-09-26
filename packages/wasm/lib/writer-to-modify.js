@@ -624,6 +624,13 @@ export function createWriterToModifyFactory({
         Tz: function (horizontalScaling) {
           return operator("Tz", 37, [horizontalScaling], true);
         },
+        /**
+         * Sets the text leading (`TL`).
+         * @param {number} textLeading - Line spacing in unscaled text space units.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         TL: function (textLeading) {
           return operator("TL", 38, [textLeading]);
         },
