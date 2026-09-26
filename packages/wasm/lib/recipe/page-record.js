@@ -1,5 +1,11 @@
 import { RecipePageLayout } from "../value-sets.js";
-/** Creates normalized Recipe metadata for a PDF page. */
+/**
+ * Creates normalized Recipe metadata for a PDF page.
+ * @param {number} pageNumber - One-based page number.
+ * @param {PDFRectangle} mediaBox - Media box.
+ * @param {number} [rotate=0] - Page rotation in degrees.
+ * @returns {object} Size, offsets, rotation, and RecipePageLayout.
+ */
 export function pageRecord(pageNumber, mediaBox, rotate = 0) {
   var side1 = Math.abs(mediaBox[2] - mediaBox[0]);
   var side2 = Math.abs(mediaBox[3] - mediaBox[1]);
