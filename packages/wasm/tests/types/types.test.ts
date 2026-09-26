@@ -7,6 +7,8 @@ import {
   TextEncoding as TextEncodings,
 } from "../../index.js";
 import type {
+  RecipeLineJoin,
+  RecipeLineCap,
   RecipeImageOptions,
   RecipeHorizontalAlignment,
   RecipeVerticalAlignment,
@@ -932,6 +934,9 @@ async function usesNamedValueSets() {
   var trianglePosition: RecipeTrianglePosition = "incenter";
   var triangleTrait: RecipeTriangleTrait = "sas";
   void [trianglePosition, triangleTrait];
+  var lineCap: RecipeLineCap = "square";
+  var lineJoin: RecipeLineJoin = "bevel";
+  void [lineCap, lineJoin];
 }
 
 void usesNamedValueSets;

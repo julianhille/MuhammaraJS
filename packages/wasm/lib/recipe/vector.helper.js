@@ -1,4 +1,8 @@
-import { DeviceColorSpace } from "../value-sets.js";
+import {
+  DeviceColorSpace,
+  RecipeLineCap,
+  RecipeLineJoin,
+} from "../value-sets.js";
 import { colorModel } from "./colors.js";
 
 /** Creates shared Recipe vector drawing helpers. */
@@ -56,11 +60,19 @@ export function createVectorHelpers(runtime) {
         cap:
           options.lineCap === undefined
             ? (lineStyle.cap ?? -1)
-            : ["butt", "round", "square"].indexOf(options.lineCap),
+            : [
+                RecipeLineCap.BUTT,
+                RecipeLineCap.ROUND,
+                RecipeLineCap.SQUARE,
+              ].indexOf(options.lineCap),
         join:
           options.lineJoin === undefined
             ? (lineStyle.join ?? -1)
-            : ["miter", "round", "bevel"].indexOf(options.lineJoin),
+            : [
+                RecipeLineJoin.MITER,
+                RecipeLineJoin.ROUND,
+                RecipeLineJoin.BEVEL,
+              ].indexOf(options.lineJoin),
         miter: Number.isFinite(options.miterLimit)
           ? options.miterLimit
           : (lineStyle.miterLimit ?? 1.414),

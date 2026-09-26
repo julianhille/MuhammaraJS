@@ -108,3 +108,17 @@ export var RecipeArrowType = Object.freeze({
   DART: "dart",
   KITE: "kite",
 });
+
+/** Recipe path line cap: butt, round, or projecting square. */
+export var RecipeLineCap = Object.freeze({
+  BUTT: "butt",
+  ROUND: "round",
+  SQUARE: "square",
+});
+
+/** Recipe path line join: miter, round, or bevel. */
+export var RecipeLineJoin = Object.freeze({
+  MITER: "miter",
+  ROUND: "round",
+  BEVEL: "bevel",
+});

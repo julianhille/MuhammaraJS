@@ -138,6 +138,20 @@ export type RecipeExtension<
   Arguments extends unknown[] = never[],
   Result = unknown,
 > = (this: Recipe, ...args: Arguments) => Result;
+/** Recipe path line cap: butt, round, or projecting square. */
+export type RecipeLineCap = "butt" | "round" | "square";
+export declare const RecipeLineCap: {
+  readonly BUTT: "butt";
+  readonly ROUND: "round";
+  readonly SQUARE: "square";
+};
+/** Recipe path line join: miter, round, or bevel. */
+export type RecipeLineJoin = "miter" | "round" | "bevel";
+export declare const RecipeLineJoin: {
+  readonly MITER: "miter";
+  readonly ROUND: "round";
+  readonly BEVEL: "bevel";
+};
 export interface RecipePathOptions {
   /** Make the rendered path's bounding rectangle open this URL. */
   link?: string;
@@ -152,8 +166,8 @@ export interface RecipePathOptions {
   opacity?: number;
   dash?: number[];
   dashPhase?: number;
-  lineCap?: "butt" | "round" | "square";
-  lineJoin?: "miter" | "round" | "bevel";
+  lineCap?: RecipeLineCap;
+  lineJoin?: RecipeLineJoin;
   miterLimit?: number;
   rotation?: number;
   rotationOrigin?: [number, number];

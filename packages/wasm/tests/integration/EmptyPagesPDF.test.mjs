@@ -8,6 +8,8 @@ import {
   RecipeArrowAnchor,
   RecipeArrowType,
   RecipeHorizontalAlignment,
+  RecipeLineCap,
+  RecipeLineJoin,
   RecipeTextAlignment,
   RecipeTextWrap,
   RecipeTrianglePosition,
@@ -126,4 +128,6 @@ var EXPORTED_VALUE_SETS = [
   ],
   [RecipeArrowAnchor, ["head", "tail"]],
   [RecipeArrowType, ["triangle", "dart", "kite"]],
+  [RecipeLineCap, ["butt", "round", "square"]],
+  [RecipeLineJoin, ["miter", "round", "bevel"]],
 ];
