@@ -58,6 +58,15 @@ export function createWriterToModifyFactory({
   removeFile,
   assertOutputSize,
 }) {
+  /**
+   * Opens PDF bytes for incremental modification.
+   * @param {ByteSource} bytes - PDF to modify.
+   * @param {WriterOptions} [options={}] - PDF version and stream compression.
+   * @returns {PDFModifier} The modifier; call `end()` for the bytes or `dispose()` to discard it.
+   * @throws {TypeError} If the bytes are unsupported, `options` is not an object, or `compress` is not a boolean.
+   * @throws {RangeError} If `version` is not a supported `ePDFVersion*` constant.
+   * @throws {Error} If the PDF cannot be opened.
+   */
   function createWriterToModify(bytes, options = {}) {
     bytes = normalizeBytes(bytes, "PDF input");
     if (!options || typeof options !== "object" || Array.isArray(options))
