@@ -1403,6 +1403,14 @@ export function createWriterFactory({
             return context;
           });
         },
+        /**
+         * Moves to the next line and shows text (`'`).
+         * @param {string|Glyph[]} text - Text, or glyph entries.
+         * @param {TextOptions} [options] - Text encoding; only for string text.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `options` is invalid or given with glyphs.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Quote: function (text, options) {
           requireActiveContext(context);
           if (typeof text === "string") {
