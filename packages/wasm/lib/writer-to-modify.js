@@ -3122,6 +3122,13 @@ export function createWriterToModifyFactory({
           options,
         );
       },
+      /**
+       * Adds an annotation to the `/Annots` of the next written page.
+       * @param {number} objectId - Annotation object ID.
+       * @returns {this} The modifier.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the modifier has ended or the annotation cannot be registered.
+       */
       registerAnnotationReferenceForNextPageWrite: function (objectId) {
         requireOpen();
         if (!Number.isInteger(objectId) || objectId <= 0)
