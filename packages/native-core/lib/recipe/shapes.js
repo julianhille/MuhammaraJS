@@ -1377,6 +1377,10 @@ const Arrow = class Arrow {
     this._connectAt_br = new Point(this._x, this._y + shaftWidth / 2); // bottom, right
   }
 
+  /**
+   * The arrow head.
+   * @returns {Kite} The head.
+   */
   get tip() {
     return this._tip;
   }
