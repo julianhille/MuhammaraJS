@@ -1,3 +1,38 @@
+/**
+ * Reports example progress to the page or Worker.
+ * @callback ProgressCallback
+ * @param {string} message - What the example is doing.
+ * @param {number} percent - Progress from 0 to 100.
+ * @param {object} [details] - Summary data to show.
+ * @returns {void}
+ */
+
+/**
+ * Optional byte assets chosen in the page.
+ * @typedef {object} ExampleAssets
+ * @property {Uint8Array} [font] - TrueType or OpenType font bytes.
+ * @property {Uint8Array} [jpeg] - JPEG bytes.
+ * @property {Uint8Array} [png] - PNG bytes.
+ * @property {Uint8Array} [tiff] - TIFF bytes.
+ */
+
+/**
+ * A generated example PDF and its parsed-back summary.
+ * @typedef {object} ExampleResult
+ * @property {string} [filename] - Suggested download name.
+ * @property {Uint8Array} bytes - The PDF bytes.
+ * @property {object} summary - Values read back from the PDF.
+ */
+
+/**
+ * Options shared by the example runners.
+ * @typedef {object} ExampleOptions
+ * @property {string} [exampleId] - How-to id, or `complete` for the full workflow.
+ * @property {ExampleAssets} [assets] - Optional byte assets.
+ * @property {AbortSignal} [signal] - Cancels the example between steps.
+ * @property {ProgressCallback} [progress] - Receives progress updates.
+ */
+
 export function throwIfCancelled(signal) {
   if (signal?.aborted)
     throw new DOMException("Operation cancelled", "AbortError");
