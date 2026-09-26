@@ -13,6 +13,14 @@ function radians(angle) {
   return (angle * Math.PI) / 180;
 }
 
+/**
+ * Returns the point at a distance and angle from an origin.
+ * @param {number} x - Origin x.
+ * @param {number} y - Origin y.
+ * @param {number} length - Distance.
+ * @param {number} angle - Angle in degrees.
+ * @returns {number[]} `[x, y]`.
+ */
 function pointAt(x, y, length, angle) {
   return [
     x + length * Math.cos(radians(angle)),
