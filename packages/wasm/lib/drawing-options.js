@@ -237,6 +237,14 @@ export function installDrawingHelpers(context, colorValue) {
         .c(x + control, y - radius, x + radius, y - control, x + radius, y),
     );
   };
+  /**
+   * Draws a polyline from a point array or flat coordinates.
+   * @param {...(number|number[][]|DrawPathOptions)} args - `[[x, y], ...]` and options,
+   * or `x1, y1, x2, y2, ...` and optional options.
+   * @returns {this} The content context, for chaining.
+   * @throws {TypeError} If fewer than two finite points are given or an option is invalid.
+   * @throws {Error} If the content context is no longer active.
+   */
   context.drawPath = function (...args) {
     var points;
     var options;
