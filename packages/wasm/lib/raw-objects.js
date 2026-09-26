@@ -748,6 +748,11 @@ export function createRawObjectsContext({
           },
         };
       },
+      /**
+       * Ends the free context started by `startFreeContext()`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or no free context is open.
+       */
       endFreeContext: function () {
         requireContext();
         if (!module._muhammara_wasm_objects_end_free_context(handle)) {
