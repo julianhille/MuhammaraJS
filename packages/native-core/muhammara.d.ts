@@ -892,6 +892,12 @@ declare namespace muhammara {
      */
     writeRectangleValue(values: Array<number>): this;
     writeRectangleValue(a: number, b: number, c: number, d: number): this;
+    /**
+     * Writes a literal string as the value of the last key.
+     * @param literal - The text, or its byte values.
+     * @returns This dictionary context.
+     * @throws {TypeError} If literal is not a single string or array.
+     */
     writeLiteralStringValue(literal: Array<number> | string): this;
     writeBooleanValue(boolValue: boolean): this;
     writeNumberValue(value: number): this;
