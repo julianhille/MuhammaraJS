@@ -259,6 +259,11 @@ export function createValueTypes({ module, withString, withBytes }) {
   }
 
   Object.values(PageBox).forEach(definePageBox);
+  /**
+   * Returns the page resources dictionary, starting a new writer page when needed.
+   * @returns {ResourcesDictionary} The resources dictionary.
+   * @throws {Error} If the page is not active and cannot be started.
+   */
   PDFPage.prototype.getResourcesDictionary = function () {
     if (!this._getNativeResources && this._activate) this._activate();
     if (!this._getNativeResources) {
