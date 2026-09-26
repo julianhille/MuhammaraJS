@@ -3167,6 +3167,15 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to pause page content context");
         return this;
       },
+      /**
+       * Opens an existing page for appending content.
+       * @param {number} [index=0] - Zero-based page index.
+       * @param {boolean} [ensureContentEncapsulation=false] - Wrap the existing content in `q`/`Q`.
+       * @returns {PageModifier} The page modifier; call `startContext()` to draw.
+       * @throws {RangeError} If `index` is not a 32-bit unsigned integer.
+       * @throws {TypeError} If `ensureContentEncapsulation` is not a boolean.
+       * @throws {Error} If the modifier has ended.
+       */
       createPageModifier: function (
         index = 0,
         ensureContentEncapsulation = false,
