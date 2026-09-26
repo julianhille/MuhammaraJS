@@ -377,6 +377,11 @@ async function createRuntime(options) {
         await normalizeBytesAsync(bytes, "PDF bytes"),
       );
     },
+    /**
+     * Removes a registered font.
+     * @param {string} name - Font name.
+     * @returns {boolean} Whether a font was removed.
+     */
     unregisterFont: function (name) {
       return unregisterAsset(fonts, name);
     },
