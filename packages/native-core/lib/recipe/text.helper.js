@@ -147,6 +147,11 @@ exports.Line = class Line {
     this.wordObjects.push(wordObject);
   }
 
+  /**
+   * Append leading spaces.
+   * @param {number} amount - The number of spaces.
+   * @returns {void}
+   */
   indent(amount) {
     for (let i = 0; i < amount; i++) {
       this.addWord(new Word(" ", this._pathOptions));
