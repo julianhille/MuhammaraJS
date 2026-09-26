@@ -59,6 +59,15 @@ declare namespace muhammara {
     options?: PDFWriterToModifyOptions,
   ): PDFWriter;
 
+  /**
+   * Continues a PDF whose writer was retired with shutdown().
+   * @param restartFile - The output path, or the output stream, of the
+   *   interrupted PDF.
+   * @param restartStateFile - The state file written by shutdown().
+   * @param options - The modified PDF path or stream, and the log.
+   * @returns The writer.
+   * @throws {TypeError} If the arguments are wrong or the state cannot be read.
+   */
   export function createWriterToContinue(
     restartFile: string,
     restartStateFile: string,
