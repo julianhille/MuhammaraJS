@@ -2,6 +2,24 @@ const fs = require("fs");
 const muhammara = require("../muhammara");
 var { recipeInfoKeys, standardInfoKeys } = require("../recipe-info");
 
+// Source Info dictionary keys that _readInfo() keeps as raw values.
+var PdfInfoKey = Object.freeze({
+  TRAPPED: "Trapped",
+  CREATION_DATE: "CreationDate",
+  MOD_DATE: "ModDate",
+  CREATOR: "Creator",
+  PRODUCER: "Producer",
+});
+
+// Names _readInfo() caches those entries under in this.infoDictionary.
+var CachedInfoKey = Object.freeze({
+  TRAPPED: "trapped",
+  CREATION_DATE: "creationDate",
+  MOD_DATE: "modDate",
+  CREATOR: "creator",
+  PRODUCER: "producer",
+});
+
 // How _writeInfo() converts each standard info option.
 var InfoFieldType = Object.freeze({
   STRING: "string",
@@ -88,29 +106,32 @@ exports._readInfo = function _readInfo() {
             return;
           }
           switch (key) {
-            case "Trapped":
+            case PdfInfoKey.TRAPPED:
               if (oldInforSrc && oldInforSrc.value) {
-                this.infoDictionary.trapped = oldInforSrc.value;
+                this.infoDictionary[CachedInfoKey.TRAPPED] = oldInforSrc.value;
               }
               break;
-            case "CreationDate":
+            case PdfInfoKey.CREATION_DATE:
               if (oldInforSrc && oldInforSrc.value) {
-                this.infoDictionary.creationDate = oldInforSrc.value;
+                this.infoDictionary[CachedInfoKey.CREATION_DATE] =
+                  oldInforSrc.value;
               }
               break;
-            case "ModDate":
+            case PdfInfoKey.MOD_DATE:
               if (oldInforSrc && oldInforSrc.value) {
-                this.infoDictionary.modDate = oldInforSrc.value;
+                this.infoDictionary[CachedInfoKey.MOD_DATE] = oldInforSrc.value;
               }
               break;
-            case "Creator":
+            case PdfInfoKey.CREATOR:
               if (oldInforSrc && oldInforSrc.toText) {
-                this.infoDictionary.creator = oldInforSrc.toText();
+                this.infoDictionary[CachedInfoKey.CREATOR] =
+                  oldInforSrc.toText();
               }
               break;
-            case "Producer":
+            case PdfInfoKey.PRODUCER:
               if (oldInforSrc && oldInforSrc.toText) {
-                this.infoDictionary.producer = oldInforSrc.toText();
+                this.infoDictionary[CachedInfoKey.PRODUCER] =
+                  oldInforSrc.toText();
               }
               break;
             default:
