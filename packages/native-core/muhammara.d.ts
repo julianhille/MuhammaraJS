@@ -936,6 +936,12 @@ declare namespace muhammara {
      * @returns This context.
      */
     endLine(): this;
+    /**
+     * Writes the end of a dictionary.
+     * @param dictionary - The dictionary started last.
+     * @returns This context.
+     * @throws {TypeError} If dictionary is not a dictionary context or not the one started last.
+     */
     endDictionary(dictionary: DictionaryContext): this;
     endIndirectObject(): this;
     writeIndirectObjectReference(
