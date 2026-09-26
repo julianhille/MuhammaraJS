@@ -3695,6 +3695,10 @@ export function createWriterToModifyFactory({
         }
         var copyingEnded = false;
         var sourceParsers = [];
+        /**
+         * Ends the copying context, its parsers, and its stored source. Idempotent.
+         * @returns {void}
+         */
         function cleanupCopying() {
           if (!copying) return;
           sourceParsers.forEach((parser) => parser._end());
