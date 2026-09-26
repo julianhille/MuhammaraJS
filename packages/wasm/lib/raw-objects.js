@@ -547,6 +547,13 @@ export function createRawObjectsContext({
         }
         return this;
       },
+      /**
+       * Writes a boolean token.
+       * @param {boolean} value - Value to write.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a boolean.
+       * @throws {Error} If the writer has ended.
+       */
       writeBoolean: function (value) {
         requireContext();
         if (typeof value !== "boolean")
