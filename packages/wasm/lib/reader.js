@@ -650,6 +650,13 @@ export function createReaderFactory({
           }
           return byteReader;
         };
+        /**
+         * Advances without reading.
+         * @param {number} amount - Bytes to skip.
+         * @returns {PositionedPDFByteReader} The byte reader.
+         * @throws {RangeError} If `amount` is not a non-negative integer.
+         * @throws {Error} If the reader or byte reader has ended or skipping fails.
+         */
         byteReader.skip = function (amount) {
           requireByteReader();
           requirePosition(amount, "skip");
