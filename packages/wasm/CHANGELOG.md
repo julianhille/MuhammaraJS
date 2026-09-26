@@ -44,6 +44,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Draw Recipe Separation (spot) colors, as native Recipe does: register an ink
+  with `chroma(name, value, "separation")` or pass `colorName` with a
+  `separation` color, and shapes, lines and text paint it at full tint with
+  `value` as the alternate device color. These calls previously threw
+  [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Accept native's `password` option in `createReader()` and
   `createReaderAsync()` to open encrypted PDFs [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Encrypt PDFs written by `createWriter()` with native's `userPassword`,

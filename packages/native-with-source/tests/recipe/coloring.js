@@ -245,4 +245,50 @@ describe("Coloring", () => {
     draw("separation-first");
     assert.match(draw("separation-second"), /\/Separation/);
   });
+
+  ["new", "edited"].forEach((mode) => {
+    it(`draws separation colors on ${mode} pages`, () => {
+      const assert = require("node:assert/strict");
+      const fs = require("fs");
+      const source = path.join(__dirname, "../output/separation-source.pdf");
+      new Recipe("new", source).createPage(200, 200).endPage().endPDF();
+      const output = path.join(__dirname, `../output/separation-${mode}.pdf`);
+      const recipe =
+        mode === "new"
+          ? new Recipe("new", output).createPage(200, 200)
+          : new Recipe(source, output).editPage(1);
+      recipe
+        .chroma("SpotOrange", [255, 128, 0], "separation")
+        .rectangle(10, 10, 40, 40, {
+          fill: "SpotOrange",
+          colorspace: "separation",
+        })
+        .line(10, 60, 60, 60, {
+          stroke: "SpotOrange",
+          colorspace: "separation",
+        })
+        .text("Spot", 10, 80, { color: "SpotOrange", colorspace: "separation" })
+        .circle(120, 40, 20, {
+          fill: [0, 255, 0, 0],
+          colorspace: "separation",
+          colorName: "SpotGreen",
+        })
+        .rectangle(10, 120, 40, 40, {
+          fill: "#0000ff",
+          colorspace: "separation",
+        })
+        .endPage()
+        .endPDF();
+      const raw = fs.readFileSync(output, "latin1");
+      assert.equal(
+        raw.match(/\/Separation \/SpotOrange \/DeviceRGB/g)?.length,
+        1,
+      );
+      assert.equal(
+        raw.match(/\/Separation \/SpotGreen \/DeviceCMYK/g)?.length,
+        1,
+      );
+      assert.equal(recipe.knownColors.separation.SpotGreen, "00ff0000");
+    });
+  });
 });

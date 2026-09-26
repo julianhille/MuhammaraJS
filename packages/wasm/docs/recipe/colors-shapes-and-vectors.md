@@ -55,9 +55,31 @@ shape's `opacity` option is scoped to that operation. On new pages, a text run's
 `opacity` option also updates the default used by subsequent vector drawing;
 the text option is ignored while editing an existing page.
 
-Wasm does not support native Recipe's `chroma("!load", path)` filesystem loader
-or Recipe-created Separation colors. Register colors individually and use the
-byte-safe low-level resource API when a Separation color space is required.
+Separation (spot) colors name a printing ink, such as a PANTONE color, with an
+alternate device color for screens and ordinary printers. Register the ink with
+the `separation` colorspace and draw with its name, or pass a device color with
+`colorName` to register and use it in one step. Recipe writes each ink's
+Separation color space once and paints it at full tint:
+
+```js
+recipe
+  .chroma("PANTONE 1505 C", [255, 105, 0], "separation")
+  .rectangle(40, 40, 120, 60, {
+    fill: "PANTONE 1505 C",
+    colorspace: "separation",
+  })
+  .text("Spot orange", 40, 120, {
+    color: [0, 56, 90, 0],
+    colorspace: "separation",
+    colorName: "Brand Orange",
+  });
+```
+
+A `separation` color without an ink name, such as `"#0000ff"`, draws in the
+device color space of its value.
+
+Wasm does not support native Recipe's `chroma("!load", path)` filesystem
+loader; register colors individually.
 
 See [Create A Pie Chart](../how-to/create-pie-charts.md) for a complete chart and
 the [API reference](../reference.md) for shape-specific options.

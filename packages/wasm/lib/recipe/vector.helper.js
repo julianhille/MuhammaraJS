@@ -1,4 +1,9 @@
-import { DeviceColorSpace, LineCap, LineJoin } from "../value-sets.js";
+import {
+  Colorspace,
+  DeviceColorSpace,
+  LineCap,
+  LineJoin,
+} from "../value-sets.js";
 import { colorModel } from "./colors.js";
 
 /**
@@ -47,7 +52,9 @@ export function createVectorHelpers(runtime) {
    */
   function setColor(recipe, value, options, stroke) {
     var model = colorModel(recipe, value, options);
-    if (model.colorspace === DeviceColorSpace.RGB)
+    if (model.colorspace === Colorspace.SEPARATION)
+      recipe._setSeparationColor(model, stroke);
+    else if (model.colorspace === DeviceColorSpace.RGB)
       operator(recipe, stroke ? 27 : 26, ...model.values);
     else if (model.colorspace === DeviceColorSpace.GRAY)
       operator(recipe, stroke ? 25 : 24, model.values[0]);
@@ -109,6 +116,7 @@ export function createVectorHelpers(runtime) {
      */
     _beginPath: function (options = {}, x = 0, y = 0) {
       var style = this._pathOptions(options);
+      this._prepareSeparationColors(options);
       this._save();
       if (options.rotation)
         this.rotateContent(
