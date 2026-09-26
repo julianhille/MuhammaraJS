@@ -1,3 +1,4 @@
+import { DeviceColorSpace } from "../value-sets.js";
 import { colorModel } from "./colors.js";
 
 /** Creates shared Recipe vector drawing helpers. */
@@ -25,9 +26,9 @@ export function createVectorHelpers(runtime) {
   }
   function setColor(recipe, value, options, stroke) {
     var model = colorModel(recipe, value, options);
-    if (model.colorspace === "rgb")
+    if (model.colorspace === DeviceColorSpace.RGB)
       operator(recipe, stroke ? 27 : 26, ...model.values);
-    else if (model.colorspace === "gray")
+    else if (model.colorspace === DeviceColorSpace.GRAY)
       operator(recipe, stroke ? 25 : 24, model.values[0]);
     else operator(recipe, stroke ? 29 : 28, ...model.values);
   }
