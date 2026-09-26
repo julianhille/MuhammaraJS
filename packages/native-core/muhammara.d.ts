@@ -1522,6 +1522,12 @@ declare namespace muhammara {
      * tighten the defaults: higher values are clamped to the built-in ceilings
      * of 1,000,000 content objects, 100,000 text operations, 1024 operands, and
      * 16 MiB of text.
+     * @param pageIndex - The zero-based page index.
+     * @param limits - Tighter extraction limits.
+     * @returns The text elements in drawing order.
+     * @throws {TypeError} If the arguments are not a page index and an optional
+     *   limits object, or the page cannot be read.
+     * @throws {Error} If the page exceeds the extraction limits.
      */
     extractPageText(
       pageIndex: number,
