@@ -2891,6 +2891,11 @@ export function createWriterFactory({
         };
       }
 
+      /**
+       * Returns the form resources dictionary.
+       * @returns {ResourcesDictionary} The resources dictionary.
+       * @throws {Error} If the writer or the form has ended.
+       */
       getResourcesDictionary() {
         if (ended || this._ended) {
           throw new Error("Form XObject resources are not active");
