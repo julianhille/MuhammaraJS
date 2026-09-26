@@ -440,6 +440,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     re(left: number, bottom: number, width: Width, height: Height): this;
+    /**
+     * Saves the graphics state; operator q.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     q(): this;
     Q(): this;
     /**
