@@ -418,6 +418,13 @@ export function createRawObjectsContext({
         indirectObjectClosedByStream = false;
         return this;
       },
+      /**
+       * Marks an object of a modified PDF as deleted.
+       * @param {number} objectId - ID of the object to delete.
+       * @returns {this} The objects context.
+       * @throws {RangeError} If `objectId` is not positive or cannot be deleted.
+       * @throws {Error} If the writer has ended.
+       */
       deleteObject: function (objectId) {
         requireContext();
         if (
