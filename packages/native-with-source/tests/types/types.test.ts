@@ -819,3 +819,4 @@ void signatureWriter.createFormXObjectFromTIFF("image.tif", {
   bwTreatment: { asImageMask: true, oneColor: [255, 128, 0] },
   grayscaleTreatment: { asColorMap: true, zeroColor: [0, 0, 0, 255] },
 });
+void signatureWriter.createImageXObjectFromJPG(signatureStream, 12);
