@@ -613,6 +613,13 @@ export function createReaderFactory({
             throw new RangeError(`${label} requires a non-negative integer`);
           }
         }
+        /**
+         * Moves to an absolute position.
+         * @param {number} position - Byte offset.
+         * @returns {PositionedPDFByteReader} The byte reader.
+         * @throws {RangeError} If `position` is not a non-negative integer.
+         * @throws {Error} If the reader or byte reader has ended or the position cannot be set.
+         */
         byteReader.setPosition = function (position) {
           requireByteReader();
           requirePosition(position, "setPosition");
