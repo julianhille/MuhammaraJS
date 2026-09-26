@@ -1277,6 +1277,10 @@ const Kite = class Kite {
   get T() {
     return [this._T.x, this._T.y];
   }
+  /**
+   * Point E, where the head base meets the axis.
+   * @returns {number[]} The [x, y] point.
+   */
   get E() {
     return [this._E.x, this._E.y];
   }
