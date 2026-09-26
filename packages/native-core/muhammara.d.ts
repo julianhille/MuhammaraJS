@@ -1275,6 +1275,11 @@ declare namespace muhammara {
      * @returns The number; undefined for other types.
      */
     toNumber(): number | undefined;
+    /**
+     * Returns the value as text: the name, string, number, symbol or
+     * boolean; the type label for other types.
+     * @returns The text.
+     */
     toString(): string;
   }
 
