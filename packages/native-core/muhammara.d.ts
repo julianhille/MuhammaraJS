@@ -714,6 +714,14 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     ET(): this;
+    /**
+     * Moves to the start of the next line by an offset; operator Td.
+     * @param tX - The horizontal offset.
+     * @param tY - The vertical offset.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 2 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     Td(tX: number, tY: number): this;
     TD(tX: number, tY: number): this;
     Tm(a: number, b: number, c: number, d: number, e: number, f: number): this;
