@@ -1008,6 +1008,51 @@ async function usesNamedValueSets() {
     [2, 66],
   ];
   void glyphRun;
+  var recipeWrap: Recipe.TextWrap = recipeClass.TextWrap.ELLIPSIS;
+  var recipeRowNth: Recipe.TableRowNth = recipeClass.TableRowNth.ODD;
+  var recipeCap: Recipe.LineCap = recipeClass.LineCap.ROUND;
+  var recipeJoin: Recipe.LineJoin = recipeClass.LineJoin.BEVEL;
+  var recipeArrowAt: Recipe.ArrowAt = recipeClass.ArrowAt.TAIL;
+  var recipeArrowType: Recipe.ArrowType = recipeClass.ArrowType.KITE;
+  var recipeLayout: Recipe.PageLayout = recipeClass.PageLayout.LANDSCAPE;
+  var recipePageSize: Recipe.PageSize = recipeClass.PageSize.A4;
+  var recipeFontStyle: Recipe.FontStyle = recipeClass.FontStyle.BOLD_ITALIC;
+  var recipeShortStyle: Recipe.RecipeFontStyle = "bi";
+  var recipePermission: Recipe.Permission = recipeClass.Permission.COPY;
+  var recipeCoordinate: Recipe.Coordinate = recipeClass.Coordinate.CENTER;
+  var recipeAnyCoordinate: Recipe.RecipeCoordinate = 10;
+  var recipeFlag: Recipe.AnnotFlag = recipeClass.AnnotFlag.LOCKED_CONTENTS;
+  var recipeIcon: Recipe.AnnotIcon = recipeClass.AnnotIcon.NOTE;
+  var recipeSubtype: Recipe.AnnotSubtype = recipeClass.AnnotSubtype.INK;
+  var recipeChroma: Recipe.ChromaCommand = recipeClass.ChromaCommand.LOAD;
+  var recipeColorspace: Recipe.Colorspace = recipeClass.Colorspace.SEPARATION;
+  var recipeDevice: Recipe.DeviceColorSpace = "cmyk";
+  var recipeBoxAlign: Recipe.TextBoxAlign = `${recipeClass.TextAlign.JUSTIFY} ${recipeClass.VerticalAlign.BOTTOM}`;
+  var recipeStructure: Recipe.StructureFormat =
+    recipeClass.StructureFormat.JSON;
+  void [
+    recipeWrap,
+    recipeRowNth,
+    recipeCap,
+    recipeJoin,
+    recipeArrowAt,
+    recipeArrowType,
+    recipeLayout,
+    recipePageSize,
+    recipeFontStyle,
+    recipeShortStyle,
+    recipePermission,
+    recipeCoordinate,
+    recipeAnyCoordinate,
+    recipeFlag,
+    recipeIcon,
+    recipeSubtype,
+    recipeChroma,
+    recipeColorspace,
+    recipeDevice,
+    recipeBoxAlign,
+    recipeStructure,
+  ];
 }
 
 void usesNamedValueSets;

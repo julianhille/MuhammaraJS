@@ -182,9 +182,7 @@ export interface RecipeImageOptions extends RecipePathOptions {
   height?: number;
   scale?: number;
   keepAspectRatio?: boolean;
-  align?:
-    | RecipeHorizontalAlignment
-    | `${RecipeHorizontalAlignment} ${RecipeVerticalAlignment}`;
+  align?: RecipeImageAlign;
   index?: number;
 }
 export interface RecipeRectangleOptions extends RecipePathOptions {
@@ -363,6 +361,65 @@ export type RecipeVerticalAlignment = "top" | "center" | "bottom";
 /** Horizontal alignment of the lines inside a Recipe text box. */
 export type RecipeTextAlignment = RecipeHorizontalAlignment | "justify";
 /** How a Recipe text box handles text that does not fit its width. */
+/** Named page size for `createPage()`, case-insensitive; other names use the default size. */
+export type RecipePageSize =
+  | "executive"
+  | "folio"
+  | "legal"
+  | "letter"
+  | "ledger"
+  | "tabloid"
+  | "a0"
+  | "a1"
+  | "a2"
+  | "a3"
+  | "a4"
+  | "a5"
+  | "a6"
+  | "a7"
+  | "a8"
+  | "a9"
+  | "a10"
+  | "b0"
+  | "b1"
+  | "b2"
+  | "b3"
+  | "b4"
+  | "b5"
+  | "b6"
+  | "b7"
+  | "b8"
+  | "b9"
+  | "b10"
+  | "c0"
+  | "c1"
+  | "c2"
+  | "c3"
+  | "c4"
+  | "c5"
+  | "c6"
+  | "c7"
+  | "c8"
+  | "c9"
+  | "c10"
+  | "ra0"
+  | "ra1"
+  | "ra2"
+  | "ra3"
+  | "ra4"
+  | "sra0"
+  | "sra1"
+  | "sra2"
+  | "sra3"
+  | "sra4"
+  | (string & {});
+/** Text-box alignment: a `Recipe.TextAlign` value, optionally followed by a space and a `Recipe.VerticalAlign` value. */
+export type RecipeTextBoxAlign =
+  RecipeTextAlignment | `${RecipeTextAlignment} ${RecipeVerticalAlignment}`;
+/** Image and text alignment: a `Recipe.HorizontalAlign` value, optionally followed by a `Recipe.VerticalAlign` value. */
+export type RecipeImageAlign =
+  | RecipeHorizontalAlignment
+  | `${RecipeHorizontalAlignment} ${RecipeVerticalAlignment}`;
 export type RecipeTextWrap = "auto" | "clip" | "trim" | "ellipsis";
 export interface RecipeTextBox {
   width?: number;
@@ -372,7 +429,7 @@ export interface RecipeTextBox {
   lineHeight?: number;
   /** `clip` retains and clips the source, `trim` omits its non-fitting suffix, and `ellipsis` replaces it with `...`. */
   wrap?: boolean | RecipeTextWrap;
-  textAlign?: RecipeTextAlignment | `${string} ${RecipeVerticalAlignment}`;
+  textAlign?: RecipeTextBoxAlign;
   /** Render only complete lines that fit within this fixed-height text box. */
   clipIfExceedsBox?: boolean;
   /** Called after clipping leaves source text unrendered. */
@@ -415,9 +472,7 @@ export interface RecipeTextOptions
   charSpace?: number;
   html?: boolean;
   flow?: boolean;
-  align?:
-    | RecipeHorizontalAlignment
-    | `${RecipeHorizontalAlignment} ${RecipeVerticalAlignment}`;
+  align?: RecipeImageAlign;
   layout?: string | number;
   /** Adds a Highlight annotation over each drawn run. */
   highlight?: boolean | RecipeTextMarkupOptions;
@@ -634,7 +689,11 @@ export interface Recipe {
     options?: Partial<RecipeTextOptions>,
   ): RecipeHtmlTextObject[];
   createPage(width?: number, height?: number, margins?: RecipeMargins): this;
-  createPage(size: string, rotation?: number, margins?: RecipeMargins): this;
+  createPage(
+    size: RecipePageSize,
+    rotation?: number,
+    margins?: RecipeMargins,
+  ): this;
   endPage(): this;
   margins(): Required<RecipeMargins>;
   margins(margins: RecipeMargins): this;
@@ -835,6 +894,46 @@ export interface Recipe {
   encrypt(options?: RecipeEncryptOptions): this;
   endPDF(callback?: (bytes: Uint8Array) => void): Uint8Array;
   dispose(): void;
+}
+/**
+ * Recipe types under the native names, one per `Recipe` value set, for example
+ * `Recipe.TextWrap` for the values of the `Recipe.TextWrap` constants.
+ */
+export declare namespace Recipe {
+  type TextWrap = RecipeTextWrap;
+  type TextAlign = RecipeTextAlignment;
+  type HorizontalAlign = RecipeHorizontalAlignment;
+  type VerticalAlign = RecipeVerticalAlignment;
+  type TextBoxAlign = RecipeTextBoxAlign;
+  type ImageAlign = RecipeImageAlign;
+  type TableRowNth = RecipeTableRowParity;
+  type LineCap = RecipeLineCap;
+  type LineJoin = RecipeLineJoin;
+  type ArrowAt = RecipeArrowAnchor;
+  type ArrowType = Exclude<RecipeArrowType, number>;
+  type TriangleTrait = RecipeTriangleTrait;
+  type TrianglePosition = RecipeTrianglePosition;
+  type PageLayout = RecipePageLayout;
+  type PageSize = RecipePageSize;
+  type FontStyle = Exclude<RecipeFontStyle, "r" | "b" | "i" | "bi">;
+  type RecipeFontStyle = import("./index.js").RecipeFontStyle;
+  type Permission = RecipePermissionName;
+  type PermissionName = RecipePermissionName;
+  type PermissionList = RecipePermission;
+  type Coordinate = "center";
+  type RecipeCoordinate = import("./index.js").RecipeCoordinate;
+  type Color = RecipeColor;
+  type DeviceColorspace = RecipeDeviceColorSpace;
+  type DeviceColorSpace = RecipeDeviceColorSpace;
+  type Colorspace = RecipeColorSpace;
+  type AnnotSubtype = RecipeAnnotationSubtype;
+  type AnnotFlag = RecipeAnnotationFlag;
+  type AnnotOptionsFlag = RecipeAnnotationFlag;
+  type AnnotIcon = RecipeAnnotationIcon;
+  type AnnotOptionsIcon = RecipeAnnotationIcon;
+  type ChromaCommand = "!load";
+  /** Wasm-only: the `Recipe.StructureFormat` values. */
+  type StructureFormat = "string" | "json";
 }
 export interface RecipeConstructor {
   /** How text that does not fit a text-box line is handled. */
