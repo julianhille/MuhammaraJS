@@ -796,6 +796,10 @@ declare namespace muhammara {
      * @throws {TypeError} If index is not a number or is out of range.
      */
     queryObject(index: number): any;
+    /**
+     * Returns the number of items.
+     * @returns The length.
+     */
     getLength(): number;
   }
 
