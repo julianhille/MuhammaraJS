@@ -1575,6 +1575,14 @@ export function createWriterToModifyFactory({
           ),
         );
       },
+      /**
+       * Counts pages or frames after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} image - Image bytes, Blob, or File.
+       * @returns {Promise<number>} The page or frame count.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the modifier has ended.
+       */
       getImagePagesCountAsync: async function (image) {
         return this.getImagePagesCount(
           await normalizeBytesAsync(image, "Image bytes"),
