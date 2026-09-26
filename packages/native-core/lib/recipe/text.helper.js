@@ -58,6 +58,9 @@ const Word = class Word {
     return this._last;
   }
 
+  /**
+   * @returns {number} The width character spacing adds to the word.
+   */
   get charSpacing() {
     return charSpacing(this._text, this._pathOptions.charSpace);
   }
