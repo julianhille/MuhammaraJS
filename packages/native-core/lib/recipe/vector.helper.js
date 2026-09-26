@@ -249,6 +249,13 @@ function toRadians(angle) {
   return 2 * Math.PI * ((angle % 360) / 360);
 }
 
+/**
+ * The transformation matrix for skew angles.
+ * @private
+ * @param {number} [skewXAngle=0] - The skew off the x axis, in degrees.
+ * @param {number} [skewYAngle=0] - The skew off the y axis, in degrees.
+ * @returns {number[]} The [a, b, c, d, e, f] matrix.
+ */
 function getSkewTransform(skewXAngle = 0, skewYAngle = 0) {
   const alpha = toRadians(skewXAngle);
   const beta = toRadians(skewYAngle);
