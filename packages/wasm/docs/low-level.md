@@ -37,8 +37,9 @@ ignores `width` and `close`, and applies a supplied `color` only to the
 non-stroking graphics state, matching native. Omit `type` or use `"stroke"` for
 an outline; `null` does not select the default.
 
-The TypeScript declarations expose these four values as `DrawingPathType`, so a
-misspelled paint mode fails to compile instead of producing unpainted geometry.
+`DrawingPathType` names these values at runtime and in the TypeScript
+declarations, so a misspelled paint mode fails to compile instead of producing
+unpainted geometry.
 The runtime still tolerates any other value for compatibility, but it is not a
 supported input.
 
@@ -54,6 +55,15 @@ underline endpoints are checked for overflow before drawing. Paths must contain
 at least two complete finite coordinate pairs, without holes or extra
 arguments. Invalid calls throw without emitting operators; correct the values
 and retry on the same context.
+
+## Named Values
+
+`DrawingPathType`, `ImageFit`, `ObjectReplacementScope`, `DeviceColorSpace`,
+`PageBox`, `PDFImageType`, and `EEncoding` are frozen objects of accepted option
+strings, for example `DrawingPathType.FILL` or `ImageFit.OVERFLOW`;
+`LineCapStyle` and `ETokenSeparator` name numeric operands. `@muhammara/native`
+and `@muhammara/wasm` export them with the same names and members, each with a
+same-named TypeScript type. The plain values stay accepted.
 
 ## Create A PDF
 
