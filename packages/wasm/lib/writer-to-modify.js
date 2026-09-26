@@ -3245,6 +3245,17 @@ export function createWriterToModifyFactory({
               requireContext(resourceContext),
             );
           },
+          /**
+           * Adds a URL link annotation to the modified page.
+           * @param {string} url - Link target.
+           * @param {number} left - Rectangle left.
+           * @param {number} bottom - Rectangle bottom.
+           * @param {number} right - Rectangle right.
+           * @param {number} top - Rectangle top.
+           * @returns {this} The page modifier.
+           * @throws {TypeError} If no context was started, `url` is not a string, or the rectangle is invalid.
+           * @throws {Error} If the modifier ended or the link cannot be attached.
+           */
           attachURLLinktoCurrentPage: function (url, left, bottom, right, top) {
             requireOpen();
             if (
