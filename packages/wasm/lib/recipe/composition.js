@@ -2,7 +2,11 @@ import { ImageFitPolicy, RecipeStructureFormat } from "../value-sets.js";
 import { constants } from "../constants.js";
 import { endActivePage } from "./page.js";
 
-/** Creates Recipe methods for composing registered PDF files. */
+/**
+ * Creates Recipe methods for composing registered PDF files.
+ * @param {object} dependencies - Module, PDF registry, and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createCompositionMethods({
   module,
   pdfs,
