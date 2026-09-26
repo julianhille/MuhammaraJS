@@ -4057,6 +4057,12 @@ declare namespace muhammara {
       top: number,
     ): Recipe;
 
+    /**
+     * Start editing a page
+     * @param pageNumber - The one-based page number to be edited.
+     * @returns The recipe instance.
+     * @throws {Error} If the page does not exist in the source PDF.
+     */
     editPage(pageNumber: number): Recipe;
     deletePage(pageNumbers: number | number[]): Recipe;
 
