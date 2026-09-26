@@ -583,6 +583,13 @@ export function createRawObjectsContext({
         writeObjectString(1, value);
         return this;
       },
+      /**
+       * Writes a hexadecimal string token.
+       * @param {string|Uint8Array|ArrayBuffer} value - Text, or raw string bytes.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is neither a string nor bytes.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeHexString: function (value) {
         writeObjectString(2, value);
         return this;

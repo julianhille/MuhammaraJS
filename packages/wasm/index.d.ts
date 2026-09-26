@@ -1124,7 +1124,7 @@ export interface ObjectsContext {
   writeBoolean(value: boolean): this;
   writeName(value: string): this;
   writeLiteralString(value: string | Uint8Array | ArrayBuffer): this;
-  writeHexString(value: string | ByteSource): this;
+  writeHexString(value: string | Uint8Array | ArrayBuffer): this;
   writeKeyword(value: string): this;
   writeComment(value: string): this;
   endLine(): this;
