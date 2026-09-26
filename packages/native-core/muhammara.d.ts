@@ -1464,6 +1464,10 @@ declare namespace muhammara {
      * @throws {TypeError} If bytes is not a single Uint8Array or byte array.
      */
     write(bytes: Uint8Array | number[]): number;
+    /**
+     * Returns the current position.
+     * @returns The byte offset.
+     */
     getCurrentPosition(): number;
   }
 
