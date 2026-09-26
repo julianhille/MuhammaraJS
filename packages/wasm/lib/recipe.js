@@ -670,6 +670,15 @@ export function createRecipeFactory({
     Recipe.prototype,
     createTextMethods({
       module,
+      /**
+       * Draws one text run for the shared text methods.
+       * @param {string} value - Text.
+       * @param {number} x - Recipe x.
+       * @param {number} y - Recipe y.
+       * @param {object} options - Normalized text options.
+       * @returns {Recipe} The Recipe instance.
+       * @throws {Error} If the text cannot be drawn.
+       */
       drawText: function (value, x, y, options) {
         return this._drawText(value, x, y, options);
       },
