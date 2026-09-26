@@ -164,7 +164,12 @@ export function checkOperatorRange(name, value, max, label) {
  * @returns {void}
  */
 export function installDrawingHelpers(context, colorValue) {
-  /** Set color and width, emit the path, and paint it. */
+  /**
+   * Sets color and width, emits the path, and paints it.
+   * @param {object} options - Options read by readDrawingOptions.
+   * @param {function(): void} emitPath - Writes the path operators.
+   * @returns {object} The content context.
+   */
   function drawWithOptions(options, emitPath) {
     applyDrawingColor(context, options, options.stroke);
     if (options.stroke && options.width !== undefined) context.w(options.width);
