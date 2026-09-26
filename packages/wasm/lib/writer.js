@@ -1771,6 +1771,14 @@ export function createWriterFactory({
             checkOperatorRange("J", value, 2, "line cap");
             return operator("J", 21, [value]);
           },
+          /**
+           * Sets the line join style (`j`).
+           * @param {LineJoinStyle} value - 0 miter, 1 round, or 2 bevel.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If `value` is missing or not an integer.
+           * @throws {RangeError} If `value` is not 0, 1, or 2.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           j: function (value) {
             checkOperatorRange("j", value, 2, "line join");
             return operator("j", 22, [value]);
