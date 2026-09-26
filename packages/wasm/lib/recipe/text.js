@@ -7,6 +7,12 @@ import {
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 
+/**
+ * Deep-merges plain option objects; arrays and dates are replaced, not merged.
+ * @param {object} [left={}] - Base options.
+ * @param {object} [right={}] - Overrides.
+ * @returns {object} A new merged object.
+ */
 function merge(left = {}, right = {}) {
   var result = { ...left };
   Object.entries(right).forEach(([key, value]) => {
