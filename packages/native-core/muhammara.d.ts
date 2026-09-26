@@ -3911,6 +3911,27 @@ declare namespace muhammara {
       type?: Recipe.RecipeFontStyle,
     ): Recipe;
 
+    /**
+     * Place images to pdf
+     * @param imgSrc - The path for the image. [JPEG, PNG, TIFF, PDF]
+     * @param x - The coordinate x of the top-left corner
+     * @param y - The coordinate y of the top-left corner
+     * @param options - The options
+     * @returns The recipe instance.
+     * @param options.width - The new width
+     * @param options.height - The new height
+     * @param options.scale - Scale the image from the original width and height.
+     * @param options.keepAspectRatio - Keep the aspect ratio; defaults to true.
+     * @param options.opacity - The opacity.
+     * @param options.align - A `Recipe.HorizontalAlign` value, optionally
+     *   followed by a space and a `Recipe.VerticalAlign` value, for example
+     *   "center center". Horizontal center moves the image left by half its width
+     *   and right moves it right by half; vertical center moves it up by half its
+     *   height and bottom moves it down by half from its top-left placement.
+     * @param options.link - Make the image open this URL.
+     * @throws {TypeError} If no page is active.
+     * @throws {Error} If the image cannot be read.
+     */
     image(
       imgSrc: string,
       x: Recipe.RecipeCoordinate,
