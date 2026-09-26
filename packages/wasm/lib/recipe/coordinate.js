@@ -7,6 +7,10 @@ export var coordinateMethods = {
   /**
    * Resolves centered Recipe coordinates against the target page.
    * @private
+   * @param {number|string} x - x, or `center`.
+   * @param {number|string} y - y, or `center`.
+   * @param {number} [pageNumber] - One-based page; the active page by default.
+   * @returns {Array} `[x, y]` with `center` replaced.
    */
   _centrify: function (x, y, pageNumber) {
     var page = this.pageInfo(
