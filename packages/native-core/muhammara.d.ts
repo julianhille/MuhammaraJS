@@ -3976,6 +3976,21 @@ declare namespace muhammara {
       srcPageNumber: number,
     ): Recipe;
 
+    /**
+     * Overlay a pdf to the current pdf
+     * @param pdfSrc - The path for the overlay pdf
+     * @param x - The PDF x offset from the left edge, or options when using the two-argument form; defaults to 0.
+     * @param y - The offset from the top edge; defaults to 0.
+     * @param options - The options.
+     * @param options.scale - Scale the overlay pdf, default is 1
+     * @param options.page - Page of the overlay pdf, default is 1
+     * @param options.keepAspectRatio - To keep the aspect ratio when scaling, default is true
+     * @param options.fitWidth - To set the width to 100% (use with keepAspectRatio=true)
+     * @param options.fitHeight - To set the height to 100% (use with keepAspectRatio=true)
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     * @throws {Error} If the overlay PDF cannot be read.
+     */
     overlay(pdfSrc: string, options?: Recipe.OverlayOptions): Recipe;
     overlay(
       pdfSrc: string,
