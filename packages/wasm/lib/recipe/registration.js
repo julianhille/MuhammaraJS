@@ -1,3 +1,5 @@
+import { fontStyleKey } from "./font.js";
+import { RecipeFontStyle } from "../value-sets.js";
 /** Creates Recipe asset registration and removal methods. */
 export function createRegistrationMethods({
   module,
@@ -160,19 +162,11 @@ export function createRegistrationMethods({
      * @param {RecipeFontStyle} [type="regular"] Font family style to remove.
      * @returns {boolean} Whether a matching registered style was removed.
      */
-    unregisterFont: function (name, type = "regular") {
+    unregisterFont: function (name, type = RecipeFontStyle.REGULAR) {
       var key = String(name).toLowerCase();
       var family = fonts.get(key);
       if (!family) return false;
-      var style =
-        {
-          bold: "b",
-          b: "b",
-          italic: "i",
-          i: "i",
-          "bold-italic": "bi",
-          bi: "bi",
-        }[String(type).toLowerCase()] || "r";
+      var style = fontStyleKey(type);
       var path = family[style];
       if (!path) return false;
       delete family[style];
