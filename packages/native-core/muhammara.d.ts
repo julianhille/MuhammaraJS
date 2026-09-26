@@ -781,6 +781,13 @@ declare namespace muhammara {
      * @throws {TypeError} If inName is not a single string.
      */
     exists(inName: string): boolean;
+    /**
+     * Returns a value, without resolving an indirect reference.
+     * @param inName - The key, without a leading slash.
+     * @returns The value.
+     * @throws {TypeError} If inName is not a single string or the key is
+     *   missing.
+     */
     queryObject(inName: string): PDFObject;
   }
 
