@@ -422,6 +422,12 @@ export function createRecipeFactory({
     /**
      * Applies line style values to the active PDF context.
      * @private
+     * @param {object} [options={}] - `width` or `lineWidth`, `cap`, `join`, `miterLimit`, `dash`, and `dashPhase`,
+     * with numeric cap and join styles.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If the dash pattern or a value is invalid.
+     * @throws {RangeError} If a cap or join style is out of range.
+     * @throws {Error} If the style cannot be applied.
      */
     _setLineStyle(options = {}) {
       if (this._pageContext) {
