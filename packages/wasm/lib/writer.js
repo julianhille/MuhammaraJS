@@ -932,6 +932,11 @@ export function createWriterFactory({
         RG: function (red, green, blue) {
           return operator("RG", 27, [red, green, blue]);
         },
+        /**
+         * Intersects the clipping path with the current path, nonzero winding (`W`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         W: function () {
           return operator("W", 30);
         },
