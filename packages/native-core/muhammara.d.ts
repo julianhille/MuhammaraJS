@@ -472,6 +472,12 @@ declare namespace muhammara {
      * @throws {TypeError} If stateObjectId is not a single number.
      */
     addExtGStateMapping(stateObjectId: number): string;
+    /**
+     * Adds a font to the resources and returns its resource name.
+     * @param fontObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If fontObjectId is not a single number.
+     */
     addFontMapping(fontObjectId: number): string;
     addColorSpaceMapping(colorSpaceId: number): string;
     addPatternMapping(colorSpaceId: number): string;
