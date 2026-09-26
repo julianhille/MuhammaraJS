@@ -4282,6 +4282,63 @@ declare namespace muhammara {
       height?: number,
       options?: Recipe.LayoutOptions,
     ): Recipe;
+    /**
+     * Display text data in tabular form
+     * Rows and headers use their rendered text-box heights, including padding,
+     * minimum heights, fixed heights, and HTML layout. Empty contents or no selected
+     * columns leave the Recipe unchanged. Array-form order preserves exact keys.
+     * Header text styles are independent of body styles: column header options
+     * (or defaults) are overridden by table header options, then alignToData
+     * and column hcell box overrides are applied.
+     * @param x - The coordinate x used to position table on page
+     * @param y - The coordinate y used to position table on page
+     * @param contents - the data to be placed into the table
+     * @param options - The options
+     * @param options.height - The height designation of the table
+     * @param options.order - Defines the order of the named columns in the table.
+     * It can also be used to choose a subset of the actual data found in the given contents.
+     * @param options.columns - Holds the defining options for columns in the table.
+     * @param options.columns - [].name] - The name of the content data field to be associated with the column.
+     * This field is mandatory when supplying column options.
+     * @param options.columns - [].text] - The title to be applied to the column header.
+     * When missing, the data field name is used.
+     * @param options.columns - [].width=100] - The width of table column.
+     * @param options.columns - [].cell] - Holds the options to be applied to a column table cell.
+     * All textBox options from the 'text' interface can be used here.
+     * @param options.columns - [].color] - Text color (HexColor, PercentColor or DecimalColor)
+     * @param options.columns - [].opacity=1] - opacity
+     * @param options.columns - [].font=Helvetica] - The font. 'Arial', 'Helvetica'...
+     * @param options.columns - [].size=14] - The font size
+     * @param options.columns - [].renderer] - function to be called which can be used to modify the text options for a particular
+     * table cell. The function is called with `(text, data, field, row)`, where `text` is the text to be written in the cell,
+     * `data` holds the text elements in the table row, `field` is the column field, and `row` is the one-based row number. The function returns an object with the text attributes that
+     * are to be modified for the table cell.
+     * @param options.header - When true, the column name associated with a column will; defaults to false.
+     * appear at the top of the column. When presented as an object it is the set of unique options to be applied to column headers.
+     * All 'text' interface options can be used.
+     * @param options.header.cell - All textBox options from the 'text' interface can be used here.
+     * @param options.border - Used to define table and cell border characteristics
+     * @param options.border.width - Thickness of lines used in the border; defaults to .5.
+     * @param options.border.stroke - line color (HexColor, PercentColor or DecimalColor)
+     * @param options.overflow - Called when the next table entry is going to expand the table
+     * beyond the given height or page boundary. Its parameters are (self, row) where 'self' is the recipe handle so
+     * that other recipe interfaces can be called, and the row number of the data which caused the data overflow.
+     * The callback's `this` is also the Recipe instance.
+     * The return value can be 'true' which indicates that data processing should stop, or 'false' which indicates that
+     * the data should continue being processed with the original [x,y] coordinates, or it can be an object containing
+     * a 'position' property indicating the [x,y] coordinates where the next table for the remaining data should start.
+     * @param options.row - text properties to be applied to all cells in a table row.
+     * @param options.row.cell - All textBox options from the 'text' interface can be used here.
+     * @param options.row.nth - A `Recipe.TableRowNth` value, indicating that the
+     * properties should be applied only to 'even' or 'odd' rows.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     * @throws {RangeError} If the overflow callback continues into an area too small
+     * for the pending row and its repeated header. Return true to stop, or provide
+     * enough space; rows are not split and the callback is called once per overflow.
+     * @throws {Error} If the overflow callback continues after ending the page
+     * without starting another one.
+     */
     table<RecordType extends object>(
       x: number,
       y: number,
