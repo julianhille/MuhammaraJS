@@ -1126,6 +1126,14 @@ export function createWriterToModifyFactory({
       );
     }
     var infoDictionary = {
+      /**
+       * Sets a custom Info dictionary entry.
+       * @param {string} key - Entry name without the leading slash.
+       * @param {string} value - Text value.
+       * @returns {void}
+       * @throws {TypeError} If `key` or `value` is not a string.
+       * @throws {Error} If the modifier has ended or the entry cannot be set.
+       */
       addAdditionalInfoEntry: function (key, value) {
         setInfo(key, value);
         additionalInfo.set(key, value);
