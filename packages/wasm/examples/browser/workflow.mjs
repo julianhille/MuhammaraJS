@@ -19,6 +19,12 @@ export var BROWSER_EXAMPLES = [
   ...HOW_TO_EXAMPLES,
 ];
 
+/**
+ * Runs the low-level and Recipe examples in sequence.
+ * @param {import("./lifecycle.mjs").ExampleOptions} [options={}] - Assets, signal, and progress.
+ * @returns {Promise<{lowLevel: {bytes: Uint8Array, summary: object}, recipe: import("./lifecycle.mjs").ExampleResult}>} Both outputs.
+ * @throws {Error} If a stage fails; `exampleDetails` names the stage.
+ */
 export async function runExampleWorkflow(options = {}) {
   var stage = "initialization";
   var progress = options.progress || (() => {});
