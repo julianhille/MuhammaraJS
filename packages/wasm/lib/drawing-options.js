@@ -68,7 +68,12 @@ export function readDrawingOptions(
   return { ...color, width, type, close, stroke };
 }
 
-/** Finish a validated path; clipping ends the path without painting it. */
+/**
+ * Paints a finished path by its DrawingPathType; clipping ends it without painting.
+ * @param {object} context - Content context.
+ * @param {object} options - Options read by readDrawingOptions.
+ * @returns {object} The content context.
+ */
 export function finishDrawingPath(context, options) {
   if (options.type === DrawingPathType.CLIP) {
     if (options.close) context.h();
