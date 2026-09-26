@@ -151,6 +151,14 @@ function createColorSpaces(self, colorName, color) {
   return colorSpaceID;
 }
 
+/**
+ * Write the type 2 tint transform function that maps a separation tint to
+ * its alternate device color.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number[]} color - The alternate device color components, 0 to 1.
+ * @returns {number} The object ID of the function.
+ */
 function tintTransform(self, color) {
   const rangeCount = color.length;
   self.pauseContext();
