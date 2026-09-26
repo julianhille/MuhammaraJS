@@ -159,6 +159,12 @@ function _initOptions(self, x = {}, y, options = {}) {
   return mergedOpts;
 }
 
+/**
+ * Whether a value is missing or an empty plain object.
+ * @private
+ * @param {*} obj - The value.
+ * @returns {boolean} True for a falsy value or an empty plain object.
+ */
 function isEmpty(obj) {
   return !obj || (Object.keys(obj).length === 0 && obj.constructor === Object);
 }
