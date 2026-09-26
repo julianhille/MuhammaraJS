@@ -249,6 +249,14 @@ export function createWriterSupport({
    * @returns {ResourcesDictionary} The resources dictionary.
    */
   function resourcesDictionary(handle, requireOpen) {
+    /**
+     * Adds an object to one resource category and returns its resource name.
+     * @param {number} type - Native category, from 0 (ExtGState) to 8 (Shading).
+     * @param {number} objectId - Indirect object ID.
+     * @returns {string} The generated resource name.
+     * @throws {RangeError} If `objectId` is not a positive integer.
+     * @throws {Error} If the owner is closed or the mapping fails.
+     */
     function addMapping(type, objectId) {
       requireOpen();
       if (!Number.isInteger(objectId) || objectId <= 0) {
