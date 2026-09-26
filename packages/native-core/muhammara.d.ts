@@ -907,6 +907,10 @@ declare namespace muhammara {
      * @returns The object ID.
      */
     allocateNewObjectID(): FormXObjectId;
+    /**
+     * Writes the start of a dictionary. End it with endDictionary().
+     * @returns The dictionary context for writing keys and values.
+     */
     startDictionary(): DictionaryContext;
     startArray(): this;
     writeNumber(value: number): this;
