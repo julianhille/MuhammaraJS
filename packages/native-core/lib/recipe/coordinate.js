@@ -35,6 +35,18 @@ exports._centrify = function _centrify(x, y, pageNumber) {
   return [x, y];
 };
 
+/**
+ * Convert Recipe coordinates (top-left origin, y down) to PDF coordinates
+ * (bottom-left origin of the media box, y up).
+ * @private
+ * @param {number|"center"} x - The Recipe x coordinate.
+ * @param {number|"center"} y - The Recipe y coordinate.
+ * @param {number} [offsetX=0] - Added to the PDF x coordinate.
+ * @param {number} [offsetY=0] - Added to the PDF y coordinate.
+ * @param {number} [pageNumber] - The one-based page number; defaults to the active page.
+ * @returns {{nx: number, ny: number}} The PDF coordinates.
+ * @throws {TypeError} If no page is active.
+ */
 exports._calibrateCoordinate = function _calibrateCoordinate(
   x,
   y,
@@ -43,7 +55,7 @@ exports._calibrateCoordinate = function _calibrateCoordinate(
   pageNumber,
 ) {
   pageNumber = pageNumber || this.pageNumber;
-  const { height, mediaBox } = this.metadata[pageNumber];
+  const { height, mediaBox } = pageMetadata(this, pageNumber);
   const startX = mediaBox[0];
   const startY = mediaBox[1];
   [x, y] = this._centrify(x, y, pageNumber);

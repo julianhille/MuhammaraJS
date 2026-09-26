@@ -332,4 +332,15 @@ describe("Graphic Object Positioning", () => {
     assert.deepEqual(recipe.movedown(1, true), [0, 14]);
     recipe.endPage().endPDF();
   });
+
+  it("reports a missing page instead of failing to read its metadata", () => {
+    const recipe = new Recipe(
+      "new",
+      path.join(__dirname, "../output/no-active-page.pdf"),
+    );
+    assert.throws(
+      () => recipe.link("https://example.test", 0, 0, 10, 10),
+      /No page is active/,
+    );
+  });
 });

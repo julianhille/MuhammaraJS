@@ -308,6 +308,9 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 - Declare `DocumentCopyingContext#getSourceDocumentParser()` without
   parameters in the TypeScript types, matching the runtime, which never used
   them [#320](https://github.com/julianhille/MuhammaraJS/issues/320)
+- Throw `TypeError: No page is active; call createPage() or editPage()
+first` from Recipe drawing and annotation methods called without a page,
+  instead of a property-destructuring `TypeError` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Link `bcrypt.lib` explicitly in the Windows native build, where OpenSSL seeds
   AES initialization vectors from `BCryptGenRandom`
   [#663](https://github.com/julianhille/MuhammaraJS/issues/663)
