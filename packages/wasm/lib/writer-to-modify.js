@@ -2075,6 +2075,11 @@ export function createWriterToModifyFactory({
           getResourcesDictinary: function () {
             return form.getResourcesDictionary();
           },
+          /**
+           * Returns the form content stream.
+           * @returns {PDFStream} The stream; `getWriteStream()` exposes a byte writer.
+           * @throws {Error} If the modifier or the form has ended.
+           */
           getContentStream: function () {
             requireOpen();
             if (form._ended)
