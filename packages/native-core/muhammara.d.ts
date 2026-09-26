@@ -4025,6 +4025,12 @@ declare namespace muhammara {
       rotation?: number,
       margins?: Recipe.RecipeMargins,
     ): Recipe;
+    /**
+     * Set the rotation of the current page.
+     * @param rotation - The page rotation in degrees, a multiple of 90.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     rotate(rotation: number): Recipe;
     endPage(): Recipe;
     setPageBox(
