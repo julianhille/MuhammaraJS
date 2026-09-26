@@ -804,8 +804,9 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
  * @name rotate
  * @function
  * @memberof Recipe#
- * @param {number} rotation - The page rotation in degrees.
+ * @param {number} rotation - The page rotation in degrees, a multiple of 90.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.rotate = function rotate(rotation) {
   this.page.rotate = rotation;
