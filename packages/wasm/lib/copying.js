@@ -11,6 +11,13 @@ export function createCopyingHelpers({ module }) {
    * @returns {CopyingObjectOperations} The methods.
    */
   function copyingObjectOperations(copying, requireCopying) {
+    /**
+     * Rejects an object ID that is not an unsigned 32-bit integer.
+     * @param {*} value - Candidate ID.
+     * @param {string} label - Name used in the error message.
+     * @returns {void}
+     * @throws {RangeError} If `value` is not an unsigned 32-bit integer.
+     */
     function requireObjectId(value, label) {
       if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
         throw new RangeError(`${label} must be a non-negative object ID`);
