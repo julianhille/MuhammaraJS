@@ -500,6 +500,14 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     ri(renderingIntentName: string): this;
+    /**
+     * Sets the flatness tolerance; operator i. The value is truncated to an
+     * integer.
+     * @param flatness - The tolerance, 0 to 100.
+     * @returns This context.
+     * @throws {TypeError} If flatness is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     i(flatness: number): this;
     gs(graphicStateName: string): this;
     setOpacity(opacity: number): this;
