@@ -6,6 +6,7 @@ import {
   RegisteredImageFormat,
 } from "./value-sets.js";
 import { isPageBoxType } from "./constants.js";
+import { selectedPageRanges } from "./page-ranges.js";
 import {
   readTextOptions,
   validateDrawingGeometry,
@@ -3077,38 +3078,7 @@ export function createWriterFactory({
       if ("password" in options) {
         throw new TypeError("PDF passwords are not supported in Wasm");
       }
-      var rangeType = options.type ?? constants.eRangeTypeAll;
-      if (
-        !Number.isInteger(rangeType) ||
-        ![constants.eRangeTypeAll, constants.eRangeTypeSpecific].includes(
-          rangeType,
-        )
-      ) {
-        throw new RangeError("A valid page range type is required");
-      }
-      var ranges = options.specificRanges ?? [];
-      if (
-        !Array.isArray(ranges) ||
-        !ranges.every(
-          (range) =>
-            Array.isArray(range) &&
-            range.length === 2 &&
-            range.every(
-              (index) =>
-                Number.isInteger(index) && index >= 0 && index <= 0xffffffff,
-            ) &&
-            range[1] >= range[0],
-        )
-      ) {
-        throw new RangeError(
-          "specificRanges must contain non-negative inclusive page ranges",
-        );
-      }
-      if (rangeType === constants.eRangeTypeSpecific && ranges.length === 0) {
-        throw new RangeError("A specific page range is required");
-      }
-      var selectedRanges =
-        rangeType === constants.eRangeTypeSpecific ? ranges : [];
+      var selectedRanges = selectedPageRanges(options, constants);
       var bytes = normalizeBytes(source, "PDF input");
       return withBytes(bytes, (bytesPointer) => {
         var errorPointer = module._malloc(4);
@@ -3198,39 +3168,8 @@ export function createWriterFactory({
       if ("callback" in options) {
         throw new TypeError("Merge callback must be provided as an argument");
       }
-      var rangeType = options.type ?? constants.eRangeTypeAll;
-      if (
-        !Number.isInteger(rangeType) ||
-        ![constants.eRangeTypeAll, constants.eRangeTypeSpecific].includes(
-          rangeType,
-        )
-      ) {
-        throw new RangeError("A valid page range type is required");
-      }
-      var ranges = options.specificRanges ?? [];
-      if (
-        !Array.isArray(ranges) ||
-        !ranges.every(
-          (range) =>
-            Array.isArray(range) &&
-            range.length === 2 &&
-            range.every(
-              (index) =>
-                Number.isInteger(index) && index >= 0 && index <= 0xffffffff,
-            ) &&
-            range[1] >= range[0],
-        )
-      ) {
-        throw new RangeError(
-          "specificRanges must contain non-negative inclusive page ranges",
-        );
-      }
-      if (rangeType === constants.eRangeTypeSpecific && ranges.length === 0) {
-        throw new RangeError("A specific page range is required");
-      }
+      var selectedRanges = selectedPageRanges(options, constants);
       if (!currentPage) writer.startPageContentContext(targetPage);
-      var selectedRanges =
-        rangeType === constants.eRangeTypeSpecific ? ranges : [];
       var bytes = normalizeBytes(source, "PDF input");
       return withBytes(bytes, (bytesPointer) => {
         var errorPointer = module._malloc(4);
@@ -4027,38 +3966,7 @@ export function createWriterFactory({
         if ("password" in options) {
           throw new TypeError("PDF form passwords are not supported in Wasm");
         }
-        var rangeType = options.type ?? constants.eRangeTypeAll;
-        if (
-          !Number.isInteger(rangeType) ||
-          ![constants.eRangeTypeAll, constants.eRangeTypeSpecific].includes(
-            rangeType,
-          )
-        ) {
-          throw new RangeError("A valid page range type is required");
-        }
-        var ranges = options.specificRanges ?? [];
-        if (
-          !Array.isArray(ranges) ||
-          !ranges.every(
-            (range) =>
-              Array.isArray(range) &&
-              range.length === 2 &&
-              range.every(
-                (index) =>
-                  Number.isInteger(index) && index >= 0 && index <= 0xffffffff,
-              ) &&
-              range[1] >= range[0],
-          )
-        ) {
-          throw new RangeError(
-            "specificRanges must contain non-negative inclusive page ranges",
-          );
-        }
-        if (rangeType === constants.eRangeTypeSpecific && ranges.length === 0) {
-          throw new RangeError("A specific page range is required");
-        }
-        var selectedRanges =
-          rangeType === constants.eRangeTypeSpecific ? ranges : [];
+        var selectedRanges = selectedPageRanges(options, constants);
         /**
          * Validates a fixed-length array of finite numbers.
          * @param {string} name - Option name for error messages.

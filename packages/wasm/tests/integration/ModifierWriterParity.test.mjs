@@ -5,6 +5,41 @@ import { createMuhammaraWasm } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("ModifierWriterParity", function () {
+  it("validates page range options the same way on writers and modifiers", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = muhammara.createBlankPdf(100, 100);
+    var targets = [
+      muhammara.createWriter(),
+      muhammara.createWriterToModify(source),
+    ];
+    var invalid = [
+      { type: 7 },
+      { type: muhammara.eRangeTypeSpecific, specificRanges: [] },
+      { type: muhammara.eRangeTypeSpecific, specificRanges: [[2, 1]] },
+      { specificRanges: [[-1, 0]] },
+    ];
+    for (var target of targets) {
+      for (var options of invalid) {
+        assert.throws(
+          () => target.appendPDFPagesFromPDF(source, options),
+          RangeError,
+        );
+        assert.throws(
+          () => target.createFormXObjectsFromPDF(source, undefined, options),
+          RangeError,
+        );
+        var page = target.createPage(0, 0, 100, 100);
+        target.startPageContentContext(page);
+        assert.throws(
+          () => target.mergePDFPagesToPage(page, source, options),
+          RangeError,
+        );
+        target.writePage(page);
+      }
+      target.end();
+    }
+  });
+
   it("exposes safe writer operations on byte-backed modifiers", async function () {
     var muhammara = await createMuhammaraWasm();
     var sourceWriter = muhammara.createWriter();

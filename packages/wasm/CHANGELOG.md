@@ -302,6 +302,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   instead of a generic native failure, and throw a `TypeError` when `Td()`,
   `TD()`, `Tw()`, `TL()`, or `Ts()` is missing an operand on a modifier form,
   as the other content contexts do [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Validate page range options on `createWriterToModify()` modifiers as the
+  writer does: `appendPDFPagesFromPDF()`, `mergePDFPagesToPage()`, and
+  `createFormXObjectsFromPDF()` throw a `RangeError` for a `type` that is not
+  an `eRangeType*` constant, an empty specific range, or an invalid range,
+  where they previously used every page or threw a `TypeError` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take
   `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
   `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,

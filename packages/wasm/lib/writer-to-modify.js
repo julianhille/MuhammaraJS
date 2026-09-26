@@ -5,6 +5,7 @@ import {
 } from "./value-sets.js";
 import { createChildLifecycle } from "./lifecycle.js";
 import { isPageBoxType } from "./constants.js";
+import { selectedPageRanges } from "./page-ranges.js";
 import {
   readTextOptions,
   validateDrawingGeometry,
@@ -1036,28 +1037,7 @@ export function createWriterToModifyFactory({
           "password" in options
         )
           throw new TypeError("Append options must be a browser-safe object");
-        var ranges =
-          options.type === constants.eRangeTypeSpecific
-            ? options.specificRanges
-            : [];
-        if (
-          !Array.isArray(ranges) ||
-          !ranges.every(
-            (range) =>
-              Array.isArray(range) &&
-              range.length === 2 &&
-              range.every(
-                (value) =>
-                  Number.isInteger(value) && value >= 0 && value <= 0xffffffff,
-              ) &&
-              range[1] >= range[0],
-          )
-        )
-          throw new RangeError(
-            "specificRanges must contain non-negative inclusive page ranges",
-          );
-        if (options.type === constants.eRangeTypeSpecific && !ranges.length)
-          throw new RangeError("A specific page range is required");
+        var ranges = selectedPageRanges(options, constants);
         var sourceBytes = normalizeBytes(source, "PDF input");
         return withBytes(sourceBytes, (bytesPointer) => {
           var errorPointer = module._malloc(4);
@@ -1130,26 +1110,7 @@ export function createWriterToModifyFactory({
           );
         if (callback !== undefined && typeof callback !== "function")
           throw new TypeError("Merge callback must be a function");
-        var ranges =
-          options.type === constants.eRangeTypeSpecific
-            ? options.specificRanges
-            : [];
-        if (
-          !Array.isArray(ranges) ||
-          !ranges.every(
-            (range) =>
-              Array.isArray(range) &&
-              range.length === 2 &&
-              range.every(
-                (value) =>
-                  Number.isInteger(value) && value >= 0 && value <= 0xffffffff,
-              ) &&
-              range[1] >= range[0],
-          )
-        )
-          throw new RangeError(
-            "specificRanges must contain non-negative inclusive page ranges",
-          );
+        var ranges = selectedPageRanges(options, constants);
         var sourceBytes = normalizeBytes(source, "PDF input");
         return withBytes(sourceBytes, (bytesPointer) => {
           var errorPointer = module._malloc(4);
@@ -1398,10 +1359,7 @@ export function createWriterToModifyFactory({
           "password" in options
         )
           throw new TypeError("PDF form options must be a browser-safe object");
-        var ranges =
-          options.type === constants.eRangeTypeSpecific
-            ? options.specificRanges
-            : [];
+        var ranges = selectedPageRanges(options, constants);
         var matrix = options.transformation;
         var additionalIds = options.additionalObjectIds ?? [];
         if (
@@ -1409,17 +1367,6 @@ export function createWriterToModifyFactory({
             (!Array.isArray(cropBox) ||
               cropBox.length !== 4 ||
               !cropBox.every(Number.isFinite))) ||
-          !Array.isArray(ranges) ||
-          !ranges.every(
-            (range) =>
-              Array.isArray(range) &&
-              range.length === 2 &&
-              range.every(
-                (value) =>
-                  Number.isInteger(value) && value >= 0 && value <= 0xffffffff,
-              ) &&
-              range[1] >= range[0],
-          ) ||
           (matrix !== undefined &&
             (!Array.isArray(matrix) ||
               matrix.length !== 6 ||
