@@ -226,6 +226,10 @@ export function createValueTypes({ module, withString, withBytes }) {
    */
   function definePageBox(name) {
     Object.defineProperty(PDFPage.prototype, `${name}Box`, {
+      /**
+       * Reads the box.
+       * @returns {PDFRectangle|undefined} The box, or undefined when unset.
+       */
       get: function () {
         return this._boxes[name];
       },
