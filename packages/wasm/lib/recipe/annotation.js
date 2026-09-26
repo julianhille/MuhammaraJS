@@ -99,7 +99,14 @@ function annotationText(options) {
   return result;
 }
 
-/** Writes Recipe metadata and reply relationships through the modifier's object API. */
+/**
+ * Writes Recipe metadata and reply relationships through the modifier's object API.
+ * @param {PDFModifier} writer - Modifier of the source PDF.
+ * @param {string} subtype - Annotation subtype.
+ * @param {number[]} rectangle - `[left, bottom, right, top]`.
+ * @param {object} options - Normalized annotation options.
+ * @returns {number} The annotation object ID.
+ */
 function writeSourceAnnotation(writer, subtype, rectangle, options) {
   var opacity = options.opacity ?? 1;
   var flags = annotationFlags(options.flag ?? options.flags);
