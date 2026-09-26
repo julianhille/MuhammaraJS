@@ -55,3 +55,25 @@ export var RecipeTextWrap = Object.freeze({
   TRIM: "trim",
   ELLIPSIS: "ellipsis",
 });
+
+/** Horizontal placement keyword for Recipe text and images. */
+export var RecipeHorizontalAlignment = Object.freeze({
+  LEFT: "left",
+  CENTER: "center",
+  RIGHT: "right",
+});
+
+/** Vertical placement keyword for Recipe text, images, and text boxes. */
+export var RecipeVerticalAlignment = Object.freeze({
+  TOP: "top",
+  CENTER: "center",
+  BOTTOM: "bottom",
+});
+
+/** Horizontal alignment of the lines inside a Recipe text box. */
+export var RecipeTextAlignment = Object.freeze({
+  LEFT: "left",
+  CENTER: "center",
+  RIGHT: "right",
+  JUSTIFY: "justify",
+});

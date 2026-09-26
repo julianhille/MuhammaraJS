@@ -296,6 +296,28 @@ export interface RecipeOverlayOptions {
   fitWidth?: boolean;
   fitHeight?: boolean;
 }
+/** Horizontal placement keyword for Recipe text and images. */
+export type RecipeHorizontalAlignment = "left" | "center" | "right";
+export declare const RecipeHorizontalAlignment: {
+  readonly LEFT: "left";
+  readonly CENTER: "center";
+  readonly RIGHT: "right";
+};
+/** Vertical placement keyword for Recipe text, images, and text boxes. */
+export type RecipeVerticalAlignment = "top" | "center" | "bottom";
+export declare const RecipeVerticalAlignment: {
+  readonly TOP: "top";
+  readonly CENTER: "center";
+  readonly BOTTOM: "bottom";
+};
+/** Horizontal alignment of the lines inside a Recipe text box. */
+export type RecipeTextAlignment = RecipeHorizontalAlignment | "justify";
+export declare const RecipeTextAlignment: {
+  readonly LEFT: "left";
+  readonly CENTER: "center";
+  readonly RIGHT: "right";
+  readonly JUSTIFY: "justify";
+};
 /** How a Recipe text box handles text that does not fit its width. */
 export type RecipeTextWrap = "auto" | "clip" | "trim" | "ellipsis";
 export declare const RecipeTextWrap: {
@@ -312,12 +334,7 @@ export interface RecipeTextBox {
   lineHeight?: number;
   /** `clip` retains and clips the source, `trim` omits its non-fitting suffix, and `ellipsis` replaces it with `...`. */
   wrap?: boolean | RecipeTextWrap;
-  textAlign?:
-    | "left"
-    | "center"
-    | "right"
-    | "justify"
-    | `${string} ${"top" | "center" | "bottom"}`;
+  textAlign?: RecipeTextAlignment | `${string} ${RecipeVerticalAlignment}`;
   /** Render only complete lines that fit within this fixed-height text box. */
   clipIfExceedsBox?: boolean;
   /** Called after clipping leaves source text unrendered. */
@@ -361,10 +378,8 @@ export interface RecipeTextOptions
   html?: boolean;
   flow?: boolean;
   align?:
-    | "left"
-    | "center"
-    | "right"
-    | `${"left" | "center" | "right"} ${"top" | "center" | "bottom"}`;
+    | RecipeHorizontalAlignment
+    | `${RecipeHorizontalAlignment} ${RecipeVerticalAlignment}`;
   layout?: string | number;
   /** Adds a Highlight annotation over each drawn run. */
   highlight?: boolean | RecipeTextMarkupOptions;

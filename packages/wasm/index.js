@@ -29,6 +29,9 @@ import {
   TextEncoding,
   DrawingPathType,
   RecipeTextWrap,
+  RecipeHorizontalAlignment,
+  RecipeVerticalAlignment,
+  RecipeTextAlignment,
 } from "./lib/value-sets.js";
 
 export {
@@ -42,7 +45,10 @@ export {
   PageBox,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
+  RecipeHorizontalAlignment,
+  RecipeTextAlignment,
   RecipeTextWrap,
+  RecipeVerticalAlignment,
   TextEncoding,
 };
 

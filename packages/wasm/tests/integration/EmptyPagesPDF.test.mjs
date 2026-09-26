@@ -5,7 +5,10 @@ import {
   DrawingPathType,
   ImageFitPolicy,
   PageBox,
+  RecipeHorizontalAlignment,
+  RecipeTextAlignment,
   RecipeTextWrap,
+  RecipeVerticalAlignment,
   TextEncoding,
 } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
@@ -109,4 +112,7 @@ var EXPORTED_VALUE_SETS = [
   [TextEncoding, ["text", "code", "hex"]],
   [DrawingPathType, ["stroke", "fill", "clip"]],
   [RecipeTextWrap, ["auto", "clip", "trim", "ellipsis"]],
+  [RecipeHorizontalAlignment, ["left", "center", "right"]],
+  [RecipeVerticalAlignment, ["top", "center", "bottom"]],
+  [RecipeTextAlignment, ["left", "center", "right", "justify"]],
 ];

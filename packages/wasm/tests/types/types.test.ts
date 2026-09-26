@@ -7,6 +7,9 @@ import {
   TextEncoding as TextEncodings,
 } from "../../index.js";
 import type {
+  RecipeHorizontalAlignment,
+  RecipeVerticalAlignment,
+  RecipeTextAlignment,
   RecipeTextWrap,
   TextEncoding,
   PageBox,
@@ -913,6 +916,14 @@ async function usesNamedValueSets() {
   var wrapMode: RecipeTextWrap = "ellipsis";
   var wrapBox: RecipeTextBox = { width: 10, wrap: wrapMode };
   void wrapBox;
+  var lineAlign: RecipeTextAlignment = "justify";
+  var boxBottom: RecipeVerticalAlignment = "bottom";
+  var textLeft: RecipeHorizontalAlignment = "left";
+  var alignedBox: RecipeTextBox = {
+    width: 10,
+    textAlign: `${lineAlign} ${boxBottom}`,
+  };
+  void [alignedBox, textLeft];
 }
 
 void usesNamedValueSets;

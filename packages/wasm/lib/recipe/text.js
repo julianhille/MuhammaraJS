@@ -1,4 +1,9 @@
-import { RecipeTextWrap } from "../value-sets.js";
+import {
+  RecipeHorizontalAlignment,
+  RecipeTextAlignment,
+  RecipeTextWrap,
+  RecipeVerticalAlignment,
+} from "../value-sets.js";
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 
@@ -712,7 +717,10 @@ export function createTextMethods({ drawText, measure, module }) {
       // Validate every requested markup option before drawing any part of
       // this text call, so a later invalid subtype cannot leave partial output.
       addTextMarkup(this, { ...options, fontSize }, x, y, 1, true);
-      var wrap = box.wrap === false ? "ellipsis" : box.wrap || "auto";
+      var wrap =
+        box.wrap === false
+          ? RecipeTextWrap.ELLIPSIS
+          : box.wrap || RecipeTextWrap.AUTO;
       var measureText = (text, textOptions) =>
         dimensions(this, text, textOptions);
       var source = options.html ? htmlToTextObjects(value, options) : null;
@@ -776,10 +784,12 @@ export function createTextMethods({ drawText, measure, module }) {
           : dimensions(this, entry.text, options).width;
       var widestEntry = Math.max(...entries.map(entryWidth), 0);
       var naturalWidth = width || widestEntry;
-      if (topAlign[0] === "center") x -= naturalWidth / 2;
-      else if (topAlign[0] === "right") x -= naturalWidth;
-      if (topAlign[1] === "center") y -= height / 2;
-      else if (topAlign[1] === "bottom") y -= height;
+      if (topAlign[0] === RecipeHorizontalAlignment.CENTER)
+        x -= naturalWidth / 2;
+      else if (topAlign[0] === RecipeHorizontalAlignment.RIGHT)
+        x -= naturalWidth;
+      if (topAlign[1] === RecipeVerticalAlignment.CENTER) y -= height / 2;
+      else if (topAlign[1] === RecipeVerticalAlignment.BOTTOM) y -= height;
       if (box.style)
         this.rectangle(
           x,
@@ -792,9 +802,9 @@ export function createTextMethods({ drawText, measure, module }) {
       var currentY =
         y +
         top +
-        (vertical === "center"
+        (vertical === RecipeVerticalAlignment.CENTER
           ? (height - contentHeight) / 2
-          : vertical === "bottom"
+          : vertical === RecipeVerticalAlignment.BOTTOM
             ? height - contentHeight
             : 0);
       var columnIndex = 0;
@@ -841,13 +851,14 @@ export function createTextMethods({ drawText, measure, module }) {
             )
           : entryDimensions.width;
         var horizontal = box.textAlign?.split(" ")[0];
-        var isJustifiedLine = horizontal === "justify" && !entry.last && width;
+        var isJustifiedLine =
+          horizontal === RecipeTextAlignment.JUSTIFY && !entry.last && width;
         var drawX =
           x +
           left +
-          (horizontal === "center"
+          (horizontal === RecipeTextAlignment.CENTER
             ? (width - left - right - textWidth) / 2
-            : horizontal === "right"
+            : horizontal === RecipeTextAlignment.RIGHT
               ? width - right - textWidth
               : 0);
         var baseline = currentY + lineHeight;
@@ -856,7 +867,7 @@ export function createTextMethods({ drawText, measure, module }) {
         }
         var linkX = drawX;
         var linkWidth = textWidth;
-        var clipping = wrap === "clip" && width;
+        var clipping = wrap === RecipeTextWrap.CLIP && width;
         var clip = clipping
           ? {
               x: x + left,
@@ -906,7 +917,8 @@ export function createTextMethods({ drawText, measure, module }) {
           );
         }
         if (entry.parts) {
-          var justify = horizontal === "justify" && !entry.last && width;
+          var justify =
+            horizontal === RecipeTextAlignment.JUSTIFY && !entry.last && width;
           var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
           /** Reports whether this fragment owns an expandable justification gap. */
           var hasGapAfter = (part, index) =>
