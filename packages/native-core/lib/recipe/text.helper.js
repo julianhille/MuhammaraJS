@@ -454,6 +454,9 @@ exports.Column = class Column {
   get position() {
     return [this._x, this._y];
   }
+  /**
+   * @param {number[]} pos - The new [x, y] position.
+   */
   set position(pos) {
     [this._x, this._y] = pos;
   }
