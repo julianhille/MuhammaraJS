@@ -30,6 +30,10 @@ PDFRStreamForBuffer.prototype.read = function (inAmount) {
   return bytes;
 };
 
+/**
+ * Tells whether bytes remain after the current position.
+ * @returns {boolean} True while the end has not been reached.
+ */
 PDFRStreamForBuffer.prototype.notEnded = function () {
   return this.rposition < this.fileSize;
 };
