@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Add `DrawingPathType` constants for the `type` option of the low-level
   drawing helpers [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add `ObjectReplacementScope` constants for the `scope` option of
+  `PDFWriter#replaceObject()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare the `text`, `border`, `color` and `followOriginalPageRotation`
   options that `Recipe#annot()` already reads [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Add `Recipe.Source`, `Recipe.TextWrap`, `Recipe.TextAlign`, `Recipe.TableRowNth`, `Recipe.LineCap`, `Recipe.LineJoin`, `Recipe.ArrowAt`, `Recipe.ArrowType`, `Recipe.TriangleTrait`, `Recipe.TrianglePosition`, `Recipe.PageSize`, `Recipe.PageLayout`, `Recipe.HorizontalAlign`, `Recipe.VerticalAlign`, `Recipe.FontStyle`, `Recipe.Permission`, `Recipe.Coordinate`, `Recipe.Colorspace`, `Recipe.AnnotSubtype`, `Recipe.AnnotFlag` and

@@ -888,6 +888,12 @@ declare namespace muhammara {
     /**
      * Replace direct references to an object in a page dictionary.
      * Available only when modifying an existing PDF.
+     * @param pageIndex - The zero-based page index; ignored for the global scope.
+     * @param sourceObjectId - The object ID to stop referencing.
+     * @param replacementObjectId - The object ID to reference instead.
+     * @param options - `scope: ObjectReplacementScope.GLOBAL` replaces on every page.
+     * @returns This writer.
+     * @throws {Error} If the writer does not modify a PDF or the page does not exist.
      */
     replaceObject(
       pageIndex: number,
@@ -1007,8 +1013,16 @@ declare namespace muhammara {
     ): void;
   }
 
+  /** Scopes for the `replaceObject()` scope option. */
+  export const ObjectReplacementScope: {
+    /** Replace the reference on every page. */
+    readonly GLOBAL: "global";
+  };
+  export type ObjectReplacementScope =
+    (typeof ObjectReplacementScope)[keyof typeof ObjectReplacementScope];
+
   export interface ObjectReplacementOptions {
-    scope?: "global";
+    scope?: ObjectReplacementScope;
   }
 
   export interface RemoveTextOptions {

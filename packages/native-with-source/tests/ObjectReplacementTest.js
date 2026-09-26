@@ -102,7 +102,7 @@ describe("ObjectReplacement", function () {
 
     objectsContext.endPDFStream(replacementStream).endIndirectObject();
     writer.replaceObject(0, firstPageContentsID, replacementObjectID, {
-      scope: "global",
+      scope: muhammara.ObjectReplacementScope.GLOBAL,
     });
     writer.end();
 

@@ -23,6 +23,11 @@ muhammara.createWriterToContinue("output.pdf", "state.txt", {
 var invalidContinuationLog: muhammara.ByteWriter = { write: () => true };
 void invalidContinuationLog;
 
+var replacementScope: muhammara.ObjectReplacementScope =
+  muhammara.ObjectReplacementScope.GLOBAL;
+var replacementOptions: muhammara.ObjectReplacementOptions = {
+  scope: replacementScope,
+};
 var pathTypes: muhammara.DrawingPathType[] = ["stroke", "fill", "clip", null];
 void pathTypes;
 // @ts-expect-error Drawing paint modes are a closed set.

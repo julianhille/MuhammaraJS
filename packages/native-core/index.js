@@ -35,13 +35,27 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     eventParams.writer = this;
     this.getEvents().emit(eventName, eventParams);
   };
+  /**
+   * Replaces direct references to an object in a page dictionary. Available
+   * only when modifying an existing PDF.
+   * @param {number} pageIndex - The zero-based page index; ignored for the
+   *   global scope.
+   * @param {number} sourceObjectId - The object ID to stop referencing.
+   * @param {number} replacementObjectId - The object ID to reference instead.
+   * @param {Object} [options] - The options.
+   * @param {string} [options.scope] - ObjectReplacementScope.GLOBAL to
+   *   replace on every page.
+   * @returns {Object} This writer.
+   * @throws {Error} If the writer does not modify a PDF or the page does not
+   *   exist.
+   */
   muhammara.PDFWriter.prototype.replaceObject = function (
     pageIndex,
     sourceObjectId,
     replacementObjectId,
     options,
   ) {
-    if (options && options.scope === "global") {
+    if (options && options.scope === muhammara.ObjectReplacementScope.GLOBAL) {
       var copyingContext = this.createPDFCopyingContextForModifiedFile();
       var pageCount = copyingContext.getSourceDocumentParser().getPagesCount();
 
@@ -89,6 +103,9 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     STROKE: "stroke",
     FILL: "fill",
     CLIP: "clip",
+  });
+  muhammara.ObjectReplacementScope = Object.freeze({
+    GLOBAL: "global",
   });
   muhammara.LineCapStyle = Object.freeze({
     LINECAP_BUTT: 0,
