@@ -65,6 +65,10 @@ declare namespace muhammara {
      * @returns The number of bytes written.
      */
     write(inBytes: Buffer): number;
+    /**
+     * Returns the number of bytes written so far.
+     * @returns The current byte offset.
+     */
     getCurrentPosition(): number;
   }
 
