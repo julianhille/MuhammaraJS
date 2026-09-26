@@ -418,9 +418,11 @@ function rewriteStream(recipe, copyingContext, objectId, content) {
  * @param {string[]} names XObject names used with `Do`.
  * @param {object|null} resources Resources dictionary for those names.
  * @param {Map<number, string>} forms Collected form IDs and stripped content.
+ * @private
+ * @returns {void}
  */
 function collectForms(recipe, names, resources, forms) {
-  var xObjects = lookup(recipe, resources, "XObject");
+  var xObjects = lookup(recipe, resources, PdfName.XOBJECT);
   names.forEach(function (name) {
     var reference =
       xObjects && xObjects.exists(name) && xObjects.queryObject(name);
@@ -437,8 +439,8 @@ function collectForms(recipe, names, resources, forms) {
       .parseNewObject(objectId)
       .toPDFStream()
       .getDictionary();
-    var subtype = lookup(recipe, dictionary, "Subtype");
-    if (!subtype || subtype.toPDFName().value !== "Form") return;
+    var subtype = lookup(recipe, dictionary, PdfName.SUBTYPE);
+    if (!subtype || subtype.toPDFName().value !== PdfName.FORM) return;
 
     var source = readContentStream(recipe, objectId);
     var stripped = removeTextShowingOperators(source);
@@ -446,7 +448,7 @@ function collectForms(recipe, names, resources, forms) {
     collectForms(
       recipe,
       stripped.xObjectNames,
-      lookup(recipe, dictionary, "Resources") || resources,
+      lookup(recipe, dictionary, PdfName.RESOURCES) || resources,
       forms,
     );
   });
