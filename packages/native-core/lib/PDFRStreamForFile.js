@@ -37,6 +37,11 @@ PDFRStreamForFile.prototype.notEnded = function () {
   return this.rposition < this.fileSize;
 };
 
+/**
+ * Moves to a position relative to the start position, clamped to the data.
+ * @param {number} inPosition - The byte offset from the start position.
+ * @returns {void}
+ */
 PDFRStreamForFile.prototype.setPosition = function (inPosition) {
   this.rposition = Math.min(
     Math.max(this.mStartPosition + inPosition, 0),
