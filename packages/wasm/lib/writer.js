@@ -2028,6 +2028,14 @@ export function createWriterFactory({
           m: function (x, y) {
             return operator("m", 10, [x, y]);
           },
+          /**
+           * Appends a straight line to a point (`l`).
+           * @param {number} x - Point x.
+           * @param {number} y - Point y.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           l: function (x, y) {
             return operator("l", 11, [x, y]);
           },
