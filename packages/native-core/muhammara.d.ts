@@ -585,6 +585,14 @@ declare namespace muhammara {
      *   dictionary and a string.
      */
     queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
+    /**
+     * Returns an array item, resolving an indirect reference.
+     * @param objectList - The array to read.
+     * @param index - The zero-based item index.
+     * @returns The item; undefined when the index is out of range.
+     * @throws {TypeError} If the reader has ended or the arguments are not an
+     *   array and a number.
+     */
     queryArrayObject(
       objectList: PDFArray,
       index: number,
