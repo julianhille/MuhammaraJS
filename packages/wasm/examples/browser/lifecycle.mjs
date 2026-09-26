@@ -97,6 +97,11 @@ export class ObjectUrlStore {
   }
 }
 
+/**
+ * Ends a writer or reader, disposing it when ending throws.
+ * @param {{end?: Function, dispose?: Function}} [owner] - Writer, modifier, or reader.
+ * @returns {void}
+ */
 export function endQuietly(owner) {
   try {
     owner?.end?.();
