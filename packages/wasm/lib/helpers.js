@@ -350,6 +350,12 @@ export function createHelpers(module) {
     return [index, pageBox, transformation];
   }
 
+  /**
+   * Maps text options to the native encoding code.
+   * @param {TextOptions} [options] - Options with an optional TextEncoding.
+   * @returns {number} 0 text, 1 code, or 2 hex.
+   * @throws {TypeError} If `options` is not an options object or the encoding is not a TextEncoding value.
+   */
   function textEncoding(options) {
     if (options === undefined) return 0;
     if (!options || typeof options !== "object" || Array.isArray(options)) {
