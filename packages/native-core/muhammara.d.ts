@@ -3832,6 +3832,33 @@ declare namespace muhammara {
       height: number,
     ): Recipe;
 
+    /**
+     * Create an annotation. It is written when the PDF ends.
+     * @todo support for rich text RC
+     * @param x - The coordinate x
+     * @param y - The coordinate y
+     * @param subtype - The annotation subtype, one of the
+     *   `Recipe.AnnotSubtype` values.
+     * @param options - The options
+     * @param options.text - The annotation content; defaults to ''.
+     * @param options.title - The title.
+     * @param options.open - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'; defaults to false.
+     * @param options.richText - Rich text
+     * @param options.flag - The flag property, one of the `Recipe.AnnotFlag` values.
+     * @param options.icon - The icon of a Text annotation, one
+     *   of the `Recipe.AnnotIcon` values. Viewers show 'Note' when it is omitted.
+     * @param options.width - Width
+     * @param options.height - Height
+     * @param options.date - Date of annotation
+     * @param options.subject - The subject.
+     * @param options.replies - Array of annotation replies
+     * @param options.border - The border width.
+     * @param options.color - The annotation color, as HexColor,
+     *   PercentColor or DecimalColor.
+     * @param options.opacity - Annotation opacity from 0 (transparent) to 1 (opaque); defaults to 1.
+     * @param options.followOriginalPageRotation - Preserve the original page rotation when positioning the annotation; defaults to false.
+     * @returns The recipe instance.
+     */
     annot(
       x: Recipe.RecipeCoordinate,
       y: Recipe.RecipeCoordinate,
