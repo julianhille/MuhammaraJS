@@ -3956,6 +3956,13 @@ export function createWriterFactory({
         if (!handle) throw new Error("Unable to create form XObject");
         return new FormXObject(handle, false, objectId || undefined);
       },
+      /**
+       * Finishes a form XObject so it can be placed with `doXObject()`.
+       * @param {FormXObject} form - Open form from this writer.
+       * @returns {this} The writer.
+       * @throws {TypeError} If `form` is not an open form from this writer or the writer ended.
+       * @throws {Error} If the form cannot be finished.
+       */
       endFormXObject: function (form) {
         if (
           !(form instanceof FormXObject) ||
