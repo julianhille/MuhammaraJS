@@ -7,7 +7,12 @@ export interface BlobLike {
 }
 export type ByteSource = Uint8Array | ArrayBuffer | PDFRStreamForBuffer;
 export type AsyncByteSource = ByteSource | BlobLike;
-export type PDFRectangle = [number, number, number, number];
+export type PDFRectangle = [
+  lowerLeftX: number,
+  lowerLeftY: number,
+  upperRightX: number,
+  upperRightY: number,
+];
 export type PDFMatrix = [number, number, number, number, number, number];
 /** Glyph entries shown without text encoding: `[glyphId, unicodeCodePoint]` pairs. */
 export type Glyph = Array<[number, number]>;
