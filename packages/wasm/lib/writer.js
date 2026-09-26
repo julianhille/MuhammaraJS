@@ -712,6 +712,11 @@ export function createWriterFactory({
           throw new TypeError("getAdditionalInfoEntry requires a string");
         return additionalInfo.get(key) || "";
       },
+      /**
+       * Reads every custom Info dictionary entry.
+       * @returns {Record<string, string>} Entries keyed by name.
+       * @throws {Error} If the writer has ended.
+       */
       getAdditionalInfoEntries: function () {
         requireOpenWriter();
         return Object.fromEntries(additionalInfo);
