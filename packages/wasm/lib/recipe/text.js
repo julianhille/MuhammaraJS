@@ -55,7 +55,11 @@ function splitWords(value) {
   );
 }
 
-/** Removes trailing breakable whitespace while preserving U+00A0. */
+/**
+ * Removes trailing breakable whitespace while preserving U+00A0.
+ * @param {string} value - Text.
+ * @returns {string} The trimmed text.
+ */
 function trimBreakableEnd(value) {
   return value.replace(/(?:(?!\u00a0)\s)+$/, "");
 }
