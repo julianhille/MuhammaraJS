@@ -4770,6 +4770,13 @@ declare namespace muhammara {
      * @throws {Error} If a name is not a `Recipe.Permission` value.
      */
     permission(flags?: Recipe.PermissionList): number;
+    /**
+     * Write the PDF object structure to a file.
+     * @param output - The output file path.
+     * @returns The recipe instance.
+     * @throws {Error} If the source reader was released by endPDF(), or the
+     *   output file cannot be written.
+     */
     structure(output: string): Recipe;
     htmlToTextObjects(
       htmlCodes: string,
