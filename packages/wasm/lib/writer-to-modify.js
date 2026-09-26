@@ -578,6 +578,18 @@ export function createWriterToModifyFactory({
         ET: function () {
           return operator("ET", 33);
         },
+        /**
+         * Sets the text matrix and text line matrix (`Tm`).
+         * @param {number} a - Matrix component `a`.
+         * @param {number} b - Matrix component `b`.
+         * @param {number} c - Matrix component `c`.
+         * @param {number} d - Matrix component `d`.
+         * @param {number} e - Matrix component `e`.
+         * @param {number} f - Matrix component `f`.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Tm: function (a, b, c, d, e, f) {
           return operator("Tm", 34, [a, b, c, d, e, f]);
         },
