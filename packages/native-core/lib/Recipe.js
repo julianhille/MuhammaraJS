@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const streams = require("memory-streams");
 var { standardInfoKeys } = require("./recipe-info");
-var { AnnotSubtype } = require("./recipe-constants");
+var { AnnotSubtype, PageLayout } = require("./recipe-constants");
 
 /**
  * @name Recipe
@@ -207,14 +207,14 @@ class Recipe {
         let side1 = Math.abs(dimensions[2] - dimensions[0]);
         let side2 = Math.abs(dimensions[3] - dimensions[1]);
         if (side1 > side2 && rotate % 180 === 0) {
-          layout = "landscape";
+          layout = PageLayout.LANDSCAPE;
         } else if (side1 < side2 && rotate % 180 !== 0) {
-          layout = "landscape";
+          layout = PageLayout.LANDSCAPE;
         } else {
-          layout = "portrait";
+          layout = PageLayout.PORTRAIT;
         }
 
-        if (layout === "landscape") {
+        if (layout === PageLayout.LANDSCAPE) {
           width = side1 > side2 ? side1 : side2;
           height = side1 > side2 ? side2 : side1;
         } else {
