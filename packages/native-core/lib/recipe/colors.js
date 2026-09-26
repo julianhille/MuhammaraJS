@@ -231,16 +231,22 @@ exports._createExtGStates = function _createExtGStates(value) {
   return this.extGStates[value];
 };
 
-function _defaultColor(colorspace = "rgb") {
+/**
+ * The hex color used when a color value is missing or invalid.
+ * @private
+ * @param {Recipe.Colorspace} [colorspace=Recipe.Colorspace.RGB] - The colorspace.
+ * @returns {string} The default color as a hex string without '#'.
+ */
+function _defaultColor(colorspace = Colorspace.RGB) {
   let defaultColor;
   switch (colorspace) {
-    case "cmyk":
+    case Colorspace.CMYK:
       defaultColor = "FF000000";
       break;
-    case "gray":
+    case Colorspace.GRAY:
       defaultColor = "00";
       break;
-    case "rgb":
+    case Colorspace.RGB:
     default:
       defaultColor = "1777d1";
       break;
