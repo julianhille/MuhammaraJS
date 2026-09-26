@@ -1874,6 +1874,11 @@ export function createWriterFactory({
           K: function (cyan, magenta, yellow, black) {
             return operator("K", 29, [cyan, magenta, yellow, black]);
           },
+          /**
+           * Intersects the clipping path with the current path, nonzero winding (`W`).
+           * @returns {this} The content context, for chaining.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           W: function () {
             return operator("W", 30);
           },
