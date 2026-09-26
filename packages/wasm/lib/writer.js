@@ -2464,6 +2464,14 @@ export function createWriterFactory({
           S: function () {
             return operator("S", 5);
           },
+          /**
+           * Paints an XObject (`Do`).
+           * @param {string|number|FormXObject|ImageXObject} xobject - Resource name, form object ID,
+           * or a completed XObject from this writer.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If `xobject` is an unfinished form or belongs to another writer.
+           * @throws {Error} If the content context is no longer active or the XObject cannot be placed.
+           */
           doXObject: function (xobject) {
             if (ended || form._ended) {
               throw new Error("Form XObject content has ended");
