@@ -63,9 +63,21 @@ function getFontSizeRatio(tagName = "") {
   return matched ? matched : 1;
 }
 
+/**
+ * Whether an element starts its content on a new line.
+ * @private
+ * @param {string} [tagName=''] - The element name, matched case-insensitively.
+ * @returns {boolean} True for p, li and h1 to h3.
+ */
 function needsLineBreaker(tagName = "") {
-  const lineBreakers = ["p", "li", "h1", "h2", "h3"];
-  return lineBreakers.includes(tagName);
+  const lineBreakers = [
+    HtmlTag.P,
+    HtmlTag.LI,
+    HtmlTag.H1,
+    HtmlTag.H2,
+    HtmlTag.H3,
+  ];
+  return lineBreakers.includes(String(tagName).toLowerCase());
 }
 
 /**
