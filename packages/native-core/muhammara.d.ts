@@ -84,6 +84,15 @@ declare namespace muhammara {
     input: FilePath | ReadStream,
     options?: PDFReaderOptions,
   ): PDFReader;
+  /**
+   * Writes a copy of a PDF with new encryption settings, or decrypted when
+   * no passwords are given.
+   * @param originalPdfPath - The source PDF path.
+   * @param newPdfPath - The output path.
+   * @param options - The source password and the new encryption settings.
+   * @throws {TypeError} If the arguments are wrong, one side is a path and the
+   *   other a stream, or the PDF cannot be recrypted.
+   */
   export function recrypt(
     originalPdfPath: FilePath,
     newPdfPath: FilePath,
