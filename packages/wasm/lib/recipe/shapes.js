@@ -28,6 +28,11 @@ function pointAt(x, y, length, angle) {
   ];
 }
 
+/**
+ * Returns the stroke width a shape is inset by; 0 for fill-only shapes.
+ * @param {object} options - Shape options.
+ * @returns {number} The line width, 2 by default when stroked.
+ */
 function drawingLineWidth(options) {
   return options.stroke || options.color || !options.fill
     ? options.lineWidth || options.width || 2
