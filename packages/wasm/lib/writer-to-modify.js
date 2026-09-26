@@ -3402,6 +3402,13 @@ export function createWriterToModifyFactory({
           module._free(objectIdPointer);
         }
       },
+      /**
+       * Opens a source PDF for copying pages and objects into this modifier.
+       * @param {ByteSource} sourceBytes - Source PDF bytes.
+       * @returns {DocumentCopyingContext} The copying context; call `end()` when done.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the modifier ended or the source cannot be opened.
+       */
       createPDFCopyingContext: function (sourceBytes) {
         requireOpen();
         sourceBytes = normalizeBytes(sourceBytes, "PDF input");
