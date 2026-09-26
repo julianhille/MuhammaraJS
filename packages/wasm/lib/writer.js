@@ -728,6 +728,11 @@ export function createWriterFactory({
         s: function () {
           return operator("s", 4);
         },
+        /**
+         * Fills the current path using the nonzero winding rule (`F`, the obsolete `f` spelling).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         F: function () {
           return operator("F", 7);
         },
