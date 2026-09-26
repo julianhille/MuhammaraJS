@@ -39,9 +39,7 @@ export class PDFRStreamForBuffer {
     if (!Number.isInteger(amount) || amount < 0) {
       throw new RangeError("read requires a non-negative integer");
     }
-    var result = Array.from(
-      this.buffer.subarray(this.rposition, this.rposition + amount),
-    );
+    var result = this.buffer.slice(this.rposition, this.rposition + amount);
     this.rposition += amount;
     return result;
   }
@@ -92,17 +90,47 @@ export class PDFRStreamForBuffer {
  */
 export class PDFWStreamForBuffer {
   constructor() {
-    this.buffer = new Uint8Array();
+    this.chunks = [];
+    this.joined = new Uint8Array();
     this.position = 0;
+  }
+
+  /**
+   * The bytes written so far. Chunks are joined on first access instead of on
+   * every write.
+   *
+   * @returns {Uint8Array} The written bytes.
+   */
+  get buffer() {
+    if (this.chunks.length === 0) return this.joined;
+    var length = this.joined.length;
+    for (var pending of this.chunks) length += pending.length;
+    var next = new Uint8Array(length);
+    next.set(this.joined);
+    var offset = this.joined.length;
+    for (var chunk of this.chunks) {
+      next.set(chunk, offset);
+      offset += chunk.length;
+    }
+    this.chunks = [];
+    this.joined = next;
+    return next;
+  }
+
+  /**
+   * Replaces the collected bytes.
+   *
+   * @param {Uint8Array} value The new contents.
+   */
+  set buffer(value) {
+    this.chunks = [];
+    this.joined = value;
   }
 
   write(bytes) {
     bytes = normalizeBytes(bytes, "PDFWStreamForBuffer input");
     if (bytes.length === 0) return 0;
-    var next = new Uint8Array(this.buffer.length + bytes.length);
-    next.set(this.buffer);
-    next.set(bytes, this.buffer.length);
-    this.buffer = next;
+    this.chunks.push(bytes);
     this.position += bytes.length;
     return bytes.length;
   }
