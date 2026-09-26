@@ -594,6 +594,13 @@ export function createRawObjectsContext({
         writeObjectString(2, value);
         return this;
       },
+      /**
+       * Writes a bare keyword token, such as `obj`.
+       * @param {string} value - Keyword text.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a string.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeKeyword: function (value) {
         writeObjectString(3, value);
         return this;
