@@ -4792,6 +4792,20 @@ declare namespace muhammara {
       options?: Recipe.TextOptions,
     ): Recipe.HtmlTextObject[];
 
+    /**
+     * End the pdfDoc. Finalization happens once; later calls do not rewrite the
+     * PDF and invoke the callback with the completed output when applicable.
+     * An active page is finished first, so a forgotten endPage() does not cost
+     * that page. A failed finalization retires the Recipe and later calls
+     * rethrow the original error.
+     * @param callback - Called when the PDF is
+     *   finished: with the output Buffer for a Buffer source without an output
+     *   path, with the output path for a Buffer source with one, and without an
+     *   argument for a path source.
+     * @returns The callback result, or undefined without a callback.
+     * @throws {Error} If pages are being deleted while a page is still open.
+     * @throws {Error} If finalization fails; later calls rethrow the same error.
+     */
     endPDF(): void;
     endPDF<T>(callback: (output?: Buffer | string) => T): T;
   }
