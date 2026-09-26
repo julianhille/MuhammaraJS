@@ -1,3 +1,24 @@
+// Lower-case names of the HTML elements the parser handles, as native names
+// them; DIV, S, and STRIKE are Wasm additions.
+var HtmlTag = Object.freeze({
+  HTML: "html",
+  P: "p",
+  DIV: "div",
+  LI: "li",
+  UL: "ul",
+  OL: "ol",
+  BR: "br",
+  B: "b",
+  STRONG: "strong",
+  I: "i",
+  EM: "em",
+  U: "u",
+  S: "s",
+  STRIKE: "strike",
+  DEL: "del",
+  A: "a",
+});
+
 // Deliberately small, DOM-free HTML subset so Recipe also works in Workers.
 /**
  * Converts the supported DOM-free HTML subset into styled Recipe fragments,
@@ -145,7 +166,7 @@ export function htmlToTextObjects(html, options = {}) {
     }
     var closing = /^<\//.test(token);
     var name = token.match(/^<\/?\s*([\w-]+)/)?.[1]?.toLowerCase();
-    if (name === "br" && !closing) {
+    if (name === HtmlTag.BR && !closing) {
       // An explicit break always ends a line, including an empty first line,
       // as in native Recipe.
       push({ value: "\n", styles: current() });
@@ -157,17 +178,19 @@ export function htmlToTextObjects(html, options = {}) {
       var frame = frameIndex === -1 ? null : frames[frameIndex];
       var removedFrames = frame ? frames.splice(frameIndex) : [];
       var removedListFrames = removedFrames.filter((removedFrame) =>
-        ["ul", "ol"].includes(removedFrame.name),
+        [HtmlTag.UL, HtmlTag.OL].includes(removedFrame.name),
       );
       removedListFrames.forEach(() => lists.pop());
-      if (removedFrames.some((removedFrame) => removedFrame.name === "li")) {
+      if (
+        removedFrames.some((removedFrame) => removedFrame.name === HtmlTag.LI)
+      ) {
         closeItems(lists.length + 1);
       }
-      if (name === "li" && frame) {
+      if (name === HtmlTag.LI && frame) {
         items.pop();
         pendingBoundary = false;
       }
-      if (["p", "div"].includes(name) && frame) {
+      if ([HtmlTag.P, HtmlTag.DIV].includes(name) && frame) {
         var blockItem = items[items.length - 1];
         if (objects.length === frame.objectCount) {
           pendingBoundary = frame.pendingBoundary;
@@ -176,7 +199,7 @@ export function htmlToTextObjects(html, options = {}) {
           pendingBoundary = true;
         }
       }
-      if (removedListFrames.length && name !== "li") {
+      if (removedListFrames.length && name !== HtmlTag.LI) {
         closeItems(lists.length + 1);
         if (objects.length > removedListFrames[0].objectCount) {
           pendingBoundary = true;
@@ -190,7 +213,7 @@ export function htmlToTextObjects(html, options = {}) {
     }
     // Native propagates the marker into block children, so an opening block
     // right after one stays on the marker's line instead of orphaning it.
-    var block = ["p", "div"].includes(name);
+    var block = [HtmlTag.P, HtmlTag.DIV].includes(name);
     var blockItem = block ? items[items.length - 1] : null;
     var blockState = block
       ? {
@@ -202,12 +225,12 @@ export function htmlToTextObjects(html, options = {}) {
     if (block) {
       pendingBoundary = true;
     }
-    if (name === "li") {
+    if (name === HtmlTag.LI) {
       var openItem = frames.length - 1;
       while (
         openItem >= 0 &&
         !(
-          frames[openItem].name === "li" &&
+          frames[openItem].name === HtmlTag.LI &&
           frames[openItem].depth === lists.length
         )
       )
@@ -216,11 +239,12 @@ export function htmlToTextObjects(html, options = {}) {
       closeItems(lists.length);
     }
     var style = {};
-    if (["b", "strong"].includes(name)) style.bold = true;
-    if (["i", "em"].includes(name)) style.italic = true;
-    if (name === "u") style.underline = true;
-    if (["s", "strike", "del"].includes(name)) style.strikeOut = true;
-    if (name === "a")
+    if ([HtmlTag.B, HtmlTag.STRONG].includes(name)) style.bold = true;
+    if ([HtmlTag.I, HtmlTag.EM].includes(name)) style.italic = true;
+    if (name === HtmlTag.U) style.underline = true;
+    if ([HtmlTag.S, HtmlTag.STRIKE, HtmlTag.DEL].includes(name))
+      style.strikeOut = true;
+    if (name === HtmlTag.A)
       style.link = token.match(/href\s*=\s*["']?([^\s"'>]+)/i)?.[1];
     var color = token.match(/(?:color|data-color)\s*=\s*["']?([^\s"'>;]+)/i);
     if (color) style.color = color[1];
@@ -235,15 +259,15 @@ export function htmlToTextObjects(html, options = {}) {
       ...blockState,
       objectCount: objects.length,
     });
-    if (["ul", "ol"].includes(name)) {
+    if ([HtmlTag.UL, HtmlTag.OL].includes(name)) {
       lists.push({ name, index: 0 });
-    } else if (name === "li") {
+    } else if (name === HtmlTag.LI) {
       lineBreak();
       pendingBoundary = false;
-      var list = lists[lists.length - 1] || { name: "ul", index: 0 };
+      var list = lists[lists.length - 1] || { name: HtmlTag.UL, index: 0 };
       list.index++;
       var item = {
-        value: list.name === "ol" ? `${list.index}. ` : "* ",
+        value: list.name === HtmlTag.OL ? `${list.index}. ` : "* ",
         indent: lists.length * 4 + 2,
         depth: lists.length,
         markerPending: true,
