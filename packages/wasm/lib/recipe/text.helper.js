@@ -36,6 +36,10 @@ export class Line {
     this.options = options;
     this.words = [];
   }
+  /**
+   * Joins the words of the line.
+   * @returns {string} The line text.
+   */
   get value() {
     return this.words.join("");
   }
