@@ -2707,6 +2707,11 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to create page");
         }
         page = nextPage;
+        /**
+         * Returns the resources dictionary of the active new page.
+         * @returns {ResourcesDictionary} The resources dictionary.
+         * @throws {Error} If the modifier ended, the page is not active, or the resources cannot be read.
+         */
         page._getNativeResources = function () {
           requireOpen();
           if (page !== nextPage) {
