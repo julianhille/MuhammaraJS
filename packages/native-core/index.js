@@ -104,6 +104,10 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     FILL: "fill",
     CLIP: "clip",
   });
+  muhammara.ImageFit = Object.freeze({
+    ALWAYS: "always",
+    OVERFLOW: "overflow",
+  });
   muhammara.ObjectReplacementScope = Object.freeze({
     GLOBAL: "global",
   });

@@ -862,11 +862,21 @@ declare namespace muhammara {
     ): this;
   }
 
+  /** When `drawImage()` scales an image into its transformation box. */
+  export const ImageFit: {
+    /** Always scale the image to the box. */
+    readonly ALWAYS: "always";
+    /** Scale only an image larger than the box. */
+    readonly OVERFLOW: "overflow";
+  };
+  export type ImageFit = (typeof ImageFit)[keyof typeof ImageFit];
+
   export interface TransformationObject {
     width: number;
     height: number;
     proportional?: boolean;
-    fit?: "always" | "overflow";
+    /** ImageFit.OVERFLOW when omitted. */
+    fit?: ImageFit;
   }
 
   export interface ImageOptions {

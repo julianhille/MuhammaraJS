@@ -23,6 +23,12 @@ muhammara.createWriterToContinue("output.pdf", "state.txt", {
 var invalidContinuationLog: muhammara.ByteWriter = { write: () => true };
 void invalidContinuationLog;
 
+var imageTransformation: muhammara.TransformationObject = {
+  width: 100,
+  height: 50,
+  fit: muhammara.ImageFit.ALWAYS,
+};
+void imageTransformation;
 var replacementScope: muhammara.ObjectReplacementScope =
   muhammara.ObjectReplacementScope.GLOBAL;
 var replacementOptions: muhammara.ObjectReplacementOptions = {

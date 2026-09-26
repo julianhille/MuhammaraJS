@@ -1,3 +1,4 @@
+const muhammara = require("../muhammara");
 const { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
 
 /**
@@ -31,7 +32,7 @@ exports.image = function image(imgSrc, x, y, options = {}) {
   );
   const imgOptions = {
     transformation: {
-      fit: "always",
+      fit: muhammara.ImageFit.ALWAYS,
       // proportional: true,
       width,
       height,
