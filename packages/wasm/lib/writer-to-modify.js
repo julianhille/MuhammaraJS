@@ -3487,6 +3487,13 @@ export function createWriterToModifyFactory({
             var parser = this.getSourceDocumentParser();
             return parser.getSourceDocumentStream();
           },
+          /**
+           * Writes a source object into the current output object unchanged.
+           * @param {PDFObject} object - Object from this context's source parser.
+           * @returns {this} The copying context.
+           * @throws {TypeError} If `object` is from another source.
+           * @throws {Error} If the context ended or the object cannot be copied.
+           */
           copyDirectObjectAsIs: function (object) {
             requireCopying();
             if (!object || object._copyingContext !== copying) {
