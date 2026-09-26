@@ -59,6 +59,11 @@ declare namespace muhammara {
    * stream owns and may keep, and returns the number of bytes it accepted.
    */
   export interface WriteStream {
+    /**
+     * Writes bytes. Implement it on a custom output stream.
+     * @param inBytes - The bytes to write.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer): number;
     getCurrentPosition(): number;
   }
