@@ -2,6 +2,14 @@ const fs = require("fs");
 const path = require("path");
 const { FontStyle } = require("../recipe-constants");
 
+// Keys of the per-style font files stored for each family in this.fonts.
+const FontSlot = Object.freeze({
+  REGULAR: "r",
+  BOLD: "b",
+  ITALIC: "i",
+  BOLD_ITALIC: "bi",
+});
+
 /**
  * Register a custom font
  * @name registerFont
@@ -22,6 +30,15 @@ exports.registerFont = function registerFont(
   return this._registerFont(fontName, fontSrcPath, type);
 };
 
+/**
+ * Register every .ttf, .ttc and .otf file in the given directories, deriving
+ * the family and style from the file name (for example "Roboto-BoldItalic").
+ * Missing directories are skipped.
+ * @private
+ * @param {string|string[]} fontSrcPath - The font directory or directories.
+ * @returns {void}
+ * @throws {Error} If an existing directory cannot be read.
+ */
 exports._loadFonts = function _loadFonts(fontSrcPath) {
   const fontTypes = [".ttf", ".ttc", ".otf"];
   const fontPaths =
@@ -39,17 +56,17 @@ exports._loadFonts = function _loadFonts(fontSrcPath) {
           // simple heuristics to make sure library fonts behave as expected
           const hasBold = fontName.indexOf("bold") !== -1;
           const hasItalic = fontName.indexOf("italic") !== -1;
-          let type = "r";
+          let type = FontSlot.REGULAR;
           if (hasBold && hasItalic) {
             fontName = fontName.replace(/-*bold/, "");
             fontName = fontName.replace(/-*italic/, "");
-            type = "bi";
+            type = FontSlot.BOLD_ITALIC;
           } else if (hasBold) {
             fontName = fontName.replace(/-*bold/, "");
-            type = "b";
+            type = FontSlot.BOLD;
           } else if (hasItalic) {
             fontName = fontName.replace(/-*italic/, "");
-            type = "i";
+            type = FontSlot.ITALIC;
           }
           return this._registerFont(fontName, path.join(fpath, file), type);
         });
