@@ -765,6 +765,10 @@ const Triangle = class Triangle {
     return this._C;
   }
 
+  /**
+   * Side b, from A to C.
+   * @returns {Line} The side.
+   */
   get AC() {
     if (!this._AC) {
       this._AC = new Line(this._A, this._C);
