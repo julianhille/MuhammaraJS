@@ -906,7 +906,17 @@ declare namespace muhammara {
       h: number,
       options?: GraphicOptions,
     ): this;
-    /** Coordinates, font size, and calculated underline geometry must remain finite. */
+    /**
+     * Writes a line of text with its own text object.
+     * @param text - The text.
+     * @param x - The baseline start x.
+     * @param y - The baseline y.
+     * @param options - The font, size, color, underline and strike-out.
+     * @returns This context.
+     * @throws {TypeError} If fewer than 3 arguments are given, or the coordinates,
+     *   font size or underline geometry are not finite.
+     * @throws {TypeError} If there is no content context.
+     */
     writeText(text: string, x: PosX, y: PosY, options?: WriteTextOptions): this;
     /**
      * Draws an image file: JPEG, PNG, TIFF or a PDF page.
