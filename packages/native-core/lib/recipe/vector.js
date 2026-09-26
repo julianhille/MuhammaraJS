@@ -703,6 +703,7 @@ exports._setLineStyle = function _setLineStyle(options = {}) {
  * @memberof Recipe#
  * @param {number} width - The line width.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.lineWidth = function lineWidth(width) {
   return this.lineStyle({ width });
