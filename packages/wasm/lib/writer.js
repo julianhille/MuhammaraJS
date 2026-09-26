@@ -299,6 +299,13 @@ export function createWriterSupport({
           }
         });
       },
+      /**
+       * Maps a graphics state object into the resources dictionary.
+       * @param {number} objectId - Indirect object ID of the graphics state.
+       * @returns {string} The resource name to use in content operators.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the owner is closed or the mapping fails.
+       */
       addExtGStateMapping: (objectId) => addMapping(0, objectId),
       addFontMapping: (objectId) => addMapping(1, objectId),
       addColorSpaceMapping: (objectId) => addMapping(2, objectId),
