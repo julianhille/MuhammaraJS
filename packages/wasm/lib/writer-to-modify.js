@@ -2087,6 +2087,10 @@ export function createWriterToModifyFactory({
                 "Form XObject content stream is no longer active",
               );
             return {
+              /**
+               * Returns a writer that appends raw bytes to the form content stream.
+               * @returns {ByteWriteStream} The byte writer.
+               */
               getWriteStream: function () {
                 return {
                   write: function (bytes) {
