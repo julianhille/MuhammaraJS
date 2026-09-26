@@ -62,6 +62,13 @@ async function setupVersionPicker() {
 
 void setupVersionPicker();
 
+/**
+ * Shows progress, and summary details when given.
+ * @param {string} message - Status text.
+ * @param {number} [percent=0] - Progress from 0 to 100.
+ * @param {object} [details] - Summary to print as JSON.
+ * @returns {void}
+ */
 function report(message, percent = 0, details) {
   progressBar.value = percent;
   status.textContent = message;
