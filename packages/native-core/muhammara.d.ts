@@ -1119,6 +1119,14 @@ declare namespace muhammara {
   }
 
   export interface OutputFile {
+    /**
+     * Opens a file for writing.
+     * @param filePath - The file path.
+     * @param append - True to append to an existing file.
+     * @throws {TypeError} If the arguments are wrong or the file cannot be
+     *   opened.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     openFile(filePath: FilePath, append?: boolean): void;
     closeFile(): void;
     getFilePath(): string | undefined;
