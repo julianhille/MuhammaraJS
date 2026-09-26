@@ -1039,6 +1039,13 @@ declare namespace muhammara {
      */
     createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
+    /**
+     * Writes a page and ends its content context.
+     * @param page - The page to write.
+     * @returns This writer.
+     * @throws {TypeError} If page is not a page or the page cannot be written.
+     * @throws {Error} If the writer has ended.
+     */
     writePage(page: PDFPage): this;
     writePageAndReturnID(page: PDFPage): number;
     startPageContentContext(page: PDFPage): PageContentContext;
