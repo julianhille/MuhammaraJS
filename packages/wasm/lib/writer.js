@@ -4178,6 +4178,13 @@ export function createWriterFactory({
           options,
         );
       },
+      /**
+       * Opens a source PDF for copying pages and objects into this writer.
+       * @param {ByteSource} sourceBytes - Source PDF bytes.
+       * @returns {DocumentCopyingContext} The copying context; call `end()` when done.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the writer ended or the source cannot be opened.
+       */
       createPDFCopyingContext: function (sourceBytes) {
         requireOpenWriter();
         sourceBytes = normalizeBytes(sourceBytes, "PDF input");
