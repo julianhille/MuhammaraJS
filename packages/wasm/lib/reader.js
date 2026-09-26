@@ -824,6 +824,11 @@ export function createReaderFactory({
         requireReader();
         return module._muhammara_wasm_reader_get_xref_size(reader);
       },
+      /**
+       * Locates the last cross-reference section.
+       * @returns {number} Its byte offset.
+       * @throws {Error} If the reader has ended.
+       */
       getXrefPosition: function () {
         requireReader();
         return module._muhammara_wasm_reader_get_xref_position(reader);
