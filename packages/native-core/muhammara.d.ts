@@ -20,6 +20,14 @@ declare namespace muhammara {
     new (value?: string | number[]): PDFTextString;
   };
 
+  /**
+   * Starts writing a new PDF.
+   * @param input - The output path, or a stream that receives the bytes.
+   * @param options - The PDF version, compression, log and encryption.
+   * @returns The writer; call end() to finish the PDF.
+   * @throws {TypeError} If the arguments are wrong, the version is not a valid
+   *   PDF version, or the output cannot be opened.
+   */
   export function createWriter(
     input: FilePath | WriteStream,
     options?: PDFWriterOptions,
