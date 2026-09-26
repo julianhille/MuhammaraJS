@@ -922,6 +922,14 @@ export function createWriterToModifyFactory({
             options,
           );
         },
+        /**
+         * Paints an XObject (`Do`).
+         * @param {string|number|FormXObject|ImageXObject} xobject - Resource name, form object ID,
+         * or a completed XObject from this writer.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `xobject` is an unfinished form or belongs to another writer.
+         * @throws {Error} If the content context is no longer active or the XObject cannot be placed.
+         */
         doXObject: function (xobject) {
           requireContext(result);
           if (Number.isInteger(xobject) && xobject > 0) {
