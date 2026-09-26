@@ -470,6 +470,11 @@ export function createRawObjectsContext({
         activeDictionary = null;
         return this;
       },
+      /**
+       * Starts an array; write its items, then call `endArray()`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or the array cannot be started.
+       */
       startArray: function () {
         requireContext();
         if (!module._muhammara_wasm_objects_start_array(handle))
