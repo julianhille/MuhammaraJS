@@ -169,6 +169,15 @@ function isEmpty(obj) {
   return !obj || (Object.keys(obj).length === 0 && obj.constructor === Object);
 }
 
+/**
+ * Wrap plain text as a one-element list of text layout objects, the same
+ * shape htmlToTextObjects() returns.
+ * @private
+ * @param {string} text - The text.
+ * @param {number} size - The font size.
+ * @param {Object} options - The text options: font, bold and italic.
+ * @returns {Object[]} The text layout objects.
+ */
 exports._makeTextObject = function _makeTextObject(text, size, options) {
   return [
     {
