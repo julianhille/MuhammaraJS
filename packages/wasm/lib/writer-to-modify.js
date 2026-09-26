@@ -833,6 +833,17 @@ export function createWriterToModifyFactory({
             throw new Error("Unable to set font");
           return result;
         },
+        /**
+         * Writes one line of text with a writer font.
+         * @param {string} text - Text to write.
+         * @param {number} x - Baseline start x.
+         * @param {number} y - Baseline y.
+         * @param {WriteTextOptions} [options={}] - Font, size, color, opacity, and underline.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `text`, a coordinate, or the font is invalid, or a color option is invalid.
+         * @throws {RangeError} If `size` is not positive.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         writeText: function (text, x, y, options = {}) {
           options = readTextOptions(options, colorValue);
           if (
