@@ -797,6 +797,11 @@ export function createReaderFactory({
         requireReader();
         return module._muhammara_wasm_reader_get_pdf_level(reader);
       },
+      /**
+       * Counts the objects in the cross-reference table.
+       * @returns {number} The object count.
+       * @throws {Error} If the reader has ended.
+       */
       getObjectsCount: function () {
         requireReader();
         return module._muhammara_wasm_reader_get_objects_count(reader);
