@@ -564,6 +564,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the reader has ended.
      */
     getPDFLevel(): number;
+    /**
+     * Returns the number of pages.
+     * @returns The page count.
+     * @throws {TypeError} If the reader has ended.
+     */
     getPagesCount(): number;
     getTrailer(): PDFDictionary;
     queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
