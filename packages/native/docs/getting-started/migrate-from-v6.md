@@ -290,6 +290,13 @@ recipe.text(longText, {
 });
 ```
 
+### Check Annotation Flags
+
+`annot()` and `comment()` now throw `Error: Unknown annotation flag (<name>)`
+for a `flag` that is not a `Recipe.AnnotFlag` value, where 6.x wrote the
+annotation without flags. Fix a misspelled name, use a `Recipe.AnnotFlag`
+value, or pass a numeric bit mask, which 7.x also accepts.
+
 ### Type Text Markup Options
 
 Objects passed through `highlight`, `underline`, `strikeOut`, and `squiggly` may
