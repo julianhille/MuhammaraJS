@@ -4518,6 +4518,13 @@ export function createWriterFactory({
           throw new Error("Unable to start page content context");
         }
         currentPage = page;
+        /**
+         * Writes a page box to the active native page.
+         * @param {PageBox} name - Box to set.
+         * @param {PDFRectangle} box - Rectangle.
+         * @returns {void}
+         * @throws {Error} If the box cannot be set.
+         */
         page._setNativeBox = function (name, box) {
           var indexes = {
             [PageBox.MEDIA]: 0,
