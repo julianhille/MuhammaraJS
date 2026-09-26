@@ -943,6 +943,10 @@ declare namespace muhammara {
      * @throws {TypeError} If dictionary is not a dictionary context or not the one started last.
      */
     endDictionary(dictionary: DictionaryContext): this;
+    /**
+     * Writes the end of the current indirect object.
+     * @returns This context.
+     */
     endIndirectObject(): this;
     writeIndirectObjectReference(
       objectId: FormXObjectId,
