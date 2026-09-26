@@ -70,6 +70,11 @@ export function createReaderFactory({
     var readerOwner = {};
     var byteReaders = new Set();
 
+    /**
+     * Rejects use of an ended reader or of a borrowed handle whose owner ended.
+     * @returns {void}
+     * @throws {Error} If the reader or its owner has ended.
+     */
     function requireReader() {
       if (requireOwner) requireOwner();
       if (ended || !reader) throw new Error("PDF reader has ended");
