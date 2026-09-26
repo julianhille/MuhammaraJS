@@ -377,6 +377,11 @@ export function createRawObjectsContext({
         indirectObjectClosedByStream = false;
         return objectId === undefined ? id : this;
       },
+      /**
+       * Ends the current indirect object; after `endPDFStream()` it only resets state.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or no object is open.
+       */
       endIndirectObject: function () {
         requireContext();
         if (indirectObjectClosedByStream) {
