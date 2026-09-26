@@ -41,6 +41,10 @@ export function createModifierFactory({
       throw new Error("Unable to modify PDF");
     }
     var ended = false;
+    /**
+     * Releases the native modifier and its input file; later calls do nothing.
+     * @returns {void}
+     */
     function dispose() {
       if (ended) return;
       if (modifier) module._muhammara_wasm_modifier_destroy(modifier);
