@@ -1,5 +1,14 @@
-import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import {
+  createMuhammaraWasm,
+  createRecipe,
+  DeviceColorSpace as DeviceColorSpaces,
+  ImageFitPolicy as ImageFitPolicies,
+  PageBox as PageBoxes,
+  TextEncoding as TextEncodings,
+} from "../../index.js";
 import type {
+  TextEncoding,
+  PageBox,
   PDFRectangle,
   PDFPageBoxType,
   ImageFitPolicy,
@@ -895,6 +904,11 @@ async function usesNamedValueSets() {
   void trimBox;
   // @ts-expect-error Page boxes are media, crop, bleed, trim, or art.
   parsed.getPageBox(0, "page");
+  var exportedColorspace: DeviceColorSpace = DeviceColorSpaces.CMYK;
+  var exportedFit: ImageFitPolicy = ImageFitPolicies.OVERFLOW;
+  var exportedBox: PageBox = PageBoxes.TRIM;
+  var exportedEncoding: TextEncoding = TextEncodings.HEX;
+  void [exportedColorspace, exportedFit, exportedBox, exportedEncoding];
 }
 
 void usesNamedValueSets;

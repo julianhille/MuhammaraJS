@@ -22,14 +22,24 @@ import { createModifierFactory } from "./lib/modifier.js";
 import { createWriterToModifyFactory } from "./lib/writer-to-modify.js";
 import { createRecipeFactory } from "./lib/recipe.js";
 import { createRecrypt } from "./lib/recrypt.js";
+import {
+  DeviceColorSpace,
+  ImageFitPolicy,
+  PageBox,
+  TextEncoding,
+} from "./lib/value-sets.js";
 
 export {
   ByteReader,
   ByteReaderWithPosition,
   ByteWriter,
   ByteWriterWithPosition,
+  DeviceColorSpace,
+  ImageFitPolicy,
+  PageBox,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
+  TextEncoding,
 };
 
 /** Loads the Muhammara WebAssembly module and its byte-first PDF API. */

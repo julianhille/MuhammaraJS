@@ -11,7 +11,19 @@ export type PDFRectangle = [number, number, number, number];
 export type PDFMatrix = [number, number, number, number, number, number];
 export type Glyph = [number, number];
 export type TextEncoding = "text" | "code" | "hex";
+export declare const TextEncoding: {
+  readonly TEXT: "text";
+  readonly CODE: "code";
+  readonly HEX: "hex";
+};
 export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
+export declare const PageBox: {
+  readonly MEDIA: "media";
+  readonly CROP: "crop";
+  readonly BLEED: "bleed";
+  readonly TRIM: "trim";
+  readonly ART: "art";
+};
 export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
 export type PDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
 export type RecryptPDFVersion = 0 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
@@ -60,9 +72,18 @@ export type RecipePosition = [number, number];
 /** Device color spaces Recipe draws with in WebAssembly. */
 /** Device color space of a drawing or Recipe color option. */
 export type DeviceColorSpace = "rgb" | "gray" | "cmyk";
+export declare const DeviceColorSpace: {
+  readonly RGB: "rgb";
+  readonly GRAY: "gray";
+  readonly CMYK: "cmyk";
+};
 export type RecipeDeviceColorSpace = DeviceColorSpace;
 /** How `drawImage()` fits an image: always scale, or only shrink when it overflows. */
 export type ImageFitPolicy = "always" | "overflow";
+export declare const ImageFitPolicy: {
+  readonly ALWAYS: "always";
+  readonly OVERFLOW: "overflow";
+};
 /**
  * Every Recipe color space, including Separation. WebAssembly Recipe keeps
  * Separation entries in `knownColors` but throws when asked to draw with them.

@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
-import { createMuhammaraWasm } from "../index.js";
+import {
+  createMuhammaraWasm,
+  DeviceColorSpace,
+  ImageFitPolicy,
+  PageBox,
+  TextEncoding,
+} from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("EmptyPagesPDF", function () {
@@ -83,5 +89,21 @@ describe("EmptyPagesPDF", function () {
     var modifiedReader = muhammara.createReader(modified);
     assert.equal(modifiedReader.getPagesCount(), 1);
     modifiedReader.end();
+  });
+
+  it("exports frozen value sets for finite string options", function () {
+    assert.deepEqual(Object.values(DeviceColorSpace), ["rgb", "gray", "cmyk"]);
+    assert.deepEqual(Object.values(ImageFitPolicy), ["always", "overflow"]);
+    assert.deepEqual(Object.values(PageBox), [
+      "media",
+      "crop",
+      "bleed",
+      "trim",
+      "art",
+    ]);
+    assert.deepEqual(Object.values(TextEncoding), ["text", "code", "hex"]);
+    [DeviceColorSpace, ImageFitPolicy, PageBox, TextEncoding].forEach(
+      (valueSet) => assert.ok(Object.isFrozen(valueSet)),
+    );
   });
 });
