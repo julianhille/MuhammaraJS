@@ -1,7 +1,13 @@
 /** UTF-8 encoder shared by WASM byte utilities. */
 export var encoder = new TextEncoder();
 
-/** Normalizes supported synchronous byte inputs into an owned Uint8Array copy. */
+/**
+ * Copies synchronous byte input into a new Uint8Array.
+ * @param {ByteSource} value - Bytes, an ArrayBuffer, or a PDFRStreamForBuffer.
+ * @param {string} [label="Bytes"] - Name used in error messages.
+ * @returns {Uint8Array} A copy of the bytes.
+ * @throws {TypeError} If `value` is a Blob or File, which needs the Async API, or is not bytes.
+ */
 export function normalizeBytes(value, label = "Bytes") {
   if (value instanceof PDFRStreamForBuffer) return new Uint8Array(value.buffer);
   if (value instanceof Uint8Array) return new Uint8Array(value);
