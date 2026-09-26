@@ -265,6 +265,13 @@ function getSkewTransform(skewXAngle = 0, skewYAngle = 0) {
   return [1, tanAlpha, tanBeta, 1, 0, 0];
 }
 
+/**
+ * Apply the skew options to a content context.
+ * @private
+ * @param {Object} context - The content context.
+ * @param {Object} options - The path options: skewX and skewY.
+ * @returns {void}
+ */
 exports._setSkewContext = function _setSkewTransform(context, options) {
   if (options.skewX || options.skewY) {
     const sm = getSkewTransform(options.skewX, options.skewY);
