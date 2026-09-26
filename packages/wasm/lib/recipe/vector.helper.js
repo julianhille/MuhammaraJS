@@ -11,6 +11,14 @@ import { colorModel } from "./colors.js";
  * @returns {object} Methods mixed into Recipe.prototype.
  */
 export function createVectorHelpers(runtime) {
+  /**
+   * Applies a numeric content operator on the page context or through the Recipe export.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {number} code - Native operator code.
+   * @param {...number} values - Operands.
+   * @returns {void}
+   * @throws {Error} If the operator fails.
+   */
   function operator(recipe, code, ...values) {
     if (recipe._pageContext) {
       var context = recipe._pageContext;
