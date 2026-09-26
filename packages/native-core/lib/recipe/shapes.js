@@ -1457,6 +1457,9 @@ const Point = class Point {
   get point() {
     return [this._x, this._y];
   }
+  /**
+   * @param {number} xx - The new x coordinate.
+   */
   set x(xx) {
     this._x = xx;
   }
