@@ -286,6 +286,13 @@ export function createHelpers(module) {
         throw new TypeError("sc requires numeric components");
       return componentOperator("sc", 7, components);
     };
+    /**
+     * Sets the nonstroking color, with an optional pattern (`scn`).
+     * @param {...(number|number[]|string)} args - Components or one component array, then an optional pattern name.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If the components are missing or not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.scn = function (...args) {
       return patternComponents("scn", 8, args);
     };
