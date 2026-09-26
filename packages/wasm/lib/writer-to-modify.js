@@ -1100,6 +1100,14 @@ export function createWriterToModifyFactory({
     }
 
     var additionalInfo = new Map();
+    /**
+     * Writes a text Info dictionary entry.
+     * @param {string} key - Entry name.
+     * @param {string} value - Text value.
+     * @returns {void}
+     * @throws {TypeError} If `key` or `value` is not a string.
+     * @throws {Error} If the modifier has ended or the entry cannot be set.
+     */
     function setInfo(key, value) {
       requireOpen();
       if (typeof key !== "string" || typeof value !== "string")
