@@ -402,14 +402,7 @@ export async function createRecipe(options) {
     var fontBytes = await normalizeBytesAsync(fontSource, "Default font bytes");
     defaultFont = { name: "default", loadBytes: () => fontBytes };
   }
-  function removeFile(path) {
-    if (!path) return;
-    try {
-      module.FS.unlink(path);
-    } catch (error) {
-      if (module.FS.analyzePath(path).exists) throw error;
-    }
-  }
+  var { removeFile } = helpers;
   return createRecipeFactory({
     defaultFont,
     module,
