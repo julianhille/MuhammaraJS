@@ -264,8 +264,8 @@ export function createWriterToModifyFactory({
         h: function () {
           return operator("h", 15);
         },
-        re: function (...args) {
-          return operator("re", 16, args);
+        re: function (x, y, width, height) {
+          return operator("re", 16, [x, y, width, height]);
         },
         q: function () {
           return operator("q", 17);
@@ -1434,7 +1434,7 @@ export function createWriterToModifyFactory({
               ["f", 6],
               ["m", 10, 2],
               ["l", 11, 2],
-              ["re", 16],
+              ["re", 16, 4],
               ["rg", 26],
               ["RG", 27],
               ["g", 24],

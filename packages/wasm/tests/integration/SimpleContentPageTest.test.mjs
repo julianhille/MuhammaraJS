@@ -172,6 +172,7 @@ describe("SimpleContentPageTest", function () {
 var INVALID_OPERATOR_CALLS = [
   ["m", [1]],
   ["l", [1]],
+  ["re", [1, 1, 1]],
 ];
 
 /**
