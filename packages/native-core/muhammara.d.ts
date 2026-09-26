@@ -1042,8 +1042,17 @@ declare namespace muhammara {
   export interface XObjectContentContext extends AbstractContentContext {}
 
   export interface PDFWStreamForFile extends WriteStream {
+    /**
+     * Creates a write stream to a file, replacing an existing one.
+     * @param inPath - The file path.
+     */
     new (inPath: string): PDFWStreamForFile;
-    /** Also accepts an array of byte values when called directly. */
+    /**
+     * Writes bytes to the file.
+     * @param inBytes - The bytes to write; an array of byte values is also
+     *   accepted when called directly.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer | number[]): number;
     /**
      * Flushes and closes the file.
