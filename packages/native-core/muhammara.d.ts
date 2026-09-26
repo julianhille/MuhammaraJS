@@ -739,6 +739,10 @@ declare namespace muhammara {
   }
 
   export interface PDFStream {
+    /**
+     * Returns the writer for the stream contents.
+     * @returns The byte writer.
+     */
     getWriteStream(): ByteWriter;
   }
 
