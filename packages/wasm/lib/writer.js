@@ -4556,6 +4556,11 @@ export function createWriterFactory({
             throw new Error("Unable to set page rotation");
           }
         };
+        /**
+         * Returns the resources dictionary of the active page.
+         * @returns {ResourcesDictionary} The resources dictionary.
+         * @throws {Error} If the writer ended, the page is not active, or the resources cannot be read.
+         */
         page._getNativeResources = function () {
           requireOpenWriter();
           if (currentPage !== page) {
