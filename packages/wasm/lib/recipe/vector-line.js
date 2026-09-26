@@ -1,4 +1,8 @@
-/** Creates Recipe line and path methods. */
+/**
+ * Creates Recipe line and path methods.
+ * @param {object} runtime - Module and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createLineMethods(runtime) {
   return {
     /**
