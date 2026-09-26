@@ -892,6 +892,14 @@ export function createReaderFactory({
         requireReader();
         return wrapObject(module._muhammara_wasm_reader_get_trailer(reader));
       },
+      /**
+       * Reads a dictionary value, resolving an indirect reference.
+       * @param {PDFDictionary} dictionary - Dictionary parsed by this reader.
+       * @param {string} key - Key without the leading slash.
+       * @returns {PDFObject|undefined} The value, or undefined when the key is missing.
+       * @throws {TypeError} If the dictionary is from another reader or `key` is not a string.
+       * @throws {Error} If the reader has ended.
+       */
       queryDictionaryObject: function (dictionary, key) {
         requireReader();
         if (
