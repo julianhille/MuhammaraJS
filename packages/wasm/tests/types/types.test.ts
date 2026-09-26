@@ -849,6 +849,10 @@ async function usesNamedValueSets() {
   void [rangeType, ranges];
   var imageType: ImageType | undefined = writer.getImageType("logo");
   void imageType;
+  var asyncImageType: Promise<ImageType | undefined> = writer.getImageTypeAsync(
+    new Uint8Array(),
+  );
+  void asyncImageType;
 }
 
 void usesNamedValueSets;
