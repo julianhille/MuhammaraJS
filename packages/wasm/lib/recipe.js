@@ -175,7 +175,10 @@ export function createRecipeFactory({
       if (Object.keys(info).length) this.info(info);
     }
 
-    /** The last moveTo or lineTo path position in Recipe coordinates. */
+    /**
+     * The last moveTo or lineTo path position in Recipe coordinates.
+     * @returns {{x: number, y: number}} A copy of the position.
+     */
     get position() {
       return { ...this._cursor };
     }
