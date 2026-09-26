@@ -248,8 +248,8 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @todo support break words
  * @memberof Recipe#
  * @param {string} [text=''] - The text content
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|"center"|Object} [x] - The coordinate x, or the options to continue at the current position
+ * @param {number|"center"} [y] - The coordinate y
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - Text color (HexColor, PercentColor or DecimalColor)
  * @param {number} [options.opacity=1] - opacity
@@ -259,8 +259,8 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {number} [options.size=14] - The font size
  * @param {number} [options.charSpace=0] - space to be added between characters, units in points.
  * @param {string} [options.align='left top'] - This is the alignment of the text in relationship to its position
- * coordinates, specified as 'horizontal vertical', where horizontal is either 'left', 'center' or 'right
- * and vertical is either 'top', 'center' or bottom.
+ * coordinates, specified as 'horizontal vertical': a `Recipe.HorizontalAlign` value, optionally followed by a
+ * space and a `Recipe.VerticalAlign` value.
  * @param {Object|Boolean} [options.highlight] - Text markup annotation.
  * @param {Object|Boolean} [options.underline] - Text markup annotation.
  * @param {Object|Boolean} [options.strikeOut] - Text markup annotation.
@@ -283,11 +283,11 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {number} [options.textBox.minHeight=0] - Text Box minimum height
  * @param {number|number[]} [options.textBox.padding=0] - Text Box padding, [top, right, bottom, left]
  * @param {number} [options.textBox.lineHeight=0] - Text Box line height
- * @param {string|Boolean} [options.textBox.wrap='auto'] - Text wrapping mechanism, may be true, false,
- * 'auto', 'clip', 'trim', 'ellipsis'. All the option values that are not equivalent to 'auto' dictate
+ * @param {Recipe.TextWrap|Boolean} [options.textBox.wrap='auto'] - Text wrapping mechanism, may be true, false,
+ * or a `Recipe.TextWrap` value: 'auto', 'clip', 'trim', 'ellipsis'. All the option values that are not equivalent to 'auto' dictate
  *  how the text which does not fit on a line is to be truncated. True is equivalent to 'auto'. False is equivalent to 'ellipsis'.
  * @param {string} [options.textBox.textAlign='left top'] - Alignment inside text box, specified as 'horizontal vertical',
- * where horizontal is one of: 'left', 'center', 'right', 'justify' and vertical is one of: 'top', 'center', 'bottom'.
+ * where horizontal is a `Recipe.TextAlign` value and vertical a `Recipe.VerticalAlign` value.
  * @param {boolean} [options.textBox.clipIfExceedsBox=false] - Render only complete lines that fit within the text box height.
  * @param {function} [options.textBox.onClip] - Called as onClip(recipe, result) when clipping leaves text unrendered.
  * Do not call endPage() or endPDF() in this callback because the text operation is still active.
@@ -301,11 +301,13 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {string} [options.title] - Title of annotation
  * @param {boolean} [options.open=false] - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'
  * @param {boolean} [options.richText] - Rich text in annotation
- * @param {'invisible'|'hidden'|'print'|'nozoom'|'norotate'|'noview'|'readonly'|'locked'|'togglenoview'} [options.flag] - The annotation flag.
- * @param {'Comment'|'Key'|'Note'|'Help'|'NewParagraph'|'Paragraph'|'Insert'} [options.icon='Note'] - The icon of annotation. Specific to text annotations.
+ * @param {Recipe.AnnotFlag} [options.flag] - The annotation flag, a `Recipe.AnnotFlag` value.
+ * @param {Recipe.AnnotIcon} [options.icon='Note'] - The icon of annotation, a `Recipe.AnnotIcon` value. Specific to text annotations.
  * @param {string} [options.date] - Date of text to show up on annotation
  * @param {string} [options.subject] - Subject of annotation.
- * @returns {Recipe} The recipe instance.
+ * @param {string} [options.link] - Make the text open this URL.
+ * @returns {Recipe} The recipe instance. Without an active page nothing is drawn.
+ * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 exports.text = function text(text = "", x, y, options = {}) {
   if (!this.pageContext) {
@@ -414,11 +416,11 @@ exports.text = function text(text = "", x, y, options = {}) {
         ? toWriteTextObjects[0].writeOptions.alignVertical
         : undefined
     ) {
-      case "center":
+      case VerticalAlign.CENTER:
         textYpos -=
           (textBox.height - textBox.textHeight) / 2 - textBox.paddingTop;
         break;
-      case "bottom":
+      case VerticalAlign.BOTTOM:
         textYpos -= textBox.height - textBox.textHeight - textBox.paddingBottom;
         break;
     }
@@ -442,10 +444,10 @@ exports.text = function text(text = "", x, y, options = {}) {
         let spaceWidth = content.text.endsWith(" ") ? content.spaceWidth : 0;
         let offsetX;
         switch (content.writeOptions.alignHorizontal) {
-          case "center":
+          case TextAlign.CENTER:
             offsetX = (textBox.width - currentLineWidth) / 2;
             break;
-          case "right":
+          case TextAlign.RIGHT:
             offsetX =
               textBox.width -
               textBox.paddingRight -
@@ -553,12 +555,12 @@ exports.text = function text(text = "", x, y, options = {}) {
           // The hiliting rectangle cannot use the text box line
           // width when justification is activated because the
           // spaces between words is calculated dynamically.
-          if (options.alignHorizontal === "justify") {
+          if (options.alignHorizontal === TextAlign.JUSTIFY) {
             bxWidth = justify(nx, x, wto, textBox) - x;
 
             // Except for 'right' alignment cases, have to consider
             // text on line ending with spaces to tweak box width.
-          } else if (options.alignHorizontal !== "right") {
+          } else if (options.alignHorizontal !== TextAlign.RIGHT) {
             if (text.endsWith(" ")) {
               bxWidth += wto.spaceWidth;
             }
@@ -574,12 +576,13 @@ exports.text = function text(text = "", x, y, options = {}) {
         }
 
         // Note that the last line of a text box ignores justification.
-        const _justify = options.alignHorizontal === "justify" && !wto.lastLine;
+        const _justify =
+          options.alignHorizontal === TextAlign.JUSTIFY && !wto.lastLine;
 
         // write directly to page when not dealing with opacity, rotation and special colorspace.
         if (
           options.opacity === 1 &&
-          options.colorspace !== "separation" &&
+          options.colorspace !== Colorspace.SEPARATION &&
           (options.rotation === 0 || options.rotation === undefined)
         ) {
           context.q();
@@ -597,7 +600,7 @@ exports.text = function text(text = "", x, y, options = {}) {
               },
             );
           } else {
-            if (textBox.wrap !== "auto") {
+            if (textBox.wrap !== TextWrap.AUTO) {
               // This applies a clipping region around the text
               context
                 .m(nx, y + lineHeight)
@@ -666,7 +669,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         var markupBottom = y - textHeight * 0.2;
         var markupWidth = _justify ? next_x - lineX : currentLineWidth;
         var markupHeight = textHeight * 1.4;
-        if (textBox.wrap === "clip") {
+        if (textBox.wrap === TextWrap.CLIP) {
           // Clipped runs retain the first overflowing word, so measure the
           // drawn text instead of using the preceding fitting line's width.
           var markupRight = Math.min(
@@ -722,7 +725,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         if (!content.writeOptions.link) return;
         var left = x;
         var width = nextX ? nextX - x : content.lineWidth;
-        if (textBox.wrap === "clip") {
+        if (textBox.wrap === TextWrap.CLIP) {
           var right = Math.min(
             x + new Word(content.text, content.writeOptions).dimensions.xMax,
             nx + textBox.width,
