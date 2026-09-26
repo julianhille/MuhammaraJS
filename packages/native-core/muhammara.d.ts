@@ -411,6 +411,17 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     v(x2: PosX, y2: PosY, x3: PosX, y3: PosY): this;
+    /**
+     * Adds a Bezier curve whose second control point is the end point;
+     * operator y.
+     * @param x1 - The first control point x.
+     * @param y1 - The first control point y.
+     * @param x3 - The end point x.
+     * @param y3 - The end point y.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 4 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     y(x1: PosX, y1: PosY, x3: PosX, y3: PosY): this;
     h(): this;
     re(left: number, bottom: number, width: Width, height: Height): this;
