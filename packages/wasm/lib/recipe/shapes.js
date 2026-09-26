@@ -487,7 +487,7 @@ export function createShapeMethods() {
       var traitID = (
         options.traitID ||
         options.traitsID ||
-        "sss"
+        RecipeTriangleTrait.SSS
       ).toLowerCase();
       var geometry = triangleGeometry(x, y, traitID, traits);
       var position = options.position
@@ -495,11 +495,11 @@ export function createShapeMethods() {
         : "default";
       var centers = centerForTriangle(geometry.vertices, geometry);
       var target =
-        position === "a"
+        position === RecipeTrianglePosition.A
           ? geometry.vertices[2]
-          : position === "b" || position === "default"
+          : position === RecipeTrianglePosition.B || position === "default"
             ? geometry.vertices[0]
-            : position === "c"
+            : position === RecipeTrianglePosition.C
               ? geometry.vertices[1]
               : centers[position] || geometry.vertices[0];
       var vertices =

@@ -929,6 +929,9 @@ async function usesNamedValueSets() {
   // @ts-expect-error Image alignment uses the alignment keywords.
   var badImageOptions: RecipeImageOptions = { align: "middle" };
   void [imageOptions, badImageOptions];
+  var trianglePosition: RecipeTrianglePosition = "incenter";
+  var triangleTrait: RecipeTriangleTrait = "sas";
+  void [trianglePosition, triangleTrait];
 }
 
 void usesNamedValueSets;
