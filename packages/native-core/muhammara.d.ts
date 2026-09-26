@@ -772,6 +772,14 @@ declare namespace muhammara {
     Tj(text: string, options?: TextRenderOptions): this;
     Tj(glyphs: Glyph): this;
     Tj(text: string | Glyph): this;
+    /**
+     * Moves to the next line and shows text; operator '.
+     * @param text - The text, or glyphs of the current font.
+     * @param options - Text encoding options.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {TypeError} If there is no content context.
+     */
     Quote(text: string, options?: TextRenderOptions): this;
     Quote(glyphs: Glyph): this;
     Quote(text: string | Glyph): this;
