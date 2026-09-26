@@ -3770,6 +3770,15 @@ export function createWriterFactory({
       createFormXObjectFromJPGBytes: function (name, objectId) {
         return createImageForm(name, RegisteredImageFormat.JPEG, objectId);
       },
+      /**
+       * Creates a completed form XObject that draws a registered PNG.
+       * @param {string} name - Registered PNG name.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {FormXObject} The form.
+       * @throws {TypeError} If the name is not a registered PNG.
+       * @throws {RangeError} If `objectId` is invalid.
+       * @throws {Error} If the writer ended or the form cannot be created.
+       */
       createFormXObjectFromPNGBytes: function (name, objectId) {
         return createImageForm(name, RegisteredImageFormat.PNG, objectId);
       },
