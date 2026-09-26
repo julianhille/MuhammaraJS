@@ -1,4 +1,8 @@
-/** Creates a low-level context for writing raw PDF objects. */
+/**
+ * Creates the low-level context for writing raw PDF objects.
+ * @param {object} dependencies - Module, constants, and byte helpers.
+ * @returns {Function} `rawObjectsContext(handle, requireOpen)`.
+ */
 export function createRawObjectsContext({
   module,
   constants,
