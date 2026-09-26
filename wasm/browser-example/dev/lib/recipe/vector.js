@@ -1,5 +1,19 @@
-/** Creates Recipe vector shape and path methods. */
+/**
+ * Creates Recipe vector shape and path methods.
+ * @param {object} runtime - Module and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createVectorMethods(runtime) {
+  /**
+   * Adds a link over a shape when `options.link` is set.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {object} options - Shape options; `useGivenCoords` selects PDF coordinates.
+   * @param {number} x - Left.
+   * @param {number} y - Top, or bottom for PDF coordinates.
+   * @param {number} width - Width.
+   * @param {number} height - Height.
+   * @returns {void}
+   */
   function addLink(recipe, options, x, y, width, height) {
     if (!options.link) return;
     if (options.useGivenCoords)
@@ -7,6 +21,16 @@ export function createVectorMethods(runtime) {
     else recipe.link(options.link, x, y, width, height);
   }
 
+  /**
+   * Appends an arc as Bezier segments of at most 90 degrees.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {number} x - Center x in PDF coordinates.
+   * @param {number} y - Center y in PDF coordinates.
+   * @param {number} radius - Radius.
+   * @param {number} start - Start angle in radians.
+   * @param {number} end - End angle in radians.
+   * @returns {void}
+   */
   function curve(recipe, x, y, radius, start, end) {
     var segments = Math.ceil(Math.abs(end - start) / (Math.PI / 2));
     var step = (end - start) / segments;
@@ -26,7 +50,15 @@ export function createVectorMethods(runtime) {
     }
   }
 
-  /** Paints a nominal fill and a shape-specific inset stroke. */
+  /**
+   * Paints a nominal fill and a shape-specific inset stroke.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {object} options - Shape options.
+   * @param {number} x - Rotation origin x.
+   * @param {number} y - Rotation origin y.
+   * @param {function(number): void} drawPath - Emits the path inset by the given amount.
+   * @returns {Recipe} The Recipe instance.
+   */
   function paintInsetShape(recipe, options, x, y, drawPath) {
     var fill = options.fill;
     var stroke = options.stroke || options.color || options.colour;
@@ -66,8 +98,8 @@ export function createVectorMethods(runtime) {
      * @name rectangle
      * @function
      * @memberof Recipe#
-     * @param {number} x - The horizontal corner coordinate in points.
-     * @param {number} y - The vertical corner coordinate in points.
+     * @param {number|string} x - The horizontal corner coordinate in points, or `center`.
+     * @param {number|string} y - The vertical corner coordinate in points, or `center`.
      * @param {number} width - The rectangle width in points.
      * @param {number} height - The rectangle height in points.
      * @param {RecipeRectangleOptions} [options] - Rectangle path, rounded-corner, and transformation options.
@@ -108,6 +140,12 @@ export function createVectorMethods(runtime) {
     /**
      * Draws a rectangle with normalized corner radii.
      * @private
+     * @param {number} x - Left.
+     * @param {number} y - Top.
+     * @param {number} width - Width.
+     * @param {number} height - Height.
+     * @param {object} options - Shape options with `borderRadius`.
+     * @returns {Recipe} The Recipe instance.
      */
     _roundedRectangle: function (x, y, width, height, options) {
       var linkX = x;
@@ -188,8 +226,8 @@ export function createVectorMethods(runtime) {
      * @name circle
      * @function
      * @memberof Recipe#
-     * @param {number} x - The center X coordinate in points.
-     * @param {number} y - The center Y coordinate in points.
+     * @param {number|string} x - The center X coordinate in points, or `center` for the page center.
+     * @param {number|string} y - The center Y coordinate in points, or `center` for the page center.
      * @param {number} radius - The radius in points.
      * @param {RecipePathOptions} [options] - Path painting and transformation options.
      * @returns {Recipe} The recipe instance.
@@ -248,8 +286,8 @@ export function createVectorMethods(runtime) {
      * @name ellipse
      * @function
      * @memberof Recipe#
-     * @param {number} cx - The center X coordinate in points.
-     * @param {number} cy - The center Y coordinate in points.
+     * @param {number|string} cx - The center X coordinate in points, or `center` for the page center.
+     * @param {number|string} cy - The center Y coordinate in points, or `center` for the page center.
      * @param {number} rx - The horizontal radius in points.
      * @param {number} ry - The vertical radius in points.
      * @param {RecipePathOptions} [options] - Path painting and transformation options.
@@ -313,8 +351,8 @@ export function createVectorMethods(runtime) {
      * @name arc
      * @function
      * @memberof Recipe#
-     * @param {number} x - The center X coordinate in points.
-     * @param {number} y - The center Y coordinate in points.
+     * @param {number|string} x - The center X coordinate in points, or `center` for the page center.
+     * @param {number|string} y - The center Y coordinate in points, or `center` for the page center.
      * @param {number} radius - The radius in points.
      * @param {number} [startAngle=0] - The starting angle in degrees.
      * @param {number} [endAngle=360] - The ending angle in degrees.
@@ -354,8 +392,8 @@ export function createVectorMethods(runtime) {
      * @name pie
      * @function
      * @memberof Recipe#
-     * @param {number} x - The center X coordinate in points.
-     * @param {number} y - The center Y coordinate in points.
+     * @param {number|string} x - The center X coordinate in points, or `center` for the page center.
+     * @param {number|string} y - The center Y coordinate in points, or `center` for the page center.
      * @param {number} radius - The radius in points.
      * @param {number} [startAngle=0] - The starting angle in degrees.
      * @param {number} [endAngle=360] - The ending angle in degrees.

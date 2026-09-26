@@ -3,10 +3,22 @@ import { throwIfCancelled } from "./lifecycle.mjs";
 
 var encoder = new TextEncoder();
 
+/**
+ * Fails the low-level example when a check does not hold.
+ * @param {*} condition - Checked value.
+ * @param {string} message - Failure description.
+ * @returns {void}
+ * @throws {Error} If `condition` is falsy.
+ */
 function assert(condition, message) {
   if (!condition) throw new Error(`Low-level validation failed: ${message}`);
 }
 
+/**
+ * Copies exactly the viewed bytes into a new ArrayBuffer.
+ * @param {Uint8Array<ArrayBuffer>} bytes - Bytes.
+ * @returns {ArrayBuffer} The copy.
+ */
 function exactArrayBuffer(bytes) {
   return bytes.buffer.slice(
     bytes.byteOffset,
@@ -14,6 +26,12 @@ function exactArrayBuffer(bytes) {
   );
 }
 
+/**
+ * Registers the synchronous byte assets.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional assets.
+ * @returns {void}
+ */
 function registerAssets(muhammara, assets) {
   if (assets.font)
     muhammara.registerFont("example-font", exactArrayBuffer(assets.font));
@@ -21,6 +39,12 @@ function registerAssets(muhammara, assets) {
   if (assets.tiff) muhammara.registerImage("example-tiff", assets.tiff, "tiff");
 }
 
+/**
+ * Registers the JPEG through the Blob-accepting async API.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional assets.
+ * @returns {Promise<void>} Resolves after registration.
+ */
 async function registerAsyncAssets(muhammara, assets) {
   if (assets.jpeg)
     await muhammara.registerImageAsync(
@@ -30,6 +54,11 @@ async function registerAsyncAssets(muhammara, assets) {
     );
 }
 
+/**
+ * Writes a raw indirect object with a stream through the objects context.
+ * @param {import("../../index.js").PDFWriter} writer - Writer.
+ * @returns {number} The object ID.
+ */
 function rawExampleObject(writer) {
   var objects = writer.getObjectsContext();
   var id = objects.startNewIndirectObject();
@@ -45,6 +74,13 @@ function rawExampleObject(writer) {
   return id;
 }
 
+/**
+ * Draws the low-level example page.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {import("../../index.js").PDFWriter} writer - Writer.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional assets.
+ * @returns {{annotationId: number, metrics: object}} The annotation ID and font metrics.
+ */
 function drawPage(muhammara, writer, assets) {
   var page = new muhammara.PDFPage(0, 0, 595, 842);
   page.cropBox = [18, 18, 577, 824];
@@ -161,6 +197,16 @@ function drawPage(muhammara, writer, assets) {
   return { annotationId, metrics };
 }
 
+/**
+ * Parses the output back and checks what was written.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {Uint8Array<ArrayBuffer>} bytes - PDF bytes.
+ * @param {number} expectedPages - Expected page count.
+ * @param {number} rawId - Raw object ID.
+ * @param {number} annotationId - Annotation object ID.
+ * @returns {object} Page count, level, object count, and extracted text.
+ * @throws {Error} If a check fails.
+ */
 function inspect(muhammara, bytes, expectedPages, rawId, annotationId) {
   var reader = muhammara.createReader(bytes);
   try {
@@ -205,6 +251,14 @@ function inspect(muhammara, bytes, expectedPages, rawId, annotationId) {
   }
 }
 
+/**
+ * Draws on the first page of a PDF with a page modifier.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {Uint8Array<ArrayBuffer>} source - PDF bytes.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional assets.
+ * @returns {Uint8Array<ArrayBuffer>} The modified PDF.
+ * @throws {Error} If modifying fails; the modifier is disposed first.
+ */
 function modify(muhammara, source, assets) {
   var modifier = muhammara.createWriterToModify(source, { compress: false });
   try {
@@ -235,6 +289,13 @@ function modify(muhammara, source, assets) {
   }
 }
 
+/**
+ * Copies pages and forms from a PDF into a new document.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {Uint8Array<ArrayBuffer>} source - PDF bytes.
+ * @returns {Promise<Uint8Array<ArrayBuffer>>} The composed PDF.
+ * @throws {Error} If composing fails; the writer is disposed first.
+ */
 async function compose(muhammara, source) {
   var writer = muhammara.createWriter({ compress: true });
   try {
@@ -285,6 +346,13 @@ async function compose(muhammara, source) {
   }
 }
 
+/**
+ * Runs the low-level writer, modifier, and reader example.
+ * @param {import("./lifecycle.mjs").ExampleOptions} [options] - Assets, signal, and progress.
+ * @returns {Promise<object>} The composed bytes, source, modified bytes, and summary.
+ * @throws {Error} If a check fails.
+ * @throws {DOMException} If the run is cancelled.
+ */
 export async function runLowLevelExample({
   assets = {},
   signal,

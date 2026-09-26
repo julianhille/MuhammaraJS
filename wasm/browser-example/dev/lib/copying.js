@@ -1,157 +1,35 @@
-/** Creates low-level helpers for copying objects between PDF documents. */
-export function createCopyingHelpers({ module, constants, withString }) {
-  function copyingSourceParser(copying, requireCopying) {
-    var parser =
-      module._muhammara_wasm_copying_context_get_source_document_parser(
-        copying,
-      );
-    var ended = false;
-    if (!parser) throw new Error("Unable to get source document parser");
-
-    function requireParser() {
-      requireCopying();
-      if (ended) throw new Error("Source document parser has ended");
-    }
-
-    function objectKeys(handle) {
-      var lengthPointer = module._malloc(4);
-      try {
-        var pointer = module._muhammara_wasm_object_dictionary_keys(
-          handle,
-          lengthPointer,
-        );
-        var length = module.HEAPU32[lengthPointer >>> 2];
-        if (!pointer && length)
-          throw new Error("Unable to read PDF dictionary");
-        try {
-          return pointer
-            ? new TextDecoder()
-                .decode(module.HEAPU8.slice(pointer, pointer + length))
-                .split("\0")
-                .filter(Boolean)
-            : [];
-        } finally {
-          if (pointer) module._muhammara_wasm_free(pointer);
-        }
-      } finally {
-        module._free(lengthPointer);
-      }
-    }
-
-    function wrapObject(handle) {
-      if (!handle) return undefined;
-      var object = {
-        _handle: handle,
-        _copyingContext: copying,
-        getType: function () {
-          requireParser();
-          return module._muhammara_wasm_object_get_type(handle);
-        },
-        toPDFArray: function () {
-          return object.getType() === constants.ePDFObjectArray
-            ? object
-            : undefined;
-        },
-        toPDFDictionary: function () {
-          return object.getType() === constants.ePDFObjectDictionary
-            ? object
-            : undefined;
-        },
-      };
-      if (object.getType() === constants.ePDFObjectArray) {
-        object.getLength = function () {
-          requireParser();
-          return module._muhammara_wasm_object_array_length(handle);
-        };
-        object.queryObject = function (index) {
-          if (!Number.isInteger(index) || index < 0) {
-            throw new RangeError("Array index must be a non-negative integer");
-          }
-          requireParser();
-          return wrapObject(
-            module._muhammara_wasm_copying_parser_query_array_object(
-              parser,
-              handle,
-              index,
-            ),
-          );
-        };
-        object.toJSArray = function () {
-          return Array.from({ length: object.getLength() }, (_, index) =>
-            object.queryObject(index),
-          );
-        };
-      }
-      if (object.getType() === constants.ePDFObjectDictionary) {
-        object.queryObject = function (key) {
-          if (typeof key !== "string") {
-            throw new TypeError("Dictionary key must be a string");
-          }
-          requireParser();
-          var result = withString(key, (pointer) =>
-            module._muhammara_wasm_copying_parser_query_dictionary_object(
-              parser,
-              handle,
-              pointer,
-            ),
-          );
-          if (!result) throw new Error("key not found");
-          return wrapObject(result);
-        };
-        object.toJSObject = function () {
-          requireParser();
-          return Object.fromEntries(
-            objectKeys(handle).map((key) => [key, object.queryObject(key)]),
-          );
-        };
-      }
-      return object;
-    }
-
-    return {
-      _end: function () {
-        ended = true;
-      },
-      getPagesCount: function () {
-        requireParser();
-        return module._muhammara_wasm_copying_parser_get_pages_count(parser);
-      },
-      getPageObjectID: function (index) {
-        requireParser();
-        if (!Number.isInteger(index) || index < 0) {
-          throw new TypeError("Page index must be a non-negative integer");
-        }
-        var id = module._muhammara_wasm_copying_parser_get_page_object_id(
-          parser,
-          index,
-        );
-        if (!id) throw new RangeError(`Unable to read page ${index}`);
-        return id;
-      },
-      parsePage: function (index) {
-        requireParser();
-        if (!Number.isInteger(index) || index < 0) {
-          throw new TypeError("Page index must be a non-negative integer");
-        }
-        var object = wrapObject(
-          module._muhammara_wasm_copying_parser_parse_page(parser, index),
-        );
-        if (!object) throw new RangeError(`Unable to read page ${index}`);
-        return object;
-      },
-      parsePageDictionary: function (index) {
-        return this.parsePage(index);
-      },
-    };
-  }
-
+/**
+ * Creates low-level helpers for copying objects between PDF documents.
+ * @param {{module: object}} dependencies - Emscripten module.
+ * @returns {{copyingObjectOperations: Function}} The helpers.
+ */
+export function createCopyingHelpers({ module }) {
+  /**
+   * Creates the object-copying methods shared by every copying context.
+   * @param {number} copying - Native copying context.
+   * @param {function(): void} requireCopying - Throws when the context or its owner has ended.
+   * @returns {CopyingObjectOperations} The methods.
+   */
   function copyingObjectOperations(copying, requireCopying) {
+    /**
+     * Rejects an object ID that is not an unsigned 32-bit integer.
+     * @param {*} value - Candidate ID.
+     * @param {string} label - Name used in the error message.
+     * @returns {void}
+     * @throws {RangeError} If `value` is not an unsigned 32-bit integer.
+     */
     function requireObjectId(value, label) {
       if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
         throw new RangeError(`${label} must be a non-negative object ID`);
       }
     }
 
+    /**
+     * Rejects a parsed object that does not come from this copying context's source.
+     * @param {PDFObject} object - Parsed object.
+     * @returns {void}
+     * @throws {TypeError} If `object` belongs to another source.
+     */
     function requireSourceObject(object) {
       if (!object || object._copyingContext !== copying) {
         throw new TypeError(
@@ -161,6 +39,13 @@ export function createCopyingHelpers({ module, constants, withString }) {
     }
 
     return {
+      /**
+       * Copies a source object, and the objects it references, into the output.
+       * @param {number} sourceObjectId - Object ID in the source document.
+       * @returns {number} Object ID of the copy in the output.
+       * @throws {RangeError} If the ID is not an unsigned 32-bit integer or the object cannot be copied.
+       * @throws {Error} If the copying context has ended.
+       */
       copyObject: function (sourceObjectId) {
         requireCopying();
         requireObjectId(sourceObjectId, "Source object ID");
@@ -180,6 +65,14 @@ export function createCopyingHelpers({ module, constants, withString }) {
           module._free(resultPointer);
         }
       },
+      /**
+       * Writes a direct source object into the current output position and
+       * schedules the indirect objects it references.
+       * @param {PDFObject} object - Object parsed by this copying context's source parser.
+       * @returns {number[]} Source object IDs still to copy with `copyNewObjectsForDirectObject()`.
+       * @throws {TypeError} If the object comes from another parser.
+       * @throws {Error} If the context has ended or the object cannot be copied.
+       */
       copyDirectObjectWithDeepCopy: function (object) {
         requireCopying();
         requireSourceObject(object);
@@ -214,6 +107,14 @@ export function createCopyingHelpers({ module, constants, withString }) {
           module._free(countPointer);
         }
       },
+      /**
+       * Copies the source objects a deep-copied direct object refers to.
+       * @param {number[]} ids - Source object IDs from `copyDirectObjectWithDeepCopy()`.
+       * @returns {this} The copying context.
+       * @throws {TypeError} If `ids` is not an array.
+       * @throws {RangeError} If an ID is invalid or repeated.
+       * @throws {Error} If the context has ended or copying fails.
+       */
       copyNewObjectsForDirectObject: function (ids) {
         requireCopying();
         if (!Array.isArray(ids))
@@ -237,6 +138,13 @@ export function createCopyingHelpers({ module, constants, withString }) {
         }
         return this;
       },
+      /**
+       * Looks up the output ID of an already copied source object.
+       * @param {number} sourceObjectId - Object ID in the source document.
+       * @returns {number} Object ID of the copy in the output.
+       * @throws {RangeError} If the ID is invalid or the object was not copied.
+       * @throws {Error} If the copying context has ended.
+       */
       getCopiedObjectID: function (sourceObjectId) {
         requireCopying();
         requireObjectId(sourceObjectId, "Source object ID");
@@ -255,6 +163,11 @@ export function createCopyingHelpers({ module, constants, withString }) {
           module._free(resultPointer);
         }
       },
+      /**
+       * Lists every source object copied so far.
+       * @returns {Record<string, number>} Output object IDs keyed by source object ID.
+       * @throws {Error} If the context has ended or the mapping cannot be read.
+       */
       getCopiedObjects: function () {
         requireCopying();
         var countPointer = module._malloc(4);
@@ -289,6 +202,15 @@ export function createCopyingHelpers({ module, constants, withString }) {
           module._free(countPointer);
         }
       },
+      /**
+       * Makes later copies reference existing output objects instead of copying
+       * the given source objects.
+       * @param {Record<string, number>} mapping - Output object IDs keyed by source object ID.
+       * @returns {this} The copying context.
+       * @throws {TypeError} If `mapping` is not a plain object.
+       * @throws {RangeError} If a key or value is not an object ID.
+       * @throws {Error} If the context has ended or the replacement fails.
+       */
       replaceSourceObjects: function (mapping) {
         requireCopying();
         if (!mapping || typeof mapping !== "object" || Array.isArray(mapping))
@@ -329,5 +251,5 @@ export function createCopyingHelpers({ module, constants, withString }) {
       },
     };
   }
-  return { copyingSourceParser, copyingObjectOperations };
+  return { copyingObjectOperations };
 }

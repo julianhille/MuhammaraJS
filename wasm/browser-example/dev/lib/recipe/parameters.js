@@ -1,4 +1,5 @@
 import { PAGE_CONTEXT_STATE } from "./context-state.js";
+import { PageSize } from "../value-sets.js";
 
 /** Standard page sizes in PDF points. */
 export var mediumSizes = {
@@ -53,7 +54,11 @@ export var mediumSizes = {
   sra4: [637.8, 907.09],
 };
 
-/** Normalizes a Recipe PDF version to a supported native version number. */
+/**
+ * Normalizes a Recipe PDF version to a supported native version number.
+ * @param {number} [version] - `1.4`-style or `14`-style version.
+ * @returns {number} The native version; 1.7 when unsupported or omitted.
+ */
 export function recipeVersion(version) {
   if (typeof version === "number" && version >= 1 && version < 3) {
     version *= 10;
@@ -64,11 +69,16 @@ export function recipeVersion(version) {
     : 17;
 }
 
-/** Initializes mutable state for a newly created Recipe instance. */
+/**
+ * Initializes mutable state for a newly created Recipe instance.
+ * @param {Recipe} recipe - Recipe instance.
+ * @param {RecipeOptions} options - Recipe options.
+ * @returns {void}
+ */
 export function initializeRecipe(recipe, options) {
   recipe.options = options;
   recipe.default = {
-    pageSize: mediumSizes.letter.slice(),
+    pageSize: mediumSizes[PageSize.LETTER].slice(),
     pageMargin: { left: 72, right: 72, top: 72, bottom: 72 },
     mediumSizes,
   };

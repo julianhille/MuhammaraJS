@@ -1,4 +1,10 @@
-/** Creates the byte-first equivalent of native `muhammara.recrypt`. */
+import { constants } from "./constants.js";
+
+/**
+ * Creates the byte-first equivalent of native `recrypt`.
+ * @param {object} dependencies - Module, constants, and byte helpers.
+ * @returns {Function} `recrypt(bytes, options)`.
+ */
 export function createRecrypt({
   module,
   normalizeBytes,
@@ -6,6 +12,15 @@ export function createRecrypt({
   withString,
   assertOutputSize,
 }) {
+  /**
+   * Decrypts, re-encrypts, or rewrites a PDF, like native `muhammara.recrypt`.
+   * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} source - PDF to rewrite.
+   * @param {PDFRecryptOptions} [options] - Source `password`, new `userPassword`/`ownerPassword`,
+   *   `userProtectionFlag`, `version`, and `compress`.
+   * @returns {Uint8Array} The rewritten PDF.
+   * @throws {TypeError} If `source` is not a supported byte source.
+   * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
+   */
   return function recrypt(source, options = {}) {
     source = normalizeBytes(source, "PDF input");
     if (!options || typeof options !== "object") options = {};
@@ -13,12 +28,24 @@ export function createRecrypt({
       throw new Error("recrypt log files are unavailable in WebAssembly");
     }
     var version = typeof options.version === "number" ? options.version | 0 : 0;
-    if (version === 20) {
+    if (version === constants.ePDFVersion20) {
       throw new Error(
         "PDF 2.0/AES-256 encryption is unavailable in WebAssembly",
       );
     }
-    if (![0, 10, 11, 12, 13, 14, 15, 16, 17].includes(version)) {
+    if (
+      ![
+        constants.ePDFVersionUndefined,
+        constants.ePDFVersion10,
+        constants.ePDFVersion11,
+        constants.ePDFVersion12,
+        constants.ePDFVersion13,
+        constants.ePDFVersion14,
+        constants.ePDFVersion15,
+        constants.ePDFVersion16,
+        constants.ePDFVersion17,
+      ].includes(version)
+    ) {
       throw new Error(
         "Wrong argument for PDF version, please provide a valid PDF version",
       );

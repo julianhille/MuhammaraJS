@@ -1,6 +1,18 @@
-/** Creates PDF value encoders and constructors backed by the WASM module. */
+import { PageBox } from "./value-sets.js";
+
+/**
+ * Creates PDF value encoders and constructors backed by the Wasm module.
+ * @param {{module: object, withString: Function, withBytes: Function}} dependencies - Module and memory helpers.
+ * @returns {{PDFTextString: Function, PDFDate: Function, PDFPage: Function, normalizePDFDate: Function, textStringValue: Function}} The value types.
+ */
 export function createValueTypes({ module, withString, withBytes }) {
   var encoder = new TextEncoder();
+  /**
+   * Encodes text as a PDF text string: PDFDocEncoding, or UTF-16BE with a byte order mark.
+   * @param {string} value - Text.
+   * @returns {Uint8Array} The encoded bytes.
+   * @throws {Error} If the text cannot be encoded.
+   */
   function textStringBytes(value) {
     var bytes = encoder.encode(value);
     var lengthPointer = module._malloc(4);
@@ -27,6 +39,12 @@ export function createValueTypes({ module, withString, withBytes }) {
     }
   }
 
+  /**
+   * Decodes PDF text string bytes.
+   * @param {Uint8Array} bytes - PDFDocEncoding or UTF-16BE bytes.
+   * @returns {string} The text.
+   * @throws {Error} If the bytes cannot be decoded.
+   */
   function textStringValue(bytes) {
     var lengthPointer = module._malloc(4);
     try {
@@ -54,6 +72,13 @@ export function createValueTypes({ module, withString, withBytes }) {
     }
   }
 
+  /**
+   * Normalizes a date to a PDF date string.
+   * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+   * @returns {string} A PDF date such as `D:20240102030405+01'00'`.
+   * @throws {TypeError} If `value` is an invalid Date or not a date.
+   * @throws {Error} If a string cannot be parsed.
+   */
   function normalizePDFDate(value) {
     if (value instanceof PDFDate) return value.toString();
     if (value instanceof Date) {
@@ -61,6 +86,11 @@ export function createValueTypes({ module, withString, withBytes }) {
         throw new TypeError("PDFDate requires a valid Date");
       var offset = -value.getTimezoneOffset();
       var sign = offset < 0 ? "-" : "+";
+      /**
+       * Formats the absolute value of a number with at least two digits.
+       * @param {number} number - Date part.
+       * @returns {string} The padded digits.
+       */
       var pad = (number) => String(Math.abs(number)).padStart(2, "0");
       value = `D:${value.getFullYear()}${pad(value.getMonth() + 1)}${pad(value.getDate())}${pad(value.getHours())}${pad(value.getMinutes())}${pad(value.getSeconds())}${sign}${pad(Math.trunc(offset / 60))}'${pad(offset % 60)}'`;
     }
@@ -117,14 +147,28 @@ export function createValueTypes({ module, withString, withBytes }) {
       }
     }
 
+    /**
+     * Reads the encoded PDF text string bytes.
+     * @returns {number[]} The bytes, PDFDocEncoding or UTF-16BE with a byte order mark.
+     */
     toBytesArray() {
       return Array.from(this._bytes);
     }
 
+    /**
+     * Decodes the text string.
+     * @returns {string} The text.
+     */
     toString() {
       return textStringValue(this._bytes);
     }
 
+    /**
+     * Replaces the text, encoding it as PDFDocEncoding or UTF-16BE.
+     * @param {string} value - New text.
+     * @returns {this} The text string.
+     * @throws {TypeError} If `value` is not a string.
+     */
     fromString(value) {
       if (typeof value !== "string")
         throw new TypeError("PDFTextString requires a string");
@@ -138,10 +182,18 @@ export function createValueTypes({ module, withString, withBytes }) {
       this._value = value === undefined ? "" : normalizePDFDate(value);
     }
 
+    /**
+     * Formats the date.
+     * @returns {string} A PDF date such as `D:20240102030405+01'00'`, or an empty string.
+     */
     toString() {
       return this._value;
     }
 
+    /**
+     * Sets the date to now, in the local time zone.
+     * @returns {this} The date.
+     */
     setToCurrentTime() {
       this._value = normalizePDFDate(new Date());
       return this;
@@ -159,7 +211,7 @@ export function createValueTypes({ module, withString, withBytes }) {
           "PDFPage requires valid left, bottom, right, and top coordinates",
         );
       }
-      this._boxes = { media: [left, bottom, right, top] };
+      this._boxes = { [PageBox.MEDIA]: [left, bottom, right, top] };
       this._rotation = undefined;
       this._setNativeBox = null;
       this._setNativeRotation = null;
@@ -167,11 +219,27 @@ export function createValueTypes({ module, withString, withBytes }) {
     }
   }
 
+  /**
+   * Defines the `<name>Box` accessor on PDFPage.
+   * @param {PageBox} name - Box name.
+   * @returns {void}
+   */
   function definePageBox(name) {
     Object.defineProperty(PDFPage.prototype, `${name}Box`, {
+      /**
+       * Reads the box.
+       * @returns {PDFRectangle|undefined} The box, or undefined when unset.
+       */
       get: function () {
         return this._boxes[name];
       },
+      /**
+       * Sets the box, and the native page box when the page is active.
+       * @param {PDFRectangle} value - `[left, bottom, right, top]` with a positive size.
+       * @returns {void}
+       * @throws {RangeError} If `value` is not four finite coordinates with a positive size.
+       * @throws {Error} If the active native page box cannot be set.
+       */
       set: function (value) {
         if (
           !Array.isArray(value) ||
@@ -190,17 +258,34 @@ export function createValueTypes({ module, withString, withBytes }) {
     });
   }
 
-  ["media", "crop", "bleed", "trim", "art"].forEach(definePageBox);
+  Object.values(PageBox).forEach(definePageBox);
+  /**
+   * Returns the page resources dictionary, starting a new writer page when needed.
+   * @returns {ResourcesDictionary} The resources dictionary.
+   * @throws {Error} If the page is not active and cannot be started.
+   */
   PDFPage.prototype.getResourcesDictionary = function () {
+    if (!this._getNativeResources && this._activate) this._activate();
     if (!this._getNativeResources) {
       throw new Error("PDFPage resources are not active");
     }
     return this._getNativeResources();
   };
   Object.defineProperty(PDFPage.prototype, "rotate", {
+    /**
+     * Reads `/Rotate`.
+     * @returns {number|undefined} The rotation in degrees, or undefined when unset.
+     */
     get: function () {
       return this._rotation;
     },
+    /**
+     * Sets `/Rotate`, and the native page rotation when the page is active.
+     * @param {number} value - Multiple of 90 degrees.
+     * @returns {void}
+     * @throws {RangeError} If `value` is not an integer multiple of 90.
+     * @throws {Error} If the active native rotation cannot be set.
+     */
     set: function (value) {
       if (!Number.isInteger(value) || value % 90 !== 0) {
         throw new RangeError("rotate must be a multiple of 90 degrees");

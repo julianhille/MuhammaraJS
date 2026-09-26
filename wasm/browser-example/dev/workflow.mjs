@@ -19,6 +19,12 @@ export var BROWSER_EXAMPLES = [
   ...HOW_TO_EXAMPLES,
 ];
 
+/**
+ * Runs the low-level and Recipe examples in sequence.
+ * @param {import("./lifecycle.mjs").ExampleOptions} [options={}] - Assets, signal, and progress.
+ * @returns {Promise<{lowLevel: {bytes: Uint8Array, summary: object}, recipe: import("./lifecycle.mjs").ExampleResult}>} Both outputs.
+ * @throws {Error} If a stage fails; `exampleDetails` names the stage.
+ */
 export async function runExampleWorkflow(options = {}) {
   var stage = "initialization";
   var progress = options.progress || (() => {});
@@ -44,6 +50,12 @@ export async function runExampleWorkflow(options = {}) {
   }
 }
 
+/**
+ * Runs the complete workflow or one how-to.
+ * @param {import("./lifecycle.mjs").ExampleOptions} [options={}] - Example id, assets, signal, and progress.
+ * @returns {Promise<object>} The workflow outputs, or `{ example }` for a how-to.
+ * @throws {Error} If the example fails; `exampleDetails` describes it.
+ */
 export async function runBrowserExample(options = {}) {
   if (!options.exampleId || options.exampleId === "complete")
     return runExampleWorkflow(options);
@@ -57,16 +69,28 @@ export async function runBrowserExample(options = {}) {
   }
 }
 
-/** Verifies replacement and disposal without leaving a real object URL behind. */
+/**
+ * Verifies replacement and disposal without leaving a real object URL behind.
+ * @returns {{created: number, revoked: number}} How many URLs were created and revoked.
+ */
 export function validateObjectUrlLifecycle() {
   var created = [];
   var revoked = [];
   var urls = new ObjectUrlStore({
+    /**
+     * Creates a fake object URL.
+     * @returns {string} The URL.
+     */
     createObjectURL() {
       var value = `blob:example-${created.length + 1}`;
       created.push(value);
       return value;
     },
+    /**
+     * Records a revoked fake object URL.
+     * @param {string} value - The URL.
+     * @returns {void}
+     */
     revokeObjectURL(value) {
       revoked.push(value);
     },

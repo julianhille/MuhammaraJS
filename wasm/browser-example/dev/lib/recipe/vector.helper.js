@@ -1,7 +1,20 @@
+import { DeviceColorSpace, LineCap, LineJoin } from "../value-sets.js";
 import { colorModel } from "./colors.js";
 
-/** Creates shared Recipe vector drawing helpers. */
+/**
+ * Creates shared Recipe vector drawing helpers.
+ * @param {object} runtime - Module and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createVectorHelpers(runtime) {
+  /**
+   * Applies a numeric content operator on the page context or through the Recipe export.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {number} code - Native operator code.
+   * @param {...number} values - Operands.
+   * @returns {void}
+   * @throws {Error} If the operator fails.
+   */
   function operator(recipe, code, ...values) {
     if (recipe._pageContext) {
       var context = recipe._pageContext;
@@ -23,11 +36,20 @@ export function createVectorHelpers(runtime) {
       ...values,
     );
   }
+  /**
+   * Sets the fill or stroke color from a Recipe color.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {RecipeColor} value - Color.
+   * @param {object} options - Options with `colorspace`.
+   * @param {boolean} stroke - Set the stroking color.
+   * @returns {void}
+   * @throws {TypeError} If the color or color space is invalid.
+   */
   function setColor(recipe, value, options, stroke) {
     var model = colorModel(recipe, value, options);
-    if (model.colorspace === "rgb")
+    if (model.colorspace === DeviceColorSpace.RGB)
       operator(recipe, stroke ? 27 : 26, ...model.values);
-    else if (model.colorspace === "gray")
+    else if (model.colorspace === DeviceColorSpace.GRAY)
       operator(recipe, stroke ? 25 : 24, model.values[0]);
     else operator(recipe, stroke ? 29 : 28, ...model.values);
   }
@@ -35,6 +57,8 @@ export function createVectorHelpers(runtime) {
     /**
      * Normalizes path options against the current Recipe graphics state.
      * @private
+     * @param {object} [options={}] - Line cap, join, miter, dash, width, and opacity.
+     * @returns {object} Native style values; -1 leaves a cap or join unchanged.
      */
     _pathOptions: function (options = {}) {
       var lineStyle = this._lineStyle || {};
@@ -55,11 +79,15 @@ export function createVectorHelpers(runtime) {
         cap:
           options.lineCap === undefined
             ? (lineStyle.cap ?? -1)
-            : ["butt", "round", "square"].indexOf(options.lineCap),
+            : [LineCap.BUTT, LineCap.ROUND, LineCap.SQUARE].indexOf(
+                options.lineCap,
+              ),
         join:
           options.lineJoin === undefined
             ? (lineStyle.join ?? -1)
-            : ["miter", "round", "bevel"].indexOf(options.lineJoin),
+            : [LineJoin.MITER, LineJoin.ROUND, LineJoin.BEVEL].indexOf(
+                options.lineJoin,
+              ),
         miter: Number.isFinite(options.miterLimit)
           ? options.miterLimit
           : (lineStyle.miterLimit ?? 1.414),
@@ -73,6 +101,11 @@ export function createVectorHelpers(runtime) {
     /**
      * Saves graphics state and applies path styles and transformations.
      * @private
+     * @param {object} [options={}] - Path options.
+     * @param {number} [x=0] - Default rotation origin x.
+     * @param {number} [y=0] - Default rotation origin y.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If a style cannot be applied.
      */
     _beginPath: function (options = {}, x = 0, y = 0) {
       var style = this._pathOptions(options);
@@ -106,6 +139,9 @@ export function createVectorHelpers(runtime) {
     /**
      * Paints the current path and restores the saved graphics state.
      * @private
+     * @param {object} [options={}] - `fill`, `stroke`, `color`, and `colorspace`.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If a color is invalid.
      */
     _finishPath: function (options = {}) {
       var fill = options.fill;

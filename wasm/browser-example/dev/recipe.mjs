@@ -1,10 +1,24 @@
 import { createMuhammaraWasm, createRecipe } from "./module-options.mjs";
 import { throwIfCancelled } from "./lifecycle.mjs";
 
+/**
+ * Fails the Recipe example when a check does not hold.
+ * @param {*} condition - Checked value.
+ * @param {string} message - Failure description.
+ * @returns {void}
+ * @throws {Error} If `condition` is falsy.
+ */
 function assert(condition, message) {
   if (!condition) throw new Error(`Recipe validation failed: ${message}`);
 }
 
+/**
+ * Runs the Recipe example on the low-level output.
+ * @param {import("./lifecycle.mjs").ExampleOptions & {source: Uint8Array<ArrayBuffer>}} options - Source PDF, assets, signal, and progress.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The Recipe PDF and its summary.
+ * @throws {Error} If a check fails.
+ * @throws {DOMException} If the run is cancelled.
+ */
 export async function runRecipeExample({
   source,
   assets = {},
@@ -101,7 +115,7 @@ export async function runRecipeExample({
       recipe.image("example-png", 405, 650, {
         width: 110,
         height: 90,
-        proportional: true,
+        keepAspectRatio: true,
         align: "center center",
         opacity: 0.82,
       });
@@ -113,7 +127,7 @@ export async function runRecipeExample({
       })
       .endPage()
       .createPage(595, 842)
-      .overlay("low-level-source", { page: 1, fitWidth: true, opacity: 0.24 })
+      .overlay("low-level-source", { page: 1, fitWidth: true })
       .endPage();
     var first = recipe.endPDF();
     assert(recipe.endPDF() === first, "endPDF must be idempotent");

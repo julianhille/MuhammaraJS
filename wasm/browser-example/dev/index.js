@@ -22,17 +22,44 @@ import { createModifierFactory } from "./lib/modifier.js";
 import { createWriterToModifyFactory } from "./lib/writer-to-modify.js";
 import { createRecipeFactory } from "./lib/recipe.js";
 import { createRecrypt } from "./lib/recrypt.js";
+import {
+  DeviceColorSpace,
+  ImageFit,
+  PageBox,
+  DrawingPathType,
+  ObjectReplacementScope,
+  PDFImageType,
+  RegisteredImageFormat,
+  ETokenSeparator,
+  LineCapStyle,
+  EEncoding,
+} from "./lib/value-sets.js";
 
 export {
   ByteReader,
   ByteReaderWithPosition,
   ByteWriter,
   ByteWriterWithPosition,
+  DeviceColorSpace,
+  DrawingPathType,
+  EEncoding,
+  ETokenSeparator,
+  ImageFit,
+  LineCapStyle,
+  ObjectReplacementScope,
+  PageBox,
+  PDFImageType,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
 };
 
-/** Loads the Muhammara WebAssembly module and its byte-first PDF API. */
+/**
+ * Loads the Muhammara WebAssembly module and its byte-first PDF API.
+ * @param {MuhammaraWasmOptions} [options] - Emscripten options and byte `limits`.
+ * @returns {Promise<object>} The API, module, helpers, and byte guards.
+ * @throws {TypeError} If `limits` is not an object or `wasmBinary` is not bytes.
+ * @throws {RangeError} If a byte limit is not a positive safe integer.
+ */
 async function createRuntime(options) {
   var limits = options?.limits || {};
   if (!limits || typeof limits !== "object" || Array.isArray(limits)) {
@@ -57,6 +84,14 @@ async function createRuntime(options) {
     throw new TypeError("wasmBinary must be a Uint8Array or ArrayBuffer");
   }
   var module = await createModule(moduleOptions);
+  /**
+   * Copies byte input and enforces `maxInputBytes`.
+   * @param {ByteSource} value - Bytes.
+   * @param {string} [label] - Name used in error messages.
+   * @returns {Uint8Array} A copy of the bytes.
+   * @throws {TypeError} If `value` is not a synchronous byte source.
+   * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+   */
   function normalizeBytes(value, label) {
     var bytes = normalizeByteSource(value, label);
     if (bytes.length > maxInputBytes) {
@@ -64,6 +99,15 @@ async function createRuntime(options) {
     }
     return bytes;
   }
+  /**
+   * Reads byte input, including Blob and File, and enforces `maxInputBytes`.
+   * @async
+   * @param {AsyncByteSource} value - Bytes or a Blob-like object.
+   * @param {string} [label] - Name used in error messages.
+   * @returns {Promise<Uint8Array>} A copy of the bytes.
+   * @throws {TypeError} If `value` is not a supported byte source.
+   * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+   */
   async function normalizeBytesAsync(value, label) {
     if (
       typeof Blob !== "undefined" &&
@@ -74,6 +118,12 @@ async function createRuntime(options) {
     }
     return normalizeBytes(await normalizeByteSourceAsync(value, label), label);
   }
+  /**
+   * Rejects PDF output larger than `maxOutputBytes`.
+   * @param {number} length - Output size in bytes.
+   * @returns {void}
+   * @throws {RangeError} If `length` exceeds `maxOutputBytes`.
+   */
   function assertOutputSize(length) {
     if (length > maxOutputBytes) {
       throw new RangeError("PDF output exceeds maxOutputBytes");
@@ -85,11 +135,35 @@ async function createRuntime(options) {
   var imageTypes = new Map();
   var pdfs = new Map();
   var helpers = createHelpers(module);
+  /**
+   * Rejects an asset name that cannot be looked up again.
+   * @param {*} name - Candidate asset name.
+   * @returns {void}
+   * @throws {TypeError} If `name` is not a non-empty string.
+   */
+  function requireAssetName(name) {
+    if (typeof name !== "string" || !name) {
+      throw new TypeError("Asset names must be non-empty strings");
+    }
+  }
+  /**
+   * Registers an asset path and removes the file it replaces.
+   * @param {Map<string, string>} registry - Font, image, or PDF registry.
+   * @param {string} name - Asset name.
+   * @param {string} path - Virtual file system path.
+   * @returns {void}
+   */
   function replaceAsset(registry, name, path) {
     var previous = registry.get(name);
     registry.set(name, path);
     if (previous && previous !== path) helpers.removeFile(previous);
   }
+  /**
+   * Removes a registered asset and its file.
+   * @param {Map<string, string>} registry - Font, image, or PDF registry.
+   * @param {string} name - Asset name.
+   * @returns {boolean} Whether an asset was removed.
+   */
   function unregisterAsset(registry, name) {
     var path = registry.get(name);
     if (!path) return false;
@@ -110,17 +184,31 @@ async function createRuntime(options) {
     withString: helpers.withString,
     withBytes: helpers.withBytes,
   });
-  var { copyingObjectOperations } = createCopyingHelpers({
-    module,
-    constants,
-    withString: helpers.withString,
-  });
+  var { copyingObjectOperations } = createCopyingHelpers({ module });
+  /**
+   * Reads native's `createReader` password option.
+   * @param {PDFReaderOptions} options - Reader options.
+   * @returns {string|undefined} The password, when given.
+   * @throws {TypeError} If `options` is not an object or `password` is not a string.
+   */
+  function readerPassword(options) {
+    if (!options || typeof options !== "object" || Array.isArray(options))
+      throw new TypeError("createReader options must be an object");
+    if (options.password !== undefined && typeof options.password !== "string")
+      throw new TypeError("createReader password must be a string");
+    return options.password;
+  }
+
   var createReader = createReaderFactory({
     module,
     constants,
     normalizeBytes,
     withString: helpers.withString,
     textStringValue,
+    /**
+     * Reserves a unique virtual path for reader input.
+     * @returns {string} The path.
+     */
     allocatePdfPath: () => `/pdfs/${state.nextPdf++}.pdf`,
     removeFile: helpers.removeFile,
   });
@@ -167,7 +255,16 @@ async function createRuntime(options) {
     ByteWriterWithPosition,
     PDFRStreamForBuffer,
     PDFWStreamForBuffer,
+    /**
+     * Registers font bytes for `getFontForBytes()`; a name registered again is replaced.
+     * @param {string} name - Non-empty font name.
+     * @param {ByteSource} bytes - Font bytes.
+     * @returns {string} The virtual path of the font.
+     * @throws {TypeError} If `name` is empty or the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerFont: function (name, bytes) {
+      requireAssetName(name);
       bytes = normalizeBytes(bytes, "Font bytes");
       var path = `/fonts/${state.nextAsset++}.font`;
       module.FS.mkdirTree("/fonts");
@@ -175,13 +272,32 @@ async function createRuntime(options) {
       replaceAsset(fonts, name, path);
       return path;
     },
+    /**
+     * Registers font bytes after reading an asynchronous byte source.
+     * @async
+     * @param {string} name - Non-empty font name.
+     * @param {AsyncByteSource} bytes - Font bytes, Blob, or File.
+     * @returns {Promise<string>} The virtual path of the font.
+     * @throws {TypeError} If `name` is empty or the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerFontAsync: async function (name, bytes) {
       return this.registerFont(
         name,
         await normalizeBytesAsync(bytes, "Font bytes"),
       );
     },
+    /**
+     * Registers image bytes for the image and form XObject methods.
+     * @param {string} name - Non-empty image name.
+     * @param {ByteSource} bytes - Image bytes.
+     * @param {string} extension - `jpg`, `jpeg`, `png`, `tif`, or `tiff`, in any case.
+     * @returns {void}
+     * @throws {TypeError} If `name` is empty, the bytes are unsupported, or the extension is unknown.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerImage: function (name, bytes, extension) {
+      requireAssetName(name);
       bytes = normalizeBytes(bytes, "Image bytes");
       if (!/^(jpe?g|png|tiff?)$/i.test(extension || "")) {
         throw new TypeError("Image extensions must be jpeg, png, or tiff");
@@ -193,12 +309,22 @@ async function createRuntime(options) {
       imageTypes.set(
         name,
         /jpe?g/i.test(extension)
-          ? "jpeg"
+          ? RegisteredImageFormat.JPEG
           : /png/i.test(extension)
-            ? "png"
-            : "tiff",
+            ? RegisteredImageFormat.PNG
+            : RegisteredImageFormat.TIFF,
       );
     },
+    /**
+     * Registers an image after reading an asynchronous byte source.
+     * @async
+     * @param {string} name - Non-empty image name.
+     * @param {AsyncByteSource} bytes - Image bytes, Blob, or File.
+     * @param {string} extension - `jpg`, `jpeg`, `png`, `tif`, or `tiff`.
+     * @returns {Promise<void>} Resolves after the image is registered.
+     * @throws {TypeError} If `name` is empty, the bytes are unsupported, or the extension is unknown.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerImageAsync: async function (name, bytes, extension) {
       return this.registerImage(
         name,
@@ -206,29 +332,66 @@ async function createRuntime(options) {
         extension,
       );
     },
+    /**
+     * Registers PDF bytes for methods that accept a registered PDF name.
+     * @param {string} name - Non-empty PDF name.
+     * @param {ByteSource} bytes - PDF bytes.
+     * @returns {void}
+     * @throws {TypeError} If `name` is empty or the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerPdf: function (name, bytes) {
+      requireAssetName(name);
       bytes = normalizeBytes(bytes, "PDF bytes");
       var path = `/pdfs/${state.nextPdf++}.pdf`;
       module.FS.mkdirTree("/pdfs");
       module.FS.writeFile(path, bytes);
       replaceAsset(pdfs, name, path);
     },
+    /**
+     * Registers a PDF after reading an asynchronous byte source.
+     * @async
+     * @param {string} name - Non-empty PDF name.
+     * @param {AsyncByteSource} bytes - PDF bytes, Blob, or File.
+     * @returns {Promise<void>} Resolves after the PDF is registered.
+     * @throws {TypeError} If `name` is empty or the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerPdfAsync: async function (name, bytes) {
       return this.registerPdf(
         name,
         await normalizeBytesAsync(bytes, "PDF bytes"),
       );
     },
+    /**
+     * Removes a registered font.
+     * @param {string} name - Font name.
+     * @returns {boolean} Whether a font was removed.
+     */
     unregisterFont: function (name) {
       return unregisterAsset(fonts, name);
     },
+    /**
+     * Removes a registered image.
+     * @param {string} name - Image name.
+     * @returns {boolean} Whether an image was removed.
+     */
     unregisterImage: function (name) {
       imageTypes.delete(name);
       return unregisterAsset(images, name);
     },
+    /**
+     * Removes a registered PDF.
+     * @param {string} name - PDF name.
+     * @returns {boolean} Whether a PDF was removed.
+     */
     unregisterPdf: function (name) {
       return unregisterAsset(pdfs, name);
     },
+    /**
+     * Removes every registered font, image, and PDF.
+     * @returns {void}
+     */
     disposeAssets: function () {
       new Set([
         ...fonts.values(),
@@ -240,7 +403,26 @@ async function createRuntime(options) {
       imageTypes.clear();
       pdfs.clear();
     },
+    /**
+     * Creates a one-page PDF with an empty page.
+     * @param {number} width - Page width in points.
+     * @param {number} height - Page height in points.
+     * @returns {Uint8Array} The PDF bytes.
+     * @throws {TypeError} If a size is not a finite number.
+     * @throws {RangeError} If a size is not positive or the output exceeds `maxOutputBytes`.
+     * @throws {Error} If the PDF cannot be created.
+     */
     createBlankPdf: function (width, height) {
+      if (![width, height].every(Number.isFinite)) {
+        throw new TypeError(
+          "createBlankPdf requires a finite width and height",
+        );
+      }
+      if (width <= 0 || height <= 0) {
+        throw new RangeError(
+          "createBlankPdf requires a positive width and height",
+        );
+      }
       var lengthPointer = module._malloc(4);
       try {
         var pdfPointer = module._muhammara_wasm_create_blank_pdf(
@@ -260,15 +442,68 @@ async function createRuntime(options) {
         module._free(lengthPointer);
       }
     },
-    createReader,
-    createReaderAsync: async function (bytes) {
-      return this.createReader(await normalizeBytesAsync(bytes, "PDF input"));
+    /**
+     * Opens a reader for PDF bytes.
+     * @param {ByteSource} bytes - PDF bytes.
+     * @param {PDFReaderOptions} [options] - `password` opens an encrypted PDF,
+     *   as in native `createReader`.
+     * @returns {PDFReader} The reader; call `end()` to release it.
+     * @throws {TypeError} If the bytes are unsupported, `options` is not an
+     *   object, or `password` is not a string.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     * @throws {Error} If the PDF cannot be parsed.
+     */
+    createReader: function (bytes, options = {}) {
+      return createReader(
+        bytes,
+        undefined,
+        undefined,
+        undefined,
+        true,
+        readerPassword(options),
+      );
+    },
+    /**
+     * Opens a reader after reading an asynchronous byte source.
+     * @async
+     * @param {AsyncByteSource} bytes - PDF bytes, Blob, or File.
+     * @param {PDFReaderOptions} [options] - `password` opens an encrypted PDF.
+     * @returns {Promise<PDFReader>} The reader.
+     * @throws {TypeError} If the bytes are unsupported, or `options` is invalid.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     * @throws {Error} If the PDF cannot be parsed.
+     */
+    createReaderAsync: async function (bytes, options = {}) {
+      readerPassword(options);
+      return this.createReader(
+        await normalizeBytesAsync(bytes, "PDF input"),
+        options,
+      );
     },
     createModifier,
+    /**
+     * Opens a high-level modifier after reading an asynchronous byte source.
+     * @async
+     * @param {AsyncByteSource} bytes - PDF bytes, Blob, or File.
+     * @returns {Promise<CompactModifier>} The modifier.
+     * @throws {TypeError} If the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     * @throws {Error} If the PDF cannot be opened.
+     */
     createModifierAsync: async function (bytes) {
       return this.createModifier(await normalizeBytesAsync(bytes, "PDF input"));
     },
     createWriterToModify,
+    /**
+     * Opens a low-level modifier after reading an asynchronous byte source.
+     * @async
+     * @param {AsyncByteSource} bytes - PDF bytes, Blob, or File.
+     * @param {WriterOptions} [writerOptions] - PDF version and stream compression.
+     * @returns {Promise<PDFModifier>} The modifier.
+     * @throws {TypeError} If the bytes or options are invalid.
+     * @throws {RangeError} If the version is unsupported or the bytes exceed `maxInputBytes`.
+     * @throws {Error} If the PDF cannot be opened.
+     */
     createWriterToModifyAsync: async function (bytes, writerOptions) {
       return this.createWriterToModify(
         await normalizeBytesAsync(bytes, "PDF input"),
@@ -331,16 +566,16 @@ export async function createRecipe(options) {
     defaultFont = { name: "Roboto", loadBytes: defaultFontBytes };
   } else if (fontSource !== false) {
     var fontBytes = await normalizeBytesAsync(fontSource, "Default font bytes");
-    defaultFont = { name: "default", loadBytes: () => fontBytes };
+    defaultFont = {
+      name: "default",
+      /**
+       * Returns the custom default font bytes.
+       * @returns {Uint8Array} The font bytes.
+       */
+      loadBytes: () => fontBytes,
+    };
   }
-  function removeFile(path) {
-    if (!path) return;
-    try {
-      module.FS.unlink(path);
-    } catch (error) {
-      if (module.FS.analyzePath(path).exists) throw error;
-    }
-  }
+  var { removeFile } = helpers;
   return createRecipeFactory({
     defaultFont,
     module,

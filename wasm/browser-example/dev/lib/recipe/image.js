@@ -1,5 +1,19 @@
-/** Creates Recipe image placement methods. */
+import { ImageFit, HorizontalAlign, VerticalAlign } from "../value-sets.js";
+/**
+ * Creates Recipe image placement methods.
+ * @param {object} runtime - Module and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createImageMethods(runtime) {
+  /**
+   * Computes the drawn size and position of an image from its options.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} path - Virtual image path.
+   * @param {number} x - Recipe x.
+   * @param {number} y - Recipe y.
+   * @param {RecipeImageOptions} options - Size, scale, keepAspectRatio, and alignment.
+   * @returns {object} The width, height, and PDF position.
+   */
   function placement(recipe, path, x, y, options) {
     var dimensions = recipe._imageDimensions(path);
     var width = options.width || dimensions.width * (options.scale || 1);
@@ -18,10 +32,10 @@ export function createImageMethods(runtime) {
       else height = width / ratio;
     }
     var align = String(options.align || "").split(" ");
-    if (align[0] === "center") x -= width / 2;
-    else if (align[0] === "right") x += width / 2;
-    if (align[1] === "center") y -= height / 2;
-    else if (align[1] === "bottom") y += height / 2;
+    if (align[0] === HorizontalAlign.CENTER) x -= width / 2;
+    else if (align[0] === HorizontalAlign.RIGHT) x += width / 2;
+    if (align[1] === VerticalAlign.CENTER) y -= height / 2;
+    else if (align[1] === VerticalAlign.BOTTOM) y += height / 2;
     return { x, y, width, height };
   }
   return {
@@ -75,7 +89,7 @@ export function createImageMethods(runtime) {
               width: box.width,
               height: box.height,
               proportional: options.keepAspectRatio !== false,
-              fit: "always",
+              fit: ImageFit.ALWAYS,
             },
           },
         );
@@ -112,6 +126,9 @@ export function createImageMethods(runtime) {
     /**
      * Reads the dimensions of an image in the virtual filesystem.
      * @private
+     * @param {string} path - Virtual image path.
+     * @returns {{width: number, height: number}} Size in points.
+     * @throws {Error} If the dimensions cannot be read.
      */
     _imageDimensions: function (path) {
       if (this._sourceMode) {
