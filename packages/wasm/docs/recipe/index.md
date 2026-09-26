@@ -25,7 +25,8 @@ streams are not accepted.
 
 Recipe string options have named values on the `Recipe` class, for example
 `Recipe.TextWrap.ELLIPSIS`, `Recipe.AnnotFlag.PRINT`, and `Recipe.PageSize.A4`.
-The plain strings stay accepted. Native and Wasm share these sets with the same
+The plain strings stay accepted. In TypeScript, each set has a same-named
+type for its values, for example `Recipe.TextWrap` or `Recipe.AnnotFlag`. Native and Wasm share these sets with the same
 names and members: `TextWrap`, `TextAlign`, `HorizontalAlign`, `VerticalAlign`, `TableRowNth`,
 `LineCap`, `LineJoin`, `ArrowAt`, `ArrowType`, `TriangleTrait`,
 `TrianglePosition`, `PageLayout`, `PageSize`, `FontStyle`, `Permission`,
