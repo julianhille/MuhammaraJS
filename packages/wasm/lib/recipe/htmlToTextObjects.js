@@ -48,7 +48,10 @@ export function htmlToTextObjects(html, options = {}) {
     firstListIndex !== -1 &&
     !hasText(source.slice(0, firstListIndex).replace(/<[^>]+>/g, ""));
   var leadingListStructure = onlyFormattingBeforeFirstList;
-  /** Combines the styles inherited from the currently open element frames. */
+  /**
+   * Combines the styles inherited from the currently open element frames.
+   * @returns {object} The styles.
+   */
   var current = () => Object.assign({}, ...frames.map((frame) => frame.style));
   /** Appends a fragment while applying any pending reset after a closed list. */
   var push = (object) => {
