@@ -301,6 +301,15 @@ async function createRuntime(options) {
         await normalizeBytesAsync(bytes, "Font bytes"),
       );
     },
+    /**
+     * Registers image bytes for the image and form XObject methods.
+     * @param {string} name - Non-empty image name.
+     * @param {ByteSource} bytes - Image bytes.
+     * @param {string} extension - `jpg`, `jpeg`, `png`, `tif`, or `tiff`, in any case.
+     * @returns {void}
+     * @throws {TypeError} If `name` is empty, the bytes are unsupported, or the extension is unknown.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerImage: function (name, bytes, extension) {
       requireAssetName(name);
       bytes = normalizeBytes(bytes, "Image bytes");
