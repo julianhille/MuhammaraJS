@@ -1316,6 +1316,10 @@ const Kite = class Kite {
     return [this._T.x, this._T.y];
   }
 
+  /**
+   * The line from K to E.
+   * @returns {Line} The segment.
+   */
   get KE() {
     // line segment between points K and E
     if (!this._KE) {
