@@ -961,6 +961,14 @@ export function createReaderFactory({
         if (!object) throw new Error("Unable to read object");
         return object;
       },
+      /**
+       * Parses a page dictionary.
+       * @param {number} index - Zero-based page index.
+       * @returns {PDFDictionary} The page dictionary.
+       * @throws {TypeError} If `index` is not a non-negative integer.
+       * @throws {RangeError} If the page does not exist.
+       * @throws {Error} If the reader has ended.
+       */
       parsePageDictionary: function (index) {
         requireReader();
         requireIndex(index, "Page index");
