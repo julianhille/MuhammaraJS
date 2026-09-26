@@ -362,12 +362,19 @@ exports._lineCap = function _lineCap(type) {
   return cap;
 };
 
+/**
+ * The PDF line join number of a `Recipe.LineJoin` value.
+ * @private
+ * @param {Recipe.LineJoin} [type] - The join style; round when omitted or unknown.
+ * @returns {number} 0 for miter, 1 for round, 2 for bevel.
+ */
 exports._lineJoin = function _lineJoin(type) {
   const round = 1;
   let join = round;
 
   if (type) {
-    const joinStyle = ["miter", "round", "bevel"];
+    // In PDF line join order.
+    const joinStyle = [LineJoin.MITER, LineJoin.ROUND, LineJoin.BEVEL];
     const joinType = joinStyle.indexOf(type);
     join = joinType !== -1 ? joinType : round;
   }
