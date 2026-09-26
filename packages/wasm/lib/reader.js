@@ -372,6 +372,11 @@ export function createReaderFactory({
           if (!result) throw new Error("key not found");
           return wrapObject(result, parser);
         };
+        /**
+         * Reads every dictionary value, resolving indirect references.
+         * @returns {Record<string, PDFObject>} Values keyed by key name.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         object.toJSObject = function () {
           object.getType();
           return Object.fromEntries(
