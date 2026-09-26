@@ -374,6 +374,19 @@ export function createWriterSupport({
     };
   }
 
+  /**
+   * Validates annotation options and runs a native annotation call.
+   * @param {Function} call - Native call receiving the encoded arguments.
+   * @param {string} subtype - Annotation subtype, such as `Text` or `Highlight`.
+   * @param {number} left - Rectangle left.
+   * @param {number} bottom - Rectangle bottom.
+   * @param {number} right - Rectangle right, not less than `left`.
+   * @param {number} top - Rectangle top, not less than `bottom`.
+   * @param {AnnotationOptions} [options={}] - Contents, color, border, and flags.
+   * @returns {number} The annotation object ID.
+   * @throws {TypeError} If the subtype, rectangle, or an option is invalid.
+   * @throws {Error} If the annotation cannot be created.
+   */
   function createAnnotation(
     call,
     subtype,
