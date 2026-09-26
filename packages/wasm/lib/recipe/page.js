@@ -204,7 +204,18 @@ function assertSupportedModifiedGenerations(tree, pageLabels, root, writer) {
   }
 }
 
-/** Rejects retained structures that reference a deleted page. @private */
+/**
+ * Rejects retained structures that reference a deleted page.
+ * @private
+ * @param {PDFReader} parser - Source parser.
+ * @param {PDFObject} value - Value to scan.
+ * @param {Set<number>} deletedPageIDs - Object IDs of deleted pages.
+ * @param {Set<number>} skippedObjectIDs - Objects that are rewritten anyway.
+ * @param {Set<number>} [visited] - Visited object IDs.
+ * @param {number} [depth=0] - Recursion depth.
+ * @returns {void}
+ * @throws {Error} If a deleted page is referenced or nesting is too deep.
+ */
 function assertNoDeletedPageReferences(
   parser,
   value,
