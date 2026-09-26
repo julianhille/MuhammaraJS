@@ -1308,6 +1308,10 @@ const Kite = class Kite {
   get Kp() {
     return [this._K.x, this._K.y];
   } // no different than K or T, just here for consistency usage
+  /**
+   * Point T for a mirrored head; the same as T.
+   * @returns {number[]} The [x, y] point.
+   */
   get Tp() {
     return [this._T.x, this._T.y];
   }
