@@ -570,6 +570,11 @@ export function createWriterToModifyFactory({
         BT: function () {
           return operator("BT", 32);
         },
+        /**
+         * Ends a text object (`ET`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         ET: function () {
           return operator("ET", 33);
         },
