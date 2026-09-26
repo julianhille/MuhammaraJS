@@ -1155,6 +1155,11 @@ export function createWriterToModifyFactory({
         });
         additionalInfo.delete(key);
       },
+      /**
+       * Removes every custom Info dictionary entry.
+       * @returns {void}
+       * @throws {Error} If the modifier has ended or the entries cannot be cleared.
+       */
       clearAdditionalInfoEntries: function () {
         requireOpen();
         if (!module._muhammara_wasm_modifier_clear_info(modifier))
