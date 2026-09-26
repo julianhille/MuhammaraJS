@@ -127,6 +127,10 @@ export function createValueTypes({ module, withString, withBytes }) {
       return Array.from(this._bytes);
     }
 
+    /**
+     * Decodes the text string.
+     * @returns {string} The text.
+     */
     toString() {
       return textStringValue(this._bytes);
     }
