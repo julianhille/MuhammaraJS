@@ -2963,6 +2963,13 @@ export function createWriterFactory({
       }
     }
 
+    /**
+     * Reads the bytes of a registered image or PDF, or normalizes given bytes.
+     * @param {string|ByteSource} value - Registered name or bytes.
+     * @returns {Uint8Array} The bytes.
+     * @throws {TypeError} If the name is not registered or the bytes are unsupported.
+     * @throws {Error} If the writer has ended.
+     */
     function imageBytes(value) {
       if (typeof value !== "string")
         return normalizeBytes(value, "Image bytes");
