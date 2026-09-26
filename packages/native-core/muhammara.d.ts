@@ -880,6 +880,14 @@ declare namespace muhammara {
      * @throws {TypeError} If the copying context has ended.
      */
     appendPDFPageFromPDF(sourcePageNumber: number): number;
+    /**
+     * Draws a source page into a form XObject of this document.
+     * @param targetForm - The target form.
+     * @param sourcePageIndex - The zero-based source page index.
+     * @throws {TypeError} If the arguments are not a form and a number, or the
+     *   source page does not exist.
+     * @throws {TypeError} If the copying context has ended.
+     */
     mergePDFPageToFormXObject(
       targetForm: FormXObject,
       sourcePageIndex: number,
