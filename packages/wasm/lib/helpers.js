@@ -298,6 +298,12 @@ export function createHelpers(module) {
     };
   }
 
+  /**
+   * Runs a callback with numbers copied into Wasm memory as doubles.
+   * @param {number[]} values - Numbers to copy.
+   * @param {function(number): *} callback - Receives the pointer, or 0 for an empty list.
+   * @returns {*} The callback result; the copy is freed afterwards.
+   */
   function withDoubles(values, callback) {
     var pointer = values.length ? module._malloc(values.length * 8) : 0;
     try {
