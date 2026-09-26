@@ -52,6 +52,7 @@ describe("Recipe prototype", function () {
       "_setSeparationColor",
       "_setSkewContext",
       "_startDictionary",
+      "_strokePolyline",
       "_transformColor",
       "_validateAnnot",
       "_writeAnnotation",

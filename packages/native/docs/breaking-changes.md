@@ -27,6 +27,15 @@ This page collects the compatibility changes formerly maintained in the README.
   `TypeError: Annotation colors need one, three, or four numbers from 0 to 255`.
   Pass one, three, or four numbers from 0 to 255; three-number arrays are
   unchanged [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
+- Recipe `line()` strokes all of its points as one path, as in
+  `@muhammara/wasm`; 6.x stroked every segment as its own path. Segments now
+  meet at the `lineJoin` instead of overlapping their caps, so corners drawn
+  with `butt` caps are closed and a translucent line no longer darkens where
+  segments overlap. A Separation line writes one form XObject instead of one
+  per segment. To keep separate segments, draw each with its own `moveTo()`
+  and `lineTo()`
+  [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+
 - An unknown colorspace throws a `TypeError`, as in `@muhammara/wasm`. The
   low-level drawing and `writeText()` color options throw
   `TypeError: colorspace must be rgb, gray, or cmyk` for a numeric or named

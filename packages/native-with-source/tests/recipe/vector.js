@@ -442,14 +442,38 @@ describe("Vector", () => {
       .endPage()
       .endPDF();
     const reader = muhammara.createReader(output);
-    const segments = getPaintBlocks(reader, 0).flatMap((block) =>
-      [...block.matchAll(/(\S+) (\S+) m\s+(\S+) (\S+) l/g)].map((match) =>
+    // One path through every point, as Wasm draws it.
+    const points = getPaintBlocks(reader, 0).flatMap((block) =>
+      [...block.matchAll(/(\S+) (\S+) [ml]\b/g)].map((match) =>
         match.slice(1).map(Number),
       ),
     );
-    assert.deepEqual(segments, [
-      [20, 180, 180, 180],
-      [180, 180, 180, 100],
+    assert.deepEqual(points, [
+      [20, 180],
+      [180, 180],
+      [180, 100],
     ]);
+  });
+
+  it("strokes a Separation line through every point as one path", () => {
+    const output = path.join(__dirname, "../output/line-separation.pdf");
+    new Recipe("new", output)
+      .createPage(200, 200)
+      .chroma("Spot", [255, 128, 0], "separation")
+      .line(
+        [
+          [20, 20],
+          [180, 20],
+          [180, 100],
+        ],
+        { stroke: "Spot", colorspace: "separation" },
+      )
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    const content = getPaintBlocks(reader, 0).join("\n");
+    // One path selects the ink once, instead of one form per segment.
+    assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 1);
+    assert.equal(content.match(/\S+ \S+ [ml]\b/g)?.length, 3);
   });
 });

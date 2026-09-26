@@ -78,6 +78,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   RGB, so `[128]` wrote dark blue and CMYK arrays lost a channel. Values
   outside 0 to 255 and other array lengths now throw a `TypeError`; pass one,
   three, or four numbers from 0 to 255 [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+- Stroke a Recipe `line()` through all of its points as one path, as
+  `@muhammara/wasm` does, instead of one path per segment. Segments now meet
+  at the `lineJoin` instead of overlapping their caps, a translucent line no
+  longer darkens where segments overlap, and a Separation line writes one form
+  XObject instead of one per segment. To keep separate segments, draw each
+  with its own `moveTo()` and `lineTo()` [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw a `TypeError` for an unknown colorspace, as `@muhammara/wasm` does.
   The low-level drawing and `writeText()` color options throw
   `colorspace must be rgb, gray, or cmyk` for a numeric or named `color`

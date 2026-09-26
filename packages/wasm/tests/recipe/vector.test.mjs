@@ -365,4 +365,28 @@ describe("Recipe vector", function () {
       [180, 100],
     ]);
   });
+
+  it("strokes a Separation line through every point as one path", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var pdf = new Recipe({ compress: false })
+      .createPage(200, 200)
+      .chroma("Spot", [255, 128, 0], "separation")
+      .line(
+        [
+          [20, 20],
+          [180, 20],
+          [180, 100],
+        ],
+        { stroke: "Spot", colorspace: "separation" },
+      )
+      .endPage()
+      .endPDF();
+    writeOutput("line-separation", pdf);
+    var reader = muhammara.createReader(pdf);
+    var content = getPaintBlocks(muhammara, reader, 0).join("\n");
+    // One path selects the ink once, as native does.
+    assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 1);
+    assert.equal(content.match(/\S+ \S+ [ml]\b/g)?.length, 3);
+  });
 });
