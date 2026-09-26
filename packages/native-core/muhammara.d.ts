@@ -239,6 +239,10 @@ declare namespace muhammara {
      * @returns The bytes read; shorter than requested at the end.
      */
     read(inAmount: number): Buffer;
+    /**
+     * Closes the file.
+     * @param inCallback - Called once the file is closed.
+     */
     close(inCallback?: () => void): void;
   }
 
