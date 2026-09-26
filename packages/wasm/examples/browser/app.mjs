@@ -121,6 +121,10 @@ function summary(value) {
   };
 }
 
+/**
+ * Previews the selected output PDF and offers it for download.
+ * @returns {void}
+ */
 function showResult() {
   if (!result) return;
   var selected = result.example
