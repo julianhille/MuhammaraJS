@@ -53,6 +53,11 @@ export class Line {
       charSpacing(this.value, this.options.charSpace)
     );
   }
+  /**
+   * Reports whether a word still fits on the line.
+   * @param {string} value - Word.
+   * @returns {boolean} Whether it fits within `width`.
+   */
   canFit(value) {
     return (
       this.currentWidth + new Word(value, this.measure, this.options).width <=
