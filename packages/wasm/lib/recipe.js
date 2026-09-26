@@ -322,6 +322,8 @@ export function createRecipeFactory({
     /**
      * Saves the active PDF graphics state.
      * @private
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the state cannot be saved.
      */
     _save() {
       if (this._pageContext) return this._pageContext.q() && this;
