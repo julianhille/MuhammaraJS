@@ -295,7 +295,19 @@ function assertNoDeletedPageReferences(
   }
 }
 
-/** Checks retained document structures for deleted-page references. @private */
+/**
+ * Checks retained document structures for deleted-page references.
+ * @private
+ * @param {PDFReader} parser - Source parser.
+ * @param {object} catalog - Catalog entries.
+ * @param {number} rootID - Catalog object ID.
+ * @param {object} tree - Page-tree root.
+ * @param {object|null} pageLabels - Prepared page labels.
+ * @param {Set<number>} deletedPageIDs - Object IDs of deleted pages.
+ * @param {number} sourcePageCount - Pages in the source.
+ * @returns {void}
+ * @throws {Error} If a retained structure references a deleted page.
+ */
 function validateDeletedPageReferences(
   parser,
   catalog,
