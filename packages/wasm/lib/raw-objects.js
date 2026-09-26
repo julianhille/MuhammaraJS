@@ -693,6 +693,12 @@ export function createRawObjectsContext({
         activeStream = stream;
         return streamContext(stream);
       },
+      /**
+       * Ends the active stream and the indirect object that holds it.
+       * @param {PDFStream} stream - The stream from `startPDFStream()`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or `stream` is not the active one.
+       */
       endPDFStream: function (stream) {
         requireContext();
         if (
