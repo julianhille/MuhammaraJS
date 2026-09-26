@@ -1048,6 +1048,11 @@ export function createWriterToModifyFactory({
         });
       };
       addTextShowingOperators(result, () => requireContext(result), {
+        /**
+         * Runs a native string text-showing operator.
+         * @param {...number} args - Operator kind, encoding, spacing, and text pointer and length.
+         * @returns {boolean} Whether the operator was written.
+         */
         text: (...args) =>
           module._muhammara_wasm_modifier_show_text_operator(modifier, ...args),
         glyphs: (...args) =>
