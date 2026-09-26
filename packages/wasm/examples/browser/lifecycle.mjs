@@ -10,17 +10,17 @@
 /**
  * Optional byte assets chosen in the page.
  * @typedef {object} ExampleAssets
- * @property {Uint8Array} [font] - TrueType or OpenType font bytes.
- * @property {Uint8Array} [jpeg] - JPEG bytes.
- * @property {Uint8Array} [png] - PNG bytes.
- * @property {Uint8Array} [tiff] - TIFF bytes.
+ * @property {Uint8Array<ArrayBuffer>} [font] - TrueType or OpenType font bytes.
+ * @property {Uint8Array<ArrayBuffer>} [jpeg] - JPEG bytes.
+ * @property {Uint8Array<ArrayBuffer>} [png] - PNG bytes.
+ * @property {Uint8Array<ArrayBuffer>} [tiff] - TIFF bytes.
  */
 
 /**
  * A generated example PDF and its parsed-back summary.
  * @typedef {object} ExampleResult
  * @property {string} [filename] - Suggested download name.
- * @property {Uint8Array} bytes - The PDF bytes.
+ * @property {Uint8Array<ArrayBuffer>} bytes - The PDF bytes.
  * @property {object} summary - Values read back from the PDF.
  */
 
@@ -72,7 +72,7 @@ export class ObjectUrlStore {
 
   /**
    * Replaces the current object URL with one for new bytes.
-   * @param {Uint8Array} bytes - File bytes.
+   * @param {Uint8Array<ArrayBuffer>} bytes - File bytes.
    * @param {string} [type="application/pdf"] - MIME type.
    * @returns {string} The new object URL.
    */

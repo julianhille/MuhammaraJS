@@ -14,7 +14,7 @@ function assert(condition, message) {
 
 /**
  * Runs the Recipe example on the low-level output.
- * @param {import("./lifecycle.mjs").ExampleOptions & {source: Uint8Array}} options - Source PDF, assets, signal, and progress.
+ * @param {import("./lifecycle.mjs").ExampleOptions & {source: Uint8Array<ArrayBuffer>}} options - Source PDF, assets, signal, and progress.
  * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The Recipe PDF and its summary.
  * @throws {Error} If a check fails.
  * @throws {DOMException} If the run is cancelled.

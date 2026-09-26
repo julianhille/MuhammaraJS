@@ -110,7 +110,7 @@ function assertAsset(value, message) {
 
 /**
  * Parses a generated PDF back and summarizes it.
- * @param {Uint8Array} bytes - PDF bytes.
+ * @param {Uint8Array<ArrayBuffer>} bytes - PDF bytes.
  * @param {object} [details={}] - Extra summary values; `expectedPageWidths` is checked.
  * @returns {Promise<object>} Page count, object count, PDF level, page widths, and `details`.
  * @throws {Error} If the page widths differ from `expectedPageWidths`.
