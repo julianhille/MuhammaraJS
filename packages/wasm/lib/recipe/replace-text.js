@@ -7,12 +7,6 @@ var ePDFObjectIndirectObjectReference =
 var WHITESPACE = "\0\t\n\f\r ";
 var DELIMITERS = "()<>[]{}/%";
 
-/**
- * Check whether a content-stream character is PDF whitespace.
- *
- * @param {string} character One character.
- * @returns {boolean} True for PDF whitespace.
- */
 // Content-stream operators this module interprets.
 var PdfOperator = Object.freeze({
   SHOW_TEXT: "Tj",
@@ -44,6 +38,12 @@ var PdfKeyword = Object.freeze({
   NULL: "null",
 });
 
+/**
+ * Check whether a content-stream character is PDF whitespace.
+ *
+ * @param {string} character One character.
+ * @returns {boolean} True for PDF whitespace.
+ */
 function isWhitespace(character) {
   return character !== "" && WHITESPACE.includes(character);
 }
