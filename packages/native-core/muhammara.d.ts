@@ -3866,6 +3866,19 @@ declare namespace muhammara {
       options?: Recipe.AnnotOptions,
     ): Recipe;
 
+    /**
+     * Append pages from the other pdf to the current pdf. An active page is
+     * finished first, so appended pages follow it in the output.
+     * @param pdfSrc - The path for the other pdf.
+     * @param pages - ] - A one-based page; defaults to [.
+     * number or array of page numbers and inclusive ranges. Omitting it appends all
+     * pages; endpoints beyond the source are clamped to its final page.
+     * @returns The recipe instance.
+     * @throws {RangeError} If a selection is not a positive integer or a two-value
+     * range in ascending order.
+     * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+     * @throws {Error} If the source PDF cannot be read.
+     */
     appendPage(
       pdfSrc: string,
       pages?: number | (number | [number, number])[],
