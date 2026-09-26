@@ -1850,7 +1850,13 @@ declare namespace muhammara {
      *   context.
      */
     getAdditionalInfoEntry(key: string): string;
-    /** @param key Ignored; kept so 6.x calls that passed a key still compile. */
+    /**
+     * Returns every additional Info entry.
+     * @param key - Ignored; kept so 6.x calls that passed a key still compile.
+     * @returns The entries by key.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
     getAdditionalInfoEntries(key?: string): { [key: string]: string };
     /**
      * Sets the creation date.
