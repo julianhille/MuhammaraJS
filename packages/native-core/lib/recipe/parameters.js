@@ -57,6 +57,12 @@ this.mediumSizes = {
   sra4: [637.8, 907.09],
 };
 
+/**
+ * Initialize the page defaults (letter size, one-inch margins), the drawing
+ * position and the page-context state.
+ * @private
+ * @returns {void}
+ */
 exports._setParameters = function _setParameters() {
   this.debug = false;
   this.metadata = {
