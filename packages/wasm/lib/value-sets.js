@@ -140,3 +140,15 @@ export var RecipeStructureFormat = Object.freeze({
   STRING: "string",
   JSON: "json",
 });
+
+/** Recipe font style spellings; the one-letter forms are the registry keys. */
+export var RecipeFontStyle = Object.freeze({
+  REGULAR: "regular",
+  BOLD: "bold",
+  ITALIC: "italic",
+  BOLD_ITALIC: "bold-italic",
+  R: "r",
+  B: "b",
+  I: "i",
+  BI: "bi",
+});

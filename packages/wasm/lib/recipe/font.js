@@ -1,12 +1,13 @@
+import { RecipeFontStyle } from "../value-sets.js";
 function fontStyle(options = {}) {
   return (options.bold || options.isBold) &&
     (options.italic || options.isItalic)
-    ? "bi"
+    ? RecipeFontStyle.BI
     : options.italic || options.isItalic
-      ? "i"
+      ? RecipeFontStyle.I
       : options.bold || options.isBold
-        ? "b"
-        : "r";
+        ? RecipeFontStyle.B
+        : RecipeFontStyle.R;
 }
 
 /**

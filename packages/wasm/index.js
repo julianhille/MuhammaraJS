@@ -41,6 +41,7 @@ import {
   RecipeTableRowParity,
   RecipePageLayout,
   RecipeStructureFormat,
+  RecipeFontStyle,
 } from "./lib/value-sets.js";
 
 export {
@@ -56,6 +57,7 @@ export {
   PDFWStreamForBuffer,
   RecipeArrowAnchor,
   RecipeArrowType,
+  RecipeFontStyle,
   RecipeHorizontalAlignment,
   RecipeLineCap,
   RecipeLineJoin,

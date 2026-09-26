@@ -67,6 +67,16 @@ export interface PDFRecryptOptions {
 }
 export type RecipeFontStyle =
   "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
+export declare const RecipeFontStyle: {
+  readonly REGULAR: "regular";
+  readonly BOLD: "bold";
+  readonly ITALIC: "italic";
+  readonly BOLD_ITALIC: "bold-italic";
+  readonly R: "r";
+  readonly B: "b";
+  readonly I: "i";
+  readonly BI: "bi";
+};
 export type RecipeCoordinate = number | "center";
 export type RecipePosition = [number, number];
 /** Device color spaces Recipe draws with in WebAssembly. */

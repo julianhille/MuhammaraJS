@@ -7,6 +7,7 @@ import {
   PageBox,
   RecipeArrowAnchor,
   RecipeArrowType,
+  RecipeFontStyle,
   RecipeHorizontalAlignment,
   RecipeLineCap,
   RecipeLineJoin,
@@ -136,4 +137,8 @@ var EXPORTED_VALUE_SETS = [
   [RecipeTableRowParity, ["even", "odd"]],
   [RecipePageLayout, ["portrait", "landscape"]],
   [RecipeStructureFormat, ["string", "json"]],
+  [
+    RecipeFontStyle,
+    ["regular", "bold", "italic", "bold-italic", "r", "b", "i", "bi"],
+  ],
 ];
