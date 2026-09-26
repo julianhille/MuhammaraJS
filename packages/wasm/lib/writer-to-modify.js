@@ -270,6 +270,11 @@ export function createWriterToModifyFactory({
           requireContext(result);
           if (!page) throw new Error("Form XObject has no page content stream");
           return {
+            /**
+             * Returns a writer that appends raw bytes to the page content stream.
+             * @returns {ByteWriteStream} The byte writer.
+             * @throws {Error} If the content context is no longer active.
+             */
             getWriteStream: function () {
               return {
                 write: function (bytes) {
