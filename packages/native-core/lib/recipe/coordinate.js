@@ -1,16 +1,36 @@
+const { Coordinate } = require("../recipe-constants");
+
+/**
+ * Look up the metadata of a page, or of the active page.
+ * @private
+ * @param {Recipe} recipe - The recipe instance.
+ * @param {number} [pageNumber] - The one-based page number; defaults to the active page.
+ * @returns {Object} The page metadata.
+ * @throws {TypeError} If there is no such page, for example before createPage().
+ */
+function pageMetadata(recipe, pageNumber) {
+  const metadata = recipe.metadata[pageNumber || recipe.pageNumber];
+  if (!metadata) {
+    throw new TypeError(
+      "No page is active; call createPage() or editPage() first",
+    );
+  }
+  return metadata;
+}
+
+/**
+ * Replace `Recipe.Coordinate.CENTER` coordinates with the page center.
+ * @private
+ * @param {number|"center"} x - The x coordinate.
+ * @param {number|"center"} y - The y coordinate.
+ * @param {number} [pageNumber] - The one-based page number; defaults to the active page.
+ * @returns {number[]} The numeric [x, y].
+ * @throws {TypeError} If no page is active.
+ */
 exports._centrify = function _centrify(x, y, pageNumber) {
-  pageNumber = pageNumber || this.pageNumber;
-  const { width, height } = this.metadata[pageNumber];
-  switch (x) {
-    case "center":
-      x = width / 2;
-      break;
-  }
-  switch (y) {
-    case "center":
-      y = height / 2;
-      break;
-  }
+  const { width, height } = pageMetadata(this, pageNumber);
+  if (x === Coordinate.CENTER) x = width / 2;
+  if (y === Coordinate.CENTER) y = height / 2;
 
   return [x, y];
 };

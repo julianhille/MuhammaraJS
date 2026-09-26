@@ -93,7 +93,18 @@ var ChromaCommand = Object.freeze({
   LOAD: "!load",
 });
 
+/**
+ * Named Recipe coordinates.
+ * @readonly
+ * @enum {string}
+ */
+var Coordinate = Object.freeze({
+  /** The horizontal or vertical center of the page. */
+  CENTER: "center",
+});
+
 module.exports = {
+  Coordinate,
   Colorspace,
   AnnotSubtype,
   AnnotFlag,

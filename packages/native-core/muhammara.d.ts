@@ -1620,6 +1620,10 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** Named coordinates, accepted wherever a `RecipeCoordinate` is. */
+    static readonly Coordinate: {
+      readonly CENTER: "center";
+    };
     /** Colorspaces accepted by the `colorspace` options. */
     static readonly Colorspace: {
       readonly RGB: "rgb";
