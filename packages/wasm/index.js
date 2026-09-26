@@ -28,6 +28,7 @@ import {
   PageBox,
   TextEncoding,
   DrawingPathType,
+  RecipeTextWrap,
 } from "./lib/value-sets.js";
 
 export {
@@ -41,6 +42,7 @@ export {
   PageBox,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
+  RecipeTextWrap,
   TextEncoding,
 };
 

@@ -47,3 +47,11 @@ export var DrawingPathType = Object.freeze({
   FILL: "fill",
   CLIP: "clip",
 });
+
+/** How a Recipe text box handles text that does not fit its width. */
+export var RecipeTextWrap = Object.freeze({
+  AUTO: "auto",
+  CLIP: "clip",
+  TRIM: "trim",
+  ELLIPSIS: "ellipsis",
+});

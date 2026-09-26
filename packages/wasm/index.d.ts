@@ -296,6 +296,14 @@ export interface RecipeOverlayOptions {
   fitWidth?: boolean;
   fitHeight?: boolean;
 }
+/** How a Recipe text box handles text that does not fit its width. */
+export type RecipeTextWrap = "auto" | "clip" | "trim" | "ellipsis";
+export declare const RecipeTextWrap: {
+  readonly AUTO: "auto";
+  readonly CLIP: "clip";
+  readonly TRIM: "trim";
+  readonly ELLIPSIS: "ellipsis";
+};
 export interface RecipeTextBox {
   width?: number;
   height?: number;
@@ -303,7 +311,7 @@ export interface RecipeTextBox {
   padding?: number | [number, number?, number?, number?];
   lineHeight?: number;
   /** `clip` retains and clips the source, `trim` omits its non-fitting suffix, and `ellipsis` replaces it with `...`. */
-  wrap?: boolean | "auto" | "clip" | "trim" | "ellipsis";
+  wrap?: boolean | RecipeTextWrap;
   textAlign?:
     | "left"
     | "center"

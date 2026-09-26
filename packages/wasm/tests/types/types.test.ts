@@ -7,6 +7,7 @@ import {
   TextEncoding as TextEncodings,
 } from "../../index.js";
 import type {
+  RecipeTextWrap,
   TextEncoding,
   PageBox,
   PDFRectangle,
@@ -909,6 +910,9 @@ async function usesNamedValueSets() {
   var exportedBox: PageBox = PageBoxes.TRIM;
   var exportedEncoding: TextEncoding = TextEncodings.HEX;
   void [exportedColorspace, exportedFit, exportedBox, exportedEncoding];
+  var wrapMode: RecipeTextWrap = "ellipsis";
+  var wrapBox: RecipeTextBox = { width: 10, wrap: wrapMode };
+  void wrapBox;
 }
 
 void usesNamedValueSets;

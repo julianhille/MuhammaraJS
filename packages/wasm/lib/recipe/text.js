@@ -1,3 +1,4 @@
+import { RecipeTextWrap } from "../value-sets.js";
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 
@@ -71,12 +72,12 @@ function lines(value, width, measure, options, wrap) {
             width;
         if (fits || !line) {
           line = next;
-        } else if (wrap === "auto" || wrap === true) {
+        } else if (wrap === RecipeTextWrap.AUTO || wrap === true) {
           result.push({ text: trimBreakableEnd(line), last: false });
           line = word;
-        } else if (wrap === "clip") {
+        } else if (wrap === RecipeTextWrap.CLIP) {
           line = next;
-        } else if (wrap === "ellipsis") {
+        } else if (wrap === RecipeTextWrap.ELLIPSIS) {
           line = ellipsize(line || word, width, measure, options);
           truncated = true;
         } else {
@@ -85,7 +86,7 @@ function lines(value, width, measure, options, wrap) {
       });
       if (line || !result.length) {
         result.push({
-          text: wrap === "clip" ? line : trimBreakableEnd(line),
+          text: wrap === RecipeTextWrap.CLIP ? line : trimBreakableEnd(line),
           last: true,
         });
       }

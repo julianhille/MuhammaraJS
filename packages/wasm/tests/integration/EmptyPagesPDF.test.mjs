@@ -5,6 +5,7 @@ import {
   DrawingPathType,
   ImageFitPolicy,
   PageBox,
+  RecipeTextWrap,
   TextEncoding,
 } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
@@ -107,4 +108,5 @@ var EXPORTED_VALUE_SETS = [
   [PageBox, ["media", "crop", "bleed", "trim", "art"]],
   [TextEncoding, ["text", "code", "hex"]],
   [DrawingPathType, ["stroke", "fill", "clip"]],
+  [RecipeTextWrap, ["auto", "clip", "trim", "ellipsis"]],
 ];
