@@ -1,4 +1,11 @@
+const { Colorspace } = require("../recipe-constants");
+
+/**
+ * Writes device color operators for a color model.
+ * @private
+ */
 const Color = class Color {
+  /** Not meant to be instantiated; use the static methods. */
   constructor() {}
 
   static fill(ctx, colorModel) {
