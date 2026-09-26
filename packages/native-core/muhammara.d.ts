@@ -877,6 +877,12 @@ declare namespace muhammara {
      * @throws {TypeError} If key is not a single string.
      */
     writeKey(key: string): DictionaryContext;
+    /**
+     * Writes a name as the value of the last key.
+     * @param nameValue - The name, without a leading slash.
+     * @returns This dictionary context.
+     * @throws {TypeError} If nameValue is not a single string.
+     */
     writeNameValue(nameValue: string): this;
     writeRectangleValue(values: Array<number>): this;
     writeRectangleValue(a: number, b: number, c: number, d: number): this;
