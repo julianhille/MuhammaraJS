@@ -442,6 +442,13 @@ exports._startDictionary = function _startDictionary() {
   this.dictionaryContext = this.objectsContext.startDictionary();
 };
 
+/**
+ * End the annotation dictionary started by _startDictionary() and record its
+ * object ID for the page.
+ * @private
+ * @param {number} pageNumber - The one-based page number.
+ * @returns {number} The object ID of the annotation.
+ */
 exports._endDictionary = function _endDictionary(pageNumber) {
   this.objectsContext.endDictionary(this.dictionaryContext).endIndirectObject();
   const pageIndex = pageNumber - 1;
