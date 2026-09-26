@@ -1533,14 +1533,17 @@ const Line = class Line {
     return ep === 1 ? this._pt1 : ep === 2 ? this._pt2 : null;
   }
 
+  /**
+   * @returns {Point} The midpoint of the segment.
+   */
   get midpoint() {
     if (!this._midpoint) {
       let dx = (this._pt2.x - this._pt1.x) / 2;
       let dy = (this._pt2.y - this._pt1.y) / 2;
-      this._midPoint = new Point(this._pt1.x + dx, this._pt1.y + dy);
+      this._midpoint = new Point(this._pt1.x + dx, this._pt1.y + dy);
     }
 
-    return this._midPoint;
+    return this._midpoint;
   }
 
   /**
