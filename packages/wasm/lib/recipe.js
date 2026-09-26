@@ -38,10 +38,11 @@ import { createSecurityMethods, permission } from "./recipe/security.js";
 import { createReplaceTextMethods } from "./recipe/replace-text.js";
 import { standardInfoKeys } from "./recipe-info.js";
 
-/** Creates the high-level Recipe PDF composition factory. */
 /**
  * Packs a Recipe color model for the text export: a color-space index (0 gray,
  * 1 RGB, 2 CMYK) and one byte per component, as PDFWriter expects.
+ * @param {{colorspace: DeviceColorSpace, values: number[]}} model - Resolved color.
+ * @returns {{space: number, value: number}} The packed color.
  */
 function textColor(model) {
   return {
