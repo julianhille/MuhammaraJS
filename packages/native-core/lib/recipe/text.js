@@ -1348,10 +1348,21 @@ function nextWord(text, brk, previousPosition, pathOptions) {
   return new Word(nextWord, pathOptions);
 }
 
+/**
+ * Handle the first word that does not fit a line when wrapping is off: CLIP
+ * keeps it for the clipping region, ELLIPSIS shortens it with "…", and TRIM
+ * drops it.
+ * @private
+ * @param {Object} textBox - The text box with its wrap mode.
+ * @param {Line} line - The full line; updated in place.
+ * @param {Word} word - The word that did not fit.
+ * @param {Object} pathOptions - The resolved text options.
+ * @returns {void}
+ */
 function elideNonFittingText(textBox, line, word, pathOptions) {
-  if (textBox.wrap === "clip") {
+  if (textBox.wrap === TextWrap.CLIP) {
     line.addWord(word);
-  } else if (textBox.wrap === "ellipsis") {
+  } else if (textBox.wrap === TextWrap.ELLIPSIS) {
     // This is more complicated than the other no-wrap options.
     // It makes an initial attempt to take the word that was
     // too big and make it shrink in size until it and the
