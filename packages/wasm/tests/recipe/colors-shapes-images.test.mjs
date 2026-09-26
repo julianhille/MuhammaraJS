@@ -244,6 +244,45 @@ describe("Recipe colors, shapes, and images", function () {
     recipe.endPage().endPDF();
   });
 
+  it("strokes a filled shape with its color, not the fill", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var colors = { fill: "#ff0000", color: "#0000ff" };
+    var bytes = new Recipe({ compress: false })
+      .createPage(300, 300)
+      .rectangle(10, 10, 40, 40, colors)
+      .circle(100, 30, 20, colors)
+      .ellipse(160, 30, 20, 10, colors)
+      .arc(220, 30, 20, 0, 90, colors)
+      .polygon(
+        [
+          [10, 100],
+          [50, 100],
+          [30, 140],
+        ],
+        colors,
+      )
+      .endPage()
+      .endPDF();
+    var reader = muhammara.createReader(bytes);
+    var content = [];
+    for (var id = 1; id < reader.getXrefSize(); id++) {
+      var object = reader.parseNewObject(id);
+      if (!object || object.getType() !== muhammara.ePDFObjectStream) continue;
+      var input = reader.startReadingFromStream(object.toPDFStream());
+      var chunks = [];
+      while (input.notEnded()) chunks.push(...input.read(4096));
+      content.push(new TextDecoder("latin1").decode(new Uint8Array(chunks)));
+    }
+    reader.end();
+    var all = content.join("\n");
+    // Every shape fills red and strokes its border blue; native's rectangle
+    // sets each color twice.
+    assert.ok(all.match(/\b1 0 0 rg\b/g)?.length >= 5);
+    assert.ok(all.match(/\b0 0 1 RG\b/g)?.length >= 5);
+    assert.doesNotMatch(all, /\b1 0 0 RG\b/);
+  });
+
   ["new", "source", "edited"].forEach(function (mode) {
     it(`draws separation colors on ${mode} pages`, async function () {
       var Recipe = await getRecipe();
@@ -305,6 +344,9 @@ describe("Recipe colors, shapes, and images", function () {
         1,
       );
       assert.equal(recipe.knownColors.separation.SpotGreen, "00ff0000");
+      // colorName names only the painted color; no second definition of the
+      // ink with the default alternate.
+      assert.equal(raw.match(/\/Separation \/SpotGreen\b/g)?.length, 1);
       assert.equal(
         raw.match(/\/Separation \/SpotDefault \/DeviceRGB/g)?.length,
         1,

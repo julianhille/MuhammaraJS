@@ -91,9 +91,13 @@ exports._getPathOptions = function _getPathOptions(
     pathOptions.fill = pathOptions.fillModel.color;
   }
 
+  // A fill or stroke replaces the default color. Resolving that default under
+  // colorName would write an unused Separation color space for the ink.
+  const paintsColor =
+    options.color || options.colour || (!options.fill && !options.stroke);
   pathOptions.colorModel = this._transformColor(
     options.color || options.colour,
-    colorOpts,
+    paintsColor ? colorOpts : { ...colorOpts, colorName: undefined },
   );
   pathOptions.color = pathOptions.colorModel.color;
   pathOptions.colorspace = pathOptions.colorModel.colorspace;

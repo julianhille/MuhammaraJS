@@ -185,11 +185,13 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   if (options.stroke || options.color || !options.fill) {
     pathOptions.type = muhammara.DrawingPathType.STROKE;
 
-    if (pathOptions.stroke !== undefined) {
-      pathOptions.color = pathOptions.stroke;
-      pathOptions.colorspace = pathOptions.strokeModel.colorspace;
-      colorModel = pathOptions.strokeModel;
-    }
+    // The fill above may have replaced the color; stroke with `color`.
+    colorModel =
+      pathOptions.stroke !== undefined
+        ? pathOptions.strokeModel
+        : pathOptions.colorModel;
+    pathOptions.color = colorModel.color;
+    pathOptions.colorspace = colorModel.colorspace;
 
     // To honor the given width and height of the rectangle ...
 
@@ -409,9 +411,11 @@ exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
   }
 
   if (options.stroke || options.color || !options.fill) {
-    if (pathOptions.stroke !== undefined) {
-      colorModel = pathOptions.strokeModel;
-    }
+    // The fill above may have replaced colorModel; stroke with `color`.
+    colorModel =
+      pathOptions.stroke !== undefined
+        ? pathOptions.strokeModel
+        : pathOptions.colorModel;
 
     // To honor the given width and height of the enclosing rectangle ...
 
@@ -581,9 +585,11 @@ exports.arc = function arc(
   }
 
   if (options.stroke || options.color || !options.fill) {
-    if (pathOptions.stroke !== undefined) {
-      colorModel = pathOptions.strokeModel;
-    }
+    // The fill above may have replaced colorModel; stroke with `color`.
+    colorModel =
+      pathOptions.stroke !== undefined
+        ? pathOptions.strokeModel
+        : pathOptions.colorModel;
 
     // To honor the given width and height of the enclosing rectangle ...
 
