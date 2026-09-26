@@ -104,6 +104,13 @@ export function createRecipeFactory({
     return getFont(fonts, { ...options, font: name });
   }
 
+  /**
+   * Calls a Recipe export and throws when it reports failure.
+   * @param {string} name - Export name.
+   * @param {...*} args - Export arguments.
+   * @returns {void}
+   * @throws {Error} If the export returns a falsy value.
+   */
   function call(name, ...args) {
     if (!module[name](...args)) {
       throw new Error(`Muhammara WebAssembly operation failed: ${name}`);
