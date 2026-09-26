@@ -11,6 +11,22 @@ This page collects the compatibility changes formerly maintained in the README.
   misspelled name or hex without the `#`. In 6.x those colors were drawn black,
   and so was every `#rrggbb` string. Pass a CSS color name, a `#rrggbb` string,
   or a 24-bit number such as `0xff0000` [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
+- Recipe `annot()` and `comment()`, and the `underline`, `strikeOut`, and
+  `highlight` annotations of `text()`, throw
+  `TypeError: Unknown annotation color (<value>)` when `color` is not a known
+  color. In 6.x an unknown color, such as a misspelled name, silently wrote the
+  default color. Known colors are `#rrggbb`, `%r,g,b`, colors registered with
+  `chroma()`, and CSS color names in any case; a CSS name such as `"navy"` now
+  writes that color instead of the default. Gray `#rr`, CMYK `#ccmmyykk`, and
+  numbers throw too. `text()` checks its markup annotations before drawing any
+  text. Fix the name, or register it with `chroma()` first [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
+- An annotation `color` array with one number is written as a gray, and one
+  with four numbers as a CMYK annotation color. In 6.x both were misread as
+  RGB, so `[128]` wrote dark blue and CMYK arrays lost a channel. An array with
+  another length, or a value outside 0 to 255, throws
+  `TypeError: Annotation colors need one, three, or four numbers from 0 to 255`.
+  Pass one, three, or four numbers from 0 to 255; three-number arrays are
+  unchanged [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
 - Recipe `annot()` and `comment()` throw
   `Error: Unknown annotation flag (<name>)` when the `flag` option is not a
   `Recipe.AnnotFlag` value, such as a misspelled name. In 6.x the annotation was

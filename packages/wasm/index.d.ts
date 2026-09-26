@@ -293,6 +293,7 @@ export interface RecipeAnnotationOptions {
   date?: string | Date;
   icon?: Recipe.AnnotIcon;
   name?: string;
+  /** `#rrggbb`, `%r,g,b`, a color registered with `chroma()`, a CSS color name, or one (gray), three (RGB), or four (CMYK) numbers from 0 to 255. Other values throw a `TypeError`. */
   color?: RecipeColor;
   border?: number | { width?: number; dash?: readonly number[] };
   borderWidth?: number;

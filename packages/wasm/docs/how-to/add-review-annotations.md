@@ -40,6 +40,9 @@ var outputBytes = pdf
 
 Set `opacity` from `0` (transparent) to `1` (opaque, the default). Recipe writes
 the annotation's `/CA` value; the `color` option sets its RGB color separately.
+It takes `#rrggbb`, `%r,g,b`, a color registered with `chroma()`, a CSS color
+name, or a gray, RGB, or CMYK array of numbers from 0 to 255; any other value
+throws a `TypeError`.
 On new and edited pages, both `comment()` and `annot()` accept `replies`, an array of objects
 with `text` and optional `title`, `date`, `subject`, `richText`, and `flag`. Each
 reply is a separate annotation linked to its parent through `/IRT` and `/RT /R`.

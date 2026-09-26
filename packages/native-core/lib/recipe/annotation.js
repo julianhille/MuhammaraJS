@@ -1,4 +1,10 @@
-const { AnnotSubtype, AnnotIcon, AnnotFlag } = require("../recipe-constants");
+const {
+  AnnotSubtype,
+  AnnotIcon,
+  AnnotFlag,
+  Colorspace,
+} = require("../recipe-constants");
+const { cssColors } = require("../css-colors");
 
 /**
  * Encodes annotation text as a PDF text string, so characters outside
@@ -30,10 +36,13 @@ function textString(writer, value) {
  * @param {boolean} [options.richText] - Display with rich text format, text will be transformed automatically, or you may pass in your own rich text starts with "<?xml..."
  * @param {Array} [options.replies] - Array of annotation replies, each with text and optional title, date, subject, richText, and flag.
  * @param {Recipe.AnnotFlag} [options.flag] - The flag property, one of the `Recipe.AnnotFlag` values.
+ * @param {string|number[]} [options.color] - The annotation color, as for
+ *   `annot()`.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If `options.color` is not a known color.
  */
 exports.comment = function comment(text = "", x, y, options = {}) {
-  validateAnnotationFlags(options);
+  this._validateAnnot(options);
   this.annotationsToWrite.push({
     subtype: AnnotSubtype.TEXT,
     pageNumber: this.pageNumber,
@@ -121,11 +130,13 @@ Object.defineProperty(exports, "linkPdf", { value: linkPdf });
  * @param {string} [options.subject] - The subject.
  * @param {Array} [options.replies] - Array of annotation replies
  * @param {number} [options.border] - The border width.
- * @param {string|number[]} [options.color] - The annotation color, as HexColor,
- *   PercentColor or DecimalColor.
+ * @param {string|number[]} [options.color] - The annotation color: a `#rrggbb`
+ *   HexColor, a `%r,g,b` PercentColor, a DecimalColor array, a color registered
+ *   with `chroma()`, or a CSS color name in any case.
  * @param {number} [options.opacity=1] - Annotation opacity from 0 (transparent) to 1 (opaque).
  * @param {boolean} [options.followOriginalPageRotation=false] - Preserve the original page rotation when positioning the annotation.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If `options.color` is not a known color.
  */
 exports.annot = function annot(
   x,
@@ -134,7 +145,7 @@ exports.annot = function annot(
   options = { text: "", width: 0, height: 0 },
 ) {
   const { text, width, height, replies } = options;
-  validateAnnotationFlags(options);
+  this._validateAnnot(options);
   this.annotationsToWrite.push({
     subtype,
     args: { text, x, y, width, height, options },
@@ -335,15 +346,12 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
   }
 
   if (color) {
-    const rgb = this._colorNumberToRGB(this._transformColor(color));
     this.dictionaryContext.writeKey("C");
-    this.objectsContext
-      .startArray()
-      .writeNumber(rgb.r / 255)
-      .writeNumber(rgb.g / 255)
-      .writeNumber(rgb.b / 255)
-      .endArray()
-      .endLine();
+    this.objectsContext.startArray();
+    annotationColorComponents(this, color).forEach((component) =>
+      this.objectsContext.writeNumber(component),
+    );
+    this.objectsContext.endArray().endLine();
   }
 
   /* Display Icon */
@@ -487,6 +495,89 @@ function validateAnnotationFlags(options) {
   if (!options) return;
   getFlagBitNumberByName(options.flag);
   (options.replies || []).forEach(validateAnnotationFlags);
+}
+
+/**
+ * Check annotation options that would otherwise only fail when the
+ * annotation is written, so an invalid one is never queued.
+ * @private
+ * @param {Object} [options] - Annotation options, with optional `replies`.
+ * @returns {void}
+ * @throws {Error} If a flag is neither a bit mask nor an AnnotFlag value.
+ * @throws {TypeError} If `options.color` is not a known color.
+ */
+exports._validateAnnot = function _validateAnnot(options) {
+  validateAnnotationFlags(options);
+  annotationColorComponents(this, (options || {}).color);
+};
+
+/**
+ * Resolve an annotation color to PDF color components, throwing instead of
+ * falling back to a default color so a typo never writes a wrong color.
+ * @private
+ * @param {Recipe} recipe - The Recipe with its registered colors.
+ * @param {string|number[]} [color] - A `#rrggbb` HexColor, a `%r,g,b`
+ *   PercentColor, a gray, RGB, or CMYK DecimalColor array with values from 0 to
+ *   255, an RGB color name registered with `chroma()`, or a CSS color name in
+ *   any case.
+ * @returns {number[]} One gray, three RGB, or four CMYK components from 0 to
+ *   1; empty when the color is omitted or empty.
+ * @throws {TypeError} If an array does not hold one, three, or four numbers
+ *   from 0 to 255, or any other value is not a known color.
+ */
+function annotationColorComponents(recipe, color) {
+  if (color === undefined || color === null || color === "") return [];
+  if (Array.isArray(color)) {
+    if (
+      ![1, 3, 4].includes(color.length) ||
+      !color.every((part) => Number.isFinite(part) && part >= 0 && part <= 255)
+    )
+      throw new TypeError(
+        "Annotation colors need one, three, or four numbers from 0 to 255",
+      );
+    return color.map((part) => part / 255);
+  }
+  var rgb = annotationColorCode(recipe, color);
+  if (rgb === undefined)
+    throw new TypeError(`Unknown annotation color (${String(color)})`);
+  return [(rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255].map(
+    (part) => part / 255,
+  );
+}
+
+/**
+ * Resolve an annotation color string to 0xRRGGBB. Registered Recipe colors
+ * win over CSS names, so `chroma()` can redefine one.
+ * @private
+ * @param {Recipe} recipe - The Recipe with its registered colors.
+ * @param {*} color - The color value.
+ * @returns {number|undefined} The color, or undefined when it is unknown.
+ */
+function annotationColorCode(recipe, color) {
+  if (typeof color !== "string") return undefined;
+  var registered = (recipe.knownColors || {})[Colorspace.RGB] || {};
+  if (Object.hasOwn(registered, color)) {
+    color = String(registered[color]);
+    if (/^[0-9a-f]{6}$/i.test(color)) color = `#${color}`;
+  } else if (Object.hasOwn(cssColors, color.toLowerCase())) {
+    return cssColors[color.toLowerCase()];
+  }
+  if (/^#[0-9a-f]{6}$/i.test(color)) return parseInt(color.slice(1), 16);
+  if (color.startsWith("%")) {
+    var parts = color.slice(1).split(",");
+    if (
+      parts.length === 3 &&
+      parts.every(
+        (part) =>
+          part.trim() !== "" && Number(part) >= 0 && Number(part) <= 100,
+      )
+    )
+      return parts.reduce(
+        (value, part) => (value << 8) | Math.round(Number(part) * 2.55),
+        0,
+      );
+  }
+  return undefined;
 }
 
 /**
