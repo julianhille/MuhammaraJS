@@ -1813,6 +1813,15 @@ exports.movedown = function movedown(lines = 1, returnCoords = false) {
   return returnCoords ? [this.x, this.y] : this;
 };
 
+/**
+ * Move a column layout so its first column starts at a point, keeping the
+ * column spacing.
+ * @private
+ * @param {Column[]} columns - The layout columns; updated in place.
+ * @param {number} x - The new x of the first column.
+ * @param {number} y - The new y of the first column.
+ * @returns {void}
+ */
 function adjustcolumnPosition(columns, x, y) {
   const ydiff = y - columns[0].y;
   for (const column of columns) {
