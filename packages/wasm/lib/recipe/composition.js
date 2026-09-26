@@ -236,7 +236,11 @@ export function createCompositionMethods({
   };
 }
 
-/** Creates Recipe's endPDF implementation, including deferred page insertions. */
+/**
+ * Creates Recipe's endPDF implementation, including deferred page insertions.
+ * @param {object} dependencies - Finalization, registry, and Recipe factory helpers.
+ * @returns {Function} The endPDF method.
+ */
 export function createEndPDF({
   endPDF,
   state,
