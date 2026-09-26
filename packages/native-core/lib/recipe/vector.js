@@ -674,6 +674,13 @@ exports.lineStyle = function lineStyle(options = {}) {
   return this._setLineStyle(options);
 };
 
+/**
+ * Write the given line style options to the page content context.
+ * @private
+ * @param {Object} [options] - The lineStyle() options.
+ * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
+ */
 exports._setLineStyle = function _setLineStyle(options = {}) {
   if (options.width !== undefined || options.lineWidth !== undefined)
     this.pageContext.w(options.width ?? options.lineWidth);
