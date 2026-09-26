@@ -307,6 +307,13 @@ export function createWriterSupport({
        * @throws {Error} If the owner is closed or the mapping fails.
        */
       addExtGStateMapping: (objectId) => addMapping(0, objectId),
+      /**
+       * Maps a font object into the resources dictionary.
+       * @param {number} objectId - Indirect object ID of the font.
+       * @returns {string} The resource name to use in content operators.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the owner is closed or the mapping fails.
+       */
       addFontMapping: (objectId) => addMapping(1, objectId),
       addColorSpaceMapping: (objectId) => addMapping(2, objectId),
       addPatternMapping: (objectId) => addMapping(3, objectId),
