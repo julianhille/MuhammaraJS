@@ -57,6 +57,13 @@ function ngon(sides, x, y, radius, options = {}) {
   );
 }
 
+/**
+ * Copies shape options for polygon(), without the link and with a default rotation origin.
+ * @param {object} options - Shape options.
+ * @param {number} x - Shape center x.
+ * @param {number} y - Shape center y.
+ * @returns {object} The polygon options.
+ */
 function polygonOptions(options, x, y) {
   var result = { ...options };
   delete result.link;
