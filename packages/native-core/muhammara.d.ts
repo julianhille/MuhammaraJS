@@ -783,6 +783,17 @@ declare namespace muhammara {
     Quote(text: string, options?: TextRenderOptions): this;
     Quote(glyphs: Glyph): this;
     Quote(text: string | Glyph): this;
+    /**
+     * Sets word and character spacing, moves to the next line and shows text;
+     * operator ".
+     * @param wordSpacing - The word spacing.
+     * @param characterSpacing - The character spacing.
+     * @param text - The text, or glyphs of the current font.
+     * @param options - Text encoding options.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {TypeError} If there is no content context.
+     */
     DoubleQuote(
       wordSpacing: number,
       characterSpacing: number,
