@@ -901,6 +901,14 @@ declare namespace muhammara {
      * @throws {TypeError} If the copying context has ended.
      */
     copyDirectObjectAsIs(objectToCopy: PDFObject): void;
+    /**
+     * Copies a source indirect object and the objects it references.
+     * @param objectId - The source object ID.
+     * @returns The object ID in this document.
+     * @throws {TypeError} If objectId is not a number or the object cannot be
+     *   copied.
+     * @throws {TypeError} If the copying context has ended.
+     */
     copyObject(objectId: number): number;
     copyDirectObjectWithDeepCopy(objectToCopy: PDFObject): Array<number>;
     copyNewObjectsForDirectObject(objectIds: Array<number>): void;
