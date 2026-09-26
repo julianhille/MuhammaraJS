@@ -253,6 +253,13 @@ function rotated(vertices, x, y, angle) {
   });
 }
 
+/**
+ * Extends the segment from `first` through `second` by a length.
+ * @param {number[]} first - Start point.
+ * @param {number[]} second - End point.
+ * @param {number} length - Extension length.
+ * @returns {number[]} The new end point.
+ */
 function extend(first, second, length) {
   var span = distance(first, second);
   return [
