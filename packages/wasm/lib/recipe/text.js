@@ -395,6 +395,13 @@ function ellipsize(value, width, measure, options) {
   return result + suffix;
 }
 
+/**
+ * Keeps the lines that fit a height and joins the rest for overflow handling.
+ * @param {{text: string}[]} entries - Laid-out lines.
+ * @param {number} availableHeight - Height of the box content.
+ * @param {number} lineHeight - Line height.
+ * @returns {{entries: object[], linesWritten: number, remainder: string}} Visible lines and the remaining text.
+ */
 function clipEntries(entries, availableHeight, lineHeight) {
   var linesWritten = Math.max(0, Math.floor(availableHeight / lineHeight));
   var visibleEntries = entries.slice(0, linesWritten);
