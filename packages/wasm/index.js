@@ -470,6 +470,15 @@ async function createRuntime(options) {
       return this.createReader(await normalizeBytesAsync(bytes, "PDF input"));
     },
     createModifier,
+    /**
+     * Opens a high-level modifier after reading an asynchronous byte source.
+     * @async
+     * @param {AsyncByteSource} bytes - PDF bytes, Blob, or File.
+     * @returns {Promise<CompactModifier>} The modifier.
+     * @throws {TypeError} If the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     * @throws {Error} If the PDF cannot be opened.
+     */
     createModifierAsync: async function (bytes) {
       return this.createModifier(await normalizeBytesAsync(bytes, "PDF input"));
     },
