@@ -1127,6 +1127,12 @@ declare namespace muhammara {
 
     type RecipeCoordinate = number | "center";
 
+    type HorizontalAlign = "left" | "center" | "right";
+    type VerticalAlign = "top" | "center" | "bottom";
+    /** Known alignments, with string compatibility for computed values. */
+    type ImageAlign =
+      HorizontalAlign | `${HorizontalAlign} ${VerticalAlign}` | (string & {});
+
     type RecipeFontStyle =
       "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
 
@@ -1226,7 +1232,8 @@ declare namespace muhammara {
       scale?: number;
       keepAspectRatio?: boolean;
       opacity?: number;
-      align?: string;
+      /** `Recipe.HorizontalAlign`, optionally followed by a space and `Recipe.VerticalAlign`. */
+      align?: ImageAlign;
       rotation?: number;
       rotationOrigin?: [number, number];
       skewX?: number;
@@ -1620,6 +1627,18 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** Horizontal alignments. */
+    static readonly HorizontalAlign: {
+      readonly LEFT: "left";
+      readonly CENTER: "center";
+      readonly RIGHT: "right";
+    };
+    /** Vertical alignments. */
+    static readonly VerticalAlign: {
+      readonly TOP: "top";
+      readonly CENTER: "center";
+      readonly BOTTOM: "bottom";
+    };
     /** Font styles for `registerFont()`. */
     static readonly FontStyle: {
       readonly REGULAR: "regular";

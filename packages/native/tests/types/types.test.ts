@@ -952,3 +952,7 @@ annotationRecipe.registerFont(
   "custom-bold.ttf",
   muhammara.Recipe.FontStyle.BOLD,
 );
+
+annotationRecipe.image("logo.png", "center", 10, {
+  align: `${muhammara.Recipe.HorizontalAlign.CENTER} ${muhammara.Recipe.VerticalAlign.TOP}`,
+});

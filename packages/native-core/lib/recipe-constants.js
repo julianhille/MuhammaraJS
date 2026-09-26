@@ -132,7 +132,31 @@ var FontStyle = Object.freeze({
   BOLD_ITALIC: "bold-italic",
 });
 
+/**
+ * Horizontal alignments, used as the first word of the image `align` option.
+ * @readonly
+ * @enum {string}
+ */
+var HorizontalAlign = Object.freeze({
+  LEFT: "left",
+  CENTER: "center",
+  RIGHT: "right",
+});
+
+/**
+ * Vertical alignments, used as the second word of the image `align` option.
+ * @readonly
+ * @enum {string}
+ */
+var VerticalAlign = Object.freeze({
+  TOP: "top",
+  CENTER: "center",
+  BOTTOM: "bottom",
+});
+
 module.exports = {
+  HorizontalAlign,
+  VerticalAlign,
   FontStyle,
   Permission,
   Coordinate,
