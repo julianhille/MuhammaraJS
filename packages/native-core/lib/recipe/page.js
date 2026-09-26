@@ -568,7 +568,18 @@ function writePageLabelsDictionary(
   objectsContext.endArray();
 }
 
-/** Reindexes page labels after removing source pages. @private */
+/**
+ * Reindex the page labels for the pages that remain after deletion, keeping
+ * each label's numbering continuous.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {Object} catalogDictionary - The catalog dictionary.
+ * @param {Set<number>} deletedPages - One-based page numbers to delete.
+ * @param {number} sourcePageCount - The source page count.
+ * @returns {Object|null} catalogValues, the PageLabels reference, the number
+ *   tree values and the normalized entries; null without page labels.
+ * @throws {Error} If PageLabels is not a valid number tree.
+ */
 function preparePageLabels(
   parser,
   catalogDictionary,
