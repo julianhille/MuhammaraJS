@@ -3093,6 +3093,19 @@ export function createWriterToModifyFactory({
         });
         return this;
       },
+      /**
+       * Writes an annotation object; register it with
+       * `registerAnnotationReferenceForNextPageWrite()` to show it on a page.
+       * @param {string} subtype - Annotation subtype, such as `Text` or `Highlight`.
+       * @param {number} left - Rectangle left.
+       * @param {number} bottom - Rectangle bottom.
+       * @param {number} right - Rectangle right.
+       * @param {number} top - Rectangle top.
+       * @param {AnnotationOptions} [options] - Contents, color, border, and flags.
+       * @returns {number} The annotation object ID.
+       * @throws {TypeError} If the subtype, rectangle, or an option is invalid.
+       * @throws {Error} If the modifier has ended or the annotation cannot be created.
+       */
       createAnnotation: function (subtype, left, bottom, right, top, options) {
         requireOpen();
         return createAnnotation(
