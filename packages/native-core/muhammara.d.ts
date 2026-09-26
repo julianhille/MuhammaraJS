@@ -702,6 +702,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     Ts(fontRise: number): this;
+    /**
+     * Begins a text object; operator BT.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     BT(): this;
     ET(): this;
     Td(tX: number, tY: number): this;
