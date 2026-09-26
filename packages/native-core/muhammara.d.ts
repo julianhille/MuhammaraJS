@@ -668,6 +668,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the reader has ended.
      */
     isEncrypted(): boolean;
+    /**
+     * Returns the size of the cross-reference table.
+     * @returns The number of cross-reference entries.
+     * @throws {TypeError} If the reader has ended.
+     */
     getXrefSize(): number;
     getXrefEntry(objectId: number): {
       objectPosition: number;
