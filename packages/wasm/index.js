@@ -417,6 +417,15 @@ async function createRuntime(options) {
       imageTypes.clear();
       pdfs.clear();
     },
+    /**
+     * Creates a one-page PDF with an empty page.
+     * @param {number} width - Page width in points.
+     * @param {number} height - Page height in points.
+     * @returns {Uint8Array} The PDF bytes.
+     * @throws {TypeError} If a size is not a finite number.
+     * @throws {RangeError} If a size is not positive or the output exceeds `maxOutputBytes`.
+     * @throws {Error} If the PDF cannot be created.
+     */
     createBlankPdf: function (width, height) {
       if (![width, height].every(Number.isFinite)) {
         throw new TypeError(
