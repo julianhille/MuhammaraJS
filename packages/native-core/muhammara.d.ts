@@ -525,6 +525,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     setOpacity(opacity: number): this;
+    /**
+     * Sets the stroke color space; operator CS.
+     * @param colorSpaceName - A color space name or resource name.
+     * @returns This context.
+     * @throws {TypeError} If colorSpaceName is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     CS(colorSpaceName: string): this;
     cs(colorSpaceName: string): this;
     SC(...colorComponents: number[]): this;
