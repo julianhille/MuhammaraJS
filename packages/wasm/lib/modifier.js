@@ -56,6 +56,11 @@ export function createModifierFactory({
       modifier = 0;
       ended = true;
     }
+    /**
+     * Rejects use of a finished modifier.
+     * @returns {void}
+     * @throws {Error} If the modifier has ended.
+     */
     function requireOpenModifier() {
       if (ended || !modifier) throw new Error("PDF modifier has ended");
     }
