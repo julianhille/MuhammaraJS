@@ -367,7 +367,18 @@ function validateDeletedPageReferences(
   });
 }
 
-/** Collects page-label number-tree entries. @private */
+/**
+ * Collects page-label number-tree entries.
+ * @private
+ * @param {PDFReader} parser - Source parser.
+ * @param {PDFDictionary} dictionary - Number-tree node.
+ * @param {object[]} entries - Receives `{pageIndex, value}` entries.
+ * @param {Set<number>} [visited] - Visited object IDs.
+ * @param {number} [objectID=0] - Node object ID.
+ * @param {number} [depth=0] - Recursion depth.
+ * @returns {void}
+ * @throws {Error} If the tree is cyclic, too deep, or malformed.
+ */
 function collectPageLabels(
   parser,
   dictionary,
