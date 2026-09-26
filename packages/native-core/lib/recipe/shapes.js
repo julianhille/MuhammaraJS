@@ -831,6 +831,10 @@ const Triangle = class Triangle {
   // The centroid is the point where all three medians of the triangle
   // intersect. A median is the line running from a vertex to the midpoint
   // of the side opposite the vertex.
+  /**
+   * The intersection of the medians.
+   * @returns {Point} The centroid.
+   */
   get centroid() {
     if (!this._centroid) {
       let AB = new Line(this._A, this._B);
