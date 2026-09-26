@@ -1234,6 +1234,12 @@ export function createWriterToModifyFactory({
           get: function () {
             return value;
           },
+          /**
+           * Writes the text entry.
+           * @param {string} nextValue - New value; other values are converted with `String()`.
+           * @returns {void}
+           * @throws {Error} If the modifier has ended or the entry cannot be set.
+           */
           set: function (nextValue) {
             nextValue = String(nextValue);
             setInfo(key, nextValue);
