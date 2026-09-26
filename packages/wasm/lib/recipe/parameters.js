@@ -53,7 +53,11 @@ export var mediumSizes = {
   sra4: [637.8, 907.09],
 };
 
-/** Normalizes a Recipe PDF version to a supported native version number. */
+/**
+ * Normalizes a Recipe PDF version to a supported native version number.
+ * @param {number} [version] - `1.4`-style or `14`-style version.
+ * @returns {number} The native version; 1.7 when unsupported or omitted.
+ */
 export function recipeVersion(version) {
   if (typeof version === "number" && version >= 1 && version < 3) {
     version *= 10;
