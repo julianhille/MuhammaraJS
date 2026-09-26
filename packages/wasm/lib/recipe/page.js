@@ -540,7 +540,16 @@ function writePageLabelsDictionary(
   objectsContext.endArray();
 }
 
-/** Reindexes page labels after removing source pages. @private */
+/**
+ * Reindexes page labels after removing source pages.
+ * @private
+ * @param {PDFReader} parser - Source parser.
+ * @param {PDFDictionary} catalogDictionary - Catalog.
+ * @param {Set<number>} deletedPages - One-based page numbers to delete.
+ * @param {number} sourcePageCount - Pages in the source.
+ * @returns {object|null} Reindexed labels, or null without labels.
+ * @throws {Error} If the labels are malformed.
+ */
 function preparePageLabels(
   parser,
   catalogDictionary,
