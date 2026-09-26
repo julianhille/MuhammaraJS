@@ -453,9 +453,12 @@ declare namespace muhammara {
      */
     Q(): this;
     /**
-     * a b 0
-     * c d 0
-     * e f 1
+     * Concatenates a matrix to the current transformation; operator cm. The
+     * matrix is [a b 0, c d 0, e f 1].
+     * @param args - The matrix values a, b, c, d, e and f.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 6 numbers.
+     * @throws {TypeError} If there is no content context.
      */
     cm(...args: TransformationMatrix): this;
     /**
