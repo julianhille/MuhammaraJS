@@ -1126,6 +1126,18 @@ declare namespace muhammara {
       inOptionalMetricsFile?: string,
       index?: number,
     ): UsedFont;
+    /**
+     * Adds a link annotation to the page written next.
+     * @param url - The ASCII link target.
+     * @param left - The clickable area left edge.
+     * @param bottom - The clickable area bottom edge.
+     * @param right - The clickable area right edge.
+     * @param top - The clickable area top edge.
+     * @returns This writer.
+     * @throws {TypeError} If the arguments are not a string and four numbers, or
+     *   the URL cannot be encoded as ASCII.
+     * @throws {Error} If the writer has ended.
+     */
     attachURLLinktoCurrentPage(
       url: string,
       left: PosX,
