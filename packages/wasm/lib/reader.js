@@ -323,6 +323,11 @@ export function createReaderFactory({
             parser,
           );
         };
+        /**
+         * Reads every array item, resolving indirect references.
+         * @returns {PDFObject[]} The items in order.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         object.toJSArray = function () {
           return Array.from({ length: object.getLength() }, (_, index) =>
             object.queryObject(index),
