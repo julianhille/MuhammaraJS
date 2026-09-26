@@ -1646,6 +1646,11 @@ export function createWriterFactory({
             }
             return context;
           },
+          /**
+           * Closes, fills (nonzero winding), and strokes the current path (`b`).
+           * @returns {this} The content context, for chaining.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           b: function () {
             return operator("b", 0);
           },
