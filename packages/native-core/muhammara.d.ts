@@ -1196,8 +1196,16 @@ declare namespace muhammara {
       filePath: FilePath | ReadStream,
       objectId?: FormXObjectId,
     ): ImageXObject;
+    /**
+     * Creates a form XObject showing a PNG image.
+     * @param filePath - The image path or a read stream.
+     * @param objectId - A forward-reference object ID reserved earlier.
+     * @returns The form.
+     * @throws {TypeError} If the arguments are wrong or the image cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObjectFromPNG(
-      filePath: FilePath | PDFRStreamForFile,
+      filePath: FilePath | ReadStream,
       objectId?: FormXObjectId,
     ): FormXObject;
     retrieveJPGImageInformation(filePath: FilePath): JPEGInformation;
