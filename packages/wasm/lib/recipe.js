@@ -661,6 +661,7 @@ export function createRecipeFactory({
         var decoration = {
           stroke: options.color || options.colour || "#1777d1",
           colorspace: options.colorspace,
+          colorName: options.colorName,
           width: 2,
         };
         if (options.htmlUnderline) {
