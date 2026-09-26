@@ -1321,6 +1321,14 @@ declare namespace muhammara {
       imageIndex?: number,
       options?: PDFReaderOptions,
     ): RectangleDimension;
+    /**
+     * Returns the number of pages or images in an image file.
+     * @param imagePath - The image path.
+     * @param options - The password of a PDF source.
+     * @returns The page count.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {Error} If the writer has ended.
+     */
     getImagePagesCount(
       imagePath: FilePath,
       options?: { password?: string },
