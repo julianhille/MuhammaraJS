@@ -820,6 +820,10 @@ const Triangle = class Triangle {
     return this._area;
   }
 
+  /**
+   * The vertices in drawing order B, C, A.
+   * @returns {number[][]} The [x, y] points.
+   */
   get vertices() {
     return [this._B, this._C, this._A];
   }
