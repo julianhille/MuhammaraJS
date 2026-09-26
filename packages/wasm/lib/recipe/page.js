@@ -3,7 +3,20 @@ import { mediumSizes } from "./parameters.js";
 import { pageRecord } from "./page-record.js";
 import { PAGE_CONTEXT_STATE } from "./context-state.js";
 
-/** Builds the retained page tree while marking deleted leaf pages. @private */
+/**
+ * Builds the retained page tree while marking deleted leaf pages.
+ * @private
+ * @param {PDFReader} parser - Source parser.
+ * @param {number} objectID - Pages or Page object ID.
+ * @param {Set<number>} deletedPages - One-based page numbers to delete.
+ * @param {Set<number>} modifiedPageIDs - Object IDs of pages already rewritten.
+ * @param {{pageNumber: number}} pageState - Running page counter.
+ * @param {number} [generation=0] - Object generation.
+ * @param {Set<number>} [visited] - Visited object IDs.
+ * @param {number} [depth=0] - Recursion depth.
+ * @returns {object|null} The node, or null for a deleted page.
+ * @throws {Error} If the tree is cyclic, too deep, or malformed.
+ */
 function readPageTree(
   parser,
   objectID,
