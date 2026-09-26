@@ -759,6 +759,11 @@ export function createReaderFactory({
     }
 
     return {
+      /**
+       * Counts the document pages.
+       * @returns {number} The page count.
+       * @throws {Error} If the reader has ended.
+       */
       getPagesCount: function () {
         requireReader();
         return module._muhammara_wasm_reader_get_pages_count(reader);
