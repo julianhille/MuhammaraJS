@@ -3216,6 +3216,11 @@ export function createWriterToModifyFactory({
             context = modifierContext();
             return this;
           },
+          /**
+           * Returns the active content context.
+           * @returns {ContentContext} The content context.
+           * @throws {Error} If the modifier ended or no context was started.
+           */
           getContext: function () {
             requireOpen();
             if (!modifierPage || !context)
