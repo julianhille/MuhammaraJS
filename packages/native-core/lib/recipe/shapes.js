@@ -1293,6 +1293,10 @@ const Kite = class Kite {
   get Ip() {
     return [this._I.x - 2 * this._width, this._I.y];
   }
+  /**
+   * Point E mirrored to point the head the other way.
+   * @returns {number[]} The [x, y] point.
+   */
   get Ep() {
     return [this._E.x + 2 * this._baseOffset, this._E.y];
   }
