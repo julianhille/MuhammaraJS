@@ -20,6 +20,13 @@ The package is ESM-only. Browser applications should serve the bundled module
 and its `.wasm` asset over HTTP through their bundler or static server. Do not
 use synchronous CommonJS loading.
 
+## TypeScript
+
+The package ships its own declarations and requires TypeScript 5.7 or later.
+PDF bytes returned by the package, such as `endPDF()`, `end()`, and
+`createBlankPdf()`, are typed as `Uint8Array<ArrayBuffer>`, so they can be passed
+to `new Blob([bytes])` or `new Response(bytes)` without a cast.
+
 ## Load The WebAssembly Binary
 
 By default the package loads `muhammara-wasm.wasm` from next to its own

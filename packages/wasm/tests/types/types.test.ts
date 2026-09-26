@@ -1080,6 +1080,13 @@ async function usesNamedValueSets() {
   };
   var nativeTiffColor: import("../../index.js").TIFFColor = [0, 0, 0, 255];
   void [nativeVersion, nativeFit, nativeGraphic, nativeMerge, nativeTiffColor];
+  // PDF bytes are plain ArrayBuffer-backed copies, usable as Blob and Response bodies.
+  var blankBytes: Uint8Array<ArrayBuffer> = muhammara.createBlankPdf(10, 10);
+  var blankBlob = new Blob([blankBytes]);
+  var blankResponse = new Response(muhammara.createBlankPdf(10, 10));
+  var recipePdf = new recipeClass().createPage(10, 10).endPage().endPDF();
+  var recipeBlob = new Blob([recipePdf], { type: "application/pdf" });
+  void [blankBlob, blankResponse, recipeBlob];
 }
 
 void usesNamedValueSets;

@@ -505,7 +505,7 @@ export interface RecipeLayoutOptions {
 export type RecipePageSelection = number | (number | [number, number])[];
 export interface RecipeSplitResult {
   name: string;
-  bytes: Uint8Array;
+  bytes: Uint8Array<ArrayBuffer>;
 }
 export interface RecipeStructure {
   pages: number;
@@ -775,7 +775,9 @@ export interface Recipe {
   structure(format?: RecipeStructureFormat): string | RecipeStructure;
   permission(flags?: RecipePermission): number;
   encrypt(options?: RecipeEncryptOptions): this;
-  endPDF(callback?: (bytes: Uint8Array) => void): Uint8Array;
+  endPDF(
+    callback?: (bytes: Uint8Array<ArrayBuffer>) => void,
+  ): Uint8Array<ArrayBuffer>;
   dispose(): void;
 }
 // Low-level types under their native names, for code shared with
@@ -967,7 +969,7 @@ export declare namespace Recipe {
     Arguments extends unknown[] = unknown[],
     Result = unknown,
   > = RecipeExtension<Arguments, Result>;
-  type EndPDFCallback = (bytes: Uint8Array) => void;
+  type EndPDFCallback = (bytes: Uint8Array<ArrayBuffer>) => void;
   type InfoOptions = Record<string, unknown>;
   type Metadata = RecipeMetadata;
   type ReadMetadata = RecipeMetadata;
@@ -1436,7 +1438,7 @@ export interface JPGImageInformation {
 export class PDFRStreamForBuffer {
   constructor(bytes: ByteSource);
   /** Returns a copy of at most `amount` bytes from the current position. */
-  read(amount: number): Uint8Array;
+  read(amount: number): Uint8Array<ArrayBuffer>;
   notEnded(): boolean;
   setPosition(position: number): void;
   setPositionFromEnd(position: number): void;
@@ -1446,10 +1448,10 @@ export class PDFRStreamForBuffer {
 }
 export class PDFWStreamForBuffer {
   constructor();
-  buffer: Uint8Array;
+  buffer: Uint8Array<ArrayBuffer>;
   write(bytes: ByteSource): number;
   getCurrentPosition(): number;
-  toUint8Array(): Uint8Array;
+  toUint8Array(): Uint8Array<ArrayBuffer>;
   toArrayBuffer(): ArrayBuffer;
   toBlob(type?: string): BlobLike;
 }
@@ -1729,7 +1731,7 @@ export interface InfoDictionary {
 
 export interface PDFByteReader {
   /** Returns a copy of at most `amount` decoded or raw stream bytes. */
-  read(amount: number): Uint8Array;
+  read(amount: number): Uint8Array<ArrayBuffer>;
   notEnded(): boolean;
   /** Immediately releases this Wasm stream reader without ending its parent PDF reader. */
   dispose(): this;
@@ -1781,7 +1783,7 @@ export interface PDFIndirectObjectReference extends PDFObject {
   getVersion(): number;
 }
 export interface PDFStringObject extends PDFObject {
-  toBytesArray(): Uint8Array;
+  toBytesArray(): Uint8Array<ArrayBuffer>;
   toText(): string;
 }
 export interface PDFPageInput {
@@ -2064,7 +2066,7 @@ export interface PDFWriter {
   pausePageContentContext(context: ContentContext): this;
   writePage(page: PDFPage): this;
   writePageAndReturnID(page: PDFPage): number;
-  end(): Uint8Array;
+  end(): Uint8Array<ArrayBuffer>;
   dispose(): void;
 }
 export interface PageModifier {
@@ -2268,7 +2270,7 @@ export interface PDFModifier {
     source: AsyncByteSource,
   ): Promise<DocumentCopyingContext>;
   createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
-  end(): Uint8Array;
+  end(): Uint8Array<ArrayBuffer>;
   dispose(): void;
 }
 /** Low-level color: a 24-bit RGB number, `#rrggbb`, a basic color name, or three 0-255 components. */
@@ -2327,7 +2329,7 @@ export interface CompactModifier {
     height: number,
   ): this;
   endPage(): this;
-  end(): Uint8Array;
+  end(): Uint8Array<ArrayBuffer>;
   dispose(): void;
 }
 export interface MuhammaraWasm {
@@ -2341,7 +2343,10 @@ export interface MuhammaraWasm {
   ByteWriter: typeof ByteWriter;
   ByteWriterWithPosition: typeof ByteWriterWithPosition;
   createWriter(options?: WriterOptions): PDFWriter;
-  recrypt(source: ByteSource, options?: PDFRecryptOptions): Uint8Array;
+  recrypt(
+    source: ByteSource,
+    options?: PDFRecryptOptions,
+  ): Uint8Array<ArrayBuffer>;
   createWriterToModify(
     source: ByteSource,
     options?: WriterOptions,
@@ -2368,7 +2373,7 @@ export interface MuhammaraWasm {
   unregisterImage(name: string): boolean;
   unregisterPdf(name: string): boolean;
   disposeAssets(): void;
-  createBlankPdf(width: number, height: number): Uint8Array;
+  createBlankPdf(width: number, height: number): Uint8Array<ArrayBuffer>;
   readonly ePDFVersionUndefined: 0;
   readonly ePDFVersion10: 10;
   readonly ePDFVersion11: 11;
