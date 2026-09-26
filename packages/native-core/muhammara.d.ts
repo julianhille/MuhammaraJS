@@ -1355,6 +1355,12 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     getModifiedInputFile(): InputFile;
+    /**
+     * Returns the output file.
+     * @returns The output file.
+     * @throws {TypeError} If the output is not a file.
+     * @throws {Error} If the writer has ended.
+     */
     getOutputFile(): OutputFile;
     registerAnnotationReferenceForNextPageWrite(annotationId: number): this;
     requireCatalogUpdate(): void;
