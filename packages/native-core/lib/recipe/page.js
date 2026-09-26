@@ -1105,6 +1105,15 @@ exports._deletePages = function _deletePages() {
   return this;
 };
 
+/**
+ * Apply the page rotation to an edited page's content context, so Recipe
+ * coordinates stay upright on rotated source pages.
+ * @private
+ * @param {number} [pageNumber] - The one-based page number; defaults to the active page.
+ * @param {Object} [context] - The content context; defaults to the page context.
+ * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If the page is unknown.
+ */
 exports._resumePageRotation = function _resumePageRotation(
   pageNumber,
   context,
