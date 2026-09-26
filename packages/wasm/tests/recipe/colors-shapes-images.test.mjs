@@ -286,6 +286,12 @@ describe("Recipe colors, shapes, and images", function () {
           fill: "#0000ff",
           colorspace: "separation",
         })
+        // Neither a fill nor a stroke: the default color strokes as the
+        // colorName ink.
+        .line(10, 180, 60, 180, {
+          colorspace: "separation",
+          colorName: "SpotDefault",
+        })
         .endPage();
       var bytes = recipe.endPDF();
       writeOutput(`colors-separation-${mode}`, bytes);
@@ -299,6 +305,10 @@ describe("Recipe colors, shapes, and images", function () {
         1,
       );
       assert.equal(recipe.knownColors.separation.SpotGreen, "00ff0000");
+      assert.equal(
+        raw.match(/\/Separation \/SpotDefault \/DeviceRGB/g)?.length,
+        1,
+      );
 
       var reader = muhammara.createReader(bytes);
       var page = reader.parsePage(mode === "source" ? 1 : 0).getDictionary();
@@ -325,20 +335,27 @@ describe("Recipe colors, shapes, and images", function () {
             ),
           ),
       );
-      var content = streams
-        .map((stream) => {
-          var input = reader.startReadingFromStream(stream.toPDFStream());
-          var chunks = [];
-          while (input.notEnded()) chunks.push(...input.read(4096));
-          return new TextDecoder("latin1").decode(new Uint8Array(chunks));
-        })
-        .join("\n");
+      var decoded = streams.map((stream) => {
+        var input = reader.startReadingFromStream(stream.toPDFStream());
+        var chunks = [];
+        while (input.notEnded()) chunks.push(...input.read(4096));
+        return new TextDecoder("latin1").decode(new Uint8Array(chunks));
+      });
+      var content = decoded.join("\n");
       reader.end();
+      // Writing a color space mid-path would split the path across content
+      // streams, which edited pages place as separate forms.
+      decoded.forEach((stream) =>
+        assert.equal(
+          stream.match(/\bq\b/g)?.length,
+          stream.match(/\bQ\b/g)?.length,
+        ),
+      );
       // Fills, the texts and the colorName circle select a Separation color
-      // at full tint; the line and both underlines stroke one, including the
-      // underline of a spot color given by value with colorName.
+      // at full tint; both lines and both underlines stroke one, including
+      // the underline of a spot color given by value with colorName.
       assert.equal(content.match(/\/\S+ cs\s+1 scn/g)?.length, 5);
-      assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 3);
+      assert.equal(content.match(/\/\S+ CS\s+1 SCN/g)?.length, 4);
       // A value without an ink name keeps its device color.
       assert.match(content, /0 0 1 rg/);
     });

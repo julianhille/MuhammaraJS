@@ -4,7 +4,7 @@ import {
   LineCap,
   LineJoin,
 } from "../value-sets.js";
-import { colorModel } from "./colors.js";
+import { colorModel, pathColors } from "./colors.js";
 
 /**
  * Creates shared Recipe vector drawing helpers.
@@ -154,9 +154,9 @@ export function createVectorHelpers(runtime) {
     _finishPath: function (options = {}) {
       var fill = options.fill;
       var stroke = options.stroke || options.color || options.colour;
-      if (fill !== undefined) setColor(this, fill, options, false);
-      if (stroke !== undefined || fill === undefined)
-        setColor(this, stroke, options, true);
+      pathColors(options).forEach((color) =>
+        setColor(this, color.value, options, color.stroke),
+      );
       if (
         fill !== undefined &&
         (stroke !== undefined || options.color !== undefined)

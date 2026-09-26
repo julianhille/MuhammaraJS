@@ -141,6 +141,23 @@ export function colorModel(recipe, value, options = {}) {
   return { colorspace, values, name };
 }
 
+/**
+ * Lists the colors a path sets, in the order it sets them: the fill, then the
+ * stroke. With neither a fill nor a stroke, the path strokes the default
+ * color, which is a Separation color when `colorName` names an ink.
+ * @param {object} options - Path options with `fill`, `stroke`, and `color`.
+ * @returns {Array.<{value: (RecipeColor|undefined), stroke: boolean}>} The colors to set.
+ */
+export function pathColors(options) {
+  var fill = options.fill;
+  var stroke = options.stroke || options.color || options.colour;
+  var colors = [];
+  if (fill !== undefined) colors.push({ value: fill, stroke: false });
+  if (stroke !== undefined || fill === undefined)
+    colors.push({ value: stroke, stroke: true });
+  return colors;
+}
+
 /** Creates the Recipe methods that write and select Separation colors. */
 export function createSeparationMethods({
   module,
@@ -252,14 +269,11 @@ export function createSeparationMethods({
      * @private
      */
     _prepareSeparationColors: function (options = {}) {
-      [options.fill, options.stroke || options.color || options.colour].forEach(
-        (value) => {
-          if (value === undefined) return;
-          var model = colorModel(this, value, options);
-          if (model.colorspace === Colorspace.SEPARATION)
-            this._separationColorspace(model);
-        },
-      );
+      pathColors(options).forEach(({ value }) => {
+        var model = colorModel(this, value, options);
+        if (model.colorspace === Colorspace.SEPARATION)
+          this._separationColorspace(model);
+      });
     },
 
     /**
