@@ -466,6 +466,9 @@ exports.Column = class Column {
   get gap() {
     return this._gap;
   }
+  /**
+   * @param {number} gap - The new gap after the column.
+   */
   set gap(gap) {
     this._gap = gap;
   }
