@@ -40,6 +40,15 @@ const { UsedFont } = require("../muhammara");
 //     return target
 // }
 
+/**
+ * Merge text options: arrays and non-object values from `source` replace those
+ * in `target`, and nested objects are merged. `source` objects are updated in
+ * place; the result is a new object.
+ * @private
+ * @param {Object} target - The base options.
+ * @param {Object} source - The overriding options.
+ * @returns {Object} The merged options.
+ */
 exports._merge = function merge(target, source) {
   // Iterate through `source` properties and if an `Object` set property to merge of `target` and `source` properties
   for (const key of Object.keys(source)) {
