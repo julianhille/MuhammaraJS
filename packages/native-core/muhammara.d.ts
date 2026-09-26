@@ -1358,6 +1358,10 @@ declare namespace muhammara {
      * @returns The dictionary.
      */
     getDictionary(): PDFDictionary;
+    /**
+     * Returns the byte position where the stream contents start.
+     * @returns The byte position in the source file.
+     */
     getStreamContentStart(): number;
   }
 
