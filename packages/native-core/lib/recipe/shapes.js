@@ -331,6 +331,16 @@ exports.star = function star(cx, cy, radius, points = 5, options = {}) {
   return this;
 };
 
+/**
+ * Rotate a point around an origin.
+ * @private
+ * @param {number} ox - The point x.
+ * @param {number} oy - The point y.
+ * @param {number} p - The origin x.
+ * @param {number} q - The origin y.
+ * @param {number} angle - The rotation in degrees.
+ * @returns {number[]} The rotated [x, y].
+ */
 function rotate(ox, oy, p, q, angle) {
   let [x, y] = [ox, oy];
   angle = angle % 360; // keep angle within realistic bounds
