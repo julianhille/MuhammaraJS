@@ -74,6 +74,16 @@ exports.image = function image(imgSrc, x, y, options = {}) {
   return this;
 };
 
+/**
+ * Compute the drawn size of an image and the offset its alignment applies.
+ * Sets `options.keepAspectRatio` to true when it is not given.
+ * @private
+ * @param {string} [imgSrc=''] - The image path.
+ * @param {Object} [options] - The image() options.
+ * @returns {{width: number, height: number, offsetX: number, offsetY: number}}
+ *   The drawn size and the PDF offset from the placement point.
+ * @throws {Error} If the image cannot be read.
+ */
 exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
   // set default to true
   options.keepAspectRatio =
@@ -114,10 +124,10 @@ exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
     const alignments = options.align.split(" ");
     if (alignments[0]) {
       switch (alignments[0]) {
-        case "center":
+        case HorizontalAlign.CENTER:
           offsetX = (-1 * width) / 2;
           break;
-        case "right":
+        case HorizontalAlign.RIGHT:
           offsetX = width / 2;
           break;
         default:
@@ -125,10 +135,10 @@ exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
     }
     if (alignments[1]) {
       switch (alignments[1]) {
-        case "center":
+        case VerticalAlign.CENTER:
           offsetY = (-1 * height) / 2;
           break;
-        case "bottom":
+        case VerticalAlign.BOTTOM:
           offsetY = height / 2;
           break;
         default:
