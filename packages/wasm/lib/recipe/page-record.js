@@ -4,7 +4,7 @@ import { PageLayout } from "../value-sets.js";
  * @param {number} pageNumber - One-based page number.
  * @param {PDFRectangle} mediaBox - Media box.
  * @param {number} [rotate=0] - Page rotation in degrees.
- * @returns {object} Size, offsets, rotation, and RecipePageLayout.
+ * @returns {object} Size, offsets, rotation, and Recipe.PageLayout.
  */
 export function pageRecord(pageNumber, mediaBox, rotate = 0) {
   var side1 = Math.abs(mediaBox[2] - mediaBox[0]);

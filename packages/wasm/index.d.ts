@@ -147,10 +147,6 @@ export type RecipeExtension<
   Arguments extends unknown[] = never[],
   Result = unknown,
 > = (this: Recipe, ...args: Arguments) => Result;
-/** Recipe path line cap: butt, round, or projecting square. */
-export type RecipeLineCap = "butt" | "round" | "square";
-/** Recipe path line join: miter, round, or bevel. */
-export type RecipeLineJoin = "miter" | "round" | "bevel";
 export interface RecipePathOptions {
   /** Make the rendered path's bounding rectangle open this URL. */
   link?: string;
@@ -165,8 +161,8 @@ export interface RecipePathOptions {
   opacity?: number;
   dash?: number[];
   dashPhase?: number;
-  lineCap?: RecipeLineCap;
-  lineJoin?: RecipeLineJoin;
+  lineCap?: Recipe.LineCap;
+  lineJoin?: Recipe.LineJoin;
   miterLimit?: number;
   rotation?: number;
   rotationOrigin?: [number, number];
@@ -182,7 +178,7 @@ export interface RecipeImageOptions extends RecipePathOptions {
   height?: number;
   scale?: number;
   keepAspectRatio?: boolean;
-  align?: RecipeImageAlign;
+  align?: Recipe.ImageAlign;
   index?: number;
 }
 export interface RecipeRectangleOptions extends RecipePathOptions {
@@ -278,65 +274,20 @@ export interface RecipeLineStyleOptions {
   dash?: number[];
   dashPhase?: number;
 }
-/** Annotation flag name for Recipe annotation `flag`; letter case is ignored. */
-export type RecipeAnnotationFlag =
-  | "invisible"
-  | "hidden"
-  | "print"
-  | "nozoom"
-  | "norotate"
-  | "noview"
-  | "readonly"
-  | "locked"
-  | "togglenoview"
-  | "lockedcontents";
-/** Standard icon name for Recipe text annotations. */
-export type RecipeAnnotationIcon =
-  "Comment" | "Key" | "Note" | "Help" | "NewParagraph" | "Paragraph" | "Insert";
-/** Annotation subtype for `annot()`; known subtypes match case-insensitively. */
-export type RecipeAnnotationSubtype =
-  | "Text"
-  | "Link"
-  | "FreeText"
-  | "Line"
-  | "Square"
-  | "Circle"
-  | "Polygon"
-  | "PolyLine"
-  | "Highlight"
-  | "Underline"
-  | "Squiggly"
-  | "StrikeOut"
-  | "Caret"
-  | "Stamp"
-  | "Ink"
-  | "Popup"
-  | "FileAttachment"
-  | "Sound"
-  | "Movie"
-  | "Screen"
-  | "Widget"
-  | "PrinterMark"
-  | "TrapNet"
-  | "Watermark"
-  | "3D"
-  | "Redact"
-  | "Projection"
-  | "RichMedia";
 export interface RecipeAnnotationOptions {
   text?: string;
   contents?: string;
   title?: string;
   subject?: string;
   date?: string | Date;
-  icon?: RecipeAnnotationIcon;
+  icon?: Recipe.AnnotIcon;
   name?: string;
   color?: RecipeColor;
   border?: number | { width?: number; dash?: number[] };
   borderWidth?: number;
   borderDash?: number[];
   quadPoints?: number[];
-  flag?: RecipeAnnotationFlag | number;
+  flag?: Recipe.AnnotFlag | number;
   flags?: number;
   open?: boolean;
   opacity?: number;
@@ -354,73 +305,7 @@ export interface RecipeOverlayOptions {
   fitWidth?: boolean;
   fitHeight?: boolean;
 }
-/** Horizontal placement keyword for Recipe text and images. */
-export type RecipeHorizontalAlignment = "left" | "center" | "right";
-/** Vertical placement keyword for Recipe text, images, and text boxes. */
-export type RecipeVerticalAlignment = "top" | "center" | "bottom";
-/** Horizontal alignment of the lines inside a Recipe text box. */
-export type RecipeTextAlignment = RecipeHorizontalAlignment | "justify";
 /** How a Recipe text box handles text that does not fit its width. */
-/** Named page size for `createPage()`, case-insensitive; other names use the default size. */
-export type RecipePageSize =
-  | "executive"
-  | "folio"
-  | "legal"
-  | "letter"
-  | "ledger"
-  | "tabloid"
-  | "a0"
-  | "a1"
-  | "a2"
-  | "a3"
-  | "a4"
-  | "a5"
-  | "a6"
-  | "a7"
-  | "a8"
-  | "a9"
-  | "a10"
-  | "b0"
-  | "b1"
-  | "b2"
-  | "b3"
-  | "b4"
-  | "b5"
-  | "b6"
-  | "b7"
-  | "b8"
-  | "b9"
-  | "b10"
-  | "c0"
-  | "c1"
-  | "c2"
-  | "c3"
-  | "c4"
-  | "c5"
-  | "c6"
-  | "c7"
-  | "c8"
-  | "c9"
-  | "c10"
-  | "ra0"
-  | "ra1"
-  | "ra2"
-  | "ra3"
-  | "ra4"
-  | "sra0"
-  | "sra1"
-  | "sra2"
-  | "sra3"
-  | "sra4"
-  | (string & {});
-/** Text-box alignment: a `Recipe.TextAlign` value, optionally followed by a space and a `Recipe.VerticalAlign` value. */
-export type RecipeTextBoxAlign =
-  RecipeTextAlignment | `${RecipeTextAlignment} ${RecipeVerticalAlignment}`;
-/** Image and text alignment: a `Recipe.HorizontalAlign` value, optionally followed by a `Recipe.VerticalAlign` value. */
-export type RecipeImageAlign =
-  | RecipeHorizontalAlignment
-  | `${RecipeHorizontalAlignment} ${RecipeVerticalAlignment}`;
-export type RecipeTextWrap = "auto" | "clip" | "trim" | "ellipsis";
 export interface RecipeTextBox {
   width?: number;
   height?: number;
@@ -428,8 +313,8 @@ export interface RecipeTextBox {
   padding?: number | [number, number?, number?, number?];
   lineHeight?: number;
   /** `clip` retains and clips the source, `trim` omits its non-fitting suffix, and `ellipsis` replaces it with `...`. */
-  wrap?: boolean | RecipeTextWrap;
-  textAlign?: RecipeTextBoxAlign;
+  wrap?: boolean | Recipe.TextWrap;
+  textAlign?: Recipe.TextBoxAlign;
   /** Render only complete lines that fit within this fixed-height text box. */
   clipIfExceedsBox?: boolean;
   /** Called after clipping leaves source text unrendered. */
@@ -472,7 +357,7 @@ export interface RecipeTextOptions
   charSpace?: number;
   html?: boolean;
   flow?: boolean;
-  align?: RecipeImageAlign;
+  align?: Recipe.ImageAlign;
   layout?: string | number;
   /** Adds a Highlight annotation over each drawn run. */
   highlight?: boolean | RecipeTextMarkupOptions;
@@ -580,8 +465,6 @@ export type RecipeTableColumnOptions<
 }[RecipeTableColumnField<RecordType>];
 export type RecipeTableRow = Record<string, unknown>;
 /** Table options. Like native Recipe, a table-level `cell` is not accepted; style cells per column or row. */
-/** Which Recipe table rows a `row` style applies to. */
-export type RecipeTableRowParity = "even" | "odd";
 export interface RecipeTableOptions<
   RecordType extends object = RecipeTableRow,
 > extends Omit<RecipeTextOptions, "overflow" | "cell"> {
@@ -602,7 +485,7 @@ export interface RecipeTableOptions<
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
   row?: RecipeTextOptions & {
-    nth?: RecipeTableRowParity;
+    nth?: Recipe.TableRowNth;
     cell?: RecipeTextBox;
   };
   /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
@@ -634,8 +517,6 @@ export interface RemoveTextOptions {
   /** Also remove text from the Form XObjects the page paints, including nested forms. Defaults to `false`. */
   forms?: boolean;
 }
-/** Orientation of a Recipe page, from its rotated width and height. */
-export type RecipePageLayout = "portrait" | "landscape";
 export interface RecipePageInfo {
   pageNumber: number;
   mediaBox: PDFRectangle;
@@ -644,7 +525,7 @@ export interface RecipePageInfo {
   width: number;
   /** Recipe-coordinate height, with MediaBox axes swapped for 90/270-degree rotation. */
   height: number;
-  layout: RecipePageLayout;
+  layout: Recipe.PageLayout;
   size: [number, number];
   offsetX: number;
   offsetY: number;
@@ -690,7 +571,7 @@ export interface Recipe {
   ): RecipeHtmlTextObject[];
   createPage(width?: number, height?: number, margins?: RecipeMargins): this;
   createPage(
-    size: RecipePageSize,
+    size: Recipe.PageSize,
     rotation?: number,
     margins?: RecipeMargins,
   ): this;
@@ -877,7 +758,7 @@ export interface Recipe {
   annot(
     x: RecipeCoordinate,
     y: RecipeCoordinate,
-    subtype: RecipeAnnotationSubtype,
+    subtype: Recipe.AnnotSubtype,
     options?: RecipeAnnotationOptions,
   ): this;
   info(): Record<string, unknown>;
@@ -931,21 +812,84 @@ export type PDFPageModifier = PageModifier;
  * `Recipe.TextWrap` for the values of the `Recipe.TextWrap` constants.
  */
 export declare namespace Recipe {
-  type TextWrap = RecipeTextWrap;
-  type TextAlign = RecipeTextAlignment;
-  type HorizontalAlign = RecipeHorizontalAlignment;
-  type VerticalAlign = RecipeVerticalAlignment;
-  type TextBoxAlign = RecipeTextBoxAlign;
-  type ImageAlign = RecipeImageAlign;
-  type TableRowNth = RecipeTableRowParity;
-  type LineCap = RecipeLineCap;
-  type LineJoin = RecipeLineJoin;
+  type TextWrap = "auto" | "clip" | "trim" | "ellipsis";
+  /** Horizontal alignment of the lines inside a Recipe text box. */
+  type TextAlign = Recipe.HorizontalAlign | "justify";
+  /** Horizontal placement keyword for Recipe text and images. */
+  type HorizontalAlign = "left" | "center" | "right";
+  /** Vertical placement keyword for Recipe text, images, and text boxes. */
+  type VerticalAlign = "top" | "center" | "bottom";
+  /** Text-box alignment: a `Recipe.TextAlign` value, optionally followed by a space and a `Recipe.VerticalAlign` value. */
+  type TextBoxAlign =
+    Recipe.TextAlign | `${Recipe.TextAlign} ${Recipe.VerticalAlign}`;
+  /** Image and text alignment: a `Recipe.HorizontalAlign` value, optionally followed by a `Recipe.VerticalAlign` value. */
+  type ImageAlign =
+    | Recipe.HorizontalAlign
+    | `${Recipe.HorizontalAlign} ${Recipe.VerticalAlign}`;
+  /** Which Recipe table rows a `row` style applies to. */
+  type TableRowNth = "even" | "odd";
+  /** Recipe path line cap: butt, round, or projecting square. */
+  type LineCap = "butt" | "round" | "square";
+  /** Recipe path line join: miter, round, or bevel. */
+  type LineJoin = "miter" | "round" | "bevel";
   type ArrowAt = RecipeArrowAnchor;
   type ArrowType = Exclude<RecipeArrowType, number>;
   type TriangleTrait = RecipeTriangleTrait;
   type TrianglePosition = RecipeTrianglePosition;
-  type PageLayout = RecipePageLayout;
-  type PageSize = RecipePageSize;
+  /** Orientation of a Recipe page, from its rotated width and height. */
+  type PageLayout = "portrait" | "landscape";
+  /** Named page size for `createPage()`, case-insensitive; other names use the default size. */
+  type PageSize =
+    | "executive"
+    | "folio"
+    | "legal"
+    | "letter"
+    | "ledger"
+    | "tabloid"
+    | "a0"
+    | "a1"
+    | "a2"
+    | "a3"
+    | "a4"
+    | "a5"
+    | "a6"
+    | "a7"
+    | "a8"
+    | "a9"
+    | "a10"
+    | "b0"
+    | "b1"
+    | "b2"
+    | "b3"
+    | "b4"
+    | "b5"
+    | "b6"
+    | "b7"
+    | "b8"
+    | "b9"
+    | "b10"
+    | "c0"
+    | "c1"
+    | "c2"
+    | "c3"
+    | "c4"
+    | "c5"
+    | "c6"
+    | "c7"
+    | "c8"
+    | "c9"
+    | "c10"
+    | "ra0"
+    | "ra1"
+    | "ra2"
+    | "ra3"
+    | "ra4"
+    | "sra0"
+    | "sra1"
+    | "sra2"
+    | "sra3"
+    | "sra4"
+    | (string & {});
   type FontStyle = Exclude<RecipeFontStyle, "r" | "b" | "i" | "bi">;
   type RecipeFontStyle = import("./index.js").RecipeFontStyle;
   type Permission = RecipePermissionName;
@@ -957,11 +901,59 @@ export declare namespace Recipe {
   type DeviceColorspace = RecipeDeviceColorSpace;
   type DeviceColorSpace = RecipeDeviceColorSpace;
   type Colorspace = RecipeColorSpace;
-  type AnnotSubtype = RecipeAnnotationSubtype;
-  type AnnotFlag = RecipeAnnotationFlag;
-  type AnnotOptionsFlag = RecipeAnnotationFlag;
-  type AnnotIcon = RecipeAnnotationIcon;
-  type AnnotOptionsIcon = RecipeAnnotationIcon;
+  /** Annotation subtype for `annot()`; known subtypes match case-insensitively. */
+  type AnnotSubtype =
+    | "Text"
+    | "Link"
+    | "FreeText"
+    | "Line"
+    | "Square"
+    | "Circle"
+    | "Polygon"
+    | "PolyLine"
+    | "Highlight"
+    | "Underline"
+    | "Squiggly"
+    | "StrikeOut"
+    | "Caret"
+    | "Stamp"
+    | "Ink"
+    | "Popup"
+    | "FileAttachment"
+    | "Sound"
+    | "Movie"
+    | "Screen"
+    | "Widget"
+    | "PrinterMark"
+    | "TrapNet"
+    | "Watermark"
+    | "3D"
+    | "Redact"
+    | "Projection"
+    | "RichMedia";
+  /** Annotation flag name for Recipe annotation `flag`; letter case is ignored. */
+  type AnnotFlag =
+    | "invisible"
+    | "hidden"
+    | "print"
+    | "nozoom"
+    | "norotate"
+    | "noview"
+    | "readonly"
+    | "locked"
+    | "togglenoview"
+    | "lockedcontents";
+  type AnnotOptionsFlag = Recipe.AnnotFlag;
+  /** Standard icon name for Recipe text annotations. */
+  type AnnotIcon =
+    | "Comment"
+    | "Key"
+    | "Note"
+    | "Help"
+    | "NewParagraph"
+    | "Paragraph"
+    | "Insert";
+  type AnnotOptionsIcon = Recipe.AnnotIcon;
   type ChromaCommand = "!load";
   /** Wasm-only: the `Recipe.StructureFormat` values. */
   type StructureFormat = "string" | "json";
@@ -1001,7 +993,7 @@ export declare namespace Recipe {
   type CommentOptions = RecipeAnnotationOptions;
   type AnnotReply = RecipeAnnotationOptions;
   /** @deprecated Use `AnnotFlag`; comments accept the same flags. */
-  type CommentOptionsFlag = RecipeAnnotationFlag;
+  type CommentOptionsFlag = Recipe.AnnotFlag;
   type PathOptions = RecipePathOptions;
   type DrawingOptions = RecipePathOptions;
   type SkewOptions = Pick<RecipePathOptions, "skewX" | "skewY">;

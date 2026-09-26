@@ -1,9 +1,9 @@
 import { AnnotFlag, AnnotIcon, AnnotSubtype } from "../value-sets.js";
 /**
  * Converts an annotation flag name or bit mask to flag bits.
- * @param {RecipeAnnotationFlag|number} [flag] - Flag name, in any case, or a non-negative bit mask.
+ * @param {Recipe.AnnotFlag|number} [flag] - Flag name, in any case, or a non-negative bit mask.
  * @returns {number} The bits; 0 when omitted.
- * @throws {Error} If a name is not a RecipeAnnotationFlag value.
+ * @throws {Error} If a name is not a Recipe.AnnotFlag value.
  */
 function annotationFlags(flag) {
   var bits = {

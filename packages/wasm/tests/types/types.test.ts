@@ -10,23 +10,13 @@ import {
   EEncoding as EEncodings,
 } from "../../index.js";
 import type {
-  RecipeAnnotationFlag,
-  RecipeAnnotationIcon,
   RecipeConstructor,
   Glyph,
   EEncoding,
   PDFPageGeometry,
   PDFXrefEntry,
   ObjectReplacementOptions,
-  RecipePageLayout,
-  RecipeTableRowParity,
-  RecipeLineJoin,
-  RecipeLineCap,
   RecipeImageOptions,
-  RecipeHorizontalAlignment,
-  RecipeVerticalAlignment,
-  RecipeTextAlignment,
-  RecipeTextWrap,
   TextEncoding,
   PageBox,
   PDFRectangle,
@@ -934,12 +924,12 @@ async function usesNamedValueSets() {
   var legacyEncoding: TextEncoding = EEncodings.TEXT;
   void legacyEncoding;
   void [exportedColorspace, exportedFit, exportedBox, exportedEncoding];
-  var wrapMode: RecipeTextWrap = "ellipsis";
+  var wrapMode: Recipe.TextWrap = "ellipsis";
   var wrapBox: RecipeTextBox = { width: 10, wrap: wrapMode };
   void wrapBox;
-  var lineAlign: RecipeTextAlignment = "justify";
-  var boxBottom: RecipeVerticalAlignment = "bottom";
-  var textLeft: RecipeHorizontalAlignment = "left";
+  var lineAlign: Recipe.TextAlign = "justify";
+  var boxBottom: Recipe.VerticalAlign = "bottom";
+  var textLeft: Recipe.HorizontalAlign = "left";
   var alignedBox: RecipeTextBox = {
     width: 10,
     textAlign: `${lineAlign} ${boxBottom}`,
@@ -952,12 +942,12 @@ async function usesNamedValueSets() {
   var trianglePosition: RecipeTrianglePosition = "incenter";
   var triangleTrait: RecipeTriangleTrait = "sas";
   void [trianglePosition, triangleTrait];
-  var lineCap: RecipeLineCap = "square";
-  var lineJoin: RecipeLineJoin = "bevel";
+  var lineCap: Recipe.LineCap = "square";
+  var lineJoin: Recipe.LineJoin = "bevel";
   void [lineCap, lineJoin];
-  var rowParity: RecipeTableRowParity = "odd";
+  var rowParity: Recipe.TableRowNth = "odd";
   void rowParity;
-  var pageLayout: RecipePageLayout = "landscape";
+  var pageLayout: Recipe.PageLayout = "landscape";
   void pageLayout;
   var replacement: ObjectReplacementOptions = { scope: "global" };
   modifierForTypes.replaceObject(0, 1, 2, replacement);
@@ -995,10 +985,10 @@ async function usesNamedValueSets() {
   void namedLineCap;
   var namedSeparator: ETokenSeparator = ETokenSeparator.eTokenSeparatorNone;
   void namedSeparator;
-  var namedFlag: RecipeAnnotationFlag = recipeClass.AnnotFlag.PRINT;
+  var namedFlag: Recipe.AnnotFlag = recipeClass.AnnotFlag.PRINT;
   void namedFlag;
-  var namedIcon: RecipeAnnotationIcon = recipeClass.AnnotIcon.COMMENT;
-  var textAlign: RecipeTextAlignment = recipeClass.TextAlign.JUSTIFY;
+  var namedIcon: Recipe.AnnotIcon = recipeClass.AnnotIcon.COMMENT;
+  var textAlign: Recipe.TextAlign = recipeClass.TextAlign.JUSTIFY;
   void textAlign;
   var pageSize: string = recipeClass.PageSize.A4;
   void pageSize;

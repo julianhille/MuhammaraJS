@@ -330,21 +330,21 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   previously produced a zero-width page, and from the low-level
   `registerFont()`, `registerImage()`, and `registerPdf()` for an empty or
   non-string name, as Recipe registration does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Type the Recipe annotation `flag` option as `RecipeAnnotationFlag | number` and
-  `icon` as `RecipeAnnotationIcon` instead of any string, matching native's
+- Type the Recipe annotation `flag` option as `Recipe.AnnotFlag | number` and
+  `icon` as `Recipe.AnnotIcon` instead of any string, matching native's
   `AnnotFlag` and `AnnotIcon` values [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Rename the text encoding type to `EEncoding`, as native names it; `TextEncoding`
   remains as a deprecated alias [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Define `Glyph` as a list of `[glyphId, unicodeCodePoint]` pairs, as native
   does; `Tj()`, `Quote()`, `DoubleQuote()`, and `TJ()` take `Glyph` where they took
   `Glyph[]`. Code that annotated one pair as `Glyph` should use `[number, number]` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Type the Recipe `annot()` subtype as `RecipeAnnotationSubtype`, the native
-  `AnnotSubtype` values, and add `lockedcontents` to `RecipeAnnotationFlag` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Type the Recipe `annot()` subtype as `Recipe.AnnotSubtype`, the native
+  `AnnotSubtype` values, and add `lockedcontents` to `Recipe.AnnotFlag` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Add a `Recipe` type namespace with native's names: one type per Recipe value
   set, for example `Recipe.TextWrap` and `Recipe.AnnotFlag`, and the option
   types, for example `Recipe.TextOptions` and `Recipe.TableOptions`; type
-  `createPage(size)` as `RecipePageSize` and text-box `textAlign` as
-  `RecipeTextBoxAlign` instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+  `createPage(size)` as `Recipe.PageSize` and text-box `textAlign` as
+  `Recipe.TextBoxAlign` instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Add native's low-level type names as aliases, for example `EPDFVersion`,
   `UsedFont`, `TextDimension`, `JPEGInformation`, `TransformationObject`, and
   `PageContentContext`, so declarations shared with `@muhammara/native` compile

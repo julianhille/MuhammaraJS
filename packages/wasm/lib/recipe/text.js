@@ -98,7 +98,7 @@ function endsWithBreakableSpace(value) {
  * @param {number} width - Available width; 0 disables wrapping.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Text options.
- * @param {RecipeTextWrap|boolean} wrap - Wrap mode; `true` means auto.
+ * @param {Recipe.TextWrap|boolean} wrap - Wrap mode; `true` means auto.
  * @returns {Array<{text: string, last: boolean}>} Lines; `last` ends a paragraph.
  */
 function lines(value, width, measure, options, wrap) {
@@ -235,7 +235,7 @@ function boundaryCharSpacing(left, right, charSpace) {
  * @param {number} width - Available width; 0 disables wrapping.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Base text options.
- * @param {RecipeTextWrap|boolean} wrap - Wrap mode.
+ * @param {Recipe.TextWrap|boolean} wrap - Wrap mode.
  * @returns {Array<{parts: object[], last: boolean}>} Lines of styled fragments.
  */
 function htmlLines(source, width, measure, options, wrap) {
