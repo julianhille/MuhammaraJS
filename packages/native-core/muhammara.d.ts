@@ -464,6 +464,10 @@ declare namespace muhammara {
     new (inPath: string): PDFWStreamForFile;
     /** Also accepts an array of byte values when called directly. */
     write(inBytes: Buffer | number[]): number;
+    /**
+     * Flushes and closes the file.
+     * @param inCallback - Called once the file is closed.
+     */
     close(inCallback?: () => void): void;
   }
 
