@@ -4595,6 +4595,12 @@ export function createWriterFactory({
         }
         return this;
       },
+      /**
+       * Writes a page, starting it first when it has no content.
+       * @param {PDFPage} page - The active page, or a page when none is active.
+       * @returns {this} The writer.
+       * @throws {Error} If the writer ended, another page is active, or the page cannot be written.
+       */
       writePage: function (page) {
         writePage(page, function () {
           return module._muhammara_wasm_recipe_end_page(recipe);
