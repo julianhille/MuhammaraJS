@@ -277,6 +277,11 @@ export function createWriterToModifyFactory({
         s: function () {
           return operator("s", 4);
         },
+        /**
+         * Strokes the current path (`S`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         S: function () {
           return operator("S", 5);
         },
