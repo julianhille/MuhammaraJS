@@ -39,6 +39,12 @@ export function createValueTypes({ module, withString, withBytes }) {
     }
   }
 
+  /**
+   * Decodes PDF text string bytes.
+   * @param {Uint8Array} bytes - PDFDocEncoding or UTF-16BE bytes.
+   * @returns {string} The text.
+   * @throws {Error} If the bytes cannot be decoded.
+   */
   function textStringValue(bytes) {
     var lengthPointer = module._malloc(4);
     try {
