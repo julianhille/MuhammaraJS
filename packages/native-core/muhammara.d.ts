@@ -4643,7 +4643,12 @@ declare namespace muhammara {
      * @throws {TypeError} If no page is active.
      */
     lineWidth(width: number): Recipe;
-    /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */
+    /**
+     * Sets fill and stroke opacity.
+     * @param opacity - From 0 (transparent) to 1 (opaque).
+     * @returns The Recipe instance.
+     * @throws {RangeError} If opacity is not a finite number from 0 to 1.
+     */
     opacity(opacity: number): Recipe;
     /**
      * Fill the current path.
