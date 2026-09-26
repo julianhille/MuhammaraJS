@@ -1398,8 +1398,18 @@ export function createReaderFactory({
           module._free(resultPointer);
         }
       },
+      /**
+       * Reads a page box with inheritance and defaults resolved.
+       * @param {number} index - Zero-based page index.
+       * @param {PageBox} [box="media"] - Box name.
+       * @returns {PDFRectangle} The box.
+       * @throws {TypeError} If `index` is not a non-negative integer.
+       * @throws {RangeError} If the box name is unknown or the page does not exist.
+       * @throws {Error} If the reader has ended.
+       */
       getPageBox: function (index, box = PageBox.MEDIA) {
         requireReader();
+        requireIndex(index, "Page index");
         // Box codes of the reader export, not the ePDFPageBox constants.
         var boxIndexes = {
           [PageBox.MEDIA]: 0,
