@@ -174,6 +174,17 @@ function getTransformParams(inAngle, x, y, offsetX, offsetY) {
   return [cosTheta, -sinTheta, sinTheta, cosTheta, x - nx, y - ny];
 }
 
+/**
+ * Translate a content context to a point and apply the rotation options.
+ * @private
+ * @param {Object} context - The content context.
+ * @param {number} x - The PDF x.
+ * @param {number} y - The PDF y.
+ * @param {Object} options - The path options: rotation, rotationOrigin,
+ *   useGivenCoords, originX, originY and deltaY.
+ * @returns {void}
+ * @throws {TypeError} If a Recipe rotation origin is converted without an active page.
+ */
 exports._setRotationContext = function _setRotationTransform(
   context,
   x,
