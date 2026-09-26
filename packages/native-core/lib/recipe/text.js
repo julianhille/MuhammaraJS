@@ -1129,6 +1129,13 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
   };
 };
 
+/**
+ * The height of laid-out text: the sum of the line heights, counting each
+ * line once.
+ * @private
+ * @param {Object[]} textObjs - The laid-out runs.
+ * @returns {number} The text height.
+ */
 function getTextBoxHeight(textObjs) {
   let previousLineID;
   let height = 0;
