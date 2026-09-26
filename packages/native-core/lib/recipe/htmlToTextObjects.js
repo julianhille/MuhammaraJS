@@ -124,9 +124,15 @@ function isBoldTag(tagName = "") {
   return boldTags.includes(String(tagName).toLowerCase());
 }
 
+/**
+ * Whether an element makes its text italic.
+ * @private
+ * @param {string} [tagName=''] - The element name, matched case-insensitively.
+ * @returns {boolean} True for i and em.
+ */
 function isItalicTag(tagName = "") {
-  const italicTags = ["i", "em"];
-  return italicTags.includes(tagName);
+  const italicTags = [HtmlTag.I, HtmlTag.EM];
+  return italicTags.includes(String(tagName).toLowerCase());
 }
 
 function parseNode(node, options) {
