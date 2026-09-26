@@ -4476,6 +4476,24 @@ declare namespace muhammara {
       options?: Recipe.RectangleOptions,
     ): Recipe;
 
+    /**
+     * Draw an ellipse
+     * @param cx - x-coordinate of center point of ellipse
+     * @param cy - y-coordinate of center point of ellipse
+     * @param rx - radius length from the center point along x-axis
+     * @param ry - radius length from the center point along y-axis
+     * @param options -
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param {string|number[]}[ options.fill] - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     ellipse(
       cx: Recipe.RecipeCoordinate,
       cy: Recipe.RecipeCoordinate,
