@@ -1053,6 +1053,26 @@ async function usesNamedValueSets() {
     recipeBoxAlign,
     recipeStructure,
   ];
+  var aliasText: Recipe.TextOptions = { font: "Roboto", fontSize: 12 };
+  var aliasPath: Recipe.PolygonOptions = { fill: "#ff0000", rotation: 15 };
+  var aliasRadius: Recipe.BorderRadius = 4;
+  var aliasAnnot: Recipe.AnnotOptions = { flag: recipeClass.AnnotFlag.PRINT };
+  var aliasTable: Recipe.TableOptions<{ name: string }> = {};
+  var aliasField: Recipe.TableField<{ name: string }> = "name";
+  var aliasOverflow: Recipe.TextOverflowCallback = () => true;
+  var aliasInstructions: Recipe.TextOverflowInstructions = { layout: "next" };
+  var aliasEnd: Recipe.EndPDFCallback = (bytes) => void bytes.length;
+  void [
+    aliasText,
+    aliasPath,
+    aliasRadius,
+    aliasAnnot,
+    aliasTable,
+    aliasField,
+    aliasOverflow,
+    aliasInstructions,
+    aliasEnd,
+  ];
 }
 
 void usesNamedValueSets;

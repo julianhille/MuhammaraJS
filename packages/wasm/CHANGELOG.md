@@ -340,8 +340,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `Glyph[]`. Code that annotated one pair as `Glyph` should use `[number, number]` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type the Recipe `annot()` subtype as `RecipeAnnotationSubtype`, the native
   `AnnotSubtype` values, and add `lockedcontents` to `RecipeAnnotationFlag` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Add a `Recipe` type namespace with native's names, one type per Recipe value
-  set, for example `Recipe.TextWrap` and `Recipe.AnnotFlag`; type
+- Add a `Recipe` type namespace with native's names: one type per Recipe value
+  set, for example `Recipe.TextWrap` and `Recipe.AnnotFlag`, and the option
+  types, for example `Recipe.TextOptions` and `Recipe.TableOptions`; type
   `createPage(size)` as `RecipePageSize` and text-box `textAlign` as
   `RecipeTextBoxAlign` instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take

@@ -934,6 +934,86 @@ export declare namespace Recipe {
   type ChromaCommand = "!load";
   /** Wasm-only: the `Recipe.StructureFormat` values. */
   type StructureFormat = "string" | "json";
+  // Option and helper types under their native names.
+  type RecipeOptions = import("./index.js").RecipeOptions;
+  type RecipeMargins = import("./index.js").RecipeMargins;
+  type CaseInsensitive<Value extends string> = RecipeCaseInsensitive<Value>;
+  type ExtensionCallback<
+    Arguments extends unknown[] = unknown[],
+    Result = unknown,
+  > = RecipeExtension<Arguments, Result>;
+  type EndPDFCallback = (bytes: Uint8Array) => void;
+  type InfoOptions = Record<string, unknown>;
+  type Metadata = RecipeMetadata;
+  type ReadMetadata = RecipeMetadata;
+  type MetadataPage = RecipePageInfo;
+  type ReadMetadataPage = RecipePageInfo;
+  type EncryptOptions = RecipeEncryptOptions;
+  type OverlayOptions = RecipeOverlayOptions;
+  type LayoutOptions = RecipeLayoutOptions;
+  type ImageOptions = RecipeImageOptions;
+  type HtmlTextObject = RecipeHtmlTextObject;
+  type TextOptions = RecipeTextOptions;
+  type TextMarkupOptions = RecipeTextMarkupOptions;
+  type TextBox = RecipeTextBox;
+  type TextBoxStyle = NonNullable<RecipeTextBox["style"]>;
+  type TextBoxClipResult = RecipeTextBoxClipResult;
+  type TextOverflowCallback = Extract<
+    NonNullable<RecipeTextOptions["overflow"]>,
+    (...args: never[]) => unknown
+  >;
+  type TextOverflowInstructions = Exclude<
+    ReturnType<TextOverflowCallback>,
+    boolean
+  >;
+  type AnnotOptions = RecipeAnnotationOptions;
+  type CommentOptions = RecipeAnnotationOptions;
+  type AnnotReply = RecipeAnnotationOptions;
+  /** @deprecated Use `AnnotFlag`; comments accept the same flags. */
+  type CommentOptionsFlag = RecipeAnnotationFlag;
+  type PathOptions = RecipePathOptions;
+  type DrawingOptions = RecipePathOptions;
+  type SkewOptions = Pick<RecipePathOptions, "skewX" | "skewY">;
+  type TransformOptions = Pick<
+    RecipePathOptions,
+    "skewX" | "skewY" | "rotation" | "rotationOrigin"
+  >;
+  type TransformedPathOptions = RecipePathOptions;
+  type LinkFillOptions = Pick<RecipePathOptions, "link" | "fill">;
+  type LineOptions = RecipePathOptions;
+  type LineToOptions = RecipePathOptions;
+  type LineStyleOptions = RecipeLineStyleOptions;
+  type PolygonOptions = RecipePathOptions;
+  type ShapeOptions = RecipePathOptions;
+  type CircleOptions = RecipePathOptions;
+  type EllipseOptions = RecipePathOptions;
+  type RectangleOptions = RecipeRectangleOptions;
+  type BorderRadius = NonNullable<RecipeRectangleOptions["borderRadius"]>;
+  type NGonOptions = RecipeNGonOptions;
+  type ArrowOptions = RecipeArrowOptions;
+  type TriangleOptions = RecipeTriangleOptions;
+  type TriangleBaseOptions = RecipeTriangleBaseOptions;
+  type TriangleMeasurementOptions = RecipeTriangleMeasurementOptions;
+  type TriangleVertexOptions = RecipeTriangleVertexOptions;
+  type TriangleUnpositionedVertexOptions =
+    RecipeTriangleUnpositionedVertexOptions;
+  type TriangleVertexIdentifier = RecipeTriangleVertexIdentifier;
+  type TriangleMeasurements = RecipeTriangleMeasurements;
+  type TriangleVertices = RecipeTriangleVertices;
+  type MutableTriangleVertices = RecipeMutableTriangleVertices;
+  type TriangleMeasurementTrait = RecipeTriangleMeasurementTrait;
+  type TriangleVertexTrait = RecipeTriangleVertexTrait;
+  type TableOptions<RecordType extends object = RecipeTableRow> =
+    RecipeTableOptions<RecordType>;
+  type TableColumnDefinition = RecipeTableColumn;
+  type TableColumnOptions = RecipeTableColumnOptions;
+  type TableField<RecordType extends object> = RecipeTableField<RecordType>;
+  type TableColumnField<RecordType extends object> =
+    RecipeTableColumnField<RecordType>;
+  type TableFieldValue<
+    RecordType extends object,
+    Field extends RecipeTableField<RecordType>,
+  > = RecipeTableFieldValue<RecordType, Field>;
 }
 export interface RecipeConstructor {
   /** How text that does not fit a text-box line is handled. */
