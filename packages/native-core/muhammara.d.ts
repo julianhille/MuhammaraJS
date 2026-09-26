@@ -765,6 +765,10 @@ declare namespace muhammara {
      * @returns The object ID.
      */
     getObjectID(): number;
+    /**
+     * Returns the referenced generation number.
+     * @returns The generation number.
+     */
     getVersion(): number;
   }
 
