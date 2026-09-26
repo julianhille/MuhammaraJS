@@ -718,6 +718,13 @@ declare namespace muhammara {
      * @throws {Error} If the stream cannot be read.
      */
     startReadingObjectsFromStream(stream: PDFStreamInput): PDFObjectParser;
+    /**
+     * Parses several content streams as one sequence of objects, as for a
+     * page whose Contents is an array.
+     * @param streams - The array of stream references.
+     * @returns A parser returning one object per call.
+     * @throws {TypeError} If the reader has ended or streams is not an array.
+     */
     startReadingObjectsFromStreams(streams: PDFArray): PDFObjectParser;
     getParserStream(): ByteReaderWithPosition;
   }
