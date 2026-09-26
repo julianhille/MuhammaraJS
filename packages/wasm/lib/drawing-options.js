@@ -102,6 +102,21 @@ export function applyDrawingColor(context, options, stroke) {
 }
 
 /**
+ * Rejects an operand outside a PDF operator's integer range.
+ * @param {string} name - Operator name for the error message.
+ * @param {*} value - Operand to check.
+ * @param {number} max - Largest allowed value; the smallest is 0.
+ * @param {string} label - What the operand selects, for the error message.
+ * @returns {void}
+ * @throws {RangeError} If `value` is not an integer from 0 to `max`.
+ */
+export function checkOperatorRange(name, value, max, label) {
+  if (!Number.isInteger(value) || value < 0 || value > max) {
+    throw new RangeError(`${name} requires a ${label} from 0 to ${max}`);
+  }
+}
+
+/**
  * Install drawRectangle, drawSquare, drawCircle, and drawPath on a content
  * context. Color and line width are set before the path is constructed,
  * because PDF forbids graphics-state operators inside a path object.

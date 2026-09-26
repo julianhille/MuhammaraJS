@@ -4,6 +4,7 @@ import {
   validateDrawingGeometry,
   applyDrawingColor,
   installDrawingHelpers,
+  checkOperatorRange,
   measureFontText,
   readFontUnderline,
   prepareUnderline,
@@ -280,6 +281,7 @@ export function createWriterToModifyFactory({
           return operator("w", 20, [value]);
         },
         J: function (value) {
+          checkOperatorRange("J", value, 2, "line cap");
           return operator("J", 21, [value]);
         },
         j: function (value) {
@@ -1442,7 +1444,6 @@ export function createWriterToModifyFactory({
               ["k", 28, 4],
               ["K", 29, 4],
               ["w", 20, 1],
-              ["J", 21],
               ["j", 22],
               ["M", 23],
               ["W", 30],
@@ -1460,6 +1461,10 @@ export function createWriterToModifyFactory({
                 return operator(code, ...args);
               };
             });
+            context.J = function (value) {
+              checkOperatorRange("J", value, 2, "line cap");
+              return operator(21, value);
+            };
             context.Tz = function (value) {
               if (!Number.isInteger(value))
                 throw new TypeError("Tz requires integer numeric arguments");

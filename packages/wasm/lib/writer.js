@@ -4,6 +4,7 @@ import {
   validateDrawingGeometry,
   applyDrawingColor,
   installDrawingHelpers,
+  checkOperatorRange,
   measureFontText,
   readFontUnderline,
   prepareUnderline,
@@ -706,9 +707,7 @@ export function createWriterFactory({
           return operator("cm", 19, [a, b, c, d, e, f]);
         },
         J: function (value) {
-          if (!Number.isInteger(value) || value < 0 || value > 2) {
-            throw new RangeError("J requires a line cap from 0 to 2");
-          }
+          checkOperatorRange("J", value, 2, "line cap");
           return operator("J", 21, [value]);
         },
         j: function (value) {
@@ -1328,6 +1327,7 @@ export function createWriterFactory({
             return operator("h", 15);
           },
           J: function (value) {
+            checkOperatorRange("J", value, 2, "line cap");
             return operator("J", 21, [value]);
           },
           j: function (value) {

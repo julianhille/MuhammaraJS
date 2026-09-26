@@ -159,7 +159,7 @@ describe("SimpleContentPageTest", function () {
       for (var [operator, args] of INVALID_OPERATOR_CALLS) {
         assert.throws(
           () => context[operator](...args),
-          TypeError,
+          (error) => error instanceof TypeError || error instanceof RangeError,
           `${kind}.${operator}(${args.join(", ")})`,
         );
       }
@@ -186,6 +186,9 @@ var INVALID_OPERATOR_CALLS = [
   ["G", []],
   ["G", [NaN]],
   ["w", []],
+  ["J", []],
+  ["J", [3]],
+  ["J", [-1]],
 ];
 
 /**
