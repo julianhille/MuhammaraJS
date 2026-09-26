@@ -68,6 +68,18 @@ exports._calibrateCoordinate = function _calibrateCoordinate(
   };
 };
 
+/**
+ * Convert Recipe coordinates to PDF coordinates for an annotation, undoing
+ * the page rotation so the annotation lands where it appears on screen.
+ * @private
+ * @param {number|"center"} x - The Recipe x coordinate.
+ * @param {number|"center"} y - The Recipe y coordinate.
+ * @param {number} [offsetX=0] - Added to the PDF x coordinate.
+ * @param {number} [offsetY=0] - Added to the PDF y coordinate.
+ * @param {number} pageNumber - The one-based page number.
+ * @returns {{nx: number, ny: number}} The PDF coordinates.
+ * @throws {TypeError} If the page is unknown.
+ */
 exports._calibrateCoordinateForAnnots = function _calibrateCoordinateForAnnots(
   x,
   y,
@@ -82,7 +94,7 @@ exports._calibrateCoordinateForAnnots = function _calibrateCoordinateForAnnots(
     offsetY,
     pageNumber,
   );
-  const { width, height, rotate, mediaBox } = this.metadata[pageNumber];
+  const { width, height, rotate, mediaBox } = pageMetadata(this, pageNumber);
   const startX = mediaBox[0];
   const startY = mediaBox[1];
   let rotateOffsetX = 0,
