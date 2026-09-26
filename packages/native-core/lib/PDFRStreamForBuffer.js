@@ -50,6 +50,11 @@ PDFRStreamForBuffer.prototype.setPosition = function (inPosition) {
   );
 };
 
+/**
+ * Moves to a position counted back from the end, clamped to the data.
+ * @param {number} inPosition - The number of bytes before the end.
+ * @returns {void}
+ */
 PDFRStreamForBuffer.prototype.setPositionFromEnd = function (inPosition) {
   this.rposition = Math.min(
     Math.max(this.fileSize - inPosition, 0),
