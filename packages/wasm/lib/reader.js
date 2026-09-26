@@ -36,6 +36,8 @@ export function createReaderFactory({
    * @param {number} copyingContext Borrowed native copying context for source streams.
    * @param {boolean} destroyReader Whether `end()` destroys `readerHandle`.
    * @returns {object} A reader whose `end()` releases owned resources.
+   * @throws {TypeError} If `bytes` is not a supported byte source.
+   * @throws {Error} If the PDF cannot be parsed.
    */
   function createReader(
     bytes,
