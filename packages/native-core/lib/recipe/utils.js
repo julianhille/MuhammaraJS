@@ -12,6 +12,8 @@ const PAGE_CONTEXT_STATE = Object.freeze({
 /**
  * Copies nested option objects and arrays without discarding callback values.
  * @private
+ * @param {*} value - The options or value to copy.
+ * @returns {*} The copy; functions and primitives are returned as they are.
  */
 function cloneOptions(value) {
   if (Array.isArray(value)) return value.map(cloneOptions);
