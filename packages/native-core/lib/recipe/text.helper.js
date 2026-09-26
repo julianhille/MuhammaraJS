@@ -17,6 +17,10 @@ const charSpacing = function charSpacing(text, charSpace) {
 // so that Line can see it. Otherwise, an error is thrown.
 
 const Word = class Word {
+  /**
+   * @param {string} word - The word, a single space measured as "o".
+   * @param {Object} pathOptions - The resolved text options: font, size and charSpace.
+   */
   constructor(word, pathOptions) {
     this._value = word;
     this._pathOptions = pathOptions;
