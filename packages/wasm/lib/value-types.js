@@ -1,3 +1,5 @@
+import { PageBox } from "./value-sets.js";
+
 /** Creates PDF value encoders and constructors backed by the WASM module. */
 export function createValueTypes({ module, withString, withBytes }) {
   var encoder = new TextEncoder();
@@ -190,7 +192,7 @@ export function createValueTypes({ module, withString, withBytes }) {
     });
   }
 
-  ["media", "crop", "bleed", "trim", "art"].forEach(definePageBox);
+  Object.values(PageBox).forEach(definePageBox);
   PDFPage.prototype.getResourcesDictionary = function () {
     if (!this._getNativeResources && this._activate) this._activate();
     if (!this._getNativeResources) {
