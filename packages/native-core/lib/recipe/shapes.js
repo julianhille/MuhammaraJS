@@ -1524,6 +1524,11 @@ const Line = class Line {
     return this._pt1.x === this._pt2.x;
   }
 
+  /**
+   * One end point.
+   * @param {number} ep - 1 for the first point, 2 for the second.
+   * @returns {Point|null} The point, or null for another value.
+   */
   point(ep) {
     return ep === 1 ? this._pt1 : ep === 2 ? this._pt2 : null;
   }
