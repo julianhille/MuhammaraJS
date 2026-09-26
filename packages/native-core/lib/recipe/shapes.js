@@ -1221,7 +1221,19 @@ exports.arrow = function arrow(x, y, options = {}) {
 //           |________________________|_______________|
 //                  base offset             height
 
+/**
+ * The quadrilateral arrow head: a triangle, dart or kite depending on the
+ * base offset.
+ * @private
+ */
 const Kite = class Kite {
+  /**
+   * @param {number} x - The x of the head base.
+   * @param {number} y - The y of the arrow axis.
+   * @param {number} width - The head length along the axis.
+   * @param {number} height - The head width across the axis.
+   * @param {number} [baseOffset=0] - Positive for a dart, negative for a kite.
+   */
   constructor(x, y, width, height, baseOffset = 0) {
     this._x = x;
     this._y = y;
@@ -1232,7 +1244,11 @@ const Kite = class Kite {
     // but it cannot exceed the height of the arrow head.
     this._baseOffset = baseOffset >= height ? height - 1 : baseOffset;
     this._type =
-      baseOffset > 0 ? "dart" : baseOffset === 0 ? "triangle" : "kite";
+      baseOffset > 0
+        ? ArrowType.DART
+        : baseOffset === 0
+          ? ArrowType.TRIANGLE
+          : ArrowType.KITE;
 
     this._K = new Point(x, y - height / 2);
     this._I = new Point(x + width, y);
