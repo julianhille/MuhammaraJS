@@ -1767,6 +1767,14 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
   };
 }
 
+/**
+ * Mark the last run as ending its line: trim it, mark its last word and
+ * optionally move the next line down.
+ * @private
+ * @param {Object[]} toWriteTextObjects - The runs; the last one is updated.
+ * @param {number|null} [lines=null] - The line offset for the next line.
+ * @returns {void}
+ */
 function markLineComplete(toWriteTextObjects, lines = null) {
   // Get last element in text objects and mark it.
   const textObj = toWriteTextObjects[toWriteTextObjects.length - 1];
