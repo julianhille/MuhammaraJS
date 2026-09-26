@@ -348,7 +348,14 @@ function htmlLines(source, width, measure, options, wrap) {
   return result;
 }
 
-/** Truncates styled fragments in place until an ellipsis fits the width. */
+/**
+ * Truncates styled fragments in place until an ellipsis fits the width.
+ * @param {{text: string, styles: object}[]} parts - Fragments, changed in place.
+ * @param {number} width - Available width.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Base text options.
+ * @returns {void}
+ */
 function ellipsizeHtmlParts(parts, width, measure, options) {
   var suffix = "...";
   while (parts.length) {
