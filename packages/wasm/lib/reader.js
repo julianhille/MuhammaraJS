@@ -12,7 +12,11 @@ function requireIndex(value, label) {
   }
 }
 
-/** Creates a factory for low-level PDF readers. */
+/**
+ * Creates a factory for low-level PDF readers.
+ * @param {object} dependencies - Module, constants, and byte helpers shared with the writer.
+ * @returns {Function} `createReader(bytes, readerHandle, requireOwner, copyingContext, destroyReader)`.
+ */
 export function createReaderFactory({
   module,
   constants,
