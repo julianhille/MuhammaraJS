@@ -347,3 +347,11 @@ export var ChromaCommand = Object.freeze({
   /** Merge the color definitions from the JSON file given as the value. */
   LOAD: "!load",
 });
+
+/** File extensions for sniffed image and PDF bytes; internal, not exported. */
+export var AssetExtension = Object.freeze({
+  JPEG: "jpg",
+  PNG: "png",
+  TIFF: "tiff",
+  PDF: "pdf",
+});

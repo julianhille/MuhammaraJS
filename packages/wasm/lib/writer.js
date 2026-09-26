@@ -1,5 +1,6 @@
 import { createChildLifecycle } from "./lifecycle.js";
 import {
+  AssetExtension,
   ImageFit,
   PageBox,
   PDFImageType,
@@ -53,7 +54,7 @@ export function createWriterSupport({
     var bytes = normalizeBytes(value, "Image bytes");
     var extension;
     if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xd8) {
-      extension = "jpg";
+      extension = AssetExtension.JPEG;
     } else if (
       bytes.length >= 8 &&
       bytes[0] === 0x89 &&
@@ -61,7 +62,7 @@ export function createWriterSupport({
       bytes[2] === 0x4e &&
       bytes[3] === 0x47
     ) {
-      extension = "png";
+      extension = AssetExtension.PNG;
     } else if (
       bytes.length >= 4 &&
       ((bytes[0] === 0x49 &&
@@ -73,7 +74,7 @@ export function createWriterSupport({
           bytes[2] === 0 &&
           bytes[3] === 0x2a))
     ) {
-      extension = "tiff";
+      extension = AssetExtension.TIFF;
     } else if (
       bytes.length >= 5 &&
       bytes[0] === 0x25 &&
@@ -82,7 +83,7 @@ export function createWriterSupport({
       bytes[3] === 0x46 &&
       bytes[4] === 0x2d
     ) {
-      extension = "pdf";
+      extension = AssetExtension.PDF;
     } else {
       throw new TypeError("Image bytes must be JPEG, PNG, TIFF, or PDF");
     }
