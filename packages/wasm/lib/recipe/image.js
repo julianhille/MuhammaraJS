@@ -1,4 +1,8 @@
-import { ImageFitPolicy } from "../value-sets.js";
+import {
+  ImageFitPolicy,
+  RecipeHorizontalAlignment,
+  RecipeVerticalAlignment,
+} from "../value-sets.js";
 /** Creates Recipe image placement methods. */
 export function createImageMethods(runtime) {
   function placement(recipe, path, x, y, options) {
@@ -19,10 +23,10 @@ export function createImageMethods(runtime) {
       else height = width / ratio;
     }
     var align = String(options.align || "").split(" ");
-    if (align[0] === "center") x -= width / 2;
-    else if (align[0] === "right") x += width / 2;
-    if (align[1] === "center") y -= height / 2;
-    else if (align[1] === "bottom") y += height / 2;
+    if (align[0] === RecipeHorizontalAlignment.CENTER) x -= width / 2;
+    else if (align[0] === RecipeHorizontalAlignment.RIGHT) x += width / 2;
+    if (align[1] === RecipeVerticalAlignment.CENTER) y -= height / 2;
+    else if (align[1] === RecipeVerticalAlignment.BOTTOM) y += height / 2;
     return { x, y, width, height };
   }
   return {

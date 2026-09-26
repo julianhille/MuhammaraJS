@@ -7,6 +7,7 @@ import {
   TextEncoding as TextEncodings,
 } from "../../index.js";
 import type {
+  RecipeImageOptions,
   RecipeHorizontalAlignment,
   RecipeVerticalAlignment,
   RecipeTextAlignment,
@@ -924,6 +925,10 @@ async function usesNamedValueSets() {
     textAlign: `${lineAlign} ${boxBottom}`,
   };
   void [alignedBox, textLeft];
+  var imageOptions: RecipeImageOptions = { align: "center bottom" };
+  // @ts-expect-error Image alignment uses the alignment keywords.
+  var badImageOptions: RecipeImageOptions = { align: "middle" };
+  void [imageOptions, badImageOptions];
 }
 
 void usesNamedValueSets;

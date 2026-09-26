@@ -169,7 +169,9 @@ export interface RecipeImageOptions extends RecipePathOptions {
   height?: number;
   scale?: number;
   keepAspectRatio?: boolean;
-  align?: string;
+  align?:
+    | RecipeHorizontalAlignment
+    | `${RecipeHorizontalAlignment} ${RecipeVerticalAlignment}`;
   index?: number;
 }
 export interface RecipeRectangleOptions extends RecipePathOptions {
