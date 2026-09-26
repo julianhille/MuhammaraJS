@@ -608,6 +608,10 @@ async function tableExample(assets) {
   }
 }
 
+/**
+ * Builds the browser example for password protection.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function passwordsExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
