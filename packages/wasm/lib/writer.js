@@ -1242,6 +1242,11 @@ export function createWriterFactory({
         q: function () {
           return operator("q", 17);
         },
+        /**
+         * Restores the graphics state (`Q`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Q: function () {
           return operator("Q", 18);
         },
