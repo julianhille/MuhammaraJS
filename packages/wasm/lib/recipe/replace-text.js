@@ -184,6 +184,11 @@ function decodeName(token) {
   });
 }
 
+/**
+ * Escapes backslashes and parentheses for a PDF literal string.
+ * @param {string} value - Text.
+ * @returns {string} The escaped text.
+ */
 function escapePDFLiteralString(value) {
   return value.replace(/([\\()])/g, "\\$1");
 }
