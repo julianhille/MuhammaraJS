@@ -504,8 +504,8 @@ function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
  * @name arc
  * @function
  * @memberof Recipe#
- * @param {number} x - the x coordinate of the arc center point
- * @param {number} y - the y coordinate of the arc center point
+ * @param {number|"center"} x - the x coordinate of the arc center point
+ * @param {number|"center"} y - the y coordinate of the arc center point
  * @param {number} radius - the distance from the given x,y coordinates from which to produce the arc
  * @param {number} [startAngle=0] - the start of the arc in degree units +/- 0 through 360. Positive values go clockwise, Negative values, counterclockwise.
  * @param {number} [endAngle=360] - the end of the arc in degree units +/- 0 through 360. Positive values go clockwise, Negative values, counterclockwise.
@@ -519,6 +519,7 @@ function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
  * @param {number} [options.rotation=0] - Accept: +/- 0 through 360.
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.arc = function arc(
   x,
@@ -528,6 +529,7 @@ exports.arc = function arc(
   endAngle = 360,
   options = {},
 ) {
+  [x, y] = this._centrify(x, y);
   const { nx, ny } = this._calibrateCoordinate(x, y);
   const diameter = radius * 2;
   const pathOptions = this._getPathOptions(options, nx, ny);

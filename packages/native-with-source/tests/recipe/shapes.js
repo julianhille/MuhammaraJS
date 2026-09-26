@@ -459,6 +459,8 @@ describe("Regular Polygons, Stars, Arrows", () => {
     new Recipe("new", output)
       .createPage(200, 200)
       .circle("center", "center", 10, { link: "https://circle.test" })
+      .ellipse("center", "center", 20, 10, { link: "https://ellipse.test" })
+      .arc("center", "center", 10, 0, 90, { link: "https://arc.test" })
       .endPage()
       .endPDF();
     const muhammara = require("@muhammara/native-with-source");
@@ -479,6 +481,10 @@ describe("Regular Polygons, Stars, Arrows", () => {
           .map((value) => value.value),
       );
     reader.end();
-    require("node:assert/strict").deepEqual(rects, [[90, 90, 110, 110]]);
+    require("node:assert/strict").deepEqual(rects, [
+      [90, 90, 110, 110],
+      [80, 90, 120, 110],
+      [90, 90, 110, 110],
+    ]);
   });
 });

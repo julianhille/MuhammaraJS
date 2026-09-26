@@ -2097,8 +2097,8 @@ declare namespace muhammara {
       options?: Recipe.EllipseOptions,
     ): Recipe;
     arc(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       radius: number,
       startAngle?: number,
       endAngle?: number,
