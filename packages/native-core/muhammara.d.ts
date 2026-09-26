@@ -44,6 +44,15 @@ declare namespace muhammara {
     inFile: FilePath,
     options?: PDFWriterToModifyOptions,
   ): PDFWriter;
+  /**
+   * Starts an incremental update of a PDF stream. The output receives the
+   * original bytes followed by the update.
+   * @param inStream - The source PDF.
+   * @param outStream - The output stream.
+   * @param options - The version, compression, log and encryption.
+   * @returns The writer; call end() to append the update.
+   * @throws {TypeError} If the arguments are wrong or the PDF cannot be read.
+   */
   export function createWriterToModify(
     inStream: ReadStream,
     outStream: WriteStream,
