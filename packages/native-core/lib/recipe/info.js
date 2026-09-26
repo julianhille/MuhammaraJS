@@ -44,6 +44,15 @@ exports.info = function info(options) {
   return result;
 };
 
+/**
+ * Read the Info dictionary of the source PDF once and cache it as
+ * `this.infoDictionary`, with Trapped, CreationDate and ModDate as raw values
+ * and the other entries as text keyed by their lower-cased names.
+ * @private
+ * @returns {Object|undefined} The cached information, or undefined for a new
+ *   PDF or a source without an Info dictionary.
+ * @throws {Error} If the source cannot be read.
+ */
 exports._readInfo = function _readInfo() {
   if (!this.isNewPDF && !this.infoDictionary) {
     const copyFrom = this.isBufferSrc
