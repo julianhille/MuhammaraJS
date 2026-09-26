@@ -1,4 +1,9 @@
-/** Converts a named, hexadecimal, RGB, or numeric color to a 24-bit integer. */
+/**
+ * Converts a named, hexadecimal, RGB, or numeric color to a 24-bit integer.
+ * @param {ColorValue} color - Number, `[r, g, b]`, `#rrggbb`, or a supported color name.
+ * @returns {number} The color as `0xRRGGBB`; black when `color` is empty.
+ * @throws {TypeError} If a string is not a known name or `#rrggbb`.
+ */
 export function colorValue(color) {
   if (typeof color === "number") {
     return color;
