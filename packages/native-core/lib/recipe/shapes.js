@@ -386,6 +386,14 @@ function center(ngon) {
   return [minX + width / 2, minY + height / 2];
 }
 
+/**
+ * Move points by an offset. The point arrays are changed in place.
+ * @private
+ * @param {number} dx - The x offset.
+ * @param {number} dy - The y offset.
+ * @param {number[][]} ngon - The [x, y] points.
+ * @returns {number[][]} A new list holding the moved points.
+ */
 function translate(dx, dy, ngon) {
   let object = ngon.slice();
   for (const coord of object) {
