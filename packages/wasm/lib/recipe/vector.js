@@ -140,6 +140,12 @@ export function createVectorMethods(runtime) {
     /**
      * Draws a rectangle with normalized corner radii.
      * @private
+     * @param {number} x - Left.
+     * @param {number} y - Top.
+     * @param {number} width - Width.
+     * @param {number} height - Height.
+     * @param {object} options - Shape options with `borderRadius`.
+     * @returns {Recipe} The Recipe instance.
      */
     _roundedRectangle: function (x, y, width, height, options) {
       var linkX = x;
