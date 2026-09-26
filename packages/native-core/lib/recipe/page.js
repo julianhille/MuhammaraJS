@@ -111,7 +111,15 @@ function readPageTree(
   };
 }
 
-/** Writes changed page-tree nodes back to the modified PDF. @private */
+/**
+ * Write changed page-tree nodes back to the modified PDF with their new
+ * Count and Kids.
+ * @private
+ * @param {Object} writer - The PDF writer.
+ * @param {Object} copyingContext - Copies the unchanged entries.
+ * @param {Object} node - A node built by readPageTree().
+ * @returns {void}
+ */
 function writePageTree(writer, copyingContext, node) {
   node.children
     .filter((child) => child.children && child.changed)
@@ -122,13 +130,13 @@ function writePageTree(writer, copyingContext, node) {
   objectsContext.startModifiedIndirectObject(node.objectID);
   const dictionary = objectsContext.startDictionary();
   Object.keys(node.values).forEach((key) => {
-    if (key === "Count" || key === "Kids") return;
+    if (key === PdfName.COUNT || key === PdfName.KIDS) return;
     dictionary.writeKey(key);
     copyingContext.copyDirectObjectAsIs(node.values[key]);
   });
-  dictionary.writeKey("Count");
+  dictionary.writeKey(PdfName.COUNT);
   objectsContext.writeNumber(node.count);
-  dictionary.writeKey("Kids");
+  dictionary.writeKey(PdfName.KIDS);
   objectsContext.startArray();
   node.children.forEach((child) => {
     objectsContext.writeIndirectObjectReference(
