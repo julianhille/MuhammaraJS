@@ -605,6 +605,13 @@ export function createRawObjectsContext({
         writeObjectString(3, value);
         return this;
       },
+      /**
+       * Writes a `%` comment line.
+       * @param {string} value - Comment text without the `%`.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a string.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeComment: function (value) {
         writeObjectString(4, value);
         return this;
