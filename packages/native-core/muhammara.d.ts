@@ -678,6 +678,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     Tz(horizontalScaling: number): this;
+    /**
+     * Sets the text leading used by T*, ' and "; operator TL.
+     * @param textLeading - The leading in text space units.
+     * @returns This context.
+     * @throws {TypeError} If textLeading is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     TL(textLeading: number): this;
     Tr(renderingMode: number): this;
     Ts(fontRise: number): this;
