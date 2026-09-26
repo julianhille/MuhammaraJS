@@ -1877,6 +1877,14 @@ export function createWriterToModifyFactory({
               checkOperatorRange("Tr", renderingMode, 7, "text rendering mode");
               return operator(39, renderingMode);
             };
+            /**
+             * Sets the dash pattern (`d`).
+             * @param {number[]} dash - Alternating dash and gap lengths; empty for a solid line.
+             * @param {number} [phase=0] - Offset into the pattern.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If `dash` is not an array of finite numbers or `phase` is not finite.
+             * @throws {Error} If the content context is no longer active or the operator fails.
+             */
             context.d = function (dash, phase = 0) {
               requireFormContent();
               if (
