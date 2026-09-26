@@ -356,6 +356,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     F(): this;
+    /**
+     * Fills the path (even-odd); operator f*.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     fStar(): this;
     n(): this;
     m(x: PosX, y: PosY): this;
