@@ -1849,6 +1849,15 @@ export function createWriterFactory({
           g: function (value) {
             return operator("g", 24, [value]);
           },
+          /**
+           * Sets the stroking RGB color (`RG`).
+           * @param {number} red - Red from 0 to 1.
+           * @param {number} green - Green from 0 to 1.
+           * @param {number} blue - Blue from 0 to 1.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           RG: function (red, green, blue) {
             return operator("RG", 27, [red, green, blue]);
           },
