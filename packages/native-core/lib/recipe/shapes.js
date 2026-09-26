@@ -757,6 +757,10 @@ const Triangle = class Triangle {
   get B() {
     return this._B;
   }
+  /**
+   * Vertex C, the apex.
+   * @returns {number[]} The [x, y] point.
+   */
   get C() {
     return this._C;
   }
