@@ -784,6 +784,7 @@ export function createWriterFactory({
           return operator("TL", 38, [textLeading]);
         },
         Tr: function (renderingMode) {
+          checkOperatorRange("Tr", renderingMode, 7, "text rendering mode");
           return operator("Tr", 39, [renderingMode], true);
         },
         Ts: function (fontRise) {
@@ -1401,6 +1402,7 @@ export function createWriterFactory({
             return operator("TL", 38, [textLeading]);
           },
           Tr: function (renderingMode) {
+            checkOperatorRange("Tr", renderingMode, 7, "text rendering mode");
             return operator("Tr", 39, [renderingMode], true);
           },
           Ts: function (fontRise) {

@@ -337,6 +337,7 @@ export function createWriterToModifyFactory({
           return operator("TL", 38, [textLeading]);
         },
         Tr: function (renderingMode) {
+          checkOperatorRange("Tr", renderingMode, 7, "text rendering mode");
           return operator("Tr", 39, [renderingMode], true);
         },
         Ts: function (fontRise) {
@@ -1475,8 +1476,7 @@ export function createWriterToModifyFactory({
               return operator(37, value);
             };
             context.Tr = function (value) {
-              if (!Number.isInteger(value))
-                throw new TypeError("Tr requires integer numeric arguments");
+              checkOperatorRange("Tr", value, 7, "text rendering mode");
               return operator(39, value);
             };
             context.d = function (dash, phase = 0) {
