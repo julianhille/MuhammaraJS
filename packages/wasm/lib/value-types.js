@@ -279,6 +279,13 @@ export function createValueTypes({ module, withString, withBytes }) {
     get: function () {
       return this._rotation;
     },
+    /**
+     * Sets `/Rotate`, and the native page rotation when the page is active.
+     * @param {number} value - Multiple of 90 degrees.
+     * @returns {void}
+     * @throws {RangeError} If `value` is not an integer multiple of 90.
+     * @throws {Error} If the active native rotation cannot be set.
+     */
     set: function (value) {
       if (!Number.isInteger(value) || value % 90 !== 0) {
         throw new RangeError("rotate must be a multiple of 90 degrees");
