@@ -23,6 +23,11 @@ export function createRawObjectsContext({
     var activeIndirectObject = false;
     var indirectObjectClosedByStream = false;
 
+    /**
+     * Rejects use after the owning writer ended.
+     * @returns {void}
+     * @throws {Error} If the writer has ended.
+     */
     function requireContext() {
       requireOpen();
     }
