@@ -793,6 +793,12 @@ declare namespace muhammara {
      * @returns The byte offset.
      */
     getCurrentPosition(): number;
+    /**
+     * Advances the position without reading.
+     * @param length - The number of bytes to skip.
+     * @returns This reader.
+     * @throws {TypeError} If length is not a single number.
+     */
     skip(length: number): this;
     setPosition(position: number): this;
     setPositionFromEnd(position: number): this;
