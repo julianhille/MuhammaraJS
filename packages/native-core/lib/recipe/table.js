@@ -121,6 +121,9 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
  * of the configured `columns`, otherwise every field found in any record, in
  * first-seen order.
  * @private
+ * @param {Object[]} contents - The table records.
+ * @param {Object} options - The table options.
+ * @returns {string[]} The field names, in column order.
  */
 function tableFields(contents, options) {
   if (options.order && options.order.length) {
