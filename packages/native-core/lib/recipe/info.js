@@ -237,8 +237,9 @@ exports._writeInfo = function _writeInfo() {
  * @memberof Recipe#
  * @function
  * @param {string} key - The key
- * @param {string} value - The value
+ * @param {string} value - The value; other values are converted with toString().
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If the key or value is null or undefined.
  */
 exports.custom = function custom(key, value) {
   const infoDictionary = this.writer.getDocumentContext().getInfoDictionary();
