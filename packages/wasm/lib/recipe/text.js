@@ -213,7 +213,13 @@ function htmlPartsWidth(parts, measure, options, group = true) {
   return measured + charSpacing(text, options.charSpace) - groupedSpacing;
 }
 
-/** Calculates the character spacing needed between separately drawn runs. */
+/**
+ * Calculates the character spacing needed between separately drawn runs.
+ * @param {string} left - Text before the boundary.
+ * @param {string} right - Text after it.
+ * @param {number} [charSpace] - Character spacing.
+ * @returns {number} The extra spacing in points.
+ */
 function boundaryCharSpacing(left, right, charSpace) {
   return (
     charSpacing(left + right, charSpace) -
