@@ -274,6 +274,13 @@ export function createHelpers(module) {
     context.SCN = function (...args) {
       return patternComponents("SCN", 6, args);
     };
+    /**
+     * Sets the nonstroking color in the current color space (`sc`).
+     * @param {...number} components - Color components.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If no components are given or one is not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.sc = function (...components) {
       if (!components.length)
         throw new TypeError("sc requires numeric components");
