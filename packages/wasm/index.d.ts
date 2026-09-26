@@ -79,7 +79,6 @@ export declare const RecipeFontStyle: {
 };
 export type RecipeCoordinate = number | "center";
 export type RecipePosition = [number, number];
-/** Device color spaces Recipe draws with in WebAssembly. */
 /** Device color space of a drawing or Recipe color option. */
 export type DeviceColorSpace = "rgb" | "gray" | "cmyk";
 export declare const DeviceColorSpace: {
@@ -87,6 +86,7 @@ export declare const DeviceColorSpace: {
   readonly GRAY: "gray";
   readonly CMYK: "cmyk";
 };
+/** Device color spaces Recipe draws with in WebAssembly. */
 export type RecipeDeviceColorSpace = DeviceColorSpace;
 /** How `drawImage()` fits an image: always scale, or only shrink when it overflows. */
 export type ImageFitPolicy = "always" | "overflow";
