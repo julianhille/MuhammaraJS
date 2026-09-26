@@ -495,16 +495,7 @@ function loadPrototypes() {
 
 loadPrototypes();
 
-/**
- * Colorspaces accepted by the `colorspace` options of Recipe.
- * @readonly
- * @enum {string}
- */
-Recipe.Colorspace = Object.freeze({
-  RGB: "rgb",
-  CMYK: "cmyk",
-  GRAY: "gray",
-  SEPARATION: "separation",
-});
+// Named values for string options, for example Recipe.AnnotSubtype.HIGHLIGHT.
+Object.assign(Recipe, require("./recipe-constants"));
 
 module.exports = Recipe;

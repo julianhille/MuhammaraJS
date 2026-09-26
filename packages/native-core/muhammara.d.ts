@@ -1618,6 +1618,60 @@ declare namespace muhammara {
       readonly GRAY: "gray";
       readonly SEPARATION: "separation";
     };
+    /** Annotation subtypes for `annot()`. */
+    static readonly AnnotSubtype: {
+      readonly TEXT: "Text";
+      readonly LINK: "Link";
+      readonly FREE_TEXT: "FreeText";
+      readonly LINE: "Line";
+      readonly SQUARE: "Square";
+      readonly CIRCLE: "Circle";
+      readonly POLYGON: "Polygon";
+      readonly POLY_LINE: "PolyLine";
+      readonly HIGHLIGHT: "Highlight";
+      readonly UNDERLINE: "Underline";
+      readonly SQUIGGLY: "Squiggly";
+      readonly STRIKE_OUT: "StrikeOut";
+      readonly CARET: "Caret";
+      readonly STAMP: "Stamp";
+      readonly INK: "Ink";
+      readonly POPUP: "Popup";
+      readonly FILE_ATTACHMENT: "FileAttachment";
+      readonly SOUND: "Sound";
+      readonly MOVIE: "Movie";
+      readonly SCREEN: "Screen";
+      readonly WIDGET: "Widget";
+      readonly PRINTER_MARK: "PrinterMark";
+      readonly TRAP_NET: "TrapNet";
+      readonly WATERMARK: "Watermark";
+      readonly THREE_D: "3D";
+      readonly REDACT: "Redact";
+      readonly PROJECTION: "Projection";
+      readonly RICH_MEDIA: "RichMedia";
+    };
+    /** Annotation flag names for the `flag` options. */
+    static readonly AnnotFlag: {
+      readonly INVISIBLE: "invisible";
+      readonly HIDDEN: "hidden";
+      readonly PRINT: "print";
+      readonly NO_ZOOM: "nozoom";
+      readonly NO_ROTATE: "norotate";
+      readonly NO_VIEW: "noview";
+      readonly READ_ONLY: "readonly";
+      readonly LOCKED: "locked";
+      readonly TOGGLE_NO_VIEW: "togglenoview";
+      readonly LOCKED_CONTENTS: "lockedcontents";
+    };
+    /** Text annotation icons for the `icon` option. */
+    static readonly AnnotIcon: {
+      readonly COMMENT: "Comment";
+      readonly KEY: "Key";
+      readonly NOTE: "Note";
+      readonly HELP: "Help";
+      readonly NEW_PARAGRAPH: "NewParagraph";
+      readonly PARAGRAPH: "Paragraph";
+      readonly INSERT: "Insert";
+    };
 
     readonly position: { x: number; y: number };
     /** Current document metadata, keyed by one-based page number. */

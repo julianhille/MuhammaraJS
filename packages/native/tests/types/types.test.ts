@@ -923,3 +923,13 @@ const recipeConstructorOptions: muhammara.Recipe.RecipeOptions = {
   fontSrcPath: ["./fonts"],
 };
 void recipeConstructorOptions;
+
+const annotationRecipe = new muhammara.Recipe("new", "output.pdf");
+annotationRecipe.createPage("A4").comment("note", "center", 100, {
+  flag: muhammara.Recipe.AnnotFlag.READ_ONLY,
+});
+const highlightSubtype: muhammara.Recipe.AnnotSubtype =
+  muhammara.Recipe.AnnotSubtype.HIGHLIGHT;
+const noteIcon: muhammara.Recipe.AnnotOptionsIcon =
+  muhammara.Recipe.AnnotIcon.NOTE;
+void [highlightSubtype, noteIcon];

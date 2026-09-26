@@ -1,3 +1,5 @@
+const { AnnotSubtype, AnnotIcon } = require("../recipe-constants");
+
 /**
  * Encodes annotation text as a PDF text string, so characters outside
  * PDFDocEncoding are written as UTF-16BE instead of raw UTF-8 bytes.
@@ -13,27 +15,33 @@ function textString(writer, value) {
 }
 
 /**
- * Create a comment annotation
+ * Create a comment annotation: a Text annotation with the Comment icon. It is
+ * written when the PDF ends.
  * @name comment
  * @function
  * @memberof Recipe#
  * @param {string} [text=''] - The text content
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|"center"} x - The coordinate x
+ * @param {number|"center"} y - The coordinate y
  * @param {Object} [options] - The options
  * @param {string} [options.title] - The title.
  * @param {string} [options.date] - The date.
  * @param {boolean} [options.open=false] - Open the annotation by default?
  * @param {boolean} [options.richText] - Display with rich text format, text will be transformed automatically, or you may pass in your own rich text starts with "<?xml..."
  * @param {Array} [options.replies] - Array of annotation replies, each with text and optional title, date, subject, richText, and flag.
- * @param {'invisible'|'hidden'|'print'|'nozoom'|'norotate'|'noview'|'readonly'|'locked'|'togglenoview'} [options.flag] - The flag property
+ * @param {Recipe.AnnotFlag} [options.flag] - The flag property, one of the `Recipe.AnnotFlag` values.
  * @returns {Recipe} The recipe instance.
  */
 exports.comment = function comment(text = "", x, y, options = {}) {
   this.annotationsToWrite.push({
-    subtype: "Text",
+    subtype: AnnotSubtype.TEXT,
     pageNumber: this.pageNumber,
-    args: { text, x, y, options: Object.assign({ icon: "Comment" }, options) },
+    args: {
+      text,
+      x,
+      y,
+      options: Object.assign({ icon: AnnotIcon.COMMENT }, options),
+    },
     replies: options.replies,
   });
   return this;

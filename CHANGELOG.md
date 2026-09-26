@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Add `Recipe.Colorspace` constants for the `colorspace` options, and declare
+- Add `Recipe.Colorspace`, `Recipe.AnnotSubtype`, `Recipe.AnnotFlag` and
+  `Recipe.AnnotIcon` constants for the matching string options, and declare
   the `password`, `ownerPassword`, `userPassword`, `userProtectionFlag` and
   `fontSrcPath` Recipe constructor options [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Accept `Recipe#line(startX, startY, endX, endY, options?)`, as Wasm does
