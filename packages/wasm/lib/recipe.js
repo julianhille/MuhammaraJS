@@ -491,6 +491,9 @@ export function createRecipeFactory({
     /**
      * Applies opacity to the active PDF context.
      * @private
+     * @param {number} value - Opacity from 0 to 1.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the opacity cannot be applied.
      */
     _setOpacity(value) {
       if (this._pageContext) this._pageContext.setOpacity(value);
