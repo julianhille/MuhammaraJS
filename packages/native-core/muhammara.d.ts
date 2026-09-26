@@ -560,6 +560,13 @@ declare namespace muhammara {
     SCN(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////SCN(...colorComponents: number[], patternName?: string): this;
     SCN(colorComponents: number[], patternName?: string): this;
+    /**
+     * Sets the fill color in the current color space; operator sc.
+     * @param colorComponents - The components, each 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If no component is given.
+     * @throws {TypeError} If there is no content context.
+     */
     sc(...colorComponents: number[]): this;
     scn(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////scn(...colorComponents: number[], patternName?: string): this;
