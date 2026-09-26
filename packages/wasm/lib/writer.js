@@ -1997,6 +1997,13 @@ export function createWriterFactory({
           k: function (cyan, magenta, yellow, black) {
             return operator("k", 28, [cyan, magenta, yellow, black]);
           },
+          /**
+           * Sets the stroking gray color (`G`).
+           * @param {number} gray - Gray level from 0 to 1.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           G: function (value) {
             return operator("G", 25, [value]);
           },
