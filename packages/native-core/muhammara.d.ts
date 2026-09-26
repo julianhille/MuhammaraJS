@@ -1267,6 +1267,19 @@ declare namespace muhammara {
       source: FilePath | ReadStream | PDFReader,
       options?: PDFReaderOptions,
     ): DocumentCopyingContext;
+    /**
+     * Creates one form XObject per page of another PDF.
+     * @param file - The PDF path.
+     * @param box - The page box to use, or an explicit [left, bottom, right, top].
+     * @param options - The page range and the source password.
+     * @param transformation - The form matrix.
+     * @param objectIds - Further source object IDs to copy.
+     * @returns The form object IDs, one per page.
+     * @throws {TypeError} If the arguments are wrong or the forms cannot be
+     *   created.
+     * @throws {RangeError} If the page range is invalid.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObjectsFromPDF(
       file: FilePath,
       box?: PDFBox | PDFPageBoxType,
