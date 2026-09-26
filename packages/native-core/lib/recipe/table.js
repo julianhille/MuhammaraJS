@@ -20,7 +20,16 @@ function getCellOptions(options, cell = "cell") {
   return cellOptions;
 }
 
-/** Measures the same text and outer box height that text() will draw. */
+/**
+ * Measure the outer box height text() will draw for a cell.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {string} text - The cell text or HTML.
+ * @param {Object} column - The table layout column: x, y and width.
+ * @param {Object} options - The cell text options.
+ * @returns {number} The box height, including padding and minimum height.
+ * @throws {TypeError} If no page is active.
+ */
 function getCellHeight(self, text, column, options) {
   var colOptions = self._merge(options, { textBox: { width: column.width } });
   var originCoord = self._calibrateCoordinate(
