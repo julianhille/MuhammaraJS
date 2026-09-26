@@ -13,35 +13,100 @@ declare namespace muhammara {
   export let PDFRStreamForBuffer: PDFRStreamForBuffer;
   export let PDFWStreamForBuffer: PDFWStreamForBuffer;
   export let PDFStreamForResponse: PDFStreamForResponse;
+  export let PDFDate: {
+    new (value?: string | Date): PDFDate;
+  };
+  export let PDFTextString: {
+    new (value?: string | number[]): PDFTextString;
+  };
 
+  /**
+   * Starts writing a new PDF.
+   * @param input - The output path, or a stream that receives the bytes.
+   * @param options - The PDF version, compression, log and encryption.
+   * @returns The writer; call end() to finish the PDF.
+   * @throws {TypeError} If the arguments are wrong, the version is not a valid
+   *   PDF version, or the output cannot be opened.
+   */
   export function createWriter(
     input: FilePath | WriteStream,
     options?: PDFWriterOptions,
   ): PDFWriter;
+  /**
+   * Starts an incremental update of a PDF file, in place or into
+   * options.modifiedFilePath.
+   * @param inFile - The PDF path.
+   * @param options - The output path, version, compression, log and encryption.
+   * @returns The writer; call end() to append the update.
+   * @throws {TypeError} If the arguments are wrong or the PDF cannot be read.
+   */
   export function createWriterToModify(
     inFile: FilePath,
     options?: PDFWriterToModifyOptions,
   ): PDFWriter;
+  /**
+   * Starts an incremental update of a PDF stream. The output receives the
+   * original bytes followed by the update.
+   * @param inStream - The source PDF.
+   * @param outStream - The output stream.
+   * @param options - The version, compression, log and encryption.
+   * @returns The writer; call end() to append the update.
+   * @throws {TypeError} If the arguments are wrong or the PDF cannot be read.
+   */
   export function createWriterToModify(
     inStream: ReadStream,
     outStream: WriteStream,
     options?: PDFWriterToModifyOptions,
   ): PDFWriter;
 
+  /**
+   * Continues a PDF whose writer was retired with shutdown().
+   * @param restartFile - The output path, or the output stream, of the
+   *   interrupted PDF.
+   * @param restartStateFile - The state file written by shutdown().
+   * @param options - The modified PDF path or stream, and the log.
+   * @returns The writer.
+   * @throws {TypeError} If the arguments are wrong or the state cannot be read.
+   */
   export function createWriterToContinue(
     restartFile: string,
     restartStateFile: string,
     options?: PDFWriterToContinueOptions,
   ): PDFWriter;
+  /**
+   * Opens a PDF for reading.
+   * @param input - The PDF path or a read stream.
+   * @param options - The password of an encrypted PDF.
+   * @returns The reader; call end() to release the file.
+   * @throws {TypeError} If the arguments are wrong or the PDF cannot be parsed.
+   */
   export function createReader(
     input: FilePath | ReadStream,
     options?: PDFReaderOptions,
   ): PDFReader;
+  /**
+   * Writes a copy of a PDF with new encryption settings, or decrypted when
+   * no passwords are given.
+   * @param originalPdfPath - The source PDF path.
+   * @param newPdfPath - The output path.
+   * @param options - The source password and the new encryption settings.
+   * @throws {TypeError} If the arguments are wrong, one side is a path and the
+   *   other a stream, or the PDF cannot be recrypted.
+   */
   export function recrypt(
     originalPdfPath: FilePath,
     newPdfPath: FilePath,
     options?: PDFRecryptOptions,
   ): void;
+  /**
+   * Writes a copy of a PDF stream with new encryption settings, or decrypted
+   * when no passwords are given.
+   * @param originalPdfStream - The source PDF.
+   * @param newPdfStream - The output stream.
+   * @param options - The source password and the new encryption settings.
+   * @throws {TypeError} If the arguments are wrong or the PDF cannot be
+   *   recrypted.
+   */
   export function recrypt(
     originalPdfStream: PDFRStreamForFile | PDFRStreamForBuffer,
     newPdfStream: PDFWStreamForFile | PDFWStreamForBuffer,
@@ -53,7 +118,16 @@ declare namespace muhammara {
    * stream owns and may keep, and returns the number of bytes it accepted.
    */
   export interface WriteStream {
+    /**
+     * Writes bytes. Implement it on a custom output stream.
+     * @param inBytes - The bytes to write.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer): number;
+    /**
+     * Returns the number of bytes written so far.
+     * @returns The current byte offset.
+     */
     getCurrentPosition(): number;
   }
 
@@ -62,6 +136,11 @@ declare namespace muhammara {
    * owns and may keep, and returns the number of bytes it accepted.
    */
   export interface LogStream {
+    /**
+     * Writes log bytes synchronously.
+     * @param inBytes - The bytes to write.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer): number;
   }
 
@@ -70,22 +149,88 @@ declare namespace muhammara {
    * `Uint8Array` (a `Buffer` qualifies) or an array of byte values.
    */
   export interface ReadStream {
+    /**
+     * Reads the next bytes and advances the position by the amount read.
+     * Implement it on a custom input stream.
+     * @param inAmount - The maximum number of bytes to read.
+     * @returns The bytes read; shorter than requested at the end.
+     */
     read(inAmount: number): Uint8Array | number[];
+    /**
+     * Tells whether bytes remain after the current position.
+     * @returns True while the end has not been reached.
+     */
     notEnded(): boolean;
+    /**
+     * Moves to a position relative to the start position.
+     * @param inPosition - The byte offset from the start position.
+     */
     setPosition(inPosition: number): void;
+    /**
+     * Moves to a position counted back from the end.
+     * @param inPosition - The number of bytes before the end.
+     */
     setPositionFromEnd(inPosition: number): void;
+    /**
+     * Advances the position without reading.
+     * @param inAmount - The number of bytes to skip.
+     */
     skip(inAmount: number): void;
+    /**
+     * Returns the position relative to the start position.
+     * @returns The current byte offset.
+     */
     getCurrentPosition(): number;
+    /**
+     * Sets the offset that later positions are counted from, for PDF data
+     * that does not begin at byte zero.
+     * @param inPosition - The absolute byte offset of the start.
+     */
     moveStartPosition(inPosition: number): void;
   }
 
   export interface PDFPageInput {
+    /**
+     * Returns the page dictionary.
+     * @returns The dictionary.
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getDictionary(): PDFDictionary;
+    /**
+     * Returns the media box, inherited from parent pages when not set.
+     * @returns The box [left, bottom, right, top].
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getMediaBox(): PDFBox;
+    /**
+     * Returns the crop box, inherited from parent pages when not set.
+     * @returns The box [left, bottom, right, top]; the media box when not set.
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getCropBox(): PDFBox;
+    /**
+     * Returns the trim box, inherited from parent pages when not set.
+     * @returns The box [left, bottom, right, top]; the crop box when not set.
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getTrimBox(): PDFBox;
+    /**
+     * Returns the bleed box, inherited from parent pages when not set.
+     * @returns The box [left, bottom, right, top]; the crop box when not set.
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getBleedBox(): PDFBox;
+    /**
+     * Returns the art box, inherited from parent pages when not set.
+     * @returns The box [left, bottom, right, top]; the crop box when not set.
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getArtBox(): PDFBox;
+    /**
+     * Returns the page rotation, inherited from parent pages when not set.
+     * @returns The rotation in degrees, a multiple of 90.
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getRotate(): number;
   }
 
@@ -95,9 +240,38 @@ declare namespace muhammara {
       pageIndex?: number,
       ensureContentEncapsulation?: boolean,
     ): PDFPageModifier;
+    /**
+     * Starts a content stream drawn over the existing page content.
+     * @returns This modifier.
+     * @throws {TypeError} If the page does not exist.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     startContext(): this;
+    /**
+     * Returns the started content context.
+     * @returns The content context.
+     * @throws {TypeError} If startContext() was not called.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     getContext(): XObjectContentContext;
+    /**
+     * Ends the content stream started by startContext().
+     * @returns This modifier.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     endContext(): this;
+    /**
+     * Adds a link annotation to the modified page.
+     * @param inUrl - The ASCII link target.
+     * @param left - The clickable area left edge.
+     * @param bottom - The clickable area bottom edge.
+     * @param right - The clickable area right edge.
+     * @param top - The clickable area top edge.
+     * @returns This modifier.
+     * @throws {TypeError} If the arguments are not a string and four numbers, or
+     *   the URL cannot be encoded as ASCII.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     attachURLLinktoCurrentPage(
       inUrl: string,
       left: number,
@@ -105,24 +279,70 @@ declare namespace muhammara {
       right: number,
       top: number,
     ): this;
+    /**
+     * Writes the modified page.
+     * @returns This modifier.
+     * @throws {TypeError} If the page cannot be written.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     writePage(): this;
   }
 
-  export type PDFImageType = "JPG" | "PDF" | "PNG" | "TIFF";
+  /** Image or document format reported by `getImageType()`. */
+  export const PDFImageType: {
+    readonly PDF: "PDF";
+    readonly JPG: "JPG";
+    readonly TIFF: "TIFF";
+    readonly PNG: "PNG";
+  };
+  export type PDFImageType = (typeof PDFImageType)[keyof typeof PDFImageType];
 
   export interface PDFRStreamForFile extends ReadStream {
+    /**
+     * Opens a file for reading.
+     * @param inPath - The file path.
+     * @throws {Error} If the file cannot be opened or read.
+     */
     new (inPath: FilePath): PDFRStreamForFile;
+    /**
+     * Reads the next bytes from the file.
+     * @param inAmount - The maximum number of bytes to read.
+     * @returns The bytes read; shorter than requested at the end.
+     */
     read(inAmount: number): Buffer;
+    /**
+     * Closes the file.
+     * @param inCallback - Called once the file is closed.
+     */
     close(inCallback?: () => void): void;
   }
 
   export interface PDFRStreamForBuffer extends ReadStream {
+    /**
+     * Creates a read stream over a buffer.
+     * @param buffer - The bytes to read.
+     */
     new (buffer: Buffer): PDFRStreamForBuffer;
+    /**
+     * Reads a copy of the next bytes.
+     * @param inAmount - The maximum number of bytes to read.
+     * @returns The bytes read; shorter than requested at the end.
+     */
     read(inAmount: number): Buffer;
   }
 
+  /** Device color space of a drawing color option. */
+  export const DeviceColorSpace: {
+    readonly RGB: "rgb";
+    readonly GRAY: "gray";
+    readonly CMYK: "cmyk";
+  };
+  export type DeviceColorSpace =
+    (typeof DeviceColorSpace)[keyof typeof DeviceColorSpace];
+
   export interface ColorOptions {
-    colorspace?: string;
+    /** A DeviceColorSpace value; other strings are accepted for compatibility. */
+    colorspace?: DeviceColorSpace | (string & {});
     color?: string | number;
   }
 
@@ -132,7 +352,14 @@ declare namespace muhammara {
    * intersects the clipping region without painting; scope it with q()/Q().
    * `null` selects no paint operation and ends the path unpainted.
    */
-  export type DrawingPathType = "stroke" | "fill" | "clip" | null;
+  /** Paint operations for the `type` option of the drawing helpers. */
+  export const DrawingPathType: {
+    readonly STROKE: "stroke";
+    readonly FILL: "fill";
+    readonly CLIP: "clip";
+  };
+  export type DrawingPathType =
+    (typeof DrawingPathType)[keyof typeof DrawingPathType] | null;
 
   export interface GraphicOptions extends ColorOptions {
     type?: DrawingPathType;
@@ -150,7 +377,13 @@ declare namespace muhammara {
 
   export type LineJoinStyle = 0 | 1 | 2;
 
-  export type EEncoding = "text" | "code" | "hex";
+  /** How text-showing operators encode string text. */
+  export const EEncoding: {
+    readonly TEXT: "text";
+    readonly CODE: "code";
+    readonly HEX: "hex";
+  };
+  export type EEncoding = (typeof EEncoding)[keyof typeof EEncoding];
 
   export const LineCapStyle: {
     readonly LINECAP_BUTT: 0;
@@ -166,90 +399,601 @@ declare namespace muhammara {
   export type Glyph = Array<[number, number]>;
 
   export interface AbstractContentContext {
+    /**
+     * Closes, fills (nonzero winding) and strokes the path; operator b.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     b(): this;
+    /**
+     * Fills (nonzero winding) and strokes the path; operator B.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     B(): this;
+    /**
+     * Closes, fills (even-odd) and strokes the path; operator b*.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     bStar(): this;
+    /**
+     * Fills (even-odd) and strokes the path; operator B*.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     BStar(): this;
+    /**
+     * Closes and strokes the path; operator s.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     s(): this;
+    /**
+     * Strokes the path; operator S.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     S(): this;
+    /**
+     * Fills the path (nonzero winding); operator f.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     f(): this;
+    /**
+     * Fills the path (nonzero winding); operator F, the obsolete form of f.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     F(): this;
+    /**
+     * Fills the path (even-odd); operator f*.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     fStar(): this;
+    /**
+     * Ends the path without painting it, for clipping; operator n.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     n(): this;
+    /**
+     * Starts a subpath; operator m.
+     * @param x - The x coordinate.
+     * @param y - The y coordinate.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 2 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     m(x: PosX, y: PosY): this;
+    /**
+     * Adds a line to the path; operator l.
+     * @param x - The x coordinate.
+     * @param y - The y coordinate.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 2 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     l(x: PosX, y: PosY): this;
+    /**
+     * Adds a cubic Bezier curve; operator c.
+     * @param x1 - The first control point x.
+     * @param y1 - The first control point y.
+     * @param x2 - The second control point x.
+     * @param y2 - The second control point y.
+     * @param x3 - The end point x.
+     * @param y3 - The end point y.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 6 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     c(x1: PosX, y1: PosY, x2: PosX, y2: PosY, x3: PosX, y3: PosY): this;
+    /**
+     * Adds a Bezier curve whose first control point is the current point;
+     * operator v.
+     * @param x2 - The second control point x.
+     * @param y2 - The second control point y.
+     * @param x3 - The end point x.
+     * @param y3 - The end point y.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 4 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     v(x2: PosX, y2: PosY, x3: PosX, y3: PosY): this;
+    /**
+     * Adds a Bezier curve whose second control point is the end point;
+     * operator y.
+     * @param x1 - The first control point x.
+     * @param y1 - The first control point y.
+     * @param x3 - The end point x.
+     * @param y3 - The end point y.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 4 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     y(x1: PosX, y1: PosY, x3: PosX, y3: PosY): this;
+    /**
+     * Closes the current subpath; operator h.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     h(): this;
+    /**
+     * Adds a rectangle to the path; operator re.
+     * @param left - The left edge.
+     * @param bottom - The bottom edge.
+     * @param width - The width.
+     * @param height - The height.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 4 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     re(left: number, bottom: number, width: Width, height: Height): this;
+    /**
+     * Saves the graphics state; operator q.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     q(): this;
+    /**
+     * Restores the graphics state; operator Q.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     Q(): this;
     /**
-     * a b 0
-     * c d 0
-     * e f 1
+     * Concatenates a matrix to the current transformation; operator cm. The
+     * matrix is [a b 0, c d 0, e f 1].
+     * @param args - The matrix values a, b, c, d, e and f.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 6 numbers.
+     * @throws {TypeError} If there is no content context.
      */
     cm(...args: TransformationMatrix): this;
+    /**
+     * Sets the line width; operator w.
+     * @param lineWidth - The width in user units.
+     * @returns This context.
+     * @throws {TypeError} If lineWidth is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     w(lineWidth: Width): this;
+    /**
+     * Sets the line cap style; operator J.
+     * @param lineCapStyle - A LineCapStyle value.
+     * @returns This context.
+     * @throws {TypeError} If lineCapStyle is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     J(lineCapStyle: LineCapStyle): this;
+    /**
+     * Sets the line join style; operator j.
+     * @param lineJoinStyle - 0 miter, 1 round or 2 bevel.
+     * @returns This context.
+     * @throws {TypeError} If lineJoinStyle is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     j(lineJoinStyle: LineJoinStyle): this;
+    /**
+     * Sets the miter limit; operator M.
+     * @param miterLimit - The miter limit.
+     * @returns This context.
+     * @throws {TypeError} If miterLimit is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     M(miterLimit: number): this;
-    d(miterLimit: number[], dashPhase: number): this;
+    /**
+     * Sets the dash pattern; operator d. Values are truncated to integers.
+     * @param dashArray - Alternating dash and gap lengths; empty for a solid line.
+     * @param dashPhase - The offset into the pattern; 0 when omitted.
+     * @returns This context.
+     * @throws {TypeError} If dashArray is not an array or dashPhase is not a
+     *   number.
+     * @throws {TypeError} If there is no content context.
+     */
+    d(dashArray: number[], dashPhase?: number): this;
+    /**
+     * Sets the rendering intent; operator ri.
+     * @param renderingIntentName - The intent, for example Perceptual.
+     * @returns This context.
+     * @throws {TypeError} If renderingIntentName is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     ri(renderingIntentName: string): this;
+    /**
+     * Sets the flatness tolerance; operator i. The value is truncated to an
+     * integer.
+     * @param flatness - The tolerance, 0 to 100.
+     * @returns This context.
+     * @throws {TypeError} If flatness is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     i(flatness: number): this;
+    /**
+     * Applies a graphics state resource; operator gs.
+     * @param graphicStateName - The ExtGState resource name.
+     * @returns This context.
+     * @throws {TypeError} If graphicStateName is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     gs(graphicStateName: string): this;
+    /**
+     * Sets the fill and stroke opacity through a graphics state resource.
+     * @param opacity - The opacity, 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If opacity is not a single number from 0 to 1.
+     * @throws {TypeError} If there is no content context.
+     */
     setOpacity(opacity: number): this;
+    /**
+     * Sets the stroke color space; operator CS.
+     * @param colorSpaceName - A color space name or resource name.
+     * @returns This context.
+     * @throws {TypeError} If colorSpaceName is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     CS(colorSpaceName: string): this;
+    /**
+     * Sets the fill color space; operator cs.
+     * @param colorSpaceName - A color space name or resource name.
+     * @returns This context.
+     * @throws {TypeError} If colorSpaceName is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     cs(colorSpaceName: string): this;
+    /**
+     * Sets the stroke color in the current color space; operator SC.
+     * @param colorComponents - The components, each 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If no component is given.
+     * @throws {TypeError} If there is no content context.
+     */
     SC(...colorComponents: number[]): this;
+    /**
+     * Sets the stroke color, optionally with a pattern; operator SCN. Pass
+     * the components as arguments or as one array, then an optional pattern name.
+     * @param parameters - The components and an optional pattern name.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are neither components nor components and a pattern name.
+     * @throws {TypeError} If there is no content context.
+     */
     SCN(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////SCN(...colorComponents: number[], patternName?: string): this;
     SCN(colorComponents: number[], patternName?: string): this;
+    /**
+     * Sets the fill color in the current color space; operator sc.
+     * @param colorComponents - The components, each 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If no component is given.
+     * @throws {TypeError} If there is no content context.
+     */
     sc(...colorComponents: number[]): this;
+    /**
+     * Sets the fill color, optionally with a pattern; operator scn. Pass the
+     * components as arguments or as one array, then an optional pattern name.
+     * @param parameters - The components and an optional pattern name.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are neither components nor components and a pattern name.
+     * @throws {TypeError} If there is no content context.
+     */
     scn(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////scn(...colorComponents: number[], patternName?: string): this;
     scn(colorComponents: number[], patternName?: string): this;
+    /**
+     * Sets a gray stroke color; operator G.
+     * @param gray - The gray level, 0 (black) to 1 (white).
+     * @returns This context.
+     * @throws {TypeError} If gray is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     G(gray: number): this;
+    /**
+     * Sets a gray fill color; operator g.
+     * @param gray - The gray level, 0 (black) to 1 (white).
+     * @returns This context.
+     * @throws {TypeError} If gray is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     g(gray: number): this;
+    /**
+     * Sets an RGB stroke color; operator RG.
+     * @param r - Red, 0 to 1.
+     * @param g - Green, 0 to 1.
+     * @param b - Blue, 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 3 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     RG(r: number, g: number, b: number): this;
+    /**
+     * Sets an RGB fill color; operator rg.
+     * @param r - Red, 0 to 1.
+     * @param g - Green, 0 to 1.
+     * @param b - Blue, 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 3 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     rg(r: number, g: number, b: number): this;
+    /**
+     * Sets a CMYK stroke color; operator K.
+     * @param c - Cyan, 0 to 1.
+     * @param m - Magenta, 0 to 1.
+     * @param y - Yellow, 0 to 1.
+     * @param k - Black, 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 4 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     K(c: number, m: number, y: number, k: number): this;
+    /**
+     * Sets a CMYK fill color; operator k.
+     * @param c - Cyan, 0 to 1.
+     * @param m - Magenta, 0 to 1.
+     * @param y - Yellow, 0 to 1.
+     * @param k - Black, 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 4 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     k(c: number, m: number, y: number, k: number): this;
+    /**
+     * Clips to the path (nonzero winding); operator W. Follow it with n.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     W(): this;
+    /**
+     * Clips to the path (even-odd); operator W*. Follow it with n.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     WStar(): this;
-    doXObject(xObject: string | FormXObject | ImageXObject): this;
+    /**
+     * Draws an XObject; operator Do. A form or image is added to the
+     * resources.
+     * @param xObject - A resource name, a form or image, or a form object ID.
+     * @returns This context.
+     * @throws {TypeError} If xObject is not a single XObject, name or ID.
+     * @throws {TypeError} If there is no content context.
+     */
+    doXObject(
+      xObject: string | FormXObjectId | FormXObject | ImageXObject,
+    ): this;
+    /**
+     * Sets the character spacing; operator Tc.
+     * @param characterSpace - The extra space per character in text space units.
+     * @returns This context.
+     * @throws {TypeError} If characterSpace is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Tc(characterSpace: number): this;
+    /**
+     * Sets the word spacing; operator Tw.
+     * @param wordSpace - The extra space per space character in text space units.
+     * @returns This context.
+     * @throws {TypeError} If wordSpace is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Tw(wordSpace: number): this;
+    /**
+     * Sets the horizontal scaling; operator Tz. The value is truncated to an
+     * integer.
+     * @param horizontalScaling - The scaling in percent; 100 is normal.
+     * @returns This context.
+     * @throws {TypeError} If horizontalScaling is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Tz(horizontalScaling: number): this;
+    /**
+     * Sets the text leading used by T*, ' and "; operator TL.
+     * @param textLeading - The leading in text space units.
+     * @returns This context.
+     * @throws {TypeError} If textLeading is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     TL(textLeading: number): this;
+    /**
+     * Sets the text rendering mode; operator Tr.
+     * @param renderingMode - 0 fill to 7 clip, as in ISO 32000-1 table 106.
+     * @returns This context.
+     * @throws {TypeError} If renderingMode is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Tr(renderingMode: number): this;
+    /**
+     * Sets the text rise; operator Ts.
+     * @param fontRise - The baseline shift in text space units.
+     * @returns This context.
+     * @throws {TypeError} If fontRise is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Ts(fontRise: number): this;
+    /**
+     * Begins a text object; operator BT.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     BT(): this;
+    /**
+     * Ends a text object; operator ET.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     ET(): this;
+    /**
+     * Moves to the start of the next line by an offset; operator Td.
+     * @param tX - The horizontal offset.
+     * @param tY - The vertical offset.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 2 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     Td(tX: number, tY: number): this;
+    /**
+     * Moves to the next line by an offset and sets the leading to -tY;
+     * operator TD.
+     * @param tX - The horizontal offset.
+     * @param tY - The vertical offset.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 2 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     TD(tX: number, tY: number): this;
+    /**
+     * Sets the text matrix; operator Tm.
+     * @param a - The matrix value a.
+     * @param b - The matrix value b.
+     * @param c - The matrix value c.
+     * @param d - The matrix value d.
+     * @param e - The matrix value e.
+     * @param f - The matrix value f.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 6 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     Tm(a: number, b: number, c: number, d: number, e: number, f: number): this;
+    /**
+     * Moves to the start of the next line; operator T*.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     TStar(): this;
+    /**
+     * Sets the font and size; operator Tf.
+     * @param fontReferenced - A font from getFontForFile(), or a font resource name.
+     * @param fontSize - The font size.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not a font or string and a number.
+     * @throws {TypeError} If there is no content context.
+     */
     Tf(fontReferenced: UsedFont | string, fontSize: number): this;
+    /**
+     * Shows text; operator Tj. Set a font with Tf() first.
+     * @param text - The text, or glyphs of the current font.
+     * @param options - Text encoding options.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {TypeError} If there is no content context.
+     */
+    Tj(text: string, options?: TextRenderOptions): this;
+    Tj(glyphs: Glyph): this;
     Tj(text: string | Glyph): this;
+    /**
+     * Moves to the next line and shows text; operator '.
+     * @param text - The text, or glyphs of the current font.
+     * @param options - Text encoding options.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {TypeError} If there is no content context.
+     */
+    Quote(text: string, options?: TextRenderOptions): this;
+    Quote(glyphs: Glyph): this;
     Quote(text: string | Glyph): this;
+    /**
+     * Sets word and character spacing, moves to the next line and shows text;
+     * operator ".
+     * @param wordSpacing - The word spacing.
+     * @param characterSpacing - The character spacing.
+     * @param text - The text, or glyphs of the current font.
+     * @param options - Text encoding options.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {TypeError} If there is no content context.
+     */
     DoubleQuote(
       wordSpacing: number,
-      characterString: number,
+      characterSpacing: number,
+      text: string,
+      options?: TextRenderOptions,
+    ): this;
+    DoubleQuote(
+      wordSpacing: number,
+      characterSpacing: number,
+      glyphs: Glyph,
+    ): this;
+    DoubleQuote(
+      wordSpacing: number,
+      characterSpacing: number,
       text: string | Glyph,
     ): this;
-    TJ(value: string | Glyph, options?: TextRenderOptions): this;
+    /**
+     * Shows text with kerning adjustments; operator TJ. Pass the array items
+     * as separate arguments: strings with numeric adjustments in thousandths of
+     * text space, optionally followed by options.
+     * @param items - The strings or glyphs and adjustments.
+     * @returns This context.
+     * @throws {TypeError} If an item is not a string, glyph list or number.
+     * @throws {TypeError} If there is no content context.
+     */
+    TJ(...items: (string | number)[]): this;
+    TJ(
+      ...items: [string | number, ...(string | number)[], TextRenderOptions]
+    ): this;
+    /** Glyph variant: glyph lists with numeric kerning adjustments. */
+    TJ(...items: (Glyph | number)[]): this;
+    /**
+     * Writes content-stream code as given, unchecked.
+     * @param freeCode - The code.
+     * @returns This context.
+     * @throws {TypeError} If freeCode is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     writeFreeCode(freeCode: string): this;
-    /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
+    /**
+     * Draws a path through points. Pass x, y numbers as arguments or one array
+     * of [x, y] pairs, then optional options. Invalid input emits no operators.
+     * @param parameters - The coordinates and optional options.
+     * @returns This context.
+     * @throws {TypeError} If fewer than two complete finite coordinate pairs are
+     *   given.
+     * @throws {TypeError} If there is no content context.
+     * @throws {TypeError} If `options.type` is not "stroke", "fill", "clip" or null.
+     */
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////drawPath(...xyPairs: number[], options: GraphicOptions): this;
     drawPath(xyPairs: Array<[number, number]>, options: GraphicOptions): this;
-    /** Coordinates, radius, and calculated circle geometry must remain finite. */
+    /**
+     * Draws a circle.
+     * @param x - The center x.
+     * @param y - The center y.
+     * @param r - The radius.
+     * @param options - The paint type, color and line width.
+     * @returns This context.
+     * @throws {TypeError} If fewer than 3 arguments are given, or the coordinates,
+     *   radius or calculated geometry are not finite.
+     * @throws {TypeError} If there is no content context.
+     * @throws {TypeError} If `options.type` is not "stroke", "fill", "clip" or null.
+     */
     drawCircle(x: PosX, y: PosY, r: number, options?: GraphicOptions): this;
-    /** Coordinates and edge length must be finite. */
+    /**
+     * Draws a square.
+     * @param x - The left edge.
+     * @param y - The bottom edge.
+     * @param l - The edge length.
+     * @param options - The paint type, color and line width.
+     * @returns This context.
+     * @throws {TypeError} If fewer than 3 arguments are given or a value is not
+     *   finite.
+     * @throws {TypeError} If there is no content context.
+     * @throws {TypeError} If `options.type` is not "stroke", "fill", "clip" or null.
+     */
     drawSquare(x: PosX, y: PosY, l: number, options?: GraphicOptions): this;
-    /** Coordinates and dimensions must be finite. */
+    /**
+     * Draws a rectangle.
+     * @param x - The left edge.
+     * @param y - The bottom edge.
+     * @param w - The width.
+     * @param h - The height.
+     * @param options - The paint type, color and line width.
+     * @returns This context.
+     * @throws {TypeError} If fewer than 4 arguments are given or a value is not
+     *   finite.
+     * @throws {TypeError} If there is no content context.
+     * @throws {TypeError} If `options.type` is not "stroke", "fill", "clip" or null.
+     */
     drawRectangle(
       x: PosX,
       y: PosY,
@@ -257,8 +1001,29 @@ declare namespace muhammara {
       h: number,
       options?: GraphicOptions,
     ): this;
-    /** Coordinates, font size, and calculated underline geometry must remain finite. */
+    /**
+     * Writes a line of text with its own text object.
+     * @param text - The text.
+     * @param x - The baseline start x.
+     * @param y - The baseline y.
+     * @param options - The font, size, color, underline and strike-out.
+     * @returns This context.
+     * @throws {TypeError} If fewer than 3 arguments are given, or the coordinates,
+     *   font size or underline geometry are not finite.
+     * @throws {TypeError} If there is no content context.
+     */
     writeText(text: string, x: PosX, y: PosY, options?: WriteTextOptions): this;
+    /**
+     * Draws an image file: JPEG, PNG, TIFF or a PDF page.
+     * @param x - The left edge.
+     * @param y - The bottom edge.
+     * @param imagePath - The image path.
+     * @param options - The image index, transformation and PDF password.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 2 numbers, a string and an
+     *   optional object. An image that cannot be read draws nothing.
+     * @throws {TypeError} If there is no content context.
+     */
     drawImage(
       x: PosX,
       y: PosY,
@@ -267,11 +1032,21 @@ declare namespace muhammara {
     ): this;
   }
 
+  /** When `drawImage()` scales an image into its transformation box. */
+  export const ImageFit: {
+    /** Always scale the image to the box. */
+    readonly ALWAYS: "always";
+    /** Scale only an image larger than the box. */
+    readonly OVERFLOW: "overflow";
+  };
+  export type ImageFit = (typeof ImageFit)[keyof typeof ImageFit];
+
   export interface TransformationObject {
     width: number;
     height: number;
     proportional?: boolean;
-    fit?: "always" | "overflow";
+    /** ImageFit.OVERFLOW when omitted. */
+    fit?: ImageFit;
   }
 
   export interface ImageOptions {
@@ -294,22 +1069,51 @@ declare namespace muhammara {
   export interface XObjectContentContext extends AbstractContentContext {}
 
   export interface PDFWStreamForFile extends WriteStream {
+    /**
+     * Creates a write stream to a file, replacing an existing one.
+     * @param inPath - The file path.
+     */
     new (inPath: string): PDFWStreamForFile;
-    /** Also accepts an array of byte values when called directly. */
+    /**
+     * Writes bytes to the file.
+     * @param inBytes - The bytes to write; an array of byte values is also
+     *   accepted when called directly.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer | number[]): number;
+    /**
+     * Flushes and closes the file.
+     * @param inCallback - Called once the file is closed.
+     */
     close(inCallback?: () => void): void;
   }
 
   export interface PDFStreamForResponse extends WriteStream {
+    /**
+     * Creates a write stream that writes to an HTTP response.
+     * @param res - The response, or any writable stream.
+     */
     new (res: NodeJS.WritableStream): PDFStreamForResponse;
-    /** Also accepts an array of byte values when called directly. */
+    /**
+     * Writes bytes to the response.
+     * @param inBytes - The bytes to write; an array of byte values is also
+     *   accepted when called directly.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer | number[]): number;
   }
 
   export interface PDFWStreamForBuffer extends WriteStream {
+    /** Creates a write stream that collects the bytes in memory. */
     new (): PDFWStreamForBuffer;
-    /** Also accepts an array of byte values when called directly. */
+    /**
+     * Writes bytes to the buffer.
+     * @param inBytes - The bytes to write; an array of byte values is also
+     *   accepted when called directly.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer | number[]): number;
+    /** The bytes written so far; null before the first write. */
     buffer: Buffer | null;
   }
 
@@ -363,6 +1167,12 @@ declare namespace muhammara {
   export const ePDFObjectStream = 10;
   export const ePDFObjectSymbol = 11;
   export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+  /**
+   * Returns the name of a PDF object type.
+   * @param type - One of the ePDFObject* constants.
+   * @returns The label, for example Dictionary.
+   * @throws {TypeError} If type is not a single valid type number.
+   */
   export function getTypeLabel(type: PDFObjectType): string;
 
   export const ePDFPageContentItemText = 0;
@@ -381,7 +1191,15 @@ declare namespace muhammara {
   export const ePDFPageBoxTrimBox = 3;
   export const ePDFPageBoxArtBox = 4;
   export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
-  export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
+  /** Page box names. */
+  export const PageBox: {
+    readonly MEDIA: "media";
+    readonly CROP: "crop";
+    readonly BLEED: "bleed";
+    readonly TRIM: "trim";
+    readonly ART: "art";
+  };
+  export type PageBox = (typeof PageBox)[keyof typeof PageBox];
 
   export const eRangeTypeAll = 0;
   export const eRangeTypeSpecific = 1;
@@ -401,20 +1219,93 @@ declare namespace muhammara {
 
   export interface FormXObject {
     id: FormXObjectId;
+    /**
+     * Returns the content context for drawing on the form.
+     * @returns The content context.
+     */
+    getContentContext(): XObjectContentContext;
+    /**
+     * Returns the form content stream.
+     * @returns The stream.
+     */
+    getContentStream(): PDFStream;
+    /**
+     * Returns the form resources.
+     * @returns The resources dictionary.
+     */
+    getResourcesDictionary(): ResourcesDictionary;
   }
 
   export interface ResourcesDictionary {
-    addFormXObjectMapping(formXObject: FormXObject): string;
+    /**
+     * Adds a form XObject to the resources and returns its resource name.
+     * @param formXObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If formXObjectId is not a single number.
+     */
+    addFormXObjectMapping(formXObjectId: FormXObjectId): string;
+    /**
+     * Adds an image XObject to the resources and returns its resource name.
+     * @param imageXObject - The image, or its object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If imageXObject is neither an image nor a number.
+     */
     addImageXObjectMapping(imageXObject: ImageXObject | number): string;
+    /**
+     * Adds a procedure set name to the ProcSet array.
+     * @param procSetName - The procedure set, for example PDF or Text.
+     * @throws {TypeError} If procSetName is not a single string.
+     */
     addProcsetResource(procSetName: string): void;
+    /**
+     * Adds a graphics state dictionary to the resources and returns its resource name.
+     * @param stateObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If stateObjectId is not a single number.
+     */
     addExtGStateMapping(stateObjectId: number): string;
+    /**
+     * Adds a font to the resources and returns its resource name.
+     * @param fontObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If fontObjectId is not a single number.
+     */
     addFontMapping(fontObjectId: number): string;
+    /**
+     * Adds a color space to the resources and returns its resource name.
+     * @param colorSpaceId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If colorSpaceId is not a single number.
+     */
     addColorSpaceMapping(colorSpaceId: number): string;
-    addPatternMapping(colorSpaceId: number): string;
+    /**
+     * Adds a pattern to the resources and returns its resource name.
+     * @param patternObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If patternObjectId is not a single number.
+     */
     addPatternMapping(patternObjectId: number): string;
+    /**
+     * Adds a marked-content property list to the resources and returns its resource name.
+     * @param propertyObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If propertyObjectId is not a single number.
+     */
     addPropertyMapping(propertyObjectId: number): string;
+    /**
+     * Adds a XObject to the resources and returns its resource name.
+     * @param xObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If xObjectId is not a single number.
+     */
     addXObjectMapping(xObjectId: number): string;
-    addShadingMapping(xObjectId: number): string;
+    /**
+     * Adds a shading to the resources and returns its resource name.
+     * @param shadingObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If shadingObjectId is not a single number.
+     */
+    addShadingMapping(shadingObjectId: number): string;
   }
 
   export type PDFBox = [PosX, PosY, Width, Height];
@@ -426,6 +1317,10 @@ declare namespace muhammara {
     trimBox?: PDFBox;
     artBox?: PDFBox;
     rotate?: number;
+    /**
+     * Returns the page resources.
+     * @returns The resources dictionary.
+     */
     getResourcesDictionary(): ResourcesDictionary;
   }
 
@@ -477,45 +1372,182 @@ declare namespace muhammara {
   }
 
   export interface UsedFont {
+    /**
+     * Measures a string, or a list of glyph ids.
+     * @param text - The text, or the glyph ids.
+     * @param fontSize - The font size; 1 when omitted.
+     * @returns The bounding box of the text at that size.
+     * @throws {TypeError} If text is not a string or glyph id array, or
+     *   fontSize is not a number.
+     */
     calculateTextDimensions(
-      text: string | any,
-      fontSize: number,
+      text: string | number[],
+      fontSize?: number,
     ): TextDimension;
-    getFontMetrics(fontSize?: number): object;
+    /**
+     * Returns the font metrics scaled to a font size.
+     * @param fontSize - The font size; 1 when omitted.
+     * @returns The ascent, descent and related metrics.
+     * @throws {TypeError} If more than one argument is given or the metrics
+     *   cannot be read.
+     */
+    getFontMetrics(fontSize?: number): FontMetrics;
+  }
+
+  export interface FontMetrics {
+    pixelsPerEm: { x: number; y: number; xScale: number; yScale: number };
+    ascender: number;
+    descender: number;
+    height: number;
+    max_advance: number;
   }
 
   export interface ByteWriter {
+    /**
+     * Writes bytes to the stream.
+     * @param buffer - The bytes to write.
+     * @returns The number of bytes written.
+     * @throws {TypeError} If buffer is not a single Uint8Array or byte array.
+     */
     write(buffer: Uint8Array | number[]): number;
   }
 
   export interface ByteReader {
+    /**
+     * Reads the next bytes.
+     * @param length - The maximum number of bytes to read.
+     * @returns The bytes read; shorter than requested at the end.
+     * @throws {TypeError} If length is not a single number.
+     * @throws {Error} If the reader has no stream.
+     */
     read(length: number): Buffer;
+    /**
+     * Tells whether bytes remain.
+     * @returns True while the end has not been reached.
+     * @throws {Error} If the reader has no stream.
+     */
     notEnded(): boolean;
   }
 
   export interface ByteReaderWithPosition {
+    /**
+     * Reads the next bytes.
+     * @param length - The maximum number of bytes to read.
+     * @returns The bytes read; shorter than requested at the end.
+     * @throws {TypeError} If length is not a single number.
+     */
     read(length: number): Buffer;
+    /**
+     * Tells whether bytes remain.
+     * @returns True while the end has not been reached.
+     */
     notEnded(): boolean;
+    /**
+     * Returns the current position.
+     * @returns The byte offset.
+     */
     getCurrentPosition(): number;
+    /**
+     * Advances the position without reading.
+     * @param length - The number of bytes to skip.
+     * @returns This reader.
+     * @throws {TypeError} If length is not a single number.
+     */
     skip(length: number): this;
+    /**
+     * Moves to a position.
+     * @param position - The byte offset.
+     * @returns This reader.
+     * @throws {TypeError} If position is not a single number.
+     */
     setPosition(position: number): this;
-    moveStartPosition(position: number): this;
+    /**
+     * Moves to a position counted back from the end.
+     * @param position - The number of bytes before the end.
+     * @returns This reader.
+     * @throws {TypeError} If position is not a single number.
+     */
     setPositionFromEnd(position: number): this;
   }
 
   export interface PDFReader {
+    /**
+     * Ends the reader and closes its file; later calls throw. Safe to repeat.
+     * @returns This reader.
+     */
     end(): PDFReader;
+    /**
+     * Returns the PDF version from the file header, for example 1.7.
+     * @returns The PDF version.
+     * @throws {TypeError} If the reader has ended.
+     */
     getPDFLevel(): number;
+    /**
+     * Returns the number of pages.
+     * @returns The page count.
+     * @throws {TypeError} If the reader has ended.
+     */
     getPagesCount(): number;
+    /**
+     * Returns the trailer dictionary.
+     * @returns The trailer; undefined when the file has none.
+     * @throws {TypeError} If the reader has ended.
+     */
     getTrailer(): PDFDictionary;
+    /**
+     * Returns a dictionary value, resolving an indirect reference.
+     * @param dictionary - The dictionary to read.
+     * @param name - The key, without a leading slash.
+     * @returns The value; undefined when the key is missing.
+     * @throws {TypeError} If the reader has ended or the arguments are not a
+     *   dictionary and a string.
+     */
     queryDictionaryObject(dictionary: PDFDictionary, name: string): PDFObject;
+    /**
+     * Returns an array item, resolving an indirect reference.
+     * @param objectList - The array to read.
+     * @param index - The zero-based item index.
+     * @returns The item; undefined when the index is out of range.
+     * @throws {TypeError} If the reader has ended or the arguments are not an
+     *   array and a number.
+     */
     queryArrayObject(
       objectList: PDFArray,
       index: number,
     ): undefined | PDFObject;
+    /**
+     * Parses an indirect object by its ID.
+     * @param objectId - The object ID.
+     * @returns The parsed object.
+     * @throws {TypeError} If the reader has ended, objectId is not a non-negative
+     *   integer, or the object cannot be read.
+     */
     parseNewObject(objectId: number): PDFObject;
-    getPageObjectID(objectId: number): number;
+    /**
+     * Returns the object ID of a page.
+     * @param pageIndex - The zero-based page index.
+     * @returns The page object ID; 0 when the page does not exist.
+     * @throws {TypeError} If the reader has ended or pageIndex is not a
+     *   non-negative integer.
+     */
+    getPageObjectID(pageIndex: number): number;
+    /**
+     * Parses a page dictionary.
+     * @param pageIndex - The zero-based page index.
+     * @returns The page dictionary.
+     * @throws {TypeError} If the reader has ended.
+     * @throws {TypeError} If pageIndex is not a non-negative integer or the page
+     *   cannot be read.
+     */
     parsePageDictionary(pageIndex: number): PDFDictionary;
+    /**
+     * Parses a page with helpers for its boxes and rotation.
+     * @param pageIndex - The zero-based page index.
+     * @returns The page.
+     * @throws {TypeError} If the reader has ended.
+     * @throws {TypeError} If pageIndex is not a non-negative integer or the page
+     *   cannot be read.
+     */
     parsePage(pageIndex: number): PDFPageInput;
     /**
      * Returns text-showing operations in PDF content-stream drawing order.
@@ -525,6 +1557,13 @@ declare namespace muhammara {
      * tighten the defaults: higher values are clamped to the built-in ceilings
      * of 1,000,000 content objects, 100,000 text operations, 1024 operands, and
      * 16 MiB of text.
+     * @param pageIndex - The zero-based page index.
+     * @param limits - Tighter extraction limits.
+     * @returns The text elements in drawing order.
+     * @throws {TypeError} If the arguments are not a page index and an optional
+     *   limits object, or the page cannot be read.
+     * @throws {RangeError} If a limit is not a positive 32-bit integer.
+     * @throws {Error} If the page exceeds the extraction limits.
      */
     extractPageText(
       pageIndex: number,
@@ -537,34 +1576,109 @@ declare namespace muhammara {
      * Shares `extractPageText`'s budget and clamping. `limits.maxTextBytes` is
      * accepted for signature parity but has no effect here, because items carry
      * an operator name rather than extracted text.
+     * @param pageIndex - The zero-based page index.
+     * @param limits - Tighter extraction limits.
+     * @returns The content items in drawing order.
+     * @throws {TypeError} If the arguments are not a page index and an optional
+     *   limits object, or the page cannot be read.
+     * @throws {RangeError} If a limit is not a positive 32-bit integer.
+     * @throws {Error} If the page exceeds the extraction limits.
      */
     extractPageContentItems(
       pageIndex: number,
       limits?: PDFExtractionLimits,
     ): PDFPageContentItem[];
+    /**
+     * Returns the number of objects in the cross-reference table.
+     * @returns The object count.
+     * @throws {TypeError} If the reader has ended.
+     */
     getObjectsCount(): number;
+    /**
+     * Tells whether the PDF is encrypted.
+     * @returns True when the PDF is encrypted.
+     * @throws {TypeError} If the reader has ended.
+     */
     isEncrypted(): boolean;
+    /**
+     * Returns the size of the cross-reference table.
+     * @returns The number of cross-reference entries.
+     * @throws {TypeError} If the reader has ended.
+     */
     getXrefSize(): number;
+    /**
+     * Returns the cross-reference entry of an object.
+     * @param objectId - The object ID.
+     * @returns The entry: byte position, revision and entry type.
+     * @throws {TypeError} If the reader has ended, objectId is not a non-negative
+     *   integer, or it is out of range.
+     */
     getXrefEntry(objectId: number): {
       objectPosition: number;
       revision: number;
       type: number;
     };
+    /**
+     * Returns the byte position of the last cross-reference section.
+     * @returns The byte position.
+     * @throws {TypeError} If the reader has ended.
+     */
     getXrefPosition(): number;
+    /**
+     * Opens a stream's contents with its filters decoded.
+     * @param inputStream - The stream to read.
+     * @returns A reader over the decoded bytes.
+     * @throws {TypeError} If the reader has ended or inputStream is not a stream.
+     * @throws {Error} If the stream cannot be read.
+     */
     startReadingFromStream(inputStream: PDFStreamInput): ByteReader;
+    /**
+     * Opens a stream's contents as stored, decrypted but not decoded.
+     * @param inputStream - The stream to read.
+     * @returns A reader over the stored bytes.
+     * @throws {TypeError} If the reader has ended or inputStream is not a stream.
+     * @throws {Error} If the stream cannot be read.
+     */
     startReadingFromStreamForPlainCopying(
       inputStream: PDFStreamInput,
     ): ByteReader;
+    /**
+     * Parses a content stream as a sequence of objects.
+     * @param stream - The stream to parse.
+     * @returns A parser returning one object per call.
+     * @throws {TypeError} If the reader has ended or stream is not a stream.
+     * @throws {Error} If the stream cannot be read.
+     */
     startReadingObjectsFromStream(stream: PDFStreamInput): PDFObjectParser;
+    /**
+     * Parses several content streams as one sequence of objects, as for a
+     * page whose Contents is an array.
+     * @param streams - The array of stream references.
+     * @returns A parser returning one object per call.
+     * @throws {TypeError} If the reader has ended or streams is not an array.
+     */
     startReadingObjectsFromStreams(streams: PDFArray): PDFObjectParser;
+    /**
+     * Returns the underlying stream the reader parses.
+     * @returns The positioned byte reader.
+     * @throws {TypeError} If the reader has ended.
+     */
     getParserStream(): ByteReaderWithPosition;
   }
 
   export interface PDFObjectParser {
+    /**
+     * Parses the next object.
+     * @returns The object; undefined at the end.
+     */
     parseNewObject(): PDFObject | undefined;
   }
 
   export interface PDFStream {
+    /**
+     * Returns the writer for the stream contents.
+     * @returns The byte writer.
+     */
     getWriteStream(): ByteWriter;
   }
 
@@ -577,7 +1691,16 @@ declare namespace muhammara {
   }
 
   export interface PDFLiteralString extends PDFObject {
+    /**
+     * Decodes the string as a PDF text string, PDFDocEncoding or UTF-16BE.
+     * @returns The text.
+     */
     toText(): string;
+    /**
+     * Returns the raw bytes of the string.
+     * @returns The byte values.
+     */
+    toBytesArray(): number[];
     value: string;
   }
 
@@ -586,7 +1709,15 @@ declare namespace muhammara {
   }
 
   export interface PDFIndirectObjectReference extends PDFObject {
+    /**
+     * Returns the referenced object ID.
+     * @returns The object ID.
+     */
     getObjectID(): number;
+    /**
+     * Returns the referenced generation number.
+     * @returns The generation number.
+     */
     getVersion(): number;
   }
 
@@ -595,13 +1726,39 @@ declare namespace muhammara {
   }
 
   export interface PDFDictionary extends PDFObject {
-    toJSObject(): object;
+    /**
+     * Returns the entries, without resolving indirect references.
+     * @returns The values by key.
+     */
+    toJSObject(): { [key: string]: PDFObject };
+    /**
+     * Tells whether a key exists.
+     * @param inName - The key, without a leading slash.
+     * @returns True when the key exists.
+     * @throws {TypeError} If inName is not a single string.
+     */
     exists(inName: string): boolean;
+    /**
+     * Returns a value, without resolving an indirect reference.
+     * @param inName - The key, without a leading slash.
+     * @returns The value.
+     * @throws {TypeError} If inName is not a single string or the key is
+     *   missing.
+     */
     queryObject(inName: string): PDFObject;
   }
 
   export interface PDFDate {
+    /**
+     * Returns the date in PDF date format, for example
+     * D:20260926120000+02'00'.
+     * @returns The PDF date string.
+     */
     toString(): string;
+    /**
+     * Sets the date to now.
+     * @returns This date.
+     */
     setToCurrentTime(): this;
   }
 
@@ -610,23 +1767,85 @@ declare namespace muhammara {
   }
 
   export interface PDFArray extends PDFObject {
+    /**
+     * Returns the items, without resolving indirect references.
+     * @returns The items as PDF objects.
+     */
     toJSArray(): Array<any>;
+    /**
+     * Returns an item, without resolving an indirect reference.
+     * @param index - The zero-based item index.
+     * @returns The item as a PDF object.
+     * @throws {TypeError} If index is not a number or is out of range.
+     */
     queryObject(index: number): any;
+    /**
+     * Returns the number of items.
+     * @returns The length.
+     */
     getLength(): number;
   }
 
   export interface OutputFile {
+    /**
+     * Opens a file for writing.
+     * @param filePath - The file path.
+     * @param append - True to append to an existing file.
+     * @throws {TypeError} If the arguments are wrong or the file cannot be
+     *   opened.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     openFile(filePath: FilePath, append?: boolean): void;
+    /**
+     * Closes the file.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     closeFile(): void;
+    /**
+     * Returns the path of the open file.
+     * @returns The path; undefined when no file is open.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     getFilePath(): string | undefined;
+    /**
+     * Returns the writer of the open file.
+     * @returns The writer; undefined when no file is open.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     getOutputStream(): ByteWriterWithPosition | undefined;
   }
 
   export interface InputFile {
+    /**
+     * Opens a file for reading.
+     * @param filePath - The file path.
+     * @throws {TypeError} If filePath is not a single string or the file cannot
+     *   be opened.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     openFile(filePath: FilePath): void;
+    /**
+     * Closes the file.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     closeFile(): void;
+    /**
+     * Returns the path of the open file.
+     * @returns The path; undefined when no file is open.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     getFilePath(): string | undefined;
+    /**
+     * Returns the size of the open file.
+     * @returns The size in bytes; undefined when no file is open.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     getFileSize(): number | undefined;
+    /**
+     * Returns the reader of the open file.
+     * @returns The reader; undefined when no file is open.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     getInputStream(): ByteReaderWithPosition | undefined;
   }
 
@@ -636,13 +1855,60 @@ declare namespace muhammara {
   export const EInfoTrappedUnknown = 2;
 
   export interface InfoDictionary {
+    /**
+     * Sets a custom info entry.
+     * @param key - The entry key.
+     * @param value - The entry text.
+     * @throws {TypeError} If key and value are not two strings.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
     addAdditionalInfoEntry(key: string, value: string): void;
+    /**
+     * Removes a custom info entry.
+     * @param key - The entry key.
+     * @throws {TypeError} If key is not a single string.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
     removeAdditionalInfoEntry(key: string): void;
+    /**
+     * Removes every custom info entry.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
     clearAdditionalInfoEntries(): void;
+    /**
+     * Returns a custom info entry.
+     * @param key - The entry key.
+     * @returns The entry text; an empty string when it is not set.
+     * @throws {TypeError} If key is not a single string.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
     getAdditionalInfoEntry(key: string): string;
-    getAdditionalInfoEntries(key: string): { [key: string]: string };
-    setCreationDate(date: string | Date): void;
-    setModDate(date: string | Date): void;
+    /**
+     * Returns every additional Info entry.
+     * @param key - Ignored; kept so 6.x calls that passed a key still compile.
+     * @returns The entries by key.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
+    getAdditionalInfoEntries(key?: string): { [key: string]: string };
+    /**
+     * Sets the creation date.
+     * @param date - The date, a PDF date string, or a PDFDate to copy.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
+    setCreationDate(date: string | Date | PDFDate): void;
+    /**
+     * Sets the modification date.
+     * @param date - The date, a PDF date string, or a PDFDate to copy.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
+    setModDate(date: string | Date | PDFDate): void;
 
     title: string;
     author: string;
@@ -659,53 +1925,228 @@ declare namespace muhammara {
 
   export interface FormObject {
     id: number;
+    /**
+     * Returns the content context for drawing on the form.
+     * @returns The content context.
+     */
     getContentContext(): XObjectContentContext;
+    /**
+     * Misspelled alias of getResourcesDictionary().
+     * @deprecated Use getResourcesDictionary().
+     * @returns The resources dictionary.
+     */
     getResourcesDictinary(): ResourcesDictionary;
+    /**
+     * Returns the form resources.
+     * @returns The resources dictionary.
+     */
     getResourcesDictionary(): ResourcesDictionary;
+    /**
+     * Returns the form content stream.
+     * @returns The stream.
+     */
     getContentStream(): PDFStream;
   }
 
   export interface DocumentCopyingContext {
+    /**
+     * Ends the copying context and releases its source; later calls throw.
+     * @returns This context.
+     */
     end(): DocumentCopyingContext;
+    /**
+     * Creates a form XObject from a source page.
+     * @param sourcePageIndex - The zero-based source page index.
+     * @param ePDFPageBox - The page box to use, or an explicit [left, bottom,
+     *   right, top].
+     * @param transformation - The form matrix.
+     * @returns The form object ID.
+     * @throws {TypeError} If the arguments are wrong or the page does not exist.
+     * @throws {TypeError} If the copying context has ended.
+     */
     createFormXObjectFromPDFPage(
       sourcePageIndex: number,
-      ePDFPageBox: PDFPageBoxType | PDFBox,
+      /** Defaults to the media box. */
+      ePDFPageBox?: PDFPageBoxType | PDFBox,
       transformation?: TransformationMatrix,
     ): number;
+    /**
+     * Draws a source page onto a page of this document.
+     * @param target - The target page.
+     * @param sourcePageIndex - The zero-based source page index.
+     * @throws {TypeError} If the arguments are not a page and a number, or the
+     *   source page does not exist.
+     * @throws {TypeError} If the copying context has ended.
+     */
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
-    appendPDFPageFromPDF(sourcePageNumber: number): number; // stream start bytes?
+    /**
+     * Appends a source page as a new page.
+     * @param sourcePageNumber - The zero-based source page index.
+     * @returns The object ID of the new page.
+     * @throws {TypeError} If the argument is not a number or the page does not
+     *   exist.
+     * @throws {TypeError} If the copying context has ended.
+     */
+    appendPDFPageFromPDF(sourcePageNumber: number): number;
+    /**
+     * Draws a source page into a form XObject of this document.
+     * @param targetForm - The target form.
+     * @param sourcePageIndex - The zero-based source page index.
+     * @throws {TypeError} If the arguments are not a form and a number, or the
+     *   source page does not exist.
+     * @throws {TypeError} If the copying context has ended.
+     */
     mergePDFPageToFormXObject(
-      sourcePage: PDFPage,
-      targetPageNumber: number,
+      targetForm: FormXObject,
+      sourcePageIndex: number,
     ): void;
+    /**
+     * Returns the reader of the source document.
+     * @returns The source document reader.
+     * @throws {TypeError} If the copying context has ended.
+     */
     getSourceDocumentParser(): PDFReader;
+    /**
+     * Writes a source object at the current output position, copying the
+     * objects it references later.
+     * @param objectToCopy - The source object.
+     * @throws {TypeError} If objectToCopy is not a PDF object or cannot be copied.
+     * @throws {TypeError} If the copying context has ended.
+     */
     copyDirectObjectAsIs(objectToCopy: PDFObject): void;
+    /**
+     * Copies a source indirect object and the objects it references.
+     * @param objectId - The source object ID.
+     * @returns The object ID in this document.
+     * @throws {TypeError} If objectId is not a number or the object cannot be
+     *   copied.
+     * @throws {TypeError} If the copying context has ended.
+     */
     copyObject(objectId: number): number;
+    /**
+     * Writes a source object at the current output position. The objects it
+     * references are not copied yet; pass the returned IDs to
+     * copyNewObjectsForDirectObject() once the current object ends.
+     * @param objectToCopy - The source object.
+     * @returns The source IDs of the referenced objects still to copy.
+     * @throws {TypeError} If objectToCopy is not a PDF object or cannot be copied.
+     * @throws {TypeError} If the copying context has ended.
+     */
     copyDirectObjectWithDeepCopy(objectToCopy: PDFObject): Array<number>;
+    /**
+     * Copies the objects returned by copyDirectObjectWithDeepCopy().
+     * @param objectIds - The source object IDs.
+     * @throws {TypeError} If objectIds is not an array or the objects cannot be
+     *   copied.
+     * @throws {TypeError} If the copying context has ended.
+     */
     copyNewObjectsForDirectObject(objectIds: Array<number>): void;
+    /**
+     * Returns the ID in this document of an already copied source object.
+     * @param objectId - The source object ID.
+     * @returns The object ID in this document.
+     * @throws {TypeError} If objectId is not a number or has not been copied.
+     * @throws {TypeError} If the copying context has ended.
+     */
     getCopiedObjectID(objectId: number): number;
+    /**
+     * Returns every copied source object ID with its ID in this document.
+     * @returns The map from source object ID to object ID in this document.
+     * @throws {TypeError} If the copying context has ended.
+     */
     getCopiedObjects(): { [key: string]: number };
+    /**
+     * Makes later copies reference existing objects instead of copying the
+     * given source objects.
+     * @param replaceMap - The map from source object ID to object ID in this
+     *   document.
+     * @throws {TypeError} If replaceMap is not an object or a key is not an
+     *   unsigned integer.
+     * @throws {TypeError} If the copying context has ended.
+     */
     replaceSourceObjects(replaceMap: { [key: string]: number }): void;
+    /**
+     * Returns the stream the source PDF is read from.
+     * @returns The positioned byte reader.
+     * @throws {TypeError} If the copying context has ended.
+     */
     getSourceDocumentStream(): ByteReaderWithPosition;
   }
 
   export interface DocumentContext {
+    /**
+     * Returns the document information dictionary written with the PDF.
+     * @returns The info dictionary.
+     * @throws {TypeError} If the context was not created by a writer.
+     */
     getInfoDictionary(): InfoDictionary;
   }
 
   export interface DictionaryContext {
+    /**
+     * Writes a dictionary key.
+     * @param key - The key, without a leading slash.
+     * @returns This dictionary context.
+     * @throws {TypeError} If key is not a single string.
+     */
     writeKey(key: string): DictionaryContext;
+    /**
+     * Writes a name as the value of the last key.
+     * @param nameValue - The name, without a leading slash.
+     * @returns This dictionary context.
+     * @throws {TypeError} If nameValue is not a single string.
+     */
     writeNameValue(nameValue: string): this;
+    /**
+     * Writes a rectangle array as the value of the last key.
+     * @param values - The rectangle [left, bottom, right, top].
+     * @returns This dictionary context.
+     * @throws {TypeError} If the arguments are not an array of 4 numbers or 4 numbers.
+     */
     writeRectangleValue(values: Array<number>): this;
     writeRectangleValue(a: number, b: number, c: number, d: number): this;
+    /**
+     * Writes a literal string as the value of the last key.
+     * @param literal - The text, or its byte values.
+     * @returns This dictionary context.
+     * @throws {TypeError} If literal is not a single string or array.
+     */
     writeLiteralStringValue(literal: Array<number> | string): this;
+    /**
+     * Writes a boolean as the value of the last key.
+     * @param boolValue - The value.
+     * @returns This dictionary context.
+     * @throws {TypeError} If boolValue is not a single boolean.
+     */
     writeBooleanValue(boolValue: boolean): this;
+    /**
+     * Writes a number as the value of the last key.
+     * @param value - The number.
+     * @returns This dictionary context.
+     * @throws {TypeError} If value is not a single number.
+     */
     writeNumberValue(value: number): this;
+    /**
+     * Writes an indirect object reference as the value of the last key.
+     * @param objectId - The object ID.
+     * @returns This dictionary context.
+     * @throws {TypeError} If objectId is not a single number.
+     */
     writeObjectReferenceValue(objectId: number): this;
   }
 
   export interface ByteWriterWithPosition {
+    /**
+     * Writes bytes at the current position.
+     * @param bytes - The bytes to write.
+     * @returns The number of bytes written.
+     * @throws {TypeError} If bytes is not a single Uint8Array or byte array.
+     */
     write(bytes: Uint8Array | number[]): number;
+    /**
+     * Returns the current position.
+     * @returns The byte offset.
+     */
     getCurrentPosition(): number;
   }
 
@@ -726,51 +2167,247 @@ declare namespace muhammara {
   export const eXrefEntryUndefined = 3;
 
   export interface ObjectsContext {
+    /**
+     * Reserves a new object ID, for a forward reference or a later object.
+     * @returns The object ID.
+     */
     allocateNewObjectID(): FormXObjectId;
+    /**
+     * Writes the start of a dictionary. End it with endDictionary().
+     * @returns The dictionary context for writing keys and values.
+     */
     startDictionary(): DictionaryContext;
+    /**
+     * Writes the start of an array. End it with endArray().
+     * @returns This context.
+     */
     startArray(): this;
+    /**
+     * Writes a number, as an integer when it has no fraction.
+     * @param value - The number.
+     * @returns This context.
+     * @throws {TypeError} If value is not a single number.
+     */
     writeNumber(value: number): this;
+    /**
+     * Writes the end of an array.
+     * @param endType - The separator after the array; a space when omitted.
+     * @returns This context.
+     * @throws {TypeError} If endType is given and is not a number.
+     */
     endArray(endType?: ETokenSeparator): this;
+    /**
+     * Writes a line break.
+     * @returns This context.
+     */
     endLine(): this;
+    /**
+     * Writes the end of a dictionary.
+     * @param dictionary - The dictionary started last.
+     * @returns This context.
+     * @throws {TypeError} If dictionary is not a dictionary context or not the one started last.
+     */
     endDictionary(dictionary: DictionaryContext): this;
+    /**
+     * Writes the end of the current indirect object.
+     * @returns This context.
+     */
     endIndirectObject(): this;
+    /**
+     * Writes a reference to an indirect object.
+     * @param objectId - The object ID.
+     * @param generationNumber - The generation number; 0 when omitted.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not one or two numbers.
+     */
     writeIndirectObjectReference(
       objectId: FormXObjectId,
       generationNumber?: number,
     ): this;
+    /**
+     * Starts an indirect object. Without an ID, allocates one and returns it;
+     * with an ID reserved by allocateNewObjectID(), returns this context.
+     * @param objectId - A reserved object ID.
+     * @returns The new object ID, or this context when objectId is given.
+     * @throws {TypeError} If objectId is given and is not a number.
+     */
     startNewIndirectObject(objectId: FormXObjectId): this;
     startNewIndirectObject(): FormXObjectId;
+    /**
+     * Starts a new version of an existing object of the PDF being modified.
+     * @param objectId - The object ID to replace.
+     * @returns This context.
+     * @throws {TypeError} If objectId is not a single number.
+     */
     startModifiedIndirectObject(objectId: FormXObjectId): this;
+    /**
+     * Marks an object as free in the cross-reference table.
+     * @param objectId - The object ID.
+     * @returns This context.
+     * @throws {TypeError} If objectId is not a single number.
+     */
     deleteObject(objectId: FormXObjectId): this;
+    /**
+     * Writes a name object, escaping it as needed.
+     * @param name - The name, without a leading slash.
+     * @returns This context.
+     * @throws {TypeError} If name is not a single string.
+     */
     writeName(name: string): this;
+    /**
+     * Writes a literal string, escaping it as needed.
+     * @param literal - The text, or its byte values.
+     * @returns This context.
+     * @throws {TypeError} If literal is not a single string or array.
+     */
     writeLiteralString(literal: string | number[]): this;
+    /**
+     * Writes a hexadecimal string.
+     * @param hex - The bytes as a string of hex digits, or their byte values.
+     * @returns This context.
+     * @throws {TypeError} If hex is not a single string or array.
+     */
     writeHexString(hex: string | number[]): this;
+    /**
+     * Writes a boolean.
+     * @param bool - The value.
+     * @returns This context.
+     * @throws {TypeError} If bool is not a single boolean.
+     */
     writeBoolean(bool: boolean): this;
+    /**
+     * Writes a keyword, such as a content-stream operator, unescaped.
+     * @param keyword - The keyword.
+     * @returns This context.
+     * @throws {TypeError} If keyword is not a single string.
+     */
     writeKeyword(keyword: string): this;
+    /**
+     * Writes a comment line.
+     * @param comment - The comment, without the percent sign.
+     * @returns This context.
+     * @throws {TypeError} If comment is not a single string.
+     */
     writeComment(comment: string): this;
+    /**
+     * Sets whether later streams are Flate compressed.
+     * @param compress - True to compress.
+     * @returns This context.
+     * @throws {TypeError} If compress is not a single boolean.
+     */
     setCompressStreams(compress: boolean): this;
-    startPDFStream(dictionaryContext: DictionaryContext): PDFStream;
-    startUnfilteredPDFStream(stream: DictionaryContext): PDFStream;
+    /**
+     * Starts a stream that is compressed when compression is on.
+     * @param dictionaryContext - A started stream dictionary to add Length and
+     *   Filter to; a new one when omitted.
+     * @returns The stream; write to its write stream, then call endPDFStream().
+     * @throws {TypeError} If dictionaryContext is given and is not a dictionary context.
+     */
+    startPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
+    /**
+     * Starts a stream written as given, never compressed.
+     * @param dictionaryContext - A started stream dictionary to add Length to;
+     *   a new one when omitted.
+     * @returns The stream; write to its write stream, then call endPDFStream().
+     * @throws {TypeError} If dictionaryContext is given and is not a dictionary context.
+     */
+    startUnfilteredPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
+    /**
+     * Ends a stream and writes its length.
+     * @param stream - The stream started last.
+     * @returns This context.
+     * @throws {TypeError} If stream is not a stream.
+     */
     endPDFStream(stream: PDFStream): this;
+    /**
+     * Gives direct access to the output, for bytes the other methods cannot
+     * write. End it with endFreeContext().
+     * @returns A writer at the current output position.
+     */
     startFreeContext(): ByteWriterWithPosition;
+    /**
+     * Ends direct output access.
+     * @returns This context.
+     */
     endFreeContext(): this;
   }
 
   export interface PDFObject {
+    /**
+     * Returns the object type.
+     * @returns The type, one of the ePDFObject* constants.
+     */
     getType(): PDFObjectType;
-    toPDFIndirectObjectReference(): PDFIndirectObjectReference;
-    toPDFArray(): PDFArray;
-    toPDFDictionary(): PDFDictionary;
-    toPDFStream(): PDFStream;
-    toPDFBoolean(): PDFBoolean;
-    toPDFLiteralString(): PDFLiteralString;
-    toPDFHexString(): PDFHexString;
-    toPDFNull(): PDFNull;
-    toPDFName(): PDFName;
-    toPDFInteger(): PDFInteger;
-    toPDFReal(): PDFReal;
-    toPDFSymbol(): PDFSymbol;
-    toNumber(): number;
+    /**
+     * Returns this object typed as an indirect object reference.
+     * @returns This object; undefined when it is not an indirect object reference.
+     */
+    toPDFIndirectObjectReference(): PDFIndirectObjectReference | undefined;
+    /**
+     * Returns this object typed as an array.
+     * @returns This object; undefined when it is not an array.
+     */
+    toPDFArray(): PDFArray | undefined;
+    /**
+     * Returns this object typed as a dictionary.
+     * @returns This object; undefined when it is not a dictionary.
+     */
+    toPDFDictionary(): PDFDictionary | undefined;
+    /**
+     * Returns this object typed as a stream.
+     * @returns This object; undefined when it is not a stream.
+     */
+    toPDFStream(): PDFStream | undefined;
+    /**
+     * Returns this object typed as a boolean.
+     * @returns This object; undefined when it is not a boolean.
+     */
+    toPDFBoolean(): PDFBoolean | undefined;
+    /**
+     * Returns this object typed as a literal string.
+     * @returns This object; undefined when it is not a literal string.
+     */
+    toPDFLiteralString(): PDFLiteralString | undefined;
+    /**
+     * Returns this object typed as a hex string.
+     * @returns This object; undefined when it is not a hex string.
+     */
+    toPDFHexString(): PDFHexString | undefined;
+    /**
+     * Returns this object typed as the null object.
+     * @returns This object; undefined when it is not the null object.
+     */
+    toPDFNull(): PDFNull | undefined;
+    /**
+     * Returns this object typed as a name.
+     * @returns This object; undefined when it is not a name.
+     */
+    toPDFName(): PDFName | undefined;
+    /**
+     * Returns this object typed as an integer.
+     * @returns This object; undefined when it is not an integer.
+     */
+    toPDFInteger(): PDFInteger | undefined;
+    /**
+     * Returns this object typed as a real number.
+     * @returns This object; undefined when it is not a real number.
+     */
+    toPDFReal(): PDFReal | undefined;
+    /**
+     * Returns this object typed as a symbol.
+     * @returns This object; undefined when it is not a symbol.
+     */
+    toPDFSymbol(): PDFSymbol | undefined;
+    /**
+     * Returns the value of an integer or real number.
+     * @returns The number; undefined for other types.
+     */
+    toNumber(): number | undefined;
+    /**
+     * Returns the value as text: the name, string, number, symbol or
+     * boolean; the type label for other types.
+     * @returns The text.
+     */
     toString(): string;
   }
 
@@ -783,18 +2420,48 @@ declare namespace muhammara {
   }
 
   export interface PDFStreamInput extends PDFObject {
+    /**
+     * Returns the stream dictionary.
+     * @returns The dictionary.
+     */
     getDictionary(): PDFDictionary;
+    /**
+     * Returns the byte position where the stream contents start.
+     * @returns The byte position in the source file.
+     */
     getStreamContentStart(): number;
   }
 
   export interface PDFTextString {
+    /**
+     * Returns the encoded bytes, PDFDocEncoding or UTF-16BE with a byte
+     * order mark.
+     * @returns The byte values.
+     */
     toBytesArray(): Array<number>;
+    /**
+     * Returns the text.
+     * @returns The decoded text.
+     */
     toString(): string;
-    fromString(value: string): void;
+    /**
+     * Sets the text; a value that is not a string is ignored.
+     * @param value - The text.
+     * @returns This text string.
+     */
+    fromString(value: string): this;
   }
 
   export interface PageContentContext extends AbstractContentContext {
+    /**
+     * Returns the content stream being written.
+     * @returns The stream.
+     */
     getCurrentPageContentStream(): PDFStream;
+    /**
+     * Returns the page this context draws on.
+     * @returns The page.
+     */
     getAssociatedPage(): PDFPage;
   }
 
@@ -822,6 +2489,30 @@ declare namespace muhammara {
     upperRightY: number,
   ];
 
+  /** RGB (3 numbers) or CMYK (4 numbers) color components, 0 to 255. */
+  export type TIFFColor =
+    | [r: number, g: number, b: number]
+    | [c: number, m: number, y: number, k: number];
+
+  /** Options for `createFormXObjectFromTIFF()`. */
+  export interface TIFFUsageOptions {
+    /** The zero-based page of a multi-page TIFF. */
+    pageIndex?: number;
+    /** How black-and-white images are drawn. */
+    bwTreatment?: {
+      /** Draw the image as a stencil mask in oneColor. */
+      asImageMask?: boolean;
+      oneColor?: TIFFColor;
+    };
+    /** How grayscale images are drawn. */
+    grayscaleTreatment?: {
+      /** Map gray values between zeroColor and oneColor. */
+      asColorMap?: boolean;
+      oneColor?: TIFFColor;
+      zeroColor?: TIFFColor;
+    };
+  }
+
   export interface MergeOptions {
     password?: string;
     type?: eRangeType;
@@ -837,6 +2528,12 @@ declare namespace muhammara {
     /**
      * Replace direct references to an object in a page dictionary.
      * Available only when modifying an existing PDF.
+     * @param pageIndex - The zero-based page index; ignored for the global scope.
+     * @param sourceObjectId - The object ID to stop referencing.
+     * @param replacementObjectId - The object ID to reference instead.
+     * @param options - `scope: ObjectReplacementScope.GLOBAL` replaces on every page.
+     * @returns This writer.
+     * @throws {Error} If the writer does not modify a PDF or the page does not exist.
      */
     replaceObject(
       pageIndex: number,
@@ -844,32 +2541,123 @@ declare namespace muhammara {
       replacementObjectId: number,
       options?: ObjectReplacementOptions,
     ): this;
-    /** Finalize once; repeated calls return this writer. A failed finalization also ends the writer. */
+    /**
+     * Finalizes the PDF once; repeated calls return this writer. A failed
+     * finalization also ends the writer.
+     * @returns This writer.
+     * @throws {TypeError} If the PDF cannot be finalized.
+     */
     end(): PDFWriter;
+    /**
+     * Creates a page, optionally with its media box. Write it with writePage().
+     * @param x - The media box left edge.
+     * @param y - The media box bottom edge.
+     * @param width - The media box width.
+     * @param height - The media box height.
+     * @returns The new page.
+     * @throws {Error} If the writer has ended.
+     */
     createPage(x: PosX, y: PosY, width: Width, height: Height): PDFPage;
     createPage(): PDFPage;
+    /**
+     * Writes a page and ends its content context.
+     * @param page - The page to write.
+     * @returns This writer.
+     * @throws {TypeError} If page is not a page or the page cannot be written.
+     * @throws {Error} If the writer has ended.
+     */
     writePage(page: PDFPage): this;
+    /**
+     * Writes a page and ends its content context.
+     * @param page - The page to write.
+     * @returns The page object ID.
+     * @throws {TypeError} If page is not a page or the page cannot be written.
+     * @throws {Error} If the writer has ended.
+     */
     writePageAndReturnID(page: PDFPage): number;
+    /**
+     * Starts, or returns the already started, content context of a page.
+     * @param page - The page to draw on.
+     * @returns The page content context.
+     * @throws {TypeError} If page is not a page.
+     * @throws {Error} If the writer has ended.
+     */
     startPageContentContext(page: PDFPage): PageContentContext;
+    /**
+     * Ends the current content stream of a page so other objects can be
+     * written; later drawing starts a new stream on the same page.
+     * @param pageContextContext - The content context to pause.
+     * @returns This writer.
+     * @throws {TypeError} If the argument is not a started page content context.
+     * @throws {Error} If the writer has ended.
+     */
     pausePageContentContext(pageContextContext: PageContentContext): this;
+    /**
+     * Starts a form XObject. Draw on its content context, then call
+     * endFormXObject().
+     * @param left - The bounding box left edge.
+     * @param bottom - The bounding box bottom edge.
+     * @param right - The bounding box right edge.
+     * @param top - The bounding box top edge.
+     * @param objectId - A forward-reference object ID reserved earlier.
+     * @returns The form.
+     * @throws {TypeError} If the arguments are not four or five numbers.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObject(
-      x: PosX,
-      y: PosY,
-      width: Width,
-      height: Height,
+      left: number,
+      bottom: number,
+      right: number,
+      top: number,
       objectId?: FormXObjectId,
     ): FormXObject;
+    /**
+     * Ends and writes a form XObject.
+     * @param formXObject - The form to end.
+     * @returns This writer.
+     * @throws {TypeError} If formXObject is not a form or cannot be written.
+     * @throws {Error} If the writer has ended.
+     */
     endFormXObject(formXObject: FormXObject): this;
+    /**
+     * Creates a form XObject showing a JPEG image.
+     * @param file - The image path or a read stream.
+     * @param objectId - A forward-reference object ID reserved earlier.
+     * @returns The form.
+     * @throws {TypeError} If the arguments are wrong or the image cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObjectFromJPG(
-      file: FilePath | PDFRStreamForFile,
+      file: FilePath | ReadStream,
       objectId?: FormXObjectId,
     ): FormXObject;
+    /**
+     * Loads a font file for text drawing.
+     * @param inFontFilePath - The font file path.
+     * @param inOptionalMetricsFile - The metrics file of a Type 1 font.
+     * @param index - The font index in a collection such as TTC or DFont.
+     * @returns The font.
+     * @throws {TypeError} If the arguments are wrong or the font cannot be loaded.
+     * @throws {Error} If the writer has ended.
+     */
     getFontForFile(inFontFilePath: FilePath, index?: number): UsedFont;
     getFontForFile(
       inFontFilePath: FilePath,
       inOptionalMetricsFile?: string,
       index?: number,
     ): UsedFont;
+    /**
+     * Adds a link annotation to the page written next.
+     * @param url - The ASCII link target.
+     * @param left - The clickable area left edge.
+     * @param bottom - The clickable area bottom edge.
+     * @param right - The clickable area right edge.
+     * @param top - The clickable area top edge.
+     * @returns This writer.
+     * @throws {TypeError} If the arguments are not a string and four numbers, or
+     *   the URL cannot be encoded as ASCII.
+     * @throws {Error} If the writer has ended.
+     */
     attachURLLinktoCurrentPage(
       url: string,
       left: PosX,
@@ -877,42 +2665,136 @@ declare namespace muhammara {
       right: PosX,
       top: PosY,
     ): this;
-    /** Save continuation state and retire this writer, including when saving fails. */
+    /**
+     * Saves the continuation state for createWriterToContinue() and retires
+     * this writer, including when saving fails.
+     * @param outputFilePath - The state file path.
+     * @returns This writer.
+     * @throws {TypeError} If the path is missing or the state cannot be saved.
+     * @throws {Error} If the writer has ended.
+     */
     shutdown(outputFilePath: FilePath): this;
+    /**
+     * Creates a form XObject showing a TIFF image.
+     * @param filePath - The image path or a read stream.
+     * @param objectId - A forward-reference object ID, or TIFF options.
+     * @returns The form.
+     * @throws {TypeError} If the arguments are wrong, a color is not 3 or 4
+     *   numbers, or the image cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObjectFromTIFF(
-      filePath: FilePath | PDFRStreamForFile,
-      objectId?: FormXObjectId,
+      filePath: FilePath | ReadStream,
+      objectId?: FormXObjectId | TIFFUsageOptions,
     ): FormXObject;
+    /**
+     * Creates an image XObject from a JPEG image.
+     * @param filePath - The image path or a read stream.
+     * @param objectId - A forward-reference object ID reserved earlier.
+     * @returns The image.
+     * @throws {TypeError} If the arguments are wrong or the image cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     createImageXObjectFromJPG(
-      filePath: FilePath | PDFRStreamForFile,
+      filePath: FilePath | ReadStream,
       objectId?: FormXObjectId,
     ): ImageXObject;
+    /**
+     * Creates a form XObject showing a PNG image.
+     * @param filePath - The image path or a read stream.
+     * @param objectId - A forward-reference object ID reserved earlier.
+     * @returns The form.
+     * @throws {TypeError} If the arguments are wrong or the image cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObjectFromPNG(
-      filePath: FilePath | PDFRStreamForFile,
+      filePath: FilePath | ReadStream,
       objectId?: FormXObjectId,
     ): FormXObject;
+    /**
+     * Reads the header information of a JPEG file.
+     * @param filePath - The image path.
+     * @returns The image information.
+     * @throws {TypeError} If the argument is wrong or the file cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     retrieveJPGImageInformation(filePath: FilePath): JPEGInformation;
+    /**
+     * Returns the context for writing PDF objects directly.
+     * @returns The objects context.
+     * @throws {Error} If the writer has ended.
+     */
     getObjectsContext(): ObjectsContext;
+    /**
+     * Returns the document context, for extensions and the info dictionary.
+     * @returns The document context.
+     * @throws {Error} If the writer has ended.
+     */
     getDocumentContext(): DocumentContext;
+    /**
+     * Appends pages of another PDF as new pages.
+     * @param source - The PDF path or a read stream.
+     * @param options - The page range and the source password.
+     * @returns The object IDs of the appended pages.
+     * @throws {TypeError} If the arguments are wrong or the pages cannot be
+     *   appended; the writer is aborted then.
+     * @throws {RangeError} If the page range is invalid.
+     * @throws {Error} If the writer has ended.
+     */
     appendPDFPagesFromPDF(
       source: FilePath | ReadStream,
       options?: AppendOptions,
     ): number[];
-    /** Calls the optional callback with no arguments and globalThis as its receiver. */
+    /**
+     * Draws pages of another PDF onto a page. The optional callback runs
+     * between pages, with no arguments and globalThis as its receiver.
+     * @param page - The target page.
+     * @param file - The PDF path or a read stream.
+     * @param options - The page range and the source password.
+     * @param callback - Called between merged pages.
+     * @returns This writer.
+     * @throws {TypeError} If page is not a page, file is neither a path nor a
+     *   stream, or the pages cannot be merged.
+     * @throws {RangeError} If the page range is invalid.
+     * @throws {Error} If the writer has ended.
+     */
     mergePDFPagesToPage(
       page: PDFPage,
-      file: FilePath | PDFRStreamForFile,
+      file: FilePath | ReadStream,
       options?: MergeOptions,
       callback?: inInterPagesCallback,
     ): this;
     mergePDFPagesToPage(
       page: PDFPage,
-      file: FilePath | PDFRStreamForFile,
+      file: FilePath | ReadStream,
       callback?: inInterPagesCallback,
     ): this;
+    /**
+     * Opens a PDF for copying objects and pages into this document.
+     * @param source - The PDF path, a read stream, or an open reader.
+     * @param options - The source password.
+     * @returns The copying context; call end() on it when done.
+     * @throws {TypeError} If the arguments are wrong, the reader has ended, or the
+     *   PDF cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     createPDFCopyingContext(
-      source: FilePath | ReadStream,
+      source: FilePath | ReadStream | PDFReader,
+      options?: PDFReaderOptions,
     ): DocumentCopyingContext;
+    /**
+     * Creates one form XObject per page of another PDF.
+     * @param file - The PDF path.
+     * @param box - The page box to use, or an explicit [left, bottom, right, top].
+     * @param options - The page range and the source password.
+     * @param transformation - The form matrix.
+     * @param objectIds - Further source object IDs to copy.
+     * @returns The form object IDs, one per page.
+     * @throws {TypeError} If the arguments are wrong or the forms cannot be
+     *   created.
+     * @throws {RangeError} If the page range is invalid.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObjectsFromPDF(
       file: FilePath,
       box?: PDFBox | PDFPageBoxType,
@@ -920,33 +2802,125 @@ declare namespace muhammara {
       transformation?: TransformationMatrix,
       objectIds?: FormXObjectId[],
     ): FormXObjectId[];
+    /**
+     * Opens the PDF being modified for copying its objects.
+     * @returns The copying context; call end() on it when done.
+     * @throws {TypeError} If the writer does not modify a PDF.
+     * @throws {Error} If the writer has ended.
+     */
     createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
-    createPDFTextString(): PDFTextString;
+    /**
+     * Creates a PDF text string, encoded as PDFDocEncoding or UTF-16 as needed.
+     * Works after the writer has ended.
+     * @param value - The text, or its UTF-16 code units.
+     * @returns The text string.
+     */
+    createPDFTextString(value?: string | number[]): PDFTextString;
+    /**
+     * Creates a PDF date. Works after the writer has ended.
+     * @param value - The date, or a PDF date string; now when omitted.
+     * @returns The date.
+     */
     createPDFDate(value?: string | Date): PDFDate;
+    /**
+     * Returns the size of an image in points.
+     * @param imagePath - The image path or a read stream.
+     * @param imageIndex - The image or page index of a multi-image file.
+     * @param options - The password of a PDF source.
+     * @returns The width and height.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {Error} If the writer has ended.
+     */
     getImageDimensions(
-      inFontFilePath: FilePath | ReadStream,
+      imagePath: FilePath | ReadStream,
+      imageIndex?: number,
+      options?: PDFReaderOptions,
     ): RectangleDimension;
+    /**
+     * Returns the number of pages or images in an image file.
+     * @param imagePath - The image path.
+     * @param options - The password of a PDF source.
+     * @returns The page count.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {Error} If the writer has ended.
+     */
     getImagePagesCount(
       imagePath: FilePath,
       options?: { password?: string },
     ): number;
+    /**
+     * Detects the type of an image file.
+     * @param imagePath - The image path.
+     * @returns The type; undefined when it is not a supported image.
+     * @throws {TypeError} If imagePath is not a single argument.
+     * @throws {Error} If the writer has ended.
+     */
     getImageType(imagePath: FilePath): PDFImageType | undefined;
+    /**
+     * Returns a reader of the PDF being modified.
+     * @returns The reader.
+     * @throws {TypeError} If the writer does not modify a PDF.
+     * @throws {Error} If the writer has ended.
+     */
     getModifiedFileParser(): PDFReader;
+    /**
+     * Returns the input file of the PDF being modified.
+     * @returns The input file.
+     * @throws {TypeError} If the writer does not modify a PDF.
+     * @throws {Error} If the writer has ended.
+     */
     getModifiedInputFile(): InputFile;
+    /**
+     * Returns the output file.
+     * @returns The output file.
+     * @throws {TypeError} If the output is not a file.
+     * @throws {Error} If the writer has ended.
+     */
     getOutputFile(): OutputFile;
+    /**
+     * Adds an annotation to the Annots array of the page written next.
+     * @param annotationId - The annotation object ID.
+     * @returns This writer.
+     * @throws {TypeError} If annotationId is not a number.
+     * @throws {Error} If the writer has ended.
+     */
     registerAnnotationReferenceForNextPageWrite(annotationId: number): this;
+    /**
+     * Makes a modified PDF write a new catalog when it ends, so catalog
+     * changes from extensions are kept.
+     * @throws {Error} If the writer has ended.
+     */
     requireCatalogUpdate(): void;
 
     /* Js Extensions (in muhammara.js) */
+    /**
+     * Returns the writer's event emitter, created on first use.
+     * @returns The emitter for writer events.
+     */
     getEvents(): EventEmitter;
+    /**
+     * Emits an event on the writer's emitter after setting `eventParams.writer`
+     * to this writer.
+     * @param eventName - The event name.
+     * @param eventParams - The event parameters; gains a `writer` key.
+     * @throws {TypeError} If eventParams is not an object.
+     */
     triggerDocumentExtensionEvent(
       eventName: string | symbol,
       eventParams: any,
     ): void;
   }
 
+  /** Scopes for the `replaceObject()` scope option. */
+  export const ObjectReplacementScope: {
+    /** Replace the reference on every page. */
+    readonly GLOBAL: "global";
+  };
+  export type ObjectReplacementScope =
+    (typeof ObjectReplacementScope)[keyof typeof ObjectReplacementScope];
+
   export interface ObjectReplacementOptions {
-    scope?: "global";
+    scope?: ObjectReplacementScope;
   }
 
   export interface RemoveTextOptions {
@@ -1019,16 +2993,8 @@ declare namespace muhammara {
       Result = unknown,
     > = (this: Recipe, ...args: Arguments) => Result;
 
-    type CommentOptionsFlag =
-      | "invisible"
-      | "hidden"
-      | "print"
-      | "nozoom"
-      | "norotate"
-      | "noview"
-      | "readonly"
-      | "locked"
-      | "togglenoview";
+    /** @deprecated Use `AnnotFlag`; comments accept the same flags. */
+    type CommentOptionsFlag = AnnotOptionsFlag;
 
     type AnnotSubtype =
       | "Text"
@@ -1083,16 +3049,121 @@ declare namespace muhammara {
 
     type RecipeCoordinate = number | "center";
 
+    /** Named page sizes, with string compatibility for other names. */
+    type PageSize =
+      | "executive"
+      | "folio"
+      | "legal"
+      | "letter"
+      | "ledger"
+      | "tabloid"
+      | "a0"
+      | "a1"
+      | "a2"
+      | "a3"
+      | "a4"
+      | "a5"
+      | "a6"
+      | "a7"
+      | "a8"
+      | "a9"
+      | "a10"
+      | "b0"
+      | "b1"
+      | "b2"
+      | "b3"
+      | "b4"
+      | "b5"
+      | "b6"
+      | "b7"
+      | "b8"
+      | "b9"
+      | "b10"
+      | "c0"
+      | "c1"
+      | "c2"
+      | "c3"
+      | "c4"
+      | "c5"
+      | "c6"
+      | "c7"
+      | "c8"
+      | "c9"
+      | "c10"
+      | "ra0"
+      | "ra1"
+      | "ra2"
+      | "ra3"
+      | "ra4"
+      | "sra0"
+      | "sra1"
+      | "sra2"
+      | "sra3"
+      | "sra4"
+      | (string & {});
+
+    /** A `Recipe.TextWrap` value. */
+    type TextWrap = "auto" | "clip" | "trim" | "ellipsis";
+    /** A `Recipe.TableRowNth` value. */
+    type TableRowNth = "even" | "odd";
+    /** A `Recipe.LineCap` value. */
+    type LineCap = "butt" | "round" | "square";
+    /** A `Recipe.LineJoin` value. */
+    type LineJoin = "miter" | "round" | "bevel";
+    /** A `Recipe.ArrowAt` value. */
+    type ArrowAt = "head" | "tail";
+    /** A `Recipe.ArrowType` value. */
+    type ArrowType = "triangle" | "dart" | "kite";
+    /** A `Recipe.PageLayout` value. */
+    type PageLayout = "portrait" | "landscape";
+    /** A `Recipe.FontStyle` value. */
+    type FontStyle = "regular" | "bold" | "italic" | "bold-italic";
+    /** A `Recipe.Permission` value. */
+    type Permission = PermissionName;
+    /** A `Recipe.Coordinate` value. */
+    type Coordinate = "center";
+    /** A `Recipe.AnnotFlag` value. */
+    type AnnotFlag = AnnotOptionsFlag;
+    /** A `Recipe.AnnotIcon` value. */
+    type AnnotIcon = AnnotOptionsIcon;
+    /** A `Recipe.ChromaCommand` value. */
+    type ChromaCommand = "!load";
+    /** A `Recipe.Source` value. */
+    type Source = "new";
+    /** The low-level `DeviceColorSpace` values; same as `DeviceColorspace`. */
+    type DeviceColorSpace = DeviceColorspace;
+    type HorizontalAlign = "left" | "center" | "right";
+    type VerticalAlign = "top" | "center" | "bottom";
+    type TextAlign = "left" | "center" | "right" | "justify";
+    /** Known text-box alignments, with string compatibility for computed values. */
+    type TextBoxAlign =
+      TextAlign | `${TextAlign} ${VerticalAlign}` | (string & {});
+    /** Known alignments, with string compatibility for computed values. */
+    type ImageAlign =
+      HorizontalAlign | `${HorizontalAlign} ${VerticalAlign}` | (string & {});
+
     type RecipeFontStyle =
       "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
 
     interface RecipeOptions {
+      /** PDF version of a new PDF: 1.0 through 1.7 or 2.0; other values use 1.7. */
       version?: number;
       author?: string;
       title?: string;
       subject?: string;
       keywords?: string[];
+      /** Default colorspace; see `Recipe.Colorspace`. */
       colorspace?: Colorspace;
+      /** Owner password; also opens a protected source PDF. */
+      password?: string;
+      /** The 'view' password; also enables encryption. */
+      userPassword?: string;
+      /** The 'edit' password. */
+      ownerPassword?: string;
+      /** Encryption permission flags, see `Recipe#permission()`. */
+      userProtectionFlag?: number;
+      /** Directory location(s) of additional fonts. */
+      fontSrcPath?: string | string[];
     }
 
     interface RecipeMargins {
@@ -1107,16 +3178,18 @@ declare namespace muhammara {
       date?: string;
       open?: boolean;
       richText?: boolean;
-      flag?: CommentOptionsFlag;
+      flag?: AnnotOptionsFlag | number;
       /** Replies linked to this comment annotation. */
       replies?: readonly AnnotReply[];
     }
 
     interface AnnotOptions {
+      /** The annotation content. */
+      text?: string;
       title?: string;
       open?: boolean;
       richText?: boolean;
-      flag?: AnnotOptionsFlag;
+      flag?: AnnotOptionsFlag | number;
       icon?: AnnotOptionsIcon;
       width?: number;
       height?: number;
@@ -1125,14 +3198,21 @@ declare namespace muhammara {
       date?: string;
       subject?: string;
       replies?: readonly AnnotReply[];
+      /** The border width. */
+      border?: number;
+      /** The annotation color. */
+      color?: Color;
+      /** Keep the annotation unrotated on a rotated source page. */
+      followOriginalPageRotation?: boolean;
     }
 
     interface AnnotReply {
+      /** Ignored: a reply uses the subtype of the annotation it answers. */
       subtype?: AnnotSubtype;
       text: string;
       title?: string;
       richText?: boolean;
-      flag?: AnnotOptionsFlag;
+      flag?: AnnotOptionsFlag | number;
       opacity?: number;
       date?: string;
       subject?: string;
@@ -1161,7 +3241,8 @@ declare namespace muhammara {
       scale?: number;
       keepAspectRatio?: boolean;
       opacity?: number;
-      align?: string;
+      /** `Recipe.HorizontalAlign`, optionally followed by a space and `Recipe.VerticalAlign`. */
+      align?: ImageAlign;
       rotation?: number;
       rotationOrigin?: [number, number];
       skewX?: number;
@@ -1189,7 +3270,7 @@ declare namespace muhammara {
     interface MetadataPage {
       pageNumber: number;
       mediaBox: number[];
-      layout: "portrait" | "landscape";
+      layout: PageLayout;
       rotate: number;
       width: number;
       height: number;
@@ -1246,8 +3327,9 @@ declare namespace muhammara {
       minHeight?: number;
       padding?: number | readonly number[];
       lineHeight?: number;
-      wrap?: boolean | "auto" | "clip" | "trim" | "ellipsis";
-      textAlign?: string;
+      wrap?: boolean | TextWrap;
+      /** `Recipe.TextAlign`, optionally followed by a space and `Recipe.VerticalAlign`. */
+      textAlign?: TextBoxAlign;
       clipIfExceedsBox?: boolean;
       onClip?: (recipe: Recipe, result: TextBoxClipResult) => void;
       style?: TextBoxStyle;
@@ -1283,7 +3365,8 @@ declare namespace muhammara {
       size?: number;
       bold?: boolean;
       italic?: boolean;
-      align?: string;
+      /** `Recipe.HorizontalAlign`, optionally followed by a space and `Recipe.VerticalAlign`. */
+      align?: ImageAlign;
       highlight?: boolean | TextMarkupOptions;
       underline?: boolean | TextMarkupOptions;
       strikeOut?: boolean | TextMarkupOptions;
@@ -1299,7 +3382,7 @@ declare namespace muhammara {
       title?: string;
       open?: boolean;
       richText?: boolean;
-      flag?: AnnotOptionsFlag;
+      flag?: AnnotOptionsFlag | number;
       icon?: AnnotOptionsIcon;
       date?: string;
       subject?: string;
@@ -1395,7 +3478,7 @@ declare namespace muhammara {
       header?:
         boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
       border?: boolean | PolygonOptions;
-      row?: TextOptions & { nth?: "even" | "odd"; cell?: TextBox };
+      row?: TextOptions & { nth?: TableRowNth; cell?: TextBox };
       /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
       overflow?: (
         this: Recipe,
@@ -1436,8 +3519,8 @@ declare namespace muhammara {
     }
 
     interface PathOptions extends DrawingOptions {
-      lineCap?: "butt" | "round" | "square";
-      lineJoin?: "miter" | "round" | "bevel";
+      lineCap?: LineCap;
+      lineJoin?: LineJoin;
       miterLimit?: number;
     }
 
@@ -1480,8 +3563,8 @@ declare namespace muhammara {
         | readonly [number, number, number];
       shaft?: number | readonly [number] | readonly [number, number];
       double?: boolean;
-      type?: 0 | 1 | 2 | "triangle" | "dart" | "kite";
-      at?: "head" | "tail";
+      type?: 0 | 1 | 2 | ArrowType;
+      at?: ArrowAt;
     }
 
     interface TriangleBaseOptions extends ShapeOptions {
@@ -1549,16 +3632,276 @@ declare namespace muhammara {
   }
 
   export class Recipe {
+    /**
+     * @param src - `Recipe.Source.NEW` ("new", or `Buffer.from("new")`) for a new PDF,
+     *   otherwise the path or Buffer of the PDF to edit.
+     * @param output - The output path. For a path source it defaults to
+     *   the source path; for a Buffer source the result is only returned by
+     *   `endPDF()` unless an output path is given.
+     * @param options - The options for pdfDoc
+     * @param options.version - The PDF version of a new PDF: 1.0 through
+     *   1.7 or 2.0. Other values fall back to 1.7.
+     * @param options.author - The author
+     * @param options.title - The title
+     * @param options.subject - The subject
+     * @param options.keywords - The array of keywords
+     * @param options.colorspace - The default colorspace, one
+     *   of the `Recipe.Colorspace` values.
+     * @param options.password - Owner password; also opens a protected source.
+     * @param options.userPassword - The 'view' password; also enables encryption.
+     * @param options.ownerPassword - The 'edit' password.
+     * @param options.userProtectionFlag - Encryption permission flags, see `permission()`.
+     * @param options.fontSrcPath - Directory location(s) of additional fonts.
+     * @throws {Error} If an existing source PDF cannot be read or opened for editing.
+     */
     constructor(
       src: string,
       output?: string | null,
       options?: Recipe.RecipeOptions,
     );
 
+    /** Special Recipe sources, such as `Recipe.Source.NEW` for a new PDF. */
+    static readonly Source: {
+      readonly NEW: "new";
+    };
+    /** How text that does not fit a text-box line is handled. */
+    static readonly TextWrap: {
+      readonly AUTO: "auto";
+      readonly CLIP: "clip";
+      readonly TRIM: "trim";
+      readonly ELLIPSIS: "ellipsis";
+    };
+    /** Horizontal alignments of text inside a text box. */
+    static readonly TextAlign: {
+      readonly LEFT: "left";
+      readonly CENTER: "center";
+      readonly RIGHT: "right";
+      readonly JUSTIFY: "justify";
+    };
+    /** Which table rows the `row` options apply to. */
+    static readonly TableRowNth: {
+      readonly EVEN: "even";
+      readonly ODD: "odd";
+    };
+    /** Line cap styles for the `lineCap` options. */
+    static readonly LineCap: {
+      readonly BUTT: "butt";
+      readonly ROUND: "round";
+      readonly SQUARE: "square";
+    };
+    /** Line join styles for the `lineJoin` options. */
+    static readonly LineJoin: {
+      readonly MITER: "miter";
+      readonly ROUND: "round";
+      readonly BEVEL: "bevel";
+    };
+    /** The arrow point placed at the `arrow()` coordinates. */
+    static readonly ArrowAt: {
+      readonly HEAD: "head";
+      readonly TAIL: "tail";
+    };
+    /** Arrow head shapes for the `arrow()` type option. */
+    static readonly ArrowType: {
+      readonly TRIANGLE: "triangle";
+      readonly DART: "dart";
+      readonly KITE: "kite";
+    };
+    /** How `triangle()` traits define the triangle. */
+    static readonly TriangleTrait: {
+      readonly SSS: "sss";
+      readonly SAS: "sas";
+      readonly ASA: "asa";
+      readonly VTX: "vtx";
+    };
+    /** The triangle point placed at the `triangle()` coordinates. */
+    static readonly TrianglePosition: {
+      readonly A: "a";
+      readonly B: "b";
+      readonly C: "c";
+      readonly CENTROID: "centroid";
+      readonly CIRCUMCENTER: "circumcenter";
+      readonly INCENTER: "incenter";
+    };
+    /** Page orientations reported in page metadata. */
+    static readonly PageLayout: {
+      readonly PORTRAIT: "portrait";
+      readonly LANDSCAPE: "landscape";
+    };
+    /** Named page sizes for `createPage()`. */
+    static readonly PageSize: {
+      readonly EXECUTIVE: "executive";
+      readonly FOLIO: "folio";
+      readonly LEGAL: "legal";
+      readonly LETTER: "letter";
+      readonly LEDGER: "ledger";
+      readonly TABLOID: "tabloid";
+      readonly A0: "a0";
+      readonly A1: "a1";
+      readonly A2: "a2";
+      readonly A3: "a3";
+      readonly A4: "a4";
+      readonly A5: "a5";
+      readonly A6: "a6";
+      readonly A7: "a7";
+      readonly A8: "a8";
+      readonly A9: "a9";
+      readonly A10: "a10";
+      readonly B0: "b0";
+      readonly B1: "b1";
+      readonly B2: "b2";
+      readonly B3: "b3";
+      readonly B4: "b4";
+      readonly B5: "b5";
+      readonly B6: "b6";
+      readonly B7: "b7";
+      readonly B8: "b8";
+      readonly B9: "b9";
+      readonly B10: "b10";
+      readonly C0: "c0";
+      readonly C1: "c1";
+      readonly C2: "c2";
+      readonly C3: "c3";
+      readonly C4: "c4";
+      readonly C5: "c5";
+      readonly C6: "c6";
+      readonly C7: "c7";
+      readonly C8: "c8";
+      readonly C9: "c9";
+      readonly C10: "c10";
+      readonly RA0: "ra0";
+      readonly RA1: "ra1";
+      readonly RA2: "ra2";
+      readonly RA3: "ra3";
+      readonly RA4: "ra4";
+      readonly SRA0: "sra0";
+      readonly SRA1: "sra1";
+      readonly SRA2: "sra2";
+      readonly SRA3: "sra3";
+      readonly SRA4: "sra4";
+    };
+    /** Horizontal alignments. */
+    static readonly HorizontalAlign: {
+      readonly LEFT: "left";
+      readonly CENTER: "center";
+      readonly RIGHT: "right";
+    };
+    /** Vertical alignments. */
+    static readonly VerticalAlign: {
+      readonly TOP: "top";
+      readonly CENTER: "center";
+      readonly BOTTOM: "bottom";
+    };
+    /** Font styles for `registerFont()`. */
+    static readonly FontStyle: {
+      readonly REGULAR: "regular";
+      readonly BOLD: "bold";
+      readonly ITALIC: "italic";
+      readonly BOLD_ITALIC: "bold-italic";
+    };
+    /** User access permission names for `permission()`. */
+    static readonly Permission: {
+      readonly PRINT: "print";
+      readonly MODIFY: "modify";
+      readonly COPY: "copy";
+      readonly EDIT: "edit";
+      readonly FILL_FORM: "fillform";
+      readonly EXTRACT: "extract";
+      readonly ASSEMBLE: "assemble";
+      readonly PRINT_BEST: "printbest";
+    };
+    /** Named coordinates, accepted wherever a `RecipeCoordinate` is. */
+    static readonly Coordinate: {
+      readonly CENTER: "center";
+    };
+    /** Colorspaces accepted by the `colorspace` options. */
+    static readonly Colorspace: {
+      readonly RGB: "rgb";
+      readonly CMYK: "cmyk";
+      readonly GRAY: "gray";
+      readonly SEPARATION: "separation";
+    };
+    /** Annotation subtypes for `annot()`. */
+    static readonly AnnotSubtype: {
+      readonly TEXT: "Text";
+      readonly LINK: "Link";
+      readonly FREE_TEXT: "FreeText";
+      readonly LINE: "Line";
+      readonly SQUARE: "Square";
+      readonly CIRCLE: "Circle";
+      readonly POLYGON: "Polygon";
+      readonly POLY_LINE: "PolyLine";
+      readonly HIGHLIGHT: "Highlight";
+      readonly UNDERLINE: "Underline";
+      readonly SQUIGGLY: "Squiggly";
+      readonly STRIKE_OUT: "StrikeOut";
+      readonly CARET: "Caret";
+      readonly STAMP: "Stamp";
+      readonly INK: "Ink";
+      readonly POPUP: "Popup";
+      readonly FILE_ATTACHMENT: "FileAttachment";
+      readonly SOUND: "Sound";
+      readonly MOVIE: "Movie";
+      readonly SCREEN: "Screen";
+      readonly WIDGET: "Widget";
+      readonly PRINTER_MARK: "PrinterMark";
+      readonly TRAP_NET: "TrapNet";
+      readonly WATERMARK: "Watermark";
+      readonly THREE_D: "3D";
+      readonly REDACT: "Redact";
+      readonly PROJECTION: "Projection";
+      readonly RICH_MEDIA: "RichMedia";
+    };
+    /** Annotation flag names for the `flag` options. */
+    static readonly AnnotFlag: {
+      readonly INVISIBLE: "invisible";
+      readonly HIDDEN: "hidden";
+      readonly PRINT: "print";
+      readonly NO_ZOOM: "nozoom";
+      readonly NO_ROTATE: "norotate";
+      readonly NO_VIEW: "noview";
+      readonly READ_ONLY: "readonly";
+      readonly LOCKED: "locked";
+      readonly TOGGLE_NO_VIEW: "togglenoview";
+      readonly LOCKED_CONTENTS: "lockedcontents";
+    };
+    /** Special `chroma()` names that run a command instead of naming a color. */
+    static readonly ChromaCommand: {
+      readonly LOAD: "!load";
+    };
+    /** Text annotation icons for the `icon` option. */
+    static readonly AnnotIcon: {
+      readonly COMMENT: "Comment";
+      readonly KEY: "Key";
+      readonly NOTE: "Note";
+      readonly HELP: "Help";
+      readonly NEW_PARAGRAPH: "NewParagraph";
+      readonly PARAGRAPH: "Paragraph";
+      readonly INSERT: "Insert";
+    };
+
     readonly position: { x: number; y: number };
     /** Current document metadata, keyed by one-based page number. */
     readonly metadata: Recipe.Metadata;
+    /**
+     * Read PDF metadata: the page count and, keyed by one-based page number,
+     * each page's media box, rotation, layout and size.
+     * @param inSrc - A PDF path or Buffer to read instead of
+     *   the recipe source. Reading another PDF does not change the recipe state.
+     * @returns The PDF metadata.
+     * @throws {Error} If the PDF cannot be read or has no pages.
+     */
     read(inSrc?: string | Buffer): Recipe.ReadMetadata;
+    /**
+     * Register a callback procedure with MuhammaraJS.
+     * @param key - Name assigned to the callback. When a named function is
+     * registered, and its given name is what is to be used to access it, the key is unnecessary.
+     * @param callback - Callback procedure that can be accessed through MuhammaraJS.
+     *   It is added to the shared Recipe prototype, so every Recipe instance gets it.
+     * @throws {string} If the callback function is unnamed when no key is provided.
+     * @throws {string} If the key conflicts with an existing Recipe prototype member.
+     * @throws {string} If the callback is not a function.
+     * @returns The recipe instance.
+     */
     register<Arguments extends unknown[], Result>(
       key: string,
       callback: Recipe.ExtensionCallback<Arguments, Result>,
@@ -1573,41 +3916,146 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /**
+     * Create a comment annotation: a Text annotation with the Comment icon. It is
+     * written when the PDF ends.
+     * @param text - The text content; defaults to ''.
+     * @param x - The coordinate x
+     * @param y - The coordinate y
+     * @param options - The options
+     * @param options.title - The title.
+     * @param options.date - The date.
+     * @param options.open - Open the annotation by default?; defaults to false.
+     * @param options.richText - Display with rich text format, text will be transformed automatically, or you may pass in your own rich text starts with "<?xml..."
+     * @param options.replies - Array of annotation replies, each with text and optional title, date, subject, richText, and flag.
+     * @param options.flag - The flag property, one of the `Recipe.AnnotFlag` values.
+     * @returns The recipe instance.
+     */
     comment(
       text: string,
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       options?: Recipe.CommentOptions,
     ): Recipe;
 
+    /**
+     * Add a clickable URL link to the current page.
+     * @param url - The URL to open.
+     * @param x - The top-left x coordinate.
+     * @param y - The top-left y coordinate.
+     * @param width - The link width.
+     * @param height - The link height.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     link(
       url: string,
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       width: number,
       height: number,
     ): Recipe;
 
+    /**
+     * Create an annotation. It is written when the PDF ends.
+     * @todo support for rich text RC
+     * @param x - The coordinate x
+     * @param y - The coordinate y
+     * @param subtype - The annotation subtype, one of the
+     *   `Recipe.AnnotSubtype` values.
+     * @param options - The options
+     * @param options.text - The annotation content; defaults to ''.
+     * @param options.title - The title.
+     * @param options.open - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'; defaults to false.
+     * @param options.richText - Rich text
+     * @param options.flag - The flag property, one of the `Recipe.AnnotFlag` values.
+     * @param options.icon - The icon of a Text annotation, one
+     *   of the `Recipe.AnnotIcon` values. Viewers show 'Note' when it is omitted.
+     * @param options.width - Width
+     * @param options.height - Height
+     * @param options.date - Date of annotation
+     * @param options.subject - The subject.
+     * @param options.replies - Array of annotation replies
+     * @param options.border - The border width.
+     * @param options.color - The annotation color, as HexColor,
+     *   PercentColor or DecimalColor.
+     * @param options.opacity - Annotation opacity from 0 (transparent) to 1 (opaque); defaults to 1.
+     * @param options.followOriginalPageRotation - Preserve the original page rotation when positioning the annotation; defaults to false.
+     * @returns The recipe instance.
+     */
     annot(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       subtype: Recipe.AnnotSubtype,
       options?: Recipe.AnnotOptions,
     ): Recipe;
 
+    /**
+     * Append pages from the other pdf to the current pdf. An active page is
+     * finished first, so appended pages follow it in the output.
+     * @param pdfSrc - The path for the other pdf.
+     * @param pages - ] - A one-based page; defaults to [.
+     * number or array of page numbers and inclusive ranges. Omitting it appends all
+     * pages; endpoints beyond the source are clamped to its final page.
+     * @returns The recipe instance.
+     * @throws {RangeError} If a selection is not a positive integer or a two-value
+     * range in ascending order.
+     * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+     * @throws {Error} If the source PDF cannot be read.
+     */
     appendPage(
       pdfSrc: string,
       pages?: number | (number | [number, number])[],
     ): Recipe;
 
+    /**
+     * Encrypt the pdf
+     * @param options - The options
+     * @param options.password - The permission password.
+     * @param options.ownerPassword - The password for editing.
+     * @param options.userPassword - The password for viewing & encryption.
+     * @param options.userProtectionFlag - The flag for the security level, see `permission()`.
+     * @returns The recipe instance. The file is encrypted by `endPDF()`;
+     *   Buffer sources are not encrypted.
+     */
     encrypt(options?: Recipe.EncryptOptions): Recipe;
 
+    /**
+     * Register a custom font
+     * @param fontName - The font name used in text, matched case-insensitively; defaults to ''.
+     * @param fontSrcPath - The path to the font file; defaults to ''.
+     * @param type - The style this file provides,; defaults to 'regular'.
+     *   one of the `Recipe.FontStyle` values or its short form r, b, i or bi.
+     *   Any other value registers the regular style.
+     * @returns The recipe instance.
+     */
     registerFont(
       fontName: string,
       fontSrcPath: string,
       type?: Recipe.RecipeFontStyle,
     ): Recipe;
 
+    /**
+     * Place images to pdf
+     * @param imgSrc - The path for the image. [JPEG, PNG, TIFF, PDF]
+     * @param x - The coordinate x of the top-left corner
+     * @param y - The coordinate y of the top-left corner
+     * @param options - The options
+     * @returns The recipe instance.
+     * @param options.width - The new width
+     * @param options.height - The new height
+     * @param options.scale - Scale the image from the original width and height.
+     * @param options.keepAspectRatio - Keep the aspect ratio; defaults to true.
+     * @param options.opacity - The opacity.
+     * @param options.align - A `Recipe.HorizontalAlign` value, optionally
+     *   followed by a space and a `Recipe.VerticalAlign` value, for example
+     *   "center center". Horizontal center moves the image left by half its width
+     *   and right moves it right by half; vertical center moves it up by half its
+     *   height and bottom moves it down by half from its top-left placement.
+     * @param options.link - Make the image open this URL.
+     * @throws {TypeError} If no page is active.
+     * @throws {Error} If the image cannot be read.
+     */
     image(
       imgSrc: string,
       x: Recipe.RecipeCoordinate,
@@ -1615,16 +4063,58 @@ declare namespace muhammara {
       options?: Recipe.ImageOptions,
     ): Recipe;
 
+    /**
+     * @param options - The options (when missing obtains existing PDF information)
+     * @param options.author - The author
+     * @param options.title - The title
+     * @param options.subject - The subject
+     * @param options.keywords - The array of keywords
+     * @returns The existing information dictionary when options are omitted, otherwise the recipe instance.
+     *   A new PDF has no existing information, so the call without options returns undefined.
+     * @throws {Error} If the source information cannot be read.
+     */
     info(options?: Recipe.InfoOptions): Recipe;
 
+    /**
+     * @param key - The key
+     * @param value - The value; other values are converted with toString().
+     * @returns The recipe instance.
+     * @throws {TypeError} If the key or value is null or undefined.
+     */
     custom(key: string, value: string): Recipe;
 
+    /**
+     * Insert a page from the other pdf
+     * @param afterPageNumber - The one-based page number to insert after; 0 inserts before the first page.
+     * @param pdfSrc - The path for the other pdf
+     * @param srcPageNumber - The one-based page number to be inserted from the other pdf.
+     * @returns The recipe instance. Pages are inserted by `endPDF()`;
+     *   Buffer sources do not support insertion.
+     * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+     * @throws {Error} If afterPageNumber is not a number.
+     * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
+     */
     insertPage(
       afterPageNumber: number,
       pdfSrc: string,
       srcPageNumber: number,
     ): Recipe;
 
+    /**
+     * Overlay a pdf to the current pdf
+     * @param pdfSrc - The path for the overlay pdf
+     * @param x - The PDF x offset from the left edge, or options when using the two-argument form; defaults to 0.
+     * @param y - The offset from the top edge; defaults to 0.
+     * @param options - The options.
+     * @param options.scale - Scale the overlay pdf, default is 1
+     * @param options.page - Page of the overlay pdf, default is 1
+     * @param options.keepAspectRatio - To keep the aspect ratio when scaling, default is true
+     * @param options.fitWidth - To set the width to 100% (use with keepAspectRatio=true)
+     * @param options.fitHeight - To set the height to 100% (use with keepAspectRatio=true)
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     * @throws {Error} If the overlay PDF cannot be read.
+     */
     overlay(pdfSrc: string, options?: Recipe.OverlayOptions): Recipe;
     overlay(
       pdfSrc: string,
@@ -1633,18 +4123,56 @@ declare namespace muhammara {
       options?: Recipe.OverlayOptions,
     ): Recipe;
 
+    /**
+     * Create a new page, specifying either actual width and height, or the name
+     * of a supported page size (eg. 'letter', 'letter-size')
+     * '-size' will be removed from string but is discouraged to use.
+     * @param pageWidth - The page width, or a `Recipe.PageSize` name.
+     * Known named medium sizes: executive, folio, legal, letter, ledger, tabloid, a0-a10, b0-b10, c0-c10, ra0-ra4, sra0-sra4.
+     * Unknown names use the default letter size.
+     * @param pageHeight - The page height, or rotation (90) when page size name given.
+     * @param margins - page margin definitions.
+     * @param margins.left - Left margin.
+     * @param margins.right - Right margin.
+     * @param margins.top - Top margin.
+     * @param margins.bottom - Bottom margin.
+     * @returns The recipe instance.
+     * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+     */
     createPage(
       pageWidth?: number,
       pageHeight?: number,
       margins?: Recipe.RecipeMargins,
     ): Recipe;
     createPage(
-      pageType: string,
+      pageType: Recipe.PageSize,
       rotation?: number,
       margins?: Recipe.RecipeMargins,
     ): Recipe;
+    /**
+     * Set the rotation of the current page.
+     * @param rotation - The page rotation in degrees, a multiple of 90.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     rotate(rotation: number): Recipe;
+    /**
+     * Finish a page. Without an active page this does nothing.
+     * @returns The recipe instance.
+     * @throws {Error} If the page cannot be written.
+     */
     endPage(): Recipe;
+    /**
+     * Set a page box on the active new page.
+     * @param box - An `ePDFPageBox*` constant.
+     * @param left - The PDF left coordinate.
+     * @param bottom - The PDF bottom coordinate.
+     * @param right - The PDF right coordinate.
+     * @param top - The PDF top coordinate.
+     * @returns The recipe instance.
+     * @throws {RangeError} If the page box constant is unknown.
+     * @throws {TypeError} If no page is active.
+     */
     setPageBox(
       box: PDFPageBoxType,
       left: number,
@@ -1653,16 +4181,74 @@ declare namespace muhammara {
       top: number,
     ): Recipe;
 
+    /**
+     * Start editing a page
+     * @param pageNumber - The one-based page number to be edited.
+     * @returns The recipe instance.
+     * @throws {Error} If the page does not exist in the source PDF.
+     */
     editPage(pageNumber: number): Recipe;
+    /**
+     * Delete one or more pages from an existing PDF.
+     * Page numbers are one-based and refer to the original source document.
+     * @param pageNumbers - Page number or page numbers to delete.
+     * @returns The recipe instance.
+     * @throws {RangeError} If a page number does not identify an original page.
+     * @throws {Error} If the Recipe has no existing source, has ended, would delete
+     * every page, or combines deletion with page composition. Page-tree,
+     * retained-reference, and object-generation validation is deferred to
+     * endPDF(), which throws those errors during finalization.
+     */
     deletePage(pageNumbers: number | number[]): Recipe;
 
+    /**
+     * Replace literal text-showing operands in a page's single content stream.
+     *
+     * @param text - Text to replace.
+     * @param replacement - Replacement text.
+     * @param pageNumber - One-based page number.
+     * @returns The Recipe instance.
+     * @throws {TypeError} If text or replacement is not a Latin-1 string, or if
+     * the page number is not a positive integer.
+     * @throws {Error} If the page does not have one indirect content stream.
+     */
     replaceText(text: string, replacement: string, pageNumber: number): Recipe;
-    /** Removes shown text from an existing page's content streams, and optionally its Form XObjects. */
+    /**
+     * Removes shown text from an existing page's content streams, and
+     * optionally its Form XObjects.
+     * @param pageNumber - One-based page number.
+     * @param options - Removal options.
+     * @returns The Recipe instance.
+     * @throws {TypeError} If the page number is not a positive integer, or the
+     *   options are not an object.
+     * @throws {RangeError} If the source document has no such page.
+     * @throws {Error} If the page's Contents holds a direct stream.
+     */
     removeText(pageNumber: number, options?: RemoveTextOptions): Recipe;
 
+    /**
+     * Get page information
+     * @param pageNumber - The one-based page number.
+     * @returns The page information.
+     * @throws {TypeError} If the page is unknown.
+     */
     pageInfo(pageNumber: number): RecipePageInfo;
+    /**
+     * Get information about the current page.
+     * @returns The current page information, or null when no page has been created or edited.
+     */
     getCurrentPageInfo(): RecipePageInfo | null;
 
+    /**
+     * Set/Get current page margins.
+     * @param left - Left margin width or an object holding margin properties to be set.
+     * Valid margin property names are: left, right, top, bottom.
+     * @param right - Right margin width.
+     * @param top - Top margin height.
+     * @param bottom - Bottom margin height.
+     * @returns When parameters are given, the value returned is the recipe handle. When no
+     * parameters given, the return value is the current page margin object.
+     */
     margins(): Required<Recipe.RecipeMargins>;
     margins(margins: Recipe.RecipeMargins): Recipe;
     margins(
@@ -1671,12 +4257,113 @@ declare namespace muhammara {
       top?: number,
       bottom?: number,
     ): Recipe;
+    /**
+     * Get the document information dictionary.
+     * @returns The document information dictionary.
+     */
     getPageInfo(): InfoDictionary;
+    /**
+     * Pause the current page content context.
+     * @returns The recipe instance.
+     * @throws {Error} If there is no active page content context.
+     */
     pauseContext(): Recipe;
+    /**
+     * Resume the current page content context after it has been paused.
+     * @returns The recipe instance.
+     * @throws {Error} If there is no paused page content context.
+     */
     resumeContext(): Recipe;
-    rotateContent(degrees: number, x?: number, y?: number): Recipe;
+    /**
+     * Rotate subsequent content around a point in Recipe coordinates.
+     * @param degrees - Clockwise rotation in degrees.
+     * @param x - Rotation origin x coordinate; defaults to 0.
+     * @param y - Rotation origin y coordinate; defaults to 0.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
+    rotateContent(
+      degrees: number,
+      x?: Recipe.RecipeCoordinate,
+      y?: Recipe.RecipeCoordinate,
+    ): Recipe;
+    /**
+     * Split the pdf
+     * @param outputDir - The path for the output PDFs; defaults to ''.
+     * @param prefix - The output filename prefix. Defaults to the
+     *   source filename; pass one for a Buffer source, which has no filename.
+     * @returns The recipe instance. Each page is written to
+     *   `<outputDir>/<prefix>-<pageNumber>.pdf`.
+     * @throws {Error} If the source reader was released by endPDF(), or an output
+     *   file cannot be written.
+     */
     split(outputDir?: string, prefix?: string): Recipe;
 
+    /**
+     * Write text elements
+     * @todo support break words
+     * @param text - The text content; defaults to ''.
+     * @param x - The coordinate x, or the options to continue at the current position
+     * @param y - The coordinate y
+     * @param options - The options
+     * @param options.color - Text color (HexColor, PercentColor or DecimalColor)
+     * @param options.opacity - opacity; defaults to 1.
+     * @param options.rotation - Accept: +/- 0 through 360; defaults to 0.
+     * @param options.rotationOrigin - ] - [originX, originY]; defaults to [x,y.
+     * @param options.font - The font. 'Arial', 'Helvetica'; defaults to Helvetica.
+     * @param options.size - The font size; defaults to 14.
+     * @param options.charSpace - space to be added between characters, units in points; defaults to 0.
+     * @param options.align - This is the alignment of the text in relationship to its position; defaults to 'left top'.
+     * coordinates, specified as 'horizontal vertical': a `Recipe.HorizontalAlign` value, optionally followed by a
+     * space and a `Recipe.VerticalAlign` value.
+     * @param options.highlight - Text markup annotation.
+     * @param options.underline - Text markup annotation.
+     * @param options.strikeOut - Text markup annotation.
+     * @param options.html - Interpret text as html
+     * @param options.flow - Used to activate/deactivate text flow which is the; defaults to false.
+     * ability to use multiple calls to 'text' to create an overall text box.
+     * @param options.layout - An identifier of the layout to be associated with given text.
+     * @param options.overflow - Called when the text is going to exceed the area
+     * of the given text object. Intended for column layouts. Its parameter is (self) where 'self' is the recipe handle so
+     * that other recipe interfaces can be called. The return value can be 'true' which indicates that text processing
+     * should stop, or 'false' which indicates that the text should continue being processed with the original [x,y]
+     * coordinates, or it can be an object containing a 'column' property indicating either a layout column index
+     * or a set of [x,y] coordinates where the next set of layout columns should be positioned for the remaining text.
+     * @param options.hilite - Used to hilite given text; defaults to false.
+     * @param options.hilite.color - text hilite color (HexColor, PercentColor or DecimalColor); defaults to yellow.
+     * @param options.hilite.opacity - text hilite color opacity; defaults to .5.
+     * @param options.textBox - Text Box to fit in.
+     * @param options.textBox.width - Text Box width; defaults to 100.
+     * @param options.textBox.height - Text Box fixed height
+     * @param options.textBox.minHeight - Text Box minimum height; defaults to 0.
+     * @param options.textBox.padding - Text Box padding, [top, right, bottom, left]; defaults to 0.
+     * @param options.textBox.lineHeight - Text Box line height; defaults to 0.
+     * @param options.textBox.wrap - Text wrapping mechanism, may be true, false,; defaults to 'auto'.
+     * or a `Recipe.TextWrap` value: 'auto', 'clip', 'trim', 'ellipsis'. All the option values that are not equivalent to 'auto' dictate
+     *  how the text which does not fit on a line is to be truncated. True is equivalent to 'auto'. False is equivalent to 'ellipsis'.
+     * @param options.textBox.textAlign - Alignment inside text box, specified as 'horizontal vertical',; defaults to 'left top'.
+     * where horizontal is a `Recipe.TextAlign` value and vertical a `Recipe.VerticalAlign` value.
+     * @param options.textBox.clipIfExceedsBox - Render only complete lines that fit within the text box height; defaults to false.
+     * @param options.textBox.onClip - Called as onClip(recipe, result) when clipping leaves text unrendered.
+     * Do not call endPage() or endPDF() in this callback because the text operation is still active.
+     * @param options.textBox.style - Text Box styles
+     * @param options.textBox.style.lineWidth - Text Box border width; defaults to 2.
+     * @param options.textBox.style.stroke - Text Box border color  (HexColor, PercentColor or DecimalColor)
+     * @param options.textBox.style.dash - ] - Text Box border border dash style [number, number]; defaults to [.
+     * @param options.textBox.style.fill - Text Box border background color (HexColor, PercentColor or DecimalColor)
+     * @param options.textBox.style.opacity - Text Box border background opacity; defaults to 1.
+     * @param options.textBox.style.borderRadius - Border radius to apply to get rounded corners; defaults to 0.
+     * @param options.title - Title of annotation
+     * @param options.open - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'; defaults to false.
+     * @param options.richText - Rich text in annotation
+     * @param options.flag - The annotation flag, a `Recipe.AnnotFlag` value.
+     * @param options.icon - The icon of annotation, a `Recipe.AnnotIcon` value. Specific to text annotations; defaults to 'Note'.
+     * @param options.date - Date of text to show up on annotation
+     * @param options.subject - Subject of annotation.
+     * @param options.link - Make the text open this URL.
+     * @returns The recipe instance. Without an active page nothing is drawn.
+     * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
+     */
     text(text: string, options?: Recipe.TextOptions): Recipe;
     text(
       text: string,
@@ -1684,10 +4371,43 @@ declare namespace muhammara {
       y: Recipe.RecipeCoordinate,
       options?: Recipe.TextOptions,
     ): Recipe;
+    /**
+     * Get text dimensions
+     * @param text - text to be measured
+     * @param options - The options
+     * @param options.font - name of font from which measurements are to be taken; defaults to 'helvetica'.
+     * @param options.size - size of font to be used in taking measurements; defaults to 14.
+     * @param options.charSpace - character spacing being applied to the given text; defaults to 0.
+     * @param options.bold - Measure with the bold style of the font.
+     * @param options.italic - Measure with the italic style of the font.
+     * @returns measurement components of given text: width, height, xMin, xMax, yMin, yMax
+     * @throws {Error} If the font file cannot be loaded.
+     */
     textDimensions(text: string, options?: Recipe.TextOptions): TextDimension;
+    /**
+     *  Move text positioning down N lines in text box
+     * @param lines - the number of lines to reposition x and y coordinates; defaults to 1.
+     * @param returnCoords - indicate whether or not to return [x,y] coordinates; defaults to false.
+     * @returns - when returnCoord false, the recipe object, when true, the new [x,y] coordinates.
+     */
     movedown(lines?: number, returnCoords?: false): Recipe;
     movedown(lines: number, returnCoords: true): number[];
     movedown(lines?: number, returnCoords?: boolean): Recipe | number[];
+    /**
+     * Define text column layout
+     * @param id - The identifier to be associated with the layout. (See 'text' layout option)
+     * @param x - The coordinate x used to position text columns on page. When zero or omitted, left margin used.
+     * @param y - The coordinate y used to position text columns on page. When zero or omitted, top margin used.
+     * @param width - The width of a text column. When zero or omitted, space between left and right margin used.
+     * @param height - The height of a text column. When zero or omitted, space between top and bottom margin used.
+     * @param options - The options.
+     * @param options.columns - Represents the number of columns in which to divide the given width.
+     * @param options.gap - Defines the separation between layout columns, units in points; defaults to 18.
+     * @param options.reset - True indicates that the a new layout should be produced for the given
+     * layout id, so any previous layout associated with the given id will be lost.
+     * @returns The recipe instance.
+     * @throws {TypeError} If width or height is omitted while no page is active.
+     */
     layout(
       id: string | number,
       x?: number,
@@ -1696,6 +4416,63 @@ declare namespace muhammara {
       height?: number,
       options?: Recipe.LayoutOptions,
     ): Recipe;
+    /**
+     * Display text data in tabular form
+     * Rows and headers use their rendered text-box heights, including padding,
+     * minimum heights, fixed heights, and HTML layout. Empty contents or no selected
+     * columns leave the Recipe unchanged. Array-form order preserves exact keys.
+     * Header text styles are independent of body styles: column header options
+     * (or defaults) are overridden by table header options, then alignToData
+     * and column hcell box overrides are applied.
+     * @param x - The coordinate x used to position table on page
+     * @param y - The coordinate y used to position table on page
+     * @param contents - the data to be placed into the table
+     * @param options - The options
+     * @param options.height - The height designation of the table
+     * @param options.order - Defines the order of the named columns in the table.
+     * It can also be used to choose a subset of the actual data found in the given contents.
+     * @param options.columns - Holds the defining options for columns in the table.
+     * @param options.columns - [].name] - The name of the content data field to be associated with the column.
+     * This field is mandatory when supplying column options.
+     * @param options.columns - [].text] - The title to be applied to the column header.
+     * When missing, the data field name is used.
+     * @param options.columns - [].width=100] - The width of table column.
+     * @param options.columns - [].cell] - Holds the options to be applied to a column table cell.
+     * All textBox options from the 'text' interface can be used here.
+     * @param options.columns - [].color] - Text color (HexColor, PercentColor or DecimalColor)
+     * @param options.columns - [].opacity=1] - opacity
+     * @param options.columns - [].font=Helvetica] - The font. 'Arial', 'Helvetica'...
+     * @param options.columns - [].size=14] - The font size
+     * @param options.columns - [].renderer] - function to be called which can be used to modify the text options for a particular
+     * table cell. The function is called with `(text, data, field, row)`, where `text` is the text to be written in the cell,
+     * `data` holds the text elements in the table row, `field` is the column field, and `row` is the one-based row number. The function returns an object with the text attributes that
+     * are to be modified for the table cell.
+     * @param options.header - When true, the column name associated with a column will; defaults to false.
+     * appear at the top of the column. When presented as an object it is the set of unique options to be applied to column headers.
+     * All 'text' interface options can be used.
+     * @param options.header.cell - All textBox options from the 'text' interface can be used here.
+     * @param options.border - Used to define table and cell border characteristics
+     * @param options.border.width - Thickness of lines used in the border; defaults to .5.
+     * @param options.border.stroke - line color (HexColor, PercentColor or DecimalColor)
+     * @param options.overflow - Called when the next table entry is going to expand the table
+     * beyond the given height or page boundary. Its parameters are (self, row) where 'self' is the recipe handle so
+     * that other recipe interfaces can be called, and the row number of the data which caused the data overflow.
+     * The callback's `this` is also the Recipe instance.
+     * The return value can be 'true' which indicates that data processing should stop, or 'false' which indicates that
+     * the data should continue being processed with the original [x,y] coordinates, or it can be an object containing
+     * a 'position' property indicating the [x,y] coordinates where the next table for the remaining data should start.
+     * @param options.row - text properties to be applied to all cells in a table row.
+     * @param options.row.cell - All textBox options from the 'text' interface can be used here.
+     * @param options.row.nth - A `Recipe.TableRowNth` value, indicating that the
+     * properties should be applied only to 'even' or 'odd' rows.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     * @throws {RangeError} If the overflow callback continues into an area too small
+     * for the pending row and its repeated header. Return true to stop, or provide
+     * enough space; rows are not split and the callback is called once per overflow.
+     * @throws {Error} If the overflow callback continues after ending the page
+     * without starting another one.
+     */
     table<RecordType extends object>(
       x: number,
       y: number,
@@ -1703,59 +4480,281 @@ declare namespace muhammara {
       options?: Recipe.TableOptions<RecordType>,
     ): Recipe;
 
+    /**
+     * move the current position to target position
+     * @param x - The coordinate x
+     * @param y - The coordinate y
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     moveTo(x: number, y: number): Recipe;
 
+    /**
+     * Draw a line from current position
+     * @param x - The coordinate x
+     * @param y - The coordinate y
+     * @param options - The options
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - how transparent should line be, from 0: invisible to 1: opaque
+     * @param options.dash - The dash pattern [dashSize, gapSize] or [dashAndGapSize]
+     * @param options.dashPhase - distance into dash pattern at which to start dash (default: 0, immediately)
+     * @param options.lineCap - open line end style, a `Recipe.LineCap` value (default: 'round')
+     * @param options.lineJoin - joined line end style, a `Recipe.LineJoin` value (default: 'round')
+     * @param options.miterLimit - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
+     */
     lineTo(x: number, y: number, options?: Recipe.LineToOptions): Recipe;
 
+    /**
+     * Draw a line through coordinate pairs, or from (startX, startY) to
+     * (endX, endY) when called as `line(startX, startY, endX, endY, options?)`.
+     * @param coordinates - The array of coordinate [[x,y], [m,n]], or the start x
+     * @param options - The options, or the start y in the four-number form
+     * @returns The recipe instance.
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - how transparent should line be, from 0: invisible to 1: opaque
+     * @param options.dash - The dash pattern [dashSize, gapSize] or [dashAndGapSize]
+     * @param options.dashPhase - distance into dash pattern at which to start dash (default: 0, immediately)
+     * @param options.lineCap - open line end style, a `Recipe.LineCap` value (default: 'round')
+     * @param options.lineJoin - joined line end style, a `Recipe.LineJoin` value (default: 'round')
+     * @param options.miterLimit - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
+     * @throws {TypeError} If no page is active.
+     */
     line(coordinates: number[][], options?: Recipe.LineOptions): Recipe;
+    line(
+      startX: number,
+      startY: number,
+      endX: number,
+      endY: number,
+      options?: Recipe.LineOptions,
+    ): Recipe;
 
+    /**
+     * Draw a polygon
+     * @param coordinates - The array of coordinate [[x,y], ... [m,n]]
+     * @param options - The options
+     * @returns The recipe instance.
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param options.fill - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash pattern [dashSize, gapSize] or [dashAndGapSize]
+     * @param options.dashPhase - distance into dash pattern at which to start dash (default: 0, immediately)
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @param options.lineCap - open line end style, a `Recipe.LineCap` value (default: 'round')
+     * @param options.lineJoin - joined line end style, a `Recipe.LineJoin` value (default: 'round')
+     * @param options.miterLimit - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
+     * @param options.link - Make the polygon's bounding box open this URL.
+     * @throws {TypeError} If no page is active or there are no coordinates.
+     */
     polygon(coordinates: number[][], options?: Recipe.PolygonOptions): Recipe;
 
+    /**
+     * Draw a circle
+     * @param x - The coordinate x of the center
+     * @param y - The coordinate y of the center
+     * @param radius - The radius
+     * @param options - The options
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param options.fill - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.link - Make the circle's bounding square open this URL.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     circle(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       radius: number,
       options?: Recipe.CircleOptions,
     ): Recipe;
 
+    /**
+     * Draw a rectangle
+     * @param x - The coordinate x of the top-left corner
+     * @param y - The coordinate y of the top-left corner
+     * @param width - The width
+     * @param height - The height
+     * @param options - The options
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param options.fill - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @param options.borderRadius - Radius size for rounded corners.
+     * When a one to four number array can be used to give specific sizees to each corner.
+     * The numbering starts from the top, left corner, and goes clockwise around the text box.
+     * Missing values in the array are filled in by opposite corner values.
+     * @param options.link - Make the rectangle open this URL.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     rectangle(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       width: number,
       height: number,
       options?: Recipe.RectangleOptions,
     ): Recipe;
 
+    /**
+     * Draw an ellipse
+     * @param cx - x-coordinate of center point of ellipse
+     * @param cy - y-coordinate of center point of ellipse
+     * @param rx - radius length from the center point along x-axis
+     * @param ry - radius length from the center point along y-axis
+     * @param options -
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param {string|number[]}[ options.fill] - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     ellipse(
-      cx: number,
-      cy: number,
+      cx: Recipe.RecipeCoordinate,
+      cy: Recipe.RecipeCoordinate,
       rx: number,
       ry: number,
       options?: Recipe.EllipseOptions,
     ): Recipe;
+    /**
+     * Draw an arc of a circle.
+     * @param x - the x coordinate of the arc center point
+     * @param y - the y coordinate of the arc center point
+     * @param radius - the distance from the given x,y coordinates from which to produce the arc
+     * @param startAngle - the start of the arc in degree units +/- 0 through 360. Positive values go clockwise, Negative values, counterclockwise; defaults to 0.
+     * @param endAngle - the end of the arc in degree units +/- 0 through 360. Positive values go clockwise, Negative values, counterclockwise; defaults to 360.
+     * @param options -
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param {string|number[]}[ options.fill] - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360; defaults to 0.
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     arc(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       radius: number,
       startAngle?: number,
       endAngle?: number,
       options?: Recipe.EllipseOptions,
     ): Recipe;
+    /**
+     * Draw a closed sector of a circle.
+     * @param x - the x coordinate of the pie center point
+     * @param y - the y coordinate of the pie center point
+     * @param radius - the distance from the center point to the arc
+     * @param startAngle - the start of the arc in degree units; defaults to 0.
+     * @param endAngle - the end of the arc in degree units; defaults to 360.
+     * @param options - The path options.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     pie(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       radius: number,
       startAngle?: number,
       endAngle?: number,
       options?: Recipe.EllipseOptions,
     ): Recipe;
+    /**
+     * Set the line style for the current page content context.
+     * @param options - The line style options.
+     * @param options.width - The line width.
+     * @param options.lineWidth - Alias for width.
+     * @param options.cap - The PDF line cap style, a `LineCapStyle` value.
+     * @param options.join - The PDF line join style: 0 miter, 1 round, 2 bevel.
+     * @param options.miterLimit - The miter limit.
+     * @param options.dash - The dash pattern.
+     * @param options.dashPhase - The dash pattern phase.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     lineStyle(options?: Recipe.LineStyleOptions): Recipe;
+    /**
+     * Set the line width.
+     *
+     * @param width - The line width.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     lineWidth(width: number): Recipe;
-    /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */
+    /**
+     * Sets fill and stroke opacity.
+     * @param opacity - From 0 (transparent) to 1 (opaque).
+     * @returns The Recipe instance.
+     * @throws {RangeError} If opacity is not a finite number from 0 to 1.
+     */
     opacity(opacity: number): Recipe;
+    /**
+     * Fill the current path.
+     *
+     * This compatibility method currently has no effect.
+     * @returns The recipe instance.
+     */
     fill(): Recipe;
+    /**
+     * Stroke the current path.
+     *
+     * This compatibility method currently has no effect.
+     * @returns The recipe instance.
+     */
     stroke(): Recipe;
+    /**
+     * Fill and stroke the current path.
+     *
+     * This compatibility method currently has no effect.
+     * @returns The recipe instance.
+     */
     fillAndStroke(): Recipe;
+    /**
+     * Draw an N-sided regular polygon
+     * @param cx - x-coordinate of center point of regular polygon
+     * @param cy - y-coordinate of center point of regular polygon
+     * @param radius - The radius, distance from the center of the polygon to a vertice.
+     * @param sides - the number of sides of the regular polygon, at least 3;; defaults to 3.
+     *   or the options when the side count is omitted.
+     * @param options - The options
+     * @param options.color - HexColor or DecimalColor
+     * @param options.stroke - HexColor or DecimalColor
+     * @param options.fill - HexColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360; defaults to 0.
+     * @param options.rotationOrigin - ] - [originX, originY]; defaults to [cx,cy.
+     * @param options.rotationVertice - the number of the vertice to be used as rotation origin
+     * @param options.skewX - the angle skew off the x-axis
+     * @param options.skewY - the angle skew off the y-axis.
+     * @param options.link - Make the polygon's bounding square open this URL.
+     * @param options.debug - Also draw the circumscribed circle and center.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     n_gon(
       cx: number,
       cy: number,
@@ -1763,6 +4762,29 @@ declare namespace muhammara {
       sides?: number | Recipe.NGonOptions,
       options?: Recipe.NGonOptions,
     ): Recipe;
+    /**
+     * Draw an N pointed star
+     * @param cx - x-coordinate of center point of regular polygon
+     * @param cy - y-coordinate of center point of regular polygon
+     * @param radius - The radius, distance from the center to a star point.
+     * @param points - number of points on star, at least 5; or; defaults to 5.
+     *   the options when the point count is omitted.
+     * @param options - The options
+     * @param options.color - HexColor or DecimalColor
+     * @param options.stroke - HexColor or DecimalColor
+     * @param options.fill - HexColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @param options.skewX - the angle skew off the x-axis
+     * @param options.skewY - the angle skew off the y-axis.
+     * @param options.link - Make the star's bounding square open this URL.
+     * @param options.debug - Also draw the circumscribed circle and center.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     star(
       cx: number,
       cy: number,
@@ -1770,6 +4792,38 @@ declare namespace muhammara {
       points?: number | Recipe.ShapeOptions,
       options?: Recipe.ShapeOptions,
     ): Recipe;
+    /**
+     * Draw a triangle, by specifying three side lengths, two side lengths and one inclusive angle, one side length and two adjacent angles, or with a set of vertices.
+     * @param x - x-coordinate used to position triangle, by default associated with left vertex of triangle base.
+     * @param y - y-coordinate used to position triangle, by default associated with left vertex of triangle base.
+     * @param traits - the data defining the triangle. Angles are specified as degrees, sides in units of points (1/72 in.).
+     * @param options - The options
+     * @param options.traitID - indicates what type of data is being passed in the traits parameter,; defaults to 'sss'.
+     * one of the `Recipe.TriangleTrait` values:
+     * ('sss'- three side lengths, 'sas' - side-angle-side (sideA, <C, sideB), 'asa' - angle-side-angle (<B, sideC, <A),
+     * or 'vtx' - three vertex points [x,y])
+     * @param options.position - the position of the triangle to be set at the given x,y coordinates,; defaults to 'b'.
+     * one of the `Recipe.TrianglePosition` values.
+     * The values can be one of: 'A' - the A vertex (right vertex of triangle base), 'B' - the B vertex (left vertex of triangle base),
+     * 'C' - the C vertex (apex of triangle), 'centroid', 'circumcenter', or 'incenter' of the triangle.
+     * @param options.flipX - flip triangle up to down through rotation point; defaults to false.
+     * @param options.flipY - flip triangle right to left through rotation point; defaults to false.
+     * @param options.color - HexColor or DecimalColor
+     * @param options.stroke - HexColor or DecimalColor
+     * @param options.fill - HexColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @param options.skewX - the angle skew off the x-axis
+     * @param options.skewY - the angle skew off the y-axis.
+     * @returns The recipe instance.
+     * @param options.link - Make the triangle's bounding box open this URL.
+     * @param options.debug - Also draw the reference points and labels.
+     * @throws {Error} If traits does not contain three values or does not define a valid triangle.
+     * @throws {TypeError} If no page is active.
+     */
     triangle(
       x: number,
       y: number,
@@ -1788,19 +4842,109 @@ declare namespace muhammara {
       traits: Recipe.MutableTriangleVertices,
       options: Recipe.TriangleVertexOptions,
     ): Recipe;
+    /**
+     * Draw an arrow
+     * @param x - x-coordinate position
+     * @param y - y-coordinate position
+     * @param options - arrow and polygon options
+     * @param options.type - indicates the type of arrow head to produce,; defaults to 0.
+     * a `Recipe.ArrowType` value or its number (0-'triangle', 1-'dart', 2-'kite').
+     * Note, that the value of base offset in head option overrides this value.
+     * @param options.head - ] defines the length, width and base offset of arrow head; defaults to [10,20,0.
+     * A single number can be used to assign both the length and width of arrow, giving the base offset value as zero.
+     * @param options.shaft - ] defines the length and width of the arrow shaft; defaults to [10,10.
+     * @param options.double - indicate double headed arrow production; defaults to false.
+     * @param options.at - position and/or rotate at the `Recipe.ArrowAt` head or tail of arrow instead of at center.
+     * @param options.debug - Draw the drop point; 2 also labels the reference points.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     arrow(x: number, y: number, options?: Recipe.ArrowOptions): Recipe;
+    /**
+     * Associate color values to names
+     *
+     * The colorspace parameter is optional. When it is missing, the colorspace
+     * is automatically determined by the given color value. Note that the special
+     * PDF color space called 'separation' may also be used. The color value is then
+     * treated as the alternative color when the named 'separation' color is unavailable.
+     *
+     * If the 'name' parameter is `Recipe.ChromaCommand.LOAD` ('!load'), the second parameter is the name of a JSON
+     * formatted file containing a formatted list of defined colors associated with the
+     * color spaces rgb, cmyk, gray, or separation (think PANTONE color definitions).
+     * This file will be merged with existing set of known colors. The color values
+     * must be specified as hex values.
+     *
+     * For example,
+     *   {
+     *      'rgb':  {'purple':'ff00ff', 'red':'#ff0000'},
+     *      'cmyk': {'cyan':'ff000000', 'magenta':'%0,100,0,0'},
+     *      'gray': {'grey':'#33'}
+     *   }
+     *
+     * @param name - the name to be associated to given color value, or `Recipe.ChromaCommand.LOAD`
+     * @param value - the color value (HexColor, DecimalColor, or PercentColor), or the path of the JSON file to load
+     * @param colorspace - One of the `Recipe.Colorspace`; defaults to ''.
+     *   values; empty picks gray, rgb or cmyk from the value length.
+     * @returns The recipe instance.
+     * @throws {Error} If the file to load cannot be read or is not valid JSON.
+     * @throws {Error} If a loaded color definition has an unrecognized colorspace.
+     * @throws {Error} If a color value has an invalid size.
+     * @throws {Error} If the colorspace is unknown.
+     */
     chroma<ColorspaceValue extends string | undefined = undefined>(
       name: string,
       value: Recipe.Color,
       colorspace?: Recipe.ValidColorspace<ColorspaceValue>,
     ): Recipe;
+    /**
+     * Encryption user access permissions
+     *
+     * This function supplies the numeric value for the encrypt function's 'userProtectionFlag'
+     * option. When no argument is given, the default 'print' value is used.
+     *
+     * @param flags - One or more `Recipe.Permission` values; defaults to 'print'.
+     * (print, modify, copy, edit, fillform, extract, assemble, printbest),
+     * separated by commas, for example `[Permission.PRINT, Permission.COPY].join()`.
+     * @returns The numeric user protection flag.
+     * @throws {Error} If a name is not a `Recipe.Permission` value.
+     */
     permission(flags?: Recipe.PermissionList): number;
+    /**
+     * Write the PDF object structure to a file.
+     * @param output - The output file path.
+     * @returns The recipe instance.
+     * @throws {Error} If the source reader was released by endPDF(), or the
+     *   output file cannot be written.
+     */
     structure(output: string): Recipe;
+    /**
+     * Convert HTML into Recipe text layout objects.
+     * @param htmlCodes - The HTML source. Tag names are matched case-insensitively.
+     * @param options - Text options used to initialize the objects.
+     * @param options.font - The font of every object.
+     * @param options.size - The base font size of every object.
+     * @returns The parsed text layout objects: one per child node,
+     *   each with its value, tag, style flags, link, font size ratio and childs.
+     */
     htmlToTextObjects(
       htmlCodes: string,
       options?: Recipe.TextOptions,
     ): Recipe.HtmlTextObject[];
 
+    /**
+     * End the pdfDoc. Finalization happens once; later calls do not rewrite the
+     * PDF and invoke the callback with the completed output when applicable.
+     * An active page is finished first, so a forgotten endPage() does not cost
+     * that page. A failed finalization retires the Recipe and later calls
+     * rethrow the original error.
+     * @param callback - Called when the PDF is
+     *   finished: with the output Buffer for a Buffer source without an output
+     *   path, with the output path for a Buffer source with one, and without an
+     *   argument for a path source.
+     * @returns The callback result, or undefined without a callback.
+     * @throws {Error} If pages are being deleted while a page is still open.
+     * @throws {Error} If finalization fails; later calls rethrow the same error.
+     */
     endPDF(): void;
     endPDF<T>(callback: (output?: Buffer | string) => T): T;
   }

@@ -1,6 +1,19 @@
 const { xObjectForm } = require("./xObjectForm");
 const { resolveFontSize } = require("./utils");
+const { LineCap, LineJoin } = require("../recipe-constants");
 
+/**
+ * Resolve drawing and text options into path options: font, size, colors
+ * and color models, line style, opacity graphics states, rotation, skew and
+ * dash. Clamps `options.opacity` to 0..1 in place.
+ * @private
+ * @param {Object} [options] - The drawing or text options.
+ * @param {number} originX - The PDF x of the default rotation origin.
+ * @param {number} originY - The PDF y of the default rotation origin.
+ * @returns {Object} The resolved path options.
+ * @throws {RangeError} If a given font size is not greater than zero.
+ * @throws {Error} If the font cannot be loaded.
+ */
 exports._getPathOptions = function _getPathOptions(
   options = {},
   originX,
@@ -126,6 +139,13 @@ exports._getPathOptions = function _getPathOptions(
   return pathOptions;
 };
 
+/**
+ * The distance between two points.
+ * @private
+ * @param {number[]} coordA - The first [x, y] point.
+ * @param {number[]} coordB - The second [x, y] point.
+ * @returns {number} The distance.
+ */
 exports._getDistance = function _getDistance(coordA, coordB) {
   const disX = Math.abs(coordB[0] - coordA[0]);
   const disY = Math.abs(coordB[1] - coordA[1]);
@@ -136,6 +156,16 @@ exports._getDistance = function _getDistance(coordA, coordB) {
 
 exports._getTransformParams = getTransformParams;
 
+/**
+ * The transformation matrix that rotates content around an origin.
+ * @private
+ * @param {number} inAngle - The rotation in degrees.
+ * @param {number} x - The origin x.
+ * @param {number} y - The origin y.
+ * @param {number} offsetX - The content x relative to the origin.
+ * @param {number} offsetY - The content y relative to the origin.
+ * @returns {number[]} The [a, b, c, d, e, f] matrix.
+ */
 function getTransformParams(inAngle, x, y, offsetX, offsetY) {
   const theta = toRadians(inAngle);
   const cosTheta = Math.cos(theta);
@@ -145,6 +175,17 @@ function getTransformParams(inAngle, x, y, offsetX, offsetY) {
   return [cosTheta, -sinTheta, sinTheta, cosTheta, x - nx, y - ny];
 }
 
+/**
+ * Translate a content context to a point and apply the rotation options.
+ * @private
+ * @param {Object} context - The content context.
+ * @param {number} x - The PDF x.
+ * @param {number} y - The PDF y.
+ * @param {Object} options - The path options: rotation, rotationOrigin,
+ *   useGivenCoords, originX, originY and deltaY.
+ * @returns {void}
+ * @throws {TypeError} If a Recipe rotation origin is converted without an active page.
+ */
 exports._setRotationContext = function _setRotationTransform(
   context,
   x,
@@ -185,6 +226,12 @@ exports._setRotationContext = function _setRotationTransform(
   }
 };
 
+/**
+ * Whether the options carry an explicit [x, y] rotation origin.
+ * @private
+ * @param {Object} options - The path options.
+ * @returns {boolean} True for a two-element rotationOrigin array.
+ */
 function hasRotation(options) {
   return (
     options.rotationOrigin &&
@@ -193,10 +240,23 @@ function hasRotation(options) {
   );
 }
 
+/**
+ * Convert degrees to radians, wrapping at 360.
+ * @private
+ * @param {number} angle - The angle in degrees.
+ * @returns {number} The angle in radians.
+ */
 function toRadians(angle) {
   return 2 * Math.PI * ((angle % 360) / 360);
 }
 
+/**
+ * The transformation matrix for skew angles.
+ * @private
+ * @param {number} [skewXAngle=0] - The skew off the x axis, in degrees.
+ * @param {number} [skewYAngle=0] - The skew off the y axis, in degrees.
+ * @returns {number[]} The [a, b, c, d, e, f] matrix.
+ */
 function getSkewTransform(skewXAngle = 0, skewYAngle = 0) {
   const alpha = toRadians(skewXAngle);
   const beta = toRadians(skewYAngle);
@@ -206,6 +266,13 @@ function getSkewTransform(skewXAngle = 0, skewYAngle = 0) {
   return [1, tanAlpha, tanBeta, 1, 0, 0];
 }
 
+/**
+ * Apply the skew options to a content context.
+ * @private
+ * @param {Object} context - The content context.
+ * @param {Object} options - The path options: skewX and skewY.
+ * @returns {void}
+ */
 exports._setSkewContext = function _setSkewTransform(context, options) {
   if (options.skewX || options.skewY) {
     const sm = getSkewTransform(options.skewX, options.skewY);
@@ -214,12 +281,34 @@ exports._setSkewContext = function _setSkewTransform(context, options) {
   }
 };
 
+/**
+ * Apply a [scaleX, scaleY] ratio to a content context.
+ * @private
+ * @param {Object} context - The content context.
+ * @param {Object} options - The path options: ratio.
+ * @returns {void}
+ */
 exports._setScalingTransform = function _setScalingTransform(context, options) {
   if (options.ratio) {
     context.cm(options.ratio[0], 0, 0, options.ratio[1], 0, 0);
   }
 };
 
+/**
+ * Draw content through a form XObject, creating it with the callback unless
+ * `options.xObject` supplies one, then place it with rotation, skew and
+ * scaling.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number} x - The PDF x.
+ * @param {number} y - The PDF y.
+ * @param {number} width - The form width.
+ * @param {number} height - The form height.
+ * @param {Object} options - The path options.
+ * @param {function(Object, xObjectForm): void} callback - Draws into a new form.
+ * @returns {void}
+ * @throws {Error} If no page content context is active.
+ */
 exports._drawObject = function _drawObject(
   self,
   x,
@@ -253,12 +342,19 @@ exports._drawObject = function _drawObject(
   context.doXObject(xObject).Q();
 };
 
+/**
+ * The PDF line cap number of a `Recipe.LineCap` value.
+ * @private
+ * @param {Recipe.LineCap} [type] - The cap style; round when omitted or unknown.
+ * @returns {number} 0 for butt, 1 for round, 2 for square.
+ */
 exports._lineCap = function _lineCap(type) {
   const round = 1;
   let cap = round;
 
   if (type) {
-    const capStyle = ["butt", "round", "square"];
+    // In PDF line cap order.
+    const capStyle = [LineCap.BUTT, LineCap.ROUND, LineCap.SQUARE];
     const capType = capStyle.indexOf(type);
     cap = capType !== -1 ? capType : round;
   }
@@ -266,12 +362,19 @@ exports._lineCap = function _lineCap(type) {
   return cap;
 };
 
+/**
+ * The PDF line join number of a `Recipe.LineJoin` value.
+ * @private
+ * @param {Recipe.LineJoin} [type] - The join style; round when omitted or unknown.
+ * @returns {number} 0 for miter, 1 for round, 2 for bevel.
+ */
 exports._lineJoin = function _lineJoin(type) {
   const round = 1;
   let join = round;
 
   if (type) {
-    const joinStyle = ["miter", "round", "bevel"];
+    // In PDF line join order.
+    const joinStyle = [LineJoin.MITER, LineJoin.ROUND, LineJoin.BEVEL];
     const joinType = joinStyle.indexOf(type);
     join = joinType !== -1 ? joinType : round;
   }

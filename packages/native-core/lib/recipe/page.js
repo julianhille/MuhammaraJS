@@ -1,7 +1,35 @@
 const muhammara = require("../muhammara");
 const { PAGE_CONTEXT_STATE } = require("./utils");
+const { PageLayout, Colorspace } = require("../recipe-constants");
 
-/** Builds the retained page tree while marking deleted leaf pages. @private */
+// PDF dictionary keys and names the page-tree and page-label code reads.
+const PdfName = Object.freeze({
+  PAGES: "Pages",
+  KIDS: "Kids",
+  COUNT: "Count",
+  PARENT: "Parent",
+  PAGE_LABELS: "PageLabels",
+  LIMITS: "Limits",
+  NUMS: "Nums",
+});
+
+/**
+ * Build the retained page tree while marking deleted leaf pages.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {number} objectID - The object ID of the Pages node to read.
+ * @param {Set<number>} deletedPages - One-based page numbers to delete.
+ * @param {Set<number>} modifiedPageIDs - Object IDs of pages edited in this Recipe.
+ * @param {Object} pageState - Running state: pageNumber, deletedPageIDs and
+ *   retainedPageIDs, updated as leaves are visited.
+ * @param {number} [generation=0] - The generation of the node's reference.
+ * @param {Set<number>} [visited] - Pages nodes already read, to reject cycles.
+ * @param {number} [depth=0] - The nesting depth, limited to 1000.
+ * @returns {Object} The node: objectID, generation, values, retained
+ *   children, retained page count and whether it changed.
+ * @throws {Error} If the page tree is cyclic, too deep or inconsistent, or a
+ *   modified page has a nonzero generation.
+ */
 function readPageTree(
   parser,
   objectID,
@@ -36,7 +64,7 @@ function readPageTree(
       throw new Error("deletePage requires a valid page tree");
     }
     const type = childValues.Type.toPDFName().value;
-    if (type === "Pages") {
+    if (type === PdfName.PAGES) {
       return readPageTree(
         parser,
         childID,
@@ -84,7 +112,15 @@ function readPageTree(
   };
 }
 
-/** Writes changed page-tree nodes back to the modified PDF. @private */
+/**
+ * Write changed page-tree nodes back to the modified PDF with their new
+ * Count and Kids.
+ * @private
+ * @param {Object} writer - The PDF writer.
+ * @param {Object} copyingContext - Copies the unchanged entries.
+ * @param {Object} node - A node built by readPageTree().
+ * @returns {void}
+ */
 function writePageTree(writer, copyingContext, node) {
   node.children
     .filter((child) => child.children && child.changed)
@@ -95,13 +131,13 @@ function writePageTree(writer, copyingContext, node) {
   objectsContext.startModifiedIndirectObject(node.objectID);
   const dictionary = objectsContext.startDictionary();
   Object.keys(node.values).forEach((key) => {
-    if (key === "Count" || key === "Kids") return;
+    if (key === PdfName.COUNT || key === PdfName.KIDS) return;
     dictionary.writeKey(key);
     copyingContext.copyDirectObjectAsIs(node.values[key]);
   });
-  dictionary.writeKey("Count");
+  dictionary.writeKey(PdfName.COUNT);
   objectsContext.writeNumber(node.count);
-  dictionary.writeKey("Kids");
+  dictionary.writeKey(PdfName.KIDS);
   objectsContext.startArray();
   node.children.forEach((child) => {
     objectsContext.writeIndirectObjectReference(
@@ -117,6 +153,10 @@ function writePageTree(writer, copyingContext, node) {
  * alike - depth-first. Shared by every deletePage() pass that needs to walk
  * the tree readPageTree() already built, instead of re-parsing or re-walking
  * it independently.
+ * @private
+ * @param {Object} tree - The root node built by readPageTree().
+ * @param {function(Object): void} visit - Called with every node.
+ * @returns {void}
  */
 function walkPageTree(tree, visit) {
   const pending = [tree];
@@ -127,14 +167,30 @@ function walkPageTree(tree, visit) {
   }
 }
 
-/** Adds retained Pages-node object IDs to a set. @private */
+/**
+ * Add the object IDs of the retained Pages nodes to a set.
+ * @private
+ * @param {Object} tree - The root node built by readPageTree().
+ * @param {Set<number>} objectIDs - The set to add to.
+ * @returns {void}
+ */
 function collectPageTreeObjectIDs(tree, objectIDs) {
   walkPageTree(tree, (node) => {
     if (node.children) objectIDs.add(node.objectID);
   });
 }
 
-/** Rejects page-tree objects that cannot be rewritten safely. @private */
+/**
+ * Reject page-tree and page-label objects that cannot be rewritten safely:
+ * changed objects must have generation 0.
+ * @private
+ * @param {Object} tree - The root node built by readPageTree().
+ * @param {Object|null} pageLabels - The result of preparePageLabels().
+ * @param {Object} root - The catalog reference.
+ * @param {Object} writer - The PDF writer.
+ * @returns {void}
+ * @throws {Error} If a changed object has a nonzero generation.
+ */
 function assertSupportedModifiedGenerations(tree, pageLabels, root, writer) {
   walkPageTree(tree, (node) => {
     if (!node.children) return;
@@ -164,7 +220,19 @@ function assertSupportedModifiedGenerations(tree, pageLabels, root, writer) {
   }
 }
 
-/** Rejects retained structures that reference a deleted page. @private */
+/**
+ * Reject a retained value that references a deleted page, following
+ * references, arrays, dictionaries and stream dictionaries.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {Object} [value] - The PDF object to check.
+ * @param {Set<number>} deletedPageIDs - Object IDs of the deleted pages.
+ * @param {Set<number>} skippedObjectIDs - Object IDs not to follow.
+ * @param {Set<number>} [visited] - Objects already checked.
+ * @param {number} [depth=0] - The nesting depth, limited to 1000.
+ * @returns {void}
+ * @throws {Error} If the value references a deleted page or nests too deeply.
+ */
 function assertNoDeletedPageReferences(
   parser,
   value,
@@ -244,7 +312,20 @@ function assertNoDeletedPageReferences(
   }
 }
 
-/** Checks retained document structures for deleted-page references. @private */
+/**
+ * Check the catalog, page labels and retained page-tree nodes for references
+ * to deleted pages.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {Object} catalog - The catalog entries.
+ * @param {number} rootID - The catalog object ID.
+ * @param {Object} tree - The root node built by readPageTree().
+ * @param {Object|null} pageLabels - The result of preparePageLabels().
+ * @param {Set<number>} deletedPageIDs - Object IDs of the deleted pages.
+ * @param {number} sourcePageCount - The source page count.
+ * @returns {void}
+ * @throws {Error} If a retained structure references a deleted page.
+ */
 function validateDeletedPageReferences(
   parser,
   catalog,
@@ -261,7 +342,7 @@ function validateDeletedPageReferences(
   }
   const visited = new Set();
   Object.entries(catalog)
-    .filter(([key]) => !["PageLabels", "Pages"].includes(key))
+    .filter(([key]) => ![PdfName.PAGE_LABELS, PdfName.PAGES].includes(key))
     .forEach(([, value]) =>
       assertNoDeletedPageReferences(
         parser,
@@ -273,7 +354,9 @@ function validateDeletedPageReferences(
     );
   if (pageLabels) {
     Object.entries(pageLabels.values)
-      .filter(([key]) => !["Kids", "Limits", "Nums"].includes(key))
+      .filter(
+        ([key]) => ![PdfName.KIDS, PdfName.LIMITS, PdfName.NUMS].includes(key),
+      )
       .forEach(([, value]) =>
         assertNoDeletedPageReferences(
           parser,
@@ -289,7 +372,9 @@ function validateDeletedPageReferences(
   // need to re-parse every retained page's dictionary here.
   walkPageTree(tree, (node) => {
     const isLeaf = !node.children;
-    const skipKeys = isLeaf ? ["Parent"] : ["Count", "Kids", "Parent"];
+    const skipKeys = isLeaf
+      ? [PdfName.PARENT]
+      : [PdfName.COUNT, PdfName.KIDS, PdfName.PARENT];
     Object.entries(node.values)
       .filter(([key]) => !skipKeys.includes(key))
       .forEach(([, value]) =>
@@ -304,7 +389,18 @@ function validateDeletedPageReferences(
   });
 }
 
-/** Collects page-label number-tree entries. @private */
+/**
+ * Collect the entries of a page-label number tree.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {Object} dictionary - The number-tree node.
+ * @param {Object[]} entries - Receives {index, value} for every label.
+ * @param {Set<number>} [visited] - Nodes already read, to reject cycles.
+ * @param {number} [objectID=0] - The object ID of this node, if indirect.
+ * @param {number} [depth=0] - The nesting depth, limited to 1000.
+ * @returns {Object} The entries of this node's dictionary.
+ * @throws {Error} If the tree is cyclic, too deep or has invalid entries.
+ */
 function collectPageLabels(
   parser,
   dictionary,
@@ -336,7 +432,7 @@ function collectPageLabels(
   }
   if (values.Kids) {
     parser
-      .queryDictionaryObject(dictionary, "Kids")
+      .queryDictionaryObject(dictionary, PdfName.KIDS)
       .toPDFArray()
       .toJSArray()
       .forEach((entry) => {
@@ -354,7 +450,14 @@ function collectPageLabels(
   return values;
 }
 
-/** Resolves an indirect chain used by a page-label number tree. @private */
+/**
+ * Follow a chain of indirect references to the object it ends at.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {Object} value - The PDF object or reference.
+ * @returns {Object} The resolved object.
+ * @throws {Error} If the chain is cyclic or longer than 1000 references.
+ */
 function resolvePageLabelObject(parser, value) {
   const visited = new Set();
   let resolved = value;
@@ -369,7 +472,16 @@ function resolvePageLabelObject(parser, value) {
   return resolved;
 }
 
-/** Reads a page-label dictionary into a serializable value. @private */
+/**
+ * Read a page-label dictionary into a plain value.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {Object} value - The page-label dictionary.
+ * @returns {{style: (string|undefined), prefix: (Object|undefined),
+ *   start: (number|undefined)}} The label style name, prefix bytes with their
+ *   string kind, and start number.
+ * @throws {Error} If the value is not a dictionary.
+ */
 function readPageLabel(parser, value) {
   const dictionary = value?.toPDFDictionary();
   if (!dictionary) {
@@ -394,7 +506,13 @@ function readPageLabel(parser, value) {
   };
 }
 
-/** Writes indirect objects for normalized page-label values. @private */
+/**
+ * Write one indirect page-label dictionary per entry.
+ * @private
+ * @param {Object} objectsContext - The writer objects context.
+ * @param {Object[]} entries - The normalized {index, value} entries.
+ * @returns {Object[]} The {index, objectID} of every written label.
+ */
 function writePageLabelObjects(objectsContext, entries) {
   return entries.map((entry) => {
     const objectID = objectsContext.startNewIndirectObject();
@@ -418,7 +536,17 @@ function writePageLabelObjects(objectsContext, entries) {
   });
 }
 
-/** Writes the number-tree dictionary for page labels. @private */
+/**
+ * Write a flat page-label number tree: the copied extra entries and a Nums
+ * array referencing the written labels.
+ * @private
+ * @param {Object} objectsContext - The writer objects context.
+ * @param {Object} copyingContext - Copies the extra entries.
+ * @param {Object} dictionary - The dictionary context to write into.
+ * @param {Object} values - The source number-tree entries.
+ * @param {Object[]} entries - The {index, objectID} of every label.
+ * @returns {void}
+ */
 function writePageLabelsDictionary(
   objectsContext,
   copyingContext,
@@ -427,11 +555,12 @@ function writePageLabelsDictionary(
   entries,
 ) {
   Object.keys(values).forEach((key) => {
-    if (key === "Kids" || key === "Limits" || key === "Nums") return;
+    if (key === PdfName.KIDS || key === PdfName.LIMITS || key === PdfName.NUMS)
+      return;
     dictionary.writeKey(key);
     copyingContext.copyDirectObjectAsIs(values[key]);
   });
-  dictionary.writeKey("Nums");
+  dictionary.writeKey(PdfName.NUMS);
   objectsContext.startArray();
   entries.forEach((entry) => {
     objectsContext.writeNumber(entry.index);
@@ -440,7 +569,18 @@ function writePageLabelsDictionary(
   objectsContext.endArray();
 }
 
-/** Reindexes page labels after removing source pages. @private */
+/**
+ * Reindex the page labels for the pages that remain after deletion, keeping
+ * each label's numbering continuous.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {Object} catalogDictionary - The catalog dictionary.
+ * @param {Set<number>} deletedPages - One-based page numbers to delete.
+ * @param {number} sourcePageCount - The source page count.
+ * @returns {Object|null} catalogValues, the PageLabels reference, the number
+ *   tree values and the normalized entries; null without page labels.
+ * @throws {Error} If PageLabels is not a valid number tree.
+ */
 function preparePageLabels(
   parser,
   catalogDictionary,
@@ -516,7 +656,15 @@ function preparePageLabels(
   };
 }
 
-/** Writes updated page labels and attaches them to the catalog. @private */
+/**
+ * Write the updated page labels and attach them to the catalog.
+ * @private
+ * @param {Object} writer - The PDF writer.
+ * @param {Object} copyingContext - Copies unchanged entries.
+ * @param {number} rootID - The catalog object ID.
+ * @param {Object|null} pageLabels - The result of preparePageLabels().
+ * @returns {void}
+ */
 function writePageLabels(writer, copyingContext, rootID, pageLabels) {
   if (!pageLabels) return;
 
@@ -557,11 +705,11 @@ function writePageLabels(writer, copyingContext, rootID, pageLabels) {
   objectsContext.startModifiedIndirectObject(rootID);
   const dictionary = objectsContext.startDictionary();
   Object.keys(pageLabels.catalogValues).forEach((key) => {
-    if (key === "PageLabels") return;
+    if (key === PdfName.PAGE_LABELS) return;
     dictionary.writeKey(key);
     copyingContext.copyDirectObjectAsIs(pageLabels.catalogValues[key]);
   });
-  dictionary.writeKey("PageLabels");
+  dictionary.writeKey(PdfName.PAGE_LABELS);
   objectsContext.writeIndirectObjectReference(labelsObjectID);
   objectsContext.endDictionary(dictionary).endIndirectObject();
 }
@@ -573,8 +721,9 @@ function writePageLabels(writer, copyingContext, rootID, pageLabels) {
  * @name createPage
  * @function
  * @memberof Recipe#
- * @param {number|string} [pageWidth] - The page width, or name of medium size.
- * Known named medium sizes: executive, folio, legal, letter, ledger, tabloid, a0-a10, b0-b10, c0-c10, ra0-ra4, sra0-ara4
+ * @param {number|Recipe.PageSize} [pageWidth] - The page width, or a `Recipe.PageSize` name.
+ * Known named medium sizes: executive, folio, legal, letter, ledger, tabloid, a0-a10, b0-b10, c0-c10, ra0-ra4, sra0-sra4.
+ * Unknown names use the default letter size.
  * @param {number} [pageHeight] - The page height, or rotation (90) when page size name given.
  * @param {object} [margins] - page margin definitions.
  * @param {number} [margins.left] - Left margin.
@@ -582,6 +731,7 @@ function writePageLabels(writer, copyingContext, rootID, pageLabels) {
  * @param {number} [margins.top] - Top margin.
  * @param {number} [margins.bottom] - Bottom margin.
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If pages were deleted with deletePage() on this Recipe.
  */
 exports.createPage = function createPage(pageWidth, pageHeight, margins) {
   if (this.deletedPages?.size) {
@@ -620,7 +770,8 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
     (this.metadata.pageCount ?? this.metadata.pages ?? 0) + 1;
   const pageNumber = this.metadata.pageCount;
   const dimensions = [0, 0, pageWidth, pageHeight];
-  const layout = pageWidth > pageHeight ? "landscape" : "portrait";
+  const layout =
+    pageWidth > pageHeight ? PageLayout.LANDSCAPE : PageLayout.PORTRAIT;
   this.metadata[pageNumber] = {
     pageNumber,
     mediaBox: dimensions,
@@ -653,8 +804,9 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
  * @name rotate
  * @function
  * @memberof Recipe#
- * @param {number} rotation - The page rotation in degrees.
+ * @param {number} rotation - The page rotation in degrees, a multiple of 90.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.rotate = function rotate(rotation) {
   this.page.rotate = rotation;
@@ -674,6 +826,7 @@ exports.rotate = function rotate(rotation) {
  * @param {number} top - The PDF top coordinate.
  * @returns {Recipe} The recipe instance.
  * @throws {RangeError} If the page box constant is unknown.
+ * @throws {TypeError} If no page is active.
  */
 exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
   const boxes = {
@@ -697,18 +850,19 @@ exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
       mediaBox: pageBox,
       width,
       height,
-      layout: width > height ? "landscape" : "portrait",
+      layout: width > height ? PageLayout.LANDSCAPE : PageLayout.PORTRAIT,
     });
   }
   return this;
 };
 
 /**
- * Finish a page
+ * Finish a page. Without an active page this does nothing.
  * @name endPage
  * @function
  * @memberof Recipe#
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the page cannot be written.
  */
 exports.endPage = function endPage() {
   if (!this.page) {
@@ -736,8 +890,9 @@ exports.endPage = function endPage() {
  * @name editPage
  * @function
  * @memberof Recipe#
- * @param {number} pageNumber - The page number to be edited.
+ * @param {number} pageNumber - The one-based page number to be edited.
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the page does not exist in the source PDF.
  */
 exports.editPage = function editPage(pageNumber) {
   const pdfWriter = this.writer;
@@ -762,9 +917,9 @@ exports.editPage = function editPage(pageNumber) {
     const startX = mediaBox[0];
     const startY = mediaBox[1];
     const textOptions = {
-      font: this.writer.getFontForFile(this.fonts["helvetica-bold"]),
+      font: this.writer.getFontForFile(this.fonts.helvetica.b),
       size: 50,
-      colorspace: "gray",
+      colorspace: Colorspace.GRAY,
       color: 0x00,
     };
     context.writeText(
@@ -850,7 +1005,14 @@ exports.deletePage = function deletePage(pageNumbers) {
   return this;
 };
 
-/** Applies queued page deletions during finalization. @private */
+/**
+ * Apply the queued page deletions during finalization: rewrite the page tree
+ * and page labels, and renumber metadata and pending annotations.
+ * @private
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the page tree or page labels cannot be rewritten safely,
+ *   or a retained structure references a deleted page.
+ */
 exports._deletePages = function _deletePages() {
   if (!this.deletedPages?.size) return this;
 
@@ -943,6 +1105,15 @@ exports._deletePages = function _deletePages() {
   return this;
 };
 
+/**
+ * Apply the page rotation to an edited page's content context, so Recipe
+ * coordinates stay upright on rotated source pages.
+ * @private
+ * @param {number} [pageNumber] - The one-based page number; defaults to the active page.
+ * @param {Object} [context] - The content context; defaults to the page context.
+ * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If the page is unknown.
+ */
 exports._resumePageRotation = function _resumePageRotation(
   pageNumber,
   context,
@@ -984,11 +1155,15 @@ exports._resumePageRotation = function _resumePageRotation(
  * @name pageInfo
  * @function
  * @memberof Recipe#
- * @param {number} pageNumber - The page number.
+ * @param {number} pageNumber - The one-based page number.
  * @returns {RecipePageInfo} The page information.
+ * @throws {TypeError} If the page is unknown.
  */
 exports.pageInfo = function pageInfo(pageNumber) {
   const pageInfo = this.metadata[pageNumber];
+  if (!pageInfo) {
+    throw new TypeError(`Unknown page number: ${pageNumber}`);
+  }
   return {
     width: pageInfo.width,
     height: pageInfo.height,

@@ -287,6 +287,7 @@ public:
   bool IsPDFReaderInstance(napi_value value) const;
   bool IsPageContentContextInstance(napi_value value) const;
   bool IsPDFWriterInstance(napi_value value) const;
+  bool IsPDFDateInstance(napi_value value) const;
   bool IsPDFObjectInstance(napi_value value) const;
 };
 

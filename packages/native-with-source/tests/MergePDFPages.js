@@ -260,6 +260,50 @@ describe("MergePDFPages", function () {
       copyingContext.end();
       pdfWriter.end();
     });
+
+    it("defaults the dash phase to 0", function () {
+      var outputPath = __dirname + "/output/DashPhaseDefault.pdf";
+      var pdfWriter = muhammara.createWriter(outputPath, { compress: false });
+      var page = pdfWriter.createPage(0, 0, 100, 100);
+      pdfWriter.startPageContentContext(page).d([3, 1]);
+      pdfWriter.writePage(page).end();
+      assert.match(
+        require("fs").readFileSync(outputPath, "latin1"),
+        /\[ 3 1 \] 0 d/,
+      );
+    });
+
+    it("places a form XObject by its object ID", function () {
+      var outputPath = __dirname + "/output/DoXObjectById.pdf";
+      var pdfWriter = muhammara.createWriter(outputPath, { compress: false });
+      var formIds = pdfWriter.createFormXObjectsFromPDF(
+        __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+        muhammara.ePDFPageBoxMediaBox,
+      );
+      var page = pdfWriter.createPage(0, 0, 595, 842);
+      var context = pdfWriter.startPageContentContext(page);
+      context.doXObject(formIds[0]);
+      assert.throws(function () {
+        context.doXObject(1.5);
+      }, /positive integer/);
+      pdfWriter.writePage(page).end();
+      assert.match(
+        require("fs").readFileSync(outputPath, "latin1"),
+        /\/Fm1 Do/,
+      );
+    });
+
+    it("defaults the copied page box to the media box", function () {
+      var pdfWriter = muhammara.createWriter(
+        __dirname + "/output/FormFromPageDefaultBox.pdf",
+      );
+      var copyingContext = pdfWriter.createPDFCopyingContext(
+        __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+      );
+      assert.isAbove(copyingContext.createFormXObjectFromPDFPage(0), 0);
+      copyingContext.end();
+      pdfWriter.end();
+    });
   });
 
   describe("MergeFromStream", function () {

@@ -1,6 +1,43 @@
 var WHITESPACE = "\0\t\n\f\r ";
 var DELIMITERS = "()<>[]{}/%";
 
+// Content-stream operators this module interprets.
+var PdfOperator = Object.freeze({
+  SHOW_TEXT: "Tj",
+  SHOW_TEXT_ARRAY: "TJ",
+  NEXT_LINE_SHOW_TEXT: "'",
+  SPACING_NEXT_LINE_SHOW_TEXT: '"',
+  PAINT_XOBJECT: "Do",
+  INLINE_IMAGE_DATA: "ID",
+  END_INLINE_IMAGE: "EI",
+});
+
+// PDF dictionary keys and names this module reads.
+var PdfName = Object.freeze({
+  PARENT: "Parent",
+  RESOURCES: "Resources",
+  CONTENTS: "Contents",
+  LENGTH: "Length",
+  FILTER: "Filter",
+  DECODE_PARMS: "DecodeParms",
+  XOBJECT: "XObject",
+  SUBTYPE: "Subtype",
+  FORM: "Form",
+});
+
+// Content-stream keywords that are operands, not operators.
+var PdfKeyword = Object.freeze({
+  TRUE: "true",
+  FALSE: "false",
+  NULL: "null",
+});
+
+/**
+ * Escape backslashes and parentheses for a PDF literal string.
+ * @private
+ * @param {string} value - The string content.
+ * @returns {string} The escaped content, without the enclosing parentheses.
+ */
 function escapePDFLiteralString(value) {
   return value.replace(/([\\()])/g, "\\$1");
 }
@@ -93,12 +130,12 @@ function skipLiteralString(source, start) {
  * @param {string} source Latin-1 content stream.
  * @param {number} start Offset directly after `ID`.
  * @returns {number} Offset after the closing `EI` operator.
+ * @private
  */
 function skipInlineImageData(source, start) {
   for (var index = start + 1; index < source.length - 1; index++) {
     if (
-      source[index] === "E" &&
-      source[index + 1] === "I" &&
+      source.startsWith(PdfOperator.END_INLINE_IMAGE, index) &&
       isWhitespace(source[index - 1]) &&
       endsRegularToken(source.charAt(index + 2))
     ) {
@@ -112,6 +149,7 @@ function skipInlineImageData(source, start) {
  * Remove text-showing operators from a page content stream. `'` and `"`
  * keep their line advance and spacing effects as `T*`, `Tw`, and `Tc`.
  *
+ * @private
  * @param {string} source Latin-1 content stream.
  * @returns {{content: string, xObjectNames: string[]}} Latin-1 content
  * stream without shown text, and the XObject names it paints with `Do`.
@@ -171,25 +209,27 @@ function removeTextShowingOperators(source) {
     var isOperator =
       depth <= 0 &&
       /^[A-Za-z'"*]/.test(token) &&
-      token !== "true" &&
-      token !== "false" &&
-      token !== "null";
+      !Object.values(PdfKeyword).includes(token);
 
     if (!isOperator) {
       if (depth <= 0) operands.push(token);
       continue;
     }
 
-    if (token === "ID") index = skipInlineImageData(source, index);
-    if (token === "Do" && /^\//.test(operands[0])) {
+    if (token === PdfOperator.INLINE_IMAGE_DATA)
+      index = skipInlineImageData(source, index);
+    if (token === PdfOperator.PAINT_XOBJECT && /^\//.test(operands[0])) {
       xObjectNames.push(decodeName(operands[0]));
     }
 
-    if (token === "Tj" || token === "TJ") {
+    if (
+      token === PdfOperator.SHOW_TEXT ||
+      token === PdfOperator.SHOW_TEXT_ARRAY
+    ) {
       result += " ";
-    } else if (token === "'") {
+    } else if (token === PdfOperator.NEXT_LINE_SHOW_TEXT) {
       result += " T*";
-    } else if (token === '"') {
+    } else if (token === PdfOperator.SPACING_NEXT_LINE_SHOW_TEXT) {
       result += " " + operands[0] + " Tw " + operands[1] + " Tc T*";
     } else {
       result += source.slice(operandStart, index);
@@ -256,6 +296,7 @@ function lookup(recipe, dictionary, key) {
  *
  * @param {Recipe} recipe Recipe with an open source reader.
  * @param {number} pageIndex Zero-based page index.
+ * @private
  * @returns {{streamIds: number[], resources: object|null}} Page content.
  * @throws {Error} If `Contents` holds a direct stream.
  */
@@ -266,12 +307,14 @@ function pageContent(recipe, pageIndex) {
   for (
     var node = page;
     node && !resources;
-    node = lookup(recipe, node, "Parent")
+    node = lookup(recipe, node, PdfName.PARENT)
   ) {
-    resources = lookup(recipe, node, "Resources");
+    resources = lookup(recipe, node, PdfName.RESOURCES);
   }
 
-  var contents = page.exists("Contents") ? page.queryObject("Contents") : null;
+  var contents = page.exists(PdfName.CONTENTS)
+    ? page.queryObject(PdfName.CONTENTS)
+    : null;
   var resolved = resolve(recipe, contents);
   var entries = [];
   if (contents && resolved.getType() === muhammara.ePDFObjectArray) {
@@ -319,6 +362,8 @@ function readContentStream(recipe, objectId) {
  * @param {number} pageIndex Zero-based page index.
  * @param {number} objectId Object ID to replace on this page.
  * @param {string} content Latin-1 stream content.
+ * @private
+ * @returns {void}
  */
 function replaceContentStream(recipe, pageIndex, objectId, content) {
   var objectsContext = recipe.writer.getObjectsContext();
@@ -338,6 +383,8 @@ function replaceContentStream(recipe, pageIndex, objectId, content) {
  * @param {object} copyingContext Copying context for the modified file.
  * @param {number} objectId Stream object ID.
  * @param {string} content Latin-1 stream content.
+ * @private
+ * @returns {void}
  */
 function rewriteStream(recipe, copyingContext, objectId, content) {
   var source = recipe.pdfReader
@@ -350,7 +397,12 @@ function rewriteStream(recipe, copyingContext, objectId, content) {
   var dictionary = objectsContext.startDictionary();
 
   Object.keys(source).forEach(function (key) {
-    if (key === "Length" || key === "Filter" || key === "DecodeParms") return;
+    if (
+      key === PdfName.LENGTH ||
+      key === PdfName.FILTER ||
+      key === PdfName.DECODE_PARMS
+    )
+      return;
     dictionary.writeKey(key);
     copyingContext.copyDirectObjectAsIs(source[key]);
   });
@@ -367,9 +419,11 @@ function rewriteStream(recipe, copyingContext, objectId, content) {
  * @param {string[]} names XObject names used with `Do`.
  * @param {object|null} resources Resources dictionary for those names.
  * @param {Map<number, string>} forms Collected form IDs and stripped content.
+ * @private
+ * @returns {void}
  */
 function collectForms(recipe, names, resources, forms) {
-  var xObjects = lookup(recipe, resources, "XObject");
+  var xObjects = lookup(recipe, resources, PdfName.XOBJECT);
   names.forEach(function (name) {
     var reference =
       xObjects && xObjects.exists(name) && xObjects.queryObject(name);
@@ -386,8 +440,8 @@ function collectForms(recipe, names, resources, forms) {
       .parseNewObject(objectId)
       .toPDFStream()
       .getDictionary();
-    var subtype = lookup(recipe, dictionary, "Subtype");
-    if (!subtype || subtype.toPDFName().value !== "Form") return;
+    var subtype = lookup(recipe, dictionary, PdfName.SUBTYPE);
+    if (!subtype || subtype.toPDFName().value !== PdfName.FORM) return;
 
     var source = readContentStream(recipe, objectId);
     var stripped = removeTextShowingOperators(source);
@@ -395,7 +449,7 @@ function collectForms(recipe, names, resources, forms) {
     collectForms(
       recipe,
       stripped.xObjectNames,
-      lookup(recipe, dictionary, "Resources") || resources,
+      lookup(recipe, dictionary, PdfName.RESOURCES) || resources,
       forms,
     );
   });
@@ -407,6 +461,10 @@ function collectForms(recipe, names, resources, forms) {
  * @param {Recipe} recipe Recipe with an open source reader.
  * @param {*} pageNumber Candidate page number.
  * @param {string} methodName Method name used in errors.
+ * @private
+ * @returns {void}
+ * @throws {TypeError} If the page number is not a positive integer.
+ * @throws {RangeError} If the source has no such page.
  */
 function assertPageNumber(recipe, pageNumber, methodName) {
   if (!Number.isInteger(pageNumber) || pageNumber < 1) {
@@ -444,7 +502,7 @@ exports.replaceText = function replaceText(text, replacement, pageNumber) {
 
   var pageIndex = pageNumber - 1;
   var page = this.pdfReader.parsePage(pageIndex).getDictionary();
-  var contents = page.queryObject("Contents");
+  var contents = page.queryObject(PdfName.CONTENTS);
 
   if (
     !contents ||

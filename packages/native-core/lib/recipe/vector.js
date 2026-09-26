@@ -13,31 +13,35 @@
 //   PercentColor component values range from 1 to 100.
 
 const { linkPdf } = require("./annotation");
+const muhammara = require("../muhammara");
 
 /**
  * Draw a circle
  * @name circle
  * @function
  * @memberof Recipe#
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|"center"} x - The coordinate x of the center
+ * @param {number|"center"} y - The coordinate y of the center
  * @param {number} radius - The radius
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - HexColor, PercentColor or DecimalColor
  * @param {string|number[]} [options.stroke] - HexColor, PercentColor or DecimalColor
- * @param {string|number[]}[ options.fill] - HexColor, PercentColor or DecimalColor
+ * @param {string|number[]} [options.fill] - HexColor, PercentColor or DecimalColor
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
+ * @param {string} [options.link] - Make the circle's bounding square open this URL.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.circle = function circle(x, y, radius, options = {}) {
+  [x, y] = this._centrify(x, y);
   const { nx, ny } = this._calibrateCoordinate(x, y);
   const diameter = radius * 2;
 
   if (options.fill) {
     const pathOptions = this._getPathOptions(options, nx, ny);
-    pathOptions.type = "fill";
+    pathOptions.type = muhammara.DrawingPathType.FILL;
 
     if (pathOptions.fill !== undefined) {
       pathOptions.color = pathOptions.fill;
@@ -60,7 +64,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
   }
   if (options.stroke || options.color || !options.fill) {
     const pathOptions = this._getPathOptions(options);
-    pathOptions.type = "stroke";
+    pathOptions.type = muhammara.DrawingPathType.STROKE;
 
     if (pathOptions.stroke !== undefined) {
       pathOptions.color = pathOptions.stroke;
@@ -101,8 +105,8 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * @name rectangle
  * @function
  * @memberof Recipe#
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|"center"} x - The coordinate x of the top-left corner
+ * @param {number|"center"} y - The coordinate y of the top-left corner
  * @param {number} width - The width
  * @param {number} height - The height
  * @param {Object} [options] - The options
@@ -118,7 +122,9 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * When a one to four number array can be used to give specific sizees to each corner.
  * The numbering starts from the top, left corner, and goes clockwise around the text box.
  * Missing values in the array are filled in by opposite corner values.
+ * @param {string} [options.link] - Make the rectangle open this URL.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   const { nx, ny } = options.useGivenCoords
@@ -130,7 +136,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   pathOptions.useGivenCoords = options.useGivenCoords;
 
   if (options.fill) {
-    pathOptions.type = "fill";
+    pathOptions.type = muhammara.DrawingPathType.FILL;
 
     if (pathOptions.fill !== undefined) {
       pathOptions.color = pathOptions.fill;
@@ -160,7 +166,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   }
 
   if (options.stroke || options.color || !options.fill) {
-    pathOptions.type = "stroke";
+    pathOptions.type = muhammara.DrawingPathType.STROKE;
 
     if (pathOptions.stroke !== undefined) {
       pathOptions.color = pathOptions.stroke;
@@ -220,6 +226,19 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   return this;
 };
 
+/**
+ * Append a rectangle path with rounded corners.
+ * @private
+ * @param {Object} ctx - The content context.
+ * @param {number} left - The left edge.
+ * @param {number} bottom - The bottom edge.
+ * @param {number} width - The width.
+ * @param {number} height - The height.
+ * @param {number|number[]} radii - One radius, or up to four clockwise from
+ *   the top-left corner; missing ones come from the opposite corner.
+ * @param {number} [inset=0] - How far to move the path inside the rectangle.
+ * @returns {void}
+ */
 function drawRoundedRectangle(
   ctx,
   left,
@@ -308,8 +327,8 @@ function drawRoundedRectangle(
  * @name ellipse
  * @function
  * @memberof Recipe#
- * @param {number} cx x-coordinate of center point of ellipse
- * @param {number} cy y-coordinate of center point of ellipse
+ * @param {number|"center"} cx x-coordinate of center point of ellipse
+ * @param {number|"center"} cy y-coordinate of center point of ellipse
  * @param {number} rx radius length from the center point along x-axis
  * @param {number} ry radius length from the center point along y-axis
  * @param {Object} [options]
@@ -322,8 +341,10 @@ function drawRoundedRectangle(
  * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
+  [cx, cy] = this._centrify(cx, cy);
   const { nx, ny } = this._calibrateCoordinate(cx, cy);
 
   const pathOptions = this._getPathOptions(options, nx, ny);
@@ -406,6 +427,18 @@ exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
   return this;
 };
 
+/**
+ * Append a circular arc path built from Bézier segments.
+ * @private
+ * @param {Object} ctx - The content context.
+ * @param {number} x - The center x.
+ * @param {number} y - The center y.
+ * @param {number} radius - The radius.
+ * @param {number} startAngle - The start angle in degrees.
+ * @param {number} endAngle - The end angle in degrees.
+ * @param {boolean} [fromCenter=false] - Start the path at the center, for a sector.
+ * @returns {void}
+ */
 function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
   const TWO_PI = 2.0 * Math.PI;
   const HALF_PI = 0.5 * Math.PI;
@@ -471,8 +504,8 @@ function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
  * @name arc
  * @function
  * @memberof Recipe#
- * @param {number} x - the x coordinate of the arc center point
- * @param {number} y - the y coordinate of the arc center point
+ * @param {number|"center"} x - the x coordinate of the arc center point
+ * @param {number|"center"} y - the y coordinate of the arc center point
  * @param {number} radius - the distance from the given x,y coordinates from which to produce the arc
  * @param {number} [startAngle=0] - the start of the arc in degree units +/- 0 through 360. Positive values go clockwise, Negative values, counterclockwise.
  * @param {number} [endAngle=360] - the end of the arc in degree units +/- 0 through 360. Positive values go clockwise, Negative values, counterclockwise.
@@ -486,6 +519,7 @@ function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
  * @param {number} [options.rotation=0] - Accept: +/- 0 through 360.
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.arc = function arc(
   x,
@@ -495,6 +529,7 @@ exports.arc = function arc(
   endAngle = 360,
   options = {},
 ) {
+  [x, y] = this._centrify(x, y);
   const { nx, ny } = this._calibrateCoordinate(x, y);
   const diameter = radius * 2;
   const pathOptions = this._getPathOptions(options, nx, ny);
@@ -576,13 +611,14 @@ exports.arc = function arc(
  * @name pie
  * @function
  * @memberof Recipe#
- * @param {number} x - the x coordinate of the pie center point
- * @param {number} y - the y coordinate of the pie center point
+ * @param {number|"center"} x - the x coordinate of the pie center point
+ * @param {number|"center"} y - the y coordinate of the pie center point
  * @param {number} radius - the distance from the center point to the arc
  * @param {number} [startAngle=0] - the start of the arc in degree units
  * @param {number} [endAngle=360] - the end of the arc in degree units
  * @param {Object} [options] - The path options.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.pie = function pie(x, y, radius, startAngle, endAngle, options = {}) {
   return this.arc(x, y, radius, startAngle, endAngle, {
@@ -599,12 +635,13 @@ exports.pie = function pie(x, y, radius, startAngle, endAngle, options = {}) {
  * @param {Recipe.LineStyleOptions} [options] - The line style options.
  * @param {number} [options.width] - The line width.
  * @param {number} [options.lineWidth] - Alias for width.
- * @param {number} [options.cap] - The PDF line cap style.
- * @param {number} [options.join] - The PDF line join style.
+ * @param {number} [options.cap] - The PDF line cap style, a `LineCapStyle` value.
+ * @param {number} [options.join] - The PDF line join style: 0 miter, 1 round, 2 bevel.
  * @param {number} [options.miterLimit] - The miter limit.
  * @param {number[]} [options.dash] - The dash pattern.
  * @param {number} [options.dashPhase] - The dash pattern phase.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.lineStyle = function lineStyle(options = {}) {
   this.current = this.current || {};
@@ -637,6 +674,13 @@ exports.lineStyle = function lineStyle(options = {}) {
   return this._setLineStyle(options);
 };
 
+/**
+ * Write the given line style options to the page content context.
+ * @private
+ * @param {Object} [options] - The lineStyle() options.
+ * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
+ */
 exports._setLineStyle = function _setLineStyle(options = {}) {
   if (options.width !== undefined || options.lineWidth !== undefined)
     this.pageContext.w(options.width ?? options.lineWidth);
@@ -659,6 +703,7 @@ exports._setLineStyle = function _setLineStyle(options = {}) {
  * @memberof Recipe#
  * @param {number} width - The line width.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.lineWidth = function lineWidth(width) {
   return this.lineStyle({ width });
@@ -672,6 +717,7 @@ exports.lineWidth = function lineWidth(width) {
  * @memberof Recipe#
  * @param {number} value - The requested opacity from 0 (transparent) to 1 (opaque).
  * @returns {Recipe} The recipe instance.
+ * @throws {RangeError} If the value is not a finite number from 0 to 1.
  */
 exports.opacity = function opacity(value) {
   if (!Number.isFinite(value) || value < 0 || value > 1) {

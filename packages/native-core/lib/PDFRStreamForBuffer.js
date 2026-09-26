@@ -4,6 +4,11 @@
     @author Luciano Júnior
 */
 
+/**
+ * Creates a read stream over bytes in memory.
+ * @constructor
+ * @param {Buffer|Uint8Array} buffer - The bytes to read; not copied.
+ */
 function PDFRStreamForBuffer(buffer) {
   this.buffer = buffer;
   this.rposition = 0;
@@ -11,6 +16,11 @@ function PDFRStreamForBuffer(buffer) {
   this.mStartPosition = 0;
 }
 
+/**
+ * Reads the next bytes and advances the position by the amount read.
+ * @param {number} inAmount - The maximum number of bytes to read.
+ * @returns {Buffer} The bytes read; shorter than requested at the end.
+ */
 PDFRStreamForBuffer.prototype.read = function (inAmount) {
   // Copy, so callers cannot change the source through the returned chunk.
   var bytes = Buffer.from(
@@ -20,10 +30,19 @@ PDFRStreamForBuffer.prototype.read = function (inAmount) {
   return bytes;
 };
 
+/**
+ * Tells whether bytes remain after the current position.
+ * @returns {boolean} True while the end has not been reached.
+ */
 PDFRStreamForBuffer.prototype.notEnded = function () {
   return this.rposition < this.fileSize;
 };
 
+/**
+ * Moves to a position relative to the start position, clamped to the data.
+ * @param {number} inPosition - The byte offset from the start position.
+ * @returns {void}
+ */
 PDFRStreamForBuffer.prototype.setPosition = function (inPosition) {
   this.rposition = Math.min(
     Math.max(this.mStartPosition + inPosition, 0),
@@ -31,6 +50,11 @@ PDFRStreamForBuffer.prototype.setPosition = function (inPosition) {
   );
 };
 
+/**
+ * Moves to a position counted back from the end, clamped to the data.
+ * @param {number} inPosition - The number of bytes before the end.
+ * @returns {void}
+ */
 PDFRStreamForBuffer.prototype.setPositionFromEnd = function (inPosition) {
   this.rposition = Math.min(
     Math.max(this.fileSize - inPosition, 0),
@@ -38,14 +62,29 @@ PDFRStreamForBuffer.prototype.setPositionFromEnd = function (inPosition) {
   );
 };
 
+/**
+ * Advances the position without reading.
+ * @param {number} inAmount - The number of bytes to skip.
+ * @returns {void}
+ */
 PDFRStreamForBuffer.prototype.skip = function (inAmount) {
   this.rposition += inAmount;
 };
 
+/**
+ * Returns the position relative to the start position.
+ * @returns {number} The current byte offset.
+ */
 PDFRStreamForBuffer.prototype.getCurrentPosition = function () {
   return this.rposition - this.mStartPosition;
 };
 
+/**
+ * Sets the offset that later positions are counted from, for PDF data that
+ * does not begin at byte zero.
+ * @param {number} inPosition - The absolute byte offset of the start.
+ * @returns {void}
+ */
 PDFRStreamForBuffer.prototype.moveStartPosition = function (inPosition) {
   this.mStartPosition = inPosition;
 };

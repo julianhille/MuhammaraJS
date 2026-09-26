@@ -154,6 +154,9 @@ describe("PDFParser", function () {
     assert.throws(function () {
       pdfReader.parsePage(2);
     }, /Unable to read page/);
+    assert.throws(function () {
+      pdfReader.getXrefEntry(99999);
+    }, /Unable to read object xref entry, object ID is out of range/);
 
     pdfReader.end();
   });

@@ -41,6 +41,12 @@ markup annotations. Their nested object sets `text`, `color`, `opacity`, and
 outer text options. In `html: true` text, `<u>` and `<del>` draw lines in the
 text color instead of annotations.
 
+Set `flag` to a `Recipe.AnnotFlag` value, such as `Recipe.AnnotFlag.PRINT`,
+or to a numeric bit mask such as `4`; flag names match case-insensitively. An
+unknown flag name throws `Error: Unknown annotation flag (<name>)` when
+`annot()` or `comment()` is called. Subtypes are `Recipe.AnnotSubtype` values,
+matched case-insensitively and written with their PDF casing.
+
 With `textBox.wrap: "clip"`, text-markup rectangles and quadrilaterals are
 limited to the line's visible clipping region. Hidden portions of the text do
 not create markup outside that region.

@@ -14,6 +14,8 @@ const utils = require("./utils");
  * @returns {Recipe} The recipe instance.
  * @throws {RangeError} If a selection is not a positive integer or a two-value
  * range in ascending order.
+ * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+ * @throws {Error} If the source PDF cannot be read.
  */
 exports.appendPage = function appendPage(pdfSrc, pages = []) {
   if (this.deletedPages?.size) {

@@ -75,4 +75,13 @@ describe("Modify", () => {
       .endPage()
       .endPDF(done);
   });
+
+  it("marks the page origin in debug mode", () => {
+    const recipe = new Recipe(
+      path.join(__dirname, "../TestMaterials/Original.pdf"),
+      path.join(__dirname, "../output/modify-debug.pdf"),
+    );
+    recipe.debug = true;
+    recipe.editPage(1).endPage().endPDF();
+  });
 });

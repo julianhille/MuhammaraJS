@@ -822,3 +822,179 @@ const sourceParser: muhammara.PDFReader =
 void sourceParser.getPagesCount();
 // @ts-expect-error The source parser belongs to the copying context and takes no input.
 copyingContext.getSourceDocumentParser("source.pdf");
+
+const alignmentWriter = muhammara.createWriter(
+  new muhammara.PDFWStreamForBuffer(),
+);
+const alignmentPage = alignmentWriter.createPage(0, 0, 595, 842);
+const alignmentForm = alignmentWriter.createFormXObject(0, 0, 100, 100);
+const formContext: muhammara.XObjectContentContext =
+  alignmentForm.getContentContext();
+void formContext;
+void alignmentForm.getContentStream();
+void alignmentForm.getResourcesDictionary();
+alignmentWriter.endFormXObject(alignmentForm);
+const alignmentResources = alignmentPage.getResourcesDictionary();
+const formName: string = alignmentResources.addFormXObjectMapping(
+  alignmentForm.id,
+);
+void formName;
+// @ts-expect-error Form mappings take the form object id, not the form.
+alignmentResources.addFormXObjectMapping(alignmentForm);
+
+const alignmentContext = alignmentWriter.startPageContentContext(alignmentPage);
+const alignmentFont = alignmentWriter.getFontForFile("font.ttf");
+alignmentContext
+  .BT()
+  .Tf(alignmentFont, 12)
+  .Tj("text", { encoding: "text" })
+  .Tj([[36, 65]])
+  .Quote("code", { encoding: "code" })
+  .DoubleQuote(1, 2, "hex", { encoding: "hex" })
+  .TJ("ab", -100, "c")
+  .TJ("ab", -100, "c", { encoding: "code" })
+  .TJ([[36, 65]], -100, [[37, 66]])
+  .ET();
+const unionText = "text" as string | muhammara.Glyph;
+alignmentContext.Tj(unionText).Quote(unionText).DoubleQuote(1, 2, unionText);
+const kernedParts: (string | number)[] = ["kern", -40, "ed"];
+const kernedGlyphs: (muhammara.Glyph | number)[] = [[[36, 65]], -40];
+alignmentContext.TJ(...kernedParts).TJ(...kernedGlyphs);
+// @ts-expect-error TJ items are separate arguments, not one array.
+alignmentContext.TJ(["ab", -100, "c"]);
+
+const fontMetrics: muhammara.FontMetrics = alignmentFont.getFontMetrics(12);
+const fontAscender: number = fontMetrics.ascender;
+void fontAscender;
+void alignmentFont.calculateTextDimensions("text");
+void alignmentFont.calculateTextDimensions([36, 37], 12);
+
+const createdDate: muhammara.PDFDate = new muhammara.PDFDate(new Date());
+const createdText: muhammara.PDFTextString = new muhammara.PDFTextString(
+  "text",
+).fromString("replacement");
+void [createdDate, createdText, alignmentWriter.createPDFTextString("text")];
+
+const alignmentObjects = alignmentWriter.getObjectsContext();
+alignmentObjects.startNewIndirectObject();
+alignmentObjects.endPDFStream(alignmentObjects.startPDFStream());
+alignmentObjects.endIndirectObject();
+
+const extraInfo: { [key: string]: string } = alignmentWriter
+  .getDocumentContext()
+  .getInfoDictionary()
+  .getAdditionalInfoEntries();
+void extraInfo;
+void alignmentWriter
+  .getDocumentContext()
+  .getInfoDictionary()
+  .getAdditionalInfoEntries("ignored");
+
+const alignmentCopy = alignmentWriter.createPDFCopyingContext("source.pdf");
+const mergeTarget = alignmentWriter.createFormXObject(0, 0, 595, 842);
+alignmentCopy.mergePDFPageToFormXObject(mergeTarget, 0);
+alignmentWriter.endFormXObject(mergeTarget);
+
+const alignmentReader = muhammara.createReader("source.pdf");
+const maybeArray: muhammara.PDFArray | undefined = alignmentReader
+  .getTrailer()
+  .toPDFArray();
+// @ts-expect-error Conversions return undefined for another object type.
+const certainArray: muhammara.PDFArray = alignmentReader
+  .getTrailer()
+  .toPDFArray();
+void [maybeArray, certainArray];
+// @ts-expect-error Positioned PDF byte readers cannot move their start position.
+alignmentReader.getParserStream().moveStartPosition(0);
+
+const alignmentRecipe = new muhammara.Recipe("new", "output.pdf");
+alignmentRecipe
+  .createPage("A4")
+  .comment("note", "center", "center")
+  .annot("center", "center", "Highlight", { width: 10, height: 10 });
+
+const recipeConstructorOptions: muhammara.Recipe.RecipeOptions = {
+  version: 1.4,
+  colorspace: muhammara.Recipe.Colorspace.CMYK,
+  password: "owner",
+  userPassword: "user",
+  ownerPassword: "owner",
+  userProtectionFlag: 4,
+  fontSrcPath: ["./fonts"],
+};
+void recipeConstructorOptions;
+
+const annotationRecipe = new muhammara.Recipe("new", "output.pdf");
+annotationRecipe.createPage("A4").comment("note", "center", 100, {
+  flag: muhammara.Recipe.AnnotFlag.READ_ONLY,
+});
+const highlightSubtype: muhammara.Recipe.AnnotSubtype =
+  muhammara.Recipe.AnnotSubtype.HIGHLIGHT;
+const noteIcon: muhammara.Recipe.AnnotOptionsIcon =
+  muhammara.Recipe.AnnotIcon.NOTE;
+void [highlightSubtype, noteIcon];
+
+annotationRecipe.annot("center", 120, muhammara.Recipe.AnnotSubtype.SQUARE, {
+  text: "boxed",
+  border: 2,
+  color: "#ff0000",
+  followOriginalPageRotation: true,
+  icon: muhammara.Recipe.AnnotIcon.KEY,
+});
+
+const permissionFlag: number = annotationRecipe.permission(
+  [muhammara.Recipe.Permission.PRINT, muhammara.Recipe.Permission.COPY].join(),
+);
+void permissionFlag;
+
+annotationRecipe.registerFont(
+  "Custom",
+  "custom-bold.ttf",
+  muhammara.Recipe.FontStyle.BOLD,
+);
+
+annotationRecipe.image("logo.png", "center", 10, {
+  align: `${muhammara.Recipe.HorizontalAlign.CENTER} ${muhammara.Recipe.VerticalAlign.TOP}`,
+});
+
+new muhammara.Recipe("new", "sizes.pdf").createPage(
+  muhammara.Recipe.PageSize.A4,
+  90,
+);
+const landscape: "portrait" | "landscape" =
+  muhammara.Recipe.PageLayout.LANDSCAPE;
+void landscape;
+
+annotationRecipe.triangle(100, 100, [30, 40, 50], {
+  traitID: muhammara.Recipe.TriangleTrait.SSS,
+  position: muhammara.Recipe.TrianglePosition.CENTROID,
+});
+
+annotationRecipe.arrow(100, 100, {
+  at: muhammara.Recipe.ArrowAt.HEAD,
+  type: muhammara.Recipe.ArrowType.KITE,
+});
+
+annotationRecipe.line(
+  [
+    [0, 0],
+    [10, 10],
+  ],
+  {
+    lineCap: muhammara.Recipe.LineCap.ROUND,
+    lineJoin: muhammara.Recipe.LineJoin.BEVEL,
+  },
+);
+
+annotationRecipe.text("boxed", 10, 10, {
+  textBox: {
+    width: 100,
+    wrap: muhammara.Recipe.TextWrap.ELLIPSIS,
+    textAlign: `${muhammara.Recipe.TextAlign.JUSTIFY} ${muhammara.Recipe.VerticalAlign.BOTTOM}`,
+  },
+});
+
+const fillPath: muhammara.DrawingPathType = muhammara.DrawingPathType.FILL;
+void fillPath;
+
+new muhammara.Recipe(muhammara.Recipe.Source.NEW, "from-source.pdf");

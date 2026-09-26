@@ -1,5 +1,6 @@
 const muhammara = require("../muhammara");
 const fs = require("fs");
+const { Colorspace, ChromaCommand } = require("../recipe-constants");
 
 this.knownColors = {
   // knownColors.colorspace.colorName = value
@@ -36,7 +37,7 @@ this.knownColors = {
  * PDF color space called 'separation' may also be used. The color value is then
  * treated as the alternative color when the named 'separation' color is unavailable.
  *
- * If the 'name' parameter is '!load', the second parameter is the name of a JSON
+ * If the 'name' parameter is `Recipe.ChromaCommand.LOAD` ('!load'), the second parameter is the name of a JSON
  * formatted file containing a formatted list of defined colors associated with the
  * color spaces rgb, cmyk, gray, or separation (think PANTONE color definitions).
  * This file will be merged with existing set of known colors. The color values
@@ -52,17 +53,19 @@ this.knownColors = {
  * @name chroma
  * @function
  * @memberof Recipe#
- * @param {string} name - the name to be associated to given color value, or '!load'
- * @param {string|number[]} value - the color value (HexColor, DecimalColor, or PercentColor), or name of '!load' file
- * @param {string} [colorspace=''] - One of: 'rgb', 'cmyk', 'gray', 'separation'.
+ * @param {string} name - the name to be associated to given color value, or `Recipe.ChromaCommand.LOAD`
+ * @param {string|number[]} value - the color value (HexColor, DecimalColor, or PercentColor), or the path of the JSON file to load
+ * @param {Recipe.Colorspace|""} [colorspace=''] - One of the `Recipe.Colorspace`
+ *   values; empty picks gray, rgb or cmyk from the value length.
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the file to load cannot be read or is not valid JSON.
  * @throws {Error} If a loaded color definition has an unrecognized colorspace.
  * @throws {Error} If a color value has an invalid size.
  * @throws {Error} If the colorspace is unknown.
  */
 exports.chroma = function chroma(name, value, colorspace = "") {
   if (name) {
-    if (name === "!load") {
+    if (name === ChromaCommand.LOAD) {
       let newColors = JSON.parse(fs.readFileSync(value));
       // Add new colors to existing colorspaces
       for (let cs in newColors) {
@@ -92,9 +95,13 @@ exports.chroma = function chroma(name, value, colorspace = "") {
       // Determine colorspace by length of given input
       // value when colorspace not provided in call.
       if (colorspace === "") {
-        const colorSpaces = { 2: "gray", 6: "rgb", 8: "cmyk" };
+        const colorSpaces = {
+          2: Colorspace.GRAY,
+          6: Colorspace.RGB,
+          8: Colorspace.CMYK,
+        };
         colorspace = colorSpaces[`${value.length}`];
-      } else if (!["rgb", "cmyk", "gray", "separation"].includes(colorspace)) {
+      } else if (!Object.values(Colorspace).includes(colorspace)) {
         throw new Error(`Unknown colorspace: ${colorspace}.`);
       }
 
@@ -107,12 +114,22 @@ exports.chroma = function chroma(name, value, colorspace = "") {
   return this;
 };
 
+/**
+ * Write a Separation color space for a named color once per Recipe and
+ * return its object ID.
+ * @private
+ * @param {Recipe} self - The recipe instance that owns the cache.
+ * @param {string} colorName - The separation color name.
+ * @param {number[]} color - The alternate device color components, 0 to 1.
+ * @returns {number} The object ID of the Separation color space.
+ */
 function createColorSpaces(self, colorName, color) {
   const deviceCS = { 1: "DeviceGray", 3: "DeviceRGB", 4: "DeviceCMYK" };
   const altCS = deviceCS[`${color.length}`];
-  this.colorSpaces = this.colorSpaces || {};
-  this.colorSpaces[altCS] = this.colorSpaces[altCS] || {};
-  let colorSpaceID = this.colorSpaces[altCS][colorName];
+  // Cache per Recipe: the IDs belong to this Recipe's PDF writer.
+  self.colorSpaces = self.colorSpaces || {};
+  self.colorSpaces[altCS] = self.colorSpaces[altCS] || {};
+  let colorSpaceID = self.colorSpaces[altCS][colorName];
 
   if (!colorSpaceID) {
     const transformFunction = tintTransform(self, color);
@@ -128,12 +145,20 @@ function createColorSpaces(self, colorName, color) {
       .endArray(muhammara.eTokenSeparatorEndLine)
       .endIndirectObject();
     self.resumeContext();
-    this.colorSpaces[altCS][colorName] = colorSpaceID;
+    self.colorSpaces[altCS][colorName] = colorSpaceID;
   }
 
   return colorSpaceID;
 }
 
+/**
+ * Write the type 2 tint transform function that maps a separation tint to
+ * its alternate device color.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number[]} color - The alternate device color components, 0 to 1.
+ * @returns {number} The object ID of the function.
+ */
 function tintTransform(self, color) {
   const rangeCount = color.length;
   self.pauseContext();
@@ -170,6 +195,14 @@ function tintTransform(self, color) {
   return tintFuncID;
 }
 
+/**
+ * Write the stroke and fill opacity graphics states for a value once per
+ * Recipe.
+ * @private
+ * @param {number} value - The opacity, from 0 to 1.
+ * @returns {{stroke: number, fill: number}} The object IDs of the stroking
+ *   (CA) and non-stroking (ca) ExtGState dictionaries.
+ */
 exports._createExtGStates = function _createExtGStates(value) {
   this.extGStates = this.extGStates || {};
   if (this.extGStates[value]) {
@@ -181,7 +214,7 @@ exports._createExtGStates = function _createExtGStates(value) {
     const objCxt = this.writer.getObjectsContext();
     const gsId = objCxt.startNewIndirectObject();
     const dict = objCxt.startDictionary();
-    dict.writeKey("type");
+    dict.writeKey("Type");
     dict.writeNameValue("ExtGState");
     dict.writeKey(key);
     objCxt.writeNumber(value);
@@ -198,16 +231,22 @@ exports._createExtGStates = function _createExtGStates(value) {
   return this.extGStates[value];
 };
 
-function _defaultColor(colorspace = "rgb") {
+/**
+ * The hex color used when a color value is missing or invalid.
+ * @private
+ * @param {Recipe.Colorspace} [colorspace=Recipe.Colorspace.RGB] - The colorspace.
+ * @returns {string} The default color as a hex string without '#'.
+ */
+function _defaultColor(colorspace = Colorspace.RGB) {
   let defaultColor;
   switch (colorspace) {
-    case "cmyk":
+    case Colorspace.CMYK:
       defaultColor = "FF000000";
       break;
-    case "gray":
+    case Colorspace.GRAY:
       defaultColor = "00";
       break;
-    case "rgb":
+    case Colorspace.RGB:
     default:
       defaultColor = "1777d1";
       break;
@@ -232,7 +271,7 @@ function _defaultColor(colorspace = "rgb") {
  * @private
  * @param {Recipe} self The recipe instance.
  * @param {string} code the color encoding as HexColor
- * @param {string} colorspace the name of the colorspace of given color code
+ * @param {Recipe.Colorspace} colorspace the name of the colorspace of given color code
  * @param {string} colorName the name to be associated with given color code
  * @returns {Object} The color model.
  */
@@ -246,17 +285,17 @@ function toColorModel(self, code, colorspace, colorName) {
 
   switch (color.length) {
     default:
-      color = hexToArray(_defaultColor("rgb"));
+      color = hexToArray(_defaultColor(Colorspace.RGB));
     // purposely want to fall through to 'rgb' case below.
     case 3:
-      cmodel.colorspace = "rgb";
+      cmodel.colorspace = Colorspace.RGB;
       cmodel.r = color[0];
       cmodel.g = color[1];
       cmodel.b = color[2];
       break;
 
     case 4:
-      cmodel.colorspace = "cmyk";
+      cmodel.colorspace = Colorspace.CMYK;
       cmodel.c = color[0];
       cmodel.m = color[1];
       cmodel.y = color[2];
@@ -264,7 +303,7 @@ function toColorModel(self, code, colorspace, colorName) {
       break;
 
     case 1:
-      cmodel.colorspace = "gray";
+      cmodel.colorspace = Colorspace.GRAY;
       cmodel.gray = color[0];
       break;
   }
@@ -273,7 +312,7 @@ function toColorModel(self, code, colorspace, colorName) {
   // use the colorspace from above as the
   // alternative color transformation when
   // the named color is unavailable.
-  if (colorspace === "separation" && colorName !== "") {
+  if (colorspace === Colorspace.SEPARATION && colorName !== "") {
     cmodel.colorspace = colorspace;
     cmodel.colorName = colorName;
     cmodel.colorspaceId = createColorSpaces(self, colorName, color);
@@ -300,11 +339,19 @@ function percentToHex(code) {
  * @param {string|number[]} [code=''] Color specification in the form of HexColor (string beginning with '#'),
  *             DecimalColor (1, 3, or 4 element array with values between 0-255),
  *             PercentColor (string, begins with '%' followed by values separated
- *             by commas with values between 0-100)
+ *             by commas with values between 0-100), or a color name known to
+ *             `chroma()`
+ * @param {Object} [opt] - The options.
+ * @param {Recipe.Colorspace} [opt.colorspace] - The colorspace; when omitted it
+ *   is picked from the value length.
+ * @param {boolean} [opt.wantColorModel=false] - Return a color model instead of a number.
+ * @param {string} [opt.colorName] - The name to record the color under.
+ * @returns {number|Object} The color as a number, or the color model when
+ *   `opt.wantColorModel` is set. Invalid values fall back to the default color.
  */
 exports._transformColor = function _transformColor(code = "", opt = {}) {
   this.knownColors = this.knownColors || {};
-  let colorspace = opt.colorspace || "rgb";
+  let colorspace = opt.colorspace || Colorspace.RGB;
   let wantColorModel = opt.wantColorModel || false;
   let colorName = opt.colorName || "";
   let defaultColor = _defaultColor(colorspace);
@@ -339,7 +386,10 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   // When colorspace is not explicitly given,
   // use size of value to determine colorspace.
   if (!opt.colorspace) {
-    colorspace = { 2: "gray", 6: "rgb", 8: "cmyk" }[`${code.length}`] || "rgb";
+    colorspace =
+      { 2: Colorspace.GRAY, 6: Colorspace.RGB, 8: Colorspace.CMYK }[
+        `${code.length}`
+      ] || Colorspace.RGB;
     defaultColor = _defaultColor(colorspace);
   }
 
@@ -347,7 +397,7 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   //  when colorspace is given and given color code does not have appropriate length, or
   //  when colorspace is missing, verify allowable hex value sizes for rgb, cmyk, or gray.
   if (
-    (["rgb", "cmyk", "gray"].includes(colorspace) &&
+    ([Colorspace.RGB, Colorspace.CMYK, Colorspace.GRAY].includes(colorspace) &&
       code.length != defaultColor.length) ||
     ![2, 6, 8].includes(code.toString().length)
   ) {
@@ -366,6 +416,12 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   return transformation;
 };
 
+/**
+ * Convert DecimalColor components (0 to 255) to a hex string.
+ * @private
+ * @param {number[]} [color] - The color components.
+ * @returns {string} The hex string without '#'.
+ */
 function arrayToHex(color = []) {
   let code = "";
   color.forEach((item) => {
@@ -376,6 +432,13 @@ function arrayToHex(color = []) {
   return code;
 }
 
+/**
+ * Convert a 2, 6 or 8 digit hex color to components between 0 and 1.
+ * @private
+ * @param {string} hex - The hex color, with or without '#'.
+ * @returns {number[]} One gray, three RGB or four CMYK components.
+ * @throws {TypeError} If the value is not a 2, 4, 6 or 8 digit hex string.
+ */
 function hexToArray(hex) {
   const result =
     /^#?([a-f\d]{2})([a-f\d]{2})?([a-f\d]{2})?([a-f\d]{2})?$/i.exec(hex);
@@ -387,6 +450,13 @@ function hexToArray(hex) {
   }, []);
 }
 
+/**
+ * Split an RGB color number into its 0 to 255 components.
+ * @private
+ * @param {number} bigint - The color as 0xRRGGBB.
+ * @returns {{r: number, g: number, b: number}} The components; black for 0 or
+ *   a missing value.
+ */
 exports._colorNumberToRGB = (bigint) => {
   if (!bigint) {
     return {

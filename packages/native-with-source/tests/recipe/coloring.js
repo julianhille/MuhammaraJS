@@ -229,4 +229,20 @@ describe("Coloring", () => {
       .endPage()
       .endPDF(done);
   });
+
+  it("writes the separation color space into every document", () => {
+    const assert = require("node:assert/strict");
+    const fs = require("fs");
+    const draw = (name) => {
+      const output = path.join(__dirname, `../output/${name}.pdf`);
+      new Recipe("new", output)
+        .createPage(100, 100)
+        .rectangle(10, 10, 20, 20, { fill: "nans", colorspace: "separation" })
+        .endPage()
+        .endPDF();
+      return fs.readFileSync(output, "latin1");
+    };
+    draw("separation-first");
+    assert.match(draw("separation-second"), /\/Separation/);
+  });
 });

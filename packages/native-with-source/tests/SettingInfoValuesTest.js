@@ -18,7 +18,11 @@ describe("SettingInfoValues", function () {
     infoDictionary.creator = "PDFHummus";
     infoDictionary.setCreationDate("D:20140720204655+03'00'"); // two options to set dates: 1. PDF encoded string (like what comes from the parser)
     infoDictionary.setModDate(new Date()); // 2. javascript date
+    infoDictionary.setModDate(new muhammara.PDFDate("D:20150101000000Z")); // 3. PDFDate
     infoDictionary.addAdditionalInfoEntry("words of praise", "amazing");
+    assert.deepEqual(infoDictionary.getAdditionalInfoEntries(), {
+      "words of praise": "amazing",
+    });
 
     // create empty page
     var page = pdfWriter.createPage();
@@ -41,6 +45,7 @@ describe("SettingInfoValues", function () {
     );
     assert.equal(info.Creator.toText(), "PDFHummus");
     assert.equal(info.CreationDate.value, "D:20140720204655+03'00'");
+    assert.equal(info.ModDate.value, "D:20150101000000Z");
     assert.equal(info["words of praise"].toText(), "amazing");
     reader.end();
   });

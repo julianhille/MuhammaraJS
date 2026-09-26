@@ -1,3 +1,18 @@
+const {
+  TriangleTrait,
+  TrianglePosition,
+  ArrowAt,
+  ArrowType,
+} = require("../recipe-constants");
+
+// Corners of an arrow shaft: bottom/top, left/right.
+const ShaftCorner = Object.freeze({
+  BOTTOM_RIGHT: "br",
+  BOTTOM_LEFT: "bl",
+  TOP_LEFT: "tl",
+  TOP_RIGHT: "tr",
+});
+
 /*  N-Gon border box for odd numbered side shapes used to deal with object rotation.
 
   --------------------------------------------------------------  =========
@@ -53,23 +68,56 @@ to produce a final border box with a center that coincides with n-gon center.
 
 */
 
+/**
+ * Whether a number is odd.
+ * @private
+ * @param {number} n - The number.
+ * @returns {boolean} True when n is odd.
+ */
 function odd(n) {
   return n % 2 !== 0;
 }
 
+/**
+ * Convert degrees to radians.
+ * @private
+ * @param {number} angle - The angle in degrees.
+ * @returns {number} The angle in radians.
+ */
 function toRadians(angle) {
   return angle * (Math.PI / 180);
 }
 
+/**
+ * Convert radians to degrees.
+ * @private
+ * @param {number} radians - The angle in radians.
+ * @returns {number} The angle in degrees.
+ */
 function toDegrees(radians) {
   return radians * (180 / Math.PI);
 }
 
+/**
+ * The end point of a segment from a start point, length and angle.
+ * @private
+ * @param {number} x - The start x.
+ * @param {number} y - The start y.
+ * @param {number} l - The segment length.
+ * @param {number} angle - The direction in degrees.
+ * @returns {number[]} The end point [x, y].
+ */
 function endPoint(x, y, l, angle) {
   const radians = toRadians(angle);
   return [x + l * Math.cos(radians), y + l * Math.sin(radians)];
 }
 
+/**
+ * The bounding box of a list of points.
+ * @private
+ * @param {number[][]} coords - The [x, y] points; at least one.
+ * @returns {number[]} [minX, minY, maxX, maxY].
+ */
 function boundingBox(coords) {
   let boundBox = [coords[0][0], coords[0][1], coords[0][0], coords[0][1]];
   for (const coord of coords) {
@@ -81,6 +129,18 @@ function boundingBox(coords) {
   return boundBox;
 }
 
+/**
+ * The vertices of a regular polygon, inset by half the line width so the
+ * stroke stays inside the radius. Sets `options.deltaYY` for odd-sided
+ * rotation, and `options.rotationOrigin` when `rotationVertice` is given.
+ * @private
+ * @param {number} sides - The number of sides.
+ * @param {number} cx - The center x.
+ * @param {number} cy - The center y.
+ * @param {number} radius - The distance from the center to a vertex.
+ * @param {Object} [options] - The n_gon() options; updated in place.
+ * @returns {number[][]} The [x, y] vertices.
+ */
 function _n_gon(sides, cx, cy, radius, options = {}) {
   let lineWidth = 0;
 
@@ -125,7 +185,8 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * @param {number} cx - x-coordinate of center point of regular polygon
  * @param {number} cy - y-coordinate of center point of regular polygon
  * @param {number} radius - The radius, distance from the center of the polygon to a vertice.
- * @param {number} [sides=3] - the number of sides of the regular polygon
+ * @param {number|Object} [sides=3] - the number of sides of the regular polygon, at least 3;
+ *   or the options when the side count is omitted.
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - HexColor or DecimalColor
  * @param {string|number[]} [options.stroke] - HexColor or DecimalColor
@@ -138,7 +199,10 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * @param {number} [options.rotationVertice] - the number of the vertice to be used as rotation origin
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.
+ * @param {string} [options.link] - Make the polygon's bounding square open this URL.
+ * @param {boolean} [options.debug] - Also draw the circumscribed circle and center.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
   const MIN_SIDES = 3;
@@ -172,6 +236,12 @@ exports.n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
   return this;
 };
 
+/**
+ * Reorder polygon vertices into a star path by skipping vertices.
+ * @private
+ * @param {number[][]} ngon - The polygon vertices.
+ * @returns {number[][]} The star path.
+ */
 function _oddStar(ngon) {
   let starPath = [];
   let points = ngon.length;
@@ -192,7 +262,8 @@ function _oddStar(ngon) {
  * @param {number} cx - x-coordinate of center point of regular polygon
  * @param {number} cy - y-coordinate of center point of regular polygon
  * @param {number} radius - The radius, distance from the center to a star point.
- * @param {number} [points=5] - number of points on star
+ * @param {number|Object} [points=5] - number of points on star, at least 5; or
+ *   the options when the point count is omitted.
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - HexColor or DecimalColor
  * @param {string|number[]} [options.stroke] - HexColor or DecimalColor
@@ -204,7 +275,10 @@ function _oddStar(ngon) {
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.
+ * @param {string} [options.link] - Make the star's bounding square open this URL.
+ * @param {boolean} [options.debug] - Also draw the circumscribed circle and center.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.star = function star(cx, cy, radius, points = 5, options = {}) {
   let starPath = [];
@@ -280,6 +354,16 @@ exports.star = function star(cx, cy, radius, points = 5, options = {}) {
   return this;
 };
 
+/**
+ * Rotate a point around an origin.
+ * @private
+ * @param {number} ox - The point x.
+ * @param {number} oy - The point y.
+ * @param {number} p - The origin x.
+ * @param {number} q - The origin y.
+ * @param {number} angle - The rotation in degrees.
+ * @returns {number[]} The rotated [x, y].
+ */
 function rotate(ox, oy, p, q, angle) {
   let [x, y] = [ox, oy];
   angle = angle % 360; // keep angle within realistic bounds
@@ -312,6 +396,12 @@ function rotate(ox, oy, p, q, angle) {
   return [x, y];
 }
 
+/**
+ * The center of the bounding box of a list of points.
+ * @private
+ * @param {number[][]} ngon - The [x, y] points.
+ * @returns {number[]} The center [x, y].
+ */
 function center(ngon) {
   let [minX, minY, maxX, maxY] = boundingBox(ngon);
   let width = maxX - minX;
@@ -319,6 +409,14 @@ function center(ngon) {
   return [minX + width / 2, minY + height / 2];
 }
 
+/**
+ * Move points by an offset. The point arrays are changed in place.
+ * @private
+ * @param {number} dx - The x offset.
+ * @param {number} dy - The y offset.
+ * @param {number[][]} ngon - The [x, y] points.
+ * @returns {number[][]} A new list holding the moved points.
+ */
 function translate(dx, dy, ngon) {
   let object = ngon.slice();
   for (const coord of object) {
@@ -329,6 +427,13 @@ function translate(dx, dy, ngon) {
   return object;
 }
 
+/**
+ * Mirror points across a horizontal line. The point arrays are changed in place.
+ * @private
+ * @param {number} y - The y of the mirror line.
+ * @param {number[][]} ngon - The [x, y] points.
+ * @returns {number[][]} A new list holding the mirrored points.
+ */
 function flipX(y, ngon) {
   let object = ngon.slice();
   for (const coord of object) {
@@ -338,6 +443,13 @@ function flipX(y, ngon) {
   return object;
 }
 
+/**
+ * Mirror points across a vertical line. The point arrays are changed in place.
+ * @private
+ * @param {number} x - The x of the mirror line.
+ * @param {number[][]} ngon - The [x, y] points.
+ * @returns {number[][]} A new list holding the mirrored points.
+ */
 function flipY(x, ngon) {
   let object = ngon.slice();
   for (const coord of object) {
@@ -356,10 +468,12 @@ function flipY(x, ngon) {
  * @param {number} y - y-coordinate used to position triangle, by default associated with left vertex of triangle base.
  * @param {number[]} traits - the data defining the triangle. Angles are specified as degrees, sides in units of points (1/72 in.).
  * @param {Object} [options] - The options
- * @param {string} [options.traitID='sss'] - indicates what type of data is being passed in the traits parameter.
+ * @param {Recipe.TriangleTrait} [options.traitID='sss'] - indicates what type of data is being passed in the traits parameter,
+ * one of the `Recipe.TriangleTrait` values:
  * ('sss'- three side lengths, 'sas' - side-angle-side (sideA, <C, sideB), 'asa' - angle-side-angle (<B, sideC, <A),
  * or 'vtx' - three vertex points [x,y])
- * @param {string} [options.position='b'] - the position of the triangle to be set at the given x,y coordinates.
+ * @param {Recipe.TrianglePosition} [options.position='b'] - the position of the triangle to be set at the given x,y coordinates,
+ * one of the `Recipe.TrianglePosition` values.
  * The values can be one of: 'A' - the A vertex (right vertex of triangle base), 'B' - the B vertex (left vertex of triangle base),
  * 'C' - the C vertex (apex of triangle), 'centroid', 'circumcenter', or 'incenter' of the triangle.
  * @param {Boolean} [options.flipX=false] - flip triangle up to down through rotation point.
@@ -375,12 +489,15 @@ function flipY(x, ngon) {
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.
  * @returns {Recipe} The recipe instance.
+ * @param {string} [options.link] - Make the triangle's bounding box open this URL.
+ * @param {boolean} [options.debug] - Also draw the reference points and labels.
  * @throws {Error} If traits does not contain three values or does not define a valid triangle.
+ * @throws {TypeError} If no page is active.
  */
 
 exports.triangle = function triangle(x, y, traits, options = {}) {
-  let traitID = options.traitID || options.traitsID || "sss";
-  let position = options.position ? options.position.toLowerCase() : "default";
+  let traitID = options.traitID || options.traitsID || TriangleTrait.SSS;
+  let position = options.position ? options.position.toLowerCase() : null;
   let triopts = Object.assign({}, options);
   delete triopts.link;
 
@@ -398,25 +515,25 @@ exports.triangle = function triangle(x, y, traits, options = {}) {
   let cc;
   let ic;
   switch (position) {
-    case "centroid":
+    case TrianglePosition.CENTROID:
       pt = triangle.centroid;
       break;
-    case "circumcenter":
+    case TrianglePosition.CIRCUMCENTER:
       cc = triangle.circumcenter;
       [pt, radius] = [cc.point, cc.radius];
       break;
-    case "incenter":
+    case TrianglePosition.INCENTER:
       ic = triangle.incenter;
       [pt, radius] = [ic.point, ic.radius];
       triangle.incenter = [x, y]; // have to update incenter because tranlation will change it.
       break;
-    case "a":
+    case TrianglePosition.A:
       pt = new Point(triangle.A);
       break;
-    case "b":
+    case TrianglePosition.B:
       pt = new Point(triangle.B);
       break;
-    case "c":
+    case TrianglePosition.C:
       pt = new Point(triangle.C);
       break;
     default:
@@ -468,13 +585,13 @@ exports.triangle = function triangle(x, y, traits, options = {}) {
       for (const vertex of trigon) {
         tgon.push(rotate(vertex[0], vertex[1], rx, ry, angle));
       }
-      triangle = new Triangle(tgon[0][0], tgon[0][1], "vtx", tgon);
+      triangle = new Triangle(tgon[0][0], tgon[0][1], TriangleTrait.VTX, tgon);
     }
     this.circle(x, y, 2, { color: "red", width: 0.5 });
 
     if (radius) {
       this.circle(x, y, radius, { color: "green", width: 0.5 });
-    } else if (position === "centroid") {
+    } else if (position === TrianglePosition.CENTROID) {
       const ma_A = new Line(triangle.A, triangle.BC.midpoint);
       const mb_B = new Line(triangle.B, triangle.AC.midpoint);
       const mc_C = new Line(triangle.C, triangle.AB.midpoint);
@@ -549,12 +666,24 @@ exports.triangle = function triangle(x, y, traits, options = {}) {
 //        /_____\
 //       B   c   A
 
+/**
+ * A triangle solved from side lengths, angles or vertices, with vertex B at
+ * (x, y) and side c along the x axis unless vertices are given.
+ * @private
+ */
 const Triangle = class Triangle {
+  /**
+   * @param {number} x - The x of vertex B.
+   * @param {number} y - The y of vertex B.
+   * @param {Recipe.TriangleTrait} traitID - How `traits` define the triangle, case-insensitive.
+   * @param {Array} traits - Three side lengths and/or angles in degrees, or three [x, y] vertices.
+   * @throws {Error} If the traits do not define a valid triangle or the trait is unknown.
+   */
   constructor(x, y, traitID, traits) {
     let a, b, c, angA, angB, angC;
     let sss, BC, AC, AB;
     switch (traitID.toLowerCase()) {
-      case "sss":
+      case TriangleTrait.SSS:
         sss = traits.slice().sort((a, b) => {
           return a - b;
         });
@@ -567,12 +696,12 @@ const Triangle = class Triangle {
         [a, b, c] = traits;
         break;
 
-      case "sas":
+      case TriangleTrait.SAS:
         [a, angC, b] = traits;
         c = Math.sqrt(a * a + b * b - 2 * a * b * Math.cos(toRadians(angC)));
         break;
 
-      case "asa":
+      case TriangleTrait.ASA:
         [angB, c, angA] = traits;
         angC = 180 - angA - angB;
         if (angC <= 0) {
@@ -584,7 +713,7 @@ const Triangle = class Triangle {
         b = (c * Math.sin(toRadians(angB))) / Math.sin(toRadians(angC));
         break;
 
-      case "vtx":
+      case TriangleTrait.VTX:
         this._B = traits[0];
         this._C = traits[1];
         this._A = traits[2];
@@ -627,16 +756,32 @@ const Triangle = class Triangle {
     }
   }
 
+  /**
+   * Vertex A, the right end of the base.
+   * @returns {number[]} The [x, y] point.
+   */
   get A() {
     return this._A;
   }
+  /**
+   * Vertex B, the left end of the base.
+   * @returns {number[]} The [x, y] point.
+   */
   get B() {
     return this._B;
   }
+  /**
+   * Vertex C, the apex.
+   * @returns {number[]} The [x, y] point.
+   */
   get C() {
     return this._C;
   }
 
+  /**
+   * Side b, from A to C.
+   * @returns {Line} The side.
+   */
   get AC() {
     if (!this._AC) {
       this._AC = new Line(this._A, this._C);
@@ -644,6 +789,10 @@ const Triangle = class Triangle {
     return this._AC;
   }
 
+  /**
+   * Side c, from A to B.
+   * @returns {Line} The side.
+   */
   get AB() {
     if (!this._AB) {
       this._AB = new Line(this._A, this._B);
@@ -651,6 +800,10 @@ const Triangle = class Triangle {
     return this._AB;
   }
 
+  /**
+   * Side a, from B to C.
+   * @returns {Line} The side.
+   */
   get BC() {
     if (!this._BC) {
       this._BC = new Line(this._B, this._C);
@@ -658,10 +811,18 @@ const Triangle = class Triangle {
     return this._BC;
   }
 
+  /**
+   * The sum of the side lengths.
+   * @returns {number} The perimeter.
+   */
   get perimeter() {
     return this._perimeter;
   }
 
+  /**
+   * The area, by Heron's formula.
+   * @returns {number} The area.
+   */
   get area() {
     if (!this._area) {
       // Heron's formula
@@ -672,6 +833,10 @@ const Triangle = class Triangle {
     return this._area;
   }
 
+  /**
+   * The vertices in drawing order B, C, A.
+   * @returns {number[][]} The [x, y] points.
+   */
   get vertices() {
     return [this._B, this._C, this._A];
   }
@@ -679,6 +844,10 @@ const Triangle = class Triangle {
   // The centroid is the point where all three medians of the triangle
   // intersect. A median is the line running from a vertex to the midpoint
   // of the side opposite the vertex.
+  /**
+   * The intersection of the medians.
+   * @returns {Point} The centroid.
+   */
   get centroid() {
     if (!this._centroid) {
       let AB = new Line(this._A, this._B);
@@ -694,6 +863,10 @@ const Triangle = class Triangle {
 
   // The intersection of the perpendicular bisectors of
   // each side midpoint defines the circumcenter.
+  /**
+   * The center and radius of the circumscribed circle.
+   * @returns {{point: Point, radius: number}} The circumcircle.
+   */
   get circumcenter() {
     if (!this._circumcenter) {
       // Algorithm in use is defining a circle from three noncolinear planar points
@@ -718,6 +891,10 @@ const Triangle = class Triangle {
     return this._circumcenter;
   }
 
+  /**
+   * Move the incenter point, keeping its radius.
+   * @param {number[]} center - The new [x, y] point.
+   */
   set incenter(center) {
     this._incenter = {
       point: new Point(center[0], center[1]),
@@ -725,6 +902,10 @@ const Triangle = class Triangle {
     };
   }
 
+  /**
+   * The center and radius of the inscribed circle.
+   * @returns {{point: Point, radius: number}} The incircle.
+   */
   get incenter() {
     if (!this._incenter) {
       // https://www.mathopenref.com/coordincenter.html
@@ -774,21 +955,31 @@ const Triangle = class Triangle {
  * @param {number} x x-coordinate position
  * @param {number} y y-coordinate position
  * @param {Object} [options] arrow and polygon options
- * @param {number} [options.type=0] indicates the type of arrow head to produce. (0-'triangle', 1-'dart', 2-'kite')
- * Number or name may be used. Note, that the value of base offset in head option overrides this value.
+ * @param {Recipe.ArrowType|number} [options.type=0] indicates the type of arrow head to produce,
+ * a `Recipe.ArrowType` value or its number (0-'triangle', 1-'dart', 2-'kite').
+ * Note, that the value of base offset in head option overrides this value.
  * @param {number|number[]} [options.head=[10,20,0]] defines the length, width and base offset of arrow head.
  * A single number can be used to assign both the length and width of arrow, giving the base offset value as zero.
  * @param {number|number[]} [options.shaft=[10,10]] defines the length and width of the arrow shaft.
  * @param {Boolean} [options.double=false] indicate double headed arrow production.
- * @param {string} [options.at] position and/or rotate at "head" or "tail" of arrow instead of at center.
+ * @param {Recipe.ArrowAt} [options.at] position and/or rotate at the `Recipe.ArrowAt` head or tail of arrow instead of at center.
+ * @param {number|boolean} [options.debug] Draw the drop point; 2 also labels the reference points.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.arrow = function arrow(x, y, options = {}) {
   let defaultHeadLength = 10;
   let nock = null;
   let ox = x;
   let debug = options.debug;
-  let headTypes = { 0: 0, triangle: 0, 1: 0.5, dart: 0.5, 2: -1, kite: -1 };
+  let headTypes = {
+    0: 0,
+    [ArrowType.TRIANGLE]: 0,
+    1: 0.5,
+    [ArrowType.DART]: 0.5,
+    2: -1,
+    [ArrowType.KITE]: -1,
+  };
 
   let shaftLength = defaultHeadLength;
   let shaftWidth = defaultHeadLength;
@@ -852,10 +1043,10 @@ exports.arrow = function arrow(x, y, options = {}) {
   // ('default' choice represents center of arrow and default rotation point)
   if (options.double) {
     switch (options.at) {
-      case "head":
+      case ArrowAt.HEAD:
         x -= headLength;
         break;
-      case "tail":
+      case ArrowAt.TAIL:
         x += shaftLength + headLength;
         break;
       default:
@@ -864,10 +1055,10 @@ exports.arrow = function arrow(x, y, options = {}) {
     nock = new Kite(x - shaftLength, y, headLength, headWidth, baseOffset);
   } else {
     switch (options.at) {
-      case "head":
+      case ArrowAt.HEAD:
         x -= headLength;
         break;
-      case "tail":
+      case ArrowAt.TAIL:
         x += shaftLength;
         break;
       default:
@@ -910,15 +1101,15 @@ exports.arrow = function arrow(x, y, options = {}) {
       [
         arrow.tip.I, // tip point of arrow
         arrow.tip.T,
-        arrow.shaft("br"), // lower connection point to arrow tip
-        arrow.shaft("bl"),
+        arrow.shaft(ShaftCorner.BOTTOM_RIGHT), // lower connection point to arrow tip
+        arrow.shaft(ShaftCorner.BOTTOM_LEFT),
 
         arrow.nock.Tp, // drawing reverse arrow head at nock/tail of arrow
         arrow.nock.Ip,
         arrow.nock.Kp,
 
-        arrow.shaft("tl"),
-        arrow.shaft("tr"), // upper connection point to arrow tip
+        arrow.shaft(ShaftCorner.TOP_LEFT),
+        arrow.shaft(ShaftCorner.TOP_RIGHT), // upper connection point to arrow tip
         arrow.tip.K,
         arrow.tip.I,
       ],
@@ -942,10 +1133,10 @@ exports.arrow = function arrow(x, y, options = {}) {
       [
         arrow.tip.I, // tip point of arrow
         arrow.tip.T,
-        arrow.shaft("br"), // lower connection point to arrow tip
-        arrow.shaft("bl"),
-        arrow.shaft("tl"),
-        arrow.shaft("tr"), // upper connection point to arrow tip
+        arrow.shaft(ShaftCorner.BOTTOM_RIGHT), // lower connection point to arrow tip
+        arrow.shaft(ShaftCorner.BOTTOM_LEFT),
+        arrow.shaft(ShaftCorner.TOP_LEFT),
+        arrow.shaft(ShaftCorner.TOP_RIGHT), // upper connection point to arrow tip
         arrow.tip.K,
         arrow.tip.I,
       ],
@@ -994,16 +1185,16 @@ exports.arrow = function arrow(x, y, options = {}) {
         color: kcc,
         width: 0.5,
       });
-      let br = arrow.shaft("br");
+      let br = arrow.shaft(ShaftCorner.BOTTOM_RIGHT);
       this.text("br", br[0] - 4, br[1] - 11, { size: 9, color: tc });
       this.circle(br[0], br[1] - 8, 6, { color: cc, width: 0.5 });
-      let bl = arrow.shaft("bl");
+      let bl = arrow.shaft(ShaftCorner.BOTTOM_LEFT);
       this.text("bl", bl[0] + 4, bl[1] - 11, { size: 9, color: tc });
       this.circle(bl[0] + 8, bl[1] - 8, 6, { color: cc, width: 0.5 });
-      let tl = arrow.shaft("tl");
+      let tl = arrow.shaft(ShaftCorner.TOP_LEFT);
       this.text("tl", tl[0] + 5, tl[1] + 2, { size: 9, color: tc });
       this.circle(tl[0] + 8, tl[1] + 7, 6, { color: cc, width: 0.5 });
-      let tr = arrow.shaft("tr");
+      let tr = arrow.shaft(ShaftCorner.TOP_RIGHT);
       this.text("tr", tr[0] - 3, tr[1] + 2, { size: 9, color: tc });
       this.circle(tr[0], tr[1] + 7, 6, { color: cc, width: 0.5 });
     }
@@ -1030,7 +1221,19 @@ exports.arrow = function arrow(x, y, options = {}) {
 //           |________________________|_______________|
 //                  base offset             height
 
+/**
+ * The quadrilateral arrow head: a triangle, dart or kite depending on the
+ * base offset.
+ * @private
+ */
 const Kite = class Kite {
+  /**
+   * @param {number} x - The x of the head base.
+   * @param {number} y - The y of the arrow axis.
+   * @param {number} width - The head length along the axis.
+   * @param {number} height - The head width across the axis.
+   * @param {number} [baseOffset=0] - Positive for a dart, negative for a kite.
+   */
   constructor(x, y, width, height, baseOffset = 0) {
     this._x = x;
     this._y = y;
@@ -1041,7 +1244,11 @@ const Kite = class Kite {
     // but it cannot exceed the height of the arrow head.
     this._baseOffset = baseOffset >= height ? height - 1 : baseOffset;
     this._type =
-      baseOffset > 0 ? "dart" : baseOffset === 0 ? "triangle" : "kite";
+      baseOffset > 0
+        ? ArrowType.DART
+        : baseOffset === 0
+          ? ArrowType.TRIANGLE
+          : ArrowType.KITE;
 
     this._K = new Point(x, y - height / 2);
     this._I = new Point(x + width, y);
@@ -1049,34 +1256,70 @@ const Kite = class Kite {
     this._E = new Point(x + this._baseOffset, y);
   }
 
+  /**
+   * Point K, the head corner above the axis.
+   * @returns {number[]} The [x, y] point.
+   */
   get K() {
     return [this._K.x, this._K.y];
   }
+  /**
+   * Point I, the head tip.
+   * @returns {number[]} The [x, y] point.
+   */
   get I() {
     return [this._I.x, this._I.y];
   }
+  /**
+   * Point T, the head corner below the axis.
+   * @returns {number[]} The [x, y] point.
+   */
   get T() {
     return [this._T.x, this._T.y];
   }
+  /**
+   * Point E, where the head base meets the axis.
+   * @returns {number[]} The [x, y] point.
+   */
   get E() {
     return [this._E.x, this._E.y];
   }
 
   // create points I&E prime (flip, 180 degrees) to change direction of Kite on X-axis
+  /**
+   * Point I mirrored to point the head the other way.
+   * @returns {number[]} The [x, y] point.
+   */
   get Ip() {
     return [this._I.x - 2 * this._width, this._I.y];
   }
+  /**
+   * Point E mirrored to point the head the other way.
+   * @returns {number[]} The [x, y] point.
+   */
   get Ep() {
     return [this._E.x + 2 * this._baseOffset, this._E.y];
   }
 
+  /**
+   * Point K for a mirrored head; the same as K.
+   * @returns {number[]} The [x, y] point.
+   */
   get Kp() {
     return [this._K.x, this._K.y];
   } // no different than K or T, just here for consistency usage
+  /**
+   * Point T for a mirrored head; the same as T.
+   * @returns {number[]} The [x, y] point.
+   */
   get Tp() {
     return [this._T.x, this._T.y];
   }
 
+  /**
+   * The line from K to E.
+   * @returns {Line} The segment.
+   */
   get KE() {
     // line segment between points K and E
     if (!this._KE) {
@@ -1085,6 +1328,10 @@ const Kite = class Kite {
     return this._KE;
   }
 
+  /**
+   * The line from T to E.
+   * @returns {Line} The segment.
+   */
   get TE() {
     // line segment between points T and E
     if (!this._TE) {
@@ -1093,6 +1340,10 @@ const Kite = class Kite {
     return this._TE;
   }
 
+  /**
+   * The head shape.
+   * @returns {Recipe.ArrowType} The `Recipe.ArrowType` value.
+   */
   get type() {
     return this._type;
   }
@@ -1102,7 +1353,19 @@ const Kite = class Kite {
   // }
 };
 
+/**
+ * An arrow: a head, an optional reverse head at the tail, and a shaft.
+ * @private
+ */
 const Arrow = class Arrow {
+  /**
+   * @param {number} x - The x where the shaft meets the head.
+   * @param {number} y - The y of the arrow axis.
+   * @param {Kite} arrowhead - The head.
+   * @param {number} shaftLength - The shaft length.
+   * @param {number} shaftWidth - The shaft width.
+   * @param {Kite|null} nock - The reverse head of a double arrow.
+   */
   constructor(x, y, arrowhead, shaftLength, shaftWidth, nock) {
     this._x = x;
     this._y = y;
@@ -1114,33 +1377,59 @@ const Arrow = class Arrow {
     this._connectAt_br = new Point(this._x, this._y + shaftWidth / 2); // bottom, right
   }
 
+  /**
+   * The arrow head.
+   * @returns {Kite} The head.
+   */
   get tip() {
     return this._tip;
   }
+  /**
+   * The reverse head of a double arrow.
+   * @returns {Kite|null} The reverse head, or null.
+   */
   get nock() {
     return this._nock;
   }
 
+  /**
+   * Move the shaft end so it meets a dart or kite head.
+   * @param {Point} pointTR - Where the top edge of the shaft meets the head.
+   * @returns {void}
+   */
   joinShaft(pointTR) {
     this._connectAt_tr.x = pointTR.x;
     this._connectAt_br.x = pointTR.x;
   }
 
+  /**
+   * A corner of the shaft.
+   * @param {string} point - A `ShaftCorner` value.
+   * @returns {number[]|undefined} The [x, y] corner, or undefined for an unknown corner.
+   */
   shaft(point) {
     switch (point) {
-      case "br":
+      case ShaftCorner.BOTTOM_RIGHT:
         return [this._connectAt_br.x, this._connectAt_br.y];
-      case "bl":
+      case ShaftCorner.BOTTOM_LEFT:
         return [this._x - this._shaftLength, this._connectAt_br.y];
-      case "tl":
+      case ShaftCorner.TOP_LEFT:
         return [this._x - this._shaftLength, this._connectAt_tr.y];
-      case "tr":
+      case ShaftCorner.TOP_RIGHT:
         return [this._connectAt_tr.x, this._connectAt_tr.y];
     }
   }
 };
 
+/**
+ * A mutable 2D point.
+ * @private
+ */
 const Point = class Point {
+  /**
+   * @param {number|number[]} x - The x, or an [x, y] array.
+   * @param {number} [y] - The y when x is a number.
+   */
   constructor(x, y) {
     if (Array.isArray(x)) {
       this._x = x[0];
@@ -1150,27 +1439,56 @@ const Point = class Point {
       this._y = y;
     }
   }
+  /**
+   * @returns {number} The x coordinate.
+   */
   get x() {
     return this._x;
   }
+  /**
+   * @returns {number} The y coordinate.
+   */
   get y() {
     return this._y;
   }
+  /**
+   * @returns {number[]} The [x, y] array.
+   */
   get point() {
     return [this._x, this._y];
   }
+  /**
+   * @param {number} xx - The new x coordinate.
+   */
   set x(xx) {
     this._x = xx;
   }
+  /**
+   * @param {number} yy - The new y coordinate.
+   */
   set y(yy) {
     this._y = yy;
   }
+  /**
+   * @param {number[]} pnt - The new [x, y] array.
+   */
   set point(pnt) {
     [this._x, this._y] = pnt;
   }
 };
 
+/**
+ * A line segment between two points.
+ * @private
+ */
 const Line = class Line {
+  /**
+   * @param {number|number[]|Point} x1 - The first x, or the first point.
+   * @param {number|number[]|Point} y1 - The first y, or the second point.
+   * @param {number} [x2] - The second x when numbers are given.
+   * @param {number} [y2] - The second y when numbers are given.
+   * @throws {Error} If the first argument is a point and the second is not.
+   */
   constructor(x1, y1, x2, y2) {
     // Allow user to supply Points or Arrays instead of individual coordinates
     if (
@@ -1199,24 +1517,38 @@ const Line = class Line {
     }
   }
 
+  /**
+   * @returns {boolean} True when both points share the same x.
+   */
   get isVertical() {
     return this._pt1.x === this._pt2.x;
   }
 
+  /**
+   * One end point.
+   * @param {number} ep - 1 for the first point, 2 for the second.
+   * @returns {Point|null} The point, or null for another value.
+   */
   point(ep) {
     return ep === 1 ? this._pt1 : ep === 2 ? this._pt2 : null;
   }
 
+  /**
+   * @returns {Point} The midpoint of the segment.
+   */
   get midpoint() {
     if (!this._midpoint) {
       let dx = (this._pt2.x - this._pt1.x) / 2;
       let dy = (this._pt2.y - this._pt1.y) / 2;
-      this._midPoint = new Point(this._pt1.x + dx, this._pt1.y + dy);
+      this._midpoint = new Point(this._pt1.x + dx, this._pt1.y + dy);
     }
 
-    return this._midPoint;
+    return this._midpoint;
   }
 
+  /**
+   * @returns {number} The segment length.
+   */
   get length() {
     if (!this._length) {
       this._length = Math.sqrt(
@@ -1228,6 +1560,9 @@ const Line = class Line {
     return this._length;
   }
 
+  /**
+   * @returns {number} The slope; Infinity for a vertical line.
+   */
   get slope() {
     if (!this._slope) {
       this._slope =
@@ -1239,11 +1574,20 @@ const Line = class Line {
     return this._slope;
   }
 
+  /**
+   * @returns {number} The negative inverse slope, of a perpendicular line.
+   */
   get inv_slope() {
     // inverse slope
     return -(1 / this.slope);
   }
 
+  /**
+   * The point past an end of the segment, continuing along the line.
+   * @param {number} distance - How far past the end.
+   * @param {number} [ptNbr=2] - The end to extend: 1 or 2.
+   * @returns {Point} The extended point.
+   */
   extend(distance, ptNbr = 2) {
     let slope = this.slope;
     let ept = this.point(ptNbr);
@@ -1298,6 +1642,11 @@ const Line = class Line {
   //  y = -----------------------------------------------     ---------------
   //          (x2 - x1)(y4 - y3) - (x4 - x3)(y2 - y1)         b1(a2) - b2(a1)
 
+  /**
+   * The intersection with another line.
+   * @param {Line} CD - The other line.
+   * @returns {Point|null} The intersection, or null for parallel lines.
+   */
   intersect(CD) {
     let A = this._pt1,
       B = this._pt2;

@@ -2,6 +2,10 @@
     PDFWStreamForBuffer is an implementation of a write stream that collects
     the written bytes in memory. Read the result from its `buffer` property.
 */
+/**
+ * Creates a write stream that collects the bytes in memory.
+ * @constructor
+ */
 function PDFWStreamForBuffer() {
   this.chunks = [];
   this.joined = null;
@@ -32,6 +36,11 @@ Object.defineProperty(PDFWStreamForBuffer.prototype, "buffer", {
   },
 });
 
+/**
+ * Collects a copy of the bytes.
+ * @param {Buffer|Uint8Array|number[]} inBytes - The bytes to write.
+ * @returns {number} The number of bytes written.
+ */
 PDFWStreamForBuffer.prototype.write = function (inBytes) {
   if (inBytes.length > 0) {
     // Copy, so a caller reusing its buffer cannot change collected output,
@@ -44,6 +53,10 @@ PDFWStreamForBuffer.prototype.write = function (inBytes) {
   return 0;
 };
 
+/**
+ * Returns the number of bytes written so far.
+ * @returns {number} The current byte offset.
+ */
 PDFWStreamForBuffer.prototype.getCurrentPosition = function () {
   return this.position;
 };

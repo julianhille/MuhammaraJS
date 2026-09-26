@@ -1,3 +1,5 @@
+const { AnnotSubtype, AnnotIcon, AnnotFlag } = require("../recipe-constants");
+
 /**
  * Encodes annotation text as a PDF text string, so characters outside
  * PDFDocEncoding are written as UTF-16BE instead of raw UTF-8 bytes.
@@ -13,27 +15,34 @@ function textString(writer, value) {
 }
 
 /**
- * Create a comment annotation
+ * Create a comment annotation: a Text annotation with the Comment icon. It is
+ * written when the PDF ends.
  * @name comment
  * @function
  * @memberof Recipe#
  * @param {string} [text=''] - The text content
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|"center"} x - The coordinate x
+ * @param {number|"center"} y - The coordinate y
  * @param {Object} [options] - The options
  * @param {string} [options.title] - The title.
  * @param {string} [options.date] - The date.
  * @param {boolean} [options.open=false] - Open the annotation by default?
  * @param {boolean} [options.richText] - Display with rich text format, text will be transformed automatically, or you may pass in your own rich text starts with "<?xml..."
  * @param {Array} [options.replies] - Array of annotation replies, each with text and optional title, date, subject, richText, and flag.
- * @param {'invisible'|'hidden'|'print'|'nozoom'|'norotate'|'noview'|'readonly'|'locked'|'togglenoview'} [options.flag] - The flag property
+ * @param {Recipe.AnnotFlag} [options.flag] - The flag property, one of the `Recipe.AnnotFlag` values.
  * @returns {Recipe} The recipe instance.
  */
 exports.comment = function comment(text = "", x, y, options = {}) {
+  validateAnnotationFlags(options);
   this.annotationsToWrite.push({
-    subtype: "Text",
+    subtype: AnnotSubtype.TEXT,
     pageNumber: this.pageNumber,
-    args: { text, x, y, options: Object.assign({ icon: "Comment" }, options) },
+    args: {
+      text,
+      x,
+      y,
+      options: Object.assign({ icon: AnnotIcon.COMMENT }, options),
+    },
     replies: options.replies,
   });
   return this;
@@ -45,17 +54,31 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  * @function
  * @memberof Recipe#
  * @param {string} url - The URL to open.
- * @param {number} x - The top-left x coordinate.
- * @param {number} y - The top-left y coordinate.
+ * @param {number|"center"} x - The top-left x coordinate.
+ * @param {number|"center"} y - The top-left y coordinate.
  * @param {number} width - The link width.
  * @param {number} height - The link height.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.link = function link(url, x, y, width, height) {
   const { nx, ny } = this._calibrateCoordinate(x, y, 0, -height);
   return linkPdf(this, url, nx, ny, width, height);
 };
 
+/**
+ * Attach a URL link at PDF coordinates, pausing the page content context
+ * while the writer adds the annotation.
+ * @private
+ * @param {Recipe} recipe - The recipe with an active page.
+ * @param {string} url - The URL to open.
+ * @param {number} left - The left edge in PDF points.
+ * @param {number} bottom - The bottom edge in PDF points.
+ * @param {number} width - The link width.
+ * @param {number} height - The link height.
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If no page is active or the link cannot be attached.
+ */
 function linkPdf(recipe, url, left, bottom, width, height) {
   recipe.pauseContext();
   try {
@@ -75,28 +98,31 @@ function linkPdf(recipe, url, left, bottom, width, height) {
 Object.defineProperty(exports, "linkPdf", { value: linkPdf });
 
 /**
- * Create an annotation
+ * Create an annotation. It is written when the PDF ends.
  * @name annot
  * @function
  * @memberof Recipe#
  * @todo support for rich text RC
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
- * @param {string} subtype - The markup annotation type 'Text'|'Link'|'FreeText'|'Line'|'Square'|'Circle'|'Polygon'|'PolyLine'|'Highlight'|'Underline'|'Squiggly'|'StrikeOut'|'Caret'|'Stamp'|'Ink'|'Popup'|'FileAttachment'|'Sound'|'Movie'|'Screen'|'Widget'|'PrinterMark'|'TrapNet'|'Watermark'|'3D'|'Redact'|'Projection'|'RichMedia'
+ * @param {number|"center"} x - The coordinate x
+ * @param {number|"center"} y - The coordinate y
+ * @param {Recipe.AnnotSubtype} subtype - The annotation subtype, one of the
+ *   `Recipe.AnnotSubtype` values.
  * @param {Object} [options] - The options
  * @param {string} [options.text=''] - The annotation content.
  * @param {string} [options.title] - The title.
  * @param {boolean} [options.open=false] - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'
  * @param {boolean} [options.richText] - Rich text
- * @param {'invisible'|'hidden'|'print'|'nozoom'|'norotate'|'noview'|'readonly'|'locked'|'togglenoview'} [options.flag] - The flag property
- * @param {'Comment'|'Key'|'Note'|'Help'|'NewParagraph'|'Paragraph'|'Insert'} [options.icon='Note'] - The icon of annotation. Specific to text annotations. Default value: 'Note'
+ * @param {Recipe.AnnotFlag} [options.flag] - The flag property, one of the `Recipe.AnnotFlag` values.
+ * @param {Recipe.AnnotIcon} [options.icon] - The icon of a Text annotation, one
+ *   of the `Recipe.AnnotIcon` values. Viewers show 'Note' when it is omitted.
  * @param {number} [options.width] - Width
  * @param {number} [options.height] - Height
  * @param {string} [options.date] - Date of annotation
  * @param {string} [options.subject] - The subject.
  * @param {Array} [options.replies] - Array of annotation replies
  * @param {number} [options.border] - The border width.
- * @param {string|number[]} [options.color] - The annotation color.
+ * @param {string|number[]} [options.color] - The annotation color, as HexColor,
+ *   PercentColor or DecimalColor.
  * @param {number} [options.opacity=1] - Annotation opacity from 0 (transparent) to 1 (opaque).
  * @param {boolean} [options.followOriginalPageRotation=false] - Preserve the original page rotation when positioning the annotation.
  * @returns {Recipe} The recipe instance.
@@ -108,6 +134,7 @@ exports.annot = function annot(
   options = { text: "", width: 0, height: 0 },
 ) {
   const { text, width, height, replies } = options;
+  validateAnnotationFlags(options);
   this.annotationsToWrite.push({
     subtype,
     args: { text, x, y, width, height, options },
@@ -119,9 +146,33 @@ exports.annot = function annot(
 
 // TODO: allow non-markup annots to be associated with markup annotations
 // Link, Popup, Movie, Widget, Screen, PrinterMark, TrapNet, Watermark, 3D
+/**
+ * Placeholder for associating non-markup annotations with markup ones; it
+ * currently does nothing.
+ * @private
+ * @returns {void}
+ */
 exports._attachNonMarkupAnnot = function _attachNonMarkupAnnot() {};
 
+/**
+ * Write one queued annotation, or a reply to one, as an indirect object and
+ * register it on its page.
+ * @private
+ * @param {Recipe.AnnotSubtype} subtype - The annotation subtype.
+ * @param {Object} [args] - The queued x, y, width, height, text, options, and
+ *   for a reply the reply entry.
+ * @param {number} pageNumber - The one-based page number.
+ * @param {number} [ref] - The object ID of the annotation a reply answers.
+ * @returns {number} The object ID of the written annotation.
+ * @throws {TypeError} If the page number is unknown.
+ */
 exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
+  // Write known subtypes with their PDF casing; the markup check below
+  // already matches them case-insensitively.
+  subtype =
+    Object.values(AnnotSubtype).find(
+      (known) => known.toLowerCase() === String(subtype).toLowerCase(),
+    ) || subtype;
   const { x, y, width, height, options, reply } = args;
   let { text } = args;
   this._startDictionary(pageNumber);
@@ -253,16 +304,16 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
     border = border || 0;
     if (!color) {
       switch (subtype) {
-        case "Highlight":
+        case AnnotSubtype.HIGHLIGHT:
           color = [255, 255, 0];
           break;
-        case "StrikeOut":
+        case AnnotSubtype.STRIKE_OUT:
           color = [255, 0, 0];
           break;
-        case "Underline":
+        case AnnotSubtype.UNDERLINE:
           color = [0, 255, 0];
           break;
-        case "Squiggly":
+        case AnnotSubtype.SQUIGGLY:
           color = [0, 255, 0];
           break;
         default:
@@ -302,6 +353,13 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
   return this._endDictionary(pageNumber);
 };
 
+/**
+ * Write every queued annotation and its replies, then add them to the Annots
+ * arrays of their pages.
+ * @private
+ * @returns {void}
+ * @throws {Error} If an annotation or page cannot be written.
+ */
 exports._writeAnnotations = function _writeAnnotations() {
   this.annotationsToWrite.forEach((annot) => {
     const ref = this._annot(annot.subtype, annot.args, annot.pageNumber);
@@ -322,6 +380,14 @@ exports._writeAnnotations = function _writeAnnotations() {
   });
 };
 
+/**
+ * Rewrite one page dictionary so its Annots array keeps the existing
+ * annotations and adds the ones written for it.
+ * @private
+ * @param {number} pageIndex - The zero-based page index.
+ * @returns {void}
+ * @throws {Error} If the page cannot be read or rewritten.
+ */
 exports._writeAnnotation = function _writeAnnotation(pageIndex) {
   const pdfWriter = this.writer;
   const copyingContext = pdfWriter.createPDFCopyingContextForModifiedFile();
@@ -367,12 +433,24 @@ exports._writeAnnotation = function _writeAnnotation(pageIndex) {
   copyingContext.end();
 };
 
+/**
+ * Start a new indirect object holding a dictionary for an annotation.
+ * @private
+ * @returns {void}
+ */
 exports._startDictionary = function _startDictionary() {
   this.objectsContext = this.writer.getObjectsContext();
   this.dictionaryObject = this.objectsContext.startNewIndirectObject();
   this.dictionaryContext = this.objectsContext.startDictionary();
 };
 
+/**
+ * End the annotation dictionary started by _startDictionary() and record its
+ * object ID for the page.
+ * @private
+ * @param {number} pageNumber - The one-based page number.
+ * @returns {number} The object ID of the annotation.
+ */
 exports._endDictionary = function _endDictionary(pageNumber) {
   this.objectsContext.endDictionary(this.dictionaryContext).endIndirectObject();
   const pageIndex = pageNumber - 1;
@@ -382,6 +460,13 @@ exports._endDictionary = function _endDictionary(pageNumber) {
   return this.dictionaryObject;
 };
 
+/**
+ * Match a text markup annotation subtype case-insensitively.
+ * @private
+ * @param {string} [subtype] - The subtype to look up.
+ * @returns {string|undefined} The matching `Recipe.AnnotSubtype` markup
+ *   value, or undefined when the subtype is not a text markup annotation.
+ */
 exports._getTextMarkupAnnotationSubtype =
   function _getTextMarkupAnnotationSubtype(subtype = "") {
     const matchedSubtype = this.textMarkupAnnotations.find((item) => {
@@ -391,43 +476,63 @@ exports._getTextMarkupAnnotationSubtype =
   };
 
 /**
+ * Rejects an unknown annotation flag when the annotation is queued, before the
+ * page is written.
+ * @private
+ * @param {object} options - Annotation options, with optional `replies`.
+ * @returns {void}
+ * @throws {Error} If a flag is neither a bit mask nor an AnnotFlag value.
+ */
+function validateAnnotationFlags(options) {
+  if (!options) return;
+  getFlagBitNumberByName(options.flag);
+  (options.replies || []).forEach(validateAnnotationFlags);
+}
+
+/**
  * Get Flag Bit by Name
  * @description 12.5.3 Annotation Flags
  * @private
- * @param {string} name
+ * @param {Recipe.AnnotFlag|number|string} [name] - A `Recipe.AnnotFlag` value,
+ *   matched case-insensitively, or a non-negative integer bit mask.
+ * @returns {number} The flag bits; 0 when the flag is omitted or empty.
+ * @throws {Error} If `name` is neither a bit mask nor an AnnotFlag value.
  */
 function getFlagBitNumberByName(name) {
-  switch (name.toLowerCase()) {
-    case "invisible":
+  if (name === undefined || name === null || name === "") return 0;
+  if (Number.isSafeInteger(name) && name >= 0) return name;
+  switch (String(name).toLowerCase()) {
+    case AnnotFlag.INVISIBLE:
       return 1;
-    case "hidden":
+    case AnnotFlag.HIDDEN:
       return 2;
-    case "print":
+    case AnnotFlag.PRINT:
       return 4;
-    case "nozoom":
+    case AnnotFlag.NO_ZOOM:
       return 8;
-    case "norotate":
+    case AnnotFlag.NO_ROTATE:
       return 16;
-    case "noview":
+    case AnnotFlag.NO_VIEW:
       return 32;
-    case "readonly":
+    case AnnotFlag.READ_ONLY:
       return 64;
-    case "locked":
+    case AnnotFlag.LOCKED:
       return 128;
-    case "togglenoview":
+    case AnnotFlag.TOGGLE_NO_VIEW:
       return 256;
-    // 1.7+
-    // case 'lockedcontents':
-    //     return 512;
+    // PDF 1.7
+    case AnnotFlag.LOCKED_CONTENTS:
+      return 512;
     default:
-      return 0;
+      throw new Error(`Unknown annotation flag (${name})`);
   }
 }
 
 /**
  * Text Strings to Rich Text Strings
  * @todo Fix display issue for ol/ul in richText
- * @param {string} content
+ * @param {string} content - The XHTML fragment to wrap.
+ * @returns {string} The rich text XML document for the RC entry.
  * @private
  * @description Supports XHTML elements: '<p>' | '<span>' | '<b>' | '<i>'. Supports CSS2 styles: 'text-align' | 'vertical-align' | 'font-size' | 'font-style' | 'font-weight' | 'font-family' | 'font' | 'color' | 'text-decoration' | 'font-stretch'.
  */

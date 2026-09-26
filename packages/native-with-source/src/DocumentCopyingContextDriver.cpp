@@ -79,15 +79,16 @@ napi_value DocumentCopyingContextDriver::CreateFormXObjectFromPDFPage(
   if (!Active(a, "copying context object not initialized, create using "
                  "pdfWriter.createPDFCopyingContext"))
     return nullptr;
-  if (a.Length() < 2 || a.Length() > 3 || !IsType(a.Env(), a[0], napi_number) ||
-      (!IsType(a.Env(), a[1], napi_number) && !IsArray(a.Env(), a[1])) ||
+  if (a.Length() < 1 || a.Length() > 3 || !IsType(a.Env(), a[0], napi_number) ||
+      (a.Length() >= 2 && !IsType(a.Env(), a[1], napi_number) &&
+       !IsArray(a.Env(), a[1])) ||
       (a.Length() == 3 && !IsArray(a.Env(), a[2])))
     return ThrowTypeError(
         a.Env(),
-        "Wrong arguments. provide 2 or 3 arguments, where the first is a 0 "
-        "based page index, and the second is a EPDFPageBox enumeration value "
-        "or a 4 numbers array defining an box. a 3rd parameter may be provided "
-        "to deisgnate the result form matrix");
+        "Wrong arguments. provide 1 to 3 arguments, where the first is a 0 "
+        "based page index, the optional second is a EPDFPageBox enumeration "
+        "value or a 4 numbers array defining a box (media box by default), and "
+        "an optional 3rd designates the result form matrix");
   double matrix[6], *mp = nullptr;
   if (a.Length() == 3) {
     if (!ReadNumberArray(a.Env(), a[2], matrix,
@@ -96,7 +97,10 @@ napi_value DocumentCopyingContextDriver::CreateFormXObjectFromPDFPage(
     mp = matrix;
   }
   EStatusCodeAndObjectIDType r;
-  if (IsType(a.Env(), a[1], napi_number))
+  if (a.Length() == 1)
+    r = D(a)->CopyingContext->CreateFormXObjectFromPDFPage(
+        ToUint32(a.Env(), a[0]), ePDFPageBoxMediaBox, mp);
+  else if (IsType(a.Env(), a[1], napi_number))
     r = D(a)->CopyingContext->CreateFormXObjectFromPDFPage(
         ToUint32(a.Env(), a[0]),
         static_cast<EPDFPageBox>(ToUint32(a.Env(), a[1])), mp);

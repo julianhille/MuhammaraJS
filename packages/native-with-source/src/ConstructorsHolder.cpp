@@ -275,6 +275,7 @@ DEFINE_INSTANCE_CHECK(IsUsedFontInstance, "PDFUsedFont")
 DEFINE_INSTANCE_CHECK(IsPDFReaderInstance, "PDFReader")
 DEFINE_INSTANCE_CHECK(IsPageContentContextInstance, "PageContentContext")
 DEFINE_INSTANCE_CHECK(IsPDFWriterInstance, "PDFWriter")
+DEFINE_INSTANCE_CHECK(IsPDFDateInstance, "PDFDate")
 
 #undef DEFINE_INSTANCE_CHECK
 

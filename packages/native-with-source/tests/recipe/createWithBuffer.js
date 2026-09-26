@@ -83,4 +83,31 @@ describe("Modify", () => {
         done();
       });
   });
+
+  it("writes the requested PDF version to a new Buffer PDF", () => {
+    const recipe = new Recipe(Buffer.from("new"), null, { version: 1.4 });
+    recipe.createPage(100, 100).endPage();
+    let outBuffer;
+    recipe.endPDF((buffer) => {
+      outBuffer = buffer;
+    });
+    assert.equal(outBuffer.subarray(0, 8).toString(), "%PDF-1.4");
+  });
+
+  it("reads another PDF instead of the Buffer source", () => {
+    const other = path.join(
+      __dirname,
+      "../TestMaterials/BasicTIFFImagesTest.PDF",
+    );
+    const recipe = new Recipe(
+      fs.readFileSync(path.join(__dirname, "../TestMaterials/Original.pdf")),
+    );
+    const ownPages = recipe.read().pages;
+    assert.notEqual(recipe.read(other).pages, ownPages);
+    assert.equal(
+      recipe.read(fs.readFileSync(other)).pages,
+      recipe.read(other).pages,
+    );
+    assert.equal(recipe.metadata.pages, ownPages);
+  });
 });
