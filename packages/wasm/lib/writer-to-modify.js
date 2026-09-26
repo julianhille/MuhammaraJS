@@ -374,14 +374,11 @@ export function createWriterToModifyFactory({
         },
         Tf: function (font, size) {
           requireContext(result);
-          if (
-            !((font && font._owner === owner) || typeof font === "string") ||
-            !Number.isFinite(size) ||
-            size <= 0
-          ) {
-            throw new TypeError(
-              "Tf requires a font from this writer and a positive size",
-            );
+          if (!((font && font._owner === owner) || typeof font === "string")) {
+            throw new TypeError("Tf requires a font from this writer");
+          }
+          if (!Number.isFinite(size) || size <= 0) {
+            throw new RangeError("Tf requires a positive font size");
           }
           if (typeof font === "string")
             return withString(font, (pointer) => {
@@ -1355,8 +1352,13 @@ export function createWriterToModifyFactory({
                 });
               },
               Tf: function (font, size) {
+                if (!(
+                  (font && font._owner === owner) ||
+                  typeof font === "string"
+                ))
+                  throw new TypeError("Tf requires a font from this writer");
                 if (!Number.isFinite(size) || size <= 0)
-                  throw new TypeError("Tf requires a positive size");
+                  throw new RangeError("Tf requires a positive font size");
                 var applied =
                   typeof font === "string"
                     ? withString(font, (pointer) =>

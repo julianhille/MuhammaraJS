@@ -163,6 +163,8 @@ describe("SimpleContentPageTest", function () {
           `${kind}.${operator}(${args.join(", ")})`,
         );
       }
+      assert.throws(() => context.Tf("F1", 0), RangeError, `${kind}.Tf`);
+      assert.throws(() => context.Tf({}, 10), TypeError, `${kind}.Tf`);
     }
   });
 });

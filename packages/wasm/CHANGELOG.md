@@ -286,6 +286,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Check `J()`, `j()` and `Tr()` operands on every content context: a line cap
   or line join must be 0 to 2 and a text rendering mode 0 to 7, otherwise a
   `RangeError` is thrown. `j(3)`, previously accepted, now throws [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Throw a `RangeError` from `Tf()` for a non-positive font size and a
+  `TypeError` for a foreign font on every content context; form and modifier
+  contexts previously threw a `TypeError` for the size and the modifier form
+  context a generic `Error` for the font. Form XObject `Tf()` and `Tj()` now
+  report an ended form instead of a native failure [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take
   `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
   `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,

@@ -79,6 +79,8 @@ describe("FormXObjectTest", function () {
     assert.throws(() => context.doXObject(form), /completed XObject/);
     writer.endFormXObject(form);
     assert.throws(() => context.f(), /content has ended/);
+    assert.throws(() => context.Tf("F1", 10), /content has ended/);
+    assert.throws(() => context.Tj("text"), /content has ended/);
     assert.throws(
       () => form.getResourcesDictionary(),
       /resources are not active/,

@@ -2465,17 +2465,17 @@ export function createWriterFactory({
           return operator("TStar", 43);
         };
         context.Tf = function (font, size) {
-          if (
-            !(
-              (font instanceof PDFUsedFont && font._owner === owner) ||
-              typeof font === "string"
-            ) ||
-            !Number.isFinite(size) ||
-            size <= 0
-          ) {
-            throw new TypeError(
-              "Tf requires a font from this writer and a positive size",
-            );
+          if (ended || form._ended) {
+            throw new Error("Form XObject content has ended");
+          }
+          if (!(
+            (font instanceof PDFUsedFont && font._owner === owner) ||
+            typeof font === "string"
+          )) {
+            throw new TypeError("Tf requires a font from this writer");
+          }
+          if (!Number.isFinite(size) || size <= 0) {
+            throw new RangeError("Tf requires a positive font size");
           }
           if (typeof font === "string")
             return withString(font, (pointer) => {
@@ -2538,6 +2538,9 @@ export function createWriterFactory({
           );
         };
         context.Tj = function (text, options) {
+          if (ended || form._ended) {
+            throw new Error("Form XObject content has ended");
+          }
           if (typeof text === "string")
             return withString(text, (pointer, length) => {
               if (
