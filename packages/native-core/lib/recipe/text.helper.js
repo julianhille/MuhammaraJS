@@ -28,6 +28,9 @@ const Word = class Word {
     this._text = word === " " ? "o" : word; // allows space to get an actual dimension
   }
 
+  /**
+   * @returns {string} The word text.
+   */
   get value() {
     return this._value;
   }
