@@ -309,6 +309,11 @@ export function createWriterToModifyFactory({
         fStar: function () {
           return operator("fStar", 8);
         },
+        /**
+         * Ends the current path without filling or stroking it (`n`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         n: function () {
           return operator("n", 9);
         },
