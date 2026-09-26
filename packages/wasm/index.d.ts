@@ -1415,6 +1415,12 @@ export interface PDFExtractionLimits {
 }
 /** @deprecated Renamed to PDFExtractionLimits, which both extractors share. */
 export type PDFTextExtractionLimits = PDFExtractionLimits;
+/** A cross-reference entry read by `PDFReader#getXrefEntry()`. */
+export interface PDFXrefEntry {
+  objectPosition: number;
+  revision: number;
+  type: XrefEntryType;
+}
 export interface PDFReader {
   getPagesCount(): number;
   getPageObjectID(index: number): number;
@@ -1423,11 +1429,7 @@ export interface PDFReader {
   isEncrypted(): boolean;
   getXrefSize(): number;
   getXrefPosition(): number;
-  getXrefEntry(id: number): {
-    objectPosition: number;
-    revision: number;
-    type: XrefEntryType;
-  };
+  getXrefEntry(id: number): PDFXrefEntry;
   getTrailerEntryType(key: string): PDFObjectType | null;
   getTrailer(): PDFDictionary;
   queryDictionaryObject(

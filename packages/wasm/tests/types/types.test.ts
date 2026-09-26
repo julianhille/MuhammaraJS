@@ -7,6 +7,7 @@ import {
   TextEncoding as TextEncodings,
 } from "../../index.js";
 import type {
+  PDFXrefEntry,
   ObjectReplacementOptions,
   RecipePageLayout,
   RecipeTableRowParity,
@@ -970,6 +971,8 @@ async function usesNamedValueSets() {
   dictionaryObjects.writeHexString(new ArrayBuffer(1));
   // @ts-expect-error Read streams are not string bytes.
   dictionaryObjects.writeHexString(readStream);
+  var xrefEntry: PDFXrefEntry = parsed.getXrefEntry(1);
+  void xrefEntry;
 }
 
 void usesNamedValueSets;

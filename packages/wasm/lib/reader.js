@@ -833,6 +833,13 @@ export function createReaderFactory({
         requireReader();
         return module._muhammara_wasm_reader_get_xref_position(reader);
       },
+      /**
+       * Reads a cross-reference entry.
+       * @param {number} objectId - Object ID.
+       * @returns {PDFXrefEntry} The entry's position, revision, and type.
+       * @throws {TypeError} If the ID is invalid or outside the xref table.
+       * @throws {Error} If the reader has ended.
+       */
       getXrefEntry: function (objectId) {
         requireReader();
         requireIndex(objectId, "Object ID");
