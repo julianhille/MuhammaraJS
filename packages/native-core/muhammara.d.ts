@@ -1254,8 +1254,18 @@ declare namespace muhammara {
       file: FilePath | PDFRStreamForFile,
       callback?: inInterPagesCallback,
     ): this;
+    /**
+     * Opens a PDF for copying objects and pages into this document.
+     * @param source - The PDF path, a read stream, or an open reader.
+     * @param options - The source password.
+     * @returns The copying context; call end() on it when done.
+     * @throws {TypeError} If the arguments are wrong, the reader has ended, or the
+     *   PDF cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     createPDFCopyingContext(
-      source: FilePath | ReadStream,
+      source: FilePath | ReadStream | PDFReader,
+      options?: PDFReaderOptions,
     ): DocumentCopyingContext;
     createFormXObjectsFromPDF(
       file: FilePath,

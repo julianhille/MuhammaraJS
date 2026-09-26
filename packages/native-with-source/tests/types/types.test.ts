@@ -821,3 +821,8 @@ void signatureWriter.createFormXObjectFromTIFF("image.tif", {
 });
 void signatureWriter.createImageXObjectFromJPG(signatureStream, 12);
 void signatureWriter.createFormXObjectFromPNG(signatureStream);
+declare const signatureReader: muhammara.PDFReader;
+void signatureWriter.createPDFCopyingContext(signatureReader);
+void signatureWriter.createPDFCopyingContext("source.pdf", {
+  password: "user",
+});
