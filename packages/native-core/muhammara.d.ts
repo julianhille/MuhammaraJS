@@ -3508,6 +3508,28 @@ declare namespace muhammara {
   }
 
   export class Recipe {
+    /**
+     * @param src - `Recipe.Source.NEW` ("new", or `Buffer.from("new")`) for a new PDF,
+     *   otherwise the path or Buffer of the PDF to edit.
+     * @param output - The output path. For a path source it defaults to
+     *   the source path; for a Buffer source the result is only returned by
+     *   `endPDF()` unless an output path is given.
+     * @param options - The options for pdfDoc
+     * @param options.version - The PDF version of a new PDF: 1.0 through
+     *   1.7 or 2.0. Other values fall back to 1.7.
+     * @param options.author - The author
+     * @param options.title - The title
+     * @param options.subject - The subject
+     * @param options.keywords - The array of keywords
+     * @param options.colorspace - The default colorspace, one
+     *   of the `Recipe.Colorspace` values.
+     * @param options.password - Owner password; also opens a protected source.
+     * @param options.userPassword - The 'view' password; also enables encryption.
+     * @param options.ownerPassword - The 'edit' password.
+     * @param options.userProtectionFlag - Encryption permission flags, see `permission()`.
+     * @param options.fontSrcPath - Directory location(s) of additional fonts.
+     * @throws {Error} If an existing source PDF cannot be read or opened for editing.
+     */
     constructor(
       src: string,
       output?: string | null,
