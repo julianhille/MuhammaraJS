@@ -872,6 +872,12 @@ export function createTextMethods({ drawText, measure, module }) {
         box.wrap === false
           ? RecipeTextWrap.ELLIPSIS
           : box.wrap || RecipeTextWrap.AUTO;
+      /**
+       * Measures a fragment with the current Recipe font state.
+       * @param {string} text - Text.
+       * @param {object} textOptions - Text options.
+       * @returns {TextDimensions} Bounds and width.
+       */
       var measureText = (text, textOptions) =>
         dimensions(this, text, textOptions);
       var source = options.html ? htmlToTextObjects(value, options) : null;
