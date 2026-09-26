@@ -698,6 +698,9 @@ export function hasActivePage(recipe) {
  * Finishes an open page on behalf of a document-level operation, so a caller
  * that forgot {@link Recipe#endPage} keeps that page instead of losing it to a
  * writer that cannot finalize around an open content stream.
+ * @param {Recipe} recipe - Recipe instance.
+ * @returns {Recipe} The Recipe instance.
+ * @throws {Error} If the page cannot be ended.
  */
 export function endActivePage(recipe) {
   if (hasActivePage(recipe)) recipe.endPage();
