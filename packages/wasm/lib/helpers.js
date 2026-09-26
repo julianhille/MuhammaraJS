@@ -58,6 +58,12 @@ export function createHelpers(module) {
     }
   }
 
+  /**
+   * Runs a callback with a copy of bytes in Wasm memory.
+   * @param {Uint8Array} bytes - Bytes to copy.
+   * @param {function(number): *} callback - Receives the pointer.
+   * @returns {*} The callback result; the copy is freed afterwards.
+   */
   function withBytes(bytes, callback) {
     var pointer = module._malloc(Math.max(bytes.length, 1));
     module.HEAPU8.set(bytes, pointer);
