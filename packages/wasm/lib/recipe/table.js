@@ -200,7 +200,11 @@ export function createTableMethods() {
         tableTop = currentY;
         lines = [];
       };
-      /** Applies native's 2pt default cell padding unless one is set. */
+      /**
+       * Applies native's 2pt default cell padding unless one is set.
+       * @param {object} cellOptionsValue - Cell options.
+       * @returns {object} Options with padding.
+       */
       var paddedCell = (cellOptionsValue) =>
         cellOptionsValue.textBox?.padding === undefined
           ? merge(cellOptionsValue, { textBox: { padding: 2 } })
