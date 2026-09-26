@@ -307,7 +307,39 @@ var TableRowNth = Object.freeze({
   ODD: "odd",
 });
 
+/**
+ * How text that does not fit a text-box line is handled. `true` is accepted
+ * for AUTO and `false` for ELLIPSIS.
+ * @readonly
+ * @enum {string}
+ */
+var TextWrap = Object.freeze({
+  /** Wrap onto the next line. */
+  AUTO: "auto",
+  /** Cut the line at the box edge. */
+  CLIP: "clip",
+  /** Drop the words that do not fit. */
+  TRIM: "trim",
+  /** Replace the text that does not fit with "...". */
+  ELLIPSIS: "ellipsis",
+});
+
+/**
+ * Horizontal alignments of text inside a text box, the first word of the
+ * `textAlign` option.
+ * @readonly
+ * @enum {string}
+ */
+var TextAlign = Object.freeze({
+  LEFT: "left",
+  CENTER: "center",
+  RIGHT: "right",
+  JUSTIFY: "justify",
+});
+
 module.exports = {
+  TextWrap,
+  TextAlign,
   TableRowNth,
   LineCap,
   LineJoin,

@@ -229,3 +229,6 @@ function parseNode(node, options) {
   });
   return parsedData;
 }
+
+// Shared with text layout; non-enumerable so it is not a Recipe method.
+Object.defineProperty(exports, "HtmlTag", { value: HtmlTag });

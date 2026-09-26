@@ -1182,6 +1182,10 @@ declare namespace muhammara {
 
     type HorizontalAlign = "left" | "center" | "right";
     type VerticalAlign = "top" | "center" | "bottom";
+    type TextAlign = "left" | "center" | "right" | "justify";
+    /** Known text-box alignments, with string compatibility for computed values. */
+    type TextBoxAlign =
+      TextAlign | `${TextAlign} ${VerticalAlign}` | (string & {});
     /** Known alignments, with string compatibility for computed values. */
     type ImageAlign =
       HorizontalAlign | `${HorizontalAlign} ${VerticalAlign}` | (string & {});
@@ -1372,7 +1376,8 @@ declare namespace muhammara {
       padding?: number | readonly number[];
       lineHeight?: number;
       wrap?: boolean | "auto" | "clip" | "trim" | "ellipsis";
-      textAlign?: string;
+      /** `Recipe.TextAlign`, optionally followed by a space and `Recipe.VerticalAlign`. */
+      textAlign?: TextBoxAlign;
       clipIfExceedsBox?: boolean;
       onClip?: (recipe: Recipe, result: TextBoxClipResult) => void;
       style?: TextBoxStyle;
@@ -1680,6 +1685,20 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** How text that does not fit a text-box line is handled. */
+    static readonly TextWrap: {
+      readonly AUTO: "auto";
+      readonly CLIP: "clip";
+      readonly TRIM: "trim";
+      readonly ELLIPSIS: "ellipsis";
+    };
+    /** Horizontal alignments of text inside a text box. */
+    static readonly TextAlign: {
+      readonly LEFT: "left";
+      readonly CENTER: "center";
+      readonly RIGHT: "right";
+      readonly JUSTIFY: "justify";
+    };
     /** Which table rows the `row` options apply to. */
     static readonly TableRowNth: {
       readonly EVEN: "even";

@@ -985,3 +985,11 @@ annotationRecipe.line(
     lineJoin: muhammara.Recipe.LineJoin.BEVEL,
   },
 );
+
+annotationRecipe.text("boxed", 10, 10, {
+  textBox: {
+    width: 100,
+    wrap: muhammara.Recipe.TextWrap.ELLIPSIS,
+    textAlign: `${muhammara.Recipe.TextAlign.JUSTIFY} ${muhammara.Recipe.VerticalAlign.BOTTOM}`,
+  },
+});

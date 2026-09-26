@@ -1,10 +1,17 @@
 const LineBreaker = require("linebreak");
 const { Word, Line, Column } = require("./text.helper");
-const { htmlToTextObjects } = require("./htmlToTextObjects");
+const { htmlToTextObjects, HtmlTag } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
 const { linkPdf } = require("./annotation");
 const muhammara = require("../muhammara");
 const { UsedFont } = require("../muhammara");
+const {
+  TextWrap,
+  TextAlign,
+  VerticalAlign,
+  HorizontalAlign,
+  Colorspace,
+} = require("../recipe-constants");
 
 //  Table indicating how to specify coloration of elements
 //  -------------------------------------------------------------------
@@ -198,6 +205,14 @@ exports._makeTextObject = function _makeTextObject(text, size, options) {
   ];
 };
 
+/**
+ * Build the text box from the textBox options; without them the text is
+ * simple, page-wide text.
+ * @private
+ * @param {Object} options - The text options.
+ * @returns {Object} The text box: width, height, lineHeight, padding,
+ *   minHeight, style, textAlign, clipping and wrap settings.
+ */
 exports._makeTextBox = function _makeTextBox(options) {
   return isEmpty(options.textBox)
     ? {
@@ -207,7 +222,7 @@ exports._makeTextBox = function _makeTextBox(options) {
         lineHeight: 0,
         padding: 0,
         minHeight: 0,
-        wrap: "auto",
+        wrap: TextWrap.AUTO,
       }
     : {
         width: options.textBox.width || 100,
@@ -220,7 +235,9 @@ exports._makeTextBox = function _makeTextBox(options) {
         clipIfExceedsBox: options.textBox.clipIfExceedsBox,
         onClip: options.textBox.onClip,
         wrap:
-          options.textBox.wrap !== undefined ? options.textBox.wrap : "auto",
+          options.textBox.wrap !== undefined
+            ? options.textBox.wrap
+            : TextWrap.AUTO,
       };
 };
 
