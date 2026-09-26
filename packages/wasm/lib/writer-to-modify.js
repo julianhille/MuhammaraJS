@@ -2583,6 +2583,17 @@ export function createWriterToModifyFactory({
                 throw new Error("Unable to place XObject");
               return context;
             };
+            /**
+             * Draws an image or PDF page at a position.
+             * @param {number} x - Left position.
+             * @param {number} y - Bottom position.
+             * @param {string|ByteSource} image - Registered image or PDF name, or JPEG, PNG, TIFF, or PDF bytes.
+             * @param {DrawImageOptions} [options] - Page index and a matrix or fit transformation.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If a coordinate or option is invalid or the bytes are not a supported image.
+             * @throws {RangeError} If `index` or the fit box is out of range.
+             * @throws {Error} If the asset is unknown, the context is inactive, or drawing fails.
+             */
             context.drawImage = function (x, y, image, options) {
               requireOpen();
               if (form._ended)
