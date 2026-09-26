@@ -1463,6 +1463,9 @@ const Point = class Point {
   set x(xx) {
     this._x = xx;
   }
+  /**
+   * @param {number} yy - The new y coordinate.
+   */
   set y(yy) {
     this._y = yy;
   }
