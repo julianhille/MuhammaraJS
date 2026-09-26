@@ -2989,6 +2989,11 @@ export function createWriterToModifyFactory({
         }
         return this;
       },
+      /**
+       * Returns the raw objects context for writing indirect objects.
+       * @returns {ObjectsContext} The objects context, created once per modifier.
+       * @throws {Error} If the modifier has ended or the context cannot be created.
+       */
       getObjectsContext: function () {
         requireOpen();
         if (!objectsContext) {
