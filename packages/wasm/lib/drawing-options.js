@@ -40,7 +40,14 @@ function readColor(options, colorValue) {
   return { color, colorspace };
 }
 
-/** Read all path options before geometry or graphics state is written. */
+/**
+ * Reads all path options before geometry or graphics state is written.
+ * @param {DrawPathOptions} [options] - Color, width, paint type, and close flag.
+ * @param {function(*): number} colorValue - Converts a color option to a number.
+ * @param {string} [widthError] - Message for a non-finite stroke width.
+ * @returns {object} `color`, `colorspace`, `width`, `type`, `close`, and `stroke`.
+ * @throws {TypeError} If the color, color space, or stroke width is invalid.
+ */
 export function readDrawingOptions(
   options,
   colorValue,
