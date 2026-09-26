@@ -3884,6 +3884,15 @@ export function createWriterToModifyFactory({
             }
             return objectId;
           },
+          /**
+           * Merges a source page into an open form XObject.
+           * @param {FormXObject} form - Open form from this modifier.
+           * @param {number} index - Zero-based source page index.
+           * @returns {this} The copying context.
+           * @throws {TypeError} If `form` is not open or from this modifier, or `index` is invalid.
+           * @throws {RangeError} If the page cannot be merged.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           mergePDFPageToFormXObject: function (form, index) {
             requireCopying();
             if (
