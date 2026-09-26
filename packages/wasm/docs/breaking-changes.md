@@ -2,6 +2,14 @@
 
 ## Version 1.x
 
+- A hex color string without the leading `#`, such as `"ff0000"`, and an empty
+  color string throw
+  `TypeError: Colors must be a 24-bit number, a color name, or a #rrggbb string`
+  in the low-level drawing helpers, `writeText()`, and `CompactModifier` shapes
+  and text, matching native. Previously `"ff0000"` drew red and `""` drew
+  black. Write `"#ff0000"`, or pass a 24-bit number such as `0xff0000`
+  [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
+
 - Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()` strokes
   now remain inside positive requested bounds large enough to contain the line
   width, matching native. They previously extended outward by half the line

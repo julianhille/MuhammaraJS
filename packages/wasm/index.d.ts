@@ -2343,7 +2343,7 @@ export interface PDFModifier {
   end(): Uint8Array<ArrayBuffer>;
   dispose(): void;
 }
-/** Low-level color: a 24-bit RGB number, `#rrggbb`, a basic color name, or three 0-255 components. */
+/** Low-level color: a 24-bit RGB number, `#rrggbb`, a CSS color name in any case, or three 0-255 components. Other strings throw a `TypeError`. */
 export type ColorValue = number | string | [number, number, number];
 /** Colors for CompactModifier rectangles and circles; `fill` wins over `stroke` and `color`. */
 export interface CompactModifierShapeOptions {

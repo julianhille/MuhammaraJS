@@ -6,6 +6,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Throw a `TypeError` for a hex color string without the leading `#`, such as
+  `"ff0000"`, or an empty string in the low-level drawing helpers,
+  `writeText()`, and `CompactModifier` shapes and text, matching native.
+  Previously `"ff0000"` drew red and `""` drew black; write `"#ff0000"`
+  instead [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Keep Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()`
   strokes inside positive requested bounds large enough to contain the line
   width, matching native. Wasm previously centered strokes on the requested
@@ -44,6 +49,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Accept every CSS color name, in any case, in the low-level drawing helpers,
+  `writeText()`, `CompactModifier`, and Recipe annotations, matching native.
+  Previously only seven names were known, each in a single spelling [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Accept native's `password` option in `createReader()` and
   `createReaderAsync()` to open encrypted PDFs [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Encrypt PDFs written by `createWriter()` with native's `userPassword`,
