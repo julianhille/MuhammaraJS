@@ -1688,9 +1688,7 @@ export interface PDFModifier {
     image: AsyncByteSource,
     imageIndex?: number,
   ): Promise<ImageDimensions>;
-  getImageType(
-    image: string | ByteSource,
-  ): "PDF" | "JPG" | "TIFF" | "PNG" | undefined;
+  getImageType(image: string | ByteSource): ImageType | undefined;
   getImageTypeAsync(
     image: AsyncByteSource,
   ): Promise<"PDF" | "JPG" | "TIFF" | "PNG" | undefined>;

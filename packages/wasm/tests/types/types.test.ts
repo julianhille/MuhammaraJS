@@ -853,6 +853,12 @@ async function usesNamedValueSets() {
     new Uint8Array(),
   );
   void asyncImageType;
+  var modifierForTypes = muhammara.createWriterToModify(
+    muhammara.createBlankPdf(10, 10),
+  );
+  var modifierImageType: ImageType | undefined =
+    modifierForTypes.getImageType("logo");
+  void modifierImageType;
 }
 
 void usesNamedValueSets;
