@@ -394,6 +394,11 @@ async function createRuntime(options) {
       imageTypes.delete(name);
       return unregisterAsset(images, name);
     },
+    /**
+     * Removes a registered PDF.
+     * @param {string} name - PDF name.
+     * @returns {boolean} Whether a PDF was removed.
+     */
     unregisterPdf: function (name) {
       return unregisterAsset(pdfs, name);
     },
