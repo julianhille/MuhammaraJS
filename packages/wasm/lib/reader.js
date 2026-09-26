@@ -209,6 +209,11 @@ export function createReaderFactory({
             ? object
             : undefined;
         },
+        /**
+         * Narrows the object to a dictionary.
+         * @returns {PDFDictionary|undefined} This object when it is a dictionary.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         toPDFDictionary: function () {
           return object.getType() === constants.ePDFObjectDictionary
             ? object
