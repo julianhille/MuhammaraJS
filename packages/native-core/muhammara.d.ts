@@ -710,6 +710,13 @@ declare namespace muhammara {
     startReadingFromStreamForPlainCopying(
       inputStream: PDFStreamInput,
     ): ByteReader;
+    /**
+     * Parses a content stream as a sequence of objects.
+     * @param stream - The stream to parse.
+     * @returns A parser returning one object per call.
+     * @throws {TypeError} If the reader has ended or stream is not a stream.
+     * @throws {Error} If the stream cannot be read.
+     */
     startReadingObjectsFromStream(stream: PDFStreamInput): PDFObjectParser;
     startReadingObjectsFromStreams(streams: PDFArray): PDFObjectParser;
     getParserStream(): ByteReaderWithPosition;
