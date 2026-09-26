@@ -80,6 +80,12 @@ export function createReaderFactory({
       if (ended || !reader) throw new Error("PDF reader has ended");
     }
 
+    /**
+     * Reads a parsed object's string form.
+     * @param {number} handle - Native object handle.
+     * @returns {string} The UTF-8 decoded value.
+     * @throws {Error} If the reader has ended or the value cannot be read.
+     */
     function objectString(handle) {
       requireReader();
       var lengthPointer = module._malloc(4);
