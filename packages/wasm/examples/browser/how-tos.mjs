@@ -283,7 +283,10 @@ async function linksExample() {
   }
 }
 
-/** Builds the browser example for nested, formatted, and linked HTML lists. */
+/**
+ * Builds the browser example for nested, formatted, and linked HTML lists.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function htmlListsExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
