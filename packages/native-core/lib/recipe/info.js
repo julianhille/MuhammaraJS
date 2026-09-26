@@ -254,6 +254,8 @@ exports.custom = function custom(key, value) {
  * @memberof Recipe#
  * @param {string} output - The output file path.
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the source reader was released by endPDF(), or the
+ *   output file cannot be written.
  */
 exports.structure = function structure(output) {
   // PDF file format http://lotabout.me/orgwiki/pdf.html
