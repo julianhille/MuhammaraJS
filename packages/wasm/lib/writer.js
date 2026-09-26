@@ -1594,6 +1594,13 @@ export function createWriterFactory({
           return context;
         }
         var context = {
+          /**
+           * Appends raw content-stream code.
+           * @param {string} freeCode - Operators to write verbatim.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If `freeCode` is not a string.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           writeFreeCode: function (freeCode) {
             return writeFreeCode(
               context,
