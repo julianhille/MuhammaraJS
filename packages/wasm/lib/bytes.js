@@ -42,6 +42,14 @@ export class PDFRStreamForBuffer {
     this.mStartPosition = 0;
   }
 
+  /**
+   * Reads bytes from the current position and advances by `amount`, as
+   * native does, even past the end.
+   *
+   * @param {number} amount Number of bytes to read.
+   * @returns {Uint8Array} A copy of at most `amount` bytes.
+   * @throws {RangeError} If `amount` is not a non-negative integer.
+   */
   read(amount) {
     if (!Number.isInteger(amount) || amount < 0) {
       throw new RangeError("read requires a non-negative integer");
