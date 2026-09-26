@@ -902,6 +902,10 @@ declare namespace muhammara {
   export const eXrefEntryUndefined = 3;
 
   export interface ObjectsContext {
+    /**
+     * Reserves a new object ID, for a forward reference or a later object.
+     * @returns The object ID.
+     */
     allocateNewObjectID(): FormXObjectId;
     startDictionary(): DictionaryContext;
     startArray(): this;
