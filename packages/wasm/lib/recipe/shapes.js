@@ -4,6 +4,11 @@ import {
   RecipeTrianglePosition,
   RecipeTriangleTrait,
 } from "../value-sets.js";
+/**
+ * Converts degrees to radians.
+ * @param {number} angle - Degrees.
+ * @returns {number} Radians.
+ */
 function radians(angle) {
   return (angle * Math.PI) / 180;
 }
