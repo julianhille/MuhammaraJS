@@ -1123,7 +1123,7 @@ export interface ObjectsContext {
   writeIndirectObjectReference(id: number, generation?: number): this;
   writeBoolean(value: boolean): this;
   writeName(value: string): this;
-  writeLiteralString(value: string | ByteSource): this;
+  writeLiteralString(value: string | Uint8Array | ArrayBuffer): this;
   writeHexString(value: string | ByteSource): this;
   writeKeyword(value: string): this;
   writeComment(value: string): this;

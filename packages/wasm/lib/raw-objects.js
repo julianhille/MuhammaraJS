@@ -572,6 +572,13 @@ export function createRawObjectsContext({
         writeObjectString(0, value);
         return this;
       },
+      /**
+       * Writes a literal string token.
+       * @param {string|Uint8Array|ArrayBuffer} value - Text, or raw string bytes.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is neither a string nor bytes.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeLiteralString: function (value) {
         writeObjectString(1, value);
         return this;
