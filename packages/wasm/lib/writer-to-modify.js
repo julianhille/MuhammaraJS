@@ -1227,6 +1227,10 @@ export function createWriterToModifyFactory({
       (key) => {
         var value = "";
         Object.defineProperty(infoDictionary, key, {
+          /**
+           * Reads the text entry.
+           * @returns {string} The value, or an empty string when unset.
+           */
           get: function () {
             return value;
           },
