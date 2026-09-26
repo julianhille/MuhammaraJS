@@ -59,7 +59,12 @@ export function errorDetails(error, stage) {
   };
 }
 
+/** Keeps at most one live object URL for the preview and download link. */
 export class ObjectUrlStore {
+  /**
+   * @param {{createObjectURL(blob: Blob): string, revokeObjectURL(url: string): void}} [urlApi=URL]
+   *   Object URL functions; tests pass a fake.
+   */
   constructor(urlApi = URL) {
     this.urlApi = urlApi;
     this.current = undefined;
