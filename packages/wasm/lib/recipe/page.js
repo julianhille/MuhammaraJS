@@ -1263,6 +1263,7 @@ export function createPageMethods(
     /**
      * Restores the active page's Recipe coordinate transform after resuming.
      * @private
+     * @returns {Recipe} The Recipe instance.
      */
     _resumePageRotation: function () {
       var page = this.getCurrentPageInfo();
