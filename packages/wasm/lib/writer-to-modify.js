@@ -297,8 +297,8 @@ export function createWriterToModifyFactory({
         rg: function (red, green, blue) {
           return operator("rg", 26, [red, green, blue]);
         },
-        RG: function (...args) {
-          return operator("RG", 27, args);
+        RG: function (red, green, blue) {
+          return operator("RG", 27, [red, green, blue]);
         },
         k: function (...args) {
           return operator("k", 28, args);
@@ -1436,7 +1436,7 @@ export function createWriterToModifyFactory({
               ["l", 11, 2],
               ["re", 16, 4],
               ["rg", 26, 3],
-              ["RG", 27],
+              ["RG", 27, 3],
               ["g", 24],
               ["G", 25],
               ["k", 28],

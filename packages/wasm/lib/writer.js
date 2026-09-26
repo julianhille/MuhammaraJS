@@ -756,8 +756,8 @@ export function createWriterFactory({
         rg: function (red, green, blue) {
           return operator("rg", 26, [red, green, blue]);
         },
-        RG: function (...args) {
-          return operator("RG", 27, args);
+        RG: function (red, green, blue) {
+          return operator("RG", 27, [red, green, blue]);
         },
         W: function () {
           return operator("W", 30);
@@ -1384,8 +1384,8 @@ export function createWriterFactory({
           g: function (value) {
             return operator("g", 24, [value]);
           },
-          RG: function (...args) {
-            return operator("RG", 27, args);
+          RG: function (red, green, blue) {
+            return operator("RG", 27, [red, green, blue]);
           },
           K: function (...args) {
             return operator("K", 29, args);
