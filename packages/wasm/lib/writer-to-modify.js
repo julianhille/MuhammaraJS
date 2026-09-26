@@ -1165,10 +1165,15 @@ export function createWriterToModifyFactory({
           throw new RangeError(
             "imageIndex must be a non-negative 32-bit integer",
           );
-        var imageBytes =
-          typeof image === "string"
-            ? module.FS.readFile(imagePath(image))
-            : normalizeBytes(image, "Image bytes");
+        var imageBytes;
+        if (typeof image === "string") {
+          var registeredPath = images.get(image) || pdfs.get(image);
+          if (!registeredPath)
+            throw new TypeError("A registered image or PDF name is required");
+          imageBytes = module.FS.readFile(registeredPath);
+        } else {
+          imageBytes = normalizeBytes(image, "Image bytes");
+        }
         var valuesPointer = module._malloc(16);
         try {
           return withBytes(imageBytes, (pointer) => {

@@ -80,6 +80,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Let `createWriterToModify().getImageDimensions()` read a PDF registered with
+  `registerPdf()`, as the writer does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Fix `createWriterToModify().createFormXObjectsFromPDF()` throwing
   `ReferenceError: pdfs is not defined` for a PDF registered with
   `registerPdf()` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)

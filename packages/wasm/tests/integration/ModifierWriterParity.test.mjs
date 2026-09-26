@@ -89,6 +89,10 @@ describe("ModifierWriterParity", function () {
     muhammara.registerPdf("parity-source", source);
     try {
       assert.equal(writer.createFormXObjectsFromPDF("parity-source").length, 1);
+      assert.deepEqual(writer.getImageDimensions("parity-source"), {
+        width: 100,
+        height: 100,
+      });
     } finally {
       muhammara.unregisterPdf("parity-source");
     }
