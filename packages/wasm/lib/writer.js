@@ -2844,6 +2844,11 @@ export function createWriterFactory({
           throw new Error("Form XObject content stream is no longer active");
         var form = this;
         return {
+          /**
+           * Returns a writer that appends raw bytes to the form content stream.
+           * @returns {ByteWriteStream} The byte writer.
+           * @throws {Error} If the writer or the form has ended.
+           */
           getWriteStream: function () {
             if (ended || form._ended) {
               throw new Error(
