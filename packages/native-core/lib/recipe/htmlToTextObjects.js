@@ -10,6 +10,11 @@ const CssProperty = Object.freeze({
   OPACITY: "opacity",
 });
 
+// CSS color functions whose components the parser reads.
+const CssColorFunction = Object.freeze({
+  RGB: "rgb",
+});
+
 // Lower-case names of the HTML elements the parser handles.
 const HtmlTag = Object.freeze({
   HTML: "html",
@@ -170,7 +175,7 @@ function parseNode(node, options) {
             const key = element[0];
             let value = element[1].replace(/ /g, "");
             if (key === CssProperty.COLOR) {
-              if (value.search("rgb") > -1) {
+              if (value.search(CssColorFunction.RGB) > -1) {
                 value = value
                   .replace(/rgba?\(/, "")
                   .replace(/\)/, "")

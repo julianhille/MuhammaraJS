@@ -54,8 +54,8 @@ exports._loadFonts = function _loadFonts(fontSrcPath) {
         .forEach((file) => {
           let fontName = path.basename(file, path.extname(file)).toLowerCase();
           // simple heuristics to make sure library fonts behave as expected
-          const hasBold = fontName.indexOf("bold") !== -1;
-          const hasItalic = fontName.indexOf("italic") !== -1;
+          const hasBold = fontName.indexOf(FontStyle.BOLD) !== -1;
+          const hasItalic = fontName.indexOf(FontStyle.ITALIC) !== -1;
           let type = FontSlot.REGULAR;
           if (hasBold && hasItalic) {
             fontName = fontName.replace(/-*bold/, "");
