@@ -1879,6 +1879,12 @@ export function createWriterToModifyFactory({
         requireOpen();
         if (!options || typeof options !== "object" || Array.isArray(options))
           throw new TypeError("TIFF options must be an object");
+        /**
+         * Reads an optional TIFF treatment object.
+         * @param {string} name - `bwTreatment` or `grayscaleTreatment`.
+         * @returns {object|undefined} The treatment.
+         * @throws {TypeError} If the treatment is not an object.
+         */
         function treatment(name) {
           var value = options[name];
           if (value === undefined) return undefined;
