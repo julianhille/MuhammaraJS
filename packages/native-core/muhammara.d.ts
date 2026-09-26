@@ -1063,6 +1063,14 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     startPageContentContext(page: PDFPage): PageContentContext;
+    /**
+     * Ends the current content stream of a page so other objects can be
+     * written; later drawing starts a new stream on the same page.
+     * @param pageContextContext - The content context to pause.
+     * @returns This writer.
+     * @throws {TypeError} If the argument is not a started page content context.
+     * @throws {Error} If the writer has ended.
+     */
     pausePageContentContext(pageContextContext: PageContentContext): this;
     createFormXObject(
       left: number,
