@@ -82,6 +82,13 @@ class Recipe {
     this._createWriter();
   }
 
+  /**
+   * Create the writer for a new PDF, or open the source PDF for editing, and
+   * apply the info options.
+   * @private
+   * @returns {void}
+   * @throws {Error} If the source PDF cannot be read or opened for editing.
+   */
   _createWriter() {
     if (this.isNewPDF) {
       if (!this.isBufferSrc) {
