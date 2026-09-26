@@ -10,6 +10,12 @@ export function createRawObjectsContext({
   withString,
   withBytes,
 }) {
+  /**
+   * Wraps a native objects context.
+   * @param {number} handle - Native objects context.
+   * @param {function(): void} requireOpen - Throws when the owning writer has ended.
+   * @returns {ObjectsContext} The objects context.
+   */
   function rawObjectsContext(handle, requireOpen) {
     var activeDictionary = null;
     var activeStream = null;
