@@ -625,7 +625,15 @@ function preparePageLabels(
   };
 }
 
-/** Writes updated page labels and attaches them to the catalog. @private */
+/**
+ * Writes updated page labels and attaches them to the catalog.
+ * @private
+ * @param {PDFModifier} writer - Modifier.
+ * @param {DocumentCopyingContext} copyingContext - Copies unchanged values.
+ * @param {number} rootID - Catalog object ID.
+ * @param {object|null} pageLabels - Prepared labels.
+ * @returns {void}
+ */
 function writePageLabels(writer, copyingContext, rootID, pageLabels) {
   if (!pageLabels) return;
 
