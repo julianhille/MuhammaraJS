@@ -233,6 +233,11 @@ declare namespace muhammara {
 
   export interface PDFRStreamForFile extends ReadStream {
     new (inPath: FilePath): PDFRStreamForFile;
+    /**
+     * Reads the next bytes from the file.
+     * @param inAmount - The maximum number of bytes to read.
+     * @returns The bytes read; shorter than requested at the end.
+     */
     read(inAmount: number): Buffer;
     close(inCallback?: () => void): void;
   }
