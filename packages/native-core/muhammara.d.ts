@@ -1055,6 +1055,13 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     writePageAndReturnID(page: PDFPage): number;
+    /**
+     * Starts, or returns the already started, content context of a page.
+     * @param page - The page to draw on.
+     * @returns The page content context.
+     * @throws {TypeError} If page is not a page.
+     * @throws {Error} If the writer has ended.
+     */
     startPageContentContext(page: PDFPage): PageContentContext;
     pausePageContentContext(pageContextContext: PageContentContext): this;
     createFormXObject(
