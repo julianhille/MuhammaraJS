@@ -239,6 +239,12 @@ function hasRotation(options) {
   );
 }
 
+/**
+ * Convert degrees to radians, wrapping at 360.
+ * @private
+ * @param {number} angle - The angle in degrees.
+ * @returns {number} The angle in radians.
+ */
 function toRadians(angle) {
   return 2 * Math.PI * ((angle % 360) / 360);
 }
