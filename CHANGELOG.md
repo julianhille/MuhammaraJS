@@ -135,6 +135,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Fix separation colors in every Recipe after the first in a process: the
+  Separation color space was cached globally, so later documents referenced
+  an object that only existed in the first PDF [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Write the `lockedcontents` annotation flag, which the types accepted but
   Recipe wrote as no flag [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Write `Recipe#annot()` subtypes given in another casing, such as

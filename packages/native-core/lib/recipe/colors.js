@@ -114,12 +114,22 @@ exports.chroma = function chroma(name, value, colorspace = "") {
   return this;
 };
 
+/**
+ * Write a Separation color space for a named color once per Recipe and
+ * return its object ID.
+ * @private
+ * @param {Recipe} self - The recipe instance that owns the cache.
+ * @param {string} colorName - The separation color name.
+ * @param {number[]} color - The alternate device color components, 0 to 1.
+ * @returns {number} The object ID of the Separation color space.
+ */
 function createColorSpaces(self, colorName, color) {
   const deviceCS = { 1: "DeviceGray", 3: "DeviceRGB", 4: "DeviceCMYK" };
   const altCS = deviceCS[`${color.length}`];
-  this.colorSpaces = this.colorSpaces || {};
-  this.colorSpaces[altCS] = this.colorSpaces[altCS] || {};
-  let colorSpaceID = this.colorSpaces[altCS][colorName];
+  // Cache per Recipe: the IDs belong to this Recipe's PDF writer.
+  self.colorSpaces = self.colorSpaces || {};
+  self.colorSpaces[altCS] = self.colorSpaces[altCS] || {};
+  let colorSpaceID = self.colorSpaces[altCS][colorName];
 
   if (!colorSpaceID) {
     const transformFunction = tintTransform(self, color);
@@ -135,7 +145,7 @@ function createColorSpaces(self, colorName, color) {
       .endArray(muhammara.eTokenSeparatorEndLine)
       .endIndirectObject();
     self.resumeContext();
-    this.colorSpaces[altCS][colorName] = colorSpaceID;
+    self.colorSpaces[altCS][colorName] = colorSpaceID;
   }
 
   return colorSpaceID;
