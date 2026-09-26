@@ -430,6 +430,9 @@ exports.Column = class Column {
   get height() {
     return this._height;
   }
+  /**
+   * @returns {number} The column x coordinate.
+   */
   get x() {
     return this._x;
   }
