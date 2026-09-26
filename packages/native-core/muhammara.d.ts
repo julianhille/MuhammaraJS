@@ -344,6 +344,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     S(): this;
+    /**
+     * Fills the path (nonzero winding); operator f.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     f(): this;
     F(): this;
     fStar(): this;
