@@ -1,14 +1,15 @@
+import { RecipeColorSpace } from "../value-sets.js";
 /** Built-in Recipe colors grouped by color space. */
 export var knownColors = {
-  rgb: { red: "ff0000", green: "00ff00", blue: "0000ff" },
-  cmyk: {
+  [RecipeColorSpace.RGB]: { red: "ff0000", green: "00ff00", blue: "0000ff" },
+  [RecipeColorSpace.CMYK]: {
     cyan: "ff000000",
     magenta: "00ff0000",
     yellow: "0000ff00",
     black: "000000ff",
   },
-  gray: { white: "ff", black: "00", grey: "00" },
-  separation: {
+  [RecipeColorSpace.GRAY]: { white: "ff", black: "00", grey: "00" },
+  [RecipeColorSpace.SEPARATION]: {
     cyan: "ff000000",
     magenta: "00ff0000",
     yellow: "0000ff00",
@@ -36,6 +37,19 @@ function hex(value) {
   return value.replace(/^#/, "");
 }
 
+/**
+ * Infers a device color space from the digit count of a hex color code.
+ * @param {string} code - Hex digits without a prefix.
+ * @returns {string|undefined} Gray for 2 digits, RGB for 6, CMYK for 8.
+ */
+function colorSpaceForCode(code) {
+  return {
+    2: RecipeColorSpace.GRAY,
+    6: RecipeColorSpace.RGB,
+    8: RecipeColorSpace.CMYK,
+  }[code.length];
+}
+
 /** Resolves a Recipe color value to a native color-space model. */
 export function colorModel(recipe, value, options = {}) {
   var colorspace = options.colorspace || recipe.options.colorspace || "";
@@ -46,24 +60,31 @@ export function colorModel(recipe, value, options = {}) {
     !value.startsWith("%")
   ) {
     name = value;
-    value = (recipe.knownColors[colorspace || "rgb"] || {})[value] || value;
+    value =
+      (recipe.knownColors[colorspace || RecipeColorSpace.RGB] || {})[value] ||
+      value;
   }
   var code = hex(value || "");
-  if (!colorspace)
-    colorspace = { 2: "gray", 6: "rgb", 8: "cmyk" }[code.length] || "rgb";
-  var expected = { gray: 2, rgb: 6, cmyk: 8, separation: undefined }[
-    colorspace
-  ];
+  if (!colorspace) colorspace = colorSpaceForCode(code) || RecipeColorSpace.RGB;
+  var expected = {
+    [RecipeColorSpace.GRAY]: 2,
+    [RecipeColorSpace.RGB]: 6,
+    [RecipeColorSpace.CMYK]: 8,
+  }[colorspace];
   if (!(colorspace in recipe.knownColors))
     throw new TypeError(`Unknown colorspace: ${colorspace}`);
-  if (colorspace === "separation") {
+  if (colorspace === RecipeColorSpace.SEPARATION) {
     // The Recipe native bridge cannot create Separation resource dictionaries.
     throw new Error(
       "Recipe separation colors are unsupported in WebAssembly; use low-level writer resources.",
     );
   }
   if (code.length !== expected || !/^[0-9a-f]+$/i.test(code)) {
-    code = { gray: "00", rgb: "1777d1", cmyk: "ff000000" }[colorspace];
+    code = {
+      [RecipeColorSpace.GRAY]: "00",
+      [RecipeColorSpace.RGB]: "1777d1",
+      [RecipeColorSpace.CMYK]: "ff000000",
+    }[colorspace];
   }
   return {
     colorspace,
