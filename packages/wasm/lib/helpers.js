@@ -2,7 +2,12 @@ import { normalizeBytes } from "./bytes.js";
 import { TextEncoding } from "./value-sets.js";
 import { isPageBoxType } from "./constants.js";
 
-/** Creates memory-safe utility functions around a loaded WASM module. */
+/**
+ * Creates memory-safe utility functions around a loaded Wasm module and makes
+ * `module._malloc` throw instead of returning a null pointer.
+ * @param {object} module - Emscripten module.
+ * @returns {object} String, byte, and operator helpers shared by writers, modifiers, and readers.
+ */
 export function createHelpers(module) {
   var nativeMalloc = module._malloc.bind(module);
   module._malloc = function (size) {
