@@ -995,6 +995,9 @@ export function createPageMethods(
     /**
      * Opens bytes as this Recipe's modification source and replaces output state.
      * @private
+     * @param {Uint8Array} bytes - PDF bytes.
+     * @returns {void}
+     * @throws {Error} If the bytes cannot be parsed or opened.
      */
     _openSource: function (bytes) {
       var { pages, metadata, sourceInfo } = this._inspectBytes(bytes);
