@@ -1079,6 +1079,10 @@ declare namespace muhammara {
 
   export interface FormObject {
     id: number;
+    /**
+     * Returns the content context for drawing on the form.
+     * @returns The content context.
+     */
     getContentContext(): XObjectContentContext;
     getResourcesDictinary(): ResourcesDictionary;
     getResourcesDictionary(): ResourcesDictionary;
