@@ -199,6 +199,11 @@ export function createWriterToModifyFactory({
       return xobject;
     }
 
+    /**
+     * Rejects use of a finished modifier.
+     * @returns {void}
+     * @throws {Error} If the modifier has ended.
+     */
     function requireOpen() {
       if (ended || !modifier) throw new Error("PDF writer has ended");
     }
