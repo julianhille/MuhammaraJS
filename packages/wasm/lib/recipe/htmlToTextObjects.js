@@ -53,7 +53,11 @@ export function htmlToTextObjects(html, options = {}) {
    * @returns {object} The styles.
    */
   var current = () => Object.assign({}, ...frames.map((frame) => frame.style));
-  /** Appends a fragment while applying any pending reset after a closed list. */
+  /**
+   * Appends a fragment while applying any pending reset after a closed list.
+   * @param {object} object - Text object.
+   * @returns {void}
+   */
   var push = (object) => {
     if (pendingReset) {
       if (object.indent === undefined) object.indent = 0;
