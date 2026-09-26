@@ -92,18 +92,17 @@ describe("EmptyPagesPDF", function () {
   });
 
   it("exports frozen value sets for finite string options", function () {
-    assert.deepEqual(Object.values(DeviceColorSpace), ["rgb", "gray", "cmyk"]);
-    assert.deepEqual(Object.values(ImageFitPolicy), ["always", "overflow"]);
-    assert.deepEqual(Object.values(PageBox), [
-      "media",
-      "crop",
-      "bleed",
-      "trim",
-      "art",
-    ]);
-    assert.deepEqual(Object.values(TextEncoding), ["text", "code", "hex"]);
-    [DeviceColorSpace, ImageFitPolicy, PageBox, TextEncoding].forEach(
-      (valueSet) => assert.ok(Object.isFrozen(valueSet)),
-    );
+    for (var [valueSet, values] of EXPORTED_VALUE_SETS) {
+      assert.deepEqual(Object.values(valueSet), values);
+      assert.ok(Object.isFrozen(valueSet));
+    }
   });
 });
+
+// Every exported value set and the string values it must carry.
+var EXPORTED_VALUE_SETS = [
+  [DeviceColorSpace, ["rgb", "gray", "cmyk"]],
+  [ImageFitPolicy, ["always", "overflow"]],
+  [PageBox, ["media", "crop", "bleed", "trim", "art"]],
+  [TextEncoding, ["text", "code", "hex"]],
+];
