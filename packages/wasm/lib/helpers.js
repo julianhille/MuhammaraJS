@@ -222,6 +222,13 @@ export function createHelpers(module) {
     context.i = function (flatness) {
       return componentOperator("i", 1, [flatness]);
     };
+    /**
+     * Applies a named graphics state (`gs`).
+     * @param {string} name - ExtGState resource name.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `name` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.gs = function (name) {
       return nameOperator("gs", 2, name);
     };
