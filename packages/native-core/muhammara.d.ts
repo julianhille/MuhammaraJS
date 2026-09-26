@@ -948,6 +948,13 @@ declare namespace muhammara {
      * @returns This context.
      */
     endIndirectObject(): this;
+    /**
+     * Writes a reference to an indirect object.
+     * @param objectId - The object ID.
+     * @param generationNumber - The generation number; 0 when omitted.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not one or two numbers.
+     */
     writeIndirectObjectReference(
       objectId: FormXObjectId,
       generationNumber?: number,
