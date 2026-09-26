@@ -1222,6 +1222,11 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     getObjectsContext(): ObjectsContext;
+    /**
+     * Returns the document context, for extensions and the info dictionary.
+     * @returns The document context.
+     * @throws {Error} If the writer has ended.
+     */
     getDocumentContext(): DocumentContext;
     appendPDFPagesFromPDF(
       source: FilePath | ReadStream,
