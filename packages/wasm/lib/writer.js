@@ -3460,6 +3460,13 @@ export function createWriterFactory({
           options,
         );
       },
+      /**
+       * Adds an annotation to the `/Annots` of the next written page.
+       * @param {number} objectId - Annotation object ID.
+       * @returns {this} The writer.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the writer has ended or the annotation cannot be registered.
+       */
       registerAnnotationReferenceForNextPageWrite: function (objectId) {
         requireOpenWriter();
         if (!Number.isInteger(objectId) || objectId <= 0) {
