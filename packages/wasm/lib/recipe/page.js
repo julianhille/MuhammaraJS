@@ -425,7 +425,14 @@ function collectPageLabels(
   return values;
 }
 
-/** Resolves an indirect chain used by a page-label number tree. @private */
+/**
+ * Resolves an indirect chain used by a page-label number tree.
+ * @private
+ * @param {PDFReader} parser - Source parser.
+ * @param {PDFObject} value - Direct value or reference.
+ * @returns {PDFObject} The resolved value.
+ * @throws {Error} If the chain is cyclic or too long.
+ */
 function resolvePageLabelObject(parser, value) {
   var visited = new Set();
   var resolved = value;
