@@ -869,7 +869,14 @@ exports.text = function text(text = "", x, y, options = {}) {
   return this;
 };
 
-/** Writes pending text links before a callback can change the active page. @private */
+/**
+ * Write pending text links before a callback can change the active page.
+ * @private
+ * @param {Recipe} recipe - The recipe instance.
+ * @param {Object[]} annotations - Pending {url, left, bottom, width, height}
+ *   links; emptied.
+ * @returns {void}
+ */
 function flushTextLinks(recipe, annotations) {
   for (var annotation of annotations.splice(0)) {
     linkPdf(
