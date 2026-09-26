@@ -609,6 +609,11 @@ export function createWriterFactory({
       }
     }
 
+    /**
+     * Rejects use of a finalized writer.
+     * @returns {void}
+     * @throws {Error} If the writer has ended.
+     */
     function requireOpenWriter() {
       if (ended) throw new Error("PDF writer has ended");
     }
