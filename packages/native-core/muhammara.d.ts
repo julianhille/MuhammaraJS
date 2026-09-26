@@ -4134,6 +4134,11 @@ declare namespace muhammara {
      * @throws {Error} If there is no active page content context.
      */
     pauseContext(): Recipe;
+    /**
+     * Resume the current page content context after it has been paused.
+     * @returns The recipe instance.
+     * @throws {Error} If there is no paused page content context.
+     */
     resumeContext(): Recipe;
     rotateContent(
       degrees: number,
