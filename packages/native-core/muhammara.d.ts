@@ -686,6 +686,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     TL(textLeading: number): this;
+    /**
+     * Sets the text rendering mode; operator Tr.
+     * @param renderingMode - 0 fill to 7 clip, as in ISO 32000-1 table 106.
+     * @returns This context.
+     * @throws {TypeError} If renderingMode is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Tr(renderingMode: number): this;
     Ts(fontRise: number): this;
     BT(): this;
