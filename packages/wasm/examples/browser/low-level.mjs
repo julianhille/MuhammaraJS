@@ -14,6 +14,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(`Low-level validation failed: ${message}`);
 }
 
+/**
+ * Copies exactly the viewed bytes into a new ArrayBuffer.
+ * @param {Uint8Array} bytes - Bytes.
+ * @returns {ArrayBuffer} The copy.
+ */
 function exactArrayBuffer(bytes) {
   return bytes.buffer.slice(
     bytes.byteOffset,
