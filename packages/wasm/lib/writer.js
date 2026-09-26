@@ -4332,6 +4332,14 @@ export function createWriterFactory({
               this.appendPDFPageFromPDF(index);
             return this;
           },
+          /**
+           * Merges a source page into the active target page.
+           * @param {PDFPage} targetPage - Active page, or a new page that is started.
+           * @param {number} index - Zero-based source page index.
+           * @returns {this} The copying context.
+           * @throws {Error} If the context ended, `targetPage` is not active, or `index` is invalid.
+           * @throws {RangeError} If the page cannot be merged.
+           */
           mergePDFPageToPage: function (targetPage, index) {
             requireCopying();
             // Like native, a new page can be the target before any content.
