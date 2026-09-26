@@ -4156,6 +4156,17 @@ export function createWriterFactory({
           }
         });
       },
+      /**
+       * Creates forms from PDF pages after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} source - PDF bytes, Blob, or File.
+       * @param {PDFPageBoxType|PDFRectangle} [pageBox] - Form bounds.
+       * @param {PDFFormOptions} [options] - Pages, transformation, and object IDs.
+       * @returns {Promise<number[]>} Object IDs of the forms.
+       * @throws {TypeError} If the source or an option is invalid.
+       * @throws {RangeError} If `pageBox`, the page range, or an object ID is invalid.
+       * @throws {Error} If the writer ended or the forms cannot be created.
+       */
       createFormXObjectsFromPDFAsync: async function (
         source,
         pageBox,
