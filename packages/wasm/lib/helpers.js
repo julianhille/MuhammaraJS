@@ -232,6 +232,13 @@ export function createHelpers(module) {
     context.gs = function (name) {
       return nameOperator("gs", 2, name);
     };
+    /**
+     * Sets the stroking color space (`CS`).
+     * @param {string} name - Color space name or resource.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `name` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.CS = function (name) {
       return nameOperator("CS", 3, name);
     };
