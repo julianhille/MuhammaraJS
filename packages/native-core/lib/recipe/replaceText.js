@@ -361,6 +361,8 @@ function readContentStream(recipe, objectId) {
  * @param {number} pageIndex Zero-based page index.
  * @param {number} objectId Object ID to replace on this page.
  * @param {string} content Latin-1 stream content.
+ * @private
+ * @returns {void}
  */
 function replaceContentStream(recipe, pageIndex, objectId, content) {
   var objectsContext = recipe.writer.getObjectsContext();
