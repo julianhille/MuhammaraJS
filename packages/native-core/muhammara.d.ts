@@ -4653,6 +4653,38 @@ declare namespace muhammara {
       points?: number | Recipe.ShapeOptions,
       options?: Recipe.ShapeOptions,
     ): Recipe;
+    /**
+     * Draw a triangle, by specifying three side lengths, two side lengths and one inclusive angle, one side length and two adjacent angles, or with a set of vertices.
+     * @param x - x-coordinate used to position triangle, by default associated with left vertex of triangle base.
+     * @param y - y-coordinate used to position triangle, by default associated with left vertex of triangle base.
+     * @param traits - the data defining the triangle. Angles are specified as degrees, sides in units of points (1/72 in.).
+     * @param options - The options
+     * @param options.traitID - indicates what type of data is being passed in the traits parameter,; defaults to 'sss'.
+     * one of the `Recipe.TriangleTrait` values:
+     * ('sss'- three side lengths, 'sas' - side-angle-side (sideA, <C, sideB), 'asa' - angle-side-angle (<B, sideC, <A),
+     * or 'vtx' - three vertex points [x,y])
+     * @param options.position - the position of the triangle to be set at the given x,y coordinates,; defaults to 'b'.
+     * one of the `Recipe.TrianglePosition` values.
+     * The values can be one of: 'A' - the A vertex (right vertex of triangle base), 'B' - the B vertex (left vertex of triangle base),
+     * 'C' - the C vertex (apex of triangle), 'centroid', 'circumcenter', or 'incenter' of the triangle.
+     * @param options.flipX - flip triangle up to down through rotation point; defaults to false.
+     * @param options.flipY - flip triangle right to left through rotation point; defaults to false.
+     * @param options.color - HexColor or DecimalColor
+     * @param options.stroke - HexColor or DecimalColor
+     * @param options.fill - HexColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @param options.skewX - the angle skew off the x-axis
+     * @param options.skewY - the angle skew off the y-axis.
+     * @returns The recipe instance.
+     * @param options.link - Make the triangle's bounding box open this URL.
+     * @param options.debug - Also draw the reference points and labels.
+     * @throws {Error} If traits does not contain three values or does not define a valid triangle.
+     * @throws {TypeError} If no page is active.
+     */
     triangle(
       x: number,
       y: number,
