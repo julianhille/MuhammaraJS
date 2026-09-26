@@ -145,6 +145,10 @@ async function summarize(bytes, details = {}) {
   }
 }
 
+/**
+ * Builds the browser example for review annotations.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function annotationsExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
