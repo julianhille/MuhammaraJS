@@ -660,7 +660,14 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     WStar(): this;
-    /** A resource name, an XObject, or a form XObject object ID. */
+    /**
+     * Draws an XObject; operator Do. A form or image is added to the
+     * resources.
+     * @param xObject - A resource name, a form or image, or a form object ID.
+     * @returns This context.
+     * @throws {TypeError} If xObject is not a single XObject, name or ID.
+     * @throws {TypeError} If there is no content context.
+     */
     doXObject(
       xObject: string | FormXObjectId | FormXObject | ImageXObject,
     ): this;
