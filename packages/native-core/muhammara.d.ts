@@ -1047,6 +1047,12 @@ declare namespace muhammara {
      * @throws {TypeError} If dictionaryContext is given and is not a dictionary context.
      */
     startUnfilteredPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
+    /**
+     * Ends a stream and writes its length.
+     * @param stream - The stream started last.
+     * @returns This context.
+     * @throws {TypeError} If stream is not a stream.
+     */
     endPDFStream(stream: PDFStream): this;
     startFreeContext(): ByteWriterWithPosition;
     endFreeContext(): this;
