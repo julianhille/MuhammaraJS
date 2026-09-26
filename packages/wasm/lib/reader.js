@@ -436,6 +436,11 @@ export function createReaderFactory({
             module._free(pointer);
           }
         };
+        /**
+         * Reads the referenced generation number.
+         * @returns {number} The generation.
+         * @throws {Error} If the reader or parser has ended or the reference cannot be read.
+         */
         object.getVersion = function () {
           object.getType();
           requireReader();
