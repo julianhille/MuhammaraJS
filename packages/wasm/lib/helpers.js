@@ -314,6 +314,15 @@ export function createHelpers(module) {
     }
   }
 
+  /**
+   * Validates the arguments of `createFormXObjectFromPDFPage()`.
+   * @param {number} index - Zero-based source page index.
+   * @param {PDFPageBoxType|PDFRectangle} pageBox - Page box constant or rectangle.
+   * @param {PDFMatrix} [transformation] - Form matrix.
+   * @returns {Array} `[index, pageBox, transformation]`.
+   * @throws {RangeError} If `index` is not a non-negative integer.
+   * @throws {TypeError} If `pageBox` or `transformation` is invalid.
+   */
   function copiedPageFormArguments(index, pageBox, transformation) {
     if (!Number.isInteger(index) || index < 0) {
       throw new RangeError("Page index must be a non-negative integer");
