@@ -35,7 +35,12 @@ function merge(left = {}, right = {}) {
   return result;
 }
 
-/** Converts a row or header style's `cell` into its text box, like native. */
+/**
+ * Converts a row or header style's `cell` into its text box, like native.
+ * @param {object} [options={}] - Row or header style.
+ * @param {string} [name="cell"] - Key holding the cell box.
+ * @returns {object} New options with `textBox`.
+ */
 function cellOptions(options = {}, name = "cell") {
   var result = { ...options };
   if (result[name]) {
