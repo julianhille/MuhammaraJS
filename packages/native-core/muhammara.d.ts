@@ -4400,6 +4400,26 @@ declare namespace muhammara {
       options?: Recipe.LineOptions,
     ): Recipe;
 
+    /**
+     * Draw a polygon
+     * @param coordinates - The array of coordinate [[x,y], ... [m,n]]
+     * @param options - The options
+     * @returns The recipe instance.
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param options.fill - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash pattern [dashSize, gapSize] or [dashAndGapSize]
+     * @param options.dashPhase - distance into dash pattern at which to start dash (default: 0, immediately)
+     * @param options.rotation - Accept: +/- 0 through 360. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @param options.lineCap - open line end style, a `Recipe.LineCap` value (default: 'round')
+     * @param options.lineJoin - joined line end style, a `Recipe.LineJoin` value (default: 'round')
+     * @param options.miterLimit - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
+     * @param options.link - Make the polygon's bounding box open this URL.
+     * @throws {TypeError} If no page is active or there are no coordinates.
+     */
     polygon(coordinates: number[][], options?: Recipe.PolygonOptions): Recipe;
 
     circle(
