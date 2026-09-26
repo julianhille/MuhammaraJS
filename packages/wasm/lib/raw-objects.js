@@ -616,6 +616,11 @@ export function createRawObjectsContext({
         writeObjectString(4, value);
         return this;
       },
+      /**
+       * Writes an end-of-line.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended.
+       */
       endLine: function () {
         requireContext();
         module._muhammara_wasm_objects_end_line(handle);
