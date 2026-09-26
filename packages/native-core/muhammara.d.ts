@@ -1148,6 +1148,13 @@ declare namespace muhammara {
   }
 
   export interface InputFile {
+    /**
+     * Opens a file for reading.
+     * @param filePath - The file path.
+     * @throws {TypeError} If filePath is not a single string or the file cannot
+     *   be opened.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     openFile(filePath: FilePath): void;
     closeFile(): void;
     getFilePath(): string | undefined;
