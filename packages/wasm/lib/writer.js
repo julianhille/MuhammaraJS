@@ -597,6 +597,12 @@ export function createWriterFactory({
       ended = true;
     }
 
+    /**
+     * Rejects use of a page content context after its page was written or paused.
+     * @param {object} context - Content context being used.
+     * @returns {void}
+     * @throws {Error} If the writer ended or `context` is not the current page context.
+     */
     function requireActiveContext(context) {
       if (ended || context !== currentContext || !currentPage) {
         throw new Error("Page content context is not active");
