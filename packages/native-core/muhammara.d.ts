@@ -143,6 +143,12 @@ declare namespace muhammara {
      * @throws {TypeError} If the modifier was not created with a writer.
      */
     startContext(): this;
+    /**
+     * Returns the started content context.
+     * @returns The content context.
+     * @throws {TypeError} If startContext() was not called.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     getContext(): XObjectContentContext;
     endContext(): this;
     attachURLLinktoCurrentPage(
