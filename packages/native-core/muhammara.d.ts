@@ -669,6 +669,14 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     Tw(wordSpace: number): this;
+    /**
+     * Sets the horizontal scaling; operator Tz. The value is truncated to an
+     * integer.
+     * @param horizontalScaling - The scaling in percent; 100 is normal.
+     * @returns This context.
+     * @throws {TypeError} If horizontalScaling is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Tz(horizontalScaling: number): this;
     TL(textLeading: number): this;
     Tr(renderingMode: number): this;
