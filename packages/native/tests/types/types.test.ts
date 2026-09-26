@@ -933,3 +933,11 @@ const highlightSubtype: muhammara.Recipe.AnnotSubtype =
 const noteIcon: muhammara.Recipe.AnnotOptionsIcon =
   muhammara.Recipe.AnnotIcon.NOTE;
 void [highlightSubtype, noteIcon];
+
+annotationRecipe.annot("center", 120, muhammara.Recipe.AnnotSubtype.SQUARE, {
+  text: "boxed",
+  border: 2,
+  color: "#ff0000",
+  followOriginalPageRotation: true,
+  icon: muhammara.Recipe.AnnotIcon.KEY,
+});

@@ -1169,6 +1169,8 @@ declare namespace muhammara {
     }
 
     interface AnnotOptions {
+      /** The annotation content. */
+      text?: string;
       title?: string;
       open?: boolean;
       richText?: boolean;
@@ -1181,9 +1183,16 @@ declare namespace muhammara {
       date?: string;
       subject?: string;
       replies?: readonly AnnotReply[];
+      /** The border width. */
+      border?: number;
+      /** The annotation color. */
+      color?: Color;
+      /** Keep the annotation unrotated on a rotated source page. */
+      followOriginalPageRotation?: boolean;
     }
 
     interface AnnotReply {
+      /** Ignored: a reply uses the subtype of the annotation it answers. */
       subtype?: AnnotSubtype;
       text: string;
       title?: string;

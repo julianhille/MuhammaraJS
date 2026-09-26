@@ -97,28 +97,31 @@ function linkPdf(recipe, url, left, bottom, width, height) {
 Object.defineProperty(exports, "linkPdf", { value: linkPdf });
 
 /**
- * Create an annotation
+ * Create an annotation. It is written when the PDF ends.
  * @name annot
  * @function
  * @memberof Recipe#
  * @todo support for rich text RC
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
- * @param {string} subtype - The markup annotation type 'Text'|'Link'|'FreeText'|'Line'|'Square'|'Circle'|'Polygon'|'PolyLine'|'Highlight'|'Underline'|'Squiggly'|'StrikeOut'|'Caret'|'Stamp'|'Ink'|'Popup'|'FileAttachment'|'Sound'|'Movie'|'Screen'|'Widget'|'PrinterMark'|'TrapNet'|'Watermark'|'3D'|'Redact'|'Projection'|'RichMedia'
+ * @param {number|"center"} x - The coordinate x
+ * @param {number|"center"} y - The coordinate y
+ * @param {Recipe.AnnotSubtype} subtype - The annotation subtype, one of the
+ *   `Recipe.AnnotSubtype` values.
  * @param {Object} [options] - The options
  * @param {string} [options.text=''] - The annotation content.
  * @param {string} [options.title] - The title.
  * @param {boolean} [options.open=false] - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'
  * @param {boolean} [options.richText] - Rich text
- * @param {'invisible'|'hidden'|'print'|'nozoom'|'norotate'|'noview'|'readonly'|'locked'|'togglenoview'} [options.flag] - The flag property
- * @param {'Comment'|'Key'|'Note'|'Help'|'NewParagraph'|'Paragraph'|'Insert'} [options.icon='Note'] - The icon of annotation. Specific to text annotations. Default value: 'Note'
+ * @param {Recipe.AnnotFlag} [options.flag] - The flag property, one of the `Recipe.AnnotFlag` values.
+ * @param {Recipe.AnnotIcon} [options.icon] - The icon of a Text annotation, one
+ *   of the `Recipe.AnnotIcon` values. Viewers show 'Note' when it is omitted.
  * @param {number} [options.width] - Width
  * @param {number} [options.height] - Height
  * @param {string} [options.date] - Date of annotation
  * @param {string} [options.subject] - The subject.
  * @param {Array} [options.replies] - Array of annotation replies
  * @param {number} [options.border] - The border width.
- * @param {string|number[]} [options.color] - The annotation color.
+ * @param {string|number[]} [options.color] - The annotation color, as HexColor,
+ *   PercentColor or DecimalColor.
  * @param {number} [options.opacity=1] - Annotation opacity from 0 (transparent) to 1 (opaque).
  * @param {boolean} [options.followOriginalPageRotation=false] - Preserve the original page rotation when positioning the annotation.
  * @returns {Recipe} The recipe instance.
