@@ -996,6 +996,12 @@ declare namespace muhammara {
      * @throws {TypeError} If literal is not a single string or array.
      */
     writeLiteralString(literal: string | number[]): this;
+    /**
+     * Writes a hexadecimal string.
+     * @param hex - The bytes as a string of hex digits, or their byte values.
+     * @returns This context.
+     * @throws {TypeError} If hex is not a single string or array.
+     */
     writeHexString(hex: string | number[]): this;
     writeBoolean(bool: boolean): this;
     writeKeyword(keyword: string): this;
