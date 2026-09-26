@@ -330,7 +330,10 @@ function debugTriangle(recipe, x, y, vertices, sides, position, options) {
   });
 }
 
-/** Creates Recipe methods for geometric shapes. */
+/**
+ * Creates Recipe methods for geometric shapes.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createShapeMethods() {
   return {
     /**
