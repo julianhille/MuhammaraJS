@@ -182,6 +182,11 @@ export function createReaderFactory({
           object.getType();
           return objectString(handle);
         },
+        /**
+         * Reads a numeric value.
+         * @returns {number|undefined} The number, or undefined for a non-numeric object.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         toNumber: function () {
           object.getType();
           requireReader();
