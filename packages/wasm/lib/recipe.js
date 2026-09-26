@@ -733,6 +733,13 @@ export function createRecipeFactory({
     createCompositionMethods({ module, pdfs, withString, call, inspectPdf }),
     {
       endPDF: createEndPDF({
+        /**
+         * Finishes the open page and writes the Recipe, rolling back page deletions
+         * when modifying a source PDF fails.
+         * @param {Recipe} recipe - Recipe to finish.
+         * @returns {Uint8Array} The PDF bytes.
+         * @throws {Error} If a page is open while pages are deleted, or writing fails.
+         */
         endPDF: (recipe) => {
           if (recipe._endError) throw recipe._endError;
           // deletePage() rewrites the page tree it read when the page was
