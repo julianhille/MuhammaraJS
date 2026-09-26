@@ -83,4 +83,13 @@ describe("Modify", () => {
         done();
       });
   });
+
+  it("writes the requested PDF version to a new Buffer PDF", () => {
+    const recipe = new Recipe(Buffer.from("new"), null, { version: 1.4 });
+    recipe.createPage(100, 100).endPage();
+    recipe.endPDF((outBuffer) => {
+      assert.equal(outBuffer.subarray(0, 8).toString(), "%PDF-1.4");
+    });
+    assert.equal(Recipe.Colorspace.SEPARATION, "separation");
+  });
 });

@@ -6,23 +6,29 @@ var { standardInfoKeys } = require("./recipe-info");
 
 /**
  * @name Recipe
- * @desc Create a pdfDoc
+ * @desc Create a new PDF, or open an existing one for editing.
  * @namespace
  * @constructor
- * @param {string|Buffer} src - The file path or Buffer of the source file.
- * @param {string} [output] - The path of the output file uses src if its not a buffer.
+ * @param {string|Buffer} src - `"new"` (or `Buffer.from("new")`) for a new PDF,
+ *   otherwise the path or Buffer of the PDF to edit.
+ * @param {string} [output] - The output path. For a path source it defaults to
+ *   the source path; for a Buffer source the result is only returned by
+ *   `endPDF()` unless an output path is given.
  * @param {Object} [options] - The options for pdfDoc
- * @param {number} [options.version] - The pdf version: 1.0 through 1.7 or 2.0, defaults to 1.7
+ * @param {number} [options.version] - The PDF version of a new PDF: 1.0 through
+ *   1.7 or 2.0. Other values fall back to 1.7.
  * @param {string} [options.author] - The author
  * @param {string} [options.title] - The title
  * @param {string} [options.subject] - The subject
- * @param {string} [options.colorspace] - The default colorspace: rgb, cmyk, gray, separation
  * @param {string[]} [options.keywords] - The array of keywords
- * @param {string} [options.password] - permission password
- * @param {string} [options.userPassword] - this 'view' password also enables encryption
- * @param {string} [options.ownerPassword] - this allows owner to 'edit' file
- * @param {string} [options.userProtectionFlag] - encryption security level (see permissions)
- * @param {string|string[]} [options.fontSrcPath] - directory location(s) of additional fonts
+ * @param {Recipe.Colorspace} [options.colorspace] - The default colorspace, one
+ *   of the `Recipe.Colorspace` values.
+ * @param {string} [options.password] - Owner password; also opens a protected source.
+ * @param {string} [options.userPassword] - The 'view' password; also enables encryption.
+ * @param {string} [options.ownerPassword] - The 'edit' password.
+ * @param {number} [options.userProtectionFlag] - Encryption permission flags, see `permission()`.
+ * @param {string|string[]} [options.fontSrcPath] - Directory location(s) of additional fonts.
+ * @throws {Error} If an existing source PDF cannot be read or opened for editing.
  */
 class Recipe {
   constructor(src, output, options = {}) {
@@ -89,6 +95,7 @@ class Recipe {
         this.writer = muhammara.createWriter(
           new muhammara.PDFStreamForResponse(this.outStream),
           Object.assign({}, this.encryptOptions, {
+            version: this._getVersion(this.options.version),
             log: this.logFile,
           }),
         );
@@ -456,4 +463,17 @@ function loadPrototypes() {
 }
 
 loadPrototypes();
+
+/**
+ * Colorspaces accepted by the `colorspace` options of Recipe.
+ * @readonly
+ * @enum {string}
+ */
+Recipe.Colorspace = Object.freeze({
+  RGB: "rgb",
+  CMYK: "cmyk",
+  GRAY: "gray",
+  SEPARATION: "separation",
+});
+
 module.exports = Recipe;

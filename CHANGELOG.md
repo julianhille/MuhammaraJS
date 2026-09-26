@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add `Recipe.Colorspace` constants for the `colorspace` options, and declare
+  the `password`, `ownerPassword`, `userPassword`, `userProtectionFlag` and
+  `fontSrcPath` Recipe constructor options [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Accept `Recipe#line(startX, startY, endX, endY, options?)`, as Wasm does
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Accept a `PDFDate` in `InfoDictionary#setCreationDate()` and
@@ -128,6 +131,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Apply the Recipe `version` option to new PDFs written to a Buffer; it was
+  ignored and those PDFs were always version 1.7 [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix native type declarations that rejected working calls or accepted failing
   ones: `addFormXObjectMapping()` takes a form id, `mergePDFPageToFormXObject()`
   takes the target form, `TJ()` takes its items as separate arguments, `Tj()`,

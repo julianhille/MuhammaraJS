@@ -912,3 +912,14 @@ alignmentRecipe
   .createPage("A4")
   .comment("note", "center", "center")
   .annot("center", "center", "Highlight", { width: 10, height: 10 });
+
+const recipeConstructorOptions: muhammara.Recipe.RecipeOptions = {
+  version: 1.4,
+  colorspace: muhammara.Recipe.Colorspace.CMYK,
+  password: "owner",
+  userPassword: "user",
+  ownerPassword: "owner",
+  userProtectionFlag: 4,
+  fontSrcPath: ["./fonts"],
+};
+void recipeConstructorOptions;

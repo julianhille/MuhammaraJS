@@ -1131,12 +1131,24 @@ declare namespace muhammara {
       "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
 
     interface RecipeOptions {
+      /** PDF version of a new PDF: 1.0 through 1.7 or 2.0; other values use 1.7. */
       version?: number;
       author?: string;
       title?: string;
       subject?: string;
       keywords?: string[];
+      /** Default colorspace; see `Recipe.Colorspace`. */
       colorspace?: Colorspace;
+      /** Owner password; also opens a protected source PDF. */
+      password?: string;
+      /** The 'view' password; also enables encryption. */
+      userPassword?: string;
+      /** The 'edit' password. */
+      ownerPassword?: string;
+      /** Encryption permission flags, see `Recipe#permission()`. */
+      userProtectionFlag?: number;
+      /** Directory location(s) of additional fonts. */
+      fontSrcPath?: string | string[];
     }
 
     interface RecipeMargins {
@@ -1598,6 +1610,14 @@ declare namespace muhammara {
       output?: string | null,
       options?: Recipe.RecipeOptions,
     );
+
+    /** Colorspaces accepted by the `colorspace` options. */
+    static readonly Colorspace: {
+      readonly RGB: "rgb";
+      readonly CMYK: "cmyk";
+      readonly GRAY: "gray";
+      readonly SEPARATION: "separation";
+    };
 
     readonly position: { x: number; y: number };
     /** Current document metadata, keyed by one-based page number. */
