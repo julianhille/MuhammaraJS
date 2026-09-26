@@ -1343,6 +1343,10 @@ declare namespace muhammara {
      * @returns The byte values.
      */
     toBytesArray(): Array<number>;
+    /**
+     * Returns the text.
+     * @returns The decoded text.
+     */
     toString(): string;
     fromString(value: string): this;
   }
