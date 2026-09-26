@@ -16,6 +16,11 @@ function PDFRStreamForBuffer(buffer) {
   this.mStartPosition = 0;
 }
 
+/**
+ * Reads the next bytes and advances the position by the amount read.
+ * @param {number} inAmount - The maximum number of bytes to read.
+ * @returns {Buffer} The bytes read; shorter than requested at the end.
+ */
 PDFRStreamForBuffer.prototype.read = function (inAmount) {
   // Copy, so callers cannot change the source through the returned chunk.
   var bytes = Buffer.from(
