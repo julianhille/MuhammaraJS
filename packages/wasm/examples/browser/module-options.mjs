@@ -30,6 +30,11 @@ export function createMuhammaraWasm() {
   return loadMuhammaraWasm(moduleOptions());
 }
 
+/**
+ * Loads Recipe with the example module options.
+ * @param {import("../../index.js").CreateRecipeOptions} [options={}] - Recipe options, such as `defaultFont`.
+ * @returns {Promise<import("../../index.js").RecipeConstructor>} The Recipe class.
+ */
 export function createRecipe(options = {}) {
   return loadRecipe({ ...moduleOptions(), ...options });
 }
