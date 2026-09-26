@@ -1353,6 +1353,10 @@ declare namespace muhammara {
   }
 
   export interface PDFStreamInput extends PDFObject {
+    /**
+     * Returns the stream dictionary.
+     * @returns The dictionary.
+     */
     getDictionary(): PDFDictionary;
     getStreamContentStart(): number;
   }
