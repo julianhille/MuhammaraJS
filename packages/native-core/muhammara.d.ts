@@ -792,6 +792,11 @@ declare namespace muhammara {
   }
 
   export interface PDFDate {
+    /**
+     * Returns the date in PDF date format, for example
+     * D:20260926120000+02'00'.
+     * @returns The PDF date string.
+     */
     toString(): string;
     setToCurrentTime(): this;
   }
