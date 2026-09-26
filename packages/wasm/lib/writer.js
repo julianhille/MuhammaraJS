@@ -355,6 +355,13 @@ export function createWriterSupport({
        * @throws {Error} If the owner is closed or the mapping fails.
        */
       addFormXObjectMapping: (objectId) => addMapping(6, objectId),
+      /**
+       * Maps a image XObject object into the resources dictionary.
+       * @param {number} objectId - Indirect object ID of the image XObject.
+       * @returns {string} The resource name to use in content operators.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the owner is closed or the mapping fails.
+       */
       addImageXObjectMapping: (objectId) => addMapping(7, objectId),
       addShadingMapping: (objectId) => addMapping(8, objectId),
     };
