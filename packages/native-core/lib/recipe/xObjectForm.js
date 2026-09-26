@@ -55,6 +55,11 @@ const Color = class Color {
 
 exports.Color = Color;
 
+/**
+ * Creates a writer form XObject extended with Recipe helpers; the
+ * constructor returns the form itself.
+ * @private
+ */
 exports.xObjectForm = class xObjectForm {
   constructor(pdfWriter, width = 100, height = 100) {
     const xObject = pdfWriter.createFormXObject(0, 0, width, height);
