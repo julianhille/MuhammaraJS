@@ -783,6 +783,10 @@ declare namespace muhammara {
      * @throws {TypeError} If length is not a single number.
      */
     read(length: number): Buffer;
+    /**
+     * Tells whether bytes remain.
+     * @returns True while the end has not been reached.
+     */
     notEnded(): boolean;
     getCurrentPosition(): number;
     skip(length: number): this;
