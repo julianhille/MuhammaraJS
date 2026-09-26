@@ -13,6 +13,11 @@ export function createChildLifecycle() {
     track: function (cleanup) {
       children.add(cleanup);
     },
+    /**
+     * Forgets a child cleanup, usually from the cleanup itself.
+     * @param {function(): void} cleanup - Registered cleanup.
+     * @returns {void}
+     */
     untrack: function (cleanup) {
       children.delete(cleanup);
     },
