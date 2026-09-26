@@ -724,6 +724,13 @@ export function createRawObjectsContext({
         if (!writer) throw new Error("Unable to start free context");
         activeFreeWriter = writer;
         return {
+          /**
+           * Writes raw bytes into the PDF output.
+           * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} bytes - Bytes to write.
+           * @returns {number} Number of bytes written.
+           * @throws {TypeError} If `bytes` is not a supported byte source.
+           * @throws {Error} If the free context has ended.
+           */
           write: (bytes) => {
             if (activeFreeWriter !== writer)
               throw new Error("Free context is no longer active");
