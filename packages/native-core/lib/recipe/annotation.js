@@ -378,6 +378,14 @@ exports._writeAnnotations = function _writeAnnotations() {
   });
 };
 
+/**
+ * Rewrite one page dictionary so its Annots array keeps the existing
+ * annotations and adds the ones written for it.
+ * @private
+ * @param {number} pageIndex - The zero-based page index.
+ * @returns {void}
+ * @throws {Error} If the page cannot be read or rewritten.
+ */
 exports._writeAnnotation = function _writeAnnotation(pageIndex) {
   const pdfWriter = this.writer;
   const copyingContext = pdfWriter.createPDFCopyingContextForModifiedFile();
