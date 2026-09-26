@@ -1704,17 +1704,17 @@ export function createWriterToModifyFactory({
                * @throws {TypeError} If `freeCode` is not a string.
                * @throws {Error} If the content context is no longer active or the operator fails.
                */
-              writeFreeCode: function (code) {
+              writeFreeCode: function (freeCode) {
                 requireFormContent();
-                if (typeof code !== "string")
+                if (typeof freeCode !== "string")
                   throw new TypeError("writeFreeCode requires a string");
-                return withString(code, (pointer) => {
+                return withString(freeCode, (pointer, length) => {
                   if (
                     !module._muhammara_wasm_modifier_form_write_free_code(
                       modifier,
                       handle,
                       pointer,
-                      new TextEncoder().encode(code).length,
+                      length,
                     )
                   )
                     throw new Error("Unable to write free code");
