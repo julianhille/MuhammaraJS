@@ -2912,6 +2912,11 @@ export function createWriterFactory({
         });
       }
 
+      /**
+       * Returns the form resources dictionary; misspelled native alias.
+       * @returns {ResourcesDictionary} The resources dictionary.
+       * @throws {Error} If the writer or the form has ended.
+       */
       getResourcesDictinary() {
         return this.getResourcesDictionary();
       }
