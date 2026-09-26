@@ -150,6 +150,12 @@ export function createReaderFactory({
       return new TextDecoder().decode(bytes);
     }
 
+    /**
+     * Wraps a native object handle with the PDFObject methods its type supports.
+     * @param {number} handle - Native object handle, or 0.
+     * @param {{handle: number, ended: boolean}} [parser] - Object parser that owns the handle.
+     * @returns {PDFObject|undefined} The object, or undefined for a 0 handle.
+     */
     function wrapObject(handle, parser) {
       if (!handle) return undefined;
       var object = {
