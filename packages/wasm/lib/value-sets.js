@@ -15,3 +15,10 @@ export var ImageFitPolicy = Object.freeze({
   ALWAYS: "always",
   OVERFLOW: "overflow",
 });
+
+/** How `Tj()`, `Quote()`, `DoubleQuote()`, and `TJ()` encode string text. */
+export var TextEncoding = Object.freeze({
+  TEXT: "text",
+  CODE: "code",
+  HEX: "hex",
+});

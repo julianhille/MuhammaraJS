@@ -1,4 +1,5 @@
 import { normalizeBytes } from "./bytes.js";
+import { TextEncoding } from "./value-sets.js";
 
 /** Creates memory-safe utility functions around a loaded WASM module. */
 export function createHelpers(module) {
@@ -190,9 +191,13 @@ export function createHelpers(module) {
     if (!options || typeof options !== "object" || Array.isArray(options)) {
       throw new TypeError("text options must be an options object");
     }
-    if (options.encoding === undefined || options.encoding === "text") return 0;
-    if (options.encoding === "code") return 1;
-    if (options.encoding === "hex") return 2;
+    if (
+      options.encoding === undefined ||
+      options.encoding === TextEncoding.TEXT
+    )
+      return 0;
+    if (options.encoding === TextEncoding.CODE) return 1;
+    if (options.encoding === TextEncoding.HEX) return 2;
     throw new TypeError("text encoding must be text, code, or hex");
   }
 

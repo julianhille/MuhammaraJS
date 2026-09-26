@@ -872,6 +872,9 @@ async function usesNamedValueSets() {
   context.drawImage(0, 0, "logo", {
     transformation: { width: 10, height: 10, fit: fitPolicy },
   });
+  context.BT().Tj("text", { encoding: "hex" }).ET();
+  // @ts-expect-error Encodings are text, code, or hex.
+  context.Tj("text", { encoding: "utf8" });
 }
 
 void usesNamedValueSets;
