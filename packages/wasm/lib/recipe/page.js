@@ -99,7 +99,14 @@ function readPageTree(
   };
 }
 
-/** Writes changed page-tree nodes back to the modified PDF. @private */
+/**
+ * Writes changed page-tree nodes back to the modified PDF.
+ * @private
+ * @param {PDFModifier} writer - Modifier.
+ * @param {DocumentCopyingContext} copyingContext - Copies unchanged values.
+ * @param {object} node - Page-tree node.
+ * @returns {void}
+ */
 function writePageTree(writer, copyingContext, node) {
   node.children
     .filter((child) => child.children && child.changed)
