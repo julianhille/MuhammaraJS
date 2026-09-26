@@ -97,6 +97,10 @@ declare namespace muhammara {
      * @returns The bytes read; shorter than requested at the end.
      */
     read(inAmount: number): Uint8Array | number[];
+    /**
+     * Tells whether bytes remain after the current position.
+     * @returns True while the end has not been reached.
+     */
     notEnded(): boolean;
     setPosition(inPosition: number): void;
     setPositionFromEnd(inPosition: number): void;
