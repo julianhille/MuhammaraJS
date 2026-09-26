@@ -835,3 +835,8 @@ declare const signatureDictionary: muhammara.PDFDictionary;
 var dictionaryEntries: { [key: string]: muhammara.PDFObject } =
   signatureDictionary.toJSObject();
 void dictionaryEntries;
+
+// Literal strings expose their raw bytes.
+declare const signatureLiteral: muhammara.PDFLiteralString;
+var literalBytes: number[] = signatureLiteral.toBytesArray();
+void literalBytes;

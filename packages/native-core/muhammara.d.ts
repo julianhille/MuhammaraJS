@@ -751,7 +751,16 @@ declare namespace muhammara {
   }
 
   export interface PDFLiteralString extends PDFObject {
+    /**
+     * Decodes the string as a PDF text string, PDFDocEncoding or UTF-16BE.
+     * @returns The text.
+     */
     toText(): string;
+    /**
+     * Returns the raw bytes of the string.
+     * @returns The byte values.
+     */
+    toBytesArray(): number[];
     value: string;
   }
 
