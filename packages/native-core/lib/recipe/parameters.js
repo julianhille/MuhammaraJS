@@ -1,4 +1,5 @@
 const { PAGE_CONTEXT_STATE } = require("./utils");
+const { PageSize } = require("../recipe-constants");
 
 this.mediumSizes = {
   executive: [521.86, 756.0], // north american
@@ -70,7 +71,7 @@ exports._setParameters = function _setParameters() {
   };
 
   let defaultMargin = 72; // 1 inch.
-  let defaultSize = "letter";
+  let defaultSize = PageSize.LETTER;
 
   this.default = {
     pageSize: this.mediumSizes[defaultSize],
