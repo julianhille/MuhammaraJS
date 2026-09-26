@@ -1,6 +1,13 @@
 import { createMuhammaraWasm, createRecipe } from "./module-options.mjs";
 import { throwIfCancelled } from "./lifecycle.mjs";
 
+/**
+ * Fails the Recipe example when a check does not hold.
+ * @param {*} condition - Checked value.
+ * @param {string} message - Failure description.
+ * @returns {void}
+ * @throws {Error} If `condition` is falsy.
+ */
 function assert(condition, message) {
   if (!condition) throw new Error(`Recipe validation failed: ${message}`);
 }
