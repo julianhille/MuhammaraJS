@@ -10,8 +10,7 @@ any value. These existing validation differences are retained for compatibility.
 Recipe value constants are static properties with the native names and members
 (`Recipe.TextWrap`, `Recipe.AnnotFlag`, and so on). Wasm has no `Recipe.Source`,
 because it has no `"new"` output-path sentinel, and adds `Recipe.StructureFormat`
-for its byte-returning `structure()`. An unknown annotation `flag` name throws an
-`Error` in Wasm; native writes no flag bits for it.
+for its byte-returning `structure()`.
 
 The WebAssembly Recipe text, HTML, layout, and table APIs are static ESM modules
 with injected in-memory Recipe state. They run in browsers and module Workers;
