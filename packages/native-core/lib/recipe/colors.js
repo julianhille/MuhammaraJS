@@ -416,6 +416,12 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   return transformation;
 };
 
+/**
+ * Convert DecimalColor components (0 to 255) to a hex string.
+ * @private
+ * @param {number[]} [color] - The color components.
+ * @returns {string} The hex string without '#'.
+ */
 function arrayToHex(color = []) {
   let code = "";
   color.forEach((item) => {
