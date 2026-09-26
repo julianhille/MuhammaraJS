@@ -4483,6 +4483,11 @@ export function createWriterFactory({
         var page = new PDFPage(left, bottom, right, top);
         // Like native, a new page exposes its resources before any content
         // context; activating it starts the page the same way writePage does.
+        /**
+         * Starts the page so its resources are available before any content.
+         * @returns {void}
+         * @throws {Error} If another page is active or the page cannot be started.
+         */
         page._activate = function () {
           writer.startPageContentContext(page);
         };
