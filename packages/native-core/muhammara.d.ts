@@ -760,6 +760,10 @@ declare namespace muhammara {
   }
 
   export interface PDFIndirectObjectReference extends PDFObject {
+    /**
+     * Returns the referenced object ID.
+     * @returns The object ID.
+     */
     getObjectID(): number;
     getVersion(): number;
   }
