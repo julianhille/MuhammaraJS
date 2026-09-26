@@ -703,6 +703,14 @@ export function createReaderFactory({
     // Shared by extractPageText and extractPageContentItems so both accept the
     // same object. Values are validated here and clamped to the built-in
     // ceilings in the Wasm module, matching the Node reader.
+    /**
+     * Validates a page index and extraction limits and fills in defaults.
+     * @param {number} pageIndex - Zero-based page index.
+     * @param {PDFExtractionLimits} limits - Requested limits.
+     * @returns {{maxElements: number, maxOperands: number, maxTextBytes: number, maxParsedObjects: number}} Complete limits.
+     * @throws {TypeError} If the index is invalid or `limits` is not an object.
+     * @throws {RangeError} If a limit is not a positive 32-bit integer.
+     */
     function extractionLimits(pageIndex, limits) {
       requireIndex(pageIndex, "Page index");
       if (!limits || typeof limits !== "object" || Array.isArray(limits)) {
