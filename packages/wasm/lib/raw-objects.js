@@ -522,6 +522,14 @@ export function createRawObjectsContext({
         }
         return this;
       },
+      /**
+       * Writes an `id generation R` reference.
+       * @param {number} objectId - Positive object ID.
+       * @param {number} [generation=0] - Non-negative generation number.
+       * @returns {this} The objects context.
+       * @throws {RangeError} If the ID or generation is invalid.
+       * @throws {Error} If the writer has ended.
+       */
       writeIndirectObjectReference: function (objectId, generation = 0) {
         requireContext();
         if (
