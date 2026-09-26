@@ -1270,6 +1270,10 @@ const Kite = class Kite {
   get I() {
     return [this._I.x, this._I.y];
   }
+  /**
+   * Point T, the head corner below the axis.
+   * @returns {number[]} The [x, y] point.
+   */
   get T() {
     return [this._T.x, this._T.y];
   }
