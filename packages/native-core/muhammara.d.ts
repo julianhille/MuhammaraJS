@@ -4140,6 +4140,14 @@ declare namespace muhammara {
      * @throws {Error} If there is no paused page content context.
      */
     resumeContext(): Recipe;
+    /**
+     * Rotate subsequent content around a point in Recipe coordinates.
+     * @param degrees - Clockwise rotation in degrees.
+     * @param x - Rotation origin x coordinate; defaults to 0.
+     * @param y - Rotation origin y coordinate; defaults to 0.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     rotateContent(
       degrees: number,
       x?: Recipe.RecipeCoordinate,
