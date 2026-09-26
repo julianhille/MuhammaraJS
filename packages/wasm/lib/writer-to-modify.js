@@ -1,4 +1,4 @@
-import { ObjectReplacementScope } from "./value-sets.js";
+import { ObjectReplacementScope, PDFImageType } from "./value-sets.js";
 import { createChildLifecycle } from "./lifecycle.js";
 import { isPageBoxType } from "./constants.js";
 import {
@@ -911,7 +911,13 @@ export function createWriterToModifyFactory({
               modifier,
               pointer,
             );
-            return [undefined, "PDF", "JPG", "TIFF", "PNG"][type];
+            return [
+              undefined,
+              PDFImageType.PDF,
+              PDFImageType.JPG,
+              PDFImageType.TIFF,
+              PDFImageType.PNG,
+            ][type];
           }),
         );
       },

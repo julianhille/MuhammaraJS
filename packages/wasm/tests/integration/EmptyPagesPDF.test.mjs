@@ -6,6 +6,7 @@ import {
   ImageFitPolicy,
   ObjectReplacementScope,
   PageBox,
+  PDFImageType,
   RecipeArrowAnchor,
   RecipeArrowType,
   RecipeFontStyle,
@@ -145,4 +146,5 @@ var EXPORTED_VALUE_SETS = [
     ["regular", "bold", "italic", "bold-italic", "r", "b", "i", "bi"],
   ],
   [ObjectReplacementScope, ["global"]],
+  [PDFImageType, ["PDF", "JPG", "TIFF", "PNG"]],
 ];

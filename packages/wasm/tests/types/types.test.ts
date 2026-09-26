@@ -1,4 +1,5 @@
 import {
+  PDFImageType,
   createMuhammaraWasm,
   createRecipe,
   DeviceColorSpace as DeviceColorSpaces,
@@ -25,7 +26,6 @@ import type {
   PDFPageBoxType,
   ImageFitPolicy,
   DeviceColorSpace,
-  PDFImageType,
   PageRangeOptions,
   ERangeType,
   XrefEntryType,
@@ -975,6 +975,8 @@ async function usesNamedValueSets() {
   void xrefEntry;
   var geometry: PDFPageGeometry = parsed.getPageInfo(0);
   void geometry;
+  var namedImageType: PDFImageType = PDFImageType.JPG;
+  void namedImageType;
 }
 
 void usesNamedValueSets;

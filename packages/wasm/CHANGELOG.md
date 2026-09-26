@@ -13,7 +13,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
 - Export frozen value sets for finite string options, each with a same-named
   type: `DeviceColorSpace`, `DrawingPathType`, `ImageFitPolicy`, `PageBox`,
-  `TextEncoding`, `ObjectReplacementScope`, and the Recipe sets
+  `PDFImageType`, `TextEncoding`, `ObjectReplacementScope`, and the Recipe sets
   `RecipeArrowAnchor`, `RecipeArrowType`, `RecipeFontStyle`,
   `RecipeHorizontalAlignment`, `RecipeLineCap`, `RecipeLineJoin`,
   `RecipePageLayout`, `RecipeStructureFormat`, `RecipeTableRowParity`,

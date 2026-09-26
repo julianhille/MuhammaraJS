@@ -157,3 +157,11 @@ export var RecipeFontStyle = Object.freeze({
 export var ObjectReplacementScope = Object.freeze({
   GLOBAL: "global",
 });
+
+/** Image or document format reported by `getImageType()`. */
+export var PDFImageType = Object.freeze({
+  PDF: "PDF",
+  JPG: "JPG",
+  TIFF: "TIFF",
+  PNG: "PNG",
+});

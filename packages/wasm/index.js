@@ -43,6 +43,7 @@ import {
   RecipeStructureFormat,
   RecipeFontStyle,
   ObjectReplacementScope,
+  PDFImageType,
 } from "./lib/value-sets.js";
 
 export {
@@ -55,6 +56,7 @@ export {
   ImageFitPolicy,
   ObjectReplacementScope,
   PageBox,
+  PDFImageType,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
   RecipeArrowAnchor,

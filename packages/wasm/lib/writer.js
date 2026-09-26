@@ -1,5 +1,5 @@
 import { createChildLifecycle } from "./lifecycle.js";
-import { ImageFitPolicy } from "./value-sets.js";
+import { ImageFitPolicy, PDFImageType } from "./value-sets.js";
 import { isPageBoxType } from "./constants.js";
 import {
   readTextOptions,
@@ -3381,7 +3381,13 @@ export function createWriterFactory({
               module._muhammara_wasm_writer_get_image_type(recipe, pointer),
             ),
         );
-        return [undefined, "PDF", "JPG", "TIFF", "PNG"][type];
+        return [
+          undefined,
+          PDFImageType.PDF,
+          PDFImageType.JPG,
+          PDFImageType.TIFF,
+          PDFImageType.PNG,
+        ][type];
       },
       getImageTypeAsync: async function (image) {
         return this.getImageType(

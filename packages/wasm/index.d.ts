@@ -952,6 +952,12 @@ export type ProcsetName = "ImageB" | "ImageC" | "ImageI" | "PDF" | "Text";
 export type ERangeType = 0 | 1;
 /** Image or document format reported by `getImageType()`. */
 export type PDFImageType = "PDF" | "JPG" | "TIFF" | "PNG";
+export declare const PDFImageType: {
+  readonly PDF: "PDF";
+  readonly JPG: "JPG";
+  readonly TIFF: "TIFF";
+  readonly PNG: "PNG";
+};
 /** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
 export type LineJoinStyle = 0 | 1 | 2;
 /**
