@@ -685,6 +685,11 @@ export function createRecipeFactory({
       pdfs,
       withString,
       call,
+      /**
+       * Creates a Recipe for each split page.
+       * @param {RecipeOptions} options - Recipe options.
+       * @returns {Recipe} A new Recipe.
+       */
       createRecipe: (options) => new Recipe(options),
     }),
   });
