@@ -115,7 +115,12 @@ function writeSourceAnnotation(writer, subtype, rectangle, options) {
   var dictionary = objects.startDictionary();
   dictionary.writeKey("Type").writeNameValue("Annot");
   dictionary.writeKey("Subtype").writeNameValue(subtype);
-  /** Writes a numeric array in the annotation dictionary. */
+  /**
+   * Writes a numeric array in the annotation dictionary.
+   * @param {string} key - Dictionary key.
+   * @param {number[]} values - Numbers.
+   * @returns {void}
+   */
   function writeArray(key, values) {
     dictionary.writeKey(key);
     objects.startArray();
