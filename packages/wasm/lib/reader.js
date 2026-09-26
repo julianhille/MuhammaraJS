@@ -536,7 +536,11 @@ export function createReaderFactory({
     function wrapByteReader(handle, positioned) {
       var active = true;
 
-      /** Rejects access after this byte reader is disposed. */
+      /**
+       * Rejects access after this byte reader is disposed.
+       * @returns {void}
+       * @throws {Error} If the reader or this byte reader has ended.
+       */
       function requireByteReader() {
         requireReader();
         if (!active) throw new Error("PDF byte reader has ended");
