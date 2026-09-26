@@ -21,6 +21,16 @@ export function createVectorMethods(runtime) {
     else recipe.link(options.link, x, y, width, height);
   }
 
+  /**
+   * Appends an arc as Bezier segments of at most 90 degrees.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {number} x - Center x in PDF coordinates.
+   * @param {number} y - Center y in PDF coordinates.
+   * @param {number} radius - Radius.
+   * @param {number} start - Start angle in radians.
+   * @param {number} end - End angle in radians.
+   * @returns {void}
+   */
   function curve(recipe, x, y, radius, start, end) {
     var segments = Math.ceil(Math.abs(end - start) / (Math.PI / 2));
     var step = (end - start) / segments;
