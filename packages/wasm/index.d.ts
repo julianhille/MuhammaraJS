@@ -961,7 +961,7 @@ export type LineJoinStyle = 0 | 1 | 2;
 export type TextRenderingMode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface DrawPathOptions {
-  color?: number | string;
+  color?: ColorValue;
   colorspace?: DeviceColorSpace;
   type?: DrawingPathType;
   width?: number;
