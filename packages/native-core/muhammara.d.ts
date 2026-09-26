@@ -509,6 +509,10 @@ declare namespace muhammara {
 
   export interface FormXObject {
     id: FormXObjectId;
+    /**
+     * Returns the content context for drawing on the form.
+     * @returns The content context.
+     */
     getContentContext(): XObjectContentContext;
     getContentStream(): PDFStream;
     getResourcesDictionary(): ResourcesDictionary;
