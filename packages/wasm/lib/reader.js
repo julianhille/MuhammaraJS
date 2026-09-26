@@ -1257,6 +1257,10 @@ export function createReaderFactory({
               parser,
             );
           },
+          /**
+           * Ends the parser; objects it returned stop working.
+           * @returns {void}
+           */
           end: function () {
             parser.ended = true;
           },
