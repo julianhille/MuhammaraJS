@@ -1,6 +1,11 @@
 import { errorDetails } from "./lifecycle.mjs";
 import { runBrowserExample } from "./workflow.mjs";
 
+/**
+ * Runs the requested example and posts progress, the result, or the error.
+ * @param {MessageEvent} event - `{ exampleId, assets }`.
+ * @returns {Promise<void>} Resolves after the result or error is posted.
+ */
 self.onmessage = async (event) => {
   try {
     var result = await runBrowserExample({
