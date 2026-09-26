@@ -65,6 +65,19 @@ exports.link = function link(url, x, y, width, height) {
   return linkPdf(this, url, nx, ny, width, height);
 };
 
+/**
+ * Attach a URL link at PDF coordinates, pausing the page content context
+ * while the writer adds the annotation.
+ * @private
+ * @param {Recipe} recipe - The recipe with an active page.
+ * @param {string} url - The URL to open.
+ * @param {number} left - The left edge in PDF points.
+ * @param {number} bottom - The bottom edge in PDF points.
+ * @param {number} width - The link width.
+ * @param {number} height - The link height.
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If no page is active or the link cannot be attached.
+ */
 function linkPdf(recipe, url, left, bottom, width, height) {
   recipe.pauseContext();
   try {
