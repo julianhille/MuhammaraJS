@@ -1571,6 +1571,9 @@ const Line = class Line {
     return this._slope;
   }
 
+  /**
+   * @returns {number} The negative inverse slope, of a perpendicular line.
+   */
   get inv_slope() {
     // inverse slope
     return -(1 / this.slope);
