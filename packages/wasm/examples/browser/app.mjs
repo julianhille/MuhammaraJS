@@ -193,6 +193,11 @@ function runInWorker(byteAssets, selectedExample) {
         finish(reject, error);
       }
     };
+    /**
+     * Rejects the run when the Worker fails to load or throws.
+     * @param {ErrorEvent} event - Worker error.
+     * @returns {void}
+     */
     worker.onerror = (event) => {
       finish(reject, new Error(event.message));
     };
