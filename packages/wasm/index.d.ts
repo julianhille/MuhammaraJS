@@ -1689,9 +1689,7 @@ export interface PDFModifier {
     imageIndex?: number,
   ): Promise<ImageDimensions>;
   getImageType(image: string | ByteSource): ImageType | undefined;
-  getImageTypeAsync(
-    image: AsyncByteSource,
-  ): Promise<"PDF" | "JPG" | "TIFF" | "PNG" | undefined>;
+  getImageTypeAsync(image: AsyncByteSource): Promise<ImageType | undefined>;
   getImagePagesCount(image: string | ByteSource): number;
   getImagePagesCountAsync(image: AsyncByteSource): Promise<number>;
   retrieveJPGImageInformation(image: string | ByteSource): JPGImageInformation;

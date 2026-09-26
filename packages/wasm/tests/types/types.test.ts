@@ -859,6 +859,9 @@ async function usesNamedValueSets() {
   var modifierImageType: ImageType | undefined =
     modifierForTypes.getImageType("logo");
   void modifierImageType;
+  var modifierAsyncImageType: Promise<ImageType | undefined> =
+    modifierForTypes.getImageTypeAsync(new Uint8Array());
+  void modifierAsyncImageType;
 }
 
 void usesNamedValueSets;
