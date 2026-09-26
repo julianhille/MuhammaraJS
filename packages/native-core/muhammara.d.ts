@@ -692,6 +692,13 @@ declare namespace muhammara {
      * @throws {TypeError} If the reader has ended.
      */
     getXrefPosition(): number;
+    /**
+     * Opens a stream's contents with its filters decoded.
+     * @param inputStream - The stream to read.
+     * @returns A reader over the decoded bytes.
+     * @throws {TypeError} If the reader has ended or inputStream is not a stream.
+     * @throws {Error} If the stream cannot be read.
+     */
     startReadingFromStream(inputStream: PDFStreamInput): ByteReader;
     startReadingFromStreamForPlainCopying(
       inputStream: PDFStreamInput,
