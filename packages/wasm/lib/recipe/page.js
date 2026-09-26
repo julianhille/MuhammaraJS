@@ -924,6 +924,9 @@ export function createPageMethods(
     /**
      * Inspects source bytes and closes the temporary reader.
      * @private
+     * @param {Uint8Array} bytes - PDF bytes.
+     * @returns {{pages: object[], metadata: object, sourceInfo: object}} Page records, metadata, and Info values.
+     * @throws {Error} If the bytes cannot be parsed.
      */
     _inspectBytes: function (bytes) {
       var reader = createReader(bytes);
