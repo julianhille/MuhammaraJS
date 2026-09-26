@@ -946,3 +946,9 @@ const permissionFlag: number = annotationRecipe.permission(
   [muhammara.Recipe.Permission.PRINT, muhammara.Recipe.Permission.COPY].join(),
 );
 void permissionFlag;
+
+annotationRecipe.registerFont(
+  "Custom",
+  "custom-bold.ttf",
+  muhammara.Recipe.FontStyle.BOLD,
+);

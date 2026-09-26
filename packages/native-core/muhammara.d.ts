@@ -1620,6 +1620,13 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** Font styles for `registerFont()`. */
+    static readonly FontStyle: {
+      readonly REGULAR: "regular";
+      readonly BOLD: "bold";
+      readonly ITALIC: "italic";
+      readonly BOLD_ITALIC: "bold-italic";
+    };
     /** User access permission names for `permission()`. */
     static readonly Permission: {
       readonly PRINT: "print";

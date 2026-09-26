@@ -1,19 +1,23 @@
 const fs = require("fs");
 const path = require("path");
+const { FontStyle } = require("../recipe-constants");
+
 /**
  * Register a custom font
  * @name registerFont
  * @function
  * @memberof Recipe#
- * @param {string} [fontName=''] - The font name used in text.
+ * @param {string} [fontName=''] - The font name used in text, matched case-insensitively.
  * @param {string} [fontSrcPath=''] - The path to the font file.
- * @param {string} [type='regular'] - The font type, one of 'bold', 'bold-italic', 'italic'
+ * @param {Recipe.FontStyle} [type='regular'] - The style this file provides,
+ *   one of the `Recipe.FontStyle` values or its short form r, b, i or bi.
+ *   Any other value registers the regular style.
  * @returns {Recipe} The recipe instance.
  */
 exports.registerFont = function registerFont(
   fontName = "",
   fontSrcPath = "",
-  type = "regular",
+  type = FontStyle.REGULAR,
 ) {
   return this._registerFont(fontName, fontSrcPath, type);
 };

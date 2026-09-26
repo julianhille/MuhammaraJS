@@ -119,7 +119,21 @@ var Permission = Object.freeze({
   PRINT_BEST: "printbest",
 });
 
+/**
+ * Font styles for `registerFont()`. The short forms r, b, i and bi are
+ * accepted as aliases.
+ * @readonly
+ * @enum {string}
+ */
+var FontStyle = Object.freeze({
+  REGULAR: "regular",
+  BOLD: "bold",
+  ITALIC: "italic",
+  BOLD_ITALIC: "bold-italic",
+});
+
 module.exports = {
+  FontStyle,
   Permission,
   Coordinate,
   Colorspace,
