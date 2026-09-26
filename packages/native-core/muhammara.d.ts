@@ -13,6 +13,12 @@ declare namespace muhammara {
   export let PDFRStreamForBuffer: PDFRStreamForBuffer;
   export let PDFWStreamForBuffer: PDFWStreamForBuffer;
   export let PDFStreamForResponse: PDFStreamForResponse;
+  export let PDFDate: {
+    new (value?: string | Date): PDFDate;
+  };
+  export let PDFTextString: {
+    new (value?: string | number[]): PDFTextString;
+  };
 
   export function createWriter(
     input: FilePath | WriteStream,
@@ -195,7 +201,7 @@ declare namespace muhammara {
     J(lineCapStyle: LineCapStyle): this;
     j(lineJoinStyle: LineJoinStyle): this;
     M(miterLimit: number): this;
-    d(miterLimit: number[], dashPhase: number): this;
+    d(dashArray: number[], dashPhase: number): this;
     ri(renderingIntentName: string): this;
     i(flatness: number): this;
     gs(graphicStateName: string): this;
@@ -232,14 +238,28 @@ declare namespace muhammara {
     Tm(a: number, b: number, c: number, d: number, e: number, f: number): this;
     TStar(): this;
     Tf(fontReferenced: UsedFont | string, fontSize: number): this;
-    Tj(text: string | Glyph): this;
-    Quote(text: string | Glyph): this;
+    Tj(text: string, options?: TextRenderOptions): this;
+    Tj(glyphs: Glyph): this;
+    Quote(text: string, options?: TextRenderOptions): this;
+    Quote(glyphs: Glyph): this;
     DoubleQuote(
       wordSpacing: number,
-      characterString: number,
-      text: string | Glyph,
+      characterSpacing: number,
+      text: string,
+      options?: TextRenderOptions,
     ): this;
-    TJ(value: string | Glyph, options?: TextRenderOptions): this;
+    DoubleQuote(
+      wordSpacing: number,
+      characterSpacing: number,
+      glyphs: Glyph,
+    ): this;
+    /** Pass the TJ array items as separate arguments: strings with numeric kerning adjustments, optionally followed by options. */
+    TJ(...items: [string | number, ...(string | number)[]]): this;
+    TJ(
+      ...items: [string | number, ...(string | number)[], TextRenderOptions]
+    ): this;
+    /** Glyph variant: glyph lists with numeric kerning adjustments. */
+    TJ(...items: [Glyph | number, ...(Glyph | number)[]]): this;
     writeFreeCode(freeCode: string): this;
     /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
@@ -401,10 +421,13 @@ declare namespace muhammara {
 
   export interface FormXObject {
     id: FormXObjectId;
+    getContentContext(): XObjectContentContext;
+    getContentStream(): PDFStream;
+    getResourcesDictionary(): ResourcesDictionary;
   }
 
   export interface ResourcesDictionary {
-    addFormXObjectMapping(formXObject: FormXObject): string;
+    addFormXObjectMapping(formXObjectId: FormXObjectId): string;
     addImageXObjectMapping(imageXObject: ImageXObject | number): string;
     addProcsetResource(procSetName: string): void;
     addExtGStateMapping(stateObjectId: number): string;
@@ -477,11 +500,20 @@ declare namespace muhammara {
   }
 
   export interface UsedFont {
+    /** Measure a string, or a list of glyph ids. The font size defaults to 1. */
     calculateTextDimensions(
-      text: string | any,
-      fontSize: number,
+      text: string | number[],
+      fontSize?: number,
     ): TextDimension;
-    getFontMetrics(fontSize?: number): object;
+    getFontMetrics(fontSize?: number): FontMetrics;
+  }
+
+  export interface FontMetrics {
+    pixelsPerEm: { x: number; y: number; xScale: number; yScale: number };
+    ascender: number;
+    descender: number;
+    height: number;
+    max_advance: number;
   }
 
   export interface ByteWriter {
@@ -499,7 +531,6 @@ declare namespace muhammara {
     getCurrentPosition(): number;
     skip(length: number): this;
     setPosition(position: number): this;
-    moveStartPosition(position: number): this;
     setPositionFromEnd(position: number): this;
   }
 
@@ -514,7 +545,7 @@ declare namespace muhammara {
       index: number,
     ): undefined | PDFObject;
     parseNewObject(objectId: number): PDFObject;
-    getPageObjectID(objectId: number): number;
+    getPageObjectID(pageIndex: number): number;
     parsePageDictionary(pageIndex: number): PDFDictionary;
     parsePage(pageIndex: number): PDFPageInput;
     /**
@@ -640,7 +671,7 @@ declare namespace muhammara {
     removeAdditionalInfoEntry(key: string): void;
     clearAdditionalInfoEntries(): void;
     getAdditionalInfoEntry(key: string): string;
-    getAdditionalInfoEntries(key: string): { [key: string]: string };
+    getAdditionalInfoEntries(): { [key: string]: string };
     setCreationDate(date: string | Date): void;
     setModDate(date: string | Date): void;
 
@@ -675,8 +706,8 @@ declare namespace muhammara {
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
     appendPDFPageFromPDF(sourcePageNumber: number): number; // stream start bytes?
     mergePDFPageToFormXObject(
-      sourcePage: PDFPage,
-      targetPageNumber: number,
+      targetForm: FormXObject,
+      sourcePageIndex: number,
     ): void;
     getSourceDocumentParser(): PDFReader;
     copyDirectObjectAsIs(objectToCopy: PDFObject): void;
@@ -749,8 +780,8 @@ declare namespace muhammara {
     writeKeyword(keyword: string): this;
     writeComment(comment: string): this;
     setCompressStreams(compress: boolean): this;
-    startPDFStream(dictionaryContext: DictionaryContext): PDFStream;
-    startUnfilteredPDFStream(stream: DictionaryContext): PDFStream;
+    startPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
+    startUnfilteredPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
     endPDFStream(stream: PDFStream): this;
     startFreeContext(): ByteWriterWithPosition;
     endFreeContext(): this;
@@ -758,19 +789,19 @@ declare namespace muhammara {
 
   export interface PDFObject {
     getType(): PDFObjectType;
-    toPDFIndirectObjectReference(): PDFIndirectObjectReference;
-    toPDFArray(): PDFArray;
-    toPDFDictionary(): PDFDictionary;
-    toPDFStream(): PDFStream;
-    toPDFBoolean(): PDFBoolean;
-    toPDFLiteralString(): PDFLiteralString;
-    toPDFHexString(): PDFHexString;
-    toPDFNull(): PDFNull;
-    toPDFName(): PDFName;
-    toPDFInteger(): PDFInteger;
-    toPDFReal(): PDFReal;
-    toPDFSymbol(): PDFSymbol;
-    toNumber(): number;
+    toPDFIndirectObjectReference(): PDFIndirectObjectReference | undefined;
+    toPDFArray(): PDFArray | undefined;
+    toPDFDictionary(): PDFDictionary | undefined;
+    toPDFStream(): PDFStream | undefined;
+    toPDFBoolean(): PDFBoolean | undefined;
+    toPDFLiteralString(): PDFLiteralString | undefined;
+    toPDFHexString(): PDFHexString | undefined;
+    toPDFNull(): PDFNull | undefined;
+    toPDFName(): PDFName | undefined;
+    toPDFInteger(): PDFInteger | undefined;
+    toPDFReal(): PDFReal | undefined;
+    toPDFSymbol(): PDFSymbol | undefined;
+    toNumber(): number | undefined;
     toString(): string;
   }
 
@@ -790,7 +821,7 @@ declare namespace muhammara {
   export interface PDFTextString {
     toBytesArray(): Array<number>;
     toString(): string;
-    fromString(value: string): void;
+    fromString(value: string): this;
   }
 
   export interface PageContentContext extends AbstractContentContext {
@@ -853,10 +884,10 @@ declare namespace muhammara {
     startPageContentContext(page: PDFPage): PageContentContext;
     pausePageContentContext(pageContextContext: PageContentContext): this;
     createFormXObject(
-      x: PosX,
-      y: PosY,
-      width: Width,
-      height: Height,
+      left: number,
+      bottom: number,
+      right: number,
+      top: number,
       objectId?: FormXObjectId,
     ): FormXObject;
     endFormXObject(formXObject: FormXObject): this;
@@ -921,7 +952,7 @@ declare namespace muhammara {
       objectIds?: FormXObjectId[],
     ): FormXObjectId[];
     createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
-    createPDFTextString(): PDFTextString;
+    createPDFTextString(value?: string | number[]): PDFTextString;
     createPDFDate(value?: string | Date): PDFDate;
     getImageDimensions(
       inFontFilePath: FilePath | ReadStream,
@@ -1575,8 +1606,8 @@ declare namespace muhammara {
 
     comment(
       text: string,
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       options?: Recipe.CommentOptions,
     ): Recipe;
 
@@ -1589,8 +1620,8 @@ declare namespace muhammara {
     ): Recipe;
 
     annot(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       subtype: Recipe.AnnotSubtype,
       options?: Recipe.AnnotOptions,
     ): Recipe;

@@ -19,6 +19,9 @@ describe("SettingInfoValues", function () {
     infoDictionary.setCreationDate("D:20140720204655+03'00'"); // two options to set dates: 1. PDF encoded string (like what comes from the parser)
     infoDictionary.setModDate(new Date()); // 2. javascript date
     infoDictionary.addAdditionalInfoEntry("words of praise", "amazing");
+    assert.deepEqual(infoDictionary.getAdditionalInfoEntries(), {
+      "words of praise": "amazing",
+    });
 
     // create empty page
     var page = pdfWriter.createPage();

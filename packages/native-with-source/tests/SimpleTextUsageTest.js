@@ -118,6 +118,32 @@ describe("SimpleTextUsageTest", function () {
     pdfWriter.writePage(page).end();
   });
 
+  it("rejects glyph lists with items that are not glyph mappings", function () {
+    var writer = muhammara.createWriter(
+      __dirname + "/output/SimpleTextUsageInvalidGlyphs.pdf",
+    );
+    var page = writer.createPage(0, 0, 100, 100);
+    var context = writer.startPageContentContext(page).BT();
+    [
+      function () {
+        context.TJ(["ab", -100, "c"]);
+      },
+      function () {
+        context.Tj([[68, 97], 69]);
+      },
+      function () {
+        context.Quote([[]]);
+      },
+    ].forEach(function (call) {
+      assert.throws(
+        call,
+        /glyph text requires \[glyphId, unicodeCodePoint\] pairs/,
+      );
+    });
+    context.TJ("ab", -100, "c").ET();
+    writer.writePage(page).end();
+  });
+
   var NUL_TEXT = "before\0after";
   var NUL_BYTES = [98, 101, 102, 111, 114, 101, 0, 97, 102, 116, 101, 114];
 

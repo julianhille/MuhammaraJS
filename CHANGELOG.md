@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Throw a `TypeError` from `Tj()`, `Quote()`, `DoubleQuote()` and `TJ()` when
+  a glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
+  array. Previously such items were skipped, so `TJ(["ab", -100, "c"])` wrote
+  an empty `[ () ] TJ`; pass the `TJ` items as separate arguments instead:
+  `TJ("ab", -100, "c")` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare `toPDF*()` and `toNumber()` on PDF objects as possibly returning
+  `undefined`, which they do for a different object type. Strict TypeScript
+  code that uses the result directly now fails to compile; check the result or
+  `getType()` first [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Deliver custom write stream and `log` chunks as `Buffer`s instead of arrays
   of numbers, and return `Buffer`s from `PDFRStreamForFile#read()`,
   `PDFRStreamForBuffer#read()`, and the byte readers returned by
@@ -108,6 +117,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Fix native type declarations that rejected working calls or accepted failing
+  ones: `addFormXObjectMapping()` takes a form id, `mergePDFPageToFormXObject()`
+  takes the target form, `TJ()` takes its items as separate arguments, `Tj()`,
+  `Quote()` and `DoubleQuote()` accept an `{ encoding }` options object, and
+  `ByteReaderWithPosition#moveStartPosition()` is no longer declared [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the `PDFDate` and `PDFTextString` constructors, the `FormXObject`
+  content, stream and resources getters, `FontMetrics`, `"center"` coordinates
+  for Recipe `comment()` and `annot()`, and the optional arguments of
+  `createPDFTextString()`, `startPDFStream()` and
+  `calculateTextDimensions()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Make `InfoDictionary#getAdditionalInfoEntries()` work without an argument; it
+  previously required an unused key [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Fix Recipe `movedown(lines, true)` throwing a `TypeError` before any text was
+  written; it now moves down from the page origin [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Report an out-of-range object ID from `PDFReader#getXrefEntry()` and a
+  non-path `drawImage()` source with accurate error messages [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix `Recipe#endPDF()` throwing `Node-API call failed` when the source PDF
   Info dictionary has a `/Trapped` entry; the entry is now kept.
   [#779](https://github.com/julianhille/MuhammaraJS/issues/779)

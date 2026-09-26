@@ -4,6 +4,15 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- `Tj()`, `Quote()`, `DoubleQuote()` and `TJ()` throw a `TypeError` when a
+  glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
+  array. In 6.x such items were skipped silently, so `TJ(["ab", -100, "c"])`
+  drew nothing. Pass the `TJ` items as separate arguments:
+  `TJ("ab", -100, "c")` [#792](https://github.com/julianhille/MuhammaraJS/issues/792).
+- The TypeScript declarations of `toPDF*()` and `toNumber()` on PDF objects
+  now include `undefined`, which they return for a different object type.
+  Strict builds that use the result directly fail with `Object is possibly
+'undefined'`; check the result, or `getType()`, before using it [#792](https://github.com/julianhille/MuhammaraJS/issues/792).
 - Custom write streams, including `log` targets, now receive each chunk as a
   `Buffer` instead of an array of numbers, and `PDFRStreamForFile#read()` and
   `PDFRStreamForBuffer#read()` return a `Buffer`, as does `read()` on the byte

@@ -1627,8 +1627,9 @@ function markLineComplete(toWriteTextObjects, lines = null) {
 exports.movedown = function movedown(lines = 1, returnCoords = false) {
   if (!this._flow || this._previousTextObjects.length === 0) {
     this._previousTextObjects = [];
-    this.y += this._lineHeight * lines;
-    this.x = this.box.x;
+    // Before any text is written there is no cursor or line height yet.
+    this.y = (this.y || 0) + (this._lineHeight || 14) * lines;
+    this.x = this.box ? this.box.x : this.x || 0;
   } else {
     // This handles continuous text positioning
     markLineComplete(this._previousTextObjects, lines);

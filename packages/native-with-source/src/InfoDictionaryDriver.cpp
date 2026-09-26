@@ -171,10 +171,6 @@ InfoDictionaryDriver::GetAdditionalInfoEntries(const CallbackArgs &args) {
   auto *d = Driver(args);
   if (!d->InfoDictionaryInstance)
     return ThrowTypeError(args.Env(), kUninitialized);
-  if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_string))
-    return ThrowTypeError(
-        args.Env(),
-        "wrong arguments. please provide key of the entry to return ");
   napi_value result = Object(args.Env());
   MapIterator<StringToPDFTextString> it =
       d->InfoDictionaryInstance->GetAdditionaEntriesIterator();

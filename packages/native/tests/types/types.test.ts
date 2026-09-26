@@ -822,3 +822,84 @@ const sourceParser: muhammara.PDFReader =
 void sourceParser.getPagesCount();
 // @ts-expect-error The source parser belongs to the copying context and takes no input.
 copyingContext.getSourceDocumentParser("source.pdf");
+
+const alignmentWriter = muhammara.createWriter(
+  new muhammara.PDFWStreamForBuffer(),
+);
+const alignmentPage = alignmentWriter.createPage(0, 0, 595, 842);
+const alignmentForm = alignmentWriter.createFormXObject(0, 0, 100, 100);
+const formContext: muhammara.XObjectContentContext =
+  alignmentForm.getContentContext();
+void formContext;
+void alignmentForm.getContentStream();
+void alignmentForm.getResourcesDictionary();
+alignmentWriter.endFormXObject(alignmentForm);
+const alignmentResources = alignmentPage.getResourcesDictionary();
+const formName: string = alignmentResources.addFormXObjectMapping(
+  alignmentForm.id,
+);
+void formName;
+// @ts-expect-error Form mappings take the form object id, not the form.
+alignmentResources.addFormXObjectMapping(alignmentForm);
+
+const alignmentContext = alignmentWriter.startPageContentContext(alignmentPage);
+const alignmentFont = alignmentWriter.getFontForFile("font.ttf");
+alignmentContext
+  .BT()
+  .Tf(alignmentFont, 12)
+  .Tj("text", { encoding: "text" })
+  .Tj([[36, 65]])
+  .Quote("code", { encoding: "code" })
+  .DoubleQuote(1, 2, "hex", { encoding: "hex" })
+  .TJ("ab", -100, "c")
+  .TJ("ab", -100, "c", { encoding: "code" })
+  .TJ([[36, 65]], -100, [[37, 66]])
+  .ET();
+// @ts-expect-error TJ items are separate arguments, not one array.
+alignmentContext.TJ(["ab", -100, "c"]);
+
+const fontMetrics: muhammara.FontMetrics = alignmentFont.getFontMetrics(12);
+const fontAscender: number = fontMetrics.ascender;
+void fontAscender;
+void alignmentFont.calculateTextDimensions("text");
+void alignmentFont.calculateTextDimensions([36, 37], 12);
+
+const createdDate: muhammara.PDFDate = new muhammara.PDFDate(new Date());
+const createdText: muhammara.PDFTextString = new muhammara.PDFTextString(
+  "text",
+).fromString("replacement");
+void [createdDate, createdText, alignmentWriter.createPDFTextString("text")];
+
+const alignmentObjects = alignmentWriter.getObjectsContext();
+alignmentObjects.startNewIndirectObject();
+alignmentObjects.endPDFStream(alignmentObjects.startPDFStream());
+alignmentObjects.endIndirectObject();
+
+const extraInfo: { [key: string]: string } = alignmentWriter
+  .getDocumentContext()
+  .getInfoDictionary()
+  .getAdditionalInfoEntries();
+void extraInfo;
+
+const alignmentCopy = alignmentWriter.createPDFCopyingContext("source.pdf");
+const mergeTarget = alignmentWriter.createFormXObject(0, 0, 595, 842);
+alignmentCopy.mergePDFPageToFormXObject(mergeTarget, 0);
+alignmentWriter.endFormXObject(mergeTarget);
+
+const alignmentReader = muhammara.createReader("source.pdf");
+const maybeArray: muhammara.PDFArray | undefined = alignmentReader
+  .getTrailer()
+  .toPDFArray();
+// @ts-expect-error Conversions return undefined for another object type.
+const certainArray: muhammara.PDFArray = alignmentReader
+  .getTrailer()
+  .toPDFArray();
+void [maybeArray, certainArray];
+// @ts-expect-error Positioned PDF byte readers cannot move their start position.
+alignmentReader.getParserStream().moveStartPosition(0);
+
+const alignmentRecipe = new muhammara.Recipe("new", "output.pdf");
+alignmentRecipe
+  .createPage("A4")
+  .comment("note", "center", "center")
+  .annot("center", "center", "Highlight", { width: 10, height: 10 });

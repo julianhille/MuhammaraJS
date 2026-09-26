@@ -407,8 +407,8 @@ napi_value PDFReaderDriver::GetXrefEntry(const CallbackArgs &args) {
     return ThrowTypeError(args.Env(), kObjectIDError);
   XrefEntryInput *entry = reader->mPDFReader->GetXrefEntry(objectID);
   if (!entry)
-    return ThrowTypeError(args.Env(), "Unable to read object xref entry, page "
-                                      "index is wrong or page is null");
+    return ThrowTypeError(args.Env(), "Unable to read object xref entry, object "
+                                      "ID is out of range");
   napi_value result = Object(args.Env());
   Set(args.Env(), result, "objectPosition",
       Number(args.Env(), entry->mObjectPosition));

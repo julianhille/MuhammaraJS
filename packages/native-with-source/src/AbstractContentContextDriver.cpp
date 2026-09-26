@@ -661,13 +661,13 @@ bool AbstractContentContextDriver::ArrayToGlyphsList(
     napi_value item = nullptr;
     if (!Get(env, array, i, &item))
       return false;
-    if (!IsArray(env, item))
-      continue;
     uint32_t itemLength = 0;
-    if (!Length(env, item, &itemLength))
+    if (!IsArray(env, item) || !Length(env, item, &itemLength) ||
+        itemLength == 0) {
+      ThrowTypeError(env,
+                     "glyph text requires [glyphId, unicodeCodePoint] pairs");
       return false;
-    if (itemLength == 0)
-      continue;
+    }
     GlyphUnicodeMapping mapping;
     napi_value value = nullptr;
     uint32_t glyph = 0;
@@ -1281,7 +1281,7 @@ napi_value AbstractContentContextDriver::DrawImage(const CallbackArgs &args) {
       (args.Length() >= 4 && !IsObject(args.Env(), args[3])))
     return WrongArguments(
         args.Env(), "Wrong Arguments, please provide bottom left coordinates, "
-                    "an edge size and optional options object");
+                    "an image file path and optional options object");
 
   AbstractContentContext::ImageOptions options;
   if (args.Length() >= 4) {
