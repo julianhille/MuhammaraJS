@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
 
 describe("ModifierContentContext", function () {
-  it("matches page and form helpers, resource names, and line join 3", async function () {
+  it("matches page and form helpers, resource names, and bevel line joins", async function () {
     var muhammara = await createMuhammaraWasm();
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 100, 100));
@@ -27,7 +27,7 @@ describe("ModifierContentContext", function () {
 
     assert.equal(
       context
-        .j(3)
+        .j(2)
         .setOpacity(0.5)
         .doXObject(formName)
         .doXObject(form)
@@ -55,7 +55,7 @@ describe("ModifierContentContext", function () {
     pageModifier.writePage();
 
     var output = new TextDecoder().decode(modifier.end());
-    assert.match(output, /3 j/);
+    assert.match(output, /2 j/);
     assert.match(output, /\/ca 0.5/);
     assert.match(output, /\/CA 0.5/);
     assert.match(output, new RegExp(`/${fontName} 10 Tf`));
@@ -84,7 +84,7 @@ describe("ModifierContentContext", function () {
     var pageContext = writer.startPageContentContext(page);
     var pageName = page.getResourcesDictionary().addFontMapping(1);
     pageContext
-      .j(3)
+      .j(2)
       .BT()
       .Tf(pageName, 10)
       .Tm(1, 0, 0, 1, 5, 5)
@@ -93,7 +93,7 @@ describe("ModifierContentContext", function () {
     writer.writePage(page);
 
     var output = new TextDecoder().decode(writer.end());
-    assert.match(output, /3 j/);
+    assert.match(output, /2 j/);
     assert.match(output, new RegExp(`/${formName} 10 Tf`));
     assert.match(output, new RegExp(`/${pageName} 10 Tf`));
   });

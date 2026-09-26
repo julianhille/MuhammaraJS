@@ -285,6 +285,7 @@ export function createWriterToModifyFactory({
           return operator("J", 21, [value]);
         },
         j: function (value) {
+          checkOperatorRange("j", value, 2, "line join");
           return operator("j", 22, [value]);
         },
         M: function (value) {
@@ -1444,7 +1445,6 @@ export function createWriterToModifyFactory({
               ["k", 28, 4],
               ["K", 29, 4],
               ["w", 20, 1],
-              ["j", 22],
               ["M", 23],
               ["W", 30],
               ["WStar", 31],
@@ -1464,6 +1464,10 @@ export function createWriterToModifyFactory({
             context.J = function (value) {
               checkOperatorRange("J", value, 2, "line cap");
               return operator(21, value);
+            };
+            context.j = function (value) {
+              checkOperatorRange("j", value, 2, "line join");
+              return operator(22, value);
             };
             context.Tz = function (value) {
               if (!Number.isInteger(value))

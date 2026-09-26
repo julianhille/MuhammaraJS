@@ -711,9 +711,7 @@ export function createWriterFactory({
           return operator("J", 21, [value]);
         },
         j: function (value) {
-          if (!Number.isInteger(value) || value < 0 || value > 3) {
-            throw new RangeError("j requires a line join from 0 to 3");
-          }
+          checkOperatorRange("j", value, 2, "line join");
           return operator("j", 22, [value]);
         },
         M: function (value) {
@@ -1331,6 +1329,7 @@ export function createWriterFactory({
             return operator("J", 21, [value]);
           },
           j: function (value) {
+            checkOperatorRange("j", value, 2, "line join");
             return operator("j", 22, [value]);
           },
           M: function (value) {
