@@ -197,6 +197,16 @@ function drawPage(muhammara, writer, assets) {
   return { annotationId, metrics };
 }
 
+/**
+ * Parses the output back and checks what was written.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {Uint8Array} bytes - PDF bytes.
+ * @param {number} expectedPages - Expected page count.
+ * @param {number} rawId - Raw object ID.
+ * @param {number} annotationId - Annotation object ID.
+ * @returns {object} Page count, level, object count, and extracted text.
+ * @throws {Error} If a check fails.
+ */
 function inspect(muhammara, bytes, expectedPages, rawId, annotationId) {
   var reader = muhammara.createReader(bytes);
   try {
