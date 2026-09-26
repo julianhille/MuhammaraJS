@@ -3361,6 +3361,12 @@ export function createWriterFactory({
         requireOpenWriter();
         return documentContext;
       },
+      /**
+       * Creates a PDF text string.
+       * @param {string|number[]|Uint8Array|ArrayBuffer} [value] - Text or encoded bytes.
+       * @returns {PDFTextString} The text string.
+       * @throws {TypeError} If `value` is not text or bytes from 0 to 255.
+       */
       createPDFTextString: function (value) {
         return new PDFTextString(value);
       },
