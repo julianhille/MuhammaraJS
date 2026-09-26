@@ -379,6 +379,14 @@ export function createAnnotationMethods({
             ? border
             : (options.borderWidth ?? border.width ?? (markup ? 0 : -1));
         var borderDash = options.borderDash ?? border.dash ?? [];
+        /**
+         * Validates and writes the annotation or one of its replies.
+         * @param {number} [replyTo] - Annotation ID a reply answers.
+         * @param {RecipeAnnotationOptions} [reply] - Reply options; parent metadata fills gaps.
+         * @returns {number} The written annotation ID, or 0 when only validating.
+         * @throws {TypeError} If an annotation value is invalid.
+         * @throws {Error} If the annotation cannot be written.
+         */
         var write = (replyTo, reply) => {
           // Native replies inherit metadata, but keep their own contents,
           // rich-text mode, and opacity (opaque by default).
