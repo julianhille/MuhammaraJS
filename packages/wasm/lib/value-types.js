@@ -183,7 +183,7 @@ export function createValueTypes({ module, withString, withBytes }) {
           "PDFPage requires valid left, bottom, right, and top coordinates",
         );
       }
-      this._boxes = { media: [left, bottom, right, top] };
+      this._boxes = { [PageBox.MEDIA]: [left, bottom, right, top] };
       this._rotation = undefined;
       this._setNativeBox = null;
       this._setNativeRotation = null;

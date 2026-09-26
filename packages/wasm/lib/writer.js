@@ -1,6 +1,7 @@
 import { createChildLifecycle } from "./lifecycle.js";
 import {
   ImageFitPolicy,
+  PageBox,
   PDFImageType,
   RegisteredImageFormat,
 } from "./value-sets.js";
@@ -4017,7 +4018,13 @@ export function createWriterFactory({
         }
         currentPage = page;
         page._setNativeBox = function (name, box) {
-          var indexes = { media: 0, crop: 1, bleed: 2, trim: 3, art: 4 };
+          var indexes = {
+            [PageBox.MEDIA]: 0,
+            [PageBox.CROP]: 1,
+            [PageBox.BLEED]: 2,
+            [PageBox.TRIM]: 3,
+            [PageBox.ART]: 4,
+          };
           if (
             !module._muhammara_wasm_recipe_set_page_box(
               recipe,
