@@ -774,6 +774,12 @@ declare namespace muhammara {
      * @returns The values by key.
      */
     toJSObject(): { [key: string]: PDFObject };
+    /**
+     * Tells whether a key exists.
+     * @param inName - The key, without a leading slash.
+     * @returns True when the key exists.
+     * @throws {TypeError} If inName is not a single string.
+     */
     exists(inName: string): boolean;
     queryObject(inName: string): PDFObject;
   }
