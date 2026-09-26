@@ -4571,6 +4571,12 @@ declare namespace muhammara {
     lineWidth(width: number): Recipe;
     /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */
     opacity(opacity: number): Recipe;
+    /**
+     * Fill the current path.
+     *
+     * This compatibility method currently has no effect.
+     * @returns The recipe instance.
+     */
     fill(): Recipe;
     stroke(): Recipe;
     fillAndStroke(): Recipe;
