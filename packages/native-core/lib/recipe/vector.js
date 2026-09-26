@@ -13,31 +13,35 @@
 //   PercentColor component values range from 1 to 100.
 
 const { linkPdf } = require("./annotation");
+const muhammara = require("../muhammara");
 
 /**
  * Draw a circle
  * @name circle
  * @function
  * @memberof Recipe#
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|"center"} x - The coordinate x of the center
+ * @param {number|"center"} y - The coordinate y of the center
  * @param {number} radius - The radius
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - HexColor, PercentColor or DecimalColor
  * @param {string|number[]} [options.stroke] - HexColor, PercentColor or DecimalColor
- * @param {string|number[]}[ options.fill] - HexColor, PercentColor or DecimalColor
+ * @param {string|number[]} [options.fill] - HexColor, PercentColor or DecimalColor
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
+ * @param {string} [options.link] - Make the circle's bounding square open this URL.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.circle = function circle(x, y, radius, options = {}) {
+  [x, y] = this._centrify(x, y);
   const { nx, ny } = this._calibrateCoordinate(x, y);
   const diameter = radius * 2;
 
   if (options.fill) {
     const pathOptions = this._getPathOptions(options, nx, ny);
-    pathOptions.type = "fill";
+    pathOptions.type = muhammara.DrawingPathType.FILL;
 
     if (pathOptions.fill !== undefined) {
       pathOptions.color = pathOptions.fill;
@@ -60,7 +64,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
   }
   if (options.stroke || options.color || !options.fill) {
     const pathOptions = this._getPathOptions(options);
-    pathOptions.type = "stroke";
+    pathOptions.type = muhammara.DrawingPathType.STROKE;
 
     if (pathOptions.stroke !== undefined) {
       pathOptions.color = pathOptions.stroke;

@@ -137,6 +137,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Place the link of a Recipe `circle()`, `ellipse()`, `arc()` or `pie()`
+  drawn at `"center"` coordinates; its rectangle was computed from the string
+  and came out invalid [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Stop `Recipe#polygon()` from appending the closing point to the coordinate
   array the caller passed in [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix `Recipe#editPage()` throwing in debug mode, where it loaded the bold

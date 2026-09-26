@@ -2075,8 +2075,8 @@ declare namespace muhammara {
     polygon(coordinates: number[][], options?: Recipe.PolygonOptions): Recipe;
 
     circle(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       radius: number,
       options?: Recipe.CircleOptions,
     ): Recipe;

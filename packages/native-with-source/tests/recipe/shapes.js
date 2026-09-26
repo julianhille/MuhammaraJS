@@ -453,4 +453,32 @@ describe("Regular Polygons, Stars, Arrows", () => {
       .endPDF();
     require("node:assert/strict").equal(coordinates.length, 3);
   });
+
+  it('centers shapes and their links at "center" coordinates', () => {
+    const output = path.join(__dirname, "../output/center-shapes.pdf");
+    new Recipe("new", output)
+      .createPage(200, 200)
+      .circle("center", "center", 10, { link: "https://circle.test" })
+      .endPage()
+      .endPDF();
+    const muhammara = require("@muhammara/native-with-source");
+    const reader = muhammara.createReader(output);
+    const page = reader.parsePageDictionary(0);
+    const rects = reader
+      .queryDictionaryObject(page, "Annots")
+      .toPDFArray()
+      .toJSArray()
+      .map((reference) =>
+        reader
+          .parseNewObject(
+            reference.toPDFIndirectObjectReference().getObjectID(),
+          )
+          .toPDFDictionary()
+          .queryObject("Rect")
+          .toJSArray()
+          .map((value) => value.value),
+      );
+    reader.end();
+    require("node:assert/strict").deepEqual(rects, [[90, 90, 110, 110]]);
+  });
 });
