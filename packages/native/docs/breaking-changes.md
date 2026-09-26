@@ -48,11 +48,13 @@ This page collects the compatibility changes formerly maintained in the README.
   accept any `string`, so `tsc` reports a value typed `string`. Pass a
   `DeviceColorSpace` or `Recipe.Colorspace` value; see
   [Type Colorspaces](getting-started/migrate-from-v6.md#type-colorspaces) [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
-- A named low-level `color` is read in the given `colorspace`, as a numeric
-  color is and as in `@muhammara/wasm`. In 6.x a named color always drew in
-  RGB, so `{ color: "red", colorspace: "gray" }` drew red and now draws the
-  value's last byte as gray. Drop `colorspace`, or set it to `"rgb"`, for a
-  named color [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+- The low-level drawing helpers and `writeText()` throw
+  `TypeError: only a numeric color can use the gray or cmyk colorspace` for a
+  color name or `#rrggbb` string with `colorspace: "gray"` or `"cmyk"`, as in
+  `@muhammara/wasm`. Such a color is RGB; in 6.x it drew in RGB and the
+  colorspace was ignored. Drop `colorspace` for a string color, or pass the
+  gray or CMYK color as a number; see
+  [Draw in Gray and CMYK](how-to/draw-in-gray-and-cmyk.md) [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
 - `InfoDictionary#getAdditionalInfoEntries()` is declared without its ignored
   `key` parameter, so `getAdditionalInfoEntries("Company")` fails `tsc` with
   `Expected 0 arguments`. The call always returned every entry; drop the

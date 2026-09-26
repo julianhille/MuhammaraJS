@@ -341,7 +341,10 @@ declare namespace muhammara {
     (typeof DeviceColorSpace)[keyof typeof DeviceColorSpace];
 
   export interface ColorOptions {
-    /** A DeviceColorSpace value. */
+    /**
+     * A DeviceColorSpace value. A `gray` or `cmyk` color must be a number; a
+     * color name or `#rrggbb` string is RGB and throws a `TypeError` with them.
+     */
     colorspace?: DeviceColorSpace;
     color?: string | number;
   }

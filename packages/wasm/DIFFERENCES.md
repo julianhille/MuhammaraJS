@@ -20,8 +20,9 @@ source PDFs for `appendPDFPagesFromPDF`, `mergePDFPagesToPage`,
 a source `password` throws a `TypeError`. Decrypt the source with
 `recrypt(bytes, { password })` first.
 Drawing helpers and `writeText` accept only `rgb`, `gray`, or `cmyk` as
-`colorspace` and throw a `TypeError` otherwise; native also accepts other
-strings for compatibility.
+`colorspace` and throw a `TypeError` otherwise, and only a numeric `color` can
+use `gray` or `cmyk`, as in native. Wasm also accepts an `[r, g, b]` array as a
+low-level RGB `color`, which native does not.
 String writers and `PDFWStreamForBuffer.write()` accept an array of byte
 values on both ends; Wasm throws a `TypeError` for an item that is not an
 integer from 0 to 255, where native coerces it to a byte.

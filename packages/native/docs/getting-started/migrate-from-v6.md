@@ -360,6 +360,11 @@ context.drawRectangle(10, 10, 100, 40, {
 });
 ```
 
+A gray or CMYK color must be a number. A color name or `#rrggbb` string is RGB,
+so 7.x throws `only a numeric color can use the gray or cmyk colorspace` where
+6.x drew it in RGB; drop `colorspace` for such a color. See
+[Draw in Gray and CMYK](../how-to/draw-in-gray-and-cmyk.md).
+
 ### Type Arrows And Triangles
 
 `Recipe.arrow()` now uses `ArrowOptions`. Replace broad string or number

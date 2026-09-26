@@ -327,15 +327,59 @@ describe("HighLevelContentContext", function () {
           color: 0xff0000,
           colorspace: undefined,
         });
-        // A named color is read in the colorspace, as a number is.
-        target.context.drawRectangle(5, 6, 7, 8, {
-          type: "fill",
-          color: "red",
-          colorspace: "gray",
-        });
         var output = await target.finish();
         assert.doesNotMatch(output, /lab/);
-        assert.match(output, /\b0 g\s+5 6 7 8 re/);
+      },
+    );
+
+    it(
+      "rejects a string color in the gray or cmyk colorspace on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var font = target.writer.getFontForBytes("arial");
+        var rgbOnly = {
+          name: "TypeError",
+          message: "only a numeric color can use the gray or cmyk colorspace",
+        };
+        // Wasm also accepts [r, g, b] arrays, which are RGB as well.
+        ["red", "#ff0000", [255, 0, 0]].forEach((color) => {
+          ["gray", "cmyk"].forEach((colorspace) => {
+            assert.throws(
+              () =>
+                target.context.drawRectangle(1, 2, 3, 4, {
+                  color,
+                  colorspace,
+                }),
+              rgbOnly,
+            );
+            assert.throws(
+              () =>
+                target.context.writeText("x", 10, 10, {
+                  font,
+                  size: 12,
+                  color,
+                  colorspace,
+                }),
+              rgbOnly,
+            );
+          });
+        });
+        // A string color draws in RGB, and a number in any colorspace.
+        target.context
+          .drawRectangle(5, 6, 7, 8, {
+            type: "fill",
+            color: "red",
+            colorspace: "rgb",
+          })
+          .drawRectangle(9, 10, 11, 12, {
+            type: "fill",
+            color: 0x80,
+            colorspace: "gray",
+          });
+        var output = await target.finish();
+        assert.match(output, /1 0 0 rg\s+5 6 7 8 re/);
+        assert.match(output, /0\.50\d* g\s+9 10 11 12 re/);
+        assert.doesNotMatch(output, /\(x\)|<[0-9A-F]+> Tj/);
       },
     );
 

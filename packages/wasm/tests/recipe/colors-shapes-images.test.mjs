@@ -66,6 +66,43 @@ describe("Recipe colors, shapes, and images", function () {
     assert.ok(Object.isFrozen(DeviceColorSpace));
   });
 
+  it("draws the gray and CMYK how-to colors", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({ compress: false });
+    var page = writer.createPage(0, 0, 595, 842);
+    writer
+      .startPageContentContext(page)
+      .drawRectangle(72, 700, 100, 50, {
+        type: "fill",
+        colorspace: DeviceColorSpace.GRAY,
+        color: 0x80,
+      })
+      .drawRectangle(200, 700, 100, 50, {
+        type: "fill",
+        colorspace: DeviceColorSpace.CMYK,
+        color: 0x00ff0000,
+      })
+      .drawRectangle(328, 700, 100, 50, { type: "fill", color: "teal" });
+    writer.writePage(page);
+    var lowLevel = new TextDecoder("latin1").decode(writer.end());
+    assert.match(lowLevel, /0\.50\d* g/);
+    assert.match(lowLevel, /0 1 0 0 k/);
+    assert.match(lowLevel, /0 0\.50\d* 0\.50\d* rg/);
+    var recipe = new TextDecoder("latin1").decode(
+      new Recipe({ compress: false })
+        .createPage(595, 842)
+        .rectangle(72, 72, 100, 50, { fill: "#80" })
+        .rectangle(200, 72, 100, 50, { fill: "#00ff0000" })
+        .rectangle(328, 72, 100, 50, { fill: [0, 0, 0, 255] })
+        .endPage()
+        .endPDF(),
+    );
+    assert.match(recipe, /0\.50\d* g/);
+    assert.match(recipe, /0 1 0 0 k/);
+    assert.match(recipe, /0 0 0 1 k/);
+  });
+
   it("rejects unknown colorspaces", async function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe().createPage(300, 300);

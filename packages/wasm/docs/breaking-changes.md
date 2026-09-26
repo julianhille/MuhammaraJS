@@ -2,6 +2,15 @@
 
 ## Version 1.x
 
+- The low-level drawing helpers and `writeText()` throw
+  `TypeError: only a numeric color can use the gray or cmyk colorspace` for a
+  color name, `#rrggbb` string, or `[r, g, b]` array with `colorspace: "gray"`
+  or `"cmyk"`, matching native. Such a color is RGB, but it was read as gray or
+  CMYK, so `{ color: "red", colorspace: "gray" }` drew black. Drop `colorspace`
+  for an RGB color, or pass the gray or CMYK color as a number; see
+  [Draw in Gray and CMYK](how-to/draw-in-gray-and-cmyk.md)
+  [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+
 - A hex color string without the leading `#`, such as `"ff0000"`, and an empty
   color string throw
   `TypeError: Colors must be a 24-bit number, a color name, or a #rrggbb string`

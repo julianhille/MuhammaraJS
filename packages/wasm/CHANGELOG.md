@@ -6,6 +6,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Throw `TypeError: only a numeric color can use the gray or cmyk colorspace`
+  from the low-level drawing helpers and `writeText()` for a color name,
+  `#rrggbb` string, or `[r, g, b]` array with `colorspace: "gray"` or
+  `"cmyk"`, as native does. Such a color is RGB, but it was read as gray or
+  CMYK, so `{ color: "red", colorspace: "gray" }` drew black. Drop
+  `colorspace`, or pass the gray or CMYK color as a number, see
+  [Draw in Gray and CMYK](docs/how-to/draw-in-gray-and-cmyk.md) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw a `TypeError` for a hex color string without the leading `#`, such as
   `"ff0000"`, or an empty string in the low-level drawing helpers,
   `writeText()`, and `CompactModifier` shapes and text, matching native.

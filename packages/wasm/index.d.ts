@@ -1416,6 +1416,11 @@ export type TextRenderingMode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface DrawPathOptions {
   color?: ColorValue;
+  /**
+   * A DeviceColorSpace value. A `gray` or `cmyk` color must be a number; a
+   * color name, `#rrggbb` string, or `[r, g, b]` array is RGB and throws a
+   * `TypeError` with them.
+   */
   colorspace?: DeviceColorSpace;
   type?: DrawingPathType;
   width?: number;
