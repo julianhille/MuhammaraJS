@@ -6,10 +6,12 @@ const utils = require("./utils");
  * @name insertPage
  * @function
  * @memberof Recipe#
- * @param {number} afterPageNumber - The page number for insertion.
+ * @param {number} afterPageNumber - The one-based page number to insert after; 0 inserts before the first page.
  * @param {string} pdfSrc - The path for the other pdf
- * @param {number} srcPageNumber - The page number to be insterted from the other pdf.
- * @returns {Recipe} The recipe instance.
+ * @param {number} srcPageNumber - The one-based page number to be inserted from the other pdf.
+ * @returns {Recipe} The recipe instance. Pages are inserted by `endPDF()`;
+ *   Buffer sources do not support insertion.
+ * @throws {Error} If pages were deleted with deletePage() on this Recipe.
  * @throws {Error} If afterPageNumber is not a number.
  * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
  */
