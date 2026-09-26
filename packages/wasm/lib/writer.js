@@ -3662,6 +3662,13 @@ export function createWriterFactory({
           await normalizeBytesAsync(image, "Image bytes"),
         );
       },
+      /**
+       * Reads JPEG sample size, components, and JFIF, Exif, and Photoshop densities.
+       * @param {string|ByteSource} image - Registered JPEG name, or JPEG bytes.
+       * @returns {JPGImageInformation} The information; density fields exist only for present headers.
+       * @throws {TypeError} If the name is not a registered JPEG or the bytes are unsupported.
+       * @throws {Error} If the writer ended or the JPEG cannot be read.
+       */
       retrieveJPGImageInformation: function (image) {
         requireOpenWriter();
         var bytes;
