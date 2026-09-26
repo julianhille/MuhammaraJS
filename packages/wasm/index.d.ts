@@ -895,6 +895,37 @@ export interface Recipe {
   endPDF(callback?: (bytes: Uint8Array) => void): Uint8Array;
   dispose(): void;
 }
+// Low-level types under their native names, for code shared with
+// @muhammara/native. Native path, stream, and password options have no alias.
+export type EPDFVersion = PDFVersion;
+export type eRangeType = ERangeType;
+export type PDFBox = PDFRectangle;
+export type TransformationMatrix = PDFMatrix;
+export type TextDimension = TextDimensions;
+export type JPEGInformation = JPGImageInformation;
+export type TIFFUsageOptions = TIFFOptions;
+export type TIFFColor = NonNullable<
+  NonNullable<TIFFOptions["bwTreatment"]>["oneColor"]
+>;
+export type TextRenderOptions = TextOptions;
+export type UsedFont = PDFUsedFont;
+export type FontOptions = Pick<WriteTextOptions, "size" | "font">;
+export type ColorOptions = Pick<DrawPathOptions, "color" | "colorspace">;
+export type GraphicOptions = DrawPathOptions;
+export type TransformationObject = Exclude<
+  NonNullable<DrawImageOptions["transformation"]>,
+  PDFMatrix
+>;
+export type ImageOptions = DrawImageOptions;
+export type MergeOptions = PageRangeOptions;
+export type AppendOptions = PageRangeOptions;
+export type PDFWriterOptions = WriterOptions;
+export type PDFWriterToModifyOptions = WriterOptions;
+export type AbstractContentContext = ContentContext;
+export type PageContentContext = ContentContext;
+export type XObjectContentContext = ContentContext;
+export type FormObject = FormXObject;
+export type PDFPageModifier = PageModifier;
 /**
  * Recipe types under the native names, one per `Recipe` value set, for example
  * `Recipe.TextWrap` for the values of the `Recipe.TextWrap` constants.

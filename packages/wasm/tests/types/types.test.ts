@@ -1073,6 +1073,23 @@ async function usesNamedValueSets() {
     aliasInstructions,
     aliasEnd,
   ];
+  var nativeVersion: import("../../index.js").EPDFVersion =
+    muhammara.ePDFVersion17;
+  var nativeFit: import("../../index.js").TransformationObject = {
+    width: 10,
+    height: 10,
+    fit: "overflow",
+  };
+  var nativeGraphic: import("../../index.js").GraphicOptions = {
+    type: "fill",
+    colorspace: "cmyk",
+  };
+  var nativeMerge: import("../../index.js").MergeOptions = {
+    type: muhammara.eRangeTypeSpecific,
+    specificRanges: [[0, 1]],
+  };
+  var nativeTiffColor: import("../../index.js").TIFFColor = [0, 0, 0, 255];
+  void [nativeVersion, nativeFit, nativeGraphic, nativeMerge, nativeTiffColor];
 }
 
 void usesNamedValueSets;

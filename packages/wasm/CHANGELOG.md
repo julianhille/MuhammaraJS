@@ -345,6 +345,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   types, for example `Recipe.TextOptions` and `Recipe.TableOptions`; type
   `createPage(size)` as `RecipePageSize` and text-box `textAlign` as
   `RecipeTextBoxAlign` instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Add native's low-level type names as aliases, for example `EPDFVersion`,
+  `UsedFont`, `TextDimension`, `JPEGInformation`, `TransformationObject`, and
+  `PageContentContext`, so declarations shared with `@muhammara/native` compile
+  against both packages [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take
   `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
   `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,
