@@ -387,6 +387,10 @@ export function createRawObjectsContext({
     }
 
     return {
+      /**
+       * Reports whether a dictionary, stream, free-context writer, or indirect object is open.
+       * @returns {boolean} Whether an operation must end before the PDF ends.
+       */
       _hasActive: function () {
         return (
           activeDictionary !== null ||
