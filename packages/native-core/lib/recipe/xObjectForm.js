@@ -8,17 +8,23 @@ const Color = class Color {
   /** Not meant to be instantiated; use the static methods. */
   constructor() {}
 
+  /**
+   * Set the fill color.
+   * @param {Object} ctx - The content context.
+   * @param {Object} colorModel - The color model from _transformColor().
+   * @returns {void}
+   */
   static fill(ctx, colorModel) {
     switch (colorModel.colorspace) {
-      case "rgb":
+      case Colorspace.RGB:
         ctx.rg(colorModel.r, colorModel.g, colorModel.b);
         break;
 
-      case "cmyk":
+      case Colorspace.CMYK:
         ctx.k(colorModel.c, colorModel.m, colorModel.y, colorModel.k);
         break;
 
-      case "gray":
+      case Colorspace.GRAY:
         ctx.g(colorModel.gray);
         break;
     }
