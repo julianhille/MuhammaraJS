@@ -514,6 +514,10 @@ declare namespace muhammara {
      * @returns The content context.
      */
     getContentContext(): XObjectContentContext;
+    /**
+     * Returns the form content stream.
+     * @returns The stream.
+     */
     getContentStream(): PDFStream;
     getResourcesDictionary(): ResourcesDictionary;
   }
