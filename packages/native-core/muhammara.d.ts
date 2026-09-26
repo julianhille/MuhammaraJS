@@ -1827,7 +1827,11 @@ declare namespace muhammara {
     getPageInfo(): InfoDictionary;
     pauseContext(): Recipe;
     resumeContext(): Recipe;
-    rotateContent(degrees: number, x?: number, y?: number): Recipe;
+    rotateContent(
+      degrees: number,
+      x?: Recipe.RecipeCoordinate,
+      y?: Recipe.RecipeCoordinate,
+    ): Recipe;
     split(outputDir?: string, prefix?: string): Recipe;
 
     text(text: string, options?: Recipe.TextOptions): Recipe;
