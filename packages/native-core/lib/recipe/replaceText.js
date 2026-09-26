@@ -1,6 +1,12 @@
 var WHITESPACE = "\0\t\n\f\r ";
 var DELIMITERS = "()<>[]{}/%";
 
+/**
+ * Escape backslashes and parentheses for a PDF literal string.
+ * @private
+ * @param {string} value - The string content.
+ * @returns {string} The escaped content, without the enclosing parentheses.
+ */
 function escapePDFLiteralString(value) {
   return value.replace(/([\\()])/g, "\\$1");
 }
