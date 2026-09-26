@@ -113,9 +113,15 @@ function startsLine(node) {
   return startsLine(parent);
 }
 
+/**
+ * Whether an element makes its text bold.
+ * @private
+ * @param {string} [tagName=''] - The element name, matched case-insensitively.
+ * @returns {boolean} True for b and strong.
+ */
 function isBoldTag(tagName = "") {
-  const boldTags = ["b", "strong"];
-  return boldTags.includes(tagName);
+  const boldTags = [HtmlTag.B, HtmlTag.STRONG];
+  return boldTags.includes(String(tagName).toLowerCase());
 }
 
 function isItalicTag(tagName = "") {
