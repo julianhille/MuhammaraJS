@@ -1,5 +1,11 @@
 import { PageBox } from "./value-sets.js";
-/** Rejects page indices and object IDs the native reader would silently wrap. */
+/**
+ * Rejects page indices and object IDs the native reader would silently wrap.
+ * @param {*} value - Candidate index or ID.
+ * @param {string} label - Name used in the error message.
+ * @returns {void}
+ * @throws {TypeError} If `value` is not an unsigned 32-bit integer.
+ */
 function requireIndex(value, label) {
   if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
     throw new TypeError(`${label} must be a non-negative integer`);
