@@ -761,6 +761,14 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     Tf(fontReferenced: UsedFont | string, fontSize: number): this;
+    /**
+     * Shows text; operator Tj. Set a font with Tf() first.
+     * @param text - The text, or glyphs of the current font.
+     * @param options - Text encoding options.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {TypeError} If there is no content context.
+     */
     Tj(text: string, options?: TextRenderOptions): this;
     Tj(glyphs: Glyph): this;
     Tj(text: string | Glyph): this;
