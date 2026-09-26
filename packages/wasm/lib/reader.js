@@ -1165,6 +1165,15 @@ export function createReaderFactory({
           module._free(statusPointer);
         }
       },
+      /**
+       * Lists the direct content operations that produce a page mark.
+       * @param {number} pageIndex - Zero-based page index.
+       * @param {PDFExtractionLimits} [limits] - Tighter extraction budgets.
+       * @returns {PDFPageContentItem[]} The item type and operator per mark.
+       * @throws {TypeError} If the index is invalid or `limits` is not an object.
+       * @throws {RangeError} If a limit is invalid or the page does not exist.
+       * @throws {Error} If the reader has ended or the page exceeds the limits.
+       */
       extractPageContentItems: function (pageIndex, limits = {}) {
         requireReader();
         var values = extractionLimits(pageIndex, limits);
