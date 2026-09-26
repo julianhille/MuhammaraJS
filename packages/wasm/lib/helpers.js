@@ -40,6 +40,12 @@ export function createHelpers(module) {
       if (module.FS.analyzePath(path).exists) throw error;
     }
   }
+  /**
+   * Runs a callback with a NUL-terminated UTF-8 copy of a string in Wasm memory.
+   * @param {string} value - Text to copy.
+   * @param {function(number, number): *} callback - Receives the pointer and the byte length without the terminator.
+   * @returns {*} The callback result; the copy is freed afterwards.
+   */
   function withString(value, callback) {
     var bytes = encoder.encode(value);
     var pointer = module._malloc(bytes.length + 1);
