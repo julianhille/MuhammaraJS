@@ -1544,6 +1544,14 @@ export function createWriterToModifyFactory({
           }),
         );
       },
+      /**
+       * Detects an image format after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} image - Image bytes, Blob, or File.
+       * @returns {Promise<PDFImageType|undefined>} The format, or undefined when unknown.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the modifier has ended.
+       */
       getImageTypeAsync: async function (image) {
         return this.getImageType(
           await normalizeBytesAsync(image, "Image bytes"),
