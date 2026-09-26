@@ -77,6 +77,10 @@ export class ObjectUrlStore {
     return this.current;
   }
 
+  /**
+   * Revokes the current object URL.
+   * @returns {boolean} Whether a URL was revoked.
+   */
   revoke() {
     if (!this.current) return false;
     this.urlApi.revokeObjectURL(this.current);
