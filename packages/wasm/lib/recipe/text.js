@@ -228,7 +228,15 @@ function boundaryCharSpacing(left, right, charSpace) {
   );
 }
 
-/** Lays out styled HTML into lines while preserving list and break structure. */
+/**
+ * Lays out styled HTML into lines while preserving list and break structure.
+ * @param {object[]} source - Text objects from htmlToTextObjects.
+ * @param {number} width - Available width; 0 disables wrapping.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Base text options.
+ * @param {RecipeTextWrap|boolean} wrap - Wrap mode.
+ * @returns {{parts: object[], last: boolean}[]} Lines of styled fragments.
+ */
 function htmlLines(source, width, measure, options, wrap) {
   var result = [];
   var parts = [];
