@@ -1579,6 +1579,12 @@ const Line = class Line {
     return -(1 / this.slope);
   }
 
+  /**
+   * The point past an end of the segment, continuing along the line.
+   * @param {number} distance - How far past the end.
+   * @param {number} [ptNbr=2] - The end to extend: 1 or 2.
+   * @returns {Point} The extended point.
+   */
   extend(distance, ptNbr = 2) {
     let slope = this.slope;
     let ept = this.point(ptNbr);
