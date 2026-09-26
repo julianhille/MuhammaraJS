@@ -138,6 +138,13 @@ exports._getPathOptions = function _getPathOptions(
   return pathOptions;
 };
 
+/**
+ * The distance between two points.
+ * @private
+ * @param {number[]} coordA - The first [x, y] point.
+ * @param {number[]} coordB - The second [x, y] point.
+ * @returns {number} The distance.
+ */
 exports._getDistance = function _getDistance(coordA, coordB) {
   const disX = Math.abs(coordB[0] - coordA[0]);
   const disY = Math.abs(coordB[1] - coordA[1]);
