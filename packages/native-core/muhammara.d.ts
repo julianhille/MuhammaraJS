@@ -1546,6 +1546,7 @@ declare namespace muhammara {
      * @returns The content items in drawing order.
      * @throws {TypeError} If the arguments are not a page index and an optional
      *   limits object, or the page cannot be read.
+     * @throws {RangeError} If a limit is not a positive 32-bit integer.
      * @throws {Error} If the page exceeds the extraction limits.
      */
     extractPageContentItems(
