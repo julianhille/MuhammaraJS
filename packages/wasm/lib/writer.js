@@ -3026,6 +3026,12 @@ export function createWriterFactory({
       }
     }
 
+    /**
+     * Validates an optional reserved object ID.
+     * @param {number} [value] - Object ID to write the XObject under.
+     * @returns {number} The ID, or 0 to allocate a new one.
+     * @throws {RangeError} If `value` is not a positive 32-bit integer.
+     */
     function optionalObjectId(value) {
       if (value === undefined) return 0;
       if (!Number.isSafeInteger(value) || value <= 0 || value > 0xffffffff) {
