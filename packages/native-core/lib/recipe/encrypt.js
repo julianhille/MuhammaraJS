@@ -101,8 +101,9 @@ exports._getEncryptOptions = function _getEncryptOptions(
  * @param {string} [options.password] - The permission password.
  * @param {string} [options.ownerPassword] - The password for editing.
  * @param {string} [options.userPassword] - The password for viewing & encryption.
- * @param {number} [options.userProtectionFlag] - The flag for the security level.
- * @returns {Recipe} The recipe instance.
+ * @param {number} [options.userProtectionFlag] - The flag for the security level, see `permission()`.
+ * @returns {Recipe} The recipe instance. The file is encrypted by `endPDF()`;
+ *   Buffer sources are not encrypted.
  */
 exports.encrypt = function encrypt(options = {}) {
   this.needToEncrypt = true;
