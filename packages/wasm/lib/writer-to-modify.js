@@ -3677,6 +3677,11 @@ export function createWriterToModifyFactory({
           await normalizeBytesAsync(sourceBytes, "PDF input"),
         );
       },
+      /**
+       * Opens the PDF being modified as a copying source.
+       * @returns {DocumentCopyingContext} The copying context; call `end()` when done.
+       * @throws {Error} If the modifier ended or the context cannot be created.
+       */
       createPDFCopyingContextForModifiedFile: function () {
         requireOpen();
         var copying =
