@@ -156,6 +156,12 @@ function showResult() {
 function runInWorker(byteAssets, selectedExample) {
   return new Promise((resolve, reject) => {
     var worker = new Worker("./example-worker.mjs", { type: "module" });
+    /**
+     * Ends the Worker and settles the promise.
+     * @param {function(*): void} callback - `resolve` or `reject`.
+     * @param {*} value - Result or error.
+     * @returns {void}
+     */
     var finish = (callback, value) => {
       worker.terminate();
       callback(value);
