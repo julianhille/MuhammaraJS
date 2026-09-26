@@ -4064,6 +4064,17 @@ declare namespace muhammara {
      * @throws {Error} If the page does not exist in the source PDF.
      */
     editPage(pageNumber: number): Recipe;
+    /**
+     * Delete one or more pages from an existing PDF.
+     * Page numbers are one-based and refer to the original source document.
+     * @param pageNumbers - Page number or page numbers to delete.
+     * @returns The recipe instance.
+     * @throws {RangeError} If a page number does not identify an original page.
+     * @throws {Error} If the Recipe has no existing source, has ended, would delete
+     * every page, or combines deletion with page composition. Page-tree,
+     * retained-reference, and object-generation validation is deferred to
+     * endPDF(), which throws those errors during finalization.
+     */
     deletePage(pageNumbers: number | number[]): Recipe;
 
     replaceText(text: string, replacement: string, pageNumber: number): Recipe;
