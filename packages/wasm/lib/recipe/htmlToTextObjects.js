@@ -90,7 +90,11 @@ export function htmlToTextObjects(html, options = {}) {
   };
   // HTML5 allows omitting </li>, so an item also ends when its sibling or its
   // list does. Without this, later content would inherit a stale marker.
-  /** Closes active list items at or below the given nesting depth. */
+  /**
+   * Closes active list items at or below the given nesting depth.
+   * @param {number} depth - List depth.
+   * @returns {void}
+   */
   var closeItems = (depth) => {
     while (items.length && items[items.length - 1].depth >= depth) items.pop();
   };
