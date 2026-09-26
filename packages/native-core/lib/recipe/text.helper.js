@@ -484,6 +484,9 @@ exports.Column = class Column {
   get text() {
     return this._text;
   }
+  /**
+   * @returns {Object} The column text options.
+   */
   get options() {
     return this._options;
   }
