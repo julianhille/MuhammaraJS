@@ -122,6 +122,11 @@ declare namespace muhammara {
      * @returns The current byte offset.
      */
     getCurrentPosition(): number;
+    /**
+     * Sets the offset that later positions are counted from, for PDF data
+     * that does not begin at byte zero.
+     * @param inPosition - The absolute byte offset of the start.
+     */
     moveStartPosition(inPosition: number): void;
   }
 
