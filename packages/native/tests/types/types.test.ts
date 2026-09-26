@@ -813,3 +813,12 @@ const builtInWrittenCount: number =
   builtInWriteStream.write([37, 80]) +
   builtInWriteStream.write(Buffer.from("DF"));
 void builtInWrittenCount;
+
+const copyingContext = muhammara
+  .createWriter(new muhammara.PDFWStreamForBuffer())
+  .createPDFCopyingContext("source.pdf");
+const sourceParser: muhammara.PDFReader =
+  copyingContext.getSourceDocumentParser();
+void sourceParser.getPagesCount();
+// @ts-expect-error The source parser belongs to the copying context and takes no input.
+copyingContext.getSourceDocumentParser("source.pdf");
