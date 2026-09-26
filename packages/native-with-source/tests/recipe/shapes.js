@@ -439,4 +439,18 @@ describe("Regular Polygons, Stars, Arrows", () => {
     assert.equal(numbers, pairs);
     assert.match(numbers, / l\b/);
   });
+
+  it("leaves the polygon coordinates it is given unchanged", () => {
+    const coordinates = [
+      [0, 0],
+      [10, 0],
+      [5, 5],
+    ];
+    new Recipe("new", path.join(__dirname, "../output/polygon-input.pdf"))
+      .createPage(50, 50)
+      .polygon(coordinates)
+      .endPage()
+      .endPDF();
+    require("node:assert/strict").equal(coordinates.length, 3);
+  });
 });
