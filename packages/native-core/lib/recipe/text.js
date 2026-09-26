@@ -890,13 +890,25 @@ function flushTextLinks(recipe, annotations) {
   }
 }
 
+/**
+ * Lay out text objects in a text box: resolve padding and wrap, walk HTML
+ * children (list bullets, numbering and indentation), split them into lines
+ * and turn line breaks into line state.
+ * @private
+ * @param {Object[]} textObjects - The text layout objects.
+ * @param {Object} textBox - The text box; wrap and padding are normalized in place.
+ * @param {Object} pathOptions - The resolved text options.
+ * @returns {{toWriteTextObjects: Object[], textHeight: number}} The laid-out
+ *   runs and the total text height.
+ * @throws {Error} If a font cannot be loaded.
+ */
 exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
   let totalHeight = 0;
   // allow user to treat wrap as boolean
   if (textBox.wrap === true) {
-    textBox.wrap = "auto";
+    textBox.wrap = TextWrap.AUTO;
   } else if (textBox.wrap === false) {
-    textBox.wrap = "ellipsis";
+    textBox.wrap = TextWrap.ELLIPSIS;
   }
 
   // Allows user to enter a single number which will be used for all text box sides,
@@ -998,34 +1010,36 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       textObject.currentIndex = 0;
       let prependValue = textObject.prependValue;
 
+      const tag = (textObject.tag || "").toLowerCase();
       textObject.childs.forEach((child) => {
-        if (textObject.tag == "ul") {
+        const childTag = (child.tag || "").toLowerCase();
+        if (tag === HtmlTag.UL) {
           child.prependValue = "* ";
           child.layer = textObject.layer + 1;
           // child.indent = 4 * child.layer;
         }
-        if (textObject.tag == "ol") {
-          if (child.tag != "ol") {
+        if (tag === HtmlTag.OL) {
+          if (childTag !== HtmlTag.OL) {
             textObject.currentIndex++;
             child.prependValue = `${textObject.currentIndex.toString()}. `;
           }
           child.layer = textObject.layer + 1;
           // child.indent = 4 * child.layer;
         }
-        if (textObject.tag == "li") {
-          if (child.tag == "ol" || child.tag == "ul") {
+        if (tag === HtmlTag.LI) {
+          if (childTag === HtmlTag.OL || childTag === HtmlTag.UL) {
             child.layer = textObject.layer - 1;
           }
         }
         if (
           prependValue &&
-          !["ol", "ul"].includes(child.tag) &&
+          ![HtmlTag.OL, HtmlTag.UL].includes(childTag) &&
           hasRenderableContent(child)
         ) {
           child.prependValue = prependValue;
           prependValue = null;
           textObject.indent =
-            textObject.tag == "li"
+            tag === HtmlTag.LI
               ? 2 * textObject.layer
               : textObject.indent || 2 * textObject.layer;
         }

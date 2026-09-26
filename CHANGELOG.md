@@ -139,7 +139,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Helvetica font by an outdated name [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix Recipe HTML text: links now use the `href` attribute instead of the
   first attribute, `<a>` without attributes no longer throws, and upper-case
-  tags such as `<B>` and `<U>` are styled [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+  tags such as `<B>`, `<U>` and `<UL>` are styled [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix separation colors in every Recipe after the first in a process: the
   Separation color space was cached globally, so later documents referenced
   an object that only existed in the first PDF [#792](https://github.com/julianhille/MuhammaraJS/issues/792)

@@ -610,4 +610,28 @@ describe("HTML to TextObjects", () => {
     assert.isTrue(strikeOut.strikeOut);
     assert.isTrue(italic.isItalic);
   });
+
+  it("lays out upper-case lists with bullets and numbers", () => {
+    const output = path.join(__dirname, "../output/html-upper-case-lists.pdf");
+    new muhammara.Recipe("new", output)
+      .createPage(300, 300)
+      .text("<UL><LI>dot</LI></UL><OL><LI>one</LI></OL>", 10, 10, {
+        html: true,
+        size: 10,
+        textBox: { width: 200 },
+      })
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    try {
+      const text = reader
+        .extractPageText(0)
+        .map((item) => item.content)
+        .join("|");
+      assert.include(text, "* dot");
+      assert.include(text, "1. one");
+    } finally {
+      reader.end();
+    }
+  });
 });
