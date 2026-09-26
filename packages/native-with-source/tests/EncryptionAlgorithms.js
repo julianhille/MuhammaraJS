@@ -15,6 +15,28 @@ function createEncryptedPdf(outputPath, version) {
   writer.end();
 }
 
+function readStreamIVs(pdf) {
+  var marker = Buffer.from("stream");
+  var ivs = [];
+  var offset = 0;
+
+  while ((offset = pdf.indexOf(marker, offset)) !== -1) {
+    var contentOffset = offset + marker.length;
+    var previous = pdf[offset - 1];
+    if (
+      (previous === 0x0a || previous === 0x0d || previous === 0x20) &&
+      (pdf[contentOffset] === 0x0a || pdf[contentOffset] === 0x0d)
+    ) {
+      if (pdf[contentOffset] === 0x0d) contentOffset++;
+      if (pdf[contentOffset] === 0x0a) contentOffset++;
+      ivs.push(pdf.subarray(contentOffset, contentOffset + 16));
+    }
+    offset += marker.length;
+  }
+
+  return ivs;
+}
+
 describe("Encryption algorithms", function () {
   var outputDirectory;
 
@@ -76,5 +98,26 @@ describe("Encryption algorithms", function () {
       "/Length 256",
       "/CFM /AESV3",
     ]);
+  });
+
+  it("generates a distinct IV for each AES-encrypted stream", function () {
+    var outputPath = path.join(outputDirectory, "distinct-aes-ivs.pdf");
+    var writer = muhammara.createWriter(outputPath, {
+      compress: false,
+      version: muhammara.ePDFVersion17,
+      userPassword: "user",
+      ownerPassword: "owner",
+    });
+
+    for (var index = 0; index < 2; index++) {
+      var page = writer.createPage(0, 0, 100, 100);
+      writer.startPageContentContext(page).q().re(1, 1, 10, 10).f().Q();
+      writer.writePage(page);
+    }
+    writer.end();
+
+    var ivs = readStreamIVs(fs.readFileSync(outputPath));
+    assert.isAtLeast(ivs.length, 2);
+    assert.notDeepEqual(ivs[0], ivs[1]);
   });
 });

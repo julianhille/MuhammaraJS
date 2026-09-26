@@ -67,6 +67,7 @@
                             'AdditionalDependencies': [
                                 '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.lib',
                                 'advapi32.lib',
+                                'bcrypt.lib',
                                 'crypt32.lib',
                                 'gdi32.lib',
                                 'user32.lib',
