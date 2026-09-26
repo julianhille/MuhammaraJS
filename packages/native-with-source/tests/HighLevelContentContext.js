@@ -331,7 +331,15 @@ describe("HighLevelContentContext", function () {
         color: 0xff0000,
         colorspace: undefined,
       });
-      assert.doesNotMatch(target.finish(), /lab/);
+      // A named color is read in the colorspace, as a number is.
+      target.context.drawRectangle(5, 6, 7, 8, {
+        type: "fill",
+        color: "red",
+        colorspace: "gray",
+      });
+      var output = target.finish();
+      assert.doesNotMatch(output, /lab/);
+      assert.match(output, /\b0 g\s+5 6 7 8 re/);
     });
 
     it("snapshots path coordinates before output on " + mode, function () {

@@ -902,8 +902,8 @@ bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
         return false;
       options.colorValue = static_cast<unsigned long>(numericColor);
     }
-    // Validate the colorspace for every color, as Wasm does; a named color
-    // still draws in RGB.
+    // Validate and apply the colorspace for every color, named or numeric, as
+    // Wasm does.
     bool hasColorSpace = Has(env, maybeOptions, "colorspace");
     if (HasPendingException(env))
       return false;

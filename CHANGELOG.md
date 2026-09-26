@@ -93,6 +93,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `ColorOptions.colorspace` or the `Recipe#chroma()` colorspace, so a value
   typed `string` fails `tsc`; use `DeviceColorSpace` or `Recipe.Colorspace`
   values, and see the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#type-colorspaces) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+- Read a named low-level `color` in the given `colorspace`, as a numeric color
+  is and as `@muhammara/wasm` does, instead of always drawing it in RGB. So
+  `{ color: "red", colorspace: "gray" }` now draws the value's last byte as
+  gray; drop `colorspace` or set it to `"rgb"` to draw a named color as before [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Remove the `key` parameter from the `InfoDictionary#getAdditionalInfoEntries()`
   declaration; the runtime ignored it and always returned every entry. Calls
   that pass a key fail `tsc`; drop the argument and pick the entry from the
