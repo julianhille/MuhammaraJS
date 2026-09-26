@@ -229,6 +229,11 @@ export function createReaderFactory({
             ? object
             : undefined;
         },
+        /**
+         * Narrows the object to an indirect reference.
+         * @returns {PDFIndirectObjectReference|undefined} This object when it is a reference.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         toPDFIndirectObjectReference: function () {
           return object.getType() ===
             constants.ePDFObjectIndirectObjectReference
