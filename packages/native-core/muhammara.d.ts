@@ -726,6 +726,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the reader has ended or streams is not an array.
      */
     startReadingObjectsFromStreams(streams: PDFArray): PDFObjectParser;
+    /**
+     * Returns the underlying stream the reader parses.
+     * @returns The positioned byte reader.
+     * @throws {TypeError} If the reader has ended.
+     */
     getParserStream(): ByteReaderWithPosition;
   }
 
