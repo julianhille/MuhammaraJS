@@ -1005,7 +1005,14 @@ exports.deletePage = function deletePage(pageNumbers) {
   return this;
 };
 
-/** Applies queued page deletions during finalization. @private */
+/**
+ * Apply the queued page deletions during finalization: rewrite the page tree
+ * and page labels, and renumber metadata and pending annotations.
+ * @private
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the page tree or page labels cannot be rewritten safely,
+ *   or a retained structure references a deleted page.
+ */
 exports._deletePages = function _deletePages() {
   if (!this.deletedPages?.size) return this;
 
