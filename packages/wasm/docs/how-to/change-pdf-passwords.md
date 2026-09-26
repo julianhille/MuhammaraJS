@@ -39,6 +39,15 @@ var writer = muhammara.createWriter({
 });
 ```
 
+To read the document, pass the user or owner password as the reader's
+`password` option, as in native:
+
+```js
+var reader = muhammara.createReader(encryptedBytes, {
+  password: "open-password",
+});
+```
+
 The PDF `version` selects the algorithm as in `recrypt`; PDF 2.0 throws
 because AES-256 is unavailable in WebAssembly. `createWriterToModify` does not
 accept these options: modify the bytes first, then encrypt the result with

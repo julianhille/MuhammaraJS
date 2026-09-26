@@ -35,6 +35,7 @@ export function createReaderFactory({
    * @param {Function} requireOwner Verifies the owner of a borrowed handle remains open.
    * @param {number} copyingContext Borrowed native copying context for source streams.
    * @param {boolean} destroyReader Whether `end()` destroys `readerHandle`.
+   * @param {string} [password] Password that opens encrypted PDF bytes.
    * @returns {object} A reader whose `end()` releases owned resources.
    * @throws {TypeError} If `bytes` is not a supported byte source.
    * @throws {Error} If the PDF cannot be parsed.
@@ -45,6 +46,7 @@ export function createReaderFactory({
     requireOwner,
     copyingContext,
     destroyReader = true,
+    password,
   ) {
     var reader = readerHandle;
     var path;
@@ -55,7 +57,14 @@ export function createReaderFactory({
       module.FS.writeFile(path, bytes);
       try {
         reader = withString(path, (pathPointer) =>
-          module._muhammara_wasm_reader_create(pathPointer),
+          password === undefined
+            ? module._muhammara_wasm_reader_create(pathPointer)
+            : withString(password, (passwordPointer) =>
+                module._muhammara_wasm_reader_create_with_password(
+                  pathPointer,
+                  passwordPointer,
+                ),
+              ),
         );
       } catch (error) {
         removeFile(path);

@@ -185,6 +185,20 @@ async function createRuntime(options) {
     withBytes: helpers.withBytes,
   });
   var { copyingObjectOperations } = createCopyingHelpers({ module });
+  /**
+   * Reads native's `createReader` password option.
+   * @param {PDFReaderOptions} options - Reader options.
+   * @returns {string|undefined} The password, when given.
+   * @throws {TypeError} If `options` is not an object or `password` is not a string.
+   */
+  function readerPassword(options) {
+    if (!options || typeof options !== "object" || Array.isArray(options))
+      throw new TypeError("createReader options must be an object");
+    if (options.password !== undefined && typeof options.password !== "string")
+      throw new TypeError("createReader password must be a string");
+    return options.password;
+  }
+
   var createReader = createReaderFactory({
     module,
     constants,
@@ -428,18 +442,43 @@ async function createRuntime(options) {
         module._free(lengthPointer);
       }
     },
-    createReader,
+    /**
+     * Opens a reader for PDF bytes.
+     * @param {ByteSource} bytes - PDF bytes.
+     * @param {PDFReaderOptions} [options] - `password` opens an encrypted PDF,
+     *   as in native `createReader`.
+     * @returns {PDFReader} The reader; call `end()` to release it.
+     * @throws {TypeError} If the bytes are unsupported, `options` is not an
+     *   object, or `password` is not a string.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     * @throws {Error} If the PDF cannot be parsed.
+     */
+    createReader: function (bytes, options = {}) {
+      return createReader(
+        bytes,
+        undefined,
+        undefined,
+        undefined,
+        true,
+        readerPassword(options),
+      );
+    },
     /**
      * Opens a reader after reading an asynchronous byte source.
      * @async
      * @param {AsyncByteSource} bytes - PDF bytes, Blob, or File.
+     * @param {PDFReaderOptions} [options] - `password` opens an encrypted PDF.
      * @returns {Promise<PDFReader>} The reader.
-     * @throws {TypeError} If the bytes are unsupported.
+     * @throws {TypeError} If the bytes are unsupported, or `options` is invalid.
      * @throws {RangeError} If the bytes exceed `maxInputBytes`.
      * @throws {Error} If the PDF cannot be parsed.
      */
-    createReaderAsync: async function (bytes) {
-      return this.createReader(await normalizeBytesAsync(bytes, "PDF input"));
+    createReaderAsync: async function (bytes, options = {}) {
+      readerPassword(options);
+      return this.createReader(
+        await normalizeBytesAsync(bytes, "PDF input"),
+        options,
+      );
     },
     createModifier,
     /**

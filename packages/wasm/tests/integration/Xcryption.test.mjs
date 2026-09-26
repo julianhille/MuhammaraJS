@@ -72,6 +72,34 @@ describe("Xcryption", function () {
       plainReader.end();
     }
 
+    for (var readerPassword of ["user", "owner"]) {
+      var passwordReader = muhammara.createReader(encrypted, {
+        password: readerPassword,
+      });
+      assert.equal(passwordReader.getPagesCount(), 1);
+      assert.deepEqual(
+        passwordReader.parsePage(0).getMediaBox(),
+        [0, 0, 595, 842],
+      );
+      passwordReader.end();
+    }
+    var asyncReader = await muhammara.createReaderAsync(new Blob([encrypted]), {
+      password: "user",
+    });
+    assert.equal(asyncReader.getPagesCount(), 1);
+    asyncReader.end();
+    var wrongReader = muhammara.createReader(encrypted, { password: "wrong" });
+    assert.throws(() => wrongReader.parsePage(0), /Unable to read page 0/);
+    wrongReader.end();
+    assert.throws(
+      () => muhammara.createReader(encrypted, 5),
+      /createReader options must be an object/,
+    );
+    assert.throws(
+      () => muhammara.createReader(encrypted, { password: 1 }),
+      /createReader password must be a string/,
+    );
+
     // An owner password alone does not encrypt, as in native.
     var ownerOnly = muhammara.createWriter({ ownerPassword: "owner" });
     ownerOnly.writePage(ownerOnly.createPage(0, 0, 10, 10));

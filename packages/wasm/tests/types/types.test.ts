@@ -12,6 +12,7 @@ import {
 import type {
   RecipeConstructor,
   PDFWriterOptions,
+  PDFReaderOptions,
   Glyph,
   EEncoding,
   PDFPageGeometry,
@@ -886,6 +887,10 @@ async function usesWriterEncryption() {
     userProtectionFlag: 4,
   };
   muhammara.createWriter(options);
+  const readerOptions: PDFReaderOptions = { password: "user" };
+  muhammara.createReader(new Uint8Array(), readerOptions).end();
+  // @ts-expect-error Reader options are an object, not a native handle.
+  muhammara.createReader(new Uint8Array(), 5);
   // @ts-expect-error A modifier does not take encryption options.
   muhammara.createWriterToModify(new Uint8Array(), { userPassword: "user" });
 }

@@ -44,6 +44,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Accept native's `password` option in `createReader()` and
+  `createReaderAsync()` to open encrypted PDFs [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Encrypt PDFs written by `createWriter()` with native's `userPassword`,
   `ownerPassword`, and `userProtectionFlag` options. These options were
   silently ignored and produced an unencrypted PDF; `log`, PDF 2.0
@@ -88,6 +90,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Stop `createReader()` from treating a second argument as an internal
+  reader handle, which read unrelated memory; it now takes native's options
+  object and throws a `TypeError` for anything else [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Accept an image XObject from `createImageXObjectFromJPGBytes()` in
   `addImageXObjectMapping()`, as native does; it accepted only an object ID [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Accept an array of byte values in `writeLiteralString()`, `writeHexString()`,

@@ -61,6 +61,11 @@ export interface WriterOptions {
   /** Enables Flate compression for streams. Defaults to true. */
   compress?: boolean;
 }
+/** `createReader()` options, as in native. */
+export interface PDFReaderOptions {
+  /** User or owner password that opens an encrypted PDF. */
+  password?: string;
+}
 /** `createWriter()` options, including native's encryption options. */
 export interface CreateWriterOptions extends WriterOptions {
   /** Encrypts the PDF with this user password, as in native. PDF 2.0 throws. */
@@ -2396,8 +2401,11 @@ export interface MuhammaraWasm {
     source: AsyncByteSource,
     options?: WriterOptions,
   ): Promise<PDFModifier>;
-  createReader(source: ByteSource): PDFReader;
-  createReaderAsync(source: AsyncByteSource): Promise<PDFReader>;
+  createReader(source: ByteSource, options?: PDFReaderOptions): PDFReader;
+  createReaderAsync(
+    source: AsyncByteSource,
+    options?: PDFReaderOptions,
+  ): Promise<PDFReader>;
   createModifier(source: ByteSource): CompactModifier;
   createModifierAsync(source: AsyncByteSource): Promise<CompactModifier>;
   registerFont(name: string, bytes: ByteSource): string;
