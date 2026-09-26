@@ -605,6 +605,13 @@ declare namespace muhammara {
      *   integer, or the object cannot be read.
      */
     parseNewObject(objectId: number): PDFObject;
+    /**
+     * Returns the object ID of a page.
+     * @param pageIndex - The zero-based page index.
+     * @returns The page object ID; 0 when the page does not exist.
+     * @throws {TypeError} If the reader has ended or pageIndex is not a
+     *   non-negative integer.
+     */
     getPageObjectID(pageIndex: number): number;
     parsePageDictionary(pageIndex: number): PDFDictionary;
     parsePage(pageIndex: number): PDFPageInput;
