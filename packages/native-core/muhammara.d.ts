@@ -1017,6 +1017,12 @@ declare namespace muhammara {
      * @throws {TypeError} If keyword is not a single string.
      */
     writeKeyword(keyword: string): this;
+    /**
+     * Writes a comment line.
+     * @param comment - The comment, without the percent sign.
+     * @returns This context.
+     * @throws {TypeError} If comment is not a single string.
+     */
     writeComment(comment: string): this;
     setCompressStreams(compress: boolean): this;
     startPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
