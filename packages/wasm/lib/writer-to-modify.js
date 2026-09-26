@@ -1712,6 +1712,15 @@ export function createWriterToModifyFactory({
           module._muhammara_wasm_modifier_form_get_object_id(handle),
         );
       },
+      /**
+       * Creates a completed form XObject that draws a registered PNG.
+       * @param {string} name - Registered PNG name.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {ModifierCompletedFormXObject} The form, placeable with `doXObject()`.
+       * @throws {TypeError} If the name is not a registered PNG.
+       * @throws {RangeError} If `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObjectFromPNGBytes: function (name, objectId) {
         requireOpen();
         var handle = withString(
