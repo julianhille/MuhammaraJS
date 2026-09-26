@@ -1037,6 +1037,12 @@ declare namespace muhammara {
     getAdditionalInfoEntry(key: string): string;
     /** @param key Ignored; kept so 6.x calls that passed a key still compile. */
     getAdditionalInfoEntries(key?: string): { [key: string]: string };
+    /**
+     * Sets the creation date.
+     * @param date - The date, a PDF date string, or a PDFDate to copy.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
     setCreationDate(date: string | Date | PDFDate): void;
     setModDate(date: string | Date | PDFDate): void;
 
