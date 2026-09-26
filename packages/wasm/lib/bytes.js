@@ -222,6 +222,13 @@ export class PDFWStreamForBuffer {
     return this.toUint8Array().buffer;
   }
 
+  /**
+   * Wraps the written bytes in a Blob.
+   *
+   * @param {string} [type="application/pdf"] Blob media type.
+   * @returns {Blob} A Blob of the bytes.
+   * @throws {Error} If the environment has no Blob.
+   */
   toBlob(type = "application/pdf") {
     if (typeof Blob === "undefined") throw new Error("Blob is unavailable");
     return new Blob([this.buffer], { type });
