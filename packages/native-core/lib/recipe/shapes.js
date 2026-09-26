@@ -247,7 +247,8 @@ function _oddStar(ngon) {
  * @param {number} cx - x-coordinate of center point of regular polygon
  * @param {number} cy - y-coordinate of center point of regular polygon
  * @param {number} radius - The radius, distance from the center to a star point.
- * @param {number} [points=5] - number of points on star
+ * @param {number|Object} [points=5] - number of points on star, at least 5; or
+ *   the options when the point count is omitted.
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - HexColor or DecimalColor
  * @param {string|number[]} [options.stroke] - HexColor or DecimalColor
@@ -259,7 +260,10 @@ function _oddStar(ngon) {
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.
+ * @param {string} [options.link] - Make the star's bounding square open this URL.
+ * @param {boolean} [options.debug] - Also draw the circumscribed circle and center.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.star = function star(cx, cy, radius, points = 5, options = {}) {
   let starPath = [];
