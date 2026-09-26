@@ -88,6 +88,10 @@ export class ObjectUrlStore {
     return true;
   }
 
+  /**
+   * Releases the current object URL.
+   * @returns {void}
+   */
   dispose() {
     this.revoke();
   }
