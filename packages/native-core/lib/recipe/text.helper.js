@@ -254,6 +254,9 @@ exports.Line = class Line {
     }, 0);
   }
 
+  /**
+   * @returns {number} The available width.
+   */
   get width() {
     return this._width;
   }
