@@ -480,6 +480,7 @@ async function rotatedPageExample() {
  * @throws {Error} If a required asset is missing.
  */
 async function imageTransformExample(assets) {
+  /** @type {[Uint8Array, string] | null} */
   var selected = assets.png
     ? [assets.png, "png"]
     : assets.jpeg
