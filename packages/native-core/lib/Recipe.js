@@ -139,6 +139,12 @@ class Recipe {
     this.info(info);
   }
 
+  /**
+   * Map a Recipe version option to a writer PDF version constant.
+   * @private
+   * @param {number} [version] - 1.0 through 1.7 or 2.0; other values use 1.7.
+   * @returns {number} The matching `ePDFVersion*` constant.
+   */
   _getVersion(version) {
     const supportedVersions = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0];
     if (!supportedVersions.includes(version)) {
