@@ -28,6 +28,10 @@ export function createChildLifecycle() {
     hasChildren: function () {
       return children.size !== 0;
     },
+    /**
+     * Runs every registered cleanup once and forgets them.
+     * @returns {void}
+     */
     disposeChildren: function () {
       [...children].forEach((cleanup) => cleanup());
       children.clear();
