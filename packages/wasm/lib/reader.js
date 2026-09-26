@@ -919,6 +919,14 @@ export function createReaderFactory({
           ),
         );
       },
+      /**
+       * Reads an array item, resolving an indirect reference.
+       * @param {PDFArray} array - Array parsed by this reader.
+       * @param {number} index - Zero-based item index.
+       * @returns {PDFObject|undefined} The item, or undefined past the end.
+       * @throws {TypeError} If the array is from another reader or `index` is invalid.
+       * @throws {Error} If the reader has ended.
+       */
       queryArrayObject: function (array, index) {
         requireReader();
         if (
