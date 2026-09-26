@@ -95,6 +95,11 @@ function addLink(recipe, options, points) {
   );
 }
 
+/**
+ * Reorders polygon vertices to draw a star.
+ * @param {number[][]} vertices - Regular polygon vertices.
+ * @returns {number[][]} The vertices in star order.
+ */
 function starPath(vertices) {
   var interval = Math.floor(vertices.length / 2);
   return vertices.map(
