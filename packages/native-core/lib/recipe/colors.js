@@ -339,11 +339,19 @@ function percentToHex(code) {
  * @param {string|number[]} [code=''] Color specification in the form of HexColor (string beginning with '#'),
  *             DecimalColor (1, 3, or 4 element array with values between 0-255),
  *             PercentColor (string, begins with '%' followed by values separated
- *             by commas with values between 0-100)
+ *             by commas with values between 0-100), or a color name known to
+ *             `chroma()`
+ * @param {Object} [opt] - The options.
+ * @param {Recipe.Colorspace} [opt.colorspace] - The colorspace; when omitted it
+ *   is picked from the value length.
+ * @param {boolean} [opt.wantColorModel=false] - Return a color model instead of a number.
+ * @param {string} [opt.colorName] - The name to record the color under.
+ * @returns {number|Object} The color as a number, or the color model when
+ *   `opt.wantColorModel` is set. Invalid values fall back to the default color.
  */
 exports._transformColor = function _transformColor(code = "", opt = {}) {
   this.knownColors = this.knownColors || {};
-  let colorspace = opt.colorspace || "rgb";
+  let colorspace = opt.colorspace || Colorspace.RGB;
   let wantColorModel = opt.wantColorModel || false;
   let colorName = opt.colorName || "";
   let defaultColor = _defaultColor(colorspace);
@@ -378,7 +386,10 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   // When colorspace is not explicitly given,
   // use size of value to determine colorspace.
   if (!opt.colorspace) {
-    colorspace = { 2: "gray", 6: "rgb", 8: "cmyk" }[`${code.length}`] || "rgb";
+    colorspace =
+      { 2: Colorspace.GRAY, 6: Colorspace.RGB, 8: Colorspace.CMYK }[
+        `${code.length}`
+      ] || Colorspace.RGB;
     defaultColor = _defaultColor(colorspace);
   }
 
@@ -386,7 +397,7 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   //  when colorspace is given and given color code does not have appropriate length, or
   //  when colorspace is missing, verify allowable hex value sizes for rgb, cmyk, or gray.
   if (
-    (["rgb", "cmyk", "gray"].includes(colorspace) &&
+    ([Colorspace.RGB, Colorspace.CMYK, Colorspace.GRAY].includes(colorspace) &&
       code.length != defaultColor.length) ||
     ![2, 6, 8].includes(code.toString().length)
   ) {
