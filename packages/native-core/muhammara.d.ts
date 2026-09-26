@@ -1260,6 +1260,10 @@ declare namespace muhammara {
      * @returns This object; undefined when it is not an integer.
      */
     toPDFInteger(): PDFInteger | undefined;
+    /**
+     * Returns this object typed as a real number.
+     * @returns This object; undefined when it is not a real number.
+     */
     toPDFReal(): PDFReal | undefined;
     toPDFSymbol(): PDFSymbol | undefined;
     toNumber(): number | undefined;
