@@ -53,6 +53,16 @@ export function createHelpers(module) {
     });
   }
 
+  /**
+   * Writes raw content-stream code for a context's `writeFreeCode()`.
+   * @param {object} context - Content context to return.
+   * @param {function(): void} requireContext - Throws when the context is inactive.
+   * @param {function(number, number): boolean} write - Writes UTF-8 bytes at a pointer and length.
+   * @param {string} freeCode - Operators to write verbatim.
+   * @returns {object} `context`.
+   * @throws {TypeError} If `freeCode` is not a string.
+   * @throws {Error} If the context is inactive or writing fails.
+   */
   function writeFreeCode(context, requireContext, write, freeCode) {
     requireContext();
     if (typeof freeCode !== "string") {
