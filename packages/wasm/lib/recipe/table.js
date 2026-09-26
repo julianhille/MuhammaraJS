@@ -77,6 +77,9 @@ function columnCellOptions(options) {
  * Resolves the table's data fields: `order` when given, otherwise the names
  * of the configured `columns`, otherwise every field found in any record, in
  * first-seen order.
+ * @param {object[]} contents - Records.
+ * @param {object} options - Table options with `order` and `columns`.
+ * @returns {string[]} Field names.
  */
 function tableFields(contents, options) {
   if (options.order?.length) {
