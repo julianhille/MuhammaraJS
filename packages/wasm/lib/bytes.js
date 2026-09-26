@@ -20,7 +20,14 @@ export function normalizeBytes(value, label = "Bytes") {
   throw new TypeError(`${label} must be a Uint8Array or ArrayBuffer`);
 }
 
-/** Normalizes byte inputs, awaiting Blob and File data when necessary. */
+/**
+ * Normalizes byte input, awaiting Blob and File data when necessary.
+ * @async
+ * @param {AsyncByteSource} value - Bytes or a Blob-like object.
+ * @param {string} label - Name used in error messages.
+ * @returns {Promise<Uint8Array>} A copy of the bytes.
+ * @throws {TypeError} If `value` is not a supported byte source.
+ */
 export async function normalizeBytesAsync(value, label) {
   // Accept any BlobLike (Blob, File, or a structural equivalent), as typed.
   if (
