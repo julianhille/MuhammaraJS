@@ -2729,6 +2729,17 @@ export function createWriterToModifyFactory({
         };
         return page;
       },
+      /**
+       * Loads a registered font for text on this modifier.
+       * @param {string} name - Registered font name.
+       * @param {string|number} [metricsNameOrIndex] - Registered Type 1 metrics font name, or the font index.
+       * @param {number} [fontIndex=0] - Face index in a font collection, after a metrics name.
+       * @returns {PDFUsedFont} The font.
+       * @throws {TypeError} If `name` is not a string, or the arguments are misordered.
+       * @throws {RangeError} If the font index is not a 32-bit unsigned integer.
+       * @throws {Error} If a font is not registered or cannot be loaded.
+       * @throws {Error} If the modifier has ended.
+       */
       getFontForBytes: function (name, metricsNameOrIndex, fontIndex) {
         requireOpen();
         if (typeof name !== "string") {
