@@ -4128,6 +4128,11 @@ declare namespace muhammara {
      * @returns The document information dictionary.
      */
     getPageInfo(): InfoDictionary;
+    /**
+     * Pause the current page content context.
+     * @returns The recipe instance.
+     * @throws {Error} If there is no active page content context.
+     */
     pauseContext(): Recipe;
     resumeContext(): Recipe;
     rotateContent(
