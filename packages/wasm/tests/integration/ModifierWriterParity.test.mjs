@@ -51,6 +51,12 @@ describe("ModifierWriterParity", function () {
     assert.equal(writer.appendPDFPagesFromPDF(source).length, 1);
     var forms = writer.createFormXObjectsFromPDF(source);
     assert.equal(forms.length, 1);
+    muhammara.registerPdf("parity-source", source);
+    try {
+      assert.equal(writer.createFormXObjectsFromPDF("parity-source").length, 1);
+    } finally {
+      muhammara.unregisterPdf("parity-source");
+    }
     var output = writer.end();
     writeOutput("ModifierWriterParity", output);
     var reader = muhammara.createReader(output);

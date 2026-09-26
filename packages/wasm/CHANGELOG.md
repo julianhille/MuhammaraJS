@@ -80,6 +80,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Fix `createWriterToModify().createFormXObjectsFromPDF()` throwing
+  `ReferenceError: pdfs is not defined` for a PDF registered with
+  `registerPdf()` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Reject `setCreationDate()`, `setModDate()`, and the text Info properties
   of a finished `createWriterToModify()` modifier with the "PDF writer has
   ended" error, and keep the previous Info value when a property assignment

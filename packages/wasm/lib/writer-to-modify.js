@@ -34,6 +34,7 @@ export function createWriterToModifyFactory({
   fonts,
   images,
   imageTypes,
+  pdfs,
   state,
   withString,
   withBytes,
