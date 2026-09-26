@@ -500,6 +500,12 @@ declare namespace muhammara {
      * @throws {TypeError} If propertyObjectId is not a single number.
      */
     addPropertyMapping(propertyObjectId: number): string;
+    /**
+     * Adds a XObject to the resources and returns its resource name.
+     * @param xObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If xObjectId is not a single number.
+     */
     addXObjectMapping(xObjectId: number): string;
     addShadingMapping(xObjectId: number): string;
   }
