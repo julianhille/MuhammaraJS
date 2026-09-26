@@ -1438,7 +1438,7 @@ export function createWriterToModifyFactory({
               ["rg", 26, 3],
               ["RG", 27, 3],
               ["g", 24],
-              ["G", 25],
+              ["G", 25, 1],
               ["k", 28, 4],
               ["K", 29, 4],
               ["w", 20],

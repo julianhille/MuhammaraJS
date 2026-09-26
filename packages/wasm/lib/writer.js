@@ -973,11 +973,7 @@ export function createWriterFactory({
           return operator("k", 28, [cyan, magenta, yellow, black]);
         },
         G: function (gray) {
-          requireActiveContext(context);
-          if (!module._muhammara_wasm_recipe_gray_stroke(recipe, gray)) {
-            throw new Error("Unable to set stroke color");
-          }
-          return context;
+          return operator("G", 25, [gray]);
         },
         w: function (width) {
           return operator("w", 20, [width]);
