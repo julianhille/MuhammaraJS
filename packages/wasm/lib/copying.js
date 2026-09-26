@@ -1,4 +1,8 @@
-/** Creates low-level helpers for copying objects between PDF documents. */
+/**
+ * Creates low-level helpers for copying objects between PDF documents.
+ * @param {{module: object}} dependencies - Emscripten module.
+ * @returns {{copyingObjectOperations: Function}} The helpers.
+ */
 export function createCopyingHelpers({ module }) {
   function copyingObjectOperations(copying, requireCopying) {
     function requireObjectId(value, label) {
