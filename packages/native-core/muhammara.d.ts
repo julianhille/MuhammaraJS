@@ -733,6 +733,18 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     TD(tX: number, tY: number): this;
+    /**
+     * Sets the text matrix; operator Tm.
+     * @param a - The matrix value a.
+     * @param b - The matrix value b.
+     * @param c - The matrix value c.
+     * @param d - The matrix value d.
+     * @param e - The matrix value e.
+     * @param f - The matrix value f.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 6 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     Tm(a: number, b: number, c: number, d: number, e: number, f: number): this;
     TStar(): this;
     Tf(fontReferenced: UsedFont | string, fontSize: number): this;
