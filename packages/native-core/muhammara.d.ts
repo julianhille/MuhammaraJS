@@ -913,6 +913,12 @@ declare namespace muhammara {
      * @throws {TypeError} If value is not a single number.
      */
     writeNumberValue(value: number): this;
+    /**
+     * Writes an indirect object reference as the value of the last key.
+     * @param objectId - The object ID.
+     * @returns This dictionary context.
+     * @throws {TypeError} If objectId is not a single number.
+     */
     writeObjectReferenceValue(objectId: number): this;
   }
 
