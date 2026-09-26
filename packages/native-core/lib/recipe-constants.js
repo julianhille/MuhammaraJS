@@ -297,7 +297,18 @@ var LineJoin = Object.freeze({
   BEVEL: "bevel",
 });
 
+/**
+ * Which table rows the `row` options apply to; all rows when omitted.
+ * @readonly
+ * @enum {string}
+ */
+var TableRowNth = Object.freeze({
+  EVEN: "even",
+  ODD: "odd",
+});
+
 module.exports = {
+  TableRowNth,
   LineCap,
   LineJoin,
   ArrowAt,

@@ -1680,6 +1680,11 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** Which table rows the `row` options apply to. */
+    static readonly TableRowNth: {
+      readonly EVEN: "even";
+      readonly ODD: "odd";
+    };
     /** Line cap styles for the `lineCap` options. */
     static readonly LineCap: {
       readonly BUTT: "butt";

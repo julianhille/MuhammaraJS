@@ -1,6 +1,6 @@
 var { htmlToTextObjects } = require("./htmlToTextObjects");
 var { cloneOptions: clone } = require("./utils");
-var { LineCap } = require("../recipe-constants");
+var { LineCap, TableRowNth } = require("../recipe-constants");
 
 /**
  * Convert a table cell style into text options: a copy of the options with
@@ -198,9 +198,10 @@ function tableFields(contents, options) {
  * a 'position' property indicating the [x,y] coordinates where the next table for the remaining data should start.
  * @param {object} [options.row] - text properties to be applied to all cells in a table row.
  * @param {object} [options.row.cell] - All textBox options from the 'text' interface can be used here.
- * @param {string} [options.row.nth] - 'even|odd', indicating that the properties should be applied only to
- * 'even' or 'odd' rows.
+ * @param {Recipe.TableRowNth} [options.row.nth] - A `Recipe.TableRowNth` value, indicating that the
+ * properties should be applied only to 'even' or 'odd' rows.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  * @throws {RangeError} If the overflow callback continues into an area too small
  * for the pending row and its repeated header. Return true to stop, or provide
  * enough space; rows are not split and the callback is called once per overflow.
@@ -280,12 +281,12 @@ exports.table = function table(x, y, contents, options = {}) {
     rowOptions = getCellOptions(options.row);
 
     switch (options.row.nth) {
-      case "even":
+      case TableRowNth.EVEN:
         nth = (row) => {
           return row % 2 === 0;
         };
         break;
-      case "odd":
+      case TableRowNth.ODD:
         nth = (row) => {
           return row % 2 !== 0;
         };
