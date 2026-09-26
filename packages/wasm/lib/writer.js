@@ -2827,6 +2827,11 @@ export function createWriterFactory({
         return context;
       }
 
+      /**
+       * Returns the form content stream.
+       * @returns {PDFStream} The stream; `getWriteStream()` exposes a byte writer.
+       * @throws {Error} If the writer or the form has ended.
+       */
       getContentStream() {
         if (ended || this._ended) {
           throw new Error("Form XObject content stream is no longer active");
