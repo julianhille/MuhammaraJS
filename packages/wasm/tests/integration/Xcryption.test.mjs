@@ -48,6 +48,90 @@ describe("Xcryption", function () {
     plainReader.end();
   });
 
+  it("creates a PDF with a password, as native createWriter does", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({
+      userPassword: "user",
+      ownerPassword: "owner",
+      userProtectionFlag: 4,
+    });
+    writer.writePage(writer.createPage(0, 0, 595, 842));
+    var encrypted = writer.end();
+    var reader = muhammara.createReader(encrypted);
+    assert.equal(reader.isEncrypted(), true);
+    reader.end();
+    for (var password of ["user", "owner"]) {
+      var plainReader = muhammara.createReader(
+        muhammara.recrypt(encrypted, { password }),
+      );
+      assert.equal(plainReader.isEncrypted(), false);
+      assert.deepEqual(
+        plainReader.parsePage(0).getMediaBox(),
+        [0, 0, 595, 842],
+      );
+      plainReader.end();
+    }
+
+    for (var readerPassword of ["user", "owner"]) {
+      var passwordReader = muhammara.createReader(encrypted, {
+        password: readerPassword,
+      });
+      assert.equal(passwordReader.getPagesCount(), 1);
+      assert.deepEqual(
+        passwordReader.parsePage(0).getMediaBox(),
+        [0, 0, 595, 842],
+      );
+      passwordReader.end();
+    }
+    var asyncReader = await muhammara.createReaderAsync(new Blob([encrypted]), {
+      password: "user",
+    });
+    assert.equal(asyncReader.getPagesCount(), 1);
+    asyncReader.end();
+    var wrongReader = muhammara.createReader(encrypted, { password: "wrong" });
+    assert.throws(() => wrongReader.parsePage(0), /Unable to read page 0/);
+    wrongReader.end();
+    assert.throws(
+      () => muhammara.createReader(encrypted, 5),
+      /createReader options must be an object/,
+    );
+    assert.throws(
+      () => muhammara.createReader(encrypted, { password: 1 }),
+      /createReader password must be a string/,
+    );
+
+    // An owner password alone does not encrypt, as in native.
+    var ownerOnly = muhammara.createWriter({ ownerPassword: "owner" });
+    ownerOnly.writePage(ownerOnly.createPage(0, 0, 10, 10));
+    var ownerOnlyReader = muhammara.createReader(ownerOnly.end());
+    assert.equal(ownerOnlyReader.isEncrypted(), false);
+    ownerOnlyReader.end();
+
+    assert.throws(
+      () => muhammara.createWriter({ userPassword: 1 }),
+      /createWriter userPassword must be a string/,
+    );
+    assert.throws(
+      () => muhammara.createWriter({ log: "muhammara.log" }),
+      /log files are unavailable in WebAssembly/,
+    );
+    assert.throws(
+      () =>
+        muhammara.createWriter({
+          userPassword: "user",
+          version: muhammara.ePDFVersion20,
+        }),
+      /PDF 2.0 encryption needs AES-256/,
+    );
+    assert.throws(
+      () =>
+        muhammara.createWriterToModify(muhammara.createBlankPdf(10, 10), {
+          userPassword: "user",
+        }),
+      /createWriterToModify userPassword is unavailable in WebAssembly/,
+    );
+  });
+
   it("keeps the native recrypt option defaults", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(100, 100);

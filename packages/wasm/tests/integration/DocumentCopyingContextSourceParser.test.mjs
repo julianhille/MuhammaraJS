@@ -126,4 +126,25 @@ describe("DocumentCopyingContext source parser", function () {
     assert.equal(reader.getPagesCount(), 1);
     reader.end();
   });
+  it("rejects source passwords with a clear error on writers and modifiers", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = muhammara.createBlankPdf(10, 10);
+    for (var owner of [
+      muhammara.createWriter(),
+      muhammara.createWriterToModify(muhammara.createBlankPdf(10, 10)),
+    ]) {
+      assert.throws(
+        () => owner.createPDFCopyingContext(source, { password: "user" }),
+        /PDF passwords are not supported in Wasm/,
+      );
+      await assert.rejects(
+        owner.createPDFCopyingContextAsync(new Blob([source]), {
+          password: "user",
+        }),
+        /PDF passwords are not supported in Wasm/,
+      );
+      owner.createPDFCopyingContext(source, {}).end();
+      owner.dispose();
+    }
+  });
 });

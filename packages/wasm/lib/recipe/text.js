@@ -1,6 +1,19 @@
+import {
+  AnnotSubtype,
+  HorizontalAlign,
+  TextAlign,
+  TextWrap,
+  VerticalAlign,
+} from "../value-sets.js";
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 
+/**
+ * Deep-merges plain option objects; arrays and dates are replaced, not merged.
+ * @param {object} [left={}] - Base options.
+ * @param {object} [right={}] - Overrides.
+ * @returns {object} A new merged object.
+ */
 function merge(left = {}, right = {}) {
   var result = { ...left };
   Object.entries(right).forEach(([key, value]) => {
@@ -15,6 +28,11 @@ function merge(left = {}, right = {}) {
   return result;
 }
 
+/**
+ * Expands CSS-style padding to four sides.
+ * @param {number|number[]} [value=0] - One to four values: top, right, bottom, left.
+ * @returns {number[]} `[top, right, bottom, left]`.
+ */
 function padding(value = 0) {
   var p = Array.isArray(value) ? value : [value];
   return [
@@ -25,7 +43,11 @@ function padding(value = 0) {
   ];
 }
 
-/** Splits text into wrapping units while keeping non-breaking spaces inside words. */
+/**
+ * Splits text into wrapping units while keeping non-breaking spaces inside words.
+ * @param {string} value - Text.
+ * @returns {string[]} Words with their trailing breakable spaces.
+ */
 function splitWords(value) {
   return (
     String(value).match(
@@ -34,26 +56,51 @@ function splitWords(value) {
   );
 }
 
-/** Removes trailing breakable whitespace while preserving U+00A0. */
+/**
+ * Removes trailing breakable whitespace while preserving U+00A0.
+ * @param {string} value - Text.
+ * @returns {string} The trimmed text.
+ */
 function trimBreakableEnd(value) {
   return value.replace(/(?:(?!\u00a0)\s)+$/, "");
 }
 
-/** Reports whether a string contains visible text or a non-breaking space. */
+/**
+ * Reports whether a string contains visible text or a non-breaking space.
+ * @param {string} value - Text.
+ * @returns {boolean} Whether it has visible content.
+ */
 function hasText(value) {
   return /(?:\S|\u00a0)/.test(value);
 }
 
-/** Reports whether wrapping may occur at the start of a string. */
+/**
+ * Reports whether wrapping may occur at the start of a string.
+ * @param {string} value - Text.
+ * @returns {boolean} Whether it starts with breakable whitespace.
+ */
 function startsWithBreakableSpace(value) {
   return value[0] !== "\u00a0" && /^\s/.test(value);
 }
 
-/** Reports whether wrapping may occur at the end of a string. */
+/**
+ * Reports whether wrapping may occur at the end of a string.
+ * @param {string} value - Text.
+ * @returns {boolean} Whether it ends with breakable whitespace.
+ */
 function endsWithBreakableSpace(value) {
   return value[value.length - 1] !== "\u00a0" && /\s$/.test(value);
 }
 
+/**
+ * Lays out plain text into lines for a width and wrap mode.
+ * @param {string} value - Text; `\n` starts a paragraph.
+ * @param {number} width - Available width; 0 disables wrapping.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Text options.
+ * @param {Recipe.TextWrap|boolean} wrap - Wrap mode; `true` means auto.
+ * @returns {Array<{text: string, last: boolean}>} Lines; `last` ends a paragraph.
+ */
 function lines(value, width, measure, options, wrap) {
   var result = [];
   String(value)
@@ -71,12 +118,12 @@ function lines(value, width, measure, options, wrap) {
             width;
         if (fits || !line) {
           line = next;
-        } else if (wrap === "auto" || wrap === true) {
+        } else if (wrap === TextWrap.AUTO || wrap === true) {
           result.push({ text: trimBreakableEnd(line), last: false });
           line = word;
-        } else if (wrap === "clip") {
+        } else if (wrap === TextWrap.CLIP) {
           line = next;
-        } else if (wrap === "ellipsis") {
+        } else if (wrap === TextWrap.ELLIPSIS) {
           line = ellipsize(line || word, width, measure, options);
           truncated = true;
         } else {
@@ -85,7 +132,7 @@ function lines(value, width, measure, options, wrap) {
       });
       if (line || !result.length) {
         result.push({
-          text: wrap === "clip" ? line : trimBreakableEnd(line),
+          text: wrap === TextWrap.CLIP ? line : trimBreakableEnd(line),
           last: true,
         });
       }
@@ -93,7 +140,12 @@ function lines(value, width, measure, options, wrap) {
   return result;
 }
 
-/** Compares two shallow HTML style objects for equivalent entries. */
+/**
+ * Compares two shallow HTML style objects for equivalent entries.
+ * @param {object} [left] - Styles.
+ * @param {object} [right] - Styles.
+ * @returns {boolean} Whether both have the same entries.
+ */
 function sameStyles(left, right) {
   var leftEntries = Object.entries(left || {});
   var rightEntries = Object.entries(right || {});
@@ -123,7 +175,11 @@ function fragmentOptions(options, styles = {}, fontSize) {
   };
 }
 
-/** Coalesces adjacent HTML fragments that use equivalent styles. */
+/**
+ * Coalesces adjacent HTML fragments that use equivalent styles.
+ * @param {Array<{text: string, styles: object}>} parts - Fragments.
+ * @returns {Array<{text: string, styles: object}>} New grouped fragments.
+ */
 function groupedHtmlParts(parts) {
   return parts.reduce((groups, part) => {
     var previous = groups[groups.length - 1];
@@ -136,7 +192,14 @@ function groupedHtmlParts(parts) {
   }, []);
 }
 
-/** Measures styled HTML fragments and spacing across separate drawing runs. */
+/**
+ * Measures styled HTML fragments and spacing across separate drawing runs.
+ * @param {Array<{text: string, styles: object}>} parts - Fragments.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Base text options.
+ * @param {boolean} [group=true] - Whether to group equal styles first.
+ * @returns {number} The width in points.
+ */
 function htmlPartsWidth(parts, measure, options, group = true) {
   var groups = group ? groupedHtmlParts(parts) : parts;
   var text = groups.map((part) => part.text).join("");
@@ -151,7 +214,13 @@ function htmlPartsWidth(parts, measure, options, group = true) {
   return measured + charSpacing(text, options.charSpace) - groupedSpacing;
 }
 
-/** Calculates the character spacing needed between separately drawn runs. */
+/**
+ * Calculates the character spacing needed between separately drawn runs.
+ * @param {string} left - Text before the boundary.
+ * @param {string} right - Text after it.
+ * @param {number} [charSpace] - Character spacing.
+ * @returns {number} The extra spacing in points.
+ */
 function boundaryCharSpacing(left, right, charSpace) {
   return (
     charSpacing(left + right, charSpace) -
@@ -160,7 +229,15 @@ function boundaryCharSpacing(left, right, charSpace) {
   );
 }
 
-/** Lays out styled HTML into lines while preserving list and break structure. */
+/**
+ * Lays out styled HTML into lines while preserving list and break structure.
+ * @param {object[]} source - Text objects from htmlToTextObjects.
+ * @param {number} width - Available width; 0 disables wrapping.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Base text options.
+ * @param {Recipe.TextWrap|boolean} wrap - Wrap mode.
+ * @returns {Array<{parts: object[], last: boolean}>} Lines of styled fragments.
+ */
 function htmlLines(source, width, measure, options, wrap) {
   var result = [];
   var parts = [];
@@ -168,11 +245,16 @@ function htmlLines(source, width, measure, options, wrap) {
   var linePrefix = "";
   var continuationPrefix = "";
   var truncated = false;
-  /** Emits the accumulated fragments and prepares the next line prefix. */
+  /**
+   * Emits the accumulated fragments and prepares the next line prefix.
+   * @param {boolean} last - Whether the line ends a paragraph.
+   * @param {boolean} [force=false] - Emit even an empty line.
+   * @returns {void}
+   */
   var flush = (last, force = false) => {
     // lines() trims every line it emits; keep trailing spaces out of the
     // measured width so alignment and justification stay correct.
-    while (wrap !== "clip" && parts.length) {
+    while (wrap !== TextWrap.CLIP && parts.length) {
       var tail = parts[parts.length - 1];
       tail.text = trimBreakableEnd(tail.text);
       if (tail.text) break;
@@ -240,16 +322,16 @@ function htmlLines(source, width, measure, options, wrap) {
             breakBefore &&
             htmlPartsWidth(candidate, measure, options) > width
           ) {
-            if (wrap === "auto" || wrap === true) {
+            if (wrap === TextWrap.AUTO || wrap === true) {
               flush(false);
               if (!hasText(word)) return;
               word = linePrefix + word;
               linePrefix = "";
-            } else if (wrap === "ellipsis") {
+            } else if (wrap === TextWrap.ELLIPSIS) {
               ellipsizeHtmlParts(parts, width, measure, options);
               truncated = true;
               return;
-            } else if (wrap !== "clip") {
+            } else if (wrap !== TextWrap.CLIP) {
               truncated = true;
               return;
             }
@@ -267,7 +349,14 @@ function htmlLines(source, width, measure, options, wrap) {
   return result;
 }
 
-/** Truncates styled fragments in place until an ellipsis fits the width. */
+/**
+ * Truncates styled fragments in place until an ellipsis fits the width.
+ * @param {Array<{text: string, styles: object}>} parts - Fragments, changed in place.
+ * @param {number} width - Available width.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Base text options.
+ * @returns {void}
+ */
 function ellipsizeHtmlParts(parts, width, measure, options) {
   var suffix = "...";
   while (parts.length) {
@@ -285,6 +374,14 @@ function ellipsizeHtmlParts(parts, width, measure, options) {
   parts.push({ text: suffix, styles: {} });
 }
 
+/**
+ * Truncates text until it and an ellipsis fit the width.
+ * @param {string} value - Text.
+ * @param {number} width - Available width.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Text options.
+ * @returns {string} The truncated text ending in `...`.
+ */
 function ellipsize(value, width, measure, options) {
   var suffix = "...";
   var result = trimBreakableEnd(value);
@@ -299,6 +396,13 @@ function ellipsize(value, width, measure, options) {
   return result + suffix;
 }
 
+/**
+ * Keeps the lines that fit a height and joins the rest for overflow handling.
+ * @param {Array<{text: string}>} entries - Laid-out lines.
+ * @param {number} availableHeight - Height of the box content.
+ * @param {number} lineHeight - Line height.
+ * @returns {{entries: object[], linesWritten: number, remainder: string}} Visible lines and the remaining text.
+ */
 function clipEntries(entries, availableHeight, lineHeight) {
   var linesWritten = Math.max(0, Math.floor(availableHeight / lineHeight));
   var visibleEntries = entries.slice(0, linesWritten);
@@ -312,8 +416,19 @@ function clipEntries(entries, availableHeight, lineHeight) {
   };
 }
 
-/** Creates Recipe text measurement, layout, and drawing methods. */
+/**
+ * Creates Recipe text measurement, layout, and drawing methods.
+ * @param {{drawText: Function, measure: Function, module: object}} dependencies - Run drawing and measuring callbacks.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createTextMethods({ drawText, measure, module }) {
+  /**
+   * Measures text including character spacing.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} value - Text.
+   * @param {object} [options={}] - Text options.
+   * @returns {TextDimensions} Bounds and width in points.
+   */
   function dimensions(recipe, value, options = {}) {
     var result = measure.call(recipe, String(value), options);
     result.width += charSpacing(value, options.charSpace);
@@ -321,7 +436,13 @@ export function createTextMethods({ drawText, measure, module }) {
     return result;
   }
 
-  /** Runs drawing inside the requested rotation and skew graphics state. */
+  /**
+   * Runs drawing inside the requested rotation and skew graphics state.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {object} options - `rotation`, `rotationOrigin`, `skewX`, and `skewY`.
+   * @param {function(): void} callback - Draws the content.
+   * @returns {void}
+   */
   function withTextTransform(recipe, options, callback) {
     if (!options.rotation && !options.skewX && !options.skewY) {
       callback();
@@ -346,7 +467,18 @@ export function createTextMethods({ drawText, measure, module }) {
     recipe._restore();
   }
 
-  /** Writes link bounds transformed and clipped with their associated text. */
+  /**
+   * Writes link bounds transformed and clipped with their associated text.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} url - Link target.
+   * @param {number} x - Left.
+   * @param {number} y - Top.
+   * @param {number} width - Width.
+   * @param {number} height - Height.
+   * @param {object} options - Rotation and skew options.
+   * @param {{x: number, y: number, width: number, height: number}} [clip] - Visible box.
+   * @returns {void}
+   */
   function transformedLink(recipe, url, x, y, width, height, options, clip) {
     if (!options.rotation && !options.skewX && !options.skewY) {
       if (clip) {
@@ -436,10 +568,10 @@ export function createTextMethods({ drawText, measure, module }) {
   }
 
   var textMarkupSubtypes = {
-    highlight: "Highlight",
-    underline: "Underline",
-    strikeOut: "StrikeOut",
-    squiggly: "Squiggly",
+    highlight: AnnotSubtype.HIGHLIGHT,
+    underline: AnnotSubtype.UNDERLINE,
+    strikeOut: AnnotSubtype.STRIKE_OUT,
+    squiggly: AnnotSubtype.SQUIGGLY,
   };
 
   /**
@@ -447,6 +579,14 @@ export function createTextMethods({ drawText, measure, module }) {
    * drawn line. Only the outer text() options request annotations; HTML
    * `<u>` and `<s>` styles stay visual decoration, as in native Recipe.
    * An optional clip rectangle limits the annotation to visible line bounds.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {object} options - text() options with `highlight`, `underline`, `strikeOut`, or `squiggly`.
+   * @param {number} x - Line left.
+   * @param {number} baseline - Line baseline.
+   * @param {number} width - Line width; nothing is added for 0.
+   * @param {boolean} [validateOnly=false] - Validate the options without writing.
+   * @param {{x: number, y: number, width: number, height: number}} [clip] - Visible box.
+   * @returns {void}
    */
   function addTextMarkup(
     recipe,
@@ -515,7 +655,17 @@ export function createTextMethods({ drawText, measure, module }) {
     });
   }
 
-  /** Draws a highlight rectangle using the same transform as its text. */
+  /**
+   * Draws a highlight rectangle using the same transform as its text.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {number} x - Left.
+   * @param {number} y - Top.
+   * @param {number} width - Width.
+   * @param {number} height - Height.
+   * @param {object} options - Rotation and skew options.
+   * @param {{color: (string|undefined), opacity: (number|undefined)}} hilite - Highlight color and opacity.
+   * @returns {void}
+   */
   function drawHilite(recipe, x, y, width, height, options, hilite) {
     withTextTransform(recipe, options, () => {
       recipe.rectangle(x, y, width, height, {
@@ -552,6 +702,9 @@ export function createTextMethods({ drawText, measure, module }) {
     /**
      * Measures the height required by an internal text box.
      * @private
+     * @param {string} value - Text or HTML.
+     * @param {object} [options={}] - Text options with `textBox` or `cell`.
+     * @returns {number} The height in points.
      */
     _measureTextBoxHeight(value, options = {}) {
       var box = options.textBox || options.cell || {};
@@ -566,7 +719,12 @@ export function createTextMethods({ drawText, measure, module }) {
         }).height;
       var availableWidth = width ? width - left - right : 0;
       var textOptions = { ...options, fontSize };
-      /** Measures a fragment with the current Recipe font state. */
+      /**
+       * Measures a fragment with the current Recipe font state.
+       * @param {string} text - Text.
+       * @param {object} partOptions - Text options.
+       * @returns {TextDimensions} Bounds and width.
+       */
       var measureText = (text, partOptions) =>
         dimensions(this, text, partOptions);
       var entries = options.html
@@ -575,14 +733,14 @@ export function createTextMethods({ drawText, measure, module }) {
             availableWidth,
             measureText,
             textOptions,
-            box.wrap === false ? "ellipsis" : box.wrap || "auto",
+            box.wrap === false ? TextWrap.ELLIPSIS : box.wrap || TextWrap.AUTO,
           )
         : lines(
             value,
             availableWidth,
             measureText,
             textOptions,
-            box.wrap === false ? "ellipsis" : box.wrap || "auto",
+            box.wrap === false ? TextWrap.ELLIPSIS : box.wrap || TextWrap.AUTO,
           );
       return (
         box.height ||
@@ -707,7 +865,14 @@ export function createTextMethods({ drawText, measure, module }) {
       // Validate every requested markup option before drawing any part of
       // this text call, so a later invalid subtype cannot leave partial output.
       addTextMarkup(this, { ...options, fontSize }, x, y, 1, true);
-      var wrap = box.wrap === false ? "ellipsis" : box.wrap || "auto";
+      var wrap =
+        box.wrap === false ? TextWrap.ELLIPSIS : box.wrap || TextWrap.AUTO;
+      /**
+       * Measures a fragment with the current Recipe font state.
+       * @param {string} text - Text.
+       * @param {object} textOptions - Text options.
+       * @returns {TextDimensions} Bounds and width.
+       */
       var measureText = (text, textOptions) =>
         dimensions(this, text, textOptions);
       var source = options.html ? htmlToTextObjects(value, options) : null;
@@ -760,7 +925,11 @@ export function createTextMethods({ drawText, measure, module }) {
       );
       var height = box.height || contentHeight;
       var topAlign = options.align?.split(" ") || [];
-      /** Measures a line with per-fragment HTML styles when present. */
+      /**
+       * Measures a line with per-fragment HTML styles when present.
+       * @param {{text: (string|undefined), parts: (object[]|undefined)}} entry - Laid-out line.
+       * @returns {number} The width in points.
+       */
       var entryWidth = (entry) =>
         entry.parts
           ? htmlPartsWidth(
@@ -771,25 +940,27 @@ export function createTextMethods({ drawText, measure, module }) {
           : dimensions(this, entry.text, options).width;
       var widestEntry = Math.max(...entries.map(entryWidth), 0);
       var naturalWidth = width || widestEntry;
-      if (topAlign[0] === "center") x -= naturalWidth / 2;
-      else if (topAlign[0] === "right") x -= naturalWidth;
-      if (topAlign[1] === "center") y -= height / 2;
-      else if (topAlign[1] === "bottom") y -= height;
+      if (topAlign[0] === HorizontalAlign.CENTER) x -= naturalWidth / 2;
+      else if (topAlign[0] === HorizontalAlign.RIGHT) x -= naturalWidth;
+      if (topAlign[1] === VerticalAlign.CENTER) y -= height / 2;
+      else if (topAlign[1] === VerticalAlign.BOTTOM) y -= height;
       if (box.style)
         this.rectangle(
           x,
           y,
           width || widestEntry + left + right,
           height,
-          box.style,
+          box.style.borderRadius === true
+            ? { ...box.style, borderRadius: 5 }
+            : box.style,
         );
       var vertical = box.textAlign?.split(" ")[1];
       var currentY =
         y +
         top +
-        (vertical === "center"
+        (vertical === VerticalAlign.CENTER
           ? (height - contentHeight) / 2
-          : vertical === "bottom"
+          : vertical === VerticalAlign.BOTTOM
             ? height - contentHeight
             : 0);
       var columnIndex = 0;
@@ -801,7 +972,7 @@ export function createTextMethods({ drawText, measure, module }) {
         ) {
           columnIndex++;
           if (columnIndex === layout.length) {
-            var order = options.overflow?.(this);
+            var order = options.overflow?.call(this, this);
             if (order === true) return true;
             if (order?.layout !== undefined) {
               layout = this._layouts?.[order.layout];
@@ -836,13 +1007,14 @@ export function createTextMethods({ drawText, measure, module }) {
             )
           : entryDimensions.width;
         var horizontal = box.textAlign?.split(" ")[0];
-        var isJustifiedLine = horizontal === "justify" && !entry.last && width;
+        var isJustifiedLine =
+          horizontal === TextAlign.JUSTIFY && !entry.last && width;
         var drawX =
           x +
           left +
-          (horizontal === "center"
+          (horizontal === TextAlign.CENTER
             ? (width - left - right - textWidth) / 2
-            : horizontal === "right"
+            : horizontal === TextAlign.RIGHT
               ? width - right - textWidth
               : 0);
         var baseline = currentY + lineHeight;
@@ -851,7 +1023,7 @@ export function createTextMethods({ drawText, measure, module }) {
         }
         var linkX = drawX;
         var linkWidth = textWidth;
-        var clipping = wrap === "clip" && width;
+        var clipping = wrap === TextWrap.CLIP && width;
         var clip = clipping
           ? {
               x: x + left,
@@ -901,9 +1073,15 @@ export function createTextMethods({ drawText, measure, module }) {
           );
         }
         if (entry.parts) {
-          var justify = horizontal === "justify" && !entry.last && width;
+          var justify =
+            horizontal === TextAlign.JUSTIFY && !entry.last && width;
           var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
-          /** Reports whether this fragment owns an expandable justification gap. */
+          /**
+           * Reports whether this fragment owns an expandable justification gap.
+           * @param {{text: string, marker: (boolean|undefined)}} part - Fragment.
+           * @param {number} index - Fragment index.
+           * @returns {boolean} Whether justification may widen the gap after it.
+           */
           var hasGapAfter = (part, index) =>
             justify &&
             !part.marker &&

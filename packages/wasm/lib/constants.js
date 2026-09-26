@@ -48,6 +48,12 @@ export var constants = {
   EInfoTrappedTrue: 0,
   EInfoTrappedFalse: 1,
   EInfoTrappedUnknown: 2,
+  /**
+   * Names a parsed PDF object type.
+   * @param {number} type - One of the `ePDFObject*` constants.
+   * @returns {string} The type name, such as `Dictionary`.
+   * @throws {TypeError} If `type` is not an `ePDFObject*` value.
+   */
   getTypeLabel: function (type) {
     var labels = [
       "Boolean",
@@ -71,3 +77,18 @@ export var constants = {
     return labels[type];
   },
 };
+
+/**
+ * Checks whether a value is one of the `ePDFPageBox*` constants.
+ * @param {*} value - Candidate page box.
+ * @returns {boolean} Whether `value` selects a page box.
+ */
+export function isPageBoxType(value) {
+  return [
+    constants.ePDFPageBoxMediaBox,
+    constants.ePDFPageBoxCropBox,
+    constants.ePDFPageBoxBleedBox,
+    constants.ePDFPageBoxTrimBox,
+    constants.ePDFPageBoxArtBox,
+  ].includes(value);
+}

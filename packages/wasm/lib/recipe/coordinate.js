@@ -1,8 +1,13 @@
+import { HorizontalAlign, VerticalAlign } from "../value-sets.js";
 /** Recipe coordinate conversion methods. */
 export var coordinateMethods = {
   /**
    * Resolves centered Recipe coordinates against the target page.
    * @private
+   * @param {number|string} x - x, or `center`.
+   * @param {number|string} y - y, or `center`.
+   * @param {number} [pageNumber] - One-based page; the active page by default.
+   * @returns {Array} `[x, y]` with `center` replaced.
    */
   _centrify: function (x, y, pageNumber) {
     var page = this.pageInfo(
@@ -10,8 +15,8 @@ export var coordinateMethods = {
     );
     if (!page) return [x, y];
     return [
-      x === "center" ? page.width / 2 : x,
-      y === "center" ? page.height / 2 : y,
+      x === HorizontalAlign.CENTER ? page.width / 2 : x,
+      y === VerticalAlign.CENTER ? page.height / 2 : y,
     ];
   },
 
@@ -19,6 +24,11 @@ export var coordinateMethods = {
    * Converts top-left Recipe coordinates to bottom-left PDF coordinates.
    *
    * @private
+   * @param {number|string} x - Recipe x, or `center`.
+   * @param {number|string} y - Recipe y, or `center`.
+   * @param {number} [offsetX=0] - Horizontal offset.
+   * @param {number} [offsetY=0] - Vertical offset.
+   * @param {number} [pageNumber] - One-based page; the active page by default.
    * @returns {{nx: number, ny: number}} Coordinates with the Y axis flipped.
    * @throws {Error} When no target page is available.
    */
@@ -37,6 +47,13 @@ export var coordinateMethods = {
   /**
    * Converts bottom-left PDF coordinates to top-left Recipe coordinates.
    * @private
+   * @param {number} x - PDF x.
+   * @param {number} y - PDF y.
+   * @param {number} [offsetX=0] - Horizontal offset.
+   * @param {number} [offsetY=0] - Vertical offset.
+   * @param {number} [pageNumber] - One-based page; the active page by default.
+   * @returns {{ox: number, oy: number}} Recipe coordinates.
+   * @throws {Error} When no target page is available.
    */
   _reverseCoordinate: function (x, y, offsetX = 0, offsetY = 0, pageNumber) {
     var page = this.pageInfo(
@@ -52,6 +69,13 @@ export var coordinateMethods = {
   /**
    * Converts Recipe coordinates for annotations on rotated pages.
    * @private
+   * @param {number} x - Recipe x.
+   * @param {number} y - Recipe y.
+   * @param {number} [offsetX=0] - Horizontal offset.
+   * @param {number} [offsetY=0] - Vertical offset.
+   * @param {number} [pageNumber] - One-based page; the active page by default.
+   * @returns {{nx: number, ny: number}} PDF coordinates.
+   * @throws {Error} When no target page is available.
    */
   _calibrateCoordinateForAnnots: function (
     x,

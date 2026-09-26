@@ -261,49 +261,6 @@ muhammara_wasm_copying_context_get_source_document_stream(
   return handle;
 }
 
-WASM_EXPORT unsigned long muhammara_wasm_copying_parser_get_pages_count(
-    WasmCopyingParser* parser) {
-  return parser == nullptr || !parser->active ? 0 : parser->GetParser().GetPagesCount();
-}
-
-WASM_EXPORT unsigned long muhammara_wasm_copying_parser_get_page_object_id(
-    WasmCopyingParser* parser, unsigned long index) {
-  if (parser == nullptr || !parser->active || index >= parser->GetParser().GetPagesCount()) {
-    return 0;
-  }
-  return parser->GetParser().GetPageObjectID(index);
-}
-
-WASM_EXPORT WasmObject* muhammara_wasm_copying_parser_parse_page(
-    WasmCopyingParser* parser, unsigned long index) {
-  if (parser == nullptr || !parser->active || index >= parser->GetParser().GetPagesCount()) {
-    return nullptr;
-  }
-  return addCopyingObject(parser, parser->GetParser().ParsePage(index));
-}
-
-WASM_EXPORT WasmObject* muhammara_wasm_copying_parser_query_dictionary_object(
-    WasmCopyingParser* parser, WasmObject* dictionary, const char* key) {
-  if (parser == nullptr || !parser->active || dictionary == nullptr ||
-      dictionary->copyingParser != parser || key == nullptr ||
-      dictionary->object->GetType() != PDFObject::ePDFObjectDictionary) {
-    return nullptr;
-  }
-  return addCopyingObject(parser, parser->GetParser().QueryDictionaryObject(
-      static_cast<PDFDictionary*>(dictionary->object), key));
-}
-
-WASM_EXPORT WasmObject* muhammara_wasm_copying_parser_query_array_object(
-    WasmCopyingParser* parser, WasmObject* array, unsigned long index) {
-  if (parser == nullptr || !parser->active || array == nullptr ||
-      array->copyingParser != parser ||
-      array->object->GetType() != PDFObject::ePDFObjectArray) {
-    return nullptr;
-  }
-  return addCopyingObject(parser, parser->GetParser().QueryArrayObject(
-      static_cast<PDFArray*>(array->object), index));
-}
-
 WASM_EXPORT int muhammara_wasm_copying_context_copy_direct_object_as_is(
     WasmCopyingContext* context, WasmObject* object) {
   if (context == nullptr || context->context == nullptr || context->ended ||

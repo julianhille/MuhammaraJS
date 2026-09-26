@@ -28,19 +28,18 @@ Page and form contexts on new and modifying writers expose `drawPath`,
 `"stroke"` (the default), `"fill"`, or `"clip"`. Clipping intersects the current
 clipping region without painting the shape and emits `W n` to end the path.
 `close: true` closes the path first. Scope the clip with `q()` before defining it
-and `Q()` after the drawing it should affect. Unknown types neither paint nor
-clip and end the path with `n`, preventing later drawing from painting their
-geometry. Pass a supported type explicitly.
+and `Q()` after the drawing it should affect. Any other `type` throws a
+`TypeError` before anything is written; native instead ends such a path with `n`
+without painting it.
 
-An explicit `type: null` is also unrecognized: it ends the path without painting,
+An explicit `type: null` ends the path without painting,
 ignores `width` and `close`, and applies a supplied `color` only to the
 non-stroking graphics state, matching native. Omit `type` or use `"stroke"` for
 an outline; `null` does not select the default.
 
-The TypeScript declarations expose these four values as `DrawingPathType`, so a
-misspelled paint mode fails to compile instead of producing unpainted geometry.
-The runtime still tolerates any other value for compatibility, but it is not a
-supported input.
+`DrawingPathType` names these values at runtime and in the TypeScript
+declarations, so a misspelled paint mode fails to compile, and at runtime it
+throws instead of producing unpainted geometry.
 
 These helpers validate coordinates and snapshot drawing options before emitting
 geometry or graphics-state operators. `writeText` likewise reads its font, size,
@@ -54,6 +53,15 @@ underline endpoints are checked for overflow before drawing. Paths must contain
 at least two complete finite coordinate pairs, without holes or extra
 arguments. Invalid calls throw without emitting operators; correct the values
 and retry on the same context.
+
+## Named Values
+
+`DrawingPathType`, `ImageFit`, `ObjectReplacementScope`, `DeviceColorSpace`,
+`PageBox`, `PDFImageType`, and `EEncoding` are frozen objects of accepted option
+strings, for example `DrawingPathType.FILL` or `ImageFit.OVERFLOW`;
+`LineCapStyle` and `ETokenSeparator` name numeric operands. `@muhammara/native`
+and `@muhammara/wasm` export them with the same names and members, each with a
+same-named TypeScript type. The plain values stay accepted.
 
 ## Create A PDF
 

@@ -7,11 +7,25 @@ var trappedValues = {
   Unknown: constants.EInfoTrappedUnknown,
 };
 
-/** Creates Recipe document-information methods. */
+/**
+ * Creates Recipe document-information methods.
+ * @param {{call: Function, withString: Function}} dependencies - Export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createInfoMethods({ call, withString }) {
+  /**
+   * Formats a Date as a local-time PDF date.
+   * @param {Date} date - Date.
+   * @returns {string} `D:YYYYMMDDHHmmSS+HH'mm'`.
+   */
   function pdfDate(date) {
     var offset = -date.getTimezoneOffset();
     var sign = offset < 0 ? "-" : "+";
+    /**
+     * Formats the absolute value of a number with at least two digits.
+     * @param {number} number - Date part.
+     * @returns {string} The padded digits.
+     */
     var pad = (number) => String(Math.abs(number)).padStart(2, "0");
     return `D:${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}${sign}${pad(Math.trunc(offset / 60))}'${pad(offset % 60)}'`;
   }
@@ -80,6 +94,7 @@ export function createInfoMethods({ call, withString }) {
      * @function
      * @memberof Recipe#
      * @private
+     * @returns {void}
      */
     _writeCanonicalInfo: function () {
       var info = this._sourceMode

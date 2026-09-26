@@ -113,6 +113,7 @@ describe("Recipe text layout and tables", function () {
   it("keeps text-box truncation modes, justification, hilite, and layout orders distinct", async function () {
     var Recipe = await getRecipe();
     var overflow = 0;
+    var overflowThis;
     var recipe = new Recipe({ compress: false })
       .createPage(300, 300)
       .layout("first", 10, 10, 100, 22, { columns: 2, gap: 10 })
@@ -143,8 +144,9 @@ describe("Recipe text layout and tables", function () {
         font: "arial",
         size: 12,
         layout: "first",
-        overflow: () => {
+        overflow: function () {
           overflow++;
+          overflowThis = this;
           return { layout: "second", column: 0 };
         },
       })
@@ -162,6 +164,7 @@ describe("Recipe text layout and tables", function () {
     // even though their extracted byte strings are not source Unicode.
     assert.ok(text.length >= 7);
     assert.equal(overflow, 1);
+    assert.equal(overflowThis, recipe, "overflow is called on the Recipe");
     assert.equal(reader.getPageInfo(0).width, 300);
     reader.end();
   });
@@ -227,6 +230,26 @@ describe("Recipe text layout and tables", function () {
     assert.match(output[2].content, /\.\.\.$/);
     assert.ok(output[2].content.length < output[0].content.length);
     reader.end();
+  });
+
+  it("rounds a text-box border of borderRadius true by 5, as native does", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe().createPage(220, 120);
+    var style = { stroke: "#000000", borderRadius: true };
+    var radii = [];
+    var rectangle = recipe.rectangle;
+    recipe.rectangle = function (x, y, width, height, options) {
+      radii.push(options.borderRadius);
+      return rectangle.apply(this, arguments);
+    };
+    recipe.text("boxed", 10, 20, {
+      font: "arial",
+      size: 12,
+      textBox: { width: 100, style },
+    });
+    assert.deepEqual(radii, [5]);
+    assert.equal(style.borderRadius, true, "the caller's style is unchanged");
+    recipe.endPage().endPDF();
   });
 
   it("clips complete text-box lines and reports the remainder", async function () {

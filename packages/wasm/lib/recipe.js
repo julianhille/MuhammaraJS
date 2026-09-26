@@ -1,3 +1,5 @@
+import { recipeConstants } from "./recipe/constants.js";
+import { DeviceColorSpace } from "./value-sets.js";
 import { coordinateMethods } from "./recipe/coordinate.js";
 import {
   colorModel,
@@ -37,14 +39,19 @@ import { createSecurityMethods, permission } from "./recipe/security.js";
 import { createReplaceTextMethods } from "./recipe/replace-text.js";
 import { standardInfoKeys } from "./recipe-info.js";
 
-/** Creates the high-level Recipe PDF composition factory. */
 /**
  * Packs a Recipe color model for the text export: a color-space index (0 gray,
  * 1 RGB, 2 CMYK) and one byte per component, as PDFWriter expects.
+ * @param {{colorspace: DeviceColorSpace, values: number[]}} model - Resolved color.
+ * @returns {{space: number, value: number}} The packed color.
  */
 function textColor(model) {
   return {
-    space: ["gray", "rgb", "cmyk"].indexOf(model.colorspace),
+    space: [
+      DeviceColorSpace.GRAY,
+      DeviceColorSpace.RGB,
+      DeviceColorSpace.CMYK,
+    ].indexOf(model.colorspace),
     value: model.values.reduce(
       (packed, component) => packed * 256 + Math.round(component * 255),
       0,
@@ -52,6 +59,11 @@ function textColor(model) {
   };
 }
 
+/**
+ * Creates the high-level Recipe PDF composition factory.
+ * @param {object} dependencies - Module, default font, byte helpers, and low-level factories.
+ * @returns {Function} The Recipe class.
+ */
 export function createRecipeFactory({
   defaultFont,
   module,
@@ -75,6 +87,12 @@ export function createRecipeFactory({
   var pdfs = new Map();
   var state = { nextFont: 0, nextImage: 0, nextPdf: 0 };
 
+  /**
+   * Resolves the registered font path for text options, registering the default font on first use.
+   * @param {object} [options={}] - Text options with `font`, `bold`, and `italic`.
+   * @returns {string} Virtual path of the font.
+   * @throws {Error} If the font is not registered.
+   */
   function resolveFont(options = {}) {
     var name = options.font || defaultFont?.name;
     if (
@@ -87,6 +105,13 @@ export function createRecipeFactory({
     return getFont(fonts, { ...options, font: name });
   }
 
+  /**
+   * Calls a Recipe export and throws when it reports failure.
+   * @param {string} name - Export name.
+   * @param {...*} args - Export arguments.
+   * @returns {void}
+   * @throws {Error} If the export returns a falsy value.
+   */
   function call(name, ...args) {
     if (!module[name](...args)) {
       throw new Error(`Muhammara WebAssembly operation failed: ${name}`);
@@ -151,7 +176,10 @@ export function createRecipeFactory({
       if (Object.keys(info).length) this.info(info);
     }
 
-    /** The last moveTo or lineTo path position in Recipe coordinates. */
+    /**
+     * The last moveTo or lineTo path position in Recipe coordinates.
+     * @returns {{x: number, y: number}} A copy of the position.
+     */
     get position() {
       return { ...this._cursor };
     }
@@ -295,6 +323,8 @@ export function createRecipeFactory({
     /**
      * Saves the active PDF graphics state.
      * @private
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the state cannot be saved.
      */
     _save() {
       if (this._pageContext) return this._pageContext.q() && this;
@@ -305,6 +335,8 @@ export function createRecipeFactory({
     /**
      * Restores the active PDF graphics state.
      * @private
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the state cannot be restored.
      */
     _restore() {
       if (this._pageContext) return this._pageContext.Q() && this;
@@ -315,6 +347,15 @@ export function createRecipeFactory({
     /**
      * Applies a PDF transformation matrix to the active context.
      * @private
+     * @param {number} a - Matrix component `a`.
+     * @param {number} b - Matrix component `b`.
+     * @param {number} c - Matrix component `c`.
+     * @param {number} d - Matrix component `d`.
+     * @param {number} e - Matrix component `e`.
+     * @param {number} f - Matrix component `f`.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If a component is not finite.
+     * @throws {Error} If the matrix cannot be applied.
      */
     _transform(a, b, c, d, e, f) {
       if (this._pageContext)
@@ -333,8 +374,8 @@ export function createRecipeFactory({
      * @function
      * @memberof Recipe#
      * @param {number} degrees - Rotation angle in degrees.
-     * @param {number} [x=0] - Horizontal rotation origin.
-     * @param {number} [y=0] - Vertical rotation origin.
+     * @param {number|string} [x=0] - Horizontal rotation origin, or `center`.
+     * @param {number|string} [y=0] - Vertical rotation origin, or `center`.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If there is no active page or the PDF operation fails.
      */
@@ -382,6 +423,12 @@ export function createRecipeFactory({
     /**
      * Applies line style values to the active PDF context.
      * @private
+     * @param {object} [options={}] - `width` or `lineWidth`, `cap`, `join`, `miterLimit`, `dash`, and `dashPhase`,
+     * with numeric cap and join styles.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If the dash pattern or a value is invalid.
+     * @throws {RangeError} If a cap or join style is out of range.
+     * @throws {Error} If the style cannot be applied.
      */
     _setLineStyle(options = {}) {
       if (this._pageContext) {
@@ -445,6 +492,9 @@ export function createRecipeFactory({
     /**
      * Applies opacity to the active PDF context.
      * @private
+     * @param {number} value - Opacity from 0 to 1.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the opacity cannot be applied.
      */
     _setOpacity(value) {
       if (this._pageContext) this._pageContext.setOpacity(value);
@@ -455,6 +505,10 @@ export function createRecipeFactory({
     /**
      * Moves the active native PDF path.
      * @private
+     * @param {number} x - PDF x.
+     * @param {number} y - PDF y.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the operator fails.
      */
     _movePdf(x, y) {
       if (this._pageContext) return this._pageContext.m(x, y) && this;
@@ -465,6 +519,10 @@ export function createRecipeFactory({
     /**
      * Adds a line to the active native PDF path.
      * @private
+     * @param {number} x - PDF x.
+     * @param {number} y - PDF y.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the operator fails.
      */
     _linePdf(x, y) {
       if (this._pageContext) return this._pageContext.l(x, y) && this;
@@ -475,6 +533,14 @@ export function createRecipeFactory({
     /**
      * Adds a cubic curve to the active native PDF path.
      * @private
+     * @param {number} x1 - First control point x.
+     * @param {number} y1 - First control point y.
+     * @param {number} x2 - Second control point x.
+     * @param {number} y2 - Second control point y.
+     * @param {number} x3 - End point x.
+     * @param {number} y3 - End point y.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the operator fails.
      */
     _curvePdf(x1, y1, x2, y2, x3, y3) {
       if (this._pageContext)
@@ -495,6 +561,13 @@ export function createRecipeFactory({
     /**
      * Draws one text run after coordinate and style normalization.
      * @private
+     * @param {string} value - Text.
+     * @param {number} x - Recipe x.
+     * @param {number} y - Recipe y of the baseline.
+     * @param {object} [options={}] - Font, size, color, spacing, rotation, skew, opacity, and HTML decorations.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If `charSpace` is not finite or a color is invalid.
+     * @throws {Error} If the font is not registered or the text cannot be drawn.
      */
     _drawText(value, x, y, options = {}) {
       var point = this._calibrateCoordinate(x, y);
@@ -535,8 +608,10 @@ export function createRecipeFactory({
           .BT()
           .Tf(this.writer.getFontForBytes(fontPath), fontSize)
           .Tc(characterSpacing);
-        if (fill.colorspace === "gray") editContext.g(...fill.values);
-        else if (fill.colorspace === "cmyk") editContext.k(...fill.values);
+        if (fill.colorspace === DeviceColorSpace.GRAY)
+          editContext.g(...fill.values);
+        else if (fill.colorspace === DeviceColorSpace.CMYK)
+          editContext.k(...fill.values);
         else editContext.rg(...fill.values);
         editContext.Tm(1, 0, 0, 1, point.nx, point.ny).Tj(String(value)).ET();
       } else {
@@ -596,9 +671,25 @@ export function createRecipeFactory({
     Recipe.prototype,
     createTextMethods({
       module,
+      /**
+       * Draws one text run for the shared text methods.
+       * @param {string} value - Text.
+       * @param {number} x - Recipe x.
+       * @param {number} y - Recipe y.
+       * @param {object} options - Normalized text options.
+       * @returns {Recipe} The Recipe instance.
+       * @throws {Error} If the text cannot be drawn.
+       */
       drawText: function (value, x, y, options) {
         return this._drawText(value, x, y, options);
       },
+      /**
+       * Measures one text run with the resolved font and size.
+       * @param {string} value - Text.
+       * @param {object} options - Font and size options.
+       * @returns {TextDimensions} Bounds and advance in points.
+       * @throws {Error} If the font is not registered or the text cannot be measured.
+       */
       measure: function (value, options) {
         var fontPath = resolveFont(options);
         if (this._sourceMode) {
@@ -678,6 +769,11 @@ export function createRecipeFactory({
       pdfs,
       withString,
       call,
+      /**
+       * Creates a Recipe for each split page.
+       * @param {RecipeOptions} options - Recipe options.
+       * @returns {Recipe} A new Recipe.
+       */
       createRecipe: (options) => new Recipe(options),
     }),
   });
@@ -721,6 +817,13 @@ export function createRecipeFactory({
     createCompositionMethods({ module, pdfs, withString, call, inspectPdf }),
     {
       endPDF: createEndPDF({
+        /**
+         * Finishes the open page and writes the Recipe, rolling back page deletions
+         * when modifying a source PDF fails.
+         * @param {Recipe} recipe - Recipe to finish.
+         * @returns {Uint8Array} The PDF bytes.
+         * @throws {Error} If a page is open while pages are deleted, or writing fails.
+         */
         endPDF: (recipe) => {
           if (recipe._endError) throw recipe._endError;
           // deletePage() rewrites the page tree it read when the page was
@@ -779,6 +882,11 @@ export function createRecipeFactory({
         registerPdf: Recipe.registerPdf,
         unregisterPdf: Recipe.unregisterPdf,
         inspectPdf,
+        /**
+         * Creates the Recipe that endPDF() uses for post-processing.
+         * @param {RecipeOptions} options - Recipe options.
+         * @returns {Recipe} A new Recipe.
+         */
         createRecipe: (options) => new Recipe(options),
         recrypt,
       }),
@@ -806,5 +914,6 @@ export function createRecipeFactory({
     },
   );
 
+  Object.assign(Recipe, recipeConstants);
   return Recipe;
 }

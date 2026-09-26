@@ -577,6 +577,18 @@ WASM_EXPORT int muhammara_wasm_writer_font_text_dimensions(
   return 1;
 }
 
+WASM_EXPORT int muhammara_wasm_writer_font_glyph_dimensions(
+    WasmRecipe* recipe, PDFUsedFont* font, const uint32_t* glyphs, int count,
+    double fontSize, double* values) {
+  return hasFont(recipe, font) && fontGlyphDimensions(font, glyphs, count, fontSize, values);
+}
+
+WASM_EXPORT int muhammara_wasm_writer_font_underline(WasmRecipe* recipe, PDFUsedFont* font,
+                                                     const char* text, double fontSize,
+                                                     double* values) {
+  return hasFont(recipe, font) && fontUnderline(font, text, fontSize, values);
+}
+
 WASM_EXPORT int muhammara_wasm_writer_font_metrics(WasmRecipe* recipe,
                                                     PDFUsedFont* font,
                                                     double fontSize,
@@ -780,18 +792,6 @@ WASM_EXPORT int muhammara_wasm_recipe_clip_rectangle(
          recipe->context->re(x, y, width, height) == PDFHummus::eSuccess &&
          recipe->context->W() == PDFHummus::eSuccess &&
          recipe->context->n() == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_cmyk_fill(WasmRecipe* recipe, double cyan,
-                                    double magenta, double yellow,
-                                    double black) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->k(cyan, magenta, yellow, black) == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_gray_stroke(WasmRecipe* recipe, double gray) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->G(gray) == PDFHummus::eSuccess;
 }
 
 int muhammara_wasm_recipe_line_width(WasmRecipe* recipe, double width) {

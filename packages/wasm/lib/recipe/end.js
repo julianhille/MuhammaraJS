@@ -3,6 +3,12 @@
  * A failed finalization retires the Recipe; later calls rethrow the original
  * error instead of re-entering finalization against a destroyed handle,
  * matching native Recipe#endPDF().
+ *
+ * @param {object} recipe - Recipe whose native handle is finished and released.
+ * @param {object} module - Emscripten module.
+ * @param {function(number): void} assertOutputSize - Throws when the output is too large.
+ * @returns {Uint8Array} The PDF bytes.
+ * @throws {Error} If the PDF cannot be written or exceeds the output limit.
  */
 export function endPDF(recipe, module, assertOutputSize) {
   if (recipe._endedBytes) return recipe._endedBytes;

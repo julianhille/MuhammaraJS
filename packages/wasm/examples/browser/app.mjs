@@ -62,17 +62,33 @@ async function setupVersionPicker() {
 
 void setupVersionPicker();
 
+/**
+ * Shows progress, and summary details when given.
+ * @param {string} message - Status text.
+ * @param {number} [percent=0] - Progress from 0 to 100.
+ * @param {object} [details] - Summary to print as JSON.
+ * @returns {void}
+ */
 function report(message, percent = 0, details) {
   progressBar.value = percent;
   status.textContent = message;
   if (details) output.textContent = JSON.stringify(details, null, 2);
 }
 
+/**
+ * Reads the file chosen in a form input.
+ * @param {string} name - Input name.
+ * @returns {Promise<Uint8Array<ArrayBuffer>|undefined>} The bytes, or undefined when no file is chosen.
+ */
 async function fileBytes(name) {
   var file = form.elements[name].files[0];
   return file ? new Uint8Array(await file.arrayBuffer()) : undefined;
 }
 
+/**
+ * Reads every optional asset input.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleAssets>} The chosen assets.
+ */
 async function assets() {
   return {
     font: await fileBytes("font"),
@@ -82,6 +98,11 @@ async function assets() {
   };
 }
 
+/**
+ * Builds the summary shown after a run.
+ * @param {object} value - Result of `runBrowserExample()`.
+ * @returns {object} Display values and output sizes.
+ */
 function summary(value) {
   if (value.example)
     return {
@@ -100,6 +121,10 @@ function summary(value) {
   };
 }
 
+/**
+ * Previews the selected output PDF and offers it for download.
+ * @returns {void}
+ */
 function showResult() {
   if (!result) return;
   var selected = result.example
@@ -120,20 +145,43 @@ function showResult() {
   download.hidden = false;
 }
 
+/**
+ * Runs an example in a module Worker.
+ * @param {import("./lifecycle.mjs").ExampleAssets} byteAssets - Assets to transfer.
+ * @param {string} selectedExample - Example id.
+ * @returns {Promise<object>} The example result.
+ * @throws {DOMException} If the run is cancelled.
+ * @throws {Error} If the Worker reports an error.
+ */
 function runInWorker(byteAssets, selectedExample) {
   return new Promise((resolve, reject) => {
     var worker = new Worker("./example-worker.mjs", { type: "module" });
+    /**
+     * Ends the Worker and settles the promise.
+     * @param {function(*): void} callback - `resolve` or `reject`.
+     * @param {*} value - Result or error.
+     * @returns {void}
+     */
     var finish = (callback, value) => {
       worker.terminate();
       callback(value);
     };
     active = {
+      /**
+       * Cancels the Worker run.
+       * @returns {void}
+       */
       cancel: () =>
         finish(
           reject,
           new DOMException("Worker operation cancelled", "AbortError"),
         ),
     };
+    /**
+     * Handles progress, result, and error messages from the Worker.
+     * @param {MessageEvent} event - Worker message.
+     * @returns {void}
+     */
     worker.onmessage = (event) => {
       if (event.data.type === "progress") {
         report(event.data.message, event.data.percent, event.data.details);
@@ -145,6 +193,11 @@ function runInWorker(byteAssets, selectedExample) {
         finish(reject, error);
       }
     };
+    /**
+     * Rejects the run when the Worker fails to load or throws.
+     * @param {ErrorEvent} event - Worker error.
+     * @returns {void}
+     */
     worker.onerror = (event) => {
       finish(reject, new Error(event.message));
     };
@@ -152,6 +205,12 @@ function runInWorker(byteAssets, selectedExample) {
   });
 }
 
+/**
+ * Activates an example tab unless a run is active.
+ * @param {string} selectedId - Example id.
+ * @param {boolean} [focus=false] - Move keyboard focus to the tab.
+ * @returns {void}
+ */
 function selectExample(selectedId, focus = false) {
   var selected = examples.get(selectedId);
   if (!selected || active) return;
@@ -212,7 +271,13 @@ form.addEventListener("submit", async (event) => {
       result = await runInWorker(byteAssets, selectedExample);
     else {
       var controller = new AbortController();
-      active = { cancel: () => controller.abort() };
+      active = {
+        /**
+         * Cancels the in-page run.
+         * @returns {void}
+         */
+        cancel: () => controller.abort(),
+      };
       result = await runBrowserExample({
         exampleId: selectedExample,
         assets: byteAssets,

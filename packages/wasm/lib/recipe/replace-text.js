@@ -7,6 +7,37 @@ var ePDFObjectIndirectObjectReference =
 var WHITESPACE = "\0\t\n\f\r ";
 var DELIMITERS = "()<>[]{}/%";
 
+// Content-stream operators this module interprets.
+var PdfOperator = Object.freeze({
+  SHOW_TEXT: "Tj",
+  SHOW_TEXT_ARRAY: "TJ",
+  NEXT_LINE_SHOW_TEXT: "'",
+  SPACING_NEXT_LINE_SHOW_TEXT: '"',
+  PAINT_XOBJECT: "Do",
+  INLINE_IMAGE_DATA: "ID",
+  END_INLINE_IMAGE: "EI",
+});
+
+// PDF dictionary keys and names this module reads.
+var PdfName = Object.freeze({
+  PARENT: "Parent",
+  RESOURCES: "Resources",
+  CONTENTS: "Contents",
+  LENGTH: "Length",
+  FILTER: "Filter",
+  DECODE_PARMS: "DecodeParms",
+  XOBJECT: "XObject",
+  SUBTYPE: "Subtype",
+  FORM: "Form",
+});
+
+// Content-stream keywords that are operands, not operators.
+var PdfKeyword = Object.freeze({
+  TRUE: "true",
+  FALSE: "false",
+  NULL: "null",
+});
+
 /**
  * Check whether a content-stream character is PDF whitespace.
  *
@@ -64,8 +95,8 @@ function skipLiteralString(source, start) {
 function skipInlineImageData(source, start) {
   for (var index = start + 1; index < source.length - 1; index++) {
     if (
-      source[index] === "E" &&
-      source[index + 1] === "I" &&
+      source[index] === PdfOperator.END_INLINE_IMAGE[0] &&
+      source[index + 1] === PdfOperator.END_INLINE_IMAGE[1] &&
       isWhitespace(source[index - 1]) &&
       endsRegularToken(source.charAt(index + 2))
     ) {
@@ -138,25 +169,29 @@ function removeTextShowingOperators(source) {
     var isOperator =
       depth <= 0 &&
       /^[A-Za-z'"*]/.test(token) &&
-      token !== "true" &&
-      token !== "false" &&
-      token !== "null";
+      token !== PdfKeyword.TRUE &&
+      token !== PdfKeyword.FALSE &&
+      token !== PdfKeyword.NULL;
 
     if (!isOperator) {
       if (depth <= 0) operands.push(token);
       continue;
     }
 
-    if (token === "ID") index = skipInlineImageData(source, index);
-    if (token === "Do" && /^\//.test(operands[0])) {
+    if (token === PdfOperator.INLINE_IMAGE_DATA)
+      index = skipInlineImageData(source, index);
+    if (token === PdfOperator.PAINT_XOBJECT && /^\//.test(operands[0])) {
       xObjectNames.push(decodeName(operands[0]));
     }
 
-    if (token === "Tj" || token === "TJ") {
+    if (
+      token === PdfOperator.SHOW_TEXT ||
+      token === PdfOperator.SHOW_TEXT_ARRAY
+    ) {
       result += " ";
-    } else if (token === "'") {
+    } else if (token === PdfOperator.NEXT_LINE_SHOW_TEXT) {
       result += " T*";
-    } else if (token === '"') {
+    } else if (token === PdfOperator.SPACING_NEXT_LINE_SHOW_TEXT) {
       result += " " + operands[0] + " Tw " + operands[1] + " Tc T*";
     } else {
       result += source.slice(operandStart, index);
@@ -184,6 +219,11 @@ function decodeName(token) {
   });
 }
 
+/**
+ * Escapes backslashes and parentheses for a PDF literal string.
+ * @param {string} value - Text.
+ * @returns {string} The escaped text.
+ */
 function escapePDFLiteralString(value) {
   return value.replace(/([\\()])/g, "\\$1");
 }
@@ -223,6 +263,11 @@ function literalReplacement(text, replacement) {
   };
 }
 
+/**
+ * Maps bytes one-to-one to a string of code units 0 to 255.
+ * @param {Uint8Array} bytes - Bytes.
+ * @returns {string} The string.
+ */
 function oneByteString(bytes) {
   var result = "";
   for (var offset = 0; offset < bytes.length; offset += 0x8000) {
@@ -290,12 +335,14 @@ function pageContent(parser, pageIndex) {
   for (
     var node = page;
     node && !resources;
-    node = lookup(parser, node, "Parent")?.toPDFDictionary()
+    node = lookup(parser, node, PdfName.PARENT)?.toPDFDictionary()
   ) {
-    resources = lookup(parser, node, "Resources")?.toPDFDictionary();
+    resources = lookup(parser, node, PdfName.RESOURCES)?.toPDFDictionary();
   }
 
-  var contents = page.exists("Contents") ? page.queryObject("Contents") : null;
+  var contents = page.exists(PdfName.CONTENTS)
+    ? page.queryObject(PdfName.CONTENTS)
+    : null;
   var resolved = resolve(parser, contents);
   var entries = [];
   if (contents && resolved.getType() === ePDFObjectArray) {
@@ -360,7 +407,12 @@ function rewriteStream(writer, copyingContext, parser, objectId, content) {
   var dictionary = objectsContext.startDictionary();
 
   Object.keys(source).forEach(function (key) {
-    if (key === "Length" || key === "Filter" || key === "DecodeParms") return;
+    if (
+      key === PdfName.LENGTH ||
+      key === PdfName.FILTER ||
+      key === PdfName.DECODE_PARMS
+    )
+      return;
     dictionary.writeKey(key);
     copyingContext.copyDirectObjectAsIs(source[key]);
   });
@@ -380,7 +432,7 @@ function rewriteStream(writer, copyingContext, parser, objectId, content) {
  * content, or null when a form shows no text.
  */
 function collectForms(parser, names, resources, forms) {
-  var xObjects = lookup(parser, resources, "XObject")?.toPDFDictionary();
+  var xObjects = lookup(parser, resources, PdfName.XOBJECT)?.toPDFDictionary();
   names.forEach(function (name) {
     var reference =
       xObjects && xObjects.exists(name) && xObjects.queryObject(name);
@@ -397,8 +449,8 @@ function collectForms(parser, names, resources, forms) {
       .parseNewObject(objectId)
       .toPDFStream()
       ?.getDictionary();
-    var subtype = dictionary && lookup(parser, dictionary, "Subtype");
-    if (!subtype || subtype.toPDFName()?.value !== "Form") return;
+    var subtype = dictionary && lookup(parser, dictionary, PdfName.SUBTYPE);
+    if (!subtype || subtype.toPDFName()?.value !== PdfName.FORM) return;
 
     var source = readContentStream(parser, objectId);
     var stripped = removeTextShowingOperators(source);
@@ -406,13 +458,17 @@ function collectForms(parser, names, resources, forms) {
     collectForms(
       parser,
       stripped.xObjectNames,
-      lookup(parser, dictionary, "Resources")?.toPDFDictionary() || resources,
+      lookup(parser, dictionary, PdfName.RESOURCES)?.toPDFDictionary() ||
+        resources,
       forms,
     );
   });
 }
 
-/** Creates literal page-content text replacement and removal methods. */
+/**
+ * Creates literal page-content text replacement and removal methods.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createReplaceTextMethods() {
   return {
     /**
@@ -450,8 +506,8 @@ export function createReplaceTextMethods() {
           .parsePage(pageNumber - 1)
           .getDictionary()
           .toPDFDictionary();
-        var contents = page.exists("Contents")
-          ? page.queryObject("Contents")
+        var contents = page.exists(PdfName.CONTENTS)
+          ? page.queryObject(PdfName.CONTENTS)
           : null;
         var reference = contents?.toPDFIndirectObjectReference();
         if (!reference) {

@@ -923,11 +923,6 @@ inline WasmCopyingContext::~WasmCopyingContext() {
   context = nullptr;
 }
 
-static WasmObject* addCopyingObject(WasmCopyingParser* parser, PDFObject* object) {
-  if (parser == nullptr || !parser->active || object == nullptr) return nullptr;
-  return addReaderObject(parser, object);
-}
-
 inline WasmRecipe::~WasmRecipe() {
   delete page;
   for (WasmImage* image : images) {
@@ -1224,4 +1219,50 @@ static PDFHummus::EStatusCode showTJ(AbstractContentContext* context, int encodi
     }
   }
   return context->TJ(values);
+}
+
+#include "FreeTypeFaceWrapper.h"
+#include FT_TRUETYPE_TABLES_H
+
+// Measure a glyph id list the way the native UsedFont driver does.
+inline bool fontGlyphDimensions(PDFUsedFont* font, const uint32_t* glyphs, int count,
+                                double fontSize, double* values) {
+  if (font == nullptr || values == nullptr || count < 0 || (count > 0 && glyphs == nullptr) ||
+      !std::isfinite(fontSize) || fontSize <= 0) {
+    return false;
+  }
+  UIntList list;
+  for (int index = 0; index < count; ++index) list.push_back(glyphs[index]);
+  PDFUsedFont::TextMeasures measures =
+      font->CalculateTextDimensions(list, static_cast<long>(fontSize));
+  values[0] = measures.xMin;
+  values[1] = measures.yMin;
+  values[2] = measures.xMax;
+  values[3] = measures.yMax;
+  values[4] = measures.width;
+  values[5] = measures.height;
+  return true;
+}
+
+// Underline thickness and position from the font post table, with the native
+// fallbacks, plus the text advance that ends the underline.
+inline bool fontUnderline(PDFUsedFont* font, const char* text, double fontSize,
+                          double* values) {
+  if (font == nullptr || text == nullptr || values == nullptr || !std::isfinite(fontSize) ||
+      fontSize <= 0) {
+    return false;
+  }
+  FreeTypeFaceWrapper* wrapper = font->GetFreeTypeFont();
+  double thickness = 0.05;
+  double position = -0.15;
+  void* tableInfo = FT_Get_Sfnt_Table(*wrapper, ft_sfnt_post);
+  if (tableInfo != nullptr) {
+    TT_Postscript* table = static_cast<TT_Postscript*>(tableInfo);
+    thickness = table->underlineThickness * 1.0 / (*wrapper)->units_per_EM;
+    position = table->underlinePosition * 1.0 / (*wrapper)->units_per_EM;
+  }
+  values[0] = thickness * fontSize;
+  values[1] = position * fontSize;
+  values[2] = font->CalculateTextAdvance(text, fontSize);
+  return true;
 }

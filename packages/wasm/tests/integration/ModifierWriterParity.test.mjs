@@ -5,6 +5,69 @@ import { createMuhammaraWasm } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("ModifierWriterParity", function () {
+  it("validates page range options the same way on writers and modifiers", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = muhammara.createBlankPdf(100, 100);
+    var targets = [
+      muhammara.createWriter(),
+      muhammara.createWriterToModify(source),
+    ];
+    var invalid = [
+      { type: 7 },
+      { type: muhammara.eRangeTypeSpecific, specificRanges: [] },
+      { type: muhammara.eRangeTypeSpecific, specificRanges: [[2, 1]] },
+      { specificRanges: [[-1, 0]] },
+    ];
+    for (var target of targets) {
+      for (var options of invalid) {
+        assert.throws(
+          () => target.appendPDFPagesFromPDF(source, options),
+          RangeError,
+        );
+        assert.throws(
+          () => target.createFormXObjectsFromPDF(source, undefined, options),
+          RangeError,
+        );
+        var page = target.createPage(0, 0, 100, 100);
+        target.startPageContentContext(page);
+        assert.throws(
+          () => target.mergePDFPagesToPage(page, source, options),
+          RangeError,
+        );
+        target.writePage(page);
+      }
+      target.end();
+    }
+  });
+
+  it("places modifier image and form results with doXObject", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var jpeg = new Uint8Array(
+      await readFile("tests/TestMaterials/images/soundcloud_logo.jpg"),
+    );
+    muhammara.registerImage("parity-jpeg", jpeg, "jpg");
+    try {
+      var modifier = muhammara.createWriterToModify(
+        muhammara.createBlankPdf(100, 100),
+        { compress: false },
+      );
+      var image = modifier.createImageXObjectFromJPGBytes("parity-jpeg");
+      var form = modifier.createFormXObjectFromJPGBytes("parity-jpeg");
+      var page = modifier.createPage(0, 0, 100, 100);
+      modifier.startPageContentContext(page).doXObject(image).doXObject(form);
+      modifier.writePage(page);
+      var output = modifier.end();
+      var text = new TextDecoder("latin1").decode(output);
+      // Two on the page, plus the JPEG form drawing its own image.
+      assert.equal(text.match(/ Do\b/g).length, 3);
+      var reader = muhammara.createReader(output);
+      assert.equal(reader.getPagesCount(), 2);
+      reader.end();
+    } finally {
+      muhammara.unregisterImage("parity-jpeg");
+    }
+  });
+
   it("exposes safe writer operations on byte-backed modifiers", async function () {
     var muhammara = await createMuhammaraWasm();
     var sourceWriter = muhammara.createWriter();
@@ -51,6 +114,16 @@ describe("ModifierWriterParity", function () {
     assert.equal(writer.appendPDFPagesFromPDF(source).length, 1);
     var forms = writer.createFormXObjectsFromPDF(source);
     assert.equal(forms.length, 1);
+    muhammara.registerPdf("parity-source", source);
+    try {
+      assert.equal(writer.createFormXObjectsFromPDF("parity-source").length, 1);
+      assert.deepEqual(writer.getImageDimensions("parity-source"), {
+        width: 100,
+        height: 100,
+      });
+    } finally {
+      muhammara.unregisterPdf("parity-source");
+    }
     var output = writer.end();
     writeOutput("ModifierWriterParity", output);
     var reader = muhammara.createReader(output);

@@ -1,5 +1,16 @@
 import assert from "node:assert/strict";
-import { createMuhammaraWasm } from "../index.js";
+import {
+  createMuhammaraWasm,
+  DeviceColorSpace,
+  DrawingPathType,
+  ETokenSeparator,
+  ImageFit,
+  LineCapStyle,
+  ObjectReplacementScope,
+  PageBox,
+  PDFImageType,
+  EEncoding,
+} from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("EmptyPagesPDF", function () {
@@ -47,6 +58,8 @@ describe("EmptyPagesPDF", function () {
       height: 842,
     });
     assert.deepEqual(reader.getPageBox(0, "crop"), [0, 0, 595, 842]);
+    assert.throws(() => reader.getPageInfo(0.5), /Page index/);
+    assert.throws(() => reader.getPageInfo("0"), /Page index/);
     reader.end();
     var version20Writer = muhammara.createWriter({
       version: muhammara.ePDFVersion20,
@@ -70,6 +83,15 @@ describe("EmptyPagesPDF", function () {
       ),
     );
     var blankPdf = muhammara.createBlankPdf(595, 842);
+    assert.throws(() => muhammara.createBlankPdf(NaN, 10), TypeError);
+    assert.throws(() => muhammara.createBlankPdf("10", 10), TypeError);
+    assert.throws(() => muhammara.createBlankPdf(0, 10), RangeError);
+    for (var register of ["registerFont", "registerImage", "registerPdf"]) {
+      assert.throws(
+        () => muhammara[register]("", blankPdf, "png"),
+        /non-empty strings/,
+      );
+    }
     var modified = muhammara
       .createModifier(blankPdf)
       .startPage(0)
@@ -84,4 +106,24 @@ describe("EmptyPagesPDF", function () {
     assert.equal(modifiedReader.getPagesCount(), 1);
     modifiedReader.end();
   });
+
+  it("exports frozen value sets for finite string options", function () {
+    for (var [valueSet, values] of EXPORTED_VALUE_SETS) {
+      assert.deepEqual(Object.values(valueSet), values);
+      assert.ok(Object.isFrozen(valueSet));
+    }
+  });
 });
+
+// Every exported value set and the string values it must carry.
+var EXPORTED_VALUE_SETS = [
+  [DeviceColorSpace, ["rgb", "gray", "cmyk"]],
+  [ImageFit, ["always", "overflow"]],
+  [PageBox, ["media", "crop", "bleed", "trim", "art"]],
+  [EEncoding, ["text", "code", "hex"]],
+  [DrawingPathType, ["stroke", "fill", "clip"]],
+  [ObjectReplacementScope, ["global"]],
+  [PDFImageType, ["PDF", "JPG", "TIFF", "PNG"]],
+  [LineCapStyle, [0, 1, 2]],
+  [ETokenSeparator, [0, 1, 2]],
+];

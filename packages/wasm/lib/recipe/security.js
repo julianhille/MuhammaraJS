@@ -1,3 +1,4 @@
+import { Permission } from "../value-sets.js";
 /**
  * Converts comma-separated PDF permission names to a user-protection bitmask.
  *
@@ -9,16 +10,16 @@
  * @returns {number} Numeric PDF user-protection flags.
  * @throws {Error} If a permission name is unknown.
  */
-export function permission(flags = "print") {
+export function permission(flags = Permission.PRINT) {
   var bits = {
-    print: 4,
-    modify: 8,
-    copy: 16,
-    edit: 32,
-    fillform: 256,
-    extract: 512,
-    assemble: 1024,
-    printbest: 2048,
+    [Permission.PRINT]: 4,
+    [Permission.MODIFY]: 8,
+    [Permission.COPY]: 16,
+    [Permission.EDIT]: 32,
+    [Permission.FILL_FORM]: 256,
+    [Permission.EXTRACT]: 512,
+    [Permission.ASSEMBLE]: 1024,
+    [Permission.PRINT_BEST]: 2048,
   };
   return String(flags)
     .split(",")
@@ -30,8 +31,17 @@ export function permission(flags = "print") {
     }, 0);
 }
 
-/** Creates Recipe security methods matching native Recipe encryption options. */
+/**
+ * Creates Recipe security methods matching native Recipe encryption options.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createSecurityMethods() {
+  /**
+   * Converts Recipe password and permission options to recrypt options.
+   * @param {object} options - Recipe options.
+   * @param {boolean} [addPermissions=true] - Include the permission flags.
+   * @returns {object} Encryption options; empty without a password.
+   */
   function getEncryptOptions(options, addPermissions = true) {
     var encryptOptions = {};
     var password = options.password || options.ownerPassword;

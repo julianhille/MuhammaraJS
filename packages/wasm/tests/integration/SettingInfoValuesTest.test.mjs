@@ -71,4 +71,39 @@ describe("SettingInfoValuesTest", function () {
     assert.match(entries, /\/words#20of#20praise \(amazing\)/);
     assert.doesNotMatch(entries, /\/removed/);
   });
+
+  it("accepts only EInfoTrapped values for trapped", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var info = writer.getDocumentContext().getInfoDictionary();
+    assert.equal(info.trapped, muhammara.EInfoTrappedUnknown);
+    info.trapped = muhammara.EInfoTrappedTrue;
+    assert.equal(info.trapped, muhammara.EInfoTrappedTrue);
+    assert.throws(() => (info.trapped = 3), /EInfoTrapped value/);
+    assert.throws(() => (info.trapped = 0.5), /EInfoTrapped value/);
+    writer.writePage(writer.createPage(0, 0, 10, 10));
+    assert.match(infoDictionary(writer.end()), /\/Trapped \/True/);
+  });
+
+  it("rejects Info changes after the writer or modifier ends", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var modifier = muhammara.createWriterToModify(
+      muhammara.createBlankPdf(10, 10),
+    );
+    var infos = [writer, modifier].map((target) => {
+      var info = target.getDocumentContext().getInfoDictionary();
+      info.title = "kept";
+      return info;
+    });
+    writer.writePage(writer.createPage(0, 0, 10, 10));
+    writer.end();
+    modifier.end();
+    for (var info of infos) {
+      assert.throws(() => info.setCreationDate(new Date()), /has ended/);
+      assert.throws(() => info.setModDate(new Date()), /has ended/);
+      assert.throws(() => (info.title = "changed"), /has ended/);
+      assert.equal(info.title, "kept");
+    }
+  });
 });

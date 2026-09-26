@@ -63,7 +63,8 @@ differently or exists on only one side.
 ## Quick Start
 
 The package is ESM. Load it in Node.js or through a browser bundler; the
-WebAssembly module loads asynchronously, so each entry point is `async`.
+WebAssembly module loads asynchronously, so each entry point is `async`. Its TypeScript
+declarations require TypeScript 5.7 or later.
 
 Create a PDF with the high-level Recipe API:
 

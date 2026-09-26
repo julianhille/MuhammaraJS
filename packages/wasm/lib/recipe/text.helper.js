@@ -1,4 +1,9 @@
-/** Calculates spacing between retained Unicode characters. */
+/**
+ * Calculates spacing between retained Unicode characters.
+ * @param {string} text - Text.
+ * @param {number} [charSpace=0] - Spacing per character gap.
+ * @returns {number} Total spacing.
+ */
 export function charSpacing(text, charSpace = 0) {
   var characterCount = Array.from(String(text)).length;
   return characterCount ? (characterCount - 1) * charSpace : 0;
@@ -11,6 +16,10 @@ export class Word {
     this.measure = measure;
     this.options = options;
   }
+  /**
+   * Measures the word including character spacing.
+   * @returns {number} The width in points.
+   */
   get width() {
     return (
       this.measure(this.value, this.options).width +
@@ -27,15 +36,28 @@ export class Line {
     this.options = options;
     this.words = [];
   }
+  /**
+   * Joins the words of the line.
+   * @returns {string} The line text.
+   */
   get value() {
     return this.words.join("");
   }
+  /**
+   * Measures the line including character spacing.
+   * @returns {number} The width in points.
+   */
   get currentWidth() {
     return (
       this.measure(this.value, this.options).width +
       charSpacing(this.value, this.options.charSpace)
     );
   }
+  /**
+   * Reports whether a word still fits on the line.
+   * @param {string} value - Word.
+   * @returns {boolean} Whether it fits within `width`.
+   */
   canFit(value) {
     return (
       this.currentWidth + new Word(value, this.measure, this.options).width <=
@@ -58,9 +80,18 @@ export class Column {
       gap: 0,
     });
   }
+  /**
+   * Reads the column origin.
+   * @returns {number[]} `[x, y]`.
+   */
   get position() {
     return [this.x, this.y];
   }
+  /**
+   * Moves the column origin.
+   * @param {number[]} value - `[x, y]`.
+   * @returns {void}
+   */
   set position(value) {
     [this.x, this.y] = value;
   }

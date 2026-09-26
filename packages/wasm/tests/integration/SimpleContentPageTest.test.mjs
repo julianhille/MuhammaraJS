@@ -150,4 +150,105 @@ describe("SimpleContentPageTest", function () {
       /writer has ended/,
     );
   });
+
+  it("rejects incomplete or out-of-range operator calls on every content context", async function () {
+    var muhammara = await createMuhammaraWasm();
+    for (var [kind, context] of Object.entries(
+      everyContentContext(muhammara),
+    )) {
+      for (var [operator, args] of INVALID_OPERATOR_CALLS) {
+        assert.throws(
+          () => context[operator](...args),
+          (error) => error instanceof TypeError || error instanceof RangeError,
+          `${kind}.${operator}(${args.join(", ")})`,
+        );
+      }
+      assert.throws(() => context.Tf("F1", 0), RangeError, `${kind}.Tf`);
+      for (var draw of [
+        () => context.drawRectangle(1, 1, 2, 2, { type: "fil" }),
+        () => context.drawCircle(3, 3, 1, { type: "outline" }),
+        () =>
+          context.drawPath(
+            [
+              [0, 0],
+              [1, 1],
+            ],
+            { type: 1 },
+          ),
+      ]) {
+        assert.throws(draw, /DrawingPathType value or null/, `${kind} type`);
+      }
+      assert.throws(() => context.Tf({}, 10), TypeError, `${kind}.Tf`);
+    }
+  });
 });
+
+// Calls that must throw on every content context. A missing operand would
+// otherwise be written as `nan` and corrupt the content stream.
+var INVALID_OPERATOR_CALLS = [
+  ["m", [1]],
+  ["l", [1]],
+  ["re", [1, 1, 1]],
+  ["c", [1, 1, 1, 1, 1]],
+  ["v", [1, 1, 1]],
+  ["y", [1, 1, 1]],
+  ["cm", [1, 1, 1, 1, 1]],
+  ["Tm", [1, 1, 1, 1, 1]],
+  ["rg", [1, 1]],
+  ["RG", [1, 1]],
+  ["K", [1, 1, 1]],
+  ["k", [1, 1, 1]],
+  ["k", [NaN, 0, 0, 0]],
+  ["G", []],
+  ["Td", [1]],
+  ["TD", [1]],
+  ["Tc", []],
+  ["Tw", []],
+  ["TL", []],
+  ["Ts", []],
+  ["M", []],
+  ["g", []],
+  ["G", [NaN]],
+  ["w", []],
+  ["J", []],
+  ["J", [3]],
+  ["J", [-1]],
+  ["j", []],
+  ["j", [3]],
+  ["j", [-1]],
+  ["Tr", []],
+  ["Tr", [8]],
+  ["Tr", [-1]],
+  ["M", []],
+  ["g", []],
+  ["Tc", []],
+  ["J", [1.5]],
+  ["j", [1.5]],
+  ["Tr", [1.5]],
+];
+
+/**
+ * Opens one content context of every Wasm kind.
+ *
+ * @param {object} muhammara Initialized Wasm module.
+ * @returns {Record<string, object>} Writer page, writer form, modifier page,
+ *   page modifier, and modifier form contexts, keyed by kind.
+ */
+function everyContentContext(muhammara) {
+  var blank = muhammara.createBlankPdf(100, 100);
+  var writer = muhammara.createWriter();
+  var modifier = muhammara.createWriterToModify(blank);
+  var pageModifier = muhammara
+    .createWriterToModify(blank)
+    .createPageModifier(0)
+    .startContext();
+  return {
+    writerPage: writer.startPageContentContext(writer.createPage(0, 0, 9, 9)),
+    writerForm: writer.createFormXObject(0, 0, 9, 9).getContentContext(),
+    modifierPage: modifier.startPageContentContext(
+      modifier.createPage(0, 0, 9, 9),
+    ),
+    pageModifier: pageModifier.getContext(),
+    modifierForm: modifier.createFormXObject(0, 0, 9, 9).getContentContext(),
+  };
+}

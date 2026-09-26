@@ -1,14 +1,22 @@
+import { AnnotFlag, AnnotIcon, AnnotSubtype } from "../value-sets.js";
+/**
+ * Converts an annotation flag name or bit mask to flag bits.
+ * @param {Recipe.AnnotFlag|number} [flag] - Flag name, in any case, or a non-negative bit mask.
+ * @returns {number} The bits; 0 when omitted.
+ * @throws {Error} If a name is not a Recipe.AnnotFlag value.
+ */
 function annotationFlags(flag) {
   var bits = {
-    invisible: 1,
-    hidden: 2,
-    print: 4,
-    nozoom: 8,
-    norotate: 16,
-    noview: 32,
-    readonly: 64,
-    locked: 128,
-    togglenoview: 256,
+    [AnnotFlag.INVISIBLE]: 1,
+    [AnnotFlag.HIDDEN]: 2,
+    [AnnotFlag.PRINT]: 4,
+    [AnnotFlag.NO_ZOOM]: 8,
+    [AnnotFlag.NO_ROTATE]: 16,
+    [AnnotFlag.NO_VIEW]: 32,
+    [AnnotFlag.READ_ONLY]: 64,
+    [AnnotFlag.LOCKED]: 128,
+    [AnnotFlag.TOGGLE_NO_VIEW]: 256,
+    [AnnotFlag.LOCKED_CONTENTS]: 512,
   };
   if (flag === undefined || flag === "") return 0;
   if (Number.isSafeInteger(flag) && flag >= 0) return flag;
@@ -17,6 +25,11 @@ function annotationFlags(flag) {
   return bits[flag.toLowerCase()];
 }
 
+/**
+ * Formats a date as a UTC PDF date.
+ * @param {string|Date} [value] - Date.
+ * @returns {string} `D:YYYYMMDDHHmmSSZ`, the original text when it is not a date, or empty.
+ */
 function annotationDate(value) {
   if (!value) return "";
   var date = new Date(value);
@@ -24,6 +37,11 @@ function annotationDate(value) {
   return `D:${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}${String(date.getUTCHours()).padStart(2, "0")}${String(date.getUTCMinutes()).padStart(2, "0")}${String(date.getUTCSeconds()).padStart(2, "0")}Z`;
 }
 
+/**
+ * Wraps text in an XHTML body for `/RC` unless it is already XML.
+ * @param {string} value - Text or XHTML.
+ * @returns {string} The rich text.
+ */
 function richText(value) {
   if (value.startsWith("<?xml")) return value;
   return `<?xml version="1.0"?><body xmlns="http://www.w3.org/1999/xhtml">${value.replace(/&nbsp;/g, " ").replace(/\r?\n|\r|\t/g, "")}</body>`;
@@ -32,6 +50,13 @@ function richText(value) {
 /**
  * Rejects annotation geometry and appearance values that cannot be written as
  * a valid PDF annotation, identically for new and edited pages.
+ * @param {number[]} rectangle - `[left, bottom, right, top]`.
+ * @param {number} borderWidth - Border width.
+ * @param {number[]} borderDash - Dash pattern.
+ * @param {number[]} quadPoints - Quad points, eight per quadrilateral.
+ * @param {number} opacity - Opacity from 0 to 1.
+ * @returns {void}
+ * @throws {TypeError} If a value is not finite, negative, or malformed.
  */
 function assertAnnotationValues(
   rectangle,
@@ -61,6 +86,8 @@ function assertAnnotationValues(
 /**
  * Converts annotation text fields like native Recipe. Contents and icon names
  * omit falsy values; titles and subjects preserve zero and false as strings.
+ * @param {object} options - Annotation options.
+ * @returns {object} New options with string text fields.
  */
 function annotationText(options) {
   var result = { ...options };
@@ -73,7 +100,14 @@ function annotationText(options) {
   return result;
 }
 
-/** Writes Recipe metadata and reply relationships through the modifier's object API. */
+/**
+ * Writes Recipe metadata and reply relationships through the modifier's object API.
+ * @param {PDFModifier} writer - Modifier of the source PDF.
+ * @param {string} subtype - Annotation subtype.
+ * @param {number[]} rectangle - `[left, bottom, right, top]`.
+ * @param {object} options - Normalized annotation options.
+ * @returns {number} The annotation object ID.
+ */
 function writeSourceAnnotation(writer, subtype, rectangle, options) {
   var opacity = options.opacity ?? 1;
   var flags = annotationFlags(options.flag ?? options.flags);
@@ -82,7 +116,12 @@ function writeSourceAnnotation(writer, subtype, rectangle, options) {
   var dictionary = objects.startDictionary();
   dictionary.writeKey("Type").writeNameValue("Annot");
   dictionary.writeKey("Subtype").writeNameValue(subtype);
-  /** Writes a numeric array in the annotation dictionary. */
+  /**
+   * Writes a numeric array in the annotation dictionary.
+   * @param {string} key - Dictionary key.
+   * @param {number[]} values - Numbers.
+   * @returns {void}
+   */
   function writeArray(key, values) {
     dictionary.writeKey(key);
     objects.startArray();
@@ -142,13 +181,23 @@ function writeSourceAnnotation(writer, subtype, rectangle, options) {
   return id;
 }
 
-/** Creates Recipe annotation methods. */
+/**
+ * Creates Recipe annotation methods.
+ * @param {{module: object, withString: Function, withDoubles: Function, colorValue: Function}} dependencies - Module and helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createAnnotationMethods({
   module,
   withString,
   withDoubles,
   colorValue,
 }) {
+  /**
+   * Converts an annotation color to PDF components from 0 to 1.
+   * @param {RecipeColor|number[]} [value] - Color, or one, three, or four components.
+   * @returns {number[]} Components; empty when omitted.
+   * @throws {TypeError} If an array has another length or a non-finite component.
+   */
   function annotationColor(value) {
     if (value === undefined) return [];
     if (Array.isArray(value)) {
@@ -175,8 +224,8 @@ export function createAnnotationMethods({
      * @function
      * @memberof Recipe#
      * @param {string} url ASCII URL to open; percent-encode non-ASCII path or query text.
-     * @param {number} x Left coordinate in Recipe coordinates.
-     * @param {number} y Top coordinate in Recipe coordinates.
+     * @param {number|string} x Left coordinate in Recipe coordinates, or `center`.
+     * @param {number|string} y Top coordinate in Recipe coordinates, or `center`.
      * @param {number} width Link width; a negative width extends leftward.
      * @param {number} height Link height; a negative height extends upward.
      * @returns {Recipe} The Recipe instance.
@@ -194,6 +243,14 @@ export function createAnnotationMethods({
      * @function
      * @memberof Recipe#
      * @private
+     * @param {string} url - ASCII URL.
+     * @param {number} left - PDF left.
+     * @param {number} bottom - PDF bottom.
+     * @param {number} width - Width.
+     * @param {number} height - Height.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If there is no active page or the link cannot be written.
+     * @throws {TypeError} If the URL is not a string or the rectangle is not finite.
      */
     _linkPdf: function (url, left, bottom, width, height) {
       if (!this._pageHeight) throw new Error("Links require an active page");
@@ -275,7 +332,11 @@ export function createAnnotationMethods({
      * @throws {TypeError} If the options cannot form a valid PDF annotation.
      */
     comment: function (text = "", x, y, options = {}) {
-      return this.annot(x, y, "Text", { icon: "Comment", ...options, text });
+      return this.annot(x, y, AnnotSubtype.TEXT, {
+        icon: AnnotIcon.COMMENT,
+        ...options,
+        text,
+      });
     },
     /**
      * Queues an annotation on the active page.
@@ -299,6 +360,11 @@ export function createAnnotationMethods({
         throw new Error("Annotations require an active page");
       if (typeof subtype !== "string" || !subtype)
         throw new TypeError("Annotation subtype is required");
+      // Write known subtypes with their PDF casing, as native does.
+      subtype =
+        Object.values(AnnotSubtype).find(
+          (known) => known.toLowerCase() === subtype.toLowerCase(),
+        ) || subtype;
       var annotation = { x, y, subtype, options: { ...options } };
       // Reject invalid options here, so they never enter the queue and block
       // every later endPage() call.
@@ -342,17 +408,17 @@ export function createAnnotationMethods({
             [bottom, width, height] = [bottom - width, height, width];
         }
         var markup = [
-          "highlight",
-          "underline",
-          "strikeout",
-          "squiggly",
-        ].includes(annotation.subtype.toLowerCase());
+          AnnotSubtype.HIGHLIGHT,
+          AnnotSubtype.UNDERLINE,
+          AnnotSubtype.STRIKE_OUT,
+          AnnotSubtype.SQUIGGLY,
+        ].includes(annotation.subtype);
         var color = annotationColor(options.color);
         if (markup && !color.length)
           color = annotationColor(
-            annotation.subtype === "Highlight"
+            annotation.subtype === AnnotSubtype.HIGHLIGHT
               ? [255, 255, 0]
-              : annotation.subtype === "StrikeOut"
+              : annotation.subtype === AnnotSubtype.STRIKE_OUT
                 ? [255, 0, 0]
                 : [0, 255, 0],
           );
@@ -379,6 +445,14 @@ export function createAnnotationMethods({
             ? border
             : (options.borderWidth ?? border.width ?? (markup ? 0 : -1));
         var borderDash = options.borderDash ?? border.dash ?? [];
+        /**
+         * Validates and writes the annotation or one of its replies.
+         * @param {number} [replyTo] - Annotation ID a reply answers.
+         * @param {RecipeAnnotationOptions} [reply] - Reply options; parent metadata fills gaps.
+         * @returns {number} The written annotation ID, or 0 when only validating.
+         * @throws {TypeError} If an annotation value is invalid.
+         * @throws {Error} If the annotation cannot be written.
+         */
         var write = (replyTo, reply) => {
           // Native replies inherit metadata, but keep their own contents,
           // rich-text mode, and opacity (opaque by default).

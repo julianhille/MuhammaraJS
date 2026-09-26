@@ -7,11 +7,32 @@ export interface BlobLike {
 }
 export type ByteSource = Uint8Array | ArrayBuffer | PDFRStreamForBuffer;
 export type AsyncByteSource = ByteSource | BlobLike;
-export type PDFRectangle = [number, number, number, number];
+export type PDFRectangle = [
+  lowerLeftX: number,
+  lowerLeftY: number,
+  upperRightX: number,
+  upperRightY: number,
+];
 export type PDFMatrix = [number, number, number, number, number, number];
-export type Glyph = [number, number];
-export type TextEncoding = "text" | "code" | "hex";
+/** Glyph entries shown without text encoding: `[glyphId, unicodeCodePoint]` pairs. */
+export type Glyph = Array<[number, number]>;
+/** How text-showing operators encode string text: the `EEncoding` values. */
+export type EEncoding = "text" | "code" | "hex";
+export declare const EEncoding: {
+  readonly TEXT: "text";
+  readonly CODE: "code";
+  readonly HEX: "hex";
+};
+/** @deprecated Use `EEncoding`, the native name. */
+export type TextEncoding = EEncoding;
 export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
+export declare const PageBox: {
+  readonly MEDIA: "media";
+  readonly CROP: "crop";
+  readonly BLEED: "bleed";
+  readonly TRIM: "trim";
+  readonly ART: "art";
+};
 export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
 export type PDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
 export type RecryptPDFVersion = 0 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
@@ -40,6 +61,20 @@ export interface WriterOptions {
   /** Enables Flate compression for streams. Defaults to true. */
   compress?: boolean;
 }
+/** `createReader()` options, as in native. */
+export interface PDFReaderOptions {
+  /** User or owner password that opens an encrypted PDF. */
+  password?: string;
+}
+/** `createWriter()` options, including native's encryption options. */
+export interface CreateWriterOptions extends WriterOptions {
+  /** Encrypts the PDF with this user password, as in native. PDF 2.0 throws. */
+  userPassword?: string;
+  /** Owner password of an encrypted PDF; ignored without `userPassword`. */
+  ownerPassword?: string;
+  /** Permission flags of an encrypted PDF; 4 (print) by default. */
+  userProtectionFlag?: number;
+}
 /** Options accepted by the byte-first equivalent of native `recrypt`. */
 export interface PDFRecryptOptions {
   password?: string;
@@ -57,8 +92,21 @@ export type RecipeFontStyle =
   "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
 export type RecipeCoordinate = number | "center";
 export type RecipePosition = [number, number];
+/** Device color space of a drawing or Recipe color option. */
+export type DeviceColorSpace = "rgb" | "gray" | "cmyk";
+export declare const DeviceColorSpace: {
+  readonly RGB: "rgb";
+  readonly GRAY: "gray";
+  readonly CMYK: "cmyk";
+};
 /** Device color spaces Recipe draws with in WebAssembly. */
-export type RecipeDeviceColorSpace = "rgb" | "gray" | "cmyk";
+export type RecipeDeviceColorSpace = DeviceColorSpace;
+/** How `drawImage()` fits an image: always scale, or only shrink when it overflows. */
+export type ImageFit = "always" | "overflow";
+export declare const ImageFit: {
+  readonly ALWAYS: "always";
+  readonly OVERFLOW: "overflow";
+};
 /**
  * Every Recipe color space, including Separation. WebAssembly Recipe keeps
  * Separation entries in `knownColors` but throws when asked to draw with them.
@@ -97,13 +145,12 @@ export interface RecipeOptions {
   userProtectionFlag?: number;
 }
 export interface RecipeEncryptOptions {
-  [key: string]: unknown;
   password?: string;
   ownerPassword?: string;
   userPassword?: string;
   userProtectionFlag?: number;
 }
-export type RecipeColor = string | number[];
+export type RecipeColor = string | readonly number[];
 export type RecipeKnownColors = Record<
   RecipeColorSpace,
   Record<string, string>
@@ -117,25 +164,21 @@ export interface RecipePathOptions {
   /** Make the rendered path's bounding rectangle open this URL. */
   link?: string;
   color?: RecipeColor;
-  colour?: RecipeColor;
   stroke?: RecipeColor;
   fill?: RecipeColor;
   colorspace?: RecipeDeviceColorSpace;
-  colorName?: string;
   width?: number;
   lineWidth?: number;
   opacity?: number;
-  dash?: number[];
+  dash?: readonly number[];
   dashPhase?: number;
-  lineCap?: "butt" | "round" | "square";
-  lineJoin?: "miter" | "round" | "bevel";
+  lineCap?: Recipe.LineCap;
+  lineJoin?: Recipe.LineJoin;
   miterLimit?: number;
   rotation?: number;
-  rotationOrigin?: [number, number];
+  rotationOrigin?: readonly [number, number];
   skewX?: number;
   skewY?: number;
-  /** Use native PDF bottom-left coordinates for this path. */
-  useGivenCoords?: boolean;
   /** Draw shape-specific diagnostic geometry. */
   debug?: boolean | number;
 }
@@ -144,16 +187,18 @@ export interface RecipeImageOptions extends RecipePathOptions {
   height?: number;
   scale?: number;
   keepAspectRatio?: boolean;
-  align?: string;
+  align?: Recipe.ImageAlign;
   index?: number;
 }
 export interface RecipeRectangleOptions extends RecipePathOptions {
+  /** Read `x` and `y` as native PDF bottom-left coordinates. */
+  useGivenCoords?: boolean;
   borderRadius?:
     | number
-    | [number]
-    | [number, number]
-    | [number, number, number]
-    | [number, number, number, number];
+    | readonly [number]
+    | readonly [number, number]
+    | readonly [number, number, number]
+    | readonly [number, number, number, number];
 }
 export interface RecipeArcOptions extends RecipePathOptions {
   sector?: boolean;
@@ -237,7 +282,7 @@ export interface RecipeLineStyleOptions {
   cap?: number;
   join?: number;
   miterLimit?: number;
-  dash?: number[];
+  dash?: readonly number[];
   dashPhase?: number;
 }
 export interface RecipeAnnotationOptions {
@@ -246,20 +291,20 @@ export interface RecipeAnnotationOptions {
   title?: string;
   subject?: string;
   date?: string | Date;
-  icon?: string;
+  icon?: Recipe.AnnotIcon;
   name?: string;
   color?: RecipeColor;
-  border?: number | { width?: number; dash?: number[] };
+  border?: number | { width?: number; dash?: readonly number[] };
   borderWidth?: number;
-  borderDash?: number[];
-  quadPoints?: number[];
-  flag?: string | number;
+  borderDash?: readonly number[];
+  quadPoints?: readonly number[];
+  flag?: Recipe.AnnotFlag | number;
   flags?: number;
   open?: boolean;
   opacity?: number;
   richText?: boolean;
   /** Replies inherit parent metadata; opacity defaults to 1 and richText to false independently. */
-  replies?: RecipeAnnotationOptions[];
+  replies?: readonly RecipeAnnotationOptions[];
   followOriginalPageRotation?: boolean;
   width?: number;
   height?: number;
@@ -271,25 +316,25 @@ export interface RecipeOverlayOptions {
   fitWidth?: boolean;
   fitHeight?: boolean;
 }
+/** How a Recipe text box handles text that does not fit its width. */
 export interface RecipeTextBox {
   width?: number;
   height?: number;
   minHeight?: number;
-  padding?: number | [number, number?, number?, number?];
+  padding?: number | readonly [number, number?, number?, number?];
   lineHeight?: number;
   /** `clip` retains and clips the source, `trim` omits its non-fitting suffix, and `ellipsis` replaces it with `...`. */
-  wrap?: boolean | "auto" | "clip" | "trim" | "ellipsis";
-  textAlign?:
-    | "left"
-    | "center"
-    | "right"
-    | "justify"
-    | `${string} ${"top" | "center" | "bottom"}`;
+  wrap?: boolean | Recipe.TextWrap;
+  textAlign?: Recipe.TextBoxAlign;
   /** Render only complete lines that fit within this fixed-height text box. */
   clipIfExceedsBox?: boolean;
   /** Called after clipping leaves source text unrendered. */
   onClip?: (recipe: Recipe, result: RecipeTextBoxClipResult) => void;
-  style?: RecipePathOptions & { borderRadius?: number | number[] };
+  /** `borderRadius: true` rounds the corners by 5, as in native. */
+  style?: RecipePathOptions & {
+    borderRadius?:
+      boolean | NonNullable<RecipeRectangleOptions["borderRadius"]>;
+  };
 }
 export interface RecipeTextBoxClipResult {
   remainder: string;
@@ -327,11 +372,7 @@ export interface RecipeTextOptions
   charSpace?: number;
   html?: boolean;
   flow?: boolean;
-  align?:
-    | "left"
-    | "center"
-    | "right"
-    | `${"left" | "center" | "right"} ${"top" | "center" | "bottom"}`;
+  align?: Recipe.ImageAlign;
   layout?: string | number;
   /** Adds a Highlight annotation over each drawn run. */
   highlight?: boolean | RecipeTextMarkupOptions;
@@ -345,11 +386,16 @@ export interface RecipeTextOptions
   squiggly?: boolean | RecipeTextMarkupOptions;
   textBox?: RecipeTextBox;
   cell?: RecipeTextBox;
+  /** Called with the Recipe as `this` when a layout runs out of columns. */
   overflow?: (
+    this: Recipe,
     recipe: Recipe,
   ) =>
     | boolean
-    | { column?: number | [number, number]; layout?: string | number }
+    | {
+        column?: number | readonly [number, number];
+        layout?: string | number;
+      }
     | void;
 }
 /** Per-annotation options for `highlight`, `underline`, `strikeOut`, and `squiggly`. */
@@ -458,7 +504,10 @@ export interface RecipeTableOptions<
     | boolean
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
-  row?: RecipeTextOptions & { nth?: "even" | "odd"; cell?: RecipeTextBox };
+  row?: RecipeTextOptions & {
+    nth?: Recipe.TableRowNth;
+    cell?: RecipeTextBox;
+  };
   /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
   overflow?: (
     this: Recipe,
@@ -476,7 +525,7 @@ export interface RecipeLayoutOptions {
 export type RecipePageSelection = number | (number | [number, number])[];
 export interface RecipeSplitResult {
   name: string;
-  bytes: Uint8Array;
+  bytes: Uint8Array<ArrayBuffer>;
 }
 export interface RecipeStructure {
   pages: number;
@@ -496,7 +545,7 @@ export interface RecipePageInfo {
   width: number;
   /** Recipe-coordinate height, with MediaBox axes swapped for 90/270-degree rotation. */
   height: number;
-  layout: "portrait" | "landscape";
+  layout: Recipe.PageLayout;
   size: [number, number];
   offsetX: number;
   offsetY: number;
@@ -520,6 +569,8 @@ export interface Recipe {
   };
   /** The last moveTo or lineTo path position in Recipe coordinates. */
   readonly position: { x: number; y: number };
+  /** Page metadata of the source PDF; undefined for a new PDF. */
+  readonly metadata: RecipeMetadata | undefined;
   /** A per-Recipe copy of the built-in named device colors. */
   readonly knownColors: RecipeKnownColors;
   register<Arguments extends unknown[], Result>(
@@ -541,7 +592,11 @@ export interface Recipe {
     options?: Partial<RecipeTextOptions>,
   ): RecipeHtmlTextObject[];
   createPage(width?: number, height?: number, margins?: RecipeMargins): this;
-  createPage(size: string, rotation?: number, margins?: RecipeMargins): this;
+  createPage(
+    size: Recipe.PageSize,
+    rotation?: number,
+    margins?: RecipeMargins,
+  ): this;
   endPage(): this;
   margins(): Required<RecipeMargins>;
   margins(margins: RecipeMargins): this;
@@ -571,7 +626,11 @@ export interface Recipe {
     top: number,
   ): this;
   rotate(rotation: number): this;
-  rotateContent(degrees: number, x?: number, y?: number): this;
+  rotateContent(
+    degrees: number,
+    x?: RecipeCoordinate,
+    y?: RecipeCoordinate,
+  ): this;
   chroma(
     name: string,
     value: RecipeColor,
@@ -589,36 +648,36 @@ export interface Recipe {
   lineTo(x: number, y: number, options?: RecipePathOptions): this;
   polygon(coordinates: [number, number][], options?: RecipePathOptions): this;
   rectangle(
-    x: number,
-    y: number,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
     width: number,
     height: number,
     options?: RecipeRectangleOptions,
   ): this;
   circle(
-    x: number,
-    y: number,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
     radius: number,
     options?: RecipePathOptions,
   ): this;
   ellipse(
-    cx: number,
-    cy: number,
+    cx: RecipeCoordinate,
+    cy: RecipeCoordinate,
     rx: number,
     ry: number,
     options?: RecipePathOptions,
   ): this;
   arc(
-    x: number,
-    y: number,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
     radius: number,
     startAngle?: number,
     endAngle?: number,
     options?: RecipeArcOptions,
   ): this;
   pie(
-    x: number,
-    y: number,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
     radius: number,
     startAngle?: number,
     endAngle?: number,
@@ -634,7 +693,7 @@ export interface Recipe {
     cx: number,
     cy: number,
     radius: number,
-    sides?: number,
+    sides?: number | RecipeNGonOptions,
     options?: RecipeNGonOptions,
   ): this;
   star(
@@ -647,7 +706,7 @@ export interface Recipe {
     cx: number,
     cy: number,
     radius: number,
-    points?: number,
+    points?: number | RecipePathOptions,
     options?: RecipePathOptions,
   ): this;
   arrow(x: number, y: number, options?: RecipeArrowOptions): this;
@@ -676,10 +735,16 @@ export interface Recipe {
   stroke(): this;
   fillAndStroke(): this;
   text(value?: string, options?: RecipeTextOptions): this;
-  text(value: string, x: number, y: number, options?: RecipeTextOptions): this;
+  text(
+    value: string,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
+    options?: RecipeTextOptions,
+  ): this;
   textDimensions(value: string, options?: RecipeTextOptions): TextDimensions;
   movedown(lines?: number, returnCoords?: false): this;
   movedown(lines: number, returnCoords: true): RecipePosition;
+  movedown(lines?: number, returnCoords?: boolean): this | RecipePosition;
   layout(
     id: string | number,
     x?: number,
@@ -694,7 +759,12 @@ export interface Recipe {
     contents: readonly RecordType[],
     options?: RecipeTableOptions<RecordType>,
   ): this;
-  image(name: string, x: number, y: number, options?: RecipeImageOptions): this;
+  image(
+    name: string,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
+    options?: RecipeImageOptions,
+  ): this;
   appendPage(name: string, pages?: RecipePageSelection): this;
   overlay(name: string, options?: RecipeOverlayOptions): this;
   overlay(name: string, x: number, options?: RecipeOverlayOptions): this;
@@ -705,7 +775,13 @@ export interface Recipe {
     options?: RecipeOverlayOptions,
   ): this;
   /** Adds an ASCII URL link; coordinates and dimensions must be finite. */
-  link(url: string, x: number, y: number, width: number, height: number): this;
+  link(
+    url: string,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
+    width: number,
+    height: number,
+  ): this;
   comment(
     text: string,
     x: RecipeCoordinate,
@@ -715,7 +791,7 @@ export interface Recipe {
   annot(
     x: RecipeCoordinate,
     y: RecipeCoordinate,
-    subtype: string,
+    subtype: Recipe.AnnotSubtype,
     options?: RecipeAnnotationOptions,
   ): this;
   info(): Record<string, unknown>;
@@ -727,13 +803,498 @@ export interface Recipe {
     sourcePageNumber: number,
   ): this;
   split(prefix?: string): RecipeSplitResult[];
+  structure(format: "json" | { json: true }): RecipeStructure;
+  structure(format?: "string" | { json?: false }): string;
   structure(format?: RecipeStructureFormat): string | RecipeStructure;
   permission(flags?: RecipePermission): number;
   encrypt(options?: RecipeEncryptOptions): this;
-  endPDF(callback?: (bytes: Uint8Array) => void): Uint8Array;
+  endPDF(
+    callback?: (bytes: Uint8Array<ArrayBuffer>) => void,
+  ): Uint8Array<ArrayBuffer>;
   dispose(): void;
 }
+// Low-level types under their native names, for code shared with
+// @muhammara/native. Native path, stream, and password options have no alias.
+export type EPDFVersion = PDFVersion;
+export type eRangeType = ERangeType;
+export type PDFBox = PDFRectangle;
+export type TransformationMatrix = PDFMatrix;
+export type TextDimension = TextDimensions;
+export type JPEGInformation = JPGImageInformation;
+export type TIFFUsageOptions = TIFFOptions;
+export type TIFFColor = NonNullable<
+  NonNullable<TIFFOptions["bwTreatment"]>["oneColor"]
+>;
+export type TextRenderOptions = TextOptions;
+export type UsedFont = PDFUsedFont;
+export type FontOptions = Pick<WriteTextOptions, "size" | "font">;
+export type ColorOptions = Pick<DrawPathOptions, "color" | "colorspace">;
+export type GraphicOptions = DrawPathOptions;
+export type TransformationObject = Exclude<
+  NonNullable<DrawImageOptions["transformation"]>,
+  PDFMatrix
+>;
+export type ImageOptions = DrawImageOptions;
+export type MergeOptions = PageRangeOptions;
+export type AppendOptions = PageRangeOptions;
+export type PDFWriterOptions = CreateWriterOptions;
+export type PDFWriterToModifyOptions = WriterOptions;
+export type AbstractContentContext = ContentContext;
+export type PageContentContext = ContentContext;
+export type XObjectContentContext = ContentContext;
+export type FormObject = FormXObject;
+export type PDFPageModifier = PageModifier;
+/**
+ * Recipe types under the native names, one per `Recipe` value set, for example
+ * `Recipe.TextWrap` for the values of the `Recipe.TextWrap` constants.
+ */
+export declare namespace Recipe {
+  type TextWrap = "auto" | "clip" | "trim" | "ellipsis";
+  /** Horizontal alignment of the lines inside a Recipe text box. */
+  type TextAlign = Recipe.HorizontalAlign | "justify";
+  /** Horizontal placement keyword for Recipe text and images. */
+  type HorizontalAlign = "left" | "center" | "right";
+  /** Vertical placement keyword for Recipe text, images, and text boxes. */
+  type VerticalAlign = "top" | "center" | "bottom";
+  /** Text-box alignment: a `Recipe.TextAlign` value, optionally followed by a space and a `Recipe.VerticalAlign` value. */
+  type TextBoxAlign =
+    Recipe.TextAlign | `${Recipe.TextAlign} ${Recipe.VerticalAlign}`;
+  /** Image and text alignment: a `Recipe.HorizontalAlign` value, optionally followed by a `Recipe.VerticalAlign` value. */
+  type ImageAlign =
+    | Recipe.HorizontalAlign
+    | `${Recipe.HorizontalAlign} ${Recipe.VerticalAlign}`;
+  /** Which Recipe table rows a `row` style applies to. */
+  type TableRowNth = "even" | "odd";
+  /** Recipe path line cap: butt, round, or projecting square. */
+  type LineCap = "butt" | "round" | "square";
+  /** Recipe path line join: miter, round, or bevel. */
+  type LineJoin = "miter" | "round" | "bevel";
+  type ArrowAt = RecipeArrowAnchor;
+  type ArrowType = Exclude<RecipeArrowType, number>;
+  type TriangleTrait = RecipeTriangleTrait;
+  type TrianglePosition = RecipeTrianglePosition;
+  /** Orientation of a Recipe page, from its rotated width and height. */
+  type PageLayout = "portrait" | "landscape";
+  /** Named page size for `createPage()`, case-insensitive; other names use the default size. */
+  type PageSize =
+    | "executive"
+    | "folio"
+    | "legal"
+    | "letter"
+    | "ledger"
+    | "tabloid"
+    | "a0"
+    | "a1"
+    | "a2"
+    | "a3"
+    | "a4"
+    | "a5"
+    | "a6"
+    | "a7"
+    | "a8"
+    | "a9"
+    | "a10"
+    | "b0"
+    | "b1"
+    | "b2"
+    | "b3"
+    | "b4"
+    | "b5"
+    | "b6"
+    | "b7"
+    | "b8"
+    | "b9"
+    | "b10"
+    | "c0"
+    | "c1"
+    | "c2"
+    | "c3"
+    | "c4"
+    | "c5"
+    | "c6"
+    | "c7"
+    | "c8"
+    | "c9"
+    | "c10"
+    | "ra0"
+    | "ra1"
+    | "ra2"
+    | "ra3"
+    | "ra4"
+    | "sra0"
+    | "sra1"
+    | "sra2"
+    | "sra3"
+    | "sra4"
+    | (string & {});
+  type FontStyle = Exclude<RecipeFontStyle, "r" | "b" | "i" | "bi">;
+  type RecipeFontStyle = import("./index.js").RecipeFontStyle;
+  type Permission = RecipePermissionName;
+  type PermissionName = RecipePermissionName;
+  type PermissionList = RecipePermission;
+  type Coordinate = "center";
+  type RecipeCoordinate = import("./index.js").RecipeCoordinate;
+  type Color = RecipeColor;
+  type DeviceColorspace = RecipeDeviceColorSpace;
+  type DeviceColorSpace = RecipeDeviceColorSpace;
+  type Colorspace = RecipeColorSpace;
+  /** Annotation subtype for `annot()`; known subtypes match case-insensitively. */
+  type AnnotSubtype =
+    | "Text"
+    | "Link"
+    | "FreeText"
+    | "Line"
+    | "Square"
+    | "Circle"
+    | "Polygon"
+    | "PolyLine"
+    | "Highlight"
+    | "Underline"
+    | "Squiggly"
+    | "StrikeOut"
+    | "Caret"
+    | "Stamp"
+    | "Ink"
+    | "Popup"
+    | "FileAttachment"
+    | "Sound"
+    | "Movie"
+    | "Screen"
+    | "Widget"
+    | "PrinterMark"
+    | "TrapNet"
+    | "Watermark"
+    | "3D"
+    | "Redact"
+    | "Projection"
+    | "RichMedia";
+  /** Annotation flag name for Recipe annotation `flag`; letter case is ignored. */
+  type AnnotFlag =
+    | "invisible"
+    | "hidden"
+    | "print"
+    | "nozoom"
+    | "norotate"
+    | "noview"
+    | "readonly"
+    | "locked"
+    | "togglenoview"
+    | "lockedcontents";
+  type AnnotOptionsFlag = Recipe.AnnotFlag;
+  /** Standard icon name for Recipe text annotations. */
+  type AnnotIcon =
+    | "Comment"
+    | "Key"
+    | "Note"
+    | "Help"
+    | "NewParagraph"
+    | "Paragraph"
+    | "Insert";
+  type AnnotOptionsIcon = Recipe.AnnotIcon;
+  type ChromaCommand = "!load";
+  /** Wasm-only: the `Recipe.StructureFormat` values. */
+  type StructureFormat = "string" | "json";
+  // Option and helper types under their native names.
+  type RecipeOptions = import("./index.js").RecipeOptions;
+  type RecipeMargins = import("./index.js").RecipeMargins;
+  type CaseInsensitive<Value extends string> = RecipeCaseInsensitive<Value>;
+  type ExtensionCallback<
+    Arguments extends unknown[] = never[],
+    Result = unknown,
+  > = RecipeExtension<Arguments, Result>;
+  type EndPDFCallback = (bytes: Uint8Array<ArrayBuffer>) => void;
+  type InfoOptions = Record<string, unknown>;
+  type Metadata = RecipeMetadata;
+  type ReadMetadata = RecipeMetadata;
+  type MetadataPage = RecipePageInfo;
+  type ReadMetadataPage = RecipePageInfo;
+  type EncryptOptions = RecipeEncryptOptions;
+  type OverlayOptions = RecipeOverlayOptions;
+  type LayoutOptions = RecipeLayoutOptions;
+  type ImageOptions = RecipeImageOptions;
+  type HtmlTextObject = RecipeHtmlTextObject;
+  type TextOptions = RecipeTextOptions;
+  type TextMarkupOptions = RecipeTextMarkupOptions;
+  type TextBox = RecipeTextBox;
+  type TextBoxStyle = NonNullable<RecipeTextBox["style"]>;
+  type TextBoxClipResult = RecipeTextBoxClipResult;
+  type TextOverflowCallback = Extract<
+    NonNullable<RecipeTextOptions["overflow"]>,
+    (...args: never[]) => unknown
+  >;
+  type TextOverflowInstructions = Exclude<
+    ReturnType<TextOverflowCallback>,
+    boolean
+  >;
+  type AnnotOptions = RecipeAnnotationOptions;
+  type CommentOptions = RecipeAnnotationOptions;
+  type AnnotReply = RecipeAnnotationOptions;
+  /** @deprecated Use `AnnotFlag`; comments accept the same flags. */
+  type CommentOptionsFlag = Recipe.AnnotFlag;
+  type PathOptions = RecipePathOptions;
+  type DrawingOptions = RecipePathOptions;
+  type SkewOptions = Pick<RecipePathOptions, "skewX" | "skewY">;
+  type TransformOptions = Pick<
+    RecipePathOptions,
+    "skewX" | "skewY" | "rotation" | "rotationOrigin"
+  >;
+  type TransformedPathOptions = RecipePathOptions;
+  type LinkFillOptions = Pick<RecipePathOptions, "link" | "fill">;
+  type LineOptions = RecipePathOptions;
+  type LineToOptions = RecipePathOptions;
+  type LineStyleOptions = RecipeLineStyleOptions;
+  type PolygonOptions = RecipePathOptions;
+  type ShapeOptions = RecipePathOptions;
+  type CircleOptions = RecipePathOptions;
+  type EllipseOptions = RecipePathOptions;
+  type RectangleOptions = RecipeRectangleOptions;
+  type BorderRadius = NonNullable<RecipeRectangleOptions["borderRadius"]>;
+  type NGonOptions = RecipeNGonOptions;
+  type ArrowOptions = RecipeArrowOptions;
+  type TriangleOptions = RecipeTriangleOptions;
+  type TriangleBaseOptions = RecipeTriangleBaseOptions;
+  type TriangleMeasurementOptions = RecipeTriangleMeasurementOptions;
+  type TriangleVertexOptions = RecipeTriangleVertexOptions;
+  type TriangleUnpositionedVertexOptions =
+    RecipeTriangleUnpositionedVertexOptions;
+  type TriangleVertexIdentifier = RecipeTriangleVertexIdentifier;
+  type TriangleMeasurements = RecipeTriangleMeasurements;
+  type TriangleVertices = RecipeTriangleVertices;
+  type MutableTriangleVertices = RecipeMutableTriangleVertices;
+  type TriangleMeasurementTrait = RecipeTriangleMeasurementTrait;
+  type TriangleVertexTrait = RecipeTriangleVertexTrait;
+  type TableOptions<RecordType extends object = RecipeTableRow> =
+    RecipeTableOptions<RecordType>;
+  type TableColumnDefinition = RecipeTableColumn;
+  type TableColumnOptions = RecipeTableColumnOptions;
+  type TableField<RecordType extends object> = RecipeTableField<RecordType>;
+  type TableColumnField<RecordType extends object> =
+    RecipeTableColumnField<RecordType>;
+  type TableFieldValue<
+    RecordType extends object,
+    Field extends RecipeTableField<RecordType>,
+  > = RecipeTableFieldValue<RecordType, Field>;
+}
 export interface RecipeConstructor {
+  /** How text that does not fit a text-box line is handled. */
+  readonly TextWrap: {
+    readonly AUTO: "auto";
+    readonly CLIP: "clip";
+    readonly TRIM: "trim";
+    readonly ELLIPSIS: "ellipsis";
+  };
+  /** Horizontal alignments of text inside a text box. */
+  readonly TextAlign: {
+    readonly LEFT: "left";
+    readonly CENTER: "center";
+    readonly RIGHT: "right";
+    readonly JUSTIFY: "justify";
+  };
+  /** Which table rows the `row` options apply to. */
+  readonly TableRowNth: {
+    readonly EVEN: "even";
+    readonly ODD: "odd";
+  };
+  /** Line cap styles for the `lineCap` options. */
+  readonly LineCap: {
+    readonly BUTT: "butt";
+    readonly ROUND: "round";
+    readonly SQUARE: "square";
+  };
+  /** Line join styles for the `lineJoin` options. */
+  readonly LineJoin: {
+    readonly MITER: "miter";
+    readonly ROUND: "round";
+    readonly BEVEL: "bevel";
+  };
+  /** The arrow point placed at the `arrow()` coordinates. */
+  readonly ArrowAt: {
+    readonly HEAD: "head";
+    readonly TAIL: "tail";
+  };
+  /** Arrow head shapes for the `arrow()` type option. */
+  readonly ArrowType: {
+    readonly TRIANGLE: "triangle";
+    readonly DART: "dart";
+    readonly KITE: "kite";
+  };
+  /** How `triangle()` traits define the triangle. */
+  readonly TriangleTrait: {
+    readonly SSS: "sss";
+    readonly SAS: "sas";
+    readonly ASA: "asa";
+    readonly VTX: "vtx";
+  };
+  /** The triangle point placed at the `triangle()` coordinates. */
+  readonly TrianglePosition: {
+    readonly A: "a";
+    readonly B: "b";
+    readonly C: "c";
+    readonly CENTROID: "centroid";
+    readonly CIRCUMCENTER: "circumcenter";
+    readonly INCENTER: "incenter";
+  };
+  /** Page orientations reported in page metadata. */
+  readonly PageLayout: {
+    readonly PORTRAIT: "portrait";
+    readonly LANDSCAPE: "landscape";
+  };
+  /** Named page sizes for `createPage()`. */
+  readonly PageSize: {
+    readonly EXECUTIVE: "executive";
+    readonly FOLIO: "folio";
+    readonly LEGAL: "legal";
+    readonly LETTER: "letter";
+    readonly LEDGER: "ledger";
+    readonly TABLOID: "tabloid";
+    readonly A0: "a0";
+    readonly A1: "a1";
+    readonly A2: "a2";
+    readonly A3: "a3";
+    readonly A4: "a4";
+    readonly A5: "a5";
+    readonly A6: "a6";
+    readonly A7: "a7";
+    readonly A8: "a8";
+    readonly A9: "a9";
+    readonly A10: "a10";
+    readonly B0: "b0";
+    readonly B1: "b1";
+    readonly B2: "b2";
+    readonly B3: "b3";
+    readonly B4: "b4";
+    readonly B5: "b5";
+    readonly B6: "b6";
+    readonly B7: "b7";
+    readonly B8: "b8";
+    readonly B9: "b9";
+    readonly B10: "b10";
+    readonly C0: "c0";
+    readonly C1: "c1";
+    readonly C2: "c2";
+    readonly C3: "c3";
+    readonly C4: "c4";
+    readonly C5: "c5";
+    readonly C6: "c6";
+    readonly C7: "c7";
+    readonly C8: "c8";
+    readonly C9: "c9";
+    readonly C10: "c10";
+    readonly RA0: "ra0";
+    readonly RA1: "ra1";
+    readonly RA2: "ra2";
+    readonly RA3: "ra3";
+    readonly RA4: "ra4";
+    readonly SRA0: "sra0";
+    readonly SRA1: "sra1";
+    readonly SRA2: "sra2";
+    readonly SRA3: "sra3";
+    readonly SRA4: "sra4";
+  };
+  /** Horizontal alignments. */
+  readonly HorizontalAlign: {
+    readonly LEFT: "left";
+    readonly CENTER: "center";
+    readonly RIGHT: "right";
+  };
+  /** Vertical alignments. */
+  readonly VerticalAlign: {
+    readonly TOP: "top";
+    readonly CENTER: "center";
+    readonly BOTTOM: "bottom";
+  };
+  /** Font styles for `registerFont()`. */
+  readonly FontStyle: {
+    readonly REGULAR: "regular";
+    readonly BOLD: "bold";
+    readonly ITALIC: "italic";
+    readonly BOLD_ITALIC: "bold-italic";
+  };
+  /** User access permission names for `permission()`. */
+  readonly Permission: {
+    readonly PRINT: "print";
+    readonly MODIFY: "modify";
+    readonly COPY: "copy";
+    readonly EDIT: "edit";
+    readonly FILL_FORM: "fillform";
+    readonly EXTRACT: "extract";
+    readonly ASSEMBLE: "assemble";
+    readonly PRINT_BEST: "printbest";
+  };
+  /** Named coordinates, accepted wherever a `RecipeCoordinate` is. */
+  readonly Coordinate: {
+    readonly CENTER: "center";
+  };
+  /** Colorspaces accepted by the `colorspace` options. */
+  readonly Colorspace: {
+    readonly RGB: "rgb";
+    readonly CMYK: "cmyk";
+    readonly GRAY: "gray";
+    readonly SEPARATION: "separation";
+  };
+  /** Annotation subtypes for `annot()`. */
+  readonly AnnotSubtype: {
+    readonly TEXT: "Text";
+    readonly LINK: "Link";
+    readonly FREE_TEXT: "FreeText";
+    readonly LINE: "Line";
+    readonly SQUARE: "Square";
+    readonly CIRCLE: "Circle";
+    readonly POLYGON: "Polygon";
+    readonly POLY_LINE: "PolyLine";
+    readonly HIGHLIGHT: "Highlight";
+    readonly UNDERLINE: "Underline";
+    readonly SQUIGGLY: "Squiggly";
+    readonly STRIKE_OUT: "StrikeOut";
+    readonly CARET: "Caret";
+    readonly STAMP: "Stamp";
+    readonly INK: "Ink";
+    readonly POPUP: "Popup";
+    readonly FILE_ATTACHMENT: "FileAttachment";
+    readonly SOUND: "Sound";
+    readonly MOVIE: "Movie";
+    readonly SCREEN: "Screen";
+    readonly WIDGET: "Widget";
+    readonly PRINTER_MARK: "PrinterMark";
+    readonly TRAP_NET: "TrapNet";
+    readonly WATERMARK: "Watermark";
+    readonly THREE_D: "3D";
+    readonly REDACT: "Redact";
+    readonly PROJECTION: "Projection";
+    readonly RICH_MEDIA: "RichMedia";
+  };
+  /** Annotation flag names for the `flag` options. */
+  readonly AnnotFlag: {
+    readonly INVISIBLE: "invisible";
+    readonly HIDDEN: "hidden";
+    readonly PRINT: "print";
+    readonly NO_ZOOM: "nozoom";
+    readonly NO_ROTATE: "norotate";
+    readonly NO_VIEW: "noview";
+    readonly READ_ONLY: "readonly";
+    readonly LOCKED: "locked";
+    readonly TOGGLE_NO_VIEW: "togglenoview";
+    readonly LOCKED_CONTENTS: "lockedcontents";
+  };
+  /** Special `chroma()` names that run a command instead of naming a color. */
+  readonly ChromaCommand: {
+    readonly LOAD: "!load";
+  };
+  /** Text annotation icons for the `icon` option. */
+  readonly AnnotIcon: {
+    readonly COMMENT: "Comment";
+    readonly KEY: "Key";
+    readonly NOTE: "Note";
+    readonly HELP: "Help";
+    readonly NEW_PARAGRAPH: "NewParagraph";
+    readonly PARAGRAPH: "Paragraph";
+    readonly INSERT: "Insert";
+  };
+  /** Output formats of `structure()`; Wasm-only. */
+  readonly StructureFormat: {
+    readonly STRING: "string";
+    readonly JSON: "json";
+  };
   new (options?: RecipeOptions): Recipe;
   new (source: ByteSource, options?: RecipeOptions): Recipe;
   registerFont(name: string, bytes: ByteSource, style?: RecipeFontStyle): void;
@@ -759,7 +1320,7 @@ export interface RecipeConstructor {
   permission(flags?: RecipePermission): number;
 }
 export interface TextOptions {
-  encoding?: TextEncoding;
+  encoding?: EEncoding;
 }
 export type PageRange = [start: number, end: number];
 export type PageRangeOptions =
@@ -805,10 +1366,54 @@ export interface AnnotationOptions {
  * `null` selects no paint operation and ends the path unpainted.
  */
 export type DrawingPathType = "stroke" | "fill" | "clip" | null;
+export declare const DrawingPathType: {
+  readonly STROKE: "stroke";
+  readonly FILL: "fill";
+  readonly CLIP: "clip";
+};
+/** PDF line cap style for `J()`: 0 butt, 1 round, 2 projecting square. */
+export type LineCapStyle = 0 | 1 | 2;
+export declare const LineCapStyle: {
+  readonly LINECAP_BUTT: 0;
+  readonly LINECAP_ROUND: 1;
+  readonly LINECAP_SQUARE: 2;
+};
+/** Info dictionary `/Trapped` state: the `EInfoTrapped*` constants. */
+export type EInfoTrapped = 0 | 1 | 2;
+/** Token written after an array by `endArray()`: the `eTokenSeparator*` constants. */
+export type ETokenSeparator = 0 | 1 | 2;
+export declare const ETokenSeparator: {
+  readonly eTokenSeparatorSpace: 0;
+  readonly eTokenSeparatorEndLine: 1;
+  readonly eTokenSeparatorNone: 2;
+};
+/** Parsed PDF object type: the `ePDFObject*` constants. */
+export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+/** Cross-reference entry kind: the `eXrefEntry*` constants. */
+export type XrefEntryType = 0 | 1 | 2 | 3;
+/** Procedure set name for `addProcsetResource()`: the `KProcset*`/`kProcset*` constants. */
+export type ProcsetName = "ImageB" | "ImageC" | "ImageI" | "PDF" | "Text";
+/** Page range selection kind: the `eRangeType*` constants. */
+export type ERangeType = 0 | 1;
+/** Image or document format reported by `getImageType()`. */
+export type PDFImageType = "PDF" | "JPG" | "TIFF" | "PNG";
+export declare const PDFImageType: {
+  readonly PDF: "PDF";
+  readonly JPG: "JPG";
+  readonly TIFF: "TIFF";
+  readonly PNG: "PNG";
+};
+/** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
+export type LineJoinStyle = 0 | 1 | 2;
+/**
+ * PDF text rendering mode for `Tr()`: 0 fill, 1 stroke, 2 fill and stroke,
+ * 3 invisible, 4 to 6 the same plus clipping, 7 clip only.
+ */
+export type TextRenderingMode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface DrawPathOptions {
-  color?: number | string;
-  colorspace?: "rgb" | "gray" | "cmyk";
+  color?: ColorValue;
+  colorspace?: DeviceColorSpace;
   type?: DrawingPathType;
   width?: number;
   close?: boolean;
@@ -826,7 +1431,7 @@ export interface DrawImageOptions {
         width: number;
         height: number;
         proportional?: boolean;
-        fit?: "always" | "overflow";
+        fit?: ImageFit;
       };
 }
 export interface TIFFOptions {
@@ -866,7 +1471,7 @@ export interface JPGImageInformation {
 export class PDFRStreamForBuffer {
   constructor(bytes: ByteSource);
   /** Returns a copy of at most `amount` bytes from the current position. */
-  read(amount: number): Uint8Array;
+  read(amount: number): Uint8Array<ArrayBuffer>;
   notEnded(): boolean;
   setPosition(position: number): void;
   setPositionFromEnd(position: number): void;
@@ -876,10 +1481,11 @@ export class PDFRStreamForBuffer {
 }
 export class PDFWStreamForBuffer {
   constructor();
-  buffer: Uint8Array;
-  write(bytes: ByteSource): number;
+  buffer: Uint8Array<ArrayBuffer>;
+  /** An array of byte values (integers from 0 to 255) is accepted, as in native. */
+  write(bytes: ByteSource | readonly number[]): number;
   getCurrentPosition(): number;
-  toUint8Array(): Uint8Array;
+  toUint8Array(): Uint8Array<ArrayBuffer>;
   toArrayBuffer(): ArrayBuffer;
   toBlob(type?: string): BlobLike;
 }
@@ -911,7 +1517,11 @@ declare class PDFDate {
 }
 export type { PDFDate, PDFPage, PDFTextString };
 export interface PDFUsedFont {
-  calculateTextDimensions(text: string, size?: number): TextDimensions;
+  /** Measure a string, or a list of glyph ids. */
+  calculateTextDimensions(
+    text: string | number[],
+    size?: number,
+  ): TextDimensions;
   getFontMetrics(size?: number): FontMetrics;
 }
 export interface ByteWriteStream {
@@ -922,7 +1532,7 @@ export interface PDFStream {
   getWriteStream(): ByteWriteStream;
 }
 export interface ResourcesDictionary {
-  addProcsetResource(name: string): void;
+  addProcsetResource(name: ProcsetName): void;
   addExtGStateMapping(id: number): string;
   addFontMapping(id: number): string;
   addColorSpaceMapping(id: number): string;
@@ -930,14 +1540,21 @@ export interface ResourcesDictionary {
   addPropertyMapping(id: number): string;
   addXObjectMapping(id: number): string;
   addFormXObjectMapping(id: number): string;
-  addImageXObjectMapping(id: number): string;
+  /** Pass an object ID, or an image XObject created by a writer or modifier, as in native. */
+  addImageXObjectMapping(
+    image: number | ImageXObject | ModifierImageXObject,
+  ): string;
   addShadingMapping(id: number): string;
 }
 export interface DictionaryContext {
   writeKey(key: string): this;
   writeNameValue(value: string): this;
-  writeLiteralStringValue(value: string | ByteSource): this;
-  writeHexStringValue(value: string | ByteSource): this;
+  writeLiteralStringValue(
+    value: string | Uint8Array | ArrayBuffer | readonly number[],
+  ): this;
+  writeHexStringValue(
+    value: string | Uint8Array | ArrayBuffer | readonly number[],
+  ): this;
   writeNumberValue(value: number): this;
   writeBooleanValue(value: boolean): this;
   writeObjectReferenceValue(id: number): this;
@@ -960,13 +1577,17 @@ export interface ObjectsContext {
   startDictionary(): DictionaryContext;
   endDictionary(dictionary: DictionaryContext): this;
   startArray(): this;
-  endArray(separator?: number): this;
+  endArray(separator?: ETokenSeparator): this;
   writeNumber(value: number): this;
   writeIndirectObjectReference(id: number, generation?: number): this;
   writeBoolean(value: boolean): this;
   writeName(value: string): this;
-  writeLiteralString(value: string | ByteSource): this;
-  writeHexString(value: string | ByteSource): this;
+  writeLiteralString(
+    value: string | Uint8Array | ArrayBuffer | readonly number[],
+  ): this;
+  writeHexString(
+    value: string | Uint8Array | ArrayBuffer | readonly number[],
+  ): this;
   writeKeyword(value: string): this;
   writeComment(value: string): this;
   endLine(): this;
@@ -1003,20 +1624,20 @@ export interface ContentContext {
     x3: number,
     y3: number,
   ): this;
-  v(x1: number, y1: number, x2: number, y2: number): this;
-  y(x1: number, y1: number, x2: number, y2: number): this;
+  v(x2: number, y2: number, x3: number, y3: number): this;
+  y(x1: number, y1: number, x3: number, y3: number): this;
   h(): this;
   re(x: number, y: number, width: number, height: number): this;
   q(): this;
   Q(): this;
   cm(...matrix: PDFMatrix): this;
-  w(value: number): this;
-  J(value: number): this;
-  j(value: number): this;
+  w(lineWidth: number): this;
+  J(value: LineCapStyle): this;
+  j(value: LineJoinStyle): this;
   M(value: number): this;
   d(dash: number[], phase?: number): this;
   g(value: number): this;
-  G(value: number): this;
+  G(gray: number): this;
   rg(red: number, green: number, blue: number): this;
   RG(red: number, green: number, blue: number): this;
   k(cyan: number, magenta: number, yellow: number, black: number): this;
@@ -1033,26 +1654,33 @@ export interface ContentContext {
   Tw(value: number): this;
   Tz(value: number): this;
   TL(value: number): this;
-  Tr(value: number): this;
+  Tr(value: TextRenderingMode): this;
   Ts(value: number): this;
   Tf(font: PDFUsedFont | string, size: number): this;
   Tj(text: string, options?: TextOptions): this;
-  Tj(glyphs: Glyph[]): this;
+  Tj(glyphs: Glyph): this;
+  Tj(text: string | Glyph): this;
   Quote(text: string, options?: TextOptions): this;
-  Quote(glyphs: Glyph[]): this;
+  Quote(glyphs: Glyph): this;
+  Quote(text: string | Glyph): this;
   DoubleQuote(
     wordSpace: number,
     characterSpace: number,
     text: string,
     options?: TextOptions,
   ): this;
-  DoubleQuote(wordSpace: number, characterSpace: number, glyphs: Glyph[]): this;
+  DoubleQuote(wordSpace: number, characterSpace: number, glyphs: Glyph): this;
+  DoubleQuote(
+    wordSpace: number,
+    characterSpace: number,
+    text: string | Glyph,
+  ): this;
   /** Pass at least one item; an empty call throws a `TypeError`. */
-  TJ(...items: (string | number | Glyph[])[]): this;
+  TJ(...items: (string | number | Glyph)[]): this;
   TJ(
     ...items: [
-      string | number | Glyph[],
-      ...(string | number | Glyph[])[],
+      string | number | Glyph,
+      ...(string | number | Glyph)[],
       TextOptions,
     ]
   ): this;
@@ -1062,19 +1690,25 @@ export interface ContentContext {
   CS(name: string): this;
   cs(name: string): this;
   SC(...components: number[]): this;
-  SCN(...componentsAndPattern: (number | string | number[])[]): this;
+  /** Color components, optionally followed by a pattern name. */
+  SCN(...components: [number, ...number[]]): this;
+  SCN(...componentsAndPattern: [number, ...number[], string]): this;
+  SCN(components: number[], pattern?: string): this;
   sc(...components: number[]): this;
-  scn(...componentsAndPattern: (number | string | number[])[]): this;
+  /** Color components, optionally followed by a pattern name. */
+  scn(...components: [number, ...number[]]): this;
+  scn(...componentsAndPattern: [number, ...number[], string]): this;
+  scn(components: number[], pattern?: string): this;
   doXObject(xObject: string | number | FormXObject | ImageXObject): this;
   /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
   drawPath(points: [number, number][], options?: DrawPathOptions): this;
-  /** Require complete finite coordinate pairs followed by an options object. */
+  /** Require complete finite coordinate pairs, optionally followed by an options object. */
   drawPath(
     x1: number,
     y1: number,
     x2: number,
     y2: number,
-    ...coordinatesAndOptions: [...number[], DrawPathOptions]
+    ...coordinatesAndOptions: [...number[], DrawPathOptions] | number[]
   ): this;
   /** Coordinates, radius, and calculated circle geometry must remain finite. */
   drawCircle(
@@ -1141,7 +1775,7 @@ export interface InfoDictionary {
   keywords: string;
   creator: string;
   producer: string;
-  trapped: number;
+  trapped: EInfoTrapped;
   addAdditionalInfoEntry(key: string, value: string): void;
   removeAdditionalInfoEntry(key: string): void;
   clearAdditionalInfoEntries(): void;
@@ -1153,7 +1787,7 @@ export interface InfoDictionary {
 
 export interface PDFByteReader {
   /** Returns a copy of at most `amount` decoded or raw stream bytes. */
-  read(amount: number): Uint8Array;
+  read(amount: number): Uint8Array<ArrayBuffer>;
   notEnded(): boolean;
   /** Immediately releases this Wasm stream reader without ending its parent PDF reader. */
   dispose(): this;
@@ -1169,7 +1803,7 @@ export interface PDFObjectParser {
   end(): void;
 }
 export interface PDFObject {
-  getType(): number;
+  getType(): PDFObjectType;
   value: string | number | boolean | undefined;
   toString(): string;
   toNumber(): number | undefined;
@@ -1205,7 +1839,7 @@ export interface PDFIndirectObjectReference extends PDFObject {
   getVersion(): number;
 }
 export interface PDFStringObject extends PDFObject {
-  toBytesArray(): Uint8Array;
+  toBytesArray(): Uint8Array<ArrayBuffer>;
   toText(): string;
 }
 export interface PDFPageInput {
@@ -1251,6 +1885,19 @@ export interface PDFExtractionLimits {
 }
 /** @deprecated Renamed to PDFExtractionLimits, which both extractors share. */
 export type PDFTextExtractionLimits = PDFExtractionLimits;
+/** A cross-reference entry read by `PDFReader#getXrefEntry()`. */
+export interface PDFXrefEntry {
+  objectPosition: number;
+  revision: number;
+  type: XrefEntryType;
+}
+/** Media box, rotation, and unrotated size read by `PDFReader#getPageInfo()`. */
+export interface PDFPageGeometry {
+  mediaBox: PDFRectangle;
+  rotate: number;
+  width: number;
+  height: number;
+}
 export interface PDFReader {
   getPagesCount(): number;
   getPageObjectID(index: number): number;
@@ -1259,10 +1906,8 @@ export interface PDFReader {
   isEncrypted(): boolean;
   getXrefSize(): number;
   getXrefPosition(): number;
-  getXrefEntry(
-    id: number,
-  ): { objectPosition: number; revision: number; type: number } | null;
-  getTrailerEntryType(key: string): number | null;
+  getXrefEntry(id: number): PDFXrefEntry;
+  getTrailerEntryType(key: string): PDFObjectType | null;
   getTrailer(): PDFDictionary;
   queryDictionaryObject(
     dictionary: PDFDictionary,
@@ -1304,12 +1949,7 @@ export interface PDFReader {
   getParserStream(): PositionedPDFByteReader;
   /** Available on readers obtained from a document copying context. */
   getSourceDocumentStream(): PositionedPDFByteReader;
-  getPageInfo(index: number): {
-    mediaBox: PDFRectangle;
-    rotate: number;
-    width: number;
-    height: number;
-  };
+  getPageInfo(index: number): PDFPageGeometry;
   getPageBox(index: number, box?: PageBox): PDFRectangle;
   end(): this;
 }
@@ -1330,7 +1970,7 @@ export interface DocumentCopyingContext extends CopyingObjectOperations {
   mergePDFPageToPage(page: PDFPage, index: number): this;
   createFormXObjectFromPDFPage(
     index: number,
-    pageBox?: number | PDFRectangle,
+    pageBox?: PDFPageBoxType | PDFRectangle,
     transformation?: PDFMatrix,
   ): number;
   mergePDFPageToFormXObject(
@@ -1417,12 +2057,8 @@ export interface PDFWriter {
     image: AsyncByteSource,
     imageIndex?: number,
   ): Promise<ImageDimensions>;
-  getImageType(
-    image: string | ByteSource,
-  ): "PDF" | "JPG" | "TIFF" | "PNG" | undefined;
-  getImageTypeAsync(
-    image: AsyncByteSource,
-  ): Promise<"PDF" | "JPG" | "TIFF" | "PNG" | undefined>;
+  getImageType(image: string | ByteSource): PDFImageType | undefined;
+  getImageTypeAsync(image: AsyncByteSource): Promise<PDFImageType | undefined>;
   getImagePagesCount(image: string | ByteSource): number;
   getImagePagesCountAsync(image: AsyncByteSource): Promise<number>;
   retrieveJPGImageInformation(image: string | ByteSource): JPGImageInformation;
@@ -1464,17 +2100,22 @@ export interface PDFWriter {
   endFormXObject(form: FormXObject): this;
   createFormXObjectsFromPDF(
     source: string | ByteSource,
-    pageBox?: number | PDFRectangle,
+    pageBox?: PDFPageBoxType | PDFRectangle,
     options?: PDFFormOptions,
   ): number[];
   createFormXObjectsFromPDFAsync(
     source: AsyncByteSource,
-    pageBox?: number | PDFRectangle,
+    pageBox?: PDFPageBoxType | PDFRectangle,
     options?: PDFFormOptions,
   ): Promise<number[]>;
-  createPDFCopyingContext(source: ByteSource): DocumentCopyingContext;
+  /** A source `password` throws; decrypt the source with `recrypt()` first. */
+  createPDFCopyingContext(
+    source: ByteSource,
+    options?: PDFReaderOptions,
+  ): DocumentCopyingContext;
   createPDFCopyingContextAsync(
     source: AsyncByteSource,
+    options?: PDFReaderOptions,
   ): Promise<DocumentCopyingContext>;
   createPage(
     left?: number,
@@ -1486,7 +2127,7 @@ export interface PDFWriter {
   pausePageContentContext(context: ContentContext): this;
   writePage(page: PDFPage): this;
   writePageAndReturnID(page: PDFPage): number;
-  end(): Uint8Array;
+  end(): Uint8Array<ArrayBuffer>;
   dispose(): void;
 }
 export interface PageModifier {
@@ -1520,6 +2161,14 @@ export interface ModifierImageXObject {
 }
 export interface ModifierCompletedFormXObject {
   readonly id: number;
+}
+/** Where `replaceObject()` replaces references: `global` means every page. */
+export type ObjectReplacementScope = "global";
+export declare const ObjectReplacementScope: {
+  readonly GLOBAL: "global";
+};
+export interface ObjectReplacementOptions {
+  scope?: ObjectReplacementScope;
 }
 export interface PDFModifier {
   createFormXObject(
@@ -1568,7 +2217,7 @@ export interface PDFModifier {
     pageIndex: number,
     sourceObjectId: number,
     replacementObjectId: number,
-    options?: { scope?: "global" },
+    options?: ObjectReplacementOptions,
   ): this;
   getObjectsContext(): ObjectsContext;
   getModifiedFileParser(): PDFReader;
@@ -1647,12 +2296,8 @@ export interface PDFModifier {
     image: AsyncByteSource,
     imageIndex?: number,
   ): Promise<ImageDimensions>;
-  getImageType(
-    image: string | ByteSource,
-  ): "PDF" | "JPG" | "TIFF" | "PNG" | undefined;
-  getImageTypeAsync(
-    image: AsyncByteSource,
-  ): Promise<"PDF" | "JPG" | "TIFF" | "PNG" | undefined>;
+  getImageType(image: string | ByteSource): PDFImageType | undefined;
+  getImageTypeAsync(image: AsyncByteSource): Promise<PDFImageType | undefined>;
   getImagePagesCount(image: string | ByteSource): number;
   getImagePagesCountAsync(image: AsyncByteSource): Promise<number>;
   retrieveJPGImageInformation(image: string | ByteSource): JPGImageInformation;
@@ -1673,21 +2318,46 @@ export interface PDFModifier {
   ): ModifierCompletedFormXObject;
   createFormXObjectsFromPDF(
     source: string | ByteSource,
-    pageBox?: number | PDFRectangle,
+    pageBox?: PDFPageBoxType | PDFRectangle,
     options?: PDFFormOptions,
   ): number[];
   createFormXObjectsFromPDFAsync(
     source: AsyncByteSource,
-    pageBox?: number | PDFRectangle,
+    pageBox?: PDFPageBoxType | PDFRectangle,
     options?: PDFFormOptions,
   ): Promise<number[]>;
-  createPDFCopyingContext(source: ByteSource): DocumentCopyingContext;
+  /** A source `password` throws; decrypt the source with `recrypt()` first. */
+  createPDFCopyingContext(
+    source: ByteSource,
+    options?: PDFReaderOptions,
+  ): DocumentCopyingContext;
   createPDFCopyingContextAsync(
     source: AsyncByteSource,
+    options?: PDFReaderOptions,
   ): Promise<DocumentCopyingContext>;
   createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
-  end(): Uint8Array;
+  end(): Uint8Array<ArrayBuffer>;
   dispose(): void;
+}
+/** Low-level color: a 24-bit RGB number, `#rrggbb`, a basic color name, or three 0-255 components. */
+export type ColorValue = number | string | [number, number, number];
+/** Colors for CompactModifier rectangles and circles; `fill` wins over `stroke` and `color`. */
+export interface CompactModifierShapeOptions {
+  color?: ColorValue;
+  fill?: ColorValue;
+  stroke?: ColorValue;
+}
+/** Line color and width for CompactModifier.line(); `stroke` wins over `color`. */
+export interface CompactModifierLineOptions {
+  color?: ColorValue;
+  stroke?: ColorValue;
+  lineWidth?: number;
+}
+/** Font and color for CompactModifier.text(); `font` names a registered font. */
+export interface CompactModifierTextOptions {
+  font: string;
+  fontSize?: number;
+  color?: ColorValue;
 }
 export interface CompactModifier {
   startPage(index: number): this;
@@ -1696,26 +2366,26 @@ export interface CompactModifier {
     y: number,
     width: number,
     height: number,
-    options?: { color?: RecipeColor; fill?: RecipeColor; stroke?: RecipeColor },
+    options?: CompactModifierShapeOptions,
   ): this;
   circle(
     x: number,
     y: number,
     radius: number,
-    options?: { color?: RecipeColor; fill?: RecipeColor; stroke?: RecipeColor },
+    options?: CompactModifierShapeOptions,
   ): this;
   line(
     startX: number,
     startY: number,
     endX: number,
     endY: number,
-    options?: { color?: RecipeColor; stroke?: RecipeColor; lineWidth?: number },
+    options?: CompactModifierLineOptions,
   ): this;
   text(
     value: string,
     x: number,
     y: number,
-    options: { font: string; fontSize?: number; color?: RecipeColor },
+    options: CompactModifierTextOptions,
   ): this;
   image(
     name: string,
@@ -1725,7 +2395,7 @@ export interface CompactModifier {
     height: number,
   ): this;
   endPage(): this;
-  end(): Uint8Array;
+  end(): Uint8Array<ArrayBuffer>;
   dispose(): void;
 }
 export interface MuhammaraWasm {
@@ -1738,8 +2408,11 @@ export interface MuhammaraWasm {
   ByteReaderWithPosition: typeof ByteReaderWithPosition;
   ByteWriter: typeof ByteWriter;
   ByteWriterWithPosition: typeof ByteWriterWithPosition;
-  createWriter(options?: WriterOptions): PDFWriter;
-  recrypt(source: ByteSource, options?: PDFRecryptOptions): Uint8Array;
+  createWriter(options?: CreateWriterOptions): PDFWriter;
+  recrypt(
+    source: ByteSource,
+    options?: PDFRecryptOptions,
+  ): Uint8Array<ArrayBuffer>;
   createWriterToModify(
     source: ByteSource,
     options?: WriterOptions,
@@ -1748,8 +2421,11 @@ export interface MuhammaraWasm {
     source: AsyncByteSource,
     options?: WriterOptions,
   ): Promise<PDFModifier>;
-  createReader(source: ByteSource): PDFReader;
-  createReaderAsync(source: AsyncByteSource): Promise<PDFReader>;
+  createReader(source: ByteSource, options?: PDFReaderOptions): PDFReader;
+  createReaderAsync(
+    source: AsyncByteSource,
+    options?: PDFReaderOptions,
+  ): Promise<PDFReader>;
   createModifier(source: ByteSource): CompactModifier;
   createModifierAsync(source: AsyncByteSource): Promise<CompactModifier>;
   registerFont(name: string, bytes: ByteSource): string;
@@ -1766,7 +2442,7 @@ export interface MuhammaraWasm {
   unregisterImage(name: string): boolean;
   unregisterPdf(name: string): boolean;
   disposeAssets(): void;
-  createBlankPdf(width: number, height: number): Uint8Array;
+  createBlankPdf(width: number, height: number): Uint8Array<ArrayBuffer>;
   readonly ePDFVersionUndefined: 0;
   readonly ePDFVersion10: 10;
   readonly ePDFVersion11: 11;
@@ -1777,45 +2453,45 @@ export interface MuhammaraWasm {
   readonly ePDFVersion16: 16;
   readonly ePDFVersion17: 17;
   readonly ePDFVersion20: 20;
-  readonly KProcsetImageB: string;
-  readonly KProcsetImageC: string;
-  readonly KProcsetImageI: string;
-  readonly kProcsetPDF: string;
-  readonly kProcsetText: string;
-  readonly eRangeTypeAll: number;
-  readonly eRangeTypeSpecific: number;
+  readonly KProcsetImageB: "ImageB";
+  readonly KProcsetImageC: "ImageC";
+  readonly KProcsetImageI: "ImageI";
+  readonly kProcsetPDF: "PDF";
+  readonly kProcsetText: "Text";
+  readonly eRangeTypeAll: 0;
+  readonly eRangeTypeSpecific: 1;
   readonly ePDFPageBoxMediaBox: 0;
   readonly ePDFPageBoxCropBox: 1;
   readonly ePDFPageBoxBleedBox: 2;
   readonly ePDFPageBoxTrimBox: 3;
   readonly ePDFPageBoxArtBox: 4;
-  readonly ePDFObjectBoolean: number;
-  readonly ePDFObjectLiteralString: number;
-  readonly ePDFObjectHexString: number;
-  readonly ePDFObjectNull: number;
-  readonly ePDFObjectName: number;
-  readonly ePDFObjectInteger: number;
-  readonly ePDFObjectReal: number;
-  readonly ePDFObjectArray: number;
-  readonly ePDFObjectDictionary: number;
-  readonly ePDFObjectIndirectObjectReference: number;
-  readonly ePDFObjectStream: number;
-  readonly ePDFObjectSymbol: number;
+  readonly ePDFObjectBoolean: 0;
+  readonly ePDFObjectLiteralString: 1;
+  readonly ePDFObjectHexString: 2;
+  readonly ePDFObjectNull: 3;
+  readonly ePDFObjectName: 4;
+  readonly ePDFObjectInteger: 5;
+  readonly ePDFObjectReal: 6;
+  readonly ePDFObjectArray: 7;
+  readonly ePDFObjectDictionary: 8;
+  readonly ePDFObjectIndirectObjectReference: 9;
+  readonly ePDFObjectStream: 10;
+  readonly ePDFObjectSymbol: 11;
   readonly ePDFPageContentItemText: 0;
   readonly ePDFPageContentItemPath: 1;
   readonly ePDFPageContentItemXObject: 2;
   readonly ePDFPageContentItemShading: 3;
-  readonly eTokenSeparatorSpace: number;
-  readonly eTokenSeparatorEndLine: number;
-  readonly eTokenSeparatorNone: number;
-  readonly eXrefEntryExisting: number;
-  readonly eXrefEntryDelete: number;
-  readonly eXrefEntryStreamObject: number;
-  readonly eXrefEntryUndefined: number;
-  readonly EInfoTrappedTrue: number;
-  readonly EInfoTrappedFalse: number;
-  readonly EInfoTrappedUnknown: number;
-  getTypeLabel(type: number): string;
+  readonly eTokenSeparatorSpace: 0;
+  readonly eTokenSeparatorEndLine: 1;
+  readonly eTokenSeparatorNone: 2;
+  readonly eXrefEntryExisting: 0;
+  readonly eXrefEntryDelete: 1;
+  readonly eXrefEntryStreamObject: 2;
+  readonly eXrefEntryUndefined: 3;
+  readonly EInfoTrappedTrue: 0;
+  readonly EInfoTrappedFalse: 1;
+  readonly EInfoTrappedUnknown: 2;
+  getTypeLabel(type: PDFObjectType): string;
 }
 export interface MuhammaraWasmOptions {
   /**

@@ -13,22 +13,20 @@ var people = [
   { name: "Sam", city: "Paris" },
 ];
 
-var columns = [
-  { text: "Name", name: "name", width: 180 },
-  { text: "City", name: "city", width: 160 },
-];
-var nextPage = function (recipe) {
-  recipe.endPage().createPage("letter");
-  return { position: [50, 52] };
-};
-
 var pdf = new Recipe().createPage("letter");
 pdf.table(50, 52, people, {
   fontSize: 11,
-  columns,
+  columns: [
+    { text: "Name", name: "name", width: 180 },
+    { text: "City", name: "city", width: 160 },
+  ],
   header: true,
   border: true,
-  overflow: nextPage,
+  // Continue on a new page at the same position.
+  overflow: (recipe) => {
+    recipe.endPage().createPage("letter");
+    return { position: [50, 52] };
+  },
 });
 var outputBytes = pdf.endPage().endPDF();
 

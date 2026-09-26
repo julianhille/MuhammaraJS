@@ -98,9 +98,10 @@ describe("MemoryLifecycle", function () {
 
     var writer = muhammara.createWriter();
     var copying = writer.createPDFCopyingContext(source);
-    assert.throws(() => writer.end(), /active page/);
-    copying.end();
-    writer.end();
+    // Like native, end() releases copying contexts left open.
+    assert.ok(writer.end().length > 0);
+    assert.throws(() => copying.copyObject(1), /ended|released|context/i);
+    assert.throws(() => writer.end(), /PDF writer has ended/);
 
     var abandonedWriter = muhammara.createWriter();
     abandonedWriter.createPDFCopyingContext(source);
@@ -182,7 +183,7 @@ describe("MemoryLifecycle", function () {
     var writer = muhammara.createWriter();
     var objects = writer.getObjectsContext();
     objects.startNewIndirectObject();
-    assert.throws(() => writer.end(), /active page/);
+    assert.throws(() => writer.end(), /active objects context operation/);
     objects.endIndirectObject();
     assert.ok(writer.end().length > 0);
 

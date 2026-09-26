@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
 
 describe("ModifierContentContext", function () {
-  it("matches page and form helpers, resource names, and line join 3", async function () {
+  it("matches page and form helpers, resource names, and bevel line joins", async function () {
     var muhammara = await createMuhammaraWasm();
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 100, 100));
@@ -27,7 +27,7 @@ describe("ModifierContentContext", function () {
 
     assert.equal(
       context
-        .j(3)
+        .j(2)
         .setOpacity(0.5)
         .doXObject(formName)
         .doXObject(form)
@@ -55,7 +55,7 @@ describe("ModifierContentContext", function () {
     pageModifier.writePage();
 
     var output = new TextDecoder().decode(modifier.end());
-    assert.match(output, /3 j/);
+    assert.match(output, /2 j/);
     assert.match(output, /\/ca 0.5/);
     assert.match(output, /\/CA 0.5/);
     assert.match(output, new RegExp(`/${fontName} 10 Tf`));
@@ -84,7 +84,7 @@ describe("ModifierContentContext", function () {
     var pageContext = writer.startPageContentContext(page);
     var pageName = page.getResourcesDictionary().addFontMapping(1);
     pageContext
-      .j(3)
+      .j(2)
       .BT()
       .Tf(pageName, 10)
       .Tm(1, 0, 0, 1, 5, 5)
@@ -93,7 +93,7 @@ describe("ModifierContentContext", function () {
     writer.writePage(page);
 
     var output = new TextDecoder().decode(writer.end());
-    assert.match(output, /3 j/);
+    assert.match(output, /2 j/);
     assert.match(output, new RegExp(`/${formName} 10 Tf`));
     assert.match(output, new RegExp(`/${pageName} 10 Tf`));
   });
@@ -140,8 +140,12 @@ describe("ModifierContentContext", function () {
       colorspace: "cmyk",
       underline: true,
     });
+    // Placing a form on a modifier-created page maps it into that page.
+    context.doXObject(form);
     modifier.writePage(page);
-    assert.match(new TextDecoder().decode(modifier.end()), /1 0 0 0 k/);
+    var output = new TextDecoder().decode(modifier.end());
+    assert.match(output, /1 0 0 0 k/);
+    assert.match(output, /\/Fm\d+ Do/);
   });
 
   it("gives modifier forms the complete writer content surface", async function () {
@@ -168,6 +172,12 @@ describe("ModifierContentContext", function () {
       colorSpace: resources.addColorSpaceMapping(3),
       pattern: resources.addPatternMapping(4),
     };
+    assert.match(
+      resources.addImageXObjectMapping(
+        modifier.createImageXObjectFromJPGBytes("jpg"),
+      ),
+      /^Im/,
+    );
     assert.equal(
       context
         .q()
@@ -237,7 +247,15 @@ describe("ModifierContentContext", function () {
     assert.equal(await context.drawImageAsync(1, 1, new Blob([jpg])), context);
     assert.ok(modifier.getFontForBytes("arial").getFontMetrics(12).height > 0);
     assert.equal(modifier.endFormXObject(form), modifier);
-    assert.throws(() => context.f(), /Unable to apply form operator/);
+    assert.throws(() => context.f(), /content has ended/);
+    for (var call of [
+      () => context.d([1]),
+      () => context.setOpacity(0.5),
+      () => context.writeFreeCode("q"),
+      () => context.Tf("F1", 10),
+      () => context.writeText("x", 1, 1, {}),
+    ])
+      assert.throws(call, /content has ended/);
     assert.throws(() => resources.addFontMapping(5), /no longer active/);
     assert.throws(() => modifier.endFormXObject(form), /open form/);
     var pageModifier = modifier.createPageModifier(0).startContext();

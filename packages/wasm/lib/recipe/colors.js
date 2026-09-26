@@ -1,14 +1,15 @@
+import { Colorspace, ChromaCommand } from "../value-sets.js";
 /** Built-in Recipe colors grouped by color space. */
 export var knownColors = {
-  rgb: { red: "ff0000", green: "00ff00", blue: "0000ff" },
-  cmyk: {
+  [Colorspace.RGB]: { red: "ff0000", green: "00ff00", blue: "0000ff" },
+  [Colorspace.CMYK]: {
     cyan: "ff000000",
     magenta: "00ff0000",
     yellow: "0000ff00",
     black: "000000ff",
   },
-  gray: { white: "ff", black: "00", grey: "00" },
-  separation: {
+  [Colorspace.GRAY]: { white: "ff", black: "00", grey: "00" },
+  [Colorspace.SEPARATION]: {
     cyan: "ff000000",
     magenta: "00ff0000",
     yellow: "0000ff00",
@@ -16,6 +17,11 @@ export var knownColors = {
   },
 };
 
+/**
+ * Converts a Recipe color to its hex digits without a prefix.
+ * @param {RecipeColor} value - `[r, g, b]` or `[c, m, y, k]` from 0 to 255, `#hex`, `%hex`, or a number.
+ * @returns {string} Hex digits; empty for unsupported values.
+ */
 function hex(value) {
   if (Array.isArray(value))
     return value
@@ -36,7 +42,28 @@ function hex(value) {
   return value.replace(/^#/, "");
 }
 
-/** Resolves a Recipe color value to a native color-space model. */
+/**
+ * Infers a device color space from the digit count of a hex color code.
+ * @param {string} code - Hex digits without a prefix.
+ * @returns {string|undefined} Gray for 2 digits, RGB for 6, CMYK for 8.
+ */
+function colorSpaceForCode(code) {
+  return {
+    2: Colorspace.GRAY,
+    6: Colorspace.RGB,
+    8: Colorspace.CMYK,
+  }[code.length];
+}
+
+/**
+ * Resolves a Recipe color value to a native color-space model.
+ * @param {Recipe} recipe - Recipe instance with known colors.
+ * @param {RecipeColor} value - Color value or registered name.
+ * @param {object} [options={}] - Options with `colorspace`.
+ * @returns {{colorspace: DeviceColorSpace, values: number[]}} Components from 0 to 1.
+ * @throws {TypeError} If the color space is unknown.
+ * @throws {Error} If a Separation color space is requested.
+ */
 export function colorModel(recipe, value, options = {}) {
   var colorspace = options.colorspace || recipe.options.colorspace || "";
   var name = "";
@@ -46,24 +73,30 @@ export function colorModel(recipe, value, options = {}) {
     !value.startsWith("%")
   ) {
     name = value;
-    value = (recipe.knownColors[colorspace || "rgb"] || {})[value] || value;
+    value =
+      (recipe.knownColors[colorspace || Colorspace.RGB] || {})[value] || value;
   }
   var code = hex(value || "");
-  if (!colorspace)
-    colorspace = { 2: "gray", 6: "rgb", 8: "cmyk" }[code.length] || "rgb";
-  var expected = { gray: 2, rgb: 6, cmyk: 8, separation: undefined }[
-    colorspace
-  ];
+  if (!colorspace) colorspace = colorSpaceForCode(code) || Colorspace.RGB;
+  var expected = {
+    [Colorspace.GRAY]: 2,
+    [Colorspace.RGB]: 6,
+    [Colorspace.CMYK]: 8,
+  }[colorspace];
   if (!(colorspace in recipe.knownColors))
     throw new TypeError(`Unknown colorspace: ${colorspace}`);
-  if (colorspace === "separation") {
+  if (colorspace === Colorspace.SEPARATION) {
     // The Recipe native bridge cannot create Separation resource dictionaries.
     throw new Error(
       "Recipe separation colors are unsupported in WebAssembly; use low-level writer resources.",
     );
   }
   if (code.length !== expected || !/^[0-9a-f]+$/i.test(code)) {
-    code = { gray: "00", rgb: "1777d1", cmyk: "ff000000" }[colorspace];
+    code = {
+      [Colorspace.GRAY]: "00",
+      [Colorspace.RGB]: "1777d1",
+      [Colorspace.CMYK]: "ff000000",
+    }[colorspace];
   }
   return {
     colorspace,
@@ -72,7 +105,10 @@ export function colorModel(recipe, value, options = {}) {
   };
 }
 
-/** Creates Recipe color registration methods. */
+/**
+ * Creates Recipe color registration methods.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createColorMethods() {
   return {
     /**
@@ -95,7 +131,7 @@ export function createColorMethods() {
      */
     chroma: function (name, value, colorspace = "") {
       if (!name) return this;
-      if (name === "!load")
+      if (name === ChromaCommand.LOAD)
         throw new Error(
           "Recipe chroma !load is unsupported in WebAssembly; register colors explicitly.",
         );
@@ -104,9 +140,8 @@ export function createColorMethods() {
         throw new TypeError(
           "Color value has incorrect size for gray, rgb, or cmyk colorspaces",
         );
-      colorspace =
-        colorspace || { 2: "gray", 6: "rgb", 8: "cmyk" }[code.length];
-      if (colorspace === "separation") {
+      colorspace = colorspace || colorSpaceForCode(code);
+      if (colorspace === Colorspace.SEPARATION) {
         throw new Error(
           "Recipe separation colors are unsupported in WebAssembly; use low-level writer resources.",
         );

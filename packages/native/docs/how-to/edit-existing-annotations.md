@@ -87,9 +87,9 @@ The example iterates the existing dictionary and copies each entry with
   text. Removing `AP` asks the viewer to build the appearance from `Contents`
   and `DA` instead. Viewers that do not generate appearances will show nothing,
   so write a new `AP` stream yourself when you need one guaranteed.
-- **End the copying context before the writer.** `copyingContext.end()` then
-  `writer.end()`. The WebAssembly package rejects `end()` outright while a
-  copying context is open.
+- **End the copying context when you are done with it.** `writer.end()`
+  releases a copying context that is still open, on both packages, but calling
+  `copyingContext.end()` first frees its source PDF sooner.
 
 `writeLiteralStringValue` takes the string directly. For text outside the
 printable ASCII range, encode it first with

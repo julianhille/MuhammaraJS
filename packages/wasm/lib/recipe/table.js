@@ -1,4 +1,14 @@
-/** Reports whether a style value is a plain object whose keys can merge. */
+import {
+  LineCap,
+  TableRowNth,
+  TextAlign,
+  VerticalAlign,
+} from "../value-sets.js";
+/**
+ * Reports whether a style value is a plain object whose keys can merge.
+ * @param {*} value - Candidate.
+ * @returns {boolean} Whether it is a plain object.
+ */
 function isPlainObject(value) {
   if (!value || typeof value !== "object") return false;
   var prototype = Object.getPrototypeOf(value);
@@ -8,6 +18,9 @@ function isPlainObject(value) {
 /**
  * Merges nested text styles like native Recipe without mutating either side.
  * Plain objects merge key by key; arrays and other values replace.
+ * @param {object} [left={}] - Base styles.
+ * @param {object} [right={}] - Overrides.
+ * @returns {object} New merged styles.
  */
 function merge(left = {}, right = {}) {
   var result = { ...left };
@@ -22,7 +35,12 @@ function merge(left = {}, right = {}) {
   return result;
 }
 
-/** Converts a row or header style's `cell` into its text box, like native. */
+/**
+ * Converts a row or header style's `cell` into its text box, like native.
+ * @param {object} [options={}] - Row or header style.
+ * @param {string} [name="cell"] - Key holding the cell box.
+ * @returns {object} New options with `textBox`.
+ */
 function cellOptions(options = {}, name = "cell") {
   var result = { ...options };
   if (result[name]) {
@@ -33,14 +51,22 @@ function cellOptions(options = {}, name = "cell") {
   return result;
 }
 
-/** Keeps table-level text options; native ignores a table-level `cell`. */
+/**
+ * Keeps table-level text options; native ignores a table-level `cell`.
+ * @param {object} options - Table options.
+ * @returns {object} New options without `cell`.
+ */
 function tableTextOptions(options) {
   var result = { ...options };
   delete result.cell;
   return result;
 }
 
-/** Uses a column's `cell` as its only body text box, like native columns. */
+/**
+ * Uses a column's `cell` as its only body text box, like native columns.
+ * @param {object} options - Column options.
+ * @returns {object} New options with `textBox`.
+ */
 function columnCellOptions(options) {
   var result = { ...options, textBox: { ...options.cell } };
   delete result.cell;
@@ -51,6 +77,9 @@ function columnCellOptions(options) {
  * Resolves the table's data fields: `order` when given, otherwise the names
  * of the configured `columns`, otherwise every field found in any record, in
  * first-seen order.
+ * @param {object[]} contents - Records.
+ * @param {object} options - Table options with `order` and `columns`.
+ * @returns {string[]} Field names.
  */
 function tableFields(contents, options) {
   if (options.order?.length) {
@@ -72,7 +101,10 @@ function tableFields(contents, options) {
   return fields;
 }
 
-/** Creates Recipe table layout methods. */
+/**
+ * Creates Recipe table layout methods.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createTableMethods() {
   return {
     /**
@@ -121,7 +153,11 @@ export function createTableMethods() {
       });
       var columns = this._layouts._table_;
       var tableWidth = columns.reduce((sum, column) => sum + column.width, 0);
-      /** Bounds are recomputed for every continuation position and page. */
+      /**
+       * Bounds are recomputed for every continuation position and page.
+       * @param {number} top - Segment top.
+       * @returns {number} The lowest y the segment may use.
+       */
       var segmentBottom = (top) =>
         options.height
           ? Math.min(
@@ -142,7 +178,7 @@ export function createTableMethods() {
         var border = {
           ...(options.border === true ? {} : options.border),
           // Keep borders from extending outside of the enclosing box.
-          lineCap: "butt",
+          lineCap: LineCap.BUTT,
         };
         if (!border.width) border.width = 0.5;
         this.rectangle(x, tableTop, tableWidth, currentY - tableTop, border);
@@ -164,12 +200,20 @@ export function createTableMethods() {
         tableTop = currentY;
         lines = [];
       };
-      /** Applies native's 2pt default cell padding unless one is set. */
+      /**
+       * Applies native's 2pt default cell padding unless one is set.
+       * @param {object} cellOptionsValue - Cell options.
+       * @returns {object} Options with padding.
+       */
       var paddedCell = (cellOptionsValue) =>
         cellOptionsValue.textBox?.padding === undefined
           ? merge(cellOptionsValue, { textBox: { padding: 2 } })
           : cellOptionsValue;
-      /** Resolves header styles identically for measurement and drawing. */
+      /**
+       * Resolves header styles identically for measurement and drawing.
+       * @param {object} column - Column definition.
+       * @returns {object} Header text options.
+       */
       var headerOptions = (column) => {
         var header = merge(
           { textBox: {} },
@@ -177,7 +221,10 @@ export function createTableMethods() {
             ? column.options.header
             : {
                 bold: true,
-                textBox: { padding: 2, textAlign: "center center" },
+                textBox: {
+                  padding: 2,
+                  textAlign: `${TextAlign.CENTER} ${VerticalAlign.CENTER}`,
+                },
               },
         );
         if (typeof options.header === "object") {
@@ -231,8 +278,8 @@ export function createTableMethods() {
         var rowOptions =
           options.row &&
           (!options.row.nth ||
-            (options.row.nth === "even" && (row + 1) % 2 === 0) ||
-            (options.row.nth === "odd" && (row + 1) % 2))
+            (options.row.nth === TableRowNth.EVEN && (row + 1) % 2 === 0) ||
+            (options.row.nth === TableRowNth.ODD && (row + 1) % 2))
             ? options.row
             : {};
         // Resolve every cell once: the renderer runs once per cell, and its

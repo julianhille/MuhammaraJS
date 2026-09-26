@@ -1,13 +1,29 @@
-import { createChildLifecycle } from "./lifecycle.js";
 import {
-  readDrawingOptions,
-  finishDrawingPath,
+  ObjectReplacementScope,
+  PDFImageType,
+  RegisteredImageFormat,
+} from "./value-sets.js";
+import { createChildLifecycle } from "./lifecycle.js";
+import { isPageBoxType } from "./constants.js";
+import { imageXObjects } from "./image-xobjects.js";
+import { selectedPageRanges } from "./page-ranges.js";
+import {
   readTextOptions,
   validateDrawingGeometry,
-  snapshotDrawingPoints,
+  applyDrawingColor,
+  installDrawingHelpers,
+  checkOperatorRange,
+  measureFontText,
+  readFontUnderline,
+  prepareUnderline,
+  strokeUnderline,
 } from "./drawing-options.js";
 
-/** Creates a factory for writers that modify an existing PDF. */
+/**
+ * Creates the byte-first PDF modifier factory.
+ * @param {object} dependencies - Module, constants, value types, and shared helpers.
+ * @returns {Function} `createWriterToModify(bytes, options)`.
+ */
 export function createWriterToModifyFactory({
   module,
   constants,
@@ -24,6 +40,7 @@ export function createWriterToModifyFactory({
   fonts,
   images,
   imageTypes,
+  pdfs,
   state,
   withString,
   withBytes,
@@ -42,6 +59,15 @@ export function createWriterToModifyFactory({
   removeFile,
   assertOutputSize,
 }) {
+  /**
+   * Opens PDF bytes for incremental modification.
+   * @param {ByteSource} bytes - PDF to modify.
+   * @param {WriterOptions} [options={}] - PDF version and stream compression.
+   * @returns {PDFModifier} The modifier; call `end()` for the bytes or `dispose()` to discard it.
+   * @throws {TypeError} If the bytes are unsupported, `options` is not an object, or `compress` is not a boolean.
+   * @throws {RangeError} If `version` is not a supported `ePDFVersion*` constant.
+   * @throws {Error} If the PDF cannot be opened.
+   */
   function createWriterToModify(bytes, options = {}) {
     bytes = normalizeBytes(bytes, "PDF input");
     if (!options || typeof options !== "object" || Array.isArray(options))
@@ -67,6 +93,18 @@ export function createWriterToModifyFactory({
       );
     if (typeof compress !== "boolean")
       throw new TypeError("createWriterToModify compress must be a boolean");
+    for (var unsupported of [
+      "userPassword",
+      "ownerPassword",
+      "userProtectionFlag",
+      "log",
+    ]) {
+      if (options[unsupported] !== undefined) {
+        throw new TypeError(
+          `createWriterToModify ${unsupported} is unavailable in WebAssembly; use recrypt() on the result`,
+        );
+      }
+    }
     var path = `/pdfs/${state.nextPdf++}.pdf`;
     module.FS.mkdirTree("/pdfs");
     module.FS.writeFile(path, bytes);
@@ -96,6 +134,10 @@ export function createWriterToModifyFactory({
     var lifecycle = createChildLifecycle();
     var modifiedReaders = [];
 
+    /**
+     * Releases the native modifier, its children, readers, and stored assets. Idempotent.
+     * @returns {void}
+     */
     function dispose() {
       if (ended) return;
       lifecycle.disposeChildren();
@@ -108,12 +150,25 @@ export function createWriterToModifyFactory({
       ended = true;
     }
 
+    /**
+     * Validates an optional reserved object ID.
+     * @param {number} [value] - Object ID to write the XObject under.
+     * @returns {number} The ID, or 0 to allocate a new one.
+     * @throws {RangeError} If `value` is not a positive 32-bit integer.
+     */
     function optionalObjectId(value) {
       if (value === undefined) return 0;
       if (!Number.isSafeInteger(value) || value <= 0 || value > 0xffffffff)
         throw new RangeError("objectId must be a positive object ID");
       return value;
     }
+    /**
+     * Resolves a registered image name to its virtual path.
+     * @param {string} name - Registered image name.
+     * @param {string} [expectedType] - Required RegisteredImageFormat.
+     * @returns {string} Virtual file system path.
+     * @throws {TypeError} If the name is not registered or the format differs.
+     */
     function imagePath(name, expectedType) {
       if (typeof name !== "string" || !images.has(name))
         throw new TypeError("A registered image name is required");
@@ -122,6 +177,16 @@ export function createWriterToModifyFactory({
         throw new TypeError(`Registered image is not a ${expectedType}`);
       return images.get(name);
     }
+    /**
+     * Runs a callback with the path of a registered image or of stored bytes;
+     * stored bytes are removed when the modifier ends.
+     * @param {string|ByteSource} value - Registered image name or image bytes.
+     * @param {string} label - Name used in byte errors.
+     * @param {string} [expectedType] - Required RegisteredImageFormat for a name.
+     * @param {function(string): *} callback - Receives the virtual path.
+     * @returns {*} The callback result.
+     * @throws {TypeError} If the name is not registered or the bytes are unsupported.
+     */
     function withImagePathOrBytes(value, label, expectedType, callback) {
       if (typeof value === "string")
         return callback(imagePath(value, expectedType));
@@ -133,17 +198,56 @@ export function createWriterToModifyFactory({
       return callback(path);
     }
 
+    /**
+     * Wraps the object ID of a finished image or form so `doXObject()` accepts it.
+     * @param {number} id - Object ID of the XObject.
+     * @returns {{id: number}} The XObject, owned by this modifier.
+     */
+    function completedXObject(id) {
+      var xobject = { id };
+      Object.defineProperties(xobject, {
+        _owner: { value: owner },
+        _ended: { value: true },
+      });
+      return xobject;
+    }
+
+    /**
+     * Rejects use of a finished modifier.
+     * @returns {void}
+     * @throws {Error} If the modifier has ended.
+     */
     function requireOpen() {
       if (ended || !modifier) throw new Error("PDF writer has ended");
     }
 
+    /**
+     * Rejects use of an inactive page content context.
+     * @param {object} value - Content context being used.
+     * @returns {void}
+     * @throws {Error} If the modifier ended or `value` is not the active context.
+     */
     function requireContext(value) {
       requireOpen();
       if (context !== value)
         throw new Error("Page content context is not active");
     }
 
+    /**
+     * Creates the content context of the active new or modified page.
+     * @returns {ContentContext} The content context.
+     */
     function modifierContext() {
+      /**
+       * Applies one numeric content operator to the active page.
+       * @param {string} name - Operator name for error messages.
+       * @param {number} code - Native operator code.
+       * @param {number[]} [args=[]] - Operands; a missing operand is `undefined` and rejected.
+       * @param {boolean} [integers=false] - Whether operands must be integers.
+       * @returns {ContentContext} The content context.
+       * @throws {TypeError} If an operand is not finite, or not an integer when required.
+       * @throws {Error} If the context is inactive or the operator fails.
+       */
       function operator(name, code, args = [], integers = false) {
         requireContext(result);
         if (!args.every(Number.isFinite)) {
@@ -160,17 +264,39 @@ export function createWriterToModifyFactory({
         return result;
       }
       var result = {
+        /**
+         * Returns the new page this context writes to.
+         * @returns {PDFPage|null} The page, or null for a page modifier.
+         * @throws {Error} If the content context is no longer active.
+         */
         getAssociatedPage: function () {
           requireContext(result);
           if (!page) throw new Error("Form XObject has no associated page");
           return page;
         },
+        /**
+         * Returns the page content stream being written.
+         * @returns {PDFStream} The stream; `getWriteStream()` exposes a byte writer.
+         * @throws {Error} If the content context is no longer active.
+         */
         getCurrentPageContentStream: function () {
           requireContext(result);
           if (!page) throw new Error("Form XObject has no page content stream");
           return {
+            /**
+             * Returns a writer that appends raw bytes to the page content stream.
+             * @returns {ByteWriteStream} The byte writer.
+             * @throws {Error} If the content context is no longer active.
+             */
             getWriteStream: function () {
               return {
+                /**
+                 * Appends raw bytes to the page content stream.
+                 * @param {ByteSource} bytes - Bytes to append.
+                 * @returns {number} The number of bytes written.
+                 * @throws {TypeError} If `bytes` is not a supported byte source.
+                 * @throws {Error} If the content context is no longer active or the write fails.
+                 */
                 write: function (bytes) {
                   requireContext(result);
                   return writeNativeBytes(
@@ -188,6 +314,13 @@ export function createWriterToModifyFactory({
             },
           };
         },
+        /**
+         * Appends raw content-stream code.
+         * @param {string} freeCode - Operators to write verbatim.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `freeCode` is not a string.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         writeFreeCode: function (freeCode) {
           return writeFreeCode(
             result,
@@ -201,6 +334,13 @@ export function createWriterToModifyFactory({
             freeCode,
           );
         },
+        /**
+         * Sets fill and stroke opacity through an ExtGState resource.
+         * @param {number} opacity - Opacity from 0 to 1.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `opacity` is not a finite number from 0 to 1.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         setOpacity: function (opacity) {
           requireContext(result);
           if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1) {
@@ -213,129 +353,433 @@ export function createWriterToModifyFactory({
           }
           return result;
         },
+        /**
+         * Closes, fills (nonzero winding), and strokes the current path (`b`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         b: function () {
           return operator("b", 0);
         },
+        /**
+         * Fills (nonzero winding) and strokes the current path (`B`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         B: function () {
           return operator("B", 1);
         },
+        /**
+         * Closes, fills (even-odd), and strokes the current path (`b*`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         bStar: function () {
           return operator("bStar", 2);
         },
+        /**
+         * Fills (even-odd) and strokes the current path (`B*`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         BStar: function () {
           return operator("BStar", 3);
         },
+        /**
+         * Closes and strokes the current path (`s`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         s: function () {
           return operator("s", 4);
         },
+        /**
+         * Strokes the current path (`S`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         S: function () {
           return operator("S", 5);
         },
+        /**
+         * Fills the current path using the nonzero winding rule (`f`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         f: function () {
           return operator("f", 6);
         },
+        /**
+         * Fills the current path using the nonzero winding rule (`F`, the obsolete `f` spelling).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         F: function () {
           return operator("F", 7);
         },
+        /**
+         * Fills the current path using the even-odd rule (`f*`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         fStar: function () {
           return operator("fStar", 8);
         },
+        /**
+         * Ends the current path without filling or stroking it (`n`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         n: function () {
           return operator("n", 9);
         },
-        m: function (...args) {
-          return operator("m", 10, args);
+        /**
+         * Begins a new subpath at a point (`m`).
+         * @param {number} x - Point x.
+         * @param {number} y - Point y.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        m: function (x, y) {
+          return operator("m", 10, [x, y]);
         },
-        l: function (...args) {
-          return operator("l", 11, args);
+        /**
+         * Appends a straight line to a point (`l`).
+         * @param {number} x - Point x.
+         * @param {number} y - Point y.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        l: function (x, y) {
+          return operator("l", 11, [x, y]);
         },
-        c: function (...args) {
-          return operator("c", 12, args);
+        /**
+         * Appends a cubic Bezier curve (`c`).
+         * @param {number} x1 - First control point x.
+         * @param {number} y1 - First control point y.
+         * @param {number} x2 - Second control point x.
+         * @param {number} y2 - Second control point y.
+         * @param {number} x3 - End point x.
+         * @param {number} y3 - End point y.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        c: function (x1, y1, x2, y2, x3, y3) {
+          return operator("c", 12, [x1, y1, x2, y2, x3, y3]);
         },
-        v: function (...args) {
-          return operator("v", 13, args);
+        /**
+         * Appends a cubic Bezier curve whose first control point is the current point (`v`).
+         * @param {number} x2 - Second control point x.
+         * @param {number} y2 - Second control point y.
+         * @param {number} x3 - End point x.
+         * @param {number} y3 - End point y.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        v: function (x2, y2, x3, y3) {
+          return operator("v", 13, [x2, y2, x3, y3]);
         },
-        y: function (...args) {
-          return operator("y", 14, args);
+        /**
+         * Appends a cubic Bezier curve whose second control point is the end point (`y`).
+         * @param {number} x1 - First control point x.
+         * @param {number} y1 - First control point y.
+         * @param {number} x3 - End point x.
+         * @param {number} y3 - End point y.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        y: function (x1, y1, x3, y3) {
+          return operator("y", 14, [x1, y1, x3, y3]);
         },
+        /**
+         * Closes the current subpath (`h`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         h: function () {
           return operator("h", 15);
         },
-        re: function (...args) {
-          return operator("re", 16, args);
+        /**
+         * Appends a rectangle subpath (`re`).
+         * @param {number} x - Lower-left x.
+         * @param {number} y - Lower-left y.
+         * @param {number} width - Rectangle width.
+         * @param {number} height - Rectangle height.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        re: function (x, y, width, height) {
+          return operator("re", 16, [x, y, width, height]);
         },
+        /**
+         * Saves the graphics state (`q`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         q: function () {
           return operator("q", 17);
         },
+        /**
+         * Restores the graphics state (`Q`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Q: function () {
           return operator("Q", 18);
         },
-        cm: function (...args) {
-          return operator("cm", 19, args);
+        /**
+         * Concatenates a matrix to the current transformation matrix (`cm`).
+         * @param {number} a - Matrix component `a`.
+         * @param {number} b - Matrix component `b`.
+         * @param {number} c - Matrix component `c`.
+         * @param {number} d - Matrix component `d`.
+         * @param {number} e - Matrix component `e`.
+         * @param {number} f - Matrix component `f`.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        cm: function (a, b, c, d, e, f) {
+          return operator("cm", 19, [a, b, c, d, e, f]);
         },
-        w: function (value) {
-          return operator("w", 20, [value]);
+        /**
+         * Sets the line width (`w`).
+         * @param {number} width - Line width in user space units.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        w: function (width) {
+          return operator("w", 20, [width]);
         },
+        /**
+         * Sets the line cap style (`J`).
+         * @param {LineCapStyle} value - 0 butt, 1 round, or 2 projecting square.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `value` is missing or not an integer.
+         * @throws {RangeError} If `value` is not 0, 1, or 2.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         J: function (value) {
+          checkOperatorRange("J", value, 2, "line cap");
           return operator("J", 21, [value]);
         },
+        /**
+         * Sets the line join style (`j`).
+         * @param {LineJoinStyle} value - 0 miter, 1 round, or 2 bevel.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `value` is missing or not an integer.
+         * @throws {RangeError} If `value` is not 0, 1, or 2.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         j: function (value) {
+          checkOperatorRange("j", value, 2, "line join");
           return operator("j", 22, [value]);
         },
+        /**
+         * Sets the miter limit (`M`).
+         * @param {number} value - Miter limit.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         M: function (value) {
           return operator("M", 23, [value]);
         },
+        /**
+         * Sets the nonstroking gray color (`g`).
+         * @param {number} value - Gray level from 0 to 1.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         g: function (value) {
           return operator("g", 24, [value]);
         },
-        G: function (value) {
-          return operator("G", 25, [value]);
+        /**
+         * Sets the stroking gray color (`G`).
+         * @param {number} gray - Gray level from 0 to 1.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        G: function (gray) {
+          return operator("G", 25, [gray]);
         },
-        rg: function (...args) {
-          return operator("rg", 26, args);
+        /**
+         * Sets the nonstroking RGB color (`rg`).
+         * @param {number} red - Red from 0 to 1.
+         * @param {number} green - Green from 0 to 1.
+         * @param {number} blue - Blue from 0 to 1.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        rg: function (red, green, blue) {
+          return operator("rg", 26, [red, green, blue]);
         },
-        RG: function (...args) {
-          return operator("RG", 27, args);
+        /**
+         * Sets the stroking RGB color (`RG`).
+         * @param {number} red - Red from 0 to 1.
+         * @param {number} green - Green from 0 to 1.
+         * @param {number} blue - Blue from 0 to 1.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        RG: function (red, green, blue) {
+          return operator("RG", 27, [red, green, blue]);
         },
-        k: function (...args) {
-          return operator("k", 28, args);
+        /**
+         * Sets the nonstroking CMYK color (`k`).
+         * @param {number} cyan - Cyan from 0 to 1.
+         * @param {number} magenta - Magenta from 0 to 1.
+         * @param {number} yellow - Yellow from 0 to 1.
+         * @param {number} black - Black from 0 to 1.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        k: function (cyan, magenta, yellow, black) {
+          return operator("k", 28, [cyan, magenta, yellow, black]);
         },
-        K: function (...args) {
-          return operator("K", 29, args);
+        /**
+         * Sets the stroking CMYK color (`K`).
+         * @param {number} cyan - Cyan from 0 to 1.
+         * @param {number} magenta - Magenta from 0 to 1.
+         * @param {number} yellow - Yellow from 0 to 1.
+         * @param {number} black - Black from 0 to 1.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        K: function (cyan, magenta, yellow, black) {
+          return operator("K", 29, [cyan, magenta, yellow, black]);
         },
+        /**
+         * Intersects the clipping path with the current path, nonzero winding (`W`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         W: function () {
           return operator("W", 30);
         },
+        /**
+         * Intersects the clipping path with the current path, even-odd (`W*`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         WStar: function () {
           return operator("WStar", 31);
         },
+        /**
+         * Begins a text object (`BT`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         BT: function () {
           return operator("BT", 32);
         },
+        /**
+         * Ends a text object (`ET`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         ET: function () {
           return operator("ET", 33);
         },
-        Tm: function (...args) {
-          return operator("Tm", 34, args);
+        /**
+         * Sets the text matrix and text line matrix (`Tm`).
+         * @param {number} a - Matrix component `a`.
+         * @param {number} b - Matrix component `b`.
+         * @param {number} c - Matrix component `c`.
+         * @param {number} d - Matrix component `d`.
+         * @param {number} e - Matrix component `e`.
+         * @param {number} f - Matrix component `f`.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
+        Tm: function (a, b, c, d, e, f) {
+          return operator("Tm", 34, [a, b, c, d, e, f]);
         },
+        /**
+         * Sets the character spacing (`Tc`).
+         * @param {number} characterSpace - Extra space per glyph in unscaled text space units.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Tc: function (characterSpace) {
           return operator("Tc", 35, [characterSpace]);
         },
+        /**
+         * Sets the word spacing (`Tw`).
+         * @param {number} wordSpace - Extra space per ASCII space in unscaled text space units.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Tw: function (wordSpace) {
           return operator("Tw", 36, [wordSpace]);
         },
+        /**
+         * Sets the horizontal text scaling (`Tz`).
+         * @param {number} horizontalScaling - Integer percentage; 100 is normal width.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {TypeError} If `horizontalScaling` is not an integer.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Tz: function (horizontalScaling) {
           return operator("Tz", 37, [horizontalScaling], true);
         },
+        /**
+         * Sets the text leading (`TL`).
+         * @param {number} textLeading - Line spacing in unscaled text space units.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         TL: function (textLeading) {
           return operator("TL", 38, [textLeading]);
         },
+        /**
+         * Sets the text rendering mode (`Tr`).
+         * @param {TextRenderingMode} renderingMode - Mode from 0 (fill) to 7 (add to clip).
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `renderingMode` is missing or not an integer.
+         * @throws {RangeError} If `renderingMode` is outside 0 to 7.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Tr: function (renderingMode) {
+          checkOperatorRange("Tr", renderingMode, 7, "text rendering mode");
           return operator("Tr", 39, [renderingMode], true);
         },
+        /**
+         * Sets the text rise (`Ts`).
+         * @param {number} fontRise - Baseline shift in unscaled text space units.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Ts: function (fontRise) {
           return operator("Ts", 40, [fontRise]);
         },
+        /**
+         * Sets the dash pattern (`d`).
+         * @param {number[]} dash - Alternating dash and gap lengths; empty for a solid line.
+         * @param {number} [phase=0] - Offset into the pattern.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `dash` is not an array of finite numbers or `phase` is not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         d: function (dash, phase = 0) {
           requireContext(result);
           if (
@@ -363,16 +807,22 @@ export function createWriterToModifyFactory({
             if (pointer) module._free(pointer);
           }
         },
+        /**
+         * Selects the font and size for text (`Tf`).
+         * @param {PDFUsedFont|string} font - Font from this writer, or a font resource name.
+         * @param {number} size - Positive font size.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `font` is neither a font from this writer nor a string.
+         * @throws {RangeError} If `size` is not a positive finite number.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Tf: function (font, size) {
           requireContext(result);
-          if (
-            !((font && font._owner === owner) || typeof font === "string") ||
-            !Number.isFinite(size) ||
-            size <= 0
-          ) {
-            throw new TypeError(
-              "Tf requires a font from this writer and a positive size",
-            );
+          if (!((font && font._owner === owner) || typeof font === "string")) {
+            throw new TypeError("Tf requires a font from this writer");
+          }
+          if (!Number.isFinite(size) || size <= 0) {
+            throw new RangeError("Tf requires a positive font size");
           }
           if (typeof font === "string")
             return withString(font, (pointer) => {
@@ -396,17 +846,17 @@ export function createWriterToModifyFactory({
             throw new Error("Unable to set font");
           return result;
         },
-        Tj: function (text) {
-          requireContext(result);
-          if (typeof text !== "string")
-            throw new TypeError("Tj requires a string");
-          return withString(text, (pointer) => {
-            if (!module._muhammara_wasm_modifier_show_text(modifier, pointer)) {
-              throw new Error("Unable to show text");
-            }
-            return result;
-          });
-        },
+        /**
+         * Writes one line of text with a writer font.
+         * @param {string} text - Text to write.
+         * @param {number} x - Baseline start x.
+         * @param {number} y - Baseline y.
+         * @param {WriteTextOptions} [options={}] - Font, size, color, opacity, and underline.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `text`, a coordinate, or the font is invalid, or a color option is invalid.
+         * @throws {RangeError} If `size` is not positive.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         writeText: function (text, x, y, options = {}) {
           options = readTextOptions(options, colorValue);
           if (
@@ -423,26 +873,24 @@ export function createWriterToModifyFactory({
           var size = options.size ?? 1;
           if (!Number.isFinite(size) || size <= 0)
             throw new RangeError("writeText requires a positive font size");
-          var dimensions = options.underline
-            ? options.font.calculateTextDimensions(text, size)
-            : null;
-          if (dimensions)
-            validateDrawingGeometry([
-              x + dimensions.width,
-              y + dimensions.yMin,
-            ]);
+          var underline = prepareUnderline(options, text, x, y, size);
           result.BT();
-          applyHighLevelColor(options, false);
+          applyDrawingColor(result, options, false);
           result.Tf(options.font, size).Tm(1, 0, 0, 1, x, y).Tj(text).ET();
-          if (dimensions) {
-            result
-              .w(Math.max(size * 0.05, 0.1))
-              .m(x, y + dimensions.yMin)
-              .l(x + dimensions.width, y + dimensions.yMin)
-              .S();
-          }
+          strokeUnderline(result, options, underline, x);
           return result;
         },
+        /**
+         * Draws an image or PDF page at a position.
+         * @param {number} x - Left position.
+         * @param {number} y - Bottom position.
+         * @param {string|ByteSource} image - Registered image or PDF name, or JPEG, PNG, TIFF, or PDF bytes.
+         * @param {DrawImageOptions} [options] - Page index and a matrix or fit transformation.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If a coordinate or option is invalid or the bytes are not a supported image.
+         * @throws {RangeError} If `index` or the fit box is out of range.
+         * @throws {Error} If the asset is unknown, the context is inactive, or drawing fails.
+         */
         drawImage: function (x, y, image, options) {
           requireContext(result);
           drawImageCall(
@@ -468,6 +916,17 @@ export function createWriterToModifyFactory({
           );
           return result;
         },
+        /**
+         * Draws an image after reading an asynchronous byte source.
+         * @async
+         * @param {number} x - Left position.
+         * @param {number} y - Bottom position.
+         * @param {string|AsyncByteSource} image - Registered name, bytes, Blob, or File.
+         * @param {DrawImageOptions} [options] - Page index and transformation.
+         * @returns {Promise<this>} Resolves to the content context.
+         * @throws {TypeError} If a coordinate, option, or byte source is invalid.
+         * @throws {Error} If the asset is unknown, the context is inactive, or drawing fails.
+         */
         drawImageAsync: async function (x, y, image, options) {
           return result.drawImage(
             x,
@@ -476,6 +935,14 @@ export function createWriterToModifyFactory({
             options,
           );
         },
+        /**
+         * Paints an XObject (`Do`).
+         * @param {string|number|FormXObject|ImageXObject} xobject - Resource name, form object ID,
+         * or a completed XObject from this writer.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `xobject` is an unfinished form or belongs to another writer.
+         * @throws {Error} If the content context is no longer active or the XObject cannot be placed.
+         */
         doXObject: function (xobject) {
           requireContext(result);
           if (Number.isInteger(xobject) && xobject > 0) {
@@ -520,15 +987,44 @@ export function createWriterToModifyFactory({
           return result;
         },
       };
+      /**
+       * Moves to the start of the next text line, offset from the current one (`Td`).
+       * @param {number} x - Horizontal offset.
+       * @param {number} y - Vertical offset.
+       * @returns {this} The content context, for chaining.
+       * @throws {TypeError} If an operand is missing or not finite.
+       * @throws {Error} If the content context is no longer active or the operator fails.
+       */
       result.Td = function (x, y) {
         return operator("Td", 41, [x, y]);
       };
+      /**
+       * Moves to the next text line and sets the leading to `-y` (`TD`).
+       * @param {number} x - Horizontal offset.
+       * @param {number} y - Vertical offset.
+       * @returns {this} The content context, for chaining.
+       * @throws {TypeError} If an operand is missing or not finite.
+       * @throws {Error} If the content context is no longer active or the operator fails.
+       */
       result.TD = function (x, y) {
         return operator("TD", 42, [x, y]);
       };
+      /**
+       * Moves to the start of the next text line (`T*`).
+       * @returns {this} The content context, for chaining.
+       * @throws {Error} If the content context is no longer active or the operator fails.
+       */
       result.TStar = function () {
         return operator("TStar", 43);
       };
+      /**
+       * Shows text (`Tj`).
+       * @param {string|Glyph} text - Text, or glyph entries to show without encoding.
+       * @param {TextOptions} [options] - Text encoding; only for string text.
+       * @returns {this} The content context, for chaining.
+       * @throws {TypeError} If `options` is not an options object, has an unknown encoding, or is given with glyphs.
+       * @throws {Error} If the content context is no longer active or the operator fails.
+       */
       result.Tj = function (text, options) {
         requireContext(result);
         if (typeof text === "string")
@@ -565,13 +1061,28 @@ export function createWriterToModifyFactory({
         });
       };
       addTextShowingOperators(result, () => requireContext(result), {
+        /**
+         * Runs a native string text-showing operator.
+         * @param {...number} args - Operator kind, encoding, spacing, and text pointer and length.
+         * @returns {boolean} Whether the operator was written.
+         */
         text: (...args) =>
           module._muhammara_wasm_modifier_show_text_operator(modifier, ...args),
+        /**
+         * Runs a native glyph text-showing operator.
+         * @param {...number} args - Operator kind, spacing, and glyph pointer and count.
+         * @returns {boolean} Whether the operator was written.
+         */
         glyphs: (...args) =>
           module._muhammara_wasm_modifier_show_glyphs_operator(
             modifier,
             ...args,
           ),
+        /**
+         * Runs the native `TJ` operator.
+         * @param {...number} args - Encoding and the encoded item pointers.
+         * @returns {boolean} Whether the operator was written.
+         */
         tj: (...args) =>
           module._muhammara_wasm_modifier_show_tj(modifier, ...args),
       });
@@ -584,128 +1095,15 @@ export function createWriterToModifyFactory({
             ...args,
           ),
       );
-      function applyHighLevelColor(options, stroke) {
-        if (!options || options.color === undefined) return;
-        var color = colorValue(options.color) >>> 0;
-        var colorspace = options.colorspace || "rgb";
-        if (colorspace === "rgb") {
-          return stroke
-            ? result.RG(
-                ((color >> 16) & 0xff) / 255,
-                ((color >> 8) & 0xff) / 255,
-                (color & 0xff) / 255,
-              )
-            : result.rg(
-                ((color >> 16) & 0xff) / 255,
-                ((color >> 8) & 0xff) / 255,
-                (color & 0xff) / 255,
-              );
-        }
-        if (colorspace === "gray")
-          return stroke
-            ? result.G((color & 0xff) / 255)
-            : result.g((color & 0xff) / 255);
-        if (colorspace === "cmyk") {
-          var values = [
-            ((color >> 24) & 0xff) / 255,
-            ((color >> 16) & 0xff) / 255,
-            ((color >> 8) & 0xff) / 255,
-            (color & 0xff) / 255,
-          ];
-          return stroke ? result.K(...values) : result.k(...values);
-        }
-        throw new TypeError("colorspace must be rgb, gray, or cmyk");
-      }
-      function finishHighLevelPath(options) {
-        var stroke = options.stroke;
-        applyHighLevelColor(options, stroke);
-        if (stroke && options.width !== undefined) result.w(options.width);
-        return finishDrawingPath(result, options);
-      }
-      result.drawRectangle = function (x, y, width, height, options) {
-        if (![x, y, width, height].every(Number.isFinite))
-          throw new TypeError("drawRectangle requires four finite coordinates");
-        options = readDrawingOptions(options, colorValue);
-        result.re(x, y, width, height);
-        return finishHighLevelPath(options);
-      };
-      result.drawSquare = function (x, y, edge, options) {
-        if (![x, y, edge].every(Number.isFinite))
-          throw new TypeError("drawSquare requires three finite coordinates");
-        return result.drawRectangle(x, y, edge, edge, options);
-      };
-      result.drawCircle = function (x, y, radius, options) {
-        if (![x, y, radius].every(Number.isFinite))
-          throw new TypeError("drawCircle requires three finite coordinates");
-        options = readDrawingOptions(options, colorValue);
-        var control = radius * 0.5522847498307936;
-        validateDrawingGeometry([
-          x + radius,
-          x - radius,
-          y + radius,
-          y - radius,
-        ]);
-        result
-          .m(x + radius, y)
-          .c(x + radius, y + control, x + control, y + radius, x, y + radius)
-          .c(x - control, y + radius, x - radius, y + control, x - radius, y)
-          .c(x - radius, y - control, x - control, y - radius, x, y - radius)
-          .c(x + control, y - radius, x + radius, y - control, x + radius, y);
-        return finishHighLevelPath(options);
-      };
-      result.drawPath = function (...args) {
-        var points;
-        var options;
-        if (Array.isArray(args[0])) {
-          if (args.length > 2)
-            throw new TypeError(
-              "drawPath accepts coordinate pairs and an optional options object",
-            );
-          points = args[0];
-          options = args[1] ?? {};
-        } else {
-          options = args.at(-1);
-          var coordinates = args.slice(0, -1);
-          if (
-            args.length < 5 ||
-            !options ||
-            typeof options !== "object" ||
-            Array.isArray(options) ||
-            coordinates.length % 2 !== 0
-          )
-            throw new TypeError(
-              "drawPath requires coordinate pairs and an options object",
-            );
-          points = [];
-          for (var index = 0; index < coordinates.length; index += 2)
-            points.push([coordinates[index], coordinates[index + 1]]);
-        }
-        points = snapshotDrawingPoints(points);
-        if (
-          !Array.isArray(points) ||
-          points.length < 2 ||
-          !points.every(
-            (point) =>
-              Array.isArray(point) &&
-              point.length === 2 &&
-              point.every(Number.isFinite),
-          ) ||
-          !options ||
-          typeof options !== "object" ||
-          Array.isArray(options)
-        )
-          throw new TypeError(
-            "drawPath requires at least two coordinate pairs of finite numbers",
-          );
-        options = readDrawingOptions(options, colorValue);
-        result.m(...points[0]);
-        for (var index = 1; index < points.length; index += 1)
-          result.l(...points[index]);
-        return finishHighLevelPath(options);
-      };
+      installDrawingHelpers(result, colorValue);
       return result;
     }
 
+    /**
+     * Starts the native page context and creates its content context.
+     * @returns {ContentContext} The content context.
+     * @throws {Error} If the context cannot be started.
+     */
     function startContext() {
       if (!module._muhammara_wasm_modifier_start_page_context(modifier)) {
         throw new Error("Unable to start page content context");
@@ -715,6 +1113,14 @@ export function createWriterToModifyFactory({
     }
 
     var additionalInfo = new Map();
+    /**
+     * Writes a text Info dictionary entry.
+     * @param {string} key - Entry name.
+     * @param {string} value - Text value.
+     * @returns {void}
+     * @throws {TypeError} If `key` or `value` is not a string.
+     * @throws {Error} If the modifier has ended or the entry cannot be set.
+     */
     function setInfo(key, value) {
       requireOpen();
       if (typeof key !== "string" || typeof value !== "string")
@@ -733,10 +1139,25 @@ export function createWriterToModifyFactory({
       );
     }
     var infoDictionary = {
+      /**
+       * Sets a custom Info dictionary entry.
+       * @param {string} key - Entry name without the leading slash.
+       * @param {string} value - Text value.
+       * @returns {void}
+       * @throws {TypeError} If `key` or `value` is not a string.
+       * @throws {Error} If the modifier has ended or the entry cannot be set.
+       */
       addAdditionalInfoEntry: function (key, value) {
         setInfo(key, value);
         additionalInfo.set(key, value);
       },
+      /**
+       * Removes a custom Info dictionary entry.
+       * @param {string} key - Entry name.
+       * @returns {void}
+       * @throws {TypeError} If `key` is not a string.
+       * @throws {Error} If the modifier has ended or the entry cannot be removed.
+       */
       removeAdditionalInfoEntry: function (key) {
         requireOpen();
         if (typeof key !== "string")
@@ -747,23 +1168,48 @@ export function createWriterToModifyFactory({
         });
         additionalInfo.delete(key);
       },
+      /**
+       * Removes every custom Info dictionary entry.
+       * @returns {void}
+       * @throws {Error} If the modifier has ended or the entries cannot be cleared.
+       */
       clearAdditionalInfoEntries: function () {
         requireOpen();
         if (!module._muhammara_wasm_modifier_clear_info(modifier))
           throw new Error("Unable to clear additional info entries");
         additionalInfo.clear();
       },
+      /**
+       * Reads a custom Info dictionary entry.
+       * @param {string} key - Entry name.
+       * @returns {string} The value, or an empty string when unset.
+       * @throws {TypeError} If `key` is not a string.
+       * @throws {Error} If the modifier has ended.
+       */
       getAdditionalInfoEntry: function (key) {
         requireOpen();
         if (typeof key !== "string")
           throw new TypeError("getAdditionalInfoEntry requires a string");
         return additionalInfo.get(key) || "";
       },
+      /**
+       * Reads every custom Info dictionary entry.
+       * @returns {Record<string, string>} Entries keyed by name.
+       * @throws {Error} If the modifier has ended.
+       */
       getAdditionalInfoEntries: function () {
         requireOpen();
         return Object.fromEntries(additionalInfo);
       },
+      /**
+       * Sets `/CreationDate`.
+       * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+       * @returns {void}
+       * @throws {TypeError} If `value` is not a valid date.
+       * @throws {Error} If the modifier has ended or the date cannot be parsed or set.
+       */
       setCreationDate: function (value) {
+        requireOpen();
         var date = normalizePDFDate(value);
         withString(date, (pointer) => {
           if (
@@ -772,7 +1218,15 @@ export function createWriterToModifyFactory({
             throw new Error("Unable to set creation date");
         });
       },
+      /**
+       * Sets `/ModDate`.
+       * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+       * @returns {void}
+       * @throws {TypeError} If `value` is not a valid date.
+       * @throws {Error} If the modifier has ended or the date cannot be parsed or set.
+       */
       setModDate: function (value) {
+        requireOpen();
         var date = normalizePDFDate(value);
         withString(date, (pointer) => {
           if (
@@ -786,24 +1240,51 @@ export function createWriterToModifyFactory({
       (key) => {
         var value = "";
         Object.defineProperty(infoDictionary, key, {
+          /**
+           * Reads the text entry.
+           * @returns {string} The value, or an empty string when unset.
+           */
           get: function () {
             return value;
           },
+          /**
+           * Writes the text entry.
+           * @param {string} nextValue - New value; other values are converted with `String()`.
+           * @returns {void}
+           * @throws {Error} If the modifier has ended or the entry cannot be set.
+           */
           set: function (nextValue) {
-            value = String(nextValue);
-            setInfo(key, value);
+            nextValue = String(nextValue);
+            setInfo(key, nextValue);
+            value = nextValue;
           },
         });
       },
     );
+    var TRAPPED_VALUES = [
+      constants.EInfoTrappedTrue,
+      constants.EInfoTrappedFalse,
+      constants.EInfoTrappedUnknown,
+    ];
     var trapped = constants.EInfoTrappedUnknown;
     Object.defineProperty(infoDictionary, "trapped", {
+      /**
+       * Reads `/Trapped`.
+       * @returns {EInfoTrapped} The trapped state; `EInfoTrappedUnknown` by default.
+       */
       get: function () {
         return trapped;
       },
+      /**
+       * Writes `/Trapped`.
+       * @param {EInfoTrapped} value - An `EInfoTrapped*` constant.
+       * @returns {void}
+       * @throws {RangeError} If `value` is not an EInfoTrapped constant.
+       * @throws {Error} If the modifier has ended or the entry cannot be set.
+       */
       set: function (value) {
         requireOpen();
-        if (!Number.isInteger(value) || value < 0 || value > 2)
+        if (!TRAPPED_VALUES.includes(value))
           throw new RangeError("trapped must be an EInfoTrapped value");
         if (!module._muhammara_wasm_modifier_set_info_trapped(modifier, value))
           throw new Error("Unable to set trapped");
@@ -812,6 +1293,17 @@ export function createWriterToModifyFactory({
     });
 
     return {
+      /**
+       * Appends pages of a source PDF as new pages.
+       * @param {ByteSource} source - Source PDF bytes.
+       * @param {PageRangeOptions} [options] - Pages to append; all by default.
+       * @returns {number[]} Object IDs of the appended pages.
+       * @throws {TypeError} If `options` is not an object or holds a password.
+       * @throws {RangeError} If `type` is not an ERangeType constant, or
+       * `specificRanges` is empty for a specific range or holds an invalid range.
+       * @throws {Error} If a page is active, the modifier ended, or the source is encrypted
+       * or unreadable; a failed append disposes the modifier.
+       */
       appendPDFPagesFromPDF: function (source, options = {}) {
         requireOpen();
         if (page || context)
@@ -823,28 +1315,7 @@ export function createWriterToModifyFactory({
           "password" in options
         )
           throw new TypeError("Append options must be a browser-safe object");
-        var ranges =
-          options.type === constants.eRangeTypeSpecific
-            ? options.specificRanges
-            : [];
-        if (
-          !Array.isArray(ranges) ||
-          !ranges.every(
-            (range) =>
-              Array.isArray(range) &&
-              range.length === 2 &&
-              range.every(
-                (value) =>
-                  Number.isInteger(value) && value >= 0 && value <= 0xffffffff,
-              ) &&
-              range[1] >= range[0],
-          )
-        )
-          throw new RangeError(
-            "specificRanges must contain non-negative inclusive page ranges",
-          );
-        if (options.type === constants.eRangeTypeSpecific && !ranges.length)
-          throw new RangeError("A specific page range is required");
+        var ranges = selectedPageRanges(options, constants);
         var sourceBytes = normalizeBytes(source, "PDF input");
         return withBytes(sourceBytes, (bytesPointer) => {
           var errorPointer = module._malloc(4);
@@ -892,20 +1363,46 @@ export function createWriterToModifyFactory({
           }
         });
       },
+      /**
+       * Appends pages of a source PDF after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} source - Source PDF bytes, Blob, or File.
+       * @param {PageRangeOptions} [options] - Pages to append.
+       * @returns {Promise<number[]>} Object IDs of the appended pages.
+       * @throws {TypeError} If the source or options are invalid.
+       * @throws {RangeError} If the page range is invalid.
+       * @throws {Error} If a page is active, the modifier ended, or the source is unreadable.
+       */
       appendPDFPagesFromPDFAsync: async function (source, options) {
         return this.appendPDFPagesFromPDF(
           await normalizeBytesAsync(source, "PDF input"),
           options,
         );
       },
-      mergePDFPagesToPage: function (target, source, options = {}, callback) {
+      /**
+       * Merges pages of a source PDF into a target page.
+       * @param {PDFPage} targetPage - Page being written.
+       * @param {ByteSource} source - Source PDF bytes.
+       * @param {PageRangeOptions|Function} [options] - Pages to merge, or the callback.
+       * @param {Function} [callback] - Called after the merge completes.
+       * @returns {this} The modifier.
+       * @throws {TypeError} If the page, options, or callback is invalid.
+       * @throws {RangeError} If the page range is invalid.
+       * @throws {Error} If another page is active, the modifier ended, or the source is unreadable.
+       */
+      mergePDFPagesToPage: function (
+        targetPage,
+        source,
+        options = {},
+        callback,
+      ) {
         requireOpen();
         if (typeof options === "function") {
           callback = options;
           options = {};
         }
         if (
-          target !== page ||
+          targetPage !== page ||
           !page ||
           !options ||
           typeof options !== "object" ||
@@ -913,30 +1410,11 @@ export function createWriterToModifyFactory({
           "password" in options
         )
           throw new TypeError(
-            "An active target PDFPage and browser-safe merge options are required",
+            "An active targetPage PDFPage and browser-safe merge options are required",
           );
         if (callback !== undefined && typeof callback !== "function")
           throw new TypeError("Merge callback must be a function");
-        var ranges =
-          options.type === constants.eRangeTypeSpecific
-            ? options.specificRanges
-            : [];
-        if (
-          !Array.isArray(ranges) ||
-          !ranges.every(
-            (range) =>
-              Array.isArray(range) &&
-              range.length === 2 &&
-              range.every(
-                (value) =>
-                  Number.isInteger(value) && value >= 0 && value <= 0xffffffff,
-              ) &&
-              range[1] >= range[0],
-          )
-        )
-          throw new RangeError(
-            "specificRanges must contain non-negative inclusive page ranges",
-          );
+        var ranges = selectedPageRanges(options, constants);
         var sourceBytes = normalizeBytes(source, "PDF input");
         return withBytes(sourceBytes, (bytesPointer) => {
           var errorPointer = module._malloc(4);
@@ -968,19 +1446,40 @@ export function createWriterToModifyFactory({
           }
         });
       },
+      /**
+       * Merges pages of a source PDF after reading an asynchronous byte source.
+       * @async
+       * @param {PDFPage} targetPage - Page being written.
+       * @param {AsyncByteSource} source - Source PDF bytes, Blob, or File.
+       * @param {PageRangeOptions|Function} [options] - Pages to merge, or the callback.
+       * @param {Function} [callback] - Called after the merge completes.
+       * @returns {Promise<this>} The writer.
+       * @throws {TypeError} If the page, source, options, or callback is invalid.
+       * @throws {RangeError} If the page range is invalid.
+       * @throws {Error} If another page is active, the modifier ended, or the source is unreadable.
+       */
       mergePDFPagesToPageAsync: async function (
-        target,
+        targetPage,
         source,
         options,
         callback,
       ) {
         return this.mergePDFPagesToPage(
-          target,
+          targetPage,
           await normalizeBytesAsync(source, "PDF input"),
           options,
           callback,
         );
       },
+      /**
+       * Reads the dimensions of an image or PDF page.
+       * @param {string|ByteSource} image - Registered image or PDF name, or bytes.
+       * @param {number} [imageIndex=0] - Page or TIFF frame index.
+       * @returns {{width: number, height: number}} Size in points.
+       * @throws {RangeError} If `imageIndex` is not a 32-bit unsigned integer.
+       * @throws {TypeError} If the name is not registered or the bytes are unsupported.
+       * @throws {Error} If the modifier ended or the dimensions cannot be read.
+       */
       getImageDimensions: function (image, imageIndex = 0) {
         requireOpen();
         if (
@@ -991,10 +1490,15 @@ export function createWriterToModifyFactory({
           throw new RangeError(
             "imageIndex must be a non-negative 32-bit integer",
           );
-        var imageBytes =
-          typeof image === "string"
-            ? module.FS.readFile(imagePath(image))
-            : normalizeBytes(image, "Image bytes");
+        var imageBytes;
+        if (typeof image === "string") {
+          var registeredPath = images.get(image) || pdfs.get(image);
+          if (!registeredPath)
+            throw new TypeError("A registered image or PDF name is required");
+          imageBytes = module.FS.readFile(registeredPath);
+        } else {
+          imageBytes = normalizeBytes(image, "Image bytes");
+        }
         var valuesPointer = module._malloc(16);
         try {
           return withBytes(imageBytes, (pointer) => {
@@ -1017,12 +1521,29 @@ export function createWriterToModifyFactory({
           module._free(valuesPointer);
         }
       },
+      /**
+       * Reads image dimensions after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} image - Image or PDF bytes, Blob, or File.
+       * @param {number} [imageIndex=0] - Page or TIFF frame index.
+       * @returns {Promise<{width: number, height: number}>} Size in points.
+       * @throws {RangeError} If `imageIndex` is invalid.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the modifier ended or the dimensions cannot be read.
+       */
       getImageDimensionsAsync: async function (image, imageIndex) {
         return this.getImageDimensions(
           await normalizeBytesAsync(image, "Image bytes"),
           imageIndex,
         );
       },
+      /**
+       * Detects the format of an image or PDF.
+       * @param {string|ByteSource} image - Registered image name, or bytes.
+       * @returns {PDFImageType|undefined} The format, or undefined when unknown.
+       * @throws {TypeError} If the name is not registered or the bytes are unsupported.
+       * @throws {Error} If the modifier has ended.
+       */
       getImageType: function (image) {
         requireOpen();
         return withImagePathOrBytes(image, "Image bytes", undefined, (path) =>
@@ -1031,15 +1552,36 @@ export function createWriterToModifyFactory({
               modifier,
               pointer,
             );
-            return [undefined, "PDF", "JPG", "TIFF", "PNG"][type];
+            return [
+              undefined,
+              PDFImageType.PDF,
+              PDFImageType.JPG,
+              PDFImageType.TIFF,
+              PDFImageType.PNG,
+            ][type];
           }),
         );
       },
+      /**
+       * Detects an image format after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} image - Image bytes, Blob, or File.
+       * @returns {Promise<PDFImageType|undefined>} The format, or undefined when unknown.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the modifier has ended.
+       */
       getImageTypeAsync: async function (image) {
         return this.getImageType(
           await normalizeBytesAsync(image, "Image bytes"),
         );
       },
+      /**
+       * Counts the pages of a PDF or the frames of a TIFF.
+       * @param {string|ByteSource} image - Registered image name, or bytes.
+       * @returns {number} The page or frame count; 1 for single-image formats.
+       * @throws {TypeError} If the name is not registered or the bytes are unsupported.
+       * @throws {Error} If the modifier has ended.
+       */
       getImagePagesCount: function (image) {
         requireOpen();
         return withImagePathOrBytes(image, "Image bytes", undefined, (path) =>
@@ -1051,16 +1593,31 @@ export function createWriterToModifyFactory({
           ),
         );
       },
+      /**
+       * Counts pages or frames after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} image - Image bytes, Blob, or File.
+       * @returns {Promise<number>} The page or frame count.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the modifier has ended.
+       */
       getImagePagesCountAsync: async function (image) {
         return this.getImagePagesCount(
           await normalizeBytesAsync(image, "Image bytes"),
         );
       },
+      /**
+       * Reads JPEG sample size, components, and JFIF, Exif, and Photoshop densities.
+       * @param {string|ByteSource} image - Registered JPEG name, or JPEG bytes.
+       * @returns {JPGImageInformation} The information; density fields exist only for present headers.
+       * @throws {TypeError} If the name is not a registered JPEG or the bytes are unsupported.
+       * @throws {Error} If the modifier ended or the JPEG cannot be read.
+       */
       retrieveJPGImageInformation: function (image) {
         requireOpen();
         var imageBytes =
           typeof image === "string"
-            ? module.FS.readFile(imagePath(image, "jpeg"))
+            ? module.FS.readFile(imagePath(image, RegisteredImageFormat.JPEG))
             : normalizeBytes(image, "JPEG bytes");
         var valuesPointer = module._malloc(14 * 8);
         try {
@@ -1109,53 +1666,110 @@ export function createWriterToModifyFactory({
           module._free(valuesPointer);
         }
       },
+      /**
+       * Reads JPEG information after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} image - JPEG bytes, Blob, or File.
+       * @returns {Promise<JPGImageInformation>} The information.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the modifier ended or the JPEG cannot be read.
+       */
       retrieveJPGImageInformationAsync: async function (image) {
         return this.retrieveJPGImageInformation(
           await normalizeBytesAsync(image, "JPEG bytes"),
         );
       },
+      /**
+       * Creates an image XObject from a registered JPEG.
+       * @param {string} name - Registered JPEG name.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {ModifierImageXObject} The image, placeable with `doXObject()`.
+       * @throws {TypeError} If the name is not a registered JPEG.
+       * @throws {RangeError} If `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the image cannot be created.
+       */
       createImageXObjectFromJPGBytes: function (name, objectId) {
         requireOpen();
-        var handle = withString(imagePath(name, "jpeg"), (pointer) =>
-          module._muhammara_wasm_modifier_create_jpg_image(
-            modifier,
-            pointer,
-            optionalObjectId(objectId),
-          ),
+        var handle = withString(
+          imagePath(name, RegisteredImageFormat.JPEG),
+          (pointer) =>
+            module._muhammara_wasm_modifier_create_jpg_image(
+              modifier,
+              pointer,
+              optionalObjectId(objectId),
+            ),
         );
         if (!handle) throw new Error("Unable to create JPEG image XObject");
-        return { id: module._muhammara_wasm_image_get_object_id(handle) };
+        var image = completedXObject(
+          module._muhammara_wasm_image_get_object_id(handle),
+        );
+        imageXObjects.add(image);
+        return image;
       },
+      /**
+       * Creates a completed form XObject that draws a registered JPEG.
+       * @param {string} name - Registered JPEG name.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {ModifierCompletedFormXObject} The form, placeable with `doXObject()`.
+       * @throws {TypeError} If the name is not a registered JPEG.
+       * @throws {RangeError} If `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObjectFromJPGBytes: function (name, objectId) {
         requireOpen();
-        var handle = withString(imagePath(name, "jpeg"), (pointer) =>
-          module._muhammara_wasm_modifier_create_image_form(
-            modifier,
-            pointer,
-            0,
-            optionalObjectId(objectId),
-          ),
+        var handle = withString(
+          imagePath(name, RegisteredImageFormat.JPEG),
+          (pointer) =>
+            module._muhammara_wasm_modifier_create_image_form(
+              modifier,
+              pointer,
+              0,
+              optionalObjectId(objectId),
+            ),
         );
         if (!handle) throw new Error("Unable to create image form XObject");
-        return {
-          id: module._muhammara_wasm_modifier_form_get_object_id(handle),
-        };
+        return completedXObject(
+          module._muhammara_wasm_modifier_form_get_object_id(handle),
+        );
       },
+      /**
+       * Creates a completed form XObject that draws a registered PNG.
+       * @param {string} name - Registered PNG name.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {ModifierCompletedFormXObject} The form, placeable with `doXObject()`.
+       * @throws {TypeError} If the name is not a registered PNG.
+       * @throws {RangeError} If `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObjectFromPNGBytes: function (name, objectId) {
         requireOpen();
-        var handle = withString(imagePath(name, "png"), (pointer) =>
-          module._muhammara_wasm_modifier_create_image_form(
-            modifier,
-            pointer,
-            1,
-            optionalObjectId(objectId),
-          ),
+        var handle = withString(
+          imagePath(name, RegisteredImageFormat.PNG),
+          (pointer) =>
+            module._muhammara_wasm_modifier_create_image_form(
+              modifier,
+              pointer,
+              1,
+              optionalObjectId(objectId),
+            ),
         );
         if (!handle) throw new Error("Unable to create image form XObject");
-        return {
-          id: module._muhammara_wasm_modifier_form_get_object_id(handle),
-        };
+        return completedXObject(
+          module._muhammara_wasm_modifier_form_get_object_id(handle),
+        );
       },
+      /**
+       * Creates one form XObject per source PDF page.
+       * @param {string|ByteSource} source - Registered PDF name, or PDF bytes.
+       * @param {PDFPageBoxType|PDFRectangle} [pageBox=ePDFPageBoxMediaBox] - Box used as
+       * the form bounds, or an explicit rectangle.
+       * @param {PDFFormOptions} [options={}] - Pages, transformation, and additional object IDs to copy.
+       * @returns {number[]} Object IDs of the forms.
+       * @throws {TypeError} If `options` is not an object, holds a password, or a rectangle
+       * or matrix is not finite.
+       * @throws {RangeError} If `pageBox`, the page range, or an object ID is invalid.
+       * @throws {Error} If the modifier ended, the PDF is not registered, or the forms cannot be created.
+       */
       createFormXObjectsFromPDF: function (
         source,
         pageBox = constants.ePDFPageBoxMediaBox,
@@ -1164,7 +1778,7 @@ export function createWriterToModifyFactory({
         requireOpen();
         var cropBox = Array.isArray(pageBox) ? pageBox : undefined;
         if (cropBox) pageBox = constants.ePDFPageBoxMediaBox;
-        if (!Number.isInteger(pageBox) || pageBox < 0 || pageBox > 4)
+        if (!isPageBoxType(pageBox))
           throw new RangeError("A valid page box is required");
         if (
           !options ||
@@ -1173,10 +1787,7 @@ export function createWriterToModifyFactory({
           "password" in options
         )
           throw new TypeError("PDF form options must be a browser-safe object");
-        var ranges =
-          options.type === constants.eRangeTypeSpecific
-            ? options.specificRanges
-            : [];
+        var ranges = selectedPageRanges(options, constants);
         var matrix = options.transformation;
         var additionalIds = options.additionalObjectIds ?? [];
         if (
@@ -1184,17 +1795,6 @@ export function createWriterToModifyFactory({
             (!Array.isArray(cropBox) ||
               cropBox.length !== 4 ||
               !cropBox.every(Number.isFinite))) ||
-          !Array.isArray(ranges) ||
-          !ranges.every(
-            (range) =>
-              Array.isArray(range) &&
-              range.length === 2 &&
-              range.every(
-                (value) =>
-                  Number.isInteger(value) && value >= 0 && value <= 0xffffffff,
-              ) &&
-              range[1] >= range[0],
-          ) ||
           (matrix !== undefined &&
             (!Array.isArray(matrix) ||
               matrix.length !== 6 ||
@@ -1262,6 +1862,17 @@ export function createWriterToModifyFactory({
           ),
         );
       },
+      /**
+       * Creates forms from PDF pages after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} source - PDF bytes, Blob, or File.
+       * @param {PDFPageBoxType|PDFRectangle} [pageBox] - Form bounds.
+       * @param {PDFFormOptions} [options] - Pages, transformation, and object IDs.
+       * @returns {Promise<number[]>} Object IDs of the forms.
+       * @throws {TypeError} If the source or an option is invalid.
+       * @throws {RangeError} If `pageBox`, the page range, or an object ID is invalid.
+       * @throws {Error} If the modifier ended or the forms cannot be created.
+       */
       createFormXObjectsFromPDFAsync: async function (
         source,
         pageBox,
@@ -1273,10 +1884,27 @@ export function createWriterToModifyFactory({
           options,
         );
       },
+      /**
+       * Creates a form XObject from a TIFF page.
+       * @param {string|ByteSource} image - Registered TIFF name, or TIFF bytes.
+       * @param {TIFFOptions} [options={}] - Page index, reserved object ID, and
+       * black-and-white or grayscale treatment.
+       * @returns {ModifierCompletedFormXObject} The completed form.
+       * @throws {TypeError} If an option or treatment color is invalid, the name is not a
+       * registered TIFF, or the bytes are unsupported.
+       * @throws {RangeError} If `pageIndex` or `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObjectFromTIFF: function (image, options = {}) {
         requireOpen();
         if (!options || typeof options !== "object" || Array.isArray(options))
           throw new TypeError("TIFF options must be an object");
+        /**
+         * Reads an optional TIFF treatment object.
+         * @param {string} name - `bwTreatment` or `grayscaleTreatment`.
+         * @returns {object|undefined} The treatment.
+         * @throws {TypeError} If the treatment is not an object.
+         */
         function treatment(name) {
           var value = options[name];
           if (value === undefined) return undefined;
@@ -1284,6 +1912,13 @@ export function createWriterToModifyFactory({
             throw new TypeError(`TIFF ${name} must be an object`);
           return value;
         }
+        /**
+         * Validates an optional TIFF treatment color.
+         * @param {string} name - Option name for error messages.
+         * @param {number[]} [value] - RGB or CMYK components from 0 to 255.
+         * @returns {{components: number, values: number[]}} Component count (0 when omitted) and four values.
+         * @throws {TypeError} If `value` is not three or four integers from 0 to 255.
+         */
         function color(name, value) {
           if (value === undefined)
             return { components: 0, values: [0, 0, 0, 0] };
@@ -1320,45 +1955,90 @@ export function createWriterToModifyFactory({
         if (!Number.isInteger(pageIndex) || pageIndex < 0)
           throw new RangeError("TIFF pageIndex must be a non-negative integer");
         var objectId = optionalObjectId(options.objectId);
-        var handle = withImagePathOrBytes(image, "TIFF bytes", "tiff", (path) =>
-          withString(path, (pointer) =>
-            module._muhammara_wasm_modifier_create_tiff_form(
-              modifier,
-              pointer,
-              pageIndex,
-              objectId,
-              bwTreatment ? 1 : 0,
-              bwTreatment?.asImageMask === true ? 1 : 0,
-              bwColor.components,
-              ...bwColor.values,
-              grayscaleTreatment ? 1 : 0,
-              grayscaleTreatment?.asColorMap === true ? 1 : 0,
-              grayscaleOneColor.components,
-              ...grayscaleOneColor.values,
-              grayscaleZeroColor.components,
-              ...grayscaleZeroColor.values,
+        var handle = withImagePathOrBytes(
+          image,
+          "TIFF bytes",
+          RegisteredImageFormat.TIFF,
+          (path) =>
+            withString(path, (pointer) =>
+              module._muhammara_wasm_modifier_create_tiff_form(
+                modifier,
+                pointer,
+                pageIndex,
+                objectId,
+                bwTreatment ? 1 : 0,
+                bwTreatment?.asImageMask === true ? 1 : 0,
+                bwColor.components,
+                ...bwColor.values,
+                grayscaleTreatment ? 1 : 0,
+                grayscaleTreatment?.asColorMap === true ? 1 : 0,
+                grayscaleOneColor.components,
+                ...grayscaleOneColor.values,
+                grayscaleZeroColor.components,
+                ...grayscaleZeroColor.values,
+              ),
             ),
-          ),
         );
         if (!handle) throw new Error("Unable to create TIFF form XObject");
-        return {
-          id:
-            objectId ||
+        return completedXObject(
+          objectId ||
             module._muhammara_wasm_modifier_form_get_object_id(handle),
-        };
+        );
       },
+      /**
+       * Creates a form XObject from TIFF bytes; alias of `createFormXObjectFromTIFF()`.
+       * @param {string|ByteSource} image - Registered TIFF name, or TIFF bytes.
+       * @param {TIFFOptions} [options] - Page index, reserved object ID, and
+       * black-and-white or grayscale treatment.
+       * @returns {ModifierCompletedFormXObject} The completed form.
+       * @throws {TypeError} If an option or treatment color is invalid, the name is not a
+       * registered TIFF, or the bytes are unsupported.
+       * @throws {RangeError} If `pageIndex` or `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObjectFromTIFFBytes: function (image, options) {
         return this.createFormXObjectFromTIFF(image, options);
       },
+      /**
+       * Creates a TIFF form XObject after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} image - TIFF bytes, Blob, or File.
+       * @param {TIFFOptions} [options] - Page index, object ID, and treatments.
+       * @returns {Promise<FormXObject>} The completed form.
+       * @throws {TypeError} If an option or the bytes are invalid.
+       * @throws {RangeError} If `pageIndex` or `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObjectFromTIFFAsync: async function (image, options) {
         return this.createFormXObjectFromTIFF(
           await normalizeBytesAsync(image, "TIFF bytes"),
           options,
         );
       },
+      /**
+       * Alias of `createFormXObjectFromTIFFAsync()`.
+       * @async
+       * @param {AsyncByteSource} image - TIFF bytes, Blob, or File.
+       * @param {TIFFOptions} [options] - Page index, object ID, and treatments.
+       * @returns {Promise<FormXObject>} The completed form.
+       * @throws {TypeError} If an option or the bytes are invalid.
+       * @throws {RangeError} If `pageIndex` or `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObjectFromTIFFBytesAsync: async function (image, options) {
         return this.createFormXObjectFromTIFFAsync(image, options);
       },
+      /**
+       * Starts a form XObject; draw through `getContentContext()`, then call `end()`.
+       * @param {number} left - Bounding box left.
+       * @param {number} bottom - Bounding box bottom.
+       * @param {number} right - Bounding box right, greater than `left`.
+       * @param {number} top - Bounding box top, greater than `bottom`.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {ModifierFormXObject} The open form.
+       * @throws {RangeError} If the rectangle is invalid or `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the form cannot be created.
+       */
       createFormXObject: function (left, bottom, right, top, objectId) {
         requireOpen();
         if (
@@ -1386,6 +2066,11 @@ export function createWriterToModifyFactory({
           id:
             objectId ||
             module._muhammara_wasm_modifier_form_get_object_id(handle),
+          /**
+           * Returns the form resources dictionary.
+           * @returns {ResourcesDictionary} The resources dictionary.
+           * @throws {Error} If the modifier or the form has ended.
+           */
           getResourcesDictionary: function () {
             requireOpen();
             if (form._ended)
@@ -1402,9 +2087,19 @@ export function createWriterToModifyFactory({
                 throw new Error("Form XObject resources are no longer active");
             });
           },
+          /**
+           * Returns the form resources dictionary; misspelled native alias.
+           * @returns {ResourcesDictionary} The resources dictionary.
+           * @throws {Error} If the modifier or the form has ended.
+           */
           getResourcesDictinary: function () {
             return form.getResourcesDictionary();
           },
+          /**
+           * Returns the form content stream.
+           * @returns {PDFStream} The stream; `getWriteStream()` exposes a byte writer.
+           * @throws {Error} If the modifier or the form has ended.
+           */
           getContentStream: function () {
             requireOpen();
             if (form._ended)
@@ -1412,8 +2107,19 @@ export function createWriterToModifyFactory({
                 "Form XObject content stream is no longer active",
               );
             return {
+              /**
+               * Returns a writer that appends raw bytes to the form content stream.
+               * @returns {ByteWriteStream} The byte writer.
+               */
               getWriteStream: function () {
                 return {
+                  /**
+                   * Appends raw bytes to the form content stream.
+                   * @param {ByteSource} bytes - Bytes to append.
+                   * @returns {number} The number of bytes written.
+                   * @throws {TypeError} If `bytes` is not a supported byte source.
+                   * @throws {Error} If the modifier or the form has ended.
+                   */
                   write: function (bytes) {
                     requireOpen();
                     if (form._ended)
@@ -1436,11 +2142,35 @@ export function createWriterToModifyFactory({
               },
             };
           },
+          /**
+           * Returns a content context that writes to this form.
+           * @returns {ContentContext} The form content context.
+           * @throws {Error} If the modifier or the form has ended.
+           */
           getContentContext: function () {
             requireOpen();
             if (form._ended)
               throw new Error("Form XObject content is not writable");
+            /**
+             * Rejects use of the form content after the modifier or form ended.
+             * @returns {void}
+             * @throws {Error} If the modifier or the form has ended.
+             */
+            function requireFormContent() {
+              requireOpen();
+              if (form._ended)
+                throw new Error("Form XObject content has ended");
+            }
+            /**
+             * Applies one numeric content operator to this form.
+             * @param {number} code - Native operator code.
+             * @param {...number} args - Operands; a missing operand is `undefined` and rejected.
+             * @returns {ContentContext} The content context.
+             * @throws {TypeError} If an operand is not finite.
+             * @throws {Error} If the modifier or form ended or the operator fails.
+             */
             function operator(code, ...args) {
+              requireFormContent();
               if (!args.every(Number.isFinite))
                 throw new TypeError("Form operator requires finite arguments");
               if (
@@ -1455,25 +2185,48 @@ export function createWriterToModifyFactory({
               return context;
             }
             var context = {
-              writeFreeCode: function (code) {
-                if (typeof code !== "string")
+              /**
+               * Appends raw content-stream code.
+               * @param {string} freeCode - Operators to write verbatim.
+               * @returns {this} The content context, for chaining.
+               * @throws {TypeError} If `freeCode` is not a string.
+               * @throws {Error} If the content context is no longer active or the operator fails.
+               */
+              writeFreeCode: function (freeCode) {
+                requireFormContent();
+                if (typeof freeCode !== "string")
                   throw new TypeError("writeFreeCode requires a string");
-                return withString(code, (pointer) => {
+                return withString(freeCode, (pointer, length) => {
                   if (
                     !module._muhammara_wasm_modifier_form_write_free_code(
                       modifier,
                       handle,
                       pointer,
-                      new TextEncoder().encode(code).length,
+                      length,
                     )
                   )
                     throw new Error("Unable to write free code");
                   return context;
                 });
               },
+              /**
+               * Selects the font and size for text (`Tf`).
+               * @param {PDFUsedFont|string} font - Font from this writer, or a font resource name.
+               * @param {number} size - Positive font size.
+               * @returns {this} The content context, for chaining.
+               * @throws {TypeError} If `font` is neither a font from this writer nor a string.
+               * @throws {RangeError} If `size` is not a positive finite number.
+               * @throws {Error} If the content context is no longer active or the operator fails.
+               */
               Tf: function (font, size) {
+                requireFormContent();
+                if (!(
+                  (font && font._owner === owner) ||
+                  typeof font === "string"
+                ))
+                  throw new TypeError("Tf requires a font from this writer");
                 if (!Number.isFinite(size) || size <= 0)
-                  throw new TypeError("Tf requires a positive size");
+                  throw new RangeError("Tf requires a positive font size");
                 var applied =
                   typeof font === "string"
                     ? withString(font, (pointer) =>
@@ -1495,22 +2248,19 @@ export function createWriterToModifyFactory({
                 if (!applied) throw new Error("Unable to set form font");
                 return context;
               },
-              Tj: function (text) {
-                if (typeof text !== "string")
-                  throw new TypeError("Tj requires a string");
-                return withString(text, (pointer) => {
-                  if (
-                    !module._muhammara_wasm_modifier_form_show_text(
-                      modifier,
-                      handle,
-                      pointer,
-                    )
-                  )
-                    throw new Error("Unable to show form text");
-                  return context;
-                });
-              },
+              /**
+               * Writes one line of text with a writer font.
+               * @param {string} text - Text to write.
+               * @param {number} x - Baseline start x.
+               * @param {number} y - Baseline y.
+               * @param {WriteTextOptions} [options={}] - Font, size, color, opacity, and underline.
+               * @returns {this} The content context, for chaining.
+               * @throws {TypeError} If `text`, a coordinate, or the font is invalid, or a color option is invalid.
+               * @throws {RangeError} If `size` is not positive.
+               * @throws {Error} If the content context is no longer active or the operator fails.
+               */
               writeText: function (text, x, y, options = {}) {
+                requireFormContent();
                 options = readTextOptions(options, colorValue);
                 if (
                   typeof text !== "string" ||
@@ -1526,43 +2276,15 @@ export function createWriterToModifyFactory({
                   throw new RangeError(
                     "writeText requires a positive font size",
                   );
-                var dimensions = options.underline
-                  ? options.font.calculateTextDimensions(text, size)
-                  : null;
-                if (dimensions)
-                  validateDrawingGeometry([
-                    x + dimensions.width,
-                    y + dimensions.yMin,
-                  ]);
-                var color = colorValue(options.color ?? 0) >>> 0;
+                var underline = prepareUnderline(options, text, x, y, size);
                 context.BT();
-                if (options.color !== undefined) {
-                  if ((options.colorspace || "rgb") === "cmyk")
-                    context.k(
-                      ((color >> 24) & 0xff) / 255,
-                      ((color >> 16) & 0xff) / 255,
-                      ((color >> 8) & 0xff) / 255,
-                      (color & 0xff) / 255,
-                    );
-                  else
-                    context.rg(
-                      ((color >> 16) & 0xff) / 255,
-                      ((color >> 8) & 0xff) / 255,
-                      (color & 0xff) / 255,
-                    );
-                }
+                applyDrawingColor(context, options, false);
                 context
                   .Tf(options.font, size)
                   .Tm(1, 0, 0, 1, x, y)
                   .Tj(text)
                   .ET();
-                if (dimensions) {
-                  context
-                    .w(Math.max(size * 0.05, 0.1))
-                    .m(x, y + dimensions.yMin)
-                    .l(x + dimensions.width, y + dimensions.yMin)
-                    .S();
-                }
+                strokeUnderline(context, options, underline, x);
                 return context;
               },
             };
@@ -1577,57 +2299,110 @@ export function createWriterToModifyFactory({
               ["F", 7],
               ["fStar", 8],
               ["n", 9],
-              ["c", 12],
-              ["v", 13],
-              ["y", 14],
+              ["c", 12, 6],
+              ["v", 13, 4],
+              ["y", 14, 4],
               ["h", 15],
               ["BT", 32],
               ["ET", 33],
-              ["Td", 41],
-              ["TD", 42],
+              ["Td", 41, 2],
+              ["TD", 42, 2],
               ["TStar", 43],
               ["S", 5],
               ["f", 6],
-              ["m", 10],
-              ["l", 11],
-              ["re", 16],
-              ["rg", 26],
-              ["RG", 27],
-              ["g", 24],
-              ["G", 25],
-              ["k", 28],
-              ["K", 29],
-              ["w", 20],
-              ["J", 21],
-              ["j", 22],
-              ["M", 23],
+              ["m", 10, 2],
+              ["l", 11, 2],
+              ["re", 16, 4],
+              ["rg", 26, 3],
+              ["RG", 27, 3],
+              ["g", 24, 1],
+              ["G", 25, 1],
+              ["k", 28, 4],
+              ["K", 29, 4],
+              ["w", 20, 1],
+              ["M", 23, 1],
               ["W", 30],
               ["WStar", 31],
-              ["cm", 19],
-              ["Tm", 34],
-              ["Tc", 35],
-              ["Tw", 36],
-              ["TL", 38],
-              ["Ts", 40],
-            ].forEach(([name, code]) => {
+              ["cm", 19, 6],
+              ["Tm", 34, 6],
+              ["Tc", 35, 1],
+              ["Tw", 36, 1],
+              ["TL", 38, 1],
+              ["Ts", 40, 1],
+            ].forEach(([name, code, arity = 0]) => {
+              /**
+               * Applies a table-driven content operator, such as `m` or `re`.
+               * @param {...number} args - Operands; missing ones are padded as `undefined` and rejected.
+               * @returns {ContentContext} The content context.
+               * @throws {TypeError} If an operand is missing or not finite.
+               * @throws {Error} If the modifier or the form has ended.
+               */
               context[name] = function (...args) {
+                // Missing operands become undefined and fail the finite check.
+                args.length = Math.max(args.length, arity);
                 return operator(code, ...args);
               };
             });
-            context.Tz = function (value) {
-              if (!Number.isInteger(value))
+            /**
+             * Sets the line cap style (`J`).
+             * @param {LineCapStyle} value - 0 butt, 1 round, or 2 projecting square.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If `value` is missing or not an integer.
+             * @throws {RangeError} If `value` is not 0, 1, or 2.
+             * @throws {Error} If the content context is no longer active or the operator fails.
+             */
+            context.J = function (value) {
+              checkOperatorRange("J", value, 2, "line cap");
+              return operator(21, value);
+            };
+            /**
+             * Sets the line join style (`j`).
+             * @param {LineJoinStyle} value - 0 miter, 1 round, or 2 bevel.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If `value` is missing or not an integer.
+             * @throws {RangeError} If `value` is not 0, 1, or 2.
+             * @throws {Error} If the content context is no longer active or the operator fails.
+             */
+            context.j = function (value) {
+              checkOperatorRange("j", value, 2, "line join");
+              return operator(22, value);
+            };
+            /**
+             * Sets the horizontal text scaling (`Tz`).
+             * @param {number} horizontalScaling - Integer percentage; 100 is normal width.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If an operand is missing or not finite.
+             * @throws {TypeError} If `horizontalScaling` is not an integer.
+             * @throws {Error} If the content context is no longer active or the operator fails.
+             */
+            context.Tz = function (horizontalScaling) {
+              if (!Number.isInteger(horizontalScaling))
                 throw new TypeError("Tz requires integer numeric arguments");
-              return operator(37, value);
+              return operator(37, horizontalScaling);
             };
-            context.Tr = function (value) {
-              if (!Number.isInteger(value))
-                throw new TypeError("Tr requires integer numeric arguments");
-              return operator(39, value);
+            /**
+             * Sets the text rendering mode (`Tr`).
+             * @param {TextRenderingMode} renderingMode - Mode from 0 (fill) to 7 (add to clip).
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If `renderingMode` is missing or not an integer.
+             * @throws {RangeError} If `renderingMode` is outside 0 to 7.
+             * @throws {Error} If the content context is no longer active or the operator fails.
+             */
+            context.Tr = function (renderingMode) {
+              checkOperatorRange("Tr", renderingMode, 7, "text rendering mode");
+              return operator(39, renderingMode);
             };
+            /**
+             * Sets the dash pattern (`d`).
+             * @param {number[]} dash - Alternating dash and gap lengths; empty for a solid line.
+             * @param {number} [phase=0] - Offset into the pattern.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If `dash` is not an array of finite numbers or `phase` is not finite.
+             * @throws {Error} If the content context is no longer active or the operator fails.
+             */
             context.d = function (dash, phase = 0) {
-              requireOpen();
+              requireFormContent();
               if (
-                form._ended ||
                 !Array.isArray(dash) ||
                 !dash.every(Number.isFinite) ||
                 !Number.isFinite(phase)
@@ -1647,8 +2422,15 @@ export function createWriterToModifyFactory({
                 return context;
               });
             };
+            /**
+             * Sets fill and stroke opacity through an ExtGState resource.
+             * @param {number} opacity - Opacity from 0 to 1.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If `opacity` is not a finite number from 0 to 1.
+             * @throws {Error} If the content context is no longer active or the operator fails.
+             */
             context.setOpacity = function (opacity) {
-              requireOpen();
+              requireFormContent();
               if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1)
                 throw new TypeError(
                   "Wrong Argument, please provide 1 opacity value between 0 and 1",
@@ -1663,6 +2445,14 @@ export function createWriterToModifyFactory({
                 throw new Error("Unable to set opacity");
               return context;
             };
+            /**
+             * Shows text (`Tj`).
+             * @param {string|Glyph} text - Text, or glyph entries to show without encoding.
+             * @param {TextOptions} [options] - Text encoding; only for string text.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If `options` is not an options object, has an unknown encoding, or is given with glyphs.
+             * @throws {Error} If the content context is no longer active or the operator fails.
+             */
             context.Tj = function (text, options) {
               requireOpen();
               if (form._ended)
@@ -1710,18 +2500,33 @@ export function createWriterToModifyFactory({
                   throw new Error("Form XObject content has ended");
               },
               {
+                /**
+                 * Runs a native string text-showing operator.
+                 * @param {...number} args - Operator kind, encoding, spacing, and text pointer and length.
+                 * @returns {boolean} Whether the operator was written.
+                 */
                 text: (...args) =>
                   module._muhammara_wasm_modifier_form_show_text_operator(
                     modifier,
                     handle,
                     ...args,
                   ),
+                /**
+                 * Runs a native glyph text-showing operator.
+                 * @param {...number} args - Operator kind, spacing, and glyph pointer and count.
+                 * @returns {boolean} Whether the operator was written.
+                 */
                 glyphs: (...args) =>
                   module._muhammara_wasm_modifier_form_show_glyphs_operator(
                     modifier,
                     handle,
                     ...args,
                   ),
+                /**
+                 * Runs the native `TJ` operator.
+                 * @param {...number} args - Encoding and the encoded item pointers.
+                 * @returns {boolean} Whether the operator was written.
+                 */
                 tj: (...args) =>
                   module._muhammara_wasm_modifier_form_show_tj(
                     modifier,
@@ -1744,6 +2549,14 @@ export function createWriterToModifyFactory({
                   ...args,
                 ),
             );
+            /**
+             * Paints an XObject (`Do`).
+             * @param {string|number|FormXObject|ImageXObject} xobject - Resource name, form object ID,
+             * or a completed XObject from this writer.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If `xobject` is an unfinished form or belongs to another writer.
+             * @throws {Error} If the content context is no longer active or the XObject cannot be placed.
+             */
             context.doXObject = function (xobject) {
               requireOpen();
               if (form._ended)
@@ -1790,6 +2603,17 @@ export function createWriterToModifyFactory({
                 throw new Error("Unable to place XObject");
               return context;
             };
+            /**
+             * Draws an image or PDF page at a position.
+             * @param {number} x - Left position.
+             * @param {number} y - Bottom position.
+             * @param {string|ByteSource} image - Registered image or PDF name, or JPEG, PNG, TIFF, or PDF bytes.
+             * @param {DrawImageOptions} [options] - Page index and a matrix or fit transformation.
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If a coordinate or option is invalid or the bytes are not a supported image.
+             * @throws {RangeError} If `index` or the fit box is out of range.
+             * @throws {Error} If the asset is unknown, the context is inactive, or drawing fails.
+             */
             context.drawImage = function (x, y, image, options) {
               requireOpen();
               if (form._ended)
@@ -1818,6 +2642,17 @@ export function createWriterToModifyFactory({
               );
               return context;
             };
+            /**
+             * Draws an image after reading an asynchronous byte source.
+             * @async
+             * @param {number} x - Left position.
+             * @param {number} y - Bottom position.
+             * @param {string|AsyncByteSource} image - Registered name, bytes, Blob, or File.
+             * @param {DrawImageOptions} [options] - Page index and transformation.
+             * @returns {Promise<this>} Resolves to the content context.
+             * @throws {TypeError} If a coordinate, option, or byte source is invalid.
+             * @throws {Error} If the asset is unknown, the context is inactive, or drawing fails.
+             */
             context.drawImageAsync = async function (x, y, image, options) {
               return context.drawImage(
                 x,
@@ -1826,161 +2661,14 @@ export function createWriterToModifyFactory({
                 options,
               );
             };
-            function finishPath(options) {
-              var stroke = options.stroke;
-              if (options.color !== undefined) {
-                var color = colorValue(options.color) >>> 0;
-                var colorspace = options.colorspace || "rgb";
-                if (colorspace === "rgb")
-                  stroke
-                    ? context.RG(
-                        ((color >> 16) & 0xff) / 255,
-                        ((color >> 8) & 0xff) / 255,
-                        (color & 0xff) / 255,
-                      )
-                    : context.rg(
-                        ((color >> 16) & 0xff) / 255,
-                        ((color >> 8) & 0xff) / 255,
-                        (color & 0xff) / 255,
-                      );
-                else if (colorspace === "gray")
-                  stroke
-                    ? context.G((color & 0xff) / 255)
-                    : context.g((color & 0xff) / 255);
-                else if (colorspace === "cmyk") {
-                  var components = [
-                    ((color >> 24) & 0xff) / 255,
-                    ((color >> 16) & 0xff) / 255,
-                    ((color >> 8) & 0xff) / 255,
-                    (color & 0xff) / 255,
-                  ];
-                  stroke ? context.K(...components) : context.k(...components);
-                } else
-                  throw new TypeError("colorspace must be rgb, gray, or cmyk");
-              }
-              if (stroke && options.width !== undefined)
-                context.w(options.width);
-              return finishDrawingPath(context, options);
-            }
-            context.drawRectangle = function (x, y, width, height, options) {
-              if (![x, y, width, height].every(Number.isFinite))
-                throw new TypeError(
-                  "drawRectangle requires four finite coordinates",
-                );
-              options = readDrawingOptions(
-                options,
-                colorValue,
-                "Form operator requires finite arguments",
-              );
-              context.re(x, y, width, height);
-              return finishPath(options);
-            };
-            context.drawSquare = function (x, y, edge, options) {
-              if (![x, y, edge].every(Number.isFinite))
-                throw new TypeError(
-                  "drawSquare requires three finite coordinates",
-                );
-              return context.drawRectangle(x, y, edge, edge, options);
-            };
-            context.drawCircle = function (x, y, radius, options) {
-              if (![x, y, radius].every(Number.isFinite))
-                throw new TypeError(
-                  "drawCircle requires three finite coordinates",
-                );
-              options = readDrawingOptions(
-                options,
-                colorValue,
-                "Form operator requires finite arguments",
-              );
-              var control = radius * 0.5522847498307936;
-              validateDrawingGeometry([
-                x + radius,
-                x - radius,
-                y + radius,
-                y - radius,
-              ]);
-              context
-                .m(x + radius, y)
-                .c(
-                  x + radius,
-                  y + control,
-                  x + control,
-                  y + radius,
-                  x,
-                  y + radius,
-                )
-                .c(
-                  x - control,
-                  y + radius,
-                  x - radius,
-                  y + control,
-                  x - radius,
-                  y,
-                )
-                .c(
-                  x - radius,
-                  y - control,
-                  x - control,
-                  y - radius,
-                  x,
-                  y - radius,
-                )
-                .c(
-                  x + control,
-                  y - radius,
-                  x + radius,
-                  y - control,
-                  x + radius,
-                  y,
-                );
-              return finishPath(options);
-            };
-            context.drawPath = function (...args) {
-              if (
-                Array.isArray(args[0])
-                  ? args.length > 2
-                  : args.length < 5 || args.length % 2 !== 1
-              )
-                throw new TypeError(
-                  "drawPath requires complete coordinate pairs and an options object",
-                );
-              var points = Array.isArray(args[0])
-                ? args[0]
-                : Array.from({ length: (args.length - 1) / 2 }, (_, index) => [
-                    args[index * 2],
-                    args[index * 2 + 1],
-                  ]);
-              var options = Array.isArray(args[0])
-                ? (args[1] ?? {})
-                : args.at(-1);
-              points = snapshotDrawingPoints(points);
-              if (
-                !Array.isArray(points) ||
-                points.length < 2 ||
-                !points.every(
-                  (point) =>
-                    Array.isArray(point) &&
-                    point.length === 2 &&
-                    point.every(Number.isFinite),
-                ) ||
-                !options ||
-                typeof options !== "object" ||
-                Array.isArray(options)
-              )
-                throw new TypeError(
-                  "drawPath requires at least two coordinate pairs of finite numbers",
-                );
-              options = readDrawingOptions(
-                options,
-                colorValue,
-                "Form operator requires finite arguments",
-              );
-              context.m(...points[0]);
-              points.slice(1).forEach((point) => context.l(...point));
-              return finishPath(options);
-            };
+            installDrawingHelpers(context, colorValue);
             return context;
           },
+          /**
+           * Finishes the form so it can be placed with `doXObject()`.
+           * @returns {this} The form.
+           * @throws {Error} If the modifier ended, the form already ended, or it cannot be finished.
+           */
           end: function () {
             requireOpen();
             if (
@@ -1995,6 +2683,13 @@ export function createWriterToModifyFactory({
         };
         return form;
       },
+      /**
+       * Finishes a form XObject created by this modifier.
+       * @param {ModifierFormXObject} form - Open form.
+       * @returns {this} The modifier.
+       * @throws {TypeError} If `form` is not an open form from this modifier.
+       * @throws {Error} If the modifier ended or the form cannot be finished.
+       */
       endFormXObject: function (form) {
         requireOpen();
         if (
@@ -2009,6 +2704,16 @@ export function createWriterToModifyFactory({
         form.end();
         return this;
       },
+      /**
+       * Appends a new page with a media box; A4 by default.
+       * @param {number} [left=0] - Media box left.
+       * @param {number} [bottom=0] - Media box bottom.
+       * @param {number} [right=595] - Media box right.
+       * @param {number} [top=842] - Media box top.
+       * @returns {PDFPage} The page; start it with `startPageContentContext()`.
+       * @throws {RangeError} If the media box is not finite or empty.
+       * @throws {Error} If the modifier ended, a page is active, or the page cannot be created.
+       */
       createPage: function (left, bottom, right, top) {
         requireOpen();
         if (page || context) throw new Error("Finish the active page first");
@@ -2022,6 +2727,11 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to create page");
         }
         page = nextPage;
+        /**
+         * Returns the resources dictionary of the active new page.
+         * @returns {ResourcesDictionary} The resources dictionary.
+         * @throws {Error} If the modifier ended, the page is not active, or the resources cannot be read.
+         */
         page._getNativeResources = function () {
           requireOpen();
           if (page !== nextPage) {
@@ -2039,6 +2749,17 @@ export function createWriterToModifyFactory({
         };
         return page;
       },
+      /**
+       * Loads a registered font for text on this modifier.
+       * @param {string} name - Registered font name.
+       * @param {string|number} [metricsNameOrIndex] - Registered Type 1 metrics font name, or the font index.
+       * @param {number} [fontIndex=0] - Face index in a font collection, after a metrics name.
+       * @returns {PDFUsedFont} The font.
+       * @throws {TypeError} If `name` is not a string, or the arguments are misordered.
+       * @throws {RangeError} If the font index is not a 32-bit unsigned integer.
+       * @throws {Error} If a font is not registered or cannot be loaded.
+       * @throws {Error} If the modifier has ended.
+       */
       getFontForBytes: function (name, metricsNameOrIndex, fontIndex) {
         requireOpen();
         if (typeof name !== "string") {
@@ -2106,37 +2827,75 @@ export function createWriterToModifyFactory({
           _modifier: modifier,
           _owner: owner,
           _font: font,
+          /**
+           * Measures text or glyphs set in this font.
+           * @param {string|number[]} text - Text, or glyph IDs.
+           * @param {number} [size=1] - Positive font size.
+           * @returns {TextDimensions} Bounding box and advance in user space units.
+           * @throws {TypeError} If `text` is invalid, or `size` is not positive.
+           * @throws {Error} If the font cannot measure the text.
+           * @throws {Error} If the modifier has ended.
+           */
           calculateTextDimensions: function (text, size = 1) {
-            if (typeof text !== "string" || !Number.isFinite(size) || size <= 0)
-              throw new TypeError("Text and a positive font size are required");
-            var values = module._malloc(48);
-            try {
-              return withString(text, (pointer) => {
-                if (
-                  !module._muhammara_wasm_modifier_font_text_dimensions(
-                    modifier,
-                    font,
-                    pointer,
-                    size,
-                    values,
-                  )
-                )
-                  throw new Error("Unable to measure text");
-                var offset = values >>> 3;
-                return {
-                  xMin: module.HEAPF64[offset],
-                  yMin: module.HEAPF64[offset + 1],
-                  xMax: module.HEAPF64[offset + 2],
-                  yMax: module.HEAPF64[offset + 3],
-                  width: module.HEAPF64[offset + 4],
-                  height: module.HEAPF64[offset + 5],
-                };
-              });
-            } finally {
-              module._free(values);
-            }
+            requireOpen();
+            return measureFontText(
+              module,
+              withString,
+              text,
+              size,
+              (textPointer, resultPointer) =>
+                module._muhammara_wasm_modifier_font_text_dimensions(
+                  modifier,
+                  font,
+                  textPointer,
+                  size,
+                  resultPointer,
+                ),
+              (glyphPointer, count, resultPointer) =>
+                module._muhammara_wasm_modifier_font_glyph_dimensions(
+                  modifier,
+                  font,
+                  glyphPointer,
+                  count,
+                  size,
+                  resultPointer,
+                ),
+            );
           },
+          /**
+           * Reads underline thickness, position, and text advance for writeText.
+           * @param {string} text - Text to underline.
+           * @param {number} size - Font size.
+           * @returns {object} `thickness`, `position`, and `advance` in points.
+           * @throws {Error} If the font cannot provide underline metrics.
+           */
+          _underline: function (text, size) {
+            requireOpen();
+            return readFontUnderline(
+              module,
+              withString,
+              text,
+              size,
+              (textPointer, resultPointer) =>
+                module._muhammara_wasm_modifier_font_underline(
+                  modifier,
+                  font,
+                  textPointer,
+                  size,
+                  resultPointer,
+                ),
+            );
+          },
+          /**
+           * Reads vertical metrics scaled to a font size.
+           * @param {number} [size=1] - Positive font size.
+           * @returns {FontMetrics} Pixels per em, ascender, descender, height, and maximum advance.
+           * @throws {TypeError} If `size` is not positive.
+           * @throws {Error} If the metrics cannot be read.
+           * @throws {Error} If the modifier has ended.
+           */
           getFontMetrics: function (size = 1) {
+            requireOpen();
             if (!Number.isFinite(size) || size <= 0)
               throw new TypeError("A positive font size is required");
             var values = module._malloc(64);
@@ -2169,13 +2928,24 @@ export function createWriterToModifyFactory({
           },
         };
       },
+      /**
+       * Forces the catalog to be rewritten when the PDF ends.
+       * @returns {void}
+       * @throws {Error} If the modifier has ended or the update cannot be requested.
+       */
       requireCatalogUpdate: function () {
         requireOpen();
         if (!module._muhammara_wasm_modifier_require_catalog_update(modifier)) {
           throw new Error("Unable to require catalog update");
         }
       },
-      /** Attaches a newly written PageLabels object to the catalog. @private */
+      /**
+       * Points the catalog `/PageLabels` at an object written by Recipe.
+       * @param {number} objectId - Page labels dictionary object ID.
+       * @returns {void}
+       * @throws {RangeError} If `objectId` is not positive or cannot be set.
+       * @throws {Error} If the modifier has ended.
+       */
       _setPageLabelsObject: function (objectId) {
         requireOpen();
         if (
@@ -2186,6 +2956,16 @@ export function createWriterToModifyFactory({
           throw new RangeError("PageLabels object ID must be positive");
         }
       },
+      /**
+       * Replaces direct references to an object in an original page dictionary.
+       * @param {number} pageIndex - Zero-based page index; ignored for a global scope.
+       * @param {number} sourceObjectId - Object ID to replace.
+       * @param {number} replacementObjectId - Object ID to reference instead.
+       * @param {ObjectReplacementOptions} [options] - `scope: ObjectReplacementScope.GLOBAL` replaces on every page.
+       * @returns {this} The modifier.
+       * @throws {RangeError} If an index or ID is invalid or does not belong to the modified PDF.
+       * @throws {Error} If the modifier has ended.
+       */
       replaceObject: function (
         pageIndex,
         sourceObjectId,
@@ -2205,7 +2985,7 @@ export function createWriterToModifyFactory({
             "Page index and object IDs must be unsigned 32-bit integers; object IDs must be positive",
           );
         }
-        if (options && options.scope === "global") {
+        if (options && options.scope === ObjectReplacementScope.GLOBAL) {
           var parser = this.getModifiedFileParser();
           var pageCount = parser.getPagesCount();
 
@@ -2229,6 +3009,11 @@ export function createWriterToModifyFactory({
         }
         return this;
       },
+      /**
+       * Returns the raw objects context for writing indirect objects.
+       * @returns {ObjectsContext} The objects context, created once per modifier.
+       * @throws {Error} If the modifier has ended or the context cannot be created.
+       */
       getObjectsContext: function () {
         requireOpen();
         if (!objectsContext) {
@@ -2239,6 +3024,11 @@ export function createWriterToModifyFactory({
         }
         return objectsContext;
       },
+      /**
+       * Returns a reader over the PDF being modified.
+       * @returns {PDFReader} The reader; it ends with the modifier.
+       * @throws {Error} If the modifier ended or the parser cannot be created.
+       */
       getModifiedFileParser: function () {
         requireOpen();
         var parser =
@@ -2248,23 +3038,55 @@ export function createWriterToModifyFactory({
         modifiedReaders.push(reader);
         return reader;
       },
+      /**
+       * Returns the document context.
+       * @returns {DocumentContext} Access to the Info dictionary.
+       * @throws {Error} If the modifier has ended.
+       */
       getDocumentContext: function () {
         requireOpen();
         return {
+          /**
+           * Returns the document Info dictionary.
+           * @returns {InfoDictionary} The Info dictionary.
+           * @throws {Error} If the modifier has ended.
+           */
           getInfoDictionary: function () {
             requireOpen();
             return infoDictionary;
           },
         };
       },
+      /**
+       * Creates a PDF text string.
+       * @param {string|number[]|Uint8Array|ArrayBuffer} [value] - Text or encoded bytes.
+       * @returns {PDFTextString} The text string.
+       * @throws {TypeError} If `value` is not text or bytes from 0 to 255.
+       */
       createPDFTextString: function (value) {
-        requireOpen();
         return new PDFTextString(value);
       },
+      /**
+       * Creates a PDF date.
+       * @param {string|Date|PDFDate} [value] - Date; empty when omitted.
+       * @returns {PDFDate} The date.
+       * @throws {TypeError} If `value` is not a valid date.
+       * @throws {Error} If a date string cannot be parsed.
+       */
       createPDFDate: function (value) {
-        requireOpen();
         return new PDFDate(value);
       },
+      /**
+       * Adds a URL link annotation to the active new page.
+       * @param {string} url - Link target.
+       * @param {number} left - Rectangle left.
+       * @param {number} bottom - Rectangle bottom.
+       * @param {number} right - Rectangle right, not less than `left`.
+       * @param {number} top - Rectangle top, not less than `bottom`.
+       * @returns {this} The modifier.
+       * @throws {TypeError} If `url` is not a string or the rectangle is invalid.
+       * @throws {Error} If the modifier has ended or the link cannot be attached.
+       */
       attachURLLinktoCurrentPage: function (url, left, bottom, right, top) {
         requireOpen();
         if (
@@ -2291,6 +3113,19 @@ export function createWriterToModifyFactory({
         });
         return this;
       },
+      /**
+       * Writes an annotation object; register it with
+       * `registerAnnotationReferenceForNextPageWrite()` to show it on a page.
+       * @param {string} subtype - Annotation subtype, such as `Text` or `Highlight`.
+       * @param {number} left - Rectangle left.
+       * @param {number} bottom - Rectangle bottom.
+       * @param {number} right - Rectangle right.
+       * @param {number} top - Rectangle top.
+       * @param {AnnotationOptions} [options] - Contents, color, border, and flags.
+       * @returns {number} The annotation object ID.
+       * @throws {TypeError} If the subtype, rectangle, or an option is invalid.
+       * @throws {Error} If the modifier has ended or the annotation cannot be created.
+       */
       createAnnotation: function (subtype, left, bottom, right, top, options) {
         requireOpen();
         return createAnnotation(
@@ -2307,6 +3142,13 @@ export function createWriterToModifyFactory({
           options,
         );
       },
+      /**
+       * Adds an annotation to the `/Annots` of the next written page.
+       * @param {number} objectId - Annotation object ID.
+       * @returns {this} The modifier.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the modifier has ended or the annotation cannot be registered.
+       */
       registerAnnotationReferenceForNextPageWrite: function (objectId) {
         requireOpen();
         if (!Number.isInteger(objectId) || objectId <= 0)
@@ -2320,6 +3162,12 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to register annotation for the current page");
         return this;
       },
+      /**
+       * Starts writing the page from `createPage()`.
+       * @param {PDFPage} nextPage - The active new page.
+       * @returns {ContentContext} The page content context.
+       * @throws {Error} If the modifier ended, `nextPage` is not the active page, or a context is active.
+       */
       startPageContentContext: function (nextPage) {
         requireOpen();
         if (nextPage !== page || context) {
@@ -2327,12 +3175,27 @@ export function createWriterToModifyFactory({
         }
         return startContext();
       },
+      /**
+       * Ends the current content stream so objects can be written before the page continues.
+       * @param {ContentContext} value - Active page content context.
+       * @returns {this} The modifier.
+       * @throws {Error} If `value` is not active or cannot be paused.
+       */
       pausePageContentContext: function (value) {
         requireContext(value);
         if (!page || !module._muhammara_wasm_modifier_pause_page(modifier))
           throw new Error("Unable to pause page content context");
         return this;
       },
+      /**
+       * Opens an existing page for appending content.
+       * @param {number} [index=0] - Zero-based page index.
+       * @param {boolean} [ensureContentEncapsulation=false] - Wrap the existing content in `q`/`Q`.
+       * @returns {PageModifier} The page modifier; call `startContext()` to draw.
+       * @throws {RangeError} If `index` is not a 32-bit unsigned integer.
+       * @throws {TypeError} If `ensureContentEncapsulation` is not a boolean.
+       * @throws {Error} If the modifier has ended.
+       */
       createPageModifier: function (
         index = 0,
         ensureContentEncapsulation = false,
@@ -2348,6 +3211,12 @@ export function createWriterToModifyFactory({
         }
         var modifierPage = null;
         return {
+          /**
+           * Starts, or restarts, the content context of the page.
+           * @returns {this} The page modifier.
+           * @throws {RangeError} If another page or context is active or the page cannot be modified.
+           * @throws {Error} If the modifier has ended.
+           */
           startContext: function () {
             requireOpen();
             if (
@@ -2367,12 +3236,22 @@ export function createWriterToModifyFactory({
             context = modifierContext();
             return this;
           },
+          /**
+           * Returns the active content context.
+           * @returns {ContentContext} The content context.
+           * @throws {Error} If the modifier ended or no context was started.
+           */
           getContext: function () {
             requireOpen();
             if (!modifierPage || !context)
               throw new Error("No context created");
             return context;
           },
+          /**
+           * Returns the resources dictionary of the modified page.
+           * @returns {ResourcesDictionary} The resources dictionary.
+           * @throws {Error} If the modifier ended, no context was started, or the resources cannot be read.
+           */
           getResourcesDictionary: function () {
             requireOpen();
             if (!modifierPage || !context) {
@@ -2386,6 +3265,17 @@ export function createWriterToModifyFactory({
               requireContext(resourceContext),
             );
           },
+          /**
+           * Adds a URL link annotation to the modified page.
+           * @param {string} url - Link target.
+           * @param {number} left - Rectangle left.
+           * @param {number} bottom - Rectangle bottom.
+           * @param {number} right - Rectangle right.
+           * @param {number} top - Rectangle top.
+           * @returns {this} The page modifier.
+           * @throws {TypeError} If no context was started, `url` is not a string, or the rectangle is invalid.
+           * @throws {Error} If the modifier ended or the link cannot be attached.
+           */
           attachURLLinktoCurrentPage: function (url, left, bottom, right, top) {
             requireOpen();
             if (
@@ -2415,6 +3305,18 @@ export function createWriterToModifyFactory({
             });
             return this;
           },
+          /**
+           * Adds an annotation to the modified page.
+           * @param {string} subtype - Annotation subtype.
+           * @param {number} left - Rectangle left.
+           * @param {number} bottom - Rectangle bottom.
+           * @param {number} right - Rectangle right.
+           * @param {number} top - Rectangle top.
+           * @param {AnnotationOptions} [options] - Contents, color, border, and flags.
+           * @returns {number} The annotation object ID.
+           * @throws {TypeError} If the subtype, rectangle, or an option is invalid.
+           * @throws {Error} If the modifier ended, no context was started, or the annotation cannot be created.
+           */
           createAnnotation: function (
             subtype,
             left,
@@ -2439,6 +3341,11 @@ export function createWriterToModifyFactory({
               options,
             );
           },
+          /**
+           * Ends the content context; call `writePage()` afterwards.
+           * @returns {this} The page modifier.
+           * @throws {Error} If the modifier ended, the context is not active, or it cannot be ended.
+           */
           endContext: function () {
             requireOpen();
             requireContext(context);
@@ -2448,6 +3355,11 @@ export function createWriterToModifyFactory({
             context = null;
             return this;
           },
+          /**
+           * Writes the modified page.
+           * @returns {this} The page modifier.
+           * @throws {Error} If the modifier ended, no page was started, a context is active, or writing fails.
+           */
           writePage: function () {
             requireOpen();
             if (
@@ -2462,6 +3374,12 @@ export function createWriterToModifyFactory({
           },
         };
       },
+      /**
+       * Writes the active new page, ending its content context.
+       * @param {PDFPage} nextPage - The active page.
+       * @returns {this} The modifier.
+       * @throws {Error} If the modifier ended, `nextPage` is not active, or writing fails.
+       */
       writePage: function (nextPage) {
         requireOpen();
         if (nextPage !== page)
@@ -2476,6 +3394,12 @@ export function createWriterToModifyFactory({
         nextPage._getNativeResources = null;
         return this;
       },
+      /**
+       * Writes the active new page and returns its object ID.
+       * @param {PDFPage} nextPage - The active page.
+       * @returns {number} Object ID of the page.
+       * @throws {Error} If the modifier ended, `nextPage` is not active, or writing fails.
+       */
       writePageAndReturnID: function (nextPage) {
         requireOpen();
         if (nextPage !== page)
@@ -2498,8 +3422,20 @@ export function createWriterToModifyFactory({
           module._free(objectIdPointer);
         }
       },
-      createPDFCopyingContext: function (sourceBytes) {
+      /**
+       * Opens a source PDF for copying pages and objects into this modifier.
+       * @param {ByteSource} sourceBytes - Source PDF bytes.
+       * @param {PDFReaderOptions} [options] - Native's source options; a
+       *   `password` is unsupported in Wasm.
+       * @returns {DocumentCopyingContext} The copying context; call `end()` when done.
+       * @throws {TypeError} If the bytes are unsupported or `options` has a `password`.
+       * @throws {Error} If the modifier ended or the source cannot be opened.
+       */
+      createPDFCopyingContext: function (sourceBytes, options = {}) {
         requireOpen();
+        if (options && typeof options === "object" && "password" in options) {
+          throw new TypeError("PDF passwords are not supported in Wasm");
+        }
         sourceBytes = normalizeBytes(sourceBytes, "PDF input");
         var sourcePath = `/pdfs/${state.nextPdf++}.pdf`;
         module.FS.writeFile(sourcePath, sourceBytes);
@@ -2521,6 +3457,10 @@ export function createWriterToModifyFactory({
         }
         var copyingEnded = false;
         var sourceParsers = [];
+        /**
+         * Ends the copying context, its parsers, and its stored source. Idempotent.
+         * @returns {void}
+         */
         function cleanupCopying() {
           if (!copying) return;
           sourceParsers.forEach((parser) => parser._end());
@@ -2533,11 +3473,21 @@ export function createWriterToModifyFactory({
           lifecycle.untrack(cleanupCopying);
         }
         lifecycle.track(cleanupCopying);
+        /**
+         * Rejects use of an ended copying context.
+         * @returns {void}
+         * @throws {Error} If the modifier or the copying context has ended.
+         */
         function requireCopying() {
           requireOpen();
           if (copyingEnded) throw new Error("PDF copying context has ended");
         }
         return {
+          /**
+           * Returns a reader over the source PDF.
+           * @returns {PDFReader} The reader; it ends with the copying context.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           getSourceDocumentParser: function () {
             requireCopying();
             var parser = createReader(
@@ -2552,11 +3502,23 @@ export function createWriterToModifyFactory({
             sourceParsers.push(parser);
             return parser;
           },
+          /**
+           * Returns a positioned reader over the source PDF bytes.
+           * @returns {PositionedPDFByteReader} The byte reader.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           getSourceDocumentStream: function () {
             requireCopying();
             var parser = this.getSourceDocumentParser();
             return parser.getSourceDocumentStream();
           },
+          /**
+           * Writes a source object into the current output object unchanged.
+           * @param {PDFObject} object - Object from this context's source parser.
+           * @returns {this} The copying context.
+           * @throws {TypeError} If `object` is from another source.
+           * @throws {Error} If the context ended or the object cannot be copied.
+           */
           copyDirectObjectAsIs: function (object) {
             requireCopying();
             if (!object || object._copyingContext !== copying) {
@@ -2575,6 +3537,13 @@ export function createWriterToModifyFactory({
             return this;
           },
           ...copyingObjectOperations(copying, requireCopying),
+          /**
+           * Appends one source page as a new page.
+           * @param {number} index - Zero-based source page index.
+           * @returns {number} Object ID of the new page.
+           * @throws {RangeError} If `index` is not a non-negative integer or the page cannot be appended.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           appendPDFPageFromPDF: function (index) {
             requireCopying();
             if (!Number.isInteger(index) || index < 0) {
@@ -2589,6 +3558,14 @@ export function createWriterToModifyFactory({
             }
             return objectId;
           },
+          /**
+           * Appends an inclusive range of source pages.
+           * @param {number} start - First zero-based page index.
+           * @param {number} end - Last page index, not less than `start`.
+           * @returns {this} The copying context.
+           * @throws {RangeError} If the range is invalid or a page cannot be appended.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           appendPDFPagesFromPDF: function (start, end) {
             requireCopying();
             if (
@@ -2603,6 +3580,14 @@ export function createWriterToModifyFactory({
               this.appendPDFPageFromPDF(index);
             return this;
           },
+          /**
+           * Merges a source page into the active target page.
+           * @param {PDFPage} targetPage - Active page, or a new page that is started.
+           * @param {number} index - Zero-based source page index.
+           * @returns {this} The copying context.
+           * @throws {Error} If the context ended, `targetPage` is not active, or `index` is invalid.
+           * @throws {RangeError} If the page cannot be merged.
+           */
           mergePDFPageToPage: function (targetPage, index) {
             requireCopying();
             if (targetPage !== page || !Number.isInteger(index) || index < 0)
@@ -2616,6 +3601,16 @@ export function createWriterToModifyFactory({
             }
             return this;
           },
+          /**
+           * Creates a form XObject from a source page.
+           * @param {number} index - Zero-based source page index.
+           * @param {PDFPageBoxType|PDFRectangle} [pageBox=ePDFPageBoxMediaBox] - Box used as the form bounds, or a rectangle.
+           * @param {PDFMatrix} [transformation] - Form matrix.
+           * @returns {number} Object ID of the form.
+           * @throws {TypeError} If a rectangle or matrix is not finite.
+           * @throws {RangeError} If `index` or `pageBox` is invalid or the form cannot be created.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           createFormXObjectFromPDFPage: function (
             index,
             pageBox = constants.ePDFPageBoxMediaBox,
@@ -2644,6 +3639,15 @@ export function createWriterToModifyFactory({
               throw new RangeError(`Unable to create form from page ${index}`);
             return objectId;
           },
+          /**
+           * Merges a source page into an open form XObject.
+           * @param {FormXObject} form - Open form from this modifier.
+           * @param {number} index - Zero-based source page index.
+           * @returns {this} The copying context.
+           * @throws {TypeError} If `form` is not open or from this modifier, or `index` is invalid.
+           * @throws {RangeError} If the page cannot be merged.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           mergePDFPageToFormXObject: function (form, index) {
             requireCopying();
             if (
@@ -2668,6 +3672,11 @@ export function createWriterToModifyFactory({
             }
             return this;
           },
+          /**
+           * Ends the copying context and releases its source.
+           * @returns {this} The copying context.
+           * @throws {Error} If the context already ended or cannot be ended.
+           */
           end: function () {
             requireCopying();
             sourceParsers.forEach((parser) => parser._end());
@@ -2680,11 +3689,29 @@ export function createWriterToModifyFactory({
           },
         };
       },
-      createPDFCopyingContextAsync: async function (sourceBytes) {
+      /**
+       * Opens a copying context after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} sourceBytes - PDF bytes, Blob, or File.
+       * @param {PDFReaderOptions} [options] - Native's source options; a
+       *   `password` is unsupported in Wasm.
+       * @returns {Promise<DocumentCopyingContext>} The copying context.
+       * @throws {TypeError} If the bytes are unsupported or `options` has a `password`.
+       * @throws {Error} If the modifier ended or the source cannot be opened.
+       */
+      createPDFCopyingContextAsync: async function (sourceBytes, options) {
+        if (options && typeof options === "object" && "password" in options) {
+          throw new TypeError("PDF passwords are not supported in Wasm");
+        }
         return this.createPDFCopyingContext(
           await normalizeBytesAsync(sourceBytes, "PDF input"),
         );
       },
+      /**
+       * Opens the PDF being modified as a copying source.
+       * @returns {DocumentCopyingContext} The copying context; call `end()` when done.
+       * @throws {Error} If the modifier ended or the context cannot be created.
+       */
       createPDFCopyingContextForModifiedFile: function () {
         requireOpen();
         var copying =
@@ -2698,6 +3725,10 @@ export function createWriterToModifyFactory({
         }
         var copyingEnded = false;
         var sourceParsers = [];
+        /**
+         * Ends the copying context, its parsers, and its stored source. Idempotent.
+         * @returns {void}
+         */
         function cleanupCopying() {
           if (!copying) return;
           sourceParsers.forEach((parser) => parser._end());
@@ -2709,11 +3740,21 @@ export function createWriterToModifyFactory({
           lifecycle.untrack(cleanupCopying);
         }
         lifecycle.track(cleanupCopying);
+        /**
+         * Rejects use of an ended copying context.
+         * @returns {void}
+         * @throws {Error} If the modifier or the copying context has ended.
+         */
         function requireCopying() {
           requireOpen();
           if (copyingEnded) throw new Error("PDF copying context has ended");
         }
         return {
+          /**
+           * Returns a reader over the source PDF.
+           * @returns {PDFReader} The reader; it ends with the copying context.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           getSourceDocumentParser: function () {
             requireCopying();
             var parser = createReader(
@@ -2728,11 +3769,23 @@ export function createWriterToModifyFactory({
             sourceParsers.push(parser);
             return parser;
           },
+          /**
+           * Returns a positioned reader over the source PDF bytes.
+           * @returns {PositionedPDFByteReader} The byte reader.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           getSourceDocumentStream: function () {
             requireCopying();
             var parser = this.getSourceDocumentParser();
             return parser.getSourceDocumentStream();
           },
+          /**
+           * Writes a source object into the current output object unchanged.
+           * @param {PDFObject} object - Object from this context's source parser.
+           * @returns {this} The copying context.
+           * @throws {TypeError} If `object` is from another source.
+           * @throws {Error} If the context ended or the object cannot be copied.
+           */
           copyDirectObjectAsIs: function (object) {
             requireCopying();
             if (!object || object._copyingContext !== copying) {
@@ -2751,6 +3804,13 @@ export function createWriterToModifyFactory({
             return this;
           },
           ...copyingObjectOperations(copying, requireCopying),
+          /**
+           * Appends one source page as a new page.
+           * @param {number} index - Zero-based source page index.
+           * @returns {number} Object ID of the new page.
+           * @throws {RangeError} If `index` is not a non-negative integer or the page cannot be appended.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           appendPDFPageFromPDF: function (index) {
             requireCopying();
             if (!Number.isInteger(index) || index < 0) {
@@ -2765,6 +3825,14 @@ export function createWriterToModifyFactory({
             }
             return objectId;
           },
+          /**
+           * Appends an inclusive range of source pages.
+           * @param {number} start - First zero-based page index.
+           * @param {number} end - Last page index, not less than `start`.
+           * @returns {this} The copying context.
+           * @throws {RangeError} If the range is invalid or a page cannot be appended.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           appendPDFPagesFromPDF: function (start, end) {
             requireCopying();
             if (
@@ -2780,6 +3848,14 @@ export function createWriterToModifyFactory({
             }
             return this;
           },
+          /**
+           * Merges a source page into the active target page.
+           * @param {PDFPage} targetPage - Active page, or a new page that is started.
+           * @param {number} index - Zero-based source page index.
+           * @returns {this} The copying context.
+           * @throws {Error} If the context ended, `targetPage` is not active, or `index` is invalid.
+           * @throws {RangeError} If the page cannot be merged.
+           */
           mergePDFPageToPage: function (targetPage, index) {
             requireCopying();
             if (
@@ -2799,6 +3875,16 @@ export function createWriterToModifyFactory({
             }
             return this;
           },
+          /**
+           * Creates a form XObject from a source page.
+           * @param {number} index - Zero-based source page index.
+           * @param {PDFPageBoxType|PDFRectangle} [pageBox=ePDFPageBoxMediaBox] - Box used as the form bounds, or a rectangle.
+           * @param {PDFMatrix} [transformation] - Form matrix.
+           * @returns {number} Object ID of the form.
+           * @throws {TypeError} If a rectangle or matrix is not finite.
+           * @throws {RangeError} If `index` or `pageBox` is invalid or the form cannot be created.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           createFormXObjectFromPDFPage: function (
             index,
             pageBox = constants.ePDFPageBoxMediaBox,
@@ -2828,6 +3914,15 @@ export function createWriterToModifyFactory({
             }
             return objectId;
           },
+          /**
+           * Merges a source page into an open form XObject.
+           * @param {FormXObject} form - Open form from this modifier.
+           * @param {number} index - Zero-based source page index.
+           * @returns {this} The copying context.
+           * @throws {TypeError} If `form` is not open or from this modifier, or `index` is invalid.
+           * @throws {RangeError} If the page cannot be merged.
+           * @throws {Error} If the modifier or the copying context has ended.
+           */
           mergePDFPageToFormXObject: function (form, index) {
             requireCopying();
             if (
@@ -2852,6 +3947,11 @@ export function createWriterToModifyFactory({
             }
             return this;
           },
+          /**
+           * Ends the copying context and releases its source.
+           * @returns {this} The copying context.
+           * @throws {Error} If the context already ended or cannot be ended.
+           */
           end: function () {
             requireCopying();
             sourceParsers.forEach((parser) => parser._end());
@@ -2866,15 +3966,22 @@ export function createWriterToModifyFactory({
           },
         };
       },
+      /**
+       * Finishes the modified PDF, releases the modifier, and returns the bytes.
+       * @returns {Uint8Array} The PDF bytes.
+       * @throws {Error} If the modifier ended, a page or objects-context operation is active,
+       * the PDF cannot be finished, or it exceeds the output limit.
+       */
       end: function () {
         requireOpen();
-        if (
-          page ||
-          context ||
-          lifecycle.hasChildren() ||
-          (objectsContext && objectsContext._hasActive())
-        )
+        if (page || context)
           throw new Error("Write the active page before ending the PDF");
+        if (objectsContext && objectsContext._hasActive())
+          throw new Error(
+            "End the active objects context operation before ending the PDF",
+          );
+        // Like native, release copying contexts the caller left open.
+        lifecycle.disposeChildren();
         var lengthPointer = module._malloc(4);
         try {
           var pdfPointer = module._muhammara_wasm_modifier_end_pdf(
@@ -2895,6 +4002,10 @@ export function createWriterToModifyFactory({
           dispose();
         }
       },
+      /**
+       * Discards the modifier without producing a PDF. Idempotent.
+       * @returns {void}
+       */
       dispose: function () {
         dispose();
       },

@@ -2,18 +2,27 @@
 
 extern "C" {
 
-WasmReader* muhammara_wasm_reader_create(const char* path) {
+// Opens a PDF with an optional password, as native createReader does.
+WASM_EXPORT WasmReader* muhammara_wasm_reader_create_with_password(
+    const char* path, const char* password) {
   if (path == nullptr) {
     return nullptr;
   }
   WasmReader* reader = new WasmReader();
   if (reader->input.OpenFile(path) != PDFHummus::eSuccess ||
-      reader->parser.StartPDFParsing(reader->input.GetInputStream()) !=
+      reader->parser.StartPDFParsing(
+          reader->input.GetInputStream(),
+          password == nullptr ? PDFParsingOptions::DefaultPDFParsingOptions()
+                              : PDFParsingOptions(password)) !=
           PDFHummus::eSuccess) {
     delete reader;
     return nullptr;
   }
   return reader;
+}
+
+WasmReader* muhammara_wasm_reader_create(const char* path) {
+  return muhammara_wasm_reader_create_with_password(path, nullptr);
 }
 
 // The modified-file parser belongs to PDFWriter. This reader wrapper owns only

@@ -1,7 +1,26 @@
+import {
+  ArrowAt,
+  ArrowType,
+  TrianglePosition,
+  TriangleTrait,
+} from "../value-sets.js";
+/**
+ * Converts degrees to radians.
+ * @param {number} angle - Degrees.
+ * @returns {number} Radians.
+ */
 function radians(angle) {
   return (angle * Math.PI) / 180;
 }
 
+/**
+ * Returns the point at a distance and angle from an origin.
+ * @param {number} x - Origin x.
+ * @param {number} y - Origin y.
+ * @param {number} length - Distance.
+ * @param {number} angle - Angle in degrees.
+ * @returns {number[]} `[x, y]`.
+ */
 function pointAt(x, y, length, angle) {
   return [
     x + length * Math.cos(radians(angle)),
@@ -9,12 +28,26 @@ function pointAt(x, y, length, angle) {
   ];
 }
 
+/**
+ * Returns the stroke width a shape is inset by; 0 for fill-only shapes.
+ * @param {object} options - Shape options.
+ * @returns {number} The line width, 2 by default when stroked.
+ */
 function drawingLineWidth(options) {
   return options.stroke || options.color || !options.fill
     ? options.lineWidth || options.width || 2
     : 0;
 }
 
+/**
+ * Computes the vertices of a regular polygon inset by half its stroke.
+ * @param {number} sides - Side count.
+ * @param {number} x - Center x.
+ * @param {number} y - Center y.
+ * @param {number} radius - Outer radius.
+ * @param {object} [options={}] - Shape options.
+ * @returns {number[][]} The vertices, starting at the top.
+ */
 function ngon(sides, x, y, radius, options = {}) {
   var angle = 360 / sides;
   var start = sides % 2 ? 270 : 270 - angle / 2;
@@ -24,6 +57,13 @@ function ngon(sides, x, y, radius, options = {}) {
   );
 }
 
+/**
+ * Copies shape options for polygon(), without the link and with a default rotation origin.
+ * @param {object} options - Shape options.
+ * @param {number} x - Shape center x.
+ * @param {number} y - Shape center y.
+ * @returns {object} The polygon options.
+ */
 function polygonOptions(options, x, y) {
   var result = { ...options };
   delete result.link;
@@ -33,6 +73,13 @@ function polygonOptions(options, x, y) {
   return result;
 }
 
+/**
+ * Adds a link over the bounding box of a shape when `options.link` is set.
+ * @param {Recipe} recipe - Recipe instance.
+ * @param {object} options - Shape options.
+ * @param {number[][]} points - Shape vertices.
+ * @returns {void}
+ */
 function addLink(recipe, options, points) {
   if (!options.link) return;
   var xs = points.map((point) => point[0]);
@@ -48,6 +95,11 @@ function addLink(recipe, options, points) {
   );
 }
 
+/**
+ * Reorders polygon vertices to draw a star.
+ * @param {number[][]} vertices - Regular polygon vertices.
+ * @returns {number[][]} The vertices in star order.
+ */
 function starPath(vertices) {
   var interval = Math.floor(vertices.length / 2);
   return vertices.map(
@@ -55,24 +107,40 @@ function starPath(vertices) {
   );
 }
 
+/**
+ * Measures the distance between two points.
+ * @param {number[]} first - `[x, y]`.
+ * @param {number[]} second - `[x, y]`.
+ * @returns {number} The distance.
+ */
 function distance(first, second) {
   return Math.hypot(first[0] - second[0], first[1] - second[1]);
 }
 
+/**
+ * Builds triangle vertices and side lengths from vertices, sides, or angles.
+ * @param {number} x - Placement x.
+ * @param {number} y - Placement y.
+ * @param {RecipeTriangleTrait} traitID - How `traits` describe the triangle.
+ * @param {Array} traits - Vertices, side lengths, or sides and angles.
+ * @returns {{vertices: number[][], sides: {a: number, b: number, c: number}}} The geometry.
+ * @throws {Error} If the trait kind is unknown, the angles sum to 180 or more, or
+ * the sides violate the triangle inequality.
+ */
 function triangleGeometry(x, y, traitID, traits) {
   var a, b, c;
   var vertices;
-  if (traitID === "vtx") {
+  if (traitID === TriangleTrait.VTX) {
     vertices = [traits[0], traits[1], traits[2]];
     a = distance(vertices[0], vertices[1]);
     b = distance(vertices[2], vertices[1]);
     c = distance(vertices[2], vertices[0]);
   } else {
-    if (traitID === "sss") [a, b, c] = traits;
-    else if (traitID === "sas") {
+    if (traitID === TriangleTrait.SSS) [a, b, c] = traits;
+    else if (traitID === TriangleTrait.SAS) {
       [a, , b] = traits;
       c = Math.sqrt(a ** 2 + b ** 2 - 2 * a * b * Math.cos(radians(traits[1])));
-    } else if (traitID === "asa") {
+    } else if (traitID === TriangleTrait.ASA) {
       var angleC = 180 - traits[0] - traits[2];
       if (angleC <= 0)
         throw new Error(
@@ -96,6 +164,12 @@ function triangleGeometry(x, y, traitID, traits) {
   return { vertices, a, b, c };
 }
 
+/**
+ * Computes a triangle's incenter, circumcenter, centroid, and radii.
+ * @param {number[][]} vertices - Three vertices.
+ * @param {{a: number, b: number, c: number}} sides - Side lengths.
+ * @returns {object} The centers and radii.
+ */
 function centerForTriangle(vertices, sides) {
   var B = vertices[0],
     C = vertices[1],
@@ -133,10 +207,26 @@ function centerForTriangle(vertices, sides) {
   };
 }
 
+/**
+ * Moves vertices by an offset.
+ * @param {number[][]} vertices - Vertices.
+ * @param {number} dx - Horizontal offset.
+ * @param {number} dy - Vertical offset.
+ * @returns {number[][]} New vertices.
+ */
 function translated(vertices, dx, dy) {
   return vertices.map((point) => [point[0] + dx, point[1] + dy]);
 }
 
+/**
+ * Mirrors vertices around a point.
+ * @param {number[][]} vertices - Vertices.
+ * @param {number} x - Mirror center x.
+ * @param {number} y - Mirror center y.
+ * @param {boolean} flipX - Mirror across the horizontal axis.
+ * @param {boolean} flipY - Mirror across the vertical axis.
+ * @returns {number[][]} New vertices.
+ */
 function flipped(vertices, x, y, flipX, flipY) {
   return vertices.map((point) => [
     flipY ? 2 * x - point[0] : point[0],
@@ -144,6 +234,14 @@ function flipped(vertices, x, y, flipX, flipY) {
   ]);
 }
 
+/**
+ * Rotates vertices around a point.
+ * @param {number[][]} vertices - Vertices.
+ * @param {number} x - Center x.
+ * @param {number} y - Center y.
+ * @param {number} angle - Degrees.
+ * @returns {number[][]} New vertices, or the input for no rotation.
+ */
 function rotated(vertices, x, y, angle) {
   if (!angle) return vertices;
   var cosine = Math.cos(radians(angle));
@@ -155,6 +253,13 @@ function rotated(vertices, x, y, angle) {
   });
 }
 
+/**
+ * Extends the segment from `first` through `second` by a length.
+ * @param {number[]} first - Start point.
+ * @param {number[]} second - End point.
+ * @param {number} length - Extension length.
+ * @returns {number[]} The new end point.
+ */
 function extend(first, second, length) {
   var span = distance(first, second);
   return [
@@ -163,14 +268,25 @@ function extend(first, second, length) {
   ];
 }
 
+/**
+ * Draws triangle construction aids for `options.debug`.
+ * @param {Recipe} recipe - Recipe instance.
+ * @param {number} x - Placement x.
+ * @param {number} y - Placement y.
+ * @param {number[][]} vertices - Vertices.
+ * @param {{a: number, b: number, c: number}} sides - Side lengths.
+ * @param {RecipeTrianglePosition} position - Center used for placement.
+ * @param {object} options - Shape options.
+ * @returns {void}
+ */
 function debugTriangle(recipe, x, y, vertices, sides, position, options) {
   var centers = centerForTriangle(vertices, sides);
   recipe.circle(x, y, 2, { color: "red", width: 0.5 });
-  if (position === "circumcenter")
+  if (position === TrianglePosition.CIRCUMCENTER)
     recipe.circle(x, y, centers.circumradius, { color: "green", width: 0.5 });
-  if (position === "incenter")
+  if (position === TrianglePosition.INCENTER)
     recipe.circle(x, y, centers.inradius, { color: "green", width: 0.5 });
-  if (position === "centroid") {
+  if (position === TrianglePosition.CENTROID) {
     var B = vertices[0],
       C = vertices[1],
       A = vertices[2];
@@ -214,7 +330,10 @@ function debugTriangle(recipe, x, y, vertices, sides, position, options) {
   });
 }
 
-/** Creates Recipe methods for geometric shapes. */
+/**
+ * Creates Recipe methods for geometric shapes.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createShapeMethods() {
   return {
     /**
@@ -382,7 +501,14 @@ export function createShapeMethods() {
       if (shaftWidth > headWidth) shaftWidth = headWidth;
       else if (shaftWidth === 0) shaftWidth = headWidth / 2;
       if (baseOffset === 0 && options.type) {
-        var types = { 0: 0, triangle: 0, 1: 0.5, dart: 0.5, 2: -1, kite: -1 };
+        var types = {
+          0: 0,
+          [ArrowType.TRIANGLE]: 0,
+          1: 0.5,
+          [ArrowType.DART]: 0.5,
+          2: -1,
+          [ArrowType.KITE]: -1,
+        };
         if (types[options.type] !== undefined)
           baseOffset = types[options.type] * headLength;
       }
@@ -390,11 +516,11 @@ export function createShapeMethods() {
       if (options.at && options.rotation && !options.rotationOrigin)
         drawOptions.rotationOrigin = [x, y];
       if (options.double) {
-        if (options.at === "head") x -= headLength;
-        else if (options.at === "tail") x += shaftLength + headLength;
+        if (options.at === ArrowAt.HEAD) x -= headLength;
+        else if (options.at === ArrowAt.TAIL) x += shaftLength + headLength;
         else x += shaftLength / 2;
-      } else if (options.at === "head") x -= headLength;
-      else if (options.at === "tail") x += shaftLength;
+      } else if (options.at === ArrowAt.HEAD) x -= headLength;
+      else if (options.at === ArrowAt.TAIL) x += shaftLength;
       else x += (shaftLength - headLength) / 2;
       var halfHead = headWidth / 2,
         halfShaft = shaftWidth / 2;
@@ -486,7 +612,7 @@ export function createShapeMethods() {
       var traitID = (
         options.traitID ||
         options.traitsID ||
-        "sss"
+        TriangleTrait.SSS
       ).toLowerCase();
       var geometry = triangleGeometry(x, y, traitID, traits);
       var position = options.position
@@ -494,11 +620,11 @@ export function createShapeMethods() {
         : "default";
       var centers = centerForTriangle(geometry.vertices, geometry);
       var target =
-        position === "a"
+        position === TrianglePosition.A
           ? geometry.vertices[2]
-          : position === "b" || position === "default"
+          : position === TrianglePosition.B || position === "default"
             ? geometry.vertices[0]
-            : position === "c"
+            : position === TrianglePosition.C
               ? geometry.vertices[1]
               : centers[position] || geometry.vertices[0];
       var vertices =

@@ -1,7 +1,12 @@
+import { ImageFit, StructureFormat } from "../value-sets.js";
 import { constants } from "../constants.js";
 import { endActivePage } from "./page.js";
 
-/** Creates Recipe methods for composing registered PDF files. */
+/**
+ * Creates Recipe methods for composing registered PDF files.
+ * @param {object} dependencies - Module, PDF registry, and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createCompositionMethods({
   module,
   pdfs,
@@ -170,7 +175,7 @@ export function createCompositionMethods({
               width,
               height,
               proportional: options.keepAspectRatio !== false,
-              fit: "always",
+              fit: ImageFit.ALWAYS,
             },
           },
         );
@@ -231,7 +236,11 @@ export function createCompositionMethods({
   };
 }
 
-/** Creates Recipe's endPDF implementation, including deferred page insertions. */
+/**
+ * Creates Recipe's endPDF implementation, including deferred page insertions.
+ * @param {object} dependencies - Finalization, registry, and Recipe factory helpers.
+ * @returns {Function} The endPDF method.
+ */
 export function createEndPDF({
   endPDF,
   state,
@@ -307,7 +316,11 @@ export function createEndPDF({
   };
 }
 
-/** Creates a function that splits a registered PDF into one-page outputs. */
+/**
+ * Creates a function that splits a registered PDF into one-page outputs.
+ * @param {object} dependencies - Module, PDF registry, and Recipe factory.
+ * @returns {Function} The split method.
+ */
 export function createSplitPdf({
   module,
   pdfs,
@@ -364,7 +377,10 @@ export function createSplitPdf({
   };
 }
 
-/** Creates a function that reports basic structure for the finished PDF. */
+/**
+ * Creates a function that reports basic structure for the finished PDF.
+ * @returns {Function} The structure method.
+ */
 export function createStructure() {
   /**
    * Reports basic structure for the finished PDF.
@@ -378,11 +394,11 @@ export function createStructure() {
    * encryption, and indirect-object counts for JSON output.
    * @throws {Error} If the Recipe cannot be finished.
    */
-  return function (format = "string") {
+  return function (format = StructureFormat.STRING) {
     var bytes = this.endPDF();
     var text = new TextDecoder().decode(bytes);
     var objects = (text.match(/\n\d+ \d+ obj\b/g) || []).length;
-    if (format === "json" || format?.json) {
+    if (format === StructureFormat.JSON || format?.json) {
       return {
         pages: this._outputPages || this._pages.length,
         encrypted: /\/Encrypt\b/.test(text),

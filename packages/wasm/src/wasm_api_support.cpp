@@ -18,6 +18,29 @@ WASM_EXPORT WasmRecipe* muhammara_wasm_recipe_create_with_options(
   return recipe;
 }
 
+// Encrypts while writing, as native createWriter does for a string
+// userPassword. A null ownerPassword leaves the owner password empty.
+WASM_EXPORT WasmRecipe* muhammara_wasm_recipe_create_encrypted(
+    int version, int compressStreams, const char* userPassword,
+    const char* ownerPassword, int userProtectionFlag) {
+  if (userPassword == nullptr) return nullptr;
+  WasmRecipe* recipe = new WasmRecipe();
+  if (((version < ePDFVersion10 || version > ePDFVersion17) &&
+       version != ePDFVersion20) ||
+      recipe->writer.StartPDFForStream(
+          &recipe->output, static_cast<EPDFVersion>(version),
+          LogConfiguration::DefaultLogConfiguration(),
+          PDFCreationSettings(
+              compressStreams != 0, true,
+              EncryptionOptions(userPassword, userProtectionFlag,
+                                ownerPassword == nullptr ? "" : ownerPassword))) !=
+          PDFHummus::eSuccess) {
+    delete recipe;
+    return nullptr;
+  }
+  return recipe;
+}
+
 WASM_EXPORT WasmRecipe* muhammara_wasm_recipe_create(int version) {
   return muhammara_wasm_recipe_create_with_options(version, 1);
 }

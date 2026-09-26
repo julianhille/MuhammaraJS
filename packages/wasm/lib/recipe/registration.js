@@ -1,4 +1,10 @@
-/** Creates Recipe asset registration and removal methods. */
+import { fontStyleKey } from "./font.js";
+import { FontStyle } from "../value-sets.js";
+/**
+ * Creates Recipe asset registration and removal methods.
+ * @param {object} dependencies - Module, registries, byte helpers, and writer font hooks.
+ * @returns {object} Static methods assigned to Recipe.
+ */
 export function createRegistrationMethods({
   module,
   normalizeBytes,
@@ -26,7 +32,7 @@ export function createRegistrationMethods({
      * @returns {void}
      * @throws {TypeError} If the name is empty or the bytes are unsupported.
      */
-    registerFont: function (name, bytes) {
+    registerFont: function (name, bytes, type) {
       if (typeof name !== "string" || !name) {
         throw new TypeError("Font names must be non-empty strings");
       }
@@ -34,7 +40,7 @@ export function createRegistrationMethods({
       var path = `/fonts/${state.nextFont++}.font`;
       module.FS.mkdirTree("/fonts");
       module.FS.writeFile(path, bytes);
-      var previous = registerFont(fonts, name, path, arguments[2]);
+      var previous = registerFont(fonts, name, path, type);
       // Modifiers load fonts through the byte-first low-level writer catalog.
       registerWriterFont(path, bytes);
       if (previous) {
@@ -160,19 +166,11 @@ export function createRegistrationMethods({
      * @param {RecipeFontStyle} [type="regular"] Font family style to remove.
      * @returns {boolean} Whether a matching registered style was removed.
      */
-    unregisterFont: function (name, type = "regular") {
+    unregisterFont: function (name, type = FontStyle.REGULAR) {
       var key = String(name).toLowerCase();
       var family = fonts.get(key);
       if (!family) return false;
-      var style =
-        {
-          bold: "b",
-          b: "b",
-          italic: "i",
-          i: "i",
-          "bold-italic": "bi",
-          bi: "bi",
-        }[String(type).toLowerCase()] || "r";
+      var style = fontStyleKey(type);
       var path = family[style];
       if (!path) return false;
       delete family[style];

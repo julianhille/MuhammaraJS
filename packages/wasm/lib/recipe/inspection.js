@@ -1,4 +1,8 @@
-/** Creates a function that inspects a registered PDF's metadata and pages. */
+/**
+ * Creates a function that inspects a registered PDF's metadata and pages.
+ * @param {{module: object, withString: Function, pdfs: Map<string, string>}} dependencies - Module and PDF registry.
+ * @returns {Function} The inspection function.
+ */
 export function createInspectPdf({ module, withString, pdfs }) {
   /**
    * Inspects metadata and page geometry for a registered PDF.

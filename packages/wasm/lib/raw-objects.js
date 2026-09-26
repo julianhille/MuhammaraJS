@@ -1,4 +1,10 @@
-/** Creates a low-level context for writing raw PDF objects. */
+import { byteArrayToBytes } from "./bytes.js";
+
+/**
+ * Creates the low-level context for writing raw PDF objects.
+ * @param {object} dependencies - Module, constants, and byte helpers.
+ * @returns {Function} `rawObjectsContext(handle, requireOpen)`.
+ */
 export function createRawObjectsContext({
   module,
   constants,
@@ -6,6 +12,12 @@ export function createRawObjectsContext({
   withString,
   withBytes,
 }) {
+  /**
+   * Wraps a native objects context.
+   * @param {number} handle - Native objects context.
+   * @param {function(): void} requireOpen - Throws when the owning writer has ended.
+   * @returns {ObjectsContext} The objects context.
+   */
   function rawObjectsContext(handle, requireOpen) {
     var activeDictionary = null;
     var activeStream = null;
@@ -13,10 +25,23 @@ export function createRawObjectsContext({
     var activeIndirectObject = false;
     var indirectObjectClosedByStream = false;
 
+    /**
+     * Rejects use after the owning writer ended.
+     * @returns {void}
+     * @throws {Error} If the writer has ended.
+     */
     function requireContext() {
       requireOpen();
     }
 
+    /**
+     * Writes bytes through a native byte writer.
+     * @param {number} writer - Native byte writer.
+     * @param {ByteSource} bytes - Bytes to write.
+     * @returns {number} The number of bytes written.
+     * @throws {TypeError} If `bytes` is not a supported byte source.
+     * @throws {Error} If the writer is no longer active.
+     */
     function writeBytes(writer, bytes) {
       bytes = normalizeBytes(bytes, "ByteWriter input");
       return withBytes(bytes, (pointer) => {
@@ -30,8 +55,17 @@ export function createRawObjectsContext({
       });
     }
 
+    /**
+     * Writes a name, literal string, hex string, or keyword token.
+     * @param {number} type - Native token kind; 1 literal and 2 hex also accept bytes.
+     * @param {string|Uint8Array|ArrayBuffer} value - Token text or string bytes.
+     * @returns {void}
+     * @throws {TypeError} If `value` has the wrong type for `type`.
+     * @throws {Error} If the writer has ended or the token cannot be written.
+     */
     function writeObjectString(type, value) {
       requireContext();
+      if (type === 1 || type === 2) value = byteArrayToBytes(value, "Value");
       if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
         if (type !== 1 && type !== 2) {
           throw new TypeError("Only literal and hex strings accept bytes");
@@ -61,13 +95,31 @@ export function createRawObjectsContext({
       });
     }
 
+    /**
+     * Wraps a native dictionary context.
+     * @param {number} dictionary - Native dictionary context.
+     * @returns {DictionaryContext} The dictionary context.
+     */
     function dictionaryContext(dictionary) {
+      /**
+       * Rejects use of a dictionary that is no longer the active one.
+       * @returns {void}
+       * @throws {Error} If the writer ended or the dictionary is not active.
+       */
       function requireDictionary() {
         requireContext();
         if (activeDictionary !== dictionary) {
           throw new Error("Dictionary context is no longer active");
         }
       }
+      /**
+       * Writes a name, string, or keyword value for the current key.
+       * @param {number} type - Native token kind.
+       * @param {string|Uint8Array|ArrayBuffer} value - Value text or string bytes.
+       * @returns {DictionaryContext} The dictionary context.
+       * @throws {TypeError} If `value` has the wrong type.
+       * @throws {Error} If the dictionary is inactive or the value cannot be written.
+       */
       function writeValue(type, value) {
         requireDictionary();
         if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
@@ -101,6 +153,13 @@ export function createRawObjectsContext({
       }
       return {
         _handle: dictionary,
+        /**
+         * Writes a dictionary key; follow it with one value.
+         * @param {string} key - Key name without the leading slash.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `key` is not a string.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeKey: function (key) {
           requireDictionary();
           if (typeof key !== "string")
@@ -114,13 +173,30 @@ export function createRawObjectsContext({
           });
           return this;
         },
+        /**
+         * Writes a name value.
+         * @param {string} value - Name without the leading slash.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `value` is not a string.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeNameValue: function (value) {
           if (typeof value !== "string")
             throw new TypeError("Name value must be a string");
           writeValue(0, value);
           return this;
         },
+        /**
+         * Writes a literal string value.
+         * @param {string|Uint8Array|ArrayBuffer|number[]} value - Text, or raw
+         *   string bytes, including an array of byte values as native accepts.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `value` is neither a string nor bytes, or an
+         *   array item is not an integer from 0 to 255.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeLiteralStringValue: function (value) {
+          value = byteArrayToBytes(value, "Literal string value");
           if (
             typeof value !== "string" &&
             !(value instanceof Uint8Array) &&
@@ -133,7 +209,17 @@ export function createRawObjectsContext({
           writeValue(1, value);
           return this;
         },
+        /**
+         * Writes a hexadecimal string value.
+         * @param {string|Uint8Array|ArrayBuffer|number[]} value - Text, or raw
+         *   string bytes, including an array of byte values as native accepts.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `value` is neither a string nor bytes, or an
+         *   array item is not an integer from 0 to 255.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeHexStringValue: function (value) {
+          value = byteArrayToBytes(value, "Hex string value");
           if (
             typeof value !== "string" &&
             !(value instanceof Uint8Array) &&
@@ -144,6 +230,13 @@ export function createRawObjectsContext({
           writeValue(2, value);
           return this;
         },
+        /**
+         * Writes a number value.
+         * @param {number} value - Finite number.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `value` is not finite.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeNumberValue: function (value) {
           requireDictionary();
           if (!Number.isFinite(value))
@@ -162,6 +255,13 @@ export function createRawObjectsContext({
           }
           return this;
         },
+        /**
+         * Writes a boolean value.
+         * @param {boolean} value - Value to write.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `value` is not a boolean.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeBooleanValue: function (value) {
           requireDictionary();
           if (typeof value !== "boolean")
@@ -180,6 +280,13 @@ export function createRawObjectsContext({
           }
           return this;
         },
+        /**
+         * Writes an indirect object reference value with generation 0.
+         * @param {number} objectId - Positive object ID.
+         * @returns {this} The dictionary context.
+         * @throws {RangeError} If `objectId` is not a positive integer.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeObjectReferenceValue: function (objectId) {
           requireDictionary();
           if (!Number.isInteger(objectId) || objectId <= 0)
@@ -198,6 +305,11 @@ export function createRawObjectsContext({
           }
           return this;
         },
+        /**
+         * Writes a null value.
+         * @returns {this} The dictionary context.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeNullValue: function () {
           requireDictionary();
           if (
@@ -214,6 +326,13 @@ export function createRawObjectsContext({
           }
           return this;
         },
+        /**
+         * Writes a rectangle array value.
+         * @param {...(number|PDFRectangle)} values - Left, bottom, right, and top, or one array of them.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If there are not four finite coordinates.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeRectangleValue: function (...values) {
           requireDictionary();
           if (values.length === 1) values = values[0];
@@ -237,9 +356,19 @@ export function createRawObjectsContext({
       };
     }
 
+    /**
+     * Wraps a native PDF stream being written.
+     * @param {number} stream - Native stream.
+     * @returns {PDFStream} The stream.
+     */
     function streamContext(stream) {
       var result = {
         _handle: stream,
+        /**
+         * Opens a writer for the stream's content.
+         * @returns {ByteWriteStream} A writer that fails once the stream has ended.
+         * @throws {Error} If the writer has ended, the stream is not active, or no writer is available.
+         */
         getWriteStream: function () {
           requireContext();
           if (activeStream !== stream)
@@ -248,6 +377,13 @@ export function createRawObjectsContext({
             module._muhammara_wasm_pdf_stream_get_write_stream(stream);
           if (!writer) throw new Error("Unable to get PDF stream writer");
           return {
+            /**
+             * Appends bytes to the stream content.
+             * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} bytes - Bytes to write.
+             * @returns {number} Number of bytes written.
+             * @throws {TypeError} If `bytes` is not a supported byte source.
+             * @throws {Error} If the stream is no longer active.
+             */
             write: (bytes) => {
               if (activeStream !== stream)
                 throw new Error("PDF stream is no longer active");
@@ -260,6 +396,10 @@ export function createRawObjectsContext({
     }
 
     return {
+      /**
+       * Reports whether a dictionary, stream, free-context writer, or indirect object is open.
+       * @returns {boolean} Whether an operation must end before the PDF ends.
+       */
       _hasActive: function () {
         return (
           activeDictionary !== null ||
@@ -268,6 +408,11 @@ export function createRawObjectsContext({
           activeIndirectObject
         );
       },
+      /**
+       * Reserves an object ID for a later `startNewIndirectObject(id)`.
+       * @returns {number} The new object ID.
+       * @throws {Error} If the writer has ended or no ID can be allocated.
+       */
       allocateNewObjectID: function () {
         requireContext();
         var objectId =
@@ -275,6 +420,13 @@ export function createRawObjectsContext({
         if (!objectId) throw new Error("Unable to allocate object ID");
         return objectId;
       },
+      /**
+       * Starts an indirect object, with a new or a previously allocated ID.
+       * @param {number} [objectId] - ID from `allocateNewObjectID()`.
+       * @returns {number|this} The new object ID when `objectId` is omitted; otherwise the context.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the writer has ended or the object cannot be started.
+       */
       startNewIndirectObject: function (objectId) {
         requireContext();
         if (
@@ -292,6 +444,11 @@ export function createRawObjectsContext({
         indirectObjectClosedByStream = false;
         return objectId === undefined ? id : this;
       },
+      /**
+       * Ends the current indirect object; after `endPDFStream()` it only resets state.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or no object is open.
+       */
       endIndirectObject: function () {
         requireContext();
         if (indirectObjectClosedByStream) {
@@ -304,6 +461,13 @@ export function createRawObjectsContext({
         activeIndirectObject = false;
         return this;
       },
+      /**
+       * Starts a replacement for an existing object of a modified PDF.
+       * @param {number} objectId - ID of the object to replace.
+       * @returns {this} The objects context.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the writer has ended or the object cannot be replaced.
+       */
       startModifiedIndirectObject: function (objectId) {
         requireContext();
         if (!Number.isInteger(objectId) || objectId <= 0) {
@@ -321,6 +485,13 @@ export function createRawObjectsContext({
         indirectObjectClosedByStream = false;
         return this;
       },
+      /**
+       * Marks an object of a modified PDF as deleted.
+       * @param {number} objectId - ID of the object to delete.
+       * @returns {this} The objects context.
+       * @throws {RangeError} If `objectId` is not positive or cannot be deleted.
+       * @throws {Error} If the writer has ended.
+       */
       deleteObject: function (objectId) {
         requireContext();
         if (
@@ -332,6 +503,11 @@ export function createRawObjectsContext({
         }
         return this;
       },
+      /**
+       * Starts a dictionary; only this dictionary accepts keys until it ends.
+       * @returns {DictionaryContext} The active dictionary.
+       * @throws {Error} If the writer has ended or the dictionary cannot be started.
+       */
       startDictionary: function () {
         requireContext();
         var dictionary =
@@ -340,6 +516,12 @@ export function createRawObjectsContext({
         activeDictionary = dictionary;
         return dictionaryContext(dictionary);
       },
+      /**
+       * Ends the active dictionary.
+       * @param {DictionaryContext} dictionary - The dictionary from `startDictionary()`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or `dictionary` is not the active one.
+       */
       endDictionary: function (dictionary) {
         requireContext();
         if (
@@ -355,24 +537,44 @@ export function createRawObjectsContext({
         activeDictionary = null;
         return this;
       },
+      /**
+       * Starts an array; write its items, then call `endArray()`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or the array cannot be started.
+       */
       startArray: function () {
         requireContext();
         if (!module._muhammara_wasm_objects_start_array(handle))
           throw new Error("Unable to start array");
         return this;
       },
+      /**
+       * Ends the current array.
+       * @param {ETokenSeparator} [separator=eTokenSeparatorNone] - Token written after `]`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended, the separator is not an `eTokenSeparator*` constant, or no array is open.
+       */
       endArray: function (separator = constants.eTokenSeparatorNone) {
         requireContext();
         if (
-          !Number.isInteger(separator) ||
-          separator < 0 ||
-          separator > 2 ||
+          ![
+            constants.eTokenSeparatorSpace,
+            constants.eTokenSeparatorEndLine,
+            constants.eTokenSeparatorNone,
+          ].includes(separator) ||
           !module._muhammara_wasm_objects_end_array(handle, separator)
         ) {
           throw new Error("Unable to end array");
         }
         return this;
       },
+      /**
+       * Writes a number token, as an integer when `value` is whole.
+       * @param {number} value - Finite number.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not finite or cannot be written.
+       * @throws {Error} If the writer has ended.
+       */
       writeNumber: function (value) {
         requireContext();
         if (
@@ -387,6 +589,14 @@ export function createRawObjectsContext({
         }
         return this;
       },
+      /**
+       * Writes an `id generation R` reference.
+       * @param {number} objectId - Positive object ID.
+       * @param {number} [generation=0] - Non-negative generation number.
+       * @returns {this} The objects context.
+       * @throws {RangeError} If the ID or generation is invalid.
+       * @throws {Error} If the writer has ended.
+       */
       writeIndirectObjectReference: function (objectId, generation = 0) {
         requireContext();
         if (
@@ -404,6 +614,13 @@ export function createRawObjectsContext({
         }
         return this;
       },
+      /**
+       * Writes a boolean token.
+       * @param {boolean} value - Value to write.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a boolean.
+       * @throws {Error} If the writer has ended.
+       */
       writeBoolean: function (value) {
         requireContext();
         if (typeof value !== "boolean")
@@ -411,31 +628,82 @@ export function createRawObjectsContext({
         module._muhammara_wasm_objects_write_boolean(handle, value);
         return this;
       },
+      /**
+       * Writes a name token.
+       * @param {string} value - Name without the leading slash.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a string.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeName: function (value) {
         writeObjectString(0, value);
         return this;
       },
+      /**
+       * Writes a literal string token.
+       * @param {string|Uint8Array|ArrayBuffer|number[]} value - Text, or raw
+       *   string bytes, including an array of byte values as native accepts.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is neither a string nor bytes, or an
+       *   array item is not an integer from 0 to 255.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeLiteralString: function (value) {
         writeObjectString(1, value);
         return this;
       },
+      /**
+       * Writes a hexadecimal string token.
+       * @param {string|Uint8Array|ArrayBuffer|number[]} value - Text, or raw
+       *   string bytes, including an array of byte values as native accepts.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is neither a string nor bytes, or an
+       *   array item is not an integer from 0 to 255.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeHexString: function (value) {
         writeObjectString(2, value);
         return this;
       },
+      /**
+       * Writes a bare keyword token, such as `obj`.
+       * @param {string} value - Keyword text.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a string.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeKeyword: function (value) {
         writeObjectString(3, value);
         return this;
       },
+      /**
+       * Writes a `%` comment line.
+       * @param {string} value - Comment text without the `%`.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a string.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeComment: function (value) {
         writeObjectString(4, value);
         return this;
       },
+      /**
+       * Writes an end-of-line.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended.
+       */
       endLine: function () {
         requireContext();
         module._muhammara_wasm_objects_end_line(handle);
         return this;
       },
+      /**
+       * Turns Flate compression of later streams on or off.
+       * @param {boolean} value - Whether to compress.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a boolean or cannot be applied.
+       * @throws {Error} If the writer has ended.
+       */
       setCompressStreams: function (value) {
         requireContext();
         if (
@@ -446,6 +714,13 @@ export function createRawObjectsContext({
         }
         return this;
       },
+      /**
+       * Starts a stream, compressed when stream compression is on.
+       * @param {DictionaryContext} [dictionary] - Active stream dictionary to finish; `/Length` and `/Filter` are added.
+       * @returns {PDFStream} The active stream.
+       * @throws {TypeError} If `dictionary` is not the active dictionary.
+       * @throws {Error} If the writer has ended or the stream cannot be started.
+       */
       startPDFStream: function (dictionary) {
         requireContext();
         if (
@@ -464,6 +739,13 @@ export function createRawObjectsContext({
         activeStream = stream;
         return streamContext(stream);
       },
+      /**
+       * Starts a stream whose content is written without a filter.
+       * @param {DictionaryContext} [dictionary] - Active stream dictionary to finish; `/Length` is added.
+       * @returns {PDFStream} The active stream.
+       * @throws {TypeError} If `dictionary` is not the active dictionary.
+       * @throws {Error} If the writer has ended or the stream cannot be started.
+       */
       startUnfilteredPDFStream: function (dictionary) {
         requireContext();
         if (
@@ -482,6 +764,12 @@ export function createRawObjectsContext({
         activeStream = stream;
         return streamContext(stream);
       },
+      /**
+       * Ends the active stream and the indirect object that holds it.
+       * @param {PDFStream} stream - The stream from `startPDFStream()`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or `stream` is not the active one.
+       */
       endPDFStream: function (stream) {
         requireContext();
         if (
@@ -496,17 +784,34 @@ export function createRawObjectsContext({
         indirectObjectClosedByStream = true;
         return this;
       },
+      /**
+       * Starts writing raw bytes directly into the PDF output.
+       * @returns {ByteWriteStream} A writer with `write()` and `getCurrentPosition()`.
+       * @throws {Error} If the writer has ended or the context cannot be started.
+       */
       startFreeContext: function () {
         requireContext();
         var writer = module._muhammara_wasm_objects_start_free_context(handle);
         if (!writer) throw new Error("Unable to start free context");
         activeFreeWriter = writer;
         return {
+          /**
+           * Writes raw bytes into the PDF output.
+           * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} bytes - Bytes to write.
+           * @returns {number} Number of bytes written.
+           * @throws {TypeError} If `bytes` is not a supported byte source.
+           * @throws {Error} If the free context has ended.
+           */
           write: (bytes) => {
             if (activeFreeWriter !== writer)
               throw new Error("Free context is no longer active");
             return writeBytes(writer, bytes);
           },
+          /**
+           * Reads the current output offset.
+           * @returns {number} Bytes written to the PDF so far.
+           * @throws {Error} If the free context has ended.
+           */
           getCurrentPosition: function () {
             if (activeFreeWriter !== writer)
               throw new Error("Free context is no longer active");
@@ -514,6 +819,11 @@ export function createRawObjectsContext({
           },
         };
       },
+      /**
+       * Ends the free context started by `startFreeContext()`.
+       * @returns {this} The objects context.
+       * @throws {Error} If the writer has ended or no free context is open.
+       */
       endFreeContext: function () {
         requireContext();
         if (!module._muhammara_wasm_objects_end_free_context(handle)) {

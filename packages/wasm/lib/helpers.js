@@ -1,8 +1,22 @@
 import { normalizeBytes } from "./bytes.js";
+import { EEncoding } from "./value-sets.js";
+import { isPageBoxType } from "./constants.js";
 
-/** Creates memory-safe utility functions around a loaded WASM module. */
+/**
+ * Creates memory-safe utility functions around a loaded Wasm module and makes
+ * `module._malloc` throw instead of returning a null pointer.
+ * @param {object} module - Emscripten module.
+ * @returns {object} String, byte, and operator helpers shared by writers, modifiers, and readers.
+ */
 export function createHelpers(module) {
   var nativeMalloc = module._malloc.bind(module);
+  /**
+   * Allocates Wasm memory.
+   * @param {number} size - Positive byte count.
+   * @returns {number} The pointer.
+   * @throws {RangeError} If `size` is not a positive safe integer.
+   * @throws {Error} If memory cannot be allocated.
+   */
   module._malloc = function (size) {
     if (!Number.isSafeInteger(size) || size <= 0) {
       throw new RangeError("WebAssembly allocation size must be positive");
@@ -12,6 +26,12 @@ export function createHelpers(module) {
     return pointer;
   };
   var encoder = new TextEncoder();
+  /**
+   * Deletes a virtual file; a missing file is ignored.
+   * @param {string} [path] - Virtual file system path.
+   * @returns {void}
+   * @throws {Error} If an existing file cannot be removed.
+   */
   function removeFile(path) {
     if (!path) return;
     try {
@@ -20,6 +40,12 @@ export function createHelpers(module) {
       if (module.FS.analyzePath(path).exists) throw error;
     }
   }
+  /**
+   * Runs a callback with a NUL-terminated UTF-8 copy of a string in Wasm memory.
+   * @param {string} value - Text to copy.
+   * @param {function(number, number): *} callback - Receives the pointer and the byte length without the terminator.
+   * @returns {*} The callback result; the copy is freed afterwards.
+   */
   function withString(value, callback) {
     var bytes = encoder.encode(value);
     var pointer = module._malloc(bytes.length + 1);
@@ -32,6 +58,12 @@ export function createHelpers(module) {
     }
   }
 
+  /**
+   * Runs a callback with a copy of bytes in Wasm memory.
+   * @param {Uint8Array} bytes - Bytes to copy.
+   * @param {function(number): *} callback - Receives the pointer.
+   * @returns {*} The callback result; the copy is freed afterwards.
+   */
   function withBytes(bytes, callback) {
     var pointer = module._malloc(Math.max(bytes.length, 1));
     module.HEAPU8.set(bytes, pointer);
@@ -42,6 +74,16 @@ export function createHelpers(module) {
     }
   }
 
+  /**
+   * Writes normalized bytes through a native byte writer.
+   * @param {object} module - Emscripten module.
+   * @param {function(number, number): number} write - Native write; negative when the writer is gone.
+   * @param {ByteSource} bytes - Bytes to write.
+   * @param {string} [label="ByteWriter input"] - Name used in byte errors.
+   * @returns {number} The number of bytes written.
+   * @throws {TypeError} If `bytes` is not a supported byte source.
+   * @throws {Error} If the writer is no longer active.
+   */
   function writeNativeBytes(module, write, bytes, label = "ByteWriter input") {
     bytes = normalizeBytes(bytes, label);
     return withBytes(bytes, (pointer) => {
@@ -51,6 +93,16 @@ export function createHelpers(module) {
     });
   }
 
+  /**
+   * Writes raw content-stream code for a context's `writeFreeCode()`.
+   * @param {object} context - Content context to return.
+   * @param {function(): void} requireContext - Throws when the context is inactive.
+   * @param {function(number, number): boolean} write - Writes UTF-8 bytes at a pointer and length.
+   * @param {string} freeCode - Operators to write verbatim.
+   * @returns {object} `context`.
+   * @throws {TypeError} If `freeCode` is not a string.
+   * @throws {Error} If the context is inactive or writing fails.
+   */
   function writeFreeCode(context, requireContext, write, freeCode) {
     requireContext();
     if (typeof freeCode !== "string") {
@@ -62,7 +114,23 @@ export function createHelpers(module) {
     });
   }
 
+  /**
+   * Installs the color space, graphics state, and rendering operators on a content context.
+   * @param {object} context - Content context to extend.
+   * @param {function(): void} requireContext - Throws when the context is inactive.
+   * @param {Function} call - Native call taking `(code, namePointer, componentsPointer, count, hasPattern)`.
+   * @returns {void}
+   */
   function addStructuredContentOperators(context, requireContext, call) {
+    /**
+     * Applies an operator whose operand is a resource name.
+     * @param {string} name - Operator name for error messages.
+     * @param {number} code - Native operator code.
+     * @param {string} value - Resource name.
+     * @returns {object} The content context.
+     * @throws {TypeError} If `value` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     function nameOperator(name, code, value) {
       requireContext();
       if (typeof value !== "string") {
@@ -76,6 +144,16 @@ export function createHelpers(module) {
       });
     }
 
+    /**
+     * Applies an operator whose operands are color components and an optional pattern.
+     * @param {string} name - Operator name for error messages.
+     * @param {number} code - Native operator code.
+     * @param {number[]} values - Components.
+     * @param {string} [pattern] - Pattern resource name.
+     * @returns {object} The content context.
+     * @throws {TypeError} If a component is not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     function componentOperator(name, code, values, pattern) {
       requireContext();
       if (!values.every(Number.isFinite)) {
@@ -99,6 +177,15 @@ export function createHelpers(module) {
       );
     }
 
+    /**
+     * Reads `SCN`/`scn` arguments: components, or one component array, then an optional pattern name.
+     * @param {string} name - Operator name for error messages.
+     * @param {number} code - Native operator code.
+     * @param {Array} args - Call arguments; a trailing string is removed as the pattern.
+     * @returns {object} The content context.
+     * @throws {TypeError} If no finite components are given or the array form has extra arguments.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     function patternComponents(name, code, args) {
       var pattern = typeof args.at(-1) === "string" ? args.pop() : undefined;
       var values = Array.isArray(args[0]) ? args[0] : args;
@@ -115,39 +202,108 @@ export function createHelpers(module) {
       return componentOperator(name, code, values, pattern);
     }
 
+    /**
+     * Sets the color rendering intent (`ri`).
+     * @param {string} name - Intent, such as `Perceptual`.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `name` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.ri = function (name) {
       return nameOperator("ri", 0, name);
     };
+    /**
+     * Sets the flatness tolerance (`i`).
+     * @param {number} flatness - Tolerance from 0 to 100.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `flatness` is not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.i = function (flatness) {
       return componentOperator("i", 1, [flatness]);
     };
+    /**
+     * Applies a named graphics state (`gs`).
+     * @param {string} name - ExtGState resource name.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `name` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.gs = function (name) {
       return nameOperator("gs", 2, name);
     };
+    /**
+     * Sets the stroking color space (`CS`).
+     * @param {string} name - Color space name or resource.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `name` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.CS = function (name) {
       return nameOperator("CS", 3, name);
     };
+    /**
+     * Sets the nonstroking color space (`cs`).
+     * @param {string} name - Color space name or resource.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `name` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.cs = function (name) {
       return nameOperator("cs", 4, name);
     };
+    /**
+     * Sets the stroking color in the current color space (`SC`).
+     * @param {...number} components - Color components.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If no components are given or one is not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.SC = function (...components) {
       if (!components.length)
         throw new TypeError("SC requires numeric components");
       return componentOperator("SC", 5, components);
     };
+    /**
+     * Sets the stroking color, with an optional pattern (`SCN`).
+     * @param {...(number|number[]|string)} args - Components or one component array, then an optional pattern name.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If the components are missing or not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.SCN = function (...args) {
       return patternComponents("SCN", 6, args);
     };
+    /**
+     * Sets the nonstroking color in the current color space (`sc`).
+     * @param {...number} components - Color components.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If no components are given or one is not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.sc = function (...components) {
       if (!components.length)
         throw new TypeError("sc requires numeric components");
       return componentOperator("sc", 7, components);
     };
+    /**
+     * Sets the nonstroking color, with an optional pattern (`scn`).
+     * @param {...(number|number[]|string)} args - Components or one component array, then an optional pattern name.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If the components are missing or not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.scn = function (...args) {
       return patternComponents("scn", 8, args);
     };
   }
 
+  /**
+   * Runs a callback with numbers copied into Wasm memory as doubles.
+   * @param {number[]} values - Numbers to copy.
+   * @param {function(number): *} callback - Receives the pointer, or 0 for an empty list.
+   * @returns {*} The callback result; the copy is freed afterwards.
+   */
   function withDoubles(values, callback) {
     var pointer = values.length ? module._malloc(values.length * 8) : 0;
     try {
@@ -158,12 +314,21 @@ export function createHelpers(module) {
     }
   }
 
+  /**
+   * Validates the arguments of `createFormXObjectFromPDFPage()`.
+   * @param {number} index - Zero-based source page index.
+   * @param {PDFPageBoxType|PDFRectangle} pageBox - Page box constant or rectangle.
+   * @param {PDFMatrix} [transformation] - Form matrix.
+   * @returns {Array} `[index, pageBox, transformation]`.
+   * @throws {RangeError} If `index` is not a non-negative integer.
+   * @throws {TypeError} If `pageBox` or `transformation` is invalid.
+   */
   function copiedPageFormArguments(index, pageBox, transformation) {
     if (!Number.isInteger(index) || index < 0) {
       throw new RangeError("Page index must be a non-negative integer");
     }
     if (!(
-      (Number.isInteger(pageBox) && pageBox >= 0 && pageBox <= 4) ||
+      isPageBoxType(pageBox) ||
       (Array.isArray(pageBox) &&
         pageBox.length === 4 &&
         pageBox.every(Number.isFinite))
@@ -185,17 +350,31 @@ export function createHelpers(module) {
     return [index, pageBox, transformation];
   }
 
+  /**
+   * Maps text options to the native encoding code.
+   * @param {TextOptions} [options] - Options with an optional EEncoding.
+   * @returns {number} 0 text, 1 code, or 2 hex.
+   * @throws {TypeError} If `options` is not an options object or the encoding is not a EEncoding value.
+   */
   function textEncoding(options) {
     if (options === undefined) return 0;
     if (!options || typeof options !== "object" || Array.isArray(options)) {
       throw new TypeError("text options must be an options object");
     }
-    if (options.encoding === undefined || options.encoding === "text") return 0;
-    if (options.encoding === "code") return 1;
-    if (options.encoding === "hex") return 2;
+    if (options.encoding === undefined || options.encoding === EEncoding.TEXT)
+      return 0;
+    if (options.encoding === EEncoding.CODE) return 1;
+    if (options.encoding === EEncoding.HEX) return 2;
     throw new TypeError("text encoding must be text, code, or hex");
   }
 
+  /**
+   * Runs a callback with glyph pairs copied into Wasm memory as 32-bit integers.
+   * @param {Glyph} glyphs - `[glyphId, unicodeCodePoint]` pairs.
+   * @param {function(number): *} callback - Receives the pointer.
+   * @returns {*} The callback result.
+   * @throws {TypeError} If an entry is not a pair of non-negative integers.
+   */
   function withGlyphs(glyphs, callback) {
     if (
       !Array.isArray(glyphs) ||
@@ -217,13 +396,15 @@ export function createHelpers(module) {
   }
 
   /**
-   * Marshals TJ items into temporary WASM buffers.
+   * Marshals TJ items into temporary Wasm buffers.
    *
    * @param {Array} items Text strings, spacing numbers, or glyph lists.
    * @param {Function} callback Receives pointers in fixed order: types, numbers,
    * string offsets, strings, glyph offsets, glyphs, then the item count and the
    * lengths of the string offset, string, glyph offset, and glyph buffers.
    * @returns {*} The callback result before all temporary buffers are freed.
+   * @throws {TypeError} If `items` is empty, a number is not finite, or a glyph list is invalid.
+   * @throws {RangeError} If the items exceed the item, string, or glyph limits.
    */
   function withTJItems(items, callback) {
     if (!items.length)
@@ -305,7 +486,25 @@ export function createHelpers(module) {
     );
   }
 
+  /**
+   * Installs `Quote`, `DoubleQuote`, and `TJ` on a content context.
+   * @param {object} context - Content context to extend.
+   * @param {function(): void} requireContext - Throws when the context is inactive.
+   * @param {{text: Function, glyphs: Function, tj: Function}} api - Native text, glyph, and TJ calls.
+   * @returns {void}
+   */
   function addTextShowingOperators(context, requireContext, api) {
+    /**
+     * Shows text or glyphs with one of the quote operators.
+     * @param {number} operation - 1 for `'`, 2 for `"`.
+     * @param {string|Glyph} text - Text or glyph entries.
+     * @param {TextOptions} [options] - Text encoding; only for string text.
+     * @param {number} [wordSpace=0] - Word spacing for `"`.
+     * @param {number} [characterSpace=0] - Character spacing for `"`.
+     * @returns {object} The content context.
+     * @throws {TypeError} If a spacing is not finite, or `options` is invalid or given with glyphs.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     function show(operation, text, options, wordSpace = 0, characterSpace = 0) {
       requireContext();
       if (![wordSpace, characterSpace].every(Number.isFinite)) {
@@ -342,12 +541,39 @@ export function createHelpers(module) {
         return context;
       });
     }
+    /**
+     * Moves to the next line and shows text (`'`).
+     * @param {string|Glyph} text - Text, or glyph entries.
+     * @param {TextOptions} [options] - Text encoding; only for string text.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `options` is invalid or given with glyphs.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.Quote = function (text, options) {
       return show(1, text, options);
     };
+    /**
+     * Sets word and character spacing, moves to the next line, and shows text (`"`).
+     * @param {number} wordSpace - Word spacing.
+     * @param {number} characterSpace - Character spacing.
+     * @param {string|Glyph} text - Text, or glyph entries.
+     * @param {TextOptions} [options] - Text encoding; only for string text.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If a spacing is not finite, or `options` is invalid or given with glyphs.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.DoubleQuote = function (wordSpace, characterSpace, text, options) {
       return show(2, text, options, wordSpace, characterSpace);
     };
+    /**
+     * Shows text with individual glyph positioning (`TJ`).
+     * @param {...(string|number|Glyph|TextOptions)} items - Strings or glyph arrays and
+     * kerning adjustments; a trailing options object sets the encoding.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If an item or the encoding is invalid.
+     * @throws {RangeError} If the items exceed the TJ limits.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.TJ = function (...items) {
       requireContext();
       var last = items.at(-1);

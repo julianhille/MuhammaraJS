@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
 
 describe("UseAfterEndTest", function () {
@@ -63,6 +64,40 @@ describe("UseAfterEndTest", function () {
         writer.dispose();
       }
     });
+  });
+
+  it("rejects font use and keeps value constructors after writers and modifiers end", async function () {
+    var muhammara = await createMuhammaraWasm();
+    muhammara.registerFont(
+      "use-after-end",
+      new Uint8Array(await readFile("tests/TestMaterials/fonts/arial.ttf")),
+    );
+    try {
+      var writer = muhammara.createWriter();
+      var modifier = muhammara.createWriterToModify(
+        muhammara.createBlankPdf(10, 10),
+      );
+      var fonts = [writer, modifier].map((target) =>
+        target.getFontForBytes("use-after-end"),
+      );
+      writer.writePage(writer.createPage(0, 0, 10, 10));
+      writer.end();
+      modifier.end();
+      for (var font of fonts) {
+        assert.throws(() => font.calculateTextDimensions("a", 10), {
+          name: "Error",
+          message: "PDF writer has ended",
+        });
+        assert.throws(() => font.getFontMetrics(10), {
+          name: "Error",
+          message: "PDF writer has ended",
+        });
+      }
+      assert.equal(modifier.createPDFTextString("kept").toString(), "kept");
+      assert.equal(modifier.createPDFDate().toString(), "");
+    } finally {
+      muhammara.unregisterFont("use-after-end");
+    }
   });
 
   it("rejects copying context use after its writer is disposed", async function () {

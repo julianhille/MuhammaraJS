@@ -95,11 +95,26 @@ export var HOW_TO_EXAMPLES = [
   },
 ];
 
+/**
+ * Returns a required asset or fails the example.
+ * @template T
+ * @param {T|undefined} value - The asset.
+ * @param {string} message - Error message when it is missing.
+ * @returns {T} The asset.
+ * @throws {Error} If the asset is missing.
+ */
 function assertAsset(value, message) {
   if (!value) throw new Error(message);
   return value;
 }
 
+/**
+ * Parses a generated PDF back and summarizes it.
+ * @param {Uint8Array<ArrayBuffer>} bytes - PDF bytes.
+ * @param {object} [details={}] - Extra summary values; `expectedPageWidths` is checked.
+ * @returns {Promise<object>} Page count, object count, PDF level, page widths, and `details`.
+ * @throws {Error} If the page widths differ from `expectedPageWidths`.
+ */
 async function summarize(bytes, details = {}) {
   var muhammara = await createMuhammaraWasm();
   var reader = muhammara.createReader(bytes);
@@ -130,6 +145,10 @@ async function summarize(bytes, details = {}) {
   }
 }
 
+/**
+ * Builds the browser example for review annotations.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function annotationsExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
@@ -198,6 +217,10 @@ async function annotationsExample() {
   }
 }
 
+/**
+ * Builds the browser example for links.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function linksExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
@@ -260,7 +283,10 @@ async function linksExample() {
   }
 }
 
-/** Builds the browser example for nested, formatted, and linked HTML lists. */
+/**
+ * Builds the browser example for nested, formatted, and linked HTML lists.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function htmlListsExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
@@ -292,6 +318,11 @@ async function htmlListsExample() {
   }
 }
 
+/**
+ * Builds the browser example for page boxes.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If writing fails; the writer is disposed first.
+ */
 async function pageBoxesExample() {
   var muhammara = await createMuhammaraWasm();
   var writer = muhammara.createWriter({ compress: false });
@@ -354,6 +385,10 @@ async function pageBoxesExample() {
   }
 }
 
+/**
+ * Builds the browser example for a gray form XObject.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function formGrayExample() {
   var muhammara = await createMuhammaraWasm();
   var writer = muhammara.createWriter({ compress: false });
@@ -388,6 +423,10 @@ async function formGrayExample() {
   }
 }
 
+/**
+ * Builds the browser example for a rotated page.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function rotatedPageExample() {
   var muhammara = await createMuhammaraWasm();
   var Recipe = await createRecipe();
@@ -434,7 +473,14 @@ async function rotatedPageExample() {
   }
 }
 
+/**
+ * Builds the browser example for image transformations.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If a required asset is missing.
+ */
 async function imageTransformExample(assets) {
+  /** @type {[Uint8Array, string] | null} */
   var selected = assets.png
     ? [assets.png, "png"]
     : assets.jpeg
@@ -501,6 +547,12 @@ async function imageTransformExample(assets) {
   }
 }
 
+/**
+ * Builds the browser example for a table.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If a required asset is missing.
+ */
 async function tableExample(assets) {
   var Recipe = await createRecipe({ defaultFont: assets.font });
   var recipe = new Recipe({ compress: false });
@@ -536,11 +588,10 @@ async function tableExample(assets) {
           fontSize: 11,
           header: true,
           border: { width: 1, color: "#c2410c" },
-          padding: 9,
           columns: [
-            { name: "item", width: 220 },
-            { name: "status", width: 95 },
-            { name: "surface", width: 140 },
+            { name: "item", width: 220, cell: { padding: 9 } },
+            { name: "status", width: 95, cell: { padding: 9 } },
+            { name: "surface", width: 140, cell: { padding: 9 } },
           ],
         },
       )
@@ -562,6 +613,10 @@ async function tableExample(assets) {
   }
 }
 
+/**
+ * Builds the browser example for password protection.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function passwordsExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
@@ -602,6 +657,12 @@ async function passwordsExample() {
   }
 }
 
+/**
+ * Builds the browser example for text replacement.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If a required asset is missing.
+ */
 async function replaceTextExample(assets) {
   assertAsset(
     assets.font,
@@ -644,6 +705,10 @@ async function replaceTextExample(assets) {
   }
 }
 
+/**
+ * Builds the browser example for page deletion.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function deletePagesExample() {
   var Recipe = await createRecipe();
   var sourceRecipe = new Recipe({ compress: false });
@@ -691,6 +756,14 @@ var runners = {
   "replace-text": replaceTextExample,
 };
 
+/**
+ * Runs one how-to example.
+ * @param {string} id - How-to id from `HOW_TO_EXAMPLES`.
+ * @param {import("./lifecycle.mjs").ExampleOptions} [options={}] - Assets, signal, and progress.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If `id` is unknown.
+ * @throws {DOMException} If the run is cancelled.
+ */
 export async function runHowToExample(id, options = {}) {
   var runner = runners[id];
   if (!runner) throw new Error(`Unknown browser example: ${id}`);

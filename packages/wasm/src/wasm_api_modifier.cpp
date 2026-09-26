@@ -496,6 +496,20 @@ WASM_EXPORT int muhammara_wasm_modifier_font_text_dimensions(
   return 1;
 }
 
+WASM_EXPORT int muhammara_wasm_modifier_font_glyph_dimensions(
+    WasmModifier* modifier, PDFUsedFont* font, const uint32_t* glyphs, int count,
+    double fontSize, double* values) {
+  return modifier != nullptr && !modifier->finished &&
+         fontGlyphDimensions(font, glyphs, count, fontSize, values);
+}
+
+WASM_EXPORT int muhammara_wasm_modifier_font_underline(WasmModifier* modifier,
+                                                       PDFUsedFont* font, const char* text,
+                                                       double fontSize, double* values) {
+  return modifier != nullptr && !modifier->finished &&
+         fontUnderline(font, text, fontSize, values);
+}
+
 WASM_EXPORT int muhammara_wasm_modifier_font_metrics(WasmModifier* modifier,
                                                       PDFUsedFont* font,
                                                       double fontSize,
@@ -558,17 +572,15 @@ WASM_EXPORT int muhammara_wasm_modifier_do_xobject_name(WasmModifier* modifier,
 
 WASM_EXPORT int muhammara_wasm_modifier_do_form_object_id(WasmModifier* modifier,
                                                            unsigned long objectId) {
-  if (modifier == nullptr || modifier->page == nullptr || modifier->context == nullptr ||
-      modifier->finished || objectId == 0)
+  if (modifier == nullptr || (modifier->page == nullptr && modifier->newPage == nullptr) ||
+      modifier->context == nullptr || modifier->finished || objectId == 0)
     return 0;
-  std::string name = modifier->page->GetCurrentResourcesDictionary()->AddFormXObjectMapping(
-      objectId);
+  // New pages keep their resources on the PDFPage; modified pages on the modifier.
+  ResourcesDictionary* resources = modifier->newPage != nullptr
+                                       ? &modifier->newPage->GetResourcesDictionary()
+                                       : modifier->page->GetCurrentResourcesDictionary();
+  std::string name = resources->AddFormXObjectMapping(objectId);
   return modifier->context->Do(name) == PDFHummus::eSuccess;
-}
-
-WASM_EXPORT int muhammara_wasm_modifier_show_text(WasmModifier* modifier, const char* text) {
-  return modifier != nullptr && modifier->context != nullptr && text != nullptr &&
-                 modifier->context->Tj(text) == PDFHummus::eSuccess;
 }
 
 WASM_EXPORT int muhammara_wasm_modifier_show_text_operator(
@@ -802,13 +814,6 @@ WASM_EXPORT int muhammara_wasm_modifier_form_set_font_name(
                  form->modifier == modifier && form->form != nullptr && !form->ended &&
                  name != nullptr && std::isfinite(fontSize) && fontSize > 0 &&
                  form->form->GetContentContext()->TfLow(name, fontSize) == PDFHummus::eSuccess;
-}
-
-WASM_EXPORT int muhammara_wasm_modifier_form_show_text(
-    WasmModifier* modifier, WasmForm* form, const char* text) {
-  return modifier != nullptr && !modifier->finished && form != nullptr &&
-                 form->modifier == modifier && form->form != nullptr && !form->ended &&
-                  text != nullptr && form->form->GetContentContext()->Tj(text) == PDFHummus::eSuccess;
 }
 
 WASM_EXPORT int muhammara_wasm_modifier_form_show_text_operator(

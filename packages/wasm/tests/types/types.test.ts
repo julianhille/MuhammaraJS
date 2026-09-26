@@ -1,5 +1,35 @@
-import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import {
+  ETokenSeparator,
+  LineCapStyle,
+  PDFImageType,
+  createMuhammaraWasm,
+  createRecipe,
+  DeviceColorSpace as DeviceColorSpaces,
+  ImageFit as ImageFitPolicies,
+  PageBox as PageBoxes,
+  EEncoding as EEncodings,
+} from "../../index.js";
 import type {
+  RecipeConstructor,
+  PDFWriterOptions,
+  PDFReaderOptions,
+  Glyph,
+  EEncoding,
+  PDFPageGeometry,
+  PDFXrefEntry,
+  ObjectReplacementOptions,
+  RecipeImageOptions,
+  TextEncoding,
+  PageBox,
+  PDFRectangle,
+  PDFPageBoxType,
+  ImageFit,
+  DeviceColorSpace,
+  PageRangeOptions,
+  ERangeType,
+  XrefEntryType,
+  PDFObjectType,
+  EInfoTrapped,
   DrawingPathType,
   PDFPageContentItemType,
   RecipeArcOptions,
@@ -109,6 +139,8 @@ async function usesLowLevelSurface() {
   context.Tj([[1, 65]], { encoding: "hex" });
   const kernedParts: (string | number)[] = ["kern", -40, "ed"];
   context.TJ(...kernedParts);
+  const shown: string | Glyph = "text";
+  context.Tj(shown).Quote(shown).DoubleQuote(0, 0, shown);
   // @ts-expect-error TJ options must be the final item.
   context.TJ({ encoding: "text" }, "text");
   await context.drawImageAsync(0, 0, new Blob());
@@ -587,6 +619,11 @@ async function usesLowLevelSurface() {
       replies: [{ text: "reply" }],
     })
     .annot(0, 0, "Square", { width: 10, height: 10, flag: "print" })
+    .annot(0, 0, Recipe.AnnotSubtype.HIGHLIGHT, {
+      width: 10,
+      height: 10,
+      flag: Recipe.AnnotFlag.LOCKED_CONTENTS,
+    })
     .annot(100, 200, "Highlight", { width: 200, height: 14, opacity: 0.45 })
     .annot(100, 230, "Highlight", { width: 200, height: 14, opacity: 0 })
     .info({
@@ -763,3 +800,379 @@ function usesRecipeDeclarations(
 }
 
 void usesRecipeDeclarations;
+
+async function usesAlignedDeclarations() {
+  var muhammara = await createMuhammaraWasm();
+  var writer = muhammara.createWriter();
+  var page = writer.createPage();
+  page.getResourcesDictionary().addFormXObjectMapping(1);
+  // Image XObjects map directly, as in native.
+  page
+    .getResourcesDictionary()
+    .addImageXObjectMapping(writer.createImageXObjectFromJPGBytes("jpg"));
+  var context = writer.startPageContentContext(page);
+  context
+    .drawPath(0, 0, 10, 10)
+    .drawPath(0, 0, 10, 10, { type: "fill" })
+    .SCN(1, 0, 0)
+    .SCN(1, 0, 0, "P0")
+    .scn([1, 0, 0], "P0");
+  // @ts-expect-error A pattern name needs color components.
+  context.SCN("P0");
+  var font = writer.getFontForBytes("arial");
+  var glyphWidth: number = font.calculateTextDimensions([43, 76], 12).width;
+  void glyphWidth;
+  var reader = muhammara.createReader(writer.end());
+  var position: number = reader.getXrefEntry(1).objectPosition;
+  void position;
+
+  var Recipe = await createRecipe();
+  new Recipe({})
+    .createPage("A4")
+    .text("centered", "center", "center")
+    .image("logo", "center", "center", { width: 10 });
+
+  // Shapes, links, and rotateContent accept `center`, as in native.
+  var shapes = new Recipe()
+    .createPage("A4")
+    .circle("center", "center", 10)
+    .rectangle("center", "center", 10, 10)
+    .ellipse("center", "center", 10, 5)
+    .arc("center", "center", 10, 0, 90)
+    .pie("center", "center", 10, 0, 90)
+    .link("https://example.com", "center", "center", 10, 10)
+    .rotateContent(10, "center", "center");
+
+  // Readonly option values shared with native-typed code are accepted.
+  const color: Recipe.Color = [255, 0, 0] as const;
+  const dash: readonly number[] = [2, 1];
+  const origin = [0, 0] as const;
+  shapes
+    .polygon(
+      [
+        [0, 0],
+        [10, 0],
+        [5, 5],
+      ],
+      { color, dash, rotationOrigin: origin },
+    )
+    .rectangle(0, 0, 10, 10, { borderRadius: [2, 4] as const })
+    .rectangle(0, 0, 10, 10, { useGivenCoords: true })
+    .text("boxed", 0, 0, {
+      textBox: {
+        width: 50,
+        padding: [1, 2] as const,
+        style: { borderRadius: true },
+      },
+      overflow: function (recipe) {
+        const self: Recipe = this;
+        return self === recipe ? { column: [0, 1] as const } : true;
+      },
+    });
+  // @ts-expect-error Only rectangle reads useGivenCoords.
+  shapes.circle(0, 0, 10, { useGivenCoords: true });
+  // @ts-expect-error `colour` is not a documented option; use `color`.
+  shapes.circle(0, 0, 10, { colour: "red" });
+  const extension: Recipe.ExtensionCallback = function () {
+    return this.position;
+  };
+  shapes.register("where", extension);
+
+  // Union arguments that native accepts in one signature.
+  const sides: number | Recipe.NGonOptions = 6;
+  const points: number | Recipe.PathOptions = { color: "red" };
+  const lines: boolean = true;
+  shapes.n_gon(50, 50, 10, sides).star(50, 50, 10, points);
+  const moved: Recipe | [number, number] = shapes.movedown(1, lines);
+  void moved;
+  const metadata: Recipe.Metadata | undefined = shapes.metadata;
+  void metadata;
+}
+
+void usesAlignedDeclarations;
+
+async function usesWriterEncryption() {
+  var muhammara = await createMuhammaraWasm();
+  const options: PDFWriterOptions = {
+    userPassword: "user",
+    ownerPassword: "owner",
+    userProtectionFlag: 4,
+  };
+  muhammara.createWriter(options);
+  const readerOptions: PDFReaderOptions = { password: "user" };
+  muhammara.createReader(new Uint8Array(), readerOptions).end();
+  // @ts-expect-error Reader options are an object, not a native handle.
+  muhammara.createReader(new Uint8Array(), 5);
+  // @ts-expect-error A modifier does not take encryption options.
+  muhammara.createWriterToModify(new Uint8Array(), { userPassword: "user" });
+}
+
+void usesWriterEncryption;
+
+async function usesNamedValueSets() {
+  var muhammara = await createMuhammaraWasm();
+  var recipeClass: RecipeConstructor = await createRecipe();
+  var writer = muhammara.createWriter();
+  var context = writer.startPageContentContext(writer.createPage());
+  void context;
+  context.J(2);
+  // @ts-expect-error PDF line caps are 0 to 2.
+  context.J(3);
+  context.j(2);
+  // @ts-expect-error PDF line joins are 0 to 2.
+  context.j(3);
+  context.Tr(7);
+  // @ts-expect-error PDF text rendering modes are 0 to 7.
+  context.Tr(8);
+  var info = writer.getDocumentContext().getInfoDictionary();
+  info.trapped = muhammara.EInfoTrappedTrue;
+  var trapped: EInfoTrapped = info.trapped;
+  void trapped;
+  // @ts-expect-error Trapped accepts only the EInfoTrapped constants.
+  info.trapped = 3;
+  var objects = writer.getObjectsContext();
+  var separator: ETokenSeparator = muhammara.eTokenSeparatorEndLine;
+  objects.startArray().endArray(separator);
+  // @ts-expect-error Separators are the eTokenSeparator constants.
+  objects.startArray().endArray(3);
+  var parsed = muhammara.createReader(muhammara.createBlankPdf(10, 10));
+  var objectType: PDFObjectType = parsed.getTrailer().getType();
+  var isDictionary: boolean = objectType === muhammara.ePDFObjectDictionary;
+  void isDictionary;
+  void muhammara.getTypeLabel(muhammara.ePDFObjectStream);
+  // @ts-expect-error Labels exist only for the ePDFObject constants.
+  muhammara.getTypeLabel(12);
+  var rootType: PDFObjectType | null = parsed.getTrailerEntryType("Root");
+  void rootType;
+  var entryType: XrefEntryType = parsed.getXrefEntry(1).type;
+  void (entryType === muhammara.eXrefEntryExisting);
+  var procsetResources = writer.createPage().getResourcesDictionary();
+  procsetResources.addProcsetResource(muhammara.kProcsetText);
+  // @ts-expect-error Procsets are the KProcset constants.
+  procsetResources.addProcsetResource("Pdf");
+  var rangeType: ERangeType = muhammara.eRangeTypeSpecific;
+  var ranges: PageRangeOptions = {
+    type: muhammara.eRangeTypeSpecific,
+    specificRanges: [[0, 0]],
+  };
+  void [rangeType, ranges];
+  var imageType: PDFImageType | undefined = writer.getImageType("logo");
+  void imageType;
+  var asyncImageType: Promise<PDFImageType | undefined> =
+    writer.getImageTypeAsync(new Uint8Array());
+  void asyncImageType;
+  var modifierForTypes = muhammara.createWriterToModify(
+    muhammara.createBlankPdf(10, 10),
+  );
+  var modifierImageType: PDFImageType | undefined =
+    modifierForTypes.getImageType("logo");
+  void modifierImageType;
+  var modifierAsyncImageType: Promise<PDFImageType | undefined> =
+    modifierForTypes.getImageTypeAsync(new Uint8Array());
+  void modifierAsyncImageType;
+  var drawColorspace: DeviceColorSpace = "cmyk";
+  context.drawRectangle(0, 0, 1, 1, { color: 0, colorspace: drawColorspace });
+  // @ts-expect-error Colorspaces are rgb, gray, or cmyk.
+  context.drawRectangle(0, 0, 1, 1, { color: 0, colorspace: "hsl" });
+  var fitPolicy: ImageFit = "overflow";
+  context.drawImage(0, 0, "logo", {
+    transformation: { width: 10, height: 10, fit: fitPolicy },
+  });
+  context.BT().Tj("text", { encoding: "hex" }).ET();
+  // @ts-expect-error Encodings are text, code, or hex.
+  context.Tj("text", { encoding: "utf8" });
+  var cropBox: PDFPageBoxType = muhammara.ePDFPageBoxCropBox;
+  writer.createFormXObjectsFromPDF("source", cropBox);
+  // @ts-expect-error Page boxes are the ePDFPageBox constants.
+  writer.createFormXObjectsFromPDF("source", 5);
+  void writer.createFormXObjectsFromPDFAsync(new Uint8Array(), cropBox);
+  modifierForTypes.createFormXObjectsFromPDF("source", cropBox);
+  void modifierForTypes.createFormXObjectsFromPDFAsync(
+    new Uint8Array(),
+    cropBox,
+  );
+  var copying = writer.createPDFCopyingContext(new Uint8Array());
+  copying.createFormXObjectFromPDFPage(0, muhammara.ePDFPageBoxTrimBox);
+  // @ts-expect-error Page boxes are the ePDFPageBox constants.
+  copying.createFormXObjectFromPDFPage(0, 5);
+  var trimBox: PDFRectangle = parsed.getPageBox(0, "trim");
+  void trimBox;
+  // @ts-expect-error Page boxes are media, crop, bleed, trim, or art.
+  parsed.getPageBox(0, "page");
+  var exportedColorspace: DeviceColorSpace = DeviceColorSpaces.CMYK;
+  var exportedFit: ImageFit = ImageFitPolicies.OVERFLOW;
+  var exportedBox: PageBox = PageBoxes.TRIM;
+  var exportedEncoding: EEncoding = EEncodings.HEX;
+  var legacyEncoding: TextEncoding = EEncodings.TEXT;
+  void legacyEncoding;
+  void [exportedColorspace, exportedFit, exportedBox, exportedEncoding];
+  var wrapMode: Recipe.TextWrap = "ellipsis";
+  var wrapBox: RecipeTextBox = { width: 10, wrap: wrapMode };
+  void wrapBox;
+  var lineAlign: Recipe.TextAlign = "justify";
+  var boxBottom: Recipe.VerticalAlign = "bottom";
+  var textLeft: Recipe.HorizontalAlign = "left";
+  var alignedBox: RecipeTextBox = {
+    width: 10,
+    textAlign: `${lineAlign} ${boxBottom}`,
+  };
+  void [alignedBox, textLeft];
+  var imageOptions: RecipeImageOptions = { align: "center bottom" };
+  // @ts-expect-error Image alignment uses the alignment keywords.
+  var badImageOptions: RecipeImageOptions = { align: "middle" };
+  void [imageOptions, badImageOptions];
+  var trianglePosition: RecipeTrianglePosition = "incenter";
+  var triangleTrait: RecipeTriangleTrait = "sas";
+  void [trianglePosition, triangleTrait];
+  var lineCap: Recipe.LineCap = "square";
+  var lineJoin: Recipe.LineJoin = "bevel";
+  void [lineCap, lineJoin];
+  var rowParity: Recipe.TableRowNth = "odd";
+  void rowParity;
+  var pageLayout: Recipe.PageLayout = "landscape";
+  void pageLayout;
+  var replacement: ObjectReplacementOptions = { scope: "global" };
+  modifierForTypes.replaceObject(0, 1, 2, replacement);
+  var compact = muhammara.createModifier(muhammara.createBlankPdf(10, 10));
+  compact.startPage(0).rectangle(0, 0, 5, 5, { fill: 0xff0000 });
+  // @ts-expect-error Low-level colors take three components.
+  compact.rectangle(0, 0, 5, 5, { fill: [1, 2] });
+  compact.circle(5, 5, 2, { stroke: "#00ff00" });
+  compact.line(0, 0, 5, 5, { color: [0, 0, 255], lineWidth: 2 });
+  compact.text("hi", 1, 1, { font: "arial", color: 0 });
+  context.drawCircle(5, 5, 2, { color: [255, 0, 0], type: "fill" });
+  var readStream = new muhammara.PDFRStreamForBuffer(new Uint8Array());
+  var dictionaryObjects = writer.getObjectsContext();
+  dictionaryObjects.startNewIndirectObject();
+  var dictionary = dictionaryObjects.startDictionary();
+  dictionary.writeKey("A").writeLiteralStringValue(new Uint8Array([65]));
+  // @ts-expect-error Read streams are not string bytes.
+  dictionary.writeLiteralStringValue(readStream);
+  dictionary.writeKey("B").writeHexStringValue(new ArrayBuffer(1));
+  // @ts-expect-error Read streams are not string bytes.
+  dictionary.writeHexStringValue(readStream);
+  dictionaryObjects.writeLiteralString(new Uint8Array([65]));
+  // Arrays of byte values are accepted, as in native.
+  dictionaryObjects.writeLiteralString([72, 105]).writeHexString([0xca]);
+  dictionary.writeKey("C").writeLiteralStringValue([72, 105]);
+  new muhammara.PDFWStreamForBuffer().write([1, 2, 3]);
+  // @ts-expect-error Read streams are not string bytes.
+  dictionaryObjects.writeLiteralString(readStream);
+  dictionaryObjects.writeHexString(new ArrayBuffer(1));
+  // @ts-expect-error Read streams are not string bytes.
+  dictionaryObjects.writeHexString(readStream);
+  var xrefEntry: PDFXrefEntry = parsed.getXrefEntry(1);
+  void xrefEntry;
+  var geometry: PDFPageGeometry = parsed.getPageInfo(0);
+  void geometry;
+  var namedImageType: PDFImageType = PDFImageType.JPG;
+  void namedImageType;
+  var namedLineCap: LineCapStyle = LineCapStyle.LINECAP_ROUND;
+  void namedLineCap;
+  var namedSeparator: ETokenSeparator = ETokenSeparator.eTokenSeparatorNone;
+  void namedSeparator;
+  var namedFlag: Recipe.AnnotFlag = recipeClass.AnnotFlag.PRINT;
+  void namedFlag;
+  var namedIcon: Recipe.AnnotIcon = recipeClass.AnnotIcon.COMMENT;
+  var textAlign: Recipe.TextAlign = recipeClass.TextAlign.JUSTIFY;
+  void textAlign;
+  var pageSize: string = recipeClass.PageSize.A4;
+  void pageSize;
+  void namedIcon;
+  var glyphRun: Glyph = [
+    [1, 65],
+    [2, 66],
+  ];
+  void glyphRun;
+  var recipeWrap: Recipe.TextWrap = recipeClass.TextWrap.ELLIPSIS;
+  var recipeRowNth: Recipe.TableRowNth = recipeClass.TableRowNth.ODD;
+  var recipeCap: Recipe.LineCap = recipeClass.LineCap.ROUND;
+  var recipeJoin: Recipe.LineJoin = recipeClass.LineJoin.BEVEL;
+  var recipeArrowAt: Recipe.ArrowAt = recipeClass.ArrowAt.TAIL;
+  var recipeArrowType: Recipe.ArrowType = recipeClass.ArrowType.KITE;
+  var recipeLayout: Recipe.PageLayout = recipeClass.PageLayout.LANDSCAPE;
+  var recipePageSize: Recipe.PageSize = recipeClass.PageSize.A4;
+  var recipeFontStyle: Recipe.FontStyle = recipeClass.FontStyle.BOLD_ITALIC;
+  var recipeShortStyle: Recipe.RecipeFontStyle = "bi";
+  var recipePermission: Recipe.Permission = recipeClass.Permission.COPY;
+  var recipeCoordinate: Recipe.Coordinate = recipeClass.Coordinate.CENTER;
+  var recipeAnyCoordinate: Recipe.RecipeCoordinate = 10;
+  var recipeFlag: Recipe.AnnotFlag = recipeClass.AnnotFlag.LOCKED_CONTENTS;
+  var recipeIcon: Recipe.AnnotIcon = recipeClass.AnnotIcon.NOTE;
+  var recipeSubtype: Recipe.AnnotSubtype = recipeClass.AnnotSubtype.INK;
+  var recipeChroma: Recipe.ChromaCommand = recipeClass.ChromaCommand.LOAD;
+  var recipeColorspace: Recipe.Colorspace = recipeClass.Colorspace.SEPARATION;
+  var recipeDevice: Recipe.DeviceColorSpace = "cmyk";
+  var recipeBoxAlign: Recipe.TextBoxAlign = `${recipeClass.TextAlign.JUSTIFY} ${recipeClass.VerticalAlign.BOTTOM}`;
+  var recipeStructure: Recipe.StructureFormat =
+    recipeClass.StructureFormat.JSON;
+  void [
+    recipeWrap,
+    recipeRowNth,
+    recipeCap,
+    recipeJoin,
+    recipeArrowAt,
+    recipeArrowType,
+    recipeLayout,
+    recipePageSize,
+    recipeFontStyle,
+    recipeShortStyle,
+    recipePermission,
+    recipeCoordinate,
+    recipeAnyCoordinate,
+    recipeFlag,
+    recipeIcon,
+    recipeSubtype,
+    recipeChroma,
+    recipeColorspace,
+    recipeDevice,
+    recipeBoxAlign,
+    recipeStructure,
+  ];
+  var aliasText: Recipe.TextOptions = { font: "Roboto", fontSize: 12 };
+  var aliasPath: Recipe.PolygonOptions = { fill: "#ff0000", rotation: 15 };
+  var aliasRadius: Recipe.BorderRadius = 4;
+  var aliasAnnot: Recipe.AnnotOptions = { flag: recipeClass.AnnotFlag.PRINT };
+  var aliasTable: Recipe.TableOptions<{ name: string }> = {};
+  var aliasField: Recipe.TableField<{ name: string }> = "name";
+  var aliasOverflow: Recipe.TextOverflowCallback = () => true;
+  var aliasInstructions: Recipe.TextOverflowInstructions = { layout: "next" };
+  var aliasEnd: Recipe.EndPDFCallback = (bytes) => void bytes.length;
+  void [
+    aliasText,
+    aliasPath,
+    aliasRadius,
+    aliasAnnot,
+    aliasTable,
+    aliasField,
+    aliasOverflow,
+    aliasInstructions,
+    aliasEnd,
+  ];
+  var nativeVersion: import("../../index.js").EPDFVersion =
+    muhammara.ePDFVersion17;
+  var nativeFit: import("../../index.js").TransformationObject = {
+    width: 10,
+    height: 10,
+    fit: "overflow",
+  };
+  var nativeGraphic: import("../../index.js").GraphicOptions = {
+    type: "fill",
+    colorspace: "cmyk",
+  };
+  var nativeMerge: import("../../index.js").MergeOptions = {
+    type: muhammara.eRangeTypeSpecific,
+    specificRanges: [[0, 1]],
+  };
+  var nativeTiffColor: import("../../index.js").TIFFColor = [0, 0, 0, 255];
+  void [nativeVersion, nativeFit, nativeGraphic, nativeMerge, nativeTiffColor];
+  // PDF bytes are plain ArrayBuffer-backed copies, usable as Blob and Response bodies.
+  var blankBytes: Uint8Array<ArrayBuffer> = muhammara.createBlankPdf(10, 10);
+  var blankBlob = new Blob([blankBytes]);
+  var blankResponse = new Response(muhammara.createBlankPdf(10, 10));
+  var recipePdf = new recipeClass().createPage(10, 10).endPage().endPDF();
+  var recipeBlob = new Blob([recipePdf], { type: "application/pdf" });
+  void [blankBlob, blankResponse, recipeBlob];
+}
+
+void usesNamedValueSets;

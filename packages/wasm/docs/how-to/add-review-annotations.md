@@ -51,6 +51,12 @@ Replies inherit the parent's title, subject, date, flags, open state, and icon.
 Set a reply's own title, subject, date, or flag to override that metadata.
 Each reply's opacity defaults to `1`, and rich text remains opt-in per reply.
 
+Set `flag` to a `Recipe.AnnotFlag` value, such as `Recipe.AnnotFlag.PRINT`,
+or to a numeric bit mask such as `4`; flag names match case-insensitively. An
+unknown flag name throws `Error: Unknown annotation flag (<name>)` when
+`annot()` or `comment()` is called. Subtypes are `Recipe.AnnotSubtype` values,
+matched case-insensitively and written with their PDF casing.
+
 Annotations are queued until `endPage()`. Supported markup subtypes include
 `Highlight`, `Underline`, `StrikeOut`, and `Squiggly`. Text options
 `highlight`, `underline`, `strikeOut`, and `squiggly` also create markup
