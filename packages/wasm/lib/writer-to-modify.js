@@ -2684,6 +2684,16 @@ export function createWriterToModifyFactory({
         form.end();
         return this;
       },
+      /**
+       * Appends a new page with a media box; A4 by default.
+       * @param {number} [left=0] - Media box left.
+       * @param {number} [bottom=0] - Media box bottom.
+       * @param {number} [right=595] - Media box right.
+       * @param {number} [top=842] - Media box top.
+       * @returns {PDFPage} The page; start it with `startPageContentContext()`.
+       * @throws {RangeError} If the media box is not finite or empty.
+       * @throws {Error} If the modifier ended, a page is active, or the page cannot be created.
+       */
       createPage: function (left, bottom, right, top) {
         requireOpen();
         if (page || context) throw new Error("Finish the active page first");
