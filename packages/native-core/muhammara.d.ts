@@ -493,7 +493,15 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     M(miterLimit: number): this;
-    /** The dash phase defaults to 0. */
+    /**
+     * Sets the dash pattern; operator d. Values are truncated to integers.
+     * @param dashArray - Alternating dash and gap lengths; empty for a solid line.
+     * @param dashPhase - The offset into the pattern; 0 when omitted.
+     * @returns This context.
+     * @throws {TypeError} If dashArray is not an array or dashPhase is not a
+     *   number.
+     * @throws {TypeError} If there is no content context.
+     */
     d(dashArray: number[], dashPhase?: number): this;
     /**
      * Sets the rendering intent; operator ri.
