@@ -35,6 +35,12 @@ export function permission(flags = "print") {
  * @returns {object} Methods mixed into Recipe.prototype.
  */
 export function createSecurityMethods() {
+  /**
+   * Converts Recipe password and permission options to recrypt options.
+   * @param {object} options - Recipe options.
+   * @param {boolean} [addPermissions=true] - Include the permission flags.
+   * @returns {object} Encryption options; empty without a password.
+   */
   function getEncryptOptions(options, addPermissions = true) {
     var encryptOptions = {};
     var password = options.password || options.ownerPassword;
