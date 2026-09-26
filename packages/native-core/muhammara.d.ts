@@ -122,6 +122,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the page input was not created by a reader.
      */
     getArtBox(): PDFBox;
+    /**
+     * Returns the page rotation, inherited from parent pages when not set.
+     * @returns The rotation in degrees, a multiple of 90.
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getRotate(): number;
   }
 
