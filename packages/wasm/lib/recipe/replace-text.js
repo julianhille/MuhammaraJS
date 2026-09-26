@@ -228,6 +228,11 @@ function literalReplacement(text, replacement) {
   };
 }
 
+/**
+ * Maps bytes one-to-one to a string of code units 0 to 255.
+ * @param {Uint8Array} bytes - Bytes.
+ * @returns {string} The string.
+ */
 function oneByteString(bytes) {
   var result = "";
   for (var offset = 0; offset < bytes.length; offset += 0x8000) {
