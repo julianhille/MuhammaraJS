@@ -225,6 +225,12 @@ exports._setRotationContext = function _setRotationTransform(
   }
 };
 
+/**
+ * Whether the options carry an explicit [x, y] rotation origin.
+ * @private
+ * @param {Object} options - The path options.
+ * @returns {boolean} True for a two-element rotationOrigin array.
+ */
 function hasRotation(options) {
   return (
     options.rotationOrigin &&
