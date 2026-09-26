@@ -843,6 +843,17 @@ declare namespace muhammara {
     ): this;
     /** Coordinates, font size, and calculated underline geometry must remain finite. */
     writeText(text: string, x: PosX, y: PosY, options?: WriteTextOptions): this;
+    /**
+     * Draws an image file: JPEG, PNG, TIFF or a PDF page.
+     * @param x - The left edge.
+     * @param y - The bottom edge.
+     * @param imagePath - The image path.
+     * @param options - The image index, transformation and PDF password.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 2 numbers, a string and an optional object, or the
+     *   image cannot be read.
+     * @throws {TypeError} If there is no content context.
+     */
     drawImage(
       x: PosX,
       y: PosY,
