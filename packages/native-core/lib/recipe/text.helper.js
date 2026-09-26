@@ -107,6 +107,12 @@ exports.Word = Word; // ... now export Word to the rest of the library.
  * @param {Object} pathOptions - The resolved text options.
  */
 exports.Line = class Line {
+  /**
+   * @param {number} [width] - The available width; unlimited when omitted.
+   * @param {number} [height] - A fixed line height.
+   * @param {number} [size] - The font size; defaults to the text options size.
+   * @param {Object} pathOptions - The resolved text options.
+   */
   constructor(width, height, size, pathOptions) {
     this._width = width || 999999999;
     this._height = height;
