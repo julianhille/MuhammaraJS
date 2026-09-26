@@ -1215,6 +1215,14 @@ export function createWriterFactory({
         Td: function (x, y) {
           return operator("Td", 41, [x, y]);
         },
+        /**
+         * Moves to the next text line and sets the leading to `-y` (`TD`).
+         * @param {number} x - Horizontal offset.
+         * @param {number} y - Vertical offset.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         TD: function (x, y) {
           return operator("TD", 42, [x, y]);
         },
