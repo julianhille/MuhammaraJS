@@ -260,6 +260,10 @@ export function createModifierFactory({
           dispose();
         }
       },
+      /**
+       * Releases the modifier without writing a PDF; later calls do nothing.
+       * @returns {void}
+       */
       dispose: function () {
         dispose();
       },
