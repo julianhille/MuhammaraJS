@@ -707,7 +707,12 @@ export function endActivePage(recipe) {
   return recipe;
 }
 
-/** Creates Recipe page creation, inspection, and editing methods. */
+/**
+ * Creates Recipe page creation, inspection, and editing methods.
+ * @param {Function} call - Calls a Recipe export and throws on failure.
+ * @param {{createReader: Function, createWriterToModify: Function, module: object}} dependencies - Low-level factories and module.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createPageMethods(
   call,
   { createReader, createWriterToModify, module },
