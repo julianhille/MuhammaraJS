@@ -167,6 +167,10 @@ function runInWorker(byteAssets, selectedExample) {
       callback(value);
     };
     active = {
+      /**
+       * Cancels the Worker run.
+       * @returns {void}
+       */
       cancel: () =>
         finish(
           reject,
