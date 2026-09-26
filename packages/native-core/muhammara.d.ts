@@ -288,7 +288,14 @@ declare namespace muhammara {
     writePage(): this;
   }
 
-  export type PDFImageType = "JPG" | "PDF" | "PNG" | "TIFF";
+  /** Image or document format reported by `getImageType()`. */
+  export const PDFImageType: {
+    readonly PDF: "PDF";
+    readonly JPG: "JPG";
+    readonly TIFF: "TIFF";
+    readonly PNG: "PNG";
+  };
+  export type PDFImageType = (typeof PDFImageType)[keyof typeof PDFImageType];
 
   export interface PDFRStreamForFile extends ReadStream {
     /**
@@ -324,8 +331,18 @@ declare namespace muhammara {
     read(inAmount: number): Buffer;
   }
 
+  /** Device color space of a drawing color option. */
+  export const DeviceColorSpace: {
+    readonly RGB: "rgb";
+    readonly GRAY: "gray";
+    readonly CMYK: "cmyk";
+  };
+  export type DeviceColorSpace =
+    (typeof DeviceColorSpace)[keyof typeof DeviceColorSpace];
+
   export interface ColorOptions {
-    colorspace?: string;
+    /** A DeviceColorSpace value; other strings are accepted for compatibility. */
+    colorspace?: DeviceColorSpace | (string & {});
     color?: string | number;
   }
 
@@ -360,7 +377,13 @@ declare namespace muhammara {
 
   export type LineJoinStyle = 0 | 1 | 2;
 
-  export type EEncoding = "text" | "code" | "hex";
+  /** How text-showing operators encode string text. */
+  export const EEncoding: {
+    readonly TEXT: "text";
+    readonly CODE: "code";
+    readonly HEX: "hex";
+  };
+  export type EEncoding = (typeof EEncoding)[keyof typeof EEncoding];
 
   export const LineCapStyle: {
     readonly LINECAP_BUTT: 0;
@@ -1164,7 +1187,15 @@ declare namespace muhammara {
   export const ePDFPageBoxTrimBox = 3;
   export const ePDFPageBoxArtBox = 4;
   export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
-  export type PageBox = "media" | "crop" | "bleed" | "trim" | "art";
+  /** Page box names. */
+  export const PageBox: {
+    readonly MEDIA: "media";
+    readonly CROP: "crop";
+    readonly BLEED: "bleed";
+    readonly TRIM: "trim";
+    readonly ART: "art";
+  };
+  export type PageBox = (typeof PageBox)[keyof typeof PageBox];
 
   export const eRangeTypeAll = 0;
   export const eRangeTypeSpecific = 1;

@@ -108,6 +108,29 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     ALWAYS: "always",
     OVERFLOW: "overflow",
   });
+  muhammara.DeviceColorSpace = Object.freeze({
+    RGB: "rgb",
+    GRAY: "gray",
+    CMYK: "cmyk",
+  });
+  muhammara.PageBox = Object.freeze({
+    MEDIA: "media",
+    CROP: "crop",
+    BLEED: "bleed",
+    TRIM: "trim",
+    ART: "art",
+  });
+  muhammara.PDFImageType = Object.freeze({
+    PDF: "PDF",
+    JPG: "JPG",
+    TIFF: "TIFF",
+    PNG: "PNG",
+  });
+  muhammara.EEncoding = Object.freeze({
+    TEXT: "text",
+    CODE: "code",
+    HEX: "hex",
+  });
   muhammara.ObjectReplacementScope = Object.freeze({
     GLOBAL: "global",
   });

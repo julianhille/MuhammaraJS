@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add frozen `DeviceColorSpace`, `PageBox`, `PDFImageType`, and `EEncoding`
+  objects, named and valued as in `@muhammara/wasm`; `ColorOptions.colorspace`
+  suggests the `DeviceColorSpace` values and still accepts other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Add `DrawingPathType` constants for the `type` option of the low-level
   drawing helpers [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare the arguments the native `PDFWriter` already accepts: TIFF options

@@ -34,6 +34,13 @@ var replacementScope: muhammara.ObjectReplacementScope =
 var replacementOptions: muhammara.ObjectReplacementOptions = {
   scope: replacementScope,
 };
+var deviceColorSpace: muhammara.DeviceColorSpace =
+  muhammara.DeviceColorSpace.CMYK;
+var pageBoxName: muhammara.PageBox = muhammara.PageBox.TRIM;
+var imageKind: muhammara.PDFImageType = muhammara.PDFImageType.PNG;
+var textEncoding: muhammara.EEncoding = muhammara.EEncoding.HEX;
+var colorOptions: muhammara.ColorOptions = { colorspace: deviceColorSpace };
+void [pageBoxName, imageKind, textEncoding, colorOptions];
 var pathTypes: muhammara.DrawingPathType[] = ["stroke", "fill", "clip", null];
 void pathTypes;
 // @ts-expect-error Drawing paint modes are a closed set.
