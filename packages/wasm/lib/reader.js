@@ -546,7 +546,10 @@ export function createReaderFactory({
         if (!active) throw new Error("PDF byte reader has ended");
       }
 
-      /** Unregisters and releases this byte reader once. */
+      /**
+       * Unregisters and releases this byte reader once.
+       * @returns {PDFByteReader} The byte reader.
+       */
       function disposeByteReader() {
         if (!active) return byteReader;
         if (!ended && reader) {
