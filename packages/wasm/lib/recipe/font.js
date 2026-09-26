@@ -1,4 +1,9 @@
 import { RecipeFontStyle } from "../value-sets.js";
+/**
+ * Picks the registry key for bold and italic text options.
+ * @param {object} [options={}] - `bold`/`isBold` and `italic`/`isItalic`.
+ * @returns {RecipeFontStyle} `r`, `b`, `i`, or `bi`.
+ */
 function fontStyle(options = {}) {
   return (options.bold || options.isBold) &&
     (options.italic || options.isItalic)
