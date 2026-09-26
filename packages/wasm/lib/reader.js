@@ -1219,6 +1219,13 @@ export function createReaderFactory({
           module._free(statusPointer);
         }
       },
+      /**
+       * Parses the objects in a content stream one by one.
+       * @param {PDFStreamInput} stream - Stream parsed by this reader.
+       * @returns {PDFObjectParser} The object parser.
+       * @throws {TypeError} If `stream` is not a stream from this reader.
+       * @throws {Error} If the reader has ended or the stream cannot be read.
+       */
       startReadingObjectsFromStream: function (stream) {
         requireReader();
         if (
