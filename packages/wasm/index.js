@@ -152,11 +152,7 @@ async function createRuntime(options) {
     withString: helpers.withString,
     withBytes: helpers.withBytes,
   });
-  var { copyingObjectOperations } = createCopyingHelpers({
-    module,
-    constants,
-    withString: helpers.withString,
-  });
+  var { copyingObjectOperations } = createCopyingHelpers({ module });
   var createReader = createReaderFactory({
     module,
     constants,

@@ -923,11 +923,6 @@ inline WasmCopyingContext::~WasmCopyingContext() {
   context = nullptr;
 }
 
-static WasmObject* addCopyingObject(WasmCopyingParser* parser, PDFObject* object) {
-  if (parser == nullptr || !parser->active || object == nullptr) return nullptr;
-  return addReaderObject(parser, object);
-}
-
 inline WasmRecipe::~WasmRecipe() {
   delete page;
   for (WasmImage* image : images) {
