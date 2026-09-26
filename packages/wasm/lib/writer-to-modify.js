@@ -2310,6 +2310,13 @@ export function createWriterToModifyFactory({
               ["TL", 38, 1],
               ["Ts", 40, 1],
             ].forEach(([name, code, arity = 0]) => {
+              /**
+               * Applies a table-driven content operator, such as `m` or `re`.
+               * @param {...number} args - Operands; missing ones are padded as `undefined` and rejected.
+               * @returns {ContentContext} The content context.
+               * @throws {TypeError} If an operand is missing or not finite.
+               * @throws {Error} If the modifier or the form has ended.
+               */
               context[name] = function (...args) {
                 // Missing operands become undefined and fail the finite check.
                 args.length = Math.max(args.length, arity);
