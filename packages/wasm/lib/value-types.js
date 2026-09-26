@@ -72,6 +72,13 @@ export function createValueTypes({ module, withString, withBytes }) {
     }
   }
 
+  /**
+   * Normalizes a date to a PDF date string.
+   * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+   * @returns {string} A PDF date such as `D:20240102030405+01'00'`.
+   * @throws {TypeError} If `value` is an invalid Date or not a date.
+   * @throws {Error} If a string cannot be parsed.
+   */
   function normalizePDFDate(value) {
     if (value instanceof PDFDate) return value.toString();
     if (value instanceof Date) {
