@@ -73,6 +73,12 @@ function toRadians(angle) {
   return angle * (Math.PI / 180);
 }
 
+/**
+ * Convert radians to degrees.
+ * @private
+ * @param {number} radians - The angle in radians.
+ * @returns {number} The angle in degrees.
+ */
 function toDegrees(radians) {
   return radians * (180 / Math.PI);
 }
