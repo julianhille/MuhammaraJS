@@ -889,6 +889,10 @@ const Triangle = class Triangle {
     };
   }
 
+  /**
+   * The center and radius of the inscribed circle.
+   * @returns {{point: Point, radius: number}} The incircle.
+   */
   get incenter() {
     if (!this._incenter) {
       // https://www.mathopenref.com/coordincenter.html
