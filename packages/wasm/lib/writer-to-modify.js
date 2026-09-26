@@ -225,6 +225,16 @@ export function createWriterToModifyFactory({
      * @returns {ContentContext} The content context.
      */
     function modifierContext() {
+      /**
+       * Applies one numeric content operator to the active page.
+       * @param {string} name - Operator name for error messages.
+       * @param {number} code - Native operator code.
+       * @param {number[]} [args=[]] - Operands; a missing operand is `undefined` and rejected.
+       * @param {boolean} [integers=false] - Whether operands must be integers.
+       * @returns {ContentContext} The content context.
+       * @throws {TypeError} If an operand is not finite, or not an integer when required.
+       * @throws {Error} If the context is inactive or the operator fails.
+       */
       function operator(name, code, args = [], integers = false) {
         requireContext(result);
         if (!args.every(Number.isFinite)) {
