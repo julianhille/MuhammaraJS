@@ -288,6 +288,12 @@ function modify(muhammara, source, assets) {
   }
 }
 
+/**
+ * Copies pages and forms from a PDF into a new document.
+ * @param {import("../../index.js").MuhammaraWasm} muhammara - Loaded API.
+ * @param {Uint8Array} source - PDF bytes.
+ * @returns {Promise<Uint8Array>} The composed PDF.
+ */
 async function compose(muhammara, source) {
   var writer = muhammara.createWriter({ compress: true });
   try {
