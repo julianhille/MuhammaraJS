@@ -27,6 +27,11 @@ export var coordinateMethods = {
    * Converts top-left Recipe coordinates to bottom-left PDF coordinates.
    *
    * @private
+   * @param {number|string} x - Recipe x, or `center`.
+   * @param {number|string} y - Recipe y, or `center`.
+   * @param {number} [offsetX=0] - Horizontal offset.
+   * @param {number} [offsetY=0] - Vertical offset.
+   * @param {number} [pageNumber] - One-based page; the active page by default.
    * @returns {{nx: number, ny: number}} Coordinates with the Y axis flipped.
    * @throws {Error} When no target page is available.
    */
