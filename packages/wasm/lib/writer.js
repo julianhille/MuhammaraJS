@@ -3380,6 +3380,11 @@ export function createWriterFactory({
       createPDFDate: function (value) {
         return new PDFDate(value);
       },
+      /**
+       * Returns the raw objects context for writing indirect objects.
+       * @returns {ObjectsContext} The objects context, created once per writer.
+       * @throws {Error} If the writer has ended or the context cannot be created.
+       */
       getObjectsContext: function () {
         requireOpenWriter();
         if (!objectsContext) {
