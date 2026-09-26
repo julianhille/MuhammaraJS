@@ -1892,6 +1892,13 @@ export function createWriterToModifyFactory({
             throw new TypeError(`TIFF ${name} must be an object`);
           return value;
         }
+        /**
+         * Validates an optional TIFF treatment color.
+         * @param {string} name - Option name for error messages.
+         * @param {number[]} [value] - RGB or CMYK components from 0 to 255.
+         * @returns {{components: number, values: number[]}} Component count (0 when omitted) and four values.
+         * @throws {TypeError} If `value` is not three or four integers from 0 to 255.
+         */
         function color(name, value) {
           if (value === undefined)
             return { components: 0, values: [0, 0, 0, 0] };
