@@ -1294,7 +1294,12 @@ export function createPageMethods(
   };
 }
 
-/** Updates the active Recipe page metadata after changing its media box. */
+/**
+ * Updates the active Recipe page metadata after changing its media box.
+ * @param {Recipe} recipe - Recipe instance.
+ * @param {PDFRectangle} mediaBox - New media box.
+ * @returns {void}
+ */
 export function updateMediaBox(recipe, mediaBox) {
   var page = recipe._pages[recipe._pages.length - 1];
   if (!page) return;
