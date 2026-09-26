@@ -11,7 +11,11 @@ export function validateDrawingGeometry(values) {
     throw new TypeError("Drawing geometry must be finite");
 }
 
-/** Read each path coordinate once, including holes, before validation/output. */
+/**
+ * Reads each path coordinate once, before validation and output.
+ * @param {Iterable<number[]>} points - Coordinate pairs.
+ * @returns {Array} Copies of the points.
+ */
 export function snapshotDrawingPoints(points) {
   return Array.from(points, function (point) {
     return Array.isArray(point) ? Array.from(point) : point;
