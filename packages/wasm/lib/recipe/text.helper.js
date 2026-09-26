@@ -43,6 +43,10 @@ export class Line {
   get value() {
     return this.words.join("");
   }
+  /**
+   * Measures the line including character spacing.
+   * @returns {number} The width in points.
+   */
   get currentWidth() {
     return (
       this.measure(this.value, this.options).width +
