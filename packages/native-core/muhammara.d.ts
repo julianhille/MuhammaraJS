@@ -4346,6 +4346,13 @@ declare namespace muhammara {
       options?: Recipe.TableOptions<RecordType>,
     ): Recipe;
 
+    /**
+     * move the current position to target position
+     * @param x - The coordinate x
+     * @param y - The coordinate y
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     moveTo(x: number, y: number): Recipe;
 
     lineTo(x: number, y: number, options?: Recipe.LineToOptions): Recipe;
