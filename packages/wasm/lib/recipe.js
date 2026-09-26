@@ -518,6 +518,10 @@ export function createRecipeFactory({
     /**
      * Adds a line to the active native PDF path.
      * @private
+     * @param {number} x - PDF x.
+     * @param {number} y - PDF y.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the operator fails.
      */
     _linePdf(x, y) {
       if (this._pageContext) return this._pageContext.l(x, y) && this;
