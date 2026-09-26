@@ -1,5 +1,26 @@
 const DOMParser = require("@xmldom/xmldom").DOMParser;
 
+// Lower-case names of the HTML elements the parser handles.
+const HtmlTag = Object.freeze({
+  HTML: "html",
+  P: "p",
+  LI: "li",
+  UL: "ul",
+  OL: "ol",
+  H1: "h1",
+  H2: "h2",
+  H3: "h3",
+  SMALL: "small",
+  BR: "br",
+  B: "b",
+  STRONG: "strong",
+  I: "i",
+  EM: "em",
+  U: "u",
+  DEL: "del",
+  A: "a",
+});
+
 /**
  * Convert HTML into Recipe text layout objects.
  * @name htmlToTextObjects
@@ -21,13 +42,19 @@ exports.htmlToTextObjects = function (htmlCodes, options = {}) {
   return textObjects;
 };
 
+/**
+ * The font size multiplier of an element.
+ * @private
+ * @param {string} [tagName=''] - The element name, matched case-insensitively.
+ * @returns {number} The multiplier; 1 for elements without one.
+ */
 function getFontSizeRatio(tagName = "") {
   const fontSizeRatio = {
-    p: 1, // 14px
-    h1: 2.57, // 36px
-    h2: 2.14, // 30px
-    h3: 1.71, // 24px
-    small: 0.7,
+    [HtmlTag.P]: 1, // 14px
+    [HtmlTag.H1]: 2.57, // 36px
+    [HtmlTag.H2]: 2.14, // 30px
+    [HtmlTag.H3]: 1.71, // 24px
+    [HtmlTag.SMALL]: 0.7,
     // h4: 1.12,
     // h5: 0.83,
     // h6: 0.75
