@@ -536,11 +536,10 @@ async function tableExample(assets) {
           fontSize: 11,
           header: true,
           border: { width: 1, color: "#c2410c" },
-          padding: 9,
           columns: [
-            { name: "item", width: 220 },
-            { name: "status", width: 95 },
-            { name: "surface", width: 140 },
+            { name: "item", width: 220, cell: { padding: 9 } },
+            { name: "status", width: 95, cell: { padding: 9 } },
+            { name: "surface", width: 140, cell: { padding: 9 } },
           ],
         },
       )

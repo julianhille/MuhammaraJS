@@ -770,6 +770,8 @@ export interface Recipe {
     sourcePageNumber: number,
   ): this;
   split(prefix?: string): RecipeSplitResult[];
+  structure(format: "json" | { json: true }): RecipeStructure;
+  structure(format?: "string" | { json?: false }): string;
   structure(format?: RecipeStructureFormat): string | RecipeStructure;
   permission(flags?: RecipePermission): number;
   encrypt(options?: RecipeEncryptOptions): this;

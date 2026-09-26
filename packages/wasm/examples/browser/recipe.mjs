@@ -101,7 +101,7 @@ export async function runRecipeExample({
       recipe.image("example-png", 405, 650, {
         width: 110,
         height: 90,
-        proportional: true,
+        keepAspectRatio: true,
         align: "center center",
         opacity: 0.82,
       });
@@ -113,7 +113,7 @@ export async function runRecipeExample({
       })
       .endPage()
       .createPage(595, 842)
-      .overlay("low-level-source", { page: 1, fitWidth: true, opacity: 0.24 })
+      .overlay("low-level-source", { page: 1, fitWidth: true })
       .endPage();
     var first = recipe.endPDF();
     assert(recipe.endPDF() === first, "endPDF must be idempotent");
