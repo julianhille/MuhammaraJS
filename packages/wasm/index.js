@@ -174,6 +174,13 @@ async function createRuntime(options) {
       throw new TypeError("Asset names must be non-empty strings");
     }
   }
+  /**
+   * Registers an asset path and removes the file it replaces.
+   * @param {Map<string, string>} registry - Font, image, or PDF registry.
+   * @param {string} name - Asset name.
+   * @param {string} path - Virtual file system path.
+   * @returns {void}
+   */
   function replaceAsset(registry, name, path) {
     var previous = registry.get(name);
     registry.set(name, path);
