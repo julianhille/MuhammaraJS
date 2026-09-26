@@ -262,6 +262,9 @@ exports.Line = class Line {
   }
 
   // dynamic adjust height based on word height?
+  /**
+   * @returns {number} The fixed height, or the measured text height plus 20.
+   */
   get height() {
     if (this._height) {
       return this._height;
