@@ -3191,6 +3191,12 @@ export function createWriterToModifyFactory({
         }
         var modifierPage = null;
         return {
+          /**
+           * Starts, or restarts, the content context of the page.
+           * @returns {this} The page modifier.
+           * @throws {RangeError} If another page or context is active or the page cannot be modified.
+           * @throws {Error} If the modifier has ended.
+           */
           startContext: function () {
             requireOpen();
             if (
