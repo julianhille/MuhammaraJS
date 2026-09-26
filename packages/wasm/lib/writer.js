@@ -3327,6 +3327,18 @@ export function createWriterFactory({
       mergePDFPagesToPage: function (targetPage, source, options, callback) {
         return mergePDFPagesToPage(targetPage, source, options, callback);
       },
+      /**
+       * Merges pages of a source PDF after reading an asynchronous byte source.
+       * @async
+       * @param {PDFPage} targetPage - Page being written.
+       * @param {AsyncByteSource} source - Source PDF bytes, Blob, or File.
+       * @param {PageRangeOptions|Function} [options] - Pages to merge, or the callback.
+       * @param {Function} [callback] - Called after the merge completes.
+       * @returns {Promise<this>} The writer.
+       * @throws {TypeError} If the page, source, options, or callback is invalid.
+       * @throws {RangeError} If the page range is invalid.
+       * @throws {Error} If another page is active, the writer ended, or the source is unreadable.
+       */
       mergePDFPagesToPageAsync: async function (
         targetPage,
         source,
