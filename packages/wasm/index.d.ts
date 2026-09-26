@@ -1379,7 +1379,7 @@ export interface DocumentCopyingContext extends CopyingObjectOperations {
   mergePDFPageToPage(page: PDFPage, index: number): this;
   createFormXObjectFromPDFPage(
     index: number,
-    pageBox?: number | PDFRectangle,
+    pageBox?: PDFPageBoxType | PDFRectangle,
     transformation?: PDFMatrix,
   ): number;
   mergePDFPageToFormXObject(

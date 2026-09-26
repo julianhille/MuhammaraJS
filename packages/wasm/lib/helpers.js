@@ -1,5 +1,6 @@
 import { normalizeBytes } from "./bytes.js";
 import { TextEncoding } from "./value-sets.js";
+import { isPageBoxType } from "./constants.js";
 
 /** Creates memory-safe utility functions around a loaded WASM module. */
 export function createHelpers(module) {
@@ -164,7 +165,7 @@ export function createHelpers(module) {
       throw new RangeError("Page index must be a non-negative integer");
     }
     if (!(
-      (Number.isInteger(pageBox) && pageBox >= 0 && pageBox <= 4) ||
+      isPageBoxType(pageBox) ||
       (Array.isArray(pageBox) &&
         pageBox.length === 4 &&
         pageBox.every(Number.isFinite))

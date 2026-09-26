@@ -886,6 +886,10 @@ async function usesNamedValueSets() {
     new Uint8Array(),
     cropBox,
   );
+  var copying = writer.createPDFCopyingContext(new Uint8Array());
+  copying.createFormXObjectFromPDFPage(0, muhammara.ePDFPageBoxTrimBox);
+  // @ts-expect-error Page boxes are the ePDFPageBox constants.
+  copying.createFormXObjectFromPDFPage(0, 5);
 }
 
 void usesNamedValueSets;
