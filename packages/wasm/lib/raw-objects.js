@@ -668,6 +668,13 @@ export function createRawObjectsContext({
         activeStream = stream;
         return streamContext(stream);
       },
+      /**
+       * Starts a stream whose content is written without a filter.
+       * @param {DictionaryContext} [dictionary] - Active stream dictionary to finish; `/Length` is added.
+       * @returns {PDFStream} The active stream.
+       * @throws {TypeError} If `dictionary` is not the active dictionary.
+       * @throws {Error} If the writer has ended or the stream cannot be started.
+       */
       startUnfilteredPDFStream: function (dictionary) {
         requireContext();
         if (
