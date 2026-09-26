@@ -51,6 +51,9 @@ const Word = class Word {
     return this._dimensions;
   }
 
+  /**
+   * @returns {boolean} Whether this is the last word of its line.
+   */
   get last() {
     return this._last;
   }
