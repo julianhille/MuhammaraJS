@@ -1216,6 +1216,11 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     retrieveJPGImageInformation(filePath: FilePath): JPEGInformation;
+    /**
+     * Returns the context for writing PDF objects directly.
+     * @returns The objects context.
+     * @throws {Error} If the writer has ended.
+     */
     getObjectsContext(): ObjectsContext;
     getDocumentContext(): DocumentContext;
     appendPDFPagesFromPDF(
