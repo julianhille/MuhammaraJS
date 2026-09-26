@@ -80,6 +80,10 @@ export class Column {
       gap: 0,
     });
   }
+  /**
+   * Reads the column origin.
+   * @returns {number[]} `[x, y]`.
+   */
   get position() {
     return [this.x, this.y];
   }
