@@ -9,6 +9,15 @@ import {
  * @returns {object} Methods mixed into Recipe.prototype.
  */
 export function createImageMethods(runtime) {
+  /**
+   * Computes the drawn size and position of an image from its options.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} path - Virtual image path.
+   * @param {number} x - Recipe x.
+   * @param {number} y - Recipe y.
+   * @param {RecipeImageOptions} options - Size, scale, keepAspectRatio, and alignment.
+   * @returns {object} The width, height, and PDF position.
+   */
   function placement(recipe, path, x, y, options) {
     var dimensions = recipe._imageDimensions(path);
     var width = options.width || dimensions.width * (options.scale || 1);
