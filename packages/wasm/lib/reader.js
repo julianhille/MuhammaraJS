@@ -110,6 +110,12 @@ export function createReaderFactory({
       }
     }
 
+    /**
+     * Lists a parsed dictionary's keys.
+     * @param {number} handle - Native dictionary handle.
+     * @returns {string[]} Keys without leading slashes.
+     * @throws {Error} If the reader has ended or the dictionary cannot be read.
+     */
     function objectKeys(handle) {
       requireReader();
       var lengthPointer = module._malloc(4);
