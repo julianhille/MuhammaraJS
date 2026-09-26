@@ -58,6 +58,11 @@ describe("Recipe opacity", function () {
           return state.CA?.toNumber() === 0.4;
         }),
       );
+      assert.ok(
+        states.every(function (state) {
+          return state.Type?.value === "ExtGState" && !state.type;
+        }),
+      );
     } finally {
       reader.end();
     }

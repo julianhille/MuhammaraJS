@@ -195,6 +195,14 @@ function tintTransform(self, color) {
   return tintFuncID;
 }
 
+/**
+ * Write the stroke and fill opacity graphics states for a value once per
+ * Recipe.
+ * @private
+ * @param {number} value - The opacity, from 0 to 1.
+ * @returns {{stroke: number, fill: number}} The object IDs of the stroking
+ *   (CA) and non-stroking (ca) ExtGState dictionaries.
+ */
 exports._createExtGStates = function _createExtGStates(value) {
   this.extGStates = this.extGStates || {};
   if (this.extGStates[value]) {
@@ -206,7 +214,7 @@ exports._createExtGStates = function _createExtGStates(value) {
     const objCxt = this.writer.getObjectsContext();
     const gsId = objCxt.startNewIndirectObject();
     const dict = objCxt.startDictionary();
-    dict.writeKey("type");
+    dict.writeKey("Type");
     dict.writeNameValue("ExtGState");
     dict.writeKey(key);
     objCxt.writeNumber(value);
