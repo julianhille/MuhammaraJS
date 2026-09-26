@@ -1823,6 +1823,14 @@ export function createWriterFactory({
         this._owner = owner;
       }
 
+      /**
+       * Measures text or glyphs set in this font.
+       * @param {string|number[]} text - Text, or glyph IDs.
+       * @param {number} [size=1] - Positive font size.
+       * @returns {TextDimensions} Bounding box and advance in user space units.
+       * @throws {TypeError} If the writer ended, `text` is invalid, or `size` is not positive.
+       * @throws {Error} If the font cannot measure the text.
+       */
       calculateTextDimensions(text, size = 1) {
         if (ended) {
           throw new TypeError(
