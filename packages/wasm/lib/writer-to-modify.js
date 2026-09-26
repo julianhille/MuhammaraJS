@@ -2908,6 +2908,11 @@ export function createWriterToModifyFactory({
           },
         };
       },
+      /**
+       * Forces the catalog to be rewritten when the PDF ends.
+       * @returns {void}
+       * @throws {Error} If the modifier has ended or the update cannot be requested.
+       */
       requireCatalogUpdate: function () {
         requireOpen();
         if (!module._muhammara_wasm_modifier_require_catalog_update(modifier)) {
