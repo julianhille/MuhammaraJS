@@ -1166,6 +1166,13 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to clear additional info entries");
         additionalInfo.clear();
       },
+      /**
+       * Reads a custom Info dictionary entry.
+       * @param {string} key - Entry name.
+       * @returns {string} The value, or an empty string when unset.
+       * @throws {TypeError} If `key` is not a string.
+       * @throws {Error} If the modifier has ended.
+       */
       getAdditionalInfoEntry: function (key) {
         requireOpen();
         if (typeof key !== "string")
