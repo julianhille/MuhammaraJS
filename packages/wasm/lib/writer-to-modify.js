@@ -149,6 +149,13 @@ export function createWriterToModifyFactory({
         throw new RangeError("objectId must be a positive object ID");
       return value;
     }
+    /**
+     * Resolves a registered image name to its virtual path.
+     * @param {string} name - Registered image name.
+     * @param {string} [expectedType] - Required RegisteredImageFormat.
+     * @returns {string} Virtual file system path.
+     * @throws {TypeError} If the name is not registered or the format differs.
+     */
     function imagePath(name, expectedType) {
       if (typeof name !== "string" || !images.has(name))
         throw new TypeError("A registered image name is required");
