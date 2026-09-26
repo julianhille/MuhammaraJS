@@ -271,7 +271,13 @@ form.addEventListener("submit", async (event) => {
       result = await runInWorker(byteAssets, selectedExample);
     else {
       var controller = new AbortController();
-      active = { cancel: () => controller.abort() };
+      active = {
+        /**
+         * Cancels the in-page run.
+         * @returns {void}
+         */
+        cancel: () => controller.abort(),
+      };
       result = await runBrowserExample({
         exampleId: selectedExample,
         assets: byteAssets,
