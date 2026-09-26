@@ -22,6 +22,10 @@ export function moduleOptions() {
   };
 }
 
+/**
+ * Loads the low-level API with the example module options.
+ * @returns {Promise<import("../../index.js").MuhammaraWasm>} The API.
+ */
 export function createMuhammaraWasm() {
   return loadMuhammaraWasm(moduleOptions());
 }
