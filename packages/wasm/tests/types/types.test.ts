@@ -7,6 +7,7 @@ import {
   TextEncoding as TextEncodings,
 } from "../../index.js";
 import type {
+  RecipeTableRowParity,
   RecipeLineJoin,
   RecipeLineCap,
   RecipeImageOptions,
@@ -937,6 +938,8 @@ async function usesNamedValueSets() {
   var lineCap: RecipeLineCap = "square";
   var lineJoin: RecipeLineJoin = "bevel";
   void [lineCap, lineJoin];
+  var rowParity: RecipeTableRowParity = "odd";
+  void rowParity;
 }
 
 void usesNamedValueSets;

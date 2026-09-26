@@ -10,6 +10,7 @@ import {
   RecipeHorizontalAlignment,
   RecipeLineCap,
   RecipeLineJoin,
+  RecipeTableRowParity,
   RecipeTextAlignment,
   RecipeTextWrap,
   RecipeTrianglePosition,
@@ -130,4 +131,5 @@ var EXPORTED_VALUE_SETS = [
   [RecipeArrowType, ["triangle", "dart", "kite"]],
   [RecipeLineCap, ["butt", "round", "square"]],
   [RecipeLineJoin, ["miter", "round", "bevel"]],
+  [RecipeTableRowParity, ["even", "odd"]],
 ];

@@ -122,3 +122,9 @@ export var RecipeLineJoin = Object.freeze({
   ROUND: "round",
   BEVEL: "bevel",
 });
+
+/** Which Recipe table rows a `row` style applies to. */
+export var RecipeTableRowParity = Object.freeze({
+  EVEN: "even",
+  ODD: "odd",
+});

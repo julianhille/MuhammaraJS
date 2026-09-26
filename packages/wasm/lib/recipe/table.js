@@ -1,3 +1,4 @@
+import { RecipeLineCap, RecipeTableRowParity } from "../value-sets.js";
 /** Reports whether a style value is a plain object whose keys can merge. */
 function isPlainObject(value) {
   if (!value || typeof value !== "object") return false;
@@ -142,7 +143,7 @@ export function createTableMethods() {
         var border = {
           ...(options.border === true ? {} : options.border),
           // Keep borders from extending outside of the enclosing box.
-          lineCap: "butt",
+          lineCap: RecipeLineCap.BUTT,
         };
         if (!border.width) border.width = 0.5;
         this.rectangle(x, tableTop, tableWidth, currentY - tableTop, border);
@@ -231,8 +232,9 @@ export function createTableMethods() {
         var rowOptions =
           options.row &&
           (!options.row.nth ||
-            (options.row.nth === "even" && (row + 1) % 2 === 0) ||
-            (options.row.nth === "odd" && (row + 1) % 2))
+            (options.row.nth === RecipeTableRowParity.EVEN &&
+              (row + 1) % 2 === 0) ||
+            (options.row.nth === RecipeTableRowParity.ODD && (row + 1) % 2))
             ? options.row
             : {};
         // Resolve every cell once: the renderer runs once per cell, and its

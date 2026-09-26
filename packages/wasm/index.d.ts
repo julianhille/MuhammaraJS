@@ -526,6 +526,12 @@ export type RecipeTableColumnOptions<
 }[RecipeTableColumnField<RecordType>];
 export type RecipeTableRow = Record<string, unknown>;
 /** Table options. Like native Recipe, a table-level `cell` is not accepted; style cells per column or row. */
+/** Which Recipe table rows a `row` style applies to. */
+export type RecipeTableRowParity = "even" | "odd";
+export declare const RecipeTableRowParity: {
+  readonly EVEN: "even";
+  readonly ODD: "odd";
+};
 export interface RecipeTableOptions<
   RecordType extends object = RecipeTableRow,
 > extends Omit<RecipeTextOptions, "overflow" | "cell"> {
@@ -545,7 +551,10 @@ export interface RecipeTableOptions<
     | boolean
     | (RecipeTextOptions & { alignToData?: boolean; cell?: RecipeTextBox });
   border?: boolean | RecipePathOptions;
-  row?: RecipeTextOptions & { nth?: "even" | "odd"; cell?: RecipeTextBox };
+  row?: RecipeTextOptions & {
+    nth?: RecipeTableRowParity;
+    cell?: RecipeTextBox;
+  };
   /** Called once per overflow. A continuing destination must fit the row and repeated header or table() throws RangeError; ending the page without starting another throws Error. */
   overflow?: (
     this: Recipe,

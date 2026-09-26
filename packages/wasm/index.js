@@ -38,6 +38,7 @@ import {
   RecipeArrowType,
   RecipeLineCap,
   RecipeLineJoin,
+  RecipeTableRowParity,
 } from "./lib/value-sets.js";
 
 export {
@@ -56,6 +57,7 @@ export {
   RecipeHorizontalAlignment,
   RecipeLineCap,
   RecipeLineJoin,
+  RecipeTableRowParity,
   RecipeTextAlignment,
   RecipeTextWrap,
   RecipeTrianglePosition,
