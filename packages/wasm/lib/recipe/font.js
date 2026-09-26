@@ -10,21 +10,44 @@ function fontStyle(options = {}) {
         : RecipeFontStyle.R;
 }
 
+/** Registry key for every RecipeFontStyle spelling. */
+var FONT_STYLE_KEYS = {
+  [RecipeFontStyle.REGULAR]: RecipeFontStyle.R,
+  [RecipeFontStyle.R]: RecipeFontStyle.R,
+  [RecipeFontStyle.BOLD]: RecipeFontStyle.B,
+  [RecipeFontStyle.B]: RecipeFontStyle.B,
+  [RecipeFontStyle.ITALIC]: RecipeFontStyle.I,
+  [RecipeFontStyle.I]: RecipeFontStyle.I,
+  [RecipeFontStyle.BOLD_ITALIC]: RecipeFontStyle.BI,
+  [RecipeFontStyle.BI]: RecipeFontStyle.BI,
+};
+
+/**
+ * Resolves a font style spelling, in any letter case, to its registry key.
+ * @param {*} type - A RecipeFontStyle value.
+ * @returns {string} `r`, `b`, `i`, or `bi`; unknown styles resolve to `r`.
+ */
+export function fontStyleKey(type) {
+  return FONT_STYLE_KEYS[String(type).toLowerCase()] || RecipeFontStyle.R;
+}
+
 /**
  * Registers a font path for a family and style.
  *
  * @returns {string|undefined} The previously registered path. The caller owns
  * cleanup of that replaced path.
  */
-export function registerFont(fonts, name, path, type = "regular") {
+export function registerFont(
+  fonts,
+  name,
+  path,
+  type = RecipeFontStyle.REGULAR,
+) {
   if (typeof name !== "string" || !name) {
     throw new TypeError("Font names must be non-empty strings");
   }
   var family = fonts.get(name.toLowerCase()) || {};
-  var style =
-    { bold: "b", b: "b", italic: "i", i: "i", "bold-italic": "bi", bi: "bi" }[
-      String(type).toLowerCase()
-    ] || "r";
+  var style = fontStyleKey(type);
   var previous = family[style];
   family[style] = path;
   fonts.set(name.toLowerCase(), family);
