@@ -106,7 +106,10 @@ export function colorModel(recipe, value, options = {}) {
   };
 }
 
-/** Creates Recipe color registration methods. */
+/**
+ * Creates Recipe color registration methods.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createColorMethods() {
   return {
     /**
