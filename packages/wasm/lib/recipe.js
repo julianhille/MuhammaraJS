@@ -334,6 +334,8 @@ export function createRecipeFactory({
     /**
      * Restores the active PDF graphics state.
      * @private
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the state cannot be restored.
      */
     _restore() {
       if (this._pageContext) return this._pageContext.Q() && this;
