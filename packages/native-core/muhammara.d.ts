@@ -694,6 +694,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     Tr(renderingMode: number): this;
+    /**
+     * Sets the text rise; operator Ts.
+     * @param fontRise - The baseline shift in text space units.
+     * @returns This context.
+     * @throws {TypeError} If fontRise is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Ts(fontRise: number): this;
     BT(): this;
     ET(): this;
