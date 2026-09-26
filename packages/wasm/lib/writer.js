@@ -3352,6 +3352,11 @@ export function createWriterFactory({
           callback,
         );
       },
+      /**
+       * Returns the document context.
+       * @returns {DocumentContext} Access to the Info dictionary.
+       * @throws {Error} If the writer has ended.
+       */
       getDocumentContext: function () {
         requireOpenWriter();
         return documentContext;
