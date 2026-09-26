@@ -179,6 +179,15 @@ export function createCopyingHelpers({ module }) {
           module._free(countPointer);
         }
       },
+      /**
+       * Makes later copies reference existing output objects instead of copying
+       * the given source objects.
+       * @param {Record<string, number>} mapping - Output object IDs keyed by source object ID.
+       * @returns {this} The copying context.
+       * @throws {TypeError} If `mapping` is not a plain object.
+       * @throws {RangeError} If a key or value is not an object ID.
+       * @throws {Error} If the context has ended or the replacement fails.
+       */
       replaceSourceObjects: function (mapping) {
         requireCopying();
         if (!mapping || typeof mapping !== "object" || Array.isArray(mapping))
