@@ -130,6 +130,17 @@ exports._calibrateCoordinateForAnnots = function _calibrateCoordinateForAnnots(
   };
 };
 
+/**
+ * Convert PDF coordinates back to Recipe coordinates.
+ * @private
+ * @param {number} x - The PDF x coordinate.
+ * @param {number} y - The PDF y coordinate.
+ * @param {number} [offsetX=0] - Subtracted from x.
+ * @param {number} [offsetY=0] - Subtracted from the Recipe y coordinate.
+ * @param {number} [pageNumber] - The one-based page number; defaults to the active page.
+ * @returns {{ox: number, oy: number}} The Recipe coordinates.
+ * @throws {TypeError} If no page is active.
+ */
 exports._reverseCoordinate = function _reverseCoordinate(
   x,
   y,
@@ -137,8 +148,7 @@ exports._reverseCoordinate = function _reverseCoordinate(
   offsetY = 0,
   pageNumber,
 ) {
-  pageNumber = pageNumber || this.pageNumber;
-  const { height } = this.metadata[pageNumber];
+  const { height } = pageMetadata(this, pageNumber);
   const ox = x - offsetX;
   const oy = height - y - offsetY;
   return {
