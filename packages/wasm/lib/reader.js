@@ -297,6 +297,13 @@ export function createReaderFactory({
           requireReader();
           return module._muhammara_wasm_object_array_length(handle);
         };
+        /**
+         * Reads an array item, resolving an indirect reference.
+         * @param {number} index - Zero-based item index.
+         * @returns {PDFObject|undefined} The item, or undefined past the end.
+         * @throws {RangeError} If `index` is not a non-negative integer.
+         * @throws {Error} If the reader or its object parser has ended.
+         */
         object.queryObject = function (index) {
           object.getType();
           if (!Number.isInteger(index) || index < 0)
