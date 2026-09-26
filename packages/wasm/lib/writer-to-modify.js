@@ -2182,6 +2182,7 @@ export function createWriterToModifyFactory({
           _owner: owner,
           _font: font,
           calculateTextDimensions: function (text, size = 1) {
+            requireOpen();
             return measureFontText(
               module,
               withString,
@@ -2208,6 +2209,7 @@ export function createWriterToModifyFactory({
           },
           /** Read underline thickness, position, and text advance for writeText. */
           _underline: function (text, size) {
+            requireOpen();
             return readFontUnderline(
               module,
               withString,
@@ -2224,6 +2226,7 @@ export function createWriterToModifyFactory({
             );
           },
           getFontMetrics: function (size = 1) {
+            requireOpen();
             if (!Number.isFinite(size) || size <= 0)
               throw new TypeError("A positive font size is required");
             var values = module._malloc(64);
@@ -2345,11 +2348,9 @@ export function createWriterToModifyFactory({
         };
       },
       createPDFTextString: function (value) {
-        requireOpen();
         return new PDFTextString(value);
       },
       createPDFDate: function (value) {
-        requireOpen();
         return new PDFDate(value);
       },
       attachURLLinktoCurrentPage: function (url, left, bottom, right, top) {

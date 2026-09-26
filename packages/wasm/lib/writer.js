@@ -1838,11 +1838,7 @@ export function createWriterFactory({
        * @throws {Error} If the font cannot measure the text.
        */
       calculateTextDimensions(text, size = 1) {
-        if (ended) {
-          throw new TypeError(
-            "Text or glyph ids and a positive font size are required",
-          );
-        }
+        requireOpenWriter();
         return measureFontText(
           module,
           withString,
@@ -1900,7 +1896,8 @@ export function createWriterFactory({
        * @throws {Error} If the metrics cannot be read.
        */
       getFontMetrics(size = 1) {
-        if (ended || !Number.isFinite(size) || size <= 0) {
+        requireOpenWriter();
+        if (!Number.isFinite(size) || size <= 0) {
           throw new TypeError("A positive font size is required");
         }
         var resultPointer = module._malloc(64);

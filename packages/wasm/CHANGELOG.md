@@ -82,6 +82,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Throw "PDF writer has ended" from `calculateTextDimensions()` and
+  `getFontMetrics()` of a font whose writer or modifier ended, instead of a
+  misleading argument error, and keep a modifier's `createPDFTextString()` and
+  `createPDFDate()` usable after `end()`, as native does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Let a modifier's `doXObject()` place the results of its own
   `createImageXObjectFromJPGBytes()`, `createFormXObjectFromJPGBytes()`,
   `createFormXObjectFromPNGBytes()`, and `createFormXObjectFromTIFF()`, which
