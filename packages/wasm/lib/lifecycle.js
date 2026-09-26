@@ -21,6 +21,10 @@ export function createChildLifecycle() {
     untrack: function (cleanup) {
       children.delete(cleanup);
     },
+    /**
+     * Reports whether any child is still tracked.
+     * @returns {boolean} Whether a cleanup is registered.
+     */
     hasChildren: function () {
       return children.size !== 0;
     },
