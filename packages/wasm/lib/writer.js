@@ -669,6 +669,13 @@ export function createWriterFactory({
         );
         additionalInfo.set(key, value);
       },
+      /**
+       * Removes a custom Info dictionary entry.
+       * @param {string} key - Entry name.
+       * @returns {void}
+       * @throws {TypeError} If `key` is not a string.
+       * @throws {Error} If the writer has ended or the entry cannot be removed.
+       */
       removeAdditionalInfoEntry: function (key) {
         requireOpenWriter();
         if (typeof key !== "string")
