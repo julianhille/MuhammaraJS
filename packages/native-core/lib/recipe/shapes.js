@@ -1353,6 +1353,10 @@ const Kite = class Kite {
   // }
 };
 
+/**
+ * An arrow: a head, an optional reverse head at the tail, and a shaft.
+ * @private
+ */
 const Arrow = class Arrow {
   constructor(x, y, arrowhead, shaftLength, shaftWidth, nock) {
     this._x = x;
