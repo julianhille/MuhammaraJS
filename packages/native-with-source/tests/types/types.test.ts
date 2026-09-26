@@ -829,3 +829,9 @@ void signatureWriter.createPDFCopyingContext("source.pdf", {
 var signatureDimensions: muhammara.RectangleDimension =
   signatureWriter.getImageDimensions("image.pdf", 1, { password: "user" });
 void signatureDimensions;
+
+// Dictionary entries are typed as PDF objects.
+declare const signatureDictionary: muhammara.PDFDictionary;
+var dictionaryEntries: { [key: string]: muhammara.PDFObject } =
+  signatureDictionary.toJSObject();
+void dictionaryEntries;

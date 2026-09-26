@@ -769,7 +769,11 @@ declare namespace muhammara {
   }
 
   export interface PDFDictionary extends PDFObject {
-    toJSObject(): object;
+    /**
+     * Returns the entries, without resolving indirect references.
+     * @returns The values by key.
+     */
+    toJSObject(): { [key: string]: PDFObject };
     exists(inName: string): boolean;
     queryObject(inName: string): PDFObject;
   }
