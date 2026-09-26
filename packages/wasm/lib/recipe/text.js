@@ -466,7 +466,18 @@ export function createTextMethods({ drawText, measure, module }) {
     recipe._restore();
   }
 
-  /** Writes link bounds transformed and clipped with their associated text. */
+  /**
+   * Writes link bounds transformed and clipped with their associated text.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} url - Link target.
+   * @param {number} x - Left.
+   * @param {number} y - Top.
+   * @param {number} width - Width.
+   * @param {number} height - Height.
+   * @param {object} options - Rotation and skew options.
+   * @param {{x: number, y: number, width: number, height: number}} [clip] - Visible box.
+   * @returns {void}
+   */
   function transformedLink(recipe, url, x, y, width, height, options, clip) {
     if (!options.rotation && !options.skewX && !options.skewY) {
       if (clip) {
