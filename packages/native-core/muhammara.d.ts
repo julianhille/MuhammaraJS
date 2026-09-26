@@ -4032,6 +4032,11 @@ declare namespace muhammara {
      * @throws {TypeError} If no page is active.
      */
     rotate(rotation: number): Recipe;
+    /**
+     * Finish a page. Without an active page this does nothing.
+     * @returns The recipe instance.
+     * @throws {Error} If the page cannot be written.
+     */
     endPage(): Recipe;
     setPageBox(
       box: PDFPageBoxType,
