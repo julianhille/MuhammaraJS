@@ -4501,6 +4501,25 @@ declare namespace muhammara {
       ry: number,
       options?: Recipe.EllipseOptions,
     ): Recipe;
+    /**
+     * Draw an arc of a circle.
+     * @param x - the x coordinate of the arc center point
+     * @param y - the y coordinate of the arc center point
+     * @param radius - the distance from the given x,y coordinates from which to produce the arc
+     * @param startAngle - the start of the arc in degree units +/- 0 through 360. Positive values go clockwise, Negative values, counterclockwise; defaults to 0.
+     * @param endAngle - the end of the arc in degree units +/- 0 through 360. Positive values go clockwise, Negative values, counterclockwise; defaults to 360.
+     * @param options -
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param {string|number[]}[ options.fill] - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Accept: +/- 0 through 360; defaults to 0.
+     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     arc(
       x: Recipe.RecipeCoordinate,
       y: Recipe.RecipeCoordinate,
