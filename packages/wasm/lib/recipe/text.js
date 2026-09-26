@@ -191,7 +191,14 @@ function groupedHtmlParts(parts) {
   }, []);
 }
 
-/** Measures styled HTML fragments and spacing across separate drawing runs. */
+/**
+ * Measures styled HTML fragments and spacing across separate drawing runs.
+ * @param {{text: string, styles: object}[]} parts - Fragments.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Base text options.
+ * @param {boolean} [group=true] - Whether to group equal styles first.
+ * @returns {number} The width in points.
+ */
 function htmlPartsWidth(parts, measure, options, group = true) {
   var groups = group ? groupedHtmlParts(parts) : parts;
   var text = groups.map((part) => part.text).join("");
