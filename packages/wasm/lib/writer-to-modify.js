@@ -3056,6 +3056,17 @@ export function createWriterToModifyFactory({
       createPDFDate: function (value) {
         return new PDFDate(value);
       },
+      /**
+       * Adds a URL link annotation to the active new page.
+       * @param {string} url - Link target.
+       * @param {number} left - Rectangle left.
+       * @param {number} bottom - Rectangle bottom.
+       * @param {number} right - Rectangle right, not less than `left`.
+       * @param {number} top - Rectangle top, not less than `bottom`.
+       * @returns {this} The modifier.
+       * @throws {TypeError} If `url` is not a string or the rectangle is invalid.
+       * @throws {Error} If the modifier has ended or the link cannot be attached.
+       */
       attachURLLinktoCurrentPage: function (url, left, bottom, right, top) {
         requireOpen();
         if (
