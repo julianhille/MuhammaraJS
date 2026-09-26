@@ -5,7 +5,11 @@ import {
 } from "../value-sets.js";
 import { colorModel } from "./colors.js";
 
-/** Creates shared Recipe vector drawing helpers. */
+/**
+ * Creates shared Recipe vector drawing helpers.
+ * @param {object} runtime - Module and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createVectorHelpers(runtime) {
   function operator(recipe, code, ...values) {
     if (recipe._pageContext) {
