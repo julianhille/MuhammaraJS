@@ -730,6 +730,14 @@ export function createReaderFactory({
       return values;
     }
 
+    /**
+     * Reads one string field of an extraction result.
+     * @param {number} extraction - Native extraction handle.
+     * @param {number} index - Element index.
+     * @param {function(number, number, number): number} read - Export that returns the field bytes.
+     * @returns {string} The field as one-byte code units.
+     * @throws {Error} If the field cannot be read.
+     */
     function extractedString(extraction, index, read) {
       var lengthPointer = module._malloc(4);
       try {
