@@ -363,6 +363,16 @@ exports.structure = function structure(output) {
   return this;
 };
 
+/**
+ * Resolve a source PDF object: follow references, recurse into arrays,
+ * dictionaries and stream dictionaries, and record leaf objects in
+ * `this.pdfStructure`.
+ * @private
+ * @param {Object} [inObject] - The parsed PDF object.
+ * @returns {Object|undefined} The resolved leaf object, or undefined for
+ *   containers and a missing object.
+ * @throws {Error} If the source reader was released by endPDF().
+ */
 exports._parseObjectByType = function _parseObjectByType(inObject) {
   if (!inObject) {
     return;
