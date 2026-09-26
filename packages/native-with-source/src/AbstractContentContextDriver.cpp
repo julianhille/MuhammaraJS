@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -136,12 +137,24 @@ public:
     }
   }
 
-  unsigned long GetRGBForColorName(const std::string &colorName) {
+  // Resolves a CSS color name (any case) or a "#rrggbb" string to 0xRRGGBB.
+  // Returns false for anything else.
+  bool GetRGBForColorName(const std::string &colorName, unsigned long *rgb) {
+    if (colorName.size() == 7 && colorName.front() == '#') {
+      auto result = std::from_chars(colorName.data() + 1,
+                                    colorName.data() + colorName.size(), *rgb,
+                                    16);
+      return result.ec == std::errc() &&
+             result.ptr == colorName.data() + colorName.size();
+    }
     std::string key = colorName;
     std::transform(key.begin(), key.end(), key.begin(),
                    [](unsigned char value) { return std::tolower(value); });
     StringToULongMap::iterator found = colorMap_.find(key);
-    return found == colorMap_.end() ? 0 : found->second;
+    if (found == colorMap_.end())
+      return false;
+    *rgb = found->second;
+    return true;
   }
 
 private:
@@ -874,11 +887,15 @@ bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
     napi_value color = nullptr;
     if (!Get(env, maybeOptions, "color", &color))
       return false;
-    options.hasNamedColor = IsType(env, color, napi_string);
-    if (options.hasNamedColor) {
-      options.colorName = LegacyString(env, color);
+    if (IsType(env, color, napi_string)) {
+      std::string colorName = LegacyString(env, color);
       if (HasPendingException(env))
         return false;
+      if (!colorMap.GetRGBForColorName(colorName, &options.colorValue)) {
+        ThrowTypeError(env, "Colors must be a 24-bit number, a color name, or "
+                            "a #rrggbb string");
+        return false;
+      }
     } else {
       int32_t numericColor = 0;
       if (!CoerceToInt32(env, color, &numericColor))
@@ -986,10 +1003,7 @@ bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
 void AbstractContentContextDriver::ApplyPathOptions(
     const PathOptions &options) {
   if (options.hasColor) {
-    if (options.hasNamedColor) {
-      SetRGBColor(colorMap.GetRGBForColorName(options.colorName),
-                  options.setupIsStroke);
-    } else if (options.colorSpace == "rgb") {
+    if (options.colorSpace == "rgb") {
       SetRGBColor(options.colorValue, options.setupIsStroke);
     } else if (options.colorSpace == "cmyk") {
       double c = static_cast<unsigned char>((options.colorValue >> 24) & 0xff);

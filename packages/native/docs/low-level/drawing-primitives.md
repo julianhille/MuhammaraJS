@@ -2,7 +2,9 @@
 
 Page content contexts provide helpers for rectangles, squares, circles, and
 paths. Each accepts drawing options such as `type`, `colorspace`, `color`, and
-stroke `width`.
+stroke `width`. Pass an RGB color as a 24-bit number, a CSS color name, or a
+`#rrggbb` string. `writeText()` accepts the same color forms. Any other color
+string throws a `TypeError` before anything is drawn.
 
 ```javascript
 var context = pdfWriter.startPageContentContext(page);

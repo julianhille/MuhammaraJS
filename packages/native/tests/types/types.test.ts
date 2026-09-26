@@ -56,11 +56,12 @@ context
       [0, 0],
       [20, 20],
     ],
-    { width: 2 },
+    { width: 2, color: "#ff0000" },
   )
   .writeText("Finite geometry", 10, 20, {
     font: writer.getFontForFile("font.ttf"),
     size: 12,
+    color: "#0000ff",
     underline: true,
   });
 context.c(0, 0, 1, 1, 2, 2).S();

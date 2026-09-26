@@ -4,6 +4,13 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Low-level `drawPath()`, `drawCircle()`, `drawSquare()`, `drawRectangle()`,
+  and `writeText()` throw
+  `TypeError: Colors must be a 24-bit number, a color name, or a #rrggbb string`
+  when a string `color` is neither a CSS color name nor `#rrggbb`, such as a
+  misspelled name or hex without the `#`. In 6.x those colors were drawn black,
+  and so was every `#rrggbb` string. Pass a CSS color name, a `#rrggbb` string,
+  or a 24-bit number such as `0xff0000` [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
 - Recipe `annot()` and `comment()` throw
   `Error: Unknown annotation flag (<name>)` when the `flag` option is not a
   `Recipe.AnnotFlag` value, such as a misspelled name. In 6.x the annotation was

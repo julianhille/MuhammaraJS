@@ -60,6 +60,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Throw a `TypeError` from low-level `drawPath()`, `drawCircle()`,
+  `drawSquare()`, `drawRectangle()`, and `writeText()` when a string `color` is
+  neither a CSS color name nor `#rrggbb`, as `@muhammara/wasm` does. Previously
+  such colors, including hex without the `#`, were drawn black. Pass a CSS
+  color name, a `#rrggbb` string, or a 24-bit number [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Throw `Error: Unknown annotation flag (<name>)` from Recipe `annot()` and
   `comment()` for a `flag` that is not a `Recipe.AnnotFlag` value, instead of
   silently writing no flag bits, as `@muhammara/wasm` does. Numeric bit masks
@@ -166,6 +171,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
+  `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
+  [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Measure `UsedFont#calculateTextDimensions()` at the exact font size; a
   fractional size such as `10.5` was truncated to `10` [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Accept a pattern name alone in `SCN` and `scn`, emitting `/P0 SCN` to select a
