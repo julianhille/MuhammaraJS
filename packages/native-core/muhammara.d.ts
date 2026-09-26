@@ -1208,6 +1208,13 @@ declare namespace muhammara {
       filePath: FilePath | ReadStream,
       objectId?: FormXObjectId,
     ): FormXObject;
+    /**
+     * Reads the header information of a JPEG file.
+     * @param filePath - The image path.
+     * @returns The image information.
+     * @throws {TypeError} If the argument is wrong or the file cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     retrieveJPGImageInformation(filePath: FilePath): JPEGInformation;
     getObjectsContext(): ObjectsContext;
     getDocumentContext(): DocumentContext;
