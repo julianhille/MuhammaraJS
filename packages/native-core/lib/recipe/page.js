@@ -857,11 +857,12 @@ exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
 };
 
 /**
- * Finish a page
+ * Finish a page. Without an active page this does nothing.
  * @name endPage
  * @function
  * @memberof Recipe#
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the page cannot be written.
  */
 exports.endPage = function endPage() {
   if (!this.page) {
