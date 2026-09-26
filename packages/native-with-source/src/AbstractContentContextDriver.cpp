@@ -901,23 +901,25 @@ bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
       if (!CoerceToInt32(env, color, &numericColor))
         return false;
       options.colorValue = static_cast<unsigned long>(numericColor);
-      bool hasColorSpace = Has(env, maybeOptions, "colorspace");
-      if (HasPendingException(env))
+    }
+    // Validate the colorspace for every color, as Wasm does; a named color
+    // still draws in RGB.
+    bool hasColorSpace = Has(env, maybeOptions, "colorspace");
+    if (HasPendingException(env))
+      return false;
+    if (hasColorSpace) {
+      napi_value colorSpace = nullptr;
+      if (!Get(env, maybeOptions, "colorspace", &colorSpace))
         return false;
-      if (hasColorSpace) {
-        napi_value colorSpace = nullptr;
-        if (!Get(env, maybeOptions, "colorspace", &colorSpace))
+      if (!IsType(env, colorSpace, napi_undefined) &&
+          !IsType(env, colorSpace, napi_null)) {
+        options.colorSpace = LegacyString(env, colorSpace);
+        if (HasPendingException(env))
           return false;
-        if (!IsType(env, colorSpace, napi_undefined) &&
-            !IsType(env, colorSpace, napi_null)) {
-          options.colorSpace = LegacyString(env, colorSpace);
-          if (HasPendingException(env))
-            return false;
-          if (!options.colorSpace.empty() && options.colorSpace != "rgb" &&
-              options.colorSpace != "gray" && options.colorSpace != "cmyk") {
-            ThrowTypeError(env, "colorspace must be rgb, gray, or cmyk");
-            return false;
-          }
+        if (!options.colorSpace.empty() && options.colorSpace != "rgb" &&
+            options.colorSpace != "gray" && options.colorSpace != "cmyk") {
+          ThrowTypeError(env, "colorspace must be rgb, gray, or cmyk");
+          return false;
         }
       }
     }

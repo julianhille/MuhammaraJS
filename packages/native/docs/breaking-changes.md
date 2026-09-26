@@ -29,8 +29,9 @@ This page collects the compatibility changes formerly maintained in the README.
   unchanged [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
 - An unknown colorspace throws a `TypeError`, as in `@muhammara/wasm`. The
   low-level drawing and `writeText()` color options throw
-  `TypeError: colorspace must be rgb, gray, or cmyk`; in 6.x they drew without
-  setting a color. Recipe `chroma()`, text and drawing options throw
+  `TypeError: colorspace must be rgb, gray, or cmyk` for a numeric or named
+  `color`; in 6.x a numeric color drew without setting a color and a named
+  color ignored the colorspace. Recipe `chroma()`, text and drawing options throw
   `TypeError: Unknown colorspace: <name>`; in 6.x `chroma()` threw a plain
   `Error` and a named color in an unknown colorspace failed with
   `Cannot read properties of undefined`. The declarations of

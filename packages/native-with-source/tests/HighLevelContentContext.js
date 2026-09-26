@@ -318,6 +318,15 @@ describe("HighLevelContentContext", function () {
           }),
         { name: "TypeError", message: "colorspace must be rgb, gray, or cmyk" },
       );
+      // The colorspace is validated for a named color too.
+      assert.throws(
+        () =>
+          target.context.drawRectangle(1, 2, 3, 4, {
+            color: "red",
+            colorspace: "lab",
+          }),
+        { name: "TypeError", message: "colorspace must be rgb, gray, or cmyk" },
+      );
       target.context.drawRectangle(1, 2, 3, 4, {
         color: 0xff0000,
         colorspace: undefined,

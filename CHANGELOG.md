@@ -80,7 +80,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   three, or four numbers from 0 to 255 [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Throw a `TypeError` for an unknown colorspace, as `@muhammara/wasm` does.
   The low-level drawing and `writeText()` color options throw
-  `colorspace must be rgb, gray, or cmyk` instead of drawing without a color,
+  `colorspace must be rgb, gray, or cmyk` for a numeric or named `color`
+  instead of drawing without a color or ignoring the colorspace,
   and Recipe `chroma()`, text and drawing options throw
   `Unknown colorspace: <name>` instead of a plain `Error` or an unrelated
   `TypeError`. The declarations no longer accept any string for
