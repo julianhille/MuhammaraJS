@@ -1465,7 +1465,8 @@ export class PDFRStreamForBuffer {
 export class PDFWStreamForBuffer {
   constructor();
   buffer: Uint8Array<ArrayBuffer>;
-  write(bytes: ByteSource): number;
+  /** An array of byte values (integers from 0 to 255) is accepted, as in native. */
+  write(bytes: ByteSource | readonly number[]): number;
   getCurrentPosition(): number;
   toUint8Array(): Uint8Array<ArrayBuffer>;
   toArrayBuffer(): ArrayBuffer;
@@ -1528,8 +1529,12 @@ export interface ResourcesDictionary {
 export interface DictionaryContext {
   writeKey(key: string): this;
   writeNameValue(value: string): this;
-  writeLiteralStringValue(value: string | Uint8Array | ArrayBuffer): this;
-  writeHexStringValue(value: string | Uint8Array | ArrayBuffer): this;
+  writeLiteralStringValue(
+    value: string | Uint8Array | ArrayBuffer | readonly number[],
+  ): this;
+  writeHexStringValue(
+    value: string | Uint8Array | ArrayBuffer | readonly number[],
+  ): this;
   writeNumberValue(value: number): this;
   writeBooleanValue(value: boolean): this;
   writeObjectReferenceValue(id: number): this;
@@ -1557,8 +1562,12 @@ export interface ObjectsContext {
   writeIndirectObjectReference(id: number, generation?: number): this;
   writeBoolean(value: boolean): this;
   writeName(value: string): this;
-  writeLiteralString(value: string | Uint8Array | ArrayBuffer): this;
-  writeHexString(value: string | Uint8Array | ArrayBuffer): this;
+  writeLiteralString(
+    value: string | Uint8Array | ArrayBuffer | readonly number[],
+  ): this;
+  writeHexString(
+    value: string | Uint8Array | ArrayBuffer | readonly number[],
+  ): this;
   writeKeyword(value: string): this;
   writeComment(value: string): this;
   endLine(): this;

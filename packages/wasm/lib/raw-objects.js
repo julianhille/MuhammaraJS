@@ -1,3 +1,5 @@
+import { byteArrayToBytes } from "./bytes.js";
+
 /**
  * Creates the low-level context for writing raw PDF objects.
  * @param {object} dependencies - Module, constants, and byte helpers.
@@ -63,6 +65,7 @@ export function createRawObjectsContext({
      */
     function writeObjectString(type, value) {
       requireContext();
+      if (type === 1 || type === 2) value = byteArrayToBytes(value, "Value");
       if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
         if (type !== 1 && type !== 2) {
           throw new TypeError("Only literal and hex strings accept bytes");
@@ -185,12 +188,15 @@ export function createRawObjectsContext({
         },
         /**
          * Writes a literal string value.
-         * @param {string|Uint8Array|ArrayBuffer} value - Text, or raw string bytes.
+         * @param {string|Uint8Array|ArrayBuffer|number[]} value - Text, or raw
+         *   string bytes, including an array of byte values as native accepts.
          * @returns {this} The dictionary context.
-         * @throws {TypeError} If `value` is neither a string nor bytes.
+         * @throws {TypeError} If `value` is neither a string nor bytes, or an
+         *   array item is not an integer from 0 to 255.
          * @throws {Error} If the writer has ended or the dictionary is no longer active.
          */
         writeLiteralStringValue: function (value) {
+          value = byteArrayToBytes(value, "Literal string value");
           if (
             typeof value !== "string" &&
             !(value instanceof Uint8Array) &&
@@ -205,12 +211,15 @@ export function createRawObjectsContext({
         },
         /**
          * Writes a hexadecimal string value.
-         * @param {string|Uint8Array|ArrayBuffer} value - Text, or raw string bytes.
+         * @param {string|Uint8Array|ArrayBuffer|number[]} value - Text, or raw
+         *   string bytes, including an array of byte values as native accepts.
          * @returns {this} The dictionary context.
-         * @throws {TypeError} If `value` is neither a string nor bytes.
+         * @throws {TypeError} If `value` is neither a string nor bytes, or an
+         *   array item is not an integer from 0 to 255.
          * @throws {Error} If the writer has ended or the dictionary is no longer active.
          */
         writeHexStringValue: function (value) {
+          value = byteArrayToBytes(value, "Hex string value");
           if (
             typeof value !== "string" &&
             !(value instanceof Uint8Array) &&
@@ -632,9 +641,11 @@ export function createRawObjectsContext({
       },
       /**
        * Writes a literal string token.
-       * @param {string|Uint8Array|ArrayBuffer} value - Text, or raw string bytes.
+       * @param {string|Uint8Array|ArrayBuffer|number[]} value - Text, or raw
+       *   string bytes, including an array of byte values as native accepts.
        * @returns {this} The objects context.
-       * @throws {TypeError} If `value` is neither a string nor bytes.
+       * @throws {TypeError} If `value` is neither a string nor bytes, or an
+       *   array item is not an integer from 0 to 255.
        * @throws {Error} If the writer has ended or writing fails.
        */
       writeLiteralString: function (value) {
@@ -643,9 +654,11 @@ export function createRawObjectsContext({
       },
       /**
        * Writes a hexadecimal string token.
-       * @param {string|Uint8Array|ArrayBuffer} value - Text, or raw string bytes.
+       * @param {string|Uint8Array|ArrayBuffer|number[]} value - Text, or raw
+       *   string bytes, including an array of byte values as native accepts.
        * @returns {this} The objects context.
-       * @throws {TypeError} If `value` is neither a string nor bytes.
+       * @throws {TypeError} If `value` is neither a string nor bytes, or an
+       *   array item is not an integer from 0 to 255.
        * @throws {Error} If the writer has ended or writing fails.
        */
       writeHexString: function (value) {

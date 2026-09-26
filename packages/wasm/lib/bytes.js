@@ -21,6 +21,24 @@ export function normalizeBytes(value, label = "Bytes") {
 }
 
 /**
+ * Converts an array of byte values to bytes, as native accepts for string
+ * and stream writes. Other values are returned unchanged.
+ * @param {*} value - Candidate value.
+ * @param {string} label - Name used in error messages.
+ * @returns {*} A new Uint8Array for an array, otherwise `value`.
+ * @throws {TypeError} If an array item is not an integer from 0 to 255.
+ */
+export function byteArrayToBytes(value, label) {
+  if (!Array.isArray(value)) return value;
+  if (
+    !value.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
+  ) {
+    throw new TypeError(`${label} bytes must be integers from 0 to 255`);
+  }
+  return Uint8Array.from(value);
+}
+
+/**
  * Normalizes byte input, awaiting Blob and File data when necessary.
  * @async
  * @param {AsyncByteSource} value - Bytes or a Blob-like object.
@@ -196,12 +214,17 @@ export class PDFWStreamForBuffer {
   /**
    * Appends a copy of the bytes.
    *
-   * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} bytes Bytes to append.
+   * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer|number[]} bytes Bytes
+   *   to append, or an array of byte values as native accepts.
    * @returns {number} Number of bytes written.
-   * @throws {TypeError} If `bytes` is not a supported byte source.
+   * @throws {TypeError} If `bytes` is not a supported byte source or an array
+   *   item is not an integer from 0 to 255.
    */
   write(bytes) {
-    bytes = normalizeBytes(bytes, "PDFWStreamForBuffer input");
+    bytes = normalizeBytes(
+      byteArrayToBytes(bytes, "PDFWStreamForBuffer input"),
+      "PDFWStreamForBuffer input",
+    );
     if (bytes.length === 0) return 0;
     this.chunks.push(bytes);
     this.position += bytes.length;

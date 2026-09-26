@@ -1016,6 +1016,10 @@ async function usesNamedValueSets() {
   // @ts-expect-error Read streams are not string bytes.
   dictionary.writeHexStringValue(readStream);
   dictionaryObjects.writeLiteralString(new Uint8Array([65]));
+  // Arrays of byte values are accepted, as in native.
+  dictionaryObjects.writeLiteralString([72, 105]).writeHexString([0xca]);
+  dictionary.writeKey("C").writeLiteralStringValue([72, 105]);
+  new muhammara.PDFWStreamForBuffer().write([1, 2, 3]);
   // @ts-expect-error Read streams are not string bytes.
   dictionaryObjects.writeLiteralString(readStream);
   dictionaryObjects.writeHexString(new ArrayBuffer(1));

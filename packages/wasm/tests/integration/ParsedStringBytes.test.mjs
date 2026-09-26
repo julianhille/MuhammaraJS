@@ -61,4 +61,56 @@ describe("Parsed string bytes", function () {
     reader.end();
     assert.throws(() => literal.toBytesArray(), /PDF reader has ended/);
   });
+  it("writes arrays of byte values as native does", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var objects = writer.getObjectsContext();
+    var literalId = objects.startNewIndirectObject();
+    objects.writeLiteralString([0, 0x80, 0xff, 0x28]).endIndirectObject();
+    var hexId = objects.startNewIndirectObject();
+    objects.writeHexString([0, 0x80, 0xff]).endIndirectObject();
+    var dictionaryId = objects.startNewIndirectObject();
+    var dictionary = objects.startDictionary();
+    dictionary.writeKey("L").writeLiteralStringValue([72, 105]);
+    dictionary.writeKey("H").writeHexStringValue([0xca, 0xfe]);
+    assert.throws(
+      () => dictionary.writeLiteralStringValue([1.5]),
+      /Literal string value bytes must be integers from 0 to 255/,
+    );
+    objects.endDictionary(dictionary).endIndirectObject();
+    objects.startNewIndirectObject();
+    assert.throws(
+      () => objects.writeLiteralString([0, 256]),
+      /Value bytes must be integers from 0 to 255/,
+    );
+    objects.writeNumber(0).endIndirectObject();
+
+    var stream = new muhammara.PDFWStreamForBuffer();
+    assert.equal(stream.write([1, 2, 3]), 3);
+    assert.deepEqual(Array.from(stream.toUint8Array()), [1, 2, 3]);
+    assert.throws(
+      () => stream.write([-1]),
+      /PDFWStreamForBuffer input bytes must be integers from 0 to 255/,
+    );
+
+    writer.writePage(new muhammara.PDFPage(0, 0, 100, 100));
+    var reader = muhammara.createReader(writer.end());
+    assert.deepEqual(
+      Array.from(
+        reader.parseNewObject(literalId).toPDFLiteralString().toBytesArray(),
+      ),
+      [0, 0x80, 0xff, 0x28],
+    );
+    assert.deepEqual(
+      Array.from(reader.parseNewObject(hexId).toPDFHexString().toBytesArray()),
+      [0, 0x80, 0xff],
+    );
+    var parsed = reader.parseNewObject(dictionaryId).toPDFDictionary();
+    assert.equal(parsed.queryObject("L").toPDFLiteralString().toText(), "Hi");
+    assert.deepEqual(
+      Array.from(parsed.queryObject("H").toPDFHexString().toBytesArray()),
+      [0xca, 0xfe],
+    );
+    reader.end();
+  });
 });

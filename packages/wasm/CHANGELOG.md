@@ -84,6 +84,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Accept an array of byte values in `writeLiteralString()`, `writeHexString()`,
+  `writeLiteralStringValue()`, and `PDFWStreamForBuffer.write()`, as native
+  does, and in the Wasm-only `writeHexStringValue()`, instead of throwing;
+  items must be integers from 0 to 255 [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Round a Recipe text box with `textBox.style.borderRadius: true` by 5, as
   native does, instead of drawing square corners [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Call the Recipe `text()` `overflow` callback with the Recipe as `this`, as
