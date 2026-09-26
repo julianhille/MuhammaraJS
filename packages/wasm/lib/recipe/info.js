@@ -94,6 +94,7 @@ export function createInfoMethods({ call, withString }) {
      * @function
      * @memberof Recipe#
      * @private
+     * @returns {void}
      */
     _writeCanonicalInfo: function () {
       var info = this._sourceMode
