@@ -99,8 +99,13 @@ exports.xObjectForm = class xObjectForm {
     return this._values[key];
   }
 
+  /**
+   * Map a graphics state into the form resources.
+   * @param {number} gsId - The ExtGState object ID.
+   * @returns {string} The resource name.
+   */
   getGsName(gsId) {
-    const resourcesDict = this.getResourcesDictinary();
+    const resourcesDict = this.getResourcesDictionary();
     const gsName = resourcesDict.addExtGStateMapping(gsId);
     return gsName;
   }
