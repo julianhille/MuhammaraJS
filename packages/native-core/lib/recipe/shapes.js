@@ -404,6 +404,13 @@ function translate(dx, dy, ngon) {
   return object;
 }
 
+/**
+ * Mirror points across a horizontal line. The point arrays are changed in place.
+ * @private
+ * @param {number} y - The y of the mirror line.
+ * @param {number[][]} ngon - The [x, y] points.
+ * @returns {number[][]} A new list holding the mirrored points.
+ */
 function flipX(y, ngon) {
   let object = ngon.slice();
   for (const coord of object) {
