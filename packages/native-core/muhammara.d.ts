@@ -982,6 +982,12 @@ declare namespace muhammara {
      * @throws {TypeError} If objectId is not a single number.
      */
     deleteObject(objectId: FormXObjectId): this;
+    /**
+     * Writes a name object, escaping it as needed.
+     * @param name - The name, without a leading slash.
+     * @returns This context.
+     * @throws {TypeError} If name is not a single string.
+     */
     writeName(name: string): this;
     writeLiteralString(literal: string | number[]): this;
     writeHexString(hex: string | number[]): this;
