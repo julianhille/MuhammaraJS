@@ -121,6 +121,10 @@ export function createWriterToModifyFactory({
     var lifecycle = createChildLifecycle();
     var modifiedReaders = [];
 
+    /**
+     * Releases the native modifier, its children, readers, and stored assets. Idempotent.
+     * @returns {void}
+     */
     function dispose() {
       if (ended) return;
       lifecycle.disposeChildren();
