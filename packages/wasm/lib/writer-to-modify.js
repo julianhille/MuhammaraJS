@@ -2936,6 +2936,16 @@ export function createWriterToModifyFactory({
           throw new RangeError("PageLabels object ID must be positive");
         }
       },
+      /**
+       * Replaces direct references to an object in an original page dictionary.
+       * @param {number} pageIndex - Zero-based page index; ignored for a global scope.
+       * @param {number} sourceObjectId - Object ID to replace.
+       * @param {number} replacementObjectId - Object ID to reference instead.
+       * @param {ObjectReplacementOptions} [options] - `scope: ObjectReplacementScope.GLOBAL` replaces on every page.
+       * @returns {this} The modifier.
+       * @throws {RangeError} If an index or ID is invalid or does not belong to the modified PDF.
+       * @throws {Error} If the modifier has ended.
+       */
       replaceObject: function (
         pageIndex,
         sourceObjectId,
