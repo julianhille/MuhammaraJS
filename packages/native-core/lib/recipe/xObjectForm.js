@@ -110,8 +110,13 @@ exports.xObjectForm = class xObjectForm {
     return gsName;
   }
 
+  /**
+   * Map a color space into the form resources.
+   * @param {number} csId - The color space object ID.
+   * @returns {string} The resource name.
+   */
   getCsName(csId) {
-    const resourcesDict = this.getResourcesDictinary();
+    const resourcesDict = this.getResourcesDictionary();
     const csName = resourcesDict.addColorSpaceMapping(csId);
     return csName;
   }
