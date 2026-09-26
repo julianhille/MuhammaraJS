@@ -459,6 +459,11 @@ declare namespace muhammara {
      * @throws {TypeError} If imageXObject is neither an image nor a number.
      */
     addImageXObjectMapping(imageXObject: ImageXObject | number): string;
+    /**
+     * Adds a procedure set name to the ProcSet array.
+     * @param procSetName - The procedure set, for example PDF or Text.
+     * @throws {TypeError} If procSetName is not a single string.
+     */
     addProcsetResource(procSetName: string): void;
     addExtGStateMapping(stateObjectId: number): string;
     addFontMapping(fontObjectId: number): string;
