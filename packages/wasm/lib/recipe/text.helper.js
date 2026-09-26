@@ -16,6 +16,10 @@ export class Word {
     this.measure = measure;
     this.options = options;
   }
+  /**
+   * Measures the word including character spacing.
+   * @returns {number} The width in points.
+   */
   get width() {
     return (
       this.measure(this.value, this.options).width +
