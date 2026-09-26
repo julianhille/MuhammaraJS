@@ -1273,6 +1273,13 @@ export function createWriterFactory({
         G: function (gray) {
           return operator("G", 25, [gray]);
         },
+        /**
+         * Sets the line width (`w`).
+         * @param {number} width - Line width in user space units.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         w: function (width) {
           return operator("w", 20, [width]);
         },
