@@ -64,7 +64,11 @@ function trimBreakableEnd(value) {
   return value.replace(/(?:(?!\u00a0)\s)+$/, "");
 }
 
-/** Reports whether a string contains visible text or a non-breaking space. */
+/**
+ * Reports whether a string contains visible text or a non-breaking space.
+ * @param {string} value - Text.
+ * @returns {boolean} Whether it has visible content.
+ */
 function hasText(value) {
   return /(?:\S|\u00a0)/.test(value);
 }
