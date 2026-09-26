@@ -1,6 +1,23 @@
 var WHITESPACE = "\0\t\n\f\r ";
 var DELIMITERS = "()<>[]{}/%";
 
+// Content-stream operators this module interprets.
+var PdfOperator = Object.freeze({
+  SHOW_TEXT: "Tj",
+  SHOW_TEXT_ARRAY: "TJ",
+  NEXT_LINE_SHOW_TEXT: "'",
+  SPACING_NEXT_LINE_SHOW_TEXT: '"',
+  PAINT_XOBJECT: "Do",
+  INLINE_IMAGE_DATA: "ID",
+});
+
+// Content-stream keywords that are operands, not operators.
+var PdfKeyword = Object.freeze({
+  TRUE: "true",
+  FALSE: "false",
+  NULL: "null",
+});
+
 /**
  * Escape backslashes and parentheses for a PDF literal string.
  * @private
@@ -118,6 +135,7 @@ function skipInlineImageData(source, start) {
  * Remove text-showing operators from a page content stream. `'` and `"`
  * keep their line advance and spacing effects as `T*`, `Tw`, and `Tc`.
  *
+ * @private
  * @param {string} source Latin-1 content stream.
  * @returns {{content: string, xObjectNames: string[]}} Latin-1 content
  * stream without shown text, and the XObject names it paints with `Do`.
@@ -177,25 +195,27 @@ function removeTextShowingOperators(source) {
     var isOperator =
       depth <= 0 &&
       /^[A-Za-z'"*]/.test(token) &&
-      token !== "true" &&
-      token !== "false" &&
-      token !== "null";
+      !Object.values(PdfKeyword).includes(token);
 
     if (!isOperator) {
       if (depth <= 0) operands.push(token);
       continue;
     }
 
-    if (token === "ID") index = skipInlineImageData(source, index);
-    if (token === "Do" && /^\//.test(operands[0])) {
+    if (token === PdfOperator.INLINE_IMAGE_DATA)
+      index = skipInlineImageData(source, index);
+    if (token === PdfOperator.PAINT_XOBJECT && /^\//.test(operands[0])) {
       xObjectNames.push(decodeName(operands[0]));
     }
 
-    if (token === "Tj" || token === "TJ") {
+    if (
+      token === PdfOperator.SHOW_TEXT ||
+      token === PdfOperator.SHOW_TEXT_ARRAY
+    ) {
       result += " ";
-    } else if (token === "'") {
+    } else if (token === PdfOperator.NEXT_LINE_SHOW_TEXT) {
       result += " T*";
-    } else if (token === '"') {
+    } else if (token === PdfOperator.SPACING_NEXT_LINE_SHOW_TEXT) {
       result += " " + operands[0] + " Tw " + operands[1] + " Tc T*";
     } else {
       result += source.slice(operandStart, index);
