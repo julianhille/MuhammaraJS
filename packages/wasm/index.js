@@ -40,6 +40,7 @@ import {
   RecipeLineJoin,
   RecipeTableRowParity,
   RecipePageLayout,
+  RecipeStructureFormat,
 } from "./lib/value-sets.js";
 
 export {
@@ -59,6 +60,7 @@ export {
   RecipeLineCap,
   RecipeLineJoin,
   RecipePageLayout,
+  RecipeStructureFormat,
   RecipeTableRowParity,
   RecipeTextAlignment,
   RecipeTextWrap,

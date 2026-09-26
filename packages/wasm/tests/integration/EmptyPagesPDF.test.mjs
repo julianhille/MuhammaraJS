@@ -11,6 +11,7 @@ import {
   RecipeLineCap,
   RecipeLineJoin,
   RecipePageLayout,
+  RecipeStructureFormat,
   RecipeTableRowParity,
   RecipeTextAlignment,
   RecipeTextWrap,
@@ -134,4 +135,5 @@ var EXPORTED_VALUE_SETS = [
   [RecipeLineJoin, ["miter", "round", "bevel"]],
   [RecipeTableRowParity, ["even", "odd"]],
   [RecipePageLayout, ["portrait", "landscape"]],
+  [RecipeStructureFormat, ["string", "json"]],
 ];

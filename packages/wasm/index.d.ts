@@ -580,6 +580,10 @@ export interface RecipeStructure {
   objects: number;
 }
 export type RecipeStructureFormat = "string" | "json" | { json?: boolean };
+export declare const RecipeStructureFormat: {
+  readonly STRING: "string";
+  readonly JSON: "json";
+};
 export interface RemoveTextOptions {
   /** Also remove text from the Form XObjects the page paints, including nested forms. Defaults to `false`. */
   forms?: boolean;

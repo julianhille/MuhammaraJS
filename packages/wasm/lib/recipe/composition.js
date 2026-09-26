@@ -1,4 +1,4 @@
-import { ImageFitPolicy } from "../value-sets.js";
+import { ImageFitPolicy, RecipeStructureFormat } from "../value-sets.js";
 import { constants } from "../constants.js";
 import { endActivePage } from "./page.js";
 
@@ -379,11 +379,11 @@ export function createStructure() {
    * encryption, and indirect-object counts for JSON output.
    * @throws {Error} If the Recipe cannot be finished.
    */
-  return function (format = "string") {
+  return function (format = RecipeStructureFormat.STRING) {
     var bytes = this.endPDF();
     var text = new TextDecoder().decode(bytes);
     var objects = (text.match(/\n\d+ \d+ obj\b/g) || []).length;
-    if (format === "json" || format?.json) {
+    if (format === RecipeStructureFormat.JSON || format?.json) {
       return {
         pages: this._outputPages || this._pages.length,
         encrypted: /\/Encrypt\b/.test(text),

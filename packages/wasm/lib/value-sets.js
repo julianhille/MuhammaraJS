@@ -134,3 +134,9 @@ export var RecipePageLayout = Object.freeze({
   PORTRAIT: "portrait",
   LANDSCAPE: "landscape",
 });
+
+/** Output format of Recipe structure(); `{ json: true }` also selects JSON. */
+export var RecipeStructureFormat = Object.freeze({
+  STRING: "string",
+  JSON: "json",
+});
