@@ -1270,6 +1270,10 @@ declare namespace muhammara {
      * @returns This object; undefined when it is not a symbol.
      */
     toPDFSymbol(): PDFSymbol | undefined;
+    /**
+     * Returns the value of an integer or real number.
+     * @returns The number; undefined for other types.
+     */
     toNumber(): number | undefined;
     toString(): string;
   }
