@@ -568,6 +568,15 @@ export function createHelpers(module) {
     context.DoubleQuote = function (wordSpace, characterSpace, text, options) {
       return show(2, text, options, wordSpace, characterSpace);
     };
+    /**
+     * Shows text with individual glyph positioning (`TJ`).
+     * @param {...(string|number|Glyph[]|TextOptions)} items - Strings or glyph arrays and
+     * kerning adjustments; a trailing options object sets the encoding.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If an item or the encoding is invalid.
+     * @throws {RangeError} If the items exceed the TJ limits.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.TJ = function (...items) {
       requireContext();
       var last = items.at(-1);
