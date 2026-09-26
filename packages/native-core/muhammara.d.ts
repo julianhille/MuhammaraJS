@@ -175,6 +175,12 @@ declare namespace muhammara {
       right: number,
       top: number,
     ): this;
+    /**
+     * Writes the modified page.
+     * @returns This modifier.
+     * @throws {TypeError} If the page cannot be written.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     writePage(): this;
   }
 
