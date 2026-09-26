@@ -465,6 +465,12 @@ declare namespace muhammara {
      * @throws {TypeError} If procSetName is not a single string.
      */
     addProcsetResource(procSetName: string): void;
+    /**
+     * Adds a graphics state dictionary to the resources and returns its resource name.
+     * @param stateObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If stateObjectId is not a single number.
+     */
     addExtGStateMapping(stateObjectId: number): string;
     addFontMapping(fontObjectId: number): string;
     addColorSpaceMapping(colorSpaceId: number): string;
