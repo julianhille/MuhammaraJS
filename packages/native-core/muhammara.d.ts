@@ -749,6 +749,12 @@ declare namespace muhammara {
   }
 
   export interface ByteWriter {
+    /**
+     * Writes bytes to the stream.
+     * @param buffer - The bytes to write.
+     * @returns The number of bytes written.
+     * @throws {TypeError} If buffer is not a single Uint8Array or byte array.
+     */
     write(buffer: Uint8Array | number[]): number;
   }
 
