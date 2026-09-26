@@ -51,7 +51,11 @@ function cellOptions(options = {}, name = "cell") {
   return result;
 }
 
-/** Keeps table-level text options; native ignores a table-level `cell`. */
+/**
+ * Keeps table-level text options; native ignores a table-level `cell`.
+ * @param {object} options - Table options.
+ * @returns {object} New options without `cell`.
+ */
 function tableTextOptions(options) {
   var result = { ...options };
   delete result.cell;
