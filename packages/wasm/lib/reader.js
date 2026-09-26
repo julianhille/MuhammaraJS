@@ -1023,6 +1023,11 @@ export function createReaderFactory({
         }
 
         return {
+          /**
+           * Reads the page dictionary.
+           * @returns {PDFDictionary} The dictionary.
+           * @throws {Error} If the reader has ended or the dictionary cannot be read.
+           */
           getDictionary: function () {
             requireReader();
             var dictionary = wrapObject(
