@@ -682,6 +682,13 @@ export function createRecipeFactory({
       drawText: function (value, x, y, options) {
         return this._drawText(value, x, y, options);
       },
+      /**
+       * Measures one text run with the resolved font and size.
+       * @param {string} value - Text.
+       * @param {object} options - Font and size options.
+       * @returns {TextDimensions} Bounds and advance in points.
+       * @throws {Error} If the font is not registered or the text cannot be measured.
+       */
       measure: function (value, options) {
         var fontPath = resolveFont(options);
         if (this._sourceMode) {
