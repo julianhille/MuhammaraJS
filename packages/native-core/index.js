@@ -12,6 +12,10 @@ exports.createMuhammara = function createMuhammara(muhammara) {
   var bindingModule = require.resolve("./lib/muhammara");
   var recipeDirectory = path.join(__dirname, "lib", "recipe") + path.sep;
 
+  /**
+   * Returns the writer's event emitter, created on first use.
+   * @returns {import("events").EventEmitter} The emitter for writer events.
+   */
   muhammara.PDFWriter.prototype.getEvents = function () {
     if (!this.events) this.events = new (require("events").EventEmitter)();
     return this.events;

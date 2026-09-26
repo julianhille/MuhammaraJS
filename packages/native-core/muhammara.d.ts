@@ -989,6 +989,10 @@ declare namespace muhammara {
     requireCatalogUpdate(): void;
 
     /* Js Extensions (in muhammara.js) */
+    /**
+     * Returns the writer's event emitter, created on first use.
+     * @returns The emitter for writer events.
+     */
     getEvents(): EventEmitter;
     triggerDocumentExtensionEvent(
       eventName: string | symbol,
