@@ -452,7 +452,7 @@ function resolvePageLabelObject(parser, value) {
  * @private
  * @param {PDFReader} parser - Source parser.
  * @param {PDFObject} value - Page-label dictionary.
- * @returns {{style?: string, prefix?: object, start?: number}} The label.
+ * @returns {{style: (string|undefined), prefix: (object|undefined), start: (number|undefined)}} The label.
  * @throws {Error} If `value` is not a dictionary.
  */
 function readPageLabel(parser, value) {
@@ -484,7 +484,7 @@ function readPageLabel(parser, value) {
  * @private
  * @param {ObjectsContext} objectsContext - Objects context.
  * @param {object[]} entries - Normalized entries.
- * @returns {{pageIndex: number, objectID: number}[]} The written objects.
+ * @returns {Array<{pageIndex: number, objectID: number}>} The written objects.
  */
 function writePageLabelObjects(objectsContext, entries) {
   return entries.map((entry) => {
@@ -516,7 +516,7 @@ function writePageLabelObjects(objectsContext, entries) {
  * @param {DocumentCopyingContext} copyingContext - Copies unchanged values.
  * @param {DictionaryContext} dictionary - Open dictionary.
  * @param {object} values - Existing entries.
- * @param {{pageIndex: number, objectID: number}[]} entries - Written label objects.
+ * @param {Array<{pageIndex: number, objectID: number}>} entries - Written label objects.
  * @returns {void}
  */
 function writePageLabelsDictionary(

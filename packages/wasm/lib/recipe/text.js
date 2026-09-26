@@ -98,7 +98,7 @@ function endsWithBreakableSpace(value) {
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Text options.
  * @param {RecipeTextWrap|boolean} wrap - Wrap mode; `true` means auto.
- * @returns {{text: string, last: boolean}[]} Lines; `last` ends a paragraph.
+ * @returns {Array<{text: string, last: boolean}>} Lines; `last` ends a paragraph.
  */
 function lines(value, width, measure, options, wrap) {
   var result = [];
@@ -176,8 +176,8 @@ function fragmentOptions(options, styles = {}, fontSize) {
 
 /**
  * Coalesces adjacent HTML fragments that use equivalent styles.
- * @param {{text: string, styles: object}[]} parts - Fragments.
- * @returns {{text: string, styles: object}[]} New grouped fragments.
+ * @param {Array<{text: string, styles: object}>} parts - Fragments.
+ * @returns {Array<{text: string, styles: object}>} New grouped fragments.
  */
 function groupedHtmlParts(parts) {
   return parts.reduce((groups, part) => {
@@ -193,7 +193,7 @@ function groupedHtmlParts(parts) {
 
 /**
  * Measures styled HTML fragments and spacing across separate drawing runs.
- * @param {{text: string, styles: object}[]} parts - Fragments.
+ * @param {Array<{text: string, styles: object}>} parts - Fragments.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Base text options.
  * @param {boolean} [group=true] - Whether to group equal styles first.
@@ -235,7 +235,7 @@ function boundaryCharSpacing(left, right, charSpace) {
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Base text options.
  * @param {RecipeTextWrap|boolean} wrap - Wrap mode.
- * @returns {{parts: object[], last: boolean}[]} Lines of styled fragments.
+ * @returns {Array<{parts: object[], last: boolean}>} Lines of styled fragments.
  */
 function htmlLines(source, width, measure, options, wrap) {
   var result = [];
@@ -350,7 +350,7 @@ function htmlLines(source, width, measure, options, wrap) {
 
 /**
  * Truncates styled fragments in place until an ellipsis fits the width.
- * @param {{text: string, styles: object}[]} parts - Fragments, changed in place.
+ * @param {Array<{text: string, styles: object}>} parts - Fragments, changed in place.
  * @param {number} width - Available width.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Base text options.
@@ -397,7 +397,7 @@ function ellipsize(value, width, measure, options) {
 
 /**
  * Keeps the lines that fit a height and joins the rest for overflow handling.
- * @param {{text: string}[]} entries - Laid-out lines.
+ * @param {Array<{text: string}>} entries - Laid-out lines.
  * @param {number} availableHeight - Height of the box content.
  * @param {number} lineHeight - Line height.
  * @returns {{entries: object[], linesWritten: number, remainder: string}} Visible lines and the remaining text.
@@ -662,7 +662,7 @@ export function createTextMethods({ drawText, measure, module }) {
    * @param {number} width - Width.
    * @param {number} height - Height.
    * @param {object} options - Rotation and skew options.
-   * @param {{color?: string, opacity?: number}} hilite - Highlight color and opacity.
+   * @param {{color: (string|undefined), opacity: (number|undefined)}} hilite - Highlight color and opacity.
    * @returns {void}
    */
   function drawHilite(recipe, x, y, width, height, options, hilite) {
@@ -932,7 +932,7 @@ export function createTextMethods({ drawText, measure, module }) {
       var topAlign = options.align?.split(" ") || [];
       /**
        * Measures a line with per-fragment HTML styles when present.
-       * @param {{text?: string, parts?: object[]}} entry - Laid-out line.
+       * @param {{text: (string|undefined), parts: (object[]|undefined)}} entry - Laid-out line.
        * @returns {number} The width in points.
        */
       var entryWidth = (entry) =>
@@ -1083,7 +1083,7 @@ export function createTextMethods({ drawText, measure, module }) {
           var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
           /**
            * Reports whether this fragment owns an expandable justification gap.
-           * @param {{text: string, marker?: boolean}} part - Fragment.
+           * @param {{text: string, marker: (boolean|undefined)}} part - Fragment.
            * @param {number} index - Fragment index.
            * @returns {boolean} Whether justification may widen the gap after it.
            */
