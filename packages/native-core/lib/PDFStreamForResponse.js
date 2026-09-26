@@ -13,6 +13,11 @@ function PDFStreamForResponse(inResponse) {
   this.position = 0;
 }
 
+/**
+ * Writes bytes to the response.
+ * @param {Buffer|number[]} inBytes - The bytes to write.
+ * @returns {number} The number of bytes written.
+ */
 PDFStreamForResponse.prototype.write = function (inBytes) {
   // Arrays of byte values are still accepted from direct callers.
   if (!Buffer.isBuffer(inBytes)) inBytes = Buffer.from(inBytes);
