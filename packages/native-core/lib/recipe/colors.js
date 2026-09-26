@@ -432,6 +432,13 @@ function arrayToHex(color = []) {
   return code;
 }
 
+/**
+ * Convert a 2, 6 or 8 digit hex color to components between 0 and 1.
+ * @private
+ * @param {string} hex - The hex color, with or without '#'.
+ * @returns {number[]} One gray, three RGB or four CMYK components.
+ * @throws {TypeError} If the value is not a 2, 4, 6 or 8 digit hex string.
+ */
 function hexToArray(hex) {
   const result =
     /^#?([a-f\d]{2})([a-f\d]{2})?([a-f\d]{2})?([a-f\d]{2})?$/i.exec(hex);
