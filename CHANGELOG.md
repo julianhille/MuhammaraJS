@@ -24,11 +24,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `PDFWriter#replaceObject()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare the `text`, `border`, `color` and `followOriginalPageRotation`
   options that `Recipe#annot()` already reads [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add `Recipe.Source`, `Recipe.TextWrap`, `Recipe.TextAlign`, `Recipe.TableRowNth`, `Recipe.LineCap`, `Recipe.LineJoin`, `Recipe.ArrowAt`, `Recipe.ArrowType`, `Recipe.TriangleTrait`, `Recipe.TrianglePosition`, `Recipe.PageSize`, `Recipe.PageLayout`, `Recipe.HorizontalAlign`, `Recipe.VerticalAlign`, `Recipe.FontStyle`, `Recipe.Permission`, `Recipe.Coordinate`, `Recipe.Colorspace`, `Recipe.AnnotSubtype`, `Recipe.AnnotFlag` and
-  `Recipe.AnnotIcon` and `Recipe.ChromaCommand` constants for the matching
-  string options, and declare
-  the `password`, `ownerPassword`, `userPassword`, `userProtectionFlag` and
-  `fontSrcPath` Recipe constructor options [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add Recipe constants for the string options Recipe accepts:
+  `Recipe.AnnotFlag`, `AnnotIcon`, `AnnotSubtype`, `ArrowAt`, `ArrowType`,
+  `ChromaCommand`, `Colorspace`, `Coordinate`, `FontStyle`, `HorizontalAlign`,
+  `LineCap`, `LineJoin`, `PageLayout`, `PageSize`, `Permission`, `Source`,
+  `TableRowNth`, `TextAlign`, `TextWrap`, `TriangleTrait`, `TrianglePosition`
+  and `VerticalAlign`. The plain strings stay accepted [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the `password`, `ownerPassword`, `userPassword`,
+  `userProtectionFlag` and `fontSrcPath` Recipe constructor options [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Accept `Recipe#line(startX, startY, endX, endY, options?)`, as Wasm does
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Accept a `PDFDate` in `InfoDictionary#setCreationDate()` and
@@ -331,9 +334,9 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 - Declare `DocumentCopyingContext#getSourceDocumentParser()` without
   parameters in the TypeScript types, matching the runtime, which never used
   them [#320](https://github.com/julianhille/MuhammaraJS/issues/320)
-- Throw `TypeError: No page is active; call createPage() or editPage()
-first` from Recipe drawing and annotation methods called without a page,
-  instead of a property-destructuring `TypeError` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Throw a `TypeError` that reads "No page is active; call createPage() or
+  editPage() first" from Recipe drawing and annotation methods called without
+  a page, instead of a property-destructuring `TypeError` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Link `bcrypt.lib` explicitly in the Windows native build, where OpenSSL seeds
   AES initialization vectors from `BCryptGenRandom`
   [#663](https://github.com/julianhille/MuhammaraJS/issues/663)
