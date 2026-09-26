@@ -104,6 +104,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the page input was not created by a reader.
      */
     getCropBox(): PDFBox;
+    /**
+     * Returns the trim box, inherited from parent pages when not set.
+     * @returns The box [left, bottom, right, top]; the crop box when not set.
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getTrimBox(): PDFBox;
     getBleedBox(): PDFBox;
     getArtBox(): PDFBox;
