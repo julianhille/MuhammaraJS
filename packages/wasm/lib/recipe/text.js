@@ -576,14 +576,18 @@ export function createTextMethods({ drawText, measure, module }) {
             availableWidth,
             measureText,
             textOptions,
-            box.wrap === false ? "ellipsis" : box.wrap || "auto",
+            box.wrap === false
+              ? RecipeTextWrap.ELLIPSIS
+              : box.wrap || RecipeTextWrap.AUTO,
           )
         : lines(
             value,
             availableWidth,
             measureText,
             textOptions,
-            box.wrap === false ? "ellipsis" : box.wrap || "auto",
+            box.wrap === false
+              ? RecipeTextWrap.ELLIPSIS
+              : box.wrap || RecipeTextWrap.AUTO,
           );
       return (
         box.height ||
