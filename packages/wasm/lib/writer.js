@@ -844,6 +844,16 @@ export function createWriterFactory({
      * @returns {ContentContext} The page content context.
      */
     function contentContext() {
+      /**
+       * Applies one numeric content operator to the current page.
+       * @param {string} name - Operator name for error messages.
+       * @param {number} code - Native operator code.
+       * @param {number[]} [args=[]] - Operands; a missing operand is `undefined` and rejected.
+       * @param {boolean} [integers=false] - Whether operands must be integers.
+       * @returns {ContentContext} The content context.
+       * @throws {TypeError} If an operand is not finite, or not an integer when required.
+       * @throws {Error} If the context is inactive or the operator fails.
+       */
       function operator(name, code, args = [], integers = false) {
         requireActiveContext(context);
         if (!args.every(Number.isFinite)) {
