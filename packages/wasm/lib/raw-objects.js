@@ -32,6 +32,14 @@ export function createRawObjectsContext({
       requireOpen();
     }
 
+    /**
+     * Writes bytes through a native byte writer.
+     * @param {number} writer - Native byte writer.
+     * @param {ByteSource} bytes - Bytes to write.
+     * @returns {number} The number of bytes written.
+     * @throws {TypeError} If `bytes` is not a supported byte source.
+     * @throws {Error} If the writer is no longer active.
+     */
     function writeBytes(writer, bytes) {
       bytes = normalizeBytes(bytes, "ByteWriter input");
       return withBytes(bytes, (pointer) => {
