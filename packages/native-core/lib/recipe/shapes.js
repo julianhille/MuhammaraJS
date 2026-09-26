@@ -1358,6 +1358,14 @@ const Kite = class Kite {
  * @private
  */
 const Arrow = class Arrow {
+  /**
+   * @param {number} x - The x where the shaft meets the head.
+   * @param {number} y - The y of the arrow axis.
+   * @param {Kite} arrowhead - The head.
+   * @param {number} shaftLength - The shaft length.
+   * @param {number} shaftWidth - The shaft width.
+   * @param {Kite|null} nock - The reverse head of a double arrow.
+   */
   constructor(x, y, arrowhead, shaftLength, shaftWidth, nock) {
     this._x = x;
     this._y = y;
