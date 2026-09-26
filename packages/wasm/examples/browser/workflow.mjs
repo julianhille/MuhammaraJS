@@ -77,6 +77,10 @@ export function validateObjectUrlLifecycle() {
   var created = [];
   var revoked = [];
   var urls = new ObjectUrlStore({
+    /**
+     * Creates a fake object URL.
+     * @returns {string} The URL.
+     */
     createObjectURL() {
       var value = `blob:example-${created.length + 1}`;
       created.push(value);
