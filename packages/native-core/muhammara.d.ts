@@ -656,6 +656,11 @@ declare namespace muhammara {
       pageIndex: number,
       limits?: PDFExtractionLimits,
     ): PDFPageContentItem[];
+    /**
+     * Returns the number of objects in the cross-reference table.
+     * @returns The object count.
+     * @throws {TypeError} If the reader has ended.
+     */
     getObjectsCount(): number;
     isEncrypted(): boolean;
     getXrefSize(): number;
