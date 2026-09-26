@@ -507,7 +507,13 @@ declare namespace muhammara {
      * @throws {TypeError} If xObjectId is not a single number.
      */
     addXObjectMapping(xObjectId: number): string;
-    addShadingMapping(xObjectId: number): string;
+    /**
+     * Adds a shading to the resources and returns its resource name.
+     * @param shadingObjectId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If shadingObjectId is not a single number.
+     */
+    addShadingMapping(shadingObjectId: number): string;
   }
 
   export type PDFBox = [PosX, PosY, Width, Height];
