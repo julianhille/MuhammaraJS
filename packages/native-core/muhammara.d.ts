@@ -1362,6 +1362,13 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     getOutputFile(): OutputFile;
+    /**
+     * Adds an annotation to the Annots array of the page written next.
+     * @param annotationId - The annotation object ID.
+     * @returns This writer.
+     * @throws {TypeError} If annotationId is not a number.
+     * @throws {Error} If the writer has ended.
+     */
     registerAnnotationReferenceForNextPageWrite(annotationId: number): this;
     requireCatalogUpdate(): void;
 
