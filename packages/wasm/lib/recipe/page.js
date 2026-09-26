@@ -687,6 +687,8 @@ function writePageLabels(writer, copyingContext, rootID, pageLabels) {
  * Reports whether a page is still open, for new pages and edited pages alike.
  * Document-level operations close the active page before they run, so the
  * writer never has to finalize around an open content stream.
+ * @param {Recipe} recipe - Recipe instance.
+ * @returns {boolean} Whether a page is open.
  */
 export function hasActivePage(recipe) {
   return recipe._contextState !== PAGE_CONTEXT_STATE.IDLE;
