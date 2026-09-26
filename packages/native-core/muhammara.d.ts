@@ -3884,6 +3884,16 @@ declare namespace muhammara {
       pages?: number | (number | [number, number])[],
     ): Recipe;
 
+    /**
+     * Encrypt the pdf
+     * @param options - The options
+     * @param options.password - The permission password.
+     * @param options.ownerPassword - The password for editing.
+     * @param options.userPassword - The password for viewing & encryption.
+     * @param options.userProtectionFlag - The flag for the security level, see `permission()`.
+     * @returns The recipe instance. The file is encrypted by `endPDF()`;
+     *   Buffer sources are not encrypted.
+     */
     encrypt(options?: Recipe.EncryptOptions): Recipe;
 
     registerFont(
