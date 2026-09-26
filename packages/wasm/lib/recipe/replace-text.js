@@ -422,7 +422,10 @@ function collectForms(parser, names, resources, forms) {
   });
 }
 
-/** Creates literal page-content text replacement and removal methods. */
+/**
+ * Creates literal page-content text replacement and removal methods.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createReplaceTextMethods() {
   return {
     /**
