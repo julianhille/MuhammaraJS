@@ -154,6 +154,13 @@ function _getFontFile(self, options = {}) {
   return fontFile;
 }
 
+/**
+ * Load the writer font for text options once per font file.
+ * @private
+ * @param {Object} [options] - Text options: font, and bold/isBold, italic/isItalic.
+ * @returns {Object} The writer's used font.
+ * @throws {Error} If the font file cannot be loaded.
+ */
 exports._getFont = function _getFont(options) {
   this.current = this.current || {};
 
