@@ -13,7 +13,12 @@ import {
   strokeUnderline,
 } from "./drawing-options.js";
 
-/** Creates shared support functions used by low-level PDF writers. */
+/**
+ * Creates shared support functions used by low-level PDF writers.
+ * @param {object} dependencies - Module, asset registries, and byte helpers.
+ * @returns {object} `imageAssetPath`, `drawImageCall`, `removeAssets`,
+ * `resourcesDictionary`, and `createAnnotation`.
+ */
 export function createWriterSupport({
   module,
   normalizeBytes,
