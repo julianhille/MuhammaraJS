@@ -3792,6 +3792,21 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /**
+     * Create a comment annotation: a Text annotation with the Comment icon. It is
+     * written when the PDF ends.
+     * @param text - The text content; defaults to ''.
+     * @param x - The coordinate x
+     * @param y - The coordinate y
+     * @param options - The options
+     * @param options.title - The title.
+     * @param options.date - The date.
+     * @param options.open - Open the annotation by default?; defaults to false.
+     * @param options.richText - Display with rich text format, text will be transformed automatically, or you may pass in your own rich text starts with "<?xml..."
+     * @param options.replies - Array of annotation replies, each with text and optional title, date, subject, richText, and flag.
+     * @param options.flag - The flag property, one of the `Recipe.AnnotFlag` values.
+     * @returns The recipe instance.
+     */
     comment(
       text: string,
       x: Recipe.RecipeCoordinate,
