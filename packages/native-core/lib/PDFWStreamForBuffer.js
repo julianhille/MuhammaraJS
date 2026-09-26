@@ -2,6 +2,10 @@
     PDFWStreamForBuffer is an implementation of a write stream that collects
     the written bytes in memory. Read the result from its `buffer` property.
 */
+/**
+ * Creates a write stream that collects the bytes in memory.
+ * @constructor
+ */
 function PDFWStreamForBuffer() {
   this.chunks = [];
   this.joined = null;
