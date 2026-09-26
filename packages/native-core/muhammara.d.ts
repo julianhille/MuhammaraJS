@@ -1228,6 +1228,16 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     getDocumentContext(): DocumentContext;
+    /**
+     * Appends pages of another PDF as new pages.
+     * @param source - The PDF path or a read stream.
+     * @param options - The page range and the source password.
+     * @returns The object IDs of the appended pages.
+     * @throws {TypeError} If the arguments are wrong or the pages cannot be
+     *   appended; the writer is aborted then.
+     * @throws {RangeError} If the page range is invalid.
+     * @throws {Error} If the writer has ended.
+     */
     appendPDFPagesFromPDF(
       source: FilePath | ReadStream,
       options?: AppendOptions,
