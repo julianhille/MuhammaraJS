@@ -884,6 +884,12 @@ declare namespace muhammara {
      * @throws {TypeError} If nameValue is not a single string.
      */
     writeNameValue(nameValue: string): this;
+    /**
+     * Writes a rectangle array as the value of the last key.
+     * @param values - The rectangle [left, bottom, right, top].
+     * @returns This dictionary context.
+     * @throws {TypeError} If the arguments are not an array of 4 numbers or 4 numbers.
+     */
     writeRectangleValue(values: Array<number>): this;
     writeRectangleValue(a: number, b: number, c: number, d: number): this;
     writeLiteralStringValue(literal: Array<number> | string): this;
