@@ -479,6 +479,12 @@ declare namespace muhammara {
      * @throws {TypeError} If fontObjectId is not a single number.
      */
     addFontMapping(fontObjectId: number): string;
+    /**
+     * Adds a color space to the resources and returns its resource name.
+     * @param colorSpaceId - The object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If colorSpaceId is not a single number.
+     */
     addColorSpaceMapping(colorSpaceId: number): string;
     addPatternMapping(colorSpaceId: number): string;
     addPatternMapping(patternObjectId: number): string;
