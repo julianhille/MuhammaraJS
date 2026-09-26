@@ -807,6 +807,12 @@ declare namespace muhammara {
      * @throws {TypeError} If position is not a single number.
      */
     setPosition(position: number): this;
+    /**
+     * Moves to a position counted back from the end.
+     * @param position - The number of bytes before the end.
+     * @returns This reader.
+     * @throws {TypeError} If position is not a single number.
+     */
     setPositionFromEnd(position: number): this;
   }
 
