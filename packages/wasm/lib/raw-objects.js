@@ -736,6 +736,11 @@ export function createRawObjectsContext({
               throw new Error("Free context is no longer active");
             return writeBytes(writer, bytes);
           },
+          /**
+           * Reads the current output offset.
+           * @returns {number} Bytes written to the PDF so far.
+           * @throws {Error} If the free context has ended.
+           */
           getCurrentPosition: function () {
             if (activeFreeWriter !== writer)
               throw new Error("Free context is no longer active");
