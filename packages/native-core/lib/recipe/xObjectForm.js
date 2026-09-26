@@ -111,6 +111,10 @@ exports.xObjectForm = class xObjectForm {
     return csName;
   }
 
+  /**
+   * End the form so it can be placed.
+   * @returns {void}
+   */
   end() {
     this.pdfWriter.endFormXObject(this);
   }
