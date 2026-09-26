@@ -152,6 +152,10 @@ function writePageTree(writer, copyingContext, node) {
  * alike - depth-first. Shared by every deletePage() pass that needs to walk
  * the tree readPageTree() already built, instead of re-parsing or re-walking
  * it independently.
+ * @private
+ * @param {Object} tree - The root node built by readPageTree().
+ * @param {function(Object): void} visit - Called with every node.
+ * @returns {void}
  */
 function walkPageTree(tree, visit) {
   const pending = [tree];
