@@ -423,6 +423,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     y(x1: PosX, y1: PosY, x3: PosX, y3: PosY): this;
+    /**
+     * Closes the current subpath; operator h.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     h(): this;
     re(left: number, bottom: number, width: Width, height: Height): this;
     q(): this;
