@@ -232,6 +232,8 @@ export function installDrawingHelpers(context, colorValue) {
  * @param {function(number, number): number} measureText - Export call for text: (textPointer, resultPointer).
  * @param {function(number, number, number): number} measureGlyphs - Export call for glyphs: (glyphPointer, count, resultPointer).
  * @returns {{xMin: number, yMin: number, xMax: number, yMax: number, width: number, height: number}} Text bounds.
+ * @throws {TypeError} If `text` is not text or glyph ids, or `size` is not positive.
+ * @throws {Error} If the font cannot measure the text.
  */
 export function measureFontText(
   module,
@@ -292,6 +294,7 @@ export function measureFontText(
  * @param {number} size - Positive font size.
  * @param {function(number, number): number} readUnderline - Export call: (textPointer, resultPointer).
  * @returns {{thickness: number, position: number, advance: number}} Underline geometry in points.
+ * @throws {Error} If the font cannot provide underline metrics.
  */
 export function readFontUnderline(
   module,
@@ -328,6 +331,7 @@ export function readFontUnderline(
  * @param {number} y - Text baseline y.
  * @param {number} size - Font size.
  * @returns {{thickness: number, lineY: number, endX: number}|null} Underline geometry, or null without underline.
+ * @throws {TypeError} If the underline geometry is not finite.
  */
 export function prepareUnderline(options, text, x, y, size) {
   if (!options.underline) return null;
