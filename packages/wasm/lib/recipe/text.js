@@ -421,6 +421,13 @@ function clipEntries(entries, availableHeight, lineHeight) {
  * @returns {object} Methods mixed into Recipe.prototype.
  */
 export function createTextMethods({ drawText, measure, module }) {
+  /**
+   * Measures text including character spacing.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} value - Text.
+   * @param {object} [options={}] - Text options.
+   * @returns {TextDimensions} Bounds and width in points.
+   */
   function dimensions(recipe, value, options = {}) {
     var result = measure.call(recipe, String(value), options);
     result.width += charSpacing(value, options.charSpace);
