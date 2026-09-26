@@ -1428,6 +1428,15 @@ function makeTextObject(lines, line, lineID, textBox, options = {}) {
   };
 }
 
+/**
+ * Carry justification totals across runs that share a line.
+ * @private
+ * @param {Line} line - The line being finished.
+ * @param {Object[]} textObjects - The runs laid out so far; updated in place.
+ * @param {number} wordCount - The words counted so far on the line.
+ * @param {number} totalTextWidth - The text width counted so far on the line.
+ * @returns {number[]} The updated [wordCount, totalTextWidth].
+ */
 function bindTextToLine(line, textObjects, wordCount, totalTextWidth) {
   // Apply justification information to previous text objects.
   if (wordCount > 0) {
