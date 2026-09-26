@@ -1167,6 +1167,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the file object was not obtained from a writer.
      */
     getFilePath(): string | undefined;
+    /**
+     * Returns the size of the open file.
+     * @returns The size in bytes; undefined when no file is open.
+     * @throws {TypeError} If the file object was not obtained from a writer.
+     */
     getFileSize(): number | undefined;
     getInputStream(): ByteReaderWithPosition | undefined;
   }
