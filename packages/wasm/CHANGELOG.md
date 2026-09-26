@@ -4,28 +4,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
-### Added
-
-- Add a guide for annotating known text regions in existing PDFs with Underline
-  or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
-- Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
-  an existing page, for example before adding a new OCR text layer, and a
-  guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
-- Export the frozen `LineCapStyle` and `ETokenSeparator` objects that native
-  exports, with the same member names, for `J()` and `endArray()` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Export frozen value sets for finite string options, each with a same-named
-  type: `DeviceColorSpace`, `DrawingPathType`, `ImageFit`, `PageBox`,
-  `PDFImageType`, `EEncoding`, and `ObjectReplacementScope` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Add native's Recipe value constants as static properties with the native names
-  and members, for example `Recipe.TextWrap.ELLIPSIS` and
-  `Recipe.AnnotFlag.LOCKED_CONTENTS`: `TextWrap`, `TextAlign`, `TableRowNth`,
-  `LineCap`, `LineJoin`, `ArrowAt`, `ArrowType`, `TriangleTrait`,
-  `TrianglePosition`, `PageLayout`, `PageSize`, `HorizontalAlign`,
-  `VerticalAlign`, `FontStyle`, `Permission`, `Coordinate`, `Colorspace`,
-  `AnnotSubtype`, `AnnotFlag`, `ChromaCommand`, and `AnnotIcon`, plus the
-  Wasm-only `StructureFormat`. The annotation `flag` option now accepts
-  `lockedcontents` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-
 ### Breaking Changes
 
 - Keep Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()`
@@ -65,6 +43,26 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [breaking changes](docs/breaking-changes.md).
 
 ### Added
+
+- Add a guide for annotating known text regions in existing PDFs with Underline
+  or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
+- Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
+  an existing page, for example before adding a new OCR text layer, and a
+  guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
+- Export the frozen `LineCapStyle` and `ETokenSeparator` objects that native
+  exports, with the same member names, for `J()` and `endArray()` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Export frozen value sets for finite string options, each with a same-named
+  type: `DeviceColorSpace`, `DrawingPathType`, `ImageFit`, `PageBox`,
+  `PDFImageType`, `EEncoding`, and `ObjectReplacementScope` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Add native's Recipe value constants as static properties with the native names
+  and members, for example `Recipe.TextWrap.ELLIPSIS` and
+  `Recipe.AnnotFlag.LOCKED_CONTENTS`: `TextWrap`, `TextAlign`, `TableRowNth`,
+  `LineCap`, `LineJoin`, `ArrowAt`, `ArrowType`, `TriangleTrait`,
+  `TrianglePosition`, `PageLayout`, `PageSize`, `HorizontalAlign`,
+  `VerticalAlign`, `FontStyle`, `Permission`, `Coordinate`, `Colorspace`,
+  `AnnotSubtype`, `AnnotFlag`, `ChromaCommand`, and `AnnotIcon`, plus the
+  Wasm-only `StructureFormat`. The annotation `flag` option now accepts
+  `lockedcontents` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 - Add a guide for annotating known text regions in existing PDFs with Underline
   or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
