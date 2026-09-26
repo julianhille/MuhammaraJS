@@ -869,6 +869,11 @@ export function createWriterFactory({
       }
 
       var context = {
+        /**
+         * Returns the page this content context writes to.
+         * @returns {PDFPage} The current page.
+         * @throws {Error} If the content context is no longer active.
+         */
         getAssociatedPage: function () {
           requireActiveContext(context);
           return currentPage;
