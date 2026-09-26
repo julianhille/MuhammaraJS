@@ -132,6 +132,9 @@ exports.Line = class Line {
     }
   }
 
+  /**
+   * @returns {number} The line ID, grouping objects laid out on one line.
+   */
   get lineID() {
     return this._lineID;
   }
