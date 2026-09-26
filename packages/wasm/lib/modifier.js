@@ -188,6 +188,16 @@ export function createModifierFactory({
         );
         return this;
       },
+      /**
+       * Places a registered image, scaled to the given box, in PDF coordinates.
+       * @param {string} name - Name the image was registered under.
+       * @param {number} x - Left edge.
+       * @param {number} y - Bottom edge.
+       * @param {number} width - Placed width.
+       * @param {number} height - Placed height.
+       * @returns {this} The modifier.
+       * @throws {Error} If the modifier has ended, the image is unknown, or placing fails.
+       */
       image: function (name, x, y, width, height) {
         requireOpenModifier();
         var imagePath = images.get(name);
