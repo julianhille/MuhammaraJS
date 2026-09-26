@@ -2180,6 +2180,11 @@ export function createWriterFactory({
         context.TD = function (x, y) {
           return operator("TD", 42, [x, y]);
         };
+        /**
+         * Moves to the start of the next text line (`T*`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         context.TStar = function () {
           return operator("TStar", 43);
         };
