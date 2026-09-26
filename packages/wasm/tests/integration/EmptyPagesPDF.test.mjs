@@ -5,6 +5,8 @@ import {
   DrawingPathType,
   ImageFitPolicy,
   PageBox,
+  RecipeArrowAnchor,
+  RecipeArrowType,
   RecipeHorizontalAlignment,
   RecipeTextAlignment,
   RecipeTextWrap,
@@ -122,4 +124,6 @@ var EXPORTED_VALUE_SETS = [
     RecipeTrianglePosition,
     ["a", "b", "c", "centroid", "circumcenter", "incenter"],
   ],
+  [RecipeArrowAnchor, ["head", "tail"]],
+  [RecipeArrowType, ["triangle", "dart", "kite"]],
 ];

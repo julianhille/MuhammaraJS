@@ -34,6 +34,8 @@ import {
   RecipeTextAlignment,
   RecipeTriangleTrait,
   RecipeTrianglePosition,
+  RecipeArrowAnchor,
+  RecipeArrowType,
 } from "./lib/value-sets.js";
 
 export {
@@ -47,6 +49,8 @@ export {
   PageBox,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
+  RecipeArrowAnchor,
+  RecipeArrowType,
   RecipeHorizontalAlignment,
   RecipeTextAlignment,
   RecipeTextWrap,

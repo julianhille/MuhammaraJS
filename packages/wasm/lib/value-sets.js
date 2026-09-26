@@ -95,3 +95,16 @@ export var RecipeTrianglePosition = Object.freeze({
   CIRCUMCENTER: "circumcenter",
   INCENTER: "incenter",
 });
+
+/** Arrow point that Recipe arrow() places at its coordinates. */
+export var RecipeArrowAnchor = Object.freeze({
+  HEAD: "head",
+  TAIL: "tail",
+});
+
+/** Named Recipe arrow head shapes; 0, 1, and 2 select the same shapes. */
+export var RecipeArrowType = Object.freeze({
+  TRIANGLE: "triangle",
+  DART: "dart",
+  KITE: "kite",
+});

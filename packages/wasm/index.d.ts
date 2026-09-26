@@ -189,7 +189,16 @@ export interface RecipeNGonOptions extends RecipePathOptions {
   rotationVertice?: number;
 }
 export type RecipeArrowType = 0 | 1 | 2 | "triangle" | "dart" | "kite";
+export declare const RecipeArrowType: {
+  readonly TRIANGLE: "triangle";
+  readonly DART: "dart";
+  readonly KITE: "kite";
+};
 export type RecipeArrowAnchor = "head" | "tail";
+export declare const RecipeArrowAnchor: {
+  readonly HEAD: "head";
+  readonly TAIL: "tail";
+};
 export interface RecipeArrowOptions extends RecipePathOptions {
   head?:
     | number

@@ -1,4 +1,9 @@
-import { RecipeTrianglePosition, RecipeTriangleTrait } from "../value-sets.js";
+import {
+  RecipeArrowAnchor,
+  RecipeArrowType,
+  RecipeTrianglePosition,
+  RecipeTriangleTrait,
+} from "../value-sets.js";
 function radians(angle) {
   return (angle * Math.PI) / 180;
 }
@@ -383,7 +388,14 @@ export function createShapeMethods() {
       if (shaftWidth > headWidth) shaftWidth = headWidth;
       else if (shaftWidth === 0) shaftWidth = headWidth / 2;
       if (baseOffset === 0 && options.type) {
-        var types = { 0: 0, triangle: 0, 1: 0.5, dart: 0.5, 2: -1, kite: -1 };
+        var types = {
+          0: 0,
+          [RecipeArrowType.TRIANGLE]: 0,
+          1: 0.5,
+          [RecipeArrowType.DART]: 0.5,
+          2: -1,
+          [RecipeArrowType.KITE]: -1,
+        };
         if (types[options.type] !== undefined)
           baseOffset = types[options.type] * headLength;
       }
@@ -391,11 +403,12 @@ export function createShapeMethods() {
       if (options.at && options.rotation && !options.rotationOrigin)
         drawOptions.rotationOrigin = [x, y];
       if (options.double) {
-        if (options.at === "head") x -= headLength;
-        else if (options.at === "tail") x += shaftLength + headLength;
+        if (options.at === RecipeArrowAnchor.HEAD) x -= headLength;
+        else if (options.at === RecipeArrowAnchor.TAIL)
+          x += shaftLength + headLength;
         else x += shaftLength / 2;
-      } else if (options.at === "head") x -= headLength;
-      else if (options.at === "tail") x += shaftLength;
+      } else if (options.at === RecipeArrowAnchor.HEAD) x -= headLength;
+      else if (options.at === RecipeArrowAnchor.TAIL) x += shaftLength;
       else x += (shaftLength - headLength) / 2;
       var halfHead = headWidth / 2,
         halfShaft = shaftWidth / 2;
