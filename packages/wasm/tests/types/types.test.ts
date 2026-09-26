@@ -805,6 +805,9 @@ async function usesNamedValueSets() {
   context.j(2);
   // @ts-expect-error PDF line joins are 0 to 2.
   context.j(3);
+  context.Tr(7);
+  // @ts-expect-error PDF text rendering modes are 0 to 7.
+  context.Tr(8);
 }
 
 void usesNamedValueSets;

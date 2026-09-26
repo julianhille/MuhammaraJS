@@ -819,6 +819,11 @@ export type DrawingPathType = "stroke" | "fill" | "clip" | null;
 export type LineCapStyle = 0 | 1 | 2;
 /** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
 export type LineJoinStyle = 0 | 1 | 2;
+/**
+ * PDF text rendering mode for `Tr()`: 0 fill, 1 stroke, 2 fill and stroke,
+ * 3 invisible, 4 to 6 the same plus clipping, 7 clip only.
+ */
+export type TextRenderingMode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface DrawPathOptions {
   color?: number | string;
@@ -1051,7 +1056,7 @@ export interface ContentContext {
   Tw(value: number): this;
   Tz(value: number): this;
   TL(value: number): this;
-  Tr(value: number): this;
+  Tr(value: TextRenderingMode): this;
   Ts(value: number): this;
   Tf(font: PDFUsedFont | string, size: number): this;
   Tj(text: string, options?: TextOptions): this;
