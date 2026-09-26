@@ -1,3 +1,5 @@
+const { TriangleTrait, TrianglePosition } = require("../recipe-constants");
+
 /*  N-Gon border box for odd numbered side shapes used to deal with object rotation.
 
   --------------------------------------------------------------  =========
@@ -453,10 +455,12 @@ function flipY(x, ngon) {
  * @param {number} y - y-coordinate used to position triangle, by default associated with left vertex of triangle base.
  * @param {number[]} traits - the data defining the triangle. Angles are specified as degrees, sides in units of points (1/72 in.).
  * @param {Object} [options] - The options
- * @param {string} [options.traitID='sss'] - indicates what type of data is being passed in the traits parameter.
+ * @param {Recipe.TriangleTrait} [options.traitID='sss'] - indicates what type of data is being passed in the traits parameter,
+ * one of the `Recipe.TriangleTrait` values:
  * ('sss'- three side lengths, 'sas' - side-angle-side (sideA, <C, sideB), 'asa' - angle-side-angle (<B, sideC, <A),
  * or 'vtx' - three vertex points [x,y])
- * @param {string} [options.position='b'] - the position of the triangle to be set at the given x,y coordinates.
+ * @param {Recipe.TrianglePosition} [options.position='b'] - the position of the triangle to be set at the given x,y coordinates,
+ * one of the `Recipe.TrianglePosition` values.
  * The values can be one of: 'A' - the A vertex (right vertex of triangle base), 'B' - the B vertex (left vertex of triangle base),
  * 'C' - the C vertex (apex of triangle), 'centroid', 'circumcenter', or 'incenter' of the triangle.
  * @param {Boolean} [options.flipX=false] - flip triangle up to down through rotation point.
@@ -472,12 +476,15 @@ function flipY(x, ngon) {
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.
  * @returns {Recipe} The recipe instance.
+ * @param {string} [options.link] - Make the triangle's bounding box open this URL.
+ * @param {boolean} [options.debug] - Also draw the reference points and labels.
  * @throws {Error} If traits does not contain three values or does not define a valid triangle.
+ * @throws {TypeError} If no page is active.
  */
 
 exports.triangle = function triangle(x, y, traits, options = {}) {
-  let traitID = options.traitID || options.traitsID || "sss";
-  let position = options.position ? options.position.toLowerCase() : "default";
+  let traitID = options.traitID || options.traitsID || TriangleTrait.SSS;
+  let position = options.position ? options.position.toLowerCase() : null;
   let triopts = Object.assign({}, options);
   delete triopts.link;
 
@@ -495,25 +502,25 @@ exports.triangle = function triangle(x, y, traits, options = {}) {
   let cc;
   let ic;
   switch (position) {
-    case "centroid":
+    case TrianglePosition.CENTROID:
       pt = triangle.centroid;
       break;
-    case "circumcenter":
+    case TrianglePosition.CIRCUMCENTER:
       cc = triangle.circumcenter;
       [pt, radius] = [cc.point, cc.radius];
       break;
-    case "incenter":
+    case TrianglePosition.INCENTER:
       ic = triangle.incenter;
       [pt, radius] = [ic.point, ic.radius];
       triangle.incenter = [x, y]; // have to update incenter because tranlation will change it.
       break;
-    case "a":
+    case TrianglePosition.A:
       pt = new Point(triangle.A);
       break;
-    case "b":
+    case TrianglePosition.B:
       pt = new Point(triangle.B);
       break;
-    case "c":
+    case TrianglePosition.C:
       pt = new Point(triangle.C);
       break;
     default:
@@ -565,13 +572,13 @@ exports.triangle = function triangle(x, y, traits, options = {}) {
       for (const vertex of trigon) {
         tgon.push(rotate(vertex[0], vertex[1], rx, ry, angle));
       }
-      triangle = new Triangle(tgon[0][0], tgon[0][1], "vtx", tgon);
+      triangle = new Triangle(tgon[0][0], tgon[0][1], TriangleTrait.VTX, tgon);
     }
     this.circle(x, y, 2, { color: "red", width: 0.5 });
 
     if (radius) {
       this.circle(x, y, radius, { color: "green", width: 0.5 });
-    } else if (position === "centroid") {
+    } else if (position === TrianglePosition.CENTROID) {
       const ma_A = new Line(triangle.A, triangle.BC.midpoint);
       const mb_B = new Line(triangle.B, triangle.AC.midpoint);
       const mc_C = new Line(triangle.C, triangle.AB.midpoint);

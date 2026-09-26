@@ -964,3 +964,8 @@ new muhammara.Recipe("new", "sizes.pdf").createPage(
 const landscape: "portrait" | "landscape" =
   muhammara.Recipe.PageLayout.LANDSCAPE;
 void landscape;
+
+annotationRecipe.triangle(100, 100, [30, 40, 50], {
+  traitID: muhammara.Recipe.TriangleTrait.SSS,
+  position: muhammara.Recipe.TrianglePosition.CENTROID,
+});

@@ -1680,6 +1680,22 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** How `triangle()` traits define the triangle. */
+    static readonly TriangleTrait: {
+      readonly SSS: "sss";
+      readonly SAS: "sas";
+      readonly ASA: "asa";
+      readonly VTX: "vtx";
+    };
+    /** The triangle point placed at the `triangle()` coordinates. */
+    static readonly TrianglePosition: {
+      readonly A: "a";
+      readonly B: "b";
+      readonly C: "c";
+      readonly CENTROID: "centroid";
+      readonly CIRCUMCENTER: "circumcenter";
+      readonly INCENTER: "incenter";
+    };
     /** Page orientations reported in page metadata. */
     static readonly PageLayout: {
       readonly PORTRAIT: "portrait";

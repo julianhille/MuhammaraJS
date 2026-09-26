@@ -222,7 +222,40 @@ var PageSize = Object.freeze({
   SRA4: "sra4",
 });
 
+/**
+ * How `triangle()` traits define the triangle. Matched case-insensitively.
+ * @readonly
+ * @enum {string}
+ */
+var TriangleTrait = Object.freeze({
+  /** Three side lengths. */
+  SSS: "sss",
+  /** Side, included angle, side: [sideA, angle C, sideB]. */
+  SAS: "sas",
+  /** Angle, side, angle: [angle B, sideC, angle A]. */
+  ASA: "asa",
+  /** Three vertex points [x, y]. */
+  VTX: "vtx",
+});
+
+/**
+ * The point of a triangle placed at the `triangle()` coordinates. Matched
+ * case-insensitively.
+ * @readonly
+ * @enum {string}
+ */
+var TrianglePosition = Object.freeze({
+  A: "a",
+  B: "b",
+  C: "c",
+  CENTROID: "centroid",
+  CIRCUMCENTER: "circumcenter",
+  INCENTER: "incenter",
+});
+
 module.exports = {
+  TriangleTrait,
+  TrianglePosition,
   PageLayout,
   PageSize,
   HorizontalAlign,
