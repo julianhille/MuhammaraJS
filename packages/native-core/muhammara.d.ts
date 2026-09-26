@@ -4237,6 +4237,18 @@ declare namespace muhammara {
       y: Recipe.RecipeCoordinate,
       options?: Recipe.TextOptions,
     ): Recipe;
+    /**
+     * Get text dimensions
+     * @param text - text to be measured
+     * @param options - The options
+     * @param options.font - name of font from which measurements are to be taken; defaults to 'helvetica'.
+     * @param options.size - size of font to be used in taking measurements; defaults to 14.
+     * @param options.charSpace - character spacing being applied to the given text; defaults to 0.
+     * @param options.bold - Measure with the bold style of the font.
+     * @param options.italic - Measure with the italic style of the font.
+     * @returns measurement components of given text: width, height, xMin, xMax, yMin, yMax
+     * @throws {Error} If the font file cannot be loaded.
+     */
     textDimensions(text: string, options?: Recipe.TextOptions): TextDimension;
     movedown(lines?: number, returnCoords?: false): Recipe;
     movedown(lines: number, returnCoords: true): number[];
