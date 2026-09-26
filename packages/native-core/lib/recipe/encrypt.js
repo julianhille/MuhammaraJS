@@ -46,6 +46,15 @@ exports.permission = function permission(flags = Permission.PRINT) {
   return access;
 };
 
+/**
+ * Build writer encryption options from Recipe options. `password` and
+ * `ownerPassword` are aliases; when only an owner password is given the user
+ * password is empty and the default permission applies.
+ * @private
+ * @param {Object} options - The Recipe or encrypt() options.
+ * @param {boolean} [addPermissions=true] - Copy `userProtectionFlag` into the result.
+ * @returns {Object} The writer encryption options; empty when no password is set.
+ */
 exports._getEncryptOptions = function _getEncryptOptions(
   options,
   addPermissions = true,
