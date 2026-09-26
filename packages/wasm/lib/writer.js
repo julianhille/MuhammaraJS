@@ -1318,6 +1318,15 @@ export function createWriterFactory({
         Ts: function (fontRise) {
           return operator("Ts", 40, [fontRise]);
         },
+        /**
+         * Selects the font and size for text (`Tf`).
+         * @param {PDFUsedFont|string} font - Font from this writer, or a font resource name.
+         * @param {number} size - Positive font size.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `font` is neither a font from this writer nor a string.
+         * @throws {RangeError} If `size` is not a positive finite number.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         Tf: function (font, size) {
           requireActiveContext(context);
           if (!(
