@@ -690,8 +690,8 @@ export function createWriterFactory({
         n: function () {
           return operator("n", 9);
         },
-        c: function (...args) {
-          return operator("c", 12, args);
+        c: function (x1, y1, x2, y2, x3, y3) {
+          return operator("c", 12, [x1, y1, x2, y2, x3, y3]);
         },
         v: function (...args) {
           return operator("v", 13, args);
@@ -1331,8 +1331,8 @@ export function createWriterFactory({
           n: function () {
             return operator("n", 9);
           },
-          c: function (...args) {
-            return operator("c", 12, args);
+          c: function (x1, y1, x2, y2, x3, y3) {
+            return operator("c", 12, [x1, y1, x2, y2, x3, y3]);
           },
           v: function (...args) {
             return operator("v", 13, args);
