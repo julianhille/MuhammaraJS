@@ -95,6 +95,14 @@ export var HOW_TO_EXAMPLES = [
   },
 ];
 
+/**
+ * Returns a required asset or fails the example.
+ * @template T
+ * @param {T|undefined} value - The asset.
+ * @param {string} message - Error message when it is missing.
+ * @returns {T} The asset.
+ * @throws {Error} If the asset is missing.
+ */
 function assertAsset(value, message) {
   if (!value) throw new Error(message);
   return value;
