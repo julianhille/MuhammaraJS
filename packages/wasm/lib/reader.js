@@ -685,6 +685,11 @@ export function createReaderFactory({
 
     // Node creates a one-byte V8 string for extracted PDF content. Avoid UTF-8
     // decoding here so every raw PDF byte remains the same JS code unit.
+    /**
+     * Maps each byte to one JavaScript code unit, as Node's extraction does.
+     * @param {Uint8Array} bytes - Raw bytes.
+     * @returns {string} A string whose code units equal the bytes.
+     */
     function oneByteString(bytes) {
       var result = "";
       for (var offset = 0; offset < bytes.length; offset += 0x8000) {
