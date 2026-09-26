@@ -130,6 +130,9 @@ export function createImageMethods(runtime) {
     /**
      * Reads the dimensions of an image in the virtual filesystem.
      * @private
+     * @param {string} path - Virtual image path.
+     * @returns {{width: number, height: number}} Size in points.
+     * @throws {Error} If the dimensions cannot be read.
      */
     _imageDimensions: function (path) {
       if (this._sourceMode) {
