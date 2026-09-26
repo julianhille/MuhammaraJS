@@ -191,6 +191,12 @@ export function createAnnotationMethods({
   withDoubles,
   colorValue,
 }) {
+  /**
+   * Converts an annotation color to PDF components from 0 to 1.
+   * @param {RecipeColor|number[]} [value] - Color, or one, three, or four components.
+   * @returns {number[]} Components; empty when omitted.
+   * @throws {TypeError} If an array has another length or a non-finite component.
+   */
   function annotationColor(value) {
     if (value === undefined) return [];
     if (Array.isArray(value)) {
