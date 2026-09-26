@@ -2755,6 +2755,11 @@ export function createWriterFactory({
               throw new Error("Form XObject content has ended");
           },
           {
+            /**
+             * Runs a native string text-showing operator on this form.
+             * @param {...number} args - Operator kind, encoding, spacing, and text pointer and length.
+             * @returns {boolean} Whether the operator was written.
+             */
             text: (...args) =>
               module._muhammara_wasm_writer_form_show_text_operator(
                 recipe,
