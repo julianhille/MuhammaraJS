@@ -1377,15 +1377,20 @@ const Arrow = class Arrow {
     this._connectAt_br.x = pointTR.x;
   }
 
+  /**
+   * A corner of the shaft.
+   * @param {string} point - A `ShaftCorner` value.
+   * @returns {number[]|undefined} The [x, y] corner, or undefined for an unknown corner.
+   */
   shaft(point) {
     switch (point) {
-      case "br":
+      case ShaftCorner.BOTTOM_RIGHT:
         return [this._connectAt_br.x, this._connectAt_br.y];
-      case "bl":
+      case ShaftCorner.BOTTOM_LEFT:
         return [this._x - this._shaftLength, this._connectAt_br.y];
-      case "tl":
+      case ShaftCorner.TOP_LEFT:
         return [this._x - this._shaftLength, this._connectAt_tr.y];
-      case "tr":
+      case ShaftCorner.TOP_RIGHT:
         return [this._connectAt_tr.x, this._connectAt_tr.y];
     }
   }
