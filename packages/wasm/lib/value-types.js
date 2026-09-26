@@ -135,6 +135,12 @@ export function createValueTypes({ module, withString, withBytes }) {
       return textStringValue(this._bytes);
     }
 
+    /**
+     * Replaces the text, encoding it as PDFDocEncoding or UTF-16BE.
+     * @param {string} value - New text.
+     * @returns {this} The text string.
+     * @throws {TypeError} If `value` is not a string.
+     */
     fromString(value) {
       if (typeof value !== "string")
         throw new TypeError("PDFTextString requires a string");
