@@ -817,6 +817,13 @@ declare namespace muhammara {
     ): this;
     /** Glyph variant: glyph lists with numeric kerning adjustments. */
     TJ(...items: (Glyph | number)[]): this;
+    /**
+     * Writes content-stream code as given, unchecked.
+     * @param freeCode - The code.
+     * @returns This context.
+     * @throws {TypeError} If freeCode is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     writeFreeCode(freeCode: string): this;
     /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
