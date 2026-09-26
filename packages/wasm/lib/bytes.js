@@ -195,6 +195,11 @@ export class PDFWStreamForBuffer {
     return bytes.length;
   }
 
+  /**
+   * Reads the number of bytes written so far.
+   *
+   * @returns {number} The write position.
+   */
   getCurrentPosition() {
     return this.position;
   }
