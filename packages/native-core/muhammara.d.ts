@@ -474,6 +474,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     J(lineCapStyle: LineCapStyle): this;
+    /**
+     * Sets the line join style; operator j.
+     * @param lineJoinStyle - 0 miter, 1 round or 2 bevel.
+     * @returns This context.
+     * @throws {TypeError} If lineJoinStyle is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     j(lineJoinStyle: LineJoinStyle): this;
     M(miterLimit: number): this;
     /** The dash phase defaults to 0. */
