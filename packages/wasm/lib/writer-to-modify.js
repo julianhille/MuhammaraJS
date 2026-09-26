@@ -1004,6 +1004,14 @@ export function createWriterToModifyFactory({
       result.TStar = function () {
         return operator("TStar", 43);
       };
+      /**
+       * Shows text (`Tj`).
+       * @param {string|Glyph[]} text - Text, or glyph entries to show without encoding.
+       * @param {TextOptions} [options] - Text encoding; only for string text.
+       * @returns {this} The content context, for chaining.
+       * @throws {TypeError} If `options` is not an options object, has an unknown encoding, or is given with glyphs.
+       * @throws {Error} If the content context is no longer active or the operator fails.
+       */
       result.Tj = function (text, options) {
         requireContext(result);
         if (typeof text === "string")
