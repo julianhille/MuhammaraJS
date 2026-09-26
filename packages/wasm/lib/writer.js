@@ -3144,6 +3144,19 @@ export function createWriterFactory({
       });
     }
 
+    /**
+     * Merges pages of a source PDF into the content of a target page.
+     * @param {PDFPage} targetPage - Page being written; started when no page is active.
+     * @param {ByteSource} source - Source PDF bytes.
+     * @param {PageRangeOptions|Function} [options] - Pages to merge, or the callback.
+     * @param {Function} [callback] - Called with `globalThis` after the merge completes.
+     * @returns {PDFWriter} The writer.
+     * @throws {TypeError} If the page, options, or callback is invalid, or a password is given.
+     * @throws {RangeError} If `type` is not an ERangeType constant, or
+     * `specificRanges` is empty for a specific range or holds an invalid range.
+     * @throws {Error} If another page is active, the writer ended, or the source is
+     * encrypted or unreadable.
+     */
     function mergePDFPagesToPage(targetPage, source, options, callback) {
       requireOpenWriter();
       if (typeof options === "function") {
