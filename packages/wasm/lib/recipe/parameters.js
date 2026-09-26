@@ -1,4 +1,5 @@
 import { PAGE_CONTEXT_STATE } from "./context-state.js";
+import { PageSize } from "../value-sets.js";
 
 /** Standard page sizes in PDF points. */
 export var mediumSizes = {
@@ -77,7 +78,7 @@ export function recipeVersion(version) {
 export function initializeRecipe(recipe, options) {
   recipe.options = options;
   recipe.default = {
-    pageSize: mediumSizes.letter.slice(),
+    pageSize: mediumSizes[PageSize.LETTER].slice(),
     pageMargin: { left: 72, right: 72, top: 72, bottom: 72 },
     mediumSizes,
   };
