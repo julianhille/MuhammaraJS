@@ -1286,6 +1286,10 @@ const Kite = class Kite {
   }
 
   // create points I&E prime (flip, 180 degrees) to change direction of Kite on X-axis
+  /**
+   * Point I mirrored to point the head the other way.
+   * @returns {number[]} The [x, y] point.
+   */
   get Ip() {
     return [this._I.x - 2 * this._width, this._I.y];
   }
