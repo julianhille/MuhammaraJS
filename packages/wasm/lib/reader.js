@@ -1036,6 +1036,11 @@ export function createReaderFactory({
             if (!dictionary) throw new Error("Unable to read page dictionary");
             return dictionary;
           },
+          /**
+           * Reads the media box.
+           * @returns {PDFRectangle} The box.
+           * @throws {Error} If the reader has ended or the box cannot be read.
+           */
           getMediaBox: function () {
             return getBox(0);
           },
