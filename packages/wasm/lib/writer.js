@@ -1890,6 +1890,11 @@ export function createWriterFactory({
           WStar: function () {
             return operator("WStar", 31);
           },
+          /**
+           * Saves the graphics state (`q`).
+           * @returns {this} The content context, for chaining.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           q: function () {
             return operator("q", 17);
           },
