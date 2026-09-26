@@ -862,6 +862,14 @@ declare namespace muhammara {
       ePDFPageBox?: PDFPageBoxType | PDFBox,
       transformation?: TransformationMatrix,
     ): number;
+    /**
+     * Draws a source page onto a page of this document.
+     * @param target - The target page.
+     * @param sourcePageIndex - The zero-based source page index.
+     * @throws {TypeError} If the arguments are not a page and a number, or the
+     *   source page does not exist.
+     * @throws {TypeError} If the copying context has ended.
+     */
     mergePDFPageToPage(target: PDFPage, sourcePageIndex: number): void;
     appendPDFPageFromPDF(sourcePageNumber: number): number; // stream start bytes?
     mergePDFPageToFormXObject(
