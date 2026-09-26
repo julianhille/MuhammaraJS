@@ -1947,6 +1947,11 @@ export function createWriterFactory({
         this.id = objectId || module._muhammara_wasm_form_get_object_id(handle);
       }
 
+      /**
+       * Returns a content context that writes to this form.
+       * @returns {ContentContext} The form content context.
+       * @throws {Error} If the writer or the form has ended.
+       */
       getContentContext() {
         if (ended || this._ended) {
           throw new Error("Form XObject content is not writable");
