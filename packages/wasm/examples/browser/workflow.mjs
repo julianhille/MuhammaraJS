@@ -50,6 +50,12 @@ export async function runExampleWorkflow(options = {}) {
   }
 }
 
+/**
+ * Runs the complete workflow or one how-to.
+ * @param {import("./lifecycle.mjs").ExampleOptions} [options={}] - Example id, assets, signal, and progress.
+ * @returns {Promise<object>} The workflow outputs, or `{ example }` for a how-to.
+ * @throws {Error} If the example fails; `exampleDetails` describes it.
+ */
 export async function runBrowserExample(options = {}) {
   if (!options.exampleId || options.exampleId === "complete")
     return runExampleWorkflow(options);
