@@ -4165,6 +4165,71 @@ declare namespace muhammara {
      */
     split(outputDir?: string, prefix?: string): Recipe;
 
+    /**
+     * Write text elements
+     * @todo support break words
+     * @param text - The text content; defaults to ''.
+     * @param x - The coordinate x, or the options to continue at the current position
+     * @param y - The coordinate y
+     * @param options - The options
+     * @param options.color - Text color (HexColor, PercentColor or DecimalColor)
+     * @param options.opacity - opacity; defaults to 1.
+     * @param options.rotation - Accept: +/- 0 through 360; defaults to 0.
+     * @param options.rotationOrigin - ] - [originX, originY]; defaults to [x,y.
+     * @param options.font - The font. 'Arial', 'Helvetica'; defaults to Helvetica.
+     * @param options.size - The font size; defaults to 14.
+     * @param options.charSpace - space to be added between characters, units in points; defaults to 0.
+     * @param options.align - This is the alignment of the text in relationship to its position; defaults to 'left top'.
+     * coordinates, specified as 'horizontal vertical': a `Recipe.HorizontalAlign` value, optionally followed by a
+     * space and a `Recipe.VerticalAlign` value.
+     * @param options.highlight - Text markup annotation.
+     * @param options.underline - Text markup annotation.
+     * @param options.strikeOut - Text markup annotation.
+     * @param options.html - Interpret text as html
+     * @param options.flow - Used to activate/deactivate text flow which is the; defaults to false.
+     * ability to use multiple calls to 'text' to create an overall text box.
+     * @param options.layout - An identifier of the layout to be associated with given text.
+     * @param options.overflow - Called when the text is going to exceed the area
+     * of the given text object. Intended for column layouts. Its parameter is (self) where 'self' is the recipe handle so
+     * that other recipe interfaces can be called. The return value can be 'true' which indicates that text processing
+     * should stop, or 'false' which indicates that the text should continue being processed with the original [x,y]
+     * coordinates, or it can be an object containing a 'column' property indicating either a layout column index
+     * or a set of [x,y] coordinates where the next set of layout columns should be positioned for the remaining text.
+     * @param options.hilite - Used to hilite given text; defaults to false.
+     * @param options.hilite.color - text hilite color (HexColor, PercentColor or DecimalColor); defaults to yellow.
+     * @param options.hilite.opacity - text hilite color opacity; defaults to .5.
+     * @param options.textBox - Text Box to fit in.
+     * @param options.textBox.width - Text Box width; defaults to 100.
+     * @param options.textBox.height - Text Box fixed height
+     * @param options.textBox.minHeight - Text Box minimum height; defaults to 0.
+     * @param options.textBox.padding - Text Box padding, [top, right, bottom, left]; defaults to 0.
+     * @param options.textBox.lineHeight - Text Box line height; defaults to 0.
+     * @param options.textBox.wrap - Text wrapping mechanism, may be true, false,; defaults to 'auto'.
+     * or a `Recipe.TextWrap` value: 'auto', 'clip', 'trim', 'ellipsis'. All the option values that are not equivalent to 'auto' dictate
+     *  how the text which does not fit on a line is to be truncated. True is equivalent to 'auto'. False is equivalent to 'ellipsis'.
+     * @param options.textBox.textAlign - Alignment inside text box, specified as 'horizontal vertical',; defaults to 'left top'.
+     * where horizontal is a `Recipe.TextAlign` value and vertical a `Recipe.VerticalAlign` value.
+     * @param options.textBox.clipIfExceedsBox - Render only complete lines that fit within the text box height; defaults to false.
+     * @param options.textBox.onClip - Called as onClip(recipe, result) when clipping leaves text unrendered.
+     * Do not call endPage() or endPDF() in this callback because the text operation is still active.
+     * @param options.textBox.style - Text Box styles
+     * @param options.textBox.style.lineWidth - Text Box border width; defaults to 2.
+     * @param options.textBox.style.stroke - Text Box border color  (HexColor, PercentColor or DecimalColor)
+     * @param options.textBox.style.dash - ] - Text Box border border dash style [number, number]; defaults to [.
+     * @param options.textBox.style.fill - Text Box border background color (HexColor, PercentColor or DecimalColor)
+     * @param options.textBox.style.opacity - Text Box border background opacity; defaults to 1.
+     * @param options.textBox.style.borderRadius - Border radius to apply to get rounded corners; defaults to 0.
+     * @param options.title - Title of annotation
+     * @param options.open - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'; defaults to false.
+     * @param options.richText - Rich text in annotation
+     * @param options.flag - The annotation flag, a `Recipe.AnnotFlag` value.
+     * @param options.icon - The icon of annotation, a `Recipe.AnnotIcon` value. Specific to text annotations; defaults to 'Note'.
+     * @param options.date - Date of text to show up on annotation
+     * @param options.subject - Subject of annotation.
+     * @param options.link - Make the text open this URL.
+     * @returns The recipe instance. Without an active page nothing is drawn.
+     * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
+     */
     text(text: string, options?: Recipe.TextOptions): Recipe;
     text(
       text: string,
