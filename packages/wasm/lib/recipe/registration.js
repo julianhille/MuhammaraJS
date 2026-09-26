@@ -28,7 +28,7 @@ export function createRegistrationMethods({
      * @returns {void}
      * @throws {TypeError} If the name is empty or the bytes are unsupported.
      */
-    registerFont: function (name, bytes) {
+    registerFont: function (name, bytes, type) {
       if (typeof name !== "string" || !name) {
         throw new TypeError("Font names must be non-empty strings");
       }
@@ -36,7 +36,7 @@ export function createRegistrationMethods({
       var path = `/fonts/${state.nextFont++}.font`;
       module.FS.mkdirTree("/fonts");
       module.FS.writeFile(path, bytes);
-      var previous = registerFont(fonts, name, path, arguments[2]);
+      var previous = registerFont(fonts, name, path, type);
       // Modifiers load fonts through the byte-first low-level writer catalog.
       registerWriterFont(path, bytes);
       if (previous) {
