@@ -815,6 +815,11 @@ export function createReaderFactory({
         requireReader();
         return Boolean(module._muhammara_wasm_reader_is_encrypted(reader));
       },
+      /**
+       * Reads the cross-reference table size.
+       * @returns {number} The number of entries.
+       * @throws {Error} If the reader has ended.
+       */
       getXrefSize: function () {
         requireReader();
         return module._muhammara_wasm_reader_get_xref_size(reader);
