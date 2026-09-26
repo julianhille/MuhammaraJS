@@ -863,7 +863,17 @@ declare namespace muhammara {
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////drawPath(...xyPairs: number[], options: GraphicOptions): this;
     drawPath(xyPairs: Array<[number, number]>, options: GraphicOptions): this;
-    /** Coordinates, radius, and calculated circle geometry must remain finite. */
+    /**
+     * Draws a circle.
+     * @param x - The center x.
+     * @param y - The center y.
+     * @param r - The radius.
+     * @param options - The paint type, color and line width.
+     * @returns This context.
+     * @throws {TypeError} If fewer than 3 arguments are given, or the coordinates,
+     *   radius or calculated geometry are not finite.
+     * @throws {TypeError} If there is no content context.
+     */
     drawCircle(x: PosX, y: PosY, r: number, options?: GraphicOptions): this;
     /** Coordinates and edge length must be finite. */
     drawSquare(x: PosX, y: PosY, l: number, options?: GraphicOptions): this;
