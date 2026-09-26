@@ -458,6 +458,13 @@ declare namespace muhammara {
      * e f 1
      */
     cm(...args: TransformationMatrix): this;
+    /**
+     * Sets the line width; operator w.
+     * @param lineWidth - The width in user units.
+     * @returns This context.
+     * @throws {TypeError} If lineWidth is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     w(lineWidth: Width): this;
     J(lineCapStyle: LineCapStyle): this;
     j(lineJoinStyle: LineJoinStyle): this;
