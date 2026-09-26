@@ -213,6 +213,11 @@ export class PDFWStreamForBuffer {
     return new Uint8Array(this.buffer);
   }
 
+  /**
+   * Copies the written bytes into a new buffer.
+   *
+   * @returns {ArrayBuffer} An owned buffer of the bytes.
+   */
   toArrayBuffer() {
     return this.toUint8Array().buffer;
   }
