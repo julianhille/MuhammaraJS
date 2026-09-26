@@ -2,6 +2,13 @@ const fs = require("fs");
 const muhammara = require("../muhammara");
 var { recipeInfoKeys, standardInfoKeys } = require("../recipe-info");
 
+// How _writeInfo() converts each standard info option.
+var InfoFieldType = Object.freeze({
+  STRING: "string",
+  DATE: "date",
+  ARRAY: "array",
+});
+
 var trappedValues = {
   True: muhammara.EInfoTrappedTrue,
   False: muhammara.EInfoTrappedFalse,
@@ -121,6 +128,13 @@ exports._readInfo = function _readInfo() {
   return this.infoDictionary;
 };
 
+/**
+ * Write the Info dictionary: the preserved source entries, creation and
+ * modification dates, producer and creator, and the info() options.
+ * @private
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the source information cannot be read.
+ */
 exports._writeInfo = function _writeInfo() {
   const options = this.toWriteInfo_ || {};
   const oldInfo = this._readInfo();
@@ -133,7 +147,10 @@ exports._writeInfo = function _writeInfo() {
   const infoDictionary = this.writer.getDocumentContext().getInfoDictionary();
   var fields = standardInfoKeys.map((key) => ({
     key,
-    type: key === recipeInfoKeys.keywords ? "array" : "string",
+    type:
+      key === recipeInfoKeys.keywords
+        ? InfoFieldType.ARRAY
+        : InfoFieldType.STRING,
   }));
   // const ignores = [
   //     'CreationDate', 'Creator', 'ModDate', 'Producer'
@@ -193,13 +210,13 @@ exports._writeInfo = function _writeInfo() {
       return;
     } else {
       switch (item.type) {
-        case "string":
+        case InfoFieldType.STRING:
           value = value.toString();
           break;
-        case "date":
+        case InfoFieldType.DATE:
           value = new Date(value);
           break;
-        case "array":
+        case InfoFieldType.ARRAY:
           value = Array.isArray(value) ? value : [value];
           break;
         default:
