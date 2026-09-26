@@ -936,6 +936,11 @@ declare namespace muhammara {
      * @throws {TypeError} If the copying context has ended.
      */
     getCopiedObjectID(objectId: number): number;
+    /**
+     * Returns every copied source object ID with its ID in this document.
+     * @returns The map from source object ID to object ID in this document.
+     * @throws {TypeError} If the copying context has ended.
+     */
     getCopiedObjects(): { [key: string]: number };
     replaceSourceObjects(replaceMap: { [key: string]: number }): void;
     getSourceDocumentStream(): ByteReaderWithPosition;
