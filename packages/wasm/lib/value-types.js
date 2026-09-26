@@ -7,6 +7,12 @@ import { PageBox } from "./value-sets.js";
  */
 export function createValueTypes({ module, withString, withBytes }) {
   var encoder = new TextEncoder();
+  /**
+   * Encodes text as a PDF text string: PDFDocEncoding, or UTF-16BE with a byte order mark.
+   * @param {string} value - Text.
+   * @returns {Uint8Array} The encoded bytes.
+   * @throws {Error} If the text cannot be encoded.
+   */
   function textStringBytes(value) {
     var bytes = encoder.encode(value);
     var lengthPointer = module._malloc(4);
