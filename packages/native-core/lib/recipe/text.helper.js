@@ -223,6 +223,9 @@ exports.Line = class Line {
     return this._pathOptions.font.calculateTextDimensions("o", this.size).width;
   }
 
+  /**
+   * @returns {string} The text of the line.
+   */
   get value() {
     const value = this.wordObjects.reduce((string, word) => {
       string += word.value;
