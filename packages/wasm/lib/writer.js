@@ -4455,6 +4455,14 @@ export function createWriterFactory({
           },
         };
       },
+      /**
+       * Opens a copying context after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} sourceBytes - PDF bytes, Blob, or File.
+       * @returns {Promise<PDFCopyingContext>} The copying context.
+       * @throws {TypeError} If the bytes are unsupported.
+       * @throws {Error} If the writer ended or the source cannot be opened.
+       */
       createPDFCopyingContextAsync: async function (sourceBytes) {
         return this.createPDFCopyingContext(
           await normalizeBytesAsync(sourceBytes, "PDF input"),
