@@ -154,7 +154,77 @@ var VerticalAlign = Object.freeze({
   BOTTOM: "bottom",
 });
 
+/**
+ * Page orientations reported in page metadata.
+ * @readonly
+ * @enum {string}
+ */
+var PageLayout = Object.freeze({
+  PORTRAIT: "portrait",
+  LANDSCAPE: "landscape",
+});
+
+/**
+ * Named page sizes for `createPage()`, matched case-insensitively; a "-size"
+ * suffix is ignored.
+ * @readonly
+ * @enum {string}
+ */
+var PageSize = Object.freeze({
+  EXECUTIVE: "executive",
+  FOLIO: "folio",
+  LEGAL: "legal",
+  LETTER: "letter",
+  LEDGER: "ledger",
+  TABLOID: "tabloid",
+  A0: "a0",
+  A1: "a1",
+  A2: "a2",
+  A3: "a3",
+  A4: "a4",
+  A5: "a5",
+  A6: "a6",
+  A7: "a7",
+  A8: "a8",
+  A9: "a9",
+  A10: "a10",
+  B0: "b0",
+  B1: "b1",
+  B2: "b2",
+  B3: "b3",
+  B4: "b4",
+  B5: "b5",
+  B6: "b6",
+  B7: "b7",
+  B8: "b8",
+  B9: "b9",
+  B10: "b10",
+  C0: "c0",
+  C1: "c1",
+  C2: "c2",
+  C3: "c3",
+  C4: "c4",
+  C5: "c5",
+  C6: "c6",
+  C7: "c7",
+  C8: "c8",
+  C9: "c9",
+  C10: "c10",
+  RA0: "ra0",
+  RA1: "ra1",
+  RA2: "ra2",
+  RA3: "ra3",
+  RA4: "ra4",
+  SRA0: "sra0",
+  SRA1: "sra1",
+  SRA2: "sra2",
+  SRA3: "sra3",
+  SRA4: "sra4",
+});
+
 module.exports = {
+  PageLayout,
+  PageSize,
   HorizontalAlign,
   VerticalAlign,
   FontStyle,

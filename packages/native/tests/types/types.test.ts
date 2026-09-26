@@ -956,3 +956,11 @@ annotationRecipe.registerFont(
 annotationRecipe.image("logo.png", "center", 10, {
   align: `${muhammara.Recipe.HorizontalAlign.CENTER} ${muhammara.Recipe.VerticalAlign.TOP}`,
 });
+
+new muhammara.Recipe("new", "sizes.pdf").createPage(
+  muhammara.Recipe.PageSize.A4,
+  90,
+);
+const landscape: "portrait" | "landscape" =
+  muhammara.Recipe.PageLayout.LANDSCAPE;
+void landscape;

@@ -1127,6 +1127,59 @@ declare namespace muhammara {
 
     type RecipeCoordinate = number | "center";
 
+    /** Named page sizes, with string compatibility for other names. */
+    type PageSize =
+      | "executive"
+      | "folio"
+      | "legal"
+      | "letter"
+      | "ledger"
+      | "tabloid"
+      | "a0"
+      | "a1"
+      | "a2"
+      | "a3"
+      | "a4"
+      | "a5"
+      | "a6"
+      | "a7"
+      | "a8"
+      | "a9"
+      | "a10"
+      | "b0"
+      | "b1"
+      | "b2"
+      | "b3"
+      | "b4"
+      | "b5"
+      | "b6"
+      | "b7"
+      | "b8"
+      | "b9"
+      | "b10"
+      | "c0"
+      | "c1"
+      | "c2"
+      | "c3"
+      | "c4"
+      | "c5"
+      | "c6"
+      | "c7"
+      | "c8"
+      | "c9"
+      | "c10"
+      | "ra0"
+      | "ra1"
+      | "ra2"
+      | "ra3"
+      | "ra4"
+      | "sra0"
+      | "sra1"
+      | "sra2"
+      | "sra3"
+      | "sra4"
+      | (string & {});
+
     type HorizontalAlign = "left" | "center" | "right";
     type VerticalAlign = "top" | "center" | "bottom";
     /** Known alignments, with string compatibility for computed values. */
@@ -1627,6 +1680,63 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** Page orientations reported in page metadata. */
+    static readonly PageLayout: {
+      readonly PORTRAIT: "portrait";
+      readonly LANDSCAPE: "landscape";
+    };
+    /** Named page sizes for `createPage()`. */
+    static readonly PageSize: {
+      readonly EXECUTIVE: "executive";
+      readonly FOLIO: "folio";
+      readonly LEGAL: "legal";
+      readonly LETTER: "letter";
+      readonly LEDGER: "ledger";
+      readonly TABLOID: "tabloid";
+      readonly A0: "a0";
+      readonly A1: "a1";
+      readonly A2: "a2";
+      readonly A3: "a3";
+      readonly A4: "a4";
+      readonly A5: "a5";
+      readonly A6: "a6";
+      readonly A7: "a7";
+      readonly A8: "a8";
+      readonly A9: "a9";
+      readonly A10: "a10";
+      readonly B0: "b0";
+      readonly B1: "b1";
+      readonly B2: "b2";
+      readonly B3: "b3";
+      readonly B4: "b4";
+      readonly B5: "b5";
+      readonly B6: "b6";
+      readonly B7: "b7";
+      readonly B8: "b8";
+      readonly B9: "b9";
+      readonly B10: "b10";
+      readonly C0: "c0";
+      readonly C1: "c1";
+      readonly C2: "c2";
+      readonly C3: "c3";
+      readonly C4: "c4";
+      readonly C5: "c5";
+      readonly C6: "c6";
+      readonly C7: "c7";
+      readonly C8: "c8";
+      readonly C9: "c9";
+      readonly C10: "c10";
+      readonly RA0: "ra0";
+      readonly RA1: "ra1";
+      readonly RA2: "ra2";
+      readonly RA3: "ra3";
+      readonly RA4: "ra4";
+      readonly SRA0: "sra0";
+      readonly SRA1: "sra1";
+      readonly SRA2: "sra2";
+      readonly SRA3: "sra3";
+      readonly SRA4: "sra4";
+    };
     /** Horizontal alignments. */
     static readonly HorizontalAlign: {
       readonly LEFT: "left";
@@ -1811,7 +1921,7 @@ declare namespace muhammara {
       margins?: Recipe.RecipeMargins,
     ): Recipe;
     createPage(
-      pageType: string,
+      pageType: Recipe.PageSize,
       rotation?: number,
       margins?: Recipe.RecipeMargins,
     ): Recipe;

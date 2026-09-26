@@ -1,5 +1,6 @@
 const muhammara = require("../muhammara");
 const { PAGE_CONTEXT_STATE } = require("./utils");
+const { PageLayout } = require("../recipe-constants");
 
 // PDF dictionary keys and names the page-tree and page-label code reads.
 const PdfName = Object.freeze({
@@ -720,8 +721,9 @@ function writePageLabels(writer, copyingContext, rootID, pageLabels) {
  * @name createPage
  * @function
  * @memberof Recipe#
- * @param {number|string} [pageWidth] - The page width, or name of medium size.
- * Known named medium sizes: executive, folio, legal, letter, ledger, tabloid, a0-a10, b0-b10, c0-c10, ra0-ra4, sra0-ara4
+ * @param {number|Recipe.PageSize} [pageWidth] - The page width, or a `Recipe.PageSize` name.
+ * Known named medium sizes: executive, folio, legal, letter, ledger, tabloid, a0-a10, b0-b10, c0-c10, ra0-ra4, sra0-sra4.
+ * Unknown names use the default letter size.
  * @param {number} [pageHeight] - The page height, or rotation (90) when page size name given.
  * @param {object} [margins] - page margin definitions.
  * @param {number} [margins.left] - Left margin.
@@ -729,6 +731,7 @@ function writePageLabels(writer, copyingContext, rootID, pageLabels) {
  * @param {number} [margins.top] - Top margin.
  * @param {number} [margins.bottom] - Bottom margin.
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If pages were deleted with deletePage() on this Recipe.
  */
 exports.createPage = function createPage(pageWidth, pageHeight, margins) {
   if (this.deletedPages?.size) {
@@ -767,7 +770,8 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
     (this.metadata.pageCount ?? this.metadata.pages ?? 0) + 1;
   const pageNumber = this.metadata.pageCount;
   const dimensions = [0, 0, pageWidth, pageHeight];
-  const layout = pageWidth > pageHeight ? "landscape" : "portrait";
+  const layout =
+    pageWidth > pageHeight ? PageLayout.LANDSCAPE : PageLayout.PORTRAIT;
   this.metadata[pageNumber] = {
     pageNumber,
     mediaBox: dimensions,
