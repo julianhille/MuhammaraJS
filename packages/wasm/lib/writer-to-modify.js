@@ -2131,6 +2131,11 @@ export function createWriterToModifyFactory({
             requireOpen();
             if (form._ended)
               throw new Error("Form XObject content is not writable");
+            /**
+             * Rejects use of the form content after the modifier or form ended.
+             * @returns {void}
+             * @throws {Error} If the modifier or the form has ended.
+             */
             function requireFormContent() {
               requireOpen();
               if (form._ended)
