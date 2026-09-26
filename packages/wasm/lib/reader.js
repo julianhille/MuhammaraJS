@@ -866,6 +866,13 @@ export function createReaderFactory({
           module._free(valuesPointer);
         }
       },
+      /**
+       * Reads the type of a trailer entry.
+       * @param {string} key - Trailer key without the leading slash.
+       * @returns {PDFObjectType|null} The type, or null when the key is missing.
+       * @throws {TypeError} If `key` is not a string.
+       * @throws {Error} If the reader has ended.
+       */
       getTrailerEntryType: function (key) {
         requireReader();
         return withString(key, (keyPointer) => {
