@@ -17,11 +17,11 @@ stroked path. `type: "clip"` intersects the current clipping region with the
 shape without painting it. It emits `W n`, ending the path so subsequent drawing
 does not accidentally reuse its geometry. `close: true` also closes the path.
 Use `q()` before defining the clip and `Q()` after the drawing it should affect;
-clipping persists until the graphics state is restored. An unrecognized `type`
-does not paint or clip and ends the path with `n` so its geometry cannot be
-painted by a later call; use `"stroke"`, `"fill"`, or `"clip"` explicitly.
+clipping persists until the graphics state is restored. Any other `type`,
+such as the typo `"fil"`, throws a `TypeError` before anything is drawn; an
+explicit `undefined` counts as omitted and strokes.
 
-An explicit `type: null` is also unrecognized: it ends the path without painting,
+An explicit `type: null` ends the path with `n` without painting or clipping,
 ignores `width` and `close`, and applies a supplied `color` only to the
 non-stroking graphics state. Omit `type` or use `"stroke"` for an outline;
 `null` does not select the default.

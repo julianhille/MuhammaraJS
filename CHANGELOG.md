@@ -97,9 +97,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [stream contract](packages/native/docs/low-level/custom-streams.md)
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750).
 - Correct low-level shape `type: "clip"` to clip without painting and end the
-  path; unrecognized types end the path without painting or clipping. Use `"clip"` explicitly with
+  path. Any other `type` except `null`, such as the typo `"fil"`, throws
+  `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`
+  instead of silently ending the path unpainted; `null` still does that. Use `"clip"` explicitly with
   `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options)
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Validate low-level shape and `writeText()` arguments before drawing, and
   propagate conversion errors instead of aborting or emitting partial output.
   Supply finite coordinates, dimensions, stroke widths, and text sizes, and

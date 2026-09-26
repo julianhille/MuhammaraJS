@@ -898,6 +898,29 @@ bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
   return true;
 }
 
+// Reads a drawing `type`: "stroke", "fill", "clip", or null, which ends the
+// path unpainted. Undefined leaves the stroke default in place.
+static bool ReadDrawingType(napi_env env, napi_value value, bool *present,
+                            std::string *type) {
+  *present = !IsType(env, value, napi_undefined);
+  if (!*present)
+    return true;
+  if (IsType(env, value, napi_null)) {
+    type->clear();
+    return true;
+  }
+  if (IsType(env, value, napi_string)) {
+    *type = LegacyString(env, value);
+    if (HasPendingException(env))
+      return false;
+    if (*type == "stroke" || *type == "fill" || *type == "clip")
+      return true;
+  }
+  ThrowTypeError(env, "Unknown drawing type; use \"stroke\", \"fill\", "
+                      "\"clip\" or null");
+  return false;
+}
+
 bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
                                                    napi_value maybeOptions,
                                                    PathOptions &options) {
@@ -910,9 +933,12 @@ bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
     napi_value value = nullptr;
     if (!Get(env, maybeOptions, "type", &value))
       return false;
-    options.setupIsStroke = LegacyString(env, value) == "stroke";
-    if (HasPendingException(env))
+    bool present = false;
+    std::string type;
+    if (!ReadDrawingType(env, value, &present, &type))
       return false;
+    if (present)
+      options.setupIsStroke = type == "stroke";
   }
   if (!ReadColorOptions(env, maybeOptions, options))
     return false;
@@ -933,9 +959,12 @@ bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
     napi_value value = nullptr;
     if (!Get(env, maybeOptions, "type", &value))
       return false;
-    options.finishType = LegacyString(env, value);
-    if (HasPendingException(env))
+    bool present = false;
+    std::string type;
+    if (!ReadDrawingType(env, value, &present, &type))
       return false;
+    if (present)
+      options.finishType = type;
   }
   bool hasClose = Has(env, maybeOptions, "close");
   if (HasPendingException(env))

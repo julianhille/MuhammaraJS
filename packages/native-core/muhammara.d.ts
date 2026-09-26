@@ -950,6 +950,7 @@ declare namespace muhammara {
      * @throws {TypeError} If fewer than two complete finite coordinate pairs are
      *   given.
      * @throws {TypeError} If there is no content context.
+     * @throws {TypeError} If `options.type` is not "stroke", "fill", "clip" or null.
      */
     drawPath(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////drawPath(...xyPairs: number[], options: GraphicOptions): this;
@@ -964,6 +965,7 @@ declare namespace muhammara {
      * @throws {TypeError} If fewer than 3 arguments are given, or the coordinates,
      *   radius or calculated geometry are not finite.
      * @throws {TypeError} If there is no content context.
+     * @throws {TypeError} If `options.type` is not "stroke", "fill", "clip" or null.
      */
     drawCircle(x: PosX, y: PosY, r: number, options?: GraphicOptions): this;
     /**
@@ -976,6 +978,7 @@ declare namespace muhammara {
      * @throws {TypeError} If fewer than 3 arguments are given or a value is not
      *   finite.
      * @throws {TypeError} If there is no content context.
+     * @throws {TypeError} If `options.type` is not "stroke", "fill", "clip" or null.
      */
     drawSquare(x: PosX, y: PosY, l: number, options?: GraphicOptions): this;
     /**
@@ -989,6 +992,7 @@ declare namespace muhammara {
      * @throws {TypeError} If fewer than 4 arguments are given or a value is not
      *   finite.
      * @throws {TypeError} If there is no content context.
+     * @throws {TypeError} If `options.type` is not "stroke", "fill", "clip" or null.
      */
     drawRectangle(
       x: PosX,

@@ -98,23 +98,31 @@ describe("HighLevelContentContext", function () {
     );
 
     it(
-      "distinguishes default, recognized and unknown path types on " + mode,
+      "distinguishes default and recognized path types and rejects others on " +
+        mode,
       function () {
         var assert = require("assert");
         var target = drawingTarget(mode);
         var cases = [
           [{}, "S"],
+          [{ type: undefined }, "S"],
           [{ type: "stroke", close: true }, "s"],
           [{ type: "fill" }, "f"],
           [{ type: "clip", close: true }, "h\\s+W\\s+n"],
           [{ type: null }, "n"],
-          [{ type: false }, "n"],
-          [{ type: 0 }, "n"],
-          [{ type: "" }, "n"],
-          [{ type: "unknown", close: true }, "n"],
         ];
         for (var [options] of cases)
           target.context.q().drawRectangle(1, 2, 3, 4, options).Q();
+        [false, 0, "", "fil", "Fill", "unknown", {}].forEach(function (type) {
+          assert.throws(
+            () => target.context.drawRectangle(1, 2, 3, 4, { type }),
+            {
+              name: "TypeError",
+              message:
+                'Unknown drawing type; use "stroke", "fill", "clip" or null',
+            },
+          );
+        });
         var output = target.finish();
         var segments = [...output.matchAll(/q\s+(1 2 3 4 re[\s\S]*?)\s+Q/g)];
         assert.equal(segments.length, cases.length);
@@ -434,7 +442,7 @@ describe("HighLevelContentContext", function () {
     });
 
     it(
-      "clips without painting and ignores unknown path types on " + mode,
+      "clips without painting and rejects unknown path types on " + mode,
       function () {
         var assert = require("assert");
         var target = drawingTarget(mode);
@@ -451,14 +459,18 @@ describe("HighLevelContentContext", function () {
             ],
             { type: "clip", close: true },
           )
-          .Q()
-          .drawRectangle(1, 2, 3, 4, { type: "clipp" })
-          .drawRectangle(5, 6, 7, 8, { type: "fill" });
+          .Q();
+        assert.throws(
+          () => context.drawRectangle(1, 2, 3, 4, { type: "clipp" }),
+          TypeError,
+        );
+        context.drawRectangle(5, 6, 7, 8, { type: "fill" });
         var output = target.finish();
         assert.equal((output.match(/\bW\s+n\b/g) || []).length, 4);
         assert.match(output, /10 20 30 40 re\s+W\s+n/);
         assert.match(output, /10 20 30 30 re\s+h\s+W\s+n/);
-        assert.match(output, /1 2 3 4 re\s+n\s+5 6 7 8 re\s+f/);
+        assert.doesNotMatch(output, /1 2 3 4 re/);
+        assert.match(output, /Q\s+5 6 7 8 re\s+f/);
       },
     );
   });

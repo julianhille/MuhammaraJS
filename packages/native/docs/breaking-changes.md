@@ -48,7 +48,10 @@ This page collects the compatibility changes formerly maintained in the README.
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750).
 - Low-level shape helpers now honor `type: "clip"`, ending the path with `W n`
   without painting it. Previously `"clip"` did nothing and unrecognized types
-  incorrectly clipped. Unknown types now end the path without painting. Use `"clip"` explicitly and scope it with `q()`/`Q()`;
+  incorrectly clipped. Any other `type` value, such as the typo `"fil"`,
+  `false`, `0`, or `""`, now throws
+  `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`
+  instead of drawing; `null` still ends the path unpainted. Use `"clip"` explicitly and scope it with `q()`/`Q()`;
   use `"stroke"` or `"fill"` when painting is intended. See the
   [drawing migration](getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
 - Shape helpers and `writeText()` now finish input conversion before emitting
