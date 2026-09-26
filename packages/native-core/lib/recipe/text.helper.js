@@ -1,6 +1,13 @@
 var { cloneOptions, resolveFontSize } = require("./utils");
 var { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
 
+/**
+ * The width character spacing adds between the characters of a text.
+ * @private
+ * @param {string} text - The text.
+ * @param {number} charSpace - The spacing added after each character but the last.
+ * @returns {number} The added width.
+ */
 const charSpacing = function charSpacing(text, charSpace) {
   var characterCount = Array.from(String(text)).length;
   return characterCount ? (characterCount - 1) * charSpace : 0;
