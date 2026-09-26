@@ -1865,6 +1865,14 @@ export function createWriterToModifyFactory({
                 throw new TypeError("Tz requires integer numeric arguments");
               return operator(37, horizontalScaling);
             };
+            /**
+             * Sets the text rendering mode (`Tr`).
+             * @param {TextRenderingMode} renderingMode - Mode from 0 (fill) to 7 (add to clip).
+             * @returns {this} The content context, for chaining.
+             * @throws {TypeError} If `renderingMode` is missing or not an integer.
+             * @throws {RangeError} If `renderingMode` is outside 0 to 7.
+             * @throws {Error} If the content context is no longer active or the operator fails.
+             */
             context.Tr = function (renderingMode) {
               checkOperatorRange("Tr", renderingMode, 7, "text rendering mode");
               return operator(39, renderingMode);
