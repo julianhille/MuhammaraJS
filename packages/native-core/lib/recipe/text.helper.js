@@ -139,6 +139,10 @@ exports.Line = class Line {
     return this._lineID;
   }
 
+  /**
+   * @param {Word} wordObject - The word to append.
+   * @returns {void}
+   */
   addWord(wordObject) {
     this.wordObjects.push(wordObject);
   }
