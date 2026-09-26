@@ -472,6 +472,9 @@ exports.Column = class Column {
   set gap(gap) {
     this._gap = gap;
   }
+  /**
+   * @returns {string} The associated data field.
+   */
   get field() {
     return this._field;
   }
