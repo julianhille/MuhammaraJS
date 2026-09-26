@@ -183,6 +183,10 @@ exports.Line = class Line {
     return charSpacing(text, this._pathOptions.charSpace);
   }
 
+  /**
+   * @param {Word} wordObject - The word to test.
+   * @returns {boolean} Whether the line still fits its width with the word appended.
+   */
   canFit(wordObject) {
     const tempValue = this.value + wordObject.value;
     const toWidth =
