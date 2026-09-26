@@ -351,6 +351,13 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
   return this._endDictionary(pageNumber);
 };
 
+/**
+ * Write every queued annotation and its replies, then add them to the Annots
+ * arrays of their pages.
+ * @private
+ * @returns {void}
+ * @throws {Error} If an annotation or page cannot be written.
+ */
 exports._writeAnnotations = function _writeAnnotations() {
   this.annotationsToWrite.forEach((annot) => {
     const ref = this._annot(annot.subtype, annot.args, annot.pageNumber);
