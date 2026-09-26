@@ -1316,6 +1316,13 @@ export function createReaderFactory({
         if (!handle) throw new Error("Unable to get source document stream");
         return wrapByteReader(handle, true);
       },
+      /**
+       * Parses the objects of several content streams as one sequence.
+       * @param {PDFArray} streams - Array of streams parsed by this reader.
+       * @returns {PDFObjectParser} The object parser.
+       * @throws {TypeError} If `streams` is not an array from this reader.
+       * @throws {Error} If the reader has ended or the streams cannot be read.
+       */
       startReadingObjectsFromStreams: function (streams) {
         requireReader();
         if (
