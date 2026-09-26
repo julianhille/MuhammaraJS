@@ -83,4 +83,20 @@ var AnnotIcon = Object.freeze({
   INSERT: "Insert",
 });
 
-module.exports = { Colorspace, AnnotSubtype, AnnotFlag, AnnotIcon };
+/**
+ * Special `chroma()` names that run a command instead of naming a color.
+ * @readonly
+ * @enum {string}
+ */
+var ChromaCommand = Object.freeze({
+  /** Merge the color definitions from the JSON file given as the value. */
+  LOAD: "!load",
+});
+
+module.exports = {
+  Colorspace,
+  AnnotSubtype,
+  AnnotFlag,
+  AnnotIcon,
+  ChromaCommand,
+};

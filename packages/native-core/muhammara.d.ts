@@ -1671,6 +1671,10 @@ declare namespace muhammara {
       readonly TOGGLE_NO_VIEW: "togglenoview";
       readonly LOCKED_CONTENTS: "lockedcontents";
     };
+    /** Special `chroma()` names that run a command instead of naming a color. */
+    static readonly ChromaCommand: {
+      readonly LOAD: "!load";
+    };
     /** Text annotation icons for the `icon` option. */
     static readonly AnnotIcon: {
       readonly COMMENT: "Comment";

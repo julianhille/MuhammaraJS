@@ -1,5 +1,6 @@
 const muhammara = require("../muhammara");
 const fs = require("fs");
+const { Colorspace, ChromaCommand } = require("../recipe-constants");
 
 this.knownColors = {
   // knownColors.colorspace.colorName = value
@@ -36,7 +37,7 @@ this.knownColors = {
  * PDF color space called 'separation' may also be used. The color value is then
  * treated as the alternative color when the named 'separation' color is unavailable.
  *
- * If the 'name' parameter is '!load', the second parameter is the name of a JSON
+ * If the 'name' parameter is `Recipe.ChromaCommand.LOAD` ('!load'), the second parameter is the name of a JSON
  * formatted file containing a formatted list of defined colors associated with the
  * color spaces rgb, cmyk, gray, or separation (think PANTONE color definitions).
  * This file will be merged with existing set of known colors. The color values
@@ -52,17 +53,19 @@ this.knownColors = {
  * @name chroma
  * @function
  * @memberof Recipe#
- * @param {string} name - the name to be associated to given color value, or '!load'
- * @param {string|number[]} value - the color value (HexColor, DecimalColor, or PercentColor), or name of '!load' file
- * @param {string} [colorspace=''] - One of: 'rgb', 'cmyk', 'gray', 'separation'.
+ * @param {string} name - the name to be associated to given color value, or `Recipe.ChromaCommand.LOAD`
+ * @param {string|number[]} value - the color value (HexColor, DecimalColor, or PercentColor), or the path of the JSON file to load
+ * @param {Recipe.Colorspace|""} [colorspace=''] - One of the `Recipe.Colorspace`
+ *   values; empty picks gray, rgb or cmyk from the value length.
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the file to load cannot be read or is not valid JSON.
  * @throws {Error} If a loaded color definition has an unrecognized colorspace.
  * @throws {Error} If a color value has an invalid size.
  * @throws {Error} If the colorspace is unknown.
  */
 exports.chroma = function chroma(name, value, colorspace = "") {
   if (name) {
-    if (name === "!load") {
+    if (name === ChromaCommand.LOAD) {
       let newColors = JSON.parse(fs.readFileSync(value));
       // Add new colors to existing colorspaces
       for (let cs in newColors) {
@@ -92,9 +95,13 @@ exports.chroma = function chroma(name, value, colorspace = "") {
       // Determine colorspace by length of given input
       // value when colorspace not provided in call.
       if (colorspace === "") {
-        const colorSpaces = { 2: "gray", 6: "rgb", 8: "cmyk" };
+        const colorSpaces = {
+          2: Colorspace.GRAY,
+          6: Colorspace.RGB,
+          8: Colorspace.CMYK,
+        };
         colorspace = colorSpaces[`${value.length}`];
-      } else if (!["rgb", "cmyk", "gray", "separation"].includes(colorspace)) {
+      } else if (!Object.values(Colorspace).includes(colorspace)) {
         throw new Error(`Unknown colorspace: ${colorspace}.`);
       }
 
