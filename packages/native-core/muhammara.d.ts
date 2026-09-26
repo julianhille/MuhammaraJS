@@ -4153,6 +4153,16 @@ declare namespace muhammara {
       x?: Recipe.RecipeCoordinate,
       y?: Recipe.RecipeCoordinate,
     ): Recipe;
+    /**
+     * Split the pdf
+     * @param outputDir - The path for the output PDFs; defaults to ''.
+     * @param prefix - The output filename prefix. Defaults to the
+     *   source filename; pass one for a Buffer source, which has no filename.
+     * @returns The recipe instance. Each page is written to
+     *   `<outputDir>/<prefix>-<pageNumber>.pdf`.
+     * @throws {Error} If the source reader was released by endPDF(), or an output
+     *   file cannot be written.
+     */
     split(outputDir?: string, prefix?: string): Recipe;
 
     text(text: string, options?: Recipe.TextOptions): Recipe;
