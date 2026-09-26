@@ -452,6 +452,12 @@ declare namespace muhammara {
      * @throws {TypeError} If formXObjectId is not a single number.
      */
     addFormXObjectMapping(formXObjectId: FormXObjectId): string;
+    /**
+     * Adds an image XObject to the resources and returns its resource name.
+     * @param imageXObject - The image, or its object ID.
+     * @returns The resource name to use in content-stream operators.
+     * @throws {TypeError} If imageXObject is neither an image nor a number.
+     */
     addImageXObjectMapping(imageXObject: ImageXObject | number): string;
     addProcsetResource(procSetName: string): void;
     addExtGStateMapping(stateObjectId: number): string;
