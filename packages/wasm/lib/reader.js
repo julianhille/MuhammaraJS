@@ -1060,6 +1060,11 @@ export function createReaderFactory({
           getTrimBox: function () {
             return getBox(2);
           },
+          /**
+           * Reads the bleed box, which defaults to the crop box.
+           * @returns {PDFRectangle} The box.
+           * @throws {Error} If the reader has ended or the box cannot be read.
+           */
           getBleedBox: function () {
             return getBox(3);
           },
