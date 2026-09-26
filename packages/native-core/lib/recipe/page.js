@@ -535,7 +535,17 @@ function writePageLabelObjects(objectsContext, entries) {
   });
 }
 
-/** Writes the number-tree dictionary for page labels. @private */
+/**
+ * Write a flat page-label number tree: the copied extra entries and a Nums
+ * array referencing the written labels.
+ * @private
+ * @param {Object} objectsContext - The writer objects context.
+ * @param {Object} copyingContext - Copies the extra entries.
+ * @param {Object} dictionary - The dictionary context to write into.
+ * @param {Object} values - The source number-tree entries.
+ * @param {Object[]} entries - The {index, objectID} of every label.
+ * @returns {void}
+ */
 function writePageLabelsDictionary(
   objectsContext,
   copyingContext,
@@ -544,11 +554,12 @@ function writePageLabelsDictionary(
   entries,
 ) {
   Object.keys(values).forEach((key) => {
-    if (key === "Kids" || key === "Limits" || key === "Nums") return;
+    if (key === PdfName.KIDS || key === PdfName.LIMITS || key === PdfName.NUMS)
+      return;
     dictionary.writeKey(key);
     copyingContext.copyDirectObjectAsIs(values[key]);
   });
-  dictionary.writeKey("Nums");
+  dictionary.writeKey(PdfName.NUMS);
   objectsContext.startArray();
   entries.forEach((entry) => {
     objectsContext.writeNumber(entry.index);
