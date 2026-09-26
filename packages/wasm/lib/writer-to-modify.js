@@ -1557,6 +1557,13 @@ export function createWriterToModifyFactory({
           await normalizeBytesAsync(image, "Image bytes"),
         );
       },
+      /**
+       * Counts the pages of a PDF or the frames of a TIFF.
+       * @param {string|ByteSource} image - Registered image name, or bytes.
+       * @returns {number} The page or frame count; 1 for single-image formats.
+       * @throws {TypeError} If the name is not registered or the bytes are unsupported.
+       * @throws {Error} If the modifier has ended.
+       */
       getImagePagesCount: function (image) {
         requireOpen();
         return withImagePathOrBytes(image, "Image bytes", undefined, (path) =>
