@@ -889,6 +889,11 @@ export function createWriterFactory({
           if (!stream)
             throw new Error("Page content stream is no longer active");
           return {
+            /**
+             * Returns a writer that appends raw bytes to the page content stream.
+             * @returns {object} A writer with `write(bytes)`.
+             * @throws {Error} If the content context or its stream is no longer active.
+             */
             getWriteStream: function () {
               requireActiveContext(context);
               var writer =
