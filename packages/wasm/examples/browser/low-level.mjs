@@ -54,6 +54,11 @@ async function registerAsyncAssets(muhammara, assets) {
     );
 }
 
+/**
+ * Writes a raw indirect object with a stream through the objects context.
+ * @param {import("../../index.js").PDFWriter} writer - Writer.
+ * @returns {number} The object ID.
+ */
 function rawExampleObject(writer) {
   var objects = writer.getObjectsContext();
   var id = objects.startNewIndirectObject();
