@@ -109,6 +109,11 @@ export function createVectorHelpers(runtime) {
     /**
      * Saves graphics state and applies path styles and transformations.
      * @private
+     * @param {object} [options={}] - Path options.
+     * @param {number} [x=0] - Default rotation origin x.
+     * @param {number} [y=0] - Default rotation origin y.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If a style cannot be applied.
      */
     _beginPath: function (options = {}, x = 0, y = 0) {
       var style = this._pathOptions(options);
