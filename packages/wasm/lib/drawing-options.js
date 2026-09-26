@@ -211,6 +211,16 @@ export function installDrawingHelpers(context, colorValue) {
     }
     return context.drawRectangle(x, y, edge, edge, options);
   };
+  /**
+   * Draws a circle from four Bezier curves.
+   * @param {number} x - Center x.
+   * @param {number} y - Center y.
+   * @param {number} radius - Radius.
+   * @param {DrawPathOptions} [options] - Color, width, paint type, and close flag.
+   * @returns {this} The content context, for chaining.
+   * @throws {TypeError} If a coordinate, derived point, or option is invalid.
+   * @throws {Error} If the content context is no longer active.
+   */
   context.drawCircle = function (x, y, radius, options) {
     if (![x, y, radius].every(Number.isFinite)) {
       throw new TypeError("drawCircle requires three finite coordinates");
