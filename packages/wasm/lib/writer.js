@@ -712,6 +712,11 @@ export function createWriterFactory({
         bStar: function () {
           return operator("bStar", 2);
         },
+        /**
+         * Fills (even-odd) and strokes the current path (`B*`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         BStar: function () {
           return operator("BStar", 3);
         },
