@@ -233,6 +233,13 @@ export function createValueTypes({ module, withString, withBytes }) {
       get: function () {
         return this._boxes[name];
       },
+      /**
+       * Sets the box, and the native page box when the page is active.
+       * @param {PDFRectangle} value - `[left, bottom, right, top]` with a positive size.
+       * @returns {void}
+       * @throws {RangeError} If `value` is not four finite coordinates with a positive size.
+       * @throws {Error} If the active native page box cannot be set.
+       */
       set: function (value) {
         if (
           !Array.isArray(value) ||
