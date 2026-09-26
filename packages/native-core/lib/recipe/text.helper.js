@@ -16,11 +16,15 @@ const charSpacing = function charSpacing(text, charSpace) {
 // Have to set up word as a constant, then export it below
 // so that Line can see it. Otherwise, an error is thrown.
 
+/**
+ * A word used by Recipe text layout.
+ * @name Word
+ * @class
+ * @memberof Recipe#
+ * @param {string} word - The word, a single space measured as "o".
+ * @param {Object} pathOptions - The resolved text options: font, size and charSpace.
+ */
 const Word = class Word {
-  /**
-   * @param {string} word - The word, a single space measured as "o".
-   * @param {Object} pathOptions - The resolved text options: font, size and charSpace.
-   */
   constructor(word, pathOptions) {
     this._value = word;
     this._pathOptions = pathOptions;
