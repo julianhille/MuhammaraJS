@@ -253,6 +253,11 @@ export function createWriterToModifyFactory({
         B: function () {
           return operator("B", 1);
         },
+        /**
+         * Closes, fills (even-odd), and strokes the current path (`b*`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         bStar: function () {
           return operator("bStar", 2);
         },
