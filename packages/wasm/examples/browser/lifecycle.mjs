@@ -33,6 +33,12 @@
  * @property {ProgressCallback} [progress] - Receives progress updates.
  */
 
+/**
+ * Stops an example that was cancelled.
+ * @param {AbortSignal} [signal] - Cancellation signal.
+ * @returns {void}
+ * @throws {DOMException} An `AbortError` if the signal is aborted.
+ */
 export function throwIfCancelled(signal) {
   if (signal?.aborted)
     throw new DOMException("Operation cancelled", "AbortError");
