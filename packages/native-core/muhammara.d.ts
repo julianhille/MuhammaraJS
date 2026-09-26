@@ -906,6 +906,12 @@ declare namespace muhammara {
      * @throws {TypeError} If boolValue is not a single boolean.
      */
     writeBooleanValue(boolValue: boolean): this;
+    /**
+     * Writes a number as the value of the last key.
+     * @param value - The number.
+     * @returns This dictionary context.
+     * @throws {TypeError} If value is not a single number.
+     */
     writeNumberValue(value: number): this;
     writeObjectReferenceValue(objectId: number): this;
   }
