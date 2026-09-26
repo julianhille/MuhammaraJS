@@ -1,5 +1,15 @@
 const DOMParser = require("@xmldom/xmldom").DOMParser;
 
+// HTML attribute and inline style names the parser reads.
+const HtmlAttribute = Object.freeze({
+  STYLE: "style",
+  HREF: "href",
+});
+const CssProperty = Object.freeze({
+  COLOR: "color",
+  OPACITY: "opacity",
+});
+
 // Lower-case names of the HTML elements the parser handles.
 const HtmlTag = Object.freeze({
   HTML: "html",
@@ -152,14 +162,14 @@ function parseNode(node, options) {
         name: node.attributes[i].nodeName,
         value: node.attributes[i].nodeValue,
       });
-      if (node.attributes[i].nodeName == "style") {
+      if (node.attributes[i].nodeName === HtmlAttribute.STYLE) {
         const styleValues = node.attributes[i].nodeValue.split(";");
         styleValues.forEach((element) => {
           if (element && element != "") {
             element = element.split(":");
             const key = element[0];
             let value = element[1].replace(/ /g, "");
-            if (key == "color") {
+            if (key === CssProperty.COLOR) {
               if (value.search("rgb") > -1) {
                 value = value
                   .replace(/rgba?\(/, "")
@@ -167,7 +177,7 @@ function parseNode(node, options) {
                   .split(",")
                   .map((item) => parseFloat(item));
                 if (value.length > 3) {
-                  styles["opacity"] = value.pop();
+                  styles[CssProperty.OPACITY] = value.pop();
                 }
               }
             }
@@ -212,8 +222,11 @@ function parseNode(node, options) {
     sizeRatios: [getFontSizeRatio(node.tagName)],
     link:
       tag === HtmlTag.A
-        ? (attributes.find((attribute) => attribute.name === "href") || {})
-            .value || null
+        ? (
+            attributes.find(
+              (attribute) => attribute.name === HtmlAttribute.HREF,
+            ) || {}
+          ).value || null
         : null,
     childs: [],
   };
