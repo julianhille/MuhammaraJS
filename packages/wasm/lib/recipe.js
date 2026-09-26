@@ -560,6 +560,13 @@ export function createRecipeFactory({
     /**
      * Draws one text run after coordinate and style normalization.
      * @private
+     * @param {string} value - Text.
+     * @param {number} x - Recipe x.
+     * @param {number} y - Recipe y of the baseline.
+     * @param {object} [options={}] - Font, size, color, spacing, rotation, skew, opacity, and HTML decorations.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If `charSpace` is not finite or a color is invalid.
+     * @throws {Error} If the font is not registered or the text cannot be drawn.
      */
     _drawText(value, x, y, options = {}) {
       var point = this._calibrateCoordinate(x, y);
