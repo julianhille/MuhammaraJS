@@ -185,6 +185,7 @@ var INVALID_OPERATOR_CALLS = [
   ["k", [NaN, 0, 0, 0]],
   ["G", []],
   ["G", [NaN]],
+  ["w", []],
 ];
 
 /**
