@@ -4757,6 +4757,18 @@ declare namespace muhammara {
       value: Recipe.Color,
       colorspace?: Recipe.ValidColorspace<ColorspaceValue>,
     ): Recipe;
+    /**
+     * Encryption user access permissions
+     *
+     * This function supplies the numeric value for the encrypt function's 'userProtectionFlag'
+     * option. When no argument is given, the default 'print' value is used.
+     *
+     * @param flags - One or more `Recipe.Permission` values; defaults to 'print'.
+     * (print, modify, copy, edit, fillform, extract, assemble, printbest),
+     * separated by commas, for example `[Permission.PRINT, Permission.COPY].join()`.
+     * @returns The numeric user protection flag.
+     * @throws {Error} If a name is not a `Recipe.Permission` value.
+     */
     permission(flags?: Recipe.PermissionList): number;
     structure(output: string): Recipe;
     htmlToTextObjects(
