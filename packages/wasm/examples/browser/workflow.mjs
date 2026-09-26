@@ -69,7 +69,10 @@ export async function runBrowserExample(options = {}) {
   }
 }
 
-/** Verifies replacement and disposal without leaving a real object URL behind. */
+/**
+ * Verifies replacement and disposal without leaving a real object URL behind.
+ * @returns {{created: number, revoked: number}} How many URLs were created and revoked.
+ */
 export function validateObjectUrlLifecycle() {
   var created = [];
   var revoked = [];
