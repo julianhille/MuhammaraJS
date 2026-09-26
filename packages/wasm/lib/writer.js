@@ -3395,6 +3395,17 @@ export function createWriterFactory({
         }
         return objectsContext;
       },
+      /**
+       * Adds a URL link annotation to the next written page.
+       * @param {string} url - Link target.
+       * @param {number} left - Rectangle left.
+       * @param {number} bottom - Rectangle bottom.
+       * @param {number} right - Rectangle right, not less than `left`.
+       * @param {number} top - Rectangle top, not less than `bottom`.
+       * @returns {this} The writer.
+       * @throws {TypeError} If `url` is not a string or the rectangle is invalid.
+       * @throws {Error} If the writer has ended or the link cannot be attached.
+       */
       attachURLLinktoCurrentPage: function (url, left, bottom, right, top) {
         requireOpenWriter();
         if (
