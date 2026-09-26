@@ -103,7 +103,24 @@ var Coordinate = Object.freeze({
   CENTER: "center",
 });
 
+/**
+ * User access permission names for `permission()` (ISO 32000-1, table 22).
+ * @readonly
+ * @enum {string}
+ */
+var Permission = Object.freeze({
+  PRINT: "print",
+  MODIFY: "modify",
+  COPY: "copy",
+  EDIT: "edit",
+  FILL_FORM: "fillform",
+  EXTRACT: "extract",
+  ASSEMBLE: "assemble",
+  PRINT_BEST: "printbest",
+});
+
 module.exports = {
+  Permission,
   Coordinate,
   Colorspace,
   AnnotSubtype,

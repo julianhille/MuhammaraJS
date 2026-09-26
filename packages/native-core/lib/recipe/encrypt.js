@@ -1,5 +1,6 @@
 const muhammara = require("../muhammara");
 const fs = require("fs");
+const { Permission } = require("../recipe-constants");
 
 /**
  * Encryption user access permissions
@@ -10,23 +11,25 @@ const fs = require("fs");
  * @name permission
  * @function
  * @memberof Recipe#
- * @param {string} [flags='print'] From the list print, modify, copy, edit, fillform, extract, assemble, and printbest.
- * More than one may be specified by using a comma to separate the names in the input string.
+ * @param {string} [flags='print'] One or more `Recipe.Permission` values
+ * (print, modify, copy, edit, fillform, extract, assemble, printbest),
+ * separated by commas, for example `[Permission.PRINT, Permission.COPY].join()`.
  * @returns {number} The numeric user protection flag.
+ * @throws {Error} If a name is not a `Recipe.Permission` value.
  */
-exports.permission = function permission(flags = "print") {
+exports.permission = function permission(flags = Permission.PRINT) {
   // https://www.adobe.com/content/dam/acom/en/devnet/pdf/pdfs/PDF32000_2008.pdf
 
   const userAccessPermissions = {
     // see table on page 61 of above document
-    print: 1 << 2, // allow printing
-    modify: 1 << 3, // allow template creation, signing, filling form fields
-    copy: 1 << 4, // allow content copying and copying for accessibility
-    edit: 1 << 5, // allow commenting
-    fillform: 1 << 8, // allow filling of form fields
-    extract: 1 << 9, // allow content copying for accessibility
-    assemble: 1 << 10, // unused
-    printbest: 1 << 11, // allow high resolution printing when 'print' is allowed
+    [Permission.PRINT]: 1 << 2, // allow printing
+    [Permission.MODIFY]: 1 << 3, // allow template creation, signing, filling form fields
+    [Permission.COPY]: 1 << 4, // allow content copying and copying for accessibility
+    [Permission.EDIT]: 1 << 5, // allow commenting
+    [Permission.FILL_FORM]: 1 << 8, // allow filling of form fields
+    [Permission.EXTRACT]: 1 << 9, // allow content copying for accessibility
+    [Permission.ASSEMBLE]: 1 << 10, // unused
+    [Permission.PRINT_BEST]: 1 << 11, // allow high resolution printing when 'print' is allowed
   };
 
   const perms = flags.split(",").map((x) => {

@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Declare the `text`, `border`, `color` and `followOriginalPageRotation`
   options that `Recipe#annot()` already reads [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add `Recipe.Coordinate`, `Recipe.Colorspace`, `Recipe.AnnotSubtype`, `Recipe.AnnotFlag` and
+- Add `Recipe.Permission`, `Recipe.Coordinate`, `Recipe.Colorspace`, `Recipe.AnnotSubtype`, `Recipe.AnnotFlag` and
   `Recipe.AnnotIcon` and `Recipe.ChromaCommand` constants for the matching
   string options, and declare
   the `password`, `ownerPassword`, `userPassword`, `userProtectionFlag` and

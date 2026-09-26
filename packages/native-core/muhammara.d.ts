@@ -1620,6 +1620,17 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** User access permission names for `permission()`. */
+    static readonly Permission: {
+      readonly PRINT: "print";
+      readonly MODIFY: "modify";
+      readonly COPY: "copy";
+      readonly EDIT: "edit";
+      readonly FILL_FORM: "fillform";
+      readonly EXTRACT: "extract";
+      readonly ASSEMBLE: "assemble";
+      readonly PRINT_BEST: "printbest";
+    };
     /** Named coordinates, accepted wherever a `RecipeCoordinate` is. */
     static readonly Coordinate: {
       readonly CENTER: "center";

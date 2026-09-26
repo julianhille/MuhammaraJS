@@ -941,3 +941,8 @@ annotationRecipe.annot("center", 120, muhammara.Recipe.AnnotSubtype.SQUARE, {
   followOriginalPageRotation: true,
   icon: muhammara.Recipe.AnnotIcon.KEY,
 });
+
+const permissionFlag: number = annotationRecipe.permission(
+  [muhammara.Recipe.Permission.PRINT, muhammara.Recipe.Permission.COPY].join(),
+);
+void permissionFlag;
