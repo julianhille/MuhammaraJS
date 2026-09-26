@@ -489,6 +489,13 @@ export function createHelpers(module) {
     );
   }
 
+  /**
+   * Installs `Quote`, `DoubleQuote`, and `TJ` on a content context.
+   * @param {object} context - Content context to extend.
+   * @param {function(): void} requireContext - Throws when the context is inactive.
+   * @param {{text: Function, glyphs: Function, tj: Function}} api - Native text, glyph, and TJ calls.
+   * @returns {void}
+   */
   function addTextShowingOperators(context, requireContext, api) {
     function show(operation, text, options, wordSpace = 0, characterSpace = 0) {
       requireContext();
