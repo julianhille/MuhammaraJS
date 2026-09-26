@@ -231,6 +231,23 @@ describe("Coloring", () => {
       .endPDF(done);
   });
 
+  it("exposes frozen colorspace constants valued as in Wasm", () => {
+    const assert = require("node:assert/strict");
+    assert.deepEqual(Recipe.Colorspace, {
+      RGB: "rgb",
+      CMYK: "cmyk",
+      GRAY: "gray",
+      SEPARATION: "separation",
+    });
+    assert.deepEqual(muhammara.DeviceColorSpace, {
+      RGB: "rgb",
+      GRAY: "gray",
+      CMYK: "cmyk",
+    });
+    assert.ok(Object.isFrozen(Recipe.Colorspace));
+    assert.ok(Object.isFrozen(muhammara.DeviceColorSpace));
+  });
+
   it("writes the separation color space into every document", () => {
     const assert = require("node:assert/strict");
     const fs = require("fs");

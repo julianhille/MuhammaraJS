@@ -74,6 +74,10 @@ void invalidPathType;
 
 async function usesLowLevelSurface() {
   var muhammara = await createMuhammaraWasm();
+  var cmyk: RecipeDeviceColorSpace = DeviceColorSpaces.CMYK;
+  void cmyk;
+  // @ts-expect-error DeviceColorSpace has no Separation member.
+  void DeviceColorSpaces.SEPARATION;
   muhammara.registerFont("font", new Uint8Array());
   await muhammara.registerFontAsync("font-async", new Blob());
   var writer = muhammara.createWriter({
@@ -362,6 +366,11 @@ async function usesLowLevelSurface() {
   modifier.replaceObject(0, parser.getPageObjectID(0), 11, { scope: "global" });
   modifier.end();
   var Recipe = await createRecipe();
+  var spot: RecipeColorSpace = Recipe.Colorspace.SEPARATION;
+  new Recipe({ colorspace: Recipe.Colorspace.SEPARATION })
+    .createPage()
+    .chroma("Spot", "#ff8000", spot)
+    .rectangle(0, 0, 10, 10, { fill: "Spot", colorspace: spot });
   Recipe.registerFont("regular", new Uint8Array(), "regular");
   await Recipe.registerFontAsync("bold", new Blob(), "bold");
   Recipe.registerImage("image", new Uint8Array(), "png");
