@@ -345,6 +345,13 @@ export function createReaderFactory({
           object.getType();
           return typeof key === "string" && objectKeys(handle).includes(key);
         };
+        /**
+         * Reads a dictionary value, resolving an indirect reference.
+         * @param {string} key - Key without the leading slash.
+         * @returns {PDFObject} The value.
+         * @throws {TypeError} If `key` is not a string.
+         * @throws {Error} If the key is missing or the reader or parser has ended.
+         */
         object.queryObject = function (key) {
           object.getType();
           if (typeof key !== "string")
