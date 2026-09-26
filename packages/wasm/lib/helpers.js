@@ -264,6 +264,13 @@ export function createHelpers(module) {
         throw new TypeError("SC requires numeric components");
       return componentOperator("SC", 5, components);
     };
+    /**
+     * Sets the stroking color, with an optional pattern (`SCN`).
+     * @param {...(number|number[]|string)} args - Components or one component array, then an optional pattern name.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If the components are missing or not finite.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.SCN = function (...args) {
       return patternComponents("SCN", 6, args);
     };
