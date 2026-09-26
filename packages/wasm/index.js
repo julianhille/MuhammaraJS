@@ -81,7 +81,13 @@ export {
   TextEncoding,
 };
 
-/** Loads the Muhammara WebAssembly module and its byte-first PDF API. */
+/**
+ * Loads the Muhammara WebAssembly module and its byte-first PDF API.
+ * @param {MuhammaraWasmOptions} [options] - Emscripten options and byte `limits`.
+ * @returns {Promise<object>} The API, module, helpers, and byte guards.
+ * @throws {TypeError} If `limits` is not an object or `wasmBinary` is not bytes.
+ * @throws {RangeError} If a byte limit is not a positive safe integer.
+ */
 async function createRuntime(options) {
   var limits = options?.limits || {};
   if (!limits || typeof limits !== "object" || Array.isArray(limits)) {
