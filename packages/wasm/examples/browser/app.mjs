@@ -177,6 +177,11 @@ function runInWorker(byteAssets, selectedExample) {
           new DOMException("Worker operation cancelled", "AbortError"),
         ),
     };
+    /**
+     * Handles progress, result, and error messages from the Worker.
+     * @param {MessageEvent} event - Worker message.
+     * @returns {void}
+     */
     worker.onmessage = (event) => {
       if (event.data.type === "progress") {
         report(event.data.message, event.data.percent, event.data.details);
