@@ -798,6 +798,10 @@ const Triangle = class Triangle {
     return this._BC;
   }
 
+  /**
+   * The sum of the side lengths.
+   * @returns {number} The perimeter.
+   */
   get perimeter() {
     return this._perimeter;
   }
