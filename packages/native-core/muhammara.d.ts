@@ -1215,6 +1215,10 @@ declare namespace muhammara {
      * @returns This object; undefined when it is not an indirect object reference.
      */
     toPDFIndirectObjectReference(): PDFIndirectObjectReference | undefined;
+    /**
+     * Returns this object typed as an array.
+     * @returns This object; undefined when it is not an array.
+     */
     toPDFArray(): PDFArray | undefined;
     toPDFDictionary(): PDFDictionary | undefined;
     toPDFStream(): PDFStream | undefined;
