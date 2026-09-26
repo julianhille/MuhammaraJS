@@ -1003,6 +1003,14 @@ declare namespace muhammara {
   export const EInfoTrappedUnknown = 2;
 
   export interface InfoDictionary {
+    /**
+     * Sets a custom info entry.
+     * @param key - The entry key.
+     * @param value - The entry text.
+     * @throws {TypeError} If key and value are not two strings.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
     addAdditionalInfoEntry(key: string, value: string): void;
     removeAdditionalInfoEntry(key: string): void;
     clearAdditionalInfoEntries(): void;
