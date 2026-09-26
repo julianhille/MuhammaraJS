@@ -318,8 +318,8 @@ export function createWriterToModifyFactory({
         ET: function () {
           return operator("ET", 33);
         },
-        Tm: function (...args) {
-          return operator("Tm", 34, args);
+        Tm: function (a, b, c, d, e, f) {
+          return operator("Tm", 34, [a, b, c, d, e, f]);
         },
         Tc: function (characterSpace) {
           return operator("Tc", 35, [characterSpace]);
@@ -1448,7 +1448,7 @@ export function createWriterToModifyFactory({
               ["W", 30],
               ["WStar", 31],
               ["cm", 19, 6],
-              ["Tm", 34],
+              ["Tm", 34, 6],
               ["Tc", 35],
               ["Tw", 36],
               ["TL", 38],

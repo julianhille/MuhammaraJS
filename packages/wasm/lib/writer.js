@@ -771,8 +771,8 @@ export function createWriterFactory({
         ET: function () {
           return operator("ET", 33);
         },
-        Tm: function (...args) {
-          return operator("Tm", 34, args);
+        Tm: function (a, b, c, d, e, f) {
+          return operator("Tm", 34, [a, b, c, d, e, f]);
         },
         Tc: function (characterSpace) {
           return operator("Tc", 35, [characterSpace]);
@@ -1512,8 +1512,8 @@ export function createWriterFactory({
         context.ET = function () {
           return operator("ET", 33);
         };
-        context.Tm = function (...args) {
-          return operator("Tm", 34, args);
+        context.Tm = function (a, b, c, d, e, f) {
+          return operator("Tm", 34, [a, b, c, d, e, f]);
         };
         context.Td = function (x, y) {
           return operator("Td", 41, [x, y]);
