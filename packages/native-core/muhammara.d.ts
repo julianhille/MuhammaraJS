@@ -4153,7 +4153,17 @@ declare namespace muhammara {
      * @throws {Error} If the page does not have one indirect content stream.
      */
     replaceText(text: string, replacement: string, pageNumber: number): Recipe;
-    /** Removes shown text from an existing page's content streams, and optionally its Form XObjects. */
+    /**
+     * Removes shown text from an existing page's content streams, and
+     * optionally its Form XObjects.
+     * @param pageNumber - One-based page number.
+     * @param options - Removal options.
+     * @returns The Recipe instance.
+     * @throws {TypeError} If the page number is not a positive integer, or the
+     *   options are not an object.
+     * @throws {RangeError} If the source document has no such page.
+     * @throws {Error} If the page's Contents holds a direct stream.
+     */
     removeText(pageNumber: number, options?: RemoveTextOptions): Recipe;
 
     /**
