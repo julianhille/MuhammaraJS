@@ -945,6 +945,13 @@ export function createReaderFactory({
           ),
         );
       },
+      /**
+       * Parses an indirect object.
+       * @param {number} objectId - Object ID.
+       * @returns {PDFObject} The parsed object.
+       * @throws {TypeError} If `objectId` is not an unsigned 32-bit integer.
+       * @throws {Error} If the reader has ended or the object cannot be read.
+       */
       parseNewObject: function (objectId) {
         requireReader();
         requireIndex(objectId, "Object ID");
