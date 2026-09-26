@@ -242,6 +242,12 @@ export function createWriterSupport({
     paths.length = 0;
   }
 
+  /**
+   * Wraps a native resources dictionary handle.
+   * @param {number} handle - Native resources dictionary.
+   * @param {Function} requireOpen - Throws when the owning page or form is closed.
+   * @returns {ResourcesDictionary} The resources dictionary.
+   */
   function resourcesDictionary(handle, requireOpen) {
     function addMapping(type, objectId) {
       requireOpen();
