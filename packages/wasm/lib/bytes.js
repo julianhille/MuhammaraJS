@@ -84,6 +84,13 @@ export class PDFRStreamForBuffer {
     );
   }
 
+  /**
+   * Moves to a position counted back from the end, clamped to the bytes.
+   *
+   * @param {number} position Offset from the end.
+   * @returns {void}
+   * @throws {TypeError} If `position` is not an integer.
+   */
   setPositionFromEnd(position) {
     if (!Number.isInteger(position))
       throw new TypeError("Position must be an integer");
