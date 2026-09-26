@@ -1862,7 +1862,13 @@ export function createWriterFactory({
         );
       }
 
-      /** Read underline thickness, position, and text advance for writeText. */
+      /**
+       * Reads underline thickness, position, and text advance for writeText.
+       * @param {string} text - Text to underline.
+       * @param {number} size - Font size.
+       * @returns {object} `thickness`, `position`, and `advance` in points.
+       * @throws {Error} If the font cannot provide underline metrics.
+       */
       _underline(text, size) {
         return readFontUnderline(
           module,
