@@ -700,6 +700,10 @@ async function replaceTextExample(assets) {
   }
 }
 
+/**
+ * Builds the browser example for page deletion.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function deletePagesExample() {
   var Recipe = await createRecipe();
   var sourceRecipe = new Recipe({ compress: false });
