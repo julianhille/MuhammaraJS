@@ -1077,9 +1077,16 @@ declare namespace muhammara {
   }
 
   export interface PDFWStreamForBuffer extends WriteStream {
+    /** Creates a write stream that collects the bytes in memory. */
     new (): PDFWStreamForBuffer;
-    /** Also accepts an array of byte values when called directly. */
+    /**
+     * Writes bytes to the buffer.
+     * @param inBytes - The bytes to write; an array of byte values is also
+     *   accepted when called directly.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer | number[]): number;
+    /** The bytes written so far; null before the first write. */
     buffer: Buffer | null;
   }
 
