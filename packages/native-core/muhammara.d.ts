@@ -661,6 +661,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     Tc(characterSpace: number): this;
+    /**
+     * Sets the word spacing; operator Tw.
+     * @param wordSpace - The extra space per space character in text space units.
+     * @returns This context.
+     * @throws {TypeError} If wordSpace is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     Tw(wordSpace: number): this;
     Tz(horizontalScaling: number): this;
     TL(textLeading: number): this;
