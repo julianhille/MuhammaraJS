@@ -768,6 +768,14 @@ export function createReaderFactory({
         requireReader();
         return module._muhammara_wasm_reader_get_pages_count(reader);
       },
+      /**
+       * Looks up a page's object ID.
+       * @param {number} index - Zero-based page index.
+       * @returns {number} The page object ID.
+       * @throws {TypeError} If `index` is not a non-negative integer.
+       * @throws {RangeError} If the page does not exist.
+       * @throws {Error} If the reader has ended.
+       */
       getPageObjectID: function (index) {
         requireReader();
         requireIndex(index, "Page index");
