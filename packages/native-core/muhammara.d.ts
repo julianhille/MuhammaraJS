@@ -3204,7 +3204,7 @@ declare namespace muhammara {
       replies?: readonly AnnotReply[];
       /** The border width. */
       border?: number;
-      /** The annotation color. */
+      /** `#rrggbb`, `%r,g,b`, a color registered with `chroma()`, a CSS color name, or one (gray), three (RGB), or four (CMYK) numbers from 0 to 255. Other values throw a `TypeError`. */
       color?: Color;
       /** Keep the annotation unrotated on a rotated source page. */
       followOriginalPageRotation?: boolean;

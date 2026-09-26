@@ -1,4 +1,44 @@
-import { AnnotFlag, AnnotIcon, AnnotSubtype } from "../value-sets.js";
+import { cssColors } from "../css-colors.js";
+import {
+  AnnotFlag,
+  AnnotIcon,
+  AnnotSubtype,
+  Colorspace,
+} from "../value-sets.js";
+
+/**
+ * Resolves an annotation color string to `0xRRGGBB`, as native does.
+ * Registered Recipe colors win over CSS names, so `chroma()` can redefine one.
+ * @param {Recipe} recipe - Recipe instance with its registered colors.
+ * @param {*} color - The color value.
+ * @returns {number|undefined} The color, or undefined when it is unknown.
+ */
+function annotationColorCode(recipe, color) {
+  if (typeof color !== "string") return undefined;
+  var registered = (recipe.knownColors || {})[Colorspace.RGB] || {};
+  if (Object.hasOwn(registered, color)) {
+    color = String(registered[color]);
+    if (/^[0-9a-f]{6}$/i.test(color)) color = `#${color}`;
+  } else if (Object.hasOwn(cssColors, color.toLowerCase())) {
+    return cssColors[color.toLowerCase()];
+  }
+  if (/^#[0-9a-f]{6}$/i.test(color)) return Number.parseInt(color.slice(1), 16);
+  if (color.startsWith("%")) {
+    var parts = color.slice(1).split(",");
+    if (
+      parts.length === 3 &&
+      parts.every(
+        (part) =>
+          part.trim() !== "" && Number(part) >= 0 && Number(part) <= 100,
+      )
+    )
+      return parts.reduce(
+        (value, part) => (value << 8) | Math.round(Number(part) * 2.55),
+        0,
+      );
+  }
+  return undefined;
+}
 /**
  * Converts an annotation flag name or bit mask to flag bits.
  * @param {Recipe.AnnotFlag|number} [flag] - Flag name, in any case, or a non-negative bit mask.
@@ -183,31 +223,34 @@ function writeSourceAnnotation(writer, subtype, rectangle, options) {
 
 /**
  * Creates Recipe annotation methods.
- * @param {{module: object, withString: Function, withDoubles: Function, colorValue: Function}} dependencies - Module and helpers.
+ * @param {{module: object, withString: Function, withDoubles: Function}} dependencies - Module and helpers.
  * @returns {object} Methods mixed into Recipe.prototype.
  */
-export function createAnnotationMethods({
-  module,
-  withString,
-  withDoubles,
-  colorValue,
-}) {
+export function createAnnotationMethods({ module, withString, withDoubles }) {
   /**
    * Converts an annotation color to PDF components from 0 to 1.
-   * @param {RecipeColor|number[]} [value] - Color, or one, three, or four components.
-   * @returns {number[]} Components; empty when omitted.
-   * @throws {TypeError} If an array has another length or a non-finite component.
+   * @param {Recipe} recipe - Recipe instance with its registered colors.
+   * @param {RecipeColor|number[]} [value] - `#rrggbb`, `%r,g,b`, a registered or CSS color name, or one, three, or four components from 0 to 255.
+   * @returns {number[]} Components; empty when omitted or empty.
+   * @throws {TypeError} If an array has another length or a component outside 0 to 255, or a string is not a known color.
    */
-  function annotationColor(value) {
-    if (value === undefined) return [];
+  function annotationColor(recipe, value) {
+    if (value === undefined || value === null || value === "") return [];
     if (Array.isArray(value)) {
-      if (![1, 3, 4].includes(value.length) || !value.every(Number.isFinite))
+      if (
+        ![1, 3, 4].includes(value.length) ||
+        !value.every(
+          (part) => Number.isFinite(part) && part >= 0 && part <= 255,
+        )
+      )
         throw new TypeError(
-          "Annotation colors need one, three, or four numbers",
+          "Annotation colors need one, three, or four numbers from 0 to 255",
         );
-      return value.map((part) => (Math.abs(part) > 1 ? part / 255 : part));
+      return value.map((part) => part / 255);
     }
-    var packed = colorValue(value);
+    var packed = annotationColorCode(recipe, value);
+    if (packed === undefined)
+      throw new TypeError(`Unknown annotation color (${String(value)})`);
     return [
       (packed >> 16) / 255,
       ((packed >> 8) & 255) / 255,
@@ -413,9 +456,10 @@ export function createAnnotationMethods({
           AnnotSubtype.STRIKE_OUT,
           AnnotSubtype.SQUIGGLY,
         ].includes(annotation.subtype);
-        var color = annotationColor(options.color);
+        var color = annotationColor(this, options.color);
         if (markup && !color.length)
           color = annotationColor(
+            this,
             annotation.subtype === AnnotSubtype.HIGHLIGHT
               ? [255, 255, 0]
               : annotation.subtype === AnnotSubtype.STRIKE_OUT

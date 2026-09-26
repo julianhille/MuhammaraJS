@@ -314,6 +314,13 @@ exports.text = function text(text = "", x, y, options = {}) {
     return this;
   }
   options = _initOptions(this, x, y, options);
+  // Reject invalid markup annotations before any text is drawn.
+  for (let key in options) {
+    if (this._getTextMarkupAnnotationSubtype(key) && options[key]) {
+      const markup = typeof options[key] === "object" ? options[key] : {};
+      this._validateAnnot({ ...markup, flag: options.flag });
+    }
+  }
   const linkX = this.x;
   const linkY = this.y;
 

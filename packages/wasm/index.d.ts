@@ -293,6 +293,7 @@ export interface RecipeAnnotationOptions {
   date?: string | Date;
   icon?: Recipe.AnnotIcon;
   name?: string;
+  /** `#rrggbb`, `%r,g,b`, a color registered with `chroma()`, a CSS color name, or one (gray), three (RGB), or four (CMYK) numbers from 0 to 255. Other values throw a `TypeError`. */
   color?: RecipeColor;
   border?: number | { width?: number; dash?: readonly number[] };
   borderWidth?: number;
@@ -2343,7 +2344,7 @@ export interface PDFModifier {
   end(): Uint8Array<ArrayBuffer>;
   dispose(): void;
 }
-/** Low-level color: a 24-bit RGB number, `#rrggbb`, a basic color name, or three 0-255 components. */
+/** Low-level color: a 24-bit RGB number, `#rrggbb`, a CSS color name in any case, or three 0-255 components. Other strings throw a `TypeError`. */
 export type ColorValue = number | string | [number, number, number];
 /** Colors for CompactModifier rectangles and circles; `fill` wins over `stroke` and `color`. */
 export interface CompactModifierShapeOptions {

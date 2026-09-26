@@ -35,8 +35,6 @@ private:
     bool hasWidth = false;
     double width = 0;
     bool hasColor = false;
-    bool hasNamedColor = false;
-    std::string colorName;
     unsigned long colorValue = 0;
     std::string colorSpace = "rgb";
     std::string finishType = "stroke";

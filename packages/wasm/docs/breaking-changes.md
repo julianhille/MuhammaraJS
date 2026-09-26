@@ -2,6 +2,28 @@
 
 ## Version 1.x
 
+- A hex color string without the leading `#`, such as `"ff0000"`, and an empty
+  color string throw
+  `TypeError: Colors must be a 24-bit number, a color name, or a #rrggbb string`
+  in the low-level drawing helpers, `writeText()`, and `CompactModifier` shapes
+  and text, matching native. Previously `"ff0000"` drew red and `""` drew
+  black. Write `"#ff0000"`, or pass a 24-bit number such as `0xff0000`
+  [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
+
+- Recipe `annot()` and `comment()`, and the `underline`, `strikeOut`, and
+  `highlight` annotations of `text()`, resolve `color` like native: `#rrggbb`,
+  `%r,g,b`, colors registered with `chroma()`, then CSS color names in any
+  case. Anything else throws `TypeError: Unknown annotation color (<value>)`,
+  including hex without the `#` and numbers, which used to be accepted.
+  `"green"` now writes the Recipe color `#00ff00` instead of CSS `#008000`;
+  write `"#008000"` to keep the old color [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
+
+- Annotation `color` arrays hold numbers from 0 to 255, matching native.
+  Values up to 1 used to be read as fractions, so `[1, 0, 0]` wrote red and now
+  writes nearly black. A value outside 0 to 255 throws
+  `TypeError: Annotation colors need one, three, or four numbers from 0 to 255`.
+  Multiply fractional components by 255, for example `[255, 0, 0]` [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
+
 - Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()` strokes
   now remain inside positive requested bounds large enough to contain the line
   width, matching native. They previously extended outward by half the line

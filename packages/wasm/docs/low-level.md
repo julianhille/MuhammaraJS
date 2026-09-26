@@ -32,6 +32,10 @@ and `Q()` after the drawing it should affect. Any other `type` throws a
 `TypeError` before anything is written; native instead ends such a path with `n`
 without painting it.
 
+Pass an RGB `color` to these helpers or `writeText()` as a 24-bit number, a
+CSS color name in any case, or a `#rrggbb` string. Any other color string, including
+hex without the `#`, throws a `TypeError` before anything is drawn.
+
 An explicit `type: null` ends the path without painting,
 ignores `width` and `close`, and applies a supplied `color` only to the
 non-stroking graphics state, matching native. Omit `type` or use `"stroke"` for

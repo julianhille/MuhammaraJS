@@ -6,6 +6,22 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Throw a `TypeError` for a hex color string without the leading `#`, such as
+  `"ff0000"`, or an empty string in the low-level drawing helpers,
+  `writeText()`, and `CompactModifier` shapes and text, matching native.
+  Previously `"ff0000"` drew red and `""` drew black; write `"#ff0000"`
+  instead [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+- Resolve Recipe `annot()`, `comment()`, and `text()` markup annotation colors
+  like native: `#rrggbb`, `%r,g,b`, colors registered with `chroma()`, then CSS
+  color names in any case. Anything else throws
+  `TypeError: Unknown annotation color (<value>)`, including hex without the
+  `#` and numbers, which used to be accepted. `"green"` now writes the Recipe
+  color `#00ff00` instead of CSS `#008000`; write `"#008000"` to keep the old
+  color [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+- Read annotation `color` arrays as numbers from 0 to 255, matching native.
+  Values up to 1 were read as fractions, so `[1, 0, 0]` was red and is now
+  nearly black; values outside 0 to 255 now throw a `TypeError`. Multiply
+  fractional components by 255 [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Keep Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()`
   strokes inside positive requested bounds large enough to contain the line
   width, matching native. Wasm previously centered strokes on the requested
@@ -44,6 +60,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Accept every CSS color name, in any case, in the low-level drawing helpers,
+  `writeText()`, `CompactModifier`, and Recipe annotations, matching native.
+  Previously only seven names were known, each in a single spelling [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Accept native's `password` option in `createReader()` and
   `createReaderAsync()` to open encrypted PDFs [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Encrypt PDFs written by `createWriter()` with native's `userPassword`,

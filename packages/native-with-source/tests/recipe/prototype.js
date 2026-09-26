@@ -51,6 +51,7 @@ describe("Recipe prototype", function () {
       "_setSkewContext",
       "_startDictionary",
       "_transformColor",
+      "_validateAnnot",
       "_writeAnnotation",
       "_writeAnnotations",
       "_writeInfo",

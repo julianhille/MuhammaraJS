@@ -580,7 +580,6 @@ export async function createRecipe(options) {
     defaultFont,
     module,
     encoder,
-    colorValue,
     normalizeBytes,
     normalizeBytesAsync,
     createReader: muhammara.createReader,

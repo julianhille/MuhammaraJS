@@ -471,6 +471,89 @@ describe("HighLevelContentContext", function () {
     );
 
     it(
+      "draws shapes and text with #rrggbb colors on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var context = target.context;
+        var font = target.writer.getFontForBytes("arial");
+        context
+          .drawPath(
+            [
+              [0, 0],
+              [10, 10],
+              [20, 0],
+            ],
+            { color: "#ff0000" },
+          )
+          .drawCircle(30, 30, 5, { color: "#00ff00" })
+          .drawSquare(40, 40, 5, { color: "#0000ff" })
+          .drawRectangle(50, 50, 5, 6, { color: "#ffff00" })
+          .writeText("hex", 10, 70, { font, color: "#ff00ff" });
+        var output = target.finish();
+        assert.match(output, /1 0 0 RG\s+0 0 m\s+10 10 l\s+20 0 l\s+S/);
+        assert.match(output, /\b0 1 0 RG\b/);
+        assert.match(output, /\b0 0 1 RG\b/);
+        assert.match(output, /\b1 1 0 RG\b/);
+        assert.match(output, /BT\s+1 0 1 rg\s+[\s\S]*?\(hex\) Tj\s+ET/);
+      },
+    );
+
+    it(
+      "rejects unknown color strings before output on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var context = target.context;
+        var font = target.writer.getFontForBytes("arial");
+        context.q();
+        ["ff0000", "#ff00", "#ff00001", "#gg0000", "notacolor", ""].forEach(
+          function (color) {
+            [
+              function () {
+                context.drawPath(
+                  [
+                    [0, 0],
+                    [10, 10],
+                  ],
+                  { color },
+                );
+              },
+              function () {
+                context.drawCircle(30, 30, 5, { color });
+              },
+              function () {
+                context.drawSquare(40, 40, 5, { color });
+              },
+              function () {
+                context.drawRectangle(50, 50, 5, 6, { color });
+              },
+              function () {
+                context.writeText("bad", 10, 70, { font, color });
+              },
+              function () {
+                context.writeText("bad", 10, 70, {
+                  font,
+                  underline: true,
+                  color,
+                });
+              },
+            ].forEach(function (draw) {
+              assert.throws(draw, {
+                name: "TypeError",
+                message:
+                  "Colors must be a 24-bit number, a color name, or a #rrggbb string",
+              });
+            });
+          },
+        );
+        context.drawCircle(30, 30, 5, { color: "blue" });
+        context.Q();
+        var output = target.finish();
+        assert.match(output, /q\s+0 0 1 RG\s+[\d.\s]+m[\s\S]*?S\s+Q/);
+        assert.doesNotMatch(output, /\(bad\)/);
+      },
+    );
+
+    it(
       "underlines text with the font underline metrics on " + mode,
       async function () {
         var target = await drawingTarget(mode);
@@ -495,6 +578,38 @@ describe("HighLevelContentContext", function () {
       },
     );
   }
+
+  it("draws every CSS color name in any case", async function () {
+    // Native's CSS color table is the reference for the Wasm one.
+    var colors = Array.from(
+      (
+        await readFile(
+          new URL(
+            "../../../native-with-source/src/CSSColors.h",
+            import.meta.url,
+          ),
+          "latin1",
+        )
+      ).matchAll(/\{"([a-z]+)",0x([0-9A-Fa-f]{6})\}/g),
+      (match) => [match[1], Number.parseInt(match[2], 16)],
+    );
+    assert.equal(colors.length, 140);
+    var target = await drawingTarget("page");
+    colors.forEach(function (color) {
+      target.context.drawCircle(50, 50, 5, { color: color[0].toUpperCase() });
+    });
+    var drawn = Array.from(
+      target.finish().matchAll(/([\d.]+) ([\d.]+) ([\d.]+) RG/g),
+      (match) =>
+        (Math.round(match[1] * 255) << 16) |
+        (Math.round(match[2] * 255) << 8) |
+        Math.round(match[3] * 255),
+    );
+    assert.deepEqual(
+      drawn,
+      colors.map((color) => color[1]),
+    );
+  });
 
   it("draws shapes and text with byte-registered fonts", async function () {
     var muhammara = await createMuhammaraWasm();
