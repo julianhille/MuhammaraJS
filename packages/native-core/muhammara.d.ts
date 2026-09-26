@@ -1337,6 +1337,11 @@ declare namespace muhammara {
   }
 
   export interface PDFTextString {
+    /**
+     * Returns the encoded bytes, PDFDocEncoding or UTF-16BE with a byte
+     * order mark.
+     * @returns The byte values.
+     */
     toBytesArray(): Array<number>;
     toString(): string;
     fromString(value: string): this;
