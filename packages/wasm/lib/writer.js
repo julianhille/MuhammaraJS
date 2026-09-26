@@ -4493,6 +4493,13 @@ export function createWriterFactory({
         };
         return page;
       },
+      /**
+       * Starts writing a page, or returns its context when it is already active.
+       * @param {PDFPage} page - Page from `createPage()`.
+       * @returns {ContentContext} The page content context.
+       * @throws {Error} If the writer ended, `page` is not a PDFPage, another page is active,
+       * or the page cannot be started.
+       */
       startPageContentContext: function (page) {
         if (
           ended ||
