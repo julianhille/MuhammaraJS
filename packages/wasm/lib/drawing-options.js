@@ -108,10 +108,14 @@ export function applyDrawingColor(context, options, stroke) {
  * @param {number} max - Largest allowed value; the smallest is 0.
  * @param {string} label - What the operand selects, for the error message.
  * @returns {void}
- * @throws {RangeError} If `value` is not an integer from 0 to `max`.
+ * @throws {TypeError} If `value` is not an integer.
+ * @throws {RangeError} If `value` is below 0 or above `max`.
  */
 export function checkOperatorRange(name, value, max, label) {
-  if (!Number.isInteger(value) || value < 0 || value > max) {
+  if (!Number.isInteger(value)) {
+    throw new TypeError(`${name} requires integer numeric arguments`);
+  }
+  if (value < 0 || value > max) {
     throw new RangeError(`${name} requires a ${label} from 0 to ${max}`);
   }
 }
