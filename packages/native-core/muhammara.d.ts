@@ -587,6 +587,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     G(gray: number): this;
+    /**
+     * Sets a gray fill color; operator g.
+     * @param gray - The gray level, 0 (black) to 1 (white).
+     * @returns This context.
+     * @throws {TypeError} If gray is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     g(gray: number): this;
     RG(r: number, g: number, b: number): this;
     rg(r: number, g: number, b: number): this;
