@@ -435,7 +435,13 @@ export function createTextMethods({ drawText, measure, module }) {
     return result;
   }
 
-  /** Runs drawing inside the requested rotation and skew graphics state. */
+  /**
+   * Runs drawing inside the requested rotation and skew graphics state.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {object} options - `rotation`, `rotationOrigin`, `skewX`, and `skewY`.
+   * @param {function(): void} callback - Draws the content.
+   * @returns {void}
+   */
   function withTextTransform(recipe, options, callback) {
     if (!options.rotation && !options.skewX && !options.skewY) {
       callback();
