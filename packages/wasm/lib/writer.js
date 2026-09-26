@@ -331,6 +331,13 @@ export function createWriterSupport({
        * @throws {Error} If the owner is closed or the mapping fails.
        */
       addPatternMapping: (objectId) => addMapping(3, objectId),
+      /**
+       * Maps a marked-content property list object into the resources dictionary.
+       * @param {number} objectId - Indirect object ID of the marked-content property list.
+       * @returns {string} The resource name to use in content operators.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the owner is closed or the mapping fails.
+       */
       addPropertyMapping: (objectId) => addMapping(4, objectId),
       addXObjectMapping: (objectId) => addMapping(5, objectId),
       addFormXObjectMapping: (objectId) => addMapping(6, objectId),
