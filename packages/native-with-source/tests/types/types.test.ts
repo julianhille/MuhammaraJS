@@ -809,3 +809,8 @@ const builtInWrittenCount: number =
   builtInWriteStream.write([37, 80]) +
   builtInWriteStream.write(Buffer.from("DF"));
 void builtInWrittenCount;
+
+// Low-level PDFWriter signatures match the arguments the binding accepts.
+declare const signatureWriter: muhammara.PDFWriter;
+declare const signatureStream: muhammara.ReadStream;
+void signatureWriter.createFormXObjectFromJPG(signatureStream);

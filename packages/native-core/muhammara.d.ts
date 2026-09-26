@@ -1099,8 +1099,16 @@ declare namespace muhammara {
      * @throws {Error} If the writer has ended.
      */
     endFormXObject(formXObject: FormXObject): this;
+    /**
+     * Creates a form XObject showing a JPEG image.
+     * @param file - The image path or a read stream.
+     * @param objectId - A forward-reference object ID reserved earlier.
+     * @returns The form.
+     * @throws {TypeError} If the arguments are wrong or the image cannot be read.
+     * @throws {Error} If the writer has ended.
+     */
     createFormXObjectFromJPG(
-      file: FilePath | PDFRStreamForFile,
+      file: FilePath | ReadStream,
       objectId?: FormXObjectId,
     ): FormXObject;
     getFontForFile(inFontFilePath: FilePath, index?: number): UsedFont;
