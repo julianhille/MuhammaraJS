@@ -1,4 +1,5 @@
 var { cloneOptions, resolveFontSize } = require("./utils");
+var { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
 
 const charSpacing = function charSpacing(text, charSpace) {
   var characterCount = Array.from(String(text)).length;
@@ -187,6 +188,12 @@ exports.Line = class Line {
  * Get the offset for a text box.
  * @private
  * @todo handle page margin and padding
+ * @param {Object} textBox - The laid-out text box: width, height, textHeight,
+ *   firstLineHeight and isSimpleText.
+ * @param {Object} [options] - The text options.
+ * @param {string} [options.align] - A `Recipe.HorizontalAlign` value,
+ *   optionally followed by a space and a `Recipe.VerticalAlign` value.
+ * @returns {{offsetX: number, offsetY: number}} The offset from the placement point.
  */
 exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
   let offsetX = 0;
@@ -196,10 +203,10 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
     const alignments = options.align.split(" ");
     if (alignments[0]) {
       switch (alignments[0]) {
-        case "center":
+        case HorizontalAlign.CENTER:
           offsetX = (-1 * width) / 2;
           break;
-        case "right":
+        case HorizontalAlign.RIGHT:
           offsetX = -width;
           break;
         default:
@@ -208,12 +215,12 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
     if (alignments[1]) {
       height = height || textHeight;
       switch (alignments[1]) {
-        case "center":
+        case VerticalAlign.CENTER:
           offsetY = textBox.isSimpleText
             ? -textBox.firstLineHeight / 2
             : height / 2 + offsetY;
           break;
-        case "bottom":
+        case VerticalAlign.BOTTOM:
           offsetY = height + offsetY;
           break;
         default:
