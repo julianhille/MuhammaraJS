@@ -91,6 +91,15 @@ function endsWithBreakableSpace(value) {
   return value[value.length - 1] !== "\u00a0" && /\s$/.test(value);
 }
 
+/**
+ * Lays out plain text into lines for a width and wrap mode.
+ * @param {string} value - Text; `\n` starts a paragraph.
+ * @param {number} width - Available width; 0 disables wrapping.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Text options.
+ * @param {RecipeTextWrap|boolean} wrap - Wrap mode; `true` means auto.
+ * @returns {{text: string, last: boolean}[]} Lines; `last` ends a paragraph.
+ */
 function lines(value, width, measure, options, wrap) {
   var result = [];
   String(value)
