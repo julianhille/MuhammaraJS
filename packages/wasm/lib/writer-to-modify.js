@@ -1661,6 +1661,15 @@ export function createWriterToModifyFactory({
           await normalizeBytesAsync(image, "JPEG bytes"),
         );
       },
+      /**
+       * Creates an image XObject from a registered JPEG.
+       * @param {string} name - Registered JPEG name.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {ModifierImageXObject} The image, placeable with `doXObject()`.
+       * @throws {TypeError} If the name is not a registered JPEG.
+       * @throws {RangeError} If `objectId` is invalid.
+       * @throws {Error} If the modifier ended or the image cannot be created.
+       */
       createImageXObjectFromJPGBytes: function (name, objectId) {
         requireOpen();
         var handle = withString(
