@@ -1623,10 +1623,14 @@ export interface ContentContext {
     options?: TextOptions,
   ): this;
   DoubleQuote(wordSpace: number, characterSpace: number, glyphs: Glyph): this;
+  /** Pass at least one item; an empty call throws a `TypeError`. */
+  TJ(...items: (string | number | Glyph)[]): this;
   TJ(
-    ...items:
-      | [string | number | Glyph, ...(string | number | Glyph)[]]
-      | [string | number | Glyph, ...(string | number | Glyph)[], TextOptions]
+    ...items: [
+      string | number | Glyph,
+      ...(string | number | Glyph)[],
+      TextOptions,
+    ]
   ): this;
   ri(name: string): this;
   i(value: number): this;

@@ -12,10 +12,22 @@ exports.createMuhammara = function createMuhammara(muhammara) {
   var bindingModule = require.resolve("./lib/muhammara");
   var recipeDirectory = path.join(__dirname, "lib", "recipe") + path.sep;
 
+  /**
+   * Returns the writer's event emitter, created on first use.
+   * @returns {import("events").EventEmitter} The emitter for writer events.
+   */
   muhammara.PDFWriter.prototype.getEvents = function () {
     if (!this.events) this.events = new (require("events").EventEmitter)();
     return this.events;
   };
+  /**
+   * Emits an event on the writer's emitter after setting `eventParams.writer`
+   * to this writer.
+   * @param {string|symbol} eventName - The event name.
+   * @param {Object} eventParams - The event parameters; gains a `writer` key.
+   * @returns {void}
+   * @throws {TypeError} If eventParams is not an object.
+   */
   muhammara.PDFWriter.prototype.triggerDocumentExtensionEvent = function (
     eventName,
     eventParams,
@@ -23,13 +35,27 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     eventParams.writer = this;
     this.getEvents().emit(eventName, eventParams);
   };
+  /**
+   * Replaces direct references to an object in a page dictionary. Available
+   * only when modifying an existing PDF.
+   * @param {number} pageIndex - The zero-based page index; ignored for the
+   *   global scope.
+   * @param {number} sourceObjectId - The object ID to stop referencing.
+   * @param {number} replacementObjectId - The object ID to reference instead.
+   * @param {Object} [options] - The options.
+   * @param {string} [options.scope] - ObjectReplacementScope.GLOBAL to
+   *   replace on every page.
+   * @returns {Object} This writer.
+   * @throws {Error} If the writer does not modify a PDF or the page does not
+   *   exist.
+   */
   muhammara.PDFWriter.prototype.replaceObject = function (
     pageIndex,
     sourceObjectId,
     replacementObjectId,
     options,
   ) {
-    if (options && options.scope === "global") {
+    if (options && options.scope === muhammara.ObjectReplacementScope.GLOBAL) {
       var copyingContext = this.createPDFCopyingContextForModifiedFile();
       var pageCount = copyingContext.getSourceDocumentParser().getPagesCount();
 
@@ -73,6 +99,41 @@ exports.createMuhammara = function createMuhammara(muhammara) {
   muhammara.PDFRStreamForFile = require("./lib/PDFRStreamForFile");
   muhammara.PDFRStreamForBuffer = require("./lib/PDFRStreamForBuffer");
   muhammara.PDFWStreamForBuffer = require("./lib/PDFWStreamForBuffer");
+  muhammara.DrawingPathType = Object.freeze({
+    STROKE: "stroke",
+    FILL: "fill",
+    CLIP: "clip",
+  });
+  muhammara.ImageFit = Object.freeze({
+    ALWAYS: "always",
+    OVERFLOW: "overflow",
+  });
+  muhammara.DeviceColorSpace = Object.freeze({
+    RGB: "rgb",
+    GRAY: "gray",
+    CMYK: "cmyk",
+  });
+  muhammara.PageBox = Object.freeze({
+    MEDIA: "media",
+    CROP: "crop",
+    BLEED: "bleed",
+    TRIM: "trim",
+    ART: "art",
+  });
+  muhammara.PDFImageType = Object.freeze({
+    PDF: "PDF",
+    JPG: "JPG",
+    TIFF: "TIFF",
+    PNG: "PNG",
+  });
+  muhammara.EEncoding = Object.freeze({
+    TEXT: "text",
+    CODE: "code",
+    HEX: "hex",
+  });
+  muhammara.ObjectReplacementScope = Object.freeze({
+    GLOBAL: "global",
+  });
   muhammara.LineCapStyle = Object.freeze({
     LINECAP_BUTT: 0,
     LINECAP_ROUND: 1,

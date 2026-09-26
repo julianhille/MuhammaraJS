@@ -1,7 +1,15 @@
 var { htmlToTextObjects } = require("./htmlToTextObjects");
 var { cloneOptions: clone } = require("./utils");
+var { LineCap, TableRowNth } = require("../recipe-constants");
 
-/** Converts a table cell style into text options. */
+/**
+ * Convert a table cell style into text options: a copy of the options with
+ * the cell entry moved to `textBox`.
+ * @private
+ * @param {Object} options - The table, header, row or column options.
+ * @param {string} [cell='cell'] - The key holding the cell style, "cell" or "hcell".
+ * @returns {Object} The text options.
+ */
 function getCellOptions(options, cell = "cell") {
   var cellOptions = clone(options);
 
@@ -13,7 +21,16 @@ function getCellOptions(options, cell = "cell") {
   return cellOptions;
 }
 
-/** Measures the same text and outer box height that text() will draw. */
+/**
+ * Measure the outer box height text() will draw for a cell.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {string} text - The cell text or HTML.
+ * @param {Object} column - The table layout column: x, y and width.
+ * @param {Object} options - The cell text options.
+ * @returns {number} The box height, including padding and minimum height.
+ * @throws {TypeError} If no page is active.
+ */
 function getCellHeight(self, text, column, options) {
   var colOptions = self._merge(options, { textBox: { width: column.width } });
   var originCoord = self._calibrateCoordinate(
@@ -44,7 +61,19 @@ function getCellHeight(self, text, column, options) {
   );
 }
 
-/** Draws a completed table segment without duplicating its bottom edge. */
+/**
+ * Draw the border of a completed table segment without duplicating its
+ * bottom edge.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number} x - The segment left.
+ * @param {number} y - The segment top.
+ * @param {number} width - The segment width.
+ * @param {number} height - The segment height; nothing is drawn when 0.
+ * @param {number[]} rowLines - The y of every row bottom.
+ * @param {Object} options - The table options; `border` enables drawing.
+ * @returns {void}
+ */
 function drawTableBorder(self, x, y, width, height, rowLines, options) {
   // A segment without rows has nothing to enclose.
   if (!options.border || height <= 0) {
@@ -54,7 +83,7 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
     {},
     options.border === true ? {} : options.border,
     // Keep borders from extending outside of the enclosing box.
-    { lineCap: "butt" },
+    { lineCap: LineCap.BUTT },
   );
   if (!borderOptions.width) {
     borderOptions.width = 0.5;
@@ -92,6 +121,9 @@ function drawTableBorder(self, x, y, width, height, rowLines, options) {
  * of the configured `columns`, otherwise every field found in any record, in
  * first-seen order.
  * @private
+ * @param {Object[]} contents - The table records.
+ * @param {Object} options - The table options.
+ * @returns {string[]} The field names, in column order.
  */
 function tableFields(contents, options) {
   if (options.order && options.order.length) {
@@ -166,9 +198,10 @@ function tableFields(contents, options) {
  * a 'position' property indicating the [x,y] coordinates where the next table for the remaining data should start.
  * @param {object} [options.row] - text properties to be applied to all cells in a table row.
  * @param {object} [options.row.cell] - All textBox options from the 'text' interface can be used here.
- * @param {string} [options.row.nth] - 'even|odd', indicating that the properties should be applied only to
- * 'even' or 'odd' rows.
+ * @param {Recipe.TableRowNth} [options.row.nth] - A `Recipe.TableRowNth` value, indicating that the
+ * properties should be applied only to 'even' or 'odd' rows.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  * @throws {RangeError} If the overflow callback continues into an area too small
  * for the pending row and its repeated header. Return true to stop, or provide
  * enough space; rows are not split and the callback is called once per overflow.
@@ -248,12 +281,12 @@ exports.table = function table(x, y, contents, options = {}) {
     rowOptions = getCellOptions(options.row);
 
     switch (options.row.nth) {
-      case "even":
+      case TableRowNth.EVEN:
         nth = (row) => {
           return row % 2 === 0;
         };
         break;
-      case "odd":
+      case TableRowNth.ODD:
         nth = (row) => {
           return row % 2 !== 0;
         };

@@ -23,6 +23,24 @@ muhammara.createWriterToContinue("output.pdf", "state.txt", {
 var invalidContinuationLog: muhammara.ByteWriter = { write: () => true };
 void invalidContinuationLog;
 
+var imageTransformation: muhammara.TransformationObject = {
+  width: 100,
+  height: 50,
+  fit: muhammara.ImageFit.ALWAYS,
+};
+void imageTransformation;
+var replacementScope: muhammara.ObjectReplacementScope =
+  muhammara.ObjectReplacementScope.GLOBAL;
+var replacementOptions: muhammara.ObjectReplacementOptions = {
+  scope: replacementScope,
+};
+var deviceColorSpace: muhammara.DeviceColorSpace =
+  muhammara.DeviceColorSpace.CMYK;
+var pageBoxName: muhammara.PageBox = muhammara.PageBox.TRIM;
+var imageKind: muhammara.PDFImageType = muhammara.PDFImageType.PNG;
+var textEncoding: muhammara.EEncoding = muhammara.EEncoding.HEX;
+var colorOptions: muhammara.ColorOptions = { colorspace: deviceColorSpace };
+void [pageBoxName, imageKind, textEncoding, colorOptions];
 var pathTypes: muhammara.DrawingPathType[] = ["stroke", "fill", "clip", null];
 void pathTypes;
 // @ts-expect-error Drawing paint modes are a closed set.
@@ -804,3 +822,80 @@ const builtInWrittenCount: number =
   builtInWriteStream.write([37, 80]) +
   builtInWriteStream.write(Buffer.from("DF"));
 void builtInWrittenCount;
+
+// Low-level PDFWriter signatures match the arguments the binding accepts.
+declare const signatureWriter: muhammara.PDFWriter;
+declare const signatureStream: muhammara.ReadStream;
+void signatureWriter.createFormXObjectFromJPG(signatureStream);
+void signatureWriter.createFormXObjectFromTIFF("image.tif", {
+  pageIndex: 1,
+  bwTreatment: { asImageMask: true, oneColor: [255, 128, 0] },
+  grayscaleTreatment: { asColorMap: true, zeroColor: [0, 0, 0, 255] },
+});
+void signatureWriter.createImageXObjectFromJPG(signatureStream, 12);
+void signatureWriter.createFormXObjectFromPNG(signatureStream);
+declare const signatureReader: muhammara.PDFReader;
+void signatureWriter.createPDFCopyingContext(signatureReader);
+void signatureWriter.createPDFCopyingContext("source.pdf", {
+  password: "user",
+});
+var signatureDimensions: muhammara.RectangleDimension =
+  signatureWriter.getImageDimensions("image.pdf", 1, { password: "user" });
+void signatureDimensions;
+
+// Dictionary entries are typed as PDF objects.
+declare const signatureDictionary: muhammara.PDFDictionary;
+var dictionaryEntries: { [key: string]: muhammara.PDFObject } =
+  signatureDictionary.toJSObject();
+void dictionaryEntries;
+
+// Literal strings expose their raw bytes.
+declare const signatureLiteral: muhammara.PDFLiteralString;
+var literalBytes: number[] = signatureLiteral.toBytesArray();
+void literalBytes;
+
+// Every Recipe value set has a same-named type for its values.
+var recipeWrap: muhammara.Recipe.TextWrap = muhammara.Recipe.TextWrap.ELLIPSIS;
+var recipeRowNth: muhammara.Recipe.TableRowNth =
+  muhammara.Recipe.TableRowNth.ODD;
+var recipeCap: muhammara.Recipe.LineCap = muhammara.Recipe.LineCap.ROUND;
+var recipeJoin: muhammara.Recipe.LineJoin = muhammara.Recipe.LineJoin.BEVEL;
+var recipeArrowAt: muhammara.Recipe.ArrowAt = muhammara.Recipe.ArrowAt.TAIL;
+var recipeArrowType: muhammara.Recipe.ArrowType =
+  muhammara.Recipe.ArrowType.KITE;
+var recipeLayout: muhammara.Recipe.PageLayout =
+  muhammara.Recipe.PageLayout.LANDSCAPE;
+var recipeFontStyle: muhammara.Recipe.FontStyle =
+  muhammara.Recipe.FontStyle.BOLD_ITALIC;
+var recipePermission: muhammara.Recipe.Permission =
+  muhammara.Recipe.Permission.COPY;
+var recipeCoordinate: muhammara.Recipe.Coordinate =
+  muhammara.Recipe.Coordinate.CENTER;
+var recipeFlag: muhammara.Recipe.AnnotFlag =
+  muhammara.Recipe.AnnotFlag.LOCKED_CONTENTS;
+var recipeIcon: muhammara.Recipe.AnnotIcon = muhammara.Recipe.AnnotIcon.NOTE;
+var recipeChroma: muhammara.Recipe.ChromaCommand =
+  muhammara.Recipe.ChromaCommand.LOAD;
+var recipeSource: muhammara.Recipe.Source = muhammara.Recipe.Source.NEW;
+var recipeDeviceColorSpace: muhammara.Recipe.DeviceColorSpace = "cmyk";
+var recipeTextOptions: muhammara.Recipe.TextOptions = {
+  align: `${muhammara.Recipe.HorizontalAlign.CENTER} ${muhammara.Recipe.VerticalAlign.TOP}`,
+};
+void [
+  recipeWrap,
+  recipeRowNth,
+  recipeCap,
+  recipeJoin,
+  recipeArrowAt,
+  recipeArrowType,
+  recipeLayout,
+  recipeFontStyle,
+  recipePermission,
+  recipeCoordinate,
+  recipeFlag,
+  recipeIcon,
+  recipeChroma,
+  recipeSource,
+  recipeDeviceColorSpace,
+  recipeTextOptions,
+];

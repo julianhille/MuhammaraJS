@@ -597,4 +597,41 @@ describe("HTML to TextObjects", () => {
       reader.end();
     }
   });
+
+  it("matches tags case-insensitively and links to href", () => {
+    const [paragraph] = htmlToTextObjects(
+      '<p><a class="x" href="https://h.test">l</a><a>none</a><B>b</B><U>u</U><DEL>d</DEL><I>i</I></p>',
+    );
+    const [link, bare, bold, underline, strikeOut, italic] = paragraph.childs;
+    assert.equal(link.link, "https://h.test");
+    assert.equal(bare.link, null);
+    assert.isTrue(bold.isBold);
+    assert.isTrue(underline.underline);
+    assert.isTrue(strikeOut.strikeOut);
+    assert.isTrue(italic.isItalic);
+  });
+
+  it("lays out upper-case lists with bullets and numbers", () => {
+    const output = path.join(__dirname, "../output/html-upper-case-lists.pdf");
+    new muhammara.Recipe("new", output)
+      .createPage(300, 300)
+      .text("<UL><LI>dot</LI></UL><OL><LI>one</LI></OL>", 10, 10, {
+        html: true,
+        size: 10,
+        textBox: { width: 200 },
+      })
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    try {
+      const text = reader
+        .extractPageText(0)
+        .map((item) => item.content)
+        .join("|");
+      assert.include(text, "* dot");
+      assert.include(text, "1. one");
+    } finally {
+      reader.end();
+    }
+  });
 });

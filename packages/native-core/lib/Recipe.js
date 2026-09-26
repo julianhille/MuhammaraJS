@@ -3,26 +3,33 @@ const path = require("path");
 const fs = require("fs");
 const streams = require("memory-streams");
 var { standardInfoKeys } = require("./recipe-info");
+var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
 
 /**
  * @name Recipe
- * @desc Create a pdfDoc
+ * @desc Create a new PDF, or open an existing one for editing.
  * @namespace
  * @constructor
- * @param {string|Buffer} src - The file path or Buffer of the source file.
- * @param {string} [output] - The path of the output file uses src if its not a buffer.
+ * @param {string|Buffer} src - `Recipe.Source.NEW` ("new", or `Buffer.from("new")`) for a new PDF,
+ *   otherwise the path or Buffer of the PDF to edit.
+ * @param {string} [output] - The output path. For a path source it defaults to
+ *   the source path; for a Buffer source the result is only returned by
+ *   `endPDF()` unless an output path is given.
  * @param {Object} [options] - The options for pdfDoc
- * @param {number} [options.version] - The pdf version: 1.0 through 1.7 or 2.0, defaults to 1.7
+ * @param {number} [options.version] - The PDF version of a new PDF: 1.0 through
+ *   1.7 or 2.0. Other values fall back to 1.7.
  * @param {string} [options.author] - The author
  * @param {string} [options.title] - The title
  * @param {string} [options.subject] - The subject
- * @param {string} [options.colorspace] - The default colorspace: rgb, cmyk, gray, separation
  * @param {string[]} [options.keywords] - The array of keywords
- * @param {string} [options.password] - permission password
- * @param {string} [options.userPassword] - this 'view' password also enables encryption
- * @param {string} [options.ownerPassword] - this allows owner to 'edit' file
- * @param {string} [options.userProtectionFlag] - encryption security level (see permissions)
- * @param {string|string[]} [options.fontSrcPath] - directory location(s) of additional fonts
+ * @param {Recipe.Colorspace} [options.colorspace] - The default colorspace, one
+ *   of the `Recipe.Colorspace` values.
+ * @param {string} [options.password] - Owner password; also opens a protected source.
+ * @param {string} [options.userPassword] - The 'view' password; also enables encryption.
+ * @param {string} [options.ownerPassword] - The 'edit' password.
+ * @param {number} [options.userProtectionFlag] - Encryption permission flags, see `permission()`.
+ * @param {string|string[]} [options.fontSrcPath] - Directory location(s) of additional fonts.
+ * @throws {Error} If an existing source PDF cannot be read or opened for editing.
  */
 class Recipe {
   constructor(src, output, options = {}) {
@@ -30,8 +37,8 @@ class Recipe {
     // detect the src is Buffer or not
     this.isBufferSrc = this.src instanceof Buffer;
     this.isNewPDF =
-      (!this.isBufferSrc && src.toLowerCase() === "new") ||
-      (this.isBufferSrc && this.src.equals(Buffer.from("new")));
+      (!this.isBufferSrc && src.toLowerCase() === Source.NEW) ||
+      (this.isBufferSrc && this.src.equals(Buffer.from(Source.NEW)));
     this.encryptOptions = this._getEncryptOptions(options, this.isNewPDF);
     this.options = Object.assign({}, options, this.encryptOptions);
     this.current = {};
@@ -50,10 +57,10 @@ class Recipe {
     this.logFile = "muhammara-error.log";
 
     this.textMarkupAnnotations = [
-      "Highlight",
-      "Underline",
-      "StrikeOut",
-      "Squiggly",
+      AnnotSubtype.HIGHLIGHT,
+      AnnotSubtype.UNDERLINE,
+      AnnotSubtype.STRIKE_OUT,
+      AnnotSubtype.SQUIGGLY,
     ];
 
     this.annotationsToWrite = [];
@@ -76,6 +83,13 @@ class Recipe {
     this._createWriter();
   }
 
+  /**
+   * Create the writer for a new PDF, or open the source PDF for editing, and
+   * apply the info options.
+   * @private
+   * @returns {void}
+   * @throws {Error} If the source PDF cannot be read or opened for editing.
+   */
   _createWriter() {
     if (this.isNewPDF) {
       if (!this.isBufferSrc) {
@@ -89,6 +103,7 @@ class Recipe {
         this.writer = muhammara.createWriter(
           new muhammara.PDFStreamForResponse(this.outStream),
           Object.assign({}, this.encryptOptions, {
+            version: this._getVersion(this.options.version),
             log: this.logFile,
           }),
         );
@@ -125,6 +140,12 @@ class Recipe {
     this.info(info);
   }
 
+  /**
+   * Map a Recipe version option to a writer PDF version constant.
+   * @private
+   * @param {number} [version] - 1.0 through 1.7 or 2.0; other values use 1.7.
+   * @returns {number} The matching `ePDFVersion*` constant.
+   */
   _getVersion(version) {
     const supportedVersions = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0];
     if (!supportedVersions.includes(version)) {
@@ -135,6 +156,11 @@ class Recipe {
     return version;
   }
 
+  /**
+   * The current drawing position in Recipe coordinates, where y grows downward
+   * from the top edge of the page.
+   * @returns {{x: number, y: number}} The current position.
+   */
   get position() {
     const { ox, oy } = this._reverseCoordinate(
       this._position.x,
@@ -147,10 +173,12 @@ class Recipe {
   }
 
   /**
-   * Read PDF metadata.
-   * @param {string|Buffer} [inSrc] - An optional PDF source to read instead of the recipe source.
+   * Read PDF metadata: the page count and, keyed by one-based page number,
+   * each page's media box, rotation, layout and size.
+   * @param {string|Buffer} [inSrc] - A PDF path or Buffer to read instead of
+   *   the recipe source. Reading another PDF does not change the recipe state.
    * @returns {Object} The PDF metadata.
-   * @throws {Error} If the PDF cannot be read.
+   * @throws {Error} If the PDF cannot be read or has no pages.
    */
   read(inSrc) {
     const isForExternal = inSrc ? true : false;
@@ -158,8 +186,8 @@ class Recipe {
     let isAdopted = false;
     try {
       let src = isForExternal ? inSrc : this.src;
-      if (this.isBufferSrc) {
-        src = new muhammara.PDFRStreamForBuffer(this.src);
+      if (src instanceof Buffer) {
+        src = new muhammara.PDFRStreamForBuffer(src);
       }
       pdfReader = muhammara.createReader(src, this.encryptOptions);
       const pages = pdfReader.getPagesCount();
@@ -179,14 +207,14 @@ class Recipe {
         let side1 = Math.abs(dimensions[2] - dimensions[0]);
         let side2 = Math.abs(dimensions[3] - dimensions[1]);
         if (side1 > side2 && rotate % 180 === 0) {
-          layout = "landscape";
+          layout = PageLayout.LANDSCAPE;
         } else if (side1 < side2 && rotate % 180 !== 0) {
-          layout = "landscape";
+          layout = PageLayout.LANDSCAPE;
         } else {
-          layout = "portrait";
+          layout = PageLayout.PORTRAIT;
         }
 
-        if (layout === "landscape") {
+        if (layout === PageLayout.LANDSCAPE) {
           width = side1 > side2 ? side1 : side2;
           height = side1 > side2 ? side2 : side1;
         } else {
@@ -268,8 +296,13 @@ class Recipe {
    * rethrow the original error.
    * @function
    * @memberof Recipe
-   * @param {function} [callback] - The callback function.
-   * @returns {*} The callback result, if a callback is provided.
+   * @param {function((Buffer|string)=): *} [callback] - Called when the PDF is
+   *   finished: with the output Buffer for a Buffer source without an output
+   *   path, with the output path for a Buffer source with one, and without an
+   *   argument for a path source.
+   * @returns {*} The callback result, or undefined without a callback.
+   * @throws {Error} If pages are being deleted while a page is still open.
+   * @throws {Error} If finalization fails; later calls rethrow the same error.
    */
   endPDF(callback) {
     if (this.endError) {
@@ -410,6 +443,7 @@ class Recipe {
    * @param {string|Function} key Name assigned to the callback. When a named function is
    * registered, and its given name is what is to be used to access it, the key is unnecessary.
    * @param {Function} [callback] Callback procedure that can be accessed through MuhammaraJS.
+   *   It is added to the shared Recipe prototype, so every Recipe instance gets it.
    * @throws {string} If the callback function is unnamed when no key is provided.
    * @throws {string} If the key conflicts with an existing Recipe prototype member.
    * @throws {string} If the callback is not a function.
@@ -438,6 +472,11 @@ class Recipe {
   }
 }
 
+/**
+ * Install every method exported by lib/recipe/*.js on the Recipe prototype.
+ * @returns {void}
+ * @throws {string} If two recipe modules export the same member.
+ */
 function loadPrototypes() {
   const ignores = ["utils.js", "xObjectForm.js"];
   fs.readdirSync(path.join(__dirname, "recipe"))
@@ -456,4 +495,8 @@ function loadPrototypes() {
 }
 
 loadPrototypes();
+
+// Named values for string options, for example Recipe.AnnotSubtype.HIGHLIGHT.
+Object.assign(Recipe, require("./recipe-constants"));
+
 module.exports = Recipe;

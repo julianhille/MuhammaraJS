@@ -9,6 +9,46 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add a `Recipe.<Name>` type for every Recipe value set, for example
+  `Recipe.TextWrap`, `Recipe.LineCap`, and `Recipe.AnnotFlag`, and use them for
+  the matching options; the text `align` option is typed as alignment keywords
+  instead of any string, still accepting other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add frozen `DeviceColorSpace`, `PageBox`, `PDFImageType`, and `EEncoding`
+  objects, named and valued as in `@muhammara/wasm`; `ColorOptions.colorspace`
+  suggests the `DeviceColorSpace` values and still accepts other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add `DrawingPathType` constants for the `type` option of the low-level
+  drawing helpers [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the arguments the native `PDFWriter` already accepts: TIFF options
+  for `createFormXObjectFromTIFF()`, the image index and password of
+  `getImageDimensions()`, a `PDFReader` source and password for
+  `createPDFCopyingContext()`, and any read stream for the JPEG, PNG, TIFF and
+  merge methods [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare `PDFLiteralString#toBytesArray()` and type the values returned by
+  `PDFDictionary#toJSObject()` as PDF objects [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add `ImageFit` constants for the `fit` option of `drawImage()`
+  transformations [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add `ObjectReplacementScope` constants for the `scope` option of
+  `PDFWriter#replaceObject()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the `text`, `border`, `color` and `followOriginalPageRotation`
+  options that `Recipe#annot()` already reads [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add Recipe constants for the string options Recipe accepts:
+  `Recipe.AnnotFlag`, `AnnotIcon`, `AnnotSubtype`, `ArrowAt`, `ArrowType`,
+  `ChromaCommand`, `Colorspace`, `Coordinate`, `FontStyle`, `HorizontalAlign`,
+  `LineCap`, `LineJoin`, `PageLayout`, `PageSize`, `Permission`, `Source`,
+  `TableRowNth`, `TextAlign`, `TextWrap`, `TriangleTrait`, `TrianglePosition`
+  and `VerticalAlign`. The plain strings stay accepted [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the `password`, `ownerPassword`, `userPassword`,
+  `userProtectionFlag` and `fontSrcPath` Recipe constructor options [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Accept `Recipe#line(startX, startY, endX, endY, options?)`, as Wasm does
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Accept a `PDFDate` in `InfoDictionary#setCreationDate()` and
+  `setModDate()`, as Wasm does [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Default the `createFormXObjectFromPDFPage()` page box to the media box,
+  as Wasm does [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Accept a form XObject object ID in `doXObject()`, as Wasm does
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Default the `d()` dash phase to 0 when it is omitted, as Wasm does
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Accept a `Uint8Array` (or `Buffer`) from custom read streams and in the
   `write()` method of PDF stream writers such as `getWriteStream()`, alongside
   arrays of byte values [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
@@ -20,6 +60,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Throw `Error: Unknown annotation flag (<name>)` from Recipe `annot()` and
+  `comment()` for a `flag` that is not a `Recipe.AnnotFlag` value, instead of
+  silently writing no flag bits, as `@muhammara/wasm` does. Numeric bit masks
+  are now accepted too. Pass a `Recipe.AnnotFlag` value or a bit mask, or omit
+  `flag` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Throw a `TypeError` from `Tj()`, `Quote()`, `DoubleQuote()` and `TJ()` when
+  a glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
+  array. Previously such items were skipped, so `TJ(["ab", -100, "c"])` wrote
+  an empty `[ () ] TJ`; pass the `TJ` items as separate arguments instead:
+  `TJ("ab", -100, "c")`. `TJ()` with text items also throws when a glyph list
+  comes last instead of treating it as the options object and dropping it [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare `toPDF*()` and `toNumber()` on PDF objects as possibly returning
+  `undefined`, which they do for a different object type. Strict TypeScript
+  code that uses the result directly now fails to compile; check the result or
+  `getType()` first [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Deliver custom write stream and `log` chunks as `Buffer`s instead of arrays
   of numbers, and return `Buffer`s from `PDFRStreamForFile#read()`,
   `PDFRStreamForBuffer#read()`, and the byte readers returned by
@@ -42,9 +97,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [stream contract](packages/native/docs/low-level/custom-streams.md)
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750).
 - Correct low-level shape `type: "clip"` to clip without painting and end the
-  path; unrecognized types end the path without painting or clipping. Use `"clip"` explicitly with
+  path. Any other `type` except `null`, such as the typo `"fil"`, throws
+  `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`
+  instead of silently ending the path unpainted; `null` still does that. Use `"clip"` explicitly with
   `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options)
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Validate low-level shape and `writeText()` arguments before drawing, and
   propagate conversion errors instead of aborting or emitting partial output.
   Supply finite coordinates, dimensions, stroke widths, and text sizes, and
@@ -108,6 +166,44 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Place the link of a Recipe `circle()`, `ellipse()`, `arc()` or `pie()`
+  drawn at `"center"` coordinates; its rectangle was computed from the string
+  and came out invalid [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Stop `Recipe#polygon()` from appending the closing point to the coordinate
+  array the caller passed in [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Fix `Recipe#editPage()` throwing in debug mode, where it loaded the bold
+  Helvetica font by an outdated name [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Fix Recipe HTML text: links now use the `href` attribute instead of the
+  first attribute, `<a>` without attributes no longer throws, and upper-case
+  tags such as `<B>`, `<U>` and `<UL>` are styled [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Fix separation colors in every Recipe after the first in a process: the
+  Separation color space was cached globally, so later documents referenced
+  an object that only existed in the first PDF [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Write the `lockedcontents` annotation flag, which the types accepted but
+  Recipe wrote as no flag [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Write `Recipe#annot()` subtypes given in another casing, such as
+  `"highlight"`, with their PDF name and default markup color; they were
+  written as invalid lower-case names with a black color [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Fix `Recipe#read(inSrc)` reading the Recipe's own Buffer source instead of
+  `inSrc`, and failing when `inSrc` is a Buffer [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Apply the Recipe `version` option to new PDFs written to a Buffer; it was
+  ignored and those PDFs were always version 1.7 [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Fix native type declarations that rejected working calls or accepted failing
+  ones: `addFormXObjectMapping()` takes a form id, `mergePDFPageToFormXObject()`
+  takes the target form, `TJ()` takes its items as separate arguments, `Tj()`,
+  `Quote()` and `DoubleQuote()` accept an `{ encoding }` options object, and
+  `ByteReaderWithPosition#moveStartPosition()` is no longer declared [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the `PDFDate` and `PDFTextString` constructors, the `FormXObject`
+  content, stream and resources getters, `FontMetrics`, `"center"` coordinates
+  for Recipe `comment()` and `annot()`, and the optional arguments of
+  `createPDFTextString()`, `startPDFStream()` and
+  `calculateTextDimensions()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Make `InfoDictionary#getAdditionalInfoEntries()` work without an argument; it
+  previously required an unused key [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Fix Recipe `movedown(lines, true)` throwing a `TypeError` before any text was
+  written; it now moves down from the page origin [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Report an out-of-range object ID from `PDFReader#getXrefEntry()` and a
+  non-path `drawImage()` source with accurate error messages [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix `Recipe#endPDF()` throwing `Node-API call failed` when the source PDF
   Info dictionary has a `/Trapped` entry; the entry is now kept.
   [#779](https://github.com/julianhille/MuhammaraJS/issues/779)
@@ -250,6 +346,12 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Changed
 
+- Declare `DocumentCopyingContext#getSourceDocumentParser()` without
+  parameters in the TypeScript types, matching the runtime, which never used
+  them [#320](https://github.com/julianhille/MuhammaraJS/issues/320)
+- Throw a `TypeError` that reads "No page is active; call createPage() or
+  editPage() first" from Recipe drawing and annotation methods called without
+  a page, instead of a property-destructuring `TypeError` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Link `bcrypt.lib` explicitly in the Windows native build, where OpenSSL seeds
   AES initialization vectors from `BCryptGenRandom`
   [#663](https://github.com/julianhille/MuhammaraJS/issues/663)

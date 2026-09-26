@@ -1,13 +1,52 @@
 const DOMParser = require("@xmldom/xmldom").DOMParser;
 
+// HTML attribute and inline style names the parser reads.
+const HtmlAttribute = Object.freeze({
+  STYLE: "style",
+  HREF: "href",
+});
+const CssProperty = Object.freeze({
+  COLOR: "color",
+  OPACITY: "opacity",
+});
+
+// CSS color functions whose components the parser reads.
+const CssColorFunction = Object.freeze({
+  RGB: "rgb",
+});
+
+// Lower-case names of the HTML elements the parser handles.
+const HtmlTag = Object.freeze({
+  HTML: "html",
+  P: "p",
+  LI: "li",
+  UL: "ul",
+  OL: "ol",
+  H1: "h1",
+  H2: "h2",
+  H3: "h3",
+  SMALL: "small",
+  BR: "br",
+  B: "b",
+  STRONG: "strong",
+  I: "i",
+  EM: "em",
+  U: "u",
+  DEL: "del",
+  A: "a",
+});
+
 /**
  * Convert HTML into Recipe text layout objects.
  * @name htmlToTextObjects
  * @function
  * @memberof Recipe#
- * @param {string} htmlCodes - The HTML source.
+ * @param {string} htmlCodes - The HTML source. Tag names are matched case-insensitively.
  * @param {Object} [options] - Text options used to initialize the objects.
- * @returns {Object[]} The parsed text layout objects.
+ * @param {string} [options.font] - The font of every object.
+ * @param {number} [options.size] - The base font size of every object.
+ * @returns {Object[]} The parsed text layout objects: one per child node,
+ *   each with its value, tag, style flags, link, font size ratio and childs.
  */
 exports.htmlToTextObjects = function (htmlCodes, options = {}) {
   const nodes = new DOMParser().parseFromString(
@@ -18,13 +57,19 @@ exports.htmlToTextObjects = function (htmlCodes, options = {}) {
   return textObjects;
 };
 
+/**
+ * The font size multiplier of an element.
+ * @private
+ * @param {string} [tagName=''] - The element name, matched case-insensitively.
+ * @returns {number} The multiplier; 1 for elements without one.
+ */
 function getFontSizeRatio(tagName = "") {
   const fontSizeRatio = {
-    p: 1, // 14px
-    h1: 2.57, // 36px
-    h2: 2.14, // 30px
-    h3: 1.71, // 24px
-    small: 0.7,
+    [HtmlTag.P]: 1, // 14px
+    [HtmlTag.H1]: 2.57, // 36px
+    [HtmlTag.H2]: 2.14, // 30px
+    [HtmlTag.H3]: 1.71, // 24px
+    [HtmlTag.SMALL]: 0.7,
     // h4: 1.12,
     // h5: 0.83,
     // h6: 0.75
@@ -33,9 +78,21 @@ function getFontSizeRatio(tagName = "") {
   return matched ? matched : 1;
 }
 
+/**
+ * Whether an element starts its content on a new line.
+ * @private
+ * @param {string} [tagName=''] - The element name, matched case-insensitively.
+ * @returns {boolean} True for p, li and h1 to h3.
+ */
 function needsLineBreaker(tagName = "") {
-  const lineBreakers = ["p", "li", "h1", "h2", "h3"];
-  return lineBreakers.includes(tagName);
+  const lineBreakers = [
+    HtmlTag.P,
+    HtmlTag.LI,
+    HtmlTag.H1,
+    HtmlTag.H2,
+    HtmlTag.H3,
+  ];
+  return lineBreakers.includes(String(tagName).toLowerCase());
 }
 
 /**
@@ -43,12 +100,18 @@ function needsLineBreaker(tagName = "") {
  * block element, or at the start of a block. Only such text drops its
  * leading whitespace; text that follows inline content keeps one space.
  * @private
+ * @param {Object} node - The DOM text node.
+ * @returns {boolean} True when the text begins a visual line.
  */
 function startsLine(node) {
   const previous = node.previousSibling;
   if (previous) {
     const tag = (previous.tagName || "").toLowerCase();
-    return tag === "br" || needsLineBreaker(tag) || ["ul", "ol"].includes(tag);
+    return (
+      tag === HtmlTag.BR ||
+      needsLineBreaker(tag) ||
+      [HtmlTag.UL, HtmlTag.OL].includes(tag)
+    );
   }
   const parent = node.parentNode;
   const parentTag = (
@@ -57,7 +120,7 @@ function startsLine(node) {
   if (
     !parent ||
     !parentTag ||
-    parentTag === "html" ||
+    parentTag === HtmlTag.HTML ||
     needsLineBreaker(parentTag)
   ) {
     return true;
@@ -65,17 +128,37 @@ function startsLine(node) {
   return startsLine(parent);
 }
 
+/**
+ * Whether an element makes its text bold.
+ * @private
+ * @param {string} [tagName=''] - The element name, matched case-insensitively.
+ * @returns {boolean} True for b and strong.
+ */
 function isBoldTag(tagName = "") {
-  const boldTags = ["b", "strong"];
-  return boldTags.includes(tagName);
+  const boldTags = [HtmlTag.B, HtmlTag.STRONG];
+  return boldTags.includes(String(tagName).toLowerCase());
 }
 
+/**
+ * Whether an element makes its text italic.
+ * @private
+ * @param {string} [tagName=''] - The element name, matched case-insensitively.
+ * @returns {boolean} True for i and em.
+ */
 function isItalicTag(tagName = "") {
-  const italicTags = ["i", "em"];
-  return italicTags.includes(tagName);
+  const italicTags = [HtmlTag.I, HtmlTag.EM];
+  return italicTags.includes(String(tagName).toLowerCase());
 }
 
+/**
+ * Convert a DOM node and its children into a text layout object.
+ * @private
+ * @param {Object} node - The DOM node.
+ * @param {Object} options - The htmlToTextObjects() options.
+ * @returns {Object} The text layout object with its parsed childs.
+ */
 function parseNode(node, options) {
+  const tag = (node.tagName || "").toLowerCase();
   const attributes = [];
   const styles = {};
   for (let i in node.attributes) {
@@ -84,22 +167,22 @@ function parseNode(node, options) {
         name: node.attributes[i].nodeName,
         value: node.attributes[i].nodeValue,
       });
-      if (node.attributes[i].nodeName == "style") {
+      if (node.attributes[i].nodeName === HtmlAttribute.STYLE) {
         const styleValues = node.attributes[i].nodeValue.split(";");
         styleValues.forEach((element) => {
           if (element && element != "") {
             element = element.split(":");
             const key = element[0];
             let value = element[1].replace(/ /g, "");
-            if (key == "color") {
-              if (value.search("rgb") > -1) {
+            if (key === CssProperty.COLOR) {
+              if (value.search(CssColorFunction.RGB) > -1) {
                 value = value
                   .replace(/rgba?\(/, "")
                   .replace(/\)/, "")
                   .split(",")
                   .map((item) => parseFloat(item));
                 if (value.length > 3) {
-                  styles["opacity"] = value.pop();
+                  styles[CssProperty.OPACITY] = value.pop();
                 }
               }
             }
@@ -115,7 +198,11 @@ function parseNode(node, options) {
   }
   // Whitespace before a line break would only pad the end of the line.
   const next = node.nextSibling;
-  if (value !== null && next && /^br$/i.test(next.tagName || "")) {
+  if (
+    value !== null &&
+    next &&
+    (next.tagName || "").toLowerCase() === HtmlTag.BR
+  ) {
     value = value.replace(/\s+$/, "");
   }
   if (value && value.charCodeAt(0) == 8203) {
@@ -128,17 +215,24 @@ function parseNode(node, options) {
     font: options.font,
     isBold: isBoldTag(node.tagName),
     isItalic: isItalicTag(node.tagName),
-    underline: node.tagName == "u",
-    strikeOut: node.tagName == "del",
+    underline: tag === HtmlTag.U,
+    strikeOut: tag === HtmlTag.DEL,
     attributes,
     styles,
     needsLineBreaker: needsLineBreaker(node.tagName),
     // An explicit line break; text layout ends the current line here.
-    lineBreak: /^br$/i.test(node.tagName || ""),
+    lineBreak: tag === HtmlTag.BR,
     size: options.size,
     sizeRatio: getFontSizeRatio(node.tagName),
     sizeRatios: [getFontSizeRatio(node.tagName)],
-    link: node.tagName == "a" ? node.attributes[0].value : null,
+    link:
+      tag === HtmlTag.A
+        ? (
+            attributes.find(
+              (attribute) => attribute.name === HtmlAttribute.HREF,
+            ) || {}
+          ).value || null
+        : null,
     childs: [],
   };
   for (let num in node.childNodes) {
@@ -153,3 +247,6 @@ function parseNode(node, options) {
   });
   return parsedData;
 }
+
+// Shared with text layout; non-enumerable so it is not a Recipe method.
+Object.defineProperty(exports, "HtmlTag", { value: HtmlTag });

@@ -29,10 +29,15 @@
  * @param {number} [options.dashPhase] - distance into dash pattern at which to start dash (default: 0, immediately)
  * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
- * @param {string} [options.lineCap] -  open line end style, 'butt', 'round', or 'square' (default: 'round')
- * @param {string} [options.lineJoin] - joined line end style, 'miter', 'round', or 'bevel' (default: 'round')
- * @param {number} [options.miterLimit] - limit at which 'miter' joins are forced to 'bevel' (default: 1.414) */
+ * @param {Recipe.LineCap} [options.lineCap] -  open line end style, a `Recipe.LineCap` value (default: 'round')
+ * @param {Recipe.LineJoin} [options.lineJoin] - joined line end style, a `Recipe.LineJoin` value (default: 'round')
+ * @param {number} [options.miterLimit] - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
+ * @param {string} [options.link] - Make the polygon's bounding box open this URL.
+ * @throws {TypeError} If no page is active or there are no coordinates.
+ */
 exports.polygon = function polygon(coordinates = [], options = {}) {
+  // Work on a copy so closing the path leaves the caller's array unchanged.
+  coordinates = coordinates.slice();
   // close polygon
   if (
     this._getDistance(coordinates[0], coordinates[coordinates.length - 1]) != 0

@@ -3,6 +3,12 @@ var fs = require("fs");
     PDFRStreamForFile is an implementation of a read stream using the supplied file path.
 */
 
+/**
+ * Opens a file for reading.
+ * @constructor
+ * @param {string} inPath - The file path.
+ * @throws {Error} If the file cannot be opened or read.
+ */
 function PDFRStreamForFile(inPath) {
   this.rs = fs.openSync(inPath, "r");
   this.path = inPath;
@@ -11,6 +17,11 @@ function PDFRStreamForFile(inPath) {
   this.mStartPosition = 0;
 }
 
+/**
+ * Reads the next bytes and advances the position by the amount read.
+ * @param {number} inAmount - The maximum number of bytes to read.
+ * @returns {Buffer} The bytes read; shorter than requested at the end.
+ */
 PDFRStreamForFile.prototype.read = function (inAmount) {
   var buffer = Buffer.alloc(inAmount);
   var bytesRead = fs.readSync(this.rs, buffer, 0, inAmount, this.rposition);
@@ -18,10 +29,19 @@ PDFRStreamForFile.prototype.read = function (inAmount) {
   return buffer.subarray(0, bytesRead);
 };
 
+/**
+ * Tells whether bytes remain after the current position.
+ * @returns {boolean} True while the end has not been reached.
+ */
 PDFRStreamForFile.prototype.notEnded = function () {
   return this.rposition < this.fileSize;
 };
 
+/**
+ * Moves to a position relative to the start position, clamped to the data.
+ * @param {number} inPosition - The byte offset from the start position.
+ * @returns {void}
+ */
 PDFRStreamForFile.prototype.setPosition = function (inPosition) {
   this.rposition = Math.min(
     Math.max(this.mStartPosition + inPosition, 0),
@@ -29,6 +49,11 @@ PDFRStreamForFile.prototype.setPosition = function (inPosition) {
   );
 };
 
+/**
+ * Moves to a position counted back from the end, clamped to the data.
+ * @param {number} inPosition - The number of bytes before the end.
+ * @returns {void}
+ */
 PDFRStreamForFile.prototype.setPositionFromEnd = function (inPosition) {
   this.rposition = Math.min(
     Math.max(this.fileSize - inPosition, 0),
@@ -36,20 +61,41 @@ PDFRStreamForFile.prototype.setPositionFromEnd = function (inPosition) {
   );
 };
 
+/**
+ * Advances the position without reading.
+ * @param {number} inAmount - The number of bytes to skip.
+ * @returns {void}
+ */
 PDFRStreamForFile.prototype.skip = function (inAmount) {
   this.rposition += inAmount;
 };
 
+/**
+ * Returns the position relative to the start position.
+ * @returns {number} The current byte offset.
+ */
 PDFRStreamForFile.prototype.getCurrentPosition = function () {
   return this.rposition - this.mStartPosition;
 };
 
+/**
+ * Sets the offset that later positions are counted from, for PDF data that
+ * does not begin at byte zero.
+ * @param {number} inPosition - The absolute byte offset of the start.
+ * @returns {void}
+ */
 PDFRStreamForFile.prototype.moveStartPosition = function (inPosition) {
   this.mStartPosition = inPosition;
 };
 
 function noop() {}
 
+/**
+ * Closes the file.
+ * @param {Function} [inCallback] - Called once the file is closed, with the
+ *   close error if any.
+ * @returns {void}
+ */
 PDFRStreamForFile.prototype.close = function (inCallback) {
   fs.close(this.rs, inCallback ? inCallback : noop);
 };

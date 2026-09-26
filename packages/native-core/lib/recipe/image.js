@@ -1,11 +1,14 @@
+const muhammara = require("../muhammara");
+const { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
+
 /**
  * Place images to pdf
  * @name image
  * @function
  * @memberof Recipe#
- * @param {string} imgSrc - The path for the image. [JPEG, PNG, TIFF]
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {string} imgSrc - The path for the image. [JPEG, PNG, TIFF, PDF]
+ * @param {number|"center"} x - The coordinate x of the top-left corner
+ * @param {number|"center"} y - The coordinate y of the top-left corner
  * @param {Object} [options] - The options
  * @returns {Recipe} The recipe instance.
  * @param {number} [options.width] - The new width
@@ -13,7 +16,14 @@
  * @param {number} [options.scale] - Scale the image from the original width and height.
  * @param {boolean} [options.keepAspectRatio=true] - Keep the aspect ratio.
  * @param {number} [options.opacity] - The opacity.
- * @param {string} [options.align] - 'center center'...
+ * @param {string} [options.align] - A `Recipe.HorizontalAlign` value, optionally
+ *   followed by a space and a `Recipe.VerticalAlign` value, for example
+ *   "center center". Horizontal center moves the image left by half its width
+ *   and right moves it right by half; vertical center moves it up by half its
+ *   height and bottom moves it down by half from its top-left placement.
+ * @param {string} [options.link] - Make the image open this URL.
+ * @throws {TypeError} If no page is active.
+ * @throws {Error} If the image cannot be read.
  */
 exports.image = function image(imgSrc, x, y, options = {}) {
   const { width, height, offsetX, offsetY } = this._getImgOffset(
@@ -22,7 +32,7 @@ exports.image = function image(imgSrc, x, y, options = {}) {
   );
   const imgOptions = {
     transformation: {
-      fit: "always",
+      fit: muhammara.ImageFit.ALWAYS,
       // proportional: true,
       width,
       height,
@@ -65,6 +75,16 @@ exports.image = function image(imgSrc, x, y, options = {}) {
   return this;
 };
 
+/**
+ * Compute the drawn size of an image and the offset its alignment applies.
+ * Sets `options.keepAspectRatio` to true when it is not given.
+ * @private
+ * @param {string} [imgSrc=''] - The image path.
+ * @param {Object} [options] - The image() options.
+ * @returns {{width: number, height: number, offsetX: number, offsetY: number}}
+ *   The drawn size and the PDF offset from the placement point.
+ * @throws {Error} If the image cannot be read.
+ */
 exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
   // set default to true
   options.keepAspectRatio =
@@ -105,10 +125,10 @@ exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
     const alignments = options.align.split(" ");
     if (alignments[0]) {
       switch (alignments[0]) {
-        case "center":
+        case HorizontalAlign.CENTER:
           offsetX = (-1 * width) / 2;
           break;
-        case "right":
+        case HorizontalAlign.RIGHT:
           offsetX = width / 2;
           break;
         default:
@@ -116,10 +136,10 @@ exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
     }
     if (alignments[1]) {
       switch (alignments[1]) {
-        case "center":
+        case VerticalAlign.CENTER:
           offsetY = (-1 * height) / 2;
           break;
-        case "bottom":
+        case VerticalAlign.BOTTOM:
           offsetY = height / 2;
           break;
         default:

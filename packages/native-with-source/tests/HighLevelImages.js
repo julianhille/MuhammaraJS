@@ -60,4 +60,23 @@ describe("HighLevelImages", function () {
     pdfWriter.writePage(page);
     pdfWriter.end();
   });
+
+  it("asks for an image file path when the source is not one", function () {
+    var muhammara = require("@muhammara/native-with-source");
+    var pdfWriter = muhammara.createWriter(
+      __dirname + "/output/HighLevelImagesInvalidSource.pdf",
+    );
+    var page = pdfWriter.createPage(0, 0, 100, 100);
+    var context = pdfWriter.startPageContentContext(page);
+    require("node:assert/strict").throws(function () {
+      context.drawImage(
+        0,
+        0,
+        new muhammara.PDFRStreamForFile(
+          __dirname + "/TestMaterials/images/soundcloud_logo.jpg",
+        ),
+      );
+    }, /an image file path and optional options object/);
+    pdfWriter.writePage(page).end();
+  });
 });

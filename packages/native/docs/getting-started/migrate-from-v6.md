@@ -290,6 +290,13 @@ recipe.text(longText, {
 });
 ```
 
+### Check Annotation Flags
+
+`annot()` and `comment()` now throw `Error: Unknown annotation flag (<name>)`
+for a `flag` that is not a `Recipe.AnnotFlag` value, where 6.x wrote the
+annotation without flags. Fix a misspelled name, use a `Recipe.AnnotFlag`
+value, or pass a numeric bit mask, which 7.x also accepts.
+
 ### Type Text Markup Options
 
 Objects passed through `highlight`, `underline`, `strikeOut`, and `squiggly` may
@@ -533,8 +540,11 @@ Turbopack to identify the addon as Node-API compatible.
 The `drawPath`, `drawCircle`, `drawSquare`, and `drawRectangle` helpers now
 interpret `type: "clip"` as clipping without painting. Previously that spelling
 did not apply a clip, while unknown strings incorrectly entered the clip branch.
-Replace misspelled or unsupported types with `"clip"` when clipping is intended,
-or `"stroke"`/`"fill"` when drawing an outline or filled shape is intended.
+Any other `type`, including misspellings such as `"fil"` and falsy values such
+as `false`, `0`, or `""`, now throws
+`TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`. Replace
+it with `"clip"` when clipping is intended, `"stroke"`/`"fill"` when drawing an
+outline or filled shape is intended, or `null` to end the path unpainted.
 
 Clipping now ends the path (`W n`). Do not rely on a later painting operator to
 paint that same path: draw the shape again with a painting type if necessary.

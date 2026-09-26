@@ -1,10 +1,17 @@
 const LineBreaker = require("linebreak");
 const { Word, Line, Column } = require("./text.helper");
-const { htmlToTextObjects } = require("./htmlToTextObjects");
+const { htmlToTextObjects, HtmlTag } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
 const { linkPdf } = require("./annotation");
 const muhammara = require("../muhammara");
 const { UsedFont } = require("../muhammara");
+const {
+  TextWrap,
+  TextAlign,
+  VerticalAlign,
+  HorizontalAlign,
+  Colorspace,
+} = require("../recipe-constants");
 
 //  Table indicating how to specify coloration of elements
 //  -------------------------------------------------------------------
@@ -40,6 +47,15 @@ const { UsedFont } = require("../muhammara");
 //     return target
 // }
 
+/**
+ * Merge text options: arrays and non-object values from `source` replace those
+ * in `target`, and nested objects are merged. `source` objects are updated in
+ * place; the result is a new object.
+ * @private
+ * @param {Object} target - The base options.
+ * @param {Object} source - The overriding options.
+ * @returns {Object} The merged options.
+ */
 exports._merge = function merge(target, source) {
   // Iterate through `source` properties and if an `Object` set property to merge of `target` and `source` properties
   for (const key of Object.keys(source)) {
@@ -63,6 +79,18 @@ exports._merge = function merge(target, source) {
   return Object.assign({}, target, source);
 };
 
+/**
+ * Resolve the text position and options for text(): a call without
+ * coordinates continues the flow or starts at the margins, a call with them
+ * starts a new text box; previous options are merged in.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number|"center"|Object} [x] - The x coordinate, or the options.
+ * @param {number|"center"} [y] - The y coordinate.
+ * @param {Object} [options] - The text options.
+ * @returns {Object} The merged text options.
+ * @throws {TypeError} If no page is active.
+ */
 function _initOptions(self, x = {}, y, options = {}) {
   // This allows user to skip providing x/y coordinates
   if (typeof x === "object") {
@@ -138,10 +166,25 @@ function _initOptions(self, x = {}, y, options = {}) {
   return mergedOpts;
 }
 
+/**
+ * Whether a value is missing or an empty plain object.
+ * @private
+ * @param {*} obj - The value.
+ * @returns {boolean} True for a falsy value or an empty plain object.
+ */
 function isEmpty(obj) {
   return !obj || (Object.keys(obj).length === 0 && obj.constructor === Object);
 }
 
+/**
+ * Wrap plain text as a one-element list of text layout objects, the same
+ * shape htmlToTextObjects() returns.
+ * @private
+ * @param {string} text - The text.
+ * @param {number} size - The font size.
+ * @param {Object} options - The text options: font, bold and italic.
+ * @returns {Object[]} The text layout objects.
+ */
 exports._makeTextObject = function _makeTextObject(text, size, options) {
   return [
     {
@@ -162,6 +205,14 @@ exports._makeTextObject = function _makeTextObject(text, size, options) {
   ];
 };
 
+/**
+ * Build the text box from the textBox options; without them the text is
+ * simple, page-wide text.
+ * @private
+ * @param {Object} options - The text options.
+ * @returns {Object} The text box: width, height, lineHeight, padding,
+ *   minHeight, style, textAlign, clipping and wrap settings.
+ */
 exports._makeTextBox = function _makeTextBox(options) {
   return isEmpty(options.textBox)
     ? {
@@ -171,7 +222,7 @@ exports._makeTextBox = function _makeTextBox(options) {
         lineHeight: 0,
         padding: 0,
         minHeight: 0,
-        wrap: "auto",
+        wrap: TextWrap.AUTO,
       }
     : {
         width: options.textBox.width || 100,
@@ -184,7 +235,9 @@ exports._makeTextBox = function _makeTextBox(options) {
         clipIfExceedsBox: options.textBox.clipIfExceedsBox,
         onClip: options.textBox.onClip,
         wrap:
-          options.textBox.wrap !== undefined ? options.textBox.wrap : "auto",
+          options.textBox.wrap !== undefined
+            ? options.textBox.wrap
+            : TextWrap.AUTO,
       };
 };
 
@@ -195,8 +248,8 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @todo support break words
  * @memberof Recipe#
  * @param {string} [text=''] - The text content
- * @param {number} x - The coordinate x
- * @param {number} y - The coordinate y
+ * @param {number|"center"|Object} [x] - The coordinate x, or the options to continue at the current position
+ * @param {number|"center"} [y] - The coordinate y
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - Text color (HexColor, PercentColor or DecimalColor)
  * @param {number} [options.opacity=1] - opacity
@@ -206,8 +259,8 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {number} [options.size=14] - The font size
  * @param {number} [options.charSpace=0] - space to be added between characters, units in points.
  * @param {string} [options.align='left top'] - This is the alignment of the text in relationship to its position
- * coordinates, specified as 'horizontal vertical', where horizontal is either 'left', 'center' or 'right
- * and vertical is either 'top', 'center' or bottom.
+ * coordinates, specified as 'horizontal vertical': a `Recipe.HorizontalAlign` value, optionally followed by a
+ * space and a `Recipe.VerticalAlign` value.
  * @param {Object|Boolean} [options.highlight] - Text markup annotation.
  * @param {Object|Boolean} [options.underline] - Text markup annotation.
  * @param {Object|Boolean} [options.strikeOut] - Text markup annotation.
@@ -230,11 +283,11 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {number} [options.textBox.minHeight=0] - Text Box minimum height
  * @param {number|number[]} [options.textBox.padding=0] - Text Box padding, [top, right, bottom, left]
  * @param {number} [options.textBox.lineHeight=0] - Text Box line height
- * @param {string|Boolean} [options.textBox.wrap='auto'] - Text wrapping mechanism, may be true, false,
- * 'auto', 'clip', 'trim', 'ellipsis'. All the option values that are not equivalent to 'auto' dictate
+ * @param {Recipe.TextWrap|Boolean} [options.textBox.wrap='auto'] - Text wrapping mechanism, may be true, false,
+ * or a `Recipe.TextWrap` value: 'auto', 'clip', 'trim', 'ellipsis'. All the option values that are not equivalent to 'auto' dictate
  *  how the text which does not fit on a line is to be truncated. True is equivalent to 'auto'. False is equivalent to 'ellipsis'.
  * @param {string} [options.textBox.textAlign='left top'] - Alignment inside text box, specified as 'horizontal vertical',
- * where horizontal is one of: 'left', 'center', 'right', 'justify' and vertical is one of: 'top', 'center', 'bottom'.
+ * where horizontal is a `Recipe.TextAlign` value and vertical a `Recipe.VerticalAlign` value.
  * @param {boolean} [options.textBox.clipIfExceedsBox=false] - Render only complete lines that fit within the text box height.
  * @param {function} [options.textBox.onClip] - Called as onClip(recipe, result) when clipping leaves text unrendered.
  * Do not call endPage() or endPDF() in this callback because the text operation is still active.
@@ -248,11 +301,13 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {string} [options.title] - Title of annotation
  * @param {boolean} [options.open=false] - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'
  * @param {boolean} [options.richText] - Rich text in annotation
- * @param {'invisible'|'hidden'|'print'|'nozoom'|'norotate'|'noview'|'readonly'|'locked'|'togglenoview'} [options.flag] - The annotation flag.
- * @param {'Comment'|'Key'|'Note'|'Help'|'NewParagraph'|'Paragraph'|'Insert'} [options.icon='Note'] - The icon of annotation. Specific to text annotations.
+ * @param {Recipe.AnnotFlag} [options.flag] - The annotation flag, a `Recipe.AnnotFlag` value.
+ * @param {Recipe.AnnotIcon} [options.icon='Note'] - The icon of annotation, a `Recipe.AnnotIcon` value. Specific to text annotations.
  * @param {string} [options.date] - Date of text to show up on annotation
  * @param {string} [options.subject] - Subject of annotation.
- * @returns {Recipe} The recipe instance.
+ * @param {string} [options.link] - Make the text open this URL.
+ * @returns {Recipe} The recipe instance. Without an active page nothing is drawn.
+ * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 exports.text = function text(text = "", x, y, options = {}) {
   if (!this.pageContext) {
@@ -361,11 +416,11 @@ exports.text = function text(text = "", x, y, options = {}) {
         ? toWriteTextObjects[0].writeOptions.alignVertical
         : undefined
     ) {
-      case "center":
+      case VerticalAlign.CENTER:
         textYpos -=
           (textBox.height - textBox.textHeight) / 2 - textBox.paddingTop;
         break;
-      case "bottom":
+      case VerticalAlign.BOTTOM:
         textYpos -= textBox.height - textBox.textHeight - textBox.paddingBottom;
         break;
     }
@@ -389,10 +444,10 @@ exports.text = function text(text = "", x, y, options = {}) {
         let spaceWidth = content.text.endsWith(" ") ? content.spaceWidth : 0;
         let offsetX;
         switch (content.writeOptions.alignHorizontal) {
-          case "center":
+          case TextAlign.CENTER:
             offsetX = (textBox.width - currentLineWidth) / 2;
             break;
-          case "right":
+          case TextAlign.RIGHT:
             offsetX =
               textBox.width -
               textBox.paddingRight -
@@ -500,12 +555,12 @@ exports.text = function text(text = "", x, y, options = {}) {
           // The hiliting rectangle cannot use the text box line
           // width when justification is activated because the
           // spaces between words is calculated dynamically.
-          if (options.alignHorizontal === "justify") {
+          if (options.alignHorizontal === TextAlign.JUSTIFY) {
             bxWidth = justify(nx, x, wto, textBox) - x;
 
             // Except for 'right' alignment cases, have to consider
             // text on line ending with spaces to tweak box width.
-          } else if (options.alignHorizontal !== "right") {
+          } else if (options.alignHorizontal !== TextAlign.RIGHT) {
             if (text.endsWith(" ")) {
               bxWidth += wto.spaceWidth;
             }
@@ -521,12 +576,13 @@ exports.text = function text(text = "", x, y, options = {}) {
         }
 
         // Note that the last line of a text box ignores justification.
-        const _justify = options.alignHorizontal === "justify" && !wto.lastLine;
+        const _justify =
+          options.alignHorizontal === TextAlign.JUSTIFY && !wto.lastLine;
 
         // write directly to page when not dealing with opacity, rotation and special colorspace.
         if (
           options.opacity === 1 &&
-          options.colorspace !== "separation" &&
+          options.colorspace !== Colorspace.SEPARATION &&
           (options.rotation === 0 || options.rotation === undefined)
         ) {
           context.q();
@@ -544,7 +600,7 @@ exports.text = function text(text = "", x, y, options = {}) {
               },
             );
           } else {
-            if (textBox.wrap !== "auto") {
+            if (textBox.wrap !== TextWrap.AUTO) {
               // This applies a clipping region around the text
               context
                 .m(nx, y + lineHeight)
@@ -613,7 +669,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         var markupBottom = y - textHeight * 0.2;
         var markupWidth = _justify ? next_x - lineX : currentLineWidth;
         var markupHeight = textHeight * 1.4;
-        if (textBox.wrap === "clip") {
+        if (textBox.wrap === TextWrap.CLIP) {
           // Clipped runs retain the first overflowing word, so measure the
           // drawn text instead of using the preceding fitting line's width.
           var markupRight = Math.min(
@@ -669,7 +725,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         if (!content.writeOptions.link) return;
         var left = x;
         var width = nextX ? nextX - x : content.lineWidth;
-        if (textBox.wrap === "clip") {
+        if (textBox.wrap === TextWrap.CLIP) {
           var right = Math.min(
             x + new Word(content.text, content.writeOptions).dimensions.xMax,
             nx + textBox.width,
@@ -813,7 +869,14 @@ exports.text = function text(text = "", x, y, options = {}) {
   return this;
 };
 
-/** Writes pending text links before a callback can change the active page. @private */
+/**
+ * Write pending text links before a callback can change the active page.
+ * @private
+ * @param {Recipe} recipe - The recipe instance.
+ * @param {Object[]} annotations - Pending {url, left, bottom, width, height}
+ *   links; emptied.
+ * @returns {void}
+ */
 function flushTextLinks(recipe, annotations) {
   for (var annotation of annotations.splice(0)) {
     linkPdf(
@@ -827,13 +890,25 @@ function flushTextLinks(recipe, annotations) {
   }
 }
 
+/**
+ * Lay out text objects in a text box: resolve padding and wrap, walk HTML
+ * children (list bullets, numbering and indentation), split them into lines
+ * and turn line breaks into line state.
+ * @private
+ * @param {Object[]} textObjects - The text layout objects.
+ * @param {Object} textBox - The text box; wrap and padding are normalized in place.
+ * @param {Object} pathOptions - The resolved text options.
+ * @returns {{toWriteTextObjects: Object[], textHeight: number}} The laid-out
+ *   runs and the total text height.
+ * @throws {Error} If a font cannot be loaded.
+ */
 exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
   let totalHeight = 0;
   // allow user to treat wrap as boolean
   if (textBox.wrap === true) {
-    textBox.wrap = "auto";
+    textBox.wrap = TextWrap.AUTO;
   } else if (textBox.wrap === false) {
-    textBox.wrap = "ellipsis";
+    textBox.wrap = TextWrap.ELLIPSIS;
   }
 
   // Allows user to enter a single number which will be used for all text box sides,
@@ -935,34 +1010,36 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       textObject.currentIndex = 0;
       let prependValue = textObject.prependValue;
 
+      const tag = (textObject.tag || "").toLowerCase();
       textObject.childs.forEach((child) => {
-        if (textObject.tag == "ul") {
+        const childTag = (child.tag || "").toLowerCase();
+        if (tag === HtmlTag.UL) {
           child.prependValue = "* ";
           child.layer = textObject.layer + 1;
           // child.indent = 4 * child.layer;
         }
-        if (textObject.tag == "ol") {
-          if (child.tag != "ol") {
+        if (tag === HtmlTag.OL) {
+          if (childTag !== HtmlTag.OL) {
             textObject.currentIndex++;
             child.prependValue = `${textObject.currentIndex.toString()}. `;
           }
           child.layer = textObject.layer + 1;
           // child.indent = 4 * child.layer;
         }
-        if (textObject.tag == "li") {
-          if (child.tag == "ol" || child.tag == "ul") {
+        if (tag === HtmlTag.LI) {
+          if (childTag === HtmlTag.OL || childTag === HtmlTag.UL) {
             child.layer = textObject.layer - 1;
           }
         }
         if (
           prependValue &&
-          !["ol", "ul"].includes(child.tag) &&
+          ![HtmlTag.OL, HtmlTag.UL].includes(childTag) &&
           hasRenderableContent(child)
         ) {
           child.prependValue = prependValue;
           prependValue = null;
           textObject.indent =
-            textObject.tag == "li"
+            tag === HtmlTag.LI
               ? 2 * textObject.layer
               : textObject.indent || 2 * textObject.layer;
         }
@@ -1052,6 +1129,13 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
   };
 };
 
+/**
+ * The height of laid-out text: the sum of the line heights, counting each
+ * line once.
+ * @private
+ * @param {Object[]} textObjs - The laid-out runs.
+ * @returns {number} The text height.
+ */
 function getTextBoxHeight(textObjs) {
   let previousLineID;
   let height = 0;
@@ -1075,6 +1159,15 @@ function getTextBoxHeight(textObjs) {
   return height;
 }
 
+/**
+ * Keep the complete lines that fit a height.
+ * @private
+ * @param {Object[]} textObjs - The laid-out runs.
+ * @param {number} availableHeight - The height available for text.
+ * @returns {{textObjects: Object[], linesWritten: number, clipped: boolean,
+ *   remainder: string}} The fitting runs, their line count, whether lines were
+ *   dropped, and the dropped text with its line breaks.
+ */
 function clipTextToBox(textObjs, availableHeight) {
   const lines = [];
   let line = [];
@@ -1119,6 +1212,15 @@ function clipTextToBox(textObjs, availableHeight) {
   };
 }
 
+/**
+ * The PDF position of a text box, after its alignment offset.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {Object} textBox - The laid-out text box.
+ * @param {Object} pathOptions - The resolved text options.
+ * @returns {number[]} The [x, y] PDF position.
+ * @throws {TypeError} If no page is active.
+ */
 function getTextBoxPosition(self, textBox, pathOptions) {
   const { offsetX, offsetY } = self._getTextBoxOffset(textBox, pathOptions);
   const { nx, ny } = self._calibrateCoordinate(
@@ -1130,6 +1232,16 @@ function getTextBoxPosition(self, textBox, pathOptions) {
   return [nx, ny];
 }
 
+/**
+ * Draw the text box border and background from its style.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number} nx - The PDF x of the box.
+ * @param {number} ny - The PDF y of the first line.
+ * @param {Object} textBox - The laid-out text box with its style.
+ * @param {Object} pathOptions - The resolved text options, for rotation.
+ * @returns {void}
+ */
 function drawTextBox(self, nx, ny, textBox, pathOptions) {
   const textBoxWidth = textBox.width; //+ textBox.paddingLeft + textBox.paddingRight;
   let borderRadius = textBox.style ? textBox.style.borderRadius : 0;
@@ -1159,6 +1271,7 @@ function drawTextBox(self, nx, ny, textBox, pathOptions) {
  * @param {Object[]} wto is a write object
  * @param {Object} textBox holds text box properties
  * @param {Function} [position] used to place given word at a postion on the line
+ * @returns {number} The x where the next run on the line starts.
  */
 function justify(left, x, wto, textBox, position) {
   // For some reason, textWidth is smaller than lineWidth. My suspicions lie in the fact
@@ -1215,6 +1328,15 @@ function justify(left, x, wto, textBox, position) {
   return word.value.endsWith(" ") ? x : x - spaceBetweenWords;
 }
 
+/**
+ * The word between the previous break and the next one.
+ * @private
+ * @param {string} text - The text being broken.
+ * @param {Object} brk - The line break opportunity: position and required.
+ * @param {number} previousPosition - The position of the previous break.
+ * @param {Object} pathOptions - The resolved text options.
+ * @returns {Word} The word; trimmed at a required break.
+ */
 function nextWord(text, brk, previousPosition, pathOptions) {
   let nextWord = text.slice(previousPosition, brk.position);
 
@@ -1226,10 +1348,21 @@ function nextWord(text, brk, previousPosition, pathOptions) {
   return new Word(nextWord, pathOptions);
 }
 
+/**
+ * Handle the first word that does not fit a line when wrapping is off: CLIP
+ * keeps it for the clipping region, ELLIPSIS shortens it with "…", and TRIM
+ * drops it.
+ * @private
+ * @param {Object} textBox - The text box with its wrap mode.
+ * @param {Line} line - The full line; updated in place.
+ * @param {Word} word - The word that did not fit.
+ * @param {Object} pathOptions - The resolved text options.
+ * @returns {void}
+ */
 function elideNonFittingText(textBox, line, word, pathOptions) {
-  if (textBox.wrap === "clip") {
+  if (textBox.wrap === TextWrap.CLIP) {
     line.addWord(word);
-  } else if (textBox.wrap === "ellipsis") {
+  } else if (textBox.wrap === TextWrap.ELLIPSIS) {
     // This is more complicated than the other no-wrap options.
     // It makes an initial attempt to take the word that was
     // too big and make it shrink in size until it and the
@@ -1260,6 +1393,17 @@ function elideNonFittingText(textBox, line, word, pathOptions) {
   }
 }
 
+/**
+ * Turn a finished line into a laid-out run and record the line.
+ * @private
+ * @param {Line[]} lines - The finished lines; the line is appended.
+ * @param {Line} line - The line.
+ * @param {number} lineID - The ID tying the first HTML line to its group.
+ * @param {Object} textBox - The laid-out text box.
+ * @param {Object} [options] - html, lastLine, lineComplete, wordCount,
+ *   totalTextWidth and writeOptions.
+ * @returns {Object} The run: text, line metrics and justification data.
+ */
 function makeTextObject(lines, line, lineID, textBox, options = {}) {
   const lineHeight = line.height;
   const spaceSz =
@@ -1296,6 +1440,15 @@ function makeTextObject(lines, line, lineID, textBox, options = {}) {
   };
 }
 
+/**
+ * Carry justification totals across runs that share a line.
+ * @private
+ * @param {Line} line - The line being finished.
+ * @param {Object[]} textObjects - The runs laid out so far; updated in place.
+ * @param {number} wordCount - The words counted so far on the line.
+ * @param {number} totalTextWidth - The text width counted so far on the line.
+ * @returns {number[]} The updated [wordCount, totalTextWidth].
+ */
 function bindTextToLine(line, textObjects, wordCount, totalTextWidth) {
   // Apply justification information to previous text objects.
   if (wordCount > 0) {
@@ -1333,6 +1486,18 @@ function bindTextToLine(line, textObjects, wordCount, totalTextWidth) {
   return [wordCount, totalTextWidth];
 }
 
+/**
+ * Break one text layout object into lines that fit the text box, continuing
+ * any unfinished flowed lines.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {Object} [textObject] - The text layout object.
+ * @param {Object} pathOptions - The resolved text options.
+ * @param {Object} [textBox] - The text box; line and baseline heights are set in place.
+ * @returns {{toWriteTextObjects: Object[], paragraphHeight: number}} The runs,
+ *   including the carried-over flowed ones, and the paragraph height.
+ * @throws {Error} If the font cannot be loaded.
+ */
 function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
   const toWriteTextObjects = [...self._previousTextObjects];
   let text =
@@ -1463,7 +1628,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
         }
       } else {
         // remove any trailing space on previous word so right justification works appropriately
-        if (previousWord && textBox.wrap === "auto") {
+        if (previousWord && textBox.wrap === TextWrap.AUTO) {
           newLine.replaceLastWord(previousWord.value.trim());
         }
 
@@ -1492,7 +1657,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
       }
 
       // now deal with text line wrap (what happens to text that doesn't fit in line)
-      if (textBox.wrap !== "auto") {
+      if (textBox.wrap !== TextWrap.AUTO) {
         flushLine = true;
         elideNonFittingText(textBox, newLine, word, pathOptions);
 
@@ -1566,7 +1731,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
     }
   }
 
-  let isLastLine = alignHorizontal === "justify" && !self._flow;
+  let isLastLine = alignHorizontal === TextAlign.JUSTIFY && !self._flow;
 
   if (!flushLine) {
     [wordCount, totalTextWidth] = bindTextToLine(
@@ -1602,6 +1767,14 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
   };
 }
 
+/**
+ * Mark the last run as ending its line: trim it, mark its last word and
+ * optionally move the next line down.
+ * @private
+ * @param {Object[]} toWriteTextObjects - The runs; the last one is updated.
+ * @param {number|null} [lines=null] - The line offset for the next line.
+ * @returns {void}
+ */
 function markLineComplete(toWriteTextObjects, lines = null) {
   // Get last element in text objects and mark it.
   const textObj = toWriteTextObjects[toWriteTextObjects.length - 1];
@@ -1627,8 +1800,9 @@ function markLineComplete(toWriteTextObjects, lines = null) {
 exports.movedown = function movedown(lines = 1, returnCoords = false) {
   if (!this._flow || this._previousTextObjects.length === 0) {
     this._previousTextObjects = [];
-    this.y += this._lineHeight * lines;
-    this.x = this.box.x;
+    // Before any text is written there is no cursor or line height yet.
+    this.y = (this.y || 0) + (this._lineHeight || 14) * lines;
+    this.x = this.box ? this.box.x : this.x || 0;
   } else {
     // This handles continuous text positioning
     markLineComplete(this._previousTextObjects, lines);
@@ -1639,6 +1813,15 @@ exports.movedown = function movedown(lines = 1, returnCoords = false) {
   return returnCoords ? [this.x, this.y] : this;
 };
 
+/**
+ * Move a column layout so its first column starts at a point, keeping the
+ * column spacing.
+ * @private
+ * @param {Column[]} columns - The layout columns; updated in place.
+ * @param {number} x - The new x of the first column.
+ * @param {number} y - The new y of the first column.
+ * @returns {void}
+ */
 function adjustcolumnPosition(columns, x, y) {
   const ydiff = y - columns[0].y;
   for (const column of columns) {
@@ -1653,16 +1836,17 @@ function adjustcolumnPosition(columns, x, y) {
  * @function
  * @memberof Recipe#
  * @param {number|string} id - The identifier to be associated with the layout. (See 'text' layout option)
- * @param {number} x - The coordinate x used to position text columns on page. When zero, left margin used.
- * @param {number} y - The coordinate y used to position text columns on page. When zero, top margin used.
- * @param {number} width - The width of a text column. When zero, space between left and right margin used.
- * @param {number} height - The height of a text column. When zero, space between top and bottom margin used.
+ * @param {number} [x] - The coordinate x used to position text columns on page. When zero or omitted, left margin used.
+ * @param {number} [y] - The coordinate y used to position text columns on page. When zero or omitted, top margin used.
+ * @param {number} [width] - The width of a text column. When zero or omitted, space between left and right margin used.
+ * @param {number} [height] - The height of a text column. When zero or omitted, space between top and bottom margin used.
  * @param {object} [options] - The options.
  * @param {number} [options.columns] - Represents the number of columns in which to divide the given width.
  * @param {number} [options.gap=18] - Defines the separation between layout columns, units in points.
  * @param {boolean} [options.reset] - True indicates that the a new layout should be produced for the given
  * layout id, so any previous layout associated with the given id will be lost.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If width or height is omitted while no page is active.
  */
 exports.layout = function layout(id, x, y, width, height, options = {}) {
   this._layouts = this._layouts || {};

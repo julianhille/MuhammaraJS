@@ -86,6 +86,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Accept a spread array in the `TJ()` type declaration, so
+  `context.TJ(...parts)` compiles; an empty call still throws at runtime
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Write known Recipe `annot()` subtypes with their PDF casing, as native does:
   `annot(x, y, "highlight")` wrote an invalid `/highlight` subtype with a green
   instead of a yellow default color [#794](https://github.com/julianhille/MuhammaraJS/issues/794)

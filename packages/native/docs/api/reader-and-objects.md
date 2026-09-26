@@ -41,8 +41,9 @@ instead of reading a wildly out-of-range page.
 
 Parsed `PDFObject` values expose `getType`, conversion methods such as
 `toPDFDictionary()` and `toPDFArray()`, and scalar conversion through
-`toNumber()` and `toString()`. A dictionary provides `exists`, `queryObject`,
-and `toJSObject`; an array provides `getLength`, `queryObject`, and `toJSArray`.
+`toNumber()` and `toString()`. A conversion to a different object type returns
+`undefined`, so check the result or `getType()` first. A dictionary provides
+`exists`, `queryObject`, and `toJSObject`; an array provides `getLength`, `queryObject`, and `toJSArray`.
 Use reader query helpers when an entry may be an indirect reference and must be
 resolved.
 

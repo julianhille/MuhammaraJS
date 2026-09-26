@@ -476,10 +476,11 @@ napi_value AbstractContentContextDriver::Dash(const CallbackArgs &args) {
   if (!driver->GetContext())
     return ThrowTypeError(args.Env(),
                           "Null content context. Please create a context");
-  if (args.Length() != 2 || !IsArray(args.Env(), args[0]) || !IsNumber(args, 1))
+  if (args.Length() < 1 || args.Length() > 2 || !IsArray(args.Env(), args[0]) ||
+      (args.Length() == 2 && !IsNumber(args, 1)))
     return WrongArguments(args.Env(),
-                          "Wrong Argument, please provide 2 parameters - array "
-                          "for dash pattern and dash phase number");
+                          "Wrong Argument, please provide an array for dash "
+                          "pattern and an optional dash phase number");
 
   uint32_t length = 0;
   if (!Length(args.Env(), args[0], &length))
@@ -493,8 +494,9 @@ napi_value AbstractContentContextDriver::Dash(const CallbackArgs &args) {
       return nullptr;
     dashArray[i] = dash;
   }
+  // The phase defaults to 0, as in Wasm.
   driver->GetContext()->d(dashArray.data(), length,
-                          ToInt32(args.Env(), args[1]));
+                          args.Length() == 2 ? ToInt32(args.Env(), args[1]) : 0);
   return args.This();
 }
 
@@ -585,6 +587,15 @@ napi_value AbstractContentContextDriver::DoXObject(const CallbackArgs &args) {
 
   if (IsString(args, 0)) {
     driver->GetContext()->Do(LegacyString(args.Env(), args[0]));
+  } else if (IsNumber(args, 0)) {
+    // A form XObject object ID, as returned by createFormXObjectsFromPDF.
+    double id = ToDouble(args.Env(), args[0]);
+    if (!(id >= 1 && id <= 4294967295.0 && id == std::floor(id)))
+      return WrongArguments(args.Env(),
+                            "Wrong arguments, a form xobject ID must be a "
+                            "positive integer");
+    driver->GetContext()->Do(driver->mResourcesDictionary->AddFormXObjectMapping(
+        static_cast<ObjectIDType>(id)));
   } else if (driver->holder->IsFormXObjectInstance(args[0])) {
     FormXObjectDriver *form =
         ObjectWrap::Unwrap<FormXObjectDriver>(args.Env(), args[0]);
@@ -661,13 +672,13 @@ bool AbstractContentContextDriver::ArrayToGlyphsList(
     napi_value item = nullptr;
     if (!Get(env, array, i, &item))
       return false;
-    if (!IsArray(env, item))
-      continue;
     uint32_t itemLength = 0;
-    if (!Length(env, item, &itemLength))
+    if (!IsArray(env, item) || !Length(env, item, &itemLength) ||
+        itemLength == 0) {
+      ThrowTypeError(env,
+                     "glyph text requires [glyphId, unicodeCodePoint] pairs");
       return false;
-    if (itemLength == 0)
-      continue;
+    }
     GlyphUnicodeMapping mapping;
     napi_value value = nullptr;
     uint32_t glyph = 0;
@@ -797,6 +808,7 @@ napi_value AbstractContentContextDriver::TJ(const CallbackArgs &args) {
   bool hasStrings = false;
   bool hasOptions = args.Length() > 0 && !IsString(args, args.Length() - 1) &&
                     !IsNumber(args, args.Length() - 1) &&
+                    !IsArray(args.Env(), args[args.Length() - 1]) &&
                     IsObject(args.Env(), args[args.Length() - 1]);
   for (size_t i = 0; i < args.Length() && !hasStrings; ++i)
     hasStrings = IsString(args, i);
@@ -886,6 +898,29 @@ bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
   return true;
 }
 
+// Reads a drawing `type`: "stroke", "fill", "clip", or null, which ends the
+// path unpainted. Undefined leaves the stroke default in place.
+static bool ReadDrawingType(napi_env env, napi_value value, bool *present,
+                            std::string *type) {
+  *present = !IsType(env, value, napi_undefined);
+  if (!*present)
+    return true;
+  if (IsType(env, value, napi_null)) {
+    type->clear();
+    return true;
+  }
+  if (IsType(env, value, napi_string)) {
+    *type = LegacyString(env, value);
+    if (HasPendingException(env))
+      return false;
+    if (*type == "stroke" || *type == "fill" || *type == "clip")
+      return true;
+  }
+  ThrowTypeError(env, "Unknown drawing type; use \"stroke\", \"fill\", "
+                      "\"clip\" or null");
+  return false;
+}
+
 bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
                                                    napi_value maybeOptions,
                                                    PathOptions &options) {
@@ -898,9 +933,12 @@ bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
     napi_value value = nullptr;
     if (!Get(env, maybeOptions, "type", &value))
       return false;
-    options.setupIsStroke = LegacyString(env, value) == "stroke";
-    if (HasPendingException(env))
+    bool present = false;
+    std::string type;
+    if (!ReadDrawingType(env, value, &present, &type))
       return false;
+    if (present)
+      options.setupIsStroke = type == "stroke";
   }
   if (!ReadColorOptions(env, maybeOptions, options))
     return false;
@@ -921,9 +959,12 @@ bool AbstractContentContextDriver::ReadPathOptions(napi_env env,
     napi_value value = nullptr;
     if (!Get(env, maybeOptions, "type", &value))
       return false;
-    options.finishType = LegacyString(env, value);
-    if (HasPendingException(env))
+    bool present = false;
+    std::string type;
+    if (!ReadDrawingType(env, value, &present, &type))
       return false;
+    if (present)
+      options.finishType = type;
   }
   bool hasClose = Has(env, maybeOptions, "close");
   if (HasPendingException(env))
@@ -1281,7 +1322,7 @@ napi_value AbstractContentContextDriver::DrawImage(const CallbackArgs &args) {
       (args.Length() >= 4 && !IsObject(args.Env(), args[3])))
     return WrongArguments(
         args.Env(), "Wrong Arguments, please provide bottom left coordinates, "
-                    "an edge size and optional options object");
+                    "an image file path and optional options object");
 
   AbstractContentContext::ImageOptions options;
   if (args.Length() >= 4) {

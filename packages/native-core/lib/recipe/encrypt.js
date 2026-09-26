@@ -1,5 +1,6 @@
 const muhammara = require("../muhammara");
 const fs = require("fs");
+const { Permission } = require("../recipe-constants");
 
 /**
  * Encryption user access permissions
@@ -10,23 +11,25 @@ const fs = require("fs");
  * @name permission
  * @function
  * @memberof Recipe#
- * @param {string} [flags='print'] From the list print, modify, copy, edit, fillform, extract, assemble, and printbest.
- * More than one may be specified by using a comma to separate the names in the input string.
+ * @param {string} [flags='print'] One or more `Recipe.Permission` values
+ * (print, modify, copy, edit, fillform, extract, assemble, printbest),
+ * separated by commas, for example `[Permission.PRINT, Permission.COPY].join()`.
  * @returns {number} The numeric user protection flag.
+ * @throws {Error} If a name is not a `Recipe.Permission` value.
  */
-exports.permission = function permission(flags = "print") {
+exports.permission = function permission(flags = Permission.PRINT) {
   // https://www.adobe.com/content/dam/acom/en/devnet/pdf/pdfs/PDF32000_2008.pdf
 
   const userAccessPermissions = {
     // see table on page 61 of above document
-    print: 1 << 2, // allow printing
-    modify: 1 << 3, // allow template creation, signing, filling form fields
-    copy: 1 << 4, // allow content copying and copying for accessibility
-    edit: 1 << 5, // allow commenting
-    fillform: 1 << 8, // allow filling of form fields
-    extract: 1 << 9, // allow content copying for accessibility
-    assemble: 1 << 10, // unused
-    printbest: 1 << 11, // allow high resolution printing when 'print' is allowed
+    [Permission.PRINT]: 1 << 2, // allow printing
+    [Permission.MODIFY]: 1 << 3, // allow template creation, signing, filling form fields
+    [Permission.COPY]: 1 << 4, // allow content copying and copying for accessibility
+    [Permission.EDIT]: 1 << 5, // allow commenting
+    [Permission.FILL_FORM]: 1 << 8, // allow filling of form fields
+    [Permission.EXTRACT]: 1 << 9, // allow content copying for accessibility
+    [Permission.ASSEMBLE]: 1 << 10, // unused
+    [Permission.PRINT_BEST]: 1 << 11, // allow high resolution printing when 'print' is allowed
   };
 
   const perms = flags.split(",").map((x) => {
@@ -43,6 +46,15 @@ exports.permission = function permission(flags = "print") {
   return access;
 };
 
+/**
+ * Build writer encryption options from Recipe options. `password` and
+ * `ownerPassword` are aliases; when only an owner password is given the user
+ * password is empty and the default permission applies.
+ * @private
+ * @param {Object} options - The Recipe or encrypt() options.
+ * @param {boolean} [addPermissions=true] - Copy `userProtectionFlag` into the result.
+ * @returns {Object} The writer encryption options; empty when no password is set.
+ */
 exports._getEncryptOptions = function _getEncryptOptions(
   options,
   addPermissions = true,
@@ -89,8 +101,9 @@ exports._getEncryptOptions = function _getEncryptOptions(
  * @param {string} [options.password] - The permission password.
  * @param {string} [options.ownerPassword] - The password for editing.
  * @param {string} [options.userPassword] - The password for viewing & encryption.
- * @param {number} [options.userProtectionFlag] - The flag for the security level.
- * @returns {Recipe} The recipe instance.
+ * @param {number} [options.userProtectionFlag] - The flag for the security level, see `permission()`.
+ * @returns {Recipe} The recipe instance. The file is encrypted by `endPDF()`;
+ *   Buffer sources are not encrypted.
  */
 exports.encrypt = function encrypt(options = {}) {
   this.needToEncrypt = true;
@@ -100,6 +113,12 @@ exports.encrypt = function encrypt(options = {}) {
 };
 
 // http://pdfhummus.com/post/147451287581/hummus-1058-and-pdf-writer-updates-encryption
+/**
+ * Re-encrypt the finished output file with the encrypt() options.
+ * @private
+ * @returns {void}
+ * @throws {Error} If the output cannot be renamed, re-encrypted or removed.
+ */
 exports._encrypt = function _encrypt() {
   if (!this.encryption_) {
     return;

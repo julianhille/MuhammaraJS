@@ -406,4 +406,85 @@ describe("Regular Polygons, Stars, Arrows", () => {
       .endPage()
       .endPDF(done);
   });
+
+  it("draws the same line from four numbers as from coordinate pairs", () => {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const draw = (name, drawLine) => {
+      const output = path.join(__dirname, `../output/${name}.pdf`);
+      drawLine(new Recipe("new", output).createPage(200, 200))
+        .endPage()
+        .endPDF();
+      const reader = muhammara.createReader(output);
+      const stream = reader
+        .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+        .toPDFStream();
+      const bytes = reader.startReadingFromStream(stream).read(10000);
+      reader.end();
+      return Buffer.from(bytes).toString("latin1");
+    };
+    const options = { stroke: "#ff0000", lineWidth: 2 };
+    const pairs = draw("line-pairs", (recipe) =>
+      recipe.line(
+        [
+          [10, 20],
+          [110, 120],
+        ],
+        options,
+      ),
+    );
+    const numbers = draw("line-numbers", (recipe) =>
+      recipe.line(10, 20, 110, 120, options),
+    );
+    assert.equal(numbers, pairs);
+    assert.match(numbers, / l\b/);
+  });
+
+  it("leaves the polygon coordinates it is given unchanged", () => {
+    const coordinates = [
+      [0, 0],
+      [10, 0],
+      [5, 5],
+    ];
+    new Recipe("new", path.join(__dirname, "../output/polygon-input.pdf"))
+      .createPage(50, 50)
+      .polygon(coordinates)
+      .endPage()
+      .endPDF();
+    require("node:assert/strict").equal(coordinates.length, 3);
+  });
+
+  it('centers shapes and their links at "center" coordinates', () => {
+    const output = path.join(__dirname, "../output/center-shapes.pdf");
+    new Recipe("new", output)
+      .createPage(200, 200)
+      .circle("center", "center", 10, { link: "https://circle.test" })
+      .ellipse("center", "center", 20, 10, { link: "https://ellipse.test" })
+      .arc("center", "center", 10, 0, 90, { link: "https://arc.test" })
+      .endPage()
+      .endPDF();
+    const muhammara = require("@muhammara/native-with-source");
+    const reader = muhammara.createReader(output);
+    const page = reader.parsePageDictionary(0);
+    const rects = reader
+      .queryDictionaryObject(page, "Annots")
+      .toPDFArray()
+      .toJSArray()
+      .map((reference) =>
+        reader
+          .parseNewObject(
+            reference.toPDFIndirectObjectReference().getObjectID(),
+          )
+          .toPDFDictionary()
+          .queryObject("Rect")
+          .toJSArray()
+          .map((value) => value.value),
+      );
+    reader.end();
+    require("node:assert/strict").deepEqual(rects, [
+      [90, 90, 110, 110],
+      [80, 90, 120, 110],
+      [90, 90, 110, 110],
+    ]);
+  });
 });

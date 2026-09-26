@@ -2,6 +2,31 @@ const fs = require("fs");
 const muhammara = require("../muhammara");
 var { recipeInfoKeys, standardInfoKeys } = require("../recipe-info");
 
+// Source Info dictionary keys that _readInfo() keeps as raw values.
+var PdfInfoKey = Object.freeze({
+  TRAPPED: "Trapped",
+  CREATION_DATE: "CreationDate",
+  MOD_DATE: "ModDate",
+  CREATOR: "Creator",
+  PRODUCER: "Producer",
+});
+
+// Names _readInfo() caches those entries under in this.infoDictionary.
+var CachedInfoKey = Object.freeze({
+  TRAPPED: "trapped",
+  CREATION_DATE: "creationDate",
+  MOD_DATE: "modDate",
+  CREATOR: "creator",
+  PRODUCER: "producer",
+});
+
+// How _writeInfo() converts each standard info option.
+var InfoFieldType = Object.freeze({
+  STRING: "string",
+  DATE: "date",
+  ARRAY: "array",
+});
+
 var trappedValues = {
   True: muhammara.EInfoTrappedTrue,
   False: muhammara.EInfoTrappedFalse,
@@ -14,12 +39,13 @@ var trappedValues = {
  * @memberof Recipe#
  * @function
  * @param {Object} [options] - The options (when missing obtains existing PDF information)
- * @param {number} [options.version] - The pdf version
  * @param {string} [options.author] - The author
  * @param {string} [options.title] - The title
  * @param {string} [options.subject] - The subject
  * @param {string[]} [options.keywords] - The array of keywords
  * @returns {Object|Recipe} The existing information dictionary when options are omitted, otherwise the recipe instance.
+ *   A new PDF has no existing information, so the call without options returns undefined.
+ * @throws {Error} If the source information cannot be read.
  */
 exports.info = function info(options) {
   let result;
@@ -43,6 +69,15 @@ exports.info = function info(options) {
   return result;
 };
 
+/**
+ * Read the Info dictionary of the source PDF once and cache it as
+ * `this.infoDictionary`, with Trapped, CreationDate and ModDate as raw values
+ * and the other entries as text keyed by their lower-cased names.
+ * @private
+ * @returns {Object|undefined} The cached information, or undefined for a new
+ *   PDF or a source without an Info dictionary.
+ * @throws {Error} If the source cannot be read.
+ */
 exports._readInfo = function _readInfo() {
   if (!this.isNewPDF && !this.infoDictionary) {
     const copyFrom = this.isBufferSrc
@@ -71,29 +106,32 @@ exports._readInfo = function _readInfo() {
             return;
           }
           switch (key) {
-            case "Trapped":
+            case PdfInfoKey.TRAPPED:
               if (oldInforSrc && oldInforSrc.value) {
-                this.infoDictionary.trapped = oldInforSrc.value;
+                this.infoDictionary[CachedInfoKey.TRAPPED] = oldInforSrc.value;
               }
               break;
-            case "CreationDate":
+            case PdfInfoKey.CREATION_DATE:
               if (oldInforSrc && oldInforSrc.value) {
-                this.infoDictionary.creationDate = oldInforSrc.value;
+                this.infoDictionary[CachedInfoKey.CREATION_DATE] =
+                  oldInforSrc.value;
               }
               break;
-            case "ModDate":
+            case PdfInfoKey.MOD_DATE:
               if (oldInforSrc && oldInforSrc.value) {
-                this.infoDictionary.modDate = oldInforSrc.value;
+                this.infoDictionary[CachedInfoKey.MOD_DATE] = oldInforSrc.value;
               }
               break;
-            case "Creator":
+            case PdfInfoKey.CREATOR:
               if (oldInforSrc && oldInforSrc.toText) {
-                this.infoDictionary.creator = oldInforSrc.toText();
+                this.infoDictionary[CachedInfoKey.CREATOR] =
+                  oldInforSrc.toText();
               }
               break;
-            case "Producer":
+            case PdfInfoKey.PRODUCER:
               if (oldInforSrc && oldInforSrc.toText) {
-                this.infoDictionary.producer = oldInforSrc.toText();
+                this.infoDictionary[CachedInfoKey.PRODUCER] =
+                  oldInforSrc.toText();
               }
               break;
             default:
@@ -111,6 +149,13 @@ exports._readInfo = function _readInfo() {
   return this.infoDictionary;
 };
 
+/**
+ * Write the Info dictionary: the preserved source entries, creation and
+ * modification dates, producer and creator, and the info() options.
+ * @private
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the source information cannot be read.
+ */
 exports._writeInfo = function _writeInfo() {
   const options = this.toWriteInfo_ || {};
   const oldInfo = this._readInfo();
@@ -123,7 +168,10 @@ exports._writeInfo = function _writeInfo() {
   const infoDictionary = this.writer.getDocumentContext().getInfoDictionary();
   var fields = standardInfoKeys.map((key) => ({
     key,
-    type: key === recipeInfoKeys.keywords ? "array" : "string",
+    type:
+      key === recipeInfoKeys.keywords
+        ? InfoFieldType.ARRAY
+        : InfoFieldType.STRING,
   }));
   // const ignores = [
   //     'CreationDate', 'Creator', 'ModDate', 'Producer'
@@ -136,27 +184,28 @@ exports._writeInfo = function _writeInfo() {
       }
 
       switch (key) {
-        case "trapped":
-          if (trappedValues[oldInfo.trapped] !== undefined) {
-            infoDictionary.trapped = trappedValues[oldInfo.trapped];
+        case CachedInfoKey.TRAPPED:
+          if (trappedValues[oldInfo[CachedInfoKey.TRAPPED]] !== undefined) {
+            infoDictionary.trapped =
+              trappedValues[oldInfo[CachedInfoKey.TRAPPED]];
           }
           break;
-        case "creationDate":
+        case CachedInfoKey.CREATION_DATE:
           infoDictionary.setCreationDate(oldInfo.creationDate);
           break;
-        case "modDate":
+        case CachedInfoKey.MOD_DATE:
           infoDictionary.addAdditionalInfoEntry(
             "source-ModDate",
             oldInfo.modDate,
           );
           break;
-        case "creator":
+        case CachedInfoKey.CREATOR:
           infoDictionary.addAdditionalInfoEntry(
             "source-Creator",
             oldInfo.creator,
           );
           break;
-        case "producer":
+        case CachedInfoKey.PRODUCER:
           infoDictionary.addAdditionalInfoEntry(
             "source-Producer",
             oldInfo.producer,
@@ -183,13 +232,13 @@ exports._writeInfo = function _writeInfo() {
       return;
     } else {
       switch (item.type) {
-        case "string":
+        case InfoFieldType.STRING:
           value = value.toString();
           break;
-        case "date":
+        case InfoFieldType.DATE:
           value = new Date(value);
           break;
-        case "array":
+        case InfoFieldType.ARRAY:
           value = Array.isArray(value) ? value : [value];
           break;
         default:
@@ -210,8 +259,9 @@ exports._writeInfo = function _writeInfo() {
  * @memberof Recipe#
  * @function
  * @param {string} key - The key
- * @param {string} value - The value
+ * @param {string} value - The value; other values are converted with toString().
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If the key or value is null or undefined.
  */
 exports.custom = function custom(key, value) {
   const infoDictionary = this.writer.getDocumentContext().getInfoDictionary();
@@ -226,6 +276,8 @@ exports.custom = function custom(key, value) {
  * @memberof Recipe#
  * @param {string} output - The output file path.
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the source reader was released by endPDF(), or the
+ *   output file cannot be written.
  */
 exports.structure = function structure(output) {
   // PDF file format http://lotabout.me/orgwiki/pdf.html
@@ -333,6 +385,16 @@ exports.structure = function structure(output) {
   return this;
 };
 
+/**
+ * Resolve a source PDF object: follow references, recurse into arrays,
+ * dictionaries and stream dictionaries, and record leaf objects in
+ * `this.pdfStructure`.
+ * @private
+ * @param {Object} [inObject] - The parsed PDF object.
+ * @returns {Object|undefined} The resolved leaf object, or undefined for
+ *   containers and a missing object.
+ * @throws {Error} If the source reader was released by endPDF().
+ */
 exports._parseObjectByType = function _parseObjectByType(inObject) {
   if (!inObject) {
     return;
