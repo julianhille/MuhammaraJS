@@ -373,6 +373,14 @@ function ellipsizeHtmlParts(parts, width, measure, options) {
   parts.push({ text: suffix, styles: {} });
 }
 
+/**
+ * Truncates text until it and an ellipsis fit the width.
+ * @param {string} value - Text.
+ * @param {number} width - Available width.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Text options.
+ * @returns {string} The truncated text ending in `...`.
+ */
 function ellipsize(value, width, measure, options) {
   var suffix = "...";
   var result = trimBreakableEnd(value);
