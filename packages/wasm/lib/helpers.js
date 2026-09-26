@@ -242,6 +242,13 @@ export function createHelpers(module) {
     context.CS = function (name) {
       return nameOperator("CS", 3, name);
     };
+    /**
+     * Sets the nonstroking color space (`cs`).
+     * @param {string} name - Color space name or resource.
+     * @returns {this} The content context, for chaining.
+     * @throws {TypeError} If `name` is not a string.
+     * @throws {Error} If the content context is no longer active or the operator fails.
+     */
     context.cs = function (name) {
       return nameOperator("cs", 4, name);
     };
