@@ -2105,8 +2105,8 @@ declare namespace muhammara {
       options?: Recipe.EllipseOptions,
     ): Recipe;
     pie(
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       radius: number,
       startAngle?: number,
       endAngle?: number,
