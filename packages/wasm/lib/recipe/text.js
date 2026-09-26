@@ -42,7 +42,11 @@ function padding(value = 0) {
   ];
 }
 
-/** Splits text into wrapping units while keeping non-breaking spaces inside words. */
+/**
+ * Splits text into wrapping units while keeping non-breaking spaces inside words.
+ * @param {string} value - Text.
+ * @returns {string[]} Words with their trailing breakable spaces.
+ */
 function splitWords(value) {
   return (
     String(value).match(
