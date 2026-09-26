@@ -382,6 +382,8 @@ function replaceContentStream(recipe, pageIndex, objectId, content) {
  * @param {object} copyingContext Copying context for the modified file.
  * @param {number} objectId Stream object ID.
  * @param {string} content Latin-1 stream content.
+ * @private
+ * @returns {void}
  */
 function rewriteStream(recipe, copyingContext, objectId, content) {
   var source = recipe.pdfReader
@@ -394,7 +396,12 @@ function rewriteStream(recipe, copyingContext, objectId, content) {
   var dictionary = objectsContext.startDictionary();
 
   Object.keys(source).forEach(function (key) {
-    if (key === "Length" || key === "Filter" || key === "DecodeParms") return;
+    if (
+      key === PdfName.LENGTH ||
+      key === PdfName.FILTER ||
+      key === PdfName.DECODE_PARMS
+    )
+      return;
     dictionary.writeKey(key);
     copyingContext.copyDirectObjectAsIs(source[key]);
   });
