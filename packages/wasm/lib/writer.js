@@ -3555,6 +3555,11 @@ export function createWriterFactory({
         if (!font) throw new Error("Unable to load registered font bytes");
         return new PDFUsedFont(font);
       },
+      /**
+       * Forces the catalog to be rewritten when the PDF ends.
+       * @returns {void}
+       * @throws {Error} If the writer has ended or the update cannot be requested.
+       */
       requireCatalogUpdate: function () {
         requireOpenWriter();
         if (!module._muhammara_wasm_writer_require_catalog_update(recipe)) {
