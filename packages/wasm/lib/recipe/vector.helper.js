@@ -61,6 +61,8 @@ export function createVectorHelpers(runtime) {
     /**
      * Normalizes path options against the current Recipe graphics state.
      * @private
+     * @param {object} [options={}] - Line cap, join, miter, dash, width, and opacity.
+     * @returns {object} Native style values; -1 leaves a cap or join unchanged.
      */
     _pathOptions: function (options = {}) {
       var lineStyle = this._lineStyle || {};
