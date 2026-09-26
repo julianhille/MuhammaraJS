@@ -3939,6 +3939,16 @@ declare namespace muhammara {
       options?: Recipe.ImageOptions,
     ): Recipe;
 
+    /**
+     * @param options - The options (when missing obtains existing PDF information)
+     * @param options.author - The author
+     * @param options.title - The title
+     * @param options.subject - The subject
+     * @param options.keywords - The array of keywords
+     * @returns The existing information dictionary when options are omitted, otherwise the recipe instance.
+     *   A new PDF has no existing information, so the call without options returns undefined.
+     * @throws {Error} If the source information cannot be read.
+     */
     info(options?: Recipe.InfoOptions): Recipe;
 
     custom(key: string, value: string): Recipe;
