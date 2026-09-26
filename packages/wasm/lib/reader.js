@@ -1462,6 +1462,10 @@ export function createReaderFactory({
         }
         return this;
       },
+      /**
+       * Marks a borrowed reader ended when its owner releases the native handle.
+       * @returns {void}
+       */
       _end: function () {
         Array.from(byteReaders).forEach(function (disposeByteReader) {
           disposeByteReader();
