@@ -4582,6 +4582,12 @@ export function createWriterFactory({
         currentContext = contentContext();
         return currentContext;
       },
+      /**
+       * Ends the current content stream so objects can be written before the page continues.
+       * @param {ContentContext} context - Active page content context.
+       * @returns {this} The writer.
+       * @throws {Error} If `context` is not active or cannot be paused.
+       */
       pausePageContentContext: function (context) {
         requireActiveContext(context);
         if (!module._muhammara_wasm_recipe_pause_page(recipe)) {
