@@ -1,4 +1,8 @@
-/** Creates Recipe vector shape and path methods. */
+/**
+ * Creates Recipe vector shape and path methods.
+ * @param {object} runtime - Module and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createVectorMethods(runtime) {
   function addLink(recipe, options, x, y, width, height) {
     if (!options.link) return;
