@@ -1301,6 +1301,11 @@ declare namespace muhammara {
      * @returns The text string.
      */
     createPDFTextString(value?: string | number[]): PDFTextString;
+    /**
+     * Creates a PDF date. Works after the writer has ended.
+     * @param value - The date, or a PDF date string; now when omitted.
+     * @returns The date.
+     */
     createPDFDate(value?: string | Date): PDFDate;
     getImageDimensions(
       inFontFilePath: FilePath | ReadStream,
