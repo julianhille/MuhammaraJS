@@ -53,11 +53,12 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  * @function
  * @memberof Recipe#
  * @param {string} url - The URL to open.
- * @param {number} x - The top-left x coordinate.
- * @param {number} y - The top-left y coordinate.
+ * @param {number|"center"} x - The top-left x coordinate.
+ * @param {number|"center"} y - The top-left y coordinate.
  * @param {number} width - The link width.
  * @param {number} height - The link height.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.link = function link(url, x, y, width, height) {
   const { nx, ny } = this._calibrateCoordinate(x, y, 0, -height);

@@ -606,6 +606,20 @@ describe("Recipe annotation parity", function () {
     assert.equal(readAnnotations(reader, 1).length, 1);
   });
 
+  it('centers a link at "center" coordinates', async function () {
+    var recipe = new muhammara.Recipe("new", output)
+      .createPage(200, 200)
+      .link("https://center.test", "center", "center", 10, 10);
+    await new Promise(function (resolve) {
+      recipe.endPage().endPDF(resolve);
+    });
+    reader = muhammara.createReader(output);
+    var rect = readAnnotations(reader)[0]
+      .dictionary.Rect.toJSArray()
+      .map((value) => value.value);
+    assert.deepEqual(rect, [100, 90, 110, 100]);
+  });
+
   [false, true].forEach(function (html) {
     [1, 0.5].forEach(function (opacity) {
       it(`covers each justified ${html ? "HTML" : "plain"} line with markup at opacity ${opacity}`, async function () {

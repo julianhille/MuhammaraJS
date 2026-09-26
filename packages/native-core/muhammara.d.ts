@@ -1700,8 +1700,8 @@ declare namespace muhammara {
 
     link(
       url: string,
-      x: number,
-      y: number,
+      x: Recipe.RecipeCoordinate,
+      y: Recipe.RecipeCoordinate,
       width: number,
       height: number,
     ): Recipe;
