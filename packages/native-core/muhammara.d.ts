@@ -1060,6 +1060,10 @@ declare namespace muhammara {
      * @returns A writer at the current output position.
      */
     startFreeContext(): ByteWriterWithPosition;
+    /**
+     * Ends direct output access.
+     * @returns This context.
+     */
     endFreeContext(): this;
   }
 
