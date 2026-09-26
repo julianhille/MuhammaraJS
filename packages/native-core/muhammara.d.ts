@@ -798,6 +798,10 @@ declare namespace muhammara {
      * @returns The PDF date string.
      */
     toString(): string;
+    /**
+     * Sets the date to now.
+     * @returns This date.
+     */
     setToCurrentTime(): this;
   }
 
