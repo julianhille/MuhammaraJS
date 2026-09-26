@@ -101,7 +101,10 @@ function tableFields(contents, options) {
   return fields;
 }
 
-/** Creates Recipe table layout methods. */
+/**
+ * Creates Recipe table layout methods.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
 export function createTableMethods() {
   return {
     /**
