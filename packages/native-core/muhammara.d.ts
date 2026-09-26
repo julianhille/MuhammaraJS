@@ -597,6 +597,13 @@ declare namespace muhammara {
       objectList: PDFArray,
       index: number,
     ): undefined | PDFObject;
+    /**
+     * Parses an indirect object by its ID.
+     * @param objectId - The object ID.
+     * @returns The parsed object.
+     * @throws {TypeError} If the reader has ended, objectId is not a non-negative
+     *   integer, or the object cannot be read.
+     */
     parseNewObject(objectId: number): PDFObject;
     getPageObjectID(pageIndex: number): number;
     parsePageDictionary(pageIndex: number): PDFDictionary;
