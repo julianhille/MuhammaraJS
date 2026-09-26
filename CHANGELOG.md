@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `getImageDimensions()`, a `PDFReader` source and password for
   `createPDFCopyingContext()`, and any read stream for the JPEG, PNG, TIFF and
   merge methods [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare `PDFLiteralString#toBytesArray()` and type the values returned by
+  `PDFDictionary#toJSObject()` as PDF objects [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Add `ObjectReplacementScope` constants for the `scope` option of
   `PDFWriter#replaceObject()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare the `text`, `border`, `color` and `followOriginalPageRotation`
