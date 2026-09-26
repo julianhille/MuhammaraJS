@@ -108,6 +108,13 @@ function assertAsset(value, message) {
   return value;
 }
 
+/**
+ * Parses a generated PDF back and summarizes it.
+ * @param {Uint8Array} bytes - PDF bytes.
+ * @param {object} [details={}] - Extra summary values; `expectedPageWidths` is checked.
+ * @returns {Promise<object>} Page count, object count, PDF level, page widths, and `details`.
+ * @throws {Error} If the page widths differ from `expectedPageWidths`.
+ */
 async function summarize(bytes, details = {}) {
   var muhammara = await createMuhammaraWasm();
   var reader = muhammara.createReader(bytes);
