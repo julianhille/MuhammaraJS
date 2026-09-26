@@ -3926,6 +3926,18 @@ export function createWriterFactory({
       createFormXObjectFromTIFFBytesAsync: async function (image, options) {
         return this.createFormXObjectFromTIFFAsync(image, options);
       },
+      /**
+       * Starts a form XObject; draw through `getContentContext()`, then call `endFormXObject()`.
+       * @param {number} left - Bounding box left.
+       * @param {number} bottom - Bounding box bottom.
+       * @param {number} right - Bounding box right.
+       * @param {number} top - Bounding box top.
+       * @param {number} [objectId] - Reserved object ID.
+       * @returns {FormXObject} The open form.
+       * @throws {TypeError} If a coordinate is not finite.
+       * @throws {RangeError} If `objectId` is invalid.
+       * @throws {Error} If the writer ended or the form cannot be created.
+       */
       createFormXObject: function (left, bottom, right, top, objectId) {
         if (![left, bottom, right, top].every(Number.isFinite)) {
           throw new TypeError(
