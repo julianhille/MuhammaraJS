@@ -90,6 +90,10 @@ exports.xObjectForm = class xObjectForm {
     this._values[key] = value;
   }
 
+  /**
+   * @param {string} key - The key.
+   * @returns {*} The stored value, or undefined.
+   */
   get(key) {
     this._values = this._values || {};
     return this._values[key];
