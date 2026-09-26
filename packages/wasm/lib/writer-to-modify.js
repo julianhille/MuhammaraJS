@@ -1205,6 +1205,13 @@ export function createWriterToModifyFactory({
             throw new Error("Unable to set creation date");
         });
       },
+      /**
+       * Sets `/ModDate`.
+       * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+       * @returns {void}
+       * @throws {TypeError} If `value` is not a valid date.
+       * @throws {Error} If the modifier has ended or the date cannot be parsed or set.
+       */
       setModDate: function (value) {
         requireOpen();
         var date = normalizePDFDate(value);
