@@ -460,6 +460,11 @@ export function createReaderFactory({
         object.getType() === constants.ePDFObjectLiteralString ||
         object.getType() === constants.ePDFObjectHexString
       ) {
+        /**
+         * Reads the raw string bytes, decoded from hex for a hex string.
+         * @returns {Uint8Array} The bytes.
+         * @throws {Error} If the reader or parser has ended or the bytes cannot be read.
+         */
         object.toBytesArray = function () {
           object.getType();
           requireReader();
