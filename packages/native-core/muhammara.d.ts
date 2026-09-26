@@ -994,6 +994,13 @@ declare namespace muhammara {
      * @returns The emitter for writer events.
      */
     getEvents(): EventEmitter;
+    /**
+     * Emits an event on the writer's emitter after setting `eventParams.writer`
+     * to this writer.
+     * @param eventName - The event name.
+     * @param eventParams - The event parameters; gains a `writer` key.
+     * @throws {TypeError} If eventParams is not an object.
+     */
     triggerDocumentExtensionEvent(
       eventName: string | symbol,
       eventParams: any,

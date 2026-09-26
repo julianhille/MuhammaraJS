@@ -20,6 +20,14 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     if (!this.events) this.events = new (require("events").EventEmitter)();
     return this.events;
   };
+  /**
+   * Emits an event on the writer's emitter after setting `eventParams.writer`
+   * to this writer.
+   * @param {string|symbol} eventName - The event name.
+   * @param {Object} eventParams - The event parameters; gains a `writer` key.
+   * @returns {void}
+   * @throws {TypeError} If eventParams is not an object.
+   */
   muhammara.PDFWriter.prototype.triggerDocumentExtensionEvent = function (
     eventName,
     eventParams,
