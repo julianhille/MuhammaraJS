@@ -4547,6 +4547,19 @@ declare namespace muhammara {
       endAngle?: number,
       options?: Recipe.EllipseOptions,
     ): Recipe;
+    /**
+     * Set the line style for the current page content context.
+     * @param options - The line style options.
+     * @param options.width - The line width.
+     * @param options.lineWidth - Alias for width.
+     * @param options.cap - The PDF line cap style, a `LineCapStyle` value.
+     * @param options.join - The PDF line join style: 0 miter, 1 round, 2 bevel.
+     * @param options.miterLimit - The miter limit.
+     * @param options.dash - The dash pattern.
+     * @param options.dashPhase - The dash pattern phase.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     lineStyle(options?: Recipe.LineStyleOptions): Recipe;
     lineWidth(width: number): Recipe;
     /** Set fill and stroke opacity from 0 (transparent) to 1 (opaque). */
