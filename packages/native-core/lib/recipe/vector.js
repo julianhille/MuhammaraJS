@@ -635,12 +635,13 @@ exports.pie = function pie(x, y, radius, startAngle, endAngle, options = {}) {
  * @param {Recipe.LineStyleOptions} [options] - The line style options.
  * @param {number} [options.width] - The line width.
  * @param {number} [options.lineWidth] - Alias for width.
- * @param {number} [options.cap] - The PDF line cap style.
- * @param {number} [options.join] - The PDF line join style.
+ * @param {number} [options.cap] - The PDF line cap style, a `LineCapStyle` value.
+ * @param {number} [options.join] - The PDF line join style: 0 miter, 1 round, 2 bevel.
  * @param {number} [options.miterLimit] - The miter limit.
  * @param {number[]} [options.dash] - The dash pattern.
  * @param {number} [options.dashPhase] - The dash pattern phase.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.lineStyle = function lineStyle(options = {}) {
   this.current = this.current || {};
