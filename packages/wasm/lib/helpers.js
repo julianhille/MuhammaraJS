@@ -10,6 +10,13 @@ import { isPageBoxType } from "./constants.js";
  */
 export function createHelpers(module) {
   var nativeMalloc = module._malloc.bind(module);
+  /**
+   * Allocates Wasm memory.
+   * @param {number} size - Positive byte count.
+   * @returns {number} The pointer.
+   * @throws {RangeError} If `size` is not a positive safe integer.
+   * @throws {Error} If memory cannot be allocated.
+   */
   module._malloc = function (size) {
     if (!Number.isSafeInteger(size) || size <= 0) {
       throw new RangeError("WebAssembly allocation size must be positive");
