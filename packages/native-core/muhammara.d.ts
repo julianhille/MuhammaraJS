@@ -1307,8 +1307,19 @@ declare namespace muhammara {
      * @returns The date.
      */
     createPDFDate(value?: string | Date): PDFDate;
+    /**
+     * Returns the size of an image in points.
+     * @param imagePath - The image path or a read stream.
+     * @param imageIndex - The image or page index of a multi-image file.
+     * @param options - The password of a PDF source.
+     * @returns The width and height.
+     * @throws {TypeError} If the arguments are wrong.
+     * @throws {Error} If the writer has ended.
+     */
     getImageDimensions(
-      inFontFilePath: FilePath | ReadStream,
+      imagePath: FilePath | ReadStream,
+      imageIndex?: number,
+      options?: PDFReaderOptions,
     ): RectangleDimension;
     getImagePagesCount(
       imagePath: FilePath,

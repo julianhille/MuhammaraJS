@@ -826,3 +826,6 @@ void signatureWriter.createPDFCopyingContext(signatureReader);
 void signatureWriter.createPDFCopyingContext("source.pdf", {
   password: "user",
 });
+var signatureDimensions: muhammara.RectangleDimension =
+  signatureWriter.getImageDimensions("image.pdf", 1, { password: "user" });
+void signatureDimensions;
