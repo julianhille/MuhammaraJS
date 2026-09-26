@@ -431,6 +431,11 @@ exports._writeAnnotation = function _writeAnnotation(pageIndex) {
   copyingContext.end();
 };
 
+/**
+ * Start a new indirect object holding a dictionary for an annotation.
+ * @private
+ * @returns {void}
+ */
 exports._startDictionary = function _startDictionary() {
   this.objectsContext = this.writer.getObjectsContext();
   this.dictionaryObject = this.objectsContext.startNewIndirectObject();
