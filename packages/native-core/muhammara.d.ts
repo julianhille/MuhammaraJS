@@ -86,6 +86,11 @@ declare namespace muhammara {
   }
 
   export interface PDFPageInput {
+    /**
+     * Returns the page dictionary.
+     * @returns The dictionary.
+     * @throws {TypeError} If the page input was not created by a reader.
+     */
     getDictionary(): PDFDictionary;
     getMediaBox(): PDFBox;
     getCropBox(): PDFBox;
