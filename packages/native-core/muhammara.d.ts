@@ -3758,6 +3758,14 @@ declare namespace muhammara {
     readonly position: { x: number; y: number };
     /** Current document metadata, keyed by one-based page number. */
     readonly metadata: Recipe.Metadata;
+    /**
+     * Read PDF metadata: the page count and, keyed by one-based page number,
+     * each page's media box, rotation, layout and size.
+     * @param inSrc - A PDF path or Buffer to read instead of
+     *   the recipe source. Reading another PDF does not change the recipe state.
+     * @returns The PDF metadata.
+     * @throws {Error} If the PDF cannot be read or has no pages.
+     */
     read(inSrc?: string | Buffer): Recipe.ReadMetadata;
     register<Arguments extends unknown[], Result>(
       key: string,
