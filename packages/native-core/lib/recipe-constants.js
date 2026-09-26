@@ -337,7 +337,18 @@ var TextAlign = Object.freeze({
   JUSTIFY: "justify",
 });
 
+/**
+ * Special Recipe sources.
+ * @readonly
+ * @enum {string}
+ */
+var Source = Object.freeze({
+  /** Create a new PDF instead of editing one; matched case-insensitively. */
+  NEW: "new",
+});
+
 module.exports = {
+  Source,
   TextWrap,
   TextAlign,
   TableRowNth,

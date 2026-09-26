@@ -1692,6 +1692,10 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** Special Recipe sources, such as `Recipe.Source.NEW` for a new PDF. */
+    static readonly Source: {
+      readonly NEW: "new";
+    };
     /** How text that does not fit a text-box line is handled. */
     static readonly TextWrap: {
       readonly AUTO: "auto";

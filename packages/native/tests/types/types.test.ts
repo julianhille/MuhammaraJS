@@ -996,3 +996,5 @@ annotationRecipe.text("boxed", 10, 10, {
 
 const fillPath: muhammara.DrawingPathType = muhammara.DrawingPathType.FILL;
 void fillPath;
+
+new muhammara.Recipe(muhammara.Recipe.Source.NEW, "from-source.pdf");

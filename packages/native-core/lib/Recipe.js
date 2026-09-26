@@ -3,14 +3,14 @@ const path = require("path");
 const fs = require("fs");
 const streams = require("memory-streams");
 var { standardInfoKeys } = require("./recipe-info");
-var { AnnotSubtype, PageLayout } = require("./recipe-constants");
+var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
 
 /**
  * @name Recipe
  * @desc Create a new PDF, or open an existing one for editing.
  * @namespace
  * @constructor
- * @param {string|Buffer} src - `"new"` (or `Buffer.from("new")`) for a new PDF,
+ * @param {string|Buffer} src - `Recipe.Source.NEW` ("new", or `Buffer.from("new")`) for a new PDF,
  *   otherwise the path or Buffer of the PDF to edit.
  * @param {string} [output] - The output path. For a path source it defaults to
  *   the source path; for a Buffer source the result is only returned by
@@ -37,8 +37,8 @@ class Recipe {
     // detect the src is Buffer or not
     this.isBufferSrc = this.src instanceof Buffer;
     this.isNewPDF =
-      (!this.isBufferSrc && src.toLowerCase() === "new") ||
-      (this.isBufferSrc && this.src.equals(Buffer.from("new")));
+      (!this.isBufferSrc && src.toLowerCase() === Source.NEW) ||
+      (this.isBufferSrc && this.src.equals(Buffer.from(Source.NEW)));
     this.encryptOptions = this._getEncryptOptions(options, this.isNewPDF);
     this.options = Object.assign({}, options, this.encryptOptions);
     this.current = {};
