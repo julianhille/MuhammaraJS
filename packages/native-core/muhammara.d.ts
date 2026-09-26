@@ -637,6 +637,11 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     k(c: number, m: number, y: number, k: number): this;
+    /**
+     * Clips to the path (nonzero winding); operator W. Follow it with n.
+     * @returns This context.
+     * @throws {TypeError} If there is no content context.
+     */
     W(): this;
     WStar(): this;
     /** A resource name, an XObject, or a form XObject object ID. */
