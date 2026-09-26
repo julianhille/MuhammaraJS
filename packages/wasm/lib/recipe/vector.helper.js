@@ -147,6 +147,9 @@ export function createVectorHelpers(runtime) {
     /**
      * Paints the current path and restores the saved graphics state.
      * @private
+     * @param {object} [options={}] - `fill`, `stroke`, `color`, and `colorspace`.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If a color is invalid.
      */
     _finishPath: function (options = {}) {
       var fill = options.fill;
