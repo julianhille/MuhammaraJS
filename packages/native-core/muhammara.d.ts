@@ -482,6 +482,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     j(lineJoinStyle: LineJoinStyle): this;
+    /**
+     * Sets the miter limit; operator M.
+     * @param miterLimit - The miter limit.
+     * @returns This context.
+     * @throws {TypeError} If miterLimit is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     M(miterLimit: number): this;
     /** The dash phase defaults to 0. */
     d(dashArray: number[], dashPhase?: number): this;
