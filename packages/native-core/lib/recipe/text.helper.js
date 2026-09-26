@@ -65,6 +65,12 @@ const Word = class Word {
     return charSpacing(this._text, this._pathOptions.charSpace);
   }
 
+  /**
+   * Mark the word as the last of its line, trimming trailing space and
+   * measuring it again.
+   * @param {boolean} [value=true] - Whether the word is last.
+   * @returns {void}
+   */
   lastWord(value = true) {
     // indicate last word in line (for justification)
     this._last = value;
