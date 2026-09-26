@@ -501,7 +501,7 @@ exports.replaceText = function replaceText(text, replacement, pageNumber) {
 
   var pageIndex = pageNumber - 1;
   var page = this.pdfReader.parsePage(pageIndex).getDictionary();
-  var contents = page.queryObject("Contents");
+  var contents = page.queryObject(PdfName.CONTENTS);
 
   if (
     !contents ||
