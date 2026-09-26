@@ -247,6 +247,11 @@ export function createRawObjectsContext({
           }
           return this;
         },
+        /**
+         * Writes a null value.
+         * @returns {this} The dictionary context.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeNullValue: function () {
           requireDictionary();
           if (
