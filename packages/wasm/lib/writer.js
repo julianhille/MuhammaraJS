@@ -828,6 +828,11 @@ export function createWriterFactory({
       },
     });
     var documentContext = {
+      /**
+       * Returns the document Info dictionary.
+       * @returns {InfoDictionary} The Info dictionary.
+       * @throws {Error} If the writer has ended.
+       */
       getInfoDictionary: function () {
         requireOpenWriter();
         return infoDictionary;
