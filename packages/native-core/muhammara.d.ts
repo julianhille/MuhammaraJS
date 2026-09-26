@@ -788,6 +788,10 @@ declare namespace muhammara {
      * @returns True while the end has not been reached.
      */
     notEnded(): boolean;
+    /**
+     * Returns the current position.
+     * @returns The byte offset.
+     */
     getCurrentPosition(): number;
     skip(length: number): this;
     setPosition(position: number): this;
