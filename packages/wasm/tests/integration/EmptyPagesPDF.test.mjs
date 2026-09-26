@@ -10,6 +10,7 @@ import {
   RecipeHorizontalAlignment,
   RecipeLineCap,
   RecipeLineJoin,
+  RecipePageLayout,
   RecipeTableRowParity,
   RecipeTextAlignment,
   RecipeTextWrap,
@@ -132,4 +133,5 @@ var EXPORTED_VALUE_SETS = [
   [RecipeLineCap, ["butt", "round", "square"]],
   [RecipeLineJoin, ["miter", "round", "bevel"]],
   [RecipeTableRowParity, ["even", "odd"]],
+  [RecipePageLayout, ["portrait", "landscape"]],
 ];

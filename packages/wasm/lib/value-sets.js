@@ -128,3 +128,9 @@ export var RecipeTableRowParity = Object.freeze({
   EVEN: "even",
   ODD: "odd",
 });
+
+/** Orientation of a Recipe page, from its rotated width and height. */
+export var RecipePageLayout = Object.freeze({
+  PORTRAIT: "portrait",
+  LANDSCAPE: "landscape",
+});

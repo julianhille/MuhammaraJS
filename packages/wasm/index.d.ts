@@ -584,6 +584,12 @@ export interface RemoveTextOptions {
   /** Also remove text from the Form XObjects the page paints, including nested forms. Defaults to `false`. */
   forms?: boolean;
 }
+/** Orientation of a Recipe page, from its rotated width and height. */
+export type RecipePageLayout = "portrait" | "landscape";
+export declare const RecipePageLayout: {
+  readonly PORTRAIT: "portrait";
+  readonly LANDSCAPE: "landscape";
+};
 export interface RecipePageInfo {
   pageNumber: number;
   mediaBox: PDFRectangle;
@@ -592,7 +598,7 @@ export interface RecipePageInfo {
   width: number;
   /** Recipe-coordinate height, with MediaBox axes swapped for 90/270-degree rotation. */
   height: number;
-  layout: "portrait" | "landscape";
+  layout: RecipePageLayout;
   size: [number, number];
   offsetX: number;
   offsetY: number;

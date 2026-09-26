@@ -1,3 +1,4 @@
+import { RecipePageLayout } from "../value-sets.js";
 /** Creates normalized Recipe metadata for a PDF page. */
 export function pageRecord(pageNumber, mediaBox, rotate = 0) {
   var side1 = Math.abs(mediaBox[2] - mediaBox[0]);
@@ -11,7 +12,8 @@ export function pageRecord(pageNumber, mediaBox, rotate = 0) {
     rotate,
     width,
     height,
-    layout: width > height ? "landscape" : "portrait",
+    layout:
+      width > height ? RecipePageLayout.LANDSCAPE : RecipePageLayout.PORTRAIT,
     size: [width, height].sort((left, right) => left - right),
     offsetX: mediaBox[0],
     offsetY: mediaBox[1],
