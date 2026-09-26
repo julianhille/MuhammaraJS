@@ -15,9 +15,13 @@ not a string, where native ignores it, and throws for PDF 2.0 encryption
 options on `createWriterToModify`; encrypt modified bytes with `recrypt`.
 `createReader` opens encrypted PDFs with native's `password` option, but
 source PDFs for `appendPDFPagesFromPDF`, `mergePDFPagesToPage`,
-`createFormXObjectsFromPDF`, and `createPDFCopyingContext` cannot be encrypted:
+`createFormXObjectsFromPDF`, `createPDFCopyingContext`, and PDF images in
+`drawImage` cannot be encrypted:
 a source `password` throws a `TypeError`. Decrypt the source with
 `recrypt(bytes, { password })` first.
+Drawing helpers and `writeText` accept only `rgb`, `gray`, or `cmyk` as
+`colorspace` and throw a `TypeError` otherwise; native also accepts other
+strings for compatibility.
 String writers and `PDFWStreamForBuffer.write()` accept an array of byte
 values on both ends; Wasm throws a `TypeError` for an item that is not an
 integer from 0 to 255, where native coerces it to a byte.

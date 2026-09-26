@@ -569,6 +569,8 @@ export interface Recipe {
   };
   /** The last moveTo or lineTo path position in Recipe coordinates. */
   readonly position: { x: number; y: number };
+  /** Page metadata of the source PDF; undefined for a new PDF. */
+  readonly metadata: RecipeMetadata | undefined;
   /** A per-Recipe copy of the built-in named device colors. */
   readonly knownColors: RecipeKnownColors;
   register<Arguments extends unknown[], Result>(
@@ -691,7 +693,7 @@ export interface Recipe {
     cx: number,
     cy: number,
     radius: number,
-    sides?: number,
+    sides?: number | RecipeNGonOptions,
     options?: RecipeNGonOptions,
   ): this;
   star(
@@ -704,7 +706,7 @@ export interface Recipe {
     cx: number,
     cy: number,
     radius: number,
-    points?: number,
+    points?: number | RecipePathOptions,
     options?: RecipePathOptions,
   ): this;
   arrow(x: number, y: number, options?: RecipeArrowOptions): this;
@@ -742,6 +744,7 @@ export interface Recipe {
   textDimensions(value: string, options?: RecipeTextOptions): TextDimensions;
   movedown(lines?: number, returnCoords?: false): this;
   movedown(lines: number, returnCoords: true): RecipePosition;
+  movedown(lines?: number, returnCoords?: boolean): this | RecipePosition;
   layout(
     id: string | number,
     x?: number,
@@ -1656,8 +1659,10 @@ export interface ContentContext {
   Tf(font: PDFUsedFont | string, size: number): this;
   Tj(text: string, options?: TextOptions): this;
   Tj(glyphs: Glyph): this;
+  Tj(text: string | Glyph): this;
   Quote(text: string, options?: TextOptions): this;
   Quote(glyphs: Glyph): this;
+  Quote(text: string | Glyph): this;
   DoubleQuote(
     wordSpace: number,
     characterSpace: number,
@@ -1665,6 +1670,11 @@ export interface ContentContext {
     options?: TextOptions,
   ): this;
   DoubleQuote(wordSpace: number, characterSpace: number, glyphs: Glyph): this;
+  DoubleQuote(
+    wordSpace: number,
+    characterSpace: number,
+    text: string | Glyph,
+  ): this;
   /** Pass at least one item; an empty call throws a `TypeError`. */
   TJ(...items: (string | number | Glyph)[]): this;
   TJ(

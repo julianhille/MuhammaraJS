@@ -139,6 +139,8 @@ async function usesLowLevelSurface() {
   context.Tj([[1, 65]], { encoding: "hex" });
   const kernedParts: (string | number)[] = ["kern", -40, "ed"];
   context.TJ(...kernedParts);
+  const shown: string | Glyph = "text";
+  context.Tj(shown).Quote(shown).DoubleQuote(0, 0, shown);
   // @ts-expect-error TJ options must be the final item.
   context.TJ({ encoding: "text" }, "text");
   await context.drawImageAsync(0, 0, new Blob());
@@ -875,6 +877,16 @@ async function usesAlignedDeclarations() {
     return this.position;
   };
   shapes.register("where", extension);
+
+  // Union arguments that native accepts in one signature.
+  const sides: number | Recipe.NGonOptions = 6;
+  const points: number | Recipe.PathOptions = { color: "red" };
+  const lines: boolean = true;
+  shapes.n_gon(50, 50, 10, sides).star(50, 50, 10, points);
+  const moved: Recipe | [number, number] = shapes.movedown(1, lines);
+  void moved;
+  const metadata: Recipe.Metadata | undefined = shapes.metadata;
+  void metadata;
 }
 
 void usesAlignedDeclarations;

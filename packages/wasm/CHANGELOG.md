@@ -324,6 +324,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Declare the Recipe `metadata` property, accept a `boolean` in
+  `movedown()`, a `number` or options in the third `n_gon()` and `star()`
+  argument, and `string | Glyph` in `Tj()`, `Quote()`, and `DoubleQuote()`, as
+  the native declarations do [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Align the Recipe option declarations with native so values typed for
   `@muhammara/native` compile: colors, `dash`, `rotationOrigin`, `borderRadius`,
   text-box `padding`, annotation arrays, and `replies` accept readonly arrays;
