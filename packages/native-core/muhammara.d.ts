@@ -73,6 +73,13 @@ declare namespace muhammara {
     restartStateFile: string,
     options?: PDFWriterToContinueOptions,
   ): PDFWriter;
+  /**
+   * Opens a PDF for reading.
+   * @param input - The PDF path or a read stream.
+   * @param options - The password of an encrypted PDF.
+   * @returns The reader; call end() to release the file.
+   * @throws {TypeError} If the arguments are wrong or the PDF cannot be parsed.
+   */
   export function createReader(
     input: FilePath | ReadStream,
     options?: PDFReaderOptions,
