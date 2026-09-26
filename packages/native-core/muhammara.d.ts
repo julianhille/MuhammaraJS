@@ -1050,7 +1050,12 @@ declare namespace muhammara {
       replacementObjectId: number,
       options?: ObjectReplacementOptions,
     ): this;
-    /** Finalize once; repeated calls return this writer. A failed finalization also ends the writer. */
+    /**
+     * Finalizes the PDF once; repeated calls return this writer. A failed
+     * finalization also ends the writer.
+     * @returns This writer.
+     * @throws {TypeError} If the PDF cannot be finalized.
+     */
     end(): PDFWriter;
     /**
      * Creates a page, optionally with its media box. Write it with writePage().
