@@ -2866,6 +2866,14 @@ export function createWriterToModifyFactory({
                 ),
             );
           },
+          /**
+           * Reads vertical metrics scaled to a font size.
+           * @param {number} [size=1] - Positive font size.
+           * @returns {FontMetrics} Pixels per em, ascender, descender, height, and maximum advance.
+           * @throws {TypeError} If `size` is not positive.
+           * @throws {Error} If the metrics cannot be read.
+           * @throws {Error} If the modifier has ended.
+           */
           getFontMetrics: function (size = 1) {
             requireOpen();
             if (!Number.isFinite(size) || size <= 0)
