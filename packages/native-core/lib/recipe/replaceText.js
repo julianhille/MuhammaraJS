@@ -9,6 +9,7 @@ var PdfOperator = Object.freeze({
   SPACING_NEXT_LINE_SHOW_TEXT: '"',
   PAINT_XOBJECT: "Do",
   INLINE_IMAGE_DATA: "ID",
+  END_INLINE_IMAGE: "EI",
 });
 
 // PDF dictionary keys and names this module reads.
@@ -129,12 +130,12 @@ function skipLiteralString(source, start) {
  * @param {string} source Latin-1 content stream.
  * @param {number} start Offset directly after `ID`.
  * @returns {number} Offset after the closing `EI` operator.
+ * @private
  */
 function skipInlineImageData(source, start) {
   for (var index = start + 1; index < source.length - 1; index++) {
     if (
-      source[index] === "E" &&
-      source[index + 1] === "I" &&
+      source.startsWith(PdfOperator.END_INLINE_IMAGE, index) &&
       isWhitespace(source[index - 1]) &&
       endsRegularToken(source.charAt(index + 2))
     ) {
