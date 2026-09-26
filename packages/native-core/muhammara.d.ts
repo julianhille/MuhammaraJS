@@ -959,6 +959,13 @@ declare namespace muhammara {
       objectId: FormXObjectId,
       generationNumber?: number,
     ): this;
+    /**
+     * Starts an indirect object. Without an ID, allocates one and returns it;
+     * with an ID reserved by allocateNewObjectID(), returns this context.
+     * @param objectId - A reserved object ID.
+     * @returns The new object ID, or this context when objectId is given.
+     * @throws {TypeError} If objectId is given and is not a number.
+     */
     startNewIndirectObject(objectId: FormXObjectId): this;
     startNewIndirectObject(): FormXObjectId;
     startModifiedIndirectObject(objectId: FormXObjectId): this;
