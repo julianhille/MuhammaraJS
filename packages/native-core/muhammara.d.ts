@@ -1174,7 +1174,14 @@ declare namespace muhammara {
       right: PosX,
       top: PosY,
     ): this;
-    /** Save continuation state and retire this writer, including when saving fails. */
+    /**
+     * Saves the continuation state for createWriterToContinue() and retires
+     * this writer, including when saving fails.
+     * @param outputFilePath - The state file path.
+     * @returns This writer.
+     * @throws {TypeError} If the path is missing or the state cannot be saved.
+     * @throws {Error} If the writer has ended.
+     */
     shutdown(outputFilePath: FilePath): this;
     /**
      * Creates a form XObject showing a TIFF image.
