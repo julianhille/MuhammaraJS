@@ -1377,14 +1377,19 @@ export function createWriterToModifyFactory({
        * @throws {RangeError} If the page range is invalid.
        * @throws {Error} If another page is active, the modifier ended, or the source is unreadable.
        */
-      mergePDFPagesToPage: function (target, source, options = {}, callback) {
+      mergePDFPagesToPage: function (
+        targetPage,
+        source,
+        options = {},
+        callback,
+      ) {
         requireOpen();
         if (typeof options === "function") {
           callback = options;
           options = {};
         }
         if (
-          target !== page ||
+          targetPage !== page ||
           !page ||
           !options ||
           typeof options !== "object" ||
@@ -1392,7 +1397,7 @@ export function createWriterToModifyFactory({
           "password" in options
         )
           throw new TypeError(
-            "An active target PDFPage and browser-safe merge options are required",
+            "An active targetPage PDFPage and browser-safe merge options are required",
           );
         if (callback !== undefined && typeof callback !== "function")
           throw new TypeError("Merge callback must be a function");
@@ -1441,13 +1446,13 @@ export function createWriterToModifyFactory({
        * @throws {Error} If another page is active, the modifier ended, or the source is unreadable.
        */
       mergePDFPagesToPageAsync: async function (
-        target,
+        targetPage,
         source,
         options,
         callback,
       ) {
         return this.mergePDFPagesToPage(
-          target,
+          targetPage,
           await normalizeBytesAsync(source, "PDF input"),
           options,
           callback,
