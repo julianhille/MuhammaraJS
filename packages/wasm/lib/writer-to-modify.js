@@ -1493,14 +1493,14 @@ export function createWriterToModifyFactory({
               checkOperatorRange("j", value, 2, "line join");
               return operator(22, value);
             };
-            context.Tz = function (value) {
-              if (!Number.isInteger(value))
+            context.Tz = function (horizontalScaling) {
+              if (!Number.isInteger(horizontalScaling))
                 throw new TypeError("Tz requires integer numeric arguments");
-              return operator(37, value);
+              return operator(37, horizontalScaling);
             };
-            context.Tr = function (value) {
-              checkOperatorRange("Tr", value, 7, "text rendering mode");
-              return operator(39, value);
+            context.Tr = function (renderingMode) {
+              checkOperatorRange("Tr", renderingMode, 7, "text rendering mode");
+              return operator(39, renderingMode);
             };
             context.d = function (dash, phase = 0) {
               requireFormContent();
