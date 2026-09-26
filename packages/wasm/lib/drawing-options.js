@@ -1,6 +1,11 @@
 import { DeviceColorSpace, DrawingPathType } from "./value-sets.js";
 
-/** Reject overflowing derived geometry before any operator is emitted. */
+/**
+ * Rejects overflowing derived geometry before any operator is emitted.
+ * @param {number[]} values - Derived coordinates.
+ * @returns {void}
+ * @throws {TypeError} If a value is not finite.
+ */
 export function validateDrawingGeometry(values) {
   if (!values.every(Number.isFinite))
     throw new TypeError("Drawing geometry must be finite");
