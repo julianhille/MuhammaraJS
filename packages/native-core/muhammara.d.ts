@@ -117,6 +117,10 @@ declare namespace muhammara {
      * @param inAmount - The number of bytes to skip.
      */
     skip(inAmount: number): void;
+    /**
+     * Returns the position relative to the start position.
+     * @returns The current byte offset.
+     */
     getCurrentPosition(): number;
     moveStartPosition(inPosition: number): void;
   }
