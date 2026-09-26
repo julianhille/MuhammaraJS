@@ -38,6 +38,11 @@ PDFWStreamForFile.prototype.getCurrentPosition = function () {
   return this.position;
 };
 
+/**
+ * Flushes and closes the file.
+ * @param {Function} [inCallback] - Called once the file is closed.
+ * @returns {void}
+ */
 PDFWStreamForFile.prototype.close = function (inCallback) {
   if (this.ws) {
     var self = this;
