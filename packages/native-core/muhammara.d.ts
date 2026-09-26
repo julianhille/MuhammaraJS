@@ -4585,6 +4585,12 @@ declare namespace muhammara {
      * @returns The recipe instance.
      */
     stroke(): Recipe;
+    /**
+     * Fill and stroke the current path.
+     *
+     * This compatibility method currently has no effect.
+     * @returns The recipe instance.
+     */
     fillAndStroke(): Recipe;
     n_gon(
       cx: number,
