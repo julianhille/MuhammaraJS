@@ -30,6 +30,14 @@ export function createWriterSupport({
   removeFile,
   assertOutputSize,
 }) {
+  /**
+   * Resolves a registered asset name, or stores sniffed image bytes, as a virtual path.
+   * @param {string|ByteSource} value - Registered image or PDF name, or JPEG, PNG, TIFF, or PDF bytes.
+   * @param {string[]} retainedPaths - Receives the path of stored bytes so the caller can remove it.
+   * @returns {string} Virtual file system path.
+   * @throws {Error} If `value` names no registered asset.
+   * @throws {TypeError} If the bytes are not JPEG, PNG, TIFF, or PDF.
+   */
   function imageAssetPath(value, retainedPaths) {
     if (typeof value === "string") {
       var path = images.get(value) || pdfs.get(value);
