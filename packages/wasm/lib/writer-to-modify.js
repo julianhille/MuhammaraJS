@@ -672,6 +672,11 @@ export function createWriterToModifyFactory({
         });
       },
     );
+    var TRAPPED_VALUES = [
+      constants.EInfoTrappedTrue,
+      constants.EInfoTrappedFalse,
+      constants.EInfoTrappedUnknown,
+    ];
     var trapped = constants.EInfoTrappedUnknown;
     Object.defineProperty(infoDictionary, "trapped", {
       get: function () {
@@ -679,7 +684,7 @@ export function createWriterToModifyFactory({
       },
       set: function (value) {
         requireOpen();
-        if (!Number.isInteger(value) || value < 0 || value > 2)
+        if (!TRAPPED_VALUES.includes(value))
           throw new RangeError("trapped must be an EInfoTrapped value");
         if (!module._muhammara_wasm_modifier_set_info_trapped(modifier, value))
           throw new Error("Unable to set trapped");

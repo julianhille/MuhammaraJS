@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  EInfoTrapped,
   DrawingPathType,
   PDFPageContentItemType,
   RecipeArcOptions,
@@ -808,6 +809,12 @@ async function usesNamedValueSets() {
   context.Tr(7);
   // @ts-expect-error PDF text rendering modes are 0 to 7.
   context.Tr(8);
+  var info = writer.getDocumentContext().getInfoDictionary();
+  info.trapped = muhammara.EInfoTrappedTrue;
+  var trapped: EInfoTrapped = info.trapped;
+  void trapped;
+  // @ts-expect-error Trapped accepts only the EInfoTrapped constants.
+  info.trapped = 3;
 }
 
 void usesNamedValueSets;

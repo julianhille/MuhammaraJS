@@ -569,6 +569,11 @@ export function createWriterFactory({
         });
       },
     );
+    var TRAPPED_VALUES = [
+      constants.EInfoTrappedTrue,
+      constants.EInfoTrappedFalse,
+      constants.EInfoTrappedUnknown,
+    ];
     var trapped = constants.EInfoTrappedUnknown;
     Object.defineProperty(infoDictionary, "trapped", {
       get: function () {
@@ -576,7 +581,7 @@ export function createWriterFactory({
       },
       set: function (value) {
         requireOpenWriter();
-        if (!Number.isInteger(value) || value < 0 || value > 2) {
+        if (!TRAPPED_VALUES.includes(value)) {
           throw new RangeError("trapped must be an EInfoTrapped value");
         }
         if (!module._muhammara_wasm_recipe_set_info_trapped(recipe, value)) {

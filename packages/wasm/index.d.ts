@@ -817,6 +817,8 @@ export interface AnnotationOptions {
 export type DrawingPathType = "stroke" | "fill" | "clip" | null;
 /** PDF line cap style for `J()`: 0 butt, 1 round, 2 projecting square. */
 export type LineCapStyle = 0 | 1 | 2;
+/** Info dictionary `/Trapped` state: the `EInfoTrapped*` constants. */
+export type EInfoTrapped = 0 | 1 | 2;
 /** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
 export type LineJoinStyle = 0 | 1 | 2;
 /**
@@ -1170,7 +1172,7 @@ export interface InfoDictionary {
   keywords: string;
   creator: string;
   producer: string;
-  trapped: number;
+  trapped: EInfoTrapped;
   addAdditionalInfoEntry(key: string, value: string): void;
   removeAdditionalInfoEntry(key: string): void;
   clearAdditionalInfoEntries(): void;
@@ -1843,9 +1845,9 @@ export interface MuhammaraWasm {
   readonly eXrefEntryDelete: number;
   readonly eXrefEntryStreamObject: number;
   readonly eXrefEntryUndefined: number;
-  readonly EInfoTrappedTrue: number;
-  readonly EInfoTrappedFalse: number;
-  readonly EInfoTrappedUnknown: number;
+  readonly EInfoTrappedTrue: 0;
+  readonly EInfoTrappedFalse: 1;
+  readonly EInfoTrappedUnknown: 2;
   getTypeLabel(type: number): string;
 }
 export interface MuhammaraWasmOptions {
