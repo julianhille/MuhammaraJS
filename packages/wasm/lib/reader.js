@@ -417,6 +417,11 @@ export function createReaderFactory({
         };
       }
       if (object.getType() === constants.ePDFObjectIndirectObjectReference) {
+        /**
+         * Reads the referenced object ID.
+         * @returns {number} The object ID.
+         * @throws {Error} If the reader or parser has ended or the reference cannot be read.
+         */
         object.getObjectID = function () {
           object.getType();
           requireReader();
