@@ -28,6 +28,10 @@ PDFStreamForResponse.prototype.write = function (inBytes) {
   } else return 0;
 };
 
+/**
+ * Returns the number of bytes written so far.
+ * @returns {number} The current byte offset.
+ */
 PDFStreamForResponse.prototype.getCurrentPosition = function () {
   return this.position;
 };
