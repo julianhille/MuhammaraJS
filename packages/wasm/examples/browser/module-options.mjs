@@ -11,6 +11,11 @@ var wasmUrl = new URL("../../dist/muhammara-wasm.wasm", import.meta.url);
  */
 export function moduleOptions() {
   return {
+    /**
+     * Maps the Wasm binary to its URL next to this package.
+     * @param {string} path - File Emscripten wants to load.
+     * @returns {string} Its URL.
+     */
     locateFile(path) {
       return path.endsWith(".wasm") ? wasmUrl.href : path;
     },
