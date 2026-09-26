@@ -4092,6 +4092,12 @@ declare namespace muhammara {
     /** Removes shown text from an existing page's content streams, and optionally its Form XObjects. */
     removeText(pageNumber: number, options?: RemoveTextOptions): Recipe;
 
+    /**
+     * Get page information
+     * @param pageNumber - The one-based page number.
+     * @returns The page information.
+     * @throws {TypeError} If the page is unknown.
+     */
     pageInfo(pageNumber: number): RecipePageInfo;
     getCurrentPageInfo(): RecipePageInfo | null;
 
