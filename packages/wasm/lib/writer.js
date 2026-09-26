@@ -4632,6 +4632,12 @@ export function createWriterFactory({
           module._free(objectIdPointer);
         }
       },
+      /**
+       * Finishes the PDF, releases the writer, and returns the bytes.
+       * @returns {Uint8Array} The PDF bytes.
+       * @throws {Error} If the writer ended, a page or objects-context operation is active,
+       * the PDF cannot be finished, or it exceeds the output limit.
+       */
       end: function () {
         requireOpenWriter();
         if (currentPage) {
