@@ -1155,11 +1155,15 @@ exports._resumePageRotation = function _resumePageRotation(
  * @name pageInfo
  * @function
  * @memberof Recipe#
- * @param {number} pageNumber - The page number.
+ * @param {number} pageNumber - The one-based page number.
  * @returns {RecipePageInfo} The page information.
+ * @throws {TypeError} If the page is unknown.
  */
 exports.pageInfo = function pageInfo(pageNumber) {
   const pageInfo = this.metadata[pageNumber];
+  if (!pageInfo) {
+    throw new TypeError(`Unknown page number: ${pageNumber}`);
+  }
   return {
     width: pageInfo.width,
     height: pageInfo.height,

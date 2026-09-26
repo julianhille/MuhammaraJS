@@ -343,4 +343,12 @@ describe("Graphic Object Positioning", () => {
       /No page is active/,
     );
   });
+
+  it("reports an unknown page number from pageInfo", () => {
+    const recipe = new Recipe(
+      "new",
+      path.join(__dirname, "../output/page-info-unknown.pdf"),
+    );
+    assert.throws(() => recipe.pageInfo(3), /Unknown page number: 3/);
+  });
 });
