@@ -735,6 +735,10 @@ declare namespace muhammara {
   }
 
   export interface PDFObjectParser {
+    /**
+     * Parses the next object.
+     * @returns The object; undefined at the end.
+     */
     parseNewObject(): PDFObject | undefined;
   }
 
