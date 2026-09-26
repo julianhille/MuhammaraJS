@@ -834,6 +834,10 @@ async function usesNamedValueSets() {
   void rootType;
   var entryType: XrefEntryType = parsed.getXrefEntry(1).type;
   void (entryType === muhammara.eXrefEntryExisting);
+  var procsetResources = writer.createPage().getResourcesDictionary();
+  procsetResources.addProcsetResource(muhammara.kProcsetText);
+  // @ts-expect-error Procsets are the KProcset constants.
+  procsetResources.addProcsetResource("Pdf");
 }
 
 void usesNamedValueSets;

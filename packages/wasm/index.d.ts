@@ -825,6 +825,8 @@ export type ETokenSeparator = 0 | 1 | 2;
 export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 /** Cross-reference entry kind: the `eXrefEntry*` constants. */
 export type XrefEntryType = 0 | 1 | 2 | 3;
+/** Procedure set name for `addProcsetResource()`: the `KProcset*`/`kProcset*` constants. */
+export type ProcsetName = "ImageB" | "ImageC" | "ImageI" | "PDF" | "Text";
 /** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
 export type LineJoinStyle = 0 | 1 | 2;
 /**
@@ -953,7 +955,7 @@ export interface PDFStream {
   getWriteStream(): ByteWriteStream;
 }
 export interface ResourcesDictionary {
-  addProcsetResource(name: string): void;
+  addProcsetResource(name: ProcsetName): void;
   addExtGStateMapping(id: number): string;
   addFontMapping(id: number): string;
   addColorSpaceMapping(id: number): string;
@@ -1816,11 +1818,11 @@ export interface MuhammaraWasm {
   readonly ePDFVersion16: 16;
   readonly ePDFVersion17: 17;
   readonly ePDFVersion20: 20;
-  readonly KProcsetImageB: string;
-  readonly KProcsetImageC: string;
-  readonly KProcsetImageI: string;
-  readonly kProcsetPDF: string;
-  readonly kProcsetText: string;
+  readonly KProcsetImageB: "ImageB";
+  readonly KProcsetImageC: "ImageC";
+  readonly KProcsetImageI: "ImageI";
+  readonly kProcsetPDF: "PDF";
+  readonly kProcsetText: "Text";
   readonly eRangeTypeAll: number;
   readonly eRangeTypeSpecific: number;
   readonly ePDFPageBoxMediaBox: 0;
