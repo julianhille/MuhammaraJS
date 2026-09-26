@@ -821,6 +821,8 @@ export type LineCapStyle = 0 | 1 | 2;
 export type EInfoTrapped = 0 | 1 | 2;
 /** Token written after an array by `endArray()`: the `eTokenSeparator*` constants. */
 export type ETokenSeparator = 0 | 1 | 2;
+/** Parsed PDF object type: the `ePDFObject*` constants. */
+export type PDFObjectType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 /** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
 export type LineJoinStyle = 0 | 1 | 2;
 /**
@@ -1202,7 +1204,7 @@ export interface PDFObjectParser {
   end(): void;
 }
 export interface PDFObject {
-  getType(): number;
+  getType(): PDFObjectType;
   value: string | number | boolean | undefined;
   toString(): string;
   toNumber(): number | undefined;
@@ -1824,18 +1826,18 @@ export interface MuhammaraWasm {
   readonly ePDFPageBoxBleedBox: 2;
   readonly ePDFPageBoxTrimBox: 3;
   readonly ePDFPageBoxArtBox: 4;
-  readonly ePDFObjectBoolean: number;
-  readonly ePDFObjectLiteralString: number;
-  readonly ePDFObjectHexString: number;
-  readonly ePDFObjectNull: number;
-  readonly ePDFObjectName: number;
-  readonly ePDFObjectInteger: number;
-  readonly ePDFObjectReal: number;
-  readonly ePDFObjectArray: number;
-  readonly ePDFObjectDictionary: number;
-  readonly ePDFObjectIndirectObjectReference: number;
-  readonly ePDFObjectStream: number;
-  readonly ePDFObjectSymbol: number;
+  readonly ePDFObjectBoolean: 0;
+  readonly ePDFObjectLiteralString: 1;
+  readonly ePDFObjectHexString: 2;
+  readonly ePDFObjectNull: 3;
+  readonly ePDFObjectName: 4;
+  readonly ePDFObjectInteger: 5;
+  readonly ePDFObjectReal: 6;
+  readonly ePDFObjectArray: 7;
+  readonly ePDFObjectDictionary: 8;
+  readonly ePDFObjectIndirectObjectReference: 9;
+  readonly ePDFObjectStream: 10;
+  readonly ePDFObjectSymbol: 11;
   readonly ePDFPageContentItemText: 0;
   readonly ePDFPageContentItemPath: 1;
   readonly ePDFPageContentItemXObject: 2;

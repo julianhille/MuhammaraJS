@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  PDFObjectType,
   ETokenSeparator,
   EInfoTrapped,
   DrawingPathType,
@@ -821,6 +822,10 @@ async function usesNamedValueSets() {
   objects.startArray().endArray(separator);
   // @ts-expect-error Separators are the eTokenSeparator constants.
   objects.startArray().endArray(3);
+  var parsed = muhammara.createReader(muhammara.createBlankPdf(10, 10));
+  var objectType: PDFObjectType = parsed.getTrailer().getType();
+  var isDictionary: boolean = objectType === muhammara.ePDFObjectDictionary;
+  void isDictionary;
 }
 
 void usesNamedValueSets;
