@@ -53,6 +53,12 @@ to produce a final border box with a center that coincides with n-gon center.
 
 */
 
+/**
+ * Whether a number is odd.
+ * @private
+ * @param {number} n - The number.
+ * @returns {boolean} True when n is odd.
+ */
 function odd(n) {
   return n % 2 !== 0;
 }
