@@ -1111,6 +1111,15 @@ declare namespace muhammara {
       file: FilePath | ReadStream,
       objectId?: FormXObjectId,
     ): FormXObject;
+    /**
+     * Loads a font file for text drawing.
+     * @param inFontFilePath - The font file path.
+     * @param inOptionalMetricsFile - The metrics file of a Type 1 font.
+     * @param index - The font index in a collection such as TTC or DFont.
+     * @returns The font.
+     * @throws {TypeError} If the arguments are wrong or the font cannot be loaded.
+     * @throws {Error} If the writer has ended.
+     */
     getFontForFile(inFontFilePath: FilePath, index?: number): UsedFont;
     getFontForFile(
       inFontFilePath: FilePath,
