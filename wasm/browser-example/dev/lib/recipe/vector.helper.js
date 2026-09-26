@@ -1,5 +1,10 @@
-import { DeviceColorSpace, LineCap, LineJoin } from "../value-sets.js";
-import { colorModel } from "./colors.js";
+import {
+  Colorspace,
+  DeviceColorSpace,
+  LineCap,
+  LineJoin,
+} from "../value-sets.js";
+import { colorModel, pathColors } from "./colors.js";
 
 /**
  * Creates shared Recipe vector drawing helpers.
@@ -47,7 +52,9 @@ export function createVectorHelpers(runtime) {
    */
   function setColor(recipe, value, options, stroke) {
     var model = colorModel(recipe, value, options);
-    if (model.colorspace === DeviceColorSpace.RGB)
+    if (model.colorspace === Colorspace.SEPARATION)
+      recipe._setSeparationColor(model, stroke);
+    else if (model.colorspace === DeviceColorSpace.RGB)
       operator(recipe, stroke ? 27 : 26, ...model.values);
     else if (model.colorspace === DeviceColorSpace.GRAY)
       operator(recipe, stroke ? 25 : 24, model.values[0]);
@@ -109,6 +116,7 @@ export function createVectorHelpers(runtime) {
      */
     _beginPath: function (options = {}, x = 0, y = 0) {
       var style = this._pathOptions(options);
+      this._prepareSeparationColors(options);
       this._save();
       if (options.rotation)
         this.rotateContent(
@@ -144,17 +152,14 @@ export function createVectorHelpers(runtime) {
      * @throws {TypeError} If a color is invalid.
      */
     _finishPath: function (options = {}) {
-      var fill = options.fill;
-      var stroke = options.stroke || options.color || options.colour;
-      if (fill !== undefined) setColor(this, fill, options, false);
-      if (stroke !== undefined || fill === undefined)
-        setColor(this, stroke, options, true);
-      if (
-        fill !== undefined &&
-        (stroke !== undefined || options.color !== undefined)
-      )
-        operator(this, 1);
-      else operator(this, fill !== undefined ? 6 : 5);
+      var colors = pathColors(options);
+      colors.forEach((color) =>
+        setColor(this, color.value, options, color.stroke),
+      );
+      // Paint what was colored: B for both, f for a fill, S for a stroke.
+      var fills = colors.some((color) => !color.stroke);
+      var strokes = colors.some((color) => color.stroke);
+      operator(this, fills && strokes ? 1 : fills ? 6 : 5);
       this._restore();
       return this;
     },

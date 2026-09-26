@@ -518,6 +518,8 @@ async function createRuntime(options) {
     normalizeBytes,
     normalizeBytesAsync,
     assertOutputSize,
+    rawObjectsContext,
+    resourcesDictionary: support.resourcesDictionary,
   };
 }
 
@@ -559,6 +561,8 @@ export async function createRecipe(options) {
     normalizeBytes,
     normalizeBytesAsync,
     assertOutputSize,
+    rawObjectsContext,
+    resourcesDictionary,
   } = await createRuntime(moduleOptions);
   var defaultFont;
   if (fontSource === undefined) {
@@ -597,6 +601,8 @@ export async function createRecipe(options) {
     removeFile,
     withString: helpers.withString,
     withDoubles: helpers.withDoubles,
+    rawObjectsContext,
+    resourcesDictionary,
     assertOutputSize,
   });
 }

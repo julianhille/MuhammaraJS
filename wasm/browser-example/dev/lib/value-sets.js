@@ -32,10 +32,7 @@ export var PageBox = Object.freeze({
   ART: "art",
 });
 
-/**
- * Recipe color spaces: the device color spaces plus Separation, which the
- * Wasm Recipe recognizes only to reject it.
- */
+/** Recipe color spaces: the device color spaces plus Separation. */
 export var Colorspace = Object.freeze({
   RGB: "rgb",
   CMYK: "cmyk",

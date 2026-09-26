@@ -27,7 +27,7 @@ export function snapshotDrawingPoints(points) {
  * @param {object} options - Options with `color` and `colorspace`.
  * @param {function(*): number} colorValue - Converts a color option to a number.
  * @returns {{color: (number|undefined), colorspace: (DeviceColorSpace|undefined)}} The color, or an empty object without one.
- * @throws {TypeError} If the color is invalid or `colorspace` is not a DeviceColorSpace value.
+ * @throws {TypeError} If the color is invalid, `colorspace` is not a DeviceColorSpace value, or a color name, `#rrggbb` string, or `[r, g, b]` array is given the gray or CMYK colorspace.
  */
 function readColor(options, colorValue) {
   var value = options.color;
@@ -36,6 +36,16 @@ function readColor(options, colorValue) {
   var colorspace = options.colorspace || DeviceColorSpace.RGB;
   if (!Object.values(DeviceColorSpace).includes(colorspace)) {
     throw new TypeError("colorspace must be rgb, gray, or cmyk");
+  }
+  // Names, #rrggbb strings, and [r, g, b] arrays are RGB; as in native,
+  // only a number can be read as gray or CMYK.
+  if (
+    (typeof value === "string" || Array.isArray(value)) &&
+    colorspace !== DeviceColorSpace.RGB
+  ) {
+    throw new TypeError(
+      "only a numeric color can use the gray or cmyk colorspace",
+    );
   }
   return { color, colorspace };
 }
