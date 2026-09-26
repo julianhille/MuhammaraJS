@@ -4,6 +4,11 @@
     @author Luciano Júnior
 */
 
+/**
+ * Creates a read stream over bytes in memory.
+ * @constructor
+ * @param {Buffer|Uint8Array} buffer - The bytes to read; not copied.
+ */
 function PDFRStreamForBuffer(buffer) {
   this.buffer = buffer;
   this.rposition = 0;
