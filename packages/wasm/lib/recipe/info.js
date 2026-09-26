@@ -21,6 +21,11 @@ export function createInfoMethods({ call, withString }) {
   function pdfDate(date) {
     var offset = -date.getTimezoneOffset();
     var sign = offset < 0 ? "-" : "+";
+    /**
+     * Formats the absolute value of a number with at least two digits.
+     * @param {number} number - Date part.
+     * @returns {string} The padded digits.
+     */
     var pad = (number) => String(Math.abs(number)).padStart(2, "0");
     return `D:${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}${sign}${pad(Math.trunc(offset / 60))}'${pad(offset % 60)}'`;
   }
