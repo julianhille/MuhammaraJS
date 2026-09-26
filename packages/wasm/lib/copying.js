@@ -84,6 +84,14 @@ export function createCopyingHelpers({ module }) {
           module._free(countPointer);
         }
       },
+      /**
+       * Copies the source objects a deep-copied direct object refers to.
+       * @param {number[]} ids - Source object IDs from `copyDirectObjectWithDeepCopy()`.
+       * @returns {this} The copying context.
+       * @throws {TypeError} If `ids` is not an array.
+       * @throws {RangeError} If an ID is invalid or repeated.
+       * @throws {Error} If the context has ended or copying fails.
+       */
       copyNewObjectsForDirectObject: function (ids) {
         requireCopying();
         if (!Array.isArray(ids))
