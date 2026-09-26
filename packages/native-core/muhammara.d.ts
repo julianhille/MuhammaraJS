@@ -519,6 +519,10 @@ declare namespace muhammara {
      * @returns The stream.
      */
     getContentStream(): PDFStream;
+    /**
+     * Returns the form resources.
+     * @returns The resources dictionary.
+     */
     getResourcesDictionary(): ResourcesDictionary;
   }
 
