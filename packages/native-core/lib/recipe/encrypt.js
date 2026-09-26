@@ -113,6 +113,12 @@ exports.encrypt = function encrypt(options = {}) {
 };
 
 // http://pdfhummus.com/post/147451287581/hummus-1058-and-pdf-writer-updates-encryption
+/**
+ * Re-encrypt the finished output file with the encrypt() options.
+ * @private
+ * @returns {void}
+ * @throws {Error} If the output cannot be renamed, re-encrypted or removed.
+ */
 exports._encrypt = function _encrypt() {
   if (!this.encryption_) {
     return;
