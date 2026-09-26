@@ -1091,6 +1091,13 @@ declare namespace muhammara {
       top: number,
       objectId?: FormXObjectId,
     ): FormXObject;
+    /**
+     * Ends and writes a form XObject.
+     * @param formXObject - The form to end.
+     * @returns This writer.
+     * @throws {TypeError} If formXObject is not a form or cannot be written.
+     * @throws {Error} If the writer has ended.
+     */
     endFormXObject(formXObject: FormXObject): this;
     createFormXObjectFromJPG(
       file: FilePath | PDFRStreamForFile,
