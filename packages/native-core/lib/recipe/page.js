@@ -655,7 +655,15 @@ function preparePageLabels(
   };
 }
 
-/** Writes updated page labels and attaches them to the catalog. @private */
+/**
+ * Write the updated page labels and attach them to the catalog.
+ * @private
+ * @param {Object} writer - The PDF writer.
+ * @param {Object} copyingContext - Copies unchanged entries.
+ * @param {number} rootID - The catalog object ID.
+ * @param {Object|null} pageLabels - The result of preparePageLabels().
+ * @returns {void}
+ */
 function writePageLabels(writer, copyingContext, rootID, pageLabels) {
   if (!pageLabels) return;
 
@@ -696,11 +704,11 @@ function writePageLabels(writer, copyingContext, rootID, pageLabels) {
   objectsContext.startModifiedIndirectObject(rootID);
   const dictionary = objectsContext.startDictionary();
   Object.keys(pageLabels.catalogValues).forEach((key) => {
-    if (key === "PageLabels") return;
+    if (key === PdfName.PAGE_LABELS) return;
     dictionary.writeKey(key);
     copyingContext.copyDirectObjectAsIs(pageLabels.catalogValues[key]);
   });
-  dictionary.writeKey("PageLabels");
+  dictionary.writeKey(PdfName.PAGE_LABELS);
   objectsContext.writeIndirectObjectReference(labelsObjectID);
   objectsContext.endDictionary(dictionary).endIndirectObject();
 }
