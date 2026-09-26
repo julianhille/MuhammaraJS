@@ -386,6 +386,18 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     l(x: PosX, y: PosY): this;
+    /**
+     * Adds a cubic Bezier curve; operator c.
+     * @param x1 - The first control point x.
+     * @param y1 - The first control point y.
+     * @param x2 - The second control point x.
+     * @param y2 - The second control point y.
+     * @param x3 - The end point x.
+     * @param y3 - The end point y.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 6 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     c(x1: PosX, y1: PosY, x2: PosX, y2: PosY, x3: PosX, y3: PosY): this;
     v(x2: PosX, y2: PosY, x3: PosX, y3: PosY): this;
     y(x1: PosX, y1: PosY, x3: PosX, y3: PosY): this;
