@@ -44,6 +44,12 @@ export function throwIfCancelled(signal) {
     throw new DOMException("Operation cancelled", "AbortError");
 }
 
+/**
+ * Describes an error for display or Worker transfer.
+ * @param {*} error - Thrown value.
+ * @param {string} stage - Example stage that failed.
+ * @returns {{name: string, message: string, stage: string, stack: (string|undefined)}} Serializable details.
+ */
 export function errorDetails(error, stage) {
   return {
     name: error instanceof Error ? error.name : "Error",
