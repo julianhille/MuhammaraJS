@@ -1297,6 +1297,11 @@ export function createReaderFactory({
         if (!handle) throw new Error("Unable to get PDF parser stream");
         return wrapByteReader(handle, true);
       },
+      /**
+       * Opens a positioned reader over a copying context's source file.
+       * @returns {PositionedPDFByteReader} The byte reader.
+       * @throws {Error} If the reader has ended, did not come from a copying context, or the stream is unavailable.
+       */
       getSourceDocumentStream: function () {
         requireReader();
         if (!copyingContext) {
