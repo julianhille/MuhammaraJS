@@ -127,6 +127,15 @@ async function createRuntime(options) {
     }
     return bytes;
   }
+  /**
+   * Reads byte input, including Blob and File, and enforces `maxInputBytes`.
+   * @async
+   * @param {AsyncByteSource} value - Bytes or a Blob-like object.
+   * @param {string} [label] - Name used in error messages.
+   * @returns {Promise<Uint8Array>} A copy of the bytes.
+   * @throws {TypeError} If `value` is not a supported byte source.
+   * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+   */
   async function normalizeBytesAsync(value, label) {
     if (
       typeof Blob !== "undefined" &&
