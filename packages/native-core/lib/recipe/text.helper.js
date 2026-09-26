@@ -35,6 +35,10 @@ const Word = class Word {
     return this._value;
   }
 
+  /**
+   * The measured text box, including character spacing; cached.
+   * @returns {Object} xMin, yMin, xMax, yMax, width and height.
+   */
   get dimensions() {
     if (this._dimensions) {
       return this._dimensions;
