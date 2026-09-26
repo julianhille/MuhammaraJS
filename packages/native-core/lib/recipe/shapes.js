@@ -97,6 +97,12 @@ function endPoint(x, y, l, angle) {
   return [x + l * Math.cos(radians), y + l * Math.sin(radians)];
 }
 
+/**
+ * The bounding box of a list of points.
+ * @private
+ * @param {number[][]} coords - The [x, y] points; at least one.
+ * @returns {number[]} [minX, minY, maxX, maxY].
+ */
 function boundingBox(coords) {
   let boundBox = [coords[0][0], coords[0][1], coords[0][0], coords[0][1]];
   for (const coord of coords) {
