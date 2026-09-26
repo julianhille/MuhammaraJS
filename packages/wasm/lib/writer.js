@@ -687,6 +687,11 @@ export function createWriterFactory({
         });
         additionalInfo.delete(key);
       },
+      /**
+       * Removes every custom Info dictionary entry.
+       * @returns {void}
+       * @throws {Error} If the writer has ended or the entries cannot be cleared.
+       */
       clearAdditionalInfoEntries: function () {
         requireOpenWriter();
         if (!module._muhammara_wasm_recipe_clear_info(recipe)) {
