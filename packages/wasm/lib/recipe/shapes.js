@@ -164,6 +164,12 @@ function triangleGeometry(x, y, traitID, traits) {
   return { vertices, a, b, c };
 }
 
+/**
+ * Computes a triangle's incenter, circumcenter, centroid, and radii.
+ * @param {number[][]} vertices - Three vertices.
+ * @param {{a: number, b: number, c: number}} sides - Side lengths.
+ * @returns {object} The centers and radii.
+ */
 function centerForTriangle(vertices, sides) {
   var B = vertices[0],
     C = vertices[1],
