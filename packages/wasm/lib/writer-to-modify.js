@@ -303,8 +303,8 @@ export function createWriterToModifyFactory({
         k: function (...args) {
           return operator("k", 28, args);
         },
-        K: function (...args) {
-          return operator("K", 29, args);
+        K: function (cyan, magenta, yellow, black) {
+          return operator("K", 29, [cyan, magenta, yellow, black]);
         },
         W: function () {
           return operator("W", 30);
@@ -1440,7 +1440,7 @@ export function createWriterToModifyFactory({
               ["g", 24],
               ["G", 25],
               ["k", 28],
-              ["K", 29],
+              ["K", 29, 4],
               ["w", 20],
               ["J", 21],
               ["j", 22],
