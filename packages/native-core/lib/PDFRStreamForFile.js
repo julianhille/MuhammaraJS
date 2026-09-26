@@ -90,6 +90,12 @@ PDFRStreamForFile.prototype.moveStartPosition = function (inPosition) {
 
 function noop() {}
 
+/**
+ * Closes the file.
+ * @param {Function} [inCallback] - Called once the file is closed, with the
+ *   close error if any.
+ * @returns {void}
+ */
 PDFRStreamForFile.prototype.close = function (inCallback) {
   fs.close(this.rs, inCallback ? inCallback : noop);
 };
