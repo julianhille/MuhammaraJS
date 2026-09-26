@@ -1138,6 +1138,13 @@ export function createWriterToModifyFactory({
         setInfo(key, value);
         additionalInfo.set(key, value);
       },
+      /**
+       * Removes a custom Info dictionary entry.
+       * @param {string} key - Entry name.
+       * @returns {void}
+       * @throws {TypeError} If `key` is not a string.
+       * @throws {Error} If the modifier has ended or the entry cannot be removed.
+       */
       removeAdditionalInfoEntry: function (key) {
         requireOpen();
         if (typeof key !== "string")
