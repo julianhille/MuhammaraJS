@@ -226,6 +226,19 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   return this;
 };
 
+/**
+ * Append a rectangle path with rounded corners.
+ * @private
+ * @param {Object} ctx - The content context.
+ * @param {number} left - The left edge.
+ * @param {number} bottom - The bottom edge.
+ * @param {number} width - The width.
+ * @param {number} height - The height.
+ * @param {number|number[]} radii - One radius, or up to four clockwise from
+ *   the top-left corner; missing ones come from the opposite corner.
+ * @param {number} [inset=0] - How far to move the path inside the rectangle.
+ * @returns {void}
+ */
 function drawRoundedRectangle(
   ctx,
   left,
