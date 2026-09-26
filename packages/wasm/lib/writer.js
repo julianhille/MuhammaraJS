@@ -3480,6 +3480,16 @@ export function createWriterFactory({
         }
         return this;
       },
+      /**
+       * Loads a registered font for text on this writer.
+       * @param {string} name - Registered font name.
+       * @param {string|number} [metricsNameOrIndex] - Registered Type 1 metrics font name, or the font index.
+       * @param {number} [fontIndex=0] - Face index in a font collection, after a metrics name.
+       * @returns {PDFUsedFont} The font.
+       * @throws {TypeError} If the writer ended, `name` is not a string, or the arguments are misordered.
+       * @throws {RangeError} If the font index is not a 32-bit unsigned integer.
+       * @throws {Error} If a font is not registered or cannot be loaded.
+       */
       getFontForBytes: function (name, metricsNameOrIndex, fontIndex) {
         if (ended || typeof name !== "string") {
           throw new TypeError(
