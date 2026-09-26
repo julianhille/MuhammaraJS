@@ -339,6 +339,13 @@ export function createWriterSupport({
        * @throws {Error} If the owner is closed or the mapping fails.
        */
       addPropertyMapping: (objectId) => addMapping(4, objectId),
+      /**
+       * Maps a XObject object into the resources dictionary.
+       * @param {number} objectId - Indirect object ID of the XObject.
+       * @returns {string} The resource name to use in content operators.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the owner is closed or the mapping fails.
+       */
       addXObjectMapping: (objectId) => addMapping(5, objectId),
       addFormXObjectMapping: (objectId) => addMapping(6, objectId),
       addImageXObjectMapping: (objectId) => addMapping(7, objectId),
