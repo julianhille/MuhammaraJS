@@ -2046,6 +2046,11 @@ export function createWriterToModifyFactory({
           id:
             objectId ||
             module._muhammara_wasm_modifier_form_get_object_id(handle),
+          /**
+           * Returns the form resources dictionary.
+           * @returns {ResourcesDictionary} The resources dictionary.
+           * @throws {Error} If the modifier or the form has ended.
+           */
           getResourcesDictionary: function () {
             requireOpen();
             if (form._ended)
