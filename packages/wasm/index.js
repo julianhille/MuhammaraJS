@@ -219,6 +219,10 @@ async function createRuntime(options) {
     normalizeBytes,
     withString: helpers.withString,
     textStringValue,
+    /**
+     * Reserves a unique virtual path for reader input.
+     * @returns {string} The path.
+     */
     allocatePdfPath: () => `/pdfs/${state.nextPdf++}.pdf`,
     removeFile: helpers.removeFile,
   });
