@@ -460,6 +460,10 @@ function collectForms(recipe, names, resources, forms) {
  * @param {Recipe} recipe Recipe with an open source reader.
  * @param {*} pageNumber Candidate page number.
  * @param {string} methodName Method name used in errors.
+ * @private
+ * @returns {void}
+ * @throws {TypeError} If the page number is not a positive integer.
+ * @throws {RangeError} If the source has no such page.
  */
 function assertPageNumber(recipe, pageNumber, methodName) {
   if (!Number.isInteger(pageNumber) || pageNumber < 1) {
