@@ -561,6 +561,13 @@ export function createRawObjectsContext({
         module._muhammara_wasm_objects_write_boolean(handle, value);
         return this;
       },
+      /**
+       * Writes a name token.
+       * @param {string} value - Name without the leading slash.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not a string.
+       * @throws {Error} If the writer has ended or writing fails.
+       */
       writeName: function (value) {
         writeObjectString(0, value);
         return this;
