@@ -1,6 +1,10 @@
 import { PageBox } from "./value-sets.js";
 
-/** Creates PDF value encoders and constructors backed by the WASM module. */
+/**
+ * Creates PDF value encoders and constructors backed by the Wasm module.
+ * @param {{module: object, withString: Function, withBytes: Function}} dependencies - Module and memory helpers.
+ * @returns {{PDFTextString: Function, PDFDate: Function, PDFPage: Function, normalizePDFDate: Function, textStringValue: Function}} The value types.
+ */
 export function createValueTypes({ module, withString, withBytes }) {
   var encoder = new TextEncoder();
   function textStringBytes(value) {
