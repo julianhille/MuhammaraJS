@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import type {
+  ImageType,
   PageRangeOptions,
   ERangeType,
   XrefEntryType,
@@ -846,6 +847,8 @@ async function usesNamedValueSets() {
     specificRanges: [[0, 0]],
   };
   void [rangeType, ranges];
+  var imageType: ImageType | undefined = writer.getImageType("logo");
+  void imageType;
 }
 
 void usesNamedValueSets;
