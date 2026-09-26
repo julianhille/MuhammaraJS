@@ -1,4 +1,8 @@
-/** Creates a factory for low-level PDF modifiers. */
+/**
+ * Creates the factory for high-level page modifiers.
+ * @param {object} dependencies - Module, constants, and shared helpers.
+ * @returns {Function} The modifier factory.
+ */
 export function createModifierFactory({
   module,
   constants,
