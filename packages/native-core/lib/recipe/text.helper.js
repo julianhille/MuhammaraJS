@@ -424,6 +424,9 @@ exports.Column = class Column {
   get width() {
     return this._width;
   }
+  /**
+   * @returns {number} The column height.
+   */
   get height() {
     return this._height;
   }
