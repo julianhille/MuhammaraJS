@@ -385,6 +385,11 @@ async function createRuntime(options) {
     unregisterFont: function (name) {
       return unregisterAsset(fonts, name);
     },
+    /**
+     * Removes a registered image.
+     * @param {string} name - Image name.
+     * @returns {boolean} Whether an image was removed.
+     */
     unregisterImage: function (name) {
       imageTypes.delete(name);
       return unregisterAsset(images, name);
