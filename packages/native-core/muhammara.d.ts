@@ -1210,6 +1210,10 @@ declare namespace muhammara {
      * @returns The type, one of the ePDFObject* constants.
      */
     getType(): PDFObjectType;
+    /**
+     * Returns this object typed as an indirect object reference.
+     * @returns This object; undefined when it is not an indirect object reference.
+     */
     toPDFIndirectObjectReference(): PDFIndirectObjectReference | undefined;
     toPDFArray(): PDFArray | undefined;
     toPDFDictionary(): PDFDictionary | undefined;
