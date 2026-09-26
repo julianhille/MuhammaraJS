@@ -532,6 +532,14 @@ export function createRecipeFactory({
     /**
      * Adds a cubic curve to the active native PDF path.
      * @private
+     * @param {number} x1 - First control point x.
+     * @param {number} y1 - First control point y.
+     * @param {number} x2 - Second control point x.
+     * @param {number} y2 - Second control point y.
+     * @param {number} x3 - End point x.
+     * @param {number} y3 - End point y.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If the operator fails.
      */
     _curvePdf(x1, y1, x2, y2, x3, y3) {
       if (this._pageContext)
