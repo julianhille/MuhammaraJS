@@ -373,6 +373,12 @@ function rotate(ox, oy, p, q, angle) {
   return [x, y];
 }
 
+/**
+ * The center of the bounding box of a list of points.
+ * @private
+ * @param {number[][]} ngon - The [x, y] points.
+ * @returns {number[]} The center [x, y].
+ */
 function center(ngon) {
   let [minX, minY, maxX, maxY] = boundingBox(ngon);
   let width = maxX - minX;
