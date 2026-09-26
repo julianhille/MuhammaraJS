@@ -140,6 +140,11 @@ export function createCopyingHelpers({ module }) {
           module._free(resultPointer);
         }
       },
+      /**
+       * Lists every source object copied so far.
+       * @returns {Record<string, number>} Output object IDs keyed by source object ID.
+       * @throws {Error} If the context has ended or the mapping cannot be read.
+       */
       getCopiedObjects: function () {
         requireCopying();
         var countPointer = module._malloc(4);
