@@ -501,6 +501,13 @@ export function createRawObjectsContext({
         }
         return this;
       },
+      /**
+       * Writes a number token, as an integer when `value` is whole.
+       * @param {number} value - Finite number.
+       * @returns {this} The objects context.
+       * @throws {TypeError} If `value` is not finite or cannot be written.
+       * @throws {Error} If the writer has ended.
+       */
       writeNumber: function (value) {
         requireContext();
         if (
