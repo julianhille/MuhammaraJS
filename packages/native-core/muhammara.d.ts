@@ -789,6 +789,12 @@ declare namespace muhammara {
      * @returns The items as PDF objects.
      */
     toJSArray(): Array<any>;
+    /**
+     * Returns an item, without resolving an indirect reference.
+     * @param index - The zero-based item index.
+     * @returns The item as a PDF object.
+     * @throws {TypeError} If index is not a number or is out of range.
+     */
     queryObject(index: number): any;
     getLength(): number;
   }
