@@ -157,6 +157,18 @@ exports._reverseCoordinate = function _reverseCoordinate(
   };
 };
 
+/**
+ * Rotate a point around a center and translate it.
+ * @private
+ * @param {number} cx - The center x.
+ * @param {number} cy - The center y.
+ * @param {number} x - The point x.
+ * @param {number} y - The point y.
+ * @param {number} angle - The rotation in degrees, clockwise in PDF space.
+ * @param {number} [offsetX=0] - Added to the rotated x.
+ * @param {number} [offsetY=0] - Added to the rotated y.
+ * @returns {{nx: number, ny: number}} The rotated point.
+ */
 function rotateCoord(cx, cy, x, y, angle, offsetX = 0, offsetY = 0) {
   const radians = (Math.PI / 180) * angle,
     cos = Math.cos(radians),
