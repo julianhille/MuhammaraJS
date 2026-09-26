@@ -4721,6 +4721,37 @@ declare namespace muhammara {
      * @throws {TypeError} If no page is active.
      */
     arrow(x: number, y: number, options?: Recipe.ArrowOptions): Recipe;
+    /**
+     * Associate color values to names
+     *
+     * The colorspace parameter is optional. When it is missing, the colorspace
+     * is automatically determined by the given color value. Note that the special
+     * PDF color space called 'separation' may also be used. The color value is then
+     * treated as the alternative color when the named 'separation' color is unavailable.
+     *
+     * If the 'name' parameter is `Recipe.ChromaCommand.LOAD` ('!load'), the second parameter is the name of a JSON
+     * formatted file containing a formatted list of defined colors associated with the
+     * color spaces rgb, cmyk, gray, or separation (think PANTONE color definitions).
+     * This file will be merged with existing set of known colors. The color values
+     * must be specified as hex values.
+     *
+     * For example,
+     *   {
+     *      'rgb':  {'purple':'ff00ff', 'red':'#ff0000'},
+     *      'cmyk': {'cyan':'ff000000', 'magenta':'%0,100,0,0'},
+     *      'gray': {'grey':'#33'}
+     *   }
+     *
+     * @param name - the name to be associated to given color value, or `Recipe.ChromaCommand.LOAD`
+     * @param value - the color value (HexColor, DecimalColor, or PercentColor), or the path of the JSON file to load
+     * @param colorspace - One of the `Recipe.Colorspace`; defaults to ''.
+     *   values; empty picks gray, rgb or cmyk from the value length.
+     * @returns The recipe instance.
+     * @throws {Error} If the file to load cannot be read or is not valid JSON.
+     * @throws {Error} If a loaded color definition has an unrecognized colorspace.
+     * @throws {Error} If a color value has an invalid size.
+     * @throws {Error} If the colorspace is unknown.
+     */
     chroma<ColorspaceValue extends string | undefined = undefined>(
       name: string,
       value: Recipe.Color,
