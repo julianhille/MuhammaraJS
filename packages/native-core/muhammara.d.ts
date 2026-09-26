@@ -928,6 +928,13 @@ declare namespace muhammara {
      * @throws {TypeError} If the copying context has ended.
      */
     copyNewObjectsForDirectObject(objectIds: Array<number>): void;
+    /**
+     * Returns the ID in this document of an already copied source object.
+     * @param objectId - The source object ID.
+     * @returns The object ID in this document.
+     * @throws {TypeError} If objectId is not a number or has not been copied.
+     * @throws {TypeError} If the copying context has ended.
+     */
     getCopiedObjectID(objectId: number): number;
     getCopiedObjects(): { [key: string]: number };
     replaceSourceObjects(replaceMap: { [key: string]: number }): void;
