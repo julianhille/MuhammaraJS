@@ -1327,6 +1327,15 @@ function justify(left, x, wto, textBox, position) {
   return word.value.endsWith(" ") ? x : x - spaceBetweenWords;
 }
 
+/**
+ * The word between the previous break and the next one.
+ * @private
+ * @param {string} text - The text being broken.
+ * @param {Object} brk - The line break opportunity: position and required.
+ * @param {number} previousPosition - The position of the previous break.
+ * @param {Object} pathOptions - The resolved text options.
+ * @returns {Word} The word; trimmed at a required break.
+ */
 function nextWord(text, brk, previousPosition, pathOptions) {
   let nextWord = text.slice(previousPosition, brk.position);
 
