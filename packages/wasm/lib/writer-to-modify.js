@@ -3448,6 +3448,11 @@ export function createWriterToModifyFactory({
           lifecycle.untrack(cleanupCopying);
         }
         lifecycle.track(cleanupCopying);
+        /**
+         * Rejects use of an ended copying context.
+         * @returns {void}
+         * @throws {Error} If the modifier or the copying context has ended.
+         */
         function requireCopying() {
           requireOpen();
           if (copyingEnded) throw new Error("PDF copying context has ended");
