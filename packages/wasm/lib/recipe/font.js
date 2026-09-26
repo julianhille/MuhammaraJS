@@ -34,8 +34,13 @@ export function fontStyleKey(type) {
 /**
  * Registers a font path for a family and style.
  *
+ * @param {Map<string, object>} fonts - Font families keyed by lower-case name.
+ * @param {string} name - Non-empty family name.
+ * @param {string} path - Virtual file system path of the font.
+ * @param {RecipeFontStyle} [type="regular"] - Style to register.
  * @returns {string|undefined} The previously registered path. The caller owns
  * cleanup of that replaced path.
+ * @throws {TypeError} If `name` is empty or not a string.
  */
 export function registerFont(
   fonts,
