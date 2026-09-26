@@ -2067,6 +2067,11 @@ export function createWriterToModifyFactory({
                 throw new Error("Form XObject resources are no longer active");
             });
           },
+          /**
+           * Returns the form resources dictionary; misspelled native alias.
+           * @returns {ResourcesDictionary} The resources dictionary.
+           * @throws {Error} If the modifier or the form has ended.
+           */
           getResourcesDictinary: function () {
             return form.getResourcesDictionary();
           },
