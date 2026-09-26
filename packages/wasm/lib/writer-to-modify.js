@@ -1262,6 +1262,13 @@ export function createWriterToModifyFactory({
       get: function () {
         return trapped;
       },
+      /**
+       * Writes `/Trapped`.
+       * @param {EInfoTrapped} value - An `EInfoTrapped*` constant.
+       * @returns {void}
+       * @throws {RangeError} If `value` is not an EInfoTrapped constant.
+       * @throws {Error} If the modifier has ended or the entry cannot be set.
+       */
       set: function (value) {
         requireOpen();
         if (!TRAPPED_VALUES.includes(value))
