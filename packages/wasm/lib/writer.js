@@ -940,6 +940,11 @@ export function createWriterFactory({
         W: function () {
           return operator("W", 30);
         },
+        /**
+         * Intersects the clipping path with the current path, even-odd (`W*`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         WStar: function () {
           return operator("WStar", 31);
         },
