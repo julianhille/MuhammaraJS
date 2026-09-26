@@ -164,6 +164,20 @@ describe("SimpleContentPageTest", function () {
         );
       }
       assert.throws(() => context.Tf("F1", 0), RangeError, `${kind}.Tf`);
+      for (var draw of [
+        () => context.drawRectangle(1, 1, 2, 2, { type: "fil" }),
+        () => context.drawCircle(3, 3, 1, { type: "outline" }),
+        () =>
+          context.drawPath(
+            [
+              [0, 0],
+              [1, 1],
+            ],
+            { type: 1 },
+          ),
+      ]) {
+        assert.throws(draw, /DrawingPathType value or null/, `${kind} type`);
+      }
       assert.throws(() => context.Tf({}, 10), TypeError, `${kind}.Tf`);
     }
   });

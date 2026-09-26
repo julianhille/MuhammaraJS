@@ -28,20 +28,18 @@ Page and form contexts on new and modifying writers expose `drawPath`,
 `"stroke"` (the default), `"fill"`, or `"clip"`. Clipping intersects the current
 clipping region without painting the shape and emits `W n` to end the path.
 `close: true` closes the path first. Scope the clip with `q()` before defining it
-and `Q()` after the drawing it should affect. Unknown types neither paint nor
-clip and end the path with `n`, preventing later drawing from painting their
-geometry. Pass a supported type explicitly.
+and `Q()` after the drawing it should affect. Any other `type` throws a
+`TypeError` before anything is written; native instead ends such a path with `n`
+without painting it.
 
-An explicit `type: null` is also unrecognized: it ends the path without painting,
+An explicit `type: null` ends the path without painting,
 ignores `width` and `close`, and applies a supplied `color` only to the
 non-stroking graphics state, matching native. Omit `type` or use `"stroke"` for
 an outline; `null` does not select the default.
 
 `DrawingPathType` names these values at runtime and in the TypeScript
-declarations, so a misspelled paint mode fails to compile instead of producing
-unpainted geometry.
-The runtime still tolerates any other value for compatibility, but it is not a
-supported input.
+declarations, so a misspelled paint mode fails to compile, and at runtime it
+throws instead of producing unpainted geometry.
 
 These helpers validate coordinates and snapshot drawing options before emitting
 geometry or graphics-state operators. `writeText` likewise reads its font, size,

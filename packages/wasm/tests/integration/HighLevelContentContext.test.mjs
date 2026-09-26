@@ -101,7 +101,8 @@ describe("HighLevelContentContext", function () {
     );
 
     it(
-      "distinguishes default, recognized and unknown path types on " + mode,
+      "distinguishes default and recognized path types and rejects others on " +
+        mode,
       async function () {
         var target = await drawingTarget(mode);
         var cases = [
@@ -111,14 +112,19 @@ describe("HighLevelContentContext", function () {
           [{ type: "fill" }, "f"],
           [{ type: "clip", close: true }, "h\\s+W\\s+n"],
           [{ type: null }, "n"],
-          [{ type: false }, "n"],
-          [{ type: 0 }, "n"],
-          [{ type: "" }, "n"],
-          [{ type: "unknown", close: true }, "n"],
         ];
         for (var [options] of cases)
           target.context.q().drawRectangle(1, 2, 3, 4, options).Q();
+        // Unlike native, which ends such a path unpainted, Wasm rejects any
+        // other type before writing anything.
+        for (var type of [false, 0, "", "unknown", "clipp"]) {
+          assert.throws(
+            () => target.context.drawRectangle(9, 9, 9, 9, { type }),
+            TypeError,
+          );
+        }
         var output = target.finish();
+        assert.doesNotMatch(output, /9 9 9 9 re/);
         var segments = [...output.matchAll(/q\s+(1 2 3 4 re[\s\S]*?)\s+Q/g)];
         assert.equal(segments.length, cases.length);
         cases.forEach(function (entry, index) {
@@ -411,33 +417,29 @@ describe("HighLevelContentContext", function () {
       },
     );
 
-    it(
-      "clips without painting and ignores unknown path types on " + mode,
-      async function () {
-        var target = await drawingTarget(mode);
-        var context = target.context;
-        context
-          .q()
-          .drawRectangle(10, 20, 30, 40, { type: "clip" })
-          .drawSquare(10, 20, 30, { type: "clip", close: true })
-          .drawCircle(50, 50, 10, { type: "clip" })
-          .drawPath(
-            [
-              [0, 0],
-              [10, 10],
-            ],
-            { type: "clip", close: true },
-          )
-          .Q()
-          .drawRectangle(1, 2, 3, 4, { type: "clipp" })
-          .drawRectangle(5, 6, 7, 8, { type: "fill" });
-        var output = target.finish();
-        assert.equal((output.match(/\bW\s+n\b/g) || []).length, 4);
-        assert.match(output, /10 20 30 40 re\s+W\s+n/);
-        assert.match(output, /10 20 30 30 re\s+h\s+W\s+n/);
-        assert.match(output, /1 2 3 4 re\s+n\s+5 6 7 8 re\s+f/);
-      },
-    );
+    it("clips without painting on " + mode, async function () {
+      var target = await drawingTarget(mode);
+      var context = target.context;
+      context
+        .q()
+        .drawRectangle(10, 20, 30, 40, { type: "clip" })
+        .drawSquare(10, 20, 30, { type: "clip", close: true })
+        .drawCircle(50, 50, 10, { type: "clip" })
+        .drawPath(
+          [
+            [0, 0],
+            [10, 10],
+          ],
+          { type: "clip", close: true },
+        )
+        .Q()
+        .drawRectangle(5, 6, 7, 8, { type: "fill" });
+      var output = target.finish();
+      assert.equal((output.match(/\bW\s+n\b/g) || []).length, 4);
+      assert.match(output, /10 20 30 40 re\s+W\s+n/);
+      assert.match(output, /10 20 30 30 re\s+h\s+W\s+n/);
+      assert.match(output, /5 6 7 8 re\s+f/);
+    });
 
     it(
       "sets color and width before the path, as native does, on " + mode,

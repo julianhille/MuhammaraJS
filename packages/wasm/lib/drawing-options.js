@@ -46,7 +46,7 @@ function readColor(options, colorValue) {
  * @param {function(*): number} colorValue - Converts a color option to a number.
  * @param {string} [widthError] - Message for a non-finite stroke width.
  * @returns {object} `color`, `colorspace`, `width`, `type`, `close`, and `stroke`.
- * @throws {TypeError} If the color, color space, or stroke width is invalid.
+ * @throws {TypeError} If the color, color space, stroke width, or `type` is invalid.
  */
 export function readDrawingOptions(
   options,
@@ -55,6 +55,13 @@ export function readDrawingOptions(
 ) {
   options = options || {};
   var setupType = options.type;
+  if (
+    setupType !== undefined &&
+    setupType !== null &&
+    !Object.values(DrawingPathType).includes(setupType)
+  ) {
+    throw new TypeError("type must be a DrawingPathType value or null");
+  }
   var stroke = setupType === undefined || setupType === DrawingPathType.STROKE;
   var color = readColor(options, colorValue);
   var width = stroke ? options.width : undefined;

@@ -5,7 +5,9 @@ Wasm requires numeric values and throws for numeric strings. Both reject
 non-finite drawing values. Wasm `writeText()` additionally requires a positive
 size and a font owned by the same writer. Wasm `J()`, `j()` and `Tr()` reject
 operands outside the PDF ranges (0 to 2, 0 to 2, and 0 to 7); native writes
-any value. These existing validation differences are retained for compatibility.
+any value. These existing validation differences are retained for compatibility. The drawing
+helpers' `type` option throws a `TypeError` in Wasm for a value that is not a
+`DrawingPathType` value or `null`; native ends such a path unpainted.
 
 Recipe value constants are static properties with the native names and members
 (`Recipe.TextWrap`, `Recipe.AnnotFlag`, and so on). Wasm has no `Recipe.Source`,
