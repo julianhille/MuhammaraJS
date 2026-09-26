@@ -4607,6 +4607,12 @@ export function createWriterFactory({
         });
         return this;
       },
+      /**
+       * Writes a page and returns its object ID.
+       * @param {PDFPage} page - The active page, or a page when none is active.
+       * @returns {number} Object ID of the page.
+       * @throws {Error} If the writer ended, another page is active, or the page cannot be written.
+       */
       writePageAndReturnID: function (page) {
         var objectIdPointer = module._malloc(4);
         try {
