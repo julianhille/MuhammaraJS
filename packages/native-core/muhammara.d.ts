@@ -533,6 +533,13 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     CS(colorSpaceName: string): this;
+    /**
+     * Sets the fill color space; operator cs.
+     * @param colorSpaceName - A color space name or resource name.
+     * @returns This context.
+     * @throws {TypeError} If colorSpaceName is not a single string.
+     * @throws {TypeError} If there is no content context.
+     */
     cs(colorSpaceName: string): this;
     SC(...colorComponents: number[]): this;
     SCN(...parameters: any[]): this; // This can't be materialized in TypeScript
