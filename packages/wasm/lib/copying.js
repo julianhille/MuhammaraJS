@@ -115,6 +115,13 @@ export function createCopyingHelpers({ module }) {
         }
         return this;
       },
+      /**
+       * Looks up the output ID of an already copied source object.
+       * @param {number} sourceObjectId - Object ID in the source document.
+       * @returns {number} Object ID of the copy in the output.
+       * @throws {RangeError} If the ID is invalid or the object was not copied.
+       * @throws {Error} If the copying context has ended.
+       */
       getCopiedObjectID: function (sourceObjectId) {
         requireCopying();
         requireObjectId(sourceObjectId, "Source object ID");
