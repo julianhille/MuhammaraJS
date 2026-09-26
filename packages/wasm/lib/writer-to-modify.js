@@ -3335,6 +3335,11 @@ export function createWriterToModifyFactory({
             context = null;
             return this;
           },
+          /**
+           * Writes the modified page.
+           * @returns {this} The page modifier.
+           * @throws {Error} If the modifier ended, no page was started, a context is active, or writing fails.
+           */
           writePage: function () {
             requireOpen();
             if (
