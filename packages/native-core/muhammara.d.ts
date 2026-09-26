@@ -1044,6 +1044,12 @@ declare namespace muhammara {
      *   context.
      */
     setCreationDate(date: string | Date | PDFDate): void;
+    /**
+     * Sets the modification date.
+     * @param date - The date, a PDF date string, or a PDFDate to copy.
+     * @throws {TypeError} If the dictionary was not obtained from a document
+     *   context.
+     */
     setModDate(date: string | Date | PDFDate): void;
 
     title: string;
