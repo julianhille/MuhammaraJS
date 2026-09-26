@@ -780,6 +780,16 @@ export function createWriterFactory({
         v: function (x1, y1, x2, y2) {
           return operator("v", 13, [x1, y1, x2, y2]);
         },
+        /**
+         * Appends a cubic Bezier curve whose second control point is the end point (`y`).
+         * @param {number} x1 - First control point x.
+         * @param {number} y1 - First control point y.
+         * @param {number} x3 - End point x.
+         * @param {number} y3 - End point y.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If an operand is missing or not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         y: function (x1, y1, x2, y2) {
           return operator("y", 14, [x1, y1, x2, y2]);
         },
