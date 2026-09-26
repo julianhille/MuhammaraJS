@@ -2502,6 +2502,11 @@ export function createWriterToModifyFactory({
                     handle,
                     ...args,
                   ),
+                /**
+                 * Runs the native `TJ` operator.
+                 * @param {...number} args - Encoding and the encoded item pointers.
+                 * @returns {boolean} Whether the operator was written.
+                 */
                 tj: (...args) =>
                   module._muhammara_wasm_modifier_form_show_tj(
                     modifier,
