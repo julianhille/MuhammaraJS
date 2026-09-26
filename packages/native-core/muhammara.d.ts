@@ -1680,6 +1680,17 @@ declare namespace muhammara {
       options?: Recipe.RecipeOptions,
     );
 
+    /** The arrow point placed at the `arrow()` coordinates. */
+    static readonly ArrowAt: {
+      readonly HEAD: "head";
+      readonly TAIL: "tail";
+    };
+    /** Arrow head shapes for the `arrow()` type option. */
+    static readonly ArrowType: {
+      readonly TRIANGLE: "triangle";
+      readonly DART: "dart";
+      readonly KITE: "kite";
+    };
     /** How `triangle()` traits define the triangle. */
     static readonly TriangleTrait: {
       readonly SSS: "sss";

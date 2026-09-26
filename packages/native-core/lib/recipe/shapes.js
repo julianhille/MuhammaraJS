@@ -1,4 +1,17 @@
-const { TriangleTrait, TrianglePosition } = require("../recipe-constants");
+const {
+  TriangleTrait,
+  TrianglePosition,
+  ArrowAt,
+  ArrowType,
+} = require("../recipe-constants");
+
+// Corners of an arrow shaft: bottom/top, left/right.
+const ShaftCorner = Object.freeze({
+  BOTTOM_RIGHT: "br",
+  BOTTOM_LEFT: "bl",
+  TOP_LEFT: "tl",
+  TOP_RIGHT: "tr",
+});
 
 /*  N-Gon border box for odd numbered side shapes used to deal with object rotation.
 
@@ -942,21 +955,31 @@ const Triangle = class Triangle {
  * @param {number} x x-coordinate position
  * @param {number} y y-coordinate position
  * @param {Object} [options] arrow and polygon options
- * @param {number} [options.type=0] indicates the type of arrow head to produce. (0-'triangle', 1-'dart', 2-'kite')
- * Number or name may be used. Note, that the value of base offset in head option overrides this value.
+ * @param {Recipe.ArrowType|number} [options.type=0] indicates the type of arrow head to produce,
+ * a `Recipe.ArrowType` value or its number (0-'triangle', 1-'dart', 2-'kite').
+ * Note, that the value of base offset in head option overrides this value.
  * @param {number|number[]} [options.head=[10,20,0]] defines the length, width and base offset of arrow head.
  * A single number can be used to assign both the length and width of arrow, giving the base offset value as zero.
  * @param {number|number[]} [options.shaft=[10,10]] defines the length and width of the arrow shaft.
  * @param {Boolean} [options.double=false] indicate double headed arrow production.
- * @param {string} [options.at] position and/or rotate at "head" or "tail" of arrow instead of at center.
+ * @param {Recipe.ArrowAt} [options.at] position and/or rotate at the `Recipe.ArrowAt` head or tail of arrow instead of at center.
+ * @param {number|boolean} [options.debug] Draw the drop point; 2 also labels the reference points.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If no page is active.
  */
 exports.arrow = function arrow(x, y, options = {}) {
   let defaultHeadLength = 10;
   let nock = null;
   let ox = x;
   let debug = options.debug;
-  let headTypes = { 0: 0, triangle: 0, 1: 0.5, dart: 0.5, 2: -1, kite: -1 };
+  let headTypes = {
+    0: 0,
+    [ArrowType.TRIANGLE]: 0,
+    1: 0.5,
+    [ArrowType.DART]: 0.5,
+    2: -1,
+    [ArrowType.KITE]: -1,
+  };
 
   let shaftLength = defaultHeadLength;
   let shaftWidth = defaultHeadLength;
@@ -1020,10 +1043,10 @@ exports.arrow = function arrow(x, y, options = {}) {
   // ('default' choice represents center of arrow and default rotation point)
   if (options.double) {
     switch (options.at) {
-      case "head":
+      case ArrowAt.HEAD:
         x -= headLength;
         break;
-      case "tail":
+      case ArrowAt.TAIL:
         x += shaftLength + headLength;
         break;
       default:
@@ -1032,10 +1055,10 @@ exports.arrow = function arrow(x, y, options = {}) {
     nock = new Kite(x - shaftLength, y, headLength, headWidth, baseOffset);
   } else {
     switch (options.at) {
-      case "head":
+      case ArrowAt.HEAD:
         x -= headLength;
         break;
-      case "tail":
+      case ArrowAt.TAIL:
         x += shaftLength;
         break;
       default:
@@ -1078,15 +1101,15 @@ exports.arrow = function arrow(x, y, options = {}) {
       [
         arrow.tip.I, // tip point of arrow
         arrow.tip.T,
-        arrow.shaft("br"), // lower connection point to arrow tip
-        arrow.shaft("bl"),
+        arrow.shaft(ShaftCorner.BOTTOM_RIGHT), // lower connection point to arrow tip
+        arrow.shaft(ShaftCorner.BOTTOM_LEFT),
 
         arrow.nock.Tp, // drawing reverse arrow head at nock/tail of arrow
         arrow.nock.Ip,
         arrow.nock.Kp,
 
-        arrow.shaft("tl"),
-        arrow.shaft("tr"), // upper connection point to arrow tip
+        arrow.shaft(ShaftCorner.TOP_LEFT),
+        arrow.shaft(ShaftCorner.TOP_RIGHT), // upper connection point to arrow tip
         arrow.tip.K,
         arrow.tip.I,
       ],
@@ -1110,10 +1133,10 @@ exports.arrow = function arrow(x, y, options = {}) {
       [
         arrow.tip.I, // tip point of arrow
         arrow.tip.T,
-        arrow.shaft("br"), // lower connection point to arrow tip
-        arrow.shaft("bl"),
-        arrow.shaft("tl"),
-        arrow.shaft("tr"), // upper connection point to arrow tip
+        arrow.shaft(ShaftCorner.BOTTOM_RIGHT), // lower connection point to arrow tip
+        arrow.shaft(ShaftCorner.BOTTOM_LEFT),
+        arrow.shaft(ShaftCorner.TOP_LEFT),
+        arrow.shaft(ShaftCorner.TOP_RIGHT), // upper connection point to arrow tip
         arrow.tip.K,
         arrow.tip.I,
       ],
@@ -1162,16 +1185,16 @@ exports.arrow = function arrow(x, y, options = {}) {
         color: kcc,
         width: 0.5,
       });
-      let br = arrow.shaft("br");
+      let br = arrow.shaft(ShaftCorner.BOTTOM_RIGHT);
       this.text("br", br[0] - 4, br[1] - 11, { size: 9, color: tc });
       this.circle(br[0], br[1] - 8, 6, { color: cc, width: 0.5 });
-      let bl = arrow.shaft("bl");
+      let bl = arrow.shaft(ShaftCorner.BOTTOM_LEFT);
       this.text("bl", bl[0] + 4, bl[1] - 11, { size: 9, color: tc });
       this.circle(bl[0] + 8, bl[1] - 8, 6, { color: cc, width: 0.5 });
-      let tl = arrow.shaft("tl");
+      let tl = arrow.shaft(ShaftCorner.TOP_LEFT);
       this.text("tl", tl[0] + 5, tl[1] + 2, { size: 9, color: tc });
       this.circle(tl[0] + 8, tl[1] + 7, 6, { color: cc, width: 0.5 });
-      let tr = arrow.shaft("tr");
+      let tr = arrow.shaft(ShaftCorner.TOP_RIGHT);
       this.text("tr", tr[0] - 3, tr[1] + 2, { size: 9, color: tc });
       this.circle(tr[0], tr[1] + 7, 6, { color: cc, width: 0.5 });
     }

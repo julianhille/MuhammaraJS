@@ -969,3 +969,8 @@ annotationRecipe.triangle(100, 100, [30, 40, 50], {
   traitID: muhammara.Recipe.TriangleTrait.SSS,
   position: muhammara.Recipe.TrianglePosition.CENTROID,
 });
+
+annotationRecipe.arrow(100, 100, {
+  at: muhammara.Recipe.ArrowAt.HEAD,
+  type: muhammara.Recipe.ArrowType.KITE,
+});

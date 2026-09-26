@@ -253,7 +253,31 @@ var TrianglePosition = Object.freeze({
   INCENTER: "incenter",
 });
 
+/**
+ * The arrow point placed at the `arrow()` coordinates; the center when omitted.
+ * @readonly
+ * @enum {string}
+ */
+var ArrowAt = Object.freeze({
+  HEAD: "head",
+  TAIL: "tail",
+});
+
+/**
+ * Arrow head shapes for the `arrow()` type option. The numbers 0, 1 and 2
+ * are accepted as aliases.
+ * @readonly
+ * @enum {string}
+ */
+var ArrowType = Object.freeze({
+  TRIANGLE: "triangle",
+  DART: "dart",
+  KITE: "kite",
+});
+
 module.exports = {
+  ArrowAt,
+  ArrowType,
   TriangleTrait,
   TrianglePosition,
   PageLayout,
