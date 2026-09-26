@@ -1852,7 +1852,7 @@ export interface MuhammaraWasm {
   readonly EInfoTrappedTrue: 0;
   readonly EInfoTrappedFalse: 1;
   readonly EInfoTrappedUnknown: 2;
-  getTypeLabel(type: number): string;
+  getTypeLabel(type: PDFObjectType): string;
 }
 export interface MuhammaraWasmOptions {
   /**

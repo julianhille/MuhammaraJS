@@ -826,6 +826,9 @@ async function usesNamedValueSets() {
   var objectType: PDFObjectType = parsed.getTrailer().getType();
   var isDictionary: boolean = objectType === muhammara.ePDFObjectDictionary;
   void isDictionary;
+  void muhammara.getTypeLabel(muhammara.ePDFObjectStream);
+  // @ts-expect-error Labels exist only for the ePDFObject constants.
+  muhammara.getTypeLabel(12);
 }
 
 void usesNamedValueSets;
