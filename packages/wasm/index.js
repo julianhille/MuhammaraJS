@@ -362,6 +362,15 @@ async function createRuntime(options) {
       module.FS.writeFile(path, bytes);
       replaceAsset(pdfs, name, path);
     },
+    /**
+     * Registers a PDF after reading an asynchronous byte source.
+     * @async
+     * @param {string} name - Non-empty PDF name.
+     * @param {AsyncByteSource} bytes - PDF bytes, Blob, or File.
+     * @returns {Promise<void>} Resolves after the PDF is registered.
+     * @throws {TypeError} If `name` is empty or the bytes are unsupported.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     */
     registerPdfAsync: async function (name, bytes) {
       return this.registerPdf(
         name,
