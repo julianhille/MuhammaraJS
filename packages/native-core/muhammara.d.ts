@@ -850,8 +850,8 @@ declare namespace muhammara {
      * @param imagePath - The image path.
      * @param options - The image index, transformation and PDF password.
      * @returns This context.
-     * @throws {TypeError} If the arguments are not 2 numbers, a string and an optional object, or the
-     *   image cannot be read.
+     * @throws {TypeError} If the arguments are not 2 numbers, a string and an
+     *   optional object. An image that cannot be read draws nothing.
      * @throws {TypeError} If there is no content context.
      */
     drawImage(
