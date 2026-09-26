@@ -153,7 +153,11 @@ export function createTableMethods() {
       });
       var columns = this._layouts._table_;
       var tableWidth = columns.reduce((sum, column) => sum + column.width, 0);
-      /** Bounds are recomputed for every continuation position and page. */
+      /**
+       * Bounds are recomputed for every continuation position and page.
+       * @param {number} top - Segment top.
+       * @returns {number} The lowest y the segment may use.
+       */
       var segmentBottom = (top) =>
         options.height
           ? Math.min(
