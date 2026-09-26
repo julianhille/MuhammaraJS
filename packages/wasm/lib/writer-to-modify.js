@@ -251,6 +251,11 @@ export function createWriterToModifyFactory({
         return result;
       }
       var result = {
+        /**
+         * Returns the new page this context writes to.
+         * @returns {PDFPage|null} The page, or null for a page modifier.
+         * @throws {Error} If the content context is no longer active.
+         */
         getAssociatedPage: function () {
           requireContext(result);
           if (!page) throw new Error("Form XObject has no associated page");
