@@ -1,5 +1,6 @@
 const { xObjectForm } = require("./xObjectForm");
 const { resolveFontSize } = require("./utils");
+const { LineCap, LineJoin } = require("../recipe-constants");
 
 /**
  * Resolve drawing and text options into path options: font, size, colors
@@ -341,12 +342,19 @@ exports._drawObject = function _drawObject(
   context.doXObject(xObject).Q();
 };
 
+/**
+ * The PDF line cap number of a `Recipe.LineCap` value.
+ * @private
+ * @param {Recipe.LineCap} [type] - The cap style; round when omitted or unknown.
+ * @returns {number} 0 for butt, 1 for round, 2 for square.
+ */
 exports._lineCap = function _lineCap(type) {
   const round = 1;
   let cap = round;
 
   if (type) {
-    const capStyle = ["butt", "round", "square"];
+    // In PDF line cap order.
+    const capStyle = [LineCap.BUTT, LineCap.ROUND, LineCap.SQUARE];
     const capType = capStyle.indexOf(type);
     cap = capType !== -1 ? capType : round;
   }
