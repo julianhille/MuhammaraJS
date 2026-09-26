@@ -4,6 +4,29 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- An unknown colorspace throws a `TypeError`, as in `@muhammara/wasm`. The
+  low-level drawing and `writeText()` color options throw
+  `TypeError: colorspace must be rgb, gray, or cmyk`; in 6.x they drew without
+  setting a color. Recipe `chroma()`, text and drawing options throw
+  `TypeError: Unknown colorspace: <name>`; in 6.x `chroma()` threw a plain
+  `Error` and a named color in an unknown colorspace failed with
+  `Cannot read properties of undefined`. The declarations of
+  `ColorOptions.colorspace` and the `Recipe#chroma()` colorspace no longer
+  accept any `string`, so `tsc` reports a value typed `string`. Pass a
+  `DeviceColorSpace` or `Recipe.Colorspace` value; see
+  [Type Colorspaces](getting-started/migrate-from-v6.md#type-colorspaces) [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+- `InfoDictionary#getAdditionalInfoEntries()` is declared without its ignored
+  `key` parameter, so `getAdditionalInfoEntries("Company")` fails `tsc` with
+  `Expected 0 arguments`. The call always returned every entry; drop the
+  argument and read the key from the result [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+- `WriteTextOptions` no longer declares `strikeOut` and `lineWidth`, which
+  `writeText()` never read. Passing them fails `tsc` with an excess-property
+  error; remove them, draw the line with `drawPath()`, or use the Recipe
+  `text()` `strikeOut` option [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+- `Recipe#info()` without options is typed `Record<string, string> | undefined`
+  instead of `Recipe`, matching what it returns. Chaining Recipe calls on it
+  fails `tsc` (and threw at runtime before); use `info(options)` to write
+  information and chain from that [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
 - Recipe `annot()` and `comment()` throw
   `Error: Unknown annotation flag (<name>)` when the `flag` option is not a
   `Recipe.AnnotFlag` value, such as a misspelled name. In 6.x the annotation was

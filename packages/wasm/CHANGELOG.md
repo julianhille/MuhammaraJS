@@ -44,6 +44,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Draw Recipe Separation (spot) colors, as native Recipe does: register an ink
+  with `chroma(name, value, "separation")` or pass `colorName` with a
+  `separation` color, and shapes, lines and text paint it at full tint with
+  `value` as the alternate device color. These calls previously threw
+  [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Accept native's `password` option in `createReader()` and
   `createReaderAsync()` to open encrypted PDFs [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Encrypt PDFs written by `createWriter()` with native's `userPassword`,
@@ -90,6 +95,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Reject inherited object keys such as `__proto__` and `constructor` as a
+  Recipe colorspace with `TypeError: Unknown colorspace: <name>`, as native
+  does. `chroma(name, value, "__proto__")` wrote the color onto
+  `Object.prototype`, and other keys failed later with an unrelated error [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw a `TypeError` for a source `password` in `createPDFCopyingContext()`
   and `createPDFCopyingContextAsync()`, as the append and form APIs already do,
   instead of ignoring it; decrypt the source with `recrypt()` first [#794](https://github.com/julianhille/MuhammaraJS/issues/794)

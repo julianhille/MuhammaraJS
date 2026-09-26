@@ -843,9 +843,12 @@ int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
                                unsigned int color, double characterSpacing) {
   if (recipe == nullptr || recipe->context == nullptr || text == nullptr ||
       fontPath == nullptr || fontSize <= 0 || colorSpace < 0 ||
-      colorSpace > 2 || !std::isfinite(characterSpacing)) {
+      colorSpace > 3 || !std::isfinite(characterSpacing)) {
     return 0;
   }
+  // Color space 3 keeps the current fill color, such as a Separation color
+  // the caller selected with cs and scn.
+  bool keepColor = colorSpace == 3;
   AbstractContentContext::EColorSpace textColorSpace =
       colorSpace == 0   ? AbstractContentContext::eGray
       : colorSpace == 1 ? AbstractContentContext::eRGB
@@ -862,7 +865,16 @@ int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
     PDFHummus::EStatusCode endTextStatus = recipe->context->ET();
     if (status == PDFHummus::eSuccess) status = endTextStatus;
   }
-  if (status == PDFHummus::eSuccess) {
+  if (status == PDFHummus::eSuccess && keepColor) {
+    status = recipe->context->BT();
+    if (status == PDFHummus::eSuccess) {
+      recipe->context->Tf(font, fontSize);
+      recipe->context->Tm(1, 0, 0, 1, x, y);
+      status = recipe->context->Tj(text);
+      PDFHummus::EStatusCode endTextStatus = recipe->context->ET();
+      if (status == PDFHummus::eSuccess) status = endTextStatus;
+    }
+  } else if (status == PDFHummus::eSuccess) {
     status = recipe->context->WriteText(
         x, y, text,
         AbstractContentContext::TextOptions(font, fontSize, textColorSpace,

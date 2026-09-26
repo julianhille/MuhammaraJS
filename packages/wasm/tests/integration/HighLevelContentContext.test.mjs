@@ -297,6 +297,29 @@ describe("HighLevelContentContext", function () {
     );
 
     it(
+      "rejects an unknown colorspace before output on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        assert.throws(
+          () =>
+            target.context.drawRectangle(1, 2, 3, 4, {
+              color: 0xff0000,
+              colorspace: "lab",
+            }),
+          {
+            name: "TypeError",
+            message: "colorspace must be rgb, gray, or cmyk",
+          },
+        );
+        target.context.drawRectangle(1, 2, 3, 4, {
+          color: 0xff0000,
+          colorspace: undefined,
+        });
+        assert.doesNotMatch(await target.finish(), /lab/);
+      },
+    );
+
+    it(
       "snapshots path coordinates before output on " + mode,
       async function () {
         var target = await drawingTarget(mode);

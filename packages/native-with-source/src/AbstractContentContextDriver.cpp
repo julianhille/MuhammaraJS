@@ -891,9 +891,17 @@ bool AbstractContentContextDriver::ReadColorOptions(napi_env env,
         napi_value colorSpace = nullptr;
         if (!Get(env, maybeOptions, "colorspace", &colorSpace))
           return false;
-        options.colorSpace = LegacyString(env, colorSpace);
-        if (HasPendingException(env))
-          return false;
+        if (!IsType(env, colorSpace, napi_undefined) &&
+            !IsType(env, colorSpace, napi_null)) {
+          options.colorSpace = LegacyString(env, colorSpace);
+          if (HasPendingException(env))
+            return false;
+          if (!options.colorSpace.empty() && options.colorSpace != "rgb" &&
+              options.colorSpace != "gray" && options.colorSpace != "cmyk") {
+            ThrowTypeError(env, "colorspace must be rgb, gray, or cmyk");
+            return false;
+          }
+        }
       }
     }
   }

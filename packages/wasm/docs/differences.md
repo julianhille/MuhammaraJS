@@ -20,9 +20,8 @@ Table header styling follows native precedence and is independent of body
 text styles. See [Create Multi-Page Tables](how-to/create-tables.md) for header
 overrides; font metrics remain the source of typography differences.
 
-Wasm Recipe does not support native `chroma("!load", path)` color-file loading
-or Recipe-created Separation colors. Register named colors individually; use
-the byte-safe low-level resource API for Separation colors.
+Wasm Recipe does not support native `chroma("!load", path)` color-file loading.
+Register named colors individually, including Separation colors.
 
 The Recipe HTML subset is DOM-free and Worker-safe. It supports URL links
 through `<a href>` and visual nested lists through `ul`, `ol`, and `li`, but

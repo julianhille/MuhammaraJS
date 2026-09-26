@@ -419,4 +419,37 @@ describe("Color", () => {
       .endPage()
       .endPDF(done);
   });
+
+  it("rejects unknown colorspaces", () => {
+    const assert = require("assert");
+    const output = path.join(__dirname, "../output/unknown-colorspace.pdf");
+    const recipe = new Recipe("new", output).createPage("A4");
+    const unknown = { name: "TypeError", message: "Unknown colorspace: lab" };
+    assert.throws(() => recipe.chroma("brand", "#ff0000", "lab"), unknown);
+    assert.throws(
+      () => recipe.text("Lab", 10, 10, { color: "#ff0000", colorspace: "lab" }),
+      unknown,
+    );
+    assert.throws(
+      () =>
+        recipe.rectangle(10, 10, 20, 20, { fill: "brand", colorspace: "lab" }),
+      unknown,
+    );
+    ["__proto__", "constructor", "toString"].forEach((colorspace) => {
+      const inherited = {
+        name: "TypeError",
+        message: `Unknown colorspace: ${colorspace}`,
+      };
+      assert.throws(
+        () => recipe.chroma("polluted", "#ff0000", colorspace),
+        inherited,
+      );
+      assert.throws(
+        () => recipe.rectangle(10, 10, 20, 20, { fill: "#ff0000", colorspace }),
+        inherited,
+      );
+    });
+    assert.equal({}.polluted, undefined);
+    recipe.endPage().endPDF(() => {});
+  });
 });

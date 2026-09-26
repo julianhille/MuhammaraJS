@@ -1,10 +1,11 @@
 import { recipeConstants } from "./recipe/constants.js";
-import { DeviceColorSpace } from "./value-sets.js";
+import { Colorspace, DeviceColorSpace } from "./value-sets.js";
 import { coordinateMethods } from "./recipe/coordinate.js";
 import {
   colorModel,
   knownColors,
   createColorMethods,
+  createSeparationMethods,
 } from "./recipe/colors.js";
 import { endPDF } from "./recipe/end.js";
 import { getFont, registerFont } from "./recipe/font.js";
@@ -46,6 +47,8 @@ import { standardInfoKeys } from "./recipe-info.js";
  * @returns {{space: number, value: number}} The packed color.
  */
 function textColor(model) {
+  // Code 3 keeps the color already selected, such as a Separation color.
+  if (model.colorspace === Colorspace.SEPARATION) return { space: 3, value: 0 };
   return {
     space: [
       DeviceColorSpace.GRAY,
@@ -80,6 +83,7 @@ export function createRecipeFactory({
   removeFile,
   withString,
   withDoubles,
+  rawObjectsContext,
   assertOutputSize,
 }) {
   var fonts = new Map();
@@ -578,6 +582,8 @@ export function createRecipeFactory({
       // Resolve like native: registered names, gray/RGB/CMYK codes, and the
       // #1777d1 default for a missing or unknown color.
       var fill = colorModel(this, options.color || options.colour, options);
+      var separation = fill.colorspace === Colorspace.SEPARATION;
+      if (separation) this._separationColorspace(fill);
       var transformed =
         options.rotation ||
         options.skewX ||
@@ -608,7 +614,8 @@ export function createRecipeFactory({
           .BT()
           .Tf(this.writer.getFontForBytes(fontPath), fontSize)
           .Tc(characterSpacing);
-        if (fill.colorspace === DeviceColorSpace.GRAY)
+        if (separation) this._setSeparationColor(fill, false);
+        else if (fill.colorspace === DeviceColorSpace.GRAY)
           editContext.g(...fill.values);
         else if (fill.colorspace === DeviceColorSpace.CMYK)
           editContext.k(...fill.values);
@@ -616,6 +623,10 @@ export function createRecipeFactory({
         editContext.Tm(1, 0, 0, 1, point.nx, point.ny).Tj(String(value)).ET();
       } else {
         var packedFill = textColor(fill);
+        if (separation) {
+          this._save();
+          this._setSeparationColor(fill, false);
+        }
         withString(value, (textPointer) =>
           withString(fontPath, (fontPointer) => {
             call(
@@ -632,6 +643,7 @@ export function createRecipeFactory({
             );
           }),
         );
+        if (separation) this._restore();
       }
       // Text-markup annotations are added per line by text(); only HTML
       // underline and strike-out styles draw a visible decoration line.
@@ -649,6 +661,7 @@ export function createRecipeFactory({
         var decoration = {
           stroke: options.color || options.colour || "#1777d1",
           colorspace: options.colorspace,
+          colorName: options.colorName,
           width: 2,
         };
         if (options.htmlUnderline) {
@@ -734,6 +747,12 @@ export function createRecipeFactory({
     coordinateMethods,
     createPageMethods(call, { createReader, createWriterToModify, module }),
     createColorMethods(),
+    createSeparationMethods({
+      module,
+      rawObjectsContext,
+      withString,
+      withDoubles,
+    }),
     createVectorHelpers(runtime),
     createLineMethods(runtime),
     createPolygonMethods(runtime),

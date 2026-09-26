@@ -307,6 +307,24 @@ describe("HighLevelContentContext", function () {
       assert.match(output, /10 20 m\s+30 40 l\s+S/);
     });
 
+    it("rejects an unknown colorspace before output on " + mode, function () {
+      var assert = require("assert");
+      var target = drawingTarget(mode);
+      assert.throws(
+        () =>
+          target.context.drawRectangle(1, 2, 3, 4, {
+            color: 0xff0000,
+            colorspace: "lab",
+          }),
+        { name: "TypeError", message: "colorspace must be rgb, gray, or cmyk" },
+      );
+      target.context.drawRectangle(1, 2, 3, 4, {
+        color: 0xff0000,
+        colorspace: undefined,
+      });
+      assert.doesNotMatch(target.finish(), /lab/);
+    });
+
     it("snapshots path coordinates before output on " + mode, function () {
       var assert = require("assert");
       var target = drawingTarget(mode);

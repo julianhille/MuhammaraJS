@@ -424,4 +424,32 @@ describe("Vector", () => {
         done();
       });
   });
+
+  it("strokes every line segment, and no empty one, on an edited page", () => {
+    const source = path.join(__dirname, "../output/line-edit-source.pdf");
+    const output = path.join(__dirname, "../output/line-edit.pdf");
+    new Recipe("new", source).createPage(200, 200).endPage().endPDF();
+    new Recipe(source, output)
+      .editPage(1)
+      .line(
+        [
+          [20, 20],
+          [180, 20],
+          [180, 100],
+        ],
+        { stroke: "#ff0000", lineWidth: 6 },
+      )
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    const segments = getPaintBlocks(reader, 0).flatMap((block) =>
+      [...block.matchAll(/(\S+) (\S+) m\s+(\S+) (\S+) l/g)].map((match) =>
+        match.slice(1).map(Number),
+      ),
+    );
+    assert.deepEqual(segments, [
+      [20, 180, 180, 180],
+      [180, 180, 180, 100],
+    ]);
+  });
 });

@@ -108,8 +108,8 @@ export declare const ImageFit: {
   readonly OVERFLOW: "overflow";
 };
 /**
- * Every Recipe color space, including Separation. WebAssembly Recipe keeps
- * Separation entries in `knownColors` but throws when asked to draw with them.
+ * Every Recipe color space. `"separation"` draws a registered name, or a color
+ * with `colorName`, as a Separation (spot) color.
  */
 export type RecipeColorSpace = RecipeDeviceColorSpace | "separation";
 export type RecipePermissionName =
@@ -138,7 +138,7 @@ export interface RecipeOptions {
   title?: string;
   subject?: string;
   keywords?: string | string[];
-  colorspace?: RecipeDeviceColorSpace;
+  colorspace?: RecipeColorSpace;
   password?: string;
   ownerPassword?: string;
   userPassword?: string;
@@ -166,7 +166,9 @@ export interface RecipePathOptions {
   color?: RecipeColor;
   stroke?: RecipeColor;
   fill?: RecipeColor;
-  colorspace?: RecipeDeviceColorSpace;
+  colorspace?: RecipeColorSpace;
+  /** The Separation ink name of a `"separation"` color given by value. */
+  colorName?: string;
   width?: number;
   lineWidth?: number;
   opacity?: number;
@@ -634,7 +636,7 @@ export interface Recipe {
   chroma(
     name: string,
     value: RecipeColor,
-    colorspace?: RecipeDeviceColorSpace | "",
+    colorspace?: RecipeColorSpace | "",
   ): this;
   line(coordinates: [number, number][], options?: RecipePathOptions): this;
   line(
