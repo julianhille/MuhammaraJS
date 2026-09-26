@@ -232,6 +232,11 @@ export function createWriterSupport({
     }
   }
 
+  /**
+   * Removes stored asset files and empties the list.
+   * @param {string[]} paths - Virtual file system paths.
+   * @returns {void}
+   */
   function removeAssets(paths) {
     paths.forEach(removeFile);
     paths.length = 0;
