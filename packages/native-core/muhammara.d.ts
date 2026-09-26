@@ -136,6 +136,12 @@ declare namespace muhammara {
       pageIndex?: number,
       ensureContentEncapsulation?: boolean,
     ): PDFPageModifier;
+    /**
+     * Starts a content stream drawn over the existing page content.
+     * @returns This modifier.
+     * @throws {TypeError} If the page does not exist.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     startContext(): this;
     getContext(): XObjectContentContext;
     endContext(): this;
