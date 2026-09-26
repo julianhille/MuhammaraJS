@@ -527,6 +527,12 @@ export function createReaderFactory({
       return wrapByteReader(handle, false);
     }
 
+    /**
+     * Wraps a native byte reader and registers it for release on `end()`.
+     * @param {number} handle - Native byte reader handle.
+     * @param {boolean} positioned - Whether to add position methods.
+     * @returns {PDFByteReader|PositionedPDFByteReader} The byte reader.
+     */
     function wrapByteReader(handle, positioned) {
       var active = true;
 
