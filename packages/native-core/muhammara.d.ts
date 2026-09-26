@@ -429,6 +429,16 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     h(): this;
+    /**
+     * Adds a rectangle to the path; operator re.
+     * @param left - The left edge.
+     * @param bottom - The bottom edge.
+     * @param width - The width.
+     * @param height - The height.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 4 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     re(left: number, bottom: number, width: Width, height: Height): this;
     q(): this;
     Q(): this;
