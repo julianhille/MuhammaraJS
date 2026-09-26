@@ -917,6 +917,12 @@ declare namespace muhammara {
      * @returns This context.
      */
     startArray(): this;
+    /**
+     * Writes a number, as an integer when it has no fraction.
+     * @param value - The number.
+     * @returns This context.
+     * @throws {TypeError} If value is not a single number.
+     */
     writeNumber(value: number): this;
     endArray(endType?: ETokenSeparator): this;
     endLine(): this;
