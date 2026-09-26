@@ -1287,6 +1287,12 @@ declare namespace muhammara {
       transformation?: TransformationMatrix,
       objectIds?: FormXObjectId[],
     ): FormXObjectId[];
+    /**
+     * Opens the PDF being modified for copying its objects.
+     * @returns The copying context; call end() on it when done.
+     * @throws {TypeError} If the writer does not modify a PDF.
+     * @throws {Error} If the writer has ended.
+     */
     createPDFCopyingContextForModifiedFile(): DocumentCopyingContext;
     createPDFTextString(value?: string | number[]): PDFTextString;
     createPDFDate(value?: string | Date): PDFDate;
