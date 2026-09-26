@@ -217,6 +217,10 @@ async function annotationsExample() {
   }
 }
 
+/**
+ * Builds the browser example for links.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
 async function linksExample() {
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
