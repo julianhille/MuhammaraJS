@@ -1,6 +1,27 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../../index.js";
 
+function readStreamIVs(pdf) {
+  var marker = new TextEncoder().encode("stream");
+  var ivs = [];
+
+  for (var offset = 1; offset <= pdf.length - marker.length; offset++) {
+    if (!marker.every((byte, index) => pdf[offset + index] === byte)) continue;
+    var contentOffset = offset + marker.length;
+    var previous = pdf[offset - 1];
+    if (
+      (previous === 0x0a || previous === 0x0d || previous === 0x20) &&
+      (pdf[contentOffset] === 0x0a || pdf[contentOffset] === 0x0d)
+    ) {
+      if (pdf[contentOffset] === 0x0d) contentOffset++;
+      if (pdf[contentOffset] === 0x0a) contentOffset++;
+      ivs.push(pdf.slice(contentOffset, contentOffset + 16));
+    }
+  }
+
+  return ivs;
+}
+
 describe("Xcryption", function () {
   it("adds, changes, and removes passwords from byte PDFs", async function () {
     var muhammara = await createMuhammaraWasm();
@@ -69,5 +90,24 @@ describe("Xcryption", function () {
         }),
       /PDF 2\.0\/AES-256 encryption is unavailable in WebAssembly/,
     );
+  });
+
+  it("generates a distinct IV for each AES-encrypted stream", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({ compress: false });
+    for (var index = 0; index < 2; index++) {
+      var page = writer.createPage(0, 0, 100, 100);
+      writer.startPageContentContext(page).q().re(1, 1, 10, 10).f().Q();
+      writer.writePage(page);
+    }
+
+    var encrypted = muhammara.recrypt(writer.end(), {
+      userPassword: "view",
+      version: muhammara.ePDFVersion17,
+      compress: false,
+    });
+    var ivs = readStreamIVs(encrypted);
+    assert.ok(ivs.length >= 2);
+    assert.notDeepEqual(ivs[0], ivs[1]);
   });
 });
