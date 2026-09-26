@@ -77,6 +77,11 @@ declare namespace muhammara {
    * owns and may keep, and returns the number of bytes it accepted.
    */
   export interface LogStream {
+    /**
+     * Writes log bytes synchronously.
+     * @param inBytes - The bytes to write.
+     * @returns The number of bytes written.
+     */
     write(inBytes: Buffer): number;
   }
 
