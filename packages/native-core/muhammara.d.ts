@@ -942,6 +942,15 @@ declare namespace muhammara {
      * @throws {TypeError} If the copying context has ended.
      */
     getCopiedObjects(): { [key: string]: number };
+    /**
+     * Makes later copies reference existing objects instead of copying the
+     * given source objects.
+     * @param replaceMap - The map from source object ID to object ID in this
+     *   document.
+     * @throws {TypeError} If replaceMap is not an object or a key is not an
+     *   unsigned integer.
+     * @throws {TypeError} If the copying context has ended.
+     */
     replaceSourceObjects(replaceMap: { [key: string]: number }): void;
     getSourceDocumentStream(): ByteReaderWithPosition;
   }
