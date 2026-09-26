@@ -301,6 +301,11 @@ export function createWriterToModifyFactory({
         F: function () {
           return operator("F", 7);
         },
+        /**
+         * Fills the current path using the even-odd rule (`f*`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         fStar: function () {
           return operator("fStar", 8);
         },
