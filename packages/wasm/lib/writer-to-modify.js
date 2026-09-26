@@ -1350,6 +1350,16 @@ export function createWriterToModifyFactory({
           }
         });
       },
+      /**
+       * Appends pages of a source PDF after reading an asynchronous byte source.
+       * @async
+       * @param {AsyncByteSource} source - Source PDF bytes, Blob, or File.
+       * @param {PageRangeOptions} [options] - Pages to append.
+       * @returns {Promise<number[]>} Object IDs of the appended pages.
+       * @throws {TypeError} If the source or options are invalid.
+       * @throws {RangeError} If the page range is invalid.
+       * @throws {Error} If a page is active, the modifier ended, or the source is unreadable.
+       */
       appendPDFPagesFromPDFAsync: async function (source, options) {
         return this.appendPDFPagesFromPDF(
           await normalizeBytesAsync(source, "PDF input"),
