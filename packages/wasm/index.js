@@ -555,7 +555,14 @@ export async function createRecipe(options) {
     defaultFont = { name: "Roboto", loadBytes: defaultFontBytes };
   } else if (fontSource !== false) {
     var fontBytes = await normalizeBytesAsync(fontSource, "Default font bytes");
-    defaultFont = { name: "default", loadBytes: () => fontBytes };
+    defaultFont = {
+      name: "default",
+      /**
+       * Returns the custom default font bytes.
+       * @returns {Uint8Array} The font bytes.
+       */
+      loadBytes: () => fontBytes,
+    };
   }
   var { removeFile } = helpers;
   return createRecipeFactory({
