@@ -509,7 +509,16 @@ function writePageLabelObjects(objectsContext, entries) {
   });
 }
 
-/** Writes the number-tree dictionary for page labels. @private */
+/**
+ * Writes the number-tree dictionary for page labels.
+ * @private
+ * @param {ObjectsContext} objectsContext - Objects context.
+ * @param {DocumentCopyingContext} copyingContext - Copies unchanged values.
+ * @param {DictionaryContext} dictionary - Open dictionary.
+ * @param {object} values - Existing entries.
+ * @param {{pageIndex: number, objectID: number}[]} entries - Written label objects.
+ * @returns {void}
+ */
 function writePageLabelsDictionary(
   objectsContext,
   copyingContext,
