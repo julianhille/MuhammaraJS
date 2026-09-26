@@ -1256,6 +1256,10 @@ const Kite = class Kite {
     this._E = new Point(x + this._baseOffset, y);
   }
 
+  /**
+   * Point K, the head corner above the axis.
+   * @returns {number[]} The [x, y] point.
+   */
   get K() {
     return [this._K.x, this._K.y];
   }
