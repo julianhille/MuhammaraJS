@@ -2039,6 +2039,16 @@ export function createWriterFactory({
           l: function (x, y) {
             return operator("l", 11, [x, y]);
           },
+          /**
+           * Appends a rectangle subpath (`re`).
+           * @param {number} x - Lower-left x.
+           * @param {number} y - Lower-left y.
+           * @param {number} width - Rectangle width.
+           * @param {number} height - Rectangle height.
+           * @returns {this} The content context, for chaining.
+           * @throws {TypeError} If an operand is missing or not finite.
+           * @throws {Error} If the content context is no longer active or the operator fails.
+           */
           re: function (x, y, width, height) {
             return operator("re", 16, [x, y, width, height]);
           },
