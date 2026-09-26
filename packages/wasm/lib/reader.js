@@ -978,6 +978,14 @@ export function createReaderFactory({
         if (!object) throw new RangeError(`Unable to read page ${index}`);
         return object;
       },
+      /**
+       * Parses a page with inherited boxes and rotation resolved.
+       * @param {number} index - Zero-based page index.
+       * @returns {PDFPageInput} The page.
+       * @throws {TypeError} If `index` is not a non-negative integer.
+       * @throws {RangeError} If the page does not exist.
+       * @throws {Error} If the reader has ended.
+       */
       parsePage: function (index) {
         requireReader();
         requireIndex(index, "Page index");
