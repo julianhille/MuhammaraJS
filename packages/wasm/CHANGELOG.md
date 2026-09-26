@@ -306,6 +306,15 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Align the Recipe option declarations with native so values typed for
+  `@muhammara/native` compile: colors, `dash`, `rotationOrigin`, `borderRadius`,
+  text-box `padding`, annotation arrays, and `replies` accept readonly arrays;
+  `circle()`, `rectangle()`, `ellipse()`, `arc()`, `pie()`, `link()`, and
+  `rotateContent()` accept `"center"` coordinates; the text `overflow` callback
+  is typed with the Recipe as `this`; and a text-box `style.borderRadius` accepts
+  `true`. The undocumented `colour` and `colorName` path options and the
+  `encrypt()` index signature are no longer declared, and `useGivenCoords` is
+  declared only on `rectangle()`, the one method that reads it [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Release copying contexts that are still open when `end()` is called on a
   writer or modifier, as native does, instead of throwing. `end()` now reports
   `PDF writer has ended` when called twice and names an open objects-context

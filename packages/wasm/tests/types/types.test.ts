@@ -823,6 +823,52 @@ async function usesAlignedDeclarations() {
     .createPage("A4")
     .text("centered", "center", "center")
     .image("logo", "center", "center", { width: 10 });
+
+  // Shapes, links, and rotateContent accept `center`, as in native.
+  var shapes = new Recipe()
+    .createPage("A4")
+    .circle("center", "center", 10)
+    .rectangle("center", "center", 10, 10)
+    .ellipse("center", "center", 10, 5)
+    .arc("center", "center", 10, 0, 90)
+    .pie("center", "center", 10, 0, 90)
+    .link("https://example.com", "center", "center", 10, 10)
+    .rotateContent(10, "center", "center");
+
+  // Readonly option values shared with native-typed code are accepted.
+  const color: Recipe.Color = [255, 0, 0] as const;
+  const dash: readonly number[] = [2, 1];
+  const origin = [0, 0] as const;
+  shapes
+    .polygon(
+      [
+        [0, 0],
+        [10, 0],
+        [5, 5],
+      ],
+      { color, dash, rotationOrigin: origin },
+    )
+    .rectangle(0, 0, 10, 10, { borderRadius: [2, 4] as const })
+    .rectangle(0, 0, 10, 10, { useGivenCoords: true })
+    .text("boxed", 0, 0, {
+      textBox: {
+        width: 50,
+        padding: [1, 2] as const,
+        style: { borderRadius: true },
+      },
+      overflow: function (recipe) {
+        const self: Recipe = this;
+        return self === recipe ? { column: [0, 1] as const } : true;
+      },
+    });
+  // @ts-expect-error Only rectangle reads useGivenCoords.
+  shapes.circle(0, 0, 10, { useGivenCoords: true });
+  // @ts-expect-error `colour` is not a documented option; use `color`.
+  shapes.circle(0, 0, 10, { colour: "red" });
+  const extension: Recipe.ExtensionCallback = function () {
+    return this.position;
+  };
+  shapes.register("where", extension);
 }
 
 void usesAlignedDeclarations;

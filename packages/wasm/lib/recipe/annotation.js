@@ -224,8 +224,8 @@ export function createAnnotationMethods({
      * @function
      * @memberof Recipe#
      * @param {string} url ASCII URL to open; percent-encode non-ASCII path or query text.
-     * @param {number} x Left coordinate in Recipe coordinates.
-     * @param {number} y Top coordinate in Recipe coordinates.
+     * @param {number|string} x Left coordinate in Recipe coordinates, or `center`.
+     * @param {number|string} y Top coordinate in Recipe coordinates, or `center`.
      * @param {number} width Link width; a negative width extends leftward.
      * @param {number} height Link height; a negative height extends upward.
      * @returns {Recipe} The Recipe instance.

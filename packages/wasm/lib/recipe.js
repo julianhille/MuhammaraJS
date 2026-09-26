@@ -374,8 +374,8 @@ export function createRecipeFactory({
      * @function
      * @memberof Recipe#
      * @param {number} degrees - Rotation angle in degrees.
-     * @param {number} [x=0] - Horizontal rotation origin.
-     * @param {number} [y=0] - Vertical rotation origin.
+     * @param {number|string} [x=0] - Horizontal rotation origin, or `center`.
+     * @param {number|string} [y=0] - Vertical rotation origin, or `center`.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If there is no active page or the PDF operation fails.
      */

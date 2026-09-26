@@ -131,13 +131,12 @@ export interface RecipeOptions {
   userProtectionFlag?: number;
 }
 export interface RecipeEncryptOptions {
-  [key: string]: unknown;
   password?: string;
   ownerPassword?: string;
   userPassword?: string;
   userProtectionFlag?: number;
 }
-export type RecipeColor = string | number[];
+export type RecipeColor = string | readonly number[];
 export type RecipeKnownColors = Record<
   RecipeColorSpace,
   Record<string, string>
@@ -151,25 +150,21 @@ export interface RecipePathOptions {
   /** Make the rendered path's bounding rectangle open this URL. */
   link?: string;
   color?: RecipeColor;
-  colour?: RecipeColor;
   stroke?: RecipeColor;
   fill?: RecipeColor;
   colorspace?: RecipeDeviceColorSpace;
-  colorName?: string;
   width?: number;
   lineWidth?: number;
   opacity?: number;
-  dash?: number[];
+  dash?: readonly number[];
   dashPhase?: number;
   lineCap?: Recipe.LineCap;
   lineJoin?: Recipe.LineJoin;
   miterLimit?: number;
   rotation?: number;
-  rotationOrigin?: [number, number];
+  rotationOrigin?: readonly [number, number];
   skewX?: number;
   skewY?: number;
-  /** Use native PDF bottom-left coordinates for this path. */
-  useGivenCoords?: boolean;
   /** Draw shape-specific diagnostic geometry. */
   debug?: boolean | number;
 }
@@ -182,12 +177,14 @@ export interface RecipeImageOptions extends RecipePathOptions {
   index?: number;
 }
 export interface RecipeRectangleOptions extends RecipePathOptions {
+  /** Read `x` and `y` as native PDF bottom-left coordinates. */
+  useGivenCoords?: boolean;
   borderRadius?:
     | number
-    | [number]
-    | [number, number]
-    | [number, number, number]
-    | [number, number, number, number];
+    | readonly [number]
+    | readonly [number, number]
+    | readonly [number, number, number]
+    | readonly [number, number, number, number];
 }
 export interface RecipeArcOptions extends RecipePathOptions {
   sector?: boolean;
@@ -271,7 +268,7 @@ export interface RecipeLineStyleOptions {
   cap?: number;
   join?: number;
   miterLimit?: number;
-  dash?: number[];
+  dash?: readonly number[];
   dashPhase?: number;
 }
 export interface RecipeAnnotationOptions {
@@ -283,17 +280,17 @@ export interface RecipeAnnotationOptions {
   icon?: Recipe.AnnotIcon;
   name?: string;
   color?: RecipeColor;
-  border?: number | { width?: number; dash?: number[] };
+  border?: number | { width?: number; dash?: readonly number[] };
   borderWidth?: number;
-  borderDash?: number[];
-  quadPoints?: number[];
+  borderDash?: readonly number[];
+  quadPoints?: readonly number[];
   flag?: Recipe.AnnotFlag | number;
   flags?: number;
   open?: boolean;
   opacity?: number;
   richText?: boolean;
   /** Replies inherit parent metadata; opacity defaults to 1 and richText to false independently. */
-  replies?: RecipeAnnotationOptions[];
+  replies?: readonly RecipeAnnotationOptions[];
   followOriginalPageRotation?: boolean;
   width?: number;
   height?: number;
@@ -310,7 +307,7 @@ export interface RecipeTextBox {
   width?: number;
   height?: number;
   minHeight?: number;
-  padding?: number | [number, number?, number?, number?];
+  padding?: number | readonly [number, number?, number?, number?];
   lineHeight?: number;
   /** `clip` retains and clips the source, `trim` omits its non-fitting suffix, and `ellipsis` replaces it with `...`. */
   wrap?: boolean | Recipe.TextWrap;
@@ -319,7 +316,11 @@ export interface RecipeTextBox {
   clipIfExceedsBox?: boolean;
   /** Called after clipping leaves source text unrendered. */
   onClip?: (recipe: Recipe, result: RecipeTextBoxClipResult) => void;
-  style?: RecipePathOptions & { borderRadius?: number | number[] };
+  /** `borderRadius: true` rounds the corners by 5, as in native. */
+  style?: RecipePathOptions & {
+    borderRadius?:
+      boolean | NonNullable<RecipeRectangleOptions["borderRadius"]>;
+  };
 }
 export interface RecipeTextBoxClipResult {
   remainder: string;
@@ -371,11 +372,16 @@ export interface RecipeTextOptions
   squiggly?: boolean | RecipeTextMarkupOptions;
   textBox?: RecipeTextBox;
   cell?: RecipeTextBox;
+  /** Called with the Recipe as `this` when a layout runs out of columns. */
   overflow?: (
+    this: Recipe,
     recipe: Recipe,
   ) =>
     | boolean
-    | { column?: number | [number, number]; layout?: string | number }
+    | {
+        column?: number | readonly [number, number];
+        layout?: string | number;
+      }
     | void;
 }
 /** Per-annotation options for `highlight`, `underline`, `strikeOut`, and `squiggly`. */
@@ -604,7 +610,11 @@ export interface Recipe {
     top: number,
   ): this;
   rotate(rotation: number): this;
-  rotateContent(degrees: number, x?: number, y?: number): this;
+  rotateContent(
+    degrees: number,
+    x?: RecipeCoordinate,
+    y?: RecipeCoordinate,
+  ): this;
   chroma(
     name: string,
     value: RecipeColor,
@@ -622,36 +632,36 @@ export interface Recipe {
   lineTo(x: number, y: number, options?: RecipePathOptions): this;
   polygon(coordinates: [number, number][], options?: RecipePathOptions): this;
   rectangle(
-    x: number,
-    y: number,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
     width: number,
     height: number,
     options?: RecipeRectangleOptions,
   ): this;
   circle(
-    x: number,
-    y: number,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
     radius: number,
     options?: RecipePathOptions,
   ): this;
   ellipse(
-    cx: number,
-    cy: number,
+    cx: RecipeCoordinate,
+    cy: RecipeCoordinate,
     rx: number,
     ry: number,
     options?: RecipePathOptions,
   ): this;
   arc(
-    x: number,
-    y: number,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
     radius: number,
     startAngle?: number,
     endAngle?: number,
     options?: RecipeArcOptions,
   ): this;
   pie(
-    x: number,
-    y: number,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
     radius: number,
     startAngle?: number,
     endAngle?: number,
@@ -748,7 +758,13 @@ export interface Recipe {
     options?: RecipeOverlayOptions,
   ): this;
   /** Adds an ASCII URL link; coordinates and dimensions must be finite. */
-  link(url: string, x: number, y: number, width: number, height: number): this;
+  link(
+    url: string,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
+    width: number,
+    height: number,
+  ): this;
   comment(
     text: string,
     x: RecipeCoordinate,
@@ -966,7 +982,7 @@ export declare namespace Recipe {
   type RecipeMargins = import("./index.js").RecipeMargins;
   type CaseInsensitive<Value extends string> = RecipeCaseInsensitive<Value>;
   type ExtensionCallback<
-    Arguments extends unknown[] = unknown[],
+    Arguments extends unknown[] = never[],
     Result = unknown,
   > = RecipeExtension<Arguments, Result>;
   type EndPDFCallback = (bytes: Uint8Array<ArrayBuffer>) => void;

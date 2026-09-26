@@ -98,8 +98,8 @@ export function createVectorMethods(runtime) {
      * @name rectangle
      * @function
      * @memberof Recipe#
-     * @param {number} x - The horizontal corner coordinate in points.
-     * @param {number} y - The vertical corner coordinate in points.
+     * @param {number|string} x - The horizontal corner coordinate in points, or `center`.
+     * @param {number|string} y - The vertical corner coordinate in points, or `center`.
      * @param {number} width - The rectangle width in points.
      * @param {number} height - The rectangle height in points.
      * @param {RecipeRectangleOptions} [options] - Rectangle path, rounded-corner, and transformation options.
@@ -226,8 +226,8 @@ export function createVectorMethods(runtime) {
      * @name circle
      * @function
      * @memberof Recipe#
-     * @param {number} x - The center X coordinate in points.
-     * @param {number} y - The center Y coordinate in points.
+     * @param {number|string} x - The center X coordinate in points, or `center` for the page center.
+     * @param {number|string} y - The center Y coordinate in points, or `center` for the page center.
      * @param {number} radius - The radius in points.
      * @param {RecipePathOptions} [options] - Path painting and transformation options.
      * @returns {Recipe} The recipe instance.
@@ -286,8 +286,8 @@ export function createVectorMethods(runtime) {
      * @name ellipse
      * @function
      * @memberof Recipe#
-     * @param {number} cx - The center X coordinate in points.
-     * @param {number} cy - The center Y coordinate in points.
+     * @param {number|string} cx - The center X coordinate in points, or `center` for the page center.
+     * @param {number|string} cy - The center Y coordinate in points, or `center` for the page center.
      * @param {number} rx - The horizontal radius in points.
      * @param {number} ry - The vertical radius in points.
      * @param {RecipePathOptions} [options] - Path painting and transformation options.
@@ -351,8 +351,8 @@ export function createVectorMethods(runtime) {
      * @name arc
      * @function
      * @memberof Recipe#
-     * @param {number} x - The center X coordinate in points.
-     * @param {number} y - The center Y coordinate in points.
+     * @param {number|string} x - The center X coordinate in points, or `center` for the page center.
+     * @param {number|string} y - The center Y coordinate in points, or `center` for the page center.
      * @param {number} radius - The radius in points.
      * @param {number} [startAngle=0] - The starting angle in degrees.
      * @param {number} [endAngle=360] - The ending angle in degrees.
@@ -392,8 +392,8 @@ export function createVectorMethods(runtime) {
      * @name pie
      * @function
      * @memberof Recipe#
-     * @param {number} x - The center X coordinate in points.
-     * @param {number} y - The center Y coordinate in points.
+     * @param {number|string} x - The center X coordinate in points, or `center` for the page center.
+     * @param {number|string} y - The center Y coordinate in points, or `center` for the page center.
      * @param {number} radius - The radius in points.
      * @param {number} [startAngle=0] - The starting angle in degrees.
      * @param {number} [endAngle=360] - The ending angle in degrees.
