@@ -388,7 +388,18 @@ function validateDeletedPageReferences(
   });
 }
 
-/** Collects page-label number-tree entries. @private */
+/**
+ * Collect the entries of a page-label number tree.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {Object} dictionary - The number-tree node.
+ * @param {Object[]} entries - Receives {index, value} for every label.
+ * @param {Set<number>} [visited] - Nodes already read, to reject cycles.
+ * @param {number} [objectID=0] - The object ID of this node, if indirect.
+ * @param {number} [depth=0] - The nesting depth, limited to 1000.
+ * @returns {Object} The entries of this node's dictionary.
+ * @throws {Error} If the tree is cyclic, too deep or has invalid entries.
+ */
 function collectPageLabels(
   parser,
   dictionary,
@@ -420,7 +431,7 @@ function collectPageLabels(
   }
   if (values.Kids) {
     parser
-      .queryDictionaryObject(dictionary, "Kids")
+      .queryDictionaryObject(dictionary, PdfName.KIDS)
       .toPDFArray()
       .toJSArray()
       .forEach((entry) => {
