@@ -89,6 +89,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Declare Recipe `text()` and `image()` coordinates as `RecipeCoordinate`,
   which accepts `"center"` at runtime, and reject a pattern name without color
   components in the `SCN()`/`scn()` types, as the runtime does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Throw when a content-context operator such as `rg()`, `cm()`, `Tm()` or
+  `k()` gets fewer operands than it needs, as native does, instead of writing
+  `nan` into the content stream; the writer page also rejects a non-finite
+  `k()` or `G()` operand [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Keep the source `/Trapped`, `CreationDate`, `Title`, `Author`, `Subject`,
   and `Keywords` Info entries when a Recipe saves an existing PDF; they were
   silently dropped. `info()` still overrides them.
@@ -271,6 +275,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   table, with the native message, instead of returning `null` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Let flat `drawPath(x1, y1, x2, y2, ...)` coordinates omit the options object,
   as native allows [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Check `J()`, `j()` and `Tr()` operands on every content context: a line cap
+  or line join must be 0 to 2 and a text rendering mode 0 to 7, otherwise a
+  `RangeError` is thrown. `j(3)`, previously accepted, now throws [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Rework the npm README: it explains how the MuhammaraJS packages fit together, when to use a native package instead, and adds tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
 - Narrow `DrawPathOptions.type` from an arbitrary string to the exported
   `DrawingPathType` (`"stroke" | "fill" | "clip" | null`), matching native.

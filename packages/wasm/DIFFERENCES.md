@@ -3,7 +3,9 @@
 Native low-level drawing helpers preserve legacy numeric coercions, while
 Wasm requires numeric values and throws for numeric strings. Both reject
 non-finite drawing values. Wasm `writeText()` additionally requires a positive
-size and a font owned by the same writer. These existing validation differences are retained for compatibility.
+size and a font owned by the same writer. Wasm `J()`, `j()` and `Tr()` reject
+operands outside the PDF ranges (0 to 2, 0 to 2, and 0 to 7); native writes
+any value. These existing validation differences are retained for compatibility.
 
 The WebAssembly Recipe text, HTML, layout, and table APIs are static ESM modules
 with injected in-memory Recipe state. They run in browsers and module Workers;
