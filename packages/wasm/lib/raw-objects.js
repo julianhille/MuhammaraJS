@@ -92,6 +92,11 @@ export function createRawObjectsContext({
       });
     }
 
+    /**
+     * Wraps a native dictionary context.
+     * @param {number} dictionary - Native dictionary context.
+     * @returns {DictionaryContext} The dictionary context.
+     */
     function dictionaryContext(dictionary) {
       function requireDictionary() {
         requireContext();
