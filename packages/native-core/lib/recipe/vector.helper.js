@@ -293,6 +293,21 @@ exports._setScalingTransform = function _setScalingTransform(context, options) {
   }
 };
 
+/**
+ * Draw content through a form XObject, creating it with the callback unless
+ * `options.xObject` supplies one, then place it with rotation, skew and
+ * scaling.
+ * @private
+ * @param {Recipe} self - The recipe instance.
+ * @param {number} x - The PDF x.
+ * @param {number} y - The PDF y.
+ * @param {number} width - The form width.
+ * @param {number} height - The form height.
+ * @param {Object} options - The path options.
+ * @param {function(Object, xObjectForm): void} callback - Draws into a new form.
+ * @returns {void}
+ * @throws {Error} If no page content context is active.
+ */
 exports._drawObject = function _drawObject(
   self,
   x,
