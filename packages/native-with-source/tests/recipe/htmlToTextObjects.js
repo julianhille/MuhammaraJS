@@ -597,4 +597,17 @@ describe("HTML to TextObjects", () => {
       reader.end();
     }
   });
+
+  it("matches tags case-insensitively and links to href", () => {
+    const [paragraph] = htmlToTextObjects(
+      '<p><a class="x" href="https://h.test">l</a><a>none</a><B>b</B><U>u</U><DEL>d</DEL><I>i</I></p>',
+    );
+    const [link, bare, bold, underline, strikeOut, italic] = paragraph.childs;
+    assert.equal(link.link, "https://h.test");
+    assert.equal(bare.link, null);
+    assert.isTrue(bold.isBold);
+    assert.isTrue(underline.underline);
+    assert.isTrue(strikeOut.strikeOut);
+    assert.isTrue(italic.isItalic);
+  });
 });

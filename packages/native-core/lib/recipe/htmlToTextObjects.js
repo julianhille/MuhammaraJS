@@ -135,7 +135,15 @@ function isItalicTag(tagName = "") {
   return italicTags.includes(String(tagName).toLowerCase());
 }
 
+/**
+ * Convert a DOM node and its children into a text layout object.
+ * @private
+ * @param {Object} node - The DOM node.
+ * @param {Object} options - The htmlToTextObjects() options.
+ * @returns {Object} The text layout object with its parsed childs.
+ */
 function parseNode(node, options) {
+  const tag = (node.tagName || "").toLowerCase();
   const attributes = [];
   const styles = {};
   for (let i in node.attributes) {
@@ -175,7 +183,11 @@ function parseNode(node, options) {
   }
   // Whitespace before a line break would only pad the end of the line.
   const next = node.nextSibling;
-  if (value !== null && next && /^br$/i.test(next.tagName || "")) {
+  if (
+    value !== null &&
+    next &&
+    (next.tagName || "").toLowerCase() === HtmlTag.BR
+  ) {
     value = value.replace(/\s+$/, "");
   }
   if (value && value.charCodeAt(0) == 8203) {
@@ -188,17 +200,21 @@ function parseNode(node, options) {
     font: options.font,
     isBold: isBoldTag(node.tagName),
     isItalic: isItalicTag(node.tagName),
-    underline: node.tagName == "u",
-    strikeOut: node.tagName == "del",
+    underline: tag === HtmlTag.U,
+    strikeOut: tag === HtmlTag.DEL,
     attributes,
     styles,
     needsLineBreaker: needsLineBreaker(node.tagName),
     // An explicit line break; text layout ends the current line here.
-    lineBreak: /^br$/i.test(node.tagName || ""),
+    lineBreak: tag === HtmlTag.BR,
     size: options.size,
     sizeRatio: getFontSizeRatio(node.tagName),
     sizeRatios: [getFontSizeRatio(node.tagName)],
-    link: node.tagName == "a" ? node.attributes[0].value : null,
+    link:
+      tag === HtmlTag.A
+        ? (attributes.find((attribute) => attribute.name === "href") || {})
+            .value || null
+        : null,
     childs: [],
   };
   for (let num in node.childNodes) {
