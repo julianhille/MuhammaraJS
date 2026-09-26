@@ -113,6 +113,7 @@ describe("Recipe text layout and tables", function () {
   it("keeps text-box truncation modes, justification, hilite, and layout orders distinct", async function () {
     var Recipe = await getRecipe();
     var overflow = 0;
+    var overflowThis;
     var recipe = new Recipe({ compress: false })
       .createPage(300, 300)
       .layout("first", 10, 10, 100, 22, { columns: 2, gap: 10 })
@@ -143,8 +144,9 @@ describe("Recipe text layout and tables", function () {
         font: "arial",
         size: 12,
         layout: "first",
-        overflow: () => {
+        overflow: function () {
           overflow++;
+          overflowThis = this;
           return { layout: "second", column: 0 };
         },
       })
@@ -162,6 +164,7 @@ describe("Recipe text layout and tables", function () {
     // even though their extracted byte strings are not source Unicode.
     assert.ok(text.length >= 7);
     assert.equal(overflow, 1);
+    assert.equal(overflowThis, recipe, "overflow is called on the Recipe");
     assert.equal(reader.getPageInfo(0).width, 300);
     reader.end();
   });

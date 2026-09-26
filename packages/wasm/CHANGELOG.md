@@ -88,6 +88,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 - Round a Recipe text box with `textBox.style.borderRadius: true` by 5, as
   native does, instead of drawing square corners [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Call the Recipe `text()` `overflow` callback with the Recipe as `this`, as
+  native does; it was called with the options object [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Accept a spread array in the `TJ()` type declaration, so
   `context.TJ(...parts)` compiles; an empty call still throws at runtime
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)

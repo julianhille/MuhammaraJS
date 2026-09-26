@@ -972,7 +972,7 @@ export function createTextMethods({ drawText, measure, module }) {
         ) {
           columnIndex++;
           if (columnIndex === layout.length) {
-            var order = options.overflow?.(this);
+            var order = options.overflow?.call(this, this);
             if (order === true) return true;
             if (order?.layout !== undefined) {
               layout = this._layouts?.[order.layout];
