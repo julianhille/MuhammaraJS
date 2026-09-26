@@ -3673,7 +3673,7 @@ export function createWriterToModifyFactory({
        * Opens a copying context after reading an asynchronous byte source.
        * @async
        * @param {AsyncByteSource} sourceBytes - PDF bytes, Blob, or File.
-       * @returns {Promise<PDFCopyingContext>} The copying context.
+       * @returns {Promise<DocumentCopyingContext>} The copying context.
        * @throws {TypeError} If the bytes are unsupported.
        * @throws {Error} If the modifier ended or the source cannot be opened.
        */
