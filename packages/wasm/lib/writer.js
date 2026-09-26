@@ -315,6 +315,13 @@ export function createWriterSupport({
        * @throws {Error} If the owner is closed or the mapping fails.
        */
       addFontMapping: (objectId) => addMapping(1, objectId),
+      /**
+       * Maps a color space object into the resources dictionary.
+       * @param {number} objectId - Indirect object ID of the color space.
+       * @returns {string} The resource name to use in content operators.
+       * @throws {RangeError} If `objectId` is not a positive integer.
+       * @throws {Error} If the owner is closed or the mapping fails.
+       */
       addColorSpaceMapping: (objectId) => addMapping(2, objectId),
       addPatternMapping: (objectId) => addMapping(3, objectId),
       addPropertyMapping: (objectId) => addMapping(4, objectId),
