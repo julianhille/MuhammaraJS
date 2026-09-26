@@ -1859,6 +1859,12 @@ export interface PDFPageInput {
 export interface PDFTextElement {
   /** Raw content-string bytes represented as one-byte JavaScript code units. */
   content: string;
+  /**
+   * `content` decoded to Unicode through the active font: its `/ToUnicode`
+   * CMap, then its simple-font `/Encoding` and `/Differences`. Codes the font
+   * does not map become U+FFFD.
+   */
+  text: string;
   fontResource: string;
   fontSize: number;
   /** The text-to-page matrix after applying the active graphics CTM. */

@@ -166,6 +166,8 @@ async function usesLowLevelSurface() {
   var reader = muhammara.createReader(source);
   var textElement = reader.extractPageText(0)[0];
   textElement.content;
+  var decodedText: string = textElement.text;
+  decodedText.normalize();
   textElement.fontResource;
   textElement.fontSize;
   textElement.textMatrix[5];

@@ -1,8 +1,8 @@
 # Find Text Positions In A PDF
 
 Use `PDFReader.extractPageText(pageIndex)` to enumerate text-showing operations,
-then filter their content. Reader pages are zero-based and positions use PDF's
-bottom-left coordinate system.
+then filter their decoded `text`. Reader pages are zero-based and positions use
+PDF's bottom-left coordinate system.
 
 ```javascript
 import { createMuhammaraWasm } from "@muhammara/wasm";
@@ -15,7 +15,7 @@ try {
   var positions = reader
     .extractPageText(0)
     .filter(function (element) {
-      return element.content === target;
+      return element.text === target;
     })
     .map(function (element) {
       return {
@@ -34,9 +34,13 @@ Each result is a PDF text-showing operation in direct content-stream order.
 `textMatrix` is `[a, b, c, d, e, f]`; `e` and `f` are its origin in page
 coordinates. The matrix combines explicit text positioning through `BT`, `Tm`,
 `Td`, `TD`, `TL`, `T*`, `'`, and `"` with the active graphics transformation
-from `cm`; its first four values retain rotation, scale, or skew. Content is raw
-PDF string data. The extractor does not decode every font character map,
-calculate glyph bounds or glyph-driven matrix advances, or descend into Form
+from `cm`; its first four values retain rotation, scale, or skew. `text` is the
+string decoded through the active font: the font's `/ToUnicode` CMap first, then
+a simple font's `/Encoding` and `/Differences`; codes the font does not map
+become U+FFFD. `content` keeps the raw character codes, for example two-byte
+glyph IDs for text written with a composite font. A phrase split across
+operations does not match as a whole. The extractor does not calculate glyph
+bounds or glyph-driven matrix advances, or descend into Form
 XObjects such as appended content created by `Recipe.editPage()`. Adjacent
 text-showing operations without an explicit positioning operator retain the
 same matrix. This is not a general visual full-text search or glyph-bounds API.

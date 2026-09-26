@@ -681,6 +681,10 @@ async function replaceTextExample(assets) {
       .Tf(writer.getFontForBytes("replace-text-font"), 24)
       .Tm(1, 0, 0, 1, 72, 180)
       .Tj("Before")
+      // Embedded fonts are subset, so the replacement glyphs must already
+      // be on the page.
+      .Tm(1, 0, 0, 1, 72, 120)
+      .Tj("After")
       .ET();
     writer.writePage(page);
     recipe = new Recipe(writer.end());
@@ -693,7 +697,7 @@ async function replaceTextExample(assets) {
       filename: "muhammara-replace-text.pdf",
       summary: await summarize(bytes, {
         howTo: "Replace literal page text",
-        replacement: text[0]?.content,
+        replacement: text[0]?.text,
         textMatrix: text[0]?.textMatrix,
       }),
     };

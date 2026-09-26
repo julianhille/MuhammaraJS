@@ -1,3 +1,4 @@
+import { decodeTextElements } from "./font-text.js";
 import { PageBox } from "./value-sets.js";
 /**
  * Rejects page indices and object IDs the native reader would silently wrap.
@@ -1144,7 +1145,7 @@ export function createReaderFactory({
           try {
             var count =
               module._muhammara_wasm_text_extraction_get_count(extraction);
-            return Array.from({ length: count }, (_, elementIndex) => ({
+            var elements = Array.from({ length: count }, (_, elementIndex) => ({
               content: extractedString(
                 extraction,
                 elementIndex,
@@ -1170,6 +1171,7 @@ export function createReaderFactory({
           } finally {
             module._muhammara_wasm_text_extraction_destroy(extraction);
           }
+          return decodeTextElements(this, constants, index, elements);
         } finally {
           module._free(statusPointer);
         }

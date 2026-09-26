@@ -1,5 +1,6 @@
 // Byte-first port of tests/PDFTextExtractionTest.js.
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
 
 describe("PDFTextExtraction", function () {
@@ -28,6 +29,68 @@ describe("PDFTextExtraction", function () {
 
     reader.end();
     assert.throws(() => reader.extractPageText(0), /PDF reader has ended/);
+  });
+
+  it("decodes Unicode text through the page font", async function () {
+    var fixtures = new URL(
+      "../../../native-with-source/tests/TestMaterials/",
+      import.meta.url,
+    );
+    var muhammara = await createMuhammaraWasm();
+    muhammara.registerFont(
+      "text-extraction-font",
+      new Uint8Array(await readFile(new URL("fonts/arial.ttf", fixtures))),
+    );
+    var writer = muhammara.createWriter();
+    var page = writer.createPage(0, 0, 200, 200);
+    writer
+      .startPageContentContext(page)
+      .writeFreeCode("BT (no font) Tj ET\n")
+      .BT()
+      .Tf(writer.getFontForBytes("text-extraction-font"), 12)
+      .Tj("plain")
+      .Tj("café Ωmega")
+      .ET();
+    writer.writePage(page);
+
+    var reader = muhammara.createReader(writer.end());
+    var elements = reader.extractPageText(0);
+    reader.end();
+
+    assert.deepEqual(
+      elements.map((element) => element.text),
+      ["no font", "plain", "café Ωmega"],
+    );
+    assert.equal(elements[2].content.length, 20, "content keeps raw codes");
+
+    var differences = new Uint8Array(
+      await readFile(new URL("FontDifferences.pdf", fixtures)),
+    );
+    reader = muhammara.createReader(differences);
+    assert.deepEqual(
+      reader
+        .extractPageText(0)
+        .map((element) => [element.content, element.text]),
+      [
+        ["cafB", "café"],
+        ["A of B", "Ω of é"],
+      ],
+    );
+    reader.end();
+
+    var modifier = muhammara.createWriterToModify(differences);
+    var parser = modifier.getModifiedFileParser();
+    assert.equal(parser.extractPageText(0)[0].text, "café");
+    parser.end();
+    var copyingContext = modifier.createPDFCopyingContextForModifiedFile();
+    assert.equal(
+      copyingContext.getSourceDocumentParser().extractPageText(0)[1].text,
+      "Ω of é",
+    );
+    copyingContext.end();
+    modifier.end();
+    muhammara.unregisterFont("text-extraction-font");
+    muhammara.disposeAssets();
   });
 
   it("skips inline image payloads", async function () {

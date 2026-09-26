@@ -76,19 +76,22 @@ console.log(metadata.pages, metadata[1].mediaBox);
 console.log(new Recipe(sourceBytes).structure("json"));
 ```
 
-## Replace Literal Text
+## Replace Text
 
-`replaceText(text, replacement, pageNumber)` rewrites complete literal
-`(...) Tj` text-showing operands in an existing page's single content stream.
-It leaves text position and font unchanged.
+`replaceText(text, replacement, pageNumber)` rewrites text-showing operands in
+an existing page's single content stream. It leaves text position and font
+unchanged.
 
 ```js
 import { createRecipe } from "@muhammara/wasm";
 
 var Recipe = await createRecipe();
+// The embedded font is subset, so the page must already use the
+// replacement's glyphs.
 var sourceBytes = new Recipe({ compress: false })
   .createPage(300, 160)
   .text("Before", 30, 50)
+  .text("After", 30, 90)
   .endPage()
   .endPDF();
 
@@ -97,14 +100,24 @@ var outputBytes = new Recipe(sourceBytes)
   .endPDF();
 ```
 
-Matching operates on literal content-stream strings. Text split across show
-operations or encoded without a direct character mapping is not replaced.
-Pages with multiple content streams are rejected; no match leaves the page
-unchanged.
+`text` is compared with each `Tj` operand decoded through the font selected by
+`Tf`: the font's `/ToUnicode` CMap first, then a simple font's `/Encoding` and
+`/Differences`. This matches text written with composite (Type0) fonts, such as
+the hex glyph IDs Muhammara writes, as well as simple fonts. `text` and
+`replacement` can be any Unicode strings. The replacement is encoded through
+the same font and written back as a literal or hex string, like the original
+operand. Content outside the replaced operands keeps its exact bytes.
 
-`text` and `replacement` are matched and written as-is, one byte per
-character, so both must be Latin-1 (U+0000 to U+00FF); other characters throw a
-`TypeError`. Content outside the replaced operands keeps its exact bytes.
+The replacement can only use glyphs the font already has. Embedded fonts are
+usually subset to the glyphs of their original text, so a replacement with any
+other character throws an error that names the missing characters, for example
+`font FN1 has no glyph for "A", "t"`. Replacing text with a new font is not
+supported.
+
+Only whole `Tj` operands match. Text split across several show operations, and
+`TJ`, `'`, and `"` operands, are not replaced. Pages with more than one content
+stream are rejected with an error. When nothing matches, the page is left
+unchanged.
 
 ## Remove Text
 
