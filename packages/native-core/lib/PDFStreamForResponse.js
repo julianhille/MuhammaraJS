@@ -2,6 +2,12 @@
     PDFStreamForResponse is an implementation of a write stream that writes directly to an HTTP response.
     Using this stream frees the user from having to create a PDF file on disk when generating on-demand PDFs
 */
+/**
+ * Creates a write stream that writes to an HTTP response.
+ * @constructor
+ * @param {{write: function(Buffer): *}} inResponse - The response, or any
+ *   object with a write method.
+ */
 function PDFStreamForResponse(inResponse) {
   this.response = inResponse;
   this.position = 0;
