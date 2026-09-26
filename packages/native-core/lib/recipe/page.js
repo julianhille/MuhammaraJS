@@ -1,6 +1,6 @@
 const muhammara = require("../muhammara");
 const { PAGE_CONTEXT_STATE } = require("./utils");
-const { PageLayout } = require("../recipe-constants");
+const { PageLayout, Colorspace } = require("../recipe-constants");
 
 // PDF dictionary keys and names the page-tree and page-label code reads.
 const PdfName = Object.freeze({
@@ -890,8 +890,9 @@ exports.endPage = function endPage() {
  * @name editPage
  * @function
  * @memberof Recipe#
- * @param {number} pageNumber - The page number to be edited.
+ * @param {number} pageNumber - The one-based page number to be edited.
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the page does not exist in the source PDF.
  */
 exports.editPage = function editPage(pageNumber) {
   const pdfWriter = this.writer;
@@ -916,9 +917,9 @@ exports.editPage = function editPage(pageNumber) {
     const startX = mediaBox[0];
     const startY = mediaBox[1];
     const textOptions = {
-      font: this.writer.getFontForFile(this.fonts["helvetica-bold"]),
+      font: this.writer.getFontForFile(this.fonts.helvetica.b),
       size: 50,
-      colorspace: "gray",
+      colorspace: Colorspace.GRAY,
       color: 0x00,
     };
     context.writeText(

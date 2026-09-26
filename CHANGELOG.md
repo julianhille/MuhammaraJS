@@ -135,6 +135,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Fix `Recipe#editPage()` throwing in debug mode, where it loaded the bold
+  Helvetica font by an outdated name [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix Recipe HTML text: links now use the `href` attribute instead of the
   first attribute, `<a>` without attributes no longer throws, and upper-case
   tags such as `<B>` and `<U>` are styled [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
