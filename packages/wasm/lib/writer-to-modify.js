@@ -220,6 +220,10 @@ export function createWriterToModifyFactory({
         throw new Error("Page content context is not active");
     }
 
+    /**
+     * Creates the content context of the active new or modified page.
+     * @returns {ContentContext} The content context.
+     */
     function modifierContext() {
       function operator(name, code, args = [], integers = false) {
         requireContext(result);
