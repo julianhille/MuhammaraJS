@@ -95,13 +95,20 @@ static napi_value SetDate(const CallbackArgs &args, bool creation) {
   auto *driver = Driver(args);
   if (!driver->InfoDictionaryInstance)
     return ThrowTypeError(args.Env(), kUninitialized);
-  std::vector<napi_value> values;
-  for (size_t i = 0; i < args.Length(); ++i)
-    values.push_back(args[i]);
-  napi_value value = driver->holder->GetNewPDFDate(values);
   PDFDateDriver *dateDriver = nullptr;
-  if (!ObjectWrap::UnwrapNew(args.Env(), value, &dateDriver))
-    return nullptr;
+  if (args.Length() == 1 && driver->holder->IsPDFDateInstance(args[0])) {
+    // An existing PDFDate is copied, as Wasm accepts.
+    dateDriver = ObjectWrap::Unwrap<PDFDateDriver>(args.Env(), args[0]);
+    if (!dateDriver)
+      return nullptr;
+  } else {
+    std::vector<napi_value> values;
+    for (size_t i = 0; i < args.Length(); ++i)
+      values.push_back(args[i]);
+    napi_value value = driver->holder->GetNewPDFDate(values);
+    if (!ObjectWrap::UnwrapNew(args.Env(), value, &dateDriver))
+      return nullptr;
+  }
   PDFDate date = *dateDriver->getInstance();
   if (creation)
     driver->InfoDictionaryInstance->CreationDate = date;

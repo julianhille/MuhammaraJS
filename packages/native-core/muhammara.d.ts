@@ -684,8 +684,8 @@ declare namespace muhammara {
     getAdditionalInfoEntry(key: string): string;
     /** @param key Ignored; kept so 6.x calls that passed a key still compile. */
     getAdditionalInfoEntries(key?: string): { [key: string]: string };
-    setCreationDate(date: string | Date): void;
-    setModDate(date: string | Date): void;
+    setCreationDate(date: string | Date | PDFDate): void;
+    setModDate(date: string | Date | PDFDate): void;
 
     title: string;
     author: string;
