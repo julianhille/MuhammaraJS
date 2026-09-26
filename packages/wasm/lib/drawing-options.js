@@ -48,12 +48,12 @@ export function readDrawingOptions(
 
 /** Finish a validated path; clipping ends the path without painting it. */
 export function finishDrawingPath(context, options) {
-  if (options.type === "clip") {
+  if (options.type === DrawingPathType.CLIP) {
     if (options.close) context.h();
     return context.W().n();
   }
-  if (options.type === "fill") return context.f();
-  if (options.type === "stroke") {
+  if (options.type === DrawingPathType.FILL) return context.f();
+  if (options.type === DrawingPathType.STROKE) {
     return options.close ? context.s() : context.S();
   }
   return context.n();
