@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
 function createSource(Recipe, pages = 12) {
   var recipe = new Recipe();
@@ -245,6 +246,7 @@ describe("Recipe deletePage", function () {
     assert.equal(recipe.deletePage([11, 2, 4, 4]), recipe);
     assert.equal(recipe.deletePage(1), recipe);
     var bytes = recipe.endPDF();
+    writeOutput("delete-pages", bytes);
 
     assert.deepEqual(
       await pageWidths(bytes),

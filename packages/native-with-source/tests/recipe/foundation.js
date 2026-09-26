@@ -1,5 +1,6 @@
 var assert = require("node:assert/strict");
 var muhammara = require("@muhammara/native-with-source");
+var { writeOutput } = require("../helpers/testOutput");
 
 describe("Recipe foundation", function () {
   it("writes page boxes using PDF bottom-left coordinates", function () {
@@ -18,6 +19,7 @@ describe("Recipe foundation", function () {
     var bytes = recipe.endPage().endPDF(function (output) {
       return output;
     });
+    writeOutput("foundation-page-boxes", bytes);
     var reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );

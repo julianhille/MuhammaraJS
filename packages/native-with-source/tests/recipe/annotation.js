@@ -1,23 +1,14 @@
 var assert = require("node:assert/strict");
-var fs = require("node:fs");
-var os = require("node:os");
 var path = require("node:path");
 var muhammara = require("@muhammara/native-with-source");
 
 describe("Recipe annotation", function () {
-  var directory;
-  var output;
+  var output = path.join(__dirname, "../output/annotations.pdf");
   var reader;
-
-  beforeEach(function () {
-    directory = fs.mkdtempSync(path.join(os.tmpdir(), "recipe-annotation-"));
-    output = path.join(directory, "annotations.pdf");
-  });
 
   afterEach(function () {
     if (reader) reader.end();
     reader = undefined;
-    fs.rmSync(directory, { recursive: true, force: true });
   });
 
   it("writes links, comments, and square annotations", async function () {
