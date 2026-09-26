@@ -4289,6 +4289,13 @@ export function createWriterFactory({
             return this;
           },
           ...copyingObjectOperations(copying, requireCopying),
+          /**
+           * Appends one source page as a new page.
+           * @param {number} index - Zero-based source page index.
+           * @returns {number} Object ID of the new page.
+           * @throws {RangeError} If `index` is not a non-negative integer or the page cannot be appended.
+           * @throws {Error} If the writer or the copying context has ended.
+           */
           appendPDFPageFromPDF: function (index) {
             requireCopying();
             if (!Number.isInteger(index) || index < 0) {
