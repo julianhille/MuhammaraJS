@@ -311,7 +311,20 @@ function assertNoDeletedPageReferences(
   }
 }
 
-/** Checks retained document structures for deleted-page references. @private */
+/**
+ * Check the catalog, page labels and retained page-tree nodes for references
+ * to deleted pages.
+ * @private
+ * @param {Object} parser - The source PDF parser.
+ * @param {Object} catalog - The catalog entries.
+ * @param {number} rootID - The catalog object ID.
+ * @param {Object} tree - The root node built by readPageTree().
+ * @param {Object|null} pageLabels - The result of preparePageLabels().
+ * @param {Set<number>} deletedPageIDs - Object IDs of the deleted pages.
+ * @param {number} sourcePageCount - The source page count.
+ * @returns {void}
+ * @throws {Error} If a retained structure references a deleted page.
+ */
 function validateDeletedPageReferences(
   parser,
   catalog,
@@ -328,7 +341,7 @@ function validateDeletedPageReferences(
   }
   const visited = new Set();
   Object.entries(catalog)
-    .filter(([key]) => !["PageLabels", "Pages"].includes(key))
+    .filter(([key]) => ![PdfName.PAGE_LABELS, PdfName.PAGES].includes(key))
     .forEach(([, value]) =>
       assertNoDeletedPageReferences(
         parser,
@@ -340,7 +353,9 @@ function validateDeletedPageReferences(
     );
   if (pageLabels) {
     Object.entries(pageLabels.values)
-      .filter(([key]) => !["Kids", "Limits", "Nums"].includes(key))
+      .filter(
+        ([key]) => ![PdfName.KIDS, PdfName.LIMITS, PdfName.NUMS].includes(key),
+      )
       .forEach(([, value]) =>
         assertNoDeletedPageReferences(
           parser,
@@ -356,7 +371,9 @@ function validateDeletedPageReferences(
   // need to re-parse every retained page's dictionary here.
   walkPageTree(tree, (node) => {
     const isLeaf = !node.children;
-    const skipKeys = isLeaf ? ["Parent"] : ["Count", "Kids", "Parent"];
+    const skipKeys = isLeaf
+      ? [PdfName.PARENT]
+      : [PdfName.COUNT, PdfName.KIDS, PdfName.PARENT];
     Object.entries(node.values)
       .filter(([key]) => !skipKeys.includes(key))
       .forEach(([, value]) =>
