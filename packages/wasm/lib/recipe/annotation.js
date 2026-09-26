@@ -36,6 +36,11 @@ function annotationDate(value) {
   return `D:${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}${String(date.getUTCHours()).padStart(2, "0")}${String(date.getUTCMinutes()).padStart(2, "0")}${String(date.getUTCSeconds()).padStart(2, "0")}Z`;
 }
 
+/**
+ * Wraps text in an XHTML body for `/RC` unless it is already XML.
+ * @param {string} value - Text or XHTML.
+ * @returns {string} The rich text.
+ */
 function richText(value) {
   if (value.startsWith("<?xml")) return value;
   return `<?xml version="1.0"?><body xmlns="http://www.w3.org/1999/xhtml">${value.replace(/&nbsp;/g, " ").replace(/\r?\n|\r|\t/g, "")}</body>`;
