@@ -27,6 +27,11 @@ function merge(left = {}, right = {}) {
   return result;
 }
 
+/**
+ * Expands CSS-style padding to four sides.
+ * @param {number|number[]} [value=0] - One to four values: top, right, bottom, left.
+ * @returns {number[]} `[top, right, bottom, left]`.
+ */
 function padding(value = 0) {
   var p = Array.isArray(value) ? value : [value];
   return [
