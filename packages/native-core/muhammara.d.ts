@@ -893,6 +893,13 @@ declare namespace muhammara {
       sourcePageIndex: number,
     ): void;
     getSourceDocumentParser(): PDFReader;
+    /**
+     * Writes a source object at the current output position, copying the
+     * objects it references later.
+     * @param objectToCopy - The source object.
+     * @throws {TypeError} If objectToCopy is not a PDF object or cannot be copied.
+     * @throws {TypeError} If the copying context has ended.
+     */
     copyDirectObjectAsIs(objectToCopy: PDFObject): void;
     copyObject(objectId: number): number;
     copyDirectObjectWithDeepCopy(objectToCopy: PDFObject): Array<number>;
