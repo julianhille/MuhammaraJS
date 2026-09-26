@@ -172,6 +172,13 @@ export function createRawObjectsContext({
           writeValue(2, value);
           return this;
         },
+        /**
+         * Writes a number value.
+         * @param {number} value - Finite number.
+         * @returns {this} The dictionary context.
+         * @throws {TypeError} If `value` is not finite.
+         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         */
         writeNumberValue: function (value) {
           requireDictionary();
           if (!Number.isFinite(value))
