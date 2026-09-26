@@ -184,27 +184,28 @@ exports._writeInfo = function _writeInfo() {
       }
 
       switch (key) {
-        case "trapped":
-          if (trappedValues[oldInfo.trapped] !== undefined) {
-            infoDictionary.trapped = trappedValues[oldInfo.trapped];
+        case CachedInfoKey.TRAPPED:
+          if (trappedValues[oldInfo[CachedInfoKey.TRAPPED]] !== undefined) {
+            infoDictionary.trapped =
+              trappedValues[oldInfo[CachedInfoKey.TRAPPED]];
           }
           break;
-        case "creationDate":
+        case CachedInfoKey.CREATION_DATE:
           infoDictionary.setCreationDate(oldInfo.creationDate);
           break;
-        case "modDate":
+        case CachedInfoKey.MOD_DATE:
           infoDictionary.addAdditionalInfoEntry(
             "source-ModDate",
             oldInfo.modDate,
           );
           break;
-        case "creator":
+        case CachedInfoKey.CREATOR:
           infoDictionary.addAdditionalInfoEntry(
             "source-Creator",
             oldInfo.creator,
           );
           break;
-        case "producer":
+        case CachedInfoKey.PRODUCER:
           infoDictionary.addAdditionalInfoEntry(
             "source-Producer",
             oldInfo.producer,
