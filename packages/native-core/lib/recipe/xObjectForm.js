@@ -129,6 +129,11 @@ exports.xObjectForm = class xObjectForm {
     this.pdfWriter.endFormXObject(this);
   }
 
+  /**
+   * Set the fill color in the form, including separation colors.
+   * @param {Object} colorModel - The color model from _transformColor().
+   * @returns {Object} The form.
+   */
   fill(colorModel) {
     const ctx = this.getContentContext();
     switch (colorModel.colorspace) {
@@ -136,7 +141,7 @@ exports.xObjectForm = class xObjectForm {
         Color.fill(ctx, colorModel);
         break;
 
-      case "separation":
+      case Colorspace.SEPARATION:
         ctx.cs(this.getCsName(colorModel.colorspaceId));
         ctx.scn(1);
         break;
