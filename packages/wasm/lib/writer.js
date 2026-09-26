@@ -3313,6 +3313,17 @@ export function createWriterFactory({
           options,
         );
       },
+      /**
+       * Merges pages of a source PDF into a target page.
+       * @param {PDFPage} targetPage - Page being written.
+       * @param {ByteSource} source - Source PDF bytes.
+       * @param {PageRangeOptions|Function} [options] - Pages to merge, or the callback.
+       * @param {Function} [callback] - Called after the merge completes.
+       * @returns {this} The writer.
+       * @throws {TypeError} If the page, options, or callback is invalid.
+       * @throws {RangeError} If the page range is invalid.
+       * @throws {Error} If another page is active, the writer ended, or the source is unreadable.
+       */
       mergePDFPagesToPage: function (targetPage, source, options, callback) {
         return mergePDFPagesToPage(targetPage, source, options, callback);
       },
