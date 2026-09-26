@@ -1451,6 +1451,9 @@ const Point = class Point {
   get y() {
     return this._y;
   }
+  /**
+   * @returns {number[]} The [x, y] array.
+   */
   get point() {
     return [this._x, this._y];
   }
