@@ -469,6 +469,12 @@ async function rotatedPageExample() {
   }
 }
 
+/**
+ * Builds the browser example for image transformations.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If a required asset is missing.
+ */
 async function imageTransformExample(assets) {
   var selected = assets.png
     ? [assets.png, "png"]
