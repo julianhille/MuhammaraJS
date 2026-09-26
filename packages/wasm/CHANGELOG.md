@@ -291,6 +291,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   contexts previously threw a `TypeError` for the size and the modifier form
   context a generic `Error` for the font. Form XObject `Tf()` and `Tj()` now
   report an ended form instead of a native failure [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Report an ended modifier form XObject from every content-context method
+  instead of a generic native failure, and throw a `TypeError` when `Td()`,
+  `TD()`, `Tw()`, `TL()`, or `Ts()` is missing an operand on a modifier form,
+  as the other content contexts do [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type finite option values by name: `J()`, `j()`, and `Tr()` take
   `LineCapStyle`, `LineJoinStyle`, and `TextRenderingMode`; `trapped`,
   `endArray()`, `getType()`, `getTypeLabel()`, `getTrailerEntryType()`,

@@ -241,7 +241,15 @@ describe("ModifierContentContext", function () {
     assert.equal(await context.drawImageAsync(1, 1, new Blob([jpg])), context);
     assert.ok(modifier.getFontForBytes("arial").getFontMetrics(12).height > 0);
     assert.equal(modifier.endFormXObject(form), modifier);
-    assert.throws(() => context.f(), /Unable to apply form operator/);
+    assert.throws(() => context.f(), /content has ended/);
+    for (var call of [
+      () => context.d([1]),
+      () => context.setOpacity(0.5),
+      () => context.writeFreeCode("q"),
+      () => context.Tf("F1", 10),
+      () => context.writeText("x", 1, 1, {}),
+    ])
+      assert.throws(call, /content has ended/);
     assert.throws(() => resources.addFontMapping(5), /no longer active/);
     assert.throws(() => modifier.endFormXObject(form), /open form/);
     var pageModifier = modifier.createPageModifier(0).startContext();

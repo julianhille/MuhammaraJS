@@ -1340,7 +1340,13 @@ export function createWriterToModifyFactory({
             requireOpen();
             if (form._ended)
               throw new Error("Form XObject content is not writable");
+            function requireFormContent() {
+              requireOpen();
+              if (form._ended)
+                throw new Error("Form XObject content has ended");
+            }
             function operator(code, ...args) {
+              requireFormContent();
               if (!args.every(Number.isFinite))
                 throw new TypeError("Form operator requires finite arguments");
               if (
@@ -1356,6 +1362,7 @@ export function createWriterToModifyFactory({
             }
             var context = {
               writeFreeCode: function (code) {
+                requireFormContent();
                 if (typeof code !== "string")
                   throw new TypeError("writeFreeCode requires a string");
                 return withString(code, (pointer) => {
@@ -1372,6 +1379,7 @@ export function createWriterToModifyFactory({
                 });
               },
               Tf: function (font, size) {
+                requireFormContent();
                 if (!(
                   (font && font._owner === owner) ||
                   typeof font === "string"
@@ -1400,22 +1408,8 @@ export function createWriterToModifyFactory({
                 if (!applied) throw new Error("Unable to set form font");
                 return context;
               },
-              Tj: function (text) {
-                if (typeof text !== "string")
-                  throw new TypeError("Tj requires a string");
-                return withString(text, (pointer) => {
-                  if (
-                    !module._muhammara_wasm_modifier_form_show_text(
-                      modifier,
-                      handle,
-                      pointer,
-                    )
-                  )
-                    throw new Error("Unable to show form text");
-                  return context;
-                });
-              },
               writeText: function (text, x, y, options = {}) {
+                requireFormContent();
                 options = readTextOptions(options, colorValue);
                 if (
                   typeof text !== "string" ||
@@ -1460,8 +1454,8 @@ export function createWriterToModifyFactory({
               ["h", 15],
               ["BT", 32],
               ["ET", 33],
-              ["Td", 41],
-              ["TD", 42],
+              ["Td", 41, 2],
+              ["TD", 42, 2],
               ["TStar", 43],
               ["S", 5],
               ["f", 6],
@@ -1481,9 +1475,9 @@ export function createWriterToModifyFactory({
               ["cm", 19, 6],
               ["Tm", 34, 6],
               ["Tc", 35, 1],
-              ["Tw", 36],
-              ["TL", 38],
-              ["Ts", 40],
+              ["Tw", 36, 1],
+              ["TL", 38, 1],
+              ["Ts", 40, 1],
             ].forEach(([name, code, arity = 0]) => {
               context[name] = function (...args) {
                 // Missing operands become undefined and fail the finite check.
@@ -1509,9 +1503,8 @@ export function createWriterToModifyFactory({
               return operator(39, value);
             };
             context.d = function (dash, phase = 0) {
-              requireOpen();
+              requireFormContent();
               if (
-                form._ended ||
                 !Array.isArray(dash) ||
                 !dash.every(Number.isFinite) ||
                 !Number.isFinite(phase)
@@ -1532,7 +1525,7 @@ export function createWriterToModifyFactory({
               });
             };
             context.setOpacity = function (opacity) {
-              requireOpen();
+              requireFormContent();
               if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1)
                 throw new TypeError(
                   "Wrong Argument, please provide 1 opacity value between 0 and 1",
