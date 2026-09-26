@@ -80,6 +80,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Let a modifier's `doXObject()` place the results of its own
+  `createImageXObjectFromJPGBytes()`, `createFormXObjectFromJPGBytes()`,
+  `createFormXObjectFromPNGBytes()`, and `createFormXObjectFromTIFF()`, which
+  previously threw a `TypeError` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Let `createWriterToModify().getImageDimensions()` read a PDF registered with
   `registerPdf()`, as the writer does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Fix `createWriterToModify().createFormXObjectsFromPDF()` throwing

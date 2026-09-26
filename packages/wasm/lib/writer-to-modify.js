@@ -145,6 +145,20 @@ export function createWriterToModifyFactory({
       return callback(path);
     }
 
+    /**
+     * Wraps the object ID of a finished image or form so `doXObject()` accepts it.
+     * @param {number} id - Object ID of the XObject.
+     * @returns {{id: number}} The XObject, owned by this modifier.
+     */
+    function completedXObject(id) {
+      var xobject = { id };
+      Object.defineProperties(xobject, {
+        _owner: { value: owner },
+        _ended: { value: true },
+      });
+      return xobject;
+    }
+
     function requireOpen() {
       if (ended || !modifier) throw new Error("PDF writer has ended");
     }
@@ -1311,7 +1325,9 @@ export function createWriterToModifyFactory({
             ),
         );
         if (!handle) throw new Error("Unable to create JPEG image XObject");
-        return { id: module._muhammara_wasm_image_get_object_id(handle) };
+        return completedXObject(
+          module._muhammara_wasm_image_get_object_id(handle),
+        );
       },
       createFormXObjectFromJPGBytes: function (name, objectId) {
         requireOpen();
@@ -1326,9 +1342,9 @@ export function createWriterToModifyFactory({
             ),
         );
         if (!handle) throw new Error("Unable to create image form XObject");
-        return {
-          id: module._muhammara_wasm_modifier_form_get_object_id(handle),
-        };
+        return completedXObject(
+          module._muhammara_wasm_modifier_form_get_object_id(handle),
+        );
       },
       createFormXObjectFromPNGBytes: function (name, objectId) {
         requireOpen();
@@ -1343,9 +1359,9 @@ export function createWriterToModifyFactory({
             ),
         );
         if (!handle) throw new Error("Unable to create image form XObject");
-        return {
-          id: module._muhammara_wasm_modifier_form_get_object_id(handle),
-        };
+        return completedXObject(
+          module._muhammara_wasm_modifier_form_get_object_id(handle),
+        );
       },
       createFormXObjectsFromPDF: function (
         source,
@@ -1522,11 +1538,10 @@ export function createWriterToModifyFactory({
             ),
         );
         if (!handle) throw new Error("Unable to create TIFF form XObject");
-        return {
-          id:
-            objectId ||
+        return completedXObject(
+          objectId ||
             module._muhammara_wasm_modifier_form_get_object_id(handle),
-        };
+        );
       },
       createFormXObjectFromTIFFBytes: function (image, options) {
         return this.createFormXObjectFromTIFF(image, options);

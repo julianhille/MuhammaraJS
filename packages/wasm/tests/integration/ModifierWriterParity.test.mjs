@@ -40,6 +40,34 @@ describe("ModifierWriterParity", function () {
     }
   });
 
+  it("places modifier image and form results with doXObject", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var jpeg = new Uint8Array(
+      await readFile("tests/TestMaterials/images/soundcloud_logo.jpg"),
+    );
+    muhammara.registerImage("parity-jpeg", jpeg, "jpg");
+    try {
+      var modifier = muhammara.createWriterToModify(
+        muhammara.createBlankPdf(100, 100),
+        { compress: false },
+      );
+      var image = modifier.createImageXObjectFromJPGBytes("parity-jpeg");
+      var form = modifier.createFormXObjectFromJPGBytes("parity-jpeg");
+      var page = modifier.createPage(0, 0, 100, 100);
+      modifier.startPageContentContext(page).doXObject(image).doXObject(form);
+      modifier.writePage(page);
+      var output = modifier.end();
+      var text = new TextDecoder("latin1").decode(output);
+      // Two on the page, plus the JPEG form drawing its own image.
+      assert.equal(text.match(/ Do\b/g).length, 3);
+      var reader = muhammara.createReader(output);
+      assert.equal(reader.getPagesCount(), 2);
+      reader.end();
+    } finally {
+      muhammara.unregisterImage("parity-jpeg");
+    }
+  });
+
   it("exposes safe writer operations on byte-backed modifiers", async function () {
     var muhammara = await createMuhammaraWasm();
     var sourceWriter = muhammara.createWriter();
