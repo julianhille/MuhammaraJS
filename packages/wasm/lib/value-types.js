@@ -86,6 +86,11 @@ export function createValueTypes({ module, withString, withBytes }) {
         throw new TypeError("PDFDate requires a valid Date");
       var offset = -value.getTimezoneOffset();
       var sign = offset < 0 ? "-" : "+";
+      /**
+       * Formats the absolute value of a number with at least two digits.
+       * @param {number} number - Date part.
+       * @returns {string} The padded digits.
+       */
       var pad = (number) => String(Math.abs(number)).padStart(2, "0");
       value = `D:${value.getFullYear()}${pad(value.getMonth() + 1)}${pad(value.getDate())}${pad(value.getHours())}${pad(value.getMinutes())}${pad(value.getSeconds())}${sign}${pad(Math.trunc(offset / 60))}'${pad(offset % 60)}'`;
     }
