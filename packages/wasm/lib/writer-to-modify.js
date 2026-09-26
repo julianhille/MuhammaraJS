@@ -285,6 +285,11 @@ export function createWriterToModifyFactory({
         S: function () {
           return operator("S", 5);
         },
+        /**
+         * Fills the current path using the nonzero winding rule (`f`).
+         * @returns {this} The content context, for chaining.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         f: function () {
           return operator("f", 6);
         },
