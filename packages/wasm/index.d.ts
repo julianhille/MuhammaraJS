@@ -817,6 +817,8 @@ export interface AnnotationOptions {
 export type DrawingPathType = "stroke" | "fill" | "clip" | null;
 /** PDF line cap style for `J()`: 0 butt, 1 round, 2 projecting square. */
 export type LineCapStyle = 0 | 1 | 2;
+/** PDF line join style for `j()`: 0 miter, 1 round, 2 bevel. */
+export type LineJoinStyle = 0 | 1 | 2;
 
 export interface DrawPathOptions {
   color?: number | string;
@@ -1028,7 +1030,7 @@ export interface ContentContext {
   cm(...matrix: PDFMatrix): this;
   w(value: number): this;
   J(value: LineCapStyle): this;
-  j(value: number): this;
+  j(value: LineJoinStyle): this;
   M(value: number): this;
   d(dash: number[], phase?: number): this;
   g(value: number): this;

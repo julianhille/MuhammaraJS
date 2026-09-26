@@ -802,6 +802,9 @@ async function usesNamedValueSets() {
   context.J(2);
   // @ts-expect-error PDF line caps are 0 to 2.
   context.J(3);
+  context.j(2);
+  // @ts-expect-error PDF line joins are 0 to 2.
+  context.j(3);
 }
 
 void usesNamedValueSets;
