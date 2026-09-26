@@ -11,6 +11,27 @@ describe("Recipe annotation", function () {
     reader = undefined;
   });
 
+  it("writes flag names and bit masks and rejects unknown flags", function () {
+    var flagOutput = path.join(__dirname, "../output/annotation-flags.pdf");
+    var recipe = new muhammara.Recipe("new", flagOutput).createPage(200, 200);
+    assert.throws(
+      () => recipe.annot(20, 20, "Square", { flag: "bogus" }),
+      /Unknown annotation flag \(bogus\)/,
+    );
+    recipe
+      .annot(20, 20, "Square", { width: 10, height: 10, flag: 4 })
+      .annot(20, 60, muhammara.Recipe.AnnotSubtype.SQUARE, {
+        width: 10,
+        height: 10,
+        flag: muhammara.Recipe.AnnotFlag.LOCKED_CONTENTS,
+      })
+      .endPage()
+      .endPDF();
+    var bytes = require("node:fs").readFileSync(flagOutput, "latin1");
+    assert.match(bytes, /\/F 4\b/);
+    assert.match(bytes, /\/F 512\b/);
+  });
+
   it("writes links, comments, and square annotations", async function () {
     var recipe = new muhammara.Recipe("new", output)
       .createPage(595, 842)

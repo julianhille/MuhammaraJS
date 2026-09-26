@@ -2989,16 +2989,8 @@ declare namespace muhammara {
       Result = unknown,
     > = (this: Recipe, ...args: Arguments) => Result;
 
-    type CommentOptionsFlag =
-      | "invisible"
-      | "hidden"
-      | "print"
-      | "nozoom"
-      | "norotate"
-      | "noview"
-      | "readonly"
-      | "locked"
-      | "togglenoview";
+    /** @deprecated Use `AnnotFlag`; comments accept the same flags. */
+    type CommentOptionsFlag = AnnotOptionsFlag;
 
     type AnnotSubtype =
       | "Text"
@@ -3182,7 +3174,7 @@ declare namespace muhammara {
       date?: string;
       open?: boolean;
       richText?: boolean;
-      flag?: CommentOptionsFlag;
+      flag?: AnnotOptionsFlag | number;
       /** Replies linked to this comment annotation. */
       replies?: readonly AnnotReply[];
     }
@@ -3193,7 +3185,7 @@ declare namespace muhammara {
       title?: string;
       open?: boolean;
       richText?: boolean;
-      flag?: AnnotOptionsFlag;
+      flag?: AnnotOptionsFlag | number;
       icon?: AnnotOptionsIcon;
       width?: number;
       height?: number;
@@ -3216,7 +3208,7 @@ declare namespace muhammara {
       text: string;
       title?: string;
       richText?: boolean;
-      flag?: AnnotOptionsFlag;
+      flag?: AnnotOptionsFlag | number;
       opacity?: number;
       date?: string;
       subject?: string;
@@ -3386,7 +3378,7 @@ declare namespace muhammara {
       title?: string;
       open?: boolean;
       richText?: boolean;
-      flag?: AnnotOptionsFlag;
+      flag?: AnnotOptionsFlag | number;
       icon?: AnnotOptionsIcon;
       date?: string;
       subject?: string;

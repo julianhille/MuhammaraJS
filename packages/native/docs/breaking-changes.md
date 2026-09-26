@@ -4,6 +4,11 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Recipe `annot()` and `comment()` throw
+  `Error: Unknown annotation flag (<name>)` when the `flag` option is not a
+  `Recipe.AnnotFlag` value, such as a misspelled name. In 6.x the annotation was
+  written without any flag bits. Pass a `Recipe.AnnotFlag` value, a numeric bit
+  mask, or omit `flag` [#792](https://github.com/julianhille/MuhammaraJS/issues/792).
 - `Tj()`, `Quote()`, `DoubleQuote()` and `TJ()` throw a `TypeError` when a
   glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
   array. In 6.x such items were skipped silently, so `TJ(["ab", -100, "c"])`

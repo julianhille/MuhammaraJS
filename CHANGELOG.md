@@ -60,6 +60,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Throw `Error: Unknown annotation flag (<name>)` from Recipe `annot()` and
+  `comment()` for a `flag` that is not a `Recipe.AnnotFlag` value, instead of
+  silently writing no flag bits, as `@muhammara/wasm` does. Numeric bit masks
+  are now accepted too. Pass a `Recipe.AnnotFlag` value or a bit mask, or omit
+  `flag` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Throw a `TypeError` from `Tj()`, `Quote()`, `DoubleQuote()` and `TJ()` when
   a glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
   array. Previously such items were skipped, so `TJ(["ab", -100, "c"])` wrote

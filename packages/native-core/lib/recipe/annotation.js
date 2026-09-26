@@ -33,6 +33,7 @@ function textString(writer, value) {
  * @returns {Recipe} The recipe instance.
  */
 exports.comment = function comment(text = "", x, y, options = {}) {
+  validateAnnotationFlags(options);
   this.annotationsToWrite.push({
     subtype: AnnotSubtype.TEXT,
     pageNumber: this.pageNumber,
@@ -133,6 +134,7 @@ exports.annot = function annot(
   options = { text: "", width: 0, height: 0 },
 ) {
   const { text, width, height, replies } = options;
+  validateAnnotationFlags(options);
   this.annotationsToWrite.push({
     subtype,
     args: { text, x, y, width, height, options },
@@ -474,14 +476,31 @@ exports._getTextMarkupAnnotationSubtype =
   };
 
 /**
+ * Rejects an unknown annotation flag when the annotation is queued, before the
+ * page is written.
+ * @private
+ * @param {object} options - Annotation options, with optional `replies`.
+ * @returns {void}
+ * @throws {Error} If a flag is neither a bit mask nor an AnnotFlag value.
+ */
+function validateAnnotationFlags(options) {
+  if (!options) return;
+  getFlagBitNumberByName(options.flag);
+  (options.replies || []).forEach(validateAnnotationFlags);
+}
+
+/**
  * Get Flag Bit by Name
  * @description 12.5.3 Annotation Flags
  * @private
- * @param {Recipe.AnnotFlag|string} name - A `Recipe.AnnotFlag` value, matched
- *   case-insensitively.
- * @returns {number} The flag bit, or 0 for an empty or unknown name.
+ * @param {Recipe.AnnotFlag|number|string} [name] - A `Recipe.AnnotFlag` value,
+ *   matched case-insensitively, or a non-negative integer bit mask.
+ * @returns {number} The flag bits; 0 when the flag is omitted or empty.
+ * @throws {Error} If `name` is neither a bit mask nor an AnnotFlag value.
  */
 function getFlagBitNumberByName(name) {
+  if (name === undefined || name === null || name === "") return 0;
+  if (Number.isSafeInteger(name) && name >= 0) return name;
   switch (String(name).toLowerCase()) {
     case AnnotFlag.INVISIBLE:
       return 1;
@@ -505,7 +524,7 @@ function getFlagBitNumberByName(name) {
     case AnnotFlag.LOCKED_CONTENTS:
       return 512;
     default:
-      return 0;
+      throw new Error(`Unknown annotation flag (${name})`);
   }
 }
 
