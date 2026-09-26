@@ -199,6 +199,18 @@ export function createWriterSupport({
     return result;
   }
 
+  /**
+   * Validates drawImage arguments and runs a native draw call.
+   * @param {Function} call - Native draw call taking `(pathPointer, drawOptions, matrixPointer)`.
+   * @param {number} x - Left position.
+   * @param {number} y - Bottom position.
+   * @param {string|ByteSource} image - Registered asset name or image bytes.
+   * @param {DrawImageOptions} [options] - Page index and transformation.
+   * @param {string[]} retainedPaths - Receives the path of stored bytes.
+   * @returns {void}
+   * @throws {TypeError} If a coordinate is not finite or an option is invalid.
+   * @throws {Error} If the image cannot be drawn.
+   */
   function drawImageCall(call, x, y, image, options, retainedPaths) {
     if (![x, y].every(Number.isFinite)) {
       throw new TypeError("drawImage requires finite x and y coordinates");
