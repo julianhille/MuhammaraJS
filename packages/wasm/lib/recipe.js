@@ -798,6 +798,11 @@ export function createRecipeFactory({
         registerPdf: Recipe.registerPdf,
         unregisterPdf: Recipe.unregisterPdf,
         inspectPdf,
+        /**
+         * Creates the Recipe that endPDF() uses for post-processing.
+         * @param {RecipeOptions} options - Recipe options.
+         * @returns {Recipe} A new Recipe.
+         */
         createRecipe: (options) => new Recipe(options),
         recrypt,
       }),
