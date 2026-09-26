@@ -98,6 +98,11 @@ async function assets() {
   };
 }
 
+/**
+ * Builds the summary shown after a run.
+ * @param {object} value - Result of `runBrowserExample()`.
+ * @returns {object} Display values and output sizes.
+ */
 function summary(value) {
   if (value.example)
     return {
