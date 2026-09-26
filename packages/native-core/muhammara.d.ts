@@ -4422,6 +4422,22 @@ declare namespace muhammara {
      */
     polygon(coordinates: number[][], options?: Recipe.PolygonOptions): Recipe;
 
+    /**
+     * Draw a circle
+     * @param x - The coordinate x of the center
+     * @param y - The coordinate y of the center
+     * @param radius - The radius
+     * @param options - The options
+     * @param options.color - HexColor, PercentColor or DecimalColor
+     * @param options.stroke - HexColor, PercentColor or DecimalColor
+     * @param options.fill - HexColor, PercentColor or DecimalColor
+     * @param options.lineWidth - The line width
+     * @param options.opacity - The opacity
+     * @param options.dash - The dash style [number, number]
+     * @param options.link - Make the circle's bounding square open this URL.
+     * @returns The recipe instance.
+     * @throws {TypeError} If no page is active.
+     */
     circle(
       x: Recipe.RecipeCoordinate,
       y: Recipe.RecipeCoordinate,
