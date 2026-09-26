@@ -1086,6 +1086,11 @@ export function createWriterToModifyFactory({
       return result;
     }
 
+    /**
+     * Starts the native page context and creates its content context.
+     * @returns {ContentContext} The content context.
+     * @throws {Error} If the context cannot be started.
+     */
     function startContext() {
       if (!module._muhammara_wasm_modifier_start_page_context(modifier)) {
         throw new Error("Unable to start page content context");
