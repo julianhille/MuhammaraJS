@@ -968,6 +968,12 @@ declare namespace muhammara {
      */
     startNewIndirectObject(objectId: FormXObjectId): this;
     startNewIndirectObject(): FormXObjectId;
+    /**
+     * Starts a new version of an existing object of the PDF being modified.
+     * @param objectId - The object ID to replace.
+     * @returns This context.
+     * @throws {TypeError} If objectId is not a single number.
+     */
     startModifiedIndirectObject(objectId: FormXObjectId): this;
     deleteObject(objectId: FormXObjectId): this;
     writeName(name: string): this;
