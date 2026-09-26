@@ -800,6 +800,12 @@ declare namespace muhammara {
      * @throws {TypeError} If length is not a single number.
      */
     skip(length: number): this;
+    /**
+     * Moves to a position.
+     * @param position - The byte offset.
+     * @returns This reader.
+     * @throws {TypeError} If position is not a single number.
+     */
     setPosition(position: number): this;
     setPositionFromEnd(position: number): this;
   }
