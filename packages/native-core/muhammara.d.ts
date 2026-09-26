@@ -156,6 +156,18 @@ declare namespace muhammara {
      * @throws {TypeError} If the modifier was not created with a writer.
      */
     endContext(): this;
+    /**
+     * Adds a link annotation to the modified page.
+     * @param inUrl - The ASCII link target.
+     * @param left - The clickable area left edge.
+     * @param bottom - The clickable area bottom edge.
+     * @param right - The clickable area right edge.
+     * @param top - The clickable area top edge.
+     * @returns This modifier.
+     * @throws {TypeError} If the arguments are not a string and four numbers, or
+     *   the URL cannot be encoded as ASCII.
+     * @throws {TypeError} If the modifier was not created with a writer.
+     */
     attachURLLinktoCurrentPage(
       inUrl: string,
       left: number,
