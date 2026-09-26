@@ -769,6 +769,12 @@ export function createWriterFactory({
           get: function () {
             return value;
           },
+          /**
+           * Writes the text entry.
+           * @param {string} nextValue - New value; other values are converted with `String()`.
+           * @returns {void}
+           * @throws {Error} If the writer has ended or the entry cannot be set.
+           */
           set: function (nextValue) {
             requireOpenWriter();
             value = String(nextValue);
