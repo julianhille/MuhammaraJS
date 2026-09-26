@@ -14,12 +14,13 @@ var trappedValues = {
  * @memberof Recipe#
  * @function
  * @param {Object} [options] - The options (when missing obtains existing PDF information)
- * @param {number} [options.version] - The pdf version
  * @param {string} [options.author] - The author
  * @param {string} [options.title] - The title
  * @param {string} [options.subject] - The subject
  * @param {string[]} [options.keywords] - The array of keywords
  * @returns {Object|Recipe} The existing information dictionary when options are omitted, otherwise the recipe instance.
+ *   A new PDF has no existing information, so the call without options returns undefined.
+ * @throws {Error} If the source information cannot be read.
  */
 exports.info = function info(options) {
   let result;
