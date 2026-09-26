@@ -42,6 +42,14 @@ export function createCopyingHelpers({ module }) {
           module._free(resultPointer);
         }
       },
+      /**
+       * Writes a direct source object into the current output position and
+       * schedules the indirect objects it references.
+       * @param {PDFObject} object - Object parsed by this copying context's source parser.
+       * @returns {number[]} Source object IDs still to copy with `copyNewObjectsForDirectObject()`.
+       * @throws {TypeError} If the object comes from another parser.
+       * @throws {Error} If the context has ended or the object cannot be copied.
+       */
       copyDirectObjectWithDeepCopy: function (object) {
         requireCopying();
         requireSourceObject(object);
