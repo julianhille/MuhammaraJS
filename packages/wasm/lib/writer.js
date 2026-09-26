@@ -2862,6 +2862,13 @@ export function createWriterFactory({
                 "Form XObject content stream is no longer active",
               );
             return {
+              /**
+               * Appends raw bytes to the form content stream.
+               * @param {ByteSource} bytes - Bytes to append.
+               * @returns {number} The number of bytes written.
+               * @throws {TypeError} If `bytes` is not a supported byte source.
+               * @throws {Error} If the writer or the form has ended.
+               */
               write: function (bytes) {
                 if (ended || form._ended) {
                   throw new Error(
