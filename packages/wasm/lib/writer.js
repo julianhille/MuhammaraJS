@@ -901,6 +901,13 @@ export function createWriterFactory({
               if (!writer)
                 throw new Error("Page content stream is no longer active");
               return {
+                /**
+                 * Appends raw bytes to the page content stream.
+                 * @param {ByteSource} bytes - Bytes to append.
+                 * @returns {number} The number of bytes written.
+                 * @throws {TypeError} If `bytes` is not a supported byte source.
+                 * @throws {Error} If the content context is no longer active or the write fails.
+                 */
                 write: function (bytes) {
                   requireActiveContext(context);
                   return writeNativeBytes(
