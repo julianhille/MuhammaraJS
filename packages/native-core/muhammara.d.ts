@@ -579,6 +579,13 @@ declare namespace muhammara {
     scn(...parameters: any[]): this; // This can't be materialized in TypeScript
     ////scn(...colorComponents: number[], patternName?: string): this;
     scn(colorComponents: number[], patternName?: string): this;
+    /**
+     * Sets a gray stroke color; operator G.
+     * @param gray - The gray level, 0 (black) to 1 (white).
+     * @returns This context.
+     * @throws {TypeError} If gray is not a single number.
+     * @throws {TypeError} If there is no content context.
+     */
     G(gray: number): this;
     g(gray: number): this;
     RG(r: number, g: number, b: number): this;
