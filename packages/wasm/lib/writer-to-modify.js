@@ -656,6 +656,14 @@ export function createWriterToModifyFactory({
         Ts: function (fontRise) {
           return operator("Ts", 40, [fontRise]);
         },
+        /**
+         * Sets the dash pattern (`d`).
+         * @param {number[]} dash - Alternating dash and gap lengths; empty for a solid line.
+         * @param {number} [phase=0] - Offset into the pattern.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If `dash` is not an array of finite numbers or `phase` is not finite.
+         * @throws {Error} If the content context is no longer active or the operator fails.
+         */
         d: function (dash, phase = 0) {
           requireContext(result);
           if (
