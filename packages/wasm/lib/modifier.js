@@ -70,6 +70,17 @@ export function createModifierFactory({
         }
         return this;
       },
+      /**
+       * Draws a rectangle in PDF coordinates, stroked unless `fill` is set.
+       * @param {number} x - Left edge.
+       * @param {number} y - Bottom edge.
+       * @param {number} width - Rectangle width.
+       * @param {number} height - Rectangle height.
+       * @param {CompactModifierShapeOptions} [options] - `fill`, `stroke`, or `color`, in that precedence.
+       * @returns {this} The modifier.
+       * @throws {TypeError} If the color is not a ColorValue.
+       * @throws {Error} If the modifier has ended or drawing fails.
+       */
       rectangle: function (x, y, width, height, options = {}) {
         requireOpenModifier();
         var color = colorValue(options.fill || options.stroke || options.color);

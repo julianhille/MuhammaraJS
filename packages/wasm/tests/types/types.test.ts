@@ -946,6 +946,10 @@ async function usesNamedValueSets() {
   void pageLayout;
   var replacement: ObjectReplacementOptions = { scope: "global" };
   modifierForTypes.replaceObject(0, 1, 2, replacement);
+  var compact = muhammara.createModifier(muhammara.createBlankPdf(10, 10));
+  compact.startPage(0).rectangle(0, 0, 5, 5, { fill: 0xff0000 });
+  // @ts-expect-error Low-level colors take three components.
+  compact.rectangle(0, 0, 5, 5, { fill: [1, 2] });
 }
 
 void usesNamedValueSets;

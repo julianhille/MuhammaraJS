@@ -1855,6 +1855,14 @@ export interface PDFModifier {
   end(): Uint8Array;
   dispose(): void;
 }
+/** Low-level color: a 24-bit RGB number, `#rrggbb`, a basic color name, or three 0-255 components. */
+export type ColorValue = number | string | [number, number, number];
+/** Colors for CompactModifier rectangles and circles; `fill` wins over `stroke` and `color`. */
+export interface CompactModifierShapeOptions {
+  color?: ColorValue;
+  fill?: ColorValue;
+  stroke?: ColorValue;
+}
 export interface CompactModifier {
   startPage(index: number): this;
   rectangle(
@@ -1862,7 +1870,7 @@ export interface CompactModifier {
     y: number,
     width: number,
     height: number,
-    options?: { color?: RecipeColor; fill?: RecipeColor; stroke?: RecipeColor },
+    options?: CompactModifierShapeOptions,
   ): this;
   circle(
     x: number,
