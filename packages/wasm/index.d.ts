@@ -1876,7 +1876,7 @@ export interface CompactModifier {
     x: number,
     y: number,
     radius: number,
-    options?: { color?: RecipeColor; fill?: RecipeColor; stroke?: RecipeColor },
+    options?: CompactModifierShapeOptions,
   ): this;
   line(
     startX: number,

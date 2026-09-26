@@ -99,6 +99,16 @@ export function createModifierFactory({
         }
         return this;
       },
+      /**
+       * Draws a circle in PDF coordinates, stroked unless `fill` is set.
+       * @param {number} x - Center x.
+       * @param {number} y - Center y.
+       * @param {number} radius - Circle radius.
+       * @param {CompactModifierShapeOptions} [options] - `fill`, `stroke`, or `color`, in that precedence.
+       * @returns {this} The modifier.
+       * @throws {TypeError} If the color is not a ColorValue.
+       * @throws {Error} If the modifier has ended or drawing fails.
+       */
       circle: function (x, y, radius, options = {}) {
         requireOpenModifier();
         if (
