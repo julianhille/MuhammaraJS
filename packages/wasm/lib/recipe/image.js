@@ -1,3 +1,4 @@
+import { ImageFitPolicy } from "../value-sets.js";
 /** Creates Recipe image placement methods. */
 export function createImageMethods(runtime) {
   function placement(recipe, path, x, y, options) {
@@ -75,7 +76,7 @@ export function createImageMethods(runtime) {
               width: box.width,
               height: box.height,
               proportional: options.keepAspectRatio !== false,
-              fit: "always",
+              fit: ImageFitPolicy.ALWAYS,
             },
           },
         );
