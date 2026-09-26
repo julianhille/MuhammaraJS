@@ -1451,7 +1451,7 @@ export function createWriterToModifyFactory({
               ["WStar", 31],
               ["cm", 19, 6],
               ["Tm", 34, 6],
-              ["Tc", 35],
+              ["Tc", 35, 1],
               ["Tw", 36],
               ["TL", 38],
               ["Ts", 40],
