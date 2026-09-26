@@ -1,4 +1,9 @@
-import { RecipeLineCap, RecipeTableRowParity } from "../value-sets.js";
+import {
+  RecipeLineCap,
+  RecipeTableRowParity,
+  RecipeTextAlignment,
+  RecipeVerticalAlignment,
+} from "../value-sets.js";
 /** Reports whether a style value is a plain object whose keys can merge. */
 function isPlainObject(value) {
   if (!value || typeof value !== "object") return false;
@@ -178,7 +183,10 @@ export function createTableMethods() {
             ? column.options.header
             : {
                 bold: true,
-                textBox: { padding: 2, textAlign: "center center" },
+                textBox: {
+                  padding: 2,
+                  textAlign: `${RecipeTextAlignment.CENTER} ${RecipeVerticalAlignment.CENTER}`,
+                },
               },
         );
         if (typeof options.header === "object") {
