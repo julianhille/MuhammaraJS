@@ -3142,6 +3142,12 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to register annotation for the current page");
         return this;
       },
+      /**
+       * Starts writing the page from `createPage()`.
+       * @param {PDFPage} nextPage - The active new page.
+       * @returns {ContentContext} The page content context.
+       * @throws {Error} If the modifier ended, `nextPage` is not the active page, or a context is active.
+       */
       startPageContentContext: function (nextPage) {
         requireOpen();
         if (nextPage !== page || context) {
