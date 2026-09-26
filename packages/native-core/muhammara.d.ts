@@ -605,6 +605,15 @@ declare namespace muhammara {
      * @throws {TypeError} If there is no content context.
      */
     RG(r: number, g: number, b: number): this;
+    /**
+     * Sets an RGB fill color; operator rg.
+     * @param r - Red, 0 to 1.
+     * @param g - Green, 0 to 1.
+     * @param b - Blue, 0 to 1.
+     * @returns This context.
+     * @throws {TypeError} If the arguments are not 3 numbers.
+     * @throws {TypeError} If there is no content context.
+     */
     rg(r: number, g: number, b: number): this;
     K(c: number, m: number, y: number, k: number): this;
     k(c: number, m: number, y: number, k: number): this;
