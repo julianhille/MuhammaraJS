@@ -271,7 +271,7 @@ function _defaultColor(colorspace = Colorspace.RGB) {
  * @private
  * @param {Recipe} self The recipe instance.
  * @param {string} code the color encoding as HexColor
- * @param {string} colorspace the name of the colorspace of given color code
+ * @param {Recipe.Colorspace} colorspace the name of the colorspace of given color code
  * @param {string} colorName the name to be associated with given color code
  * @returns {Object} The color model.
  */
@@ -285,17 +285,17 @@ function toColorModel(self, code, colorspace, colorName) {
 
   switch (color.length) {
     default:
-      color = hexToArray(_defaultColor("rgb"));
+      color = hexToArray(_defaultColor(Colorspace.RGB));
     // purposely want to fall through to 'rgb' case below.
     case 3:
-      cmodel.colorspace = "rgb";
+      cmodel.colorspace = Colorspace.RGB;
       cmodel.r = color[0];
       cmodel.g = color[1];
       cmodel.b = color[2];
       break;
 
     case 4:
-      cmodel.colorspace = "cmyk";
+      cmodel.colorspace = Colorspace.CMYK;
       cmodel.c = color[0];
       cmodel.m = color[1];
       cmodel.y = color[2];
@@ -303,7 +303,7 @@ function toColorModel(self, code, colorspace, colorName) {
       break;
 
     case 1:
-      cmodel.colorspace = "gray";
+      cmodel.colorspace = Colorspace.GRAY;
       cmodel.gray = color[0];
       break;
   }
@@ -312,7 +312,7 @@ function toColorModel(self, code, colorspace, colorName) {
   // use the colorspace from above as the
   // alternative color transformation when
   // the named color is unavailable.
-  if (colorspace === "separation" && colorName !== "") {
+  if (colorspace === Colorspace.SEPARATION && colorName !== "") {
     cmodel.colorspace = colorspace;
     cmodel.colorName = colorName;
     cmodel.colorspaceId = createColorSpaces(self, colorName, color);
