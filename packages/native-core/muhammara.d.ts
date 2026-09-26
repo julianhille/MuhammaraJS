@@ -1348,6 +1348,11 @@ declare namespace muhammara {
      * @returns The decoded text.
      */
     toString(): string;
+    /**
+     * Sets the text; a value that is not a string is ignored.
+     * @param value - The text.
+     * @returns This text string.
+     */
     fromString(value: string): this;
   }
 
