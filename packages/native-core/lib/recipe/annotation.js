@@ -512,7 +512,8 @@ function getFlagBitNumberByName(name) {
 /**
  * Text Strings to Rich Text Strings
  * @todo Fix display issue for ol/ul in richText
- * @param {string} content
+ * @param {string} content - The XHTML fragment to wrap.
+ * @returns {string} The rich text XML document for the RC entry.
  * @private
  * @description Supports XHTML elements: '<p>' | '<span>' | '<b>' | '<i>'. Supports CSS2 styles: 'text-align' | 'vertical-align' | 'font-size' | 'font-style' | 'font-weight' | 'font-family' | 'font' | 'color' | 'text-decoration' | 'font-stretch'.
  */
