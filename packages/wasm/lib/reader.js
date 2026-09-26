@@ -569,7 +569,9 @@ export function createReaderFactory({
               valuesPointer,
             )
           ) {
-            return null;
+            throw new TypeError(
+              "Unable to read object xref entry, object ID is out of range",
+            );
           }
           var offset = valuesPointer >>> 3;
           return {

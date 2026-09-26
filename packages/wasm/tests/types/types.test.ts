@@ -763,3 +763,33 @@ function usesRecipeDeclarations(
 }
 
 void usesRecipeDeclarations;
+
+async function usesAlignedDeclarations() {
+  var muhammara = await createMuhammaraWasm();
+  var writer = muhammara.createWriter();
+  var page = writer.createPage();
+  page.getResourcesDictionary().addFormXObjectMapping(1);
+  var context = writer.startPageContentContext(page);
+  context
+    .drawPath(0, 0, 10, 10)
+    .drawPath(0, 0, 10, 10, { type: "fill" })
+    .SCN(1, 0, 0)
+    .SCN(1, 0, 0, "P0")
+    .scn([1, 0, 0], "P0");
+  // @ts-expect-error A pattern name needs color components.
+  context.SCN("P0");
+  var font = writer.getFontForBytes("arial");
+  var glyphWidth: number = font.calculateTextDimensions([43, 76], 12).width;
+  void glyphWidth;
+  var reader = muhammara.createReader(writer.end());
+  var position: number = reader.getXrefEntry(1).objectPosition;
+  void position;
+
+  var Recipe = await createRecipe();
+  new Recipe({})
+    .createPage("A4")
+    .text("centered", "center", "center")
+    .image("logo", "center", "center", { width: 10 });
+}
+
+void usesAlignedDeclarations;

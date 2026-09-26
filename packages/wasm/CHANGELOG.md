@@ -72,6 +72,23 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Fix `drawRectangle()`, `drawSquare()`, `drawCircle()` and `drawPath()`
+  emitting the color and line width inside the path object, which PDF forbids;
+  they are now set before the path, as native does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Fix `writeText()` underlines to use the font's underline position and
+  thickness and the text advance, stroked in the text color, matching native
+  output [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Fix `writeText()` on modifier forms treating a `gray` colorspace as RGB [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Fix `doXObject()` failing with `Unable to place XObject` on pages created by a
+  modifier [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Let a new page expose `getResourcesDictionary()` and receive
+  `mergePDFPageToPage()` before a content context is started, as native does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Accept glyph id lists in `calculateTextDimensions()`, as native does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Accept any structural `BlobLike` in the async byte inputs, as
+  `AsyncByteSource` declares, instead of only `Blob` instances [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Declare Recipe `text()` and `image()` coordinates as `RecipeCoordinate`,
+  which accepts `"center"` at runtime, and reject a pattern name without color
+  components in the `SCN()`/`scn()` types, as the runtime does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Keep the source `/Trapped`, `CreationDate`, `Title`, `Author`, `Subject`,
   and `Keywords` Info entries when a Recipe saves an existing PDF; they were
   silently dropped. `info()` still overrides them.
@@ -246,6 +263,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Release copying contexts that are still open when `end()` is called on a
+  writer or modifier, as native does, instead of throwing. `end()` now reports
+  `PDF writer has ended` when called twice and names an open objects-context
+  operation instead of reporting an active page [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Throw from `PDFReader#getXrefEntry()` for an object ID outside the xref
+  table, with the native message, instead of returning `null` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Let flat `drawPath(x1, y1, x2, y2, ...)` coordinates omit the options object,
+  as native allows [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Rework the npm README: it explains how the MuhammaraJS packages fit together, when to use a native package instead, and adds tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
 - Narrow `DrawPathOptions.type` from an arbitrary string to the exported
   `DrawingPathType` (`"stroke" | "fill" | "clip" | null`), matching native.

@@ -179,6 +179,10 @@ describe("PDFParser", function () {
       muhammara.ePDFObjectDictionary,
     );
     assert.ok(reader.getXrefEntry(pageObjectID).objectPosition >= 0);
+    assert.throws(
+      () => reader.getXrefEntry(99999),
+      /Unable to read object xref entry, object ID is out of range/,
+    );
     assert.throws(() => reader.parsePage(1), /Unable to read page 1/);
     reader.end();
   });

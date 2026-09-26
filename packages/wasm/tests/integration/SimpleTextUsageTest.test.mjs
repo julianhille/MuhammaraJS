@@ -97,6 +97,11 @@ describe("SimpleTextUsageTest", function () {
     var page = new muhammara.PDFPage(0, 0, 595, 842);
     var writer = muhammara.createWriter();
     var arial = writer.getFontForBytes("arial");
+    // Glyph id lists measure like the text they encode, as on native.
+    assert.deepEqual(
+      arial.calculateTextDimensions([43, 76], 12),
+      arial.calculateTextDimensions("Hi", 12),
+    );
     var koz = writer.getFontForBytes("koz");
     var helvetica = writer.getFontForBytes("helvetica-pfb", "helvetica-pfm");
     var dimensions = arial.calculateTextDimensions("Hello World", 14);

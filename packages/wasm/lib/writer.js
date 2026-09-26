@@ -1,10 +1,13 @@
 import { createChildLifecycle } from "./lifecycle.js";
 import {
-  readDrawingOptions,
-  finishDrawingPath,
   readTextOptions,
   validateDrawingGeometry,
-  snapshotDrawingPoints,
+  applyDrawingColor,
+  installDrawingHelpers,
+  measureFontText,
+  readFontUnderline,
+  prepareUnderline,
+  strokeUnderline,
 } from "./drawing-options.js";
 
 /** Creates shared support functions used by low-level PDF writers. */
@@ -1062,136 +1065,7 @@ export function createWriterFactory({
           module._muhammara_wasm_recipe_structured_operator(recipe, ...args),
       );
 
-      function applyHighLevelColor(options, stroke) {
-        if (!options || options.color === undefined) return;
-        var color = colorValue(options.color) >>> 0;
-        var colorspace = options.colorspace || "rgb";
-        if (colorspace === "rgb") {
-          return stroke
-            ? context.RG(
-                ((color >> 16) & 0xff) / 255,
-                ((color >> 8) & 0xff) / 255,
-                (color & 0xff) / 255,
-              )
-            : context.rg(
-                ((color >> 16) & 0xff) / 255,
-                ((color >> 8) & 0xff) / 255,
-                (color & 0xff) / 255,
-              );
-        }
-        if (colorspace === "gray") {
-          return stroke
-            ? context.G((color & 0xff) / 255)
-            : context.g((color & 0xff) / 255);
-        }
-        if (colorspace === "cmyk") {
-          var values = [
-            ((color >> 24) & 0xff) / 255,
-            ((color >> 16) & 0xff) / 255,
-            ((color >> 8) & 0xff) / 255,
-            (color & 0xff) / 255,
-          ];
-          return stroke ? context.K(...values) : context.k(...values);
-        }
-        throw new TypeError("colorspace must be rgb, gray, or cmyk");
-      }
-
-      function finishHighLevelPath(options) {
-        var stroke = options.stroke;
-        applyHighLevelColor(options, stroke);
-        if (stroke && options.width !== undefined) context.w(options.width);
-        return finishDrawingPath(context, options);
-      }
-
-      context.drawRectangle = function (x, y, width, height, options) {
-        if (![x, y, width, height].every(Number.isFinite)) {
-          throw new TypeError("drawRectangle requires four finite coordinates");
-        }
-        options = readDrawingOptions(options, colorValue);
-        context.re(x, y, width, height);
-        return finishHighLevelPath(options);
-      };
-      context.drawSquare = function (x, y, edge, options) {
-        if (![x, y, edge].every(Number.isFinite)) {
-          throw new TypeError("drawSquare requires three finite coordinates");
-        }
-        return context.drawRectangle(x, y, edge, edge, options);
-      };
-      context.drawCircle = function (x, y, radius, options) {
-        if (![x, y, radius].every(Number.isFinite)) {
-          throw new TypeError("drawCircle requires three finite coordinates");
-        }
-        options = readDrawingOptions(options, colorValue);
-        var control = radius * 0.5522847498307936;
-        validateDrawingGeometry([
-          x + radius,
-          x - radius,
-          y + radius,
-          y - radius,
-        ]);
-        context
-          .m(x + radius, y)
-          .c(x + radius, y + control, x + control, y + radius, x, y + radius)
-          .c(x - control, y + radius, x - radius, y + control, x - radius, y)
-          .c(x - radius, y - control, x - control, y - radius, x, y - radius)
-          .c(x + control, y - radius, x + radius, y - control, x + radius, y);
-        return finishHighLevelPath(options);
-      };
-      context.drawPath = function (...args) {
-        var points;
-        var options;
-        if (Array.isArray(args[0])) {
-          if (args.length > 2) {
-            throw new TypeError(
-              "drawPath accepts coordinate pairs and an optional options object",
-            );
-          }
-          points = args[0];
-          options = args[1] ?? {};
-        } else {
-          options = args.at(-1);
-          var coordinates = args.slice(0, -1);
-          if (
-            args.length < 5 ||
-            !options ||
-            typeof options !== "object" ||
-            Array.isArray(options) ||
-            coordinates.length % 2 !== 0
-          ) {
-            throw new TypeError(
-              "drawPath requires coordinate pairs and an options object",
-            );
-          }
-          points = [];
-          for (var index = 0; index < coordinates.length; index += 2) {
-            points.push([coordinates[index], coordinates[index + 1]]);
-          }
-        }
-        points = snapshotDrawingPoints(points);
-        if (
-          !Array.isArray(points) ||
-          points.length < 2 ||
-          !points.every(
-            (point) =>
-              Array.isArray(point) &&
-              point.length === 2 &&
-              point.every(Number.isFinite),
-          ) ||
-          !options ||
-          typeof options !== "object" ||
-          Array.isArray(options)
-        ) {
-          throw new TypeError(
-            "drawPath requires at least two coordinate pairs of finite numbers",
-          );
-        }
-        options = readDrawingOptions(options, colorValue);
-        context.m(...points[0]);
-        for (var index = 1; index < points.length; index += 1) {
-          context.l(...points[index]);
-        }
-        return finishHighLevelPath(options);
-      };
+      installDrawingHelpers(context, colorValue);
       context.writeText = function (text, x, y, options = {}) {
         options = readTextOptions(options, colorValue);
         if (
@@ -1210,21 +1084,11 @@ export function createWriterFactory({
         if (!Number.isFinite(size) || size <= 0) {
           throw new RangeError("writeText requires a positive font size");
         }
-        var dimensions = options.underline
-          ? options.font.calculateTextDimensions(text, size)
-          : null;
-        if (dimensions)
-          validateDrawingGeometry([x + dimensions.width, y + dimensions.yMin]);
+        var underline = prepareUnderline(options, text, x, y, size);
         context.BT();
-        applyHighLevelColor(options, false);
+        applyDrawingColor(context, options, false);
         context.Tf(options.font, size).Tm(1, 0, 0, 1, x, y).Tj(text).ET();
-        if (dimensions) {
-          context
-            .w(Math.max(size * 0.05, 0.1))
-            .m(x, y + dimensions.yMin)
-            .l(x + dimensions.width, y + dimensions.yMin)
-            .S();
-        }
+        strokeUnderline(context, options, underline, x);
         return context;
       };
       context.drawImage = function (x, y, image, options) {
@@ -1275,41 +1139,52 @@ export function createWriterFactory({
       }
 
       calculateTextDimensions(text, size = 1) {
-        if (
-          ended ||
-          typeof text !== "string" ||
-          !Number.isFinite(size) ||
-          size <= 0
-        ) {
-          throw new TypeError("Text and a positive font size are required");
+        if (ended) {
+          throw new TypeError(
+            "Text or glyph ids and a positive font size are required",
+          );
         }
-        var resultPointer = module._malloc(48);
-        try {
-          return withString(text, (textPointer) => {
-            if (
-              !module._muhammara_wasm_writer_font_text_dimensions(
-                recipe,
-                this._font,
-                textPointer,
-                size,
-                resultPointer,
-              )
-            ) {
-              throw new Error("Unable to measure text");
-            }
-            var offset = resultPointer >>> 3;
-            return {
-              xMin: module.HEAPF64[offset],
-              yMin: module.HEAPF64[offset + 1],
-              xMax: module.HEAPF64[offset + 2],
-              yMax: module.HEAPF64[offset + 3],
-              width: module.HEAPF64[offset + 4],
-              height: module.HEAPF64[offset + 5],
-            };
-          });
-        } finally {
-          module._free(resultPointer);
-        }
+        return measureFontText(
+          module,
+          withString,
+          text,
+          size,
+          (textPointer, resultPointer) =>
+            module._muhammara_wasm_writer_font_text_dimensions(
+              recipe,
+              this._font,
+              textPointer,
+              size,
+              resultPointer,
+            ),
+          (glyphPointer, count, resultPointer) =>
+            module._muhammara_wasm_writer_font_glyph_dimensions(
+              recipe,
+              this._font,
+              glyphPointer,
+              count,
+              size,
+              resultPointer,
+            ),
+        );
+      }
+
+      /** Read underline thickness, position, and text advance for writeText. */
+      _underline(text, size) {
+        return readFontUnderline(
+          module,
+          withString,
+          text,
+          size,
+          (textPointer, resultPointer) =>
+            module._muhammara_wasm_writer_font_underline(
+              recipe,
+              this._font,
+              textPointer,
+              size,
+              resultPointer,
+            ),
+        );
       }
 
       getFontMetrics(size = 1) {
@@ -1799,127 +1674,7 @@ export function createWriterFactory({
               ...args,
             ),
         );
-        function applyHighLevelColor(options, stroke) {
-          if (!options || options.color === undefined) return;
-          var color = colorValue(options.color) >>> 0;
-          var colorspace = options.colorspace || "rgb";
-          if (colorspace === "rgb") {
-            return stroke
-              ? context.RG(
-                  ((color >> 16) & 0xff) / 255,
-                  ((color >> 8) & 0xff) / 255,
-                  (color & 0xff) / 255,
-                )
-              : context.rg(
-                  ((color >> 16) & 0xff) / 255,
-                  ((color >> 8) & 0xff) / 255,
-                  (color & 0xff) / 255,
-                );
-          }
-          if (colorspace === "gray")
-            return stroke
-              ? context.G((color & 0xff) / 255)
-              : context.g((color & 0xff) / 255);
-          if (colorspace === "cmyk") {
-            var values = [
-              ((color >> 24) & 0xff) / 255,
-              ((color >> 16) & 0xff) / 255,
-              ((color >> 8) & 0xff) / 255,
-              (color & 0xff) / 255,
-            ];
-            return stroke ? context.K(...values) : context.k(...values);
-          }
-          throw new TypeError("colorspace must be rgb, gray, or cmyk");
-        }
-        function finishHighLevelPath(options) {
-          var stroke = options.stroke;
-          applyHighLevelColor(options, stroke);
-          if (stroke && options.width !== undefined) context.w(options.width);
-          return finishDrawingPath(context, options);
-        }
-        context.drawRectangle = function (x, y, width, height, options) {
-          if (![x, y, width, height].every(Number.isFinite))
-            throw new TypeError(
-              "drawRectangle requires four finite coordinates",
-            );
-          options = readDrawingOptions(options, colorValue);
-          context.re(x, y, width, height);
-          return finishHighLevelPath(options);
-        };
-        context.drawSquare = function (x, y, edge, options) {
-          if (![x, y, edge].every(Number.isFinite))
-            throw new TypeError("drawSquare requires three finite coordinates");
-          return context.drawRectangle(x, y, edge, edge, options);
-        };
-        context.drawCircle = function (x, y, radius, options) {
-          if (![x, y, radius].every(Number.isFinite))
-            throw new TypeError("drawCircle requires three finite coordinates");
-          options = readDrawingOptions(options, colorValue);
-          var control = radius * 0.5522847498307936;
-          validateDrawingGeometry([
-            x + radius,
-            x - radius,
-            y + radius,
-            y - radius,
-          ]);
-          context
-            .m(x + radius, y)
-            .c(x + radius, y + control, x + control, y + radius, x, y + radius)
-            .c(x - control, y + radius, x - radius, y + control, x - radius, y)
-            .c(x - radius, y - control, x - control, y - radius, x, y - radius)
-            .c(x + control, y - radius, x + radius, y - control, x + radius, y);
-          return finishHighLevelPath(options);
-        };
-        context.drawPath = function (...args) {
-          var points;
-          var options;
-          if (Array.isArray(args[0])) {
-            if (args.length > 2)
-              throw new TypeError(
-                "drawPath accepts coordinate pairs and an optional options object",
-              );
-            points = args[0];
-            options = args[1] ?? {};
-          } else {
-            options = args.at(-1);
-            var coordinates = args.slice(0, -1);
-            if (
-              args.length < 5 ||
-              !options ||
-              typeof options !== "object" ||
-              Array.isArray(options) ||
-              coordinates.length % 2 !== 0
-            )
-              throw new TypeError(
-                "drawPath requires coordinate pairs and an options object",
-              );
-            points = [];
-            for (var index = 0; index < coordinates.length; index += 2)
-              points.push([coordinates[index], coordinates[index + 1]]);
-          }
-          points = snapshotDrawingPoints(points);
-          if (
-            !Array.isArray(points) ||
-            points.length < 2 ||
-            !points.every(
-              (point) =>
-                Array.isArray(point) &&
-                point.length === 2 &&
-                point.every(Number.isFinite),
-            ) ||
-            !options ||
-            typeof options !== "object" ||
-            Array.isArray(options)
-          )
-            throw new TypeError(
-              "drawPath requires at least two coordinate pairs of finite numbers",
-            );
-          options = readDrawingOptions(options, colorValue);
-          context.m(...points[0]);
-          for (var index = 1; index < points.length; index += 1)
-            context.l(...points[index]);
-          return finishHighLevelPath(options);
-        };
+        installDrawingHelpers(context, colorValue);
         context.writeText = function (text, x, y, options = {}) {
           options = readTextOptions(options, colorValue);
           if (
@@ -1936,24 +1691,11 @@ export function createWriterFactory({
           var size = options.size ?? 1;
           if (!Number.isFinite(size) || size <= 0)
             throw new RangeError("writeText requires a positive font size");
-          var dimensions = options.underline
-            ? options.font.calculateTextDimensions(text, size)
-            : null;
-          if (dimensions)
-            validateDrawingGeometry([
-              x + dimensions.width,
-              y + dimensions.yMin,
-            ]);
+          var underline = prepareUnderline(options, text, x, y, size);
           context.BT();
-          applyHighLevelColor(options, false);
+          applyDrawingColor(context, options, false);
           context.Tf(options.font, size).Tm(1, 0, 0, 1, x, y).Tj(text).ET();
-          if (dimensions) {
-            context
-              .w(Math.max(size * 0.05, 0.1))
-              .m(x, y + dimensions.yMin)
-              .l(x + dimensions.width, y + dimensions.yMin)
-              .S();
-          }
+          strokeUnderline(context, options, underline, x);
           return context;
         };
         return context;
@@ -3011,6 +2753,13 @@ export function createWriterFactory({
           },
           mergePDFPageToPage: function (targetPage, index) {
             requireCopying();
+            // Like native, a new page can be the target before any content.
+            if (
+              !currentPage &&
+              targetPage instanceof PDFPage &&
+              targetPage._activate
+            )
+              targetPage._activate();
             if (
               targetPage !== currentPage ||
               !Number.isInteger(index) ||
@@ -3100,7 +2849,13 @@ export function createWriterFactory({
       },
       createPage: function (left = 0, bottom = 0, right = 595, top = 842) {
         requireOpenWriter();
-        return new PDFPage(left, bottom, right, top);
+        var page = new PDFPage(left, bottom, right, top);
+        // Like native, a new page exposes its resources before any content
+        // context; activating it starts the page the same way writePage does.
+        page._activate = function () {
+          writer.startPageContentContext(page);
+        };
+        return page;
       },
       startPageContentContext: function (page) {
         if (
@@ -3193,14 +2948,17 @@ export function createWriterFactory({
         }
       },
       end: function () {
-        if (
-          ended ||
-          currentPage ||
-          lifecycle.hasChildren() ||
-          (objectsContext && objectsContext._hasActive())
-        ) {
+        requireOpenWriter();
+        if (currentPage) {
           throw new Error("Write the active page before ending the PDF");
         }
+        if (objectsContext && objectsContext._hasActive()) {
+          throw new Error(
+            "End the active objects context operation before ending the PDF",
+          );
+        }
+        // Like native, release copying contexts the caller left open.
+        lifecycle.disposeChildren();
         var lengthPointer = module._malloc(4);
         try {
           var pdfPointer = module._muhammara_wasm_recipe_end_pdf(
@@ -3245,6 +3003,7 @@ export function createWriterFactory({
       page._setNativeBox = null;
       page._setNativeRotation = null;
       page._getNativeResources = null;
+      page._activate = null;
       return result;
     }
 

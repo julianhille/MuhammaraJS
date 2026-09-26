@@ -192,6 +192,7 @@ export function createValueTypes({ module, withString, withBytes }) {
 
   ["media", "crop", "bleed", "trim", "art"].forEach(definePageBox);
   PDFPage.prototype.getResourcesDictionary = function () {
+    if (!this._getNativeResources && this._activate) this._activate();
     if (!this._getNativeResources) {
       throw new Error("PDFPage resources are not active");
     }

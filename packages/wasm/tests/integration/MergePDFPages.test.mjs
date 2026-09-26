@@ -43,6 +43,17 @@ describe("MergePDFPages", function () {
     );
     assert.equal(typeof copiedForm, "number");
     assert.ok(copiedForm > 0);
+    // Like native, a new page exposes resources and accepts a merge before
+    // any content context is started.
+    var freshPage = formWriter.createPage(0, 0, 200, 300);
+    assert.equal(
+      typeof freshPage
+        .getResourcesDictionary()
+        .addFormXObjectMapping(copiedForm),
+      "string",
+    );
+    assert.equal(formCopying.mergePDFPageToPage(freshPage, 0), formCopying);
+    formWriter.writePage(freshPage);
     formCopying.end();
     var formPage = new muhammara.PDFPage(0, 0, 400, 300);
     formWriter
@@ -56,7 +67,7 @@ describe("MergePDFPages", function () {
     var forms = formWriter.end();
     writeOutput("MergePDFPages-forms", forms);
     var formsReader = muhammara.createReader(forms);
-    assert.equal(formsReader.getPagesCount(), 1);
+    assert.equal(formsReader.getPagesCount(), 2);
     formsReader.end();
 
     var mergeWriter = muhammara.createWriter();

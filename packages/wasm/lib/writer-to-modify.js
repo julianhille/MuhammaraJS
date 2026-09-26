@@ -1,10 +1,13 @@
 import { createChildLifecycle } from "./lifecycle.js";
 import {
-  readDrawingOptions,
-  finishDrawingPath,
   readTextOptions,
   validateDrawingGeometry,
-  snapshotDrawingPoints,
+  applyDrawingColor,
+  installDrawingHelpers,
+  measureFontText,
+  readFontUnderline,
+  prepareUnderline,
+  strokeUnderline,
 } from "./drawing-options.js";
 
 /** Creates a factory for writers that modify an existing PDF. */
@@ -423,24 +426,11 @@ export function createWriterToModifyFactory({
           var size = options.size ?? 1;
           if (!Number.isFinite(size) || size <= 0)
             throw new RangeError("writeText requires a positive font size");
-          var dimensions = options.underline
-            ? options.font.calculateTextDimensions(text, size)
-            : null;
-          if (dimensions)
-            validateDrawingGeometry([
-              x + dimensions.width,
-              y + dimensions.yMin,
-            ]);
+          var underline = prepareUnderline(options, text, x, y, size);
           result.BT();
-          applyHighLevelColor(options, false);
+          applyDrawingColor(result, options, false);
           result.Tf(options.font, size).Tm(1, 0, 0, 1, x, y).Tj(text).ET();
-          if (dimensions) {
-            result
-              .w(Math.max(size * 0.05, 0.1))
-              .m(x, y + dimensions.yMin)
-              .l(x + dimensions.width, y + dimensions.yMin)
-              .S();
-          }
+          strokeUnderline(result, options, underline, x);
           return result;
         },
         drawImage: function (x, y, image, options) {
@@ -584,125 +574,7 @@ export function createWriterToModifyFactory({
             ...args,
           ),
       );
-      function applyHighLevelColor(options, stroke) {
-        if (!options || options.color === undefined) return;
-        var color = colorValue(options.color) >>> 0;
-        var colorspace = options.colorspace || "rgb";
-        if (colorspace === "rgb") {
-          return stroke
-            ? result.RG(
-                ((color >> 16) & 0xff) / 255,
-                ((color >> 8) & 0xff) / 255,
-                (color & 0xff) / 255,
-              )
-            : result.rg(
-                ((color >> 16) & 0xff) / 255,
-                ((color >> 8) & 0xff) / 255,
-                (color & 0xff) / 255,
-              );
-        }
-        if (colorspace === "gray")
-          return stroke
-            ? result.G((color & 0xff) / 255)
-            : result.g((color & 0xff) / 255);
-        if (colorspace === "cmyk") {
-          var values = [
-            ((color >> 24) & 0xff) / 255,
-            ((color >> 16) & 0xff) / 255,
-            ((color >> 8) & 0xff) / 255,
-            (color & 0xff) / 255,
-          ];
-          return stroke ? result.K(...values) : result.k(...values);
-        }
-        throw new TypeError("colorspace must be rgb, gray, or cmyk");
-      }
-      function finishHighLevelPath(options) {
-        var stroke = options.stroke;
-        applyHighLevelColor(options, stroke);
-        if (stroke && options.width !== undefined) result.w(options.width);
-        return finishDrawingPath(result, options);
-      }
-      result.drawRectangle = function (x, y, width, height, options) {
-        if (![x, y, width, height].every(Number.isFinite))
-          throw new TypeError("drawRectangle requires four finite coordinates");
-        options = readDrawingOptions(options, colorValue);
-        result.re(x, y, width, height);
-        return finishHighLevelPath(options);
-      };
-      result.drawSquare = function (x, y, edge, options) {
-        if (![x, y, edge].every(Number.isFinite))
-          throw new TypeError("drawSquare requires three finite coordinates");
-        return result.drawRectangle(x, y, edge, edge, options);
-      };
-      result.drawCircle = function (x, y, radius, options) {
-        if (![x, y, radius].every(Number.isFinite))
-          throw new TypeError("drawCircle requires three finite coordinates");
-        options = readDrawingOptions(options, colorValue);
-        var control = radius * 0.5522847498307936;
-        validateDrawingGeometry([
-          x + radius,
-          x - radius,
-          y + radius,
-          y - radius,
-        ]);
-        result
-          .m(x + radius, y)
-          .c(x + radius, y + control, x + control, y + radius, x, y + radius)
-          .c(x - control, y + radius, x - radius, y + control, x - radius, y)
-          .c(x - radius, y - control, x - control, y - radius, x, y - radius)
-          .c(x + control, y - radius, x + radius, y - control, x + radius, y);
-        return finishHighLevelPath(options);
-      };
-      result.drawPath = function (...args) {
-        var points;
-        var options;
-        if (Array.isArray(args[0])) {
-          if (args.length > 2)
-            throw new TypeError(
-              "drawPath accepts coordinate pairs and an optional options object",
-            );
-          points = args[0];
-          options = args[1] ?? {};
-        } else {
-          options = args.at(-1);
-          var coordinates = args.slice(0, -1);
-          if (
-            args.length < 5 ||
-            !options ||
-            typeof options !== "object" ||
-            Array.isArray(options) ||
-            coordinates.length % 2 !== 0
-          )
-            throw new TypeError(
-              "drawPath requires coordinate pairs and an options object",
-            );
-          points = [];
-          for (var index = 0; index < coordinates.length; index += 2)
-            points.push([coordinates[index], coordinates[index + 1]]);
-        }
-        points = snapshotDrawingPoints(points);
-        if (
-          !Array.isArray(points) ||
-          points.length < 2 ||
-          !points.every(
-            (point) =>
-              Array.isArray(point) &&
-              point.length === 2 &&
-              point.every(Number.isFinite),
-          ) ||
-          !options ||
-          typeof options !== "object" ||
-          Array.isArray(options)
-        )
-          throw new TypeError(
-            "drawPath requires at least two coordinate pairs of finite numbers",
-          );
-        options = readDrawingOptions(options, colorValue);
-        result.m(...points[0]);
-        for (var index = 1; index < points.length; index += 1)
-          result.l(...points[index]);
-        return finishHighLevelPath(options);
-      };
+      installDrawingHelpers(result, colorValue);
       return result;
     }
 
@@ -1526,43 +1398,15 @@ export function createWriterToModifyFactory({
                   throw new RangeError(
                     "writeText requires a positive font size",
                   );
-                var dimensions = options.underline
-                  ? options.font.calculateTextDimensions(text, size)
-                  : null;
-                if (dimensions)
-                  validateDrawingGeometry([
-                    x + dimensions.width,
-                    y + dimensions.yMin,
-                  ]);
-                var color = colorValue(options.color ?? 0) >>> 0;
+                var underline = prepareUnderline(options, text, x, y, size);
                 context.BT();
-                if (options.color !== undefined) {
-                  if ((options.colorspace || "rgb") === "cmyk")
-                    context.k(
-                      ((color >> 24) & 0xff) / 255,
-                      ((color >> 16) & 0xff) / 255,
-                      ((color >> 8) & 0xff) / 255,
-                      (color & 0xff) / 255,
-                    );
-                  else
-                    context.rg(
-                      ((color >> 16) & 0xff) / 255,
-                      ((color >> 8) & 0xff) / 255,
-                      (color & 0xff) / 255,
-                    );
-                }
+                applyDrawingColor(context, options, false);
                 context
                   .Tf(options.font, size)
                   .Tm(1, 0, 0, 1, x, y)
                   .Tj(text)
                   .ET();
-                if (dimensions) {
-                  context
-                    .w(Math.max(size * 0.05, 0.1))
-                    .m(x, y + dimensions.yMin)
-                    .l(x + dimensions.width, y + dimensions.yMin)
-                    .S();
-                }
+                strokeUnderline(context, options, underline, x);
                 return context;
               },
             };
@@ -1826,159 +1670,7 @@ export function createWriterToModifyFactory({
                 options,
               );
             };
-            function finishPath(options) {
-              var stroke = options.stroke;
-              if (options.color !== undefined) {
-                var color = colorValue(options.color) >>> 0;
-                var colorspace = options.colorspace || "rgb";
-                if (colorspace === "rgb")
-                  stroke
-                    ? context.RG(
-                        ((color >> 16) & 0xff) / 255,
-                        ((color >> 8) & 0xff) / 255,
-                        (color & 0xff) / 255,
-                      )
-                    : context.rg(
-                        ((color >> 16) & 0xff) / 255,
-                        ((color >> 8) & 0xff) / 255,
-                        (color & 0xff) / 255,
-                      );
-                else if (colorspace === "gray")
-                  stroke
-                    ? context.G((color & 0xff) / 255)
-                    : context.g((color & 0xff) / 255);
-                else if (colorspace === "cmyk") {
-                  var components = [
-                    ((color >> 24) & 0xff) / 255,
-                    ((color >> 16) & 0xff) / 255,
-                    ((color >> 8) & 0xff) / 255,
-                    (color & 0xff) / 255,
-                  ];
-                  stroke ? context.K(...components) : context.k(...components);
-                } else
-                  throw new TypeError("colorspace must be rgb, gray, or cmyk");
-              }
-              if (stroke && options.width !== undefined)
-                context.w(options.width);
-              return finishDrawingPath(context, options);
-            }
-            context.drawRectangle = function (x, y, width, height, options) {
-              if (![x, y, width, height].every(Number.isFinite))
-                throw new TypeError(
-                  "drawRectangle requires four finite coordinates",
-                );
-              options = readDrawingOptions(
-                options,
-                colorValue,
-                "Form operator requires finite arguments",
-              );
-              context.re(x, y, width, height);
-              return finishPath(options);
-            };
-            context.drawSquare = function (x, y, edge, options) {
-              if (![x, y, edge].every(Number.isFinite))
-                throw new TypeError(
-                  "drawSquare requires three finite coordinates",
-                );
-              return context.drawRectangle(x, y, edge, edge, options);
-            };
-            context.drawCircle = function (x, y, radius, options) {
-              if (![x, y, radius].every(Number.isFinite))
-                throw new TypeError(
-                  "drawCircle requires three finite coordinates",
-                );
-              options = readDrawingOptions(
-                options,
-                colorValue,
-                "Form operator requires finite arguments",
-              );
-              var control = radius * 0.5522847498307936;
-              validateDrawingGeometry([
-                x + radius,
-                x - radius,
-                y + radius,
-                y - radius,
-              ]);
-              context
-                .m(x + radius, y)
-                .c(
-                  x + radius,
-                  y + control,
-                  x + control,
-                  y + radius,
-                  x,
-                  y + radius,
-                )
-                .c(
-                  x - control,
-                  y + radius,
-                  x - radius,
-                  y + control,
-                  x - radius,
-                  y,
-                )
-                .c(
-                  x - radius,
-                  y - control,
-                  x - control,
-                  y - radius,
-                  x,
-                  y - radius,
-                )
-                .c(
-                  x + control,
-                  y - radius,
-                  x + radius,
-                  y - control,
-                  x + radius,
-                  y,
-                );
-              return finishPath(options);
-            };
-            context.drawPath = function (...args) {
-              if (
-                Array.isArray(args[0])
-                  ? args.length > 2
-                  : args.length < 5 || args.length % 2 !== 1
-              )
-                throw new TypeError(
-                  "drawPath requires complete coordinate pairs and an options object",
-                );
-              var points = Array.isArray(args[0])
-                ? args[0]
-                : Array.from({ length: (args.length - 1) / 2 }, (_, index) => [
-                    args[index * 2],
-                    args[index * 2 + 1],
-                  ]);
-              var options = Array.isArray(args[0])
-                ? (args[1] ?? {})
-                : args.at(-1);
-              points = snapshotDrawingPoints(points);
-              if (
-                !Array.isArray(points) ||
-                points.length < 2 ||
-                !points.every(
-                  (point) =>
-                    Array.isArray(point) &&
-                    point.length === 2 &&
-                    point.every(Number.isFinite),
-                ) ||
-                !options ||
-                typeof options !== "object" ||
-                Array.isArray(options)
-              )
-                throw new TypeError(
-                  "drawPath requires at least two coordinate pairs of finite numbers",
-                );
-              options = readDrawingOptions(
-                options,
-                colorValue,
-                "Form operator requires finite arguments",
-              );
-              context.m(...points[0]);
-              points.slice(1).forEach((point) => context.l(...point));
-              return finishPath(options);
-            };
+            installDrawingHelpers(context, colorValue);
             return context;
           },
           end: function () {
@@ -2107,34 +1799,46 @@ export function createWriterToModifyFactory({
           _owner: owner,
           _font: font,
           calculateTextDimensions: function (text, size = 1) {
-            if (typeof text !== "string" || !Number.isFinite(size) || size <= 0)
-              throw new TypeError("Text and a positive font size are required");
-            var values = module._malloc(48);
-            try {
-              return withString(text, (pointer) => {
-                if (
-                  !module._muhammara_wasm_modifier_font_text_dimensions(
-                    modifier,
-                    font,
-                    pointer,
-                    size,
-                    values,
-                  )
-                )
-                  throw new Error("Unable to measure text");
-                var offset = values >>> 3;
-                return {
-                  xMin: module.HEAPF64[offset],
-                  yMin: module.HEAPF64[offset + 1],
-                  xMax: module.HEAPF64[offset + 2],
-                  yMax: module.HEAPF64[offset + 3],
-                  width: module.HEAPF64[offset + 4],
-                  height: module.HEAPF64[offset + 5],
-                };
-              });
-            } finally {
-              module._free(values);
-            }
+            return measureFontText(
+              module,
+              withString,
+              text,
+              size,
+              (textPointer, resultPointer) =>
+                module._muhammara_wasm_modifier_font_text_dimensions(
+                  modifier,
+                  font,
+                  textPointer,
+                  size,
+                  resultPointer,
+                ),
+              (glyphPointer, count, resultPointer) =>
+                module._muhammara_wasm_modifier_font_glyph_dimensions(
+                  modifier,
+                  font,
+                  glyphPointer,
+                  count,
+                  size,
+                  resultPointer,
+                ),
+            );
+          },
+          /** Read underline thickness, position, and text advance for writeText. */
+          _underline: function (text, size) {
+            return readFontUnderline(
+              module,
+              withString,
+              text,
+              size,
+              (textPointer, resultPointer) =>
+                module._muhammara_wasm_modifier_font_underline(
+                  modifier,
+                  font,
+                  textPointer,
+                  size,
+                  resultPointer,
+                ),
+            );
           },
           getFontMetrics: function (size = 1) {
             if (!Number.isFinite(size) || size <= 0)
@@ -2868,13 +2572,14 @@ export function createWriterToModifyFactory({
       },
       end: function () {
         requireOpen();
-        if (
-          page ||
-          context ||
-          lifecycle.hasChildren() ||
-          (objectsContext && objectsContext._hasActive())
-        )
+        if (page || context)
           throw new Error("Write the active page before ending the PDF");
+        if (objectsContext && objectsContext._hasActive())
+          throw new Error(
+            "End the active objects context operation before ending the PDF",
+          );
+        // Like native, release copying contexts the caller left open.
+        lifecycle.disposeChildren();
         var lengthPointer = module._malloc(4);
         try {
           var pdfPointer = module._muhammara_wasm_modifier_end_pdf(

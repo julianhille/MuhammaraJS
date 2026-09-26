@@ -264,10 +264,10 @@ describe("HighLevelContentContext", function () {
             );
           }
         }
-        var measure = font.calculateTextDimensions;
+        var measure = font._underline;
         /** Supply finite metrics whose placement overflows the underline endpoint. */
-        font.calculateTextDimensions = function () {
-          return { width: Number.MAX_VALUE, yMin: 0 };
+        font._underline = function () {
+          return { thickness: 1, position: 0, advance: Number.MAX_VALUE };
         };
         try {
           assert.throws(
@@ -281,7 +281,7 @@ describe("HighLevelContentContext", function () {
             /finite/,
           );
         } finally {
-          font.calculateTextDimensions = measure;
+          font._underline = measure;
         }
         context.Q().drawRectangle(1, 2, 3, 4, {});
         var output = target.finish();
@@ -438,6 +438,60 @@ describe("HighLevelContentContext", function () {
         assert.match(output, /1 2 3 4 re\s+n\s+5 6 7 8 re\s+f/);
       },
     );
+
+    it(
+      "sets color and width before the path, as native does, on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var context = target.context;
+        context
+          .drawRectangle(1, 2, 3, 4, { type: "fill", color: 0xff0000 })
+          .drawSquare(1, 2, 3, { color: "black", width: 2 })
+          .drawCircle(50, 50, 10, { colorspace: "gray", color: 0x80 })
+          .drawPath(0, 0, 10, 10, {
+            type: "fill",
+            colorspace: "cmyk",
+            color: 0xff,
+          })
+          .drawPath(0, 0, 20, 20);
+        var output = target.finish();
+        // PDF forbids graphics-state operators inside a path object.
+        assert.match(output, /1 0 0 rg\s+1 2 3 4 re\s+f/);
+        assert.match(output, /0 0 0 RG\s+2 w\s+1 2 3 3 re\s+S/);
+        assert.match(output, /0\.50\d* G\s+60 50 m/);
+        assert.match(output, /0 0 0 1 k\s+0 0 m\s+10 10 l\s+f/);
+        assert.match(output, /0 0 m\s+20 20 l\s+S/);
+        assert.doesNotMatch(
+          output,
+          /\b(?:re|l|c)\s+(?:[\d.]+ ){1,4}(?:rg|RG|g|G|k|K|w)\b/,
+        );
+      },
+    );
+
+    it(
+      "underlines text with the font underline metrics on " + mode,
+      async function () {
+        var target = await drawingTarget(mode);
+        var context = target.context;
+        var font = target.writer.getFontForBytes("arial");
+        context
+          .writeText("Hi", 10, 10, { font, size: 12, underline: true })
+          .writeText("Gray", 10, 40, {
+            font,
+            size: 12,
+            colorspace: "gray",
+            color: 0x80,
+          });
+        var output = target.finish();
+        // Arial post table: thickness 150/2048 and position -217/2048 em; the
+        // underline ends at the text advance, matching native byte for byte.
+        assert.match(
+          output,
+          /0\.878906 w\s+10 8\.728516 m\s+21\.328 8\.728516 l\s+S/,
+        );
+        assert.match(output, /BT\s+0\.50\d* g\s+[^]*?\(Gray\) Tj/);
+      },
+    );
   }
 
   it("draws shapes and text with byte-registered fonts", async function () {
@@ -531,10 +585,12 @@ describe("HighLevelContentContext", function () {
         ]),
       /finite numbers/,
     );
-    assert.throws(() => context.drawPath(0, 0, 1, 1), /options object/);
+    // Like native, flat coordinates may omit the options object.
+    context.drawPath(0, 0, 1, 1);
+    assert.throws(() => context.drawPath(0, 0, 1), /coordinate pairs/);
     assert.throws(
       () => context.drawPath(0, 0, 1, 1, "stroke"),
-      /options object/,
+      /coordinate pairs/,
     );
     writer.writePage(page);
     writer.end();

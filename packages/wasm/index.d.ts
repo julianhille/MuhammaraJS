@@ -676,7 +676,12 @@ export interface Recipe {
   stroke(): this;
   fillAndStroke(): this;
   text(value?: string, options?: RecipeTextOptions): this;
-  text(value: string, x: number, y: number, options?: RecipeTextOptions): this;
+  text(
+    value: string,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
+    options?: RecipeTextOptions,
+  ): this;
   textDimensions(value: string, options?: RecipeTextOptions): TextDimensions;
   movedown(lines?: number, returnCoords?: false): this;
   movedown(lines: number, returnCoords: true): RecipePosition;
@@ -694,7 +699,12 @@ export interface Recipe {
     contents: readonly RecordType[],
     options?: RecipeTableOptions<RecordType>,
   ): this;
-  image(name: string, x: number, y: number, options?: RecipeImageOptions): this;
+  image(
+    name: string,
+    x: RecipeCoordinate,
+    y: RecipeCoordinate,
+    options?: RecipeImageOptions,
+  ): this;
   appendPage(name: string, pages?: RecipePageSelection): this;
   overlay(name: string, options?: RecipeOverlayOptions): this;
   overlay(name: string, x: number, options?: RecipeOverlayOptions): this;
@@ -911,7 +921,11 @@ declare class PDFDate {
 }
 export type { PDFDate, PDFPage, PDFTextString };
 export interface PDFUsedFont {
-  calculateTextDimensions(text: string, size?: number): TextDimensions;
+  /** Measure a string, or a list of glyph ids. */
+  calculateTextDimensions(
+    text: string | number[],
+    size?: number,
+  ): TextDimensions;
   getFontMetrics(size?: number): FontMetrics;
 }
 export interface ByteWriteStream {
@@ -1062,19 +1076,25 @@ export interface ContentContext {
   CS(name: string): this;
   cs(name: string): this;
   SC(...components: number[]): this;
-  SCN(...componentsAndPattern: (number | string | number[])[]): this;
+  /** Color components, optionally followed by a pattern name. */
+  SCN(...components: [number, ...number[]]): this;
+  SCN(...componentsAndPattern: [number, ...number[], string]): this;
+  SCN(components: number[], pattern?: string): this;
   sc(...components: number[]): this;
-  scn(...componentsAndPattern: (number | string | number[])[]): this;
+  /** Color components, optionally followed by a pattern name. */
+  scn(...components: [number, ...number[]]): this;
+  scn(...componentsAndPattern: [number, ...number[], string]): this;
+  scn(components: number[], pattern?: string): this;
   doXObject(xObject: string | number | FormXObject | ImageXObject): this;
   /** Require at least two complete finite coordinate pairs; invalid input emits no operators. */
   drawPath(points: [number, number][], options?: DrawPathOptions): this;
-  /** Require complete finite coordinate pairs followed by an options object. */
+  /** Require complete finite coordinate pairs, optionally followed by an options object. */
   drawPath(
     x1: number,
     y1: number,
     x2: number,
     y2: number,
-    ...coordinatesAndOptions: [...number[], DrawPathOptions]
+    ...coordinatesAndOptions: [...number[], DrawPathOptions] | number[]
   ): this;
   /** Coordinates, radius, and calculated circle geometry must remain finite. */
   drawCircle(
@@ -1259,9 +1279,11 @@ export interface PDFReader {
   isEncrypted(): boolean;
   getXrefSize(): number;
   getXrefPosition(): number;
-  getXrefEntry(
-    id: number,
-  ): { objectPosition: number; revision: number; type: number } | null;
+  getXrefEntry(id: number): {
+    objectPosition: number;
+    revision: number;
+    type: number;
+  };
   getTrailerEntryType(key: string): number | null;
   getTrailer(): PDFDictionary;
   queryDictionaryObject(

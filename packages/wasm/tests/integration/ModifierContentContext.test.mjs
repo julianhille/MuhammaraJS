@@ -140,8 +140,12 @@ describe("ModifierContentContext", function () {
       colorspace: "cmyk",
       underline: true,
     });
+    // Placing a form on a modifier-created page maps it into that page.
+    context.doXObject(form);
     modifier.writePage(page);
-    assert.match(new TextDecoder().decode(modifier.end()), /1 0 0 0 k/);
+    var output = new TextDecoder().decode(modifier.end());
+    assert.match(output, /1 0 0 0 k/);
+    assert.match(output, /\/Fm\d+ Do/);
   });
 
   it("gives modifier forms the complete writer content surface", async function () {

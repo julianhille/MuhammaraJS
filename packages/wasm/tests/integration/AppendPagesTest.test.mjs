@@ -50,6 +50,15 @@ describe("AppendPagesTest", function () {
     var writer = muhammara.createWriter();
     var ids = await writer.appendPDFPagesFromPDFAsync(new Blob([sourcePdf(1)]));
     assert.equal(ids.length, 1);
+    // Any structural BlobLike is accepted, as AsyncByteSource declares.
+    var bytes = sourcePdf(1);
+    var blobLike = {
+      size: bytes.length,
+      type: "application/pdf",
+      arrayBuffer: async () => bytes.slice().buffer,
+      slice: () => blobLike,
+    };
+    assert.equal((await writer.appendPDFPagesFromPDFAsync(blobLike)).length, 1);
     assert.ok(writer.end() instanceof Uint8Array);
   });
 

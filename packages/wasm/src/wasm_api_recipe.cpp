@@ -577,6 +577,18 @@ WASM_EXPORT int muhammara_wasm_writer_font_text_dimensions(
   return 1;
 }
 
+WASM_EXPORT int muhammara_wasm_writer_font_glyph_dimensions(
+    WasmRecipe* recipe, PDFUsedFont* font, const uint32_t* glyphs, int count,
+    double fontSize, double* values) {
+  return hasFont(recipe, font) && fontGlyphDimensions(font, glyphs, count, fontSize, values);
+}
+
+WASM_EXPORT int muhammara_wasm_writer_font_underline(WasmRecipe* recipe, PDFUsedFont* font,
+                                                     const char* text, double fontSize,
+                                                     double* values) {
+  return hasFont(recipe, font) && fontUnderline(font, text, fontSize, values);
+}
+
 WASM_EXPORT int muhammara_wasm_writer_font_metrics(WasmRecipe* recipe,
                                                     PDFUsedFont* font,
                                                     double fontSize,

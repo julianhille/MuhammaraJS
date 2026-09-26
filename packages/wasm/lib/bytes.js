@@ -16,7 +16,14 @@ export function normalizeBytes(value, label = "Bytes") {
 
 /** Normalizes byte inputs, awaiting Blob and File data when necessary. */
 export async function normalizeBytesAsync(value, label) {
-  if (typeof Blob !== "undefined" && value instanceof Blob) {
+  // Accept any BlobLike (Blob, File, or a structural equivalent), as typed.
+  if (
+    value &&
+    typeof value === "object" &&
+    !(value instanceof ArrayBuffer) &&
+    !ArrayBuffer.isView(value) &&
+    typeof value.arrayBuffer === "function"
+  ) {
     return normalizeBytes(await value.arrayBuffer(), label);
   }
   return normalizeBytes(value, label);
