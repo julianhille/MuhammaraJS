@@ -219,6 +219,11 @@ export function createValueTypes({ module, withString, withBytes }) {
     }
   }
 
+  /**
+   * Defines the `<name>Box` accessor on PDFPage.
+   * @param {PageBox} name - Box name.
+   * @returns {void}
+   */
   function definePageBox(name) {
     Object.defineProperty(PDFPage.prototype, `${name}Box`, {
       get: function () {
