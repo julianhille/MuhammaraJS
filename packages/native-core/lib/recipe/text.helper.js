@@ -234,6 +234,9 @@ exports.Line = class Line {
     return value;
   }
 
+  /**
+   * @returns {number} The measured width of the line text.
+   */
   get currentWidth() {
     return (
       this._pathOptions.font.calculateTextDimensions(this.value, this.size)
