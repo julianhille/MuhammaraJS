@@ -4,8 +4,11 @@ Use `appendPDFPagesFromPDF` to append source pages to the output document. Use
 `mergePDFPagesToPage` when source page content must be placed on an existing
 target page.
 
-An `appendPDFPagesFromPDF` failure ends the writer because the failed copy can
-leave partial output. Create a fresh writer and retry with a valid source.
+An `appendPDFPagesFromPDF` failure while copying pages ends the writer because
+the failed copy can leave partial output; create a fresh writer and retry with a
+valid source. A source that cannot be opened, parsed, or decrypted, and page
+ranges outside the source, are rejected before anything is written, so the
+writer stays usable.
 
 For more control, create a copying context:
 

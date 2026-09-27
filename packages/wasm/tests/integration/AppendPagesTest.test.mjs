@@ -74,7 +74,16 @@ describe("AppendPagesTest", function () {
       () => writer.appendPDFPagesFromPDF(new Uint8Array([1, 2, 3])),
       /Unable to append PDF pages/,
     );
-    assert.throws(() => writer.createPage(), /writer has ended/);
+    assert.throws(
+      () =>
+        writer.appendPDFPagesFromPDF(sourcePdf(1), {
+          type: muhammara.eRangeTypeSpecific,
+          specificRanges: [[5, 6]],
+        }),
+      /Unable to append PDF pages/,
+    );
+    // Both are rejected before anything is written, so the writer continues.
+    assert.equal(writer.appendPDFPagesFromPDF(sourcePdf(1)).length, 1);
 
     writer = muhammara.createWriter();
     assert.throws(
@@ -116,6 +125,28 @@ describe("AppendPagesTest", function () {
   });
 
   /**
+   * Asserts that a source rejected before anything is appended leaves the
+   * modifier usable. The modified source PDF is written to the test output as
+   * `outputName`.
+   */
+  function assertModifierUsableAfterRejectedAppend(
+    source,
+    expectedMessage,
+    outputName,
+  ) {
+    var modifiedSource = sourcePdf(1);
+    writeOutput(outputName, modifiedSource);
+    var writer = muhammara.createWriterToModify(modifiedSource);
+    assert.throws(() => writer.appendPDFPagesFromPDF(source), {
+      message: expectedMessage,
+    });
+    assert.equal(writer.appendPDFPagesFromPDF(sourcePdf(1)).length, 1);
+    var reader = muhammara.createReader(writer.end());
+    assert.equal(reader.getPagesCount(), 2);
+    reader.end();
+  }
+
+  /**
    * Asserts that a native modifier append failure makes the modifier terminal.
    * The modified source PDF is written to the test output as `outputName`.
    */
@@ -139,17 +170,20 @@ describe("AppendPagesTest", function () {
     });
   }
 
-  it("ends modifiers after synchronous native append failures", async function () {
-    assertModifierEndedAfterAppendFailure(
+  it("keeps modifiers usable after sources rejected before appending", async function () {
+    assertModifierUsableAfterRejectedAppend(
       new Uint8Array([1, 2, 3]),
       "Unable to append PDF pages from input bytes",
       "AppendPagesTest-sync-failure-malformed-source",
     );
-    assertModifierEndedAfterAppendFailure(
+    assertModifierUsableAfterRejectedAppend(
       new Uint8Array(await readFile("tests/TestMaterials/Protected.pdf")),
       "Encrypted PDF input is not supported in Wasm",
       "AppendPagesTest-sync-failure-encrypted-source",
     );
+  });
+
+  it("ends modifiers after synchronous native append failures", async function () {
     assertModifierEndedAfterAppendFailure(
       new Uint8Array(await readFile("tests/TestMaterials/appendbreaks.pdf")),
       "Unable to append PDF pages from input bytes",
@@ -157,7 +191,7 @@ describe("AppendPagesTest", function () {
     );
   });
 
-  it("ends modifiers after asynchronous native append failures", async function () {
+  it("keeps modifiers usable after asynchronous rejected appends", async function () {
     var protectedPdf = new Uint8Array(
       await readFile("tests/TestMaterials/Protected.pdf"),
     );
@@ -175,13 +209,8 @@ describe("AppendPagesTest", function () {
         () => writer.appendPDFPagesFromPDFAsync(new Blob([source])),
         { message: expectedMessage },
       );
-      assert.throws(() => writer.createPage(), {
-        message: "PDF writer has ended",
-      });
-      assert.throws(() => writer.end(), { message: "PDF writer has ended" });
-      assert.throws(() => writer.appendPDFPagesFromPDF(sourcePdf(1)), {
-        message: "PDF writer has ended",
-      });
+      assert.equal(writer.appendPDFPagesFromPDF(sourcePdf(1)).length, 1);
+      assert.ok(writer.end().length > 0);
     }
   });
 

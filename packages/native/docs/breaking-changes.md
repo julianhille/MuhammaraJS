@@ -135,9 +135,12 @@ This page collects the compatibility changes formerly maintained in the README.
   writes, `end()`, and `shutdown()` throw) instead of being ignored. See
   [Accept Buffers in custom streams](getting-started/migrate-from-v6.md#16-accept-buffers-in-custom-streams)
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324).
-- `appendPDFPagesFromPDF()` now ends its writer when appending fails. Previously
-  callers could continue and produce a corrupted document; create a fresh
-  writer and retry with a valid source.
+- `appendPDFPagesFromPDF()` now ends its writer when copying pages fails.
+  Previously callers could continue and produce a corrupted document; create a
+  fresh writer and retry with a valid source. A source that cannot be opened,
+  parsed, or decrypted, and page ranges outside the source, still throw without
+  ending the writer, because nothing was written
+  [#828](https://github.com/julianhille/MuhammaraJS/issues/828).
 - Custom-stream `getCurrentPosition()` results now throw `TypeError` if numeric
   conversion produces a non-finite value or a value outside `[-2^63, 2^63)`.
   Previously these values could produce corrupt PDF offsets. Return the actual

@@ -28,9 +28,9 @@ describe("AppendSpecialPagesTest", function () {
         __dirname + "/TestMaterials/Protected.pdf",
       );
     }, /unable to append page, make sure it's fine/i);
-    assert.throws(function () {
-      failedWriter.createPage(0, 0, 100, 100);
-    }, /PDF writer has ended/);
+    // A source that cannot be opened is rejected before anything is written.
+    failedWriter.writePage(failedWriter.createPage(0, 0, 100, 100));
+    failedWriter.end();
 
     var pdfWriter = muhammara.createWriter(outputPath);
     sourceFiles.forEach(function (sourceFile) {
