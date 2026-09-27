@@ -109,7 +109,9 @@ bool PDFReaderDriver::Init(ModuleState &state, napi_value exports) {
       .Method("startReadingObjectsFromStream", StartReadingObjectsFromStream)
       .Method("startReadingObjectsFromStreams", StartReadingObjectsFromStreams)
       .Method("getParserStream", GetParserStream);
-  return builder.Define(exports, false) != nullptr;
+  // Exported so the JavaScript layer can extend the reader prototype; it
+  // removes the export again, so PDFReader is not public API.
+  return builder.Define(exports) != nullptr;
 }
 
 napi_value PDFReaderDriver::New(const CallbackArgs &args) {

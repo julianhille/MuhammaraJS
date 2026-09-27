@@ -208,13 +208,13 @@ function nonzeroGenerationTextPdf() {
     offsets[id] = [Buffer.byteLength(pdf), generation];
     pdf += `${id} ${generation} obj\n${body}\nendobj\n`;
   }
-  var content = "BT\n(Before) Tj\nET\n";
+  var content = "BT\n/F1 12 Tf\n(Before) Tj\nET\n";
   object(1, 0, "<< /Type /Catalog /Pages 2 0 R >>");
   object(2, 0, "<< /Type /Pages /Kids [3 1 R 4 0 R] /Count 2 >>");
   object(
     3,
     1,
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Contents 5 0 R >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> >> >> /Contents 5 0 R >>",
   );
   object(4, 0, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>");
   object(

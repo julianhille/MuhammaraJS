@@ -1020,3 +1020,31 @@ const fillPath: muhammara.DrawingPathType = muhammara.DrawingPathType.FILL;
 void fillPath;
 
 new muhammara.Recipe(muhammara.Recipe.Source.NEW, "from-source.pdf");
+
+// Extracted text elements carry decoded Unicode text next to the raw codes.
+const decodingReader = muhammara.createReader("source.pdf");
+const decodedElement: muhammara.PDFTextElement =
+  decodingReader.extractPageText(0)[0];
+const decodedText: string = decodedElement.text;
+const rawCodes: string = decodedElement.content;
+void [decodedText, rawCodes];
+
+// decodeText: false skips decoding, so the elements have no text.
+const rawElements: muhammara.PDFRawTextElement[] =
+  decodingReader.extractPageText(0, undefined, { decodeText: false });
+// @ts-expect-error Elements extracted without decoding have no text.
+void rawElements[0].text;
+const decodedElements: muhammara.PDFTextElement[] =
+  decodingReader.extractPageText(0, { maxElements: 5 }, { decodeText: true });
+declare const decodeChoice: boolean;
+const maybeDecoded: muhammara.PDFRawTextElement[] =
+  decodingReader.extractPageText(0, undefined, { decodeText: decodeChoice });
+const extractionOptions: muhammara.PDFTextExtractionOptions = {
+  decodeText: false,
+};
+void [rawElements, decodedElements, maybeDecoded, extractionOptions];
+new muhammara.Recipe("source.pdf", "output.pdf").replaceText(
+  "Größe Ω",
+  "Ω Größe",
+  1,
+);

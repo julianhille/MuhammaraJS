@@ -74,6 +74,10 @@ describe("Browser how-to examples", function () {
       if (example.id === "delete-pages") {
         assert.deepEqual(result.summary.pageWidths, [300, 340]);
       }
+      if (example.id === "replace-text") {
+        assert.equal(result.summary.replacement, "Status: geprüft");
+        assert.deepEqual(result.summary.textMatrix, [1, 0, 0, 1, 72, 180]);
+      }
       assert.match(result.filename, /^muhammara-.+\.pdf$/);
     });
   }
@@ -196,6 +200,41 @@ describe("Browser how-to examples", function () {
     assert.equal(missing.summary.query, "not in the sample");
     assert.equal(missing.summary.matches, 0);
     assert.equal(missing.summary.pages, 2);
+  });
+
+  it("finds non-ASCII text that a composite font shows as glyph IDs", async function () {
+    var muhammara = await createMuhammaraWasm();
+    muhammara.registerFont(
+      "find-text-font",
+      new Uint8Array(
+        await readFile(
+          new URL(
+            "../../../native-with-source/tests/TestMaterials/fonts/arial.ttf",
+            import.meta.url,
+          ),
+        ),
+      ),
+    );
+    var writer = muhammara.createWriter();
+    var page = writer.createPage(0, 0, 300, 200);
+    writer
+      .startPageContentContext(page)
+      .BT()
+      .Tf(writer.getFontForBytes("find-text-font"), 18)
+      .Tm(1, 0, 0, 1, 40, 100)
+      .Tj("Größe Ω")
+      .ET();
+    writer.writePage(page);
+    var pdf = writer.end();
+    muhammara.unregisterFont("find-text-font");
+    muhammara.disposeAssets();
+
+    var result = await runHowToExample("find-text", {
+      assets: { pdf, search: "Ω" },
+    });
+    writeOutput("BrowserExamples-find-text-composite", result.bytes);
+    assert.equal(result.summary.matches, 1);
+    assert.deepEqual(result.summary.highlightedPages, [1]);
   });
 
   it("inspects the built-in sample into a one-page report", async function () {

@@ -243,7 +243,7 @@ function inspect(muhammara, bytes, expectedPages, rawId, annotationId) {
       pages: reader.getPagesCount(),
       level: reader.getPDFLevel(),
       objects: reader.getObjectsCount(),
-      text: reader.extractPageText(0).map((entry) => entry.content),
+      text: reader.extractPageText(0).map((entry) => entry.text),
       contentItems: contentItems.length,
     };
   } finally {

@@ -41,11 +41,11 @@ bytes may remain unreachable in the file; do not use it to erase sensitive
 data. Page deletion cannot be combined with `createPage()`, `appendPage()`, or
 `insertPage()` in the same Recipe.
 
-## Replace Literal Text
+## Replace Text
 
-`replaceText(text, replacement, pageNumber)` rewrites literal text-showing
-operands in a page's content stream, leaving the surrounding text position and
-font untouched. `pageNumber` is a required one-based page number.
+`replaceText(text, replacement, pageNumber)` rewrites text-showing operands in
+a page's content stream, leaving the surrounding text position and font
+untouched. `pageNumber` is a required one-based page number.
 
 ```javascript
 new Recipe("input.pdf", "output.pdf")
@@ -53,15 +53,31 @@ new Recipe("input.pdf", "output.pdf")
   .endPDF();
 ```
 
-The match is on the literal string as it appears in the content stream, so text
-split across several show operations, or encoded through a font that does not
-map to the source characters, is not replaced. Pages with more than one content
-stream are rejected with an error. When nothing matches, the page is left
-unchanged.
+`text` is compared with each `Tj` operand decoded through the font selected by
+`Tf`: the font's `/ToUnicode` CMap first, then a simple font's `/Encoding` and
+`/Differences`. This matches text written with composite (Type0) fonts, such as
+the hex glyph IDs Muhammara writes, as well as simple fonts. `text` and
+`replacement` can be any Unicode strings. The replacement is encoded through
+the same font and written back as a literal or hex string, like the original
+operand. Content outside the replaced operands keeps its exact bytes.
 
-`text` and `replacement` are matched and written as-is, one byte per
-character, so both must be Latin-1 (U+0000 to U+00FF); other characters throw a
-`TypeError`. Content outside the replaced operands keeps its exact bytes.
+Matching follows the font's encoding, not the raw bytes. A Type 1 font without
+an `/Encoding` uses StandardEncoding, where the byte `'` is the right single
+quotation mark, so `(don't) Tj` matches `"don’t"` rather than `"don't"`. Use
+the `text` field of `extractPageText()` to see how a page's text decodes.
+
+The replacement can only use glyphs the font already has. Embedded fonts are
+usually subset to the glyphs of their original text, so a replacement with any
+other character throws an error that names the missing characters, for example
+`font FN1 has no glyph for "A", "t"`. A font that cannot be read, or whose
+`/Widths` array is malformed, so it cannot tell which glyphs exist, throws an
+error too. Replacing text with a new font is not supported.
+
+Only whole `Tj` operands match. Text split across several show operations, and
+`TJ`, `'`, and `"` operands, are not replaced. Pages with more than one content
+stream are rejected with an error. When nothing matches, the page is left
+unchanged. See [Replace Text In An Existing PDF](../how-to/replace-text.md) for
+a worked example and what to do when nothing matches or a glyph is missing.
 
 ## Remove Text
 

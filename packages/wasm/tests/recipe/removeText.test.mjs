@@ -202,6 +202,26 @@ describe("Remove text", function () {
     assert.match(editedFirst.forms, /\bTj\b/);
   });
 
+  it("removes text on a page whose page tree has a /Parent cycle", async function () {
+    var output = new Recipe(
+      new Uint8Array(
+        await readFile(
+          new URL(
+            "../../../native-with-source/tests/TestMaterials/FontMalformed.pdf",
+            import.meta.url,
+          ),
+        ),
+      ),
+    )
+      .removeText(1, { forms: true })
+      .endPDF();
+    writeOutput("removeText-cycle", output);
+
+    var reader = muhammara.createReader(output);
+    assert.deepEqual(reader.extractPageText(0), []);
+    reader.end();
+  });
+
   it("validates the page number", async function () {
     var source = await writeSource(muhammara);
     writeOutput("removeText-validation-source", source);

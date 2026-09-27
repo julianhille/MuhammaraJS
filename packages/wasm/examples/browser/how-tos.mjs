@@ -87,9 +87,9 @@ export var HOW_TO_EXAMPLES = [
   {
     id: "replace-text",
     label: "Replace text",
-    title: "Replace literal page text",
+    title: "Replace page text",
     description:
-      "Create a source page, replace its literal text operand, and verify the original placement survives.",
+      "Create a source page, replace non-ASCII text through its font, and verify the original placement survives.",
     assets: ["font"],
     requirement: "Requires a TTF or OTF font upload.",
   },
@@ -713,11 +713,17 @@ async function replaceTextExample(assets) {
       .BT()
       .Tf(writer.getFontForBytes("replace-text-font"), 24)
       .Tm(1, 0, 0, 1, 72, 180)
-      .Tj("Before")
+      .Tj("Status: in Prüfung")
+      // Embedded fonts are subset, so the replacement glyphs must already
+      // be on the page.
+      .Tm(1, 0, 0, 1, 72, 120)
+      .Tj("Status: geprüft")
       .ET();
     writer.writePage(page);
     recipe = new Recipe(writer.end());
-    var bytes = recipe.replaceText("Before", "After", 1).endPDF();
+    var bytes = recipe
+      .replaceText("Status: in Prüfung", "Status: geprüft", 1)
+      .endPDF();
     var reader = muhammara.createReader(bytes);
     var text = reader.extractPageText(0);
     reader.end();
@@ -725,8 +731,8 @@ async function replaceTextExample(assets) {
       bytes,
       filename: "muhammara-replace-text.pdf",
       summary: await summarize(bytes, {
-        howTo: "Replace literal page text",
-        replacement: text[0]?.content,
+        howTo: "Replace page text",
+        replacement: text[0]?.text,
         textMatrix: text[0]?.textMatrix,
       }),
     };
@@ -1022,11 +1028,13 @@ function findText(muhammara, bytes, query) {
       }
       for (var element of reader.extractPageText(index)) {
         var [scaleX, skewY, skewX, scaleY, x, baseline] = element.textMatrix;
-        var offset = element.content.indexOf(query);
+        // Match the text decoded through the font, so non-ASCII queries and
+        // composite-font text are found too.
+        var offset = element.text.indexOf(query);
         for (
           ;
           offset !== -1;
-          offset = element.content.indexOf(query, offset + 1)
+          offset = element.text.indexOf(query, offset + 1)
         ) {
           if (skewY || skewX || scaleX <= 0 || scaleY <= 0) {
             result.skippedTransformedMatches++;
@@ -1036,7 +1044,7 @@ function findText(muhammara, bytes, query) {
           result.matches.push({
             pageNumber: index + 1,
             mediaBox: geometry.mediaBox,
-            prefix: element.content.slice(0, offset),
+            prefix: element.text.slice(0, offset),
             x,
             baseline,
             sizeX: element.fontSize * scaleX,
@@ -1084,10 +1092,11 @@ async function findTextExample(assets) {
       var start =
         recipe.textDimensions(match.prefix + query, { size: match.sizeX })
           .xMax - end;
-      // annot() places the rectangle's bottom-left corner at (x, y).
+      // annot() places the rectangle's top-left corner at (x, y), measured
+      // from the page's top-left corner.
       recipe.annot(
         match.x - match.mediaBox[0] + start,
-        match.mediaBox[3] - match.baseline + HIGHLIGHT_DESCENT * match.sizeY,
+        match.mediaBox[3] - match.baseline - HIGHLIGHT_ASCENT * match.sizeY,
         Recipe.AnnotSubtype.HIGHLIGHT,
         {
           width: end,
