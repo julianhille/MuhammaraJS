@@ -48,6 +48,7 @@ describe("Browser how-to examples", function () {
         "replace-text",
         "watermark",
         "find-text",
+        "inspect-pdf",
       ],
     );
   });
@@ -195,5 +196,108 @@ describe("Browser how-to examples", function () {
     assert.equal(missing.summary.query, "not in the sample");
     assert.equal(missing.summary.matches, 0);
     assert.equal(missing.summary.pages, 2);
+  });
+
+  it("inspects the built-in sample into a one-page report", async function () {
+    var result = await runHowToExample("inspect-pdf");
+    writeOutput("BrowserExamples-inspect-pdf-sample", result.bytes);
+    var inspected = result.summary.inspected;
+    assert.equal(result.summary.source, "Built-in sample");
+    assert.equal(inspected.pages, 2);
+    assert.equal(inspected.encrypted, false);
+    assert.equal(inspected.info.Title, "Service agreement");
+    assert.equal(inspected.info.Status, "Draft");
+    assert.equal(Object.keys(inspected.info)[0], "Title");
+    assert.deepEqual(
+      inspected.pageDetails.map((page) => [
+        page.page,
+        page.width,
+        page.height,
+        page.textOperations,
+      ]),
+      [
+        [1, 595, 842, 4],
+        [2, 595, 842, 2],
+      ],
+    );
+    assert.deepEqual(inspected.bookmarks, [
+      { title: "Service agreement", page: 1, children: [] },
+      { title: "Pricing appendix", page: 2, children: [] },
+    ]);
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(result.bytes);
+    try {
+      var text = reader.extractPageText(0).map((item) => item.content);
+      assert.ok(text.includes("PDF inspection report"));
+      assert.ok(text.includes("Pricing appendix"));
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
+  });
+
+  it("counts XObjects in an uploaded PDF", async function () {
+    var pdf = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/BasicJPGImagesTest.PDF",
+          import.meta.url,
+        ),
+      ),
+    );
+    var result = await runHowToExample("inspect-pdf", { assets: { pdf } });
+    assert.equal(result.summary.source, "Uploaded PDF");
+    assert.equal(result.summary.pages, 1);
+    assert.deepEqual(
+      result.summary.inspected.pageDetails.map((page) => [
+        page.images,
+        page.forms,
+      ]),
+      [[1, 1]],
+    );
+  });
+
+  it("keeps the report of a long uploaded PDF on one page", async function () {
+    var pdf = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/recipe/compressed.tracemonkey-pldi-09.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+    var result = await runHowToExample("inspect-pdf", { assets: { pdf } });
+    writeOutput("BrowserExamples-inspect-pdf-long", result.bytes);
+    assert.equal(result.summary.inspected.pages, 14);
+    assert.equal(result.summary.inspected.pageDetails.length, 14);
+    assert.equal(result.summary.pages, 1);
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(result.bytes);
+    try {
+      assert.ok(
+        reader.extractPageText(0).some((item) => item.content === "+ 9 more"),
+      );
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
+  });
+
+  it("reports an encrypted PDF without reading its contents", async function () {
+    var pdf = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/Protected.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+    var result = await runHowToExample("inspect-pdf", { assets: { pdf } });
+    var inspected = result.summary.inspected;
+    assert.equal(inspected.encrypted, true);
+    assert.deepEqual(inspected.info, {});
+    assert.deepEqual(inspected.pageDetails, []);
+    assert.deepEqual(inspected.bookmarks, []);
+    assert.equal(result.summary.pages, 1);
   });
 });

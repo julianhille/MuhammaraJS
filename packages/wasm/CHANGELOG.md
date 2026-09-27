@@ -124,6 +124,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Add a **Find text** tab to the browser example that searches the text
   operations of an uploaded PDF, or of the built-in sample, and adds a
   Highlight annotation over every match
+- Add an **Inspect PDF** tab to the browser example that reads the version,
+  Info metadata, page geometry, text operations, annotations, XObjects, and
+  bookmarks of an uploaded PDF, or of the built-in sample, into a one-page
+  report
 
 ### Fixed
 
