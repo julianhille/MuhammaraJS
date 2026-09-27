@@ -14,14 +14,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   drew nothing. Pass a finite count; beyond a few hundred sides a polygon is
   indistinguishable from `circle()`
   [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
-
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, as
   documented, like `rectangle()` and `link()`, and as native does. Wasm used
   (x, y) as the bottom-left corner, so every annotation with a `height` now
   appears `height` points lower; Highlight, Underline, StrikeOut, and Squiggly
   now render where native draws them. Subtract `height` from `y` to keep the
   previous position [#808](https://github.com/julianhille/MuhammaraJS/issues/808)
-
 - Throw `TypeError: only a numeric color can use the gray or cmyk colorspace`
   from the low-level drawing helpers and `writeText()` for a color name,
   `#rrggbb` string, or `[r, g, b]` array with `colorspace: "gray"` or
@@ -67,23 +65,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   writer usable
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
   [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
-- Align `mergePDFPagesToPage` callback receivers with native: strict callbacks now receive `globalThis` instead of `undefined`. Use `callback.bind(undefined)` if an undefined receiver is required.
-
-- Treat low-level shape `type: null` as an unknown type, ending the path without
-  painting instead of stroking with stale graphics state, matching native.
-  Omit `type` or pass `"stroke"` to draw an outline; see
-  [drawing helpers](docs/low-level.md#drawing-helpers-and-clipping).
-- Correct low-level shape `type: "clip"` to clip without painting instead of
-  stroking, and end paths with unknown types without painting. Pass `"stroke"`/`"fill"` to paint,
-  or scope intentional clipping with `q()`/`Q()`. See
-  [breaking changes](docs/breaking-changes.md).
-- Validate drawing options before emitting shape or text operators, preventing
-  failed option getters from leaving partial output. Reject overflowing circle
-  and underline geometry, sparse paths, and incomplete or extra modified-form
-  path arguments before drawing. Supply complete finite coordinate pairs and
-  reduce coordinates or sizes that overflow. Return stable option
-  values and correct invalid inputs before retrying; see
-  [breaking changes](docs/breaking-changes.md).
 
 ### Added
 
@@ -133,24 +114,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `AnnotSubtype`, `AnnotFlag`, `ChromaCommand`, and `AnnotIcon`, plus the
   Wasm-only `StructureFormat`. The annotation `flag` option now accepts
   `lockedcontents` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-
 - Add a guide for annotating known text regions in existing PDFs with Underline
   or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
-- Add Recipe `text()` options `underline`, `strikeOut`, and `squiggly` as
-  structured text-markup annotations alongside `highlight`, with per-annotation
-  `text`, `color`, `opacity`, and `replies`, shared `title`, `date`, `subject`,
-  `open`, `richText`, `flag`, and `icon`, one annotation per drawn line, on new
-  and edited pages
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Add Recipe HTML text alignment coverage mirroring native, asserting that
-  `html: true` lines align like the same text without `html` for `center`,
-  `right`, and `justify`, including multi-segment lines and lines ended by
-  `<br>` [#708](https://github.com/julianhille/MuhammaraJS/issues/708)
-- Add regression coverage for the truncated-input parser sweep, non-sequential
-  `appendPDFPageFromPDF` indices, the full rotation fixture matrix, repeated
-  `insertPage()` ordering, `FreeText` annotations, and the text `wrap` type
-  test, closing test-parity gaps against native
-  [#725](https://github.com/julianhille/MuhammaraJS/issues/725)
 - Add a **Watermark** tab to the browser example that stamps diagonal,
   semi-transparent text on every page of an uploaded PDF, or of a built-in
   sample when none is chosen
@@ -213,7 +178,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are
   now clamped instead of throwing a `RangeError`, matching native
   [#807](https://github.com/julianhille/MuhammaraJS/issues/807)
-
 - Register a Recipe color named `__proto__` with `chroma()` or `colorName`; the
   name was silently dropped [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Reject inherited object keys such as `__proto__` and `constructor` as a
@@ -328,145 +292,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Release copying contexts created by `PDFPageMergingHelper` after file- and
   stream-based merges instead of retaining their parser and source resources
   [#759](https://github.com/julianhille/MuhammaraJS/issues/759)
-- Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
-  writer dictionaries and related parser, encryption, and stream ownership
-  defects.
-- Fix Wasm documentation examples that could not run as written: the Edit Or
-  Remove An Existing Annotation how-to never defined `annotationId` and its
-  removal example reused a writer and copying context an earlier block had
-  already ended; a `queryDictionaryObject` call was unguarded against its own
-  documented "returns nothing for a page without annotations" caveat; the
-  Watermark Every Page how-to unregistered its font before the "Watermark In
-  Place" section that still needed it; the Low-Level API guide never showed
-  how to obtain `muhammara` and illustrated `replaceObject()` on a plain
-  writer that does not have the method; and the Find Text Positions guide
-  reused a reader an earlier block had already ended
-  [#740](https://github.com/julianhille/MuhammaraJS/issues/740)
-- Finish an active Recipe page in `endPDF()` and `appendPage()` instead of
-  failing with `Unable to finish PDF` or
-  `Muhammara WebAssembly operation failed: _muhammara_wasm_recipe_append_pdf`,
-  matching native. New documents and source edits alike no longer need an
-  explicit `endPage()` first, and the Recipe is no longer destroyed by the
-  failure. A page still open while pages are marked for deletion is still
-  reported, before the Recipe is retired
-  [#732](https://github.com/julianhille/MuhammaraJS/issues/732)
-- Stop advancing Recipe `position` in `text()`, `movedown()`, and `table()`.
-  `position` is the path cursor, written only by `moveTo()` and `lineTo()` as
-  in native, and text flow now runs on its own cursor, so drawing text no
-  longer moves the point a following path continues from. `editPage()` seeds
-  that text cursor with the page margins instead of reporting them as the path
-  position
-  [#734](https://github.com/julianhille/MuhammaraJS/issues/734)
-- Require a Recipe text `size`, or its `fontSize` alias, greater than zero and
-  throw `RangeError` naming the option and the value otherwise, instead of
-  failing inside the measuring call with an error naming the internal
-  `_muhammara_wasm_recipe_text_dimensions` symbol or silently falling back to
-  the 14pt default for zero and `NaN`. The check runs before `text()` or
-  `textDimensions()` measures or draws anything, on new and edited pages;
-  `null`, `undefined`, and an omitted option still select the 14pt default
-  [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
-- Write a zero-width `/Border` for text-markup annotations (`highlight`,
-  `underline`, `strikeOut`, `squiggly`) by default, matching native, instead of
-  omitting it and letting viewers apply the PDF default 1pt border. Other
-  annotation subtypes keep omitting `/Border` when none is requested
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Stop writing an empty `/RC` or `/Contents` entry for a `richText` annotation
-  with no text
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Constrain Recipe text-markup annotations to the visible clipping region when
-  using `textBox.wrap: "clip"`, so hidden text does not leave highlights or
-  other review markup outside the box
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-
-- Reject non-finite Recipe link rectangles before queuing them, so they
-  cannot produce malformed PDF coordinates or interrupt `endPage()`, and
-  accept negative link widths and heights on edited pages as on new pages,
-  covering the same area as native
-  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
-- Validate all text-markup options before drawing text or queuing annotations,
-  so a rejected `text()` call cannot leave partial content or markup behind
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Write non-string annotation contents and metadata, including replies and
-  text-markup `text`, as strings the way native does. Preserve `0` and `false`
-  titles and subjects; omit nullish metadata and falsy contents instead of
-  failing while finalizing the page
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Reject unsupported URL strings before queuing Recipe links, so non-ASCII
-  URLs fail at `link()` instead of interrupting `endPage()`
-  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
-- Inherit parent annotation metadata for replies, matching native defaults for
-  title, subject, date, flags, open state, and icon while keeping reply opacity
-  and rich-text mode independent. An empty or zero reply `flag` keeps the
-  parent's flag, as on native
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Write Recipe annotation dash patterns as a nested `/Border` array on new
-  documents, matching edited pages and allowing PDF viewers to render the dashes
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Reject invalid annotation options when `annot()`, `comment()`, or a text
-  markup option adds the annotation, instead of during `endPage()`. A failed
-  call no longer leaves the page unable to end or the Recipe unable to finish
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Stop corrupting the page content stream when a Recipe page has both drawn
-  content and an annotation or link, such as `comment()`, `annot()`, `link()`,
-  a text `link`, or a text `highlight`; annotations and links are now written
-  after the content stream is closed
-  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
-- Inherit parent annotation metadata for replies without their own `title`,
-  `subject`, `date`, `flag`, `open`, or icon, matching native. A reply keeps
-  its own contents, rich-text mode, and opacity (opaque by default)
-  [#717](https://github.com/julianhille/MuhammaraJS/issues/717)
-- Draw `underline` and `strikeOut` text decoration on edited pages, not only on
-  new pages [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Preserve annotation metadata, rich text, dates, and reply relationships on
-  edited pages and pages added to existing documents; flush queued annotations
-  and links even when an edited page was paused
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Retain drawn content across Recipe `pauseContext()`/`resumeContext()` and
-  low-level page-modifier `endContext()`/`startContext()` calls
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Write Recipe annotation `title`, `subject`, and text as PDF text strings, so
-  non-ASCII characters no longer display as garbled UTF-8 bytes in PDF viewers
-  [#716](https://github.com/julianhille/MuhammaraJS/issues/716)
-- Preserve `Date` objects in text-markup options and cover the full width of
-  justified HTML lines [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Reject Recipe links between pages instead of attaching them to the next page
-  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
-- Bind table overflow callbacks to their Recipe instance, matching their declared
-  `this` type and native behavior
-  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-- Resolve Recipe text colors like native: gray (`#gg`), CMYK (`#ccmmyykk`),
-  percent (`%r,g,b`), and names registered with `chroma()` now draw instead of
-  throwing, an unknown name falls back to the default, and text written while
-  editing an existing page uses its color
-  [#712](https://github.com/julianhille/MuhammaraJS/issues/712)
-- Constrain Recipe text links to their visible clipping region when using
-  `textBox.wrap: "clip"`, so hidden overflow does not remain clickable outside
-  the text box [#718](https://github.com/julianhille/MuhammaraJS/issues/718)
-- Preserve explicit table header styles against body-column overrides and
-  merge nested `hcell` styles without discarding header backgrounds or borders
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Run a Recipe table column `renderer` once per cell instead of twice, keep the
-  text cursor at the table's left edge after an overflow moved the table, keep
-  every `border` option such as `dash` on the outer rectangle, and stop drawing
-  the table's bottom border twice, including when `overflow` returns `true`
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Leave tables with no columns unchanged instead of setting the cursor to
-  `-Infinity`, and throw a clear `Error` when an `overflow` callback ends the
-  page without starting another
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Treat inherited record properties as missing table cells instead of
-  rendering prototype methods such as `constructor` and `toString`
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Stop a table's `overflow` callback from also running as the text-flow
-  overflow callback while drawing a cell's text
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Resolve table cell text boxes like native: a column's `cell` is its only
-  body text box, a row `cell` replaces the row's `textBox`, and nested styles
-  such as a column fill and a row stroke merge instead of replacing each other.
-  A table-level `cell` is ignored. `RecipeTableColumn` no longer declares
-  `textBox` and `RecipeTableOptions` no longer declares `cell`; use a column's
-  `cell` or `row.cell`
-  [#710](https://github.com/julianhille/MuhammaraJS/issues/710)
 
 ### Changed
 
@@ -560,6 +385,193 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
   Unsupported paint modes neither paint nor clip, so they are now a compile
   error rather than silently unpainted geometry; pass a supported type
   [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
+
+## [1.0.0-beta.4] - 2026-09-24
+
+### Breaking Changes
+
+- Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
+  Previously callers could continue after a failed append and produce a
+  corrupted document; create a fresh writer and retry with valid source bytes.
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+- Align `mergePDFPagesToPage` callback receivers with native: strict callbacks now receive `globalThis` instead of `undefined`. Use `callback.bind(undefined)` if an undefined receiver is required.
+- Treat low-level shape `type: null` as an unknown type, ending the path without
+  painting instead of stroking with stale graphics state, matching native.
+  Omit `type` or pass `"stroke"` to draw an outline; see
+  [drawing helpers](docs/low-level.md#drawing-helpers-and-clipping).
+- Correct low-level shape `type: "clip"` to clip without painting instead of
+  stroking, and end paths with unknown types without painting. Pass `"stroke"`/`"fill"` to paint,
+  or scope intentional clipping with `q()`/`Q()`. See
+  [breaking changes](docs/breaking-changes.md).
+- Validate drawing options before emitting shape or text operators, preventing
+  failed option getters from leaving partial output. Reject overflowing circle
+  and underline geometry, sparse paths, and incomplete or extra modified-form
+  path arguments before drawing. Supply complete finite coordinate pairs and
+  reduce coordinates or sizes that overflow. Return stable option
+  values and correct invalid inputs before retrying; see
+  [breaking changes](docs/breaking-changes.md).
+
+### Added
+
+- Add Recipe `text()` options `underline`, `strikeOut`, and `squiggly` as
+  structured text-markup annotations alongside `highlight`, with per-annotation
+  `text`, `color`, `opacity`, and `replies`, shared `title`, `date`, `subject`,
+  `open`, `richText`, `flag`, and `icon`, one annotation per drawn line, on new
+  and edited pages
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Add Recipe HTML text alignment coverage mirroring native, asserting that
+  `html: true` lines align like the same text without `html` for `center`,
+  `right`, and `justify`, including multi-segment lines and lines ended by
+  `<br>` [#708](https://github.com/julianhille/MuhammaraJS/issues/708)
+- Add regression coverage for the truncated-input parser sweep, non-sequential
+  `appendPDFPageFromPDF` indices, the full rotation fixture matrix, repeated
+  `insertPage()` ordering, `FreeText` annotations, and the text `wrap` type
+  test, closing test-parity gaps against native
+  [#725](https://github.com/julianhille/MuhammaraJS/issues/725)
+
+### Fixed
+
+- Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
+  writer dictionaries and related parser, encryption, and stream ownership
+  defects.
+- Fix Wasm documentation examples that could not run as written: the Edit Or
+  Remove An Existing Annotation how-to never defined `annotationId` and its
+  removal example reused a writer and copying context an earlier block had
+  already ended; a `queryDictionaryObject` call was unguarded against its own
+  documented "returns nothing for a page without annotations" caveat; the
+  Watermark Every Page how-to unregistered its font before the "Watermark In
+  Place" section that still needed it; the Low-Level API guide never showed
+  how to obtain `muhammara` and illustrated `replaceObject()` on a plain
+  writer that does not have the method; and the Find Text Positions guide
+  reused a reader an earlier block had already ended
+  [#740](https://github.com/julianhille/MuhammaraJS/issues/740)
+- Finish an active Recipe page in `endPDF()` and `appendPage()` instead of
+  failing with `Unable to finish PDF` or
+  `Muhammara WebAssembly operation failed: _muhammara_wasm_recipe_append_pdf`,
+  matching native. New documents and source edits alike no longer need an
+  explicit `endPage()` first, and the Recipe is no longer destroyed by the
+  failure. A page still open while pages are marked for deletion is still
+  reported, before the Recipe is retired
+  [#732](https://github.com/julianhille/MuhammaraJS/issues/732)
+- Stop advancing Recipe `position` in `text()`, `movedown()`, and `table()`.
+  `position` is the path cursor, written only by `moveTo()` and `lineTo()` as
+  in native, and text flow now runs on its own cursor, so drawing text no
+  longer moves the point a following path continues from. `editPage()` seeds
+  that text cursor with the page margins instead of reporting them as the path
+  position
+  [#734](https://github.com/julianhille/MuhammaraJS/issues/734)
+- Require a Recipe text `size`, or its `fontSize` alias, greater than zero and
+  throw `RangeError` naming the option and the value otherwise, instead of
+  failing inside the measuring call with an error naming the internal
+  `_muhammara_wasm_recipe_text_dimensions` symbol or silently falling back to
+  the 14pt default for zero and `NaN`. The check runs before `text()` or
+  `textDimensions()` measures or draws anything, on new and edited pages;
+  `null`, `undefined`, and an omitted option still select the 14pt default
+  [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
+- Write a zero-width `/Border` for text-markup annotations (`highlight`,
+  `underline`, `strikeOut`, `squiggly`) by default, matching native, instead of
+  omitting it and letting viewers apply the PDF default 1pt border. Other
+  annotation subtypes keep omitting `/Border` when none is requested
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Stop writing an empty `/RC` or `/Contents` entry for a `richText` annotation
+  with no text
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Constrain Recipe text-markup annotations to the visible clipping region when
+  using `textBox.wrap: "clip"`, so hidden text does not leave highlights or
+  other review markup outside the box
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject non-finite Recipe link rectangles before queuing them, so they
+  cannot produce malformed PDF coordinates or interrupt `endPage()`, and
+  accept negative link widths and heights on edited pages as on new pages,
+  covering the same area as native
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
+- Validate all text-markup options before drawing text or queuing annotations,
+  so a rejected `text()` call cannot leave partial content or markup behind
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Write non-string annotation contents and metadata, including replies and
+  text-markup `text`, as strings the way native does. Preserve `0` and `false`
+  titles and subjects; omit nullish metadata and falsy contents instead of
+  failing while finalizing the page
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject unsupported URL strings before queuing Recipe links, so non-ASCII
+  URLs fail at `link()` instead of interrupting `endPage()`
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
+- Inherit parent annotation metadata for replies, matching native defaults for
+  title, subject, date, flags, open state, and icon while keeping reply opacity
+  and rich-text mode independent. An empty or zero reply `flag` keeps the
+  parent's flag, as on native
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Write Recipe annotation dash patterns as a nested `/Border` array on new
+  documents, matching edited pages and allowing PDF viewers to render the dashes
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject invalid annotation options when `annot()`, `comment()`, or a text
+  markup option adds the annotation, instead of during `endPage()`. A failed
+  call no longer leaves the page unable to end or the Recipe unable to finish
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Stop corrupting the page content stream when a Recipe page has both drawn
+  content and an annotation or link, such as `comment()`, `annot()`, `link()`,
+  a text `link`, or a text `highlight`; annotations and links are now written
+  after the content stream is closed
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
+- Inherit parent annotation metadata for replies without their own `title`,
+  `subject`, `date`, `flag`, `open`, or icon, matching native. A reply keeps
+  its own contents, rich-text mode, and opacity (opaque by default)
+  [#717](https://github.com/julianhille/MuhammaraJS/issues/717)
+- Draw `underline` and `strikeOut` text decoration on edited pages, not only on
+  new pages [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Preserve annotation metadata, rich text, dates, and reply relationships on
+  edited pages and pages added to existing documents; flush queued annotations
+  and links even when an edited page was paused
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Retain drawn content across Recipe `pauseContext()`/`resumeContext()` and
+  low-level page-modifier `endContext()`/`startContext()` calls
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Write Recipe annotation `title`, `subject`, and text as PDF text strings, so
+  non-ASCII characters no longer display as garbled UTF-8 bytes in PDF viewers
+  [#716](https://github.com/julianhille/MuhammaraJS/issues/716)
+- Preserve `Date` objects in text-markup options and cover the full width of
+  justified HTML lines [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Reject Recipe links between pages instead of attaching them to the next page
+  [#703](https://github.com/julianhille/MuhammaraJS/issues/703)
+- Bind table overflow callbacks to their Recipe instance, matching their declared
+  `this` type and native behavior
+  [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
+- Resolve Recipe text colors like native: gray (`#gg`), CMYK (`#ccmmyykk`),
+  percent (`%r,g,b`), and names registered with `chroma()` now draw instead of
+  throwing, an unknown name falls back to the default, and text written while
+  editing an existing page uses its color
+  [#712](https://github.com/julianhille/MuhammaraJS/issues/712)
+- Constrain Recipe text links to their visible clipping region when using
+  `textBox.wrap: "clip"`, so hidden overflow does not remain clickable outside
+  the text box [#718](https://github.com/julianhille/MuhammaraJS/issues/718)
+- Preserve explicit table header styles against body-column overrides and
+  merge nested `hcell` styles without discarding header backgrounds or borders
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Run a Recipe table column `renderer` once per cell instead of twice, keep the
+  text cursor at the table's left edge after an overflow moved the table, keep
+  every `border` option such as `dash` on the outer rectangle, and stop drawing
+  the table's bottom border twice, including when `overflow` returns `true`
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Leave tables with no columns unchanged instead of setting the cursor to
+  `-Infinity`, and throw a clear `Error` when an `overflow` callback ends the
+  page without starting another
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Treat inherited record properties as missing table cells instead of
+  rendering prototype methods such as `constructor` and `toString`
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Stop a table's `overflow` callback from also running as the text-flow
+  overflow callback while drawing a cell's text
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Resolve table cell text boxes like native: a column's `cell` is its only
+  body text box, a row `cell` replaces the row's `textBox`, and nested styles
+  such as a column fill and a row stroke merge instead of replacing each other.
+  A table-level `cell` is ignored. `RecipeTableColumn` no longer declares
+  `textBox` and `RecipeTableOptions` no longer declares `cell`; use a column's
+  `cell` or `row.cell`
+  [#710](https://github.com/julianhille/MuhammaraJS/issues/710)
+
+### Changed
+
 - Resolve table header styles independently of body styles, matching native.
   Headers that inherited a body font, size, or color can change appearance;
   set those properties explicitly in `header` to retain the intended style
@@ -802,7 +814,8 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Validate Wasm ABI exports, resource ownership, temporary-file cleanup, and
   bounded byte input/output handling.
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.3...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.4...HEAD
+[1.0.0-beta.4]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.3...wasm-v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.2...wasm-v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.1...wasm-v1.0.0-beta.2
 [1.0.0-beta.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-alpha.1...wasm-v1.0.0-beta.1

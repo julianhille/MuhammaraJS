@@ -7,69 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-### Added
-
-- Add a `pruneReferences` option to Recipe `deletePage(pageNumbers, options)`
-  that removes references to the deleted pages from outlines, link
-  annotations, named destinations, form widgets, tagged-PDF structure elements
-  and the open action, instead of refusing the deletion; see
-  [Delete Pages](packages/native/docs/how-to/delete-pages.md) [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
-- Add a decoded Unicode `text` field to `PDFReader#extractPageText()`
-  elements, decoded through the font's `/ToUnicode` CMap, `/Encoding`, and
-  `/Differences`; `content` keeps the raw character codes, and
-  `{ decodeText: false }` skips decoding
-  [#788](https://github.com/julianhille/MuhammaraJS/issues/788)
-- Add a `Recipe.<Name>` type for every Recipe value set, for example
-  `Recipe.TextWrap`, `Recipe.LineCap`, and `Recipe.AnnotFlag`, and use them for
-  the matching options; the text `align` option is typed as alignment keywords
-  instead of any string, still accepting other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add frozen `DeviceColorSpace`, `PageBox`, `PDFImageType`, and `EEncoding`
-  objects, named and valued as in `@muhammara/wasm` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add `DrawingPathType` constants for the `type` option of the low-level
-  drawing helpers [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Declare the arguments the native `PDFWriter` already accepts: TIFF options
-  for `createFormXObjectFromTIFF()`, the image index and password of
-  `getImageDimensions()`, a `PDFReader` source and password for
-  `createPDFCopyingContext()`, and any read stream for the JPEG, PNG, TIFF and
-  merge methods [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Declare `PDFLiteralString#toBytesArray()` and type the values returned by
-  `PDFDictionary#toJSObject()` as PDF objects [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add `ImageFit` constants for the `fit` option of `drawImage()`
-  transformations [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add `ObjectReplacementScope` constants for the `scope` option of
-  `PDFWriter#replaceObject()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Declare the `text`, `border`, `color` and `followOriginalPageRotation`
-  options that `Recipe#annot()` already reads [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add Recipe constants for the string options Recipe accepts:
-  `Recipe.AnnotFlag`, `AnnotIcon`, `AnnotSubtype`, `ArrowAt`, `ArrowType`,
-  `ChromaCommand`, `Colorspace`, `Coordinate`, `FontStyle`, `HorizontalAlign`,
-  `LineCap`, `LineJoin`, `PageLayout`, `PageSize`, `Permission`, `Source`,
-  `TableRowNth`, `TextAlign`, `TextWrap`, `TriangleTrait`, `TrianglePosition`
-  and `VerticalAlign`. The plain strings stay accepted [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Declare the `password`, `ownerPassword`, `userPassword`,
-  `userProtectionFlag` and `fontSrcPath` Recipe constructor options [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Accept `Recipe#line(startX, startY, endX, endY, options?)`, as Wasm does
-  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Accept a `PDFDate` in `InfoDictionary#setCreationDate()` and
-  `setModDate()`, as Wasm does [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Default the `createFormXObjectFromPDFPage()` page box to the media box,
-  as Wasm does [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Accept a form XObject object ID in `doXObject()`, as Wasm does
-  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Default the `d()` dash phase to 0 when it is omitted, as Wasm does
-  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Accept a `Uint8Array` (or `Buffer`) from custom read streams and in the
-  `write()` method of PDF stream writers such as `getWriteStream()`, alongside
-  arrays of byte values [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
-- Add a guide for replacing text in an existing PDF with `replaceText()`,
-  including what to do when nothing matches or the font lacks a glyph
-  [#788](https://github.com/julianhille/MuhammaraJS/issues/788)
-- Add a guide for annotating known text regions in existing PDFs with Underline
-  or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
-- Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
-  an existing page, for example before adding a new OCR text layer, and a
-  guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
-
 ### Breaking Changes
 
 - Recipe `n_gon()` and `star()` throw
@@ -80,7 +17,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   drew nothing. Pass a finite count; beyond a few hundred sides a polygon is
   indistinguishable from `circle()`
   [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
-
 - Throw `Error: End the active objects context operation before ending the PDF`
   from `PDFWriter#end()` while a dictionary started with `startDictionary()` is
   still open, as Wasm does, and keep the writer usable. Previously `end()`
@@ -104,7 +40,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   value that viewers ignore or round. Pass a multiple of 90
   [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
-
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
   `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
   Square, Circle, FreeText, or other annotation with a `height` now appears
@@ -114,7 +49,6 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   Highlight, Underline, StrikeOut, and Squiggly already hung down from `y` and
   render where they did; their `Rect` now encloses their `QuadPoints`
   [#808](https://github.com/julianhille/MuhammaraJS/issues/808)
-
 - Throw a `TypeError` from low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` when a string `color` is
   neither a CSS color name nor `#rrggbb`, as `@muhammara/wasm` does. Previously
@@ -201,12 +135,6 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   writer usable
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
   [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
-- Reject custom-stream `getCurrentPosition()` results that convert to non-finite
-  numbers or fall outside `[-2^63, 2^63)` with `TypeError`, preventing corrupt
-  PDF offsets. Return the actual finite byte position within that range; numeric
-  coercion remains supported. See the
-  [stream contract](packages/native/docs/low-level/custom-streams.md)
-  [#750](https://github.com/julianhille/MuhammaraJS/issues/750).
 - Correct low-level shape `type: "clip"` to clip without painting and end the
   path. Any other `type` except `null`, such as the typo `"fil"`, throws
   `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`
@@ -214,55 +142,6 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
   [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options)
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Validate low-level shape and `writeText()` arguments before drawing, and
-  propagate conversion errors instead of aborting or emitting partial output.
-  Supply finite coordinates, dimensions, stroke widths, and text sizes, and
-  at least two complete `drawPath()` coordinate pairs; incomplete paths now
-  throw instead of silently drawing a prefix. Correct invalid inputs before retrying. See
-  [breaking changes](packages/native/docs/breaking-changes.md).
-- Replace runtime-specific Node.js and Electron native binaries with Node-API 8
-  prebuilds shared by every supported runtime. Standard npm installs and public
-  package imports require no changes, but custom binary mirrors, direct archive
-  downloads, and tooling that uses `binding/muhammara.node` must replace
-  `node-v{abi}-{platform}-{arch}-{libc}.tar.gz` with
-  `napi-v8-{platform}-{arch}-{libc}.tar.gz` and use
-  `binding/napi-v8/muhammara.node`. See the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#14-update-native-binary-tooling)
-  and [breaking changes](packages/native/docs/breaking-changes.md) page
-  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
-  [#504](https://github.com/julianhille/MuhammaraJS/issues/504)
-- Require a Recipe text `size`, or its `fontSize` alias, greater than zero and
-  throw `RangeError` naming the option and the value otherwise. `text()`
-  clamped a negative size to 1pt, drew nothing visible for zero, and
-  `textDimensions()` measured with those values, returning nonsensical font
-  metrics; zero and `NaN` also fell back to the 14pt default in some paths.
-  Both now throw before drawing or measuring. Pass a size greater than zero, or
-  omit the option — `null` and `undefined` still select the 14pt default. See
-  the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
-  and the [breaking changes](packages/native/docs/breaking-changes.md) page
-  [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
-- Keep Recipe HTML text outside any element on one line with its neighboring
-  inline elements, with one space between them, instead of starting a new line
-  for each top-level run and inline element; wrap content in `<p>` or add
-  `<br>` where separate lines are intended. `htmlToTextObjects()` returns a
-  `<br>` as an object with `lineBreak: true` instead of a placeholder
-  paragraph. See the [breaking changes](packages/native/docs/breaking-changes.md)
-  page [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
-- Derive Recipe `table()` columns from every record instead of only the first,
-  keep `order` and `columns` entries even when no record has that field, and
-  use exactly the listed `columns` when no `order` is given. A column
-  `renderer` result now also sizes its row, and a misspelled `order` or
-  `columns` name draws an empty column instead of being dropped. List the intended columns with
-  `order` or `columns` to keep a fixed layout; see the
-  [breaking changes](packages/native/docs/breaking-changes.md) page
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Include padding, minimum/fixed cell heights, and rendered HTML in Recipe
-  table sizing. Tables can grow taller or continue earlier; adjust cell sizing
-  and continuation areas using the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly).
-  An `overflow` destination too small for a row and its repeated header now
-  throws `RangeError` instead of drawing beyond the bounds; return `true` to
-  stop or provide a large enough area
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Throw `TypeError: charSpace must be a finite number` from Recipe `text()`
   when `charSpace` is `Infinity`, `-Infinity`, `NaN`, or not a number, as
   `@muhammara/wasm` does. Previously `Infinity` wrote an invalid `inf Tc`
@@ -273,14 +152,66 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
 
 ### Added
 
-- Add Electron 44.4.5 as the newest tested compatibility boundary on Linux x64,
-  macOS arm64, and Windows x64
-  [#753](https://github.com/julianhille/MuhammaraJS/issues/753)
-- Add regression coverage for `retrieveJPGImageInformation`, the `compress`
-  writer option's effect on output bytes, and the low-level `ri`, `i`, `gs`,
-  `CS`, `cs`, `SC`, `SCN`, `sc`, and `scn` content-stream operators, closing
-  test-parity gaps against `@muhammara/wasm`
-  [#725](https://github.com/julianhille/MuhammaraJS/issues/725)
+- Add a `pruneReferences` option to Recipe `deletePage(pageNumbers, options)`
+  that removes references to the deleted pages from outlines, link
+  annotations, named destinations, form widgets, tagged-PDF structure elements
+  and the open action, instead of refusing the deletion; see
+  [Delete Pages](packages/native/docs/how-to/delete-pages.md) [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
+- Add a decoded Unicode `text` field to `PDFReader#extractPageText()`
+  elements, decoded through the font's `/ToUnicode` CMap, `/Encoding`, and
+  `/Differences`; `content` keeps the raw character codes, and
+  `{ decodeText: false }` skips decoding
+  [#788](https://github.com/julianhille/MuhammaraJS/issues/788)
+- Add a `Recipe.<Name>` type for every Recipe value set, for example
+  `Recipe.TextWrap`, `Recipe.LineCap`, and `Recipe.AnnotFlag`, and use them for
+  the matching options; the text `align` option is typed as alignment keywords
+  instead of any string, still accepting other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add frozen `DeviceColorSpace`, `PageBox`, `PDFImageType`, and `EEncoding`
+  objects, named and valued as in `@muhammara/wasm` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add `DrawingPathType` constants for the `type` option of the low-level
+  drawing helpers [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the arguments the native `PDFWriter` already accepts: TIFF options
+  for `createFormXObjectFromTIFF()`, the image index and password of
+  `getImageDimensions()`, a `PDFReader` source and password for
+  `createPDFCopyingContext()`, and any read stream for the JPEG, PNG, TIFF and
+  merge methods [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare `PDFLiteralString#toBytesArray()` and type the values returned by
+  `PDFDictionary#toJSObject()` as PDF objects [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add `ImageFit` constants for the `fit` option of `drawImage()`
+  transformations [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add `ObjectReplacementScope` constants for the `scope` option of
+  `PDFWriter#replaceObject()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the `text`, `border`, `color` and `followOriginalPageRotation`
+  options that `Recipe#annot()` already reads [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add Recipe constants for the string options Recipe accepts:
+  `Recipe.AnnotFlag`, `AnnotIcon`, `AnnotSubtype`, `ArrowAt`, `ArrowType`,
+  `ChromaCommand`, `Colorspace`, `Coordinate`, `FontStyle`, `HorizontalAlign`,
+  `LineCap`, `LineJoin`, `PageLayout`, `PageSize`, `Permission`, `Source`,
+  `TableRowNth`, `TextAlign`, `TextWrap`, `TriangleTrait`, `TrianglePosition`
+  and `VerticalAlign`. The plain strings stay accepted [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Declare the `password`, `ownerPassword`, `userPassword`,
+  `userProtectionFlag` and `fontSrcPath` Recipe constructor options [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Accept `Recipe#line(startX, startY, endX, endY, options?)`, as Wasm does
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Accept a `PDFDate` in `InfoDictionary#setCreationDate()` and
+  `setModDate()`, as Wasm does [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Default the `createFormXObjectFromPDFPage()` page box to the media box,
+  as Wasm does [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Accept a form XObject object ID in `doXObject()`, as Wasm does
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Default the `d()` dash phase to 0 when it is omitted, as Wasm does
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Accept a `Uint8Array` (or `Buffer`) from custom read streams and in the
+  `write()` method of PDF stream writers such as `getWriteStream()`, alongside
+  arrays of byte values [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
+- Add a guide for replacing text in an existing PDF with `replaceText()`,
+  including what to do when nothing matches or the font lacks a glyph
+  [#788](https://github.com/julianhille/MuhammaraJS/issues/788)
+- Add a guide for annotating known text regions in existing PDFs with Underline
+  or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
+- Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
+  an existing page, for example before adding a new OCR text layer, and a
+  guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
 
 ### Fixed
 
@@ -501,6 +432,107 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 - Release copying contexts created by `PDFPageMergingHelper` after file- and
   stream-based merges instead of retaining their parser and source resources
   [#759](https://github.com/julianhille/MuhammaraJS/issues/759)
+
+### Changed
+
+- Reject an infinite Recipe text `size`, or its `fontSize` alias, with the
+  `RangeError` other invalid sizes get; it used to write an invalid `inf` font
+  size into the page [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
+- Throw a `TypeError` from `UsedFont#calculateTextDimensions()` when the font
+  size is not a finite positive number, as `@muhammara/wasm` does; a negative
+  size used to wrap to a huge integer and `NaN` measured as size 0 [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
+- Declare `DocumentCopyingContext#getSourceDocumentParser()` without
+  parameters in the TypeScript types, matching the runtime, which never used
+  them [#320](https://github.com/julianhille/MuhammaraJS/issues/320)
+- Throw a `TypeError` that reads "No page is active; call createPage() or
+  editPage() first" from Recipe drawing and annotation methods called without
+  a page, instead of a property-destructuring `TypeError` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Link `bcrypt.lib` explicitly in the Windows native build, where OpenSSL seeds
+  AES initialization vectors from `BCryptGenRandom`
+  [#663](https://github.com/julianhille/MuhammaraJS/issues/663)
+- Rework the npm READMEs of `@muhammara/native`, `@muhammara/native-with-source`, and `@muhammara/native-core`: each explains how the MuhammaraJS packages fit together, when to use the Wasm package instead, supported platforms, and tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
+
+## [7.0.0-beta.4] - 2026-09-24
+
+### Breaking Changes
+
+- Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
+  Previously callers could continue after a failed append and produce a
+  corrupted document; create a fresh writer and retry with a valid source.
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+- Reject custom-stream `getCurrentPosition()` results that convert to non-finite
+  numbers or fall outside `[-2^63, 2^63)` with `TypeError`, preventing corrupt
+  PDF offsets. Return the actual finite byte position within that range; numeric
+  coercion remains supported. See the
+  [stream contract](packages/native/docs/low-level/custom-streams.md)
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750).
+- Correct low-level shape `type: "clip"` to clip without painting and end the
+  path; unrecognized types end the path without painting or clipping. Use `"clip"` explicitly with
+  `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+- Validate low-level shape and `writeText()` arguments before drawing, and
+  propagate conversion errors instead of aborting or emitting partial output.
+  Supply finite coordinates, dimensions, stroke widths, and text sizes, and
+  at least two complete `drawPath()` coordinate pairs; incomplete paths now
+  throw instead of silently drawing a prefix. Correct invalid inputs before retrying. See
+  [breaking changes](packages/native/docs/breaking-changes.md).
+- Replace runtime-specific Node.js and Electron native binaries with Node-API 8
+  prebuilds shared by every supported runtime. Standard npm installs and public
+  package imports require no changes, but custom binary mirrors, direct archive
+  downloads, and tooling that uses `binding/muhammara.node` must replace
+  `node-v{abi}-{platform}-{arch}-{libc}.tar.gz` with
+  `napi-v8-{platform}-{arch}-{libc}.tar.gz` and use
+  `binding/napi-v8/muhammara.node`. See the
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#14-update-native-binary-tooling)
+  and [breaking changes](packages/native/docs/breaking-changes.md) page
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  [#504](https://github.com/julianhille/MuhammaraJS/issues/504)
+- Require a Recipe text `size`, or its `fontSize` alias, greater than zero and
+  throw `RangeError` naming the option and the value otherwise. `text()`
+  clamped a negative size to 1pt, drew nothing visible for zero, and
+  `textDimensions()` measured with those values, returning nonsensical font
+  metrics; zero and `NaN` also fell back to the 14pt default in some paths.
+  Both now throw before drawing or measuring. Pass a size greater than zero, or
+  omit the option — `null` and `undefined` still select the 14pt default. See
+  the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
+  and the [breaking changes](packages/native/docs/breaking-changes.md) page
+  [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
+- Keep Recipe HTML text outside any element on one line with its neighboring
+  inline elements, with one space between them, instead of starting a new line
+  for each top-level run and inline element; wrap content in `<p>` or add
+  `<br>` where separate lines are intended. `htmlToTextObjects()` returns a
+  `<br>` as an object with `lineBreak: true` instead of a placeholder
+  paragraph. See the [breaking changes](packages/native/docs/breaking-changes.md)
+  page [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
+- Derive Recipe `table()` columns from every record instead of only the first,
+  keep `order` and `columns` entries even when no record has that field, and
+  use exactly the listed `columns` when no `order` is given. A column
+  `renderer` result now also sizes its row, and a misspelled `order` or
+  `columns` name draws an empty column instead of being dropped. List the intended columns with
+  `order` or `columns` to keep a fixed layout; see the
+  [breaking changes](packages/native/docs/breaking-changes.md) page
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Include padding, minimum/fixed cell heights, and rendered HTML in Recipe
+  table sizing. Tables can grow taller or continue earlier; adjust cell sizing
+  and continuation areas using the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly).
+  An `overflow` destination too small for a row and its repeated header now
+  throws `RangeError` instead of drawing beyond the bounds; return `true` to
+  stop or provide a large enough area
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+
+### Added
+
+- Add Electron 44.4.5 as the newest tested compatibility boundary on Linux x64,
+  macOS arm64, and Windows x64
+  [#753](https://github.com/julianhille/MuhammaraJS/issues/753)
+- Add regression coverage for `retrieveJPGImageInformation`, the `compress`
+  writer option's effect on output bytes, and the low-level `ri`, `i`, `gs`,
+  `CS`, `cs`, `SC`, `SCN`, `sc`, and `scn` content-stream operators, closing
+  test-parity gaps against `@muhammara/wasm`
+  [#725](https://github.com/julianhille/MuhammaraJS/issues/725)
+
+### Fixed
+
 - Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
   writer dictionaries and related parser, encryption, and stream ownership
   defects on native and Wasm builds.
@@ -543,7 +575,6 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   using `textBox.wrap: "clip"`, so hidden text does not leave highlights or
   other review markup outside the box
   [#665](https://github.com/julianhille/MuhammaraJS/issues/665)
-
 - Create Recipe text-markup annotations only for `highlight`, `underline`,
   `strikeOut`, and `squiggly` options that are enabled; `false` values no
   longer add an annotation
@@ -596,22 +627,6 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Changed
 
-- Reject an infinite Recipe text `size`, or its `fontSize` alias, with the
-  `RangeError` other invalid sizes get; it used to write an invalid `inf` font
-  size into the page [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
-- Throw a `TypeError` from `UsedFont#calculateTextDimensions()` when the font
-  size is not a finite positive number, as `@muhammara/wasm` does; a negative
-  size used to wrap to a huge integer and `NaN` measured as size 0 [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
-- Declare `DocumentCopyingContext#getSourceDocumentParser()` without
-  parameters in the TypeScript types, matching the runtime, which never used
-  them [#320](https://github.com/julianhille/MuhammaraJS/issues/320)
-- Throw a `TypeError` that reads "No page is active; call createPage() or
-  editPage() first" from Recipe drawing and annotation methods called without
-  a page, instead of a property-destructuring `TypeError` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Link `bcrypt.lib` explicitly in the Windows native build, where OpenSSL seeds
-  AES initialization vectors from `BCryptGenRandom`
-  [#663](https://github.com/julianhille/MuhammaraJS/issues/663)
-- Rework the npm READMEs of `@muhammara/native`, `@muhammara/native-with-source`, and `@muhammara/native-core`: each explains how the MuhammaraJS packages fit together, when to use the Wasm package instead, supported platforms, and tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
 - Build seven canonical native prebuilds and reuse them across supported Node.js
   and Electron compatibility-boundary tests, including native ARM64 musl tests
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
@@ -1541,7 +1556,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.3...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.4...HEAD
+[7.0.0-beta.4]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.3...native-v7.0.0-beta.4
 [7.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.2...native-v7.0.0-beta.3
 [7.0.0-beta.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.1...native-v7.0.0-beta.2
 [7.0.0-beta.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-alpha.1...native-v7.0.0-beta.1
