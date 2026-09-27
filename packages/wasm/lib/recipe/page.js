@@ -41,11 +41,21 @@ function readPageTree(
   if (depth === 0 && values.Parent !== undefined) {
     throw new Error("deletePage requires a valid page tree");
   }
-  var kids = parser.queryDictionaryObject(dictionary, "Kids").toPDFArray();
+  var kids = parser.queryDictionaryObject(dictionary, "Kids")?.toPDFArray();
+  if (!kids) {
+    throw new Error("deletePage requires a valid page tree");
+  }
   var mappedChildren = kids.toJSArray().map((entry) => {
+    // Kids must be references to page tree dictionaries with a /Type.
     var reference = entry.toPDFIndirectObjectReference();
-    var childID = reference.getObjectID();
-    var childDictionary = parser.parseNewObject(childID).toPDFDictionary();
+    var childID = reference?.getObjectID();
+    var childDictionary =
+      childID === undefined
+        ? null
+        : parser.parseNewObject(childID)?.toPDFDictionary();
+    if (!childDictionary) {
+      throw new Error("deletePage requires a valid page tree");
+    }
     var childValues = childDictionary.toJSObject();
     var parentReference = childValues.Parent?.toPDFIndirectObjectReference();
     if (
@@ -55,7 +65,10 @@ function readPageTree(
     ) {
       throw new Error("deletePage requires a valid page tree");
     }
-    var type = childValues.Type.toPDFName().value;
+    var type = childValues.Type?.toPDFName()?.value;
+    if (type === undefined) {
+      throw new Error("deletePage requires a valid page tree");
+    }
     if (type === "Pages") {
       return readPageTree(
         parser,
@@ -281,6 +294,9 @@ function readPageLabel(parser, value) {
   var start = values.St ? resolvePageLabelObject(parser, values.St) : null;
   var prefixHex = prefix?.toPDFHexString();
   var prefixLiteral = prefix?.toPDFLiteralString();
+  if (values.P !== undefined && !prefixHex && !prefixLiteral) {
+    throw new Error("deletePage requires valid PageLabels entries");
+  }
   return {
     style: style?.toPDFName()?.value,
     prefix:

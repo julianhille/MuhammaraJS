@@ -660,7 +660,7 @@ export interface Recipe {
   pauseContext(): this;
   resumeContext(): this;
   setPageBox(
-    box: PDFPageBoxType,
+    box: PDFPageBoxType | PageBox,
     left: number,
     bottom: number,
     right: number,

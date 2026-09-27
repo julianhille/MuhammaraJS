@@ -147,4 +147,39 @@ describe("Recipe create", function () {
     writeOutput("create-rotate-edited-page", pdf);
     assert.equal(new Recipe(pdf).pageInfo(1).rotate, 0);
   });
+
+  it("validates rotate() and setPageBox() arguments", async function () {
+    var { createMuhammaraWasm, PageBox } = await import("../../index.js");
+    var muhammara = await createMuhammaraWasm();
+    var recipe = new Recipe();
+    assert.throws(() => recipe.rotate(90), {
+      name: "TypeError",
+      message: "rotate requires an active page",
+    });
+    recipe.createPage("A4");
+    assert.throws(() => recipe.rotate(45), {
+      name: "RangeError",
+      message: "Rotation must be a multiple of 90 degrees",
+    });
+    assert.throws(() => recipe.rotate(90n), {
+      name: "TypeError",
+      message: "Rotation is not set to a number",
+    });
+    assert.throws(
+      () => recipe.setPageBox(muhammara.ePDFPageBoxCropBox, 0, 0, 10n, 10),
+      { name: "TypeError", message: "setPageBox coordinates must be numbers" },
+    );
+    var pdf = recipe
+      .rotate(180)
+      .setPageBox(PageBox.CROP, 10, 20, 300, 400)
+      .endPage()
+      .endPDF();
+    writeOutput("create-rotate-validation", pdf);
+    var reader = muhammara.createReader(pdf);
+    assert.equal(
+      reader.parsePageDictionary(0).queryObject("Rotate").value,
+      180,
+    );
+    reader.end();
+  });
 });

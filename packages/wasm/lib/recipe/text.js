@@ -693,6 +693,8 @@ export function createTextMethods({ drawText, measure, module }) {
      * @throws {Error} If the requested font is not registered or cannot be loaded.
      */
     textDimensions(value, options = {}) {
+      // null options act like omitted options.
+      if (options === null) options = {};
       return dimensions(this, value, {
         ...options,
         fontSize: resolveFontSize(options),
@@ -842,6 +844,8 @@ export function createTextMethods({ drawText, measure, module }) {
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
      */
     text(value = "", x, y, options = {}) {
+      // null options act like omitted options.
+      if (options === null) options = {};
       if (typeof x === "object" || x === undefined) {
         options = x || {};
         x = this._textCursor.x || this._margin.left;

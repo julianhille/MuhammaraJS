@@ -354,6 +354,8 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
  * @throws {Error} If the font file cannot be loaded.
  */
 exports.textDimensions = function textDimensions(text, options = {}) {
+  // null options act like omitted options.
+  if (options === null) options = {};
   const font = this._getFont(options);
   let dimensions = {};
   let charSpaces = 0;

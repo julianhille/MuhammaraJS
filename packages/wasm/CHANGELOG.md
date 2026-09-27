@@ -197,6 +197,17 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   from Recipe `rotate()` on a page opened with `editPage()`, as native does,
   instead of an opaque `_muhammara_wasm_recipe_set_page_rotation` failure
   [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
+- Fix Recipe edge cases found in fuzzing, matching native: `removeText()` no
+  longer writes `undefined` for a malformed `"` operator with fewer than three
+  operands; `rotate()` throws `rotate requires an active page` without an
+  active page and `RangeError: Rotation must be a multiple of 90 degrees`
+  instead of an opaque export failure; `setPageBox()` accepts `PageBox` names
+  such as `PageBox.CROP`; a BigInt coordinate in `setPageBox()` throws a
+  `TypeError`; `null` options act like omitted options in `circle()`,
+  `ellipse()`, `arc()`, `rectangle()`, `text()`, `textDimensions()`,
+  `lineStyle()`, `polygon()`, and `line()`; and `deletePage()` reports
+  malformed page trees and PageLabels with its own errors instead of internal
+  `TypeError`s [#829](https://github.com/julianhille/MuhammaraJS/issues/829)
 - Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
   was ignored, and to that text only: on new pages it also became the
   Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are

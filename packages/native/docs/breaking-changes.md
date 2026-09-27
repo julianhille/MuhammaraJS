@@ -27,6 +27,17 @@ This page collects the compatibility changes formerly maintained in the README.
   later coordinate handling disagreed with the written page. Rotate only pages
   you create; an edited page keeps its source rotation
   [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
+- Recipe `register()` throws
+  `Found conflict in Recipe prototypes. <name> already exists.` for a plugin
+  named like a method new in v7: `deletePage`, `getCurrentPageInfo`,
+  `lineStyle`, `link`, `opacity`, `pie`, `removeText`, `replaceText`,
+  `rotate`, `rotateContent`, or `setPageBox`. Rename the plugin; see
+  [Rename Recipe plugins that collide with new methods](getting-started/migrate-from-v6.md#18-rename-recipe-plugins-that-collide-with-new-methods)
+  [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
+- Recipe `rotate()` throws `RangeError: Rotation must be a multiple of 90
+degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
+  value that viewers ignore or round. Pass a multiple of 90
+  [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
 
 - Recipe `annot(x, y, subtype, { width, height })` places its rectangle with
   (x, y) as the top-left corner, like `rectangle()` and `link()`. In 6.x (x, y)

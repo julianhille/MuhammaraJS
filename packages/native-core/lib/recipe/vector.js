@@ -35,6 +35,8 @@ const muhammara = require("../muhammara");
  * @throws {TypeError} If no page is active.
  */
 exports.circle = function circle(x, y, radius, options = {}) {
+  // null options act like omitted options.
+  if (options === null) options = {};
   [x, y] = this._centrify(x, y);
   const { nx, ny } = this._calibrateCoordinate(x, y);
   const diameter = radius * 2;
@@ -138,6 +140,8 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * @throws {TypeError} If no page is active.
  */
 exports.rectangle = function rectangle(x, y, width, height, options = {}) {
+  // null options act like omitted options.
+  if (options === null) options = {};
   const { nx, ny } = options.useGivenCoords
     ? { nx: x, ny: y }
     : this._calibrateCoordinate(x, y, 0, -height);
@@ -363,6 +367,8 @@ function drawRoundedRectangle(
  * @throws {TypeError} If no page is active.
  */
 exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
+  // null options act like omitted options.
+  if (options === null) options = {};
   [cx, cy] = this._centrify(cx, cy);
   const { nx, ny } = this._calibrateCoordinate(cx, cy);
 
@@ -550,6 +556,8 @@ exports.arc = function arc(
   endAngle = 360,
   options = {},
 ) {
+  // null options act like omitted options.
+  if (options === null) options = {};
   [x, y] = this._centrify(x, y);
   const { nx, ny } = this._calibrateCoordinate(x, y);
   const diameter = radius * 2;
@@ -667,6 +675,8 @@ exports.pie = function pie(x, y, radius, startAngle, endAngle, options = {}) {
  * @throws {TypeError} If no page is active.
  */
 exports.lineStyle = function lineStyle(options = {}) {
+  // null options act like omitted options.
+  if (options === null) options = {};
   this.current = this.current || {};
   this.current.lineStyle = this.current.lineStyle || {};
 

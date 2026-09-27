@@ -68,7 +68,10 @@ function removeTextShowingOperators(source) {
     } else if (operator === PdfOperator.NEXT_LINE_SHOW_TEXT) {
       result += " T*";
     } else if (operator === PdfOperator.SPACING_NEXT_LINE_SHOW_TEXT) {
-      result += " " + operands[0] + " Tw " + operands[1] + " Tc T*";
+      // `aw ac string "`; a malformed one is skipped by viewers, so drop it.
+      if (operands.length === 3)
+        result += " " + operands[0] + " Tw " + operands[1] + " Tc T*";
+      else result += " ";
     } else {
       result += source.slice(operandStart, operation.end);
     }

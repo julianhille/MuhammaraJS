@@ -212,6 +212,7 @@ recipe
 var pageBox: muhammara.PDFPageBoxType = muhammara.ePDFPageBoxCropBox;
 recipe.setPageBox(pageBox, 10, 20, 585, 822);
 recipe.setPageBox(muhammara.ePDFPageBoxMediaBox, 0, 0, 595, 842);
+recipe.setPageBox(muhammara.PageBox.CROP, 10, 20, 585, 822);
 void pageBox;
 recipe.replaceText("Before", "After", 1);
 // Text is matched and written through the page font, so any Unicode string works.

@@ -116,6 +116,19 @@ describe("Remove text", function () {
     expect(result.content).to.match(/14 TL\s+T\*\s+2 Tw 1 Tc T\*\s+ET/);
   });
 
+  it('drops a malformed " operator instead of writing undefined', function () {
+    var source = path.join(__dirname, "../output/Remove text quote source.pdf");
+    var output = path.join(__dirname, "../output/Remove text quote output.pdf");
+    writeSource(source, 'BT (one) " 2 (two) " 3 1 (three) " ET');
+
+    new Recipe(source, output).removeText(1).endPDF();
+
+    var content = readPageContent(output).content;
+    expect(content).not.to.include("undefined");
+    expect(content).not.to.include("(two) Tc");
+    expect(content).to.match(/BT\s+3 Tw 1 Tc T\*\s+ET/);
+  });
+
   it("removes text from painted Form XObjects when forms is set", function () {
     var source = path.join(__dirname, "../output/Remove text forms.pdf");
     var edited = path.join(__dirname, "../output/Remove text forms edited.pdf");

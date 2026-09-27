@@ -1199,4 +1199,33 @@ describe("Recipe deletePage", function () {
       muhammara.disposeAssets();
     }
   });
+
+  it("rejects a page-label prefix that is not a string", function () {
+    /**
+     * Replaces one unique span of a fixture with bytes of the same length, so
+     * the xref offsets stay valid.
+     *
+     * @param {Uint8Array} bytes The fixture.
+     * @param {string} from The span to replace.
+     * @param {string} to The replacement, as long as `from`.
+     * @returns {Uint8Array} The changed fixture.
+     */
+    function replaceSpan(bytes, from, to) {
+      var text = new TextDecoder("latin1").decode(bytes);
+      assert.equal(from.length, to.length);
+      assert.equal(text.split(from).length, 2);
+      return Uint8Array.from(text.replace(from, to), (c) => c.charCodeAt(0));
+    }
+    var fixture = nestedNonzeroGenerationPdf();
+    for (var [from, to, message] of [
+      ["/P (B-)", "/P 1234", /valid PageLabels entries/],
+    ]) {
+      var recipe = new Recipe(replaceSpan(fixture, from, to));
+      try {
+        assert.throws(() => recipe.deletePage(1), message);
+      } finally {
+        recipe.dispose();
+      }
+    }
+  });
 });

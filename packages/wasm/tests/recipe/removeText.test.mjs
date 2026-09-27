@@ -138,6 +138,20 @@ describe("Remove text", function () {
     assert.match(result.content, /14 TL\s+T\*\s+2 Tw 1 Tc T\*\s+ET/);
   });
 
+  it('drops a malformed " operator instead of writing undefined', async function () {
+    var source = await writeSource(
+      muhammara,
+      'BT (one) " 2 (two) " 3 1 (three) " ET',
+    );
+    var output = new Recipe(source).removeText(1).endPDF();
+    writeOutput("removeText-malformed-quote", output);
+
+    var content = readPage(muhammara, output).content;
+    assert.ok(!content.includes("undefined"));
+    assert.ok(!content.includes("(two) Tc"));
+    assert.match(content, /BT\s+3 Tw 1 Tc T\*\s+ET/);
+  });
+
   it("removes text from painted Form XObjects when forms is set", async function () {
     var source = await writeSource(muhammara);
     writeOutput("removeText-forms-source", source);
