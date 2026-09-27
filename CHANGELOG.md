@@ -305,6 +305,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `read()`, or `getCurrentPosition()` callback, a log stream, or a writer
   event that the object is still using
   [#820](https://github.com/julianhille/MuhammaraJS/issues/820)
+- Lay out Recipe `text()` without a `textBox` in linear time; every word
+  re-measured the whole line, so 2 000 characters took about 9 seconds and
+  longer text effectively hung the process. Output is unchanged
+  [#824](https://github.com/julianhille/MuhammaraJS/issues/824)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)

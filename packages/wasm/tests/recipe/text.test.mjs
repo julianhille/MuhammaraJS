@@ -66,4 +66,16 @@ describe("Recipe text", function () {
     reader.end();
     assert.equal(textObjects, 1);
   });
+
+  it("lays out a long line without a text box in linear time", async function () {
+    this.timeout(10000);
+    var Recipe = await getRecipe();
+    var pdf = new Recipe()
+      .createPage("A4")
+      .text("word ".repeat(600), 10, 10, { size: 8 })
+      .endPage()
+      .endPDF();
+    writeOutput("text-long-line", pdf);
+    assert.ok(pdf.length > 0);
+  });
 });
