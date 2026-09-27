@@ -12,6 +12,7 @@
  * @typedef {object} ExampleAssets
  * @property {Uint8Array<ArrayBuffer>} [pdf] - PDF bytes to read or edit; examples fall back to a built-in sample.
  * @property {string} [watermark] - Watermark text.
+ * @property {string} [search] - Text to find.
  * @property {Uint8Array<ArrayBuffer>} [font] - TrueType or OpenType font bytes.
  * @property {Uint8Array<ArrayBuffer>} [jpeg] - JPEG bytes.
  * @property {Uint8Array<ArrayBuffer>} [png] - PNG bytes.

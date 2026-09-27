@@ -102,7 +102,21 @@ export var HOW_TO_EXAMPLES = [
     assets: ["pdf", "watermark", "font"],
     expectedPages: 2,
   },
+  {
+    id: "find-text",
+    label: "Find text",
+    title: "Find and highlight text in a PDF",
+    description:
+      "Search the text operations of your PDF, or of a built-in sample, and add a Highlight annotation over every match.",
+    assets: ["pdf", "search"],
+    expectedPages: 2,
+  },
 ];
+
+var MAX_MATCHES = 500;
+// Share of the font size above and below the baseline that a highlight covers.
+var HIGHLIGHT_ASCENT = 0.8;
+var HIGHLIGHT_DESCENT = 0.25;
 
 /**
  * Returns a required asset or fails the example.
@@ -859,6 +873,149 @@ async function watermarkExample(assets) {
   }
 }
 
+/**
+ * One occurrence of the searched text inside a text-showing operation.
+ * @typedef {object} TextMatch
+ * @property {number} pageNumber - One-based page number.
+ * @property {number[]} mediaBox - The page's MediaBox.
+ * @property {string} prefix - Operation text before the match.
+ * @property {number} x - Operation origin, in PDF page coordinates.
+ * @property {number} baseline - Operation baseline, in PDF page coordinates.
+ * @property {number} sizeX - Horizontal font size after the text matrix.
+ * @property {number} sizeY - Vertical font size after the text matrix.
+ */
+
+/**
+ * Lists every occurrence of a string in the text operations of a PDF.
+ * Rotated pages and rotated, skewed, or mirrored text are skipped, because
+ * their highlights would need more than a translated, scaled rectangle.
+ * @param {Awaited<ReturnType<typeof createMuhammaraWasm>>} muhammara - Loaded Wasm API.
+ * @param {Uint8Array<ArrayBuffer>} bytes - PDF bytes.
+ * @param {string} query - Text to find.
+ * @returns {{matches: TextMatch[], skippedRotatedPages: number[], skippedTransformedMatches: number}} The matches, capped at `MAX_MATCHES`, and what was skipped.
+ */
+function findText(muhammara, bytes, query) {
+  var reader = muhammara.createReader(bytes);
+  var result = {
+    matches: [],
+    skippedRotatedPages: [],
+    skippedTransformedMatches: 0,
+  };
+  try {
+    for (var index = 0; index < reader.getPagesCount(); index++) {
+      var geometry = reader.getPageInfo(index);
+      if (geometry.rotate % 360 !== 0) {
+        result.skippedRotatedPages.push(index + 1);
+        continue;
+      }
+      for (var element of reader.extractPageText(index)) {
+        var [scaleX, skewY, skewX, scaleY, x, baseline] = element.textMatrix;
+        var offset = element.content.indexOf(query);
+        for (
+          ;
+          offset !== -1;
+          offset = element.content.indexOf(query, offset + 1)
+        ) {
+          if (skewY || skewX || scaleX <= 0 || scaleY <= 0) {
+            result.skippedTransformedMatches++;
+            continue;
+          }
+          if (result.matches.length === MAX_MATCHES) return result;
+          result.matches.push({
+            pageNumber: index + 1,
+            mediaBox: geometry.mediaBox,
+            prefix: element.content.slice(0, offset),
+            x,
+            baseline,
+            sizeX: element.fontSize * scaleX,
+            sizeY: element.fontSize * scaleY,
+          });
+        }
+      }
+    }
+    return result;
+  } finally {
+    reader.end();
+  }
+}
+
+/**
+ * Builds the browser example that finds text and highlights every match.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
+async function findTextExample(assets) {
+  var source = await sourcePdf(assets);
+  var query = assets.search?.trim() || "Draft";
+  var muhammara = await createMuhammaraWasm();
+  var found;
+  try {
+    found = findText(muhammara, source.bytes, query);
+  } finally {
+    muhammara.disposeAssets();
+  }
+  var Recipe = await createRecipe();
+  var recipe = new Recipe(source.bytes, { compress: false });
+  try {
+    var editing;
+    for (var match of found.matches) {
+      if (match.pageNumber !== editing) {
+        if (editing) recipe.endPage();
+        recipe.editPage(match.pageNumber);
+        editing = match.pageNumber;
+      }
+      // extractPageText() reports no glyph widths, so measure with Recipe's
+      // bundled font: exact for the sample, an estimate for other fonts.
+      // textDimensions() returns glyph bounds, which drop trailing spaces, so
+      // the prefix advance is the difference of the two right edges.
+      var end = recipe.textDimensions(query, { size: match.sizeX }).xMax;
+      var start =
+        recipe.textDimensions(match.prefix + query, { size: match.sizeX })
+          .xMax - end;
+      // annot() places the rectangle's bottom-left corner at (x, y).
+      recipe.annot(
+        match.x - match.mediaBox[0] + start,
+        match.mediaBox[3] - match.baseline + HIGHLIGHT_DESCENT * match.sizeY,
+        Recipe.AnnotSubtype.HIGHLIGHT,
+        {
+          width: end,
+          height: (HIGHLIGHT_ASCENT + HIGHLIGHT_DESCENT) * match.sizeY,
+          color: "#fde047",
+          opacity: 0.5,
+          title: "Find text",
+          text: `Matched "${query}"`,
+        },
+      );
+    }
+    if (editing) recipe.endPage();
+    var bytes = recipe.endPDF();
+    return {
+      bytes,
+      filename: "muhammara-find-text.pdf",
+      summary: await summarize(bytes, {
+        howTo: "Find and highlight text",
+        source: source.origin,
+        query,
+        matches: found.matches.length,
+        limitReached: found.matches.length === MAX_MATCHES,
+        highlightedPages: [
+          ...new Set(found.matches.map((item) => item.pageNumber)),
+        ],
+        firstMatches: found.matches.slice(0, 10).map((item) => ({
+          page: item.pageNumber,
+          x: item.x,
+          baseline: item.baseline,
+        })),
+        skippedRotatedPages: found.skippedRotatedPages,
+        skippedTransformedMatches: found.skippedTransformedMatches,
+      }),
+    };
+  } finally {
+    recipe.dispose();
+    Recipe.disposeAssets();
+  }
+}
+
 var runners = {
   annotations: annotationsExample,
   links: linksExample,
@@ -872,6 +1029,7 @@ var runners = {
   passwords: passwordsExample,
   "replace-text": replaceTextExample,
   watermark: watermarkExample,
+  "find-text": findTextExample,
 };
 
 /**

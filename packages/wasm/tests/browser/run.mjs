@@ -157,6 +157,7 @@ try {
       "passwords",
       "replace-text",
       "watermark",
+      "find-text",
     ];
     if (tabIds.join(",") !== expectedTabIds.join(",")) {
       throw new Error(`Unexpected example tabs: ${tabIds.join(", ")}`);
@@ -208,6 +209,7 @@ try {
     await runExample("delete-pages", "page");
     await runExample("delete-pages", "worker");
     await runExample("watermark", "worker");
+    await runExample("find-text", "page");
     return {
       tabs: tabs.length,
       selected: "delete-pages",

@@ -6,8 +6,8 @@ paths, Node streams, and CommonJS with `Uint8Array`, `Blob`, `File`, and ESM.
 
 The [interactive browser examples](../browser-examples.md)
 run annotations, links, HTML lists, page boxes, rotated pages, page deletion,
-image transformations, tables, password changes, and watermarks on the page or
-in a module Worker.
+image transformations, tables, password changes, watermarks, and text search
+on the page or in a module Worker.
 
 To serve the WebAssembly binary from a CDN or load it from bytes you retrieved
 yourself, see [Load the WebAssembly Binary](load-the-wasm-binary.md).

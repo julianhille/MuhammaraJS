@@ -47,6 +47,7 @@ describe("Browser how-to examples", function () {
         "passwords",
         "replace-text",
         "watermark",
+        "find-text",
       ],
     );
   });
@@ -149,5 +150,50 @@ describe("Browser how-to examples", function () {
       new TextDecoder("latin1").decode(result.bytes),
       /\(CONFIDENTIAL\) Tj/,
     );
+  });
+
+  it("highlights every match of the default query in the built-in sample", async function () {
+    var result = await runHowToExample("find-text");
+    writeOutput("BrowserExamples-find-text-sample", result.bytes);
+    assert.equal(result.summary.source, "Built-in sample");
+    assert.equal(result.summary.query, "Draft");
+    assert.equal(result.summary.matches, 4);
+    assert.deepEqual(result.summary.highlightedPages, [1, 2]);
+    var content = new TextDecoder("latin1").decode(result.bytes);
+    var rectangles = Array.from(
+      content.matchAll(/\/Subtype \/Highlight[^]*?\/Rect \[([^\]]+)\]/g),
+      (match) => match[1].trim().split(/\s+/).map(Number),
+    );
+    assert.equal(rectangles.length, 4);
+    // "Draft for review" starts the line: the first highlight starts at the
+    // text origin and spans the text's baseline.
+    var first = result.summary.firstMatches[0];
+    assert.equal(rectangles[0][0], first.x);
+    assert.ok(rectangles[0][1] < first.baseline);
+    assert.ok(rectangles[0][3] > first.baseline);
+    // "This Draft ..." offsets the second highlight by the advance of "This ".
+    assert.ok(rectangles[1][0] > result.summary.firstMatches[1].x + 20);
+  });
+
+  it("reports skipped rotated pages and no matches without failing", async function () {
+    var pdf = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/recipe/test-P-90.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+    var rotated = await runHowToExample("find-text", {
+      assets: { pdf, search: "Rotate" },
+    });
+    assert.equal(rotated.summary.matches, 0);
+    assert.deepEqual(rotated.summary.skippedRotatedPages, [1]);
+    var missing = await runHowToExample("find-text", {
+      assets: { search: "  not in the sample  " },
+    });
+    assert.equal(missing.summary.query, "not in the sample");
+    assert.equal(missing.summary.matches, 0);
+    assert.equal(missing.summary.pages, 2);
   });
 });
