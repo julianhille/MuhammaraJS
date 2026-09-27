@@ -959,6 +959,10 @@ napi_value PDFWriterDriver::CreateFormXObjectsFromPDF(const CallbackArgs &a) {
 napi_value
 PDFWriterDriver::CreatePDFCopyingContextForModifiedFile(const CallbackArgs &a) {
   auto *d = Driver(a);
+  // Without a modified file the copying context reads an unparsed parser.
+  if (!d->IsModifyingPDF())
+    return ThrowError(a.Env(), "createPDFCopyingContextForModifiedFile is only "
+                               "available when modifying a PDF");
   auto *c = d->writer_.CreatePDFCopyingContextForModifiedFile();
   if (!c)
     return ThrowTypeError(
@@ -983,6 +987,9 @@ napi_value PDFWriterDriver::CreatePDFDate(const CallbackArgs &a) {
 }
 PDFWriter *PDFWriterDriver::GetWriter() { return &writer_; }
 DriverLifecycle PDFWriterDriver::GetLifecycle() { return lifecycle_; }
+bool PDFWriterDriver::IsModifyingPDF() {
+  return writer_.GetModifiedFileParser().GetTrailer() != nullptr;
+}
 void PDFWriterDriver::SetLogStream(napi_env e, napi_value stream,
                                    LogConfiguration &c) {
   ReleaseLogProxy();

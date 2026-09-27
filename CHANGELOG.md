@@ -288,6 +288,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   modified-file parsers, event dictionaries after the event, parsed pages and
   stream readers after `reader.end()`, and file streams after `closeFile()`
   [#817](https://github.com/julianhille/MuhammaraJS/issues/817)
+- Throw instead of crashing when `replaceObject()`,
+  `createPDFCopyingContextForModifiedFile()`, or `new PDFPageModifier()` is used
+  with a writer that does not modify a PDF, and when Recipe `editPage()` is
+  called on a new document
+  [#819](https://github.com/julianhille/MuhammaraJS/issues/819)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)

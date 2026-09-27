@@ -58,6 +58,8 @@ public:
   // Ends when the writer ends; objects that use the writer's state depend on
   // it.
   DriverLifecycle GetLifecycle();
+  // Only a writer from createWriterToModify() has a modified-file parser.
+  bool IsModifyingPDF();
   void SetLogStream(napi_env env, napi_value stream, LogConfiguration &config);
   ConstructorsHolder *holder;
 

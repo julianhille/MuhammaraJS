@@ -148,4 +148,15 @@ describe("Recipe finalization with an active page", () => {
     // The guard runs before finalization, so the document still recovers.
     expect(() => recipe.endPage().endPDF()).to.not.throw();
   });
+
+  it("rejects editPage on a new document", () => {
+    const recipe = new Recipe(
+      "new",
+      path.join(__dirname, "../output/active-page-edit-new.pdf"),
+    );
+    expect(() => recipe.editPage(1)).to.throw(
+      "editPage requires a Recipe constructed from an existing PDF",
+    );
+    recipe.createPage(600, 800).endPage().endPDF();
+  });
 });

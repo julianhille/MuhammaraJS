@@ -206,4 +206,15 @@ describe("Recipe finalization with an active page", function () {
     writeOutput("active-page-finalization-deletion-recovered", bytes);
     assert.ok(bytes instanceof Uint8Array);
   });
+
+  it("rejects editPage on a new document", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe();
+    assert.throws(
+      () => recipe.editPage(1),
+      /^Error: editPage requires a Recipe constructed from PDF bytes$/,
+    );
+    recipe.createPage(600, 800).endPage();
+    assert.ok(recipe.endPDF().length > 0);
+  });
 });

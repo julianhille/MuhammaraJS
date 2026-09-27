@@ -46,4 +46,12 @@ describe("ModifyExistingPageContent", function () {
     assert.match(bytes, /10 10 5 5 re/);
     assert.match(bytes, /30 30 5 5 re/);
   });
+
+  it("rejects a page modifier on a writer that does not modify a PDF", function () {
+    var pdfWriter = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    assert.throws(function () {
+      new muhammara.PDFPageModifier(pdfWriter, 0, true);
+    }, /^Error: PDFPageModifier is only available when modifying a PDF$/);
+    pdfWriter.end();
+  });
 });
