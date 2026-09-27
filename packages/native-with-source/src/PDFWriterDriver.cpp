@@ -50,7 +50,7 @@ void Password(napi_env e, napi_value o, PDFParsingOptions &p) {
 PDFWriterDriver::PDFWriterDriver()
     : holder(nullptr), startedWithStream_(false), catalogUpdateRequired_(false),
       started_(false), formAbandoned_(false),
-      lifecycle_(new DriverLifecycleState()),
+      lifecycle_(new DriverLifecycleState("PDF writer")),
       openForms_(std::make_shared<OpenFormXObjects>()), writeProxy_(nullptr),
       readProxy_(nullptr), logProxy_(nullptr), env_(nullptr) {}
 PDFWriterDriver::~PDFWriterDriver() {
@@ -219,6 +219,7 @@ napi_value PDFWriterDriver::WritePageAndReturnID(const CallbackArgs &a) {
       d->writer_.EndPageContentContext(p->ContentContext) != eSuccess)
     return ThrowTypeError(a.Env(), "Unable to finalize page context");
   p->ContentContext = nullptr;
+  p->EndContentLifecycle();
   auto r = d->writer_.WritePageAndReturnPageID(p->GetPage());
   return r.first == eSuccess ? Number(a.Env(), r.second)
                              : ThrowTypeError(a.Env(), "Unable to write page");
@@ -238,7 +239,11 @@ napi_value PDFWriterDriver::StartPageContentContext(const CallbackArgs &a) {
     return nullptr;
   c->ContentContext = d->writer_.StartPageContentContext(p->GetPage());
   c->SetResourcesDictionary(&p->GetPage()->GetResourcesDictionary());
+  if (p->ContentContext != c->ContentContext)
+    p->RenewContentLifecycle();
   p->ContentContext = c->ContentContext;
+  c->AddOwner(d->lifecycle_);
+  c->AddOwner(p->ContentLifecycle());
   return v;
 }
 napi_value PDFWriterDriver::PausePageContentContext(const CallbackArgs &a) {
@@ -282,6 +287,7 @@ napi_value PDFWriterDriver::CreateFormXObject(const CallbackArgs &a) {
     d->openForms_->forms.insert(f->FormXObject);
     f->openForms = d->openForms_;
   }
+  f->AddOwner(d->lifecycle_);
   return v;
 }
 napi_value PDFWriterDriver::EndFormXObject(const CallbackArgs &a) {
@@ -340,6 +346,7 @@ static napi_value FormImage(const CallbackArgs &a, const char *kind) {
     return nullptr;
   }
   form->FormXObject = f;
+  form->AddOwner(d->GetLifecycle());
   return v;
 }
 napi_value PDFWriterDriver::CreateformXObjectFromJPG(const CallbackArgs &a) {
@@ -420,6 +427,7 @@ napi_value PDFWriterDriver::GetFontForFile(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &font))
     return nullptr;
   font->UsedFont = f;
+  font->AddOwner(d->lifecycle_);
   return v;
 }
 napi_value PDFWriterDriver::AttachURLLinktoCurrentPage(const CallbackArgs &a) {
@@ -608,6 +616,7 @@ napi_value PDFWriterDriver::CreateFormXObjectFromTIFF(const CallbackArgs &a) {
     return nullptr;
   }
   form->FormXObject = f;
+  form->AddOwner(d->lifecycle_);
   return v;
 }
 napi_value PDFWriterDriver::CreateImageXObjectFromJPG(const CallbackArgs &a) {
@@ -641,6 +650,7 @@ napi_value PDFWriterDriver::CreateImageXObjectFromJPG(const CallbackArgs &a) {
     return nullptr;
   }
   image->ImageXObject = x;
+  image->AddOwner(d->lifecycle_);
   return v;
 }
 napi_value PDFWriterDriver::GetObjectsContext(const CallbackArgs &a) {
@@ -650,6 +660,7 @@ napi_value PDFWriterDriver::GetObjectsContext(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &context))
     return nullptr;
   context->ObjectsContextInstance = &d->writer_.GetObjectsContext();
+  context->AddOwner(d->lifecycle_);
   return v;
 }
 napi_value PDFWriterDriver::GetDocumentContext(const CallbackArgs &a) {
@@ -659,6 +670,7 @@ napi_value PDFWriterDriver::GetDocumentContext(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &context))
     return nullptr;
   context->DocumentContextInstance = &d->writer_.GetDocumentContext();
+  context->AddOwner(d->lifecycle_);
   return v;
 }
 bool PDFWriterDriver::ObjectToPageRange(napi_env e, napi_value o,
@@ -959,6 +971,7 @@ napi_value PDFWriterDriver::CreatePDFDate(const CallbackArgs &a) {
   return Driver(a)->holder->GetNewPDFDate(Values(a), true);
 }
 PDFWriter *PDFWriterDriver::GetWriter() { return &writer_; }
+DriverLifecycle PDFWriterDriver::GetLifecycle() { return lifecycle_; }
 void PDFWriterDriver::SetLogStream(napi_env e, napi_value stream,
                                    LogConfiguration &c) {
   ReleaseLogProxy();
@@ -1045,7 +1058,7 @@ napi_value PDFWriterDriver::GetModifiedFileParser(const CallbackArgs &a) {
   PDFReaderDriver *reader = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &reader))
     return nullptr;
-  reader->SetFromOwnedParser(p);
+  reader->SetFromOwnedParser(p, d->lifecycle_);
   return v;
 }
 napi_value PDFWriterDriver::GetModifiedInputFile(const CallbackArgs &a) {
@@ -1060,6 +1073,7 @@ napi_value PDFWriterDriver::GetModifiedInputFile(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &file))
     return nullptr;
   file->SetFromOwnedFile(f);
+  file->AddOwner(d->lifecycle_);
   return v;
 }
 napi_value PDFWriterDriver::GetOutputFile(const CallbackArgs &a) {
@@ -1074,6 +1088,7 @@ napi_value PDFWriterDriver::GetOutputFile(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &file))
     return nullptr;
   file->SetFromOwnedFile(f);
+  file->AddOwner(d->lifecycle_);
   return v;
 }
 napi_value PDFWriterDriver::RegisterAnnotationReferenceForNextPageWrite(
@@ -1091,15 +1106,28 @@ napi_value PDFWriterDriver::RequireCatalogUpdate(const CallbackArgs &a) {
   Driver(a)->catalogUpdateRequired_ = true;
   return Undefined(a.Env());
 }
+// The dictionary is released after the event, so the wrapper is usable only
+// while the event scope is active.
 napi_value WrapDictionary(ConstructorsHolder *h, napi_env e,
-                          DictionaryContext *d) {
+                          DictionaryContext *d, const DriverLifecycle &scope) {
   napi_value v = h->GetNewDictionaryContext();
   DictionaryContextDriver *driver = nullptr;
   if (!ObjectWrap::UnwrapNew(e, v, &driver))
     return nullptr;
   driver->DictionaryContextInstance = d;
+  driver->AddOwner(scope);
   return v;
 }
+// Ends the wrappers created for one writer event once the event returns.
+class EventScope {
+public:
+  explicit EventScope(const DriverLifecycle &owner)
+      : lifecycle(std::make_shared<DriverLifecycleState>("PDF writer event")) {
+    lifecycle->AddOwner(owner);
+  }
+  ~EventScope() { lifecycle->End(); }
+  DriverLifecycle lifecycle;
+};
 EStatusCode PDFWriterDriver::OnPageWrite(PDFPage *p, DictionaryContext *d,
                                          ObjectsContext *, DocumentContext *) {
   napi_value o = Object(env_);
@@ -1113,7 +1141,8 @@ EStatusCode PDFWriterDriver::OnPageWrite(PDFPage *p, DictionaryContext *d,
     delete pd->mPDFPage;
   pd->mPDFPage = p;
   pd->mOwnsPage = false;
-  napi_value dictionary = WrapDictionary(holder, env_, d);
+  EventScope scope(lifecycle_);
+  napi_value dictionary = WrapDictionary(holder, env_, d, scope.lifecycle);
   if (!dictionary || !Set(env_, o, "page", pv) ||
       !Set(env_, o, "pageDictionaryContext", dictionary))
     return eFailure;
@@ -1131,7 +1160,8 @@ EStatusCode PDFWriterDriver::OnResourcesWrite(ResourcesDictionary *r,
   if (!ObjectWrap::UnwrapNew(env_, rv, &resources))
     return eFailure;
   resources->ResourcesDictionaryInstance = r;
-  napi_value dictionary = WrapDictionary(holder, env_, d);
+  EventScope scope(lifecycle_);
+  napi_value dictionary = WrapDictionary(holder, env_, d, scope.lifecycle);
   if (!dictionary || !Set(env_, o, "resources", rv) ||
       !Set(env_, o, "pageResourcesDictionaryContext", dictionary))
     return eFailure;
@@ -1144,7 +1174,8 @@ EStatusCode PDFWriterDriver::OnResourceDictionaryWrite(DictionaryContext *d,
   napi_value o = Object(env_);
   if (!o)
     return eFailure;
-  napi_value dictionary = WrapDictionary(holder, env_, d);
+  EventScope scope(lifecycle_);
+  napi_value dictionary = WrapDictionary(holder, env_, d, scope.lifecycle);
   napi_value name = String(env_, n);
   if (!dictionary || !name ||
       !Set(env_, o, "resourceDictionaryName", name) ||
@@ -1159,7 +1190,8 @@ EStatusCode PDFWriterDriver::OnCatalogWrite(CatalogInformation *,
   napi_value o = Object(env_);
   if (!o)
     return eFailure;
-  napi_value dictionary = WrapDictionary(holder, env_, d);
+  EventScope scope(lifecycle_);
+  napi_value dictionary = WrapDictionary(holder, env_, d, scope.lifecycle);
   if (!dictionary || !Set(env_, o, "catalogDictionaryContext", dictionary))
     return eFailure;
   return TriggerEvent("OnCatalogWrite", o);

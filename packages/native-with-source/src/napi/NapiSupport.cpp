@@ -16,6 +16,7 @@ struct ModuleState::CallbackBinding {
   std::vector<napi_property_descriptor> instanceProperties;
   bool tagsThis;
   bool checksThis;
+  std::string className;
 };
 
 bool Check(napi_env env, napi_status status) {
@@ -498,6 +499,24 @@ bool ObjectWrap::Wrap(napi_env env, napi_value object) {
   return Check(env, napi_wrap(env, object, this, Finalize, nullptr, nullptr));
 }
 
+void ObjectWrap::AddOwner(const DriverLifecycle& owner) {
+  if (!owner) {
+    return;
+  }
+  Lifecycle()->AddOwner(owner);
+}
+
+DriverLifecycle ObjectWrap::Lifecycle() {
+  if (!lifecycle_) {
+    lifecycle_ = std::make_shared<DriverLifecycleState>();
+  }
+  return lifecycle_;
+}
+
+const DriverLifecycleState* ObjectWrap::EndedOwner() const {
+  return lifecycle_ ? lifecycle_->EndedState() : nullptr;
+}
+
 void ObjectWrap::Finalize(napi_env, void* data, void*) {
   delete static_cast<ObjectWrap*>(data);
 }
@@ -561,7 +580,7 @@ ClassBuilder& ClassBuilder::Method(const char* name, Callback callback,
                          static_cast<napi_property_attributes>(
                              napi_writable | napi_enumerable |
                              napi_configurable),
-                         state_.AddMethod(callback, data, typeTag_)});
+                         state_.AddMethod(callback, data, typeTag_, name_)});
   return *this;
 }
 
@@ -611,7 +630,7 @@ napi_env ModuleState::Env() const { return env_; }
 
 void* ModuleState::AddCallback(Callback callback, void* data) {
   callbacks_.push_back(std::make_unique<CallbackBinding>(
-      CallbackBinding{callback, nullptr, data, {}, {}, false, false}));
+      CallbackBinding{callback, nullptr, data, {}, {}, false, false, {}}));
   return callbacks_.back().get();
 }
 
@@ -621,27 +640,28 @@ void* ModuleState::AddConstructor(Callback callback, void* data,
                                       instanceProperties) {
   callbacks_.push_back(std::make_unique<CallbackBinding>(
       CallbackBinding{callback, nullptr, data, typeTag, instanceProperties,
-                      true, false}));
+                      true, false, {}}));
   return callbacks_.back().get();
 }
 
 void* ModuleState::AddMethod(Callback callback, void* data,
-                             const napi_type_tag& typeTag) {
-  callbacks_.push_back(std::make_unique<CallbackBinding>(
-      CallbackBinding{callback, nullptr, data, typeTag, {}, false, true}));
+                             const napi_type_tag& typeTag,
+                             const std::string& className) {
+  callbacks_.push_back(std::make_unique<CallbackBinding>(CallbackBinding{
+      callback, nullptr, data, typeTag, {}, false, true, className}));
   return callbacks_.back().get();
 }
 
 void* ModuleState::AddAccessor(Callback getter, Callback setter, void* data) {
   callbacks_.push_back(std::make_unique<CallbackBinding>(
-      CallbackBinding{getter, setter, data, {}, {}, false, false}));
+      CallbackBinding{getter, setter, data, {}, {}, false, false, {}}));
   return callbacks_.back().get();
 }
 
 void* ModuleState::AddAccessor(Callback getter, Callback setter, void* data,
                                const napi_type_tag& typeTag) {
   callbacks_.push_back(std::make_unique<CallbackBinding>(
-      CallbackBinding{getter, setter, data, typeTag, {}, false, true}));
+      CallbackBinding{getter, setter, data, typeTag, {}, false, true, {}}));
   return callbacks_.back().get();
 }
 
@@ -704,6 +724,17 @@ napi_value Dispatch(napi_env env, napi_callback_info info) {
     }
     if (!matches) {
       return ThrowTypeError(env, "Invalid native method receiver");
+    }
+    void* wrapped = nullptr;
+    const DriverLifecycleState* ended =
+        napi_unwrap(env, args.This(), &wrapped) == napi_ok && wrapped
+            ? static_cast<ObjectWrap*>(wrapped)->EndedOwner()
+            : nullptr;
+    if (ended) {
+      std::string message =
+          (ended->GetName().empty() ? binding->className : ended->GetName()) +
+          " has ended";
+      return ThrowError(env, message.c_str());
     }
   }
   napi_value result = binding->callback(args);

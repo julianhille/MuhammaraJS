@@ -23,7 +23,7 @@ bool Active(const CallbackArgs &a, const char *msg) {
 } // namespace
 DocumentCopyingContextDriver::DocumentCopyingContextDriver()
     : CopyingContext(nullptr), ReadStreamProxy(nullptr), holder(nullptr),
-      mLifecycle(new DriverLifecycleState()) {}
+      mLifecycle(new DriverLifecycleState("PDF copying context")) {}
 DocumentCopyingContextDriver::~DocumentCopyingContextDriver() {
   mLifecycle->End();
   delete CopyingContext;
@@ -337,5 +337,6 @@ DocumentCopyingContextDriver::GetSourceDocumentStream(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &reader))
     return nullptr;
   reader->SetStream(d->CopyingContext->GetSourceDocumentStream(), false);
+  reader->AddOwner(d->GetLifecycle());
   return v;
 }

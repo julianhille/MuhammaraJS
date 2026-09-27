@@ -55,6 +55,8 @@ public:
   // Detaches an open form's stream from the output from a finalizer, which
   // leaves the PDF incomplete, so end() fails.
   void AbandonFormXObject(PDFFormXObject *);
+  // Ends when the writer ends; objects that use the writer's state depend on it.
+  DriverLifecycle GetLifecycle();
   void SetLogStream(napi_env env, napi_value stream, LogConfiguration &config);
   ConstructorsHolder *holder;
 

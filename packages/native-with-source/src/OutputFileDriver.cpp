@@ -9,6 +9,8 @@ using namespace muhammara::napi;
 OutputFileDriver::OutputFileDriver()
     : holder(nullptr), outputFile_(new OutputFile()), owns_(true) {}
 OutputFileDriver::~OutputFileDriver() {
+  if (streamLifecycle_)
+    streamLifecycle_->End();
   if (owns_)
     delete outputFile_;
 }
@@ -17,13 +19,21 @@ PDFHummus::EStatusCode OutputFileDriver::OpenFile(const std::string &path,
   if (!outputFile_)
     outputFile_ = new OutputFile();
   owns_ = true;
+  RenewStreamLifecycle();
   return outputFile_->OpenFile(path, append);
+}
+void OutputFileDriver::RenewStreamLifecycle() {
+  if (streamLifecycle_)
+    streamLifecycle_->End();
+  streamLifecycle_ =
+      std::make_shared<DriverLifecycleState>("Output file stream");
 }
 void OutputFileDriver::SetFromOwnedFile(OutputFile *file) {
   if (outputFile_ && owns_)
     delete outputFile_;
   owns_ = false;
   outputFile_ = file;
+  RenewStreamLifecycle();
 }
 bool OutputFileDriver::Init(ModuleState &state, napi_value exports) {
   ClassBuilder builder(state, "OutputFile", New);
@@ -74,6 +84,8 @@ napi_value OutputFileDriver::CloseFile(const CallbackArgs &args) {
         args.Env(), "no driver created...please create one through Hummus");
   if (driver->outputFile_)
     driver->outputFile_->CloseFile();
+  if (driver->streamLifecycle_)
+    driver->streamLifecycle_->End();
   return Undefined(args.Env());
 }
 napi_value OutputFileDriver::GetFilePath(const CallbackArgs &args) {
@@ -97,5 +109,7 @@ napi_value OutputFileDriver::GetOutputStream(const CallbackArgs &args) {
   if (!ObjectWrap::UnwrapNew(args.Env(), value, &writer))
     return nullptr;
   writer->SetStream(driver->outputFile_->GetOutputStream(), false);
+  writer->AddOwner(driver->streamLifecycle_);
+  writer->AddOwner(driver->Lifecycle());
   return value;
 }

@@ -2,6 +2,8 @@
 
 #include <node_api.h>
 
+#include "DriverLifecycle.h"
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -173,6 +175,15 @@ public:
 
   bool Wrap(napi_env env, napi_value object);
 
+  // Ties this object to native state owned by another object, such as a
+  // writer, reader, page or file. Once any owner ends, every method of this
+  // object throws instead of touching released memory.
+  void AddOwner(const DriverLifecycle &owner);
+  // The lifecycle to pass to AddOwner() of the objects this one creates.
+  DriverLifecycle Lifecycle();
+  // The ended lifecycle, this object's or an owner's, or null while usable.
+  const DriverLifecycleState *EndedOwner() const;
+
   template <typename T> static T *Unwrap(napi_env env, napi_value object) {
     T *result = nullptr;
     if (!Check(env,
@@ -196,6 +207,8 @@ public:
 
 private:
   static void Finalize(napi_env env, void *data, void *hint);
+
+  DriverLifecycle lifecycle_;
 };
 
 class ConstructorRegistry {
@@ -330,7 +343,8 @@ public:
                        const napi_type_tag &typeTag,
                        const std::vector<napi_property_descriptor>
                            &instanceProperties);
-  void *AddMethod(Callback callback, void *data, const napi_type_tag &typeTag);
+  void *AddMethod(Callback callback, void *data, const napi_type_tag &typeTag,
+                  const std::string &className);
   void *AddAccessor(Callback getter, Callback setter, void *data);
   void *AddAccessor(Callback getter, Callback setter, void *data,
                     const napi_type_tag &typeTag);

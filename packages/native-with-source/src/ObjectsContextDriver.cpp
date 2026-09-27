@@ -87,6 +87,7 @@ napi_value ObjectsContextDriver::StartDictionary(const CallbackArgs &a) {
     return nullptr;
   driver->DictionaryContextInstance =
       d->ObjectsContextInstance->StartDictionary();
+  driver->AddOwner(d->Lifecycle());
   return value;
 }
 napi_value ObjectsContextDriver::StartArray(const CallbackArgs &a) {
@@ -252,6 +253,7 @@ static napi_value StartStream(const CallbackArgs &a, bool filtered) {
           : (dict ? d->ObjectsContextInstance->StartUnfilteredPDFStream(dict)
                   : d->ObjectsContextInstance->StartUnfilteredPDFStream());
   sd->mOwns = true;
+  sd->AddOwner(d->Lifecycle());
   return value;
 }
 napi_value ObjectsContextDriver::StartPDFStream(const CallbackArgs &a) {
@@ -276,6 +278,7 @@ napi_value ObjectsContextDriver::StartFreeContext(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), value, &writer))
     return nullptr;
   writer->SetStream(d->ObjectsContextInstance->StartFreeContext(), false);
+  writer->AddOwner(d->Lifecycle());
   return value;
 }
 napi_value ObjectsContextDriver::EndFreeContext(const CallbackArgs &a) {

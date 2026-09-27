@@ -40,12 +40,15 @@ napi_value PDFPageModifierDriver::New(const CallbackArgs &a) {
   if (!w)
     return ThrowTypeError(
         a.Env(), "Wrong arguments, provide a PDFWriter as the first object");
+  if (!w->GetLifecycle()->IsActive())
+    return ThrowError(a.Env(), "PDF writer has ended");
   auto pageIndex =
       a.Length() >= 2 ? static_cast<unsigned long>(ToDouble(a.Env(), a[1])) : 0;
   auto *d = new PDFPageModifierDriver(
       w->GetWriter(), pageIndex,
       a.Length() >= 3 ? ToBoolean(a.Env(), a[2]) : false);
   d->holder = &constructors;
+  d->AddOwner(w->GetLifecycle());
   if (!d->Wrap(a.Env(), a.This())) {
     delete d;
     return nullptr;
@@ -79,6 +82,7 @@ napi_value PDFPageModifierDriver::GetContext(const CallbackArgs &a) {
   c->FormOfContext = d->mModifierPageInstance->GetCurrentFormContext();
   c->SetResourcesDictionary(
       d->mModifierPageInstance->GetCurrentResourcesDictionary());
+  c->AddOwner(d->Lifecycle());
   return v;
 }
 napi_value PDFPageModifierDriver::EndContext(const CallbackArgs &a) {

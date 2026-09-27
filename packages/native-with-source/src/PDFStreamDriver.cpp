@@ -36,5 +36,6 @@ napi_value PDFStreamDriver::GetWriteStream(const CallbackArgs &args) {
   if (!ObjectWrap::UnwrapNew(args.Env(), result, &writer))
     return nullptr;
   writer->SetStream(stream->PDFStreamInstance->GetWriteStream(), false);
+  writer->AddOwner(stream->Lifecycle());
   return result;
 }

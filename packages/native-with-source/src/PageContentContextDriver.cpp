@@ -34,6 +34,7 @@ PageContentContextDriver::GetCurrentPageContentStream(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &stream))
     return nullptr;
   stream->PDFStreamInstance = d->ContentContext->GetCurrentPageContentStream();
+  stream->AddOwner(d->Lifecycle());
   return v;
 }
 napi_value PageContentContextDriver::GetAssociatedPage(const CallbackArgs &a) {
@@ -45,5 +46,6 @@ napi_value PageContentContextDriver::GetAssociatedPage(const CallbackArgs &a) {
     return nullptr;
   p->mPDFPage = page;
   p->mOwnsPage = false;
+  p->AddOwner(d->Lifecycle());
   return v;
 }

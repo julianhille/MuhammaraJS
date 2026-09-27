@@ -10,6 +10,8 @@ InputFileDriver::InputFileDriver()
     : holder(nullptr), mInputFileInstance(new InputFile()),
       mOwnsInstance(true) {}
 InputFileDriver::~InputFileDriver() {
+  if (mStreamLifecycle)
+    mStreamLifecycle->End();
   if (mOwnsInstance)
     delete mInputFileInstance;
 }
@@ -18,7 +20,14 @@ PDFHummus::EStatusCode InputFileDriver::OpenFile(const std::string &path) {
   if (!mInputFileInstance)
     mInputFileInstance = new InputFile();
   mOwnsInstance = true;
+  RenewStreamLifecycle();
   return mInputFileInstance->OpenFile(path);
+}
+void InputFileDriver::RenewStreamLifecycle() {
+  if (mStreamLifecycle)
+    mStreamLifecycle->End();
+  mStreamLifecycle =
+      std::make_shared<DriverLifecycleState>("Input file stream");
 }
 
 void InputFileDriver::SetFromOwnedFile(InputFile *file) {
@@ -26,6 +35,7 @@ void InputFileDriver::SetFromOwnedFile(InputFile *file) {
     delete mInputFileInstance;
   mOwnsInstance = false;
   mInputFileInstance = file;
+  RenewStreamLifecycle();
 }
 
 bool InputFileDriver::Init(ModuleState &state, napi_value exports) {
@@ -72,6 +82,8 @@ napi_value InputFileDriver::CloseFile(const CallbackArgs &args) {
         args.Env(), "no driver created...please create one through Hummus");
   if (driver->mInputFileInstance)
     driver->mInputFileInstance->CloseFile();
+  if (driver->mStreamLifecycle)
+    driver->mStreamLifecycle->End();
   return Undefined(args.Env());
 }
 
@@ -110,5 +122,7 @@ napi_value InputFileDriver::GetInputStream(const CallbackArgs &args) {
   if (!ObjectWrap::UnwrapNew(args.Env(), result, &reader))
     return nullptr;
   reader->SetStream(driver->mInputFileInstance->GetInputStream(), false);
+  reader->AddOwner(driver->mStreamLifecycle);
+  reader->AddOwner(driver->Lifecycle());
   return result;
 }
