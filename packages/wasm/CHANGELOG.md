@@ -4,68 +4,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
-### Breaking Changes
-
-- Recipe `n_gon()` and `star()` throw
-  `RangeError: n_gon sides must be a finite number no greater than 100000`
-  (`star points …` for `star()`) when the side or point count is `NaN`,
-  `Infinity`, not a number, or above 100000. An infinite or huge count used to
-  build vertices until memory ran out, and `NaN`
-  drew nothing. Pass a finite count; beyond a few hundred sides a polygon is
-  indistinguishable from `circle()`
-  [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
-- Place Recipe `annot()` rectangles with (x, y) as their top-left corner, as
-  documented, like `rectangle()` and `link()`, and as native does. Wasm used
-  (x, y) as the bottom-left corner, so every annotation with a `height` now
-  appears `height` points lower; Highlight, Underline, StrikeOut, and Squiggly
-  now render where native draws them. Subtract `height` from `y` to keep the
-  previous position [#808](https://github.com/julianhille/MuhammaraJS/issues/808)
-- Throw `TypeError: only a numeric color can use the gray or cmyk colorspace`
-  from the low-level drawing helpers and `writeText()` for a color name,
-  `#rrggbb` string, or `[r, g, b]` array with `colorspace: "gray"` or
-  `"cmyk"`, as native does. Such a color is RGB, but it was read as gray or
-  CMYK, so `{ color: "red", colorspace: "gray" }` drew black. Drop
-  `colorspace`, or pass the gray or CMYK color as a number, see
-  [Draw in Gray and CMYK](docs/how-to/draw-in-gray-and-cmyk.md) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
-- Throw a `TypeError` for a hex color string without the leading `#`, such as
-  `"ff0000"`, or an empty string in the low-level drawing helpers,
-  `writeText()`, and `CompactModifier` shapes and text, matching native.
-  Previously `"ff0000"` drew red and `""` drew black; write `"#ff0000"`
-  instead [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
-- Resolve Recipe `annot()`, `comment()`, and `text()` markup annotation colors
-  like native: `#rrggbb`, `%r,g,b`, colors registered with `chroma()`, then CSS
-  color names in any case. Anything else throws
-  `TypeError: Unknown annotation color (<value>)`, including hex without the
-  `#` and numbers, which used to be accepted. `"green"` now writes the Recipe
-  color `#00ff00` instead of CSS `#008000`; write `"#008000"` to keep the old
-  color [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
-- Read annotation `color` arrays as numbers from 0 to 255, matching native.
-  Values up to 1 were read as fractions, so `[1, 0, 0]` was red and is now
-  nearly black; values outside 0 to 255 now throw a `TypeError`. Multiply
-  fractional components by 255 [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
-- Keep Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()`
-  strokes inside positive requested bounds large enough to contain the line
-  width, matching native. Wasm previously centered strokes on the requested
-  boundary, extending them outward by half the line width. Adjust layouts that
-  relied on that overshoot; see
-  [Migrate Vector Stroke Bounds](docs/migrate-vector-stroke-bounds.md)
-  [#743](https://github.com/julianhille/MuhammaraJS/issues/743)
-- Return a `Uint8Array` instead of an array of numbers from
-  `PDFRStreamForBuffer#read()`, the `ByteReader` and `ByteReaderWithPosition`
-  adapters, and the byte readers returned by `startReadingFromStream()`,
-  `startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
-  `getSourceDocumentStream()`, matching native. Replace array methods on the result with
-  typed-array operations, or wrap it in `Array.from()`
-  [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
-- Treat an `appendPDFPagesFromPDF()` call that fails while copying pages as
-  terminal for its writer. Previously callers could continue after a failed
-  append and produce a corrupted document; create a fresh writer and retry with
-  valid source bytes. Source bytes that cannot be parsed, encrypted input, and
-  page ranges outside the source throw before anything is written and leave the
-  writer usable
-  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
-  [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
-
 ### Added
 
 - Add a `pruneReferences` option to Recipe `deletePage(pageNumbers, options)`
@@ -129,6 +67,27 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Recipe `n_gon()` and `star()` throw
+  `RangeError: n_gon sides must be a finite number no greater than 100000`
+  (`star points …` for `star()`) when the side or point count is `NaN`,
+  `Infinity`, not a number, or above 100000. An infinite or huge count used to
+  build vertices until memory ran out, and `NaN`
+  drew nothing. Pass a finite count; beyond a few hundred sides a polygon is
+  indistinguishable from `circle()`
+  [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
+- Place Recipe `annot()` rectangles with (x, y) as their top-left corner, as
+  documented, like `rectangle()` and `link()`, and as native does. Wasm used
+  (x, y) as the bottom-left corner, so every annotation with a `height` now
+  appears `height` points lower; Highlight, Underline, StrikeOut, and Squiggly
+  now render where native draws them. Subtract `height` from `y` to keep the
+  previous position [#808](https://github.com/julianhille/MuhammaraJS/issues/808)
+- Throw `TypeError: only a numeric color can use the gray or cmyk colorspace`
+  from the low-level drawing helpers and `writeText()` for a color name,
+  `#rrggbb` string, or `[r, g, b]` array with `colorspace: "gray"` or
+  `"cmyk"`, as native does. Such a color is RGB, but it was read as gray or
+  CMYK, so `{ color: "red", colorspace: "gray" }` drew black. Drop
+  `colorspace`, or pass the gray or CMYK color as a number, see
+  [Draw in Gray and CMYK](docs/how-to/draw-in-gray-and-cmyk.md) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Prevent a `RuntimeError` or memory corruption when `dispose()` is called on
   a writer or writer-to-modify holding a form started with
   `createFormXObject()` and never passed to `endFormXObject()`
@@ -295,6 +254,44 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- Throw a `TypeError` for a hex color string without the leading `#`, such as
+  `"ff0000"`, or an empty string in the low-level drawing helpers,
+  `writeText()`, and `CompactModifier` shapes and text, matching native.
+  Previously `"ff0000"` drew red and `""` drew black; write `"#ff0000"`
+  instead [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+- Resolve Recipe `annot()`, `comment()`, and `text()` markup annotation colors
+  like native: `#rrggbb`, `%r,g,b`, colors registered with `chroma()`, then CSS
+  color names in any case. Anything else throws
+  `TypeError: Unknown annotation color (<value>)`, including hex without the
+  `#` and numbers, which used to be accepted. `"green"` now writes the Recipe
+  color `#00ff00` instead of CSS `#008000`; write `"#008000"` to keep the old
+  color [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+- Read annotation `color` arrays as numbers from 0 to 255, matching native.
+  Values up to 1 were read as fractions, so `[1, 0, 0]` was red and is now
+  nearly black; values outside 0 to 255 now throw a `TypeError`. Multiply
+  fractional components by 255 [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+- Keep Recipe `circle()`, `ellipse()`, `rectangle()`, `arc()`, and `pie()`
+  strokes inside positive requested bounds large enough to contain the line
+  width, matching native. Wasm previously centered strokes on the requested
+  boundary, extending them outward by half the line width. Adjust layouts that
+  relied on that overshoot; see
+  [Migrate Vector Stroke Bounds](docs/migrate-vector-stroke-bounds.md)
+  [#743](https://github.com/julianhille/MuhammaraJS/issues/743)
+- Return a `Uint8Array` instead of an array of numbers from
+  `PDFRStreamForBuffer#read()`, the `ByteReader` and `ByteReaderWithPosition`
+  adapters, and the byte readers returned by `startReadingFromStream()`,
+  `startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
+  `getSourceDocumentStream()`, matching native. Replace array methods on the result with
+  typed-array operations, or wrap it in `Array.from()`
+  [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
+- Treat an `appendPDFPagesFromPDF()` call that fails while copying pages as
+  terminal for its writer. Previously callers could continue after a failed
+  append and produce a corrupted document; create a fresh writer and retry with
+  valid source bytes. Source bytes that cannot be parsed, encrypted input, and
+  page ranges outside the source throw before anything is written and leave the
+  writer usable
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
 - Draw nothing for a Recipe `line()` with fewer than two coordinate pairs, as
   native does, instead of throwing a `TypeError`; a single pair moves the
   current position [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
@@ -388,29 +385,6 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ## [1.0.0-beta.4] - 2026-09-24
 
-### Breaking Changes
-
-- Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
-  Previously callers could continue after a failed append and produce a
-  corrupted document; create a fresh writer and retry with valid source bytes.
-  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
-- Align `mergePDFPagesToPage` callback receivers with native: strict callbacks now receive `globalThis` instead of `undefined`. Use `callback.bind(undefined)` if an undefined receiver is required.
-- Treat low-level shape `type: null` as an unknown type, ending the path without
-  painting instead of stroking with stale graphics state, matching native.
-  Omit `type` or pass `"stroke"` to draw an outline; see
-  [drawing helpers](docs/low-level.md#drawing-helpers-and-clipping).
-- Correct low-level shape `type: "clip"` to clip without painting instead of
-  stroking, and end paths with unknown types without painting. Pass `"stroke"`/`"fill"` to paint,
-  or scope intentional clipping with `q()`/`Q()`. See
-  [breaking changes](docs/breaking-changes.md).
-- Validate drawing options before emitting shape or text operators, preventing
-  failed option getters from leaving partial output. Reject overflowing circle
-  and underline geometry, sparse paths, and incomplete or extra modified-form
-  path arguments before drawing. Supply complete finite coordinate pairs and
-  reduce coordinates or sizes that overflow. Return stable option
-  values and correct invalid inputs before retrying; see
-  [breaking changes](docs/breaking-changes.md).
-
 ### Added
 
 - Add Recipe `text()` options `underline`, `strikeOut`, and `squiggly` as
@@ -431,6 +405,23 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ### Fixed
 
+- Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
+  Previously callers could continue after a failed append and produce a
+  corrupted document; create a fresh writer and retry with valid source bytes.
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+- Treat low-level shape `type: null` as an unknown type, ending the path without
+  painting instead of stroking with stale graphics state, matching native.
+  Omit `type` or pass `"stroke"` to draw an outline; see
+  [drawing helpers](docs/low-level.md#drawing-helpers-and-clipping).
+- Correct low-level shape `type: "clip"` to clip without painting instead of
+  stroking, and end paths with unknown types without painting. Pass `"stroke"`/`"fill"` to paint,
+  or scope intentional clipping with `q()`/`Q()`.
+- Validate drawing options before emitting shape or text operators, preventing
+  failed option getters from leaving partial output. Reject overflowing circle
+  and underline geometry, sparse paths, and incomplete or extra modified-form
+  path arguments before drawing. Supply complete finite coordinate pairs and
+  reduce coordinates or sizes that overflow. Return stable option
+  values and correct invalid inputs before retrying.
 - Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
   writer dictionaries and related parser, encryption, and stream ownership
   defects.
@@ -572,6 +563,7 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ### Changed
 
+- Align `mergePDFPagesToPage` callback receivers with native: strict callbacks now receive `globalThis` instead of `undefined`. Use `callback.bind(undefined)` if an undefined receiver is required.
 - Resolve table header styles independently of body styles, matching native.
   Headers that inherited a body font, size, or color can change appearance;
   set those properties explicitly in `header` to retain the intended style
