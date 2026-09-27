@@ -364,4 +364,185 @@ describe("UseAfterEndTest", function () {
     copyingContext.end();
     writer.end();
   });
+
+  describe("objects obtained before their owner ended", function () {
+    /**
+     * Asserts that calling a method throws because its owner has ended.
+     *
+     * @param {string} message The expected error message.
+     * @param {Function} call Calls a method on an object whose owner ended.
+     */
+    function assertEnded(message, call) {
+      assert.throws(call, new RegExp("^" + message + "$"));
+    }
+
+    it("rejects writer children after end()", function () {
+      var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+      var page = writer.createPage(0, 0, 100, 100);
+      var pageContent = writer.startPageContentContext(page);
+      writer.pausePageContentContext(pageContent);
+      var pageStream = pageContent.getCurrentPageContentStream();
+      var form = writer.createFormXObject(0, 0, 10, 10);
+      var formContent = form.getContentContext();
+      writer.endFormXObject(form);
+      var objectsContext = writer.getObjectsContext();
+      objectsContext.startNewIndirectObject();
+      var dictionary = objectsContext.startDictionary();
+      objectsContext.endDictionary(dictionary);
+      objectsContext.endIndirectObject();
+      var font = writer.getFontForFile(
+        __dirname + "/TestMaterials/fonts/arial.ttf",
+      );
+      var documentContext = writer.getDocumentContext();
+      writer.writePage(page);
+      writer.end();
+
+      assertEnded("PDF writer has ended", function () {
+        pageContent.drawRectangle(1, 1, 2, 2);
+      });
+      assertEnded("PDF writer has ended", function () {
+        pageStream.getWriteStream();
+      });
+      assertEnded("PDF writer has ended", function () {
+        formContent.re(0, 0, 1, 1);
+      });
+      assertEnded("PDF writer has ended", function () {
+        form.getContentContext();
+      });
+      assertEnded("PDF writer has ended", function () {
+        objectsContext.startDictionary();
+      });
+      assertEnded("PDF writer has ended", function () {
+        dictionary.writeKey("Key");
+      });
+      assertEnded("PDF writer has ended", function () {
+        font.calculateTextDimensions("text", 10);
+      });
+      assertEnded("PDF writer has ended", function () {
+        documentContext.getInfoDictionary();
+      });
+    });
+
+    it("rejects a page content context after writePage()", function () {
+      var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+      var page = writer.createPage(0, 0, 100, 100);
+      var pageContent = writer.startPageContentContext(page);
+      writer.writePage(page);
+
+      assertEnded("Page content context is not active", function () {
+        pageContent.re(1, 1, 2, 2);
+      });
+      var nextContent = writer.startPageContentContext(page);
+      nextContent.re(1, 1, 2, 2);
+      writer.writePage(page);
+      writer.end();
+    });
+
+    it("rejects dictionaries of a writer event after the event", function () {
+      var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+      var pageDictionary;
+      writer.getEvents().on("OnPageWrite", function (event) {
+        pageDictionary = event.pageDictionaryContext;
+        pageDictionary.writeKey("PieceInfo").writeNameValue("Test");
+      });
+      writer.writePage(writer.createPage(0, 0, 100, 100));
+
+      assertEnded("PDF writer event has ended", function () {
+        pageDictionary.writeKey("Late");
+      });
+      writer.end();
+    });
+
+    it("rejects modifier and modified-file children after end()", function () {
+      var directory = fs.mkdtempSync(path.join(os.tmpdir(), "muhammara-"));
+      try {
+        var writer = muhammara.createWriterToModify(
+          path.join(__dirname, "TestMaterials", "Original.pdf"),
+          { modifiedFilePath: path.join(directory, "modified.pdf") },
+        );
+        var modifier = new muhammara.PDFPageModifier(writer, 0, true);
+        var modifierContent = modifier.startContext().getContext();
+        modifierContent.re(1, 1, 2, 2);
+        modifier.endContext().writePage();
+        var parser = writer.getModifiedFileParser();
+        var inputStream = writer.getModifiedInputFile().getInputStream();
+        writer.end();
+
+        assertEnded("PDF writer has ended", function () {
+          modifierContent.re(1, 1, 2, 2);
+        });
+        assertEnded("PDF writer has ended", function () {
+          modifier.writePage();
+        });
+        assertEnded("PDF writer has ended", function () {
+          inputStream.read(10);
+        });
+        assert.throws(function () {
+          parser.parsePage(0);
+        }, /PDF reader has ended/);
+        assert.throws(function () {
+          new muhammara.PDFPageModifier(writer, 0);
+        }, /PDF writer has ended/);
+      } finally {
+        fs.rmSync(directory, { recursive: true, force: true });
+      }
+    });
+
+    it("rejects reader children after end()", function () {
+      var reader = muhammara.createReader(
+        path.join(__dirname, "TestMaterials", "XObjectContent.PDF"),
+      );
+      var page = reader.parsePage(0);
+      var parserStream = reader.getParserStream();
+      var contents;
+      for (var id = 1; !contents && id < reader.getObjectsCount(); id++) {
+        var object = reader.parseNewObject(id);
+        if (object && object.getType() === muhammara.ePDFObjectStream) {
+          contents = object;
+        }
+      }
+      var contentReader = reader.startReadingFromStream(contents);
+      var objectsParser = reader.startReadingObjectsFromStream(contents);
+      reader.end();
+
+      assertEnded("PDF reader has ended", function () {
+        page.getCropBox();
+      });
+      assertEnded("PDF reader has ended", function () {
+        parserStream.read(10);
+      });
+      assertEnded("PDF reader has ended", function () {
+        contentReader.read(10);
+      });
+      assertEnded("PDF reader has ended", function () {
+        objectsParser.parseNewObject();
+      });
+      assertEnded("PDF reader has ended", function () {
+        muhammara.createReader(parserStream);
+      });
+    });
+
+    it("rejects file streams after closeFile()", function () {
+      var input = new muhammara.InputFile(
+        path.join(__dirname, "TestMaterials", "Original.pdf"),
+      );
+      var inputStream = input.getInputStream();
+      input.closeFile();
+      assertEnded("Input file stream has ended", function () {
+        inputStream.read(10);
+      });
+
+      var directory = fs.mkdtempSync(path.join(os.tmpdir(), "muhammara-"));
+      try {
+        var output = new muhammara.OutputFile(path.join(directory, "out.bin"));
+        var outputStream = output.getOutputStream();
+        output.closeFile();
+        assertEnded("Output file stream has ended", function () {
+          outputStream.write([1, 2, 3]);
+        });
+      } finally {
+        fs.rmSync(directory, { recursive: true, force: true });
+      }
+    });
+  });
 });

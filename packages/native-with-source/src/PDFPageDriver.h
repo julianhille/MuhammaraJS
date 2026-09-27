@@ -13,8 +13,14 @@ public:
   ConstructorsHolder *holder;
   PDFPage *mPDFPage;
   bool mOwnsPage;
+  // The content context started for this page is released by writePage(),
+  // which ends this lifecycle.
+  DriverLifecycle ContentLifecycle();
+  void RenewContentLifecycle();
+  void EndContentLifecycle();
 
 private:
+  DriverLifecycle mContentLifecycle;
   static napi_value New(const muhammara::napi::CallbackArgs &);
   static napi_value GetMediaBox(const muhammara::napi::CallbackArgs &);
   static napi_value SetMediaBox(const muhammara::napi::CallbackArgs &);

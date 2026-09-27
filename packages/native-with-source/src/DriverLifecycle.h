@@ -1,23 +1,41 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
+#include <string>
 #include <vector>
 
 class DriverLifecycleState
 {
 public:
-    DriverLifecycleState() : mActive(true) {}
+    // The error thrown when an object tied to this lifecycle is used after
+    // it ended, such as "PDF writer has ended".
+    explicit DriverLifecycleState(
+        const std::string& inEndedMessage = std::string())
+        : mActive(true), mEndedMessage(inEndedMessage) {}
 
     bool IsActive() const
     {
+        return EndedState() == NULL;
+    }
+
+    // The first ended lifecycle, this one or an owner, or NULL while active.
+    const DriverLifecycleState* EndedState() const
+    {
         if(!mActive)
-            return false;
+            return this;
         for(std::vector<std::shared_ptr<DriverLifecycleState> >::const_iterator it = mOwners.begin(); it != mOwners.end(); ++it)
         {
-            if(!(*it)->IsActive())
-                return false;
+            const DriverLifecycleState* ended = (*it)->EndedState();
+            if(ended)
+                return ended;
         }
-        return true;
+        return NULL;
+    }
+
+    const std::string& GetEndedMessage() const
+    {
+        return mEndedMessage;
     }
 
     void End()
@@ -39,6 +57,7 @@ public:
 
 private:
     bool mActive;
+    std::string mEndedMessage;
     std::vector<std::shared_ptr<DriverLifecycleState> > mOwners;
 };
 

@@ -52,6 +52,7 @@ napi_value FormXObjectDriver::GetContentContext(const CallbackArgs &a) {
   c->ContentContext = d->FormXObject->GetContentContext();
   c->FormOfContext = d->FormXObject;
   c->SetResourcesDictionary(&d->FormXObject->GetResourcesDictionary());
+  c->AddOwner(d->Lifecycle());
   return v;
 }
 napi_value FormXObjectDriver::GetResourcesDictionary(const CallbackArgs &a) {
@@ -62,6 +63,7 @@ napi_value FormXObjectDriver::GetResourcesDictionary(const CallbackArgs &a) {
     return nullptr;
   resources->ResourcesDictionaryInstance =
       &d->FormXObject->GetResourcesDictionary();
+  resources->AddOwner(d->Lifecycle());
   return v;
 }
 napi_value FormXObjectDriver::GetContentStream(const CallbackArgs &a) {
@@ -71,5 +73,6 @@ napi_value FormXObjectDriver::GetContentStream(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &stream))
     return nullptr;
   stream->PDFStreamInstance = d->FormXObject->GetContentStream();
+  stream->AddOwner(d->Lifecycle());
   return v;
 }

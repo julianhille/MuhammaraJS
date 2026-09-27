@@ -75,7 +75,7 @@ napi_value OneByteString(napi_env env, const std::string &value) {
 PDFReaderDriver::PDFReaderDriver()
     : holder(nullptr), mStartedWithStream(false), mReadStreamProxy(nullptr),
       mOwnsParser(false), mPDFReader(nullptr),
-      mLifecycle(new DriverLifecycleState()) {}
+      mLifecycle(new DriverLifecycleState("PDF reader has ended")) {}
 
 PDFReaderDriver::~PDFReaderDriver() {
   mLifecycle->End();
@@ -321,6 +321,7 @@ napi_value PDFReaderDriver::ParsePage(const CallbackArgs &args) {
     return nullptr;
   page->PageInput = new PDFPageInput(reader->mPDFReader, object);
   page->PageInputDictionary = object.GetPtr();
+  page->AddOwner(reader->mLifecycle);
   return instance;
 }
 
@@ -445,6 +446,7 @@ napi_value PDFReaderDriver::StartReadingFromStream(const CallbackArgs &args) {
   if (!streamReader)
     return ThrowError(args.Env(), "Unable to read PDF stream");
   driver->SetStream(streamReader, true);
+  driver->AddOwner(reader->mLifecycle);
   return result;
 }
 
@@ -466,6 +468,7 @@ napi_value PDFReaderDriver::StartReadingFromStreamForPlainCopying(
   if (!streamReader)
     return ThrowError(args.Env(), "Unable to read PDF stream");
   driver->SetStream(streamReader, true);
+  driver->AddOwner(reader->mLifecycle);
   return result;
 }
 
@@ -487,6 +490,7 @@ PDFReaderDriver::StartReadingObjectsFromStream(const CallbackArgs &args) {
   if (!objectsParser)
     return ThrowError(args.Env(), "Unable to read PDF stream objects");
   driver->PDFObjectParserInstance = objectsParser;
+  driver->AddOwner(reader->mLifecycle);
   return result;
 }
 
@@ -505,6 +509,7 @@ PDFReaderDriver::StartReadingObjectsFromStreams(const CallbackArgs &args) {
   driver->PDFObjectParserInstance =
       reader->mPDFReader->StartReadingObjectsFromStreams(
           array->TheObject.GetPtr());
+  driver->AddOwner(reader->mLifecycle);
   return result;
 }
 
@@ -517,5 +522,6 @@ napi_value PDFReaderDriver::GetParserStream(const CallbackArgs &args) {
   if (!ObjectWrap::UnwrapNew(args.Env(), result, &driver))
     return nullptr;
   driver->SetStream(reader->mPDFReader->GetParserStream(), false);
+  driver->AddOwner(reader->mLifecycle);
   return result;
 }

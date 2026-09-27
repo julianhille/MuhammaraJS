@@ -23,4 +23,7 @@ private:
   static napi_value GetOutputStream(const muhammara::napi::CallbackArgs &args);
   OutputFile *outputFile_;
   bool owns_;
+  // Ends when the open stream is closed or replaced; its writers depend on it.
+  DriverLifecycle streamLifecycle_;
+  void RenewStreamLifecycle();
 };

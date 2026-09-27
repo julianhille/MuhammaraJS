@@ -273,6 +273,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   direct values, or whose `/Resources` is not a dictionary. The edit is now
   written and the malformed entry is dropped or replaced, a local change to
   the vendored PDF-Writer [#816](https://github.com/julianhille/MuhammaraJS/issues/816)
+- Throw `PDF writer has ended`, `PDF reader has ended`, or a similar error
+  instead of crashing when an object obtained from a writer, reader, page, or
+  file is used after its owner ended: content contexts after `end()` or
+  `writePage()`, objects and dictionary contexts, used fonts, page modifiers,
+  modified-file parsers, event dictionaries after the event, parsed pages and
+  stream readers after `reader.end()`, and file streams after `closeFile()`
+  [#817](https://github.com/julianhille/MuhammaraJS/issues/817)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)

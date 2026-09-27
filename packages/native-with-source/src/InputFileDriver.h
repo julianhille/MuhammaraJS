@@ -28,4 +28,7 @@ private:
 
   InputFile *mInputFileInstance;
   bool mOwnsInstance;
+  // Ends when the open stream is closed or replaced; its readers depend on it.
+  DriverLifecycle mStreamLifecycle;
+  void RenewStreamLifecycle();
 };

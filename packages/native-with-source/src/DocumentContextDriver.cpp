@@ -39,5 +39,6 @@ napi_value DocumentContextDriver::GetInfoDictionary(const CallbackArgs &args) {
     return nullptr;
   info->InfoDictionaryInstance =
       &driver->DocumentContextInstance->GetTrailerInformation().GetInfo();
+  info->AddOwner(driver->Lifecycle());
   return result;
 }
