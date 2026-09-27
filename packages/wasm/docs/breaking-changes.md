@@ -2,6 +2,14 @@
 
 ## Version 1.x
 
+- Recipe `annot(x, y, subtype, { width, height })` places its rectangle with
+  (x, y) as the top-left corner, as documented and as native does, like
+  `rectangle()` and `link()`. Earlier 1.0.0 prereleases used (x, y) as the
+  bottom-left corner, so an annotation with a `height` now appears `height`
+  points lower, and Highlight, Underline, StrikeOut, and Squiggly render where
+  native draws them. Subtract `height` from `y` to keep the previous position.
+  `comment()` and the markup options of `text()` are unchanged [#808](https://github.com/julianhille/MuhammaraJS/issues/808).
+
 - The low-level drawing helpers and `writeText()` throw
   `TypeError: only a numeric color can use the gray or cmyk colorspace` for a
   color name, `#rrggbb` string, or `[r, g, b]` array with `colorspace: "gray"`

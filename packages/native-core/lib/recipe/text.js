@@ -750,7 +750,6 @@ exports.text = function text(text = "", x, y, options = {}) {
               height: markupHeight,
               width: markupWidth,
               text: markupOption.text || "",
-              _textHeight: textHeight,
               // add options to annotation
               title: title || "",
               open: Boolean(open),
@@ -760,9 +759,10 @@ exports.text = function text(text = "", x, y, options = {}) {
               date: date || "",
               subject: subject || "",
             });
+            // annot() takes the rectangle's top-left corner.
             const { ox, oy } = this._reverseCoordinate(
               markupLeft,
-              markupBottom,
+              markupBottom + markupHeight,
             );
 
             this.annot(ox, oy, subtype, markupOption);

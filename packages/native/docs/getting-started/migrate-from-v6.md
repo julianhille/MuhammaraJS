@@ -638,6 +638,30 @@ TypeScript implementations of `WriteStream` or the `log` option must declare
 `write(bytes: Buffer)`. Custom read streams may keep returning arrays; returning
 a `Uint8Array` or `Buffer` is now also accepted and faster.
 
+## 17. Move Recipe Annotations To Their Top-Left Corner
+
+`annot(x, y, subtype, { width, height })` now places the annotation
+rectangle with (x, y) as its top-left corner, like `rectangle()` and `link()`
+[#808](https://github.com/julianhille/MuhammaraJS/issues/808). In v6, (x, y) was the bottom-left corner, so the rectangle extended
+`height` points up from `y`. A Square, Circle, FreeText, or other annotation
+with a `height` now appears `height` points lower.
+
+To keep the v6 position, subtract the height from `y`:
+
+```javascript
+// v6: the Square spans y 70..100.
+recipe.annot(50, 100, "Square", { width: 120, height: 30 });
+
+// v7: pass the top edge to cover the same area.
+recipe.annot(50, 100 - 30, "Square", { width: 120, height: 30 });
+```
+
+Highlight, Underline, StrikeOut, and Squiggly annotations need no change. In
+v6 their `QuadPoints`, which viewers draw, already hung down from `y`, while
+their `Rect` lay above them. Both now cover the same area below `y`. Annotations
+without a `height`, such as `comment()`, and the `highlight`, `underline`,
+`strikeOut`, and `squiggly` options of `text()` stay where they were.
+
 ## What Does Not Change
 
 - Supported Node.js versions.

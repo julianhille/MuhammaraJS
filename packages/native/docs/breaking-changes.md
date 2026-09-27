@@ -4,6 +4,18 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Recipe `annot(x, y, subtype, { width, height })` places its rectangle with
+  (x, y) as the top-left corner, like `rectangle()` and `link()`. In 6.x (x, y)
+  was the bottom-left corner, so a Square, Circle, FreeText, or other
+  annotation with a `height` now appears `height` points lower on the page.
+  Subtract `height` from `y` to keep the 6.x position; see [Move Recipe
+  annotations to their top-left
+  corner](getting-started/migrate-from-v6.md#17-move-recipe-annotations-to-their-top-left-corner).
+  Highlight, Underline, StrikeOut, and Squiggly created with `annot()` already
+  hung down from `y` and render where they did, but their `Rect` now encloses
+  their `QuadPoints` instead of lying above them. `comment()` and the markup
+  options of `text()` are unchanged [#808](https://github.com/julianhille/MuhammaraJS/issues/808).
+
 - Low-level `drawPath()`, `drawCircle()`, `drawSquare()`, `drawRectangle()`,
   and `writeText()` throw
   `TypeError: Colors must be a 24-bit number, a color name, or a #rrggbb string`

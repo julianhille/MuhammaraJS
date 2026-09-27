@@ -6,6 +6,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Place Recipe `annot()` rectangles with (x, y) as their top-left corner, as
+  documented, like `rectangle()` and `link()`, and as native does. Wasm used
+  (x, y) as the bottom-left corner, so every annotation with a `height` now
+  appears `height` points lower; Highlight, Underline, StrikeOut, and Squiggly
+  now render where native draws them. Subtract `height` from `y` to keep the
+  previous position [#808](https://github.com/julianhille/MuhammaraJS/issues/808)
+
 - Throw `TypeError: only a numeric color can use the gray or cmyk colorspace`
   from the low-level drawing helpers and `writeText()` for a color name,
   `#rrggbb` string, or `[r, g, b]` array with `colorspace: "gray"` or
@@ -130,6 +137,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   report
 
 ### Fixed
+
+- Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
+  was ignored, and to that text only: on new pages it also became the
+  Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are
+  now clamped instead of throwing a `RangeError`, matching native
+  [#807](https://github.com/julianhille/MuhammaraJS/issues/807)
 
 - Register a Recipe color named `__proto__` with `chroma()` or `colorName`; the
   name was silently dropped [#799](https://github.com/julianhille/MuhammaraJS/issues/799)

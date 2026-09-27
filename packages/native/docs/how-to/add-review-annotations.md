@@ -27,6 +27,10 @@ pdfDoc
   .endPDF();
 ```
 
+`annot(x, y, subtype, { width, height })` takes the annotation rectangle's
+top-left corner, like `rectangle()` and `link()`; the rectangle extends `width`
+to the right and `height` down from it.
+
 Set `opacity` from `0` (transparent) to `1` (opaque, the default). Recipe writes
 the annotation's `/CA` value; the `color` option sets its RGB color separately.
 It takes `#rrggbb`, `%r,g,b`, a color registered with `chroma()`, a CSS color

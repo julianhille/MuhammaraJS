@@ -83,6 +83,16 @@ function readPageForms(reader, pageIndex = 0) {
     .join("\n");
 }
 
+/** Reads a numeric PDF array entry, such as Rect or QuadPoints. */
+function numbers(object) {
+  return object
+    .toPDFArray()
+    .toJSArray()
+    .map(function (value) {
+      return value.toNumber();
+    });
+}
+
 describe("Recipe annotation parity", function () {
   var Recipe;
   var muhammara;
@@ -1053,6 +1063,88 @@ describe("Recipe annotation parity", function () {
       content,
       /(^|\s)1 0 0 RG\b/,
       "the del line uses the text color",
+    );
+  });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`anchors annot() at the rectangle's top-left corner on ${mode} pages`, function () {
+      var source = new Recipe().createPage(200, 300).endPage().endPDF();
+      var recipe =
+        mode === "new"
+          ? new Recipe().createPage(200, 300)
+          : new Recipe(source).editPage(1);
+      var annotations = finish(
+        recipe
+          .annot(10, 100, Recipe.AnnotSubtype.SQUARE, { width: 40, height: 30 })
+          .annot(10, 100, Recipe.AnnotSubtype.HIGHLIGHT, {
+            width: 40,
+            height: 30,
+          }),
+      );
+      // Recipe y 100..130 on a 300-point page is PDF y 170..200.
+      annotations.forEach(function (annotation) {
+        assert.deepEqual(
+          numbers(annotation.dictionary.Rect),
+          [10, 170, 50, 200],
+        );
+      });
+      assert.deepEqual(
+        numbers(annotations[1].dictionary.QuadPoints),
+        [10, 200, 50, 200, 10, 170, 50, 170],
+      );
+    });
+  });
+
+  it("anchors annot() at the top-left corner on a rotated page", function () {
+    var source = new Recipe()
+      .createPage(200, 300)
+      .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 210, 320)
+      .rotate(90)
+      .endPage()
+      .endPDF();
+    var annotations = finish(
+      new Recipe(source)
+        .editPage(1)
+        .annot(110, 120, Recipe.AnnotSubtype.SQUARE, { width: 30, height: 40 }),
+    );
+    // The 40-point height runs down the visual page, +x in PDF space.
+    assert.deepEqual(
+      numbers(annotations[0].dictionary.Rect),
+      [90, 140, 130, 170],
+    );
+  });
+
+  it("underlines existing text like the Annotate Existing Text guide", function () {
+    var source = new Recipe()
+      .createPage(595, 842)
+      .text("Draft", 72, 120, { size: 12 })
+      .endPage()
+      .endPDF();
+    var sourceReader = muhammara.createReader(source);
+    var match = sourceReader.extractPageText(0)[0];
+    sourceReader.end();
+    var pdf = new Recipe(source);
+    var page = pdf.pageInfo(1);
+    var annotations = finish(
+      pdf
+        .editPage(1)
+        .annot(
+          match.textMatrix[4],
+          page.height - match.textMatrix[5] - match.fontSize,
+          Recipe.AnnotSubtype.UNDERLINE,
+          { width: 28, height: match.fontSize },
+        ),
+      "annotation-underline-existing-text",
+    );
+    var baseline = match.textMatrix[5];
+    var rect = numbers(annotations[0].dictionary.Rect);
+    assert.equal(rect[0], match.textMatrix[4]);
+    assert.ok(Math.abs(rect[1] - baseline) < 0.001);
+    assert.ok(Math.abs(rect[3] - (baseline + match.fontSize)) < 0.001);
+    // The underline is drawn along the quadrilateral's bottom: the baseline.
+    assert.equal(
+      numbers(annotations[0].dictionary.QuadPoints)[5],
+      Math.round(baseline),
     );
   });
 });
