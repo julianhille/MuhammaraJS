@@ -5,7 +5,14 @@
 #include "PageContentContext.h"
 using namespace muhammara::napi;
 PageContentContextDriver::PageContentContextDriver()
-    : ContentContext(nullptr) {}
+    : ContentContext(nullptr),
+      mCurrentStreamLifecycle(std::make_shared<DriverLifecycleState>(
+          "PDF stream is no longer active")) {}
+void PageContentContextDriver::EndCurrentStream() {
+  mCurrentStreamLifecycle->End();
+  mCurrentStreamLifecycle =
+      std::make_shared<DriverLifecycleState>("PDF stream is no longer active");
+}
 PageContentContextDriver::~PageContentContextDriver() = default;
 bool PageContentContextDriver::Init(ModuleState &s, napi_value exports) {
   ClassBuilder b(s, "PageContentContext", New);
@@ -34,7 +41,10 @@ PageContentContextDriver::GetCurrentPageContentStream(const CallbackArgs &a) {
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &stream))
     return nullptr;
   stream->PDFStreamInstance = d->ContentContext->GetCurrentPageContentStream();
+  if (!stream->PDFStreamInstance)
+    return ThrowError(a.Env(), "Unable to start a page content stream");
   stream->AddOwner(d->Lifecycle());
+  stream->AddOwner(d->mCurrentStreamLifecycle);
   return v;
 }
 napi_value PageContentContextDriver::GetAssociatedPage(const CallbackArgs &a) {

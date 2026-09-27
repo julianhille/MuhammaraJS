@@ -10,7 +10,20 @@
 using namespace muhammara::napi;
 
 FormXObjectDriver::FormXObjectDriver()
-    : FormXObject(nullptr), holder(nullptr), mPDFWriterDriver(nullptr) {}
+    : FormXObject(nullptr), holder(nullptr), mPDFWriterDriver(nullptr),
+      mContentLifecycle(std::make_shared<DriverLifecycleState>(
+          "Form XObject content has ended")) {}
+void FormXObjectDriver::SetOpenIn(PDFWriterDriver *writer) {
+  mPDFWriterDriver = writer;
+}
+bool FormXObjectDriver::IsOpenIn(PDFWriterDriver *writer) const {
+  return FormXObject && mPDFWriterDriver == writer &&
+         mContentLifecycle->IsActive();
+}
+void FormXObjectDriver::EndContent() {
+  mPDFWriterDriver = nullptr;
+  mContentLifecycle->End();
+}
 FormXObjectDriver::~FormXObjectDriver() {
   // An unfinished form's stream deletes the writer's output when destroyed.
   if (openForms && openForms->writer && openForms->forms.erase(FormXObject))
@@ -45,6 +58,8 @@ napi_value FormXObjectDriver::GetID(const CallbackArgs &a) {
 }
 napi_value FormXObjectDriver::GetContentContext(const CallbackArgs &a) {
   auto *d = ObjectWrap::Unwrap<FormXObjectDriver>(a.Env(), a.This());
+  if (!d->mContentLifecycle->IsActive())
+    return ThrowError(a.Env(), "Form XObject content is not writable");
   napi_value v = d->holder->GetNewXObjectContentContext();
   XObjectContentContextDriver *c = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &c))
@@ -53,6 +68,7 @@ napi_value FormXObjectDriver::GetContentContext(const CallbackArgs &a) {
   c->FormOfContext = d->FormXObject;
   c->SetResourcesDictionary(&d->FormXObject->GetResourcesDictionary());
   c->AddOwner(d->Lifecycle());
+  c->AddOwner(d->mContentLifecycle);
   return v;
 }
 napi_value FormXObjectDriver::GetResourcesDictionary(const CallbackArgs &a) {
@@ -68,11 +84,15 @@ napi_value FormXObjectDriver::GetResourcesDictionary(const CallbackArgs &a) {
 }
 napi_value FormXObjectDriver::GetContentStream(const CallbackArgs &a) {
   auto *d = ObjectWrap::Unwrap<FormXObjectDriver>(a.Env(), a.This());
+  if (!d->mContentLifecycle->IsActive())
+    return ThrowError(a.Env(),
+                      "Form XObject content stream is no longer active");
   napi_value v = d->holder->GetNewPDFStream();
   PDFStreamDriver *stream = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &stream))
     return nullptr;
   stream->PDFStreamInstance = d->FormXObject->GetContentStream();
   stream->AddOwner(d->Lifecycle());
+  stream->AddOwner(d->mContentLifecycle);
   return v;
 }
