@@ -13,9 +13,12 @@ public:
   ConstructorsHolder *holder;
   PDFStream *PDFStreamInstance;
   bool mOwns;
+  // Ends when objectsContext.endPDFStream() finalizes the stream.
+  bool EndStream();
 
 private:
   PDFStreamDriver();
+  DriverLifecycle mStreamLifecycle;
   static napi_value New(const muhammara::napi::CallbackArgs &args);
   static napi_value GetWriteStream(const muhammara::napi::CallbackArgs &args);
 };

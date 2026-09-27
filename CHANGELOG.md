@@ -273,6 +273,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   direct values, or whose `/Resources` is not a dictionary. The edit is now
   written and the malformed entry is dropped or replaced, a local change to
   the vendored PDF-Writer [#816](https://github.com/julianhille/MuhammaraJS/issues/816)
+- Throw instead of crashing when a form is passed to `endFormXObject()` twice,
+  already ended, created from an image, or started in another writer
+  (`endFormXObject requires an open form from this writer`), when a stream is
+  passed to `endPDFStream()` twice (`Unable to end PDF stream`), and when a
+  page, form, or objects-context stream or its write stream is used after it
+  was paused or ended; `getContentContext()` and `getContentStream()` of an
+  ended form throw as in `@muhammara/wasm`
+  [#818](https://github.com/julianhille/MuhammaraJS/issues/818)
 - Throw `PDF writer has ended`, `PDF reader has ended`, or a similar error
   instead of crashing when an object obtained from a writer, reader, page, or
   file is used after its owner ended: content contexts after `end()` or

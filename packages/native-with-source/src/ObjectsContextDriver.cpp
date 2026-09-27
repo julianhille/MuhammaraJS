@@ -267,8 +267,11 @@ napi_value ObjectsContextDriver::EndPDFStream(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (a.Length() != 1 || !d->holder->IsPDFStreamInstance(a[0]))
     return ThrowTypeError(a.Env(), "wrong arguments, provide a stream to end");
-  d->ObjectsContextInstance->EndPDFStream(
-      ObjectWrap::Unwrap<PDFStreamDriver>(a.Env(), a[0])->PDFStreamInstance);
+  auto *stream = ObjectWrap::Unwrap<PDFStreamDriver>(a.Env(), a[0]);
+  // A second end would finalize a finished stream.
+  if (!stream || !stream->PDFStreamInstance || !stream->EndStream())
+    return ThrowError(a.Env(), "Unable to end PDF stream");
+  d->ObjectsContextInstance->EndPDFStream(stream->PDFStreamInstance);
   return a.This();
 }
 napi_value ObjectsContextDriver::StartFreeContext(const CallbackArgs &a) {

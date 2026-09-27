@@ -261,6 +261,9 @@ napi_value PDFWriterDriver::PausePageContentContext(const CallbackArgs &a) {
     return ThrowTypeError(a.Env(),
                           "paused context not initialized, please create "
                           "one using pdfWriter.startPageContentContext");
+  if (const DriverLifecycleState *ended = c->EndedOwner())
+    return ThrowError(a.Env(), ended->GetEndedMessage().c_str());
+  c->EndCurrentStream();
   d->writer_.PausePageContentContext(c->ContentContext);
   return a.This();
 }
@@ -288,6 +291,7 @@ napi_value PDFWriterDriver::CreateFormXObject(const CallbackArgs &a) {
     f->openForms = d->openForms_;
   }
   f->AddOwner(d->lifecycle_);
+  f->SetOpenIn(d);
   return v;
 }
 napi_value PDFWriterDriver::EndFormXObject(const CallbackArgs &a) {
@@ -299,6 +303,11 @@ napi_value PDFWriterDriver::EndFormXObject(const CallbackArgs &a) {
   if (!f)
     return ThrowTypeError(
         a.Env(), "Wrong arguments, provide a form as the single parameter");
+  // Ending a form twice, or in another writer, finalizes a finished stream.
+  if (!f->IsOpenIn(d))
+    return ThrowError(a.Env(),
+                      "endFormXObject requires an open form from this writer");
+  f->EndContent();
   // Ending finalizes the stream, so the form no longer needs releasing.
   d->openForms_->forms.erase(f->FormXObject);
   d->writer_.EndFormXObject(f->FormXObject);
@@ -347,6 +356,7 @@ static napi_value FormImage(const CallbackArgs &a, const char *kind) {
   }
   form->FormXObject = f;
   form->AddOwner(d->GetLifecycle());
+  form->EndContent();
   return v;
 }
 napi_value PDFWriterDriver::CreateformXObjectFromJPG(const CallbackArgs &a) {
@@ -617,6 +627,7 @@ napi_value PDFWriterDriver::CreateFormXObjectFromTIFF(const CallbackArgs &a) {
   }
   form->FormXObject = f;
   form->AddOwner(d->lifecycle_);
+  form->EndContent();
   return v;
 }
 napi_value PDFWriterDriver::CreateImageXObjectFromJPG(const CallbackArgs &a) {

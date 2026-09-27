@@ -143,4 +143,41 @@ describe("FormXObjectTest", function () {
     pdfWriter._abort();
     assert.ok(form);
   });
+
+  it("ends a form only once and only in its own writer", function () {
+    var pdfWriter = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    var otherWriter = muhammara.createWriter(
+      new muhammara.PDFWStreamForBuffer(),
+    );
+    var form = pdfWriter.createFormXObject(0, 0, 10, 10);
+    var formContent = form.getContentContext();
+    var otherForm = otherWriter.createFormXObject(0, 0, 10, 10);
+    var imageForm = pdfWriter.createFormXObjectFromJPG(
+      __dirname + "/TestMaterials/images/otherStage.JPG",
+    );
+    var notOpen =
+      /^Error: endFormXObject requires an open form from this writer$/;
+
+    assert.throws(function () {
+      pdfWriter.endFormXObject(otherForm);
+    }, notOpen);
+    assert.throws(function () {
+      pdfWriter.endFormXObject(imageForm);
+    }, notOpen);
+    pdfWriter.endFormXObject(form);
+    assert.throws(function () {
+      pdfWriter.endFormXObject(form);
+    }, notOpen);
+    assert.throws(function () {
+      form.getContentContext();
+    }, /^Error: Form XObject content is not writable$/);
+    assert.ok(form.getResourcesDictionary());
+    assert.throws(function () {
+      formContent.re(0, 0, 1, 1);
+    }, /^Error: Form XObject content has ended$/);
+
+    otherWriter.endFormXObject(otherForm);
+    otherWriter.end();
+    pdfWriter.end();
+  });
 });
