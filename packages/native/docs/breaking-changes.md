@@ -13,6 +13,13 @@ This page collects the compatibility changes formerly maintained in the README.
   indistinguishable from `circle()`
   [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
 
+- `PDFWriter#end()` throws
+  `Error: End the active objects context operation before ending the PDF`
+  while a dictionary started with `startDictionary()` is still open, as
+  `@muhammara/wasm` does. The writer stays usable: end the dictionary and
+  call `end()` again. In 6.x `end()` succeeded and wrote the cross-reference
+  table and trailer inside the open dictionary, so the PDF was damaged
+  [#815](https://github.com/julianhille/MuhammaraJS/issues/815).
 - Recipe `annot(x, y, subtype, { width, height })` places its rectangle with
   (x, y) as the top-left corner, like `rectangle()` and `link()`. In 6.x (x, y)
   was the bottom-left corner, so a Square, Circle, FreeText, or other

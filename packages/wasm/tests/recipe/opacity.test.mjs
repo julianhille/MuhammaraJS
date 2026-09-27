@@ -126,4 +126,15 @@ describe("Recipe opacity", function () {
       .endPDF();
     assert.deepEqual(fillAlphas(bytes), [1, 0]);
   });
+
+  it("writes a numeric-string opacity as a number", async function () {
+    var Recipe = await getRecipe();
+    var bytes = new Recipe({ compress: false })
+      .createPage(595, 842)
+      .rectangle(10, 10, 20, 20, { fill: "#ff0000", opacity: "0.5" })
+      .endPage()
+      .endPDF();
+    writeOutput("opacity-numeric-string", bytes);
+    assert.deepEqual(fillAlphas(bytes), [0.5]);
+  });
 });

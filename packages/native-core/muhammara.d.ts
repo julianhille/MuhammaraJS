@@ -2594,6 +2594,9 @@ declare namespace muhammara {
      * Finalizes the PDF once; repeated calls return this writer. A failed
      * finalization also ends the writer.
      * @returns This writer.
+     * @throws {Error} If a dictionary started with `startDictionary()` is still
+     * open; the writer stays usable, so end the dictionary and call `end()`
+     * again.
      * @throws {TypeError} If the PDF cannot be finalized.
      */
     end(): PDFWriter;

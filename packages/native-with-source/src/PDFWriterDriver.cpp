@@ -61,6 +61,9 @@ PDFWriterDriver::~PDFWriterDriver() {
   openForms_->writer = nullptr;
   if (started_)
     Retire();
+  // Release dictionaries left open; with the output closed, this writes
+  // nothing.
+  writer_.GetObjectsContext().Cleanup();
   delete writeProxy_;
   delete readProxy_;
   ReleaseLogProxy();
@@ -158,6 +161,12 @@ napi_value PDFWriterDriver::End(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (!d || !d->started_)
     return a.This();
+  // Ending would write the trailer into the open dictionary. Refuse, like
+  // Wasm, and keep the writer usable so the caller can end it and retry.
+  if (d->writer_.GetObjectsContext().HasOpenDictionaries())
+    return ThrowError(
+        a.Env(),
+        "End the active objects context operation before ending the PDF");
   // An open or abandoned form leaves an unfinished object in the output.
   EStatusCode status = eFailure;
   if (d->openForms_->forms.empty() && !d->formAbandoned_)

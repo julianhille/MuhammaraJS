@@ -144,4 +144,17 @@ describe("Recipe opacity", function () {
     );
     assert.deepEqual(fillAlphas(bytes), [1, 0]);
   });
+
+  it("writes a numeric-string opacity as a number", function () {
+    // "0.5" used to fail after the ExtGState dictionary was started, and the
+    // open dictionary crashed endPDF().
+    var bytes = endToBuffer(
+      new muhammara.Recipe(Buffer.from("new"), null, { compress: false })
+        .createPage(595, 842)
+        .rectangle(10, 10, 20, 20, { fill: "#ff0000", opacity: "0.5" })
+        .endPage(),
+    );
+    writeOutput("opacity-numeric-string", bytes);
+    assert.deepEqual(fillAlphas(bytes), [0.5]);
+  });
 });

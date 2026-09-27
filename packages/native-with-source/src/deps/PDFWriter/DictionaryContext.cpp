@@ -34,18 +34,26 @@ DictionaryContext::DictionaryContext(ObjectsContext* inObjectsContext,size_t inI
 {
 	mObjectsContext = inObjectsContext;
 	mIndentLevel= inIndentLevel;
+	mDiscarded = false;
 
 	mObjectsContext->WriteKeyword(scStartDictionary);
 }
 
 DictionaryContext::~DictionaryContext(void)
 {
+	if(mDiscarded)
+		return;
 	if(mIndentLevel > 0)
 	{
 		--mIndentLevel; // the final end dictionary should be written with a lower indent, as a value of the container
 		WriteIndents();
 	}
 	mObjectsContext->WriteKeyword(scEndDictionary);
+}
+
+void DictionaryContext::Discard()
+{
+	mDiscarded = true;
 }
 
 EStatusCode DictionaryContext::WriteKey(const std::string& inKey)

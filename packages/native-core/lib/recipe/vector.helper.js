@@ -60,8 +60,9 @@ exports._getPathOptions = function _getPathOptions(
   if (options.opacity == void 0 || isNaN(options.opacity)) {
     options.opacity = this.current.opacity ?? 1;
   } else {
-    options.opacity =
-      options.opacity < 0 ? 0 : options.opacity > 1 ? 1 : options.opacity;
+    // A numeric string such as "0.5" passes the isNaN check; write it as a
+    // number, as Wasm does.
+    options.opacity = Math.max(0, Math.min(1, Number(options.opacity)));
   }
   pathOptions.opacity = options.opacity;
   const extGStates = this._createExtGStates(options.opacity);
