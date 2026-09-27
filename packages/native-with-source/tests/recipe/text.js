@@ -720,4 +720,17 @@ describe("Text", () => {
     }
     assert.equal(textObjects, 1);
   });
+
+  it("lays out a long line without a text box in linear time", function () {
+    // Measuring the whole line for every word took about 25 s for 3 000
+    // characters; the mocha timeout catches a regression.
+    this.timeout(10000);
+    const output = path.join(__dirname, "../output/text-long-line.pdf");
+    new Recipe("new", output)
+      .createPage("A4")
+      .text("word ".repeat(600), 10, 10, { size: 8 })
+      .endPage()
+      .endPDF();
+    require("node:assert/strict").ok(fs.statSync(output).size > 0);
+  });
 });

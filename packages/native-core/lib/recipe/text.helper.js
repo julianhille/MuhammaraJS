@@ -110,6 +110,10 @@ exports.Word = Word; // ... now export Word to the rest of the library.
  * @param {number} size - The font size.
  * @param {Object} pathOptions - The resolved text options.
  */
+// The width of a line without a text box. No text reaches it, so such a line
+// accepts every word without measuring.
+const UNBOUNDED_LINE_WIDTH = 999999999;
+
 exports.Line = class Line {
   /**
    * @param {number} [width] - The available width; unlimited when omitted.
@@ -118,7 +122,7 @@ exports.Line = class Line {
    * @param {Object} pathOptions - The resolved text options.
    */
   constructor(width, height, size, pathOptions) {
-    this._width = width || 999999999;
+    this._width = width || UNBOUNDED_LINE_WIDTH;
     this._height = height;
     this._pathOptions = pathOptions;
     this.size = size || pathOptions.size;
@@ -192,6 +196,9 @@ exports.Line = class Line {
    * @returns {boolean} Whether the line still fits its width with the word appended.
    */
   canFit(wordObject) {
+    // Measuring the whole line for every word is quadratic in its length, and
+    // a line without a text box never wraps.
+    if (this._width >= UNBOUNDED_LINE_WIDTH) return true;
     const tempValue = this.value + wordObject.value;
     const toWidth =
       this._pathOptions.font.calculateTextDimensions(tempValue, this.size)
