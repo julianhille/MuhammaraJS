@@ -2,8 +2,11 @@
 
 #include "napi/NapiSupport.h"
 
+#include <memory>
+
 class ObjectsContext;
 class ConstructorsHolder;
+struct OpenContent;
 
 class ObjectsContextDriver : public muhammara::napi::ObjectWrap {
 public:
@@ -11,6 +14,8 @@ public:
   static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
   ObjectsContext *ObjectsContextInstance;
   ConstructorsHolder *holder;
+  // The writer's open content, where started streams are registered.
+  std::shared_ptr<OpenContent> openContent;
 
 private:
   static napi_value New(const muhammara::napi::CallbackArgs &);
