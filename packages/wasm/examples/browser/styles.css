@@ -165,6 +165,7 @@ form {
   font-weight: 700;
 }
 input[type="file"],
+input[type="text"],
 select {
   width: 100%;
   padding: 0.65rem;

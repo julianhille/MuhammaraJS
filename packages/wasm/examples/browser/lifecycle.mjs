@@ -8,8 +8,10 @@
  */
 
 /**
- * Optional byte assets chosen in the page.
+ * Optional byte assets and text inputs chosen in the page.
  * @typedef {object} ExampleAssets
+ * @property {Uint8Array<ArrayBuffer>} [pdf] - PDF bytes to read or edit; examples fall back to a built-in sample.
+ * @property {string} [watermark] - Watermark text.
  * @property {Uint8Array<ArrayBuffer>} [font] - TrueType or OpenType font bytes.
  * @property {Uint8Array<ArrayBuffer>} [jpeg] - JPEG bytes.
  * @property {Uint8Array<ArrayBuffer>} [png] - PNG bytes.

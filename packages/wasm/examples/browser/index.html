@@ -131,6 +131,15 @@
         >
           Replace text
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
+          data-example="watermark"
+        >
+          Watermark
+        </button>
       </div>
     </nav>
     <main>
@@ -161,6 +170,19 @@
             >
           </div>
           <div class="file-grid">
+            <label data-asset="pdf"
+              >PDF document (optional)<input
+                name="pdf"
+                type="file"
+                accept=".pdf,application/pdf"
+            /></label>
+            <label data-asset="watermark"
+              >Watermark text<input
+                name="watermark"
+                type="text"
+                placeholder="CONFIDENTIAL"
+                maxlength="40"
+            /></label>
             <label data-asset="font"
               >TTF / OTF font<input
                 name="font"

@@ -91,6 +91,8 @@ async function fileBytes(name) {
  */
 async function assets() {
   return {
+    pdf: await fileBytes("pdf"),
+    watermark: form.elements.watermark.value,
     font: await fileBytes("font"),
     jpeg: await fileBytes("jpeg"),
     png: await fileBytes("png"),

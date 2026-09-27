@@ -46,6 +46,7 @@ describe("Browser how-to examples", function () {
         "table",
         "passwords",
         "replace-text",
+        "watermark",
       ],
     );
   });
@@ -115,5 +116,38 @@ describe("Browser how-to examples", function () {
       reader.end();
       muhammara.disposeAssets();
     }
+  });
+
+  it("watermarks every page of the built-in sample with custom text", async function () {
+    var result = await runHowToExample("watermark", {
+      assets: { watermark: "  PRIVATE  " },
+    });
+    writeOutput("BrowserExamples-watermark-sample", result.bytes);
+    assert.equal(result.summary.source, "Built-in sample");
+    assert.equal(result.summary.watermark, "PRIVATE");
+    assert.equal(result.summary.watermarkedPages, 2);
+    var content = new TextDecoder("latin1").decode(result.bytes);
+    assert.equal(content.match(/\(PRIVATE\) Tj/g)?.length, 2);
+    assert.match(content, /\/ca 0\.25/);
+  });
+
+  it("watermarks an uploaded PDF, including rotated pages", async function () {
+    var pdf = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/recipe/test-P-90.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+    var result = await runHowToExample("watermark", { assets: { pdf } });
+    writeOutput("BrowserExamples-watermark-upload", result.bytes);
+    assert.equal(result.summary.source, "Uploaded PDF");
+    assert.equal(result.summary.watermark, "CONFIDENTIAL");
+    assert.equal(result.summary.watermarkedPages, result.summary.pages);
+    assert.match(
+      new TextDecoder("latin1").decode(result.bytes),
+      /\(CONFIDENTIAL\) Tj/,
+    );
   });
 });

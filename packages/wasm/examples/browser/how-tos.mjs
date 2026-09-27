@@ -93,6 +93,15 @@ export var HOW_TO_EXAMPLES = [
     assets: ["font"],
     requirement: "Requires a TTF or OTF font upload.",
   },
+  {
+    id: "watermark",
+    label: "Watermark",
+    title: "Watermark every page of a PDF",
+    description:
+      "Stamp diagonal, semi-transparent text across every page of your PDF, or of a built-in two-page sample.",
+    assets: ["pdf", "watermark", "font"],
+    expectedPages: 2,
+  },
 ];
 
 /**
@@ -742,6 +751,114 @@ async function deletePagesExample() {
   }
 }
 
+/**
+ * Builds the two-page sample PDF that the PDF-reading examples use when no
+ * PDF is uploaded.
+ * @returns {Promise<Uint8Array<ArrayBuffer>>} The sample PDF bytes.
+ */
+async function samplePdf() {
+  var Recipe = await createRecipe();
+  var recipe = new Recipe({ compress: false });
+  var heading = { size: 26, color: "#102a43" };
+  var body = { size: 12, color: "#334e68" };
+  try {
+    recipe
+      .createPage(595, 842)
+      .text("Service agreement", 72, 80, heading)
+      .text("Draft for review", 72, 124, { size: 14, color: "#bd412d" })
+      .text(
+        "This Draft describes how the supplier delivers the service.",
+        72,
+        172,
+        body,
+      )
+      .text("Both parties sign once the Draft is approved.", 72, 196, body)
+      .endPage()
+      .createPage(595, 842)
+      .text("Pricing appendix", 72, 80, heading)
+      .text("Draft pricing, valid for 30 days.", 72, 124, body)
+      .endPage();
+    return recipe.endPDF();
+  } finally {
+    recipe.dispose();
+    Recipe.disposeAssets();
+  }
+}
+
+/**
+ * Returns the uploaded PDF, or the built-in sample when none was chosen.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<{bytes: Uint8Array<ArrayBuffer>, origin: string}>} The PDF and where it came from.
+ */
+async function sourcePdf(assets) {
+  return assets.pdf
+    ? { bytes: assets.pdf, origin: "Uploaded PDF" }
+    : { bytes: await samplePdf(), origin: "Built-in sample" };
+}
+
+/**
+ * Builds the browser example that watermarks every page of a PDF.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ */
+async function watermarkExample(assets) {
+  var source = await sourcePdf(assets);
+  var label = assets.watermark?.trim() || "CONFIDENTIAL";
+  var muhammara = await createMuhammaraWasm();
+  var reader = muhammara.createReader(source.bytes);
+  var pageCount;
+  try {
+    pageCount = reader.getPagesCount();
+  } finally {
+    reader.end();
+    muhammara.disposeAssets();
+  }
+  var Recipe = await createRecipe({ defaultFont: assets.font });
+  var recipe = new Recipe(source.bytes, { compress: false });
+  try {
+    for (var pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+      // pageInfo() swaps width and height for 90- and 270-degree pages.
+      var page = recipe.pageInfo(pageNumber);
+      var centerX = page.width / 2;
+      var centerY = page.height / 2;
+      // Run the text along the diagonal and size it to 60% of its length,
+      // capped so that a short label stays inside the page.
+      var angle = (Math.atan2(page.height, page.width) * 180) / Math.PI;
+      var size = Math.min(
+        Math.min(page.width, page.height) / 3,
+        (100 * 0.6 * Math.hypot(page.width, page.height)) /
+          recipe.textDimensions(label, { size: 100 }).width,
+      );
+      recipe
+        .editPage(pageNumber)
+        .opacity(0.25)
+        .text(label, centerX, centerY, {
+          size,
+          color: "#dc2626",
+          align: "center center",
+          rotation: angle,
+          rotationOrigin: [centerX, centerY],
+        })
+        .endPage();
+    }
+    var bytes = recipe.endPDF();
+    return {
+      bytes,
+      filename: "muhammara-watermarked.pdf",
+      summary: await summarize(bytes, {
+        howTo: "Watermark every page",
+        source: source.origin,
+        watermark: label,
+        watermarkedPages: pageCount,
+        font: assets.font ? "Uploaded font" : "Roboto (bundled)",
+      }),
+    };
+  } finally {
+    recipe.dispose();
+    Recipe.disposeAssets();
+  }
+}
+
 var runners = {
   annotations: annotationsExample,
   links: linksExample,
@@ -754,6 +871,7 @@ var runners = {
   table: tableExample,
   passwords: passwordsExample,
   "replace-text": replaceTextExample,
+  watermark: watermarkExample,
 };
 
 /**
