@@ -4,6 +4,18 @@ describe("HighLevelContentContext", function () {
   var os = require("os");
   var path = require("path");
   var outputPath = __dirname + "/output/HighLevelContentContext.pdf";
+  var { writeOutput } = require("./helpers/testOutput");
+  var currentSlug = "";
+
+  beforeEach(
+    /** Derive the output file name of the running case from its title. */
+    function () {
+      currentSlug = this.currentTest.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+    },
+  );
 
   /** Create a page or form context on a fresh or modifying writer. */
   function drawingTarget(mode) {
@@ -14,6 +26,10 @@ describe("HighLevelContentContext", function () {
       var source = new muhammara.PDFWStreamForBuffer();
       var original = muhammara.createWriter(source);
       original.writePage(original.createPage(0, 0, 100, 100)).end();
+      writeOutput(
+        "HighLevelContentContext-" + currentSlug + "-source",
+        source.buffer,
+      );
       writer = muhammara.createWriterToModify(
         new muhammara.PDFRStreamForBuffer(source.buffer),
         output,
@@ -38,6 +54,7 @@ describe("HighLevelContentContext", function () {
           writer.writePage(writer.createPage(0, 0, 100, 100));
         } else writer.writePage(page);
         writer.end();
+        writeOutput("HighLevelContentContext-" + currentSlug, output.buffer);
         return output.buffer.toString("latin1");
       },
     };
@@ -792,6 +809,10 @@ describe("HighLevelContentContext", function () {
 
       pdfWriter.writePage(page);
       pdfWriter.end();
+      writeOutput(
+        "HighLevelContentContext-invalid-opacity",
+        fs.readFileSync(path.join(tempDirectory, "invalid-opacity.pdf")),
+      );
     } finally {
       fs.rmSync(tempDirectory, { recursive: true, force: true });
     }
@@ -862,6 +883,10 @@ describe("HighLevelContentContext", function () {
     pdfWriter.end();
 
     try {
+      writeOutput(
+        "HighLevelContentContext-partial-draw-path",
+        fs.readFileSync(invalidPath),
+      );
       var contents = fs.readFileSync(invalidPath, "latin1");
       expect(contents).not.to.contain("10 20 m");
       expect(contents).not.to.contain("1 0 0 RG");

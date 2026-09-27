@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const { writeOutput } = require("../helpers/testOutput");
 const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Append Pages", () => {
@@ -32,6 +33,7 @@ describe("Append Pages", () => {
     fs.copyFileSync(material, appended);
 
     new Recipe(source, output).appendPage(appended).endPDF();
+    writeOutput("appendPages-handles-result", fs.readFileSync(output));
 
     // Windows refuses the unlink with EBUSY while a reader still holds the
     // file, which is what https://github.com/julianhille/MuhammaraJS/issues/381

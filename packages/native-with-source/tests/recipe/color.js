@@ -1,6 +1,7 @@
 const path = require("path");
 const Recipe = require("@muhammara/native-with-source").Recipe;
 const muhammara = require("@muhammara/native-with-source");
+const { writeOutput } = require("../helpers/testOutput");
 
 describe("Color", () => {
   it("basic", (done) => {
@@ -469,6 +470,8 @@ describe("Color", () => {
       .rectangle(40, 10, 20, 20, { fill: "__proto__" })
       .endPage()
       .endPDF();
+    // The rejected Recipe below truncates output; keep the finished PDF.
+    writeOutput("color-own-names-result", fs.readFileSync(output));
     const reader = muhammara.createReader(output);
     const content = [];
     for (let id = 1; id < reader.getXrefSize(); id++) {

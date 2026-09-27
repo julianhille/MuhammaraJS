@@ -173,9 +173,9 @@ describe("SimpleTextUsageTest", function () {
       function () {
         var outputPath =
           __dirname +
-          "/output/SimpleTextUsageTJ-NUL-" +
+          "/output/SimpleTextUsageTest-nul-" +
           variant.encoding +
-          ".pdf";
+          "-tj-array.pdf";
         var writer = muhammara.createWriter(outputPath);
         var page = writer.createPage(0, 0, 100, 100);
         writer
@@ -199,9 +199,9 @@ describe("SimpleTextUsageTest", function () {
       function () {
         var outputPath =
           __dirname +
-          "/output/SimpleTextUsageTj-NUL-" +
+          "/output/SimpleTextUsageTest-nul-" +
           variant.encoding +
-          ".pdf";
+          "-tj-string.pdf";
         var writer = muhammara.createWriter(outputPath);
         var page = writer.createPage(0, 0, 100, 100);
         writer

@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const { writeOutput } = require("../helpers/testOutput");
 const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("Modify", () => {
@@ -262,6 +263,7 @@ describe("Modify", () => {
     fs.copyFileSync(material, overlaid);
 
     new Recipe(source, output).editPage(1).overlay(overlaid).endPage().endPDF();
+    writeOutput("overlay-handles-result", fs.readFileSync(output));
 
     // Both files stay locked on Windows while a reader still holds them: #381.
     fs.unlinkSync(source);

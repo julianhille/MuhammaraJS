@@ -5,12 +5,20 @@ const muhammara = require("@muhammara/native-with-source");
 const {
   htmlToTextObjects,
 } = require("@muhammara/native-core/lib/recipe/htmlToTextObjects");
+const { writeOutput } = require("../helpers/testOutput");
 const htmlCodes = fs.readFileSync(
   path.join(__dirname, "../TestMaterials/recipe/text.html"),
   "utf8",
 );
-/** Renders HTML and returns its visual lines; blank lines appear as "". */
-function renderLines(html, options = {}) {
+/**
+ * Renders HTML, writes the PDF to tests/output/<name>.pdf, and returns its
+ * visual lines; blank lines appear as "".
+ * @param {string} html HTML to render.
+ * @param {string} name Output file name without extension.
+ * @param {object} [options] Extra text options.
+ * @returns {string[]} The rendered lines, top to bottom.
+ */
+function renderLines(html, name, options = {}) {
   const recipe = new muhammara.Recipe(Buffer.from("new"));
   recipe.registerFont(
     "arial",
@@ -35,6 +43,7 @@ function renderLines(html, options = {}) {
     })
     .endPage()
     .endPDF((output) => output);
+  writeOutput(name, bytes);
   const reader = muhammara.createReader(
     new muhammara.PDFRStreamForBuffer(bytes),
   );
@@ -122,6 +131,7 @@ describe("HTML to TextObjects", () => {
       )
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-list-prefixes", bytes);
     const reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -171,6 +181,7 @@ describe("HTML to TextObjects", () => {
       )
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-nested-only-items", bytes);
     const reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -201,6 +212,7 @@ describe("HTML to TextObjects", () => {
       )
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-formatted-runs", bytes);
     const reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -240,6 +252,7 @@ describe("HTML to TextObjects", () => {
       })
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-hanging-indent", bytes);
     const reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -278,6 +291,7 @@ describe("HTML to TextObjects", () => {
       })
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-list-line-breaks", bytes);
     const reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -309,6 +323,7 @@ describe("HTML to TextObjects", () => {
       })
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-break-clip", clippedBytes);
     const clippedReader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(clippedBytes),
     );
@@ -339,7 +354,9 @@ describe("HTML to TextObjects", () => {
         },
       })
       .endPage()
-      .endPDF();
+      .endPDF((output) =>
+        writeOutput("htmlToTextObjects-double-break-clip", output),
+      );
     assert.equal(doubleBreakClip.linesWritten, 2);
     assert.equal(doubleBreakClip.remainder, "b");
 
@@ -360,7 +377,9 @@ describe("HTML to TextObjects", () => {
         },
       })
       .endPage()
-      .endPDF();
+      .endPDF((output) =>
+        writeOutput("htmlToTextObjects-trailing-break-clip", output),
+      );
     assert.equal(trailingBreakClip.clipped, true);
     assert.equal(trailingBreakClip.linesWritten, 1);
   });
@@ -388,6 +407,7 @@ describe("HTML to TextObjects", () => {
       .text("<br>", 20, 200, { font: "arial", size: 12, html: true })
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-break-boundaries", bytes);
     const reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -418,6 +438,7 @@ describe("HTML to TextObjects", () => {
       .text("FOLLOW", { font: "arial", size: 12, flow: false })
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-trailing-break-flow", trailingBytes);
     const trailingReader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(trailingBytes),
     );
@@ -444,6 +465,7 @@ describe("HTML to TextObjects", () => {
       })
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-block-children-marker", bytes);
     const reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );
@@ -463,7 +485,7 @@ describe("HTML to TextObjects", () => {
       ["a <u>b</u>", {}, 14],
       ["a <u>b</u>", { size: 20 }, 20],
     ];
-    for (const [html, options, size] of cases) {
+    for (const [index, [html, options, size]] of cases.entries()) {
       const recipe = new muhammara.Recipe(Buffer.from("new"));
       recipe.registerFont(
         "arial",
@@ -479,6 +501,7 @@ describe("HTML to TextObjects", () => {
         })
         .endPage()
         .endPDF((output) => output);
+      writeOutput(`htmlToTextObjects-element-size-${index + 1}`, bytes);
       const reader = muhammara.createReader(
         new muhammara.PDFRStreamForBuffer(bytes),
       );
@@ -526,8 +549,12 @@ describe("HTML to TextObjects", () => {
         ["1. one", "two", "2. three", "* n1", "n2"],
       ],
     ];
-    for (const [html, lines] of cases) {
-      assert.deepEqual(renderLines(html), lines, html);
+    for (const [index, [html, lines]] of cases.entries()) {
+      assert.deepEqual(
+        renderLines(html, `htmlToTextObjects-line-breaks-${index + 1}`),
+        lines,
+        html,
+      );
     }
   });
 
@@ -566,6 +593,7 @@ describe("HTML to TextObjects", () => {
       })
       .endPage()
       .endPDF((output) => output);
+    writeOutput("htmlToTextObjects-links-tables-clipped", bytes);
     const reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(bytes),
     );

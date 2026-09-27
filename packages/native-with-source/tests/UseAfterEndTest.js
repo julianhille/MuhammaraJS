@@ -3,6 +3,7 @@ var muhammara = require("@muhammara/native-with-source");
 var fs = require("fs");
 var os = require("os");
 var path = require("path");
+var { writeOutput } = require("./helpers/testOutput");
 
 /** Exercise stateful methods after a writer enters a terminal state. */
 function checkEndedWriter(directory, mode) {
@@ -20,6 +21,10 @@ function checkEndedWriter(directory, mode) {
     var sourcePath = path.join(directory, "source.pdf");
     var source = muhammara.createWriter(sourcePath);
     source.writePage(source.createPage(0, 0, 200, 200)).end();
+    writeOutput(
+      "UseAfterEndTest-" + mode + "-source",
+      fs.readFileSync(sourcePath),
+    );
     writer =
       mode === "modified-file"
         ? muhammara.createWriterToModify(sourcePath, {
@@ -51,12 +56,18 @@ function checkEndedWriter(directory, mode) {
       writer.shutdown(statePath);
       var resumed = muhammara.createWriterToContinue(outputPath, statePath);
       resumed.end();
+      writeOutput("UseAfterEndTest-" + mode, fs.readFileSync(outputPath));
       var reader = muhammara.createReader(outputPath);
       assert.equal(reader.getPagesCount(), 1);
       reader.end();
     }
   } else {
     writer.end();
+    if (mode === "stream" || mode === "modified-stream") {
+      writeOutput("UseAfterEndTest-" + mode, stream.buffer);
+    } else if (mode === "file" || mode === "modified-file") {
+      writeOutput("UseAfterEndTest-" + mode, fs.readFileSync(outputPath));
+    }
   }
   assert.equal(writer.end(), writer);
   assert.equal(writer._abort(), writer);
@@ -199,6 +210,10 @@ describe("UseAfterEndTest", function () {
 
           if (mode === "end") {
             logged.writer.end();
+            writeOutput(
+              "UseAfterEndTest-log-stream-end",
+              fs.readFileSync(path.join(directory, "logged.pdf")),
+            );
           } else {
             logged.writer._abort();
           }

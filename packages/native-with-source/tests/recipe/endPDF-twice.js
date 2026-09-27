@@ -1,5 +1,6 @@
 const path = require("path");
 const { expect } = require("chai");
+const { writeOutput } = require("../helpers/testOutput");
 const Recipe = require("@muhammara/native-with-source").Recipe;
 
 describe("endPDF called twice", () => {
@@ -31,6 +32,7 @@ describe("endPDF called twice", () => {
       secondOutput = output;
       return "second";
     });
+    writeOutput("endPDF-twice-buffer", firstOutput);
 
     expect(firstResult).to.equal("first");
     expect(secondResult).to.equal("second");

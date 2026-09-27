@@ -3,6 +3,7 @@ const assert = require("chai").assert;
 const zlib = require("zlib");
 const muhammara = require("@muhammara/native-with-source");
 const Recipe = muhammara.Recipe;
+const { writeOutput } = require("../helpers/testOutput");
 
 function getFirstContentStream(pdf) {
   const start = pdf.indexOf("stream\r\n") + "stream\r\n".length;
@@ -289,6 +290,7 @@ describe("Vector", () => {
       .pie(100, 100, 50, 20, 220, { stroke: "#000000" })
       .endPage()
       .endPDF((pdf) => {
+        writeOutput("vector-pie-wedges", pdf);
         assert.match(getFirstContentStream(pdf), /\r?\nh\r?\n[\s\S]*?S\r?\n/);
         done();
       });
@@ -333,6 +335,7 @@ describe("Vector", () => {
       })
       .endPage()
       .endPDF((pdf) => {
+        writeOutput("vector-inset-strokes", pdf);
         const reader = muhammara.createReader(
           new muhammara.PDFRStreamForBuffer(pdf),
         );
@@ -389,6 +392,7 @@ describe("Vector", () => {
       .arc(10, 10, 10, 0, 90, thick)
       .endPage()
       .endPDF((pdf) => {
+        writeOutput("vector-thick-inset-strokes", pdf);
         const reader = muhammara.createReader(
           new muhammara.PDFRStreamForBuffer(pdf),
         );

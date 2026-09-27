@@ -13,6 +13,7 @@ describe("Recipe text default-size parity", function () {
           .createPage("letter")
           .endPage()
           .endPDF((bytes) => bytes);
+        writeOutput("text-defaults-sizes-editing-source", source);
         recipe = new Recipe(source).editPage(1);
       } else {
         recipe.createPage("letter");
@@ -189,7 +190,9 @@ describe("Recipe text color parity", function () {
         cases.forEach(function () {
           recipe.createPage(200, 200).endPage();
         });
-        recipe = new Recipe(recipe.endPDF((bytes) => bytes));
+        var source = recipe.endPDF((bytes) => bytes);
+        writeOutput("text-color-parity-editing-source", source);
+        recipe = new Recipe(source);
       }
       recipe.chroma("brand", "#00ff00");
       cases.forEach(function ([options], index) {
@@ -282,7 +285,13 @@ describe("Recipe text size validation", function () {
           }),
         expected,
       );
-      recipe.endPage().endPDF((output) => output);
+      var bytes = recipe.endPage().endPDF((output) => output);
+      writeOutput(
+        `text-size-rejects-${Object.entries(size)
+          .map(([key, value]) => `${key}-${String(value)}`)
+          .join("-")}`,
+        bytes,
+      );
     });
   });
 
@@ -291,11 +300,13 @@ describe("Recipe text size validation", function () {
       .createPage("letter")
       .endPage()
       .endPDF((bytes) => bytes);
+    writeOutput("text-size-rejects-editing-source", source);
     var recipe = new Recipe(source).editPage(1);
     assert.throws(() => recipe.text("Hello", 72, 72, { size: -5 }), {
       name: "RangeError",
     });
-    recipe.endPage().endPDF((output) => output);
+    var bytes = recipe.endPage().endPDF((output) => output);
+    writeOutput("text-size-rejects-editing", bytes);
   });
 
   it("draws nothing for a rejected size and keeps the document usable", function () {
@@ -367,7 +378,8 @@ describe("Recipe text size validation", function () {
       recipe.textDimensions("Hello", { font: "arial", fontSize: 12 }),
       recipe.textDimensions("Hello", { font: "arial" }),
     );
-    recipe.endPage().endPDF((output) => output);
+    var bytes = recipe.endPage().endPDF((output) => output);
+    writeOutput("text-size-fontSize-alias", bytes);
   });
 
   it("rejects an infinite size", function () {
@@ -378,6 +390,7 @@ describe("Recipe text size validation", function () {
     assert.throws(function () {
       recipe.text("Hello", 72, 72, { font: "arial", fontSize: Infinity });
     }, /Text fontSize must be a number greater than zero, received Infinity/);
-    recipe.endPage().endPDF((output) => output);
+    var bytes = recipe.endPage().endPDF((output) => output);
+    writeOutput("text-size-rejects-infinity", bytes);
   });
 });
