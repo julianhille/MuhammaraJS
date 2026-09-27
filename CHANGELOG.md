@@ -203,6 +203,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   throws `RangeError` instead of drawing beyond the bounds; return `true` to
   stop or provide a large enough area
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Throw `TypeError: charSpace must be a finite number` from Recipe `text()`
+  when `charSpace` is `Infinity`, `-Infinity`, `NaN`, or not a number, as
+  `@muhammara/wasm` does. Previously `Infinity` wrote an invalid `inf Tc`
+  operand into the page, `NaN` silently drew with no spacing, and a string or
+  boolean threw `Wrong Arguments, please provide character space` after
+  drawing had started. The check runs before anything is drawn. Pass a finite
+  number, or omit the option for no spacing [#812](https://github.com/julianhille/MuhammaraJS/issues/812)
 
 ### Added
 

@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
-const Recipe = require("@muhammara/native-with-source").Recipe;
+const muhammara = require("@muhammara/native-with-source");
+const Recipe = muhammara.Recipe;
 const { Word } = require("@muhammara/native-core/lib/recipe/text.helper");
 const path = require("path");
 
@@ -126,5 +127,41 @@ facilisis risus eu lacinia. Sed eu leo in turpis fringilla hendrerit.";
       })
       .endPage()
       .endPDF(done);
+  });
+
+  it("contains character spacing and rejects non-finite values", () => {
+    const output = path.join(
+      __dirname,
+      "../output/text-charSpace-restored.pdf",
+    );
+    const recipe = new Recipe("new", output, { compress: false });
+    recipe.createPage(200, 200);
+    for (const charSpace of [Infinity, -Infinity, NaN]) {
+      assert.throws(
+        () => recipe.text("Invalid", 20, 20, { charSpace }),
+        {
+          name: "TypeError",
+          message: "charSpace must be a finite number",
+        },
+        String(charSpace),
+      );
+    }
+    recipe.text("Spaced", 20, 40, { charSpace: 5 }).endPage().endPDF();
+
+    const reader = muhammara.createReader(output);
+    const stream = reader.startReadingFromStream(
+      reader
+        .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+        .toPDFStream(),
+    );
+    const chunks = [];
+    while (stream.notEnded()) chunks.push(Buffer.from(stream.read(4096)));
+    const content = Buffer.concat(chunks).toString("latin1");
+    assert.doesNotMatch(content, /\(Invalid\)/, "rejected text is not drawn");
+    assert.match(
+      content,
+      /\bq\s+BT\s+5 Tc\b[^Q]*?\(Spaced\) Tj\s+ET\s+Q/,
+      "Recipe character spacing is restored after its text operation",
+    );
   });
 });

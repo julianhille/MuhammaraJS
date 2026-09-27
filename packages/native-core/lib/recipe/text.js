@@ -80,6 +80,20 @@ exports._merge = function merge(target, source) {
 };
 
 /**
+ * Reject a character spacing that cannot become a `Tc` operand.
+ * @private
+ * @param {Object} [options] - The text options of one text() call.
+ * @returns {void}
+ * @throws {TypeError} If `options.charSpace` is given and is not a finite number.
+ */
+function _validateCharSpace(options) {
+  const charSpace = options?.charSpace ?? 0;
+  if (!Number.isFinite(charSpace)) {
+    throw new TypeError("charSpace must be a finite number");
+  }
+}
+
+/**
  * Resolve the text position and options for text(): a call without
  * coordinates continues the flow or starts at the margins, a call with them
  * starts a new text box; previous options are merged in.
@@ -307,12 +321,15 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {string} [options.subject] - Subject of annotation.
  * @param {string} [options.link] - Make the text open this URL.
  * @returns {Recipe} The recipe instance. Without an active page nothing is drawn.
+ * @throws {TypeError} If `options.charSpace` is not a finite number; nothing is drawn.
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 exports.text = function text(text = "", x, y, options = {}) {
   if (!this.pageContext) {
     return this;
   }
+  // Validate before _initOptions moves the text position or resets the flow.
+  _validateCharSpace(typeof x === "object" ? x : options);
   options = _initOptions(this, x, y, options);
   // Reject invalid markup annotations before any text is drawn.
   for (let key in options) {
