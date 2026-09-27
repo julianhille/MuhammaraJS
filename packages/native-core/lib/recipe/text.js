@@ -325,6 +325,8 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 exports.text = function text(text = "", x, y, options = {}) {
+  // null options act like omitted options.
+  if (options === null) options = {};
   if (!this.pageContext) {
     return this;
   }

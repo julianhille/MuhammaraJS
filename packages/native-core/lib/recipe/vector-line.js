@@ -127,6 +127,9 @@ exports._strokePolyline = function _strokePolyline(points, options) {
  * @throws {TypeError} If no page is active.
  */
 exports.line = function line(coordinates = [], options = {}) {
+  // null arguments act like omitted ones.
+  if (coordinates === null) coordinates = [];
+  if (options === null) options = {};
   if (typeof coordinates === "number") {
     // line(startX, startY, endX, endY, options?), as in Wasm.
     const [startX, startY, endX, endY, lineOptions = {}] = arguments;

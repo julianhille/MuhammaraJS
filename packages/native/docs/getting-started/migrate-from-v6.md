@@ -662,6 +662,25 @@ their `Rect` lay above them. Both now cover the same area below `y`. Annotations
 without a `height`, such as `comment()`, and the `highlight`, `underline`,
 `strikeOut`, and `squiggly` options of `text()` stay where they were.
 
+## 18. Rename Recipe Plugins That Collide With New Methods
+
+v7 adds these Recipe methods: `deletePage`, `getCurrentPageInfo`,
+`lineStyle`, `link`, `opacity`, `pie`, `removeText`, `replaceText`, `rotate`,
+`rotateContent`, and `setPageBox`. `register()` refuses to replace an existing
+method, so registering a plugin with one of these names now throws
+`Found conflict in Recipe prototypes. <name> already exists.`
+[#829](https://github.com/julianhille/MuhammaraJS/issues/829).
+
+Rename the plugin, or use the built-in method if it does what your plugin did:
+
+```javascript
+// v6: a plugin named pie.
+recipe.register("pie", drawPie);
+
+// v7: register it under a name Recipe does not use.
+recipe.register("drawPieChart", drawPie);
+```
+
 ## What Does Not Change
 
 - Supported Node.js versions.

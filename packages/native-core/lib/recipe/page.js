@@ -54,11 +54,21 @@ function readPageTree(
   if (depth === 0 && values.Parent !== undefined) {
     throw new Error("deletePage requires a valid page tree");
   }
-  const kids = parser.queryDictionaryObject(dictionary, "Kids").toPDFArray();
+  const kids = parser.queryDictionaryObject(dictionary, "Kids")?.toPDFArray();
+  if (!kids) {
+    throw new Error("deletePage requires a valid page tree");
+  }
   const mappedChildren = kids.toJSArray().map((entry) => {
+    // Kids must be references to page tree dictionaries with a /Type.
     const reference = entry.toPDFIndirectObjectReference();
-    const childID = reference.getObjectID();
-    const childDictionary = parser.parseNewObject(childID).toPDFDictionary();
+    const childID = reference?.getObjectID();
+    const childDictionary =
+      childID === undefined
+        ? null
+        : parser.parseNewObject(childID)?.toPDFDictionary();
+    if (!childDictionary) {
+      throw new Error("deletePage requires a valid page tree");
+    }
     const childValues = childDictionary.toJSObject();
     const parentReference = childValues.Parent?.toPDFIndirectObjectReference();
     if (
@@ -68,7 +78,10 @@ function readPageTree(
     ) {
       throw new Error("deletePage requires a valid page tree");
     }
-    const type = childValues.Type.toPDFName().value;
+    const type = childValues.Type?.toPDFName()?.value;
+    if (type === undefined) {
+      throw new Error("deletePage requires a valid page tree");
+    }
     if (type === PdfName.PAGES) {
       return readPageTree(
         parser,
@@ -302,6 +315,9 @@ function readPageLabel(parser, value) {
   const start = values.St ? resolvePageLabelObject(parser, values.St) : null;
   const prefixHex = prefix?.toPDFHexString();
   const prefixLiteral = prefix?.toPDFLiteralString();
+  if (values.P !== undefined && !prefixHex && !prefixLiteral) {
+    throw new Error("deletePage requires valid PageLabels entries");
+  }
   return {
     style: style?.toPDFName()?.value,
     prefix:
@@ -592,6 +608,35 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
   return this;
 };
 
+// setPageBox() also accepts the PageBox names.
+const PAGE_BOX_CONSTANTS = {
+  [muhammara.PageBox.MEDIA]: muhammara.ePDFPageBoxMediaBox,
+  [muhammara.PageBox.CROP]: muhammara.ePDFPageBoxCropBox,
+  [muhammara.PageBox.BLEED]: muhammara.ePDFPageBoxBleedBox,
+  [muhammara.PageBox.TRIM]: muhammara.ePDFPageBoxTrimBox,
+  [muhammara.PageBox.ART]: muhammara.ePDFPageBoxArtBox,
+};
+
+/**
+ * Validate a page rotation. PDF allows only multiples of 90 degrees.
+ * @private
+ * @param {*} page - The active page, if any.
+ * @param {*} rotation - The requested rotation.
+ * @throws {TypeError} If no page is active or `rotation` is not a number.
+ * @throws {RangeError} If `rotation` is not a multiple of 90.
+ */
+function checkRotation(page, rotation) {
+  if (!page) {
+    throw new TypeError("rotate requires an active page");
+  }
+  if (typeof rotation !== "number") {
+    throw new TypeError("Rotation is not set to a number");
+  }
+  if (!Number.isInteger(rotation / 90)) {
+    throw new RangeError("Rotation must be a multiple of 90 degrees");
+  }
+}
+
 /**
  * Set the rotation of the current page.
  * @name rotate
@@ -599,7 +644,8 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
  * @memberof Recipe#
  * @param {number} rotation - The page rotation in degrees, a multiple of 90.
  * @returns {Recipe} The recipe instance.
- * @throws {TypeError} If no page is active.
+ * @throws {TypeError} If no page is active or `rotation` is not a number.
+ * @throws {RangeError} If `rotation` is not a multiple of 90.
  * @throws {Error} If the active page was opened with `editPage()`.
  */
 exports.rotate = function rotate(rotation) {
@@ -610,6 +656,7 @@ exports.rotate = function rotate(rotation) {
       "rotate() is only available on pages created with createPage()",
     );
   }
+  checkRotation(this.page, rotation);
   this.page.rotate = rotation;
   this.metadata[this.pageNumber].rotate = rotation;
   return this;
@@ -620,7 +667,7 @@ exports.rotate = function rotate(rotation) {
  * @name setPageBox
  * @function
  * @memberof Recipe#
- * @param {number} box - An `ePDFPageBox*` constant.
+ * @param {number|string} box - An `ePDFPageBox*` constant or a `PageBox` name.
  * @param {number} left - The PDF left coordinate.
  * @param {number} bottom - The PDF bottom coordinate.
  * @param {number} right - The PDF right coordinate.
@@ -630,6 +677,10 @@ exports.rotate = function rotate(rotation) {
  * @throws {TypeError} If no page is active.
  */
 exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
+  box = PAGE_BOX_CONSTANTS[box] ?? box;
+  if ([left, bottom, right, top].some((value) => typeof value === "bigint")) {
+    throw new TypeError("setPageBox coordinates must be numbers");
+  }
   const boxes = {
     [muhammara.ePDFPageBoxMediaBox]: "mediaBox",
     [muhammara.ePDFPageBoxCropBox]: "cropBox",

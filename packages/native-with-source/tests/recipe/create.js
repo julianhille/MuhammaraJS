@@ -220,4 +220,36 @@ describe("Create", () => {
     reader.end();
     assert.equal(new Recipe(output).pageInfo(1).rotate, 0);
   });
+
+  it("validates rotate() and setPageBox() arguments", () => {
+    const output = path.join(__dirname, "../output/rotate-validation.pdf");
+    const recipe = new Recipe("new", output);
+    assert.throws(() => recipe.rotate(90), "rotate requires an active page");
+    recipe.createPage("A4");
+    assert.throws(
+      () => recipe.rotate(45),
+      RangeError,
+      "Rotation must be a multiple of 90 degrees",
+    );
+    assert.throws(
+      () => recipe.rotate(90n),
+      TypeError,
+      "Rotation is not set to a number",
+    );
+    assert.throws(
+      () => recipe.setPageBox(muhammara.ePDFPageBoxCropBox, 0, 0, 10n, 10),
+      TypeError,
+      "setPageBox coordinates must be numbers",
+    );
+    recipe
+      .rotate(180)
+      .setPageBox(muhammara.PageBox.CROP, 10, 20, 300, 400)
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    const page = reader.parsePage(0);
+    assert.equal(page.getRotate(), 180);
+    assert.deepEqual(page.getCropBox(), [10, 20, 300, 400]);
+    reader.end();
+  });
 });

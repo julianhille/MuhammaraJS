@@ -445,6 +445,7 @@ async function usesLowLevelSurface() {
   recipe
     .createPage()
     .setPageBox(muhammara.ePDFPageBoxCropBox, 18, 18, 594, 774)
+    .setPageBox(PageBoxes.TRIM, 18, 18, 594, 774)
     .endPage();
   var defaultFontBytes: Uint8Array = new Recipe()
     .createPage("letter")

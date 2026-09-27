@@ -425,4 +425,29 @@ describe("Recipe vector", function () {
     recipe.n_gon(100, 100, 50, 100000).star(100, 100, 50, 7).endPage();
     assert.ok(recipe.endPDF().length > 0);
   });
+
+  it("treats null options like omitted options", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe().createPage(200, 200);
+    recipe
+      .circle(50, 50, 10, null)
+      .ellipse(50, 50, 10, 5, null)
+      .arc(50, 50, 10, 0, 90, null)
+      .rectangle(10, 10, 20, 20, null)
+      .lineStyle(null)
+      .polygon(
+        [
+          [1, 1],
+          [5, 5],
+          [1, 5],
+        ],
+        null,
+      )
+      .line(1, 1, 5, 5, null)
+      .text("text", 10, 10, null);
+    assert.ok(recipe.textDimensions("text", null).width > 0);
+    var pdf = recipe.endPage().endPDF();
+    writeOutput("vector-null-options", pdf);
+    assert.ok(pdf.length > 0);
+  });
 });

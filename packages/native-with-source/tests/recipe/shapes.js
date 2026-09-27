@@ -506,4 +506,41 @@ describe("Regular Polygons, Stars, Arrows", () => {
     }
     recipe.n_gon(100, 100, 50, 100000).star(100, 100, 50, 7).endPage().endPDF();
   });
+
+  it("treats null options like omitted options", () => {
+    const assert = require("node:assert/strict");
+    const recipe = new Recipe(
+      "new",
+      path.join(__dirname, "../output/shapes-null-options.pdf"),
+    ).createPage(200, 200);
+    recipe
+      .circle(50, 50, 10, null)
+      .ellipse(50, 50, 10, 5, null)
+      .arc(50, 50, 10, 0, 90, null)
+      .rectangle(10, 10, 20, 20, null)
+      .lineStyle(null)
+      .polygon(
+        [
+          [1, 1],
+          [5, 5],
+          [1, 5],
+        ],
+        null,
+      )
+      .line(
+        [
+          [1, 1],
+          [5, 5],
+        ],
+        null,
+      )
+      .line(null)
+      .text("text", 10, 10, null);
+    assert.ok(recipe.textDimensions("text", null).width > 0);
+    assert.throws(
+      () => recipe.polygon(null),
+      /^TypeError: A polygon needs at least one coordinate pair$/,
+    );
+    recipe.endPage().endPDF();
+  });
 });

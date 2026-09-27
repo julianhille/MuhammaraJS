@@ -21,6 +21,8 @@ export function createPolygonMethods(runtime) {
      * @throws {Error} If no target page is available or an unsupported color is requested.
      */
     polygon: function (coordinates, options = {}) {
+      // null options act like omitted options.
+      if (options === null) options = {};
       if (!Array.isArray(coordinates) || coordinates.length < 2)
         throw new TypeError("A polygon needs at least two coordinate pairs");
       this._beginPath(options, coordinates[0][0], coordinates[0][1]);

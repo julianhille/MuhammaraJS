@@ -93,6 +93,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   later coordinate handling disagreed with the written page. Rotate only pages
   you create; an edited page keeps its source rotation
   [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
+- Recipe `register()` throws
+  `Found conflict in Recipe prototypes. <name> already exists.` for a plugin
+  named like a method new in v7: `deletePage`, `getCurrentPageInfo`,
+  `lineStyle`, `link`, `opacity`, `pie`, `removeText`, `replaceText`,
+  `rotate`, `rotateContent`, or `setPageBox`. Rename the plugin; see
+  [Rename Recipe plugins that collide with new methods](packages/native/docs/getting-started/migrate-from-v6.md#18-rename-recipe-plugins-that-collide-with-new-methods)
+  [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
+- Recipe `rotate()` throws `RangeError: Rotation must be a multiple of 90
+degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
+  value that viewers ignore or round. Pass a multiple of 90
+  [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
 
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
   `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
@@ -345,6 +356,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Direct page labels on a catalog with a nonzero generation no longer throw,
   and the labels are no longer dropped when the writer also writes a new
   catalog [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
+- Fix Recipe edge cases found in fuzzing: `removeText()` no longer writes
+  `undefined` for a malformed `"` operator with fewer than three operands;
+  `rotate()` without an active page throws `rotate requires an active page`;
+  `setPageBox()` accepts `PageBox` names such as `PageBox.CROP`; a BigInt
+  coordinate in `setPageBox()` throws a `TypeError`; `null` options act like
+  omitted options in `circle()`, `ellipse()`, `arc()`, `rectangle()`, `text()`,
+  `textDimensions()`, `lineStyle()`, `polygon()`, and `line()`, and `null`
+  coordinates in `line()` draw nothing; `polygon()` without coordinates throws
+  `A polygon needs at least one coordinate pair`; and `deletePage()` reports
+  malformed page trees and PageLabels with its own errors instead of internal
+  `TypeError`s [#829](https://github.com/julianhille/MuhammaraJS/issues/829)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)

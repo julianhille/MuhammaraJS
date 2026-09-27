@@ -36,6 +36,11 @@
  * @throws {TypeError} If no page is active or there are no coordinates.
  */
 exports.polygon = function polygon(coordinates = [], options = {}) {
+  // null options act like omitted options.
+  if (options === null) options = {};
+  if (!Array.isArray(coordinates) || coordinates.length === 0) {
+    throw new TypeError("A polygon needs at least one coordinate pair");
+  }
   // Work on a copy so closing the path leaves the caller's array unchanged.
   coordinates = coordinates.slice();
   // close polygon

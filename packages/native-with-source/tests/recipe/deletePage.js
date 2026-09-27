@@ -1234,4 +1234,29 @@ describe("Recipe deletePage", () => {
       { text: "Reply", title: "Reviewer" },
     ]);
   });
+
+  it("rejects a page-label prefix that is not a string", () => {
+    /**
+     * Replaces one unique span of a fixture with bytes of the same length, so
+     * the xref offsets stay valid.
+     *
+     * @param {Buffer} bytes The fixture.
+     * @param {string} from The span to replace.
+     * @param {string} to The replacement, as long as `from`.
+     * @returns {Buffer} The changed fixture.
+     */
+    function replaceSpan(bytes, from, to) {
+      const text = bytes.toString("latin1");
+      assert.equal(from.length, to.length);
+      assert.equal(text.split(from).length, 2);
+      return Buffer.from(text.replace(from, to), "latin1");
+    }
+    const fixture = nestedNonzeroGenerationPdf();
+    for (const [from, to, message] of [
+      ["/P (B-)", "/P 1234", /valid PageLabels entries/],
+    ]) {
+      const recipe = new Recipe(replaceSpan(fixture, from, to));
+      assert.throws(() => recipe.deletePage(1), message);
+    }
+  });
 });
