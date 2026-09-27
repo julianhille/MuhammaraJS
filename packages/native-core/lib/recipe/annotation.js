@@ -112,8 +112,10 @@ Object.defineProperty(exports, "linkPdf", { value: linkPdf });
  * @function
  * @memberof Recipe#
  * @todo support for rich text RC
- * @param {number|"center"} x - The coordinate x
- * @param {number|"center"} y - The coordinate y
+ * @param {number|"center"} x - The left edge of the annotation rectangle.
+ * @param {number|"center"} y - The top edge of the annotation rectangle. Like
+ *   `rectangle()` and `link()`, (x, y) is the rectangle's top-left corner, and
+ *   the rectangle extends `options.height` down from it.
  * @param {Recipe.AnnotSubtype} subtype - The annotation subtype, one of the
  *   `Recipe.AnnotSubtype` values.
  * @param {Object} [options] - The options
@@ -188,7 +190,15 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
   let { text } = args;
   this._startDictionary(pageNumber);
   const { rotate } = this.metadata[pageNumber];
-  let { nx, ny } = this._calibrateCoordinateForAnnots(x, y, 0, 0, pageNumber);
+  // (x, y) is the top-left corner, like rectangle() and link(): offset by the
+  // height to reach the bottom-left corner that PDF rectangles start from.
+  let { nx, ny } = this._calibrateCoordinateForAnnots(
+    x,
+    y,
+    0,
+    -(height || 0),
+    pageNumber,
+  );
 
   let nWidth = width;
   let nHeight = height;
@@ -293,16 +303,13 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
   let { border, color } = options;
 
   if (this._getTextMarkupAnnotationSubtype(subtype)) {
+    // The quadrilateral covers the annotation rectangle.
     this.dictionaryContext.writeKey("QuadPoints");
-    const { _textHeight } = options;
-    const annotHeight = height;
-    const bx = nx;
-    const by = ny + (_textHeight ? 0 : -annotHeight);
     const coordinates = [
-      [bx, by + annotHeight],
-      [bx + nWidth, by + annotHeight],
-      [bx, by],
-      [bx + nWidth, by],
+      [nx, ny + nHeight],
+      [nx + nWidth, ny + nHeight],
+      [nx, ny],
+      [nx + nWidth, ny],
     ];
     this.objectsContext.startArray();
     coordinates.forEach((coord) => {

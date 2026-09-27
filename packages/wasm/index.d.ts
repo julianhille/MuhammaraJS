@@ -791,6 +791,11 @@ export interface Recipe {
     y: RecipeCoordinate,
     options?: RecipeAnnotationOptions,
   ): this;
+  /**
+   * Queues an annotation on the active page. Like `rectangle()` and `link()`,
+   * (x, y) is the annotation rectangle's top-left corner in Recipe
+   * coordinates, and the rectangle extends `options.height` down from it.
+   */
   annot(
     x: RecipeCoordinate,
     y: RecipeCoordinate,

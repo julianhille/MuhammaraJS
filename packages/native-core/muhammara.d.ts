@@ -3968,8 +3968,10 @@ declare namespace muhammara {
     /**
      * Create an annotation. It is written when the PDF ends.
      * @todo support for rich text RC
-     * @param x - The coordinate x
-     * @param y - The coordinate y
+     * @param x - The left edge of the annotation rectangle.
+     * @param y - The top edge of the annotation rectangle. Like
+     *   `rectangle()` and `link()`, (x, y) is the rectangle's top-left corner, and
+     *   the rectangle extends `options.height` down from it.
      * @param subtype - The annotation subtype, one of the
      *   `Recipe.AnnotSubtype` values.
      * @param options - The options

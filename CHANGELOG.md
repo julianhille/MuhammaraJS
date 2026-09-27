@@ -59,6 +59,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
+  `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
+  Square, Circle, FreeText, or other annotation with a `height` now appears
+  `height` points lower. Subtract `height` from `y` to keep the 6.x position;
+  see [Move Recipe annotations to their top-left
+  corner](packages/native/docs/getting-started/migrate-from-v6.md#17-move-recipe-annotations-to-their-top-left-corner).
+  Highlight, Underline, StrikeOut, and Squiggly already hung down from `y` and
+  render where they did; their `Rect` now encloses their `QuadPoints`
+  [#808](https://github.com/julianhille/MuhammaraJS/issues/808)
+
 - Throw a `TypeError` from low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` when a string `color` is
   neither a CSS color name nor `#rrggbb`, as `@muhammara/wasm` does. Previously

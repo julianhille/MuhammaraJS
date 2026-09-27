@@ -176,7 +176,7 @@ async function annotationsExample() {
       })
       .annot(66, 214, "Square", {
         width: 425,
-        height: 145,
+        height: 162,
         text: "This section needs approval",
         title: "Design review",
         color: "#dc2626",
