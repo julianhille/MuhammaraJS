@@ -1336,9 +1336,13 @@ export function createWriterToModifyFactory({
               countPointer,
             );
             var errorCode = module.HEAP32[errorPointer >>> 2];
+            // Codes 2 and 3 are found before anything is written, so the
+            // writer stays usable; only a failure while appending ends it.
             if (errorCode === 2) {
-              dispose();
               throw new Error("Encrypted PDF input is not supported in Wasm");
+            }
+            if (errorCode === 3) {
+              throw new Error("Unable to append PDF pages from input bytes");
             }
             if (errorCode !== 0) {
               dispose();
@@ -2940,20 +2944,32 @@ export function createWriterToModifyFactory({
         }
       },
       /**
-       * Points the catalog `/PageLabels` at an object written by Recipe.
-       * @param {number} objectId - Page labels dictionary object ID.
+       * Replaces a catalog entry when the catalog is written, for Recipe
+       * page deletion.
+       * @private
+       * @param {string} key - Catalog key.
+       * @param {number} objectId - Object ID of the new value, or 0 for null.
        * @returns {void}
-       * @throws {RangeError} If `objectId` is not positive or cannot be set.
+       * @throws {RangeError} If `key` is empty or `objectId` is not a
+       *   non-negative integer.
        * @throws {Error} If the modifier has ended.
        */
-      _setPageLabelsObject: function (objectId) {
+      _setCatalogEntry: function (key, objectId) {
         requireOpen();
         if (
+          typeof key !== "string" ||
+          key === "" ||
           !Number.isInteger(objectId) ||
-          objectId <= 0 ||
-          !module._muhammara_wasm_modifier_set_page_labels(modifier, objectId)
+          objectId < 0 ||
+          !withString(key, (pointer) =>
+            module._muhammara_wasm_modifier_set_catalog_entry(
+              modifier,
+              pointer,
+              objectId,
+            ),
+          )
         ) {
-          throw new RangeError("PageLabels object ID must be positive");
+          throw new RangeError("Catalog entry must have a key and object ID");
         }
       },
       /**

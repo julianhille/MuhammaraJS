@@ -112,6 +112,8 @@ export function createVectorMethods(runtime) {
      * @throws {TypeError} If the requested color space is unknown.
      */
     rectangle: function (x, y, width, height, options = {}) {
+      // null options act like omitted options.
+      if (options === null) options = {};
       if (options.borderRadius)
         return this._roundedRectangle(x, y, width, height, options);
       var point = options.useGivenCoords
@@ -239,6 +241,8 @@ export function createVectorMethods(runtime) {
      * @throws {TypeError} If the requested color space is unknown.
      */
     circle: function (x, y, radius, options = {}) {
+      // null options act like omitted options.
+      if (options === null) options = {};
       var point = this._calibrateCoordinate(x, y);
       var recipe = this;
       var result = paintInsetShape(this, options, x, y, function (inset) {
@@ -300,6 +304,8 @@ export function createVectorMethods(runtime) {
      * @throws {TypeError} If the requested color space is unknown.
      */
     ellipse: function (cx, cy, rx, ry, options = {}) {
+      // null options act like omitted options.
+      if (options === null) options = {};
       var point = this._calibrateCoordinate(cx, cy);
       var x = point.nx;
       var y = point.ny;
@@ -366,6 +372,8 @@ export function createVectorMethods(runtime) {
      * @throws {TypeError} If the requested color space is unknown.
      */
     arc: function (x, y, radius, startAngle = 0, endAngle = 360, options = {}) {
+      // null options act like omitted options.
+      if (options === null) options = {};
       var point = this._calibrateCoordinate(x, y);
       var recipe = this;
       var result = paintInsetShape(this, options, x, y, function (inset) {

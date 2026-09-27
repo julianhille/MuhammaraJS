@@ -275,7 +275,7 @@ export function createRecipeFactory({
      * @name setPageBox
      * @function
      * @memberof Recipe#
-     * @param {PDFPageBoxType} box - Page-box constant.
+     * @param {PDFPageBoxType|PageBox} box - Page-box constant or `PageBox` name.
      * @param {number} left - Left PDF coordinate.
      * @param {number} bottom - Bottom PDF coordinate.
      * @param {number} right - Right PDF coordinate.
@@ -285,6 +285,11 @@ export function createRecipeFactory({
      * @throws {Error} If the underlying PDF operation fails.
      */
     setPageBox(box, left, bottom, right, top) {
+      // Also accept the PageBox names, which are pageBoxes' keys.
+      if (typeof box === "string" && Object.hasOwn(pageBoxes, box))
+        box = pageBoxes[box];
+      if ([left, bottom, right, top].some((value) => typeof value === "bigint"))
+        throw new TypeError("setPageBox coordinates must be numbers");
       if (!Object.values(pageBoxes).includes(box)) {
         throw new RangeError(`Unknown page box: ${box}`);
       }
@@ -311,11 +316,25 @@ export function createRecipeFactory({
      * @name rotate
      * @function
      * @memberof Recipe#
-     * @param {number} rotation - Page rotation in degrees.
+     * @param {number} rotation - Page rotation in degrees, a multiple of 90.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the underlying PDF operation fails.
+     * @throws {TypeError} If no page is active or `rotation` is not a number.
+     * @throws {RangeError} If `rotation` is not a multiple of 90.
+     * @throws {Error} If the active page was opened with `editPage()`, or the
+     *   underlying PDF operation fails.
      */
     rotate(rotation) {
+      if (this._editingPage) {
+        throw new Error(
+          "rotate() is only available on pages created with createPage()",
+        );
+      }
+      if (!this._pageHeight)
+        throw new TypeError("rotate requires an active page");
+      if (typeof rotation !== "number")
+        throw new TypeError("Rotation is not set to a number");
+      if (!Number.isInteger(rotation / 90))
+        throw new RangeError("Rotation must be a multiple of 90 degrees");
       call("_muhammara_wasm_recipe_set_page_rotation", this._recipe, rotation);
       var page = this._pages[this._pages.length - 1];
       if (page) {
@@ -407,6 +426,8 @@ export function createRecipeFactory({
      * @throws {Error} If the underlying PDF operation fails.
      */
     lineStyle(options = {}) {
+      // null options act like omitted options.
+      if (options === null) options = {};
       this._lineStyle = this._lineStyle || {};
       if (options.width !== undefined || options.lineWidth !== undefined)
         this._lineStyle.width = options.width ?? options.lineWidth;

@@ -2,6 +2,11 @@ import { standardInfoKeys } from "../recipe-info.js";
 import { mediumSizes } from "./parameters.js";
 import { pageRecord } from "./page-record.js";
 import { PAGE_CONTEXT_STATE } from "./context-state.js";
+import {
+  planDeletedPageReferences,
+  pruneDeletedPageReferences,
+  setCatalogEntry,
+} from "./page-references.js";
 
 /**
  * Builds the retained page tree while marking deleted leaf pages.
@@ -36,11 +41,21 @@ function readPageTree(
   if (depth === 0 && values.Parent !== undefined) {
     throw new Error("deletePage requires a valid page tree");
   }
-  var kids = parser.queryDictionaryObject(dictionary, "Kids").toPDFArray();
+  var kids = parser.queryDictionaryObject(dictionary, "Kids")?.toPDFArray();
+  if (!kids) {
+    throw new Error("deletePage requires a valid page tree");
+  }
   var mappedChildren = kids.toJSArray().map((entry) => {
+    // Kids must be references to page tree dictionaries with a /Type.
     var reference = entry.toPDFIndirectObjectReference();
-    var childID = reference.getObjectID();
-    var childDictionary = parser.parseNewObject(childID).toPDFDictionary();
+    var childID = reference?.getObjectID();
+    var childDictionary =
+      childID === undefined
+        ? null
+        : parser.parseNewObject(childID)?.toPDFDictionary();
+    if (!childDictionary) {
+      throw new Error("deletePage requires a valid page tree");
+    }
     var childValues = childDictionary.toJSObject();
     var parentReference = childValues.Parent?.toPDFIndirectObjectReference();
     if (
@@ -50,7 +65,10 @@ function readPageTree(
     ) {
       throw new Error("deletePage requires a valid page tree");
     }
-    var type = childValues.Type.toPDFName().value;
+    var type = childValues.Type?.toPDFName()?.value;
+    if (type === undefined) {
+      throw new Error("deletePage requires a valid page tree");
+    }
     if (type === "Pages") {
       return readPageTree(
         parser,
@@ -153,29 +171,15 @@ function walkPageTree(tree, visit) {
 }
 
 /**
- * Adds retained Pages-node object IDs to a set.
- * @private
- * @param {object} tree - Page-tree root.
- * @param {Set<number>} objectIDs - Receives the IDs.
- * @returns {void}
- */
-function collectPageTreeObjectIDs(tree, objectIDs) {
-  walkPageTree(tree, (node) => {
-    if (node.children) objectIDs.add(node.objectID);
-  });
-}
-
-/**
- * Rejects page-tree objects that cannot be rewritten safely.
+ * Rejects page-tree objects that cannot be rewritten safely. The catalog is
+ * never rewritten in place, so its generation does not matter.
  * @private
  * @param {object} tree - Page-tree root.
  * @param {object|null} pageLabels - Prepared page labels.
- * @param {PDFIndirectObjectReference} root - Catalog reference.
- * @param {PDFModifier} writer - Modifier.
  * @returns {void}
  * @throws {Error} If a changed object has a nonzero generation.
  */
-function assertSupportedModifiedGenerations(tree, pageLabels, root, writer) {
+function assertSupportedModifiedGenerations(tree, pageLabels) {
   walkPageTree(tree, (node) => {
     if (!node.children) return;
     if (node.changed && node.generation !== 0) {
@@ -189,182 +193,6 @@ function assertSupportedModifiedGenerations(tree, pageLabels, root, writer) {
       "deletePage does not support rewriting nonzero-generation objects",
     );
   }
-  // A writer with _setPageLabelsObject() (wasm) always attaches a new
-  // PageLabels entry through that dedicated hook and never rewrites the
-  // catalog object in place, so the catalog's own generation never matters
-  // there. Without it (native-core), writePageLabels() falls back to
-  // rewriting the catalog via startModifiedIndirectObject(rootID), which
-  // only supports generation 0.
-  if (pageLabels && !pageLabels.reference && !writer._setPageLabelsObject) {
-    if (root.getVersion() !== 0) {
-      throw new Error(
-        "deletePage does not support rewriting nonzero-generation objects",
-      );
-    }
-  }
-}
-
-/**
- * Rejects retained structures that reference a deleted page.
- * @private
- * @param {PDFReader} parser - Source parser.
- * @param {PDFObject} value - Value to scan.
- * @param {Set<number>} deletedPageIDs - Object IDs of deleted pages.
- * @param {Set<number>} skippedObjectIDs - Objects that are rewritten anyway.
- * @param {Set<number>} [visited] - Visited object IDs.
- * @param {number} [depth=0] - Recursion depth.
- * @returns {void}
- * @throws {Error} If a deleted page is referenced or nesting is too deep.
- */
-function assertNoDeletedPageReferences(
-  parser,
-  value,
-  deletedPageIDs,
-  skippedObjectIDs,
-  visited = new Set(),
-  depth = 0,
-) {
-  if (!value) return;
-  if (depth > 1000) {
-    throw new Error("deletePage cannot validate deeply nested references");
-  }
-  var reference = value.toPDFIndirectObjectReference?.();
-  if (reference) {
-    var objectID = reference.getObjectID();
-    if (deletedPageIDs.has(objectID)) {
-      throw new Error(
-        "deletePage cannot remove a page referenced by retained document structures",
-      );
-    }
-    if (skippedObjectIDs.has(objectID) || visited.has(objectID)) return;
-    visited.add(objectID);
-    assertNoDeletedPageReferences(
-      parser,
-      parser.parseNewObject(objectID),
-      deletedPageIDs,
-      skippedObjectIDs,
-      visited,
-      depth + 1,
-    );
-    return;
-  }
-  var array =
-    value.toPDFArray?.() ||
-    (typeof value.toJSArray === "function" ? value : null);
-  if (array) {
-    array
-      .toJSArray()
-      .forEach((entry) =>
-        assertNoDeletedPageReferences(
-          parser,
-          entry,
-          deletedPageIDs,
-          skippedObjectIDs,
-          visited,
-          depth + 1,
-        ),
-      );
-    return;
-  }
-  var dictionary =
-    value.toPDFDictionary?.() ||
-    (typeof value.toJSObject === "function" ? value : null);
-  if (dictionary) {
-    Object.values(dictionary.toJSObject()).forEach((entry) =>
-      assertNoDeletedPageReferences(
-        parser,
-        entry,
-        deletedPageIDs,
-        skippedObjectIDs,
-        visited,
-        depth + 1,
-      ),
-    );
-    return;
-  }
-  var stream = value.toPDFStream?.();
-  if (stream) {
-    assertNoDeletedPageReferences(
-      parser,
-      stream.getDictionary(),
-      deletedPageIDs,
-      skippedObjectIDs,
-      visited,
-      depth + 1,
-    );
-  }
-}
-
-/**
- * Checks retained document structures for deleted-page references.
- * @private
- * @param {PDFReader} parser - Source parser.
- * @param {object} catalog - Catalog entries.
- * @param {number} rootID - Catalog object ID.
- * @param {object} tree - Page-tree root.
- * @param {object|null} pageLabels - Prepared page labels.
- * @param {Set<number>} deletedPageIDs - Object IDs of deleted pages.
- * @param {number} sourcePageCount - Pages in the source.
- * @returns {void}
- * @throws {Error} If a retained structure references a deleted page.
- */
-function validateDeletedPageReferences(
-  parser,
-  catalog,
-  rootID,
-  tree,
-  pageLabels,
-  deletedPageIDs,
-  sourcePageCount,
-) {
-  var skippedObjectIDs = new Set([rootID]);
-  collectPageTreeObjectIDs(tree, skippedObjectIDs);
-  for (var pageIndex = 0; pageIndex < sourcePageCount; pageIndex += 1) {
-    skippedObjectIDs.add(parser.getPageObjectID(pageIndex));
-  }
-  var visited = new Set();
-  Object.entries(catalog)
-    .filter(([key]) => !["PageLabels", "Pages"].includes(key))
-    .forEach(([, value]) =>
-      assertNoDeletedPageReferences(
-        parser,
-        value,
-        deletedPageIDs,
-        skippedObjectIDs,
-        visited,
-      ),
-    );
-  if (pageLabels) {
-    Object.entries(pageLabels.values)
-      .filter(([key]) => !["Kids", "Limits", "Nums"].includes(key))
-      .forEach(([, value]) =>
-        assertNoDeletedPageReferences(
-          parser,
-          value,
-          deletedPageIDs,
-          skippedObjectIDs,
-          visited,
-        ),
-      );
-  }
-  // Walks the same tree readPageTree() already parsed - each retained leaf
-  // carries the page dictionary values readPageTree() read, so there is no
-  // need to re-parse every retained page's dictionary here.
-  walkPageTree(tree, (node) => {
-    var isLeaf = !node.children;
-    var skipKeys = isLeaf ? ["Parent"] : ["Count", "Kids", "Parent"];
-    Object.entries(node.values)
-      .filter(([key]) => !skipKeys.includes(key))
-      .forEach(([, value]) =>
-        assertNoDeletedPageReferences(
-          parser,
-          value,
-          deletedPageIDs,
-          skippedObjectIDs,
-          visited,
-        ),
-      );
-  });
 }
 
 /**
@@ -466,6 +294,9 @@ function readPageLabel(parser, value) {
   var start = values.St ? resolvePageLabelObject(parser, values.St) : null;
   var prefixHex = prefix?.toPDFHexString();
   var prefixLiteral = prefix?.toPDFLiteralString();
+  if (values.P !== undefined && !prefixHex && !prefixLiteral) {
+    throw new Error("deletePage requires valid PageLabels entries");
+  }
   return {
     style: style?.toPDFName()?.value,
     prefix:
@@ -618,7 +449,6 @@ function preparePageLabels(
     }
   });
   return {
-    catalogValues,
     reference,
     values,
     entries: normalized,
@@ -630,11 +460,10 @@ function preparePageLabels(
  * @private
  * @param {PDFModifier} writer - Modifier.
  * @param {DocumentCopyingContext} copyingContext - Copies unchanged values.
- * @param {number} rootID - Catalog object ID.
  * @param {object|null} pageLabels - Prepared labels.
  * @returns {void}
  */
-function writePageLabels(writer, copyingContext, rootID, pageLabels) {
+function writePageLabels(writer, copyingContext, pageLabels) {
   if (!pageLabels) return;
 
   var objectsContext = writer.getObjectsContext();
@@ -666,21 +495,78 @@ function writePageLabels(writer, copyingContext, rootID, pageLabels) {
   );
   objectsContext.endDictionary(labelsDictionary).endIndirectObject();
 
-  if (writer._setPageLabelsObject) {
-    writer._setPageLabelsObject(labelsObjectID);
-    return;
-  }
+  setCatalogEntry(writer, "PageLabels", labelsObjectID);
+}
 
-  objectsContext.startModifiedIndirectObject(rootID);
-  var dictionary = objectsContext.startDictionary();
-  Object.keys(pageLabels.catalogValues).forEach((key) => {
-    if (key === "PageLabels") return;
-    dictionary.writeKey(key);
-    copyingContext.copyDirectObjectAsIs(pageLabels.catalogValues[key]);
-  });
-  dictionary.writeKey("PageLabels");
-  objectsContext.writeIndirectObjectReference(labelsObjectID);
-  objectsContext.endDictionary(dictionary).endIndirectObject();
+/**
+ * Reads the page tree and checks that the queued deletions can be applied:
+ * the page tree and page labels can be rewritten, and every retained
+ * reference to a deleted page can be pruned or there is none.
+ * @private
+ * @param {Recipe} recipe - Recipe instance.
+ * @param {DocumentCopyingContext} copyingContext - Copying context for the
+ *   modified file.
+ * @param {Set<number>} deletedPages - One-based page numbers to delete.
+ * @param {boolean} prune - Whether to prune references to deleted pages.
+ * @returns {object} The page tree, page labels, catalog entries, deleted
+ *   page object IDs and the pruning plan.
+ * @throws {Error} If the deletion cannot be applied.
+ */
+function planPageDeletion(recipe, copyingContext, deletedPages, prune) {
+  var parser = copyingContext.getSourceDocumentParser();
+  var trailer = parser.getTrailer().toJSObject();
+  var rootID = trailer.Root.toPDFIndirectObjectReference().getObjectID();
+  var catalogDictionary = parser.parseNewObject(rootID).toPDFDictionary();
+  var catalog = catalogDictionary.toJSObject();
+  var pagesReference = catalog.Pages.toPDFIndirectObjectReference();
+  var pageLabels = preparePageLabels(
+    parser,
+    catalogDictionary,
+    deletedPages,
+    recipe._sourcePageCount,
+  );
+  var modifiedPageIDs = new Set(
+    Array.from(recipe._modifiedSourcePages, (pageNumber) =>
+      parser.getPageObjectID(pageNumber - 1),
+    ),
+  );
+  var pageState = {
+    pageNumber: 0,
+    deletedPageIDs: new Set(),
+    retainedPageIDs: new Set(),
+  };
+  var tree = readPageTree(
+    parser,
+    pagesReference.getObjectID(),
+    deletedPages,
+    modifiedPageIDs,
+    pageState,
+    pagesReference.getVersion(),
+  );
+  pageState.retainedPageIDs.forEach((objectID) =>
+    pageState.deletedPageIDs.delete(objectID),
+  );
+  assertSupportedModifiedGenerations(tree, pageLabels);
+  var plan = planDeletedPageReferences(
+    parser,
+    {
+      catalog,
+      rootID,
+      tree,
+      pageLabels,
+      deletedPageIDs: pageState.deletedPageIDs,
+      modifiedPageIDs,
+      sourcePageCount: recipe._sourcePageCount,
+    },
+    prune,
+  );
+  return {
+    catalog,
+    tree,
+    pageLabels,
+    deletedPageIDs: pageState.deletedPageIDs,
+    plan,
+  };
 }
 
 /**
@@ -1072,19 +958,34 @@ export function createPageMethods(
      * Deletes one or more pages from an existing PDF.
      * Page numbers are one-based and refer to the original source document.
      *
+     * By default a page that retained structures still reference - outline
+     * items, link annotations and named destinations, form widgets,
+     * tagged-PDF structure elements or the open action - cannot be deleted.
+     * With `pruneReferences`, those references are removed instead: a
+     * destination that targets a deleted page becomes null (so outline items
+     * keep their title and children, and links do nothing), and every other
+     * direct reference to a deleted page is dropped. Pruning applies to every
+     * queued deletion once any deletePage() call enables it.
+     *
      * @name deletePage
      * @function
      * @memberof Recipe#
      * @param {number|number[]} pageNumbers - Page number or page numbers to delete.
+     * @param {object} [options] - Deletion options.
+     * @param {boolean} [options.pruneReferences=false] - Remove references to
+     *   the deleted pages from retained structures instead of refusing the
+     *   deletion.
      * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If options is not an object or pruneReferences is
+     * not a boolean.
      * @throws {RangeError} If a page number does not identify an original page.
      * @throws {Error} If the Recipe has no existing source, has ended or was
      * disposed, would delete every page, combines deletion with page
-     * composition. Page-tree, retained-reference, and object-generation
-     * validation is deferred to endPDF(), which throws those errors during
-     * finalization.
+     * composition, or the page tree, page labels or retained references
+     * cannot be rewritten. A failed call leaves the queued deletions
+     * unchanged.
      */
-    deletePage: function (pageNumbers) {
+    deletePage: function (pageNumbers, options) {
       if (this._disposed) {
         throw new Error("Cannot delete a page after disposal");
       }
@@ -1103,6 +1004,21 @@ export function createPageMethods(
       if (this._pagesCreated) {
         throw new Error("deletePage cannot be combined with createPage");
       }
+      if (
+        options !== undefined &&
+        (options === null ||
+          typeof options !== "object" ||
+          Array.isArray(options))
+      ) {
+        throw new TypeError("deletePage expects an options object");
+      }
+      var pruneReferences = options?.pruneReferences;
+      if (
+        pruneReferences !== undefined &&
+        typeof pruneReferences !== "boolean"
+      ) {
+        throw new TypeError("deletePage pruneReferences must be a boolean");
+      }
       pageNumbers = Array.isArray(pageNumbers) ? pageNumbers : [pageNumbers];
       var deletedPages = new Set(this._deletedPages || []);
       pageNumbers.forEach((pageNumber) => {
@@ -1118,72 +1034,47 @@ export function createPageMethods(
       if (deletedPages.size >= this._sourcePageCount) {
         throw new Error("At least one page must remain in the PDF");
       }
+      var prune = Boolean(this._pruneReferences || pruneReferences);
+      var copyingContext = this.writer.createPDFCopyingContextForModifiedFile();
+      try {
+        planPageDeletion(this, copyingContext, deletedPages, prune);
+      } finally {
+        copyingContext.end();
+      }
       this._deletedPages = deletedPages;
+      this._pruneReferences = prune;
       return this;
     },
 
     /**
-     * Applies queued page deletions during finalization.
+     * Applies queued page deletions during finalization, pruning references
+     * to deleted pages when enabled.
      * @private
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the page tree or page labels cannot be rewritten safely.
+     * @throws {Error} If the page tree, page labels or retained references
+     *   cannot be rewritten safely, for example after editing a page that
+     *   holds a pruned reference.
      */
     _deletePages: function () {
       if (!this._deletedPages?.size) return this;
 
       var copyingContext = this.writer.createPDFCopyingContextForModifiedFile();
       try {
-        var parser = copyingContext.getSourceDocumentParser();
-        var trailer = parser.getTrailer().toJSObject();
-        var rootReference = trailer.Root.toPDFIndirectObjectReference();
-        var rootID = rootReference.getObjectID();
-        var catalogDictionary = parser.parseNewObject(rootID).toPDFDictionary();
-        var catalog = catalogDictionary.toJSObject();
-        var pagesReference = catalog.Pages.toPDFIndirectObjectReference();
-        var pageLabels = preparePageLabels(
-          parser,
-          catalogDictionary,
+        var deletion = planPageDeletion(
+          this,
+          copyingContext,
           this._deletedPages,
-          this._sourcePageCount,
+          Boolean(this._pruneReferences),
         );
-        var modifiedPageIDs = new Set(
-          Array.from(this._modifiedSourcePages, (pageNumber) =>
-            parser.getPageObjectID(pageNumber - 1),
-          ),
-        );
-        var pageState = {
-          pageNumber: 0,
-          deletedPageIDs: new Set(),
-          retainedPageIDs: new Set(),
-        };
-        var tree = readPageTree(
-          parser,
-          pagesReference.getObjectID(),
-          this._deletedPages,
-          modifiedPageIDs,
-          pageState,
-          pagesReference.getVersion(),
-        );
-        pageState.retainedPageIDs.forEach((objectID) =>
-          pageState.deletedPageIDs.delete(objectID),
-        );
-        assertSupportedModifiedGenerations(
-          tree,
-          pageLabels,
-          rootReference,
+        writePageTree(this.writer, copyingContext, deletion.tree);
+        writePageLabels(this.writer, copyingContext, deletion.pageLabels);
+        pruneDeletedPageReferences(
           this.writer,
+          copyingContext,
+          deletion.catalog,
+          deletion.plan,
+          deletion.deletedPageIDs,
         );
-        validateDeletedPageReferences(
-          parser,
-          catalog,
-          rootID,
-          tree,
-          pageLabels,
-          pageState.deletedPageIDs,
-          this._sourcePageCount,
-        );
-        writePageTree(this.writer, copyingContext, tree);
-        writePageLabels(this.writer, copyingContext, rootID, pageLabels);
       } finally {
         copyingContext.end();
       }

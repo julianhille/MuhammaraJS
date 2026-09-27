@@ -73,6 +73,8 @@ export function createLineMethods(runtime) {
      * @throws {Error} If no target page is available or an unsupported color is requested.
      */
     line: function (startX, startY, endX, endY, options = {}) {
+      // null options act like omitted options.
+      if (options === null) options = {};
       var points = Array.isArray(startX)
         ? startX
         : [
