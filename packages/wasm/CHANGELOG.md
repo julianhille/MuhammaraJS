@@ -121,6 +121,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
+  was ignored, and to that text only: on new pages it also became the
+  Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are
+  now clamped instead of throwing a `RangeError`, matching native
+  [#807](https://github.com/julianhille/MuhammaraJS/issues/807)
+
 - Register a Recipe color named `__proto__` with `chroma()` or `colorName`; the
   name was silently dropped [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Reject inherited object keys such as `__proto__` and `constructor` as a
