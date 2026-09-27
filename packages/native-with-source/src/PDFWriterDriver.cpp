@@ -15,6 +15,7 @@
 #include "PDFDocumentCopyingContext.h"
 #include "PDFFormXObject.h"
 #include "PDFImageXObject.h"
+#include "PDFModifiedPage.h"
 #include "PDFPageDriver.h"
 #include "PDFReaderDriver.h"
 #include "PDFRectangle.h"
@@ -51,17 +52,40 @@ const char *const kEndInCallback =
     "A PDF writer cannot end from its own stream or event callback";
 PDFWriterDriver::PDFWriterDriver()
     : holder(nullptr), startedWithStream_(false), catalogUpdateRequired_(false),
-      started_(false), formAbandoned_(false),
+      started_(false), formAbandoned_(false), finalizing_(false),
       lifecycle_(new DriverLifecycleState("PDF writer has ended")),
-      openForms_(std::make_shared<OpenFormXObjects>()),
+      openContent_(std::make_shared<OpenContent>()),
       callbackDepth_(std::make_shared<int>(0)), writeProxy_(nullptr),
       readProxy_(nullptr), logProxy_(nullptr), env_(nullptr) {}
+class PDFWriterDriver::NoJavaScriptScope {
+public:
+  explicit NoJavaScriptScope(PDFWriterDriver *writer) : writer_(writer) {
+    writer_->finalizing_ = true;
+    if (writer_->writeProxy_)
+      writer_->writeProxy_->SetDeferred(true);
+    if (writer_->logProxy_)
+      writer_->logProxy_->SetSuspended(true);
+  }
+  ~NoJavaScriptScope() {
+    writer_->finalizing_ = false;
+    if (writer_->writeProxy_)
+      writer_->writeProxy_->SetDeferred(false);
+    if (writer_->logProxy_)
+      writer_->logProxy_->SetSuspended(false);
+  }
+
+private:
+  PDFWriterDriver *writer_;
+};
 PDFWriterDriver::~PDFWriterDriver() {
   // A finalizer must not call into JavaScript, so unwritten output is dropped.
   if (writeProxy_)
     writeProxy_->Close();
-  ReleaseOpenFormXObjects();
-  openForms_->writer = nullptr;
+  {
+    NoJavaScriptScope noJavaScript(this);
+    ReleaseOpenContent();
+  }
+  openContent_->writer = nullptr;
   if (started_)
     Retire();
   // Release dictionaries left open; with the output closed, this writes
@@ -122,7 +146,7 @@ bool PDFWriterDriver::Init(ModuleState &s, napi_value exports) {
 napi_value PDFWriterDriver::New(const CallbackArgs &a) {
   auto *d = new PDFWriterDriver();
   d->holder = &ModuleState::Get(a.Env())->Constructors();
-  d->openForms_->writer = d;
+  d->openContent_->writer = d;
   d->env_ = a.Env();
   d->self_.Reset(a.Env(), a.This(), 0);
   if (!d->Wrap(a.Env(), a.This())) {
@@ -131,10 +155,31 @@ napi_value PDFWriterDriver::New(const CallbackArgs &a) {
   }
   return a.This();
 }
-void PDFWriterDriver::ReleaseOpenFormXObjects() {
-  for (PDFFormXObject *form : openForms_->forms)
+void PDFWriterDriver::ReleaseOpenContent() {
+  for (PDFFormXObject *form : openContent_->forms)
     form->GetContentStream()->FinalizeStreamWrite();
-  openForms_->forms.clear();
+  openContent_->forms.clear();
+  for (PDFPage *page : openContent_->pages)
+    if (page->GetAssociatedContentContext())
+      writer_.EndPageContentContext(page->GetAssociatedContentContext());
+  openContent_->pages.clear();
+  for (PDFModifiedPage *page : openContent_->modifiedPages)
+    page->EndContentContext();
+  openContent_->modifiedPages.clear();
+}
+std::shared_ptr<OpenContent> PDFWriterDriver::GetOpenContent() {
+  return openContent_;
+}
+void PDFWriterDriver::AbandonPage(PDFPage *page) {
+  // A finalizer must not call into JavaScript, so the output keeps what
+  // ending writes until the next JavaScript call flushes it.
+  NoJavaScriptScope noJavaScript(this);
+  if (page->GetAssociatedContentContext())
+    writer_.EndPageContentContext(page->GetAssociatedContentContext());
+}
+void PDFWriterDriver::AbandonModifiedPage(PDFModifiedPage *page) {
+  NoJavaScriptScope noJavaScript(this);
+  page->EndContentContext();
 }
 void PDFWriterDriver::AbandonFormXObject(PDFFormXObject *form) {
   // The form's stream sits in the middle of the output, so no valid PDF can
@@ -146,7 +191,7 @@ void PDFWriterDriver::AbandonFormXObject(PDFFormXObject *form) {
   form->GetContentStream()->FinalizeStreamWrite();
 }
 bool PDFWriterDriver::Retire() {
-  ReleaseOpenFormXObjects();
+  ReleaseOpenContent();
   writer_.GetDocumentContext().RemoveDocumentContextExtender(this);
   // The last batch usually holds the xref and trailer, so a short write here
   // must fail end() rather than leave a silently truncated PDF.
@@ -174,7 +219,7 @@ napi_value PDFWriterDriver::End(const CallbackArgs &a) {
         "End the active objects context operation before ending the PDF");
   // An open or abandoned form leaves an unfinished object in the output.
   EStatusCode status = eFailure;
-  if (d->openForms_->forms.empty() && !d->formAbandoned_)
+  if (d->openContent_->forms.empty() && !d->formAbandoned_)
     status = d->startedWithStream_ ? d->writer_.EndPDFForStream()
                                    : d->writer_.EndPDF();
   if (!d->Retire())
@@ -189,7 +234,7 @@ napi_value PDFWriterDriver::Abort(const CallbackArgs &a) {
   if (IsInCallback(d->callbackDepth_))
     return ThrowError(a.Env(), kEndInCallback);
   d->writer_.GetDocumentContext().RemoveDocumentContextExtender(d);
-  d->ReleaseOpenFormXObjects();
+  d->ReleaseOpenContent();
   // A failed append can leave dictionaries open. Release them while the
   // output stream is still alive: their destructors write to it, and
   // Reset() closes the stream before cleaning up the objects context.
@@ -227,6 +272,7 @@ napi_value PDFWriterDriver::WritePageAndReturnID(const CallbackArgs &a) {
     return ThrowTypeError(a.Env(), "Unable to finalize page context");
   p->ContentContext = nullptr;
   p->EndContentLifecycle();
+  d->openContent_->pages.erase(p->GetPage());
   auto r = d->writer_.WritePageAndReturnPageID(p->GetPage());
   return r.first == eSuccess ? Number(a.Env(), r.second)
                              : ThrowTypeError(a.Env(), "Unable to write page");
@@ -251,6 +297,10 @@ napi_value PDFWriterDriver::StartPageContentContext(const CallbackArgs &a) {
   p->ContentContext = c->ContentContext;
   c->AddOwner(d->lifecycle_);
   c->AddOwner(p->ContentLifecycle());
+  if (c->ContentContext) {
+    d->openContent_->pages.insert(p->GetPage());
+    p->openContent = d->openContent_;
+  }
   return v;
 }
 napi_value PDFWriterDriver::PausePageContentContext(const CallbackArgs &a) {
@@ -294,8 +344,8 @@ napi_value PDFWriterDriver::CreateFormXObject(const CallbackArgs &a) {
                        ? d->writer_.StartFormXObject(r, ToUint32(a.Env(), a[4]))
                        : d->writer_.StartFormXObject(r);
   if (f->FormXObject) {
-    d->openForms_->forms.insert(f->FormXObject);
-    f->openForms = d->openForms_;
+    d->openContent_->forms.insert(f->FormXObject);
+    f->openContent = d->openContent_;
   }
   f->AddOwner(d->lifecycle_);
   f->SetOpenIn(d);
@@ -316,7 +366,7 @@ napi_value PDFWriterDriver::EndFormXObject(const CallbackArgs &a) {
                       "endFormXObject requires an open form from this writer");
   f->EndContent();
   // Ending finalizes the stream, so the form no longer needs releasing.
-  d->openForms_->forms.erase(f->FormXObject);
+  d->openContent_->forms.erase(f->FormXObject);
   d->writer_.EndFormXObject(f->FormXObject);
   return a.This();
 }
@@ -1171,6 +1221,8 @@ public:
 };
 EStatusCode PDFWriterDriver::OnPageWrite(PDFPage *p, DictionaryContext *d,
                                          ObjectsContext *, DocumentContext *) {
+  if (finalizing_)
+    return eSuccess;
   napi_value o = Object(env_);
   if (!o)
     return eFailure;
@@ -1193,6 +1245,8 @@ EStatusCode PDFWriterDriver::OnResourcesWrite(ResourcesDictionary *r,
                                               DictionaryContext *d,
                                               ObjectsContext *,
                                               DocumentContext *) {
+  if (finalizing_)
+    return eSuccess;
   napi_value o = Object(env_);
   if (!o)
     return eFailure;
@@ -1212,6 +1266,8 @@ EStatusCode PDFWriterDriver::OnResourceDictionaryWrite(DictionaryContext *d,
                                                        const std::string &n,
                                                        ObjectsContext *,
                                                        DocumentContext *) {
+  if (finalizing_)
+    return eSuccess;
   napi_value o = Object(env_);
   if (!o)
     return eFailure;
@@ -1228,6 +1284,8 @@ EStatusCode PDFWriterDriver::OnCatalogWrite(CatalogInformation *,
                                             DictionaryContext *d,
                                             ObjectsContext *,
                                             DocumentContext *) {
+  if (finalizing_)
+    return eSuccess;
   napi_value o = Object(env_);
   if (!o)
     return eFailure;
@@ -1238,6 +1296,8 @@ EStatusCode PDFWriterDriver::OnCatalogWrite(CatalogInformation *,
   return TriggerEvent("OnCatalogWrite", o);
 }
 EStatusCode PDFWriterDriver::TriggerEvent(const std::string &n, napi_value p) {
+  if (finalizing_)
+    return eSuccess;
   napi_value self = self_.Get();
   napi_value f = Get(env_, self, "triggerDocumentExtensionEvent");
   if (!f || Type(env_, f, napi_undefined))

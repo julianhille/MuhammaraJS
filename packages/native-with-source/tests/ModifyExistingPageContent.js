@@ -54,4 +54,62 @@ describe("ModifyExistingPageContent", function () {
     }, /^Error: PDFPageModifier is only available when modifying a PDF$/);
     pdfWriter.end();
   });
+
+  describe("unwritten page modifiers", function () {
+    var { collectGarbage } = require("./helpers/gc");
+    var source = fs.readFileSync(__dirname + "/TestMaterials/Original.pdf");
+
+    /**
+     * Starts drawing on the first page and never writes the modifier.
+     *
+     * @param {object} pdfWriter The writer modifying the source.
+     * @returns {object} The page modifier.
+     */
+    function startUnwrittenModifier(pdfWriter) {
+      var pageModifier = new muhammara.PDFPageModifier(pdfWriter, 0, true);
+      pageModifier.startContext().getContext().re(10, 10, 20, 20).f();
+      return pageModifier;
+    }
+
+    /**
+     * Creates a writer that modifies the source into a buffer.
+     *
+     * @returns {{writer: object, output: object}} The writer and its output.
+     */
+    function modifyingWriter() {
+      var output = new muhammara.PDFWStreamForBuffer();
+      var writer = muhammara.createWriterToModify(
+        new muhammara.PDFRStreamForBuffer(source),
+        output,
+      );
+      return { writer: writer, output: output };
+    }
+
+    it("releases a modifier collected before its writer", async function () {
+      var modified = modifyingWriter();
+      (function () {
+        startUnwrittenModifier(modified.writer);
+      })();
+      await collectGarbage();
+      modified.writer.end();
+      var reader = muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(modified.output.buffer),
+      );
+      assert.equal(reader.getPagesCount(), 2);
+      reader.end();
+    });
+
+    it("releases modifiers collected with or after their writers", async function () {
+      var modifiers = [];
+      (function () {
+        for (var i = 0; i < 10; i++) {
+          startUnwrittenModifier(modifyingWriter().writer);
+          modifiers.push(startUnwrittenModifier(modifyingWriter().writer));
+        }
+      })();
+      await collectGarbage();
+      modifiers = null;
+      await collectGarbage();
+    });
+  });
 });

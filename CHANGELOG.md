@@ -256,6 +256,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Release the content stream of a page whose content context was never
+  written, and of a `PDFPageModifier` whose context was never written, when
+  the writer ends or when the page, modifier, or writer is garbage-collected.
+  Each kept about 0.5 MB, so every abandoned writer or Recipe, such as one left
+  by an error, leaked. `end()` no longer fails after an unwritten page modifier
+  was garbage-collected
+  [#823](https://github.com/julianhille/MuhammaraJS/issues/823)
 - Prevent a segmentation fault when a form started with `createFormXObject()`
   and never passed to `endFormXObject()` is garbage-collected, or when its
   writer is collected or the process exits; `end()` on such a writer throws

@@ -13,9 +13,12 @@ public:
         IOBasicTypes::LongBufferSizeType size) override;
   // Counts the owner's JavaScript calls made through this stream.
   void SetCallbackDepth(const CallbackDepth &depth);
+  // While suspended, writes are dropped without calling JavaScript.
+  void SetSuspended(bool suspended);
 
 private:
   napi_env env_;
   muhammara::napi::Reference object_;
   CallbackDepth depth_;
+  bool suspended_;
 };

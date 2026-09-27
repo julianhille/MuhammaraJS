@@ -3,7 +3,9 @@
 using namespace muhammara::napi;
 
 ObjectByteWriter::ObjectByteWriter(napi_env env, napi_value object)
-    : env_(env), object_(env, object) {}
+    : env_(env), object_(env, object), suspended_(false) {}
+
+void ObjectByteWriter::SetSuspended(bool suspended) { suspended_ = suspended; }
 
 void ObjectByteWriter::SetCallbackDepth(const CallbackDepth &depth) {
   depth_ = depth;
@@ -12,6 +14,8 @@ void ObjectByteWriter::SetCallbackDepth(const CallbackDepth &depth) {
 IOBasicTypes::LongBufferSizeType
 ObjectByteWriter::Write(const IOBasicTypes::Byte *buffer,
                         IOBasicTypes::LongBufferSizeType size) {
+  if (suspended_)
+    return size;
   HandleScope scope(env_);
   napi_value bytes = BytesToBuffer(env_, buffer, size);
   if (!bytes)

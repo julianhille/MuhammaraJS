@@ -4,7 +4,8 @@ using namespace muhammara::napi;
 
 ObjectByteWriterWithPosition::ObjectByteWriterWithPosition(napi_env env,
                                                            napi_value object)
-    : env_(env), object_(env, object), failed_(false) {}
+    : env_(env), object_(env, object), failed_(false), deferred_(false),
+      reportedPosition_(0), deliveredSinceReport_(0) {}
 
 namespace {
 const size_t kFlushSize = 64 * 1024;
@@ -15,6 +16,10 @@ ObjectByteWriterWithPosition::Write(const IOBasicTypes::Byte *buffer,
                                     IOBasicTypes::LongBufferSizeType size) {
   if (failed_)
     return 0;
+  if (deferred_) {
+    pending_.insert(pending_.end(), buffer, buffer + size);
+    return size;
+  }
   if (pending_.size() + size > kFlushSize && Flush() != PDFHummus::eSuccess)
     return 0;
   if (size >= kFlushSize) {
@@ -43,6 +48,10 @@ PDFHummus::EStatusCode ObjectByteWriterWithPosition::Flush() {
 }
 
 void ObjectByteWriterWithPosition::DiscardPending() { pending_.clear(); }
+
+void ObjectByteWriterWithPosition::SetDeferred(bool deferred) {
+  deferred_ = deferred;
+}
 
 void ObjectByteWriterWithPosition::Close() {
   pending_.clear();
@@ -84,11 +93,16 @@ ObjectByteWriterWithPosition::Deliver(const IOBasicTypes::Byte *buffer,
                          "of written characters");
     return 0;
   }
-  return ToUint32(env_, result);
+  IOBasicTypes::LongBufferSizeType written = ToUint32(env_, result);
+  deliveredSinceReport_ += written;
+  return written;
 }
 
 IOBasicTypes::LongFilePositionType
 ObjectByteWriterWithPosition::GetCurrentPosition() {
+  if (deferred_ || failed_)
+    return reportedPosition_ + deliveredSinceReport_ +
+           static_cast<IOBasicTypes::LongFilePositionType>(pending_.size());
   HandleScope scope(env_);
   napi_value object = object_.Get();
   napi_value function = Get(env_, object, "getCurrentPosition");
@@ -106,6 +120,8 @@ ObjectByteWriterWithPosition::GetCurrentPosition() {
                             "getCurrentPosition must return a finite number",
                             &position))
     return 0;
-  return static_cast<IOBasicTypes::LongFilePositionType>(position) +
+  reportedPosition_ = static_cast<IOBasicTypes::LongFilePositionType>(position);
+  deliveredSinceReport_ = 0;
+  return reportedPosition_ +
          static_cast<IOBasicTypes::LongFilePositionType>(pending_.size());
 }

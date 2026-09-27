@@ -898,4 +898,72 @@ describe("HighLevelContentContext", function () {
       fs.rmSync(invalidPath, { force: true });
     }
   });
+
+  describe("unwritten pages", function () {
+    var muhammara = require("@muhammara/native-with-source");
+    var { collectGarbage } = require("./helpers/gc");
+
+    /**
+     * Starts a page's content context, draws on it, and pauses it.
+     *
+     * @param {object} pdfWriter The writer to start the page on.
+     * @returns {object} The page, never written.
+     */
+    function startUnwrittenPage(pdfWriter) {
+      var page = pdfWriter.createPage(0, 0, 100, 100);
+      var context = pdfWriter.startPageContentContext(page);
+      context.re(10, 10, 20, 20).f();
+      pdfWriter.pausePageContentContext(context);
+      return page;
+    }
+
+    it("releases an unwritten page's content when its writer ends", function () {
+      var output = new muhammara.PDFWStreamForBuffer();
+      var pdfWriter = muhammara.createWriter(output);
+      var page = startUnwrittenPage(pdfWriter);
+      pdfWriter.writePage(pdfWriter.createPage(0, 0, 100, 100));
+      pdfWriter.end();
+      expect(page).to.be.ok;
+      var reader = muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(output.buffer),
+      );
+      expect(reader.getPagesCount()).to.equal(1);
+      reader.end();
+    });
+
+    it("releases an unwritten page collected before its writer", async function () {
+      var output = new muhammara.PDFWStreamForBuffer();
+      var pdfWriter = muhammara.createWriter(output);
+      (function () {
+        startUnwrittenPage(pdfWriter);
+      })();
+      await collectGarbage();
+      pdfWriter.writePage(pdfWriter.createPage(0, 0, 100, 100));
+      pdfWriter.end();
+      var reader = muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(output.buffer),
+      );
+      expect(reader.getPagesCount()).to.equal(1);
+      reader.end();
+    });
+
+    it("releases unwritten pages collected with or after their writers", async function () {
+      var pages = [];
+      (function () {
+        for (var i = 0; i < 20; i++) {
+          startUnwrittenPage(
+            muhammara.createWriter(new muhammara.PDFWStreamForBuffer()),
+          );
+          pages.push(
+            startUnwrittenPage(
+              muhammara.createWriter(new muhammara.PDFWStreamForBuffer()),
+            ),
+          );
+        }
+      })();
+      await collectGarbage();
+      pages = null;
+      await collectGarbage();
+    });
+  });
 });

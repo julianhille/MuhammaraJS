@@ -18,15 +18,21 @@
 
 class ConstructorsHolder;
 class PDFFormXObject;
+class PDFModifiedPage;
+class PDFPage;
 class PDFWriterDriver;
 
-// Forms started with createFormXObject() and not yet ended. Their content
-// stream writes to the writer's output and deletes it when destroyed
-// unfinished, so it must be finalized while that output is alive. Shared by
-// the writer and its forms because their finalizers run in any order.
-struct OpenFormXObjects {
+// Content started by a writer and owned by other objects: forms from
+// createFormXObject() not yet ended, pages whose content context is not yet
+// written, and page modifiers. Their content stream writes to the writer's
+// output and holds about 0.5 MB until ended, and an unfinished one deletes the
+// output when destroyed, so each is ended while the output is alive. Shared by
+// the writer and the owners because their finalizers run in any order.
+struct OpenContent {
   PDFWriterDriver *writer = nullptr;
   std::set<PDFFormXObject *> forms;
+  std::set<PDFPage *> pages;
+  std::set<PDFModifiedPage *> modifiedPages;
 };
 
 class PDFWriterDriver : public muhammara::napi::ObjectWrap,
@@ -61,6 +67,11 @@ public:
   DriverLifecycle GetLifecycle();
   // Only a writer from createWriterToModify() has a modified-file parser.
   bool IsModifyingPDF();
+  // Ends the content context of a page or page modifier released by a
+  // finalizer. The content is complete, so the PDF can still end.
+  void AbandonPage(PDFPage *);
+  void AbandonModifiedPage(PDFModifiedPage *);
+  std::shared_ptr<OpenContent> GetOpenContent();
   void SetLogStream(napi_env env, napi_value stream, LogConfiguration &config);
   ConstructorsHolder *holder;
 
@@ -170,14 +181,19 @@ private:
   PDFHummus::EStatusCode TriggerEvent(const std::string &, napi_value);
   // Returns false when buffered output could not be delivered.
   bool Retire();
-  void ReleaseOpenFormXObjects();
+  void ReleaseOpenContent();
+  // Keeps JavaScript out of finalizers: output is buffered, logging dropped
+  // and events skipped until the returned value is destroyed.
+  class NoJavaScriptScope;
   void ReleaseLogProxy();
   bool startedWithStream_;
   bool catalogUpdateRequired_;
   bool started_;
   bool formAbandoned_;
+  // Set while a finalizer ends abandoned content; events are not delivered.
+  bool finalizing_;
   DriverLifecycle lifecycle_;
-  std::shared_ptr<OpenFormXObjects> openForms_;
+  std::shared_ptr<OpenContent> openContent_;
   CallbackDepth callbackDepth_;
   PDFWriter writer_;
   ObjectByteWriterWithPosition *writeProxy_;
