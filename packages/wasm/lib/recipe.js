@@ -313,9 +313,15 @@ export function createRecipeFactory({
      * @memberof Recipe#
      * @param {number} rotation - Page rotation in degrees.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the underlying PDF operation fails.
+     * @throws {Error} If the active page was opened with `editPage()`, or the
+     *   underlying PDF operation fails.
      */
     rotate(rotation) {
+      if (this._editingPage) {
+        throw new Error(
+          "rotate() is only available on pages created with createPage()",
+        );
+      }
       call("_muhammara_wasm_recipe_set_page_rotation", this._recipe, rotation);
       var page = this._pages[this._pages.length - 1];
       if (page) {

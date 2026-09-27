@@ -600,8 +600,16 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
  * @param {number} rotation - The page rotation in degrees, a multiple of 90.
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
+ * @throws {Error} If the active page was opened with `editPage()`.
  */
 exports.rotate = function rotate(rotation) {
+  // A page modifier keeps the source page's /Rotate, so the rotation would
+  // only change Recipe's coordinate bookkeeping.
+  if (this.editingPage) {
+    throw new Error(
+      "rotate() is only available on pages created with createPage()",
+    );
+  }
   this.page.rotate = rotation;
   this.metadata[this.pageNumber].rotate = rotation;
   return this;

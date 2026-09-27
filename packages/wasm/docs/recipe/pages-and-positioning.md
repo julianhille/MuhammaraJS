@@ -23,7 +23,8 @@ var pdfBytes = recipe.endPage().endPDF();
 The rotation argument to `createPage("A4", 90)` swaps the named page's width
 and height. `rotate(degrees)` sets `/Rotate` on the active page, including pages
 with explicit dimensions. If both are used, `rotate()` supplies the final
-rotation value while the named size remains swapped. Positive
+rotation value while the named size remains swapped. `rotate()` throws on a page
+opened with `editPage()`, whose `/Rotate` the page modifier keeps. Positive
 `rotateContent()` angles rotate subsequent content clockwise because Recipe's Y
 axis points down. Its optional `x` and `y` values select the Recipe-coordinate
 point around which subsequent drawing rotates.

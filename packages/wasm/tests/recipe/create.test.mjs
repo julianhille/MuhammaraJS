@@ -1,5 +1,6 @@
 // Ports creation behavior from tests/recipe/create.js and createWithBuffer.js.
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { getRecipe } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
 
@@ -131,5 +132,19 @@ describe("Recipe create", function () {
       sourceRecipe.pageInfo(1),
     );
     writeOutput("create-page-geometry-reopened", sourceRecipe.endPDF());
+  });
+
+  it("rejects rotate() on an edited page", async function () {
+    var source = new Uint8Array(
+      await readFile("tests/TestMaterials/Original.pdf"),
+    );
+    var recipe = new Recipe(source).editPage(1);
+    assert.throws(
+      () => recipe.rotate(90),
+      /^Error: rotate\(\) is only available on pages created with createPage\(\)$/,
+    );
+    var pdf = recipe.endPage().endPDF();
+    writeOutput("create-rotate-edited-page", pdf);
+    assert.equal(new Recipe(pdf).pageInfo(1).rotate, 0);
   });
 });

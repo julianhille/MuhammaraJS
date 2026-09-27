@@ -14,7 +14,8 @@ The second argument for a named page is rotation. A 90- or 270-degree rotation
 swaps its width and height. `rotate(degrees)` sets the PDF `/Rotate` value on
 the current page, including a page created with an explicit width and height.
 When both are used on a named page, `rotate()` is the last rotation setting and
-wins; the named size's swapped dimensions remain unchanged. `pageInfo(pageNumber)`
+wins; the named size's swapped dimensions remain unchanged. `rotate()` throws on a page opened with `editPage()`, whose
+`/Rotate` the page modifier keeps. `pageInfo(pageNumber)`
 returns page geometry for a specific one-based page. Inside a `createPage()` or
 `editPage()` block, `getCurrentPageInfo()` returns that same geometry for the
 active page, including after `endPage()`. Despite its similar name,
