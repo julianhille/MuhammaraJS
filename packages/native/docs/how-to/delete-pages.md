@@ -15,9 +15,37 @@ creation, appending, or insertion in the same Recipe. Retained page content,
 annotations, and page-tree metadata remain attached to their pages, and the
 result is renumbered contiguously.
 
-Deletion fails rather than leaving a dangling reference when a retained page or
-catalog-owned structure, such as an outline or open action, refers to a selected
-page. Remove or retarget that reference before calling `deletePage()`.
+`deletePage()` validates the selection when you call it. If it throws, the
+queued deletions are unchanged and the rest of the Recipe still works; only a
+page edited after `deletePage()` is checked again during `endPDF()`.
+
+By default, deletion is refused when retained structures still reference a
+selected page: outline items, link annotations and named destinations, form
+widgets, tagged-PDF structure elements, or the catalog's open action. Most
+real-world PDFs have such references. Pass `pruneReferences: true` to remove
+them instead:
+
+```javascript
+new Recipe("manual.pdf", "without-cover.pdf")
+  .deletePage(1, { pruneReferences: true })
+  .endPDF();
+```
+
+Pruning rewrites each retained object that points at a deleted page:
+
+- A destination that targets a deleted page becomes null. Outline items keep
+  their title and children, link annotations and named destinations stop
+  going anywhere, and an open action is cleared.
+- Every other direct reference to a deleted page, such as a widget's `/P` or a
+  structure element's `/Pg`, is removed.
+- A changed dictionary nested inside another object is written as its own
+  indirect object.
+
+Pruning does not remove form fields whose widgets sat on a deleted page, or
+structure elements for its content; they stay as orphans. It is refused when
+the reference is held by the page tree, the page labels, a stream dictionary,
+or a page edited in the same Recipe. Once any `deletePage()` call enables it,
+pruning applies to every queued deletion.
 
 Deletion also rejects edited retained pages, page trees, and page-label
 dictionaries that would require rewriting an indirect object with a nonzero

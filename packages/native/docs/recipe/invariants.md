@@ -29,8 +29,10 @@
 - `deletePage` accepts one-based original source page numbers. At least one page
   must remain, and deletion cannot be mixed with page insertion or addition in
   the same Recipe. Page-tree cycles, retained references to deleted pages, and
-  nonzero-generation rewrites are validated during `endPDF()`, not
-  `deletePage()`.
+  nonzero-generation rewrites are validated by `deletePage()`; a failed call
+  leaves the queued deletions unchanged. A page edited after `deletePage()` is
+  validated again during `endPDF()`. `pruneReferences: true` removes retained
+  references to deleted pages instead of refusing the deletion.
 - `insertPage()` and `appendPage()` throw synchronously for invalid or missing
   arguments; neither silently no-ops.
 - `read()` inspects a source without replacing the Recipe's output state.

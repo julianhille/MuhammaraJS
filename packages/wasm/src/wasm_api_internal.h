@@ -89,18 +89,35 @@ inline void ReleaseUnwrittenObjects(PDFWriter& writer, ObjectIDType firstID) {
 class WasmCatalogUpdateExtender : public DocumentContextExtenderAdapter {
  public:
   bool required = false;
-  ObjectIDType pageLabelsObjectID = 0;
+  // Catalog entries to replace, in the order set. Object ID 0 writes null.
+  std::vector<std::pair<std::string, ObjectIDType>> entries;
 
   bool IsCatalogUpdateRequiredForModifiedFile(PDFParser*) override {
     return required;
   }
 
+  void SetEntry(const std::string& key, ObjectIDType objectID) {
+    required = true;
+    for (auto& entry : entries) {
+      if (entry.first == key) {
+        entry.second = objectID;
+        return;
+      }
+    }
+    entries.emplace_back(key, objectID);
+  }
+
+  // The entries written here replace the original catalog's: the modified
+  // document copies only the keys the catalog does not have yet.
   PDFHummus::EStatusCode OnCatalogWrite(
       CatalogInformation*, DictionaryContext* catalog,
-      ObjectsContext*, PDFHummus::DocumentContext*) override {
-    if (pageLabelsObjectID != 0) {
-      catalog->WriteKey("PageLabels");
-      catalog->WriteNewObjectReferenceValue(pageLabelsObjectID);
+      ObjectsContext* objects, PDFHummus::DocumentContext*) override {
+    for (const auto& entry : entries) {
+      catalog->WriteKey(entry.first);
+      if (entry.second != 0)
+        catalog->WriteNewObjectReferenceValue(entry.second);
+      else
+        objects->WriteKeyword("null");
     }
     return PDFHummus::eSuccess;
   }

@@ -41,6 +41,12 @@ bytes may remain unreachable in the file; do not use it to erase sensitive
 data. Page deletion cannot be combined with `createPage()`, `appendPage()`, or
 `insertPage()` in the same Recipe.
 
+A page that outlines, links, form widgets, tagged-PDF structure or the open
+action still reference is refused unless you pass
+`deletePage(pageNumbers, { pruneReferences: true })`, which removes those
+references. See [Delete Pages](../how-to/delete-pages.md) for what pruning
+changes.
+
 ## Replace Text
 
 `replaceText(text, replacement, pageNumber)` rewrites text-showing operands in

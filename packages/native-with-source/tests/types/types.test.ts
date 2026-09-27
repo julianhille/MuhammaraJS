@@ -811,6 +811,9 @@ void trianglePosition;
 void invalidColorspace;
 void invalidPermission;
 recipe.deletePage(1).deletePage([2, 3]);
+recipe.deletePage(2, { pruneReferences: true }).deletePage([3], {});
+// @ts-expect-error pruneReferences must be a boolean.
+recipe.deletePage(2, { pruneReferences: "yes" });
 
 declare const callableReadStream: (() => void) & muhammara.ReadStream;
 declare const callableWriteStream: (() => void) & muhammara.WriteStream;
