@@ -36,6 +36,10 @@ The reader uses zero-based page indexes for page operations, while Recipe
 editing uses one-based page numbers. `pageInfo()` accounts for rotated page
 dimensions before the watermark center is calculated.
 
+The browser example's **Watermark** tab runs a diagonal variant of this
+workflow on an uploaded PDF, or on a built-in sample when none is chosen, on
+the main thread or in a module Worker.
+
 ## Watermark In Place
 
 The WebAssembly package is byte-first, so there is no second file to avoid:

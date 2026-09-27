@@ -62,3 +62,7 @@ Not every XObject is an image: `Subtype` can be `Image`, `Form`, or another
 PDF-defined type. Inspect stream dictionaries before assuming an object can be
 recompressed. See [Low-Level Writer, Reader, And Modifier](../low-level.md) for
 reader lifecycle and API details.
+
+The browser example's **Inspect PDF** tab counts each page's image and form
+XObjects this way, together with its Info metadata, text operations,
+annotations, and bookmarks, and renders the result as a one-page report.

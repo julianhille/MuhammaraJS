@@ -118,6 +118,16 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `insertPage()` ordering, `FreeText` annotations, and the text `wrap` type
   test, closing test-parity gaps against native
   [#725](https://github.com/julianhille/MuhammaraJS/issues/725)
+- Add a **Watermark** tab to the browser example that stamps diagonal,
+  semi-transparent text on every page of an uploaded PDF, or of a built-in
+  sample when none is chosen
+- Add a **Find text** tab to the browser example that searches the text
+  operations of an uploaded PDF, or of the built-in sample, and adds a
+  Highlight annotation over every match
+- Add an **Inspect PDF** tab to the browser example that reads the version,
+  Info metadata, page geometry, text operations, annotations, XObjects, and
+  bookmarks of an uploaded PDF, or of the built-in sample, into a one-page
+  report
 
 ### Fixed
 

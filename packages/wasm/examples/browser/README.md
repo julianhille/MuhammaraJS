@@ -9,9 +9,11 @@ parses both final outputs, and exposes preview and download controls.
 
 The tabs keep that complete laboratory intact and add focused, runnable how-to
 examples for annotations, URL links, HTML lists, page boxes, rotated-page
-coordinates, grayscale form XObjects, image transformations, and tables. Each
-focused example generates and parses its own previewable PDF; only image
-transformations require an upload. The
+coordinates, grayscale form XObjects, image transformations, tables,
+watermarks, text search, and PDF inspection. Each focused example generates and
+parses its own previewable PDF; only image transformations require an upload.
+The Watermark, Find text, and Inspect PDF tabs read an uploaded PDF, or a
+built-in two-page sample with bookmarks and metadata when no PDF is chosen. The
 Tables tab and complete Recipe workflow use bundled Roboto Regular when no
 custom font is uploaded. With an upload, they skip importing Roboto: Tables passes
 the uploaded bytes as `createRecipe({ defaultFont: assets.font })`, while the
@@ -63,6 +65,9 @@ The matching guides explain the focused examples:
 - [rotated pages](https://muhammarajs-wasm.readthedocs.io/how-to/add-content-to-rotated-pages/)
 - [image transformations](https://muhammarajs-wasm.readthedocs.io/how-to/place-and-transform-images/)
 - [tables](https://muhammarajs-wasm.readthedocs.io/how-to/create-tables/)
+- [watermarks](https://muhammarajs-wasm.readthedocs.io/how-to/watermark-pdfs/)
+- [finding text](https://muhammarajs-wasm.readthedocs.io/how-to/find-text-positions/)
+- [inspecting PDFs](https://muhammarajs-wasm.readthedocs.io/how-to/inspect-pdf-objects/)
 
 Focused documentation: [browser setup](https://muhammarajs-wasm.readthedocs.io/browser-setup/),
 [byte and Blob/File assets](https://muhammarajs-wasm.readthedocs.io/byte-assets/),

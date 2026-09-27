@@ -74,5 +74,9 @@ use a named destination or an `A` action such as `GoToR`, `URI`, or `Launch`.
 Those cases intentionally return `null` here and need application-specific
 handling. A PDF without an `Outlines` entry has no bookmarks and returns `[]`.
 
+The browser example's **Inspect PDF** tab lists bookmarks in its report. It
+reads at most 50 bookmarks, eight levels deep, so a cyclic outline in an
+untrusted upload cannot loop forever.
+
 This uses the low-level reader rather than Recipe. See [Inspect PDF
 Objects](inspect-pdf-objects.md) for dictionary and indirect-object traversal.

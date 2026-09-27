@@ -28,6 +28,14 @@ build the package, run
   upload.
 - [Change PDF Passwords](how-to/change-pdf-passwords.md) encrypts a PDF and
   creates a decrypted verification copy.
+- [Watermark Every Page](how-to/watermark-pdfs.md) stamps diagonal text on an
+  uploaded PDF, or on a built-in sample when none is chosen.
+- [Find Text Positions in a PDF](how-to/find-text-positions.md) and
+  [Annotate Existing Text](how-to/annotate-existing-text.md) find a string in
+  an uploaded PDF or the built-in sample and highlight every match.
+- [Inspect PDF Objects](how-to/inspect-pdf-objects.md) and
+  [Read PDF Bookmarks](how-to/read-bookmarks.md) read an uploaded PDF or the
+  built-in sample into a one-page report.
 
 See [Browser Setup](browser-setup.md) for loading the package and [Byte Assets,
 Blob, and File Input](byte-assets.md) for browser-safe assets.

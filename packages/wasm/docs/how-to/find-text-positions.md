@@ -41,6 +41,11 @@ XObjects such as appended content created by `Recipe.editPage()`. Adjacent
 text-showing operations without an explicit positioning operator retain the
 same matrix. This is not a general visual full-text search or glyph-bounds API.
 
+The browser example's **Find text** tab runs this search on an uploaded PDF, or
+on a built-in sample when none is chosen, and highlights each match. It
+estimates match widths with Recipe's bundled font, so highlights are exact for
+the sample and approximate for PDFs that use other fonts.
+
 ## Bound the work on untrusted input
 
 Both extractors accept an optional `limits` object. Fields you omit keep the
