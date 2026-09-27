@@ -76,6 +76,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   indistinguishable from `circle()`
   [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
 
+- Throw `Error: End the active objects context operation before ending the PDF`
+  from `PDFWriter#end()` while a dictionary started with `startDictionary()` is
+  still open, as Wasm does, and keep the writer usable. Previously `end()`
+  wrote the cross-reference table and trailer inside the open dictionary.
+  End every dictionary before `end()` [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
   `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
   Square, Circle, FreeText, or other annotation with a `height` now appears
@@ -255,6 +260,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   and never passed to `endFormXObject()` is garbage-collected, or when its
   writer is collected or the process exits; `end()` on such a writer throws
   `Unable to end PDF` [#814](https://github.com/julianhille/MuhammaraJS/issues/814)
+- Fix a crash (use-after-free) in `end()`, `_abort()`, and Recipe error
+  recovery after a dictionary was left open, for example by a failed
+  `image()`: PDF-Writer's cleanup wrote the dictionary's closing `>>` into the
+  already closed output. Open dictionaries are now released without writing,
+  a local change to the vendored PDF-Writer [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
+- Write a numeric-string Recipe `opacity` such as `"0.5"` as a number, as Wasm
+  does. It passed the opacity check but failed after the ExtGState dictionary
+  was started, leaving that dictionary open [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)

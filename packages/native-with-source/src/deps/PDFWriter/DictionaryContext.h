@@ -61,11 +61,16 @@ public:
 	// and you would still like to have the indents (a current example [4/10/2010] would be when writing
 	// multiline arrays)
 	void WriteIndents();
+
+	// Release without writing the closing ">>", for cleanup after the output
+	// stream may already be gone.
+	void Discard();
 private:
 
 	ObjectsContext* mObjectsContext;
 	StringSet mKeys;
 	size_t mIndentLevel;
+	bool mDiscarded;
 
 
 };

@@ -159,6 +159,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   a writer or writer-to-modify holding a form started with
   `createFormXObject()` and never passed to `endFormXObject()`
   [#814](https://github.com/julianhille/MuhammaraJS/issues/814)
+- Release dictionaries left open when a writer ends or is disposed without
+  writing their closing `>>` to an output that may already be released, a
+  local change to the PDF-Writer shared with native [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
 - Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
   was ignored, and to that text only: on new pages it also became the
   Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are

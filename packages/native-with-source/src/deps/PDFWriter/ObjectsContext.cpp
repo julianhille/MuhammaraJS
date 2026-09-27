@@ -635,6 +635,11 @@ EStatusCode ObjectsContext::ReadState(PDFParser* inStateReader,ObjectIDType inOb
 
 }
 
+bool ObjectsContext::HasOpenDictionaries() const
+{
+	return !mDictionaryStack.empty();
+}
+
 void ObjectsContext::Cleanup()
 {
 	mOutputStream = NULL;
@@ -645,9 +650,14 @@ void ObjectsContext::Cleanup()
 	mSubsetFontsNamesSequance.Reset();
 	mReferencesRegistry.Reset();
 
+	// Dictionaries left open are released without writing: when the writer
+	// ends or aborts, the output stream may already be closed.
 	DictionaryContextList::iterator it = mDictionaryStack.begin();
 	for(; it != mDictionaryStack.end(); ++it)
+	{
+		(*it)->Discard();
 		delete *it;
+	}
 	mDictionaryStack.clear();
 }
 

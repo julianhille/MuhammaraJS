@@ -97,6 +97,8 @@ public:
 	DictionaryContext* StartDictionary();
 	// ends dictionary context, releases the dictionary started in "StartDictionary", and now returned
 	PDFHummus::EStatusCode EndDictionary(DictionaryContext* inDictionaryContext); 
+	// true while a dictionary started with StartDictionary has not ended
+	bool HasOpenDictionaries() const;
 
 	// Array writing, currently just writing begin and end brackets
 	void StartArray();
