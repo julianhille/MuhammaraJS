@@ -50,8 +50,17 @@ describe("Recipe HTML text alignment", function () {
     Recipe = await getRecipe();
   });
 
-  /** Lays a single text box out with the shared Arial fixture. */
-  function layout(text, html, textAlign) {
+  /**
+   * Lays a single text box out with the shared Arial fixture and writes the
+   * PDF for manual review.
+   *
+   * @param {string} text Text or HTML to lay out.
+   * @param {boolean} html Whether the text is HTML.
+   * @param {string} textAlign Text box alignment.
+   * @param {string} outputName Test output file name without extension.
+   * @returns {number[]} Horizontal start of each drawn text run.
+   */
+  function layout(text, html, textAlign, outputName) {
     var recipe = new Recipe().createPage(300, 300);
     recipe.text(text, BOX_X, 20, {
       font: "arial",
@@ -59,14 +68,22 @@ describe("Recipe HTML text alignment", function () {
       html: html,
       textBox: { width: BOX_WIDTH, padding: 0, textAlign: textAlign },
     });
-    return textStarts(muhammara, recipe.endPage().endPDF());
+    var bytes = recipe.endPage().endPDF();
+    writeOutput(outputName, bytes);
+    return textStarts(muhammara, bytes);
   }
 
-  /** xMax of a run measured with the fixture font, as the layout measures it. */
-  function runExtent(text) {
+  /**
+   * xMax of a run measured with the fixture font, as the layout measures it.
+   *
+   * @param {string} text Text to measure.
+   * @param {string} outputName Test output file name without extension.
+   * @returns {number} The measured xMax.
+   */
+  function runExtent(text, outputName) {
     var recipe = new Recipe().createPage(300, 300);
     var extent = recipe.textDimensions(text, { font: "arial", size: 12 }).xMax;
-    recipe.endPage().endPDF();
+    writeOutput(outputName, recipe.endPage().endPDF());
     return extent;
   }
 
@@ -77,39 +94,85 @@ describe("Recipe HTML text alignment", function () {
   ["center", "right", "justify"].forEach(function (textAlign) {
     it(`aligns single-segment HTML like plain text when ${textAlign}`, function () {
       assert.deepEqual(
-        layout("one", true, textAlign),
-        layout("one", false, textAlign),
+        layout(
+          "one",
+          true,
+          textAlign,
+          `text-html-align-single-${textAlign}-html`,
+        ),
+        layout(
+          "one",
+          false,
+          textAlign,
+          `text-html-align-single-${textAlign}-plain`,
+        ),
       );
     });
 
     it(`aligns HTML lines ended by <br> like plain text when ${textAlign}`, function () {
       assert.deepEqual(
-        layout("one<br>two", true, textAlign),
-        layout("one\ntwo", false, textAlign),
+        layout(
+          "one<br>two",
+          true,
+          textAlign,
+          `text-html-align-br-${textAlign}-html`,
+        ),
+        layout(
+          "one\ntwo",
+          false,
+          textAlign,
+          `text-html-align-br-${textAlign}-plain`,
+        ),
       );
     });
 
     it(`aligns wrapped HTML like plain text when ${textAlign}`, function () {
       var wrapping = "one two three four five six seven";
       assert.deepEqual(
-        layout(wrapping, true, textAlign),
-        layout(wrapping, false, textAlign),
+        layout(
+          wrapping,
+          true,
+          textAlign,
+          `text-html-align-wrapped-${textAlign}-html`,
+        ),
+        layout(
+          wrapping,
+          false,
+          textAlign,
+          `text-html-align-wrapped-${textAlign}-plain`,
+        ),
       );
     });
   });
 
   it("ends a multi-segment HTML line at the box edge when right aligned", function () {
-    var starts = layout("<b>a</b> b", true, "right");
+    var starts = layout(
+      "<b>a</b> b",
+      true,
+      "right",
+      "text-html-align-multi-segment-right",
+    );
     assert.equal(starts.length, 2, "the line is drawn as two styled runs");
-    assert.equal(starts[1] + runExtent(" b"), BOX_X + BOX_WIDTH);
+    assert.equal(
+      starts[1] + runExtent(" b", "text-html-align-multi-segment-right-extent"),
+      BOX_X + BOX_WIDTH,
+    );
   });
 
   it("centers a multi-segment HTML line inside the text box", function () {
-    var starts = layout("<b>a</b> b", true, "center");
+    var starts = layout(
+      "<b>a</b> b",
+      true,
+      "center",
+      "text-html-align-multi-segment-center",
+    );
     assert.equal(starts.length, 2, "the line is drawn as two styled runs");
     assert.equal(
       starts[0] - BOX_X,
-      BOX_X + BOX_WIDTH - (starts[1] + runExtent(" b")),
+      BOX_X +
+        BOX_WIDTH -
+        (starts[1] +
+          runExtent(" b", "text-html-align-multi-segment-center-extent")),
     );
   });
 

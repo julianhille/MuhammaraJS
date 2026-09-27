@@ -1,6 +1,7 @@
 // Byte-first port of DocumentCopyingContext source parser and stream behavior.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("DocumentCopyingContext source parser", function () {
   it("matches the reader parser surface and retains copying ownership", async function () {
@@ -12,6 +13,7 @@ describe("DocumentCopyingContext source parser", function () {
       .writeFreeCode("10 20 m 30 40 l S");
     sourceWriter.writePage(sourcePage);
     var source = sourceWriter.end();
+    writeOutput("DocumentCopyingContextSourceParser-source", source);
 
     var writer = muhammara.createWriter();
     var copying = writer.createPDFCopyingContext(source);
@@ -100,7 +102,7 @@ describe("DocumentCopyingContext source parser", function () {
     assert.throws(() => parser.getTrailer(), /copying context has ended/);
     assert.throws(() => page.getType(), /copying context has ended/);
     assert.throws(() => sourceStream.read(1), /copying context has ended/);
-    writer.end();
+    writeOutput("DocumentCopyingContextSourceParser-writer", writer.end());
   });
 
   it("supports PDF-page forms and open modifier forms for external sources", async function () {
@@ -108,6 +110,7 @@ describe("DocumentCopyingContext source parser", function () {
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 200, 200));
     var source = sourceWriter.end();
+    writeOutput("DocumentCopyingContextSourceParser-forms-source", source);
     var modifier = muhammara.createWriterToModify(source);
     var copying = modifier.createPDFCopyingContext(source);
     var externalStream = copying.getSourceDocumentStream();
@@ -122,6 +125,7 @@ describe("DocumentCopyingContext source parser", function () {
     modifiedCopying.end();
     assert.equal(modifiedStream.dispose(), modifiedStream);
     var output = modifier.end();
+    writeOutput("DocumentCopyingContextSourceParser-forms-modified", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 1);
     reader.end();
@@ -129,9 +133,15 @@ describe("DocumentCopyingContext source parser", function () {
   it("rejects source passwords with a clear error on writers and modifiers", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(10, 10);
+    writeOutput("DocumentCopyingContextSourceParser-password-source", source);
+    var modifySource = muhammara.createBlankPdf(10, 10);
+    writeOutput(
+      "DocumentCopyingContextSourceParser-password-modify-source",
+      modifySource,
+    );
     for (var owner of [
       muhammara.createWriter(),
-      muhammara.createWriterToModify(muhammara.createBlankPdf(10, 10)),
+      muhammara.createWriterToModify(modifySource),
     ]) {
       assert.throws(
         () => owner.createPDFCopyingContext(source, { password: "user" }),

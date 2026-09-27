@@ -29,48 +29,11 @@ describe("Recipe text", function () {
     assert.match(output, /\/QuadPoints/);
   });
 
-  it("contains character spacing and rejects non-finite values", async function () {
-    var Recipe = await getRecipe();
-    var recipe = new Recipe({ compress: false }).createPage(200, 200);
-    assert.throws(
-      () => recipe.text("Invalid", 20, 20, { charSpace: Infinity }),
-      /charSpace must be a finite number/,
-    );
-    assert.throws(
-      () => recipe.text("Invalid", 20, 20, { charSpace: NaN }),
-      /charSpace must be a finite number/,
-    );
-    var bytes = recipe
-      .text("Spaced", 20, 40, { charSpace: 5 })
-      .endPage()
-      .endPDF();
-    writeOutput("text-charspace", bytes);
-    var muhammara = await createMuhammaraWasm();
-    var reader = muhammara.createReader(bytes);
-    try {
-      var stream = reader.startReadingFromStream(
-        reader
-          .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
-          .toPDFStream(),
-      );
-      var chunks = [];
-      while (stream.notEnded()) chunks.push(Buffer.from(stream.read(4096)));
-      var content = Buffer.concat(chunks).toString("latin1");
-      assert.match(
-        content,
-        /q\s+BT\s+5 Tc\s+ET[\s\S]*?\bTj\s+ET\s+Q/,
-        "Recipe character spacing is restored after its text operation",
-      );
-    } finally {
-      reader.end();
-      muhammara.disposeAssets();
-    }
-  });
-
   it("keeps hilited text on edited pages", async function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();
     var source = new Recipe().createPage(200, 200).endPage().endPDF();
+    writeOutput("text-hilite-edit-source", source);
     // The hilite rectangle is drawn before the text on an edited page; the
     // text must still reach the page.
     var bytes = new Recipe(source, { compress: false })

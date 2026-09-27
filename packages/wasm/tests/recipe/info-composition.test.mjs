@@ -137,6 +137,7 @@ describe("Recipe byte metadata and composition", function () {
       .createPage(120, 100)
       .endPage()
       .endPDF();
+    writeOutput("info-composition-composition-source", source);
     Recipe.registerPdf("composition-source", source);
     var recipe = new Recipe({ compress: false })
       .info({ author: "browser", title: "metadata", keywords: ["one", "two"] })
@@ -153,10 +154,18 @@ describe("Recipe byte metadata and composition", function () {
       custom: "value",
     });
     var bytes = recipe.endPDF();
+    writeOutput("info-composition-composition", bytes);
     var reader = (await createMuhammaraWasm()).createReader(bytes);
     assert.equal(reader.getPagesCount(), 3);
     reader.end();
-    assert.equal(recipe.split("part").length, 3);
+    var parts = recipe.split("part");
+    parts.forEach((part, index) =>
+      writeOutput(
+        `info-composition-composition-split-${index + 1}`,
+        part.bytes,
+      ),
+    );
+    assert.equal(parts.length, 3);
     assert.deepEqual(recipe.structure("json"), {
       pages: 3,
       encrypted: false,
@@ -186,7 +195,9 @@ describe("Recipe byte metadata and composition", function () {
       return writer.end();
     }
 
-    Recipe.registerPdf("insert-order-source", markerSource(["S1", "S2", "S3"]));
+    var markerBytes = markerSource(["S1", "S2", "S3"]);
+    writeOutput("info-composition-insert-order-source", markerBytes);
+    Recipe.registerPdf("insert-order-source", markerBytes);
 
     var recipe = new Recipe({ compress: false })
       .createPage(200, 200)
@@ -201,6 +212,7 @@ describe("Recipe byte metadata and composition", function () {
       .insertPage(1, "insert-order-source", 1);
 
     var bytes = recipe.endPDF();
+    writeOutput("info-composition-insert-order", bytes);
     var reader = muhammara.createReader(bytes);
     assert.equal(reader.getPagesCount(), 6);
     var labels = [];

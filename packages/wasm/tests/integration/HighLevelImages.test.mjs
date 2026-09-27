@@ -22,6 +22,7 @@ describe("HighLevelImages", function () {
     source.writePage(source.createPage());
     source.writePage(source.createPage());
     var sourcePdf = source.end();
+    writeOutput("HighLevelImages-source", sourcePdf);
     muhammara.registerPdf("source", sourcePdf);
 
     var writer = muhammara.createWriter();
@@ -124,6 +125,7 @@ describe("HighLevelImages", function () {
     );
     writer.writePage(page);
     var input = writer.end();
+    writeOutput("HighLevelImages-invalid-input", input);
 
     var modifier = muhammara.createWriterToModify(input);
     var pageModifier = modifier.createPageModifier(0);

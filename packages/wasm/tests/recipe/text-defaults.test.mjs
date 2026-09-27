@@ -10,6 +10,7 @@ describe("Recipe text default-size parity", function () {
       var recipe = new Recipe();
       if (editing) {
         var source = recipe.createPage("letter").endPage().endPDF();
+        writeOutput("text-defaults-sizes-editing-source", source);
         recipe = new Recipe(source).editPage(1);
       } else {
         recipe.createPage("letter");
@@ -177,7 +178,9 @@ describe("Recipe text color parity", function () {
         cases.forEach(function () {
           recipe.createPage(200, 200).endPage();
         });
-        recipe = new Recipe(recipe.endPDF());
+        var source = recipe.endPDF();
+        writeOutput("text-defaults-color-parity-editing-source", source);
+        recipe = new Recipe(source);
       }
       recipe.chroma("brand", "#00ff00");
       cases.forEach(function ([options], index) {
@@ -231,7 +234,7 @@ describe("Recipe text size validation", function () {
     ],
   ];
 
-  rejected.forEach(function ([size, message]) {
+  rejected.forEach(function ([size, message], index) {
     it(`rejects ${Object.entries(size).map(([key, value]) => `${key} ${String(value)}`)} on every measuring and drawing path`, async function () {
       var Recipe = await getRecipe();
       var recipe = new Recipe().createPage("letter");
@@ -259,19 +262,23 @@ describe("Recipe text size validation", function () {
           }),
         expected,
       );
-      recipe.endPage().endPDF();
+      writeOutput(
+        `text-defaults-rejected-size-${index}`,
+        recipe.endPage().endPDF(),
+      );
     });
   });
 
   it("rejects a negative size while editing an existing page", async function () {
     var Recipe = await getRecipe();
     var source = new Recipe().createPage("letter").endPage().endPDF();
+    writeOutput("text-defaults-rejected-edit-source", source);
     var recipe = new Recipe(source).editPage(1);
     assert.throws(
       () => recipe.text("Hello", 72, 72, { font: "arial", size: -5 }),
       { name: "RangeError" },
     );
-    recipe.endPage().endPDF();
+    writeOutput("text-defaults-rejected-edit", recipe.endPage().endPDF());
   });
 
   it("draws nothing for a rejected size and keeps the document usable", async function () {
@@ -340,6 +347,6 @@ describe("Recipe text size validation", function () {
     assert.throws(function () {
       recipe.text("Hello", 72, 72, { font: "arial", fontSize: Infinity });
     }, /Text fontSize must be a number greater than zero, received Infinity/);
-    recipe.endPage().endPDF();
+    writeOutput("text-defaults-infinite-size", recipe.endPage().endPDF());
   });
 });

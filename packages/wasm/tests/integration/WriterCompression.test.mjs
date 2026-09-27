@@ -1,17 +1,27 @@
 // Verifies createWriter({ compress }) configures native PDFCreationSettings.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("WriterCompression", function () {
   it("uses the requested stream filter mode", async function () {
     var muhammara = await createMuhammaraWasm();
 
+    /**
+     * Writes a one-page PDF with the given compression mode, saves it to the
+     * test output, and returns its decoded text.
+     */
     function create(compress) {
       var writer = muhammara.createWriter({ compress });
       var page = writer.createPage();
       writer.startPageContentContext(page).q().re(1, 1, 10, 10).f().Q();
       writer.writePage(page);
-      return new TextDecoder().decode(writer.end());
+      var pdf = writer.end();
+      writeOutput(
+        "WriterCompression-" + (compress ? "compressed" : "uncompressed"),
+        pdf,
+      );
+      return new TextDecoder().decode(pdf);
     }
 
     assert.match(create(true), /\/Filter \/FlateDecode/);

@@ -144,7 +144,7 @@ describe("SimpleContentPageTest", function () {
       /active PDFPage/,
     );
     invalidWriter.writePageAndReturnID(activePage);
-    invalidWriter.end();
+    writeOutput("SimpleContentPageTest-invalid-writer", invalidWriter.end());
     assert.throws(
       () => invalidWriter.writePageAndReturnID(activePage),
       /writer has ended/,
@@ -236,6 +236,7 @@ var INVALID_OPERATOR_CALLS = [
  */
 function everyContentContext(muhammara) {
   var blank = muhammara.createBlankPdf(100, 100);
+  writeOutput("SimpleContentPageTest-every-context-source", blank);
   var writer = muhammara.createWriter();
   var modifier = muhammara.createWriterToModify(blank);
   var pageModifier = muhammara

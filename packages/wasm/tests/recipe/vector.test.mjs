@@ -173,6 +173,7 @@ describe("Recipe vector", function () {
       })
       .endPage()
       .endPDF();
+    writeOutput("vector-stroke-insets", pdf);
     var reader = muhammara.createReader(pdf);
     try {
       var expectedGeometry = [
@@ -225,6 +226,7 @@ describe("Recipe vector", function () {
       .createPage(80, 80)
       .endPage()
       .endPDF();
+    writeOutput("vector-stroke-insets-edit-source", source);
     var options = {
       fill: "#000000",
       stroke: "#ff0000",
@@ -250,6 +252,7 @@ describe("Recipe vector", function () {
       .pie(40, 40, 40, 0, 90, options)
       .endPage()
       .endPDF();
+    writeOutput("vector-stroke-insets-edit", pdf);
     var reader = muhammara.createReader(pdf);
     try {
       var expectedGeometry = [
@@ -298,6 +301,7 @@ describe("Recipe vector", function () {
       .arc(10, 10, 10, 0, 90, thick)
       .endPage()
       .endPDF();
+    writeOutput("vector-thick-insets", pdf);
     var reader = muhammara.createReader(pdf);
     try {
       var strokeBlock = function (pageIndex) {
@@ -340,6 +344,7 @@ describe("Recipe vector", function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();
     var source = new Recipe().createPage(200, 200).endPage().endPDF();
+    writeOutput("vector-line-edit-source", source);
     var pdf = new Recipe(source)
       .editPage(1)
       .line(
@@ -399,6 +404,7 @@ describe("Recipe vector", function () {
       .line([[20, 20]])
       .endPage()
       .endPDF();
+    writeOutput("vector-line-too-few-points", pdf);
     var reader = muhammara.createReader(pdf);
     assert.deepEqual(getPaintBlocks(muhammara, reader, 0), []);
   });

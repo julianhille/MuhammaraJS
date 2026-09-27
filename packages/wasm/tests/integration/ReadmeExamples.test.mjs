@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 var AsyncFunction = async function () {}.constructor;
 var readme = await readFile(
@@ -19,6 +20,7 @@ describe("@muhammara/wasm README examples", function () {
     var Recipe = await createRecipe();
     muhammara = await createMuhammaraWasm();
     inputBytes = new Recipe().createPage("A4").endPage().endPDF();
+    writeOutput("ReadmeExamples-input", inputBytes);
   });
 
   it("imports only from the package entry point", function () {
@@ -34,6 +36,7 @@ describe("@muhammara/wasm README examples", function () {
         "inputBytes",
         source + "\nreturn typeof output === 'undefined' ? pdfBytes : output;",
       )(createRecipe, createMuhammaraWasm, inputBytes);
+      writeOutput(`ReadmeExamples-example-${index + 1}`, pdf);
 
       assert.ok(pdf instanceof Uint8Array);
       assert.equal(new TextDecoder().decode(pdf.subarray(0, 5)), "%PDF-");

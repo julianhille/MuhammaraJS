@@ -8,6 +8,7 @@ describe("ModifierWriterParity", function () {
   it("validates page range options the same way on writers and modifiers", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(100, 100);
+    writeOutput("ModifierWriterParity-range-validation-source", source);
     var targets = [
       muhammara.createWriter(),
       muhammara.createWriterToModify(source),
@@ -36,7 +37,10 @@ describe("ModifierWriterParity", function () {
         );
         target.writePage(page);
       }
-      target.end();
+      writeOutput(
+        "ModifierWriterParity-range-validation-" + targets.indexOf(target),
+        target.end(),
+      );
     }
   });
 
@@ -47,16 +51,18 @@ describe("ModifierWriterParity", function () {
     );
     muhammara.registerImage("parity-jpeg", jpeg, "jpg");
     try {
-      var modifier = muhammara.createWriterToModify(
-        muhammara.createBlankPdf(100, 100),
-        { compress: false },
-      );
+      var source = muhammara.createBlankPdf(100, 100);
+      writeOutput("ModifierWriterParity-doxobject-source", source);
+      var modifier = muhammara.createWriterToModify(source, {
+        compress: false,
+      });
       var image = modifier.createImageXObjectFromJPGBytes("parity-jpeg");
       var form = modifier.createFormXObjectFromJPGBytes("parity-jpeg");
       var page = modifier.createPage(0, 0, 100, 100);
       modifier.startPageContentContext(page).doXObject(image).doXObject(form);
       modifier.writePage(page);
       var output = modifier.end();
+      writeOutput("ModifierWriterParity-doxobject", output);
       var text = new TextDecoder("latin1").decode(output);
       // Two on the page, plus the JPEG form drawing its own image.
       assert.equal(text.match(/ Do\b/g).length, 3);
@@ -75,6 +81,7 @@ describe("ModifierWriterParity", function () {
     sourceWriter.startPageContentContext(sourcePage).re(1, 1, 10, 10).f();
     sourceWriter.writePage(sourcePage);
     var source = sourceWriter.end();
+    writeOutput("ModifierWriterParity-source", source);
     var jpeg = new Uint8Array(
       await readFile("tests/TestMaterials/images/soundcloud_logo.jpg"),
     );
@@ -145,7 +152,7 @@ describe("ModifierWriterParity", function () {
         .length,
       1,
     );
-    asyncWriter.end();
+    writeOutput("ModifierWriterParity-async", asyncWriter.end());
 
     var mergeWriter = muhammara.createWriterToModify(source);
     var mergePage = mergeWriter.createPage(0, 0, 100, 100);
@@ -157,7 +164,9 @@ describe("ModifierWriterParity", function () {
     });
     mergeWriter.writePage(mergePage);
     assert.equal(called, true);
-    var mergeReader = muhammara.createReader(mergeWriter.end());
+    var merged = mergeWriter.end();
+    writeOutput("ModifierWriterParity-merge", merged);
+    var mergeReader = muhammara.createReader(merged);
     assert.equal(mergeReader.getPagesCount(), 2);
     mergeReader.end();
   });

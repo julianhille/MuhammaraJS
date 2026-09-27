@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 function names(resources) {
   return {
@@ -80,6 +81,7 @@ describe("StructuredContentOperators", function () {
     writer.startPageContentContext(formPage).doXObject(form);
     writer.writePage(formPage);
     var source = writer.end();
+    writeOutput("StructuredContentOperators", source);
 
     var modifier = muhammara.createWriterToModify(source);
     var pageModifier = modifier.createPageModifier(0).startContext();
@@ -94,7 +96,9 @@ describe("StructuredContentOperators", function () {
     assert.throws(() => modifierContext.sc(0.5), /not active/);
     pageModifier.writePage();
 
-    var reader = muhammara.createReader(modifier.end());
+    var modified = modifier.end();
+    writeOutput("StructuredContentOperators-modified", modified);
+    var reader = muhammara.createReader(modified);
     assertOperators(reader);
     reader.end();
   });
@@ -107,7 +111,9 @@ describe("StructuredContentOperators", function () {
     var pattern = page.getResourcesDictionary().addPatternMapping(12);
     assert.equal(context.SCN(pattern).scn(pattern), context);
     writer.writePage(page);
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("StructuredContentOperators-colored-pattern", pdf);
+    var reader = muhammara.createReader(pdf);
 
     var tokens = [];
     for (var objectId = 1; objectId < reader.getXrefSize(); ++objectId) {

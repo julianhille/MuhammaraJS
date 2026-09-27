@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createRecipe } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe endPDF called twice", function () {
   it("returns the same cached bytes on repeated calls", async function () {
@@ -8,6 +9,7 @@ describe("Recipe endPDF called twice", function () {
     recipe.createPage().endPage();
 
     var first = recipe.endPDF();
+    writeOutput("endPDF-twice-cached", first);
     var second = recipe.endPDF();
 
     assert.equal(second, first);

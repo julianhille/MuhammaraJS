@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("ImageTypeTest", function () {
   it("detects registered image assets and direct bytes without paths", async function () {
@@ -29,6 +30,6 @@ describe("ImageTypeTest", function () {
     assert.equal(await writer.getImageTypeAsync(new Blob([jpg])), "JPG");
     assert.equal(await writer.getImagePagesCountAsync(new Blob([tiff])), 1);
     assert.throws(() => writer.getImageType("not-a-path"), TypeError);
-    writer.end();
+    writeOutput("ImageTypeTest", writer.end());
   });
 });

@@ -121,6 +121,6 @@ describe("ImagesAndFormsForwardReferenceTest", function () {
       () => writer.createFormXObject(0, 0, 10, 10, 0x100000000),
       RangeError,
     );
-    writer.end();
+    writeOutput("ImagesAndFormsForwardReferenceTest-invalid-ids", writer.end());
   });
 });

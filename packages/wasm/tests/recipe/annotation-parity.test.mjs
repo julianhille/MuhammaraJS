@@ -98,6 +98,14 @@ describe("Recipe annotation parity", function () {
     reader = undefined;
   });
 
+  /**
+   * Finishes the page and document, writes the bytes for manual review when
+   * a name is given, and reads the first page's annotations.
+   *
+   * @param {object} recipe Recipe with an open page.
+   * @param {string} [outputName] Test output file name without extension.
+   * @returns {Array<object>} Annotations on the first page.
+   */
   function finish(recipe, outputName) {
     var bytes = recipe.endPage().endPDF();
     if (outputName) writeOutput(outputName, bytes);
@@ -109,6 +117,10 @@ describe("Recipe annotation parity", function () {
     [false, true].forEach(function (html) {
       it(`clips ${html ? "HTML" : "plain"} text markup to the box on ${mode} pages`, function () {
         var source = new Recipe().createPage(300, 300).endPage().endPDF();
+        writeOutput(
+          `annotation-parity-clip-markup-${mode}-${html ? "html" : "plain"}-source`,
+          source,
+        );
         var recipe =
           mode === "new"
             ? new Recipe().createPage(300, 300)
@@ -134,7 +146,10 @@ describe("Recipe annotation parity", function () {
             },
           );
         });
-        var annotations = finish(recipe);
+        var annotations = finish(
+          recipe,
+          `annotation-parity-clip-markup-${mode}-${html ? "html" : "plain"}`,
+        );
         assert.equal(annotations.length, 6);
         annotations.forEach(function (annotation, index) {
           var top = 300 - (40 + Math.floor(index / 2) * 70);
@@ -171,6 +186,10 @@ describe("Recipe annotation parity", function () {
     [false, true].forEach(function (html) {
       it(`clips ${html ? "HTML" : "plain"} text links to the box on ${mode} pages`, function () {
         var source = new Recipe().createPage(300, 300).endPage().endPDF();
+        writeOutput(
+          `annotation-parity-clip-links-${mode}-${html ? "html" : "plain"}-source`,
+          source,
+        );
         var recipe =
           mode === "new"
             ? new Recipe().createPage(300, 300)
@@ -195,7 +214,10 @@ describe("Recipe annotation parity", function () {
             },
           );
         });
-        var annotations = finish(recipe);
+        var annotations = finish(
+          recipe,
+          `annotation-parity-clip-links-${mode}-${html ? "html" : "plain"}`,
+        );
         assert.deepEqual(
           annotations.map(function (annotation) {
             return annotation.dictionary.Subtype.toString();
@@ -233,7 +255,7 @@ describe("Recipe annotation parity", function () {
         opacity: opacity,
       });
     });
-    var annotations = finish(recipe);
+    var annotations = finish(recipe, "annotation-parity-opacity");
     assert.equal(annotations.length, opacities.length);
     annotations.forEach(function (annotation, index) {
       var dictionary = annotation.dictionary;
@@ -266,7 +288,7 @@ describe("Recipe annotation parity", function () {
     recipe.annot(300, 200, "Text", { ...options, text: "Please review." });
     recipe.comment("No replies.", 300, 300);
     recipe.comment("Empty replies.", 300, 400, { replies: [] });
-    var annotations = finish(recipe);
+    var annotations = finish(recipe, "annotation-parity-reply-parents");
     assert.equal(annotations.length, 8);
     [0, 3].forEach(function (index) {
       var parent = annotations[index];
@@ -301,7 +323,7 @@ describe("Recipe annotation parity", function () {
         { text: "Override.", title: "Editor", flag: "hidden" },
       ],
     });
-    var annotations = finish(recipe);
+    var annotations = finish(recipe, "annotation-parity-reply-inheritance");
     var inherited = annotations[1].dictionary;
     var overridden = annotations[2].dictionary;
     assert.equal(inherited.T.toText(), "Reviewer");
@@ -322,7 +344,7 @@ describe("Recipe annotation parity", function () {
       },
     });
 
-    var annotations = finish(recipe);
+    var annotations = finish(recipe, "annotation-parity-squiggly");
     assert.equal(annotations.length, 2);
     assert.equal(annotations[0].dictionary.Subtype.toString(), "Squiggly");
     assert.equal(annotations[0].dictionary.Contents.toText(), "Needs review.");
@@ -350,7 +372,9 @@ describe("Recipe annotation parity", function () {
       recipe.link("https://invalid.test", 50, 100, 80, 12);
     });
     recipe.createPage(595, 842).link("https://valid.test", 50, 100, 80, 12);
-    reader = muhammara.createReader(recipe.endPage().endPDF());
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("annotation-parity-between-pages-link", bytes);
+    reader = muhammara.createReader(bytes);
     assert.equal(readAnnotations(reader, 1).length, 1);
   });
 
@@ -366,7 +390,10 @@ describe("Recipe annotation parity", function () {
           highlight,
           textBox: { width: 120, padding: 10, textAlign: "justify" },
         });
-        var annotations = finish(recipe);
+        var annotations = finish(
+          recipe,
+          `annotation-parity-justified-${html ? "html" : "plain"}-${opacity}`,
+        );
         assert.ok(annotations.length > 1);
         annotations.forEach(function (annotation, index) {
           var rect = annotation.dictionary.Rect.toPDFArray()
@@ -399,7 +426,7 @@ describe("Recipe annotation parity", function () {
       textBox: { width: 300 },
     });
 
-    var annotations = finish(recipe);
+    var annotations = finish(recipe, "annotation-parity-requested-markup");
     assert.deepEqual(subtypes(annotations), [
       "Highlight",
       "Underline",
@@ -422,6 +449,7 @@ describe("Recipe annotation parity", function () {
     recipe.link("https://example.test", 50, 150, 80, 12);
     recipe.text("Linked text.", 50, 180, { link: "https://text.test" });
     var source = recipe.endPage().endPDF();
+    writeOutput("annotation-parity-shared-page-source", source);
     reader = muhammara.createReader(source);
     assert.match(readPageContent(muhammara, reader), /Linked text[\s\S]*Q\s*$/);
     assert.deepEqual(subtypes(readAnnotations(reader)), [
@@ -437,7 +465,9 @@ describe("Recipe annotation parity", function () {
       .editPage(1)
       .text("Edited text.", 50, 200, { underline: true, strikeOut: true })
       .link("https://edited.test", 50, 220, 80, 12);
-    reader = muhammara.createReader(edited.endPage().endPDF());
+    var bytes = edited.endPage().endPDF();
+    writeOutput("annotation-parity-shared-page-edited", bytes);
+    reader = muhammara.createReader(bytes);
     // Edited content is drawn through a form XObject the page invokes.
     assert.match(readPageContent(muhammara, reader), /Commented text[\s\S]*Do/);
     assert.match(readPageForms(reader), /Tj/);
@@ -461,7 +491,7 @@ describe("Recipe annotation parity", function () {
         width: 200,
         height: 50,
       });
-    var annotations = finish(recipe);
+    var annotations = finish(recipe, "annotation-parity-freetext");
     assert.deepEqual(subtypes(annotations), ["FreeText", "FreeText"]);
     assert.equal(annotations[0].dictionary.Contents.toText(), "Yo yo yo");
     assert.equal(
@@ -480,6 +510,7 @@ describe("Recipe annotation parity", function () {
   ["new", "added", "edited", "paused", "resumed"].forEach(function (mode) {
     it(`preserves structured markup on ${mode} source pages`, function () {
       var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      writeOutput(`annotation-parity-structured-${mode}-source`, source);
       var recipe = mode === "new" ? new Recipe() : new Recipe(source);
       if (mode === "added" || mode === "new") recipe.createPage(595, 842);
       else recipe.editPage(1);
@@ -500,7 +531,9 @@ describe("Recipe annotation parity", function () {
       if (mode === "resumed")
         recipe.resumeContext().text("After resume.", 50, 300);
       recipe.comment("After pause.", 300, 200);
-      reader = muhammara.createReader(recipe.endPage().endPDF());
+      var bytes = recipe.endPage().endPDF();
+      writeOutput(`annotation-parity-structured-${mode}`, bytes);
+      reader = muhammara.createReader(bytes);
       var pageIndex = mode === "added" ? 1 : 0;
       var annotations = readAnnotations(reader, pageIndex);
       var parent = annotations.find(function (annotation) {
@@ -531,6 +564,7 @@ describe("Recipe annotation parity", function () {
 
   it("rejects invalid annotation values alike on new and edited pages", function () {
     var source = new Recipe().createPage(595, 842).endPage().endPDF();
+    writeOutput("annotation-parity-invalid-values-source", source);
     [
       { opacity: 2 },
       { borderDash: ["x"] },
@@ -538,7 +572,7 @@ describe("Recipe annotation parity", function () {
       { borderWidth: Number.NaN },
       { width: Number.NaN },
       { height: Number.NaN },
-    ].forEach(function (options) {
+    ].forEach(function (options, optionsIndex) {
       [
         new Recipe().createPage(595, 842),
         new Recipe(source).editPage(1),
@@ -556,7 +590,12 @@ describe("Recipe annotation parity", function () {
             }),
           { name: "TypeError", message: "Invalid annotation options" },
         );
-        reader = muhammara.createReader(recipe.endPage().endPDF());
+        var bytes = recipe.endPage().endPDF();
+        writeOutput(
+          `annotation-parity-invalid-values-${optionsIndex}-${index === 0 ? "new" : "edited"}`,
+          bytes,
+        );
+        reader = muhammara.createReader(bytes);
         assert.deepEqual(subtypes(readAnnotations(reader)), ["Text"]);
         assert.match(
           index === 0
@@ -572,6 +611,7 @@ describe("Recipe annotation parity", function () {
 
   it("rejects invalid text markup before drawing or queuing annotations", function () {
     var source = new Recipe().createPage(595, 842).endPage().endPDF();
+    writeOutput("annotation-parity-invalid-markup-source", source);
     ["new", "edited"].forEach(function (mode) {
       var recipe =
         mode === "new"
@@ -590,7 +630,9 @@ describe("Recipe annotation parity", function () {
         { name: "TypeError", message: "Invalid annotation options" },
       );
       assert.deepEqual(recipe.position, position);
-      reader = muhammara.createReader(recipe.endPage().endPDF());
+      var bytes = recipe.endPage().endPDF();
+      writeOutput(`annotation-parity-invalid-markup-${mode}`, bytes);
+      reader = muhammara.createReader(bytes);
       assert.deepEqual(subtypes(readAnnotations(reader)), ["Text"]);
       var content =
         mode === "new"
@@ -605,6 +647,7 @@ describe("Recipe annotation parity", function () {
   ["new", "edited"].forEach(function (mode) {
     it(`inherits parent metadata for replies on ${mode} pages`, function () {
       var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      writeOutput(`annotation-parity-reply-metadata-${mode}-source`, source);
       var recipe =
         mode === "new"
           ? new Recipe().createPage(595, 842)
@@ -627,7 +670,10 @@ describe("Recipe annotation parity", function () {
           },
         ],
       });
-      var annotations = finish(recipe);
+      var annotations = finish(
+        recipe,
+        `annotation-parity-reply-metadata-${mode}`,
+      );
       var parent = annotations[0].dictionary;
       var inherited = annotations[1].dictionary;
       var overridden = annotations[2].dictionary;
@@ -648,6 +694,7 @@ describe("Recipe annotation parity", function () {
 
   it("writes the same valid dashed border on new and edited pages", function () {
     var source = new Recipe().createPage(595, 842).endPage().endPDF();
+    writeOutput("annotation-parity-dashed-border-source", source);
     ["new", "edited"].forEach(function (mode) {
       var recipe =
         mode === "new"
@@ -659,7 +706,10 @@ describe("Recipe annotation parity", function () {
         height: 20,
         border: { width: 2, dash: [3, 4] },
       });
-      var annotation = finish(recipe)[0].dictionary;
+      var annotation = finish(
+        recipe,
+        `annotation-parity-dashed-border-${mode}`,
+      )[0].dictionary;
       var border = annotation.Border.toPDFArray().toJSArray();
       assert.equal(border.length, 4);
       assert.deepEqual(
@@ -684,6 +734,7 @@ describe("Recipe annotation parity", function () {
 
   it("writes non-ASCII annotation text and supplied rich text", function () {
     var source = new Recipe().createPage(595, 842).endPage().endPDF();
+    writeOutput("annotation-parity-non-ascii-source", source);
     var xml = '<?xml version="1.0"?><body><p>Supplied.</p></body>';
     ["new", "edited"].forEach(function (mode) {
       var recipe =
@@ -693,7 +744,9 @@ describe("Recipe annotation parity", function () {
       recipe
         .comment("Größe ✓", 50, 50, { title: "Jürgen", subject: "Prüfung" })
         .comment(xml, 50, 100, { richText: true });
-      reader = muhammara.createReader(recipe.endPage().endPDF());
+      var bytes = recipe.endPage().endPDF();
+      writeOutput(`annotation-parity-non-ascii-${mode}`, bytes);
+      reader = muhammara.createReader(bytes);
       var annotations = readAnnotations(reader);
       assert.equal(annotations[0].dictionary.Contents.toText(), "Größe ✓");
       assert.equal(annotations[0].dictionary.T.toText(), "Jürgen");
@@ -712,7 +765,7 @@ describe("Recipe annotation parity", function () {
       replies: [{ text: 7, flag: "" }],
     });
     recipe.text("Marked.", 50, 100, { highlight: { text: null } });
-    var annotations = finish(recipe);
+    var annotations = finish(recipe, "annotation-parity-text-conversion");
     assert.equal(annotations[0].dictionary.T?.toText() ?? "", "");
     assert.equal(annotations[0].dictionary.Subj.toText(), "42");
     assert.equal(annotations[1].dictionary.Contents.toText(), "7");
@@ -724,6 +777,10 @@ describe("Recipe annotation parity", function () {
   ["new", "edited"].forEach(function (mode) {
     it(`preserves zero and false annotation metadata on ${mode} pages`, function () {
       var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      writeOutput(
+        `annotation-parity-zero-false-metadata-${mode}-source`,
+        source,
+      );
       var recipe =
         mode === "new"
           ? new Recipe().createPage(595, 842)
@@ -734,7 +791,10 @@ describe("Recipe annotation parity", function () {
         replies: [{ text: "Reply." }],
       });
       recipe.comment("Other.", 50, 100, { title: false, subject: 0 });
-      var annotations = finish(recipe);
+      var annotations = finish(
+        recipe,
+        `annotation-parity-zero-false-metadata-${mode}`,
+      );
       [0, 1].forEach(function (index) {
         assert.equal(annotations[index].dictionary.T?.toText(), "0");
         assert.equal(annotations[index].dictionary.Subj?.toText(), "false");
@@ -745,6 +805,7 @@ describe("Recipe annotation parity", function () {
 
     it(`rejects unsupported URLs before queuing links on ${mode} pages`, function () {
       var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      writeOutput(`annotation-parity-unsupported-urls-${mode}-source`, source);
       var recipe =
         mode === "new"
           ? new Recipe().createPage(595, 842)
@@ -757,7 +818,10 @@ describe("Recipe annotation parity", function () {
         });
       });
       recipe.link(encodeURI("https://example.test/✓"), 50, 110, 80, 12);
-      var annotations = finish(recipe);
+      var annotations = finish(
+        recipe,
+        `annotation-parity-unsupported-urls-${mode}`,
+      );
       assert.deepEqual(subtypes(annotations), ["Link", "Link"]);
       var content =
         mode === "new"
@@ -770,6 +834,10 @@ describe("Recipe annotation parity", function () {
   ["new", "added", "edited"].forEach(function (mode) {
     it(`rejects invalid link rectangles before queuing on ${mode} pages`, function () {
       var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      writeOutput(
+        `annotation-parity-invalid-link-rects-${mode}-source`,
+        source,
+      );
       var recipe = mode === "new" ? new Recipe() : new Recipe(source);
       if (mode === "edited") recipe.editPage(1);
       else recipe.createPage(595, 842);
@@ -797,7 +865,9 @@ describe("Recipe annotation parity", function () {
       recipe.link("https://after.test", 50, 100, 80, 12);
       // Zero-sized rectangles remain valid, as in the low-level writer API.
       recipe.link("https://empty.test", 50, 120, 0, 0);
-      reader = muhammara.createReader(recipe.endPage().endPDF());
+      var bytes = recipe.endPage().endPDF();
+      writeOutput(`annotation-parity-invalid-link-rects-${mode}`, bytes);
+      reader = muhammara.createReader(bytes);
       var pageIndex = mode === "added" ? 1 : 0;
       var annotations = readAnnotations(reader, pageIndex);
       assert.deepEqual(subtypes(annotations), ["Link", "Link", "Link"]);
@@ -819,6 +889,7 @@ describe("Recipe annotation parity", function () {
   ["new", "edited"].forEach(function (mode) {
     it(`keeps negative link sizes over the same area on ${mode} pages`, function () {
       var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      writeOutput(`annotation-parity-negative-links-${mode}-source`, source);
       var recipe =
         mode === "new"
           ? new Recipe().createPage(595, 842)
@@ -826,15 +897,17 @@ describe("Recipe annotation parity", function () {
       recipe.link("https://negative.test", 100, 150, -40, -10);
       recipe.rectangle(100, 200, -50, 20, { link: "https://shape.test" });
       assert.deepEqual(
-        finish(recipe).map(function (annotation) {
-          var [left, bottom, right, top] =
-            annotation.dictionary.Rect.toPDFArray()
-              .toJSArray()
-              .map(function (value) {
-                return value.toNumber();
-              });
-          return [Math.abs(right - left), Math.abs(top - bottom)];
-        }),
+        finish(recipe, `annotation-parity-negative-links-${mode}`).map(
+          function (annotation) {
+            var [left, bottom, right, top] =
+              annotation.dictionary.Rect.toPDFArray()
+                .toJSArray()
+                .map(function (value) {
+                  return value.toNumber();
+                });
+            return [Math.abs(right - left), Math.abs(top - bottom)];
+          },
+        ),
         [
           [40, 10],
           [50, 20],
@@ -845,6 +918,7 @@ describe("Recipe annotation parity", function () {
   ["new", "edited"].forEach(function (mode) {
     it(`defaults markup borders to zero width and omits empty rich text on ${mode} pages`, function () {
       var source = new Recipe().createPage(595, 842).endPage().endPDF();
+      writeOutput(`annotation-parity-markup-borders-${mode}-source`, source);
       var recipe =
         mode === "new"
           ? new Recipe().createPage(595, 842)
@@ -852,7 +926,10 @@ describe("Recipe annotation parity", function () {
       recipe.text("Marked.", 50, 100, { highlight: true });
       recipe.annot(50, 150, "Square", { width: 20, height: 20 });
       recipe.comment("", 50, 200, { richText: true });
-      var annotations = finish(recipe);
+      var annotations = finish(
+        recipe,
+        `annotation-parity-markup-borders-${mode}`,
+      );
       assert.deepEqual(
         annotations[0].dictionary.Border.toPDFArray()
           .toJSArray()

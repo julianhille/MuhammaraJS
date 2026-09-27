@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("DocumentCopyingContext deep objects", function () {
   it("copies direct-object dependencies, tracks mappings, and replaces sources", async function () {
@@ -12,6 +13,7 @@ describe("DocumentCopyingContext deep objects", function () {
     sourceWriter.startPageContentContext(sourcePage).q().Q();
     sourceWriter.writePage(sourcePage);
     var source = sourceWriter.end();
+    writeOutput("DocumentCopyingContextDeepObjects-source", source);
 
     var writer = muhammara.createWriter();
     var copying = writer.createPDFCopyingContext(source);
@@ -77,6 +79,7 @@ describe("DocumentCopyingContext deep objects", function () {
     var targetPage = writer.createPage(0, 0, 100, 100);
     writer.writePage(targetPage);
     var output = writer.end();
+    writeOutput("DocumentCopyingContextDeepObjects-copied", output);
     var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 1);
     reader.end();
@@ -88,6 +91,7 @@ describe("DocumentCopyingContext deep objects", function () {
     var sourcePage = sourceWriter.createPage();
     sourceWriter.writePage(sourcePage);
     var source = sourceWriter.end();
+    writeOutput("DocumentCopyingContextDeepObjects-family-source", source);
     var writer = muhammara.createWriter();
     var modifier = muhammara.createWriterToModify(source);
     var contexts = [
@@ -109,7 +113,13 @@ describe("DocumentCopyingContext deep objects", function () {
       assert.throws(() => copying.copyNewObjectsForDirectObject("1"), /array/);
       assert.equal(copying.end(), copying);
     });
-    writer.end();
-    modifier.end();
+    writeOutput(
+      "DocumentCopyingContextDeepObjects-family-writer",
+      writer.end(),
+    );
+    writeOutput(
+      "DocumentCopyingContextDeepObjects-family-modifier",
+      modifier.end(),
+    );
   });
 });

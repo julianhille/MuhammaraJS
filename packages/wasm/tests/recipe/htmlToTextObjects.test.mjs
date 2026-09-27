@@ -2,9 +2,18 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
+import { writeOutput } from "../testOutput.mjs";
 
-/** Renders HTML and returns its visual lines; blank lines appear as "". */
-async function renderLines(html, options = {}) {
+/**
+ * Renders HTML, writes the PDF for manual review, and returns its visual
+ * lines; blank lines appear as "".
+ *
+ * @param {string} html HTML fragment to render.
+ * @param {string} outputName Test output file name without extension.
+ * @param {object} [options] Extra text options.
+ * @returns {Promise<string[]>} Rendered visual lines.
+ */
+async function renderLines(html, outputName, options = {}) {
   var Recipe = await getRecipe();
   var muhammara = await createMuhammaraWasm();
   var bytes = new Recipe()
@@ -26,6 +35,7 @@ async function renderLines(html, options = {}) {
     })
     .endPage()
     .endPDF();
+  writeOutput(outputName, bytes);
   var reader = muhammara.createReader(bytes);
   try {
     return visualLines(reader.extractPageText(0), reader.extractPageText(1));
@@ -153,6 +163,7 @@ describe("HTML to TextObjects", function () {
       })
       .endPage();
     var bytes = recipe.endPDF();
+    writeOutput("htmlToTextObjects-lists", bytes);
     assert.match(
       new TextDecoder().decode(bytes),
       /\/URI \(https:\/\/example\.test\)/,
@@ -299,6 +310,7 @@ describe("HTML to TextObjects", function () {
       })
       .endPage();
     var bytes = recipe.endPDF();
+    writeOutput("htmlToTextObjects-continuation-indent", bytes);
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(bytes);
     try {
@@ -340,10 +352,13 @@ describe("HTML to TextObjects", function () {
      * Finalizes a recipe and extracts its first page for spacing assertions.
      *
      * @param {Recipe} recipe Recipe containing the page under test.
+     * @param {string} outputName Test output file name without extension.
      * @returns {Array<object>} Extracted text items from the first page.
      */
-    var extract = (recipe) => {
-      var reader = muhammara.createReader(recipe.endPage().endPDF());
+    var extract = (recipe, outputName) => {
+      var bytes = recipe.endPage().endPDF();
+      writeOutput(outputName, bytes);
+      var reader = muhammara.createReader(bytes);
       try {
         return reader.extractPageText(0);
       } finally {
@@ -372,7 +387,9 @@ describe("HTML to TextObjects", function () {
       },
     });
     assert.deepEqual(
-      extract(clippedRecipe).map((item) => item.content),
+      extract(clippedRecipe, "htmlToTextObjects-spacing-clipped").map(
+        (item) => item.content,
+      ),
       ["WWWW", "WWWW"],
     );
     assert.equal(clipped, undefined);
@@ -391,6 +408,7 @@ describe("HTML to TextObjects", function () {
       charSpace: 5,
     }).width;
     var spacedBytes = spacedRecipe.endPage().endPDF();
+    writeOutput("htmlToTextObjects-spacing-charspace", spacedBytes);
     var spacedRuns;
     assert.deepEqual(
       (() => {
@@ -424,6 +442,7 @@ describe("HTML to TextObjects", function () {
       })
       .endPage()
       .endPDF();
+    writeOutput("htmlToTextObjects-spacing-rotated", rotatedBytes);
     var rotationPivots = Array.from(
       new TextDecoder()
         .decode(rotatedBytes)
@@ -444,6 +463,7 @@ describe("HTML to TextObjects", function () {
       })
       .endPage()
       .endPDF();
+    writeOutput("htmlToTextObjects-spacing-rotated-link", transformedLinkBytes);
     var transformedSource = new TextDecoder().decode(transformedLinkBytes);
     var transformedRect = transformedSource.match(
       /\/Rect \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/,
@@ -465,19 +485,23 @@ describe("HTML to TextObjects", function () {
       .createPage(300, 200)
       .endPage()
       .endPDF();
-    var editedTransformSource = new TextDecoder().decode(
-      new Recipe(editSource, { compress: false })
-        .editPage(1)
-        .text('<a href="https://example.test"><b>ab</b>cd</a>', 20, 20, {
-          font: "arial",
-          size: 12,
-          html: true,
-          rotation: 90,
-          hilite: true,
-        })
-        .endPage()
-        .endPDF(),
+    writeOutput("htmlToTextObjects-spacing-edit-source", editSource);
+    var editedTransformBytes = new Recipe(editSource, { compress: false })
+      .editPage(1)
+      .text('<a href="https://example.test"><b>ab</b>cd</a>', 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        rotation: 90,
+        hilite: true,
+      })
+      .endPage()
+      .endPDF();
+    writeOutput(
+      "htmlToTextObjects-spacing-edited-rotated-link",
+      editedTransformBytes,
     );
+    var editedTransformSource = new TextDecoder().decode(editedTransformBytes);
     assert.ok(
       Array.from(
         editedTransformSource.matchAll(
@@ -500,18 +524,22 @@ describe("HTML to TextObjects", function () {
       .rotate(90)
       .endPage()
       .endPDF();
-    var rotatedEditOutput = new TextDecoder().decode(
-      new Recipe(rotatedEditSource, { compress: false })
-        .editPage(1)
-        .text('<a href="https://example.test">linked</a>', 20, 20, {
-          font: "arial",
-          size: 12,
-          html: true,
-          skewX: 10,
-        })
-        .endPage()
-        .endPDF(),
+    writeOutput(
+      "htmlToTextObjects-spacing-rotated-edit-source",
+      rotatedEditSource,
     );
+    var rotatedEditBytes = new Recipe(rotatedEditSource, { compress: false })
+      .editPage(1)
+      .text('<a href="https://example.test">linked</a>', 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        skewX: 10,
+      })
+      .endPage()
+      .endPDF();
+    writeOutput("htmlToTextObjects-spacing-rotated-edit", rotatedEditBytes);
+    var rotatedEditOutput = new TextDecoder().decode(rotatedEditBytes);
     var rotatedEditRect = rotatedEditOutput.match(
       /\/Rect \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/,
     );
@@ -521,19 +549,22 @@ describe("HTML to TextObjects", function () {
       "transformed links must follow the source page rotation",
     );
 
-    var rotatedCreatedOutput = new TextDecoder().decode(
-      new Recipe({ compress: false })
-        .createPage(300, 200)
-        .rotate(90)
-        .text('<a href="https://example.test">linked</a>', 20, 20, {
-          font: "arial",
-          size: 12,
-          html: true,
-          skewX: 10,
-        })
-        .endPage()
-        .endPDF(),
+    var rotatedCreatedBytes = new Recipe({ compress: false })
+      .createPage(300, 200)
+      .rotate(90)
+      .text('<a href="https://example.test">linked</a>', 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        skewX: 10,
+      })
+      .endPage()
+      .endPDF();
+    writeOutput(
+      "htmlToTextObjects-spacing-rotated-created",
+      rotatedCreatedBytes,
     );
+    var rotatedCreatedOutput = new TextDecoder().decode(rotatedCreatedBytes);
     var rotatedCreatedRect = rotatedCreatedOutput.match(
       /\/Rect \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/,
     );
@@ -554,6 +585,10 @@ describe("HTML to TextObjects", function () {
       })
       .endPage()
       .endPDF();
+    writeOutput(
+      "htmlToTextObjects-spacing-justified-hilite",
+      justifiedHiliteBytes,
+    );
     var hiliteRectangles = Array.from(
       new TextDecoder()
         .decode(justifiedHiliteBytes)
@@ -581,7 +616,10 @@ describe("HTML to TextObjects", function () {
       html: true,
       textBox: { width: narrowNonBreakingWidth, wrap: "auto" },
     });
-    var nonBreaking = extract(nonBreakingRecipe);
+    var nonBreaking = extract(
+      nonBreakingRecipe,
+      "htmlToTextObjects-spacing-non-breaking",
+    );
     assert.equal(
       new Set(nonBreaking.map((item) => item.textMatrix[5])).size,
       1,
@@ -596,7 +634,10 @@ describe("HTML to TextObjects", function () {
         html: true,
         textBox: { width: narrowNonBreakingWidth, wrap: "auto" },
       });
-    var breakableUnicode = extract(breakableUnicodeRecipe);
+    var breakableUnicode = extract(
+      breakableUnicodeRecipe,
+      "htmlToTextObjects-spacing-breakable-unicode",
+    );
     assert.equal(
       new Set(breakableUnicode.map((item) => item.textMatrix[5])).size,
       2,
@@ -611,7 +652,9 @@ describe("HTML to TextObjects", function () {
         textBox: { width: 63, wrap: "auto" },
       });
     assert.deepEqual(
-      extract(narrowListRecipe).map((item) => item.content),
+      extract(narrowListRecipe, "htmlToTextObjects-spacing-narrow-list").map(
+        (item) => item.content,
+      ),
       ["      * alpha", "         bravo", "         charlie"],
     );
 
@@ -628,9 +671,10 @@ describe("HTML to TextObjects", function () {
           textBox: { width: 55, wrap: "auto" },
         },
       );
-    var nestedContinuation = extract(nestedContinuationRecipe).map(
-      (item) => item.content,
-    );
+    var nestedContinuation = extract(
+      nestedContinuationRecipe,
+      "htmlToTextObjects-spacing-nested-continuation",
+    ).map((item) => item.content);
     var continuationStart = nestedContinuation.findIndex((line) =>
       line.includes("d"),
     );
@@ -651,7 +695,10 @@ describe("HTML to TextObjects", function () {
       html: true,
       textBox: { width: 45, textAlign: "justify top" },
     });
-    var justified = extract(justifiedRecipe);
+    var justified = extract(
+      justifiedRecipe,
+      "htmlToTextObjects-spacing-justified",
+    );
     assert.equal(justified[0].content, "hel");
     assert.equal(justified[1].content, "lo ");
     assert.ok(
@@ -669,6 +716,7 @@ describe("HTML to TextObjects", function () {
       )
       .endPage()
       .endPDF();
+    writeOutput("htmlToTextObjects-spacing-linked-marker", linkedBytes);
     assert.match(
       new TextDecoder().decode(linkedBytes),
       /\/Rect \[\s*20 [^\]]+\]/,
@@ -690,6 +738,7 @@ describe("HTML to TextObjects", function () {
       )
       .endPage()
       .endPDF();
+    writeOutput("htmlToTextObjects-spacing-clipped-link", clippedLinkBytes);
     var clippedRect = new TextDecoder()
       .decode(clippedLinkBytes)
       .match(/\/Rect \[\s*([\d.-]+)\s+[\d.-]+\s+([\d.-]+)/);
@@ -707,12 +756,13 @@ describe("HTML to TextObjects", function () {
       ["a <u>b</u>", {}, 14],
       ["a <u>b</u>", { size: 20 }, 20],
     ];
-    for (var [html, options, size] of cases) {
+    for (var [index, [html, options, size]] of cases.entries()) {
       var bytes = new Recipe()
         .createPage(300, 300)
         .text(html, 20, 20, { html: true, textBox: { width: 200 }, ...options })
         .endPage()
         .endPDF();
+      writeOutput(`htmlToTextObjects-outside-element-size-${index}`, bytes);
       var reader = muhammara.createReader(bytes);
       try {
         var extracted = reader.extractPageText(0);
@@ -754,8 +804,12 @@ describe("HTML to TextObjects", function () {
         ["1. one", "two", "2. three", "* n1", "n2"],
       ],
     ];
-    for (var [html, lines] of cases) {
-      assert.deepEqual(await renderLines(html), lines, html);
+    for (var [index, [html, lines]] of cases.entries()) {
+      assert.deepEqual(
+        await renderLines(html, `htmlToTextObjects-line-breaks-${index}`),
+        lines,
+        html,
+      );
     }
   });
 
@@ -795,6 +849,7 @@ describe("HTML to TextObjects", function () {
       })
       .endPage()
       .endPDF();
+    writeOutput("htmlToTextObjects-line-breaks-links-tables-clip", bytes);
     var reader = muhammara.createReader(bytes);
     try {
       var page = reader.parsePage(0).getDictionary();

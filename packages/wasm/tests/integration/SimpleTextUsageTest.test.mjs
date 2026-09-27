@@ -215,6 +215,7 @@ describe("SimpleTextUsageTest", function () {
     writer.startPageContentContext(page).doXObject(form);
     writer.writePage(page);
     var source = writer.end();
+    writeOutput("SimpleTextUsageTest-text-state", source);
 
     var reader = muhammara.createReader(source);
     var pageDictionary = reader.parsePageDictionary(0).toPDFDictionary();
@@ -258,6 +259,7 @@ describe("SimpleTextUsageTest", function () {
     assert.throws(() => modifierContext.Tw(1), /not active/);
     pageModifier.writePage();
     var modified = modifier.end();
+    writeOutput("SimpleTextUsageTest-text-state-modified", modified);
     assert.ok(modified instanceof Uint8Array);
     var modifiedReader = muhammara.createReader(modified);
     assertTextStateOperations(modifiedReader, allStreams(modifiedReader), [
@@ -409,9 +411,11 @@ describe("SimpleTextUsageTest", function () {
         .TJ(NUL_TEXT, { encoding: variant.encoding })
         .ET();
       writer.writePage(page);
+      var pdf = writer.end();
+      writeOutput(`SimpleTextUsageTest-nul-${variant.encoding}-tj-array`, pdf);
 
       assert.deepEqual(
-        readTextOperandBytes(muhammara, writer.end(), (object) =>
+        readTextOperandBytes(muhammara, pdf, (object) =>
           object.toPDFArray().queryObject(0)[variant.accessor](),
         ),
         NUL_BYTES,
@@ -428,9 +432,11 @@ describe("SimpleTextUsageTest", function () {
         .Tj(NUL_TEXT, { encoding: variant.encoding })
         .ET();
       writer.writePage(page);
+      var pdf = writer.end();
+      writeOutput(`SimpleTextUsageTest-nul-${variant.encoding}-tj-string`, pdf);
 
       assert.deepEqual(
-        readTextOperandBytes(muhammara, writer.end(), (object) =>
+        readTextOperandBytes(muhammara, pdf, (object) =>
           object[variant.accessor](),
         ),
         NUL_BYTES,
@@ -456,6 +462,7 @@ describe("SimpleTextUsageTest", function () {
     writer.writePage(page);
     assert.throws(() => pageContext.writeFreeCode("0.25 g\n"), /not active/);
     var source = writer.end();
+    writeOutput("SimpleTextUsageTest-free-code", source);
     var sourceReader = muhammara.createReader(source);
     var pageDictionary = sourceReader.parsePageDictionary(0).toPDFDictionary();
     assertRawGrayOperators(
@@ -495,7 +502,9 @@ describe("SimpleTextUsageTest", function () {
       /not active/,
     );
     pageModifier.writePage();
-    var modifiedReader = muhammara.createReader(modifier.end());
+    var modified = modifier.end();
+    writeOutput("SimpleTextUsageTest-free-code-modified", modified);
+    var modifiedReader = muhammara.createReader(modified);
     assertRawGrayOperators(modifiedReader, allStreams(modifiedReader), 3);
     modifiedReader.end();
   });

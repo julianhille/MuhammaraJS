@@ -5,8 +5,12 @@ import { createMuhammaraWasm } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("HighLevelContentContext", function () {
-  /** Create the same page/form contexts exposed by fresh and modifying writers. */
-  async function drawingTarget(mode) {
+  /**
+   * Create the same page/form contexts exposed by fresh and modifying writers.
+   * The finished PDF (and the modified source, if any) are written to the test
+   * output under `outputName`.
+   */
+  async function drawingTarget(mode, outputName) {
     var muhammara = await createMuhammaraWasm();
     muhammara.registerFont(
       "arial",
@@ -16,7 +20,9 @@ describe("HighLevelContentContext", function () {
     if (mode.startsWith("modified")) {
       var original = muhammara.createWriter();
       original.writePage(original.createPage(0, 0, 100, 100));
-      writer = muhammara.createWriterToModify(original.end(), {
+      var source = original.end();
+      writeOutput(outputName + "-source", source);
+      writer = muhammara.createWriterToModify(source, {
         compress: false,
       });
     } else writer = muhammara.createWriter({ compress: false });
@@ -36,7 +42,9 @@ describe("HighLevelContentContext", function () {
           writer.endFormXObject(form);
           writer.writePage(writer.createPage(0, 0, 100, 100));
         } else writer.writePage(page);
-        return new TextDecoder().decode(writer.end());
+        var bytes = writer.end();
+        writeOutput(outputName, bytes);
+        return new TextDecoder().decode(bytes);
       },
     };
   }
@@ -51,7 +59,10 @@ describe("HighLevelContentContext", function () {
     it(
       "discards null-type shapes without changing stroke state on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-null-type-shapes-" + mode,
+        );
         var context = target.context;
         for (var [name, values] of [
           ["drawCircle", [10, 20, 5]],
@@ -104,7 +115,10 @@ describe("HighLevelContentContext", function () {
       "distinguishes default and recognized path types and rejects others on " +
         mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-path-types-" + mode,
+        );
         var cases = [
           [{}, "S"],
           [{ type: undefined }, "S"],
@@ -139,7 +153,10 @@ describe("HighLevelContentContext", function () {
     it(
       "preserves null-type accessor order and failure atomicity on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-null-type-accessors-" + mode,
+        );
         var events = [];
         var failure = new Error("null type sentinel");
         var fail = true;
@@ -188,7 +205,10 @@ describe("HighLevelContentContext", function () {
     it(
       "rejects non-finite drawing and incomplete paths atomically on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-non-finite-atomic-" + mode,
+        );
         var context = target.context;
         var font = target.writer.getFontForBytes("arial");
         var options = { color: "red", width: 2 };
@@ -299,7 +319,10 @@ describe("HighLevelContentContext", function () {
     it(
       "rejects an unknown colorspace before output on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-unknown-colorspace-" + mode,
+        );
         assert.throws(
           () =>
             target.context.drawRectangle(1, 2, 3, 4, {
@@ -335,7 +358,10 @@ describe("HighLevelContentContext", function () {
     it(
       "rejects a string color in the gray or cmyk colorspace on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-gray-cmyk-string-color-" + mode,
+        );
         var font = target.writer.getFontForBytes("arial");
         var rgbOnly = {
           name: "TypeError",
@@ -399,7 +425,10 @@ describe("HighLevelContentContext", function () {
     it(
       "snapshots path coordinates before output on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-snapshot-path-" + mode,
+        );
         var failure = new Error("coordinate sentinel");
         var reads = 0;
         var fail = true;
@@ -431,7 +460,10 @@ describe("HighLevelContentContext", function () {
     it(
       "validates all shapes and text before output on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-validate-before-output-" + mode,
+        );
         var context = target.context;
         var font = target.writer.getFontForBytes("arial");
         var failure = new Error("option sentinel");
@@ -518,7 +550,10 @@ describe("HighLevelContentContext", function () {
     );
 
     it("clips without painting on " + mode, async function () {
-      var target = await drawingTarget(mode);
+      var target = await drawingTarget(
+        mode,
+        "HighLevelContentContext-clip-" + mode,
+      );
       var context = target.context;
       context
         .q()
@@ -544,7 +579,10 @@ describe("HighLevelContentContext", function () {
     it(
       "sets color and width before the path, as native does, on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-color-width-order-" + mode,
+        );
         var context = target.context;
         context
           .drawRectangle(1, 2, 3, 4, { type: "fill", color: 0xff0000 })
@@ -573,7 +611,10 @@ describe("HighLevelContentContext", function () {
     it(
       "draws shapes and text with #rrggbb colors on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-hex-colors-" + mode,
+        );
         var context = target.context;
         var font = target.writer.getFontForBytes("arial");
         context
@@ -601,7 +642,10 @@ describe("HighLevelContentContext", function () {
     it(
       "rejects unknown color strings before output on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-unknown-color-strings-" + mode,
+        );
         var context = target.context;
         var font = target.writer.getFontForBytes("arial");
         context.q();
@@ -656,7 +700,10 @@ describe("HighLevelContentContext", function () {
     it(
       "underlines text with the font underline metrics on " + mode,
       async function () {
-        var target = await drawingTarget(mode);
+        var target = await drawingTarget(
+          mode,
+          "HighLevelContentContext-underline-" + mode,
+        );
         var context = target.context;
         var font = target.writer.getFontForBytes("arial");
         context
@@ -694,7 +741,10 @@ describe("HighLevelContentContext", function () {
       (match) => [match[1], Number.parseInt(match[2], 16)],
     );
     assert.equal(colors.length, 140);
-    var target = await drawingTarget("page");
+    var target = await drawingTarget(
+      "page",
+      "HighLevelContentContext-css-colors",
+    );
     colors.forEach(function (color) {
       target.context.drawCircle(50, 50, 5, { color: color[0].toUpperCase() });
     });
@@ -783,7 +833,7 @@ describe("HighLevelContentContext", function () {
     assert.throws(() => context.setOpacity(-0.1), message);
     assert.throws(() => context.setOpacity(1.1), message);
     writer.writePage(page);
-    writer.end();
+    writeOutput("HighLevelContentContext-invalid-opacity", writer.end());
   });
 
   it("rejects invalid drawPath arguments", async function () {
@@ -810,6 +860,6 @@ describe("HighLevelContentContext", function () {
       /coordinate pairs/,
     );
     writer.writePage(page);
-    writer.end();
+    writeOutput("HighLevelContentContext-invalid-drawpath", writer.end());
   });
 });

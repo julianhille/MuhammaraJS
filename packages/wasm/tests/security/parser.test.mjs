@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 var encoder = new TextEncoder();
 
@@ -86,6 +87,7 @@ describe("parser security regressions", function () {
     );
 
     var safeInput = muhammara.createBlankPdf(100, 100);
+    writeOutput("parser-bounded-input", safeInput);
     var bounded = new muhammara.PDFRStreamForBuffer(safeInput);
     assert.equal(bounded.read(safeInput.length).length, safeInput.length);
     assert.equal(bounded.read(1).length, 0);

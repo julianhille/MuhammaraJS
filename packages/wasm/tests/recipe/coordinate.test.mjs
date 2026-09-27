@@ -22,6 +22,7 @@ describe("Recipe coordinates", function () {
       .rotate(90)
       .endPage()
       .endPDF();
+    writeOutput("coordinate-rotated-source", source);
     Recipe.registerPdf("rotated-coordinate-source", source);
     assert.deepEqual(Recipe.inspectPdf("rotated-coordinate-source")[1], {
       pageNumber: 1,
@@ -96,6 +97,7 @@ describe("Recipe coordinates", function () {
       assert.deepEqual(recipe.position, { x: page.width, y: page.height });
 
       var bytes = recipe.endPage().endPDF();
+      writeOutput(`coordinate-edit-${name}`, bytes);
       var output = new TextDecoder().decode(bytes);
       assert.match(
         output,

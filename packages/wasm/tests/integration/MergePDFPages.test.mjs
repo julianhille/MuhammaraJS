@@ -30,6 +30,7 @@ describe("MergePDFPages", function () {
 
   it("copies pages and forms from byte-backed PDFs", function () {
     var source = sourcePdf(200, 300);
+    writeOutput("MergePDFPages-source", source);
     var formWriter = muhammara.createWriter();
     var formCopying = formWriter.createPDFCopyingContext(source);
     var mergedForm = formWriter.createFormXObject(0, 0, 100, 150);
@@ -89,7 +90,11 @@ describe("MergePDFPages", function () {
     mergedReader.end();
 
     var appendWriter = muhammara.createWriter();
-    for (var bytes of [sourcePdf(100, 100), sourcePdf(120, 120), source]) {
+    var smallSource = sourcePdf(100, 100);
+    writeOutput("MergePDFPages-append-source-100", smallSource);
+    var largeSource = sourcePdf(120, 120);
+    writeOutput("MergePDFPages-append-source-120", largeSource);
+    for (var bytes of [smallSource, largeSource, source]) {
       var copying = appendWriter.createPDFCopyingContext(bytes);
       copying.appendPDFPagesFromPDF(0, 1).end();
     }
@@ -102,6 +107,7 @@ describe("MergePDFPages", function () {
 
   it("returns copied IDs and accepts crop boxes and transformation matrices", function () {
     var source = sourcePdf(200, 300);
+    writeOutput("MergePDFPages-crop-transform-source", source);
     var writer = muhammara.createWriter();
     var copying = writer.createPDFCopyingContext(source);
     var appendedId = copying.appendPDFPageFromPDF(0);
@@ -164,12 +170,14 @@ describe("MergePDFPages", function () {
       sourceWriter.writePage(page);
     }
     var source = sourceWriter.end();
+    writeOutput("MergePDFPages-non-sequential-source", source);
 
     var writer = muhammara.createWriter();
     var copying = writer.createPDFCopyingContext(source);
     var ids = [3, 0, 4].map((index) => copying.appendPDFPageFromPDF(index));
     copying.end();
     var output = writer.end();
+    writeOutput("MergePDFPages-non-sequential", output);
 
     assert.equal(new Set(ids).size, ids.length);
     ids.forEach((id) => assert.ok(id > 0));
@@ -180,6 +188,7 @@ describe("MergePDFPages", function () {
 
   it("directly merges byte-backed pages before and during target content", function () {
     var source = sourcePdf(200, 300);
+    writeOutput("MergePDFPages-direct-merge-source", source);
     var writer = muhammara.createWriter();
     var page = writer.createPage(0, 0, 400, 300);
 
@@ -224,6 +233,7 @@ describe("MergePDFPages", function () {
 
   it("directly merges all and zero-based inclusive selected pages", function () {
     var source = sourcePdf(100, 100);
+    writeOutput("MergePDFPages-selected-merge-source", source);
     var writer = muhammara.createWriter();
     var page = writer.createPage();
     writer.mergePDFPagesToPage(page, source, {
@@ -244,21 +254,27 @@ describe("MergePDFPages", function () {
     var allPage = allWriter.createPage();
     allWriter.mergePDFPagesToPage(allPage, source);
     allWriter.writePage(allPage);
-    assert.ok(allWriter.end() instanceof Uint8Array);
+    var allOutput = allWriter.end();
+    writeOutput("MergePDFPages-all-merge", allOutput);
+    assert.ok(allOutput instanceof Uint8Array);
   });
 
   it("propagates callback errors after a successful native merge", function () {
     var writer = muhammara.createWriter();
     var page = writer.createPage();
+    var source = sourcePdf(1);
+    writeOutput("MergePDFPages-callback-error-source", source);
     assert.throws(
       () =>
-        writer.mergePDFPagesToPage(page, sourcePdf(1), () => {
+        writer.mergePDFPagesToPage(page, source, () => {
           throw new Error("callback failure");
         }),
       /callback failure/,
     );
     writer.writePage(page);
-    var reader = muhammara.createReader(writer.end());
+    var output = writer.end();
+    writeOutput("MergePDFPages-callback-error", output);
+    var reader = muhammara.createReader(output);
     assert.equal(reader.getPagesCount(), 1);
     reader.end();
   });
@@ -275,12 +291,16 @@ describe("MergePDFPages", function () {
   it("accepts Blob through the direct merge async variant", async function () {
     var writer = muhammara.createWriter();
     var page = writer.createPage();
+    var source = sourcePdf(1);
+    writeOutput("MergePDFPages-async-blob-source", source);
     assert.equal(
-      await writer.mergePDFPagesToPageAsync(page, new Blob([sourcePdf(1)])),
+      await writer.mergePDFPagesToPageAsync(page, new Blob([source])),
       writer,
     );
     writer.writePage(page);
-    assert.ok(writer.end() instanceof Uint8Array);
+    var output = writer.end();
+    writeOutput("MergePDFPages-async-blob", output);
+    assert.ok(output instanceof Uint8Array);
   });
 
   it("rejects invalid direct merge inputs and writer lifecycle", async function () {
@@ -356,7 +376,7 @@ describe("MergePDFPages", function () {
       /active target PDFPage/,
     );
     writer.writePage(activePage);
-    writer.end();
+    writeOutput("MergePDFPages-invalid-ended-writer", writer.end());
     assert.throws(
       () => writer.mergePDFPagesToPage(page, sourcePdf(1)),
       /has ended/,

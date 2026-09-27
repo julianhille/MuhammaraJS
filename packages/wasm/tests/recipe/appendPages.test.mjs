@@ -8,6 +8,7 @@ describe("Recipe appendPages", function () {
   it("inspects, appends, selects, and splits registered PDFs", async function () {
     var Recipe = await getRecipe();
     var source = new Recipe().createPage(595, 842).endPage().endPDF();
+    writeOutput("appendPages-source", source);
     Recipe.registerPdf("source", source);
     var metadata = Recipe.inspectPdf("source");
     assert.equal(metadata.pages, 1);
@@ -34,11 +35,13 @@ describe("Recipe appendPages", function () {
       .comment("source annotation", 10, 10, { width: 20, height: 20 })
       .endPage()
       .endPDF();
+    writeOutput("appendPages-annotated-source", source);
     assert.match(new TextDecoder().decode(source), /\/Annots/);
     Recipe.registerPdf("annotated-source", source);
     var appended = new Recipe({ compress: false })
       .appendPage("annotated-source")
       .endPDF();
+    writeOutput("appendPages-annotated-appended", appended);
     assert.doesNotMatch(new TextDecoder().decode(appended), /\/Annots/);
   });
 
@@ -50,7 +53,9 @@ describe("Recipe appendPages", function () {
       .createPage(200, 200)
       .endPage()
       .endPDF();
+    writeOutput("appendPages-source-mode-source", source);
     var appended = new Recipe().createPage(300, 300).endPage().endPDF();
+    writeOutput("appendPages-source-mode-registered", appended);
     Recipe.registerPdf("source-mode-append", appended);
     var recipe = new Recipe(source).appendPage("source-mode-append");
     assert.deepEqual(recipe.pageInfo(3).mediaBox, [0, 0, 300, 300]);

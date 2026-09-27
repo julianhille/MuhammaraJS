@@ -25,6 +25,7 @@ describe("ObjectReplacement", function () {
       sourceWriter.writePage(page);
     }
     var source = sourceWriter.end();
+    writeOutput("ObjectReplacementTest-source", source);
     var sourceReader = muhammara.createReader(source);
     var firstContentsId = getPageContentsID(sourceReader, 0);
     var secondContentsId = getPageContentsID(sourceReader, 1);
@@ -64,6 +65,7 @@ describe("ObjectReplacement", function () {
     sourceWriter.startPageContentContext(sourcePage).q().Q();
     sourceWriter.writePage(sourcePage);
     var source = sourceWriter.end();
+    writeOutput("ObjectReplacementTest-invalid-source", source);
     var reader = muhammara.createReader(source);
     var sourceId = getPageContentsID(reader, 0);
     reader.end();
@@ -107,7 +109,7 @@ describe("ObjectReplacement", function () {
       () => writer.replaceObject(0, sourceId, replacementId),
       /must belong to the modified PDF/,
     );
-    writer.writePage(page).end();
+    writeOutput("ObjectReplacementTest-invalid", writer.writePage(page).end());
     assert.throws(
       () => writer.replaceObject(0, sourceId, replacementId),
       /has ended/,
@@ -123,6 +125,7 @@ describe("ObjectReplacement", function () {
       sourceWriter.writePage(page);
     }
     var source = sourceWriter.end();
+    writeOutput("ObjectReplacementTest-global-source", source);
     var sourceReader = muhammara.createReader(source);
     var firstContentsId = getPageContentsID(sourceReader, 0);
     var secondContentsId = getPageContentsID(sourceReader, 1);
@@ -131,6 +134,7 @@ describe("ObjectReplacement", function () {
     var sharingWriter = muhammara.createWriterToModify(source);
     sharingWriter.replaceObject(1, secondContentsId, firstContentsId);
     var shared = sharingWriter.end();
+    writeOutput("ObjectReplacementTest-global-shared", shared);
 
     var writer = muhammara.createWriterToModify(shared);
     var objects = writer.getObjectsContext();

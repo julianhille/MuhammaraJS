@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("FontCatalogParity", function () {
   it("selects TTC faces by index and retains font metrics", async function () {
@@ -33,7 +34,7 @@ describe("FontCatalogParity", function () {
     assert.ok(
       writer.getFontForBytes("courier", 0).getFontMetrics(12).height > 0,
     );
-    writer.end();
+    writeOutput("FontCatalogParity-ttc-faces", writer.end());
   });
 
   it("rewrites the modified catalog when requested", async function () {
@@ -41,9 +42,11 @@ describe("FontCatalogParity", function () {
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 100, 100));
     var source = sourceWriter.end();
+    writeOutput("FontCatalogParity-catalog-source", source);
     var writer = muhammara.createWriterToModify(source);
     assert.equal(writer.requireCatalogUpdate(), undefined);
     var output = writer.end();
+    writeOutput("FontCatalogParity-catalog-modified", output);
     assert.equal(
       (new TextDecoder().decode(source).match(/\/Type \/Catalog/g) || [])
         .length,

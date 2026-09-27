@@ -10,6 +10,7 @@ describe("ModifyingExistingFileContent", function () {
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 200, 200));
     var source = sourceWriter.end();
+    writeOutput("ModifyingExistingFileContent-reader-view-source", source);
 
     var writer = muhammara.createWriterToModify(source);
     var parser = writer.getModifiedFileParser();
@@ -46,7 +47,7 @@ describe("ModifyingExistingFileContent", function () {
 
     var liveParser = writer.getModifiedFileParser();
     var liveTrailer = liveParser.getTrailer();
-    writer.end();
+    writeOutput("ModifyingExistingFileContent-reader-view", writer.end());
     assert.throws(() => liveParser.getPagesCount(), /PDF writer has ended/);
     assert.throws(() => liveTrailer.getType(), /PDF writer has ended/);
     assert.throws(() => writer.getModifiedFileParser(), /PDF writer has ended/);
@@ -64,6 +65,7 @@ describe("ModifyingExistingFileContent", function () {
       sourceWriter.writePage(sourcePage);
     }
     var source = sourceWriter.end();
+    writeOutput("ModifyingExistingFileContent-form-source", source);
 
     var writer = muhammara.createWriterToModify(source);
     var copying = writer.createPDFCopyingContextForModifiedFile();
@@ -99,6 +101,7 @@ describe("ModifyingExistingFileContent", function () {
     sourceWriter.startPageContentContext(sourcePage).re(10, 10, 20, 20).f();
     sourceWriter.writePage(sourcePage);
     var source = sourceWriter.end();
+    writeOutput("ModifyingExistingFileContent-interleaved-source", source);
 
     var writer = muhammara.createWriterToModify(source);
     var external = writer.createPDFCopyingContext(source);
@@ -128,6 +131,7 @@ describe("ModifyingExistingFileContent", function () {
     var sourcePage = sourceWriter.createPage(0, 0, 200, 200);
     sourceWriter.writePage(sourcePage);
     var source = sourceWriter.end();
+    writeOutput("ModifyingExistingFileContent-page-dictionary-source", source);
 
     var writer = muhammara.createWriterToModify(source);
     var copying = writer.createPDFCopyingContextForModifiedFile();

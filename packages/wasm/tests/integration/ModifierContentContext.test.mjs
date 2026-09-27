@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("ModifierContentContext", function () {
   it("matches page and form helpers, resource names, and bevel line joins", async function () {
@@ -8,6 +9,7 @@ describe("ModifierContentContext", function () {
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 100, 100));
     var source = sourceWriter.end();
+    writeOutput("ModifierContentContext-helpers-source", source);
 
     var modifier = muhammara.createWriterToModify(source);
     modifier.getObjectsContext().setCompressStreams(false);
@@ -54,7 +56,9 @@ describe("ModifierContentContext", function () {
     assert.throws(() => resources.addFontMapping(2), /not active/);
     pageModifier.writePage();
 
-    var output = new TextDecoder().decode(modifier.end());
+    var pdf = modifier.end();
+    writeOutput("ModifierContentContext-helpers", pdf);
+    var output = new TextDecoder().decode(pdf);
     assert.match(output, /2 j/);
     assert.match(output, /\/ca 0.5/);
     assert.match(output, /\/CA 0.5/);
@@ -92,7 +96,9 @@ describe("ModifierContentContext", function () {
       .ET();
     writer.writePage(page);
 
-    var output = new TextDecoder().decode(writer.end());
+    var pdf = writer.end();
+    writeOutput("ModifierContentContext-mapped-fonts", pdf);
+    var output = new TextDecoder().decode(pdf);
     assert.match(output, /2 j/);
     assert.match(output, new RegExp(`/${formName} 10 Tf`));
     assert.match(output, new RegExp(`/${pageName} 10 Tf`));
@@ -106,7 +112,9 @@ describe("ModifierContentContext", function () {
     );
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 100, 100));
-    var modifier = muhammara.createWriterToModify(sourceWriter.end());
+    var source = sourceWriter.end();
+    writeOutput("ModifierContentContext-lifecycle-source", source);
+    var modifier = muhammara.createWriterToModify(source);
     modifier.getObjectsContext().setCompressStreams(false);
     var id = modifier.getObjectsContext().allocateNewObjectID();
     var form = modifier.createFormXObject(0, 0, 10, 10, id);
@@ -143,7 +151,9 @@ describe("ModifierContentContext", function () {
     // Placing a form on a modifier-created page maps it into that page.
     context.doXObject(form);
     modifier.writePage(page);
-    var output = new TextDecoder().decode(modifier.end());
+    var pdf = modifier.end();
+    writeOutput("ModifierContentContext-lifecycle", pdf);
+    var output = new TextDecoder().decode(pdf);
     assert.match(output, /1 0 0 0 k/);
     assert.match(output, /\/Fm\d+ Do/);
   });
@@ -160,7 +170,9 @@ describe("ModifierContentContext", function () {
     );
     var sourceWriter = muhammara.createWriter({ compress: false });
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 100, 100));
-    var modifier = muhammara.createWriterToModify(sourceWriter.end());
+    var source = sourceWriter.end();
+    writeOutput("ModifierContentContext-form-surface-source", source);
+    var modifier = muhammara.createWriterToModify(source);
     modifier.getObjectsContext().setCompressStreams(false);
     var form = modifier.createFormXObject(0, 0, 100, 100);
     var context = form.getContentContext();
@@ -261,14 +273,18 @@ describe("ModifierContentContext", function () {
     var pageModifier = modifier.createPageModifier(0).startContext();
     pageModifier.getContext().doXObject(form);
     pageModifier.endContext().writePage();
-    assert.match(new TextDecoder().decode(modifier.end()), /\/XObject/);
+    var pdf = modifier.end();
+    writeOutput("ModifierContentContext-form-surface", pdf);
+    assert.match(new TextDecoder().decode(pdf), /\/XObject/);
   });
 
   it("keeps content from every restarted page context", async function () {
     var muhammara = await createMuhammaraWasm();
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 100, 100));
-    var modifier = muhammara.createWriterToModify(sourceWriter.end());
+    var source = sourceWriter.end();
+    writeOutput("ModifierContentContext-restarted-context-source", source);
+    var modifier = muhammara.createWriterToModify(source);
     modifier.getObjectsContext().setCompressStreams(false);
     var pageModifier = modifier.createPageModifier(0);
     pageModifier.startContext().getContext().re(10, 10, 5, 5).f();
@@ -276,7 +292,9 @@ describe("ModifierContentContext", function () {
     pageModifier.startContext().getContext().re(30, 30, 5, 5).f();
     pageModifier.endContext().writePage();
 
-    var output = new TextDecoder().decode(modifier.end());
+    var pdf = modifier.end();
+    writeOutput("ModifierContentContext-restarted-context", pdf);
+    var output = new TextDecoder().decode(pdf);
     assert.match(output, /10 10 5 5 re/);
     assert.match(output, /30 30 5 5 re/);
   });

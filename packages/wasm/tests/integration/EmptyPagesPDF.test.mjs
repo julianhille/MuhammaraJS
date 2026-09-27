@@ -83,6 +83,7 @@ describe("EmptyPagesPDF", function () {
       ),
     );
     var blankPdf = muhammara.createBlankPdf(595, 842);
+    writeOutput("EmptyPagesPDF-blank", blankPdf);
     assert.throws(() => muhammara.createBlankPdf(NaN, 10), TypeError);
     assert.throws(() => muhammara.createBlankPdf("10", 10), TypeError);
     assert.throws(() => muhammara.createBlankPdf(0, 10), RangeError);

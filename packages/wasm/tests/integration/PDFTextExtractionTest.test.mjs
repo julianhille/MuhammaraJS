@@ -1,6 +1,7 @@
 // Byte-first port of tests/PDFTextExtractionTest.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("PDFTextExtraction", function () {
   it("returns text operations and their active text state", async function () {
@@ -14,7 +15,9 @@ describe("PDFTextExtraction", function () {
       );
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFTextExtractionTest-text-state", pdf);
+    var reader = muhammara.createReader(pdf);
     var elements = reader.extractPageText(0);
 
     assert.deepEqual(
@@ -41,7 +44,9 @@ describe("PDFTextExtraction", function () {
       );
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFTextExtractionTest-inline-image", pdf);
+    var reader = muhammara.createReader(pdf);
     var elements = reader.extractPageText(0);
     reader.end();
 
@@ -64,7 +69,9 @@ describe("PDFTextExtraction", function () {
       );
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFTextExtractionTest-positioning", pdf);
+    var reader = muhammara.createReader(pdf);
     var elements = reader.extractPageText(0);
     reader.end();
 
@@ -98,7 +105,9 @@ describe("PDFTextExtraction", function () {
       );
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFTextExtractionTest-ctm", pdf);
+    var reader = muhammara.createReader(pdf);
     var elements = reader.extractPageText(0);
     reader.end();
 
@@ -127,7 +136,9 @@ describe("PDFTextExtraction", function () {
       );
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFTextExtractionTest-malformed-positioning", pdf);
+    var reader = muhammara.createReader(pdf);
     var elements = reader.extractPageText(0);
     reader.end();
 
@@ -155,7 +166,9 @@ describe("PDFTextExtraction", function () {
       );
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFTextExtractionTest-malformed-boundaries", pdf);
+    var reader = muhammara.createReader(pdf);
     var elements = reader.extractPageText(0);
     reader.end();
 
@@ -179,7 +192,9 @@ describe("PDFTextExtraction", function () {
       );
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFTextExtractionTest-graphics-state", pdf);
+    var reader = muhammara.createReader(pdf);
     var elements = reader.extractPageText(0);
     reader.end();
 
@@ -189,7 +204,9 @@ describe("PDFTextExtraction", function () {
   });
   it("validates the page index", async function () {
     var muhammara = await createMuhammaraWasm();
-    var reader = muhammara.createReader(muhammara.createBlankPdf(20, 20));
+    var pdf = muhammara.createBlankPdf(20, 20);
+    writeOutput("PDFTextExtractionTest-page-index", pdf);
+    var reader = muhammara.createReader(pdf);
     assert.throws(
       () => reader.extractPageText(-1),
       /Page index must be a non-negative integer/,
@@ -206,7 +223,9 @@ describe("PDFTextExtraction", function () {
       .startPageContentContext(page)
       .writeFreeCode("BT (first) Tj (second) Tj ET");
     writer.writePage(page);
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFTextExtractionTest-limits", pdf);
+    var reader = muhammara.createReader(pdf);
 
     assert.throws(
       () => reader.extractPageText(0, { maxElements: 1 }),

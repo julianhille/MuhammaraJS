@@ -102,7 +102,7 @@ describe("Recipe table layout", function () {
       () => recipe.table(20, 20, [{ a: "A1" }, null], {}),
       TypeError,
     );
-    finish(recipe);
+    finish(recipe, "table-null-record");
   });
 
   it("renders nullish values as empty cells and keeps other values", function () {
@@ -381,7 +381,10 @@ describe("Recipe table layout", function () {
       },
     );
     assert.equal(calls, 1);
-    recipe.endPDF(() => {});
+    writeOutput(
+      "table-continuation-ended-page",
+      recipe.endPDF(() => {}),
+    );
   });
 
   it("rejects a continuation without room for its header and first row", function () {
@@ -604,7 +607,7 @@ describe("Recipe table layout", function () {
       ],
     });
     var cursor = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-column-cell-text-box");
     assert.deepEqual(cursor, [20, 36]);
   });
 
@@ -616,7 +619,7 @@ describe("Recipe table layout", function () {
       columns: [{ name: "a", cell: { lineHeight: 10, padding: 3 } }],
     });
     var cursor = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-level-cell-ignored");
     assert.deepEqual(cursor, [20, 36]);
   });
 
@@ -628,7 +631,7 @@ describe("Recipe table layout", function () {
       row: { textBox: { padding: 20 }, cell: { minHeight: 30 } },
     });
     var cursor = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-row-cell-replaces-text-box");
     assert.deepEqual(cursor, [20, 50]);
   });
 
@@ -644,7 +647,7 @@ describe("Recipe table layout", function () {
       ],
       row: { cell: { style: { stroke: "#0000ff" } } },
     });
-    finish(recipe);
+    finish(recipe, "table-nested-cell-styles");
     var content = pageContent(muhammara, reader, 0);
     assert.match(content, /(^|\s)1 0 0 rg\b/, "the column fill survives");
     assert.match(content, /(^|\s)0 0 1 RG\b/, "the row stroke applies");
@@ -663,7 +666,7 @@ describe("Recipe table layout", function () {
       ],
       row: { cell: { style: { stroke: "#0000ff" } } },
     });
-    finish(recipe);
+    finish(recipe, "table-renderer-box-styles");
     var content = pageContent(muhammara, reader, 0);
     assert.match(content, /(^|\s)1 0 0 rg\b/, "the column fill survives");
     assert.match(content, /(^|\s)0 1 0 RG\b/, "the renderer stroke applies");
@@ -684,7 +687,7 @@ describe("Recipe table layout", function () {
       row: { cell: { padding: [3] } },
     });
     var cursor = recipe.movedown(0, true);
-    finish(recipe);
+    finish(recipe, "table-array-replacement");
     // [3] pads every side by 3; merging entries would keep the 10pt bottom.
     assert.deepEqual(cursor, [20, 36]);
   });

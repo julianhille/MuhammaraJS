@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("ShutdownRestartTest", function () {
   it("normalizes bytes and rejects stale Wasm handles", async function () {
@@ -32,6 +33,7 @@ describe("ShutdownRestartTest", function () {
       /resources are not active/,
     );
     var pdf = writer.end();
+    writeOutput("ShutdownRestartTest", pdf);
     assert.throws(() => writer.getDocumentContext(), /has ended/);
     assert.throws(() => context.re(0, 0, 1, 1), /not active/);
 
@@ -62,7 +64,7 @@ describe("ShutdownRestartTest", function () {
 
     var modifier = await muhammara.createModifierAsync(new Blob([pdf]));
     modifier.startPage(0).endPage();
-    modifier.end();
+    writeOutput("ShutdownRestartTest-modifier", modifier.end());
     assert.throws(() => modifier.startPage(0), /has ended/);
 
     var modifyingWriter = await muhammara.createWriterToModifyAsync(
@@ -74,7 +76,7 @@ describe("ShutdownRestartTest", function () {
     );
     copying.end();
     assert.throws(() => copying.appendPDFPageFromPDF(0), /has ended/);
-    modifyingWriter.end();
+    writeOutput("ShutdownRestartTest-modifying-writer", modifyingWriter.end());
     assert.throws(() => modifyingWriter.createPage(0, 0, 10, 10), /has ended/);
 
     var formWriter = muhammara.createWriter();
@@ -82,6 +84,6 @@ describe("ShutdownRestartTest", function () {
     var formContext = form.getContentContext();
     formWriter.endFormXObject(form);
     assert.throws(() => formContext.re(0, 0, 1, 1), /has ended/);
-    formWriter.end();
+    writeOutput("ShutdownRestartTest-form-writer", formWriter.end());
   });
 });
