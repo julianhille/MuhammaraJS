@@ -5,6 +5,10 @@ using namespace muhammara::napi;
 ObjectByteWriter::ObjectByteWriter(napi_env env, napi_value object)
     : env_(env), object_(env, object) {}
 
+void ObjectByteWriter::SetCallbackDepth(const CallbackDepth &depth) {
+  depth_ = depth;
+}
+
 IOBasicTypes::LongBufferSizeType
 ObjectByteWriter::Write(const IOBasicTypes::Byte *buffer,
                         IOBasicTypes::LongBufferSizeType size) {
@@ -16,6 +20,10 @@ ObjectByteWriter::Write(const IOBasicTypes::Byte *buffer,
   napi_value function = Get(env_, object, "write");
   if (!function || IsType(env_, function, napi_undefined))
     return 0;
-  napi_value result = Call(env_, object, function, {bytes});
+  napi_value result;
+  {
+    CallbackScope callback(depth_);
+    result = Call(env_, object, function, {bytes});
+  }
   return result ? ToUint32(env_, result) : 0;
 }

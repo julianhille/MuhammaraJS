@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CallbackDepth.h"
 #include "IByteReaderWithPosition.h"
 #include "napi/NapiSupport.h"
 
@@ -17,6 +18,8 @@ public:
   LongFilePositionType GetCurrentPosition() override;
   void Skip(LongBufferSizeType skipSize) override;
   void MoveStartPosition(LongFilePositionType startPosition);
+  // Counts the owner's JavaScript calls made through this stream.
+  void SetCallbackDepth(const CallbackDepth &depth);
 
 private:
   napi_value CallMethod(const char *name,
@@ -24,4 +27,5 @@ private:
 
   napi_env env_;
   muhammara::napi::Reference object_;
+  CallbackDepth depth_;
 };

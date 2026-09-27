@@ -2,13 +2,14 @@
 
 #include "ObjectsBasicTypes.h"
 
+#include "CallbackDepth.h"
 #include "DriverLifecycle.h"
 #include "EHummusImageType.h"
+#include "IDocumentContextExtender.h"
 #include "ObjectByteReaderWithPosition.h"
 #include "ObjectByteWriter.h"
 #include "ObjectByteWriterWithPosition.h"
 #include "PDFEmbedParameterTypes.h"
-#include "IDocumentContextExtender.h"
 #include "PDFWriter.h"
 #include "napi/NapiSupport.h"
 
@@ -177,6 +178,7 @@ private:
   bool formAbandoned_;
   DriverLifecycle lifecycle_;
   std::shared_ptr<OpenFormXObjects> openForms_;
+  CallbackDepth callbackDepth_;
   PDFWriter writer_;
   ObjectByteWriterWithPosition *writeProxy_;
   ObjectByteReaderWithPosition *readProxy_;

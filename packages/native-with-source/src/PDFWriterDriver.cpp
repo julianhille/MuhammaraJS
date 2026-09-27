@@ -47,11 +47,14 @@ void Password(napi_env e, napi_value o, PDFParsingOptions &p) {
 }
 } // namespace
 
+const char *const kEndInCallback =
+    "A PDF writer cannot end from its own stream or event callback";
 PDFWriterDriver::PDFWriterDriver()
     : holder(nullptr), startedWithStream_(false), catalogUpdateRequired_(false),
       started_(false), formAbandoned_(false),
       lifecycle_(new DriverLifecycleState("PDF writer has ended")),
-      openForms_(std::make_shared<OpenFormXObjects>()), writeProxy_(nullptr),
+      openForms_(std::make_shared<OpenFormXObjects>()),
+      callbackDepth_(std::make_shared<int>(0)), writeProxy_(nullptr),
       readProxy_(nullptr), logProxy_(nullptr), env_(nullptr) {}
 PDFWriterDriver::~PDFWriterDriver() {
   // A finalizer must not call into JavaScript, so unwritten output is dropped.
@@ -161,6 +164,8 @@ napi_value PDFWriterDriver::End(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (!d || !d->started_)
     return a.This();
+  if (IsInCallback(d->callbackDepth_))
+    return ThrowError(a.Env(), kEndInCallback);
   // Ending would write the trailer into the open dictionary. Refuse, like
   // Wasm, and keep the writer usable so the caller can end it and retry.
   if (d->writer_.GetObjectsContext().HasOpenDictionaries())
@@ -181,6 +186,8 @@ napi_value PDFWriterDriver::Abort(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (!d || !d->started_)
     return a.This();
+  if (IsInCallback(d->callbackDepth_))
+    return ThrowError(a.Env(), kEndInCallback);
   d->writer_.GetDocumentContext().RemoveDocumentContextExtender(d);
   d->ReleaseOpenFormXObjects();
   // A failed append can leave dictionaries open. Release them while the
@@ -487,6 +494,7 @@ PDFHummus::EStatusCode PDFWriterDriver::StartPDF(napi_env e, napi_value stream,
                                                  const LogConfiguration &l,
                                                  const PDFCreationSettings &c) {
   writeProxy_ = new ObjectByteWriterWithPosition(e, stream);
+  writeProxy_->SetCallbackDepth(callbackDepth_);
   startedWithStream_ = true;
   return Setup(writer_.StartPDFForStream(writeProxy_, v, l, c));
 }
@@ -503,8 +511,11 @@ PDFHummus::EStatusCode PDFWriterDriver::ContinuePDF(napi_env e, napi_value o,
                                                     const LogConfiguration &l) {
   startedWithStream_ = true;
   writeProxy_ = new ObjectByteWriterWithPosition(e, o);
-  if (m && !Type(e, m, napi_undefined))
+  writeProxy_->SetCallbackDepth(callbackDepth_);
+  if (m && !Type(e, m, napi_undefined)) {
     readProxy_ = new ObjectByteReaderWithPosition(e, m);
+    readProxy_->SetCallbackDepth(callbackDepth_);
+  }
   return Setup(writer_.ContinuePDFForStream(writeProxy_, s, readProxy_, l));
 }
 PDFHummus::EStatusCode
@@ -520,7 +531,9 @@ PDFWriterDriver::ModifyPDF(napi_env e, napi_value s, napi_value o,
                            const PDFCreationSettings &c) {
   startedWithStream_ = true;
   writeProxy_ = new ObjectByteWriterWithPosition(e, o);
+  writeProxy_->SetCallbackDepth(callbackDepth_);
   readProxy_ = new ObjectByteReaderWithPosition(e, s);
+  readProxy_->SetCallbackDepth(callbackDepth_);
   return Setup(
       writer_.ModifyPDFForStream(readProxy_, writeProxy_, false, v, l, c));
 }
@@ -852,6 +865,7 @@ napi_value PDFWriterDriver::CreatePDFCopyingContext(const CallbackArgs &a) {
     Password(a.Env(), a[1], p);
   PDFDocumentCopyingContext *c = nullptr;
   DriverLifecycle owner;
+  CallbackDepth ownerDepth;
   ObjectByteReaderWithPosition *proxy = nullptr;
   if (IsObject(a.Env(), a[0])) {
     if (d->holder->IsPDFReaderInstance(a[0])) {
@@ -859,10 +873,13 @@ napi_value PDFWriterDriver::CreatePDFCopyingContext(const CallbackArgs &a) {
       if (!r->GetParser())
         return ThrowTypeError(a.Env(), "PDF reader has ended");
       owner = r->GetLifecycle();
+      ownerDepth = r->GetCallbackDepth();
+      r->AddUserCallbackDepth(d->callbackDepth_);
       c = d->writer_.GetDocumentContext().CreatePDFCopyingContext(
           r->GetParser());
     } else {
       proxy = new ObjectByteReaderWithPosition(a.Env(), a[0]);
+      proxy->SetCallbackDepth(d->callbackDepth_);
       c = d->writer_.CreatePDFCopyingContext(proxy, p);
     }
   } else
@@ -883,8 +900,11 @@ napi_value PDFWriterDriver::CreatePDFCopyingContext(const CallbackArgs &a) {
   cd->CopyingContext = c;
   cd->ReadStreamProxy = proxy;
   cd->AddOwnerLifecycle(d->lifecycle_);
+  cd->AddCallbackDepth(d->callbackDepth_);
   if (owner)
     cd->AddOwnerLifecycle(owner);
+  if (ownerDepth)
+    cd->AddCallbackDepth(ownerDepth);
   return v;
 }
 napi_value PDFWriterDriver::CreateFormXObjectsFromPDF(const CallbackArgs &a) {
@@ -977,6 +997,7 @@ PDFWriterDriver::CreatePDFCopyingContextForModifiedFile(const CallbackArgs &a) {
   }
   cd->CopyingContext = c;
   cd->AddOwnerLifecycle(d->lifecycle_);
+  cd->AddCallbackDepth(d->callbackDepth_);
   return v;
 }
 napi_value PDFWriterDriver::CreatePDFTextString(const CallbackArgs &a) {
@@ -994,6 +1015,7 @@ void PDFWriterDriver::SetLogStream(napi_env e, napi_value stream,
                                    LogConfiguration &c) {
   ReleaseLogProxy();
   logProxy_ = new ObjectByteWriter(e, stream);
+  logProxy_->SetCallbackDepth(callbackDepth_);
   c.ShouldLog = true;
   c.LogFileLocation = "";
   c.LogStream = logProxy_;
@@ -1220,6 +1242,7 @@ EStatusCode PDFWriterDriver::TriggerEvent(const std::string &n, napi_value p) {
   napi_value f = Get(env_, self, "triggerDocumentExtensionEvent");
   if (!f || Type(env_, f, napi_undefined))
     return eFailure;
+  CallbackScope callback(callbackDepth_);
   return Call(env_, self, f, {String(env_, n), p}) ? eSuccess : eFailure;
 }
 #define SUCCESS_METHOD(signature)                                              \

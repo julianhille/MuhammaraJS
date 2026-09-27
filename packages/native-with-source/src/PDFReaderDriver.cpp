@@ -75,7 +75,8 @@ napi_value OneByteString(napi_env env, const std::string &value) {
 PDFReaderDriver::PDFReaderDriver()
     : holder(nullptr), mStartedWithStream(false), mReadStreamProxy(nullptr),
       mOwnsParser(false), mPDFReader(nullptr),
-      mLifecycle(new DriverLifecycleState("PDF reader has ended")) {}
+      mLifecycle(new DriverLifecycleState("PDF reader has ended")),
+      mCallbackDepth(std::make_shared<int>(0)) {}
 
 PDFReaderDriver::~PDFReaderDriver() {
   mLifecycle->End();
@@ -135,6 +136,13 @@ PDFReaderDriver *PDFReaderDriver::GetActiveReader(const CallbackArgs &args) {
 
 napi_value PDFReaderDriver::End(const CallbackArgs &args) {
   auto *reader = ObjectWrap::Unwrap<PDFReaderDriver>(args.Env(), args.This());
+  // Ending releases the parser and stream the interrupted read still uses.
+  bool inCallback = IsInCallback(reader->mCallbackDepth);
+  for (const CallbackDepth &depth : reader->mUserCallbackDepths)
+    inCallback = inCallback || IsInCallback(depth);
+  if (inCallback)
+    return ThrowError(args.Env(), "A PDF reader cannot end from a stream or "
+                                  "event callback that is using it");
   reader->mLifecycle->End();
   delete reader->mReadStreamProxy;
   reader->mReadStreamProxy = nullptr;
@@ -216,6 +224,7 @@ PDFReaderDriver::StartPDFParsing(napi_env env, napi_value stream,
   delete mReadStreamProxy;
   mStartedWithStream = true;
   mReadStreamProxy = new ObjectByteReaderWithPosition(env, stream);
+  mReadStreamProxy->SetCallbackDepth(mCallbackDepth);
   mPDFReader->ResetParser();
   return mPDFReader->StartPDFParsing(mReadStreamProxy, options);
 }
@@ -254,6 +263,10 @@ PDFParser *PDFReaderDriver::GetParser() {
   return mLifecycle->IsActive() ? mPDFReader : nullptr;
 }
 DriverLifecycle PDFReaderDriver::GetLifecycle() { return mLifecycle; }
+CallbackDepth PDFReaderDriver::GetCallbackDepth() { return mCallbackDepth; }
+void PDFReaderDriver::AddUserCallbackDepth(const CallbackDepth &depth) {
+  mUserCallbackDepths.push_back(depth);
+}
 
 napi_value PDFReaderDriver::ParseNewObject(const CallbackArgs &args) {
   auto *reader = GetActiveReader(args);

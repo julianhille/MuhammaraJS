@@ -6,8 +6,14 @@ ObjectByteReaderWithPosition::ObjectByteReaderWithPosition(napi_env env,
                                                            napi_value object)
     : env_(env), object_(env, object) {}
 
+void ObjectByteReaderWithPosition::SetCallbackDepth(
+    const CallbackDepth &depth) {
+  depth_ = depth;
+}
+
 napi_value ObjectByteReaderWithPosition::CallMethod(
     const char *name, const std::vector<napi_value> &arguments) {
+  CallbackScope callback(depth_);
   return muhammara::napi::CallMethod(env_, object_.Get(), name, arguments);
 }
 

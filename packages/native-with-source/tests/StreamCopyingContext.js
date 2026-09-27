@@ -30,4 +30,42 @@ describe("StreamCopyingContext", function () {
     inStreamA.close();
     inStreamB.close();
   });
+
+  it("rejects ending a copy source or context while it is copying", function () {
+    var assert = require("chai").assert;
+    var source = new muhammara.PDFRStreamForBuffer(
+      fs.readFileSync(__dirname + "/TestMaterials/Original.pdf"),
+    );
+    var read = source.read.bind(source);
+    var errors = [];
+    var armed = false;
+    var copyingContext;
+    var reader;
+    source.read = function (length) {
+      if (armed) {
+        [reader, copyingContext].forEach(function (target) {
+          try {
+            target.end();
+          } catch (error) {
+            errors.push(error.message);
+          }
+        });
+      }
+      return read(length);
+    };
+    reader = muhammara.createReader(source);
+    var pdfWriter = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    copyingContext = pdfWriter.createPDFCopyingContext(reader);
+    armed = true;
+    copyingContext.appendPDFPageFromPDF(0);
+    armed = false;
+    copyingContext.end();
+    pdfWriter.end();
+    reader.end();
+
+    assert.deepEqual(Array.from(new Set(errors)), [
+      "A PDF reader cannot end from a stream or event callback that is using it",
+      "A PDF copying context cannot end from a stream or event callback",
+    ]);
+  });
 });

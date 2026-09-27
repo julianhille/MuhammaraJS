@@ -75,4 +75,26 @@ describe("WriterEvents", function () {
     assert.equal(onCatalogWriteCalled, 1, "catalog write called once");
     assert.equal(onPageWriteCalled, 2, "page write called twice");
   });
+
+  it("rejects end() and _abort() from an event handler", function () {
+    var muhammara = require("@muhammara/native-with-source");
+    var pdfWriter = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    var errors = [];
+    pdfWriter.getEvents().on("OnPageWrite", function () {
+      [pdfWriter.end, pdfWriter._abort].forEach(function (end) {
+        try {
+          end.call(pdfWriter);
+        } catch (error) {
+          errors.push(error.message);
+        }
+      });
+    });
+    pdfWriter.writePage(pdfWriter.createPage(0, 0, 100, 100));
+    pdfWriter.end();
+
+    assert.deepEqual(errors, [
+      "A PDF writer cannot end from its own stream or event callback",
+      "A PDF writer cannot end from its own stream or event callback",
+    ]);
+  });
 });

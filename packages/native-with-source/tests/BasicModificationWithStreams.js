@@ -621,4 +621,54 @@ describe("BasicModificationWithStreams", function () {
       .expect(Number(result.stdout))
       .to.be.at.least(require("fs").statSync(sourcePath).size);
   });
+
+  it("rejects ending the writer from its own output and source streams", function () {
+    var source = require("fs").readFileSync(
+      __dirname + "/TestMaterials/Original.pdf",
+    );
+    var errors = [];
+    var pdfWriter;
+
+    /**
+     * Tries to end the writer from inside one of its stream callbacks.
+     */
+    function endFromCallback() {
+      if (!pdfWriter) return;
+      [pdfWriter.end, pdfWriter._abort].forEach(function (end) {
+        try {
+          end.call(pdfWriter);
+        } catch (error) {
+          errors.push(error.message);
+        }
+      });
+    }
+
+    var output = new muhammara.PDFWStreamForBuffer();
+    var write = output.write.bind(output);
+    output.write = function (bytes) {
+      endFromCallback();
+      return write(bytes);
+    };
+    var input = new muhammara.PDFRStreamForBuffer(source);
+    var read = input.read.bind(input);
+    input.read = function (length) {
+      endFromCallback();
+      return read(length);
+    };
+    pdfWriter = muhammara.createWriterToModify(input, output);
+    pdfWriter.writePage(pdfWriter.createPage(0, 0, 100, 100));
+    pdfWriter.end();
+
+    chai.expect(errors).to.not.be.empty;
+    chai
+      .expect(new Set(errors))
+      .to.deep.equal(
+        new Set([
+          "A PDF writer cannot end from its own stream or event callback",
+        ]),
+      );
+    chai
+      .expect(output.buffer.subarray(0, 5).toString("latin1"))
+      .to.equal("%PDF-");
+  });
 });

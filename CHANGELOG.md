@@ -293,6 +293,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   with a writer that does not modify a PDF, and when Recipe `editPage()` is
   called on a new document
   [#819](https://github.com/julianhille/MuhammaraJS/issues/819)
+- Throw instead of crashing when a writer's `end()` or `_abort()`, a reader's
+  `end()`, or a copying context's `end()` is called from a stream `write()`,
+  `read()`, or `getCurrentPosition()` callback, a log stream, or a writer
+  event that the object is still using
+  [#820](https://github.com/julianhille/MuhammaraJS/issues/820)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
