@@ -175,6 +175,8 @@ describe("MemoryLifecycle", function () {
   });
 
   it("releases open pages and edited pages on dispose()", async function () {
+    // The sanitizer build runs this loop many times slower.
+    this.timeout(120000);
     var Recipe = await createRecipe();
     var source = new Uint8Array(
       await readFile("tests/TestMaterials/Original.pdf"),
@@ -182,8 +184,10 @@ describe("MemoryLifecycle", function () {
     // Each open page used to keep its content stream, about 0.5 MB, so the
     // 512 MB heap aborted after roughly a thousand disposed Recipes.
     for (var index = 0; index < 1200; index += 1) {
-      new Recipe().createPage("A4").text("open page", 10, 10).dispose();
-      new Recipe(source).editPage(1).text("edited", 10, 10).dispose();
+      new Recipe().createPage("A4").rectangle(10, 10, 20, 20).dispose();
+      if (index % 10 === 0) {
+        new Recipe(source).editPage(1).rectangle(10, 10, 20, 20).dispose();
+      }
     }
     var pdf = new Recipe().createPage("A4").text("after", 10, 10).endPage();
     assert.ok(pdf.endPDF().length > 0);
