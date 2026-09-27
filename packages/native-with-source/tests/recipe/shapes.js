@@ -487,4 +487,23 @@ describe("Regular Polygons, Stars, Arrows", () => {
       [90, 90, 110, 110],
     ]);
   });
+
+  it("rejects a side or point count that is not finite or too large", () => {
+    const assert = require("node:assert/strict");
+    const recipe = new Recipe(
+      "new",
+      path.join(__dirname, "../output/n-gon-count-limit.pdf"),
+    ).createPage(200, 200);
+    for (const count of [Infinity, NaN, 1e9, 100001]) {
+      assert.throws(
+        () => recipe.n_gon(100, 100, 50, count),
+        /^RangeError: n_gon sides must be a finite number no greater than 100000$/,
+      );
+      assert.throws(
+        () => recipe.star(100, 100, 50, count),
+        /^RangeError: star points must be a finite number no greater than 100000$/,
+      );
+    }
+    recipe.n_gon(100, 100, 50, 100000).star(100, 100, 50, 7).endPage().endPDF();
+  });
 });

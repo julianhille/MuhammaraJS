@@ -408,4 +408,21 @@ describe("Recipe vector", function () {
     var reader = muhammara.createReader(pdf);
     assert.deepEqual(getPaintBlocks(muhammara, reader, 0), []);
   });
+
+  it("rejects a side or point count that is not finite or too large", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe().createPage(200, 200);
+    for (var count of [Infinity, NaN, 1e9, 100001]) {
+      assert.throws(
+        () => recipe.n_gon(100, 100, 50, count),
+        /^RangeError: n_gon sides must be a finite number no greater than 100000$/,
+      );
+      assert.throws(
+        () => recipe.star(100, 100, 50, count),
+        /^RangeError: star points must be a finite number no greater than 100000$/,
+      );
+    }
+    recipe.n_gon(100, 100, 50, 100000).star(100, 100, 50, 7).endPage();
+    assert.ok(recipe.endPDF().length > 0);
+  });
 });

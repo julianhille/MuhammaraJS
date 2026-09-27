@@ -2,6 +2,15 @@
 
 ## Version 1.x
 
+- Recipe `n_gon()` and `star()` throw
+  `RangeError: n_gon sides must be a finite number no greater than 100000`
+  (`star points …` for `star()`) when the side or point count is `NaN`,
+  `Infinity`, not a number, or above 100000. An infinite or huge count used to
+  build vertices until memory ran out, and `NaN`
+  drew nothing. Pass a finite count; beyond a few hundred sides a polygon is
+  indistinguishable from `circle()`
+  [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
+
 - Recipe `annot(x, y, subtype, { width, height })` places its rectangle with
   (x, y) as the top-left corner, as documented and as native does, like
   `rectangle()` and `link()`. Earlier 1.0.0 prereleases used (x, y) as the
