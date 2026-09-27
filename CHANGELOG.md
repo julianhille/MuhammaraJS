@@ -86,6 +86,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   still open, as Wasm does, and keep the writer usable. Previously `end()`
   wrote the cross-reference table and trailer inside the open dictionary.
   End every dictionary before `end()` [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
+- Recipe `rotate()` throws
+  `Error: rotate() is only available on pages created with createPage()` on a
+  page opened with `editPage()`. In 6.x it left the page's `/Rotate` unchanged
+  but recorded the rotation in the Recipe's page geometry, so `pageInfo()` and
+  later coordinate handling disagreed with the written page. Rotate only pages
+  you create; an edited page keeps its source rotation
+  [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
+
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
   `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
   Square, Circle, FreeText, or other annotation with a `height` now appears

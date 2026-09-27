@@ -205,4 +205,19 @@ describe("Create", () => {
     recipe.endPDF();
     recipe = null;
   });
+
+  it("rejects rotate() on an edited page", () => {
+    const source = path.join(__dirname, "../TestMaterials/Original.pdf");
+    const output = path.join(__dirname, "../output/rotate-edited-page.pdf");
+    const recipe = new Recipe(source, output).editPage(1);
+    assert.throws(
+      () => recipe.rotate(90),
+      "rotate() is only available on pages created with createPage()",
+    );
+    recipe.endPage().endPDF();
+    const reader = muhammara.createReader(output);
+    assert.equal(reader.parsePage(0).getRotate(), 0);
+    reader.end();
+    assert.equal(new Recipe(output).pageInfo(1).rotate, 0);
+  });
 });

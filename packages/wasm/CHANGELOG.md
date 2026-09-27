@@ -189,6 +189,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   so a page referenced by retained structures, an invalid page tree or page
   labels, or a nonzero-generation rewrite throws right away and the rest of the
   Recipe is kept. A failed call leaves the queued deletions unchanged [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
+- Throw `Error: rotate() is only available on pages created with createPage()`
+  from Recipe `rotate()` on a page opened with `editPage()`, as native does,
+  instead of an opaque `_muhammara_wasm_recipe_set_page_rotation` failure
+  [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
 - Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
   was ignored, and to that text only: on new pages it also became the
   Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are

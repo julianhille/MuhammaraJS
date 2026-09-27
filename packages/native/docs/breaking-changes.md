@@ -20,6 +20,14 @@ This page collects the compatibility changes formerly maintained in the README.
   call `end()` again. In 6.x `end()` succeeded and wrote the cross-reference
   table and trailer inside the open dictionary, so the PDF was damaged
   [#815](https://github.com/julianhille/MuhammaraJS/issues/815).
+- Recipe `rotate()` throws
+  `Error: rotate() is only available on pages created with createPage()` on a
+  page opened with `editPage()`. In 6.x it left the page's `/Rotate` unchanged
+  but recorded the rotation in the Recipe's page geometry, so `pageInfo()` and
+  later coordinate handling disagreed with the written page. Rotate only pages
+  you create; an edited page keeps its source rotation
+  [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
+
 - Recipe `annot(x, y, subtype, { width, height })` places its rectangle with
   (x, y) as the top-left corner, like `rectangle()` and `link()`. In 6.x (x, y)
   was the bottom-left corner, so a Square, Circle, FreeText, or other
