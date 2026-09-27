@@ -129,6 +129,26 @@ function boundingBox(coords) {
   return boundBox;
 }
 
+// More vertices than this cannot be told apart from a circle, and an
+// unbounded count builds a vertex array until the process runs out of memory.
+const MAX_POLYGON_VERTICES = 100000;
+
+/**
+ * Validate a polygon side or star point count.
+ * @private
+ * @param {*} count - The requested count.
+ * @param {string} name - The argument name used in the error, such as "n_gon sides".
+ * @throws {RangeError} If the count is not a finite number or exceeds the maximum.
+ */
+function _checkVertexCount(count, name) {
+  const value = Number(count);
+  if (!Number.isFinite(value) || value > MAX_POLYGON_VERTICES) {
+    throw new RangeError(
+      `${name} must be a finite number no greater than ${MAX_POLYGON_VERTICES}`,
+    );
+  }
+}
+
 /**
  * The vertices of a regular polygon, inset by half the line width so the
  * stroke stays inside the radius. Sets `options.deltaYY` for odd-sided
@@ -203,6 +223,7 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * @param {boolean} [options.debug] - Also draw the circumscribed circle and center.
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
+ * @throws {RangeError} If `sides` is not a finite number or exceeds 100000.
  */
 exports.n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
   const MIN_SIDES = 3;
@@ -213,6 +234,7 @@ exports.n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
     sides = MIN_SIDES;
   }
 
+  _checkVertexCount(sides, "n_gon sides");
   if (sides < MIN_SIDES) {
     sides = MIN_SIDES;
   }
@@ -279,6 +301,7 @@ function _oddStar(ngon) {
  * @param {boolean} [options.debug] - Also draw the circumscribed circle and center.
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
+ * @throws {RangeError} If `points` is not a finite number or exceeds 100000.
  */
 exports.star = function star(cx, cy, radius, points = 5, options = {}) {
   let starPath = [];
@@ -292,6 +315,7 @@ exports.star = function star(cx, cy, radius, points = 5, options = {}) {
     points = MIN_POINTS;
   }
 
+  _checkVertexCount(points, "star points");
   if (points < MIN_POINTS) {
     points = MIN_POINTS;
   }

@@ -67,6 +67,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+- Recipe `n_gon()` and `star()` throw
+  `RangeError: n_gon sides must be a finite number no greater than 100000`
+  (`star points …` for `star()`) when the side or point count is `NaN`,
+  `Infinity`, not a number, or above 100000. An infinite or huge count used to
+  build vertices until the process ran out of memory and aborted, and `NaN`
+  drew nothing. Pass a finite count; beyond a few hundred sides a polygon is
+  indistinguishable from `circle()`
+  [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
+
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
   `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
   Square, Circle, FreeText, or other annotation with a `height` now appears
