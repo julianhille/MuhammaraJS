@@ -146,6 +146,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Prevent a `RuntimeError` or memory corruption when `dispose()` is called on
+  a writer or writer-to-modify holding a form started with
+  `createFormXObject()` and never passed to `endFormXObject()`
+  [#814](https://github.com/julianhille/MuhammaraJS/issues/814)
 - Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
   was ignored, and to that text only: on new pages it also became the
   Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are

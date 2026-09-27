@@ -12,7 +12,21 @@
 #include "PDFWriter.h"
 #include "napi/NapiSupport.h"
 
+#include <memory>
+#include <set>
+
 class ConstructorsHolder;
+class PDFFormXObject;
+class PDFWriterDriver;
+
+// Forms started with createFormXObject() and not yet ended. Their content
+// stream writes to the writer's output and deletes it when destroyed
+// unfinished, so it must be finalized while that output is alive. Shared by
+// the writer and its forms because their finalizers run in any order.
+struct OpenFormXObjects {
+  PDFWriterDriver *writer = nullptr;
+  std::set<PDFFormXObject *> forms;
+};
 
 class PDFWriterDriver : public muhammara::napi::ObjectWrap,
                         public IDocumentContextExtender {
@@ -38,6 +52,9 @@ public:
                                    EPDFVersion, const LogConfiguration &,
                                    const PDFCreationSettings &);
   PDFWriter *GetWriter();
+  // Detaches an open form's stream from the output from a finalizer, which
+  // leaves the PDF incomplete, so end() fails.
+  void AbandonFormXObject(PDFFormXObject *);
   void SetLogStream(napi_env env, napi_value stream, LogConfiguration &config);
   ConstructorsHolder *holder;
 
@@ -147,11 +164,14 @@ private:
   PDFHummus::EStatusCode TriggerEvent(const std::string &, napi_value);
   // Returns false when buffered output could not be delivered.
   bool Retire();
+  void ReleaseOpenFormXObjects();
   void ReleaseLogProxy();
   bool startedWithStream_;
   bool catalogUpdateRequired_;
   bool started_;
+  bool formAbandoned_;
   DriverLifecycle lifecycle_;
+  std::shared_ptr<OpenFormXObjects> openForms_;
   PDFWriter writer_;
   ObjectByteWriterWithPosition *writeProxy_;
   ObjectByteReaderWithPosition *readProxy_;

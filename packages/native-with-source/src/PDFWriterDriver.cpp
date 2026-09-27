@@ -18,6 +18,7 @@
 #include "PDFPageDriver.h"
 #include "PDFReaderDriver.h"
 #include "PDFRectangle.h"
+#include "PDFStream.h"
 #include "PageContentContextDriver.h"
 #include "ResourcesDictionaryDriver.h"
 #include "TIFFImageHandler.h"
@@ -48,13 +49,16 @@ void Password(napi_env e, napi_value o, PDFParsingOptions &p) {
 
 PDFWriterDriver::PDFWriterDriver()
     : holder(nullptr), startedWithStream_(false), catalogUpdateRequired_(false),
-      started_(false), lifecycle_(new DriverLifecycleState()),
-      writeProxy_(nullptr), readProxy_(nullptr), logProxy_(nullptr),
-      env_(nullptr) {}
+      started_(false), formAbandoned_(false),
+      lifecycle_(new DriverLifecycleState()),
+      openForms_(std::make_shared<OpenFormXObjects>()), writeProxy_(nullptr),
+      readProxy_(nullptr), logProxy_(nullptr), env_(nullptr) {}
 PDFWriterDriver::~PDFWriterDriver() {
   // A finalizer must not call into JavaScript, so unwritten output is dropped.
   if (writeProxy_)
-    writeProxy_->DiscardPending();
+    writeProxy_->Close();
+  ReleaseOpenFormXObjects();
+  openForms_->writer = nullptr;
   if (started_)
     Retire();
   delete writeProxy_;
@@ -112,6 +116,7 @@ bool PDFWriterDriver::Init(ModuleState &s, napi_value exports) {
 napi_value PDFWriterDriver::New(const CallbackArgs &a) {
   auto *d = new PDFWriterDriver();
   d->holder = &ModuleState::Get(a.Env())->Constructors();
+  d->openForms_->writer = d;
   d->env_ = a.Env();
   d->self_.Reset(a.Env(), a.This(), 0);
   if (!d->Wrap(a.Env(), a.This())) {
@@ -120,7 +125,22 @@ napi_value PDFWriterDriver::New(const CallbackArgs &a) {
   }
   return a.This();
 }
+void PDFWriterDriver::ReleaseOpenFormXObjects() {
+  for (PDFFormXObject *form : openForms_->forms)
+    form->GetContentStream()->FinalizeStreamWrite();
+  openForms_->forms.clear();
+}
+void PDFWriterDriver::AbandonFormXObject(PDFFormXObject *form) {
+  // The form's stream sits in the middle of the output, so no valid PDF can
+  // follow. Close the output first: finishing the stream writes to it, and a
+  // finalizer must not call into JavaScript.
+  formAbandoned_ = true;
+  if (writeProxy_)
+    writeProxy_->Close();
+  form->GetContentStream()->FinalizeStreamWrite();
+}
 bool PDFWriterDriver::Retire() {
+  ReleaseOpenFormXObjects();
   writer_.GetDocumentContext().RemoveDocumentContextExtender(this);
   // The last batch usually holds the xref and trailer, so a short write here
   // must fail end() rather than leave a silently truncated PDF.
@@ -138,8 +158,11 @@ napi_value PDFWriterDriver::End(const CallbackArgs &a) {
   auto *d = Driver(a);
   if (!d || !d->started_)
     return a.This();
-  EStatusCode status = d->startedWithStream_ ? d->writer_.EndPDFForStream()
-                                             : d->writer_.EndPDF();
+  // An open or abandoned form leaves an unfinished object in the output.
+  EStatusCode status = eFailure;
+  if (d->openForms_->forms.empty() && !d->formAbandoned_)
+    status = d->startedWithStream_ ? d->writer_.EndPDFForStream()
+                                   : d->writer_.EndPDF();
   if (!d->Retire())
     status = eFailure;
   return status == eSuccess ? a.This()
@@ -150,6 +173,7 @@ napi_value PDFWriterDriver::Abort(const CallbackArgs &a) {
   if (!d || !d->started_)
     return a.This();
   d->writer_.GetDocumentContext().RemoveDocumentContextExtender(d);
+  d->ReleaseOpenFormXObjects();
   // A failed append can leave dictionaries open. Release them while the
   // output stream is still alive: their destructors write to it, and
   // Reset() closes the stream before cleaning up the objects context.
@@ -245,6 +269,10 @@ napi_value PDFWriterDriver::CreateFormXObject(const CallbackArgs &a) {
   f->FormXObject = a.Length() == 5
                        ? d->writer_.StartFormXObject(r, ToUint32(a.Env(), a[4]))
                        : d->writer_.StartFormXObject(r);
+  if (f->FormXObject) {
+    d->openForms_->forms.insert(f->FormXObject);
+    f->openForms = d->openForms_;
+  }
   return v;
 }
 napi_value PDFWriterDriver::EndFormXObject(const CallbackArgs &a) {
@@ -256,6 +284,8 @@ napi_value PDFWriterDriver::EndFormXObject(const CallbackArgs &a) {
   if (!f)
     return ThrowTypeError(
         a.Env(), "Wrong arguments, provide a form as the single parameter");
+  // Ending finalizes the stream, so the form no longer needs releasing.
+  d->openForms_->forms.erase(f->FormXObject);
   d->writer_.EndFormXObject(f->FormXObject);
   return a.This();
 }

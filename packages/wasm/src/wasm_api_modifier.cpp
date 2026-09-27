@@ -689,6 +689,7 @@ WASM_EXPORT WasmForm* muhammara_wasm_modifier_create_form(
   handle->form = form;
   handle->modifier = modifier;
   handle->ended = false;
+  handle->streamOpen = true;
   modifier->forms.push_back(handle);
   return handle;
 }
@@ -884,8 +885,12 @@ WASM_EXPORT unsigned long muhammara_wasm_modifier_form_get_object_id(WasmForm* f
 WASM_EXPORT int muhammara_wasm_modifier_end_form(WasmModifier* modifier,
                                                   WasmForm* form) {
   if (modifier == nullptr || modifier->finished || form == nullptr ||
-      form->modifier != modifier || form->form == nullptr || form->ended ||
-      modifier->writer.EndFormXObject(form->form) != PDFHummus::eSuccess) {
+      form->modifier != modifier || form->form == nullptr || form->ended) {
+    return 0;
+  }
+  // Ending finalizes the stream even when it fails.
+  form->streamOpen = false;
+  if (modifier->writer.EndFormXObject(form->form) != PDFHummus::eSuccess) {
     return 0;
   }
   form->ended = true;
