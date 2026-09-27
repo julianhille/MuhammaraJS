@@ -233,6 +233,94 @@ function nonzeroGenerationTextPdf() {
   return new Uint8Array(Buffer.from(pdf));
 }
 
+/**
+ * Builds a three-page PDF whose second page (object 4) is referenced by an
+ * open action, an outline item with a child, a named destination, a link
+ * annotation, a direct link annotation on page 3, a form widget and a
+ * structure element, and writes it to tests/output.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function referencedPagesPdf() {
+  var pdf = "%PDF-1.7\n";
+  var offsets = [];
+  var object = (id, body) => {
+    offsets[id] = Buffer.byteLength(pdf);
+    pdf += `${id} 0 obj\n${body}\nendobj\n`;
+  };
+  object(
+    1,
+    "<< /Type /Catalog /Pages 2 0 R /OpenAction [4 0 R /Fit] /Outlines 6 0 R /Names << /Dests 9 0 R >> /AcroForm 10 0 R /StructTreeRoot 12 0 R >>",
+  );
+  object(2, "<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>");
+  object(
+    3,
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 101 201] /Annots [14 0 R] >>",
+  );
+  object(
+    4,
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 102 202] /Annots [11 0 R] /StructParents 0 >>",
+  );
+  object(
+    5,
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 103 203] /Annots [<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] /A << /S /GoTo /D [4 0 R /Fit] >> >>] >>",
+  );
+  object(6, "<< /Type /Outlines /First 7 0 R /Last 7 0 R /Count 2 >>");
+  object(
+    7,
+    "<< /Title (Two) /Parent 6 0 R /Dest [4 0 R /Fit] /First 8 0 R /Last 8 0 R /Count 1 >>",
+  );
+  object(8, "<< /Title (Three) /Parent 7 0 R /Dest [5 0 R /Fit] >>");
+  object(9, "<< /Names [(three) [5 0 R /Fit] (two) [4 0 R /Fit]] >>");
+  object(10, "<< /Fields [11 0 R] >>");
+  object(
+    11,
+    "<< /Type /Annot /Subtype /Widget /FT /Tx /T (field) /Rect [0 0 10 10] /P 4 0 R >>",
+  );
+  object(12, "<< /Type /StructTreeRoot /K 13 0 R >>");
+  object(13, "<< /Type /StructElem /S /P /P 12 0 R /Pg 4 0 R /K 0 >>");
+  object(
+    14,
+    "<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] /Dest [4 0 R /XYZ 0 0 0] >>",
+  );
+  var xrefOffset = Buffer.byteLength(pdf);
+  pdf += "xref\n0 15\n0000000000 65535 f \n";
+  for (var id = 1; id <= 14; id += 1) {
+    pdf += `${String(offsets[id]).padStart(10, "0")} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size 15 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+  var bytes = new Uint8Array(Buffer.from(pdf));
+  writeOutput("deletePage-fixture-referenced-pages", bytes);
+  return bytes;
+}
+
+/**
+ * Collects the object IDs reachable from the trailer's catalog.
+ * @param {object} muhammara - The Wasm module, for its type constants.
+ * @param {PDFReader} reader - A PDF reader.
+ * @returns {Set<number>} The reachable object IDs.
+ */
+function reachableObjectIDs(muhammara, reader) {
+  var reachable = new Set();
+  var pending = [reader.getTrailer().queryObject("Root")];
+  while (pending.length) {
+    var value = pending.pop();
+    var type = value.getType();
+    if (type === muhammara.ePDFObjectIndirectObjectReference) {
+      var objectID = value.toPDFIndirectObjectReference().getObjectID();
+      if (reachable.has(objectID)) continue;
+      reachable.add(objectID);
+      pending.push(reader.parseNewObject(objectID));
+    } else if (type === muhammara.ePDFObjectArray) {
+      pending.push(...value.toPDFArray().toJSArray());
+    } else if (type === muhammara.ePDFObjectDictionary) {
+      pending.push(...Object.values(value.toPDFDictionary().toJSObject()));
+    } else if (type === muhammara.ePDFObjectStream) {
+      pending.push(value.toPDFStream().getDictionary());
+    }
+  }
+  return reachable;
+}
+
 describe("Recipe deletePage", function () {
   var Recipe;
 
@@ -576,22 +664,24 @@ describe("Recipe deletePage", function () {
     }
   });
 
-  it("rejects page trees that require nonzero-generation rewrites", function () {
+  it("rejects page trees that require nonzero-generation rewrites", async function () {
     var source = nestedNonzeroGenerationPdf({ nonzeroGeneration: true });
     writeOutput("deletePage-nonzero-generation-source", source);
-    var recipe = new Recipe(source).deletePage(2);
+    var recipe = new Recipe(source);
     try {
-      assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
-      assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
+      assert.throws(() => recipe.deletePage(2), /nonzero-generation objects/);
+      // A rejected deletion is not queued, so the Recipe still ends.
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-rejected-nonzero-tree", bytes);
+      assert.deepEqual(await pageWidths(bytes), [101, 102]);
     } finally {
       recipe.dispose();
     }
   });
 
   it("accepts direct page labels with a nonzero-generation catalog", async function () {
-    // Unlike native-core, wasm's writer always attaches PageLabels through
-    // _setPageLabelsObject() rather than rewriting the catalog object in
-    // place, so the catalog's own generation never matters here.
+    // PageLabels are attached when the catalog is written, never by
+    // rewriting the catalog object in place, so its generation never matters.
     var source = nestedNonzeroGenerationPdf({
       catalogGeneration: true,
       pageLabels: "direct",
@@ -610,12 +700,16 @@ describe("Recipe deletePage", function () {
   it("rejects edited retained pages with nonzero generations", function () {
     var source = nestedNonzeroGenerationPdf();
     writeOutput("deletePage-edited-retained-nonzero-source", source);
-    var recipe = new Recipe(source).editPage(1).endPage().deletePage(2);
+    var recipe = new Recipe(source).editPage(1).endPage();
+    // Editing after the deletion is queued is caught when the PDF ends.
+    var editedLater = new Recipe(source).deletePage(2).editPage(1).endPage();
     try {
-      assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
-      assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
+      assert.throws(() => recipe.deletePage(2), /nonzero-generation objects/);
+      assert.throws(() => editedLater.endPDF(), /nonzero-generation objects/);
+      assert.throws(() => editedLater.endPDF(), /nonzero-generation objects/);
     } finally {
       recipe.dispose();
+      editedLater.dispose();
     }
   });
 
@@ -637,12 +731,9 @@ describe("Recipe deletePage", function () {
   it("rejects replaced text on nonzero-generation pages", function () {
     var source = nonzeroGenerationTextPdf();
     writeOutput("deletePage-replaced-text-nonzero-source", source);
-    var recipe = new Recipe(source)
-      .replaceText("Before", "After", 1)
-      .deletePage(2);
+    var recipe = new Recipe(source).replaceText("Before", "After", 1);
     try {
-      assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
-      assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
+      assert.throws(() => recipe.deletePage(2), /nonzero-generation objects/);
     } finally {
       recipe.dispose();
     }
@@ -759,10 +850,25 @@ describe("Recipe deletePage", function () {
     recipe.dispose();
   });
 
-  it("rejects cyclic page labels", function () {
+  it("rejects cyclic page labels", async function () {
     var recipe = new Recipe(
       nestedNonzeroGenerationPdf({ pageLabels: "cycle" }),
-    ).deletePage(1);
+    );
+    try {
+      assert.throws(() => recipe.deletePage(1), /acyclic PageLabels/);
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-rejected-cyclic-labels", bytes);
+      assert.deepEqual(await pageWidths(bytes), [101, 102]);
+    } finally {
+      recipe.dispose();
+    }
+  });
+
+  it("disposes the writer when a queued deletion fails at endPDF", function () {
+    var recipe = new Recipe(nestedNonzeroGenerationPdf())
+      .deletePage(2)
+      .editPage(1)
+      .endPage();
     var writerDisposed = false;
     var disposeWriter = recipe.writer.dispose.bind(recipe.writer);
     recipe.writer.dispose = () => {
@@ -778,10 +884,10 @@ describe("Recipe deletePage", function () {
           endError = error;
           throw error;
         }
-      }, /acyclic PageLabels/);
+      }, /nonzero-generation objects/);
       assert.equal(writerDisposed, true);
       assert.equal(recipe.metadata.pages, 2);
-      assert.deepEqual(Array.from(recipe._deletedPages), [1]);
+      assert.deepEqual(Array.from(recipe._deletedPages), [2]);
       assert.throws(
         () => recipe.endPDF(),
         (error) => error === endError,
@@ -792,19 +898,19 @@ describe("Recipe deletePage", function () {
     }
   });
 
-  it("rejects references from retained structures to deleted pages", function () {
+  it("rejects references from retained structures to deleted pages", async function () {
     var source = nestedNonzeroGenerationPdf({ openAction: true });
     writeOutput("deletePage-open-action-source", source);
-    var recipe = new Recipe(source).deletePage(1);
+    var recipe = new Recipe(source);
     try {
       assert.throws(
-        () => recipe.endPDF(),
+        () => recipe.deletePage(1),
         /referenced by retained document structures/,
       );
-      assert.throws(
-        () => recipe.endPDF(),
-        /referenced by retained document structures/,
-      );
+      // The rejected deletion leaves the Recipe usable.
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-rejected-open-action", bytes);
+      assert.deepEqual(await pageWidths(bytes), [101, 102]);
     } finally {
       recipe.dispose();
     }
@@ -813,16 +919,140 @@ describe("Recipe deletePage", function () {
   it("rejects references from retained page-tree metadata", function () {
     var source = nestedNonzeroGenerationPdf({ pageTreeReference: true });
     writeOutput("deletePage-page-tree-reference-source", source);
-    var recipe = new Recipe(source).deletePage(2);
+    var recipe = new Recipe(source);
     try {
       assert.throws(
-        () => recipe.endPDF(),
+        () => recipe.deletePage(2),
         /referenced by retained document structures/,
       );
       assert.throws(
-        () => recipe.endPDF(),
+        () => recipe.deletePage(2, { pruneReferences: true }),
+        /cannot prune references held by the page tree/,
+      );
+    } finally {
+      recipe.dispose();
+    }
+  });
+
+  it("rejects a page referenced by outlines, links, forms and structure", async function () {
+    var recipe = new Recipe(referencedPagesPdf());
+    try {
+      assert.throws(
+        () => recipe.deletePage(2),
         /referenced by retained document structures/,
       );
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-rejected-referenced-page", bytes);
+      assert.deepEqual(await pageWidths(bytes), [101, 102, 103]);
+    } finally {
+      recipe.dispose();
+    }
+  });
+
+  it("prunes references to deleted pages with pruneReferences", async function () {
+    var recipe = new Recipe(referencedPagesPdf()).deletePage(2, {
+      pruneReferences: true,
+    });
+    var muhammara = await createMuhammaraWasm();
+    var reader;
+    try {
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-prune-references", bytes);
+      assert.deepEqual(await pageWidths(bytes), [101, 103]);
+      reader = muhammara.createReader(bytes);
+      var object = (id) =>
+        reader.parseNewObject(id).toPDFDictionary().toJSObject();
+      // Nothing retained reaches the deleted page any more.
+      assert.equal(reachableObjectIDs(muhammara, reader).has(4), false);
+
+      var catalog = reader
+        .queryDictionaryObject(reader.getTrailer(), "Root")
+        .toPDFDictionary()
+        .toJSObject();
+      assert.equal(catalog.OpenAction.getType(), muhammara.ePDFObjectNull);
+      // The outline item keeps its title and child, without a target.
+      assert.equal(object(7).Title.value, "Two");
+      assert.equal("Dest" in object(7), false);
+      assert.equal("First" in object(7), true);
+      assert.equal("Dest" in object(8), true);
+      var names = object(9).Names.toJSArray();
+      assert.equal(names[1].toJSArray().length, 2);
+      assert.equal(names[3].getType(), muhammara.ePDFObjectNull);
+      assert.equal("P" in object(11), false);
+      assert.equal(object(11).T.value, "field");
+      assert.equal("Pg" in object(13), false);
+      assert.equal("Dest" in object(14), false);
+      // The changed direct annotation and its action become indirect objects.
+      var resolve = (value) =>
+        value.getType() === muhammara.ePDFObjectIndirectObjectReference
+          ? reader.parseNewObject(
+              value.toPDFIndirectObjectReference().getObjectID(),
+            )
+          : value;
+      var annotation = resolve(
+        reader.parsePage(1).getDictionary().toJSObject().Annots.toJSArray()[0],
+      )
+        .toPDFDictionary()
+        .toJSObject();
+      assert.equal(annotation.Subtype.value, "Link");
+      assert.deepEqual(
+        Object.keys(resolve(annotation.A).toPDFDictionary().toJSObject()),
+        ["S"],
+      );
+    } finally {
+      reader?.end();
+      recipe.dispose();
+      muhammara.disposeAssets();
+    }
+  });
+
+  it("keeps pruning enabled for every queued deletion", async function () {
+    var recipe = new Recipe(referencedPagesPdf())
+      .deletePage(3, { pruneReferences: true })
+      .deletePage(2);
+    try {
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-prune-queued", bytes);
+      assert.deepEqual(await pageWidths(bytes), [101]);
+    } finally {
+      recipe.dispose();
+    }
+  });
+
+  it("rejects pruning a reference held by an edited page", function () {
+    var edited = new Recipe(referencedPagesPdf()).editPage(3).endPage();
+    var editedLater = new Recipe(referencedPagesPdf())
+      .deletePage(2, { pruneReferences: true })
+      .editPage(3)
+      .endPage();
+    try {
+      assert.throws(
+        () => edited.deletePage(2, { pruneReferences: true }),
+        /held by a page edited in this Recipe/,
+      );
+      assert.throws(
+        () => editedLater.endPDF(),
+        /held by a page edited in this Recipe/,
+      );
+    } finally {
+      edited.dispose();
+      editedLater.dispose();
+    }
+  });
+
+  it("validates deletePage options", function () {
+    var recipe = new Recipe(referencedPagesPdf());
+    try {
+      [null, true, "prune", []].forEach((options) =>
+        assert.throws(() => recipe.deletePage(3, options), {
+          name: "TypeError",
+          message: "deletePage expects an options object",
+        }),
+      );
+      assert.throws(() => recipe.deletePage(3, { pruneReferences: "yes" }), {
+        name: "TypeError",
+        message: "deletePage pruneReferences must be a boolean",
+      });
     } finally {
       recipe.dispose();
     }
@@ -831,22 +1061,18 @@ describe("Recipe deletePage", function () {
   it("rejects page-tree children with an incorrect parent", function () {
     var recipe = new Recipe(
       nestedNonzeroGenerationPdf({ invalidParent: true }),
-    ).deletePage(1);
+    );
     try {
-      assert.throws(() => recipe.endPDF(), /valid page tree/);
-      assert.throws(() => recipe.endPDF(), /valid page tree/);
+      assert.throws(() => recipe.deletePage(1), /valid page tree/);
     } finally {
       recipe.dispose();
     }
   });
 
   it("rejects a root page tree with a parent", function () {
-    var recipe = new Recipe(
-      nestedNonzeroGenerationPdf({ rootParent: true }),
-    ).deletePage(1);
+    var recipe = new Recipe(nestedNonzeroGenerationPdf({ rootParent: true }));
     try {
-      assert.throws(() => recipe.endPDF(), /valid page tree/);
-      assert.throws(() => recipe.endPDF(), /valid page tree/);
+      assert.throws(() => recipe.deletePage(1), /valid page tree/);
     } finally {
       recipe.dispose();
     }

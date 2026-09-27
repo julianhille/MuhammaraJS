@@ -332,11 +332,12 @@ WASM_EXPORT int muhammara_wasm_modifier_require_catalog_update(
   return 1;
 }
 
-WASM_EXPORT int muhammara_wasm_modifier_set_page_labels(
-    WasmModifier* modifier, unsigned long objectId) {
-  if (modifier == nullptr || modifier->finished || objectId == 0) return 0;
-  modifier->catalogUpdate.required = true;
-  modifier->catalogUpdate.pageLabelsObjectID = objectId;
+WASM_EXPORT int muhammara_wasm_modifier_set_catalog_entry(
+    WasmModifier* modifier, const char* key, unsigned long objectId) {
+  if (modifier == nullptr || modifier->finished || key == nullptr ||
+      *key == '\0')
+    return 0;
+  modifier->catalogUpdate.SetEntry(key, objectId);
   return 1;
 }
 

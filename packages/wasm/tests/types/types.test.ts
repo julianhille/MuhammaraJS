@@ -10,6 +10,7 @@ import {
   EEncoding as EEncodings,
 } from "../../index.js";
 import type {
+  DeletePageOptions,
   RecipeConstructor,
   PDFWriterOptions,
   PDFReaderOptions,
@@ -699,8 +700,12 @@ async function usesLowLevelSurface() {
     .resumeContext()
     .endPage()
     .deletePage([2, 3])
-    .deletePage(1)
+    .deletePage(1, { pruneReferences: true })
     .endPDF();
+  var deleteOptions: DeletePageOptions = { pruneReferences: false };
+  byteRecipe.deletePage(1, deleteOptions);
+  // @ts-expect-error pruneReferences must be a boolean.
+  byteRecipe.deletePage(1, { pruneReferences: "yes" });
   var asyncByteRecipe = new Recipe();
   var metadata: RecipeMetadata = await asyncByteRecipe.readAsync(sourceBlob);
   metadata[1].width;

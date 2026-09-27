@@ -2980,6 +2980,17 @@ declare namespace muhammara {
     forms?: boolean;
   }
 
+  export interface DeletePageOptions {
+    /**
+     * Remove references to the deleted pages from retained structures -
+     * outlines, link annotations, named destinations, form widgets,
+     * tagged-PDF structure elements and the open action - instead of
+     * refusing the deletion. Defaults to `false`. Once enabled, it applies to
+     * every queued deletion.
+     */
+    pruneReferences?: boolean;
+  }
+
   export interface RecipePageInfo {
     width: number;
     height: number;
@@ -4257,14 +4268,20 @@ declare namespace muhammara {
      * Delete one or more pages from an existing PDF.
      * Page numbers are one-based and refer to the original source document.
      * @param pageNumbers - Page number or page numbers to delete.
+     * @param options - Deletion options.
      * @returns The recipe instance.
+     * @throws {TypeError} If options is not an object or pruneReferences is
+     * not a boolean.
      * @throws {RangeError} If a page number does not identify an original page.
      * @throws {Error} If the Recipe has no existing source, has ended, would delete
-     * every page, or combines deletion with page composition. Page-tree,
-     * retained-reference, and object-generation validation is deferred to
-     * endPDF(), which throws those errors during finalization.
+     * every page, combines deletion with page composition, or the page tree,
+     * page labels or retained references cannot be rewritten. A failed call
+     * leaves the queued deletions unchanged.
      */
-    deletePage(pageNumbers: number | number[]): Recipe;
+    deletePage(
+      pageNumbers: number | number[],
+      options?: DeletePageOptions,
+    ): Recipe;
 
     /**
      * Replace text shown with `Tj` in a page's single content stream. Each

@@ -83,6 +83,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Add a `pruneReferences` option to Recipe `deletePage(pageNumbers, options)`
+  that removes references to the deleted pages from outlines, link
+  annotations, named destinations, form widgets, tagged-PDF structure elements
+  and the open action, instead of refusing the deletion; see
+  [Delete Pages](docs/how-to/delete-pages.md) [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
 - Add a decoded Unicode `text` field to `PDFReader#extractPageText()`
   elements, decoded through the font's `/ToUnicode` CMap, `/Encoding`, and
   `/Differences`; `content` keeps the raw character codes, and
@@ -180,6 +185,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   IDs a failed load allocated are now freed, and a font that failed to load is
   skipped when fonts are written, a local change to the PDF-Writer shared with
   native [#825](https://github.com/julianhille/MuhammaraJS/issues/825)
+- Validate Recipe `deletePage()` when it is called instead of in `endPDF()`,
+  so a page referenced by retained structures, an invalid page tree or page
+  labels, or a nonzero-generation rewrite throws right away and the rest of the
+  Recipe is kept. A failed call leaves the queued deletions unchanged [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
 - Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
   was ignored, and to that text only: on new pages it also became the
   Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are

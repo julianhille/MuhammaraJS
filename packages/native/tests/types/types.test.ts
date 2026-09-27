@@ -83,6 +83,9 @@ context.J(api.LineCapStyle.LINECAP_BUTT).j(2);
 objects.endArray(api.ETokenSeparator.eTokenSeparatorEndLine);
 recipe.read();
 recipe.deletePage(1).deletePage([2, 3]);
+recipe.deletePage(2, { pruneReferences: true }).deletePage([3], {});
+// @ts-expect-error pruneReferences must be a boolean.
+recipe.deletePage(2, { pruneReferences: "yes" });
 recipe.removeText(1).removeText(2, { forms: true });
 // @ts-expect-error removeText requires a one-based page number.
 recipe.removeText();

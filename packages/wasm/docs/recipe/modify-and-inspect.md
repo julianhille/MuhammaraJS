@@ -42,8 +42,12 @@ At least one page must remain. Deletion cannot be combined with `createPage()`,
 `appendPage()`, or `insertPage()` in the same Recipe.
 
 Deletion preserves retained page objects and adjusts page labels, but it is an
-incremental update rather than secure erasure of the removed content. See
-[Delete Pages](../how-to/delete-pages.md) for a complete byte-input example.
+incremental update rather than secure erasure of the removed content. A page
+that outlines, links, form widgets, tagged-PDF structure or the open action
+still reference is refused unless you pass
+`deletePage(pageNumbers, { pruneReferences: true })`, which removes those
+references. See [Delete Pages](../how-to/delete-pages.md) for a complete
+byte-input example and what pruning changes.
 
 ## Inspect Without Replacing Output State
 

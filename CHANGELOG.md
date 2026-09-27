@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Add a `pruneReferences` option to Recipe `deletePage(pageNumbers, options)`
+  that removes references to the deleted pages from outlines, link
+  annotations, named destinations, form widgets, tagged-PDF structure elements
+  and the open action, instead of refusing the deletion; see
+  [Delete Pages](packages/native/docs/how-to/delete-pages.md) [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
 - Add a decoded Unicode `text` field to `PDFReader#extractPageText()`
   elements, decoded through the font's `/ToUnicode` CMap, `/Encoding`, and
   `/Differences`; `content` keeps the raw character codes, and
@@ -319,6 +324,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Throw `Error: Unknown image: <path>` from Recipe `image()` for an image that
   cannot be read, such as a missing file, as Wasm does. The image used to be
   drawn anyway, and `endPDF()` then failed [#825](https://github.com/julianhille/MuhammaraJS/issues/825)
+- Validate Recipe `deletePage()` when it is called instead of in `endPDF()`,
+  so a page referenced by retained structures, an invalid page tree or page
+  labels, or a nonzero-generation rewrite throws right away and the rest of the
+  Recipe is kept. A failed call leaves the queued deletions unchanged [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
+- Attach the renumbered page labels of Recipe `deletePage()` when the catalog
+  is written, as Wasm does, instead of rewriting the catalog object in place.
+  Direct page labels on a catalog with a nonzero generation no longer throw,
+  and the labels are no longer dropped when the writer also writes a new
+  catalog [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)

@@ -486,7 +486,7 @@ class Recipe {
  * @throws {string} If two recipe modules export the same member.
  */
 function loadPrototypes() {
-  const ignores = ["utils.js", "xObjectForm.js"];
+  const ignores = ["utils.js", "xObjectForm.js", "page-references.js"];
   fs.readdirSync(path.join(__dirname, "recipe"))
     .filter((file) => {
       return file[0] != "." && !ignores.includes(file);

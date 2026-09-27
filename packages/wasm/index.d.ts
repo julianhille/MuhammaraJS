@@ -540,6 +540,16 @@ export interface RemoveTextOptions {
   /** Also remove text from the Form XObjects the page paints, including nested forms. Defaults to `false`. */
   forms?: boolean;
 }
+export interface DeletePageOptions {
+  /**
+   * Remove references to the deleted pages from retained structures -
+   * outlines, link annotations, named destinations, form widgets, tagged-PDF
+   * structure elements and the open action - instead of refusing the
+   * deletion. Defaults to `false`. Once enabled, it applies to every queued
+   * deletion.
+   */
+  pruneReferences?: boolean;
+}
 export interface RecipePageInfo {
   pageNumber: number;
   mediaBox: PDFRectangle;
@@ -636,7 +646,17 @@ export interface Recipe {
   replaceText(text: string, replacement: string, pageNumber: number): this;
   /** Removes shown text from an existing page's content streams, and optionally its Form XObjects. */
   removeText(pageNumber: number, options?: RemoveTextOptions): this;
-  deletePage(pageNumbers: number | number[]): this;
+  /**
+   * Deletes one or more original source pages. Validation runs here: a page
+   * that retained structures still reference is refused unless
+   * `pruneReferences` is set, and a failed call leaves the queued deletions
+   * unchanged.
+   * @throws {TypeError} If options is not an object or pruneReferences is
+   * not a boolean.
+   * @throws {RangeError} If a page number does not identify an original page.
+   * @throws {Error} If the deletion cannot be applied.
+   */
+  deletePage(pageNumbers: number | number[], options?: DeletePageOptions): this;
   pauseContext(): this;
   resumeContext(): this;
   setPageBox(
