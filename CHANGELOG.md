@@ -242,6 +242,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Prevent a segmentation fault when a form started with `createFormXObject()`
+  and never passed to `endFormXObject()` is garbage-collected, or when its
+  writer is collected or the process exits; `end()` on such a writer throws
+  `Unable to end PDF` [#814](https://github.com/julianhille/MuhammaraJS/issues/814)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)

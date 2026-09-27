@@ -263,6 +263,7 @@ WASM_EXPORT WasmForm* muhammara_wasm_writer_create_form(WasmRecipe* recipe,
   handle->form = form;
   handle->recipe = recipe;
   handle->ended = false;
+  handle->streamOpen = true;
   recipe->forms.push_back(handle);
   return handle;
 }
@@ -394,6 +395,8 @@ WASM_EXPORT int muhammara_wasm_writer_end_form(WasmRecipe* recipe,
   if (recipe == nullptr || form == nullptr || form->recipe != recipe ||
       form->form == nullptr || form->ended ||
       recipe->finished) return 0;
+  // Ending finalizes the stream even when it fails.
+  form->streamOpen = false;
   if (recipe->writer.EndFormXObject(form->form) != PDFHummus::eSuccess) return 0;
   form->ended = true;
   invalidateContentStreams(recipe, form);

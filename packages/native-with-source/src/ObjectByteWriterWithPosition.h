@@ -19,6 +19,9 @@ public:
   PDFHummus::EStatusCode Flush() override;
   // Drops buffered bytes without calling JavaScript, for finalizer cleanup.
   void DiscardPending();
+  // Drops buffered bytes and fails every later write and flush without
+  // calling JavaScript, for output that can no longer become a valid PDF.
+  void Close();
 
 private:
   IOBasicTypes::LongBufferSizeType

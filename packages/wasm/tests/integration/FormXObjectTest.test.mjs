@@ -265,4 +265,39 @@ describe("FormXObjectTest", function () {
     assert.equal(reader.getPagesCount(), 7);
     reader.end();
   });
+
+  it("releases unfinished forms when their writer ends or is disposed", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = new Uint8Array(
+      await readFile("tests/TestMaterials/Original.pdf"),
+    );
+    for (var index = 0; index < 20; index += 1) {
+      var writer = muhammara.createWriter();
+      writer
+        .createFormXObject(0, 0, 10, 10)
+        .getContentContext()
+        .re(0, 0, 10, 10)
+        .f();
+      assert.throws(() => writer.end(), /Unable to finish PDF/);
+      writer.dispose();
+
+      writer = muhammara.createWriter();
+      writer.createFormXObject(0, 0, 10, 10);
+      writer.dispose();
+
+      var modifier = muhammara.createWriterToModify(source);
+      modifier.createFormXObject(0, 0, 10, 10);
+      modifier.dispose();
+    }
+
+    writer = muhammara.createWriter();
+    var form = writer.createFormXObject(0, 0, 10, 10);
+    writer.endFormXObject(form);
+    var page = writer.createPage(0, 0, 100, 100);
+    writer.startPageContentContext(page).doXObject(form);
+    writer.writePage(page);
+    var reader = muhammara.createReader(writer.end());
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
+  });
 });

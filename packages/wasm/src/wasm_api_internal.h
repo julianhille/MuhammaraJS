@@ -163,7 +163,18 @@ class WasmForm {
   WasmRecipe* recipe = nullptr;
   WasmModifier* modifier = nullptr;
   bool ended = true;
+  // Set until EndFormXObject is called. An unfinished content stream deletes
+  // the writer's output when destroyed, see releaseForm().
+  bool streamOpen = false;
 };
+
+// Deletes a form, first detaching a still open content stream from the
+// writer's output, which must still be alive.
+static void releaseForm(WasmForm* form) {
+  if (form->streamOpen) form->form->GetContentStream()->FinalizeStreamWrite();
+  delete form->form;
+  delete form;
+}
 
 class WasmRecipe {
  public:
@@ -949,10 +960,7 @@ inline WasmRecipe::~WasmRecipe() {
     delete image->image;
     delete image;
   }
-  for (WasmForm* form : forms) {
-    delete form->form;
-    delete form;
-  }
+  for (WasmForm* form : forms) releaseForm(form);
   for (WasmObjectsContext* context : objectsContexts) {
     delete context;
   }
@@ -967,10 +975,7 @@ inline WasmModifier::~WasmModifier() {
     delete image->image;
     delete image;
   }
-  for (WasmForm* form : forms) {
-    delete form->form;
-    delete form;
-  }
+  for (WasmForm* form : forms) releaseForm(form);
   for (WasmObjectsContext* context : objectsContexts) {
     delete context;
   }

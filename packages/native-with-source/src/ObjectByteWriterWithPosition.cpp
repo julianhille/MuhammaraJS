@@ -44,6 +44,11 @@ PDFHummus::EStatusCode ObjectByteWriterWithPosition::Flush() {
 
 void ObjectByteWriterWithPosition::DiscardPending() { pending_.clear(); }
 
+void ObjectByteWriterWithPosition::Close() {
+  pending_.clear();
+  failed_ = true;
+}
+
 IOBasicTypes::LongBufferSizeType
 ObjectByteWriterWithPosition::Deliver(const IOBasicTypes::Byte *buffer,
                                       IOBasicTypes::LongBufferSizeType size) {

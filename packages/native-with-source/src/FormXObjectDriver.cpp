@@ -3,6 +3,7 @@
 #include "ConstructorsHolder.h"
 #include "PDFFormXObject.h"
 #include "PDFStreamDriver.h"
+#include "PDFWriterDriver.h"
 #include "ResourcesDictionaryDriver.h"
 #include "XObjectContentContextDriver.h"
 
@@ -10,7 +11,12 @@ using namespace muhammara::napi;
 
 FormXObjectDriver::FormXObjectDriver()
     : FormXObject(nullptr), holder(nullptr), mPDFWriterDriver(nullptr) {}
-FormXObjectDriver::~FormXObjectDriver() { delete FormXObject; }
+FormXObjectDriver::~FormXObjectDriver() {
+  // An unfinished form's stream deletes the writer's output when destroyed.
+  if (openForms && openForms->writer && openForms->forms.erase(FormXObject))
+    openForms->writer->AbandonFormXObject(FormXObject);
+  delete FormXObject;
+}
 
 bool FormXObjectDriver::Init(ModuleState &state, napi_value exports) {
   ClassBuilder b(state, "FormXObject", New);
