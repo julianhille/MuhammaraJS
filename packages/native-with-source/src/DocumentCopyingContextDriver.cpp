@@ -35,6 +35,9 @@ bool DocumentCopyingContextDriver::IsActive() {
 DriverLifecycle DocumentCopyingContextDriver::GetLifecycle() {
   return mLifecycle;
 }
+void DocumentCopyingContextDriver::AddCallbackDepth(const CallbackDepth &v) {
+  mCallbackDepths.push_back(v);
+}
 void DocumentCopyingContextDriver::AddOwnerLifecycle(DriverLifecycle v) {
   mLifecycle->AddOwner(v);
 }
@@ -67,6 +70,10 @@ napi_value DocumentCopyingContextDriver::New(const CallbackArgs &a) {
 }
 napi_value DocumentCopyingContextDriver::End(const CallbackArgs &a) {
   auto *d = D(a);
+  for (const CallbackDepth &depth : d->mCallbackDepths)
+    if (IsInCallback(depth))
+      return ThrowError(a.Env(), "A PDF copying context cannot end from a "
+                                 "stream or event callback");
   d->mLifecycle->End();
   delete d->CopyingContext;
   d->CopyingContext = nullptr;

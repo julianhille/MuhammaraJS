@@ -1,9 +1,12 @@
 #pragma once
 
+#include "CallbackDepth.h"
 #include "DriverLifecycle.h"
 #include "InputFile.h"
 #include "PDFParser.h"
 #include "napi/NapiSupport.h"
+
+#include <vector>
 
 class ObjectByteReaderWithPosition;
 class ConstructorsHolder;
@@ -20,6 +23,10 @@ public:
                           DriverLifecycle ownerLifecycle = DriverLifecycle());
   PDFParser *GetParser();
   DriverLifecycle GetLifecycle();
+  CallbackDepth GetCallbackDepth();
+  // A writer copying from this reader uses its parser during the writer's
+  // own callbacks too.
+  void AddUserCallbackDepth(const CallbackDepth &);
 
   ConstructorsHolder *holder;
 
@@ -64,4 +71,6 @@ private:
   PDFParser *mPDFReader;
   InputFile mPDFFile;
   DriverLifecycle mLifecycle;
+  CallbackDepth mCallbackDepth;
+  std::vector<CallbackDepth> mUserCallbackDepths;
 };

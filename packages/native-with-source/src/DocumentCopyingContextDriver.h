@@ -1,6 +1,9 @@
 #pragma once
+#include "CallbackDepth.h"
 #include "DriverLifecycle.h"
 #include "napi/NapiSupport.h"
+
+#include <vector>
 class PDFDocumentCopyingContext;
 class IByteReaderWithPosition;
 class ConstructorsHolder;
@@ -15,9 +18,13 @@ public:
   bool IsActive();
   DriverLifecycle GetLifecycle();
   void AddOwnerLifecycle(DriverLifecycle);
+  // The copying context reads and writes through its owners' streams, so it
+  // cannot end from their callbacks either.
+  void AddCallbackDepth(const CallbackDepth &);
 
 private:
   DriverLifecycle mLifecycle;
+  std::vector<CallbackDepth> mCallbackDepths;
   static napi_value New(const muhammara::napi::CallbackArgs &);
   static napi_value End(const muhammara::napi::CallbackArgs &);
   static napi_value

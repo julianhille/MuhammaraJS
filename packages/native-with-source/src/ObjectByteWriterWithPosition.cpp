@@ -49,6 +49,11 @@ void ObjectByteWriterWithPosition::Close() {
   failed_ = true;
 }
 
+void ObjectByteWriterWithPosition::SetCallbackDepth(
+    const CallbackDepth &depth) {
+  depth_ = depth;
+}
+
 IOBasicTypes::LongBufferSizeType
 ObjectByteWriterWithPosition::Deliver(const IOBasicTypes::Byte *buffer,
                                       IOBasicTypes::LongBufferSizeType size) {
@@ -62,7 +67,11 @@ ObjectByteWriterWithPosition::Deliver(const IOBasicTypes::Byte *buffer,
     ThrowTypeError(env_, "write is not a function, it should be you know...");
     return 0;
   }
-  napi_value result = Call(env_, object, function, {bytes});
+  napi_value result;
+  {
+    CallbackScope callback(depth_);
+    result = Call(env_, object, function, {bytes});
+  }
   if (!result)
     return 0;
   if (IsType(env_, result, napi_undefined)) {
@@ -85,7 +94,11 @@ ObjectByteWriterWithPosition::GetCurrentPosition() {
   napi_value function = Get(env_, object, "getCurrentPosition");
   if (!function || IsType(env_, function, napi_undefined))
     return 1;
-  napi_value result = Call(env_, object, function);
+  napi_value result;
+  {
+    CallbackScope callback(depth_);
+    result = Call(env_, object, function);
+  }
   if (!result)
     return 0;
   double position = 0;

@@ -40,4 +40,31 @@ describe("BufferRead", function () {
     pdfWriter.end();
     target.close();
   });
+
+  it("rejects ending a reader from its own read stream", function () {
+    var source = new muhammara.PDFRStreamForBuffer(
+      fs.readFileSync(__dirname + "/TestMaterials/Original.pdf"),
+    );
+    var read = source.read.bind(source);
+    var errors = [];
+    var reader;
+    source.read = function (length) {
+      if (reader) {
+        try {
+          reader.end();
+        } catch (error) {
+          errors.push(error.message);
+        }
+      }
+      return read(length);
+    };
+    reader = muhammara.createReader(source);
+    reader.parsePage(0);
+    reader.end();
+
+    assert.include(
+      errors,
+      "A PDF reader cannot end from a stream or event callback that is using it",
+    );
+  });
 });

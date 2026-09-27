@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CallbackDepth.h"
 #include "IByteWriterWithPosition.h"
 #include "napi/NapiSupport.h"
 
@@ -22,6 +23,8 @@ public:
   // Drops buffered bytes and fails every later write and flush without
   // calling JavaScript, for output that can no longer become a valid PDF.
   void Close();
+  // Counts the owner's JavaScript calls made through this stream.
+  void SetCallbackDepth(const CallbackDepth &depth);
 
 private:
   IOBasicTypes::LongBufferSizeType
@@ -35,4 +38,5 @@ private:
   std::vector<IOBasicTypes::Byte> pending_;
   // Set once any delivery falls short; the output is corrupt from then on.
   bool failed_;
+  CallbackDepth depth_;
 };

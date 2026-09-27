@@ -2,6 +2,7 @@
 
 #include "ObjectsBasicTypes.h"
 
+#include "CallbackDepth.h"
 #include "DriverLifecycle.h"
 #include "EHummusImageType.h"
 #include "ObjectByteReaderWithPosition.h"
@@ -177,6 +178,7 @@ private:
   bool formAbandoned_;
   DriverLifecycle lifecycle_;
   std::shared_ptr<OpenFormXObjects> openForms_;
+  CallbackDepth callbackDepth_;
   PDFWriter writer_;
   ObjectByteWriterWithPosition *writeProxy_;
   ObjectByteReaderWithPosition *readProxy_;
