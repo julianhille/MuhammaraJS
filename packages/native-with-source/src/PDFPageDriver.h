@@ -1,8 +1,11 @@
 #pragma once
 #include "PDFPage.h"
 #include "napi/NapiSupport.h"
+
+#include <memory>
 class PageContentContext;
 class ConstructorsHolder;
+struct OpenContent;
 class PDFPageDriver : public muhammara::napi::ObjectWrap {
 public:
   PDFPageDriver();
@@ -18,6 +21,8 @@ public:
   DriverLifecycle ContentLifecycle();
   void RenewContentLifecycle();
   void EndContentLifecycle();
+  // Set once a writer starts a content context on this page, see OpenContent.
+  std::shared_ptr<OpenContent> openContent;
 
 private:
   DriverLifecycle mContentLifecycle;

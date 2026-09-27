@@ -26,8 +26,9 @@ void FormXObjectDriver::EndContent() {
 }
 FormXObjectDriver::~FormXObjectDriver() {
   // An unfinished form's stream deletes the writer's output when destroyed.
-  if (openForms && openForms->writer && openForms->forms.erase(FormXObject))
-    openForms->writer->AbandonFormXObject(FormXObject);
+  if (openContent && openContent->writer &&
+      openContent->forms.erase(FormXObject))
+    openContent->writer->AbandonFormXObject(FormXObject);
   delete FormXObject;
 }
 

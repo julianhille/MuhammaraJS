@@ -1,19 +1,6 @@
 var assert = require("node:assert/strict");
 var muhammara = require("@muhammara/native-with-source");
-
-/**
- * Runs garbage collection and lets pending native finalizers run.
- *
- * @returns {Promise<void>} Resolves after the finalizers had a chance to run.
- */
-async function collectGarbage() {
-  for (var i = 0; i < 5; i++) {
-    global.gc();
-    await new Promise(function (resolve) {
-      setTimeout(resolve, 10);
-    });
-  }
-}
+var { collectGarbage } = require("./helpers/gc");
 
 /**
  * Starts a form with some content and never ends it.

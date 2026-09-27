@@ -25,6 +25,9 @@ public:
   void Close();
   // Counts the owner's JavaScript calls made through this stream.
   void SetCallbackDepth(const CallbackDepth &depth);
+  // While deferred, writes are buffered without calling JavaScript, for
+  // finalizers that must write; the next flush delivers them.
+  void SetDeferred(bool deferred);
 
 private:
   IOBasicTypes::LongBufferSizeType
@@ -39,4 +42,9 @@ private:
   // Set once any delivery falls short; the output is corrupt from then on.
   bool failed_;
   CallbackDepth depth_;
+  bool deferred_;
+  // The last position JavaScript reported and the bytes delivered since, so a
+  // deferred or closed stream reports its position without calling it.
+  IOBasicTypes::LongFilePositionType reportedPosition_;
+  IOBasicTypes::LongFilePositionType deliveredSinceReport_;
 };

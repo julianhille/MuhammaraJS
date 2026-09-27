@@ -15,6 +15,10 @@ PDFPageModifierDriver::PDFPageModifierDriver(PDFWriter *w, unsigned long p,
                                               bool e)
     : holder(nullptr), mModifierPageInstance(new PDFModifiedPage(w, p, e)) {}
 PDFPageModifierDriver::~PDFPageModifierDriver() {
+  // An unended content form is released only by ending it.
+  if (mOpenContent && mOpenContent->writer &&
+      mOpenContent->modifiedPages.erase(mModifierPageInstance))
+    mOpenContent->writer->AbandonModifiedPage(mModifierPageInstance);
   delete mModifierPageInstance;
 }
 bool PDFPageModifierDriver::Init(ModuleState &s, napi_value exports) {
@@ -52,6 +56,8 @@ napi_value PDFPageModifierDriver::New(const CallbackArgs &a) {
       a.Length() >= 3 ? ToBoolean(a.Env(), a[2]) : false);
   d->holder = &constructors;
   d->AddOwner(w->GetLifecycle());
+  d->mOpenContent = w->GetOpenContent();
+  d->mOpenContent->modifiedPages.insert(d->mModifierPageInstance);
   if (!d->Wrap(a.Env(), a.This())) {
     delete d;
     return nullptr;

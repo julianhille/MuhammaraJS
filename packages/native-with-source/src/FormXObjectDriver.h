@@ -7,7 +7,7 @@
 class PDFFormXObject;
 class PDFWriterDriver;
 class ConstructorsHolder;
-struct OpenFormXObjects;
+struct OpenContent;
 
 class FormXObjectDriver : public muhammara::napi::ObjectWrap {
 public:
@@ -16,8 +16,8 @@ public:
   static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
   PDFFormXObject *FormXObject;
   ConstructorsHolder *holder;
-  // Set while the form is open, see OpenFormXObjects.
-  std::shared_ptr<OpenFormXObjects> openForms;
+  // Set while the form is open, see OpenContent.
+  std::shared_ptr<OpenContent> openContent;
   // Records the writer that started the form, whose endFormXObject() alone
   // may end it.
   void SetOpenIn(PDFWriterDriver *writer);

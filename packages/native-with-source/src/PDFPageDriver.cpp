@@ -1,6 +1,7 @@
 #include "PDFPageDriver.h"
 #include "ConstructorsHolder.h"
 #include "PDFRectangle.h"
+#include "PDFWriterDriver.h"
 #include "ResourcesDictionaryDriver.h"
 using namespace muhammara::napi;
 namespace {
@@ -41,6 +42,9 @@ PDFPageDriver::PDFPageDriver()
 PDFPageDriver::~PDFPageDriver() {
   // A content context of this page refers to the page's resources.
   EndContentLifecycle();
+  // The page's content context is released only by ending it.
+  if (openContent && openContent->writer && openContent->pages.erase(mPDFPage))
+    openContent->writer->AbandonPage(mPDFPage);
   if (mOwnsPage)
     delete mPDFPage;
 }
