@@ -4,6 +4,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-beta.5] - 2026-09-27
+
 ### Added
 
 - Add a `pruneReferences` option to Recipe `deletePage(pageNumbers, options)`
@@ -52,8 +54,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `AnnotSubtype`, `AnnotFlag`, `ChromaCommand`, and `AnnotIcon`, plus the
   Wasm-only `StructureFormat`. The annotation `flag` option now accepts
   `lockedcontents` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Add a guide for annotating known text regions in existing PDFs with Underline
-  or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
 - Add a **Watermark** tab to the browser example that stamps diagonal,
   semi-transparent text on every page of an uploaded PDF, or of a built-in
   sample when none is chosen
@@ -806,7 +806,8 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Validate Wasm ABI exports, resource ownership, temporary-file cleanup, and
   bounded byte input/output handling.
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.4...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.5...HEAD
+[1.0.0-beta.5]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.4...wasm-v1.0.0-beta.5
 [1.0.0-beta.4]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.3...wasm-v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.2...wasm-v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.1...wasm-v1.0.0-beta.2

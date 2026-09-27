@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [7.0.0-beta.5] - 2026-09-27
+
 ### Breaking Changes
 
 - Recipe `n_gon()` and `star()` throw
@@ -1556,7 +1558,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.4...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.5...HEAD
+[7.0.0-beta.5]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.4...native-v7.0.0-beta.5
 [7.0.0-beta.4]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.3...native-v7.0.0-beta.4
 [7.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.2...native-v7.0.0-beta.3
 [7.0.0-beta.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.1...native-v7.0.0-beta.2
