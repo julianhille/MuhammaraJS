@@ -192,9 +192,12 @@ PDFHummus::EStatusCode PDFModifiedPage::WritePage()
 			// write old annots, if any exist
 			if(pageDictionaryObject->Exists("Annots")) {
 				PDFObjectCastPtr<PDFArray> anArray(copyingContext->GetSourceDocumentParser()->QueryDictionaryObject(pageDictionaryObject.GetPtr(), "Annots"));
-				SingleValueContainerIterator<PDFObjectVector> refs = anArray->GetIterator();
-				while (refs.MoveNext())
-					copyingContext->CopyDirectObjectAsIs(refs.GetItem());
+				// a malformed Annots entry that is not an array is dropped
+				if (anArray.GetPtr()) {
+					SingleValueContainerIterator<PDFObjectVector> refs = anArray->GetIterator();
+					while (refs.MoveNext())
+						copyingContext->CopyDirectObjectAsIs(refs.GetItem());
+				}
 
 			}
 
@@ -227,11 +230,16 @@ PDFHummus::EStatusCode PDFModifiedPage::WritePage()
 			}
 
 			RefCountPtr<PDFObject> pageContent(copyingContext->GetSourceDocumentParser()->QueryDictionaryObject(pageDictionaryObject.GetPtr(), "Contents"));
-			if (pageContent->GetType() == PDFObject::ePDFObjectStream)
+			// malformed Contents that do not resolve, or are not references, are dropped
+			if (!pageContent)
+			{
+			}
+			else if (pageContent->GetType() == PDFObject::ePDFObjectStream)
 			{
 				// single content stream. must be a refrence which points to it
 				PDFObjectCastPtr<PDFIndirectObjectReference> ref(pageDictionaryObject->QueryDirectObject("Contents"));
-				objectContext.WriteIndirectObjectReference(ref->mObjectID, ref->mVersion);
+				if (ref.GetPtr())
+					objectContext.WriteIndirectObjectReference(ref->mObjectID, ref->mVersion);
 			}
 			else if (pageContent->GetType() == PDFObject::ePDFObjectArray)
 			{
@@ -239,10 +247,14 @@ PDFHummus::EStatusCode PDFModifiedPage::WritePage()
 
 				// multiple content streams
 				SingleValueContainerIterator<PDFObjectVector> refs = anArray->GetIterator();
-				PDFObjectCastPtr<PDFIndirectObjectReference> ref;
 				while (refs.MoveNext())
 				{
-					ref = refs.GetItem();
+					// GetItem() does not add a reference, so check the type instead of
+					// casting with PDFObjectCastPtr, which releases other types
+					PDFObject* item = refs.GetItem();
+					if (item->GetType() != PDFObject::ePDFObjectIndirectObjectReference)
+						continue;
+					PDFIndirectObjectReference* ref = (PDFIndirectObjectReference*)item;
 					objectContext.WriteIndirectObjectReference(ref->mObjectID, ref->mVersion);
 				}
 
@@ -397,6 +409,10 @@ PDFHummus::EStatusCode PDFModifiedPage::WritePage()
 vector<string> PDFModifiedPage::WriteModifiedResourcesDict(PDFParser* inParser,PDFDictionary* inResourcesDictionary,ObjectsContext& inObjectContext,PDFDocumentCopyingContext* inCopyingContext)
 {
 	vector<string> formResourcesNames;
+
+	// malformed Resources that are not a dictionary are replaced with new ones
+	if (!inResourcesDictionary)
+		return WriteNewResourcesDictionary(inObjectContext);
 
     MapIterator<PDFNameToPDFObjectMap>  resourcesDictionaryIt = inResourcesDictionary->GetIterator();
         
