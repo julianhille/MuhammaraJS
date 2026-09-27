@@ -1,6 +1,7 @@
 // Byte-first port of packages/native-with-source/tests/PDFPageContentItemsTest.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("PDFPageContentItems", function () {
   it("returns page-marking operations without relying on resources", async function () {
@@ -21,7 +22,9 @@ describe("PDFPageContentItems", function () {
       );
     writer.writePage(textPage);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFPageContentItemsTest-marking", pdf);
+    var reader = muhammara.createReader(pdf);
     var emptyItems = reader.extractPageContentItems(0);
     var pathItems = reader.extractPageContentItems(1);
     var textItems = reader.extractPageContentItems(2);
@@ -52,7 +55,9 @@ describe("PDFPageContentItems", function () {
       );
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFPageContentItemsTest-xobject-shading", pdf);
+    var reader = muhammara.createReader(pdf);
     var items = reader.extractPageContentItems(0);
     reader.end();
 
@@ -78,7 +83,9 @@ describe("PDFPageContentItems", function () {
       );
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFPageContentItemsTest-inline-image", pdf);
+    var reader = muhammara.createReader(pdf);
     var items = reader.extractPageContentItems(0);
     reader.end();
 
@@ -99,7 +106,9 @@ describe("PDFPageContentItems", function () {
       .writeFreeCode("BT /F1 12 Tf q 3 Tr (hidden) Tj Q (visible) Tj ET");
     writer.writePage(page);
 
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFPageContentItemsTest-text-render-mode", pdf);
+    var reader = muhammara.createReader(pdf);
     var items = reader.extractPageContentItems(0);
     reader.end();
 
@@ -110,7 +119,9 @@ describe("PDFPageContentItems", function () {
 
   it("validates the page index", async function () {
     var muhammara = await createMuhammaraWasm();
-    var reader = muhammara.createReader(muhammara.createBlankPdf(20, 20));
+    var pdf = muhammara.createBlankPdf(20, 20);
+    writeOutput("PDFPageContentItemsTest-page-index", pdf);
+    var reader = muhammara.createReader(pdf);
     assert.throws(
       () => reader.extractPageContentItems(-1),
       /Page index must be a non-negative integer/,
@@ -133,7 +144,9 @@ describe("PDFPageContentItems", function () {
       .re(40, 40, 20, 20)
       .f();
     writer.writePage(page);
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFPageContentItemsTest-limits", pdf);
+    var reader = muhammara.createReader(pdf);
 
     assert.equal(reader.extractPageContentItems(0).length, 2);
     assert.throws(
@@ -159,7 +172,9 @@ describe("PDFPageContentItems", function () {
     var page = writer.createPage(0, 0, 100, 100);
     writer.startPageContentContext(page).re(10, 10, 20, 20).f();
     writer.writePage(page);
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PDFPageContentItemsTest-clamped-limits", pdf);
+    var reader = muhammara.createReader(pdf);
 
     var expected = [
       { type: muhammara.ePDFPageContentItemPath, operation: "f" },

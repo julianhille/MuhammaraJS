@@ -3,6 +3,7 @@ var fs = require("fs");
 var os = require("os");
 var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
+var { writeOutput } = require("./helpers/testOutput");
 
 describe("PDF versions", function () {
   var outputDirectory;
@@ -25,6 +26,7 @@ describe("PDF versions", function () {
 
     writer.writePage(writer.createPage(0, 0, 100, 100));
     writer.end();
+    writeOutput("PDFVersionTest-version-20", fs.readFileSync(outputPath));
 
     assert.match(fs.readFileSync(outputPath, "latin1"), /^%PDF-2\.0/);
   });
@@ -37,6 +39,10 @@ describe("PDF versions", function () {
       writer.startPageContentContext(page).q().re(1, 1, 10, 10).f().Q();
       writer.writePage(page);
       writer.end();
+      writeOutput(
+        "PDFVersionTest-compress-" + compress,
+        fs.readFileSync(outputPath),
+      );
 
       var output = fs.readFileSync(outputPath, "latin1");
       if (compress) assert.match(output, /\/Filter\s*\/FlateDecode/);

@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("JPGImageInformation", function () {
   it("retrieves Node-shaped JPEG metadata from registered and direct bytes", async function () {
@@ -52,7 +53,7 @@ describe("JPGImageInformation", function () {
       () => writer.retrieveJPGImageInformation("missing"),
       TypeError,
     );
-    writer.end();
+    writeOutput("JPGImageInformation", writer.end());
     assert.throws(() => writer.retrieveJPGImageInformation(jpg), /ended/);
   });
 });

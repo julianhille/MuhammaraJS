@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("UseAfterEndTest", function () {
   ["end", "dispose", "failed-end"].forEach(function (mode) {
@@ -18,7 +19,8 @@ describe("UseAfterEndTest", function () {
           writer.end();
         }, /maxOutputBytes/);
       } else {
-        writer[mode]();
+        var closed = writer[mode]();
+        if (mode === "end") writeOutput("UseAfterEndTest-writer-end", closed);
       }
       try {
         var calls = {
@@ -74,15 +76,15 @@ describe("UseAfterEndTest", function () {
     );
     try {
       var writer = muhammara.createWriter();
-      var modifier = muhammara.createWriterToModify(
-        muhammara.createBlankPdf(10, 10),
-      );
+      var source = muhammara.createBlankPdf(10, 10);
+      writeOutput("UseAfterEndTest-fonts-source", source);
+      var modifier = muhammara.createWriterToModify(source);
       var fonts = [writer, modifier].map((target) =>
         target.getFontForBytes("use-after-end"),
       );
       writer.writePage(writer.createPage(0, 0, 10, 10));
-      writer.end();
-      modifier.end();
+      writeOutput("UseAfterEndTest-fonts-writer", writer.end());
+      writeOutput("UseAfterEndTest-fonts-modifier", modifier.end());
       for (var font of fonts) {
         assert.throws(() => font.calculateTextDimensions("a", 10), {
           name: "Error",
@@ -105,6 +107,7 @@ describe("UseAfterEndTest", function () {
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 200, 200));
     var source = sourceWriter.end();
+    writeOutput("UseAfterEndTest-copying-source", source);
     var writer = muhammara.createWriter();
     var copying = writer.createPDFCopyingContext(source);
 

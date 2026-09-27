@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm, createRecipe } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("MemoryLifecycle", function () {
   it("enforces runtime byte budgets without exposing the module", async function () {
@@ -37,6 +38,7 @@ describe("MemoryLifecycle", function () {
         limits: { maxInputBytes: 1 },
       });
       var pdf = muhammara.createBlankPdf(100, 100);
+      writeOutput("MemoryLifecycle-wasm-binary", pdf);
       assert.equal(new TextDecoder().decode(pdf.subarray(0, 5)), "%PDF-");
     }
 
@@ -45,7 +47,9 @@ describe("MemoryLifecycle", function () {
       locateFile,
       defaultFont: false,
     });
-    assert.ok(new Recipe().createPage("A4").endPage().endPDF().length > 0);
+    var recipePdf = new Recipe().createPage("A4").endPage().endPDF();
+    writeOutput("MemoryLifecycle-wasm-binary-recipe", recipePdf);
+    assert.ok(recipePdf.length > 0);
 
     for (var invalid of [
       new Uint16Array(buffer, 0, buffer.byteLength >>> 1),
@@ -64,6 +68,7 @@ describe("MemoryLifecycle", function () {
     var muhammara = await createMuhammaraWasm();
     assert.equal("_module" in muhammara, false);
     var source = muhammara.createBlankPdf(100, 100);
+    writeOutput("MemoryLifecycle-release-source", source);
 
     var reader = muhammara.createReader(source);
     var parserStream = reader.getParserStream();
@@ -81,7 +86,10 @@ describe("MemoryLifecycle", function () {
     var compact = muhammara.createModifier(source);
     compact.dispose();
     compact = muhammara.createModifier(source);
-    compact.startPage(0).endPage().end();
+    writeOutput(
+      "MemoryLifecycle-release-compact-modifier",
+      compact.startPage(0).endPage().end(),
+    );
     assert.throws(
       () => muhammara.createModifier(new Uint8Array([1, 2, 3])),
       /Unable to modify PDF/,
@@ -90,7 +98,7 @@ describe("MemoryLifecycle", function () {
     var modifier = muhammara.createWriterToModify(source);
     modifier.dispose();
     modifier = muhammara.createWriterToModify(source);
-    modifier.end();
+    writeOutput("MemoryLifecycle-release-modifier", modifier.end());
     assert.throws(
       () => muhammara.createWriterToModify(new Uint8Array([1, 2, 3])),
       /Unable to modify PDF/,
@@ -99,7 +107,9 @@ describe("MemoryLifecycle", function () {
     var writer = muhammara.createWriter();
     var copying = writer.createPDFCopyingContext(source);
     // Like native, end() releases copying contexts left open.
-    assert.ok(writer.end().length > 0);
+    var copyingOutput = writer.end();
+    writeOutput("MemoryLifecycle-release-copying-writer", copyingOutput);
+    assert.ok(copyingOutput.length > 0);
     assert.throws(() => copying.copyObject(1), /ended|released|context/i);
     assert.throws(() => writer.end(), /PDF writer has ended/);
 
@@ -158,7 +168,7 @@ describe("MemoryLifecycle", function () {
     Recipe.disposeAssets();
     assert.equal(Recipe.unregisterImage("image"), false);
     assert.equal(Recipe.unregisterPdf("pdf"), false);
-    recipe.endPDF();
+    writeOutput("MemoryLifecycle-recipe-assets", recipe.endPDF());
 
     var abandoned = new Recipe();
     abandoned.dispose();
@@ -185,7 +195,9 @@ describe("MemoryLifecycle", function () {
     objects.startNewIndirectObject();
     assert.throws(() => writer.end(), /active objects context operation/);
     objects.endIndirectObject();
-    assert.ok(writer.end().length > 0);
+    var output = writer.end();
+    writeOutput("MemoryLifecycle-open-indirect-object", output);
+    assert.ok(output.length > 0);
 
     var abandoned = muhammara.createWriter();
     abandoned.getObjectsContext().startNewIndirectObject();
@@ -200,7 +212,9 @@ describe("MemoryLifecycle", function () {
     var stream = objects.startPDFStream();
     stream.getWriteStream().write(new Uint8Array([37, 32, 114, 97, 119, 10]));
     objects.endPDFStream(stream).endIndirectObject();
-    var output = new TextDecoder().decode(writer.end());
+    var pdf = writer.end();
+    writeOutput("MemoryLifecycle-raw-stream", pdf);
+    var output = new TextDecoder().decode(pdf);
     assert.equal((output.match(/endobj/g) || []).length, 3);
   });
 });

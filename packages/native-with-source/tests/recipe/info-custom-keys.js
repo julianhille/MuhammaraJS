@@ -2,6 +2,7 @@ var assert = require("node:assert/strict");
 var fs = require("node:fs");
 var path = require("node:path");
 var muhammara = require("@muhammara/native-with-source");
+var { writeOutput } = require("../helpers/testOutput");
 var Recipe = muhammara.Recipe;
 
 describe("Recipe info custom keys", function () {
@@ -18,10 +19,17 @@ describe("Recipe info custom keys", function () {
       return recipe;
     }
 
-    function readInfo(recipe) {
+    /**
+     * Finishes the Recipe, writes it to tests/output, and reads its Info.
+     * @param {Recipe} recipe The Recipe to finish.
+     * @param {string} name Output name suffix for this case.
+     * @returns {Object<string, *>} The Info dictionary entries.
+     */
+    function readInfo(recipe, name) {
       var bytes = recipe.endPDF(function (output) {
         return output;
       });
+      writeOutput(`info-custom-keys-${mode}-${name}`, bytes);
       var reader = muhammara.createReader(
         new muhammara.PDFRStreamForBuffer(bytes),
       );
@@ -56,7 +64,7 @@ describe("Recipe info custom keys", function () {
         recipe,
       );
       recipe.info({ Extra: "another call" }).custom("Explicit", "X-123");
-      var info = readInfo(recipe);
+      var info = readInfo(recipe, "standard-and-custom");
       assert.equal(info.Author, "A");
       assert.equal(info.Title, "Report");
       assert.equal(info.Subject, "Metadata parity");
@@ -78,7 +86,7 @@ describe("Recipe info custom keys", function () {
         .custom("InfoThenCustom", "new")
         .custom("CustomThenInfo", "old")
         .info({ CustomThenInfo: "new", Repeated: "new" });
-      var info = readInfo(recipe);
+      var info = readInfo(recipe, "last-call-wins");
       assert.equal(info.InfoThenCustom, "new");
       assert.equal(info.CustomThenInfo, "new");
       assert.equal(info.Repeated, "new");
@@ -92,6 +100,7 @@ describe("Recipe info custom keys", function () {
           compress: false,
           ReportId: "not constructor metadata",
         }),
+        "constructor-settings",
       );
       assert.equal(info.Author, "Constructor author");
       ["version", "compress", "ReportId"].forEach(function (key) {

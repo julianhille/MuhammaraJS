@@ -4,6 +4,7 @@ var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
 var Recipe = muhammara.Recipe;
 var fs = require("fs");
+var { writeOutput } = require("../helpers/testOutput");
 
 /** Decodes page streams for structural border assertions. */
 function pageContent(reader, pageIndex) {
@@ -294,11 +295,18 @@ describe("Text - Columns", () => {
 describe("Recipe table layout", () => {
   var directory;
   var output;
+  var outputName;
   var reader;
 
-  beforeEach(() => {
+  beforeEach(function () {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "recipe-table-"));
     output = path.join(directory, "table.pdf");
+    outputName =
+      "table-layout-" +
+      this.currentTest.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
   });
 
   afterEach(() => {
@@ -307,9 +315,15 @@ describe("Recipe table layout", () => {
     fs.rmSync(directory, { recursive: true, force: true });
   });
 
-  /** Finalizes the output and opens the reader owned by this test. */
+  /**
+   * Finalizes the output, copies it to tests/output for review, and opens the
+   * reader owned by this test.
+   * @param {Recipe} recipe The Recipe to finish.
+   * @returns {object} The reader for the finished output.
+   */
   function finish(recipe) {
     recipe.endPage().endPDF();
+    writeOutput(outputName, fs.readFileSync(output));
     reader = muhammara.createReader(output);
     return reader;
   }
@@ -623,6 +637,7 @@ describe("Recipe table layout", () => {
     );
     assert.equal(calls, 1);
     recipe.endPDF(() => {});
+    writeOutput(outputName, fs.readFileSync(output));
   });
 
   it("rejects a continuation without room for its header and first row", function () {

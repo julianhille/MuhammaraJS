@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 var encoder = new TextEncoder();
 var decodedBytes = encoder.encode("decoded flate bytes");
@@ -64,6 +65,7 @@ describe("PDFReader stream byte readers", function () {
     var writer = muhammara.createWriter();
     writer.writePage(writer.createPage(0, 0, 100, 100));
     var bytes = writer.end();
+    writeOutput("PDFStreamReader-clamped-positions", bytes);
     assert.ok(bytes.length < 1024);
 
     var stream = new muhammara.PDFRStreamForBuffer(bytes);
@@ -88,6 +90,7 @@ describe("PDFReader stream byte readers", function () {
   it("provides a reader-owned random-access parser byte handle", async function () {
     var muhammara = await createMuhammaraWasm();
     var bytes = buildFlatePdf();
+    writeOutput("PDFStreamReader-parser-handle", bytes);
     var reader = muhammara.createReader(bytes);
     var parserStream = reader.getParserStream();
 
@@ -129,7 +132,9 @@ describe("PDFReader stream byte readers", function () {
 
   it("reads decoded and plain Flate stream bytes", async function () {
     var muhammara = await createMuhammaraWasm();
-    var reader = muhammara.createReader(buildFlatePdf());
+    var bytes = buildFlatePdf();
+    writeOutput("PDFStreamReader-flate", bytes);
+    var reader = muhammara.createReader(bytes);
     var stream = reader.parseNewObject(4).toPDFStream();
     var decoded = reader.startReadingFromStream(stream);
 
@@ -152,6 +157,7 @@ describe("PDFReader stream byte readers", function () {
   it("rejects invalid, foreign, and ended stream inputs", async function () {
     var muhammara = await createMuhammaraWasm();
     var bytes = buildFlatePdf();
+    writeOutput("PDFStreamReader-invalid-inputs", bytes);
     var reader = muhammara.createReader(bytes);
     var stream = reader.parseNewObject(4).toPDFStream();
     var foreignReader = muhammara.createReader(bytes);

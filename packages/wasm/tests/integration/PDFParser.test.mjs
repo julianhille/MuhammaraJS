@@ -2,6 +2,7 @@
 // SettingInfoValuesFromParsedContentTest.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("PDFParser", function () {
   it("parses byte-backed objects and reuses metadata", async function () {
@@ -23,6 +24,7 @@ describe("PDFParser", function () {
     sourceWriter.startPageContentContext(fallbackPage);
     sourceWriter.writePage(fallbackPage);
     var source = sourceWriter.end();
+    writeOutput("PDFParser-source", source);
 
     var reader = muhammara.createReader(source);
     assert.equal(reader.getPagesCount(), 2);
@@ -106,6 +108,7 @@ describe("PDFParser", function () {
     copyWriter.startPageContentContext(copyPage);
     copyWriter.writePage(copyPage);
     var copied = copyWriter.end();
+    writeOutput("PDFParser-copied-info", copied);
     reader.end();
     assert.throws(() => info.queryObject("Author"), /has ended/);
     assert.throws(() => pageInput.getMediaBox(), /PDF reader has ended/);
@@ -134,6 +137,7 @@ describe("PDFParser", function () {
     writer.startPageContentContext(page).re(10, 10, 20, 20).f();
     writer.writePage(page);
     var bytes = writer.end();
+    writeOutput("PDFParser-invalid-indices", bytes);
 
     var reader = muhammara.createReader(bytes);
     var methods = [

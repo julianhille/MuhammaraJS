@@ -87,6 +87,8 @@ describe("Recipe finalization with an active page", function () {
 
     var implicitBytes = implicit.endPDF();
     var explicitBytes = explicit.endPDF();
+    writeOutput("active-page-finalization-implicit", implicitBytes);
+    writeOutput("active-page-finalization-explicit", explicitBytes);
     assert.equal(
       pageCount(muhammara, implicitBytes),
       pageCount(muhammara, explicitBytes),
@@ -101,6 +103,7 @@ describe("Recipe finalization with an active page", function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();
     var source = new Recipe().createPage(300, 300).endPage().endPDF();
+    writeOutput("active-page-finalization-appendPage-source", source);
     Recipe.registerPdf("active-page-source", source);
     try {
       var recipe = new Recipe();
@@ -130,6 +133,7 @@ describe("Recipe finalization with an active page", function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();
     var source = new Recipe().createPage(300, 300).endPage().endPDF();
+    writeOutput("active-page-finalization-rejected-source", source);
     Recipe.registerPdf("active-page-rejected", source);
     try {
       var recipe = new Recipe();
@@ -142,6 +146,7 @@ describe("Recipe finalization with an active page", function () {
       // The page survived the rejection, so drawing continues on it.
       recipe.text("still here", 10, 40, { font: "arial" });
       var bytes = recipe.endPDF();
+      writeOutput("active-page-finalization-rejected", bytes);
       assert.equal(pageCount(muhammara, bytes), 1);
     } finally {
       Recipe.unregisterPdf("active-page-rejected");
@@ -152,6 +157,7 @@ describe("Recipe finalization with an active page", function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();
     var source = new Recipe().createPage(400, 400).endPage().endPDF();
+    writeOutput("active-page-finalization-edit-source", source);
     var recipe = new Recipe(source);
     recipe.editPage(1).text("edited", 10, 10, { font: "arial" });
 
@@ -167,6 +173,7 @@ describe("Recipe finalization with an active page", function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();
     var source = new Recipe().createPage(400, 400).endPage().endPDF();
+    writeOutput("active-page-finalization-source-mode-source", source);
     Recipe.registerPdf("active-page-source-mode", source);
     try {
       var recipe = new Recipe(source);
@@ -189,11 +196,14 @@ describe("Recipe finalization with an active page", function () {
       .createPage(300, 300)
       .endPage()
       .endPDF();
+    writeOutput("active-page-finalization-deletion-source", source);
     var recipe = new Recipe(source);
     recipe.editPage(1).deletePage(2);
 
     assert.throws(() => recipe.endPDF(), /Finish the current page/);
     // The failed guard runs before finalization, so the document recovers.
-    assert.ok(recipe.endPage().endPDF() instanceof Uint8Array);
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("active-page-finalization-deletion-recovered", bytes);
+    assert.ok(bytes instanceof Uint8Array);
   });
 });

@@ -66,7 +66,7 @@ describe("Recipe foundation", function () {
     assert.deepEqual(recipe.position, { x: 0, y: 0 });
     recipe.endPage().createPage("a4", 90).endPage();
     assert.deepEqual(recipe.pageInfo(2).size, [595.28, 841.89]);
-    recipe.endPDF();
+    writeOutput("foundation-letter-defaults", recipe.endPDF());
   });
 
   it("normalizes center coordinates against the current media box", async function () {
@@ -85,7 +85,9 @@ describe("Recipe foundation", function () {
     });
     assert.deepEqual(recipe._reverseCoordinate(110, 170), { ox: 100, oy: 150 });
     assert.deepEqual(recipe.pageInfo(1).mediaBox, [10, 20, 210, 320]);
-    var reader = muhammara.createReader(recipe.endPage().endPDF());
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("foundation-page-boxes", bytes);
+    var reader = muhammara.createReader(bytes);
     assert.deepEqual(reader.getPageBox(0, "media"), [10, 20, 210, 320]);
     assert.deepEqual(reader.getPageBox(0, "crop"), [11, 21, 209, 319]);
     assert.deepEqual(reader.getPageBox(0, "bleed"), [12, 22, 208, 318]);
@@ -96,9 +98,9 @@ describe("Recipe foundation", function () {
     var numericRecipe = new Recipe()
       .createPage(200, 300)
       .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 210, 320);
-    var numericReader = muhammara.createReader(
-      numericRecipe.endPage().endPDF(),
-    );
+    var numericBytes = numericRecipe.endPage().endPDF();
+    writeOutput("foundation-page-boxes-numeric", numericBytes);
+    var numericReader = muhammara.createReader(numericBytes);
     assert.deepEqual(numericReader.getPageBox(0, "media"), [10, 20, 210, 320]);
     numericReader.end();
   });
@@ -112,6 +114,7 @@ describe("Recipe foundation", function () {
     var bytes = recipe.endPDF((result) => {
       callbackBytes = result;
     });
+    writeOutput("foundation-version-callback", bytes);
     assert.ok(bytes instanceof Uint8Array);
     assert.strictEqual(callbackBytes, bytes);
     assert.strictEqual(recipe.endPDF(), bytes);
@@ -128,6 +131,7 @@ describe("Recipe foundation", function () {
     );
 
     var modified = new Recipe(bytes).editPage(1).endPage().endPDF();
+    writeOutput("foundation-version-callback-modified", modified);
     var modifiedText = new TextDecoder().decode(modified);
     assert.match(modifiedText, /\/source-ModDate \(D:/);
     assert.match(modifiedText, /\/source-Creator \(Muhammara-Recipe/);
@@ -141,6 +145,7 @@ describe("Recipe foundation", function () {
       .rectangle(10, 10, 20, 20, { fill: "#000000" })
       .endPage()
       .endPDF();
+    writeOutput("foundation-paused-edit-source", source);
     var recipe = new Recipe({ compress: false });
     assert.equal(recipe.read(source).pages, 1);
     assert.equal(recipe.pageInfo(1), null);
@@ -154,6 +159,7 @@ describe("Recipe foundation", function () {
     assert.throws(() => recipe.resumeContext(), /No paused page/);
     recipe.rectangle(60, 60, 20, 20, { fill: "#000000" }).endPage();
     var bytes = recipe.endPDF();
+    writeOutput("foundation-paused-edit", bytes);
     assert.ok(bytes instanceof Uint8Array);
     var reader = (await createMuhammaraWasm()).createReader(bytes);
     assert.equal(reader.getPagesCount(), 1);
@@ -177,10 +183,13 @@ describe("Recipe foundation", function () {
   it("creates pages after reading byte source PDFs", async function () {
     var Recipe = await createRecipe();
     var source = new Recipe().createPage(200, 300).endPage().endPDF();
+    writeOutput("foundation-create-after-read-source", source);
     var recipe = new Recipe(source).createPage(400, 500).endPage();
     assert.deepEqual(recipe.pageInfo(2).mediaBox, [0, 0, 400, 500]);
     assert.deepEqual(recipe.position, { x: 0, y: 0 });
-    var reader = (await createMuhammaraWasm()).createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("foundation-create-after-read", bytes);
+    var reader = (await createMuhammaraWasm()).createReader(bytes);
     assert.equal(reader.getPagesCount(), 2);
     assert.deepEqual(reader.getPageInfo(1).mediaBox, [0, 0, 400, 500]);
     reader.end();
@@ -194,21 +203,28 @@ describe("Recipe foundation", function () {
     assert.throws(() => recipe.pauseContext(), /No active page/);
     assert.throws(() => recipe.resumeContext(), /No paused page/);
     var source = new Recipe().createPage().endPage().endPDF();
+    writeOutput("foundation-edit-lifecycle-source", source);
     recipe = new Recipe(source);
     assert.throws(() => recipe.editPage(2), /pageNumber/);
     recipe.editPage(1);
     // endPDF() finishes the edited page itself, so no guard fires here.
-    assert.ok(recipe.endPDF() instanceof Uint8Array);
+    var bytes = recipe.endPDF();
+    writeOutput("foundation-edit-lifecycle", bytes);
+    assert.ok(bytes instanceof Uint8Array);
   });
 
   it("inspects Blob input asynchronously without entering source mode", async function () {
     var Recipe = await createRecipe();
     var source = new Recipe().createPage().endPage().endPDF();
+    writeOutput("foundation-blob-inspect-source", source);
     var recipe = new Recipe();
     var metadata = await recipe.readAsync(new Blob([source]));
     assert.equal(metadata.pages, 1);
     assert.throws(() => recipe.editPage(1), /constructed from PDF bytes/);
-    recipe.createPage().endPage().endPDF();
+    writeOutput(
+      "foundation-blob-inspect",
+      recipe.createPage().endPage().endPDF(),
+    );
   });
 
   it("registers byte fonts by family and selects their requested style", async function () {
@@ -222,7 +238,7 @@ describe("Recipe foundation", function () {
     assert.ok(
       recipe.textDimensions("styled", { font: "arial", bold: true }).width > 0,
     );
-    recipe.endPDF();
+    writeOutput("foundation-font-styles", recipe.endPDF());
   });
 
   it("uses explicit async byte asset APIs and rejects paths and encrypted sources", async function () {
@@ -231,6 +247,7 @@ describe("Recipe foundation", function () {
       await readFile("tests/TestMaterials/fonts/arial.ttf"),
     );
     var source = new Recipe().createPage().endPage().endPDF();
+    writeOutput("foundation-async-assets-source", source);
     await Recipe.registerFontAsync("async-font", new Blob([font]), "italic");
     await Recipe.registerImageAsync("async-image", new Blob([font]), "png");
     await Recipe.registerPdfAsync("async-pdf", new Blob([source]));
@@ -250,7 +267,7 @@ describe("Recipe foundation", function () {
       () => recipe.register("toString", function toString() {}),
       /already exists/,
     );
-    recipe.endPDF();
+    writeOutput("foundation-extension-names", recipe.endPDF());
   });
 
   it("uses modifier-safe Recipe links, images, and clipping", async function () {
@@ -265,6 +282,7 @@ describe("Recipe foundation", function () {
       .createPage(200, 200)
       .endPage()
       .endPDF();
+    writeOutput("foundation-links-images-clip-source", source);
     var recipe = new Recipe(source, { compress: false });
     recipe.registerFont("instance-font", font);
     await recipe.registerFontAsync("instance-font-async", new Blob([font]));

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 function readStreamIVs(pdf) {
   var marker = new TextEncoder().encode("stream");
@@ -26,12 +27,14 @@ describe("Xcryption", function () {
   it("adds, changes, and removes passwords from byte PDFs", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(100, 100);
+    writeOutput("Xcryption-recrypt-source", source);
     var encrypted = muhammara.recrypt(source, {
       userPassword: "view",
       ownerPassword: "edit",
       userProtectionFlag: 4,
       version: muhammara.ePDFVersion17,
     });
+    writeOutput("Xcryption-recrypt-encrypted", encrypted);
     var encryptedReader = muhammara.createReader(encrypted);
     assert.equal(encryptedReader.isEncrypted(), true);
     encryptedReader.end();
@@ -41,7 +44,9 @@ describe("Xcryption", function () {
       userPassword: "new-view",
       ownerPassword: "new-edit",
     });
+    writeOutput("Xcryption-recrypt-changed", changed);
     var plain = muhammara.recrypt(changed, { password: "new-view" });
+    writeOutput("Xcryption-recrypt-plain", plain);
     var plainReader = muhammara.createReader(plain);
     assert.equal(plainReader.isEncrypted(), false);
     assert.equal(plainReader.getPagesCount(), 1);
@@ -57,13 +62,14 @@ describe("Xcryption", function () {
     });
     writer.writePage(writer.createPage(0, 0, 595, 842));
     var encrypted = writer.end();
+    writeOutput("Xcryption-writer-encrypted", encrypted);
     var reader = muhammara.createReader(encrypted);
     assert.equal(reader.isEncrypted(), true);
     reader.end();
     for (var password of ["user", "owner"]) {
-      var plainReader = muhammara.createReader(
-        muhammara.recrypt(encrypted, { password }),
-      );
+      var decrypted = muhammara.recrypt(encrypted, { password });
+      writeOutput("Xcryption-writer-decrypted-" + password, decrypted);
+      var plainReader = muhammara.createReader(decrypted);
       assert.equal(plainReader.isEncrypted(), false);
       assert.deepEqual(
         plainReader.parsePage(0).getMediaBox(),
@@ -103,7 +109,9 @@ describe("Xcryption", function () {
     // An owner password alone does not encrypt, as in native.
     var ownerOnly = muhammara.createWriter({ ownerPassword: "owner" });
     ownerOnly.writePage(ownerOnly.createPage(0, 0, 10, 10));
-    var ownerOnlyReader = muhammara.createReader(ownerOnly.end());
+    var ownerOnlyPdf = ownerOnly.end();
+    writeOutput("Xcryption-writer-owner-only", ownerOnlyPdf);
+    var ownerOnlyReader = muhammara.createReader(ownerOnlyPdf);
     assert.equal(ownerOnlyReader.isEncrypted(), false);
     ownerOnlyReader.end();
 
@@ -135,7 +143,9 @@ describe("Xcryption", function () {
   it("keeps the native recrypt option defaults", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(100, 100);
+    writeOutput("Xcryption-defaults-source", source);
     var encrypted = muhammara.recrypt(source, { userPassword: "" });
+    writeOutput("Xcryption-defaults-encrypted", encrypted);
     var reader = muhammara.createReader(encrypted);
     assert.equal(reader.isEncrypted(), true);
     reader.end();
@@ -148,15 +158,18 @@ describe("Xcryption", function () {
   it("uses the native RC4 and AES-128 version selection", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(100, 100);
+    writeOutput("Xcryption-versions-source", source);
     for (var version of [10, 14, 17]) {
       var encrypted = muhammara.recrypt(source, {
         userPassword: "view",
         version,
       });
+      writeOutput("Xcryption-version-" + version + "-encrypted", encrypted);
       var reader = muhammara.createReader(encrypted);
       assert.equal(reader.isEncrypted(), true);
       reader.end();
       var plain = muhammara.recrypt(encrypted, { password: "view" });
+      writeOutput("Xcryption-version-" + version + "-plain", plain);
       var plainReader = muhammara.createReader(plain);
       assert.equal(plainReader.isEncrypted(), false);
       plainReader.end();
@@ -166,6 +179,7 @@ describe("Xcryption", function () {
   it("rejects unsupported PDF 2.0 AES-256 encryption", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(100, 100);
+    writeOutput("Xcryption-aes256-source", source);
     assert.throws(
       () =>
         muhammara.recrypt(source, {
@@ -185,11 +199,14 @@ describe("Xcryption", function () {
       writer.writePage(page);
     }
 
-    var encrypted = muhammara.recrypt(writer.end(), {
+    var source = writer.end();
+    writeOutput("Xcryption-aes-iv-source", source);
+    var encrypted = muhammara.recrypt(source, {
       userPassword: "view",
       version: muhammara.ePDFVersion17,
       compress: false,
     });
+    writeOutput("Xcryption-aes-iv-encrypted", encrypted);
     var ivs = readStreamIVs(encrypted);
     assert.ok(ivs.length >= 2);
     assert.notDeepEqual(ivs[0], ivs[1]);

@@ -91,6 +91,7 @@ describe("Modify", () => {
     recipe.endPDF((buffer) => {
       outBuffer = buffer;
     });
+    writeOutput("createWithBuffer-version-1-4", outBuffer);
     assert.equal(outBuffer.subarray(0, 8).toString(), "%PDF-1.4");
   });
 

@@ -3,6 +3,7 @@ var fs = require("fs");
 var os = require("os");
 var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
+var { writeOutput } = require("./helpers/testOutput");
 
 function createEncryptedPdf(outputPath, version) {
   var writer = muhammara.createWriter(outputPath, {
@@ -50,9 +51,19 @@ describe("Encryption algorithms", function () {
     fs.rmSync(outputDirectory, { recursive: true, force: true });
   });
 
+  /**
+   * Encrypts a one-page PDF for the given version, writes it to the test
+   * output, and asserts on its encryption dictionary and readability.
+   * @param {number} version PDF version constant (`muhammara.ePDFVersion*`).
+   * @param {string[]} expectedValues Fragments the encryption dictionary must contain.
+   */
   function assertEncryptionDictionary(version, expectedValues) {
     var outputPath = path.join(outputDirectory, `version-${version}.pdf`);
     createEncryptedPdf(outputPath, version);
+    writeOutput(
+      "EncryptionAlgorithms-version-" + version,
+      fs.readFileSync(outputPath),
+    );
 
     var pdf = fs.readFileSync(outputPath, "latin1");
     expectedValues.forEach(function (value) {
@@ -115,6 +126,10 @@ describe("Encryption algorithms", function () {
       writer.writePage(page);
     }
     writer.end();
+    writeOutput(
+      "EncryptionAlgorithms-distinct-aes-ivs",
+      fs.readFileSync(outputPath),
+    );
 
     var ivs = readStreamIVs(fs.readFileSync(outputPath));
     assert.isAtLeast(ivs.length, 2);

@@ -85,19 +85,21 @@ describe("Recipe colors, shapes, and images", function () {
       })
       .drawRectangle(328, 700, 100, 50, { type: "fill", color: "teal" });
     writer.writePage(page);
-    var lowLevel = new TextDecoder("latin1").decode(writer.end());
+    var lowLevelBytes = writer.end();
+    writeOutput("colors-shapes-images-how-to-low-level", lowLevelBytes);
+    var lowLevel = new TextDecoder("latin1").decode(lowLevelBytes);
     assert.match(lowLevel, /0\.50\d* g/);
     assert.match(lowLevel, /0 1 0 0 k/);
     assert.match(lowLevel, /0 0\.50\d* 0\.50\d* rg/);
-    var recipe = new TextDecoder("latin1").decode(
-      new Recipe({ compress: false })
-        .createPage(595, 842)
-        .rectangle(72, 72, 100, 50, { fill: "#80" })
-        .rectangle(200, 72, 100, 50, { fill: "#00ff0000" })
-        .rectangle(328, 72, 100, 50, { fill: [0, 0, 0, 255] })
-        .endPage()
-        .endPDF(),
-    );
+    var recipeBytes = new Recipe({ compress: false })
+      .createPage(595, 842)
+      .rectangle(72, 72, 100, 50, { fill: "#80" })
+      .rectangle(200, 72, 100, 50, { fill: "#00ff0000" })
+      .rectangle(328, 72, 100, 50, { fill: [0, 0, 0, 255] })
+      .endPage()
+      .endPDF();
+    writeOutput("colors-shapes-images-how-to-recipe", recipeBytes);
+    var recipe = new TextDecoder("latin1").decode(recipeBytes);
     assert.match(recipe, /0\.50\d* g/);
     assert.match(recipe, /0 1 0 0 k/);
     assert.match(recipe, /0 0 0 1 k/);
@@ -132,7 +134,10 @@ describe("Recipe colors, shapes, and images", function () {
       );
     });
     assert.equal({}.polluted, undefined);
-    recipe.endPage().endPDF();
+    writeOutput(
+      "colors-shapes-images-unknown-colorspace",
+      recipe.endPage().endPDF(),
+    );
   });
 
   it("keeps registered colors per Recipe and ignores inherited names", async function () {
@@ -150,6 +155,7 @@ describe("Recipe colors, shapes, and images", function () {
       .rectangle(40, 10, 20, 20, { fill: "__proto__" })
       .endPage()
       .endPDF();
+    writeOutput("colors-shapes-images-per-recipe-colors", bytes);
     var reader = muhammara.createReader(bytes);
     var content = [];
     for (var id = 1; id < reader.getXrefSize(); id++) {
@@ -162,7 +168,7 @@ describe("Recipe colors, shapes, and images", function () {
     }
     reader.end();
     assert.match(content.join("\n"), /0\.070588 0\.203922 0\.337255 rg/);
-    other.endPDF();
+    writeOutput("colors-shapes-images-per-recipe-colors-other", other.endPDF());
   });
 
   it("places registered byte images with fit, alignment, transforms, and reuse", async function () {
@@ -234,6 +240,7 @@ describe("Recipe colors, shapes, and images", function () {
       .rectangle(1, 1, 1, 1, { fill: "#000000" })
       .endPage()
       .endPDF();
+    writeOutput("colors-shapes-images-polygon-derived-source", source);
     var recipe = new Recipe(source, { compress: false })
       .editPage(1)
       .polygon(
@@ -308,35 +315,38 @@ describe("Recipe colors, shapes, and images", function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe().createPage();
     assert.throws(() => recipe.chroma("!load", "colors.json"), /!load/);
-    recipe.endPage().endPDF();
+    writeOutput(
+      "colors-shapes-images-chroma-loader",
+      recipe.endPage().endPDF(),
+    );
   });
 
   it("names Separation inks freely and keeps the first color of a shared ink", async function () {
     var Recipe = await getRecipe();
-    var raw = new TextDecoder("latin1").decode(
-      new Recipe({ compress: false })
-        .createPage(200, 200)
-        .chroma("__proto__", "#ff0000", "separation")
-        .chroma("constructor", "#0000ff", "separation")
-        .rectangle(10, 10, 20, 20, {
-          fill: "__proto__",
-          colorspace: "separation",
-        })
-        .rectangle(40, 10, 20, 20, {
-          fill: "constructor",
-          colorspace: "separation",
-        })
-        // A stroke resolves before the fill, so its color is the ink
-        // alternate, as in native.
-        .rectangle(70, 10, 40, 40, {
-          fill: "#ff0000",
-          stroke: "#00ff00",
-          colorName: "ink",
-          colorspace: "separation",
-        })
-        .endPage()
-        .endPDF(),
-    );
+    var separationBytes = new Recipe({ compress: false })
+      .createPage(200, 200)
+      .chroma("__proto__", "#ff0000", "separation")
+      .chroma("constructor", "#0000ff", "separation")
+      .rectangle(10, 10, 20, 20, {
+        fill: "__proto__",
+        colorspace: "separation",
+      })
+      .rectangle(40, 10, 20, 20, {
+        fill: "constructor",
+        colorspace: "separation",
+      })
+      // A stroke resolves before the fill, so its color is the ink
+      // alternate, as in native.
+      .rectangle(70, 10, 40, 40, {
+        fill: "#ff0000",
+        stroke: "#00ff00",
+        colorName: "ink",
+        colorspace: "separation",
+      })
+      .endPage()
+      .endPDF();
+    writeOutput("colors-shapes-images-separation-ink-names", separationBytes);
+    var raw = new TextDecoder("latin1").decode(separationBytes);
     assert.equal(raw.match(/\/Separation \/__proto__ \/DeviceRGB/g)?.length, 1);
     assert.equal(
       raw.match(/\/Separation \/constructor \/DeviceRGB/g)?.length,
@@ -366,6 +376,7 @@ describe("Recipe colors, shapes, and images", function () {
       )
       .endPage()
       .endPDF();
+    writeOutput("colors-shapes-images-stroke-with-color", bytes);
     var reader = muhammara.createReader(bytes);
     var content = [];
     for (var id = 1; id < reader.getXrefSize(); id++) {
@@ -390,6 +401,7 @@ describe("Recipe colors, shapes, and images", function () {
       var Recipe = await getRecipe();
       var muhammara = await createMuhammaraWasm();
       var source = new Recipe().createPage(200, 200).endPage().endPDF();
+      writeOutput(`colors-shapes-images-separation-${mode}-source`, source);
       var recipe =
         mode === "new"
           ? new Recipe({ compress: false }).createPage(200, 200)

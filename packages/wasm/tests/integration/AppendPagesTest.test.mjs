@@ -23,6 +23,7 @@ describe("AppendPagesTest", function () {
 
   it("appends all pages and zero-based inclusive ranges, returning page IDs", function () {
     var source = sourcePdf(4);
+    writeOutput("AppendPagesTest-source", source);
     var writer = muhammara.createWriter();
     var allIds = writer.appendPDFPagesFromPDF(source);
     var rangeIds = writer.appendPDFPagesFromPDF(source, {
@@ -48,10 +49,13 @@ describe("AppendPagesTest", function () {
 
   it("accepts Blob through the async variant", async function () {
     var writer = muhammara.createWriter();
-    var ids = await writer.appendPDFPagesFromPDFAsync(new Blob([sourcePdf(1)]));
+    var blobSource = sourcePdf(1);
+    writeOutput("AppendPagesTest-async-blob-source", blobSource);
+    var ids = await writer.appendPDFPagesFromPDFAsync(new Blob([blobSource]));
     assert.equal(ids.length, 1);
     // Any structural BlobLike is accepted, as AsyncByteSource declares.
     var bytes = sourcePdf(1);
+    writeOutput("AppendPagesTest-async-bloblike-source", bytes);
     var blobLike = {
       size: bytes.length,
       type: "application/pdf",
@@ -59,7 +63,9 @@ describe("AppendPagesTest", function () {
       slice: () => blobLike,
     };
     assert.equal((await writer.appendPDFPagesFromPDFAsync(blobLike)).length, 1);
-    assert.ok(writer.end() instanceof Uint8Array);
+    var output = writer.end();
+    writeOutput("AppendPagesTest-async", output);
+    assert.ok(output instanceof Uint8Array);
   });
 
   it("rejects malformed, encrypted, invalid, active, and ended writer inputs", async function () {
@@ -102,16 +108,25 @@ describe("AppendPagesTest", function () {
       /active page/,
     );
     writer.writePage(page);
-    writer.end();
+    writeOutput("AppendPagesTest-rejects-ended-writer", writer.end());
     assert.throws(
       () => writer.appendPDFPagesFromPDF(sourcePdf(1)),
       /has ended/,
     );
   });
 
-  /** Asserts that a native modifier append failure makes the modifier terminal. */
-  function assertModifierEndedAfterAppendFailure(source, expectedMessage) {
-    var writer = muhammara.createWriterToModify(sourcePdf(1));
+  /**
+   * Asserts that a native modifier append failure makes the modifier terminal.
+   * The modified source PDF is written to the test output as `outputName`.
+   */
+  function assertModifierEndedAfterAppendFailure(
+    source,
+    expectedMessage,
+    outputName,
+  ) {
+    var modifiedSource = sourcePdf(1);
+    writeOutput(outputName, modifiedSource);
+    var writer = muhammara.createWriterToModify(modifiedSource);
     assert.throws(() => writer.appendPDFPagesFromPDF(source), {
       message: expectedMessage,
     });
@@ -128,14 +143,17 @@ describe("AppendPagesTest", function () {
     assertModifierEndedAfterAppendFailure(
       new Uint8Array([1, 2, 3]),
       "Unable to append PDF pages from input bytes",
+      "AppendPagesTest-sync-failure-malformed-source",
     );
     assertModifierEndedAfterAppendFailure(
       new Uint8Array(await readFile("tests/TestMaterials/Protected.pdf")),
       "Encrypted PDF input is not supported in Wasm",
+      "AppendPagesTest-sync-failure-encrypted-source",
     );
     assertModifierEndedAfterAppendFailure(
       new Uint8Array(await readFile("tests/TestMaterials/appendbreaks.pdf")),
       "Unable to append PDF pages from input bytes",
+      "AppendPagesTest-sync-failure-appendbreaks-source",
     );
   });
 
@@ -150,7 +168,9 @@ describe("AppendPagesTest", function () {
       ],
       [protectedPdf, "Encrypted PDF input is not supported in Wasm"],
     ]) {
-      var writer = muhammara.createWriterToModify(sourcePdf(1));
+      var modifiedSource = sourcePdf(1);
+      writeOutput("AppendPagesTest-async-failure-source", modifiedSource);
+      var writer = muhammara.createWriterToModify(modifiedSource);
       await assert.rejects(
         () => writer.appendPDFPagesFromPDFAsync(new Blob([source])),
         { message: expectedMessage },
@@ -167,6 +187,7 @@ describe("AppendPagesTest", function () {
 
   it("keeps modifiers open after JavaScript append validation failures", function () {
     var source = sourcePdf(1);
+    writeOutput("AppendPagesTest-validation-source", source);
     var writer = muhammara.createWriterToModify(source);
     assert.throws(
       () =>
@@ -177,6 +198,8 @@ describe("AppendPagesTest", function () {
       /specificRanges/,
     );
     assert.equal(writer.appendPDFPagesFromPDF(source).length, 1);
-    assert.ok(writer.end() instanceof Uint8Array);
+    var output = writer.end();
+    writeOutput("AppendPagesTest-validation-modified", output);
+    assert.ok(output instanceof Uint8Array);
   });
 });

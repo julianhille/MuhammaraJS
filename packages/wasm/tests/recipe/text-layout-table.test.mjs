@@ -249,7 +249,7 @@ describe("Recipe text layout and tables", function () {
     });
     assert.deepEqual(radii, [5]);
     assert.equal(style.borderRadius, true, "the caller's style is unchanged");
-    recipe.endPage().endPDF();
+    writeOutput("text-layout-table-border-radius", recipe.endPage().endPDF());
   });
 
   it("clips complete text-box lines and reports the remainder", async function () {

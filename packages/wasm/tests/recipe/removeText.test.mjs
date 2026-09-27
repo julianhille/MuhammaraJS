@@ -115,6 +115,7 @@ describe("Remove text", function () {
         "0 0 1 rg 100 100 20 20 re f",
       ].join("\n"),
     );
+    writeOutput("removeText-operators-source", source);
     assert.ok(readPage(muhammara, source).text.length > 0);
 
     var output = new Recipe(source).removeText(1).endPDF();
@@ -139,17 +140,18 @@ describe("Remove text", function () {
 
   it("removes text from painted Form XObjects when forms is set", async function () {
     var source = await writeSource(muhammara);
+    writeOutput("removeText-forms-source", source);
     var edited = new Recipe(source)
       .editPage(1)
       .text("Added", 50, 50, { font: "arial" })
       .endPage()
       .endPDF();
+    writeOutput("removeText-forms-edited", edited);
     assert.match(readPage(muhammara, edited).forms, /\bTj\b/);
 
-    var pageOnly = readPage(
-      muhammara,
-      new Recipe(edited).removeText(1).endPDF(),
-    );
+    var pageOnlyBytes = new Recipe(edited).removeText(1).endPDF();
+    writeOutput("removeText-forms-page-only", pageOnlyBytes);
+    var pageOnly = readPage(muhammara, pageOnlyBytes);
     assert.deepEqual(pageOnly.text, []);
     assert.match(pageOnly.forms, /\bTj\b/);
 
@@ -162,12 +164,12 @@ describe("Remove text", function () {
     assert.doesNotMatch(result.forms, /\bTj\b/);
     assert.match(result.forms, /\bTf\b/);
 
-    var twice = latin1(
-      new Recipe(edited)
-        .removeText(1, { forms: true })
-        .removeText(1, { forms: true })
-        .endPDF(),
-    );
+    var twiceBytes = new Recipe(edited)
+      .removeText(1, { forms: true })
+      .removeText(1, { forms: true })
+      .endPDF();
+    writeOutput("removeText-forms-twice", twiceBytes);
+    var twice = latin1(twiceBytes);
     var update = twice.slice(twice.lastIndexOf("%%EOF", twice.length - 8));
     var objectIds = update.match(/^\d+(?= 0 obj)/gm);
     assert.equal(new Set(objectIds).size, objectIds.length);
@@ -175,34 +177,34 @@ describe("Remove text", function () {
 
   it("keeps text added with editPage in either order", async function () {
     var source = await writeSource(muhammara);
+    writeOutput("removeText-edit-order-source", source);
 
-    var removedFirst = readPage(
-      muhammara,
-      new Recipe(source)
-        .removeText(1)
-        .editPage(1)
-        .text("OCR", 20, 30, { font: "arial" })
-        .endPage()
-        .endPDF(),
-    );
+    var removedFirstBytes = new Recipe(source)
+      .removeText(1)
+      .editPage(1)
+      .text("OCR", 20, 30, { font: "arial" })
+      .endPage()
+      .endPDF();
+    writeOutput("removeText-edit-order-removed-first", removedFirstBytes);
+    var removedFirst = readPage(muhammara, removedFirstBytes);
     assert.ok(!removedFirst.content.includes("Visible"));
     assert.match(removedFirst.forms, /\bTj\b/);
 
-    var editedFirst = readPage(
-      muhammara,
-      new Recipe(source)
-        .editPage(1)
-        .text("OCR", 20, 30, { font: "arial" })
-        .endPage()
-        .removeText(1)
-        .endPDF(),
-    );
+    var editedFirstBytes = new Recipe(source)
+      .editPage(1)
+      .text("OCR", 20, 30, { font: "arial" })
+      .endPage()
+      .removeText(1)
+      .endPDF();
+    writeOutput("removeText-edit-order-edited-first", editedFirstBytes);
+    var editedFirst = readPage(muhammara, editedFirstBytes);
     assert.ok(!editedFirst.content.includes("Visible"));
     assert.match(editedFirst.forms, /\bTj\b/);
   });
 
   it("validates the page number", async function () {
     var source = await writeSource(muhammara);
+    writeOutput("removeText-validation-source", source);
     var recipe = new Recipe(source);
 
     assert.throws(() => recipe.removeText(), {
@@ -221,6 +223,6 @@ describe("Remove text", function () {
       name: "RangeError",
       message: "removeText page 2 does not exist",
     });
-    recipe.endPDF();
+    writeOutput("removeText-validation", recipe.endPDF());
   });
 });

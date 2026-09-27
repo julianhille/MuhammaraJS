@@ -3,6 +3,7 @@ var fs = require("node:fs");
 var os = require("node:os");
 var path = require("node:path");
 var muhammara = require("@muhammara/native-with-source");
+var { writeOutput } = require("../helpers/testOutput");
 
 function readAnnotations(reader, pageIndex = 0) {
   var page = reader.parsePage(pageIndex).getDictionary();
@@ -75,11 +76,18 @@ function readPageForms(reader, pageIndex = 0) {
 describe("Recipe annotation parity", function () {
   var directory;
   var output;
+  var outputName;
   var reader;
 
   beforeEach(function () {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "annotation-parity-"));
     output = path.join(directory, "annotations.pdf");
+    outputName =
+      "annotation-parity-" +
+      this.currentTest.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
   });
 
   afterEach(function () {
@@ -88,19 +96,19 @@ describe("Recipe annotation parity", function () {
     fs.rmSync(directory, { recursive: true, force: true });
   });
 
+  /**
+   * Finalizes the output, copies it to tests/output for review, and reads the
+   * first page's annotations.
+   * @param {Recipe} recipe The Recipe to finish.
+   * @returns {Promise<object[]>} The first page's annotations.
+   */
   async function finish(recipe) {
     await new Promise(function (resolve) {
       recipe.endPage().endPDF(resolve);
     });
+    writeOutput(outputName, fs.readFileSync(output));
     reader = muhammara.createReader(output);
     return readAnnotations(reader);
-  }
-
-  /** Copies the generated PDF to tests/output/<name>.pdf for manual review. */
-  function writeOutput(name) {
-    var directory = path.join(__dirname, "../output");
-    fs.mkdirSync(directory, { recursive: true });
-    fs.copyFileSync(output, path.join(directory, name + ".pdf"));
   }
 
   ["new", "edited"].forEach(function (mode) {
@@ -113,6 +121,7 @@ describe("Recipe annotation parity", function () {
             .endPage()
             .endPDF(resolve);
         });
+        writeOutput(`${outputName}-source`, fs.readFileSync(source));
         var recipe = new muhammara.Recipe(
           mode === "new" ? "new" : source,
           output,
@@ -183,6 +192,7 @@ describe("Recipe annotation parity", function () {
             .endPage()
             .endPDF(resolve);
         });
+        writeOutput(`${outputName}-source`, fs.readFileSync(source));
         var recipe = new muhammara.Recipe(
           mode === "new" ? "new" : source,
           output,
@@ -256,6 +266,7 @@ describe("Recipe annotation parity", function () {
     await new Promise(function (resolve) {
       recipe.endPage().endPDF(resolve);
     });
+    writeOutput(outputName, fs.readFileSync(output));
     reader = muhammara.createReader(output);
     assert.equal(overflows, 2);
     assert.equal(reader.getPagesCount(), 3);
@@ -289,6 +300,7 @@ describe("Recipe annotation parity", function () {
     await new Promise(function (resolve) {
       recipe.endPDF(resolve);
     });
+    writeOutput(outputName, fs.readFileSync(output));
     reader = muhammara.createReader(output);
     assert.equal(clipped, true);
     assert.deepEqual(
@@ -307,6 +319,7 @@ describe("Recipe annotation parity", function () {
         .endPage()
         .endPDF(resolve);
     });
+    writeOutput(`${outputName}-source`, fs.readFileSync(source));
     var recipe = new muhammara.Recipe(source, output).editPage(1);
     var overflows = 0;
     recipe
@@ -491,7 +504,7 @@ describe("Recipe annotation parity", function () {
       })
       .text("Hello", 50, 200, { font: "arial", highlight: true });
     var annotations = await finish(recipe);
-    writeOutput("text-markup-annotations");
+    writeOutput("text-markup-annotations", fs.readFileSync(output));
     /** Reads a numeric PDF array from an annotation dictionary. */
     var numbers = (value) =>
       value
@@ -547,7 +560,7 @@ describe("Recipe annotation parity", function () {
     await new Promise(function (resolve) {
       recipe.endPage().endPDF(resolve);
     });
-    writeOutput("html-underline-strikeout-lines");
+    writeOutput("html-underline-strikeout-lines", fs.readFileSync(output));
     reader = muhammara.createReader(output);
     var page = reader.parsePage(0).getDictionary();
     assert.equal(page.exists("Annots"), false, "HTML markup is not annotated");
@@ -602,6 +615,7 @@ describe("Recipe annotation parity", function () {
     await new Promise(function (resolve) {
       recipe.endPage().endPDF(resolve);
     });
+    writeOutput(outputName, fs.readFileSync(output));
     reader = muhammara.createReader(output);
     assert.equal(readAnnotations(reader, 1).length, 1);
   });
@@ -618,6 +632,7 @@ describe("Recipe annotation parity", function () {
     await new Promise(function (resolve) {
       recipe.endPage().endPDF(resolve);
     });
+    writeOutput(outputName, fs.readFileSync(output));
     reader = muhammara.createReader(output);
     assert.deepEqual(
       readAnnotations(reader).map(
@@ -634,6 +649,7 @@ describe("Recipe annotation parity", function () {
     await new Promise(function (resolve) {
       recipe.endPage().endPDF(resolve);
     });
+    writeOutput(outputName, fs.readFileSync(output));
     reader = muhammara.createReader(output);
     var dictionary = readAnnotations(reader)[0].dictionary;
     assert.equal(dictionary.Subtype.value, "Highlight");
@@ -650,6 +666,7 @@ describe("Recipe annotation parity", function () {
     await new Promise(function (resolve) {
       recipe.endPage().endPDF(resolve);
     });
+    writeOutput(outputName, fs.readFileSync(output));
     reader = muhammara.createReader(output);
     var rect = readAnnotations(reader)[0]
       .dictionary.Rect.toJSArray()
@@ -712,6 +729,7 @@ describe("Recipe annotation parity", function () {
     await new Promise(function (resolve) {
       editor.endPage().endPDF(resolve);
     });
+    writeOutput(`${outputName}-edited`, fs.readFileSync(edited));
     reader = muhammara.createReader(edited);
     assert.match(readPageContent(reader), /Commented text/);
     assert.match(readPageForms(reader), /Tj/);
@@ -735,6 +753,7 @@ describe("Recipe annotation parity", function () {
           .endPage()
           .endPDF(resolve);
       });
+      writeOutput(`${outputName}-source`, fs.readFileSync(source));
       var recipe = new muhammara.Recipe(
         mode === "new" ? "new" : source,
         output,
@@ -761,6 +780,7 @@ describe("Recipe annotation parity", function () {
       await new Promise(function (resolve) {
         recipe.endPage().endPDF(resolve);
       });
+      writeOutput(outputName, fs.readFileSync(output));
       reader = muhammara.createReader(output);
       var pageIndex = mode === "added" ? 1 : 0;
       var annotations = readAnnotations(reader, pageIndex);
@@ -800,6 +820,7 @@ describe("Recipe annotation parity", function () {
         .endPage()
         .endPDF(resolve);
     });
+    writeOutput(`${outputName}-source`, fs.readFileSync(source));
     var xml = '<?xml version="1.0"?><body><p>Supplied.</p></body>';
     for (var mode of ["new", "edited"]) {
       var recipe = new muhammara.Recipe(
@@ -814,6 +835,7 @@ describe("Recipe annotation parity", function () {
       await new Promise(function (resolve) {
         recipe.endPage().endPDF(resolve);
       });
+      writeOutput(`${outputName}-${mode}`, fs.readFileSync(output));
       reader = muhammara.createReader(output);
       var annotations = readAnnotations(reader);
       assert.equal(annotations[0].dictionary.Contents.toText(), "Größe ✓");
@@ -834,6 +856,7 @@ describe("Recipe annotation parity", function () {
           .endPage()
           .endPDF(resolve);
       });
+      writeOutput(`${outputName}-source`, fs.readFileSync(source));
       var recipe = new muhammara.Recipe(
         mode === "new" ? "new" : source,
         output,
@@ -904,6 +927,7 @@ describe("Recipe annotation parity", function () {
           .endPage()
           .endPDF(resolve);
       });
+      writeOutput(`${outputName}-source`, fs.readFileSync(source));
       var recipe = new muhammara.Recipe(
         mode === "new" ? "new" : source,
         output,
@@ -933,6 +957,7 @@ describe("Recipe annotation parity", function () {
           .endPage()
           .endPDF(resolve);
       });
+      writeOutput(`${outputName}-source`, fs.readFileSync(source));
       var recipe = new muhammara.Recipe(
         mode === "new" ? "new" : source,
         output,
@@ -965,6 +990,7 @@ describe("Recipe annotation parity", function () {
           .endPage()
           .endPDF(resolve);
       });
+      writeOutput(`${outputName}-source`, fs.readFileSync(source));
       var recipe = new muhammara.Recipe(
         mode === "new" ? "new" : source,
         output,

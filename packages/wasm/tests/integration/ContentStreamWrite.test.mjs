@@ -62,7 +62,7 @@ describe("ContentStreamWrite", function () {
     var context = writer.startPageContentContext(page);
     var streamWriter = context.getCurrentPageContentStream().getWriteStream();
     writer.writePage(page);
-    writer.end();
+    writeOutput("ContentStreamWrite-ended-writer", writer.end());
     assert.throws(() => streamWriter.write(new Uint8Array()), /not active/);
   });
 });

@@ -2,6 +2,7 @@ var assert = require("node:assert/strict");
 var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
 var Recipe = muhammara.Recipe;
+var { writeOutput } = require("../helpers/testOutput");
 
 var FONT = path.join(__dirname, "../TestMaterials/fonts/arial.ttf");
 var BOX_X = 20;
@@ -42,7 +43,14 @@ function textStarts(bytes) {
   );
 }
 
-/** Lays a single text box out with the shared Arial fixture. */
+/**
+ * Lays a single text box out with the shared Arial fixture, writes the PDF to
+ * tests/output, and returns the start x of every text run.
+ * @param {string} text Text or HTML to lay out.
+ * @param {boolean} html Whether `text` is HTML.
+ * @param {string} textAlign Text box alignment.
+ * @returns {number[]} Start x of every text run, in drawing order.
+ */
 function layout(text, html, textAlign) {
   var recipe = new Recipe(Buffer.from("new")).createPage(300, 300);
   recipe.registerFont("arial", FONT);
@@ -52,11 +60,15 @@ function layout(text, html, textAlign) {
     html: html,
     textBox: { width: BOX_WIDTH, padding: 0, textAlign: textAlign },
   });
-  return textStarts(
-    recipe.endPage().endPDF(function (bytes) {
-      return bytes;
-    }),
+  var bytes = recipe.endPage().endPDF(function (output) {
+    return output;
+  });
+  var slug = text.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  writeOutput(
+    `text-html-align-${textAlign}-${html ? "html" : "plain"}-${slug}`,
+    bytes,
   );
+  return textStarts(bytes);
 }
 
 describe("Recipe HTML text alignment", function () {
@@ -92,7 +104,12 @@ describe("Recipe HTML text alignment", function () {
     var recipe = new Recipe(Buffer.from("new")).createPage(300, 300);
     recipe.registerFont("arial", FONT);
     var extent = recipe.textDimensions(text, { font: "arial", size: 12 }).xMax;
-    recipe.endPage().endPDF(function () {});
+    recipe.endPage().endPDF(function (bytes) {
+      writeOutput(
+        `text-html-align-extent-${text.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`,
+        bytes,
+      );
+    });
     return extent;
   }
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 /**
  * Creates a minimal PDF with an image XObject and one direct-destination outline.
@@ -178,6 +179,7 @@ describe("InspectPDFs documentation workflows", function () {
   it("inspects XObjects and reads direct-destination bookmarks", async function () {
     var muhammara = await createMuhammaraWasm();
     var bytes = outlinedPdf();
+    writeOutput("InspectPDFs-outlined", bytes);
 
     assert.deepEqual(inspectPageXObjects(muhammara, bytes, 0), [
       { name: "Im1", objectId: 4, subtype: "Image" },

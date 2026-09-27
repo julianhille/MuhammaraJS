@@ -1,6 +1,7 @@
 // Byte-first coverage for PDFLiteralString/PDFHexString.toBytesArray().
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Parsed string bytes", function () {
   it("preserves decoded literal and hex bytes independently of text conversion", async function () {
@@ -19,7 +20,9 @@ describe("Parsed string bytes", function () {
       .startPageContentContext(page)
       .writeFreeCode("(\\000\\200\\377\\(\\)\\\\) <0080ff0>");
     writer.writePage(page);
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("ParsedStringBytes-decoded", pdf);
+    var reader = muhammara.createReader(pdf);
 
     var literal = reader.parseNewObject(literalId).toPDFLiteralString();
     var hex = reader.parseNewObject(hexId).toPDFHexString();
@@ -94,7 +97,9 @@ describe("Parsed string bytes", function () {
     );
 
     writer.writePage(new muhammara.PDFPage(0, 0, 100, 100));
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("ParsedStringBytes-byte-arrays", pdf);
+    var reader = muhammara.createReader(pdf);
     assert.deepEqual(
       Array.from(
         reader.parseNewObject(literalId).toPDFLiteralString().toBytesArray(),

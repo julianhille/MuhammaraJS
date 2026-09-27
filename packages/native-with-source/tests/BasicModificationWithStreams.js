@@ -1,5 +1,6 @@
 var muhammara = require("@muhammara/native-with-source");
 const chai = require("chai");
+var { writeOutput } = require("./helpers/testOutput");
 
 /**
  * Wraps a stream object in a callable object exposing the same methods, the
@@ -93,6 +94,7 @@ describe("BasicModificationWithStreams", function () {
     inStream.close();
 
     var produced = outStream.target.buffer;
+    writeOutput("BasicModificationWithStreams-callable", produced);
     chai.expect(produced).to.be.instanceOf(Buffer);
     chai.expect(produced.subarray(0, 5).toString("latin1")).to.equal("%PDF-");
     var reader = muhammara.createReader(
@@ -141,6 +143,7 @@ describe("BasicModificationWithStreams", function () {
     inStream.target.close();
 
     var produced = outStream.target.buffer;
+    writeOutput("BasicModificationWithStreams-string-positions", produced);
     chai.expect(produced.subarray(0, 5).toString("latin1")).to.equal("%PDF-");
     var reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(produced),
@@ -213,6 +216,10 @@ describe("BasicModificationWithStreams", function () {
       );
       var writer = muhammara.createWriter(output);
       writer.writePage(writer.createPage(0, 0, 100, 100)).end();
+      writeOutput(
+        "BasicModificationWithStreams-position-" + project.name,
+        output.target.buffer,
+      );
       var input = withReportedPosition(
         new muhammara.PDFRStreamForBuffer(output.target.buffer),
         project,
@@ -227,6 +234,10 @@ describe("BasicModificationWithStreams", function () {
     var source = new muhammara.PDFWStreamForBuffer();
     var original = muhammara.createWriter(source);
     original.writePage(original.createPage(0, 0, 100, 100)).end();
+    writeOutput(
+      "BasicModificationWithStreams-out-of-range-source",
+      source.buffer,
+    );
     // Adjacent doubles outside the signed 64-bit interval catch both bounds.
     for (var position of [Infinity, -Infinity, 2 ** 63, -(2 ** 63) - 2048]) {
       /** Reports the invalid position under test. */
@@ -276,6 +287,7 @@ describe("BasicModificationWithStreams", function () {
     var source = new muhammara.PDFWStreamForBuffer();
     var original = muhammara.createWriter(source);
     original.writePage(original.createPage(0, 0, 100, 100)).end();
+    writeOutput("BasicModificationWithStreams-coercion-source", source.buffer);
     var input = withReportedPosition(
       new muhammara.PDFRStreamForBuffer(source.buffer),
       project,
@@ -341,6 +353,7 @@ describe("BasicModificationWithStreams", function () {
     });
     // Chunks are copies, so keeping them past write() must not see them change.
     var produced = Buffer.concat(chunks);
+    writeOutput("BasicModificationWithStreams-kept-chunks", produced);
     chai.expect(produced.length).to.equal(position);
     chai.expect(produced.subarray(0, 5).toString("latin1")).to.equal("%PDF-");
     var reader = muhammara.createReader(
@@ -537,6 +550,7 @@ describe("BasicModificationWithStreams", function () {
     });
     writer.writePage(writer.createPage(0, 0, 100, 100));
     writer.end();
+    writeOutput("BasicModificationWithStreams-byte-arrays", output.buffer);
 
     var reader = muhammara.createReader(
       new muhammara.PDFRStreamForBuffer(output.buffer),

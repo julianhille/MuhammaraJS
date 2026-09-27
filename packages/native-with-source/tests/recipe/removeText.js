@@ -2,6 +2,7 @@ var expect = require("chai").expect;
 var path = require("path");
 var muhammara = require("../..");
 var Recipe = muhammara.Recipe;
+var { writeOutput } = require("../helpers/testOutput");
 
 var fontPath = path.join(__dirname, "../TestMaterials/fonts/arial.ttf");
 
@@ -163,6 +164,11 @@ describe("Remove text", function () {
       .text("OCR", 20, 30)
       .endPage()
       .endPDF();
+    // The second pass below overwrites output; keep this first result too.
+    writeOutput(
+      "removeText-ocr-remove-then-edit",
+      require("fs").readFileSync(output),
+    );
 
     var result = readPageContent(output);
     expect(result.content).not.to.include("Visible");

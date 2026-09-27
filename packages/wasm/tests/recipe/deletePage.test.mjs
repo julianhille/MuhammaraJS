@@ -241,7 +241,9 @@ describe("Recipe deletePage", function () {
   });
 
   it("deletes selected original pages from nested page trees", async function () {
-    var recipe = new Recipe(createSource(Recipe));
+    var source = createSource(Recipe);
+    writeOutput("deletePage-selected-source", source);
+    var recipe = new Recipe(source);
     var metadata = recipe.metadata;
     assert.equal(recipe.deletePage([11, 2, 4, 4]), recipe);
     assert.equal(recipe.deletePage(1), recipe);
@@ -276,6 +278,7 @@ describe("Recipe deletePage", function () {
   it("rejects invalid deletion requests", function () {
     assert.throws(() => new Recipe().deletePage(1), /existing PDF/);
     var source = createSource(Recipe);
+    writeOutput("deletePage-invalid-requests-source", source);
     [0, -1, 1.5, "1", 13].forEach((pageNumber) => {
       assert.throws(
         () => new Recipe(source).deletePage(pageNumber),
@@ -289,8 +292,13 @@ describe("Recipe deletePage", function () {
         ),
       /At least one page/,
     );
+    var singlePageSource = createSource(Recipe, 1);
+    writeOutput(
+      "deletePage-invalid-requests-single-page-source",
+      singlePageSource,
+    );
     assert.throws(
-      () => new Recipe(createSource(Recipe, 1)).deletePage(1),
+      () => new Recipe(singlePageSource).deletePage(1),
       /At least one page/,
     );
     assert.throws(
@@ -349,6 +357,7 @@ describe("Recipe deletePage", function () {
 
   it("rejects page composition in either order", function () {
     var source = createSource(Recipe);
+    writeOutput("deletePage-composition-source", source);
     Recipe.registerPdf("delete-composition", source);
     try {
       var appendThenDelete = new Recipe(source).appendPage(
@@ -392,9 +401,10 @@ describe("Recipe deletePage", function () {
 
   it("preserves retained page generations and remaps page labels", async function () {
     var muhammara = await createMuhammaraWasm();
-    var generationBytes = new Recipe(nestedNonzeroGenerationPdf())
-      .deletePage(2)
-      .endPDF();
+    var source = nestedNonzeroGenerationPdf();
+    writeOutput("deletePage-generations-source", source);
+    var generationBytes = new Recipe(source).deletePage(2).endPDF();
+    writeOutput("deletePage-generations", generationBytes);
     var reader = muhammara.createReader(generationBytes);
     try {
       assert.equal(reader.getPagesCount(), 1);
@@ -428,9 +438,10 @@ describe("Recipe deletePage", function () {
       reader.end();
     }
 
-    var labelBytes = new Recipe(nestedNonzeroGenerationPdf())
-      .deletePage(1)
-      .endPDF();
+    var source = nestedNonzeroGenerationPdf();
+    writeOutput("deletePage-generations-labels-source", source);
+    var labelBytes = new Recipe(source).deletePage(1).endPDF();
+    writeOutput("deletePage-generations-labels", labelBytes);
     reader = muhammara.createReader(labelBytes);
     try {
       var labelCatalog = reader
@@ -456,9 +467,10 @@ describe("Recipe deletePage", function () {
 
   it("preserves page-label range starts while renumbering", async function () {
     var muhammara = await createMuhammaraWasm();
-    var bytes = new Recipe(nestedNonzeroGenerationPdf({ pageLabels: "start" }))
-      .deletePage(1)
-      .endPDF();
+    var source = nestedNonzeroGenerationPdf({ pageLabels: "start" });
+    writeOutput("deletePage-label-start-source", source);
+    var bytes = new Recipe(source).deletePage(1).endPDF();
+    writeOutput("deletePage-label-start", bytes);
     var reader = muhammara.createReader(bytes);
     try {
       var catalog = reader
@@ -482,11 +494,13 @@ describe("Recipe deletePage", function () {
   });
 
   it("flattens and remaps recursive page labels", async function () {
-    var recipe = new Recipe(
-      nestedNonzeroGenerationPdf({ pageLabels: "kids" }),
-    ).deletePage(1);
+    var source = nestedNonzeroGenerationPdf({ pageLabels: "kids" });
+    writeOutput("deletePage-label-kids-source", source);
+    var recipe = new Recipe(source).deletePage(1);
     var muhammara = await createMuhammaraWasm();
-    var reader = muhammara.createReader(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("deletePage-label-kids", bytes);
+    var reader = muhammara.createReader(bytes);
     try {
       var catalog = reader
         .queryDictionaryObject(reader.getTrailer(), "Root")
@@ -515,10 +529,12 @@ describe("Recipe deletePage", function () {
   it("preserves indirect page-label keys and values", async function () {
     var muhammara = await createMuhammaraWasm();
     for (var pageLabels of ["indirect-values", "chained-values"]) {
-      var recipe = new Recipe(
-        nestedNonzeroGenerationPdf({ pageLabels }),
-      ).deletePage(2);
-      var reader = muhammara.createReader(recipe.endPDF());
+      var source = nestedNonzeroGenerationPdf({ pageLabels });
+      writeOutput(`deletePage-label-${pageLabels}-source`, source);
+      var recipe = new Recipe(source).deletePage(2);
+      var bytes = recipe.endPDF();
+      writeOutput(`deletePage-label-${pageLabels}`, bytes);
+      var reader = muhammara.createReader(bytes);
       try {
         var catalog = reader
           .queryDictionaryObject(reader.getTrailer(), "Root")
@@ -548,20 +564,22 @@ describe("Recipe deletePage", function () {
   });
 
   it("does not rewrite untouched nonzero-generation page-tree branches", async function () {
-    var recipe = new Recipe(
-      nestedNonzeroGenerationPdf({ nonzeroSibling: true }),
-    ).deletePage(2);
+    var source = nestedNonzeroGenerationPdf({ nonzeroSibling: true });
+    writeOutput("deletePage-untouched-branch-source", source);
+    var recipe = new Recipe(source).deletePage(2);
     try {
-      assert.deepEqual(await pageWidths(recipe.endPDF()), [101, 103]);
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-untouched-branch", bytes);
+      assert.deepEqual(await pageWidths(bytes), [101, 103]);
     } finally {
       recipe.dispose();
     }
   });
 
   it("rejects page trees that require nonzero-generation rewrites", function () {
-    var recipe = new Recipe(
-      nestedNonzeroGenerationPdf({ nonzeroGeneration: true }),
-    ).deletePage(2);
+    var source = nestedNonzeroGenerationPdf({ nonzeroGeneration: true });
+    writeOutput("deletePage-nonzero-generation-source", source);
+    var recipe = new Recipe(source).deletePage(2);
     try {
       assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
       assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
@@ -574,24 +592,25 @@ describe("Recipe deletePage", function () {
     // Unlike native-core, wasm's writer always attaches PageLabels through
     // _setPageLabelsObject() rather than rewriting the catalog object in
     // place, so the catalog's own generation never matters here.
-    var recipe = new Recipe(
-      nestedNonzeroGenerationPdf({
-        catalogGeneration: true,
-        pageLabels: "direct",
-      }),
-    ).deletePage(2);
+    var source = nestedNonzeroGenerationPdf({
+      catalogGeneration: true,
+      pageLabels: "direct",
+    });
+    writeOutput("deletePage-direct-labels-nonzero-catalog-source", source);
+    var recipe = new Recipe(source).deletePage(2);
     try {
-      assert.deepEqual(await pageWidths(recipe.endPDF()), [101]);
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-direct-labels-nonzero-catalog", bytes);
+      assert.deepEqual(await pageWidths(bytes), [101]);
     } finally {
       recipe.dispose();
     }
   });
 
   it("rejects edited retained pages with nonzero generations", function () {
-    var recipe = new Recipe(nestedNonzeroGenerationPdf())
-      .editPage(1)
-      .endPage()
-      .deletePage(2);
+    var source = nestedNonzeroGenerationPdf();
+    writeOutput("deletePage-edited-retained-nonzero-source", source);
+    var recipe = new Recipe(source).editPage(1).endPage().deletePage(2);
     try {
       assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
       assert.throws(() => recipe.endPDF(), /nonzero-generation objects/);
@@ -603,19 +622,22 @@ describe("Recipe deletePage", function () {
   it("allows deleting an edited page with a nonzero generation", async function () {
     // The edited page is dropped entirely, not rewritten, so its own
     // generation must not block the deletion.
-    var recipe = new Recipe(nestedNonzeroGenerationPdf())
-      .editPage(1)
-      .endPage()
-      .deletePage(1);
+    var source = nestedNonzeroGenerationPdf();
+    writeOutput("deletePage-edited-deleted-nonzero-source", source);
+    var recipe = new Recipe(source).editPage(1).endPage().deletePage(1);
     try {
-      assert.deepEqual(await pageWidths(recipe.endPDF()), [102]);
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-edited-deleted-nonzero", bytes);
+      assert.deepEqual(await pageWidths(bytes), [102]);
     } finally {
       recipe.dispose();
     }
   });
 
   it("rejects replaced text on nonzero-generation pages", function () {
-    var recipe = new Recipe(nonzeroGenerationTextPdf())
+    var source = nonzeroGenerationTextPdf();
+    writeOutput("deletePage-replaced-text-nonzero-source", source);
+    var recipe = new Recipe(source)
       .replaceText("Before", "After", 1)
       .deletePage(2);
     try {
@@ -627,10 +649,11 @@ describe("Recipe deletePage", function () {
   });
 
   it("deletes one occurrence of a duplicated page reference", async function () {
-    var recipe = new Recipe(
-      nestedNonzeroGenerationPdf({ duplicatePageReference: true }),
-    ).deletePage(1);
+    var source = nestedNonzeroGenerationPdf({ duplicatePageReference: true });
+    writeOutput("deletePage-duplicate-reference-source", source);
+    var recipe = new Recipe(source).deletePage(1);
     var bytes = recipe.endPDF();
+    writeOutput("deletePage-duplicate-reference", bytes);
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(bytes);
     try {
@@ -645,11 +668,10 @@ describe("Recipe deletePage", function () {
 
   it("remaps direct page labels and accepts null page labels", async function () {
     var muhammara = await createMuhammaraWasm();
-    var directBytes = new Recipe(
-      nestedNonzeroGenerationPdf({ pageLabels: "direct" }),
-    )
-      .deletePage(1)
-      .endPDF();
+    var source = nestedNonzeroGenerationPdf({ pageLabels: "direct" });
+    writeOutput("deletePage-direct-labels-source", source);
+    var directBytes = new Recipe(source).deletePage(1).endPDF();
+    writeOutput("deletePage-direct-labels", directBytes);
     var reader = muhammara.createReader(directBytes);
     try {
       var catalog = reader
@@ -674,17 +696,15 @@ describe("Recipe deletePage", function () {
       reader.end();
     }
 
-    var nullBytes = new Recipe(
-      nestedNonzeroGenerationPdf({ pageLabels: "null" }),
-    )
-      .deletePage(1)
-      .endPDF();
+    var source = nestedNonzeroGenerationPdf({ pageLabels: "null" });
+    writeOutput("deletePage-null-labels-source", source);
+    var nullBytes = new Recipe(source).deletePage(1).endPDF();
+    writeOutput("deletePage-null-labels", nullBytes);
     assert.deepEqual(await pageWidths(nullBytes), [102]);
-    var chainedNullBytes = new Recipe(
-      nestedNonzeroGenerationPdf({ pageLabels: "chained-null" }),
-    )
-      .deletePage(1)
-      .endPDF();
+    var source = nestedNonzeroGenerationPdf({ pageLabels: "chained-null" });
+    writeOutput("deletePage-chained-null-labels-source", source);
+    var chainedNullBytes = new Recipe(source).deletePage(1).endPDF();
+    writeOutput("deletePage-chained-null-labels", chainedNullBytes);
     assert.deepEqual(await pageWidths(chainedNullBytes), [102]);
     muhammara.disposeAssets();
   });
@@ -695,9 +715,10 @@ describe("Recipe deletePage", function () {
       ["unicode-literal", "toPDFLiteralString"],
       ["unicode-hex", "toPDFHexString"],
     ]) {
-      var bytes = new Recipe(nestedNonzeroGenerationPdf({ pageLabels }))
-        .deletePage(1)
-        .endPDF();
+      var source = nestedNonzeroGenerationPdf({ pageLabels });
+      writeOutput(`deletePage-unicode-${pageLabels}-source`, source);
+      var bytes = new Recipe(source).deletePage(1).endPDF();
+      writeOutput(`deletePage-unicode-${pageLabels}`, bytes);
       var reader = muhammara.createReader(bytes);
       try {
         var catalog = reader
@@ -730,8 +751,10 @@ describe("Recipe deletePage", function () {
   });
 
   it("rejects deletion after finalization", function () {
-    var recipe = new Recipe(createSource(Recipe));
-    recipe.deletePage(1).endPDF();
+    var source = createSource(Recipe);
+    writeOutput("deletePage-after-finalization-source", source);
+    var recipe = new Recipe(source);
+    writeOutput("deletePage-after-finalization", recipe.deletePage(1).endPDF());
     assert.throws(() => recipe.deletePage(2), /after endPDF/);
     recipe.dispose();
   });
@@ -770,9 +793,9 @@ describe("Recipe deletePage", function () {
   });
 
   it("rejects references from retained structures to deleted pages", function () {
-    var recipe = new Recipe(
-      nestedNonzeroGenerationPdf({ openAction: true }),
-    ).deletePage(1);
+    var source = nestedNonzeroGenerationPdf({ openAction: true });
+    writeOutput("deletePage-open-action-source", source);
+    var recipe = new Recipe(source).deletePage(1);
     try {
       assert.throws(
         () => recipe.endPDF(),
@@ -788,9 +811,9 @@ describe("Recipe deletePage", function () {
   });
 
   it("rejects references from retained page-tree metadata", function () {
-    var recipe = new Recipe(
-      nestedNonzeroGenerationPdf({ pageTreeReference: true }),
-    ).deletePage(2);
+    var source = nestedNonzeroGenerationPdf({ pageTreeReference: true });
+    writeOutput("deletePage-page-tree-reference-source", source);
+    var recipe = new Recipe(source).deletePage(2);
     try {
       assert.throws(
         () => recipe.endPDF(),
@@ -830,18 +853,22 @@ describe("Recipe deletePage", function () {
   });
 
   it("ignores discarded page-label fields that reference deleted pages", async function () {
-    var recipe = new Recipe(
-      nestedNonzeroGenerationPdf({ pageLabelReference: true }),
-    ).deletePage(1);
+    var source = nestedNonzeroGenerationPdf({ pageLabelReference: true });
+    writeOutput("deletePage-discarded-label-reference-source", source);
+    var recipe = new Recipe(source).deletePage(1);
     try {
-      assert.deepEqual(await pageWidths(recipe.endPDF()), [102]);
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-discarded-label-reference", bytes);
+      assert.deepEqual(await pageWidths(bytes), [102]);
     } finally {
       recipe.dispose();
     }
   });
 
   it("rejects active pages before deletion finalization", function () {
-    var recipe = new Recipe(createSource(Recipe)).editPage(1).deletePage(2);
+    var source = createSource(Recipe);
+    writeOutput("deletePage-active-page-source", source);
+    var recipe = new Recipe(source).editPage(1).deletePage(2);
     var writerDisposed = false;
     var disposeWriter = recipe.writer.dispose.bind(recipe.writer);
     recipe.writer.dispose = () => {
@@ -852,14 +879,18 @@ describe("Recipe deletePage", function () {
       assert.throws(() => recipe.endPDF(), /Finish the current page/);
       assert.equal(writerDisposed, false);
       recipe.endPage();
-      assert.ok(recipe.endPDF() instanceof Uint8Array);
+      var bytes = recipe.endPDF();
+      writeOutput("deletePage-active-page", bytes);
+      assert.ok(bytes instanceof Uint8Array);
     } finally {
       recipe.dispose();
     }
   });
 
   it("disposes the modifier when later finalization fails", function () {
-    var recipe = new Recipe(nestedNonzeroGenerationPdf()).deletePage(1);
+    var source = nestedNonzeroGenerationPdf();
+    writeOutput("deletePage-modifier-dispose-source", source);
+    var recipe = new Recipe(source).deletePage(1);
     var metadata = recipe.metadata;
     var writerDisposed = false;
     var disposeWriter = recipe.writer.dispose.bind(recipe.writer);
@@ -895,12 +926,15 @@ describe("Recipe deletePage", function () {
   });
 
   it("keeps queued annotations on their retained page", async function () {
-    var bytes = new Recipe(createSource(Recipe))
+    var source = createSource(Recipe);
+    writeOutput("deletePage-retained-annotations-source", source);
+    var bytes = new Recipe(source)
       .editPage(2)
       .comment("Retained", 10, 10)
       .endPage()
       .deletePage(1)
       .endPDF();
+    writeOutput("deletePage-retained-annotations", bytes);
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(bytes);
     try {
@@ -912,12 +946,15 @@ describe("Recipe deletePage", function () {
   });
 
   it("preserves existing annotation generations on retained pages", async function () {
-    var recipe = new Recipe(nestedNonzeroGenerationPdf({ annotation: true }))
+    var source = nestedNonzeroGenerationPdf({ annotation: true });
+    writeOutput("deletePage-annotation-generations-source", source);
+    var recipe = new Recipe(source)
       .editPage(2)
       .comment("New", 10, 10)
       .endPage()
       .deletePage(1);
     var bytes = recipe.endPDF();
+    writeOutput("deletePage-annotation-generations", bytes);
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(bytes);
     try {

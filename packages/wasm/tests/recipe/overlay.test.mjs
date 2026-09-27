@@ -12,6 +12,7 @@ describe("Recipe overlay", function () {
       .createPage(300, 200)
       .endPage()
       .endPDF();
+    writeOutput("overlay-source", source);
     Recipe.registerPdf("source", source);
     var overlay = new Recipe()
       .createPage(595, 842)

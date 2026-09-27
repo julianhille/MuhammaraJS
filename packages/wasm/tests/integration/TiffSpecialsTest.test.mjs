@@ -108,7 +108,9 @@ describe("TiffSpecialsTest", function () {
     var muhammara = await createMuhammaraWasm();
     var sourceWriter = muhammara.createWriter();
     sourceWriter.writePage(sourceWriter.createPage(0, 0, 100, 100));
-    var modifier = muhammara.createWriterToModify(sourceWriter.end());
+    var source = sourceWriter.end();
+    writeOutput("TiffSpecialsTest-modifier-source", source);
+    var modifier = muhammara.createWriterToModify(source);
     var grayscale = new Uint8Array(
       await readFile("tests/TestMaterials/images/tiff/jim___cg.tif"),
     );
@@ -138,7 +140,9 @@ describe("TiffSpecialsTest", function () {
       () => modifier.createFormXObjectFromTIFF(grayscale, { pageIndex: -1 }),
       RangeError,
     );
-    var output = new TextDecoder().decode(modifier.end());
+    var modified = modifier.end();
+    writeOutput("TiffSpecialsTest-modifier", modified);
+    var output = new TextDecoder().decode(modified);
     assert.match(output, /\/DeviceCMYK/);
     assert.match(output, /\/ImageMask true/);
   });

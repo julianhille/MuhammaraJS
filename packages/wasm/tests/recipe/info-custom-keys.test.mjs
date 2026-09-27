@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe info custom keys", function () {
   var muhammara;
@@ -29,8 +30,18 @@ describe("Recipe info custom keys", function () {
       return recipe;
     }
 
-    function readInfo(recipe) {
-      var reader = muhammara.createReader(recipe.endPDF());
+    /**
+     * Finishes the Recipe, writes its bytes for manual review, and reads the
+     * trailer Info dictionary back as plain text values.
+     *
+     * @param {object} recipe Recipe to finish.
+     * @param {string} outputName Test output file name without extension.
+     * @returns {Record<string, string>} Info entries keyed by name.
+     */
+    function readInfo(recipe, outputName) {
+      var bytes = recipe.endPDF();
+      writeOutput(outputName, bytes);
+      var reader = muhammara.createReader(bytes);
       try {
         var dictionary = reader
           .queryDictionaryObject(reader.getTrailer(), "Info")
@@ -62,7 +73,10 @@ describe("Recipe info custom keys", function () {
         recipe,
       );
       recipe.info({ Extra: "another call" }).custom("Explicit", "X-123");
-      var info = readInfo(recipe);
+      var info = readInfo(
+        recipe,
+        `info-custom-keys-${mode}-standard-and-custom`,
+      );
       assert.equal(info.Author, "A");
       assert.equal(info.Title, "Report");
       assert.equal(info.Subject, "Metadata parity");
@@ -84,7 +98,7 @@ describe("Recipe info custom keys", function () {
         .custom("InfoThenCustom", "new")
         .custom("CustomThenInfo", "old")
         .info({ CustomThenInfo: "new", Repeated: "new" });
-      var info = readInfo(recipe);
+      var info = readInfo(recipe, `info-custom-keys-${mode}-last-call-wins`);
       assert.equal(info.InfoThenCustom, "new");
       assert.equal(info.CustomThenInfo, "new");
       assert.equal(info.Repeated, "new");
@@ -98,6 +112,7 @@ describe("Recipe info custom keys", function () {
           compress: false,
           ReportId: "not constructor metadata",
         }),
+        `info-custom-keys-${mode}-constructor-settings`,
       );
       assert.equal(info.Author, "Constructor author");
       ["version", "compress", "ReportId"].forEach(function (key) {

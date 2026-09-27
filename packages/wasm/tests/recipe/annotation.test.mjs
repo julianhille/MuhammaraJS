@@ -17,7 +17,9 @@ describe("Recipe annotation", function () {
         flag: Recipe.AnnotFlag.LOCKED_CONTENTS,
       })
       .endPage();
-    var output = new TextDecoder("latin1").decode(recipe.endPDF());
+    var bytes = recipe.endPDF();
+    writeOutput("annotation-subtypes", bytes);
+    var output = new TextDecoder("latin1").decode(bytes);
     assert.match(output, /\/Subtype\s*\/Highlight/);
     assert.doesNotMatch(output, /\/Subtype\s*\/highlight/);
     assert.match(output, /\/C\s*\[\s*1 1 0\s*\]/);
@@ -72,7 +74,9 @@ describe("Recipe annotation", function () {
     });
     recipe.comment("note", 150, 20, { color: "DarkMagenta" });
     recipe.endPage();
-    var bytes = new TextDecoder("latin1").decode(recipe.endPDF());
+    var pdf = recipe.endPDF();
+    writeOutput("annotation-colors", pdf);
+    var bytes = new TextDecoder("latin1").decode(pdf);
     var colors = Array.from(bytes.matchAll(/\/C\s*\[\s*([^\]]*?)\s*\]/g), (m) =>
       m[1].split(/\s+/).map((part) => Math.round(Number(part) * 255)),
     );
@@ -93,8 +97,14 @@ describe("Recipe annotation", function () {
   it("rejects invalid text markup before drawing the text", async function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();
-    /** Renders "Kept", after rejected markup calls when `reject` is set. */
-    var render = function (reject) {
+    /**
+     * Renders "Kept", after rejected markup calls when `reject` is set.
+     *
+     * @param {boolean} reject Whether to attempt the rejected markup first.
+     * @param {string} outputName Test output file name without extension.
+     * @returns {string} The page content streams as latin1 text.
+     */
+    var render = function (reject, outputName) {
       var recipe = new Recipe().createPage(200, 200);
       if (reject) {
         assert.throws(
@@ -109,7 +119,9 @@ describe("Recipe annotation", function () {
         );
       }
       recipe.text("Kept", 20, 60).endPage();
-      var reader = muhammara.createReader(recipe.endPDF());
+      var bytes = recipe.endPDF();
+      writeOutput(outputName, bytes);
+      var reader = muhammara.createReader(bytes);
       try {
         var page = reader.parsePage(0).getDictionary();
         assert.equal(page.exists("Annots"), false);
@@ -140,9 +152,9 @@ describe("Recipe annotation", function () {
         reader.end();
       }
     };
-    var kept = render(false);
+    var kept = render(false, "annotation-markup-kept");
     assert.match(kept, /Tj/);
-    assert.equal(render(true), kept);
+    assert.equal(render(true, "annotation-markup-rejected"), kept);
   });
 
   it("writes links, comments, and square annotations", async function () {

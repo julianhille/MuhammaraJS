@@ -2,6 +2,7 @@
 // ModifyingExistingFileContent.js and ImagesAndFormsForwardReferenceTest.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("InputFileTest", function () {
   it("reads and writes byte-backed raw objects", async function () {
@@ -70,6 +71,7 @@ describe("InputFileTest", function () {
     writer.startPageContentContext(page).q().Q();
     writer.writePage(page);
     var pdf = writer.end();
+    writeOutput("InputFileTest", pdf);
     assert.match(
       new TextDecoder().decode(pdf),
       new RegExp(`${annotationId} 0 obj`),
@@ -97,6 +99,7 @@ describe("InputFileTest", function () {
     modification.writeKey("Type").writeNameValue("Annot");
     modifiedObjects.endDictionary(modification).endIndirectObject();
     var modifiedPdf = modifier.end();
+    writeOutput("InputFileTest-modified", modifiedPdf);
     var modifiedReader = muhammara.createReader(modifiedPdf);
     assert.equal(
       modifiedReader

@@ -12,6 +12,7 @@ describe("BasicModification", function () {
     sourceWriter.startPageContentContext(sourcePage).re(10, 10, 20, 20).f();
     sourceWriter.writePage(sourcePage);
     var source = sourceWriter.end();
+    writeOutput("BasicModification-source", source);
 
     muhammara.registerFont(
       "arial",

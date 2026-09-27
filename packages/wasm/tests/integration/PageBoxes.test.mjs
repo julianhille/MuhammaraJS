@@ -1,6 +1,7 @@
 // Port of the page box and rotation behavior in tests/PageBoxes.js.
 import assert from "node:assert/strict";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("PageBoxes", function () {
   it("writes page boxes and rotation", async function () {
@@ -20,7 +21,9 @@ describe("PageBoxes", function () {
     var writer = muhammara.createWriter();
     writer.startPageContentContext(page).n();
     writer.writePage(page);
-    var reader = muhammara.createReader(writer.end());
+    var pdf = writer.end();
+    writeOutput("PageBoxes", pdf);
+    var reader = muhammara.createReader(pdf);
     assert.deepEqual(reader.getPageBox(0, "media"), [0, 0, 595, 842]);
     assert.deepEqual(reader.getPageBox(0, "crop"), [1, 1, 594, 841]);
     assert.deepEqual(reader.getPageBox(0, "bleed"), [2, 2, 593, 840]);

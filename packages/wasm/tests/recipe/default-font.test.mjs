@@ -82,6 +82,7 @@ describe("Recipe default font", function () {
     }
 
     var source = muhammara.createBlankPdf(612, 792);
+    writeOutput("default-font-blank-source", source);
     recipe = new Recipe(source, { compress: false });
     try {
       assert.ok(recipe.textDimensions("Edited").width > 0);
@@ -153,6 +154,7 @@ describe("Recipe default font", function () {
       recipe = new Recipe().createPage("letter");
       try {
         var restored = recipe.text("Restored", 72, 72).endPage().endPDF();
+        writeOutput(`default-font-restored-${index}`, restored);
         checkText(restored, ["Restored"]);
         assert.match(new TextDecoder().decode(restored), /Roboto-Regular/);
       } finally {
@@ -163,7 +165,11 @@ describe("Recipe default font", function () {
     var bytes = new Uint8Array(
       await readFile("tests/TestMaterials/fonts/arial.ttf"),
     );
-    for (var source of [bytes, bytes.buffer, new Blob([bytes])]) {
+    for (var [sourceIndex, source] of [
+      bytes,
+      bytes.buffer,
+      new Blob([bytes]),
+    ].entries()) {
       var CustomRecipe = await createRecipe({ defaultFont: source });
       for (var index = 0; index < 2; index++) {
         var recipe = new CustomRecipe().createPage("letter");
@@ -173,6 +179,10 @@ describe("Recipe default font", function () {
             recipe.textDimensions("Custom", { font: "default" }),
           );
           var output = recipe.text("Custom", 72, 72).endPage().endPDF();
+          writeOutput(
+            `default-font-custom-default-${sourceIndex}-${index}`,
+            output,
+          );
           checkText(output, ["Custom"]);
           assert.match(new TextDecoder().decode(output), /Arial/);
           assert.doesNotMatch(

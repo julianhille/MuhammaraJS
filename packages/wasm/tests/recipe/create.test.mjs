@@ -17,7 +17,7 @@ describe("Recipe create", function () {
       fontSize: 24,
     });
     assert.ok(textDimensions.width > 0);
-    dimensionsRecipe.endPDF();
+    writeOutput("create-text-dimensions", dimensionsRecipe.endPDF());
 
     var extensionRecipe = new Recipe();
     assert.equal(
@@ -27,7 +27,10 @@ describe("Recipe create", function () {
       extensionRecipe,
     );
     assert.equal(typeof extensionRecipe.drawDot, "function");
-    extensionRecipe.createPage(100, 100).drawDot(50, 50).endPage().endPDF();
+    writeOutput(
+      "create-extension",
+      extensionRecipe.createPage(100, 100).drawDot(50, 50).endPage().endPDF(),
+    );
 
     var namedExtensionRecipe = new Recipe();
     assert.equal(
@@ -40,11 +43,14 @@ describe("Recipe create", function () {
       () => namedExtensionRecipe.register("drawSquare", () => {}),
       /already exists/,
     );
-    namedExtensionRecipe
-      .createPage(100, 100)
-      .drawSquare(50, 50)
-      .endPage()
-      .endPDF();
+    writeOutput(
+      "create-named-extension",
+      namedExtensionRecipe
+        .createPage(100, 100)
+        .drawSquare(50, 50)
+        .endPage()
+        .endPDF(),
+    );
   });
 
   it("chains valid context transitions and rejects unmatched calls", function () {
@@ -59,7 +65,7 @@ describe("Recipe create", function () {
     recipe.rectangle(40, 40, 20, 20).endPage();
     assert.throws(() => recipe.pauseContext(), /No active page/);
     assert.throws(() => recipe.resumeContext(), /No paused page/);
-    recipe.endPDF();
+    writeOutput("create-context-transitions", recipe.endPDF());
   });
 
   it("tracks named-page metadata, margins, and rotation", function () {
@@ -96,13 +102,17 @@ describe("Recipe create", function () {
       offsetX: 0,
       offsetY: 0,
     });
-    assert.equal(named.read(named.endPage().endPDF())[1].rotate, 90);
+    var namedBytes = named.endPage().endPDF();
+    writeOutput("create-rotation-named", namedBytes);
+    assert.equal(named.read(namedBytes)[1].rotate, 90);
 
     var explicit = new Recipe().createPage(100, 200).rotate(90);
     assert.equal(explicit.getCurrentPageInfo().rotate, 90);
     assert.equal(explicit.pageInfo(1).width, 100);
     assert.equal(explicit.pageInfo(1).height, 200);
-    assert.equal(explicit.read(explicit.endPage().endPDF())[1].rotate, 90);
+    var explicitBytes = explicit.endPage().endPDF();
+    writeOutput("create-rotation-explicit", explicitBytes);
+    assert.equal(explicit.read(explicitBytes)[1].rotate, 90);
   });
 
   it("reports active page geometry", function () {
@@ -114,11 +124,12 @@ describe("Recipe create", function () {
     recipe.endPage();
     assert.deepEqual(recipe.getCurrentPageInfo(), recipe.pageInfo(1));
     var bytes = recipe.endPDF();
+    writeOutput("create-page-geometry-source", bytes);
     var sourceRecipe = new Recipe(bytes);
     assert.deepEqual(
       sourceRecipe.getCurrentPageInfo(),
       sourceRecipe.pageInfo(1),
     );
-    sourceRecipe.endPDF();
+    writeOutput("create-page-geometry-reopened", sourceRecipe.endPDF());
   });
 });

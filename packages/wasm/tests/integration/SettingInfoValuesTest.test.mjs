@@ -82,23 +82,25 @@ describe("SettingInfoValuesTest", function () {
     assert.throws(() => (info.trapped = 3), /EInfoTrapped value/);
     assert.throws(() => (info.trapped = 0.5), /EInfoTrapped value/);
     writer.writePage(writer.createPage(0, 0, 10, 10));
-    assert.match(infoDictionary(writer.end()), /\/Trapped \/True/);
+    var pdf = writer.end();
+    writeOutput("SettingInfoValuesTest-trapped", pdf);
+    assert.match(infoDictionary(pdf), /\/Trapped \/True/);
   });
 
   it("rejects Info changes after the writer or modifier ends", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter();
-    var modifier = muhammara.createWriterToModify(
-      muhammara.createBlankPdf(10, 10),
-    );
+    var source = muhammara.createBlankPdf(10, 10);
+    writeOutput("SettingInfoValuesTest-ended-source", source);
+    var modifier = muhammara.createWriterToModify(source);
     var infos = [writer, modifier].map((target) => {
       var info = target.getDocumentContext().getInfoDictionary();
       info.title = "kept";
       return info;
     });
     writer.writePage(writer.createPage(0, 0, 10, 10));
-    writer.end();
-    modifier.end();
+    writeOutput("SettingInfoValuesTest-ended-writer", writer.end());
+    writeOutput("SettingInfoValuesTest-ended-modifier", modifier.end());
     for (var info of infos) {
       assert.throws(() => info.setCreationDate(new Date()), /has ended/);
       assert.throws(() => info.setModDate(new Date()), /has ended/);

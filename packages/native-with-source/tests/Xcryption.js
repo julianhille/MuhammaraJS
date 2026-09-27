@@ -1,5 +1,6 @@
 var muhammara = require("@muhammara/native-with-source");
 var assert = require("assert");
+var { writeOutput } = require("./helpers/testOutput");
 
 function assertRecryptedPdf(filePath, password, encrypted) {
   var reader = muhammara.createReader(filePath, password ? { password } : {});
@@ -94,6 +95,7 @@ describe("Xcryption", function () {
         writer.writePage(page);
       }
       writer.end();
+      writeOutput("Xcryption-stream-source", sourceWriter.buffer);
 
       var chunks = [];
       var position = 0;
@@ -112,6 +114,7 @@ describe("Xcryption", function () {
         { userPassword: "user1", ownerPassword: "owner1" },
       );
 
+      writeOutput("Xcryption-stream-encrypted", Buffer.concat(chunks));
       // RC4 encrypts one byte per write; ~400 KB must not become ~400k calls.
       assert.ok(chunks.length < 100, chunks.length + " writes");
       var reader = muhammara.createReader(

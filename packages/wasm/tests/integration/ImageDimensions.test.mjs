@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
+import { writeOutput } from "../testOutput.mjs";
 
 describe("ImageDimensions", function () {
   it("reads registered and direct JPEG, TIFF directories, PDF pages, and async bytes", async function () {
@@ -22,6 +23,7 @@ describe("ImageDimensions", function () {
     pdfWriter.writePage(new muhammara.PDFPage(0, 0, 100, 200));
     pdfWriter.writePage(new muhammara.PDFPage(0, 0, 300, 400));
     var pdf = pdfWriter.end();
+    writeOutput("ImageDimensions-boxes", pdf);
     muhammara.registerPdf("boxes", pdf);
 
     var writer = muhammara.createWriter();
@@ -67,7 +69,7 @@ describe("ImageDimensions", function () {
       );
     }
     assert.throws(() => writer.getImageDimensions("missing"), TypeError);
-    writer.end();
+    writeOutput("ImageDimensions-writer", writer.end());
     assert.throws(() => writer.getImageDimensions(jpg), /ended/);
   });
 });

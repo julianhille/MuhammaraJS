@@ -23,7 +23,7 @@ describe("PDFEmbedTest", function () {
         .length,
       2,
     );
-    asyncWriter.end();
+    writeOutput("PDFEmbedTest-async", asyncWriter.end());
 
     var page = writer.createPage(0, 0, 595, 842);
     var context = writer.startPageContentContext(page);
@@ -65,7 +65,9 @@ describe("PDFEmbedTest", function () {
       page.getResourcesDictionary().addFormXObjectMapping(formIDs[0]),
     );
     writer.writePage(page);
-    assert.ok(writer.end() instanceof Uint8Array);
+    var registeredOutput = writer.end();
+    writeOutput("PDFEmbedTest-registered", registeredOutput);
+    assert.ok(registeredOutput instanceof Uint8Array);
   });
 
   it("applies advanced byte-first embed options for direct and registered sources", async function () {
@@ -78,6 +80,7 @@ describe("PDFEmbedTest", function () {
     sourceWriter.startPageContentContext(sourcePage).q().Q();
     sourceWriter.writePage(sourcePage);
     var source = sourceWriter.end();
+    writeOutput("PDFEmbedTest-advanced-source", source);
     var options = {
       transformation: [0.5, 0, 0, 0.5, 3, 4],
       additionalObjectIds: [additionalObjectId],
@@ -111,8 +114,10 @@ describe("PDFEmbedTest", function () {
     }
 
     var direct = embed(source);
+    writeOutput("PDFEmbedTest-advanced-direct", direct.output);
     muhammara.registerPdf("advanced-embed", source);
     var registered = embed("advanced-embed");
+    writeOutput("PDFEmbedTest-advanced-registered", registered.output);
     assert.equal(direct.ids.length, 1);
     assert.equal(registered.ids.length, 1);
     assert.deepEqual(direct.box, [10, 20, 110, 220]);
@@ -154,6 +159,6 @@ describe("PDFEmbedTest", function () {
       () => writer.createFormXObjectsFromPDF(source, 0, { password: "nope" }),
       /passwords are not supported/,
     );
-    writer.end();
+    writeOutput("PDFEmbedTest-invalid-options", writer.end());
   });
 });

@@ -28,6 +28,7 @@ describe("Replace text", function () {
       .writeFreeCode("% caf\u00e9\n");
     writer.writePage(page);
     var source = writer.end();
+    writeOutput("replaceText-source", source);
 
     var Recipe = await createRecipe();
     var output = new Recipe(source)
@@ -95,6 +96,7 @@ describe("Replace text", function () {
     });
 
     var source = new Recipe().createPage(100, 100).endPage().endPDF();
+    writeOutput("replaceText-validation-source", source);
     assert.throws(
       () => new Recipe(source).replaceText("Before", "After", 1),
       /replaceText supports pages with one content stream/,
