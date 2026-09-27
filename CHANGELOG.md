@@ -268,6 +268,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Write a numeric-string Recipe `opacity` such as `"0.5"` as a number, as Wasm
   does. It passed the opacity check but failed after the ExtGState dictionary
   was started, leaving that dictionary open [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
+- Fix a crash when editing a page of a malformed PDF, such as one whose
+  `/Annots` is not an array, whose `/Contents` does not resolve or holds
+  direct values, or whose `/Resources` is not a dictionary. The edit is now
+  written and the malformed entry is dropped or replaced, a local change to
+  the vendored PDF-Writer [#816](https://github.com/julianhille/MuhammaraJS/issues/816)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)

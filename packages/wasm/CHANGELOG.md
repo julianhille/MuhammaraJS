@@ -162,6 +162,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Release dictionaries left open when a writer ends or is disposed without
   writing their closing `>>` to an output that may already be released, a
   local change to the PDF-Writer shared with native [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
+- Fix a crash when editing a page of a malformed PDF, such as one whose
+  `/Annots` is not an array, whose `/Contents` does not resolve or holds
+  direct values, or whose `/Resources` is not a dictionary. The edit is now
+  written and the malformed entry is dropped or replaced, a local change to
+  the PDF-Writer shared with native [#816](https://github.com/julianhille/MuhammaraJS/issues/816)
 - Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
   was ignored, and to that text only: on new pages it also became the
   Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are
