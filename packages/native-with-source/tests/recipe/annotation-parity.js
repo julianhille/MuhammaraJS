@@ -1118,7 +1118,6 @@ describe("Recipe annotation parity", function () {
           { width: 28, height: match.fontSize },
         ),
     );
-    writeOutput("annotation-underline-existing-text");
     var baseline = match.textMatrix[5];
     var rect = numbers(annotations[0].dictionary.Rect);
     assert.equal(rect[0], match.textMatrix[4]);

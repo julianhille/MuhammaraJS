@@ -1092,10 +1092,11 @@ async function findTextExample(assets) {
       var start =
         recipe.textDimensions(match.prefix + query, { size: match.sizeX })
           .xMax - end;
-      // annot() places the rectangle's bottom-left corner at (x, y).
+      // annot() places the rectangle's top-left corner at (x, y), measured
+      // from the page's top-left corner.
       recipe.annot(
         match.x - match.mediaBox[0] + start,
-        match.mediaBox[3] - match.baseline + HIGHLIGHT_DESCENT * match.sizeY,
+        match.mediaBox[3] - match.baseline - HIGHLIGHT_ASCENT * match.sizeY,
         Recipe.AnnotSubtype.HIGHLIGHT,
         {
           width: end,
