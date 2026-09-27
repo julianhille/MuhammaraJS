@@ -11,26 +11,26 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+Upgrading from 6.x? Each change below is described in [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x); follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md) for the upgrade steps.
+
 - Recipe `n_gon()` and `star()` throw
   `RangeError: n_gon sides must be a finite number no greater than 100000`
   (`star points …` for `star()`) when the side or point count is `NaN`,
   `Infinity`, not a number, or above 100000. An infinite or huge count used to
   build vertices until the process ran out of memory and aborted, and `NaN`
   drew nothing. Pass a finite count; beyond a few hundred sides a polygon is
-  indistinguishable from `circle()`
-  [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
+  indistinguishable from `circle()`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#821](https://github.com/julianhille/MuhammaraJS/issues/821)
 - Throw `Error: End the active objects context operation before ending the PDF`
   from `PDFWriter#end()` while a dictionary started with `startDictionary()` is
   still open, as Wasm does, and keep the writer usable. Previously `end()`
   wrote the cross-reference table and trailer inside the open dictionary.
-  End every dictionary before `end()` [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
+  End every dictionary before `end()`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
 - Recipe `rotate()` throws
   `Error: rotate() is only available on pages created with createPage()` on a
   page opened with `editPage()`. In 6.x it left the page's `/Rotate` unchanged
   but recorded the rotation in the Recipe's page geometry, so `pageInfo()` and
   later coordinate handling disagreed with the written page. Rotate only pages
-  you create; an edited page keeps its source rotation
-  [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
+  you create; an edited page keeps its source rotation; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
 - Recipe `register()` throws
   `Found conflict in Recipe prototypes. <name> already exists.` for a plugin
   named like a method new in v7: `deletePage`, `getCurrentPageInfo`,
@@ -40,8 +40,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
 - Recipe `rotate()` throws `RangeError: Rotation must be a multiple of 90
 degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
-  value that viewers ignore or round. Pass a multiple of 90
-  [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
+  value that viewers ignore or round. Pass a multiple of 90; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#829](https://github.com/julianhille/MuhammaraJS/issues/829)
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
   `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
   Square, Circle, FreeText, or other annotation with a `height` now appears
@@ -55,7 +54,7 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   `drawSquare()`, `drawRectangle()`, and `writeText()` when a string `color` is
   neither a CSS color name nor `#rrggbb`, as `@muhammara/wasm` does. Previously
   such colors, including hex without the `#`, were drawn black. Pass a CSS
-  color name, a `#rrggbb` string, or a 24-bit number [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+  color name, a `#rrggbb` string, or a 24-bit number; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Throw `TypeError: Unknown annotation color (<value>)` from Recipe `annot()`
   and `comment()`, and from text `underline`, `strikeOut`, and `highlight`
   annotations, when `color` is not a known color, instead of writing the
@@ -63,18 +62,18 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   `chroma()`, and CSS color names in any case, which previously fell back to
   the default too. Gray `#rr`, CMYK `#ccmmyykk`, and numbers also throw.
   `text()` checks its markup annotations before drawing any text. Fix
-  misspelled names or register them with `chroma()` [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+  misspelled names or register them with `chroma()`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Write a one-number annotation `color` array as a gray and a four-number one
   as a CMYK annotation color, as `@muhammara/wasm` does. They were misread as
   RGB, so `[128]` wrote dark blue and CMYK arrays lost a channel. Values
   outside 0 to 255 and other array lengths now throw a `TypeError`; pass one,
-  three, or four numbers from 0 to 255 [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
+  three, or four numbers from 0 to 255; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Stroke a Recipe `line()` through all of its points as one path, as
   `@muhammara/wasm` does, instead of one path per segment. Segments now meet
   at the `lineJoin` instead of overlapping their caps, a translucent line no
   longer darkens where segments overlap, and a Separation line writes one form
   XObject instead of one per segment. To keep separate segments, draw each
-  with its own `moveTo()` and `lineTo()` [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  with its own `moveTo()` and `lineTo()`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw a `TypeError` for an unknown colorspace, as `@muhammara/wasm` does.
   The low-level drawing and `writeText()` color options throw
   `colorspace must be rgb, gray, or cmyk` for a numeric or named `color`
@@ -90,34 +89,34 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   `#rrggbb` string with `colorspace: "gray"` or `"cmyk"`, as `@muhammara/wasm`
   does. Such a color is RGB; 6.x drew it in RGB and ignored the colorspace.
   Drop `colorspace`, or pass the gray or CMYK color as a number, see
-  [Draw in Gray and CMYK](packages/native/docs/how-to/draw-in-gray-and-cmyk.md) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  [Draw in Gray and CMYK](packages/native/docs/how-to/draw-in-gray-and-cmyk.md); see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Remove the `key` parameter from the `InfoDictionary#getAdditionalInfoEntries()`
   declaration; the runtime ignored it and always returned every entry. Calls
   that pass a key fail `tsc`; drop the argument and pick the entry from the
-  returned object [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  returned object; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Remove `strikeOut` and `lineWidth` from the `WriteTextOptions` declaration;
   `writeText()` never read them, so `{ strikeOut: true }` drew nothing. Passing
   them fails `tsc`; draw a line with `drawPath()` or use the Recipe `text()`
-  `strikeOut` option instead [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  `strikeOut` option instead; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Type `Recipe#info()` without options as `Record<string, string> | undefined`,
   the Info record it returns, instead of `Recipe`. Code that chained on it
   fails `tsc` and failed at runtime before; call `info(options)` to write
-  information [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  information; see [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#10-update-recipe-types) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw `Error: Unknown annotation flag (<name>)` from Recipe `annot()` and
   `comment()` for a `flag` that is not a `Recipe.AnnotFlag` value, instead of
   silently writing no flag bits, as `@muhammara/wasm` does. Numeric bit masks
   are now accepted too. Pass a `Recipe.AnnotFlag` value or a bit mask, or omit
-  `flag` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+  `flag`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Throw a `TypeError` from `Tj()`, `Quote()`, `DoubleQuote()` and `TJ()` when
   a glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
   array. Previously such items were skipped, so `TJ(["ab", -100, "c"])` wrote
   an empty `[ () ] TJ`; pass the `TJ` items as separate arguments instead:
   `TJ("ab", -100, "c")`. `TJ()` with text items also throws when a glyph list
-  comes last instead of treating it as the options object and dropping it [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+  comes last instead of treating it as the options object and dropping it; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare `toPDF*()` and `toNumber()` on PDF objects as possibly returning
   `undefined`, which they do for a different object type. Strict TypeScript
   code that uses the result directly now fails to compile; check the result or
-  `getType()` first [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+  `getType()` first; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Deliver custom write stream and `log` chunks as `Buffer`s instead of arrays
   of numbers, and return `Buffer`s from `PDFRStreamForFile#read()`,
   `PDFRStreamForBuffer#read()`, and the byte readers returned by
@@ -134,8 +133,7 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   append and produce a corrupted document; create a fresh writer and retry with
   a valid source. A source that cannot be opened, parsed, or decrypted, and page
   ranges outside the source, throw before anything is written and leave the
-  writer usable
-  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  writer usable; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
   [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
 - Correct low-level shape `type: "clip"` to clip without painting and end the
   path. Any other `type` except `null`, such as the typo `"fil"`, throws
@@ -150,7 +148,7 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   operand into the page, `NaN` silently drew with no spacing, and a string or
   boolean threw `Wrong Arguments, please provide character space` after
   drawing had started. The check runs before anything is drawn. Pass a finite
-  number, or omit the option for no spacing [#812](https://github.com/julianhille/MuhammaraJS/issues/812)
+  number, or omit the option for no spacing; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#812](https://github.com/julianhille/MuhammaraJS/issues/812)
 
 ### Added
 
@@ -458,16 +456,16 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Breaking Changes
 
+Upgrading from 6.x? Each change below is described in [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x); follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md) for the upgrade steps.
+
 - Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
   Previously callers could continue after a failed append and produce a
-  corrupted document; create a fresh writer and retry with a valid source.
-  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  corrupted document; create a fresh writer and retry with a valid source. See [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x). [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Reject custom-stream `getCurrentPosition()` results that convert to non-finite
   numbers or fall outside `[-2^63, 2^63)` with `TypeError`, preventing corrupt
   PDF offsets. Return the actual finite byte position within that range; numeric
   coercion remains supported. See the
-  [stream contract](packages/native/docs/low-level/custom-streams.md)
-  [#750](https://github.com/julianhille/MuhammaraJS/issues/750).
+  [stream contract](packages/native/docs/low-level/custom-streams.md); see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Correct low-level shape `type: "clip"` to clip without painting and end the
   path; unrecognized types end the path without painting or clipping. Use `"clip"` explicitly with
   `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
@@ -477,7 +475,7 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   Supply finite coordinates, dimensions, stroke widths, and text sizes, and
   at least two complete `drawPath()` coordinate pairs; incomplete paths now
   throw instead of silently drawing a prefix. Correct invalid inputs before retrying. See
-  [breaking changes](packages/native/docs/breaking-changes.md).
+  [breaking changes](packages/native/docs/breaking-changes.md#version-7x).
 - Replace runtime-specific Node.js and Electron native binaries with Node-API 8
   prebuilds shared by every supported runtime. Standard npm installs and public
   package imports require no changes, but custom binary mirrors, direct archive
@@ -486,7 +484,7 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   `napi-v8-{platform}-{arch}-{libc}.tar.gz` and use
   `binding/napi-v8/muhammara.node`. See the
   [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#14-update-native-binary-tooling)
-  and [breaking changes](packages/native/docs/breaking-changes.md) page
+  and [breaking changes](packages/native/docs/breaking-changes.md#version-7x) page
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
   [#504](https://github.com/julianhille/MuhammaraJS/issues/504)
 - Require a Recipe text `size`, or its `fontSize` alias, greater than zero and
@@ -497,14 +495,14 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   Both now throw before drawing or measuring. Pass a size greater than zero, or
   omit the option — `null` and `undefined` still select the 14pt default. See
   the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
-  and the [breaking changes](packages/native/docs/breaking-changes.md) page
+  and the [breaking changes](packages/native/docs/breaking-changes.md#version-7x) page
   [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
 - Keep Recipe HTML text outside any element on one line with its neighboring
   inline elements, with one space between them, instead of starting a new line
   for each top-level run and inline element; wrap content in `<p>` or add
   `<br>` where separate lines are intended. `htmlToTextObjects()` returns a
   `<br>` as an object with `lineBreak: true` instead of a placeholder
-  paragraph. See the [breaking changes](packages/native/docs/breaking-changes.md)
+  paragraph. See the [breaking changes](packages/native/docs/breaking-changes.md#version-7x)
   page [#667](https://github.com/julianhille/MuhammaraJS/issues/667)
 - Derive Recipe `table()` columns from every record instead of only the first,
   keep `order` and `columns` entries even when no record has that field, and
@@ -512,7 +510,7 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   `renderer` result now also sizes its row, and a misspelled `order` or
   `columns` name draws an empty column instead of being dropped. List the intended columns with
   `order` or `columns` to keep a fixed layout; see the
-  [breaking changes](packages/native/docs/breaking-changes.md) page
+  [breaking changes](packages/native/docs/breaking-changes.md#version-7x) page
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Include padding, minimum/fixed cell heights, and rendered HTML in Recipe
   table sizing. Tables can grow taller or continue earlier; adjust cell sizing
@@ -665,19 +663,19 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Breaking Changes
 
+Upgrading from 6.x? Each change below is described in [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x); follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md) for the upgrade steps.
+
 - Reject native `PDFWriter` stateful calls after `end()` or `shutdown()` with
   `Error("PDF writer has ended")`, including after finalization failures. Create
   a new writer, or resume saved state with `createWriterToContinue()`; direct
-  `new PDFWriter()` instances cannot perform stateful operations
-  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+  `new PDFWriter()` instances cannot perform stateful operations; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 - Make native Recipe `endPDF()` idempotent. Repeated calls no longer attempt to
   rewrite the completed PDF, while repeated `endPDF(callback)` calls still
   invoke the callback with the completed output where applicable. Create a new
-  Recipe instead of calling `endPDF()` again to flush later changes
-  [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
+  Recipe instead of calling `endPDF()` again to flush later changes; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#693](https://github.com/julianhille/MuhammaraJS/issues/693)
 - Retire native Recipe instances after any `endPDF()` failure and rethrow the
   original error on later calls. Code that retried the same Recipe must create a
-  new instance instead [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
+  new instance instead; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#381](https://github.com/julianhille/MuhammaraJS/issues/381)
 - Count leading and trailing non-breaking spaces in native Recipe `charSpace`
   measurements, matching Wasm. Text can measure wider or wrap earlier; use
   regular boundary spaces when they should be trimmed. See
@@ -686,17 +684,15 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
   and malformed page selections instead of clamping or partially interpreting
   them; pass positive one-based integers or ascending two-value ranges. Integer
-  endpoints beyond the source still clamp to its final page
-  [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
+  endpoints beyond the source still clamp to its final page; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
 - Native Recipe `insertPage()` now throws synchronously when `pdfSrc` or
   `srcPageNumber` is missing instead of silently queuing no insertion or failing
   later in `endPDF()`; pass all three arguments before continuing the Recipe
-  chain [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
+  chain; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#548](https://github.com/julianhille/MuhammaraJS/issues/548)
 - Native Recipe `pauseContext()` and `resumeContext()` now throw when there is
   no matching active or paused page content context instead of silently doing
   nothing. Call `pauseContext()` only after creating or editing a page, and call
-  `resumeContext()` exactly once after a successful pause
-  [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
+  `resumeContext()` exactly once after a successful pause; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Native Recipe `endPage()` now clears the completed page and its content
   context instead of leaving them active. Code that called page drawing,
   configuration, or context methods after `endPage()` now fails; call
@@ -707,7 +703,7 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   `ANNOTATION_PREFIX`, `appendPDFPageFromPDFWithAnnotations()`, and
   `appendPDFPagesFromPDFWithAnnotations()`. Code that called these undocumented
   internal helpers now fails; use `appendPage()`, `insertPage()`, or `split()`
-  for supported page-copying operations [#623](https://github.com/julianhille/MuhammaraJS/issues/623)
+  for supported page-copying operations; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#623](https://github.com/julianhille/MuhammaraJS/issues/623)
 - The native `PDFReader` methods that take a page index or object ID —
   `parseNewObject()`, `getPageObjectID()`, `parsePageDictionary()`,
   `parsePage()`, `extractPageText()`, `extractPageContentItems()`, and
@@ -715,11 +711,10 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   `reader.parsePage(-1)`, which used to read page 4294967295, and
   `reader.extractPageText(1.5)`, which used to read page 1, now fail with
   `Page index must be a non-negative integer`; pass a non-negative integer below
-  2^32 [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
+  2^32; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
 - Native `Recipe.setPageBox()` now requires an `ePDFPageBox*` constant instead
   of a string box name. Calls such as `setPageBox("crop", ...)` now fail; pass
-  `muhammara.ePDFPageBoxCropBox` instead
-  [#619](https://github.com/julianhille/MuhammaraJS/issues/619)
+  `muhammara.ePDFPageBoxCropBox` instead; see [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#7-update-recipe-page-boxes) [#619](https://github.com/julianhille/MuhammaraJS/issues/619)
 - Remove native `Recipe.fillOpacity()`. Calls now fail; use `Recipe.opacity()`
   to set both fill and stroke alpha. Opacity persists for later vector drawing,
   so call `opacity(1)` to restore opaque output. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#8-replace-recipefillopacity)
@@ -945,14 +940,16 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Breaking Changes
 
+Upgrading from 6.x? Each change below is described in [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x); follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md) for the upgrade steps.
+
 - Replace the unscoped `muhammara` package with `@muhammara/native` or
   `@muhammara/native-with-source`. Existing `require("muhammara")` imports must
   change, or the source-capable package must be installed with the documented npm
-  alias.
+  alias. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#1-choose-the-replacement-package).
 - `@muhammara/native` is prebuilt-only. A missing compatible prebuilt now fails
   installation instead of compiling locally; install
-  `@muhammara/native-with-source` for source and Electron builds.
-- Windows win32 (32-bit) prebuilds and build tooling are no longer supported.
+  `@muhammara/native-with-source` for source and Electron builds. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#1-choose-the-replacement-package).
+- Windows win32 (32-bit) prebuilds and build tooling are no longer supported. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#5-confirm-prebuilt-coverage).
 
 ### Added
 
