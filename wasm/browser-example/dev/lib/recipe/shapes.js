@@ -39,6 +39,26 @@ function drawingLineWidth(options) {
     : 0;
 }
 
+// More vertices than this cannot be told apart from a circle, and an
+// unbounded count builds a vertex array until memory runs out.
+var MAX_POLYGON_VERTICES = 100000;
+
+/**
+ * Validates a polygon side or star point count.
+ *
+ * @param {*} count - The requested count.
+ * @param {string} name - The argument name used in the error, such as "n_gon sides".
+ * @throws {RangeError} If the count is not a finite number or exceeds the maximum.
+ */
+function checkVertexCount(count, name) {
+  var value = Number(count);
+  if (!Number.isFinite(value) || value > MAX_POLYGON_VERTICES) {
+    throw new RangeError(
+      `${name} must be a finite number no greater than ${MAX_POLYGON_VERTICES}`,
+    );
+  }
+}
+
 /**
  * Computes the vertices of a regular polygon inset by half its stroke.
  * @param {number} sides - Side count.
@@ -354,9 +374,11 @@ export function createShapeMethods() {
      * @returns {Recipe} The recipe instance.
      * @throws {Error} If no target page is available or an unsupported color is requested.
      * @throws {TypeError} If the requested color space is unknown.
+     * @throws {RangeError} If `sides` is not a finite number or exceeds 100000.
      */
     n_gon: function (cx, cy, radius, sides = 3, options = {}) {
       if (typeof sides === "object") [options, sides] = [sides, 3];
+      checkVertexCount(sides, "n_gon sides");
       sides = Math.max(3, Math.floor(sides));
       var vertices = ngon(sides, cx, cy, radius, options);
       var drawOptions = polygonOptions(options, cx, cy);
@@ -396,9 +418,11 @@ export function createShapeMethods() {
      * @returns {Recipe} The recipe instance.
      * @throws {Error} If no target page is available or an unsupported color is requested.
      * @throws {TypeError} If the requested color space is unknown.
+     * @throws {RangeError} If `points` is not a finite number or exceeds 100000.
      */
     star: function (cx, cy, radius, points = 5, options = {}) {
       if (typeof points === "object") [options, points] = [points, 5];
+      checkVertexCount(points, "star points");
       points = Math.max(5, Math.floor(points));
       var drawOptions = polygonOptions(options, cx, cy);
       if (points % 2)
