@@ -111,4 +111,23 @@ describe("ObjectReplacement", function () {
     expect(getPageContentsID(resultReader, 1)).to.equal(replacementObjectID);
     resultReader.end();
   });
+
+  it("rejects a writer that does not modify a PDF", function () {
+    var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    var notModifying =
+      /^createPDFCopyingContextForModifiedFile is only available when modifying a PDF$/;
+
+    expect(function () {
+      writer.replaceObject(0, 1, 2);
+    }).to.throw(notModifying);
+    expect(function () {
+      writer.replaceObject(0, 1, 2, {
+        scope: muhammara.ObjectReplacementScope.GLOBAL,
+      });
+    }).to.throw(notModifying);
+    expect(function () {
+      writer.createPDFCopyingContextForModifiedFile();
+    }).to.throw(notModifying);
+    writer.end();
+  });
 });

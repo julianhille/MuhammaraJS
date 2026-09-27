@@ -892,9 +892,15 @@ exports.endPage = function endPage() {
  * @memberof Recipe#
  * @param {number} pageNumber - The one-based page number to be edited.
  * @returns {Recipe} The recipe instance.
+ * @throws {Error} If the Recipe was not constructed from an existing PDF.
  * @throws {Error} If the page does not exist in the source PDF.
  */
 exports.editPage = function editPage(pageNumber) {
+  if (this.isNewPDF) {
+    throw new Error(
+      "editPage requires a Recipe constructed from an existing PDF",
+    );
+  }
   const pdfWriter = this.writer;
   const pageIndex = pageNumber - 1;
   const pageModifier = new muhammara.PDFPageModifier(

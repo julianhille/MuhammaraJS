@@ -42,6 +42,9 @@ napi_value PDFPageModifierDriver::New(const CallbackArgs &a) {
         a.Env(), "Wrong arguments, provide a PDFWriter as the first object");
   if (!w->GetLifecycle()->IsActive())
     return ThrowError(a.Env(), "PDF writer has ended");
+  if (!w->IsModifyingPDF())
+    return ThrowError(a.Env(),
+                      "PDFPageModifier is only available when modifying a PDF");
   auto pageIndex =
       a.Length() >= 2 ? static_cast<unsigned long>(ToDouble(a.Env(), a[1])) : 0;
   auto *d = new PDFPageModifierDriver(
