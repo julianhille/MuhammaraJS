@@ -1336,9 +1336,13 @@ export function createWriterToModifyFactory({
               countPointer,
             );
             var errorCode = module.HEAP32[errorPointer >>> 2];
+            // Codes 2 and 3 are found before anything is written, so the
+            // writer stays usable; only a failure while appending ends it.
             if (errorCode === 2) {
-              dispose();
               throw new Error("Encrypted PDF input is not supported in Wasm");
+            }
+            if (errorCode === 3) {
+              throw new Error("Unable to append PDF pages from input bytes");
             }
             if (errorCode !== 0) {
               dispose();

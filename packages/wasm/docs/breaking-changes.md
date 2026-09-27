@@ -70,9 +70,12 @@
   Use typed-array operations, or `Array.from(bytes)` where an array is required
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324).
 
-- `appendPDFPagesFromPDF()` now ends its writer or modifier when appending
+- `appendPDFPagesFromPDF()` now ends its writer or modifier when copying pages
   fails. Previously callers could continue and produce a corrupted document;
-  create a fresh writer and retry with valid source bytes.
+  create a fresh writer and retry with valid source bytes. Source bytes that
+  cannot be parsed, encrypted input, and page ranges outside the source still
+  throw without ending the writer, because nothing was written
+  [#828](https://github.com/julianhille/MuhammaraJS/issues/828).
 
 - Merge callbacks now receive `globalThis` as `this`, matching native, instead
   of `undefined` in strict functions. Code relying on an undefined receiver

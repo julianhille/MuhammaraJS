@@ -827,6 +827,28 @@ bool PDFWriterDriver::ObjectToPageRange(napi_env e, napi_value o,
   out = r;
   return true;
 }
+const char *const kAppendError = "unable to append page, make sure it's fine";
+// Parses the source and checks the ranges before anything is written, so
+// these failures leave the writer usable.
+static bool CanAppendFrom(IByteReaderWithPosition *source,
+                          const PDFParsingOptions &options,
+                          const PDFPageRange &range) {
+  bool canAppend = true;
+  {
+    PDFParser parser;
+    if (parser.StartPDFParsing(source, options) != eSuccess ||
+        (parser.IsEncrypted() && !parser.IsEncryptionSupported()))
+      canAppend = false;
+    else if (range.mType == PDFPageRange::eRangeTypeSpecific)
+      for (const ULongAndULong &pages : range.mSpecificRanges)
+        if (pages.first > pages.second ||
+            pages.second >= parser.GetPagesCount())
+          canAppend = false;
+  }
+  // Parsing reads the header from the current position.
+  source->SetPosition(0);
+  return canAppend;
+}
 napi_value PDFWriterDriver::AppendPDFPagesFromPDF(const CallbackArgs &a) {
   if (a.Length() < 1 || a.Length() > 2 ||
       (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
@@ -846,14 +868,24 @@ napi_value PDFWriterDriver::AppendPDFPagesFromPDF(const CallbackArgs &a) {
   EStatusCodeAndObjectIDTypeList r;
   if (IsObject(a.Env(), a[0])) {
     ObjectByteReaderWithPosition s(a.Env(), a[0]);
+    if (!CanAppendFrom(&s, p, range))
+      return HasPendingException(a.Env())
+                 ? nullptr
+                 : ThrowTypeError(a.Env(), kAppendError);
     r = d->writer_.AppendPDFPagesFromPDF(&s, range, ObjectIDTypeList(), p);
-  } else
-    r = d->writer_.AppendPDFPagesFromPDF(LegacyString(a.Env(), a[0]), range,
-                                          ObjectIDTypeList(), p);
+  } else {
+    std::string path = LegacyString(a.Env(), a[0]);
+    InputFile source;
+    if (source.OpenFile(path) != eSuccess ||
+        !CanAppendFrom(source.GetInputStream(), p, range))
+      return ThrowTypeError(a.Env(), kAppendError);
+    source.CloseFile();
+    r = d->writer_.AppendPDFPagesFromPDF(path, range, ObjectIDTypeList(), p);
+  }
+  // Only a failure while appending leaves a partial page tree behind.
   if (r.first != eSuccess) {
     Abort(a);
-    return ThrowTypeError(a.Env(),
-                          "unable to append page, make sure it's fine");
+    return ThrowTypeError(a.Env(), kAppendError);
   }
   napi_value out = Array(a.Env(), r.second.size());
   uint32_t i = 0;

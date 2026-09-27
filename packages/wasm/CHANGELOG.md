@@ -59,10 +59,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `getSourceDocumentStream()`, matching native. Replace array methods on the result with
   typed-array operations, or wrap it in `Array.from()`
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
-- Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
-  Previously callers could continue after a failed append and produce a
-  corrupted document; create a fresh writer and retry with valid source bytes.
+- Treat an `appendPDFPagesFromPDF()` call that fails while copying pages as
+  terminal for its writer. Previously callers could continue after a failed
+  append and produce a corrupted document; create a fresh writer and retry with
+  valid source bytes. Source bytes that cannot be parsed, encrypted input, and
+  page ranges outside the source throw before anything is written and leave the
+  writer usable
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
 - Align `mergePDFPagesToPage` callback receivers with native: strict callbacks now receive `globalThis` instead of `undefined`. Use `callback.bind(undefined)` if an undefined receiver is required.
 
 - Treat low-level shape `type: null` as an unknown type, ending the path without

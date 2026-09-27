@@ -272,6 +272,9 @@ WASM_EXPORT unsigned long* muhammara_wasm_modifier_append_pages_from_pdf(
   if (modifier == nullptr || modifier->finished || modifier->page != nullptr ||
       modifier->newPage != nullptr || bytes == nullptr || length == 0 ||
       (rangeCount != 0 && ranges == nullptr)) return nullptr;
+  // Nothing is written until the source parses and every range is inside it,
+  // so these failures (3, or 2 for encrypted input) leave the writer usable.
+  *errorCode = 3;
   InputByteArrayStream inspection(bytes, length); PDFParser parser;
   if (parser.StartPDFParsing(&inspection) != PDFHummus::eSuccess) return nullptr;
   if (parser.IsEncrypted()) { *errorCode = 2; return nullptr; }
@@ -279,10 +282,12 @@ WASM_EXPORT unsigned long* muhammara_wasm_modifier_append_pages_from_pdf(
   if (rangeCount != 0) {
     pageRange.mType = PDFPageRange::eRangeTypeSpecific;
     for (unsigned int index = 0; index < rangeCount; ++index) {
-      if (ranges[index * 2 + 1] < ranges[index * 2]) return nullptr;
+      if (ranges[index * 2 + 1] < ranges[index * 2] ||
+          ranges[index * 2 + 1] >= parser.GetPagesCount()) return nullptr;
       pageRange.mSpecificRanges.push_back(ULongAndULong(ranges[index * 2], ranges[index * 2 + 1]));
     }
   }
+  *errorCode = 1;
   InputByteArrayStream stream(bytes, length);
   EStatusCodeAndObjectIDTypeList result = modifier->writer.AppendPDFPagesFromPDF(&stream, pageRange);
   if (result.first != PDFHummus::eSuccess) return nullptr;

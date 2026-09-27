@@ -88,6 +88,12 @@ WASM_EXPORT unsigned long* muhammara_wasm_writer_create_forms_from_pdf(
   return ids;
 }
 
+// Append error codes. Only a failure while appending leaves a partial page
+// tree behind; the writer is released for it.
+static const int kAppendFailed = 1;
+static const int kAppendEncrypted = 2;
+static const int kAppendRejected = 3;
+
 // This deliberately uses PDFWriter's stream overload instead of creating a
 // copying context: append is an immediate writer operation with page IDs.
 WASM_EXPORT unsigned long* muhammara_wasm_writer_append_pages_from_pdf(
@@ -102,6 +108,10 @@ WASM_EXPORT unsigned long* muhammara_wasm_writer_append_pages_from_pdf(
     return nullptr;
   }
 
+  // Nothing is written until the source parses and every range is inside it,
+  // so these failures leave the writer usable.
+  *errorCode = kAppendRejected;
+  unsigned long pageCount = 0;
   {
     InputByteArrayStream inspectionStream(bytes, length);
     PDFParser parser;
@@ -109,9 +119,10 @@ WASM_EXPORT unsigned long* muhammara_wasm_writer_append_pages_from_pdf(
       return nullptr;
     }
     if (parser.IsEncrypted()) {
-      *errorCode = 2;
+      *errorCode = kAppendEncrypted;
       return nullptr;
     }
+    pageCount = parser.GetPagesCount();
   }
 
   PDFPageRange pageRange;
@@ -120,11 +131,12 @@ WASM_EXPORT unsigned long* muhammara_wasm_writer_append_pages_from_pdf(
     for (unsigned int index = 0; index < rangeCount; ++index) {
       unsigned long start = ranges[index * 2];
       unsigned long end = ranges[index * 2 + 1];
-      if (end < start) return nullptr;
+      if (end < start || end >= pageCount) return nullptr;
       pageRange.mSpecificRanges.push_back(ULongAndULong(start, end));
     }
   }
   InputByteArrayStream stream(bytes, length);
+  *errorCode = kAppendFailed;
   EStatusCodeAndObjectIDTypeList result = recipe->writer.AppendPDFPagesFromPDF(
       &stream, pageRange);
   if (result.first != PDFHummus::eSuccess) return nullptr;

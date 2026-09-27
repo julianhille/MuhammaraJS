@@ -30,7 +30,7 @@ describe("AppendPagesTest", function () {
     );
   });
 
-  it("should retire modifiers after append failures", function () {
+  it("keeps modifiers usable when the source cannot be appended", function () {
     var sources = [
       {
         name: "Malformed",
@@ -52,15 +52,55 @@ describe("AppendPagesTest", function () {
       expect(() => pdfWriter.appendPDFPagesFromPDF(source.value)).to.throw(
         "unable to append",
       );
-      expect(() => pdfWriter.createPage(0, 0, 100, 100)).to.throw(
-        "PDF writer has ended",
-      );
-      expect(() =>
+      // Nothing was written, so the writer continues.
+      expect(
         pdfWriter.appendPDFPagesFromPDF(
           __dirname + "/TestMaterials/Original.pdf",
         ),
-      ).to.throw("PDF writer has ended");
+      ).to.have.length(2);
+      pdfWriter.end();
+      var reader = muhammara.createReader(
+        __dirname + "/output/AppendPagesModify" + source.name + ".pdf",
+      );
+      expect(reader.getPagesCount()).to.equal(4);
+      reader.end();
     }
+  });
+
+  it("keeps the writer usable when page ranges are outside the source", function () {
+    var output = new muhammara.PDFWStreamForBuffer();
+    var pdfWriter = muhammara.createWriter(output);
+    var source = __dirname + "/TestMaterials/Original.pdf";
+    [
+      [[50, 60]],
+      [[1, 0]],
+      [
+        [0, 0],
+        [5, 6],
+      ],
+    ].forEach(function (specificRanges) {
+      expect(() =>
+        pdfWriter.appendPDFPagesFromPDF(source, {
+          type: muhammara.eRangeTypeSpecific,
+          specificRanges: specificRanges,
+        }),
+      ).to.throw("unable to append");
+    });
+    expect(() => pdfWriter.appendPDFPagesFromPDF("/missing.pdf")).to.throw(
+      "unable to append",
+    );
+    expect(
+      pdfWriter.appendPDFPagesFromPDF(
+        new muhammara.PDFRStreamForBuffer(require("fs").readFileSync(source)),
+        { type: muhammara.eRangeTypeSpecific, specificRanges: [[1, 1]] },
+      ),
+    ).to.have.length(1);
+    pdfWriter.end();
+    var reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(output.buffer),
+    );
+    expect(reader.getPagesCount()).to.equal(1);
+    reader.end();
   });
 
   it("should reject malformed appends to modifiers without hanging", function () {
