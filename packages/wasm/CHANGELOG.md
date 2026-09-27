@@ -167,6 +167,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   direct values, or whose `/Resources` is not a dictionary. The edit is now
   written and the malformed entry is dropped or replaced, a local change to
   the PDF-Writer shared with native [#816](https://github.com/julianhille/MuhammaraJS/issues/816)
+- Release a page's content stream and an edited page's content form when a
+  Recipe, writer, or writer-to-modify with an open page is disposed; each one
+  kept about 0.5 MB, so the module aborted with `RuntimeError: Aborted()` after
+  roughly a thousand disposed documents
+  [#822](https://github.com/julianhille/MuhammaraJS/issues/822)
 - Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
   was ignored, and to that text only: on new pages it also became the
   Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are

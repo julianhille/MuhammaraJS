@@ -954,8 +954,22 @@ inline WasmCopyingContext::~WasmCopyingContext() {
   context = nullptr;
 }
 
-inline WasmRecipe::~WasmRecipe() {
+// A page's content context and a modified page's content form hold a
+// content stream that only ending releases, and ending writes to the
+// writer's output, which must still be alive.
+static void releasePage(PDFWriter& writer, PDFPage* page) {
+  if (page != nullptr && page->GetAssociatedContentContext() != nullptr)
+    writer.EndPageContentContext(page->GetAssociatedContentContext());
   delete page;
+}
+
+static void releaseModifiedPage(PDFModifiedPage* page) {
+  if (page != nullptr) page->EndContentContext();
+  delete page;
+}
+
+inline WasmRecipe::~WasmRecipe() {
+  releasePage(writer, page);
   for (WasmImage* image : images) {
     delete image->image;
     delete image;
@@ -969,8 +983,8 @@ inline WasmRecipe::~WasmRecipe() {
 }
 
 inline WasmModifier::~WasmModifier() {
-  delete page;
-  delete newPage;
+  releaseModifiedPage(page);
+  releasePage(writer, newPage);
   for (WasmImage* image : images) {
     delete image->image;
     delete image;

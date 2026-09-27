@@ -95,6 +95,10 @@ var output = new Recipe(inputBytes)
 `output` is a new `Uint8Array`; `inputBytes` is not changed. Recipe page
 numbers are one-based and coordinates start at the top-left corner.
 
+WebAssembly memory is not garbage-collected. Finish every Recipe, writer, and
+reader with `endPDF()` or `end()`, or call `dispose()` to discard one you do not
+finish; otherwise each one keeps its memory until the module is recreated.
+
 Drop down to the low-level API when you need exact control over the PDF
 content stream. Its coordinates start at the bottom-left corner, as in the PDF
 specification:
