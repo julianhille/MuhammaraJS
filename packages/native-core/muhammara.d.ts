@@ -4378,6 +4378,7 @@ declare namespace muhammara {
      * @param options.subject - Subject of annotation.
      * @param options.link - Make the text open this URL.
      * @returns The recipe instance. Without an active page nothing is drawn.
+     * @throws {TypeError} If `options.charSpace` is not a finite number; nothing is drawn.
      * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
      */
     text(text: string, options?: Recipe.TextOptions): Recipe;

@@ -271,6 +271,14 @@ This page collects the compatibility changes formerly maintained in the README.
   the 14pt default. See
   [Migrate from v6 to v7](getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
   [#733](https://github.com/julianhille/MuhammaraJS/issues/733).
+- Recipe `text()` throws `TypeError: charSpace must be a finite number` when
+  `charSpace` is `Infinity`, `-Infinity`, `NaN`, or not a number, matching
+  Wasm. In 6.x `Infinity` wrote an invalid `inf Tc` operand into the page,
+  `NaN` silently drew with no character spacing, and a string or boolean threw
+  `Wrong Arguments, please provide character space` after drawing had started.
+  The check runs before anything is drawn, and the Recipe stays usable. Pass a
+  finite number, or omit the option — `null` and `undefined` still mean no
+  spacing [#812](https://github.com/julianhille/MuhammaraJS/issues/812).
 
 ## Version 5.x
 
