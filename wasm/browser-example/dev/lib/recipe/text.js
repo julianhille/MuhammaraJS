@@ -639,18 +639,18 @@ export function createTextMethods({ drawText, measure, module }) {
       Object.keys(annotation).forEach((name) => {
         if (annotation[name] === undefined) delete annotation[name];
       });
-      // annot() anchors the box at its bottom edge, the line's descent.
+      // annot() anchors the box at its top-left corner.
       if (validateOnly) {
         recipe._flushAnnotations(true, [
           {
             x: left,
-            y: bottom,
+            y: top,
             subtype,
             options: annotation,
           },
         ]);
       } else {
-        recipe.annot(left, bottom, subtype, annotation);
+        recipe.annot(left, top, subtype, annotation);
       }
     });
   }

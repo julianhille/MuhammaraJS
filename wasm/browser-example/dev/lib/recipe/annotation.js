@@ -367,7 +367,9 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
      * @memberof Recipe#
      * @param {string} text Comment contents.
      * @param {RecipeCoordinate} x Left coordinate in Recipe coordinates.
-     * @param {RecipeCoordinate} y Top coordinate in Recipe coordinates.
+     * @param {RecipeCoordinate} y Top coordinate in Recipe coordinates. Like
+     * `rectangle()` and `link()`, (x, y) is the annotation rectangle's
+     * top-left corner, and the rectangle extends `options.height` down from it.
      * @param {RecipeAnnotationOptions} [options={}] Annotation options. The
      * `text` argument supplies the contents and the default icon is `Comment`.
      * @returns {Recipe} The Recipe instance.
@@ -435,9 +437,13 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
         var options = annotation.options;
         var width = options.width ?? 0;
         var height = options.height ?? 0;
+        // (x, y) is the top-left corner, like rectangle() and link(): offset
+        // by the height to reach the bottom-left corner of the PDF rectangle.
         var point = this._calibrateCoordinateForAnnots(
           annotation.x,
           annotation.y,
+          0,
+          -height,
         );
         var left = point.nx;
         var bottom = point.ny;

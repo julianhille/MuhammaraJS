@@ -584,15 +584,21 @@ export function createRecipeFactory({
       var fill = colorModel(this, options.color || options.colour, options);
       var separation = fill.colorspace === Colorspace.SEPARATION;
       if (separation) this._separationColorspace(fill);
+      // Resolve like native: a missing or NaN opacity keeps the current
+      // graphics state; any other value is clamped to 0..1 and applies to
+      // this run only, leaving the Recipe-level opacity() default untouched.
+      var opacity =
+        options.opacity == null || Number.isNaN(Number(options.opacity))
+          ? undefined
+          : Math.max(0, Math.min(1, Number(options.opacity)));
       var transformed =
         options.rotation ||
         options.skewX ||
         options.skewY ||
-        (!this._pageContext && options.opacity !== undefined);
+        opacity !== undefined;
       if (transformed) {
         this._save();
-        if (!this._pageContext && options.opacity !== undefined)
-          this.opacity(options.opacity);
+        if (opacity !== undefined) this._setOpacity(opacity);
         var origin = options.rotationOrigin || [x, y];
         if (options.rotation)
           this.rotateContent(options.rotation, origin[0], origin[1]);

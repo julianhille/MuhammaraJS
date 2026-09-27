@@ -1,3 +1,4 @@
+import { decodeTextElements, decodeTextOption } from "./font-text.js";
 import { PageBox } from "./value-sets.js";
 /**
  * Rejects page indices and object IDs the native reader would silently wrap.
@@ -744,10 +745,11 @@ export function createReaderFactory({
      * @param {number} extraction - Native extraction handle.
      * @param {number} index - Element index.
      * @param {function(number, number, number): number} read - Export that returns the field bytes.
-     * @returns {string} The field as one-byte code units.
+     * @param {function(Uint8Array): string} [decode] - Converts the field bytes; one-byte code units by default.
+     * @returns {string} The decoded field.
      * @throws {Error} If the field cannot be read.
      */
-    function extractedString(extraction, index, read) {
+    function extractedString(extraction, index, read, decode = oneByteString) {
       var lengthPointer = module._malloc(4);
       try {
         module.HEAPU32[lengthPointer >>> 2] = 0;
@@ -757,7 +759,7 @@ export function createReaderFactory({
           throw new Error("Unable to read extracted text");
         try {
           return pointer
-            ? oneByteString(module.HEAPU8.slice(pointer, pointer + length))
+            ? decode(module.HEAPU8.slice(pointer, pointer + length))
             : "";
         } finally {
           if (pointer) module._muhammara_wasm_free(pointer);
@@ -767,7 +769,7 @@ export function createReaderFactory({
       }
     }
 
-    return {
+    var pdfReader = {
       /**
        * Counts the document pages.
        * @returns {number} The page count.
@@ -1113,12 +1115,14 @@ export function createReaderFactory({
        * Lists text-showing operations in content-stream drawing order.
        * @param {number} pageIndex - Zero-based page index.
        * @param {PDFExtractionLimits} [limits] - Tighter extraction budgets.
-       * @returns {PDFTextElement[]} Raw content, font resource, size, and text matrix per operation.
-       * @throws {TypeError} If the index is invalid or `limits` is not an object.
+       * @param {PDFTextExtractionOptions} [options] - `decodeText: false` skips font decoding and leaves out `text`.
+       * @returns {PDFTextElement[]} Decoded text, raw content, font resource, size, and text matrix per operation.
+       * @throws {TypeError} If the index is invalid, `limits` is not an object, or `options` is invalid.
        * @throws {RangeError} If a limit is invalid or the page does not exist.
        * @throws {Error} If the reader has ended or the page exceeds the limits.
        */
-      extractPageText: function (pageIndex, limits = {}) {
+      extractPageText: function (pageIndex, limits = {}, options) {
+        var decode = decodeTextOption(options);
         requireReader();
         var values = extractionLimits(pageIndex, limits);
         var index = pageIndex;
@@ -1144,16 +1148,19 @@ export function createReaderFactory({
           try {
             var count =
               module._muhammara_wasm_text_extraction_get_count(extraction);
-            return Array.from({ length: count }, (_, elementIndex) => ({
+            var elements = Array.from({ length: count }, (_, elementIndex) => ({
               content: extractedString(
                 extraction,
                 elementIndex,
                 module._muhammara_wasm_text_extraction_get_content,
               ),
+              // Resource names are UTF-8, as dictionary keys and native's
+              // fontResource are.
               fontResource: extractedString(
                 extraction,
                 elementIndex,
                 module._muhammara_wasm_text_extraction_get_font_resource,
+                objectStringBytes,
               ),
               fontSize: module._muhammara_wasm_text_extraction_get_font_size(
                 extraction,
@@ -1170,6 +1177,9 @@ export function createReaderFactory({
           } finally {
             module._muhammara_wasm_text_extraction_destroy(extraction);
           }
+          return decode
+            ? decodeTextElements(pdfReader, constants, index, elements, values)
+            : elements;
         } finally {
           module._free(statusPointer);
         }
@@ -1483,6 +1493,7 @@ export function createReaderFactory({
         ended = true;
       },
     };
+    return pdfReader;
   }
 
   return createReader;
