@@ -309,6 +309,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   re-measured the whole line, so 2 000 characters took about 9 seconds and
   longer text effectively hung the process. Output is unchanged
   [#824](https://github.com/julianhille/MuhammaraJS/issues/824)
+- Keep the writer usable after a failed `createImageXObjectFromJPG()`,
+  `createFormXObjectFromJPG()`, `createFormXObjectFromPNG()`,
+  `createFormXObjectFromTIFF()`, or `getFontForFile()`. The failed load left
+  an object that was never written, or a cached empty font, so `end()` threw
+  `Unable to end PDF` and the whole document was lost. The object IDs a failed
+  load allocated are now freed, and a font that failed to load is skipped when
+  fonts are written, a local change to the vendored PDF-Writer [#825](https://github.com/julianhille/MuhammaraJS/issues/825)
+- Throw `Error: Unknown image: <path>` from Recipe `image()` for an image that
+  cannot be read, such as a missing file, as Wasm does. The image used to be
+  drawn anyway, and `endPDF()` then failed [#825](https://github.com/julianhille/MuhammaraJS/issues/825)
 - Parse `#rrggbb` color strings in native low-level `drawPath()`, `drawCircle()`,
   `drawSquare()`, `drawRectangle()`, and `writeText()` instead of drawing black
   [#796](https://github.com/julianhille/MuhammaraJS/issues/796)

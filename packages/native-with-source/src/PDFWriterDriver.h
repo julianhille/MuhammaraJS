@@ -38,6 +38,12 @@ struct OpenContent {
 class PDFWriterDriver : public muhammara::napi::ObjectWrap,
                         public IDocumentContextExtender {
 public:
+  // The number of object IDs allocated so far.
+  ObjectIDType ObjectsCount();
+  // Free the object IDs allocated from inFirstID on that were never
+  // written, so a failed image, form or font load does not leave the
+  // cross-reference table unwritable.
+  void ReleaseUnwrittenObjects(ObjectIDType inFirstID);
   ~PDFWriterDriver() override;
   static bool Init(muhammara::napi::ModuleState &state, napi_value exports);
   PDFHummus::EStatusCode StartPDF(const std::string &, EPDFVersion,
