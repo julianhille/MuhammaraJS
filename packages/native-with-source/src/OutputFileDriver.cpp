@@ -26,7 +26,7 @@ void OutputFileDriver::RenewStreamLifecycle() {
   if (streamLifecycle_)
     streamLifecycle_->End();
   streamLifecycle_ =
-      std::make_shared<DriverLifecycleState>("Output file stream");
+      std::make_shared<DriverLifecycleState>("Output file stream has ended");
 }
 void OutputFileDriver::SetFromOwnedFile(OutputFile *file) {
   if (outputFile_ && owns_)

@@ -50,7 +50,7 @@ void Password(napi_env e, napi_value o, PDFParsingOptions &p) {
 PDFWriterDriver::PDFWriterDriver()
     : holder(nullptr), startedWithStream_(false), catalogUpdateRequired_(false),
       started_(false), formAbandoned_(false),
-      lifecycle_(new DriverLifecycleState("PDF writer")),
+      lifecycle_(new DriverLifecycleState("PDF writer has ended")),
       openForms_(std::make_shared<OpenFormXObjects>()), writeProxy_(nullptr),
       readProxy_(nullptr), logProxy_(nullptr), env_(nullptr) {}
 PDFWriterDriver::~PDFWriterDriver() {
@@ -1122,7 +1122,8 @@ napi_value WrapDictionary(ConstructorsHolder *h, napi_env e,
 class EventScope {
 public:
   explicit EventScope(const DriverLifecycle &owner)
-      : lifecycle(std::make_shared<DriverLifecycleState>("PDF writer event")) {
+      : lifecycle(std::make_shared<DriverLifecycleState>(
+            "PDF writer event has ended")) {
     lifecycle->AddOwner(owner);
   }
   ~EventScope() { lifecycle->End(); }

@@ -75,7 +75,7 @@ napi_value OneByteString(napi_env env, const std::string &value) {
 PDFReaderDriver::PDFReaderDriver()
     : holder(nullptr), mStartedWithStream(false), mReadStreamProxy(nullptr),
       mOwnsParser(false), mPDFReader(nullptr),
-      mLifecycle(new DriverLifecycleState("PDF reader")) {}
+      mLifecycle(new DriverLifecycleState("PDF reader has ended")) {}
 
 PDFReaderDriver::~PDFReaderDriver() {
   mLifecycle->End();

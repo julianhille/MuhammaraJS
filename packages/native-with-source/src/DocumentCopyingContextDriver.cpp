@@ -23,7 +23,7 @@ bool Active(const CallbackArgs &a, const char *msg) {
 } // namespace
 DocumentCopyingContextDriver::DocumentCopyingContextDriver()
     : CopyingContext(nullptr), ReadStreamProxy(nullptr), holder(nullptr),
-      mLifecycle(new DriverLifecycleState("PDF copying context")) {}
+      mLifecycle(new DriverLifecycleState("PDF copying context has ended")) {}
 DocumentCopyingContextDriver::~DocumentCopyingContextDriver() {
   mLifecycle->End();
   delete CopyingContext;

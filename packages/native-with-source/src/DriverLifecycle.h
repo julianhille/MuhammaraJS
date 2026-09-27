@@ -8,10 +8,11 @@
 class DriverLifecycleState
 {
 public:
-    // The name completes the error thrown after the lifecycle ends, as in
-    // "PDF writer has ended".
-    explicit DriverLifecycleState(const std::string& inName = std::string())
-        : mActive(true), mName(inName) {}
+    // The error thrown when an object tied to this lifecycle is used after
+    // it ended, such as "PDF writer has ended".
+    explicit DriverLifecycleState(
+        const std::string& inEndedMessage = std::string())
+        : mActive(true), mEndedMessage(inEndedMessage) {}
 
     bool IsActive() const
     {
@@ -32,9 +33,9 @@ public:
         return NULL;
     }
 
-    const std::string& GetName() const
+    const std::string& GetEndedMessage() const
     {
-        return mName;
+        return mEndedMessage;
     }
 
     void End()
@@ -56,7 +57,7 @@ public:
 
 private:
     bool mActive;
-    std::string mName;
+    std::string mEndedMessage;
     std::vector<std::shared_ptr<DriverLifecycleState> > mOwners;
 };
 

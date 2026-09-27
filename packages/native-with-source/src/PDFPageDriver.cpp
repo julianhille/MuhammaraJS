@@ -51,8 +51,8 @@ DriverLifecycle PDFPageDriver::ContentLifecycle() {
 }
 void PDFPageDriver::RenewContentLifecycle() {
   EndContentLifecycle();
-  mContentLifecycle =
-      std::make_shared<DriverLifecycleState>("Page content context");
+  mContentLifecycle = std::make_shared<DriverLifecycleState>(
+      "Page content context is not active");
 }
 void PDFPageDriver::EndContentLifecycle() {
   if (mContentLifecycle)

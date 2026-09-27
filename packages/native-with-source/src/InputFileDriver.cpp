@@ -27,7 +27,7 @@ void InputFileDriver::RenewStreamLifecycle() {
   if (mStreamLifecycle)
     mStreamLifecycle->End();
   mStreamLifecycle =
-      std::make_shared<DriverLifecycleState>("Input file stream");
+      std::make_shared<DriverLifecycleState>("Input file stream has ended");
 }
 
 void InputFileDriver::SetFromOwnedFile(InputFile *file) {

@@ -369,11 +369,11 @@ describe("UseAfterEndTest", function () {
     /**
      * Asserts that calling a method throws because its owner has ended.
      *
-     * @param {string} owner The name of the owner in the error message.
+     * @param {string} message The expected error message.
      * @param {Function} call Calls a method on an object whose owner ended.
      */
-    function assertEnded(owner, call) {
-      assert.throws(call, new RegExp("^" + owner + " has ended$"));
+    function assertEnded(message, call) {
+      assert.throws(call, new RegExp("^" + message + "$"));
     }
 
     it("rejects writer children after end()", function () {
@@ -397,28 +397,28 @@ describe("UseAfterEndTest", function () {
       writer.writePage(page);
       writer.end();
 
-      assertEnded("PDF writer", function () {
+      assertEnded("PDF writer has ended", function () {
         pageContent.drawRectangle(1, 1, 2, 2);
       });
-      assertEnded("PDF writer", function () {
+      assertEnded("PDF writer has ended", function () {
         pageStream.getWriteStream();
       });
-      assertEnded("PDF writer", function () {
+      assertEnded("PDF writer has ended", function () {
         formContent.re(0, 0, 1, 1);
       });
-      assertEnded("PDF writer", function () {
+      assertEnded("PDF writer has ended", function () {
         form.getContentContext();
       });
-      assertEnded("PDF writer", function () {
+      assertEnded("PDF writer has ended", function () {
         objectsContext.startDictionary();
       });
-      assertEnded("PDF writer", function () {
+      assertEnded("PDF writer has ended", function () {
         dictionary.writeKey("Key");
       });
-      assertEnded("PDF writer", function () {
+      assertEnded("PDF writer has ended", function () {
         font.calculateTextDimensions("text", 10);
       });
-      assertEnded("PDF writer", function () {
+      assertEnded("PDF writer has ended", function () {
         documentContext.getInfoDictionary();
       });
     });
@@ -429,7 +429,7 @@ describe("UseAfterEndTest", function () {
       var pageContent = writer.startPageContentContext(page);
       writer.writePage(page);
 
-      assertEnded("Page content context", function () {
+      assertEnded("Page content context is not active", function () {
         pageContent.re(1, 1, 2, 2);
       });
       var nextContent = writer.startPageContentContext(page);
@@ -447,7 +447,7 @@ describe("UseAfterEndTest", function () {
       });
       writer.writePage(writer.createPage(0, 0, 100, 100));
 
-      assertEnded("PDF writer event", function () {
+      assertEnded("PDF writer event has ended", function () {
         pageDictionary.writeKey("Late");
       });
       writer.end();
@@ -468,13 +468,13 @@ describe("UseAfterEndTest", function () {
         var inputStream = writer.getModifiedInputFile().getInputStream();
         writer.end();
 
-        assertEnded("PDF writer", function () {
+        assertEnded("PDF writer has ended", function () {
           modifierContent.re(1, 1, 2, 2);
         });
-        assertEnded("PDF writer", function () {
+        assertEnded("PDF writer has ended", function () {
           modifier.writePage();
         });
-        assertEnded("PDF writer", function () {
+        assertEnded("PDF writer has ended", function () {
           inputStream.read(10);
         });
         assert.throws(function () {
@@ -505,19 +505,19 @@ describe("UseAfterEndTest", function () {
       var objectsParser = reader.startReadingObjectsFromStream(contents);
       reader.end();
 
-      assertEnded("PDF reader", function () {
+      assertEnded("PDF reader has ended", function () {
         page.getCropBox();
       });
-      assertEnded("PDF reader", function () {
+      assertEnded("PDF reader has ended", function () {
         parserStream.read(10);
       });
-      assertEnded("PDF reader", function () {
+      assertEnded("PDF reader has ended", function () {
         contentReader.read(10);
       });
-      assertEnded("PDF reader", function () {
+      assertEnded("PDF reader has ended", function () {
         objectsParser.parseNewObject();
       });
-      assertEnded("PDF reader", function () {
+      assertEnded("PDF reader has ended", function () {
         muhammara.createReader(parserStream);
       });
     });
@@ -528,7 +528,7 @@ describe("UseAfterEndTest", function () {
       );
       var inputStream = input.getInputStream();
       input.closeFile();
-      assertEnded("Input file stream", function () {
+      assertEnded("Input file stream has ended", function () {
         inputStream.read(10);
       });
 
@@ -537,7 +537,7 @@ describe("UseAfterEndTest", function () {
         var output = new muhammara.OutputFile(path.join(directory, "out.bin"));
         var outputStream = output.getOutputStream();
         output.closeFile();
-        assertEnded("Output file stream", function () {
+        assertEnded("Output file stream has ended", function () {
           outputStream.write([1, 2, 3]);
         });
       } finally {

@@ -725,15 +725,16 @@ napi_value Dispatch(napi_env env, napi_callback_info info) {
     if (!matches) {
       return ThrowTypeError(env, "Invalid native method receiver");
     }
+    // Objects tied to an owner that ended hold released native state.
     void* wrapped = nullptr;
     const DriverLifecycleState* ended =
         napi_unwrap(env, args.This(), &wrapped) == napi_ok && wrapped
             ? static_cast<ObjectWrap*>(wrapped)->EndedOwner()
             : nullptr;
     if (ended) {
-      std::string message =
-          (ended->GetName().empty() ? binding->className : ended->GetName()) +
-          " has ended";
+      std::string message = ended->GetEndedMessage().empty()
+                                ? binding->className + " has ended"
+                                : ended->GetEndedMessage();
       return ThrowError(env, message.c_str());
     }
   }
