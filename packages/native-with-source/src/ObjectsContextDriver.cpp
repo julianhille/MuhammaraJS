@@ -7,6 +7,7 @@
 #include "ETokenSeparator.h"
 #include "ObjectsContext.h"
 #include "PDFStreamDriver.h"
+#include "PDFWriterDriver.h"
 
 using namespace muhammara::napi;
 
@@ -254,6 +255,10 @@ static napi_value StartStream(const CallbackArgs &a, bool filtered) {
                   : d->ObjectsContextInstance->StartUnfilteredPDFStream());
   sd->mOwns = true;
   sd->AddOwner(d->Lifecycle());
+  if (d->openContent && sd->PDFStreamInstance) {
+    d->openContent->streams.insert(sd->PDFStreamInstance);
+    sd->openContent = d->openContent;
+  }
   return value;
 }
 napi_value ObjectsContextDriver::StartPDFStream(const CallbackArgs &a) {
@@ -271,6 +276,9 @@ napi_value ObjectsContextDriver::EndPDFStream(const CallbackArgs &a) {
   // A second end would finalize a finished stream.
   if (!stream || !stream->PDFStreamInstance || !stream->EndStream())
     return ThrowError(a.Env(), "Unable to end PDF stream");
+  // Ending finalizes the stream, so it no longer needs releasing.
+  if (d->openContent)
+    d->openContent->streams.erase(stream->PDFStreamInstance);
   d->ObjectsContextInstance->EndPDFStream(stream->PDFStreamInstance);
   return a.This();
 }

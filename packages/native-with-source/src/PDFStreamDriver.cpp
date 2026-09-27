@@ -3,6 +3,7 @@
 #include "ByteWriterDriver.h"
 #include "ConstructorsHolder.h"
 #include "PDFStream.h"
+#include "PDFWriterDriver.h"
 
 using namespace muhammara::napi;
 
@@ -17,6 +18,10 @@ bool PDFStreamDriver::EndStream() {
   return true;
 }
 PDFStreamDriver::~PDFStreamDriver() {
+  // An unfinished stream deletes the writer's output when destroyed.
+  if (openContent && openContent->writer &&
+      openContent->streams.erase(PDFStreamInstance))
+    openContent->writer->AbandonStream(PDFStreamInstance);
   if (mOwns)
     delete PDFStreamInstance;
 }

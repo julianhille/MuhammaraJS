@@ -284,6 +284,10 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
 
 ### Fixed
 
+- Prevent a segmentation fault when a stream started with
+  `objectsContext.startPDFStream()` and never passed to `endPDFStream()` is
+  garbage-collected, or when its writer is collected or the process exits
+  [#842](https://github.com/julianhille/MuhammaraJS/issues/842)
 - Release the content stream of a page whose content context was never
   written, and of a `PDFPageModifier` whose context was never written, when
   the writer ends or when the page, modifier, or writer is garbage-collected.

@@ -166,6 +166,9 @@ void PDFWriterDriver::ReleaseOpenContent() {
   for (PDFModifiedPage *page : openContent_->modifiedPages)
     page->EndContentContext();
   openContent_->modifiedPages.clear();
+  for (PDFStream *stream : openContent_->streams)
+    stream->FinalizeStreamWrite();
+  openContent_->streams.clear();
 }
 std::shared_ptr<OpenContent> PDFWriterDriver::GetOpenContent() {
   return openContent_;
@@ -180,6 +183,12 @@ void PDFWriterDriver::AbandonPage(PDFPage *page) {
 void PDFWriterDriver::AbandonModifiedPage(PDFModifiedPage *page) {
   NoJavaScriptScope noJavaScript(this);
   page->EndContentContext();
+}
+void PDFWriterDriver::AbandonStream(PDFStream *stream) {
+  formAbandoned_ = true;
+  if (writeProxy_)
+    writeProxy_->Close();
+  stream->FinalizeStreamWrite();
 }
 void PDFWriterDriver::AbandonFormXObject(PDFFormXObject *form) {
   // The form's stream sits in the middle of the output, so no valid PDF can
@@ -233,9 +242,10 @@ napi_value PDFWriterDriver::End(const CallbackArgs &a) {
     return ThrowError(
         a.Env(),
         "End the active objects context operation before ending the PDF");
-  // An open or abandoned form leaves an unfinished object in the output.
+  // An open or abandoned form or stream leaves an unfinished object.
   EStatusCode status = eFailure;
-  if (d->openContent_->forms.empty() && !d->formAbandoned_)
+  if (d->openContent_->forms.empty() && d->openContent_->streams.empty() &&
+      !d->formAbandoned_)
     status = d->startedWithStream_ ? d->writer_.EndPDFForStream()
                                    : d->writer_.EndPDF();
   if (!d->Retire())
@@ -763,6 +773,7 @@ napi_value PDFWriterDriver::GetObjectsContext(const CallbackArgs &a) {
     return nullptr;
   context->ObjectsContextInstance = &d->writer_.GetObjectsContext();
   context->AddOwner(d->lifecycle_);
+  context->openContent = d->openContent_;
   return v;
 }
 napi_value PDFWriterDriver::GetDocumentContext(const CallbackArgs &a) {

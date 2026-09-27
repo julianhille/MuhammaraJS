@@ -61,4 +61,60 @@ describe("ObjectsContextCleanup", function () {
     global.gc();
     global.gc();
   });
+
+  describe("unended streams", function () {
+    var { collectGarbage } = require("./helpers/gc");
+
+    /**
+     * Starts an objects-context stream, writes to it, and never ends it.
+     *
+     * @param {object} writer The writer to start the stream on.
+     * @returns {object} The unended stream.
+     */
+    function startUnendedStream(writer) {
+      var objectsContext = writer.getObjectsContext();
+      objectsContext.startNewIndirectObject();
+      var stream = objectsContext.startPDFStream();
+      stream.getWriteStream().write([0x41, 0x42]);
+      return stream;
+    }
+
+    it("fails end() while a stream is still open", function () {
+      var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+      startUnendedStream(writer);
+      assert.throws(function () {
+        writer.end();
+      }, /Unable to end PDF/);
+    });
+
+    it("releases a stream collected before its writer", async function () {
+      var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+      (function () {
+        startUnendedStream(writer);
+      })();
+      await collectGarbage();
+      assert.throws(function () {
+        writer.end();
+      }, /Unable to end PDF/);
+    });
+
+    it("releases streams collected with or after their writers", async function () {
+      var streams = [];
+      (function () {
+        for (var i = 0; i < 20; i++) {
+          startUnendedStream(
+            muhammara.createWriter(new muhammara.PDFWStreamForBuffer()),
+          );
+          streams.push(
+            startUnendedStream(
+              muhammara.createWriter(new muhammara.PDFWStreamForBuffer()),
+            ),
+          );
+        }
+      })();
+      await collectGarbage();
+      streams = null;
+      await collectGarbage();
+    });
+  });
 });

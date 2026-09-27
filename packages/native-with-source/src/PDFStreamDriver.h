@@ -2,8 +2,11 @@
 
 #include "napi/NapiSupport.h"
 
+#include <memory>
+
 class PDFStream;
 class ConstructorsHolder;
+struct OpenContent;
 
 class PDFStreamDriver : public muhammara::napi::ObjectWrap {
 public:
@@ -15,6 +18,8 @@ public:
   bool mOwns;
   // Ends when objectsContext.endPDFStream() finalizes the stream.
   bool EndStream();
+  // Set for an owned stream while it is open, see OpenContent.
+  std::shared_ptr<OpenContent> openContent;
 
 private:
   PDFStreamDriver();

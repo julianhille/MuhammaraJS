@@ -20,19 +20,22 @@ class ConstructorsHolder;
 class PDFFormXObject;
 class PDFModifiedPage;
 class PDFPage;
+class PDFStream;
 class PDFWriterDriver;
 
 // Content started by a writer and owned by other objects: forms from
 // createFormXObject() not yet ended, pages whose content context is not yet
-// written, and page modifiers. Their content stream writes to the writer's
-// output and holds about 0.5 MB until ended, and an unfinished one deletes the
-// output when destroyed, so each is ended while the output is alive. Shared by
-// the writer and the owners because their finalizers run in any order.
+// written, page modifiers, and streams from objectsContext.startPDFStream().
+// Their content stream writes to the writer's output and holds about 0.5 MB
+// until ended, and an unfinished one deletes the output when destroyed, so each
+// is ended while the output is alive. Shared by the writer and the owners
+// because their finalizers run in any order.
 struct OpenContent {
   PDFWriterDriver *writer = nullptr;
   std::set<PDFFormXObject *> forms;
   std::set<PDFPage *> pages;
   std::set<PDFModifiedPage *> modifiedPages;
+  std::set<PDFStream *> streams;
 };
 
 class PDFWriterDriver : public muhammara::napi::ObjectWrap,
@@ -77,6 +80,9 @@ public:
   // finalizer. The content is complete, so the PDF can still end.
   void AbandonPage(PDFPage *);
   void AbandonModifiedPage(PDFModifiedPage *);
+  // Detaches an unended objects-context stream from the output from a
+  // finalizer; like an abandoned form it leaves the PDF incomplete.
+  void AbandonStream(PDFStream *);
   std::shared_ptr<OpenContent> GetOpenContent();
   void SetLogStream(napi_env env, napi_value stream, LogConfiguration &config);
   ConstructorsHolder *holder;
