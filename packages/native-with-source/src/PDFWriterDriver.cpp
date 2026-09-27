@@ -190,6 +190,22 @@ void PDFWriterDriver::AbandonFormXObject(PDFFormXObject *form) {
     writeProxy_->Close();
   form->GetContentStream()->FinalizeStreamWrite();
 }
+ObjectIDType PDFWriterDriver::ObjectsCount() {
+  return writer_.GetObjectsContext()
+      .GetInDirectObjectsRegistry()
+      .GetObjectsCount();
+}
+void PDFWriterDriver::ReleaseUnwrittenObjects(ObjectIDType inFirstID) {
+  IndirectObjectsReferenceRegistry &registry =
+      writer_.GetObjectsContext().GetInDirectObjectsRegistry();
+  for (ObjectIDType id = inFirstID; id < registry.GetObjectsCount(); ++id) {
+    GetObjectWriteInformationResult info =
+        registry.GetObjectWriteInformation(id);
+    if (info.first && !info.second.mObjectWritten &&
+        info.second.mObjectReferenceType == ObjectWriteInformation::Used)
+      registry.DeleteObject(id);
+  }
+}
 bool PDFWriterDriver::Retire() {
   ReleaseOpenContent();
   writer_.GetDocumentContext().RemoveDocumentContextExtender(this);
@@ -381,6 +397,7 @@ static napi_value FormImage(const CallbackArgs &a, const char *kind) {
                  "ID for a forward reference image");
   PDFFormXObject *f = nullptr;
   ObjectIDType id = a.Length() == 2 ? ToInt32(a.Env(), a[1]) : 0;
+  ObjectIDType firstID = d->ObjectsCount();
   if (IsObject(a.Env(), a[0])) {
     ObjectByteReaderWithPosition p(a.Env(), a[0]);
     if (!strcmp(kind, "JPG"))
@@ -398,13 +415,15 @@ static napi_value FormImage(const CallbackArgs &a, const char *kind) {
       f = id ? d->GetWriter()->CreateFormXObjectFromPNGFile(path, id)
              : d->GetWriter()->CreateFormXObjectFromPNGFile(path);
   }
-  if (!f)
+  if (!f) {
+    d->ReleaseUnwrittenObjects(firstID);
     return ThrowTypeError(
         a.Env(), !strcmp(kind, "JPG")
                      ? "unable to create form xobject. verify that the "
                        "target is an existing jpg file/stream"
                      : "unable to create form xobject. verify that the "
                        "target is an existing png file/stream");
+  }
   napi_value v = d->holder->GetNewFormXObject();
   FormXObjectDriver *form = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &form)) {
@@ -475,6 +494,7 @@ napi_value PDFWriterDriver::GetFontForFile(const CallbackArgs &a) {
                  "with font index in case of font packages (TTC, DFont)");
   auto *d = Driver(a);
   PDFUsedFont *f = nullptr;
+  ObjectIDType firstID = d->ObjectsCount();
   std::string p = LegacyString(a.Env(), a[0]);
   if (a.Length() == 3)
     f = d->writer_.GetFontForFile(p, LegacyString(a.Env(), a[1]),
@@ -485,10 +505,12 @@ napi_value PDFWriterDriver::GetFontForFile(const CallbackArgs &a) {
             : d->writer_.GetFontForFile(p, ToUint32(a.Env(), a[1]));
   else
     f = d->writer_.GetFontForFile(p);
-  if (!f)
+  if (!f) {
+    d->ReleaseUnwrittenObjects(firstID);
     return ThrowTypeError(
         a.Env(), "unable to create font object. verify that the target is an "
                  "existing and supported font type (ttf,otf,type1,dfont,ttc)");
+  }
   napi_value v = d->holder->GetNewUsedFont();
   UsedFontDriver *font = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &font))
@@ -669,6 +691,7 @@ napi_value PDFWriterDriver::CreateFormXObjectFromTIFF(const CallbackArgs &a) {
   if (HasPendingException(a.Env()))
     return nullptr;
   PDFFormXObject *f = nullptr;
+  ObjectIDType firstID = d->ObjectsCount();
   if (IsObject(a.Env(), a[0])) {
     ObjectByteReaderWithPosition r(a.Env(), a[0]);
     f = id ? d->writer_.CreateFormXObjectFromTIFFStream(&r, id, p)
@@ -678,10 +701,12 @@ napi_value PDFWriterDriver::CreateFormXObjectFromTIFF(const CallbackArgs &a) {
     f = id ? d->writer_.CreateFormXObjectFromTIFFFile(path, id, p)
            : d->writer_.CreateFormXObjectFromTIFFFile(path, p);
   }
-  if (!f)
+  if (!f) {
+    d->ReleaseUnwrittenObjects(firstID);
     return ThrowTypeError(a.Env(),
                           "unable to create form xobject. verify that the "
                           "target is an existing tiff file");
+  }
   napi_value v = d->holder->GetNewFormXObject();
   FormXObjectDriver *form = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &form)) {
@@ -704,6 +729,7 @@ napi_value PDFWriterDriver::CreateImageXObjectFromJPG(const CallbackArgs &a) {
   auto *d = Driver(a);
   ObjectIDType id = a.Length() == 2 ? ToInt32(a.Env(), a[1]) : 0;
   PDFImageXObject *x = nullptr;
+  ObjectIDType firstID = d->ObjectsCount();
   if (IsObject(a.Env(), a[0])) {
     ObjectByteReaderWithPosition r(a.Env(), a[0]);
     x = id ? d->writer_.CreateImageXObjectFromJPGStream(&r, id)
@@ -713,10 +739,12 @@ napi_value PDFWriterDriver::CreateImageXObjectFromJPG(const CallbackArgs &a) {
     x = id ? d->writer_.CreateImageXObjectFromJPGFile(p, id)
            : d->writer_.CreateImageXObjectFromJPGFile(p);
   }
-  if (!x)
+  if (!x) {
+    d->ReleaseUnwrittenObjects(firstID);
     return ThrowTypeError(a.Env(),
                           "unable to create image xobject. verify that "
                           "the target is an existing jpg file");
+  }
   napi_value v = d->holder->GetNewImageXObject();
   ImageXObjectDriver *image = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &image)) {

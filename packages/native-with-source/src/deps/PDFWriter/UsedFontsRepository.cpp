@@ -114,10 +114,12 @@ EStatusCode UsedFontsRepository::WriteUsedFontsDefinitions()
 	StringAndLongToPDFUsedFontMap::iterator it = mUsedFonts.begin();
 	EStatusCode status = PDFHummus::eSuccess;
 
+	// a font that failed to load is cached as NULL, so it is not retried;
+	// it has nothing to write, and must not fail the document
 	for(; it != mUsedFonts.end() && PDFHummus::eSuccess == status; ++it)
 		status = it->second ?
                     it->second->WriteFontDefinition():
-                    eFailure;
+                    eSuccess;
 
 	return status;
 }

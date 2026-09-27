@@ -90,6 +90,11 @@ exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
   options.keepAspectRatio =
     options.keepAspectRatio == void 0 ? true : options.keepAspectRatio;
   const dimensions = this.writer.getImageDimensions(imgSrc);
+  // An unreadable image measures 0 by 0. Drawing it would leave an image
+  // object that is never written, so endPDF() could not finish the PDF.
+  if (!(dimensions.width > 0 && dimensions.height > 0)) {
+    throw new Error(`Unknown image: ${imgSrc}`);
+  }
   const ratio = dimensions.width / dimensions.height;
 
   let width = dimensions.width;

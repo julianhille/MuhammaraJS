@@ -149,10 +149,14 @@ WASM_EXPORT WasmImage* muhammara_wasm_writer_create_jpg_image(WasmRecipe* recipe
                                                                  const char* path,
                                                                  unsigned long objectId) {
   if (recipe == nullptr || path == nullptr || recipe->finished) return nullptr;
+  ObjectIDType firstID = AllocatedObjectsCount(recipe->writer);
   PDFImageXObject* image = objectId == 0
                                 ? recipe->writer.CreateImageXObjectFromJPGFile(path)
                                 : recipe->writer.CreateImageXObjectFromJPGFile(path, objectId);
-  if (image == nullptr) return nullptr;
+  if (image == nullptr) {
+    ReleaseUnwrittenObjects(recipe->writer, firstID);
+    return nullptr;
+  }
   WasmImage* handle = new WasmImage();
   handle->image = image;
   recipe->images.push_back(handle);
@@ -169,6 +173,7 @@ WASM_EXPORT WasmForm* muhammara_wasm_writer_create_image_form(
     WasmRecipe* recipe, const char* path, int type, unsigned long objectId) {
   if (recipe == nullptr || path == nullptr || recipe->finished) return nullptr;
   PDFFormXObject* form = nullptr;
+  ObjectIDType firstID = AllocatedObjectsCount(recipe->writer);
   if (type == 0)
     form = objectId == 0 ? recipe->writer.CreateFormXObjectFromJPGFile(path)
                          : recipe->writer.CreateFormXObjectFromJPGFile(path, objectId);
@@ -182,7 +187,10 @@ WASM_EXPORT WasmForm* muhammara_wasm_writer_create_image_form(
     form = objectId == 0 ? recipe->writer.CreateFormXObjectFromTIFFFile(path)
                          : recipe->writer.CreateFormXObjectFromTIFFFile(path, objectId);
 #endif
-  if (form == nullptr) return nullptr;
+  if (form == nullptr) {
+    ReleaseUnwrittenObjects(recipe->writer, firstID);
+    return nullptr;
+  }
   WasmForm* handle = new WasmForm();
   handle->form = form;
   handle->recipe = recipe;
@@ -233,11 +241,15 @@ WASM_EXPORT WasmForm* muhammara_wasm_writer_create_tiff_form(
           CMYKRGBColor(grayscaleZeroColor0, grayscaleZeroColor1,
                        grayscaleZeroColor2, grayscaleZeroColor3);
   }
+  ObjectIDType firstID = AllocatedObjectsCount(recipe->writer);
   PDFFormXObject* form = objectId == 0
                              ? recipe->writer.CreateFormXObjectFromTIFFFile(path, parameters)
                              : recipe->writer.CreateFormXObjectFromTIFFFile(
                                    path, objectId, parameters);
-  if (form == nullptr) return nullptr;
+  if (form == nullptr) {
+    ReleaseUnwrittenObjects(recipe->writer, firstID);
+    return nullptr;
+  }
   WasmForm* handle = new WasmForm();
   handle->form = form;
   handle->recipe = recipe;

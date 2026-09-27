@@ -67,6 +67,25 @@ class WasmPageInput;
 class WasmModifier;
 class WasmRecipe;
 
+// The number of object IDs the writer has allocated so far.
+inline ObjectIDType AllocatedObjectsCount(PDFWriter& writer) {
+  return writer.GetObjectsContext().GetInDirectObjectsRegistry().GetObjectsCount();
+}
+
+// Frees the object IDs allocated from firstID on that were never written, so a
+// failed image or form load does not leave the cross-reference table
+// unwritable.
+inline void ReleaseUnwrittenObjects(PDFWriter& writer, ObjectIDType firstID) {
+  IndirectObjectsReferenceRegistry& registry =
+      writer.GetObjectsContext().GetInDirectObjectsRegistry();
+  for (ObjectIDType id = firstID; id < registry.GetObjectsCount(); ++id) {
+    GetObjectWriteInformationResult info = registry.GetObjectWriteInformation(id);
+    if (info.first && !info.second.mObjectWritten &&
+        info.second.mObjectReferenceType == ObjectWriteInformation::Used)
+      registry.DeleteObject(id);
+  }
+}
+
 class WasmCatalogUpdateExtender : public DocumentContextExtenderAdapter {
  public:
   bool required = false;

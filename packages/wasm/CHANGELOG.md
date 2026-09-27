@@ -172,6 +172,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   kept about 0.5 MB, so the module aborted with `RuntimeError: Aborted()` after
   roughly a thousand disposed documents
   [#822](https://github.com/julianhille/MuhammaraJS/issues/822)
+- Keep the writer usable after a failed `createImageXObjectFromJPGBytes()`,
+  `createFormXObjectFromJPGBytes()`, `createFormXObjectFromPNGBytes()`,
+  `createFormXObjectFromTIFF()`, `createFormXObjectFromTIFFBytes()`, or
+  `getFontForBytes()`. The failed load left an object that was never written,
+  or a cached empty font, so `end()` threw `Unable to finish PDF`. The object
+  IDs a failed load allocated are now freed, and a font that failed to load is
+  skipped when fonts are written, a local change to the PDF-Writer shared with
+  native [#825](https://github.com/julianhille/MuhammaraJS/issues/825)
 - Apply Recipe `text()` `opacity` on pages opened with `editPage()`, where it
   was ignored, and to that text only: on new pages it also became the
   Recipe-level `opacity()` default for later shapes. Values outside 0 to 1 are

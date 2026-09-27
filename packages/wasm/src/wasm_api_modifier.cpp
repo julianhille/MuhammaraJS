@@ -185,10 +185,14 @@ WASM_EXPORT int muhammara_wasm_modifier_retrieve_jpg_image_information(
 WASM_EXPORT WasmImage* muhammara_wasm_modifier_create_jpg_image(
     WasmModifier* modifier, const char* path, unsigned long objectId) {
   if (modifier == nullptr || modifier->finished || path == nullptr) return nullptr;
+  ObjectIDType firstID = AllocatedObjectsCount(modifier->writer);
   PDFImageXObject* image = objectId == 0
       ? modifier->writer.CreateImageXObjectFromJPGFile(path)
       : modifier->writer.CreateImageXObjectFromJPGFile(path, objectId);
-  if (image == nullptr) return nullptr;
+  if (image == nullptr) {
+    ReleaseUnwrittenObjects(modifier->writer, firstID);
+    return nullptr;
+  }
   WasmImage* handle = new WasmImage();
   handle->image = image;
   modifier->images.push_back(handle);
@@ -199,6 +203,7 @@ WASM_EXPORT WasmForm* muhammara_wasm_modifier_create_image_form(
     WasmModifier* modifier, const char* path, int type, unsigned long objectId) {
   if (modifier == nullptr || modifier->finished || path == nullptr) return nullptr;
   PDFFormXObject* form = nullptr;
+  ObjectIDType firstID = AllocatedObjectsCount(modifier->writer);
   if (type == 0) form = objectId == 0 ? modifier->writer.CreateFormXObjectFromJPGFile(path)
                                       : modifier->writer.CreateFormXObjectFromJPGFile(path, objectId);
 #ifndef PDFHUMMUS_NO_PNG
@@ -209,7 +214,10 @@ WASM_EXPORT WasmForm* muhammara_wasm_modifier_create_image_form(
   if (type == 2) form = objectId == 0 ? modifier->writer.CreateFormXObjectFromTIFFFile(path)
                                       : modifier->writer.CreateFormXObjectFromTIFFFile(path, objectId);
 #endif
-  if (form == nullptr) return nullptr;
+  if (form == nullptr) {
+    ReleaseUnwrittenObjects(modifier->writer, firstID);
+    return nullptr;
+  }
   WasmForm* handle = new WasmForm();
   handle->form = form;
   handle->modifier = modifier;
@@ -723,10 +731,14 @@ WASM_EXPORT WasmForm* muhammara_wasm_modifier_create_tiff_form(
     if (grayscaleZeroColorComponents == 3) parameters.GrayscaleTreatment.ZeroColor = CMYKRGBColor(grayscaleZeroColor0, grayscaleZeroColor1, grayscaleZeroColor2);
     if (grayscaleZeroColorComponents == 4) parameters.GrayscaleTreatment.ZeroColor = CMYKRGBColor(grayscaleZeroColor0, grayscaleZeroColor1, grayscaleZeroColor2, grayscaleZeroColor3);
   }
+  ObjectIDType firstID = AllocatedObjectsCount(modifier->writer);
   PDFFormXObject* form = objectId == 0
                              ? modifier->writer.CreateFormXObjectFromTIFFFile(path, parameters)
                              : modifier->writer.CreateFormXObjectFromTIFFFile(path, objectId, parameters);
-  if (form == nullptr) return nullptr;
+  if (form == nullptr) {
+    ReleaseUnwrittenObjects(modifier->writer, firstID);
+    return nullptr;
+  }
   WasmForm* handle = new WasmForm();
   handle->form = form;
   handle->modifier = modifier;
