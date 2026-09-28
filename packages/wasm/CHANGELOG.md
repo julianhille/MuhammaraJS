@@ -69,12 +69,20 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   Info metadata, page geometry, text operations, annotations, XObjects, and
   bookmarks of an uploaded PDF, or of the built-in sample, into a one-page
   report
+- Add a `Recipe` type namespace with native's names: one type per Recipe value
+  set, for example `Recipe.TextWrap` and `Recipe.AnnotFlag`, and the option
+  types, for example `Recipe.TextOptions` and `Recipe.TableOptions`; type
+  `createPage(size)` as `Recipe.PageSize` and text-box `textAlign` as
+  `Recipe.TextBoxAlign` instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Add native's low-level type names as aliases, for example `EPDFVersion`,
+  `UsedFont`, `TextDimension`, `JPEGInformation`, `TransformationObject`, and
+  `PageContentContext`, so declarations shared with `@muhammara/native` compile
+  against both packages [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ### Fixed
 
-- Recipe `n_gon()` and `star()` throw
-  `RangeError: n_gon sides must be a finite number no greater than 100000`
-  (`star points …` for `star()`) when the side or point count is `NaN`,
+- Throw `RangeError: n_gon sides must be a finite number no greater than 100000`
+  from Recipe `n_gon()` (`star points …` from `star()`) when the side or point count is `NaN`,
   `Infinity`, not a number, or above 100000. An infinite or huge count used to
   build vertices until memory ran out, and `NaN`
   drew nothing. Pass a finite count; beyond a few hundred sides a polygon is
@@ -355,15 +363,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `Glyph[]`. Code that annotated one pair as `Glyph` should use `[number, number]` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type the Recipe `annot()` subtype as `Recipe.AnnotSubtype`, the native
   `AnnotSubtype` values, and add `lockedcontents` to `Recipe.AnnotFlag` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Add a `Recipe` type namespace with native's names: one type per Recipe value
-  set, for example `Recipe.TextWrap` and `Recipe.AnnotFlag`, and the option
-  types, for example `Recipe.TextOptions` and `Recipe.TableOptions`; type
-  `createPage(size)` as `Recipe.PageSize` and text-box `textAlign` as
-  `Recipe.TextBoxAlign` instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Add native's low-level type names as aliases, for example `EPDFVersion`,
-  `UsedFont`, `TextDimension`, `JPEGInformation`, `TransformationObject`, and
-  `PageContentContext`, so declarations shared with `@muhammara/native` compile
-  against both packages [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Throw a `TypeError` from `drawRectangle()`, `drawSquare()`, `drawCircle()`, and
   `drawPath()` for a `type` that is not a `DrawingPathType` value or `null`,
   instead of ending the path unpainted, as native now does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
@@ -424,7 +423,8 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Correct low-level shape `type: "clip"` to clip without painting instead of
   stroking, and end paths with unknown types without painting. Pass `"stroke"`/`"fill"` to paint,
-  or scope intentional clipping with `q()`/`Q()`
+  or scope intentional clipping with `q()`/`Q()`; see
+  [drawing helpers](docs/low-level.md#drawing-helpers-and-clipping)
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Validate drawing options before emitting shape or text operators, preventing
   failed option getters from leaving partial output. Reject overflowing circle

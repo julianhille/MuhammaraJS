@@ -25,7 +25,7 @@ This page collects the compatibility changes formerly maintained in the README.
   named like a method new in v7: `deletePage`, `getCurrentPageInfo`,
   `lineStyle`, `link`, `opacity`, `pie`, `removeText`, `replaceText`,
   `rotate`, `rotateContent`, or `setPageBox`. Rename the plugin; see
-  [Rename Recipe plugins that collide with new methods](getting-started/migrate-from-v6.md#18-rename-recipe-plugins-that-collide-with-new-methods)
+  [Rename Recipe plugins that collide with new methods](getting-started/migrate-from-v6.md#17-rename-recipe-plugins-that-collide-with-new-methods)
   [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
 
 - Recipe `annot(x, y, subtype, { width, height })` places its rectangle with
@@ -34,7 +34,7 @@ This page collects the compatibility changes formerly maintained in the README.
   annotation with a `height` now appears `height` points lower on the page.
   Subtract `height` from `y` to keep the 6.x position; see [Move Recipe
   annotations to their top-left
-  corner](getting-started/migrate-from-v6.md#17-move-recipe-annotations-to-their-top-left-corner).
+  corner](getting-started/migrate-from-v6.md#16-move-recipe-annotations-to-their-top-left-corner).
   Highlight, Underline, StrikeOut, and Squiggly created with `annot()` already
   hung down from `y` and render where they did, but their `Rect` now encloses
   their `QuadPoints` instead of lying above them. `comment()` and the markup
@@ -145,7 +145,7 @@ This page collects the compatibility changes formerly maintained in the README.
   ends; do not expect one `write` call per PDF token. `write` must return the
   full chunk length: returning less now fails the writer (creation, later
   writes, `end()`, and `shutdown()` throw) instead of being ignored. See
-  [Accept Buffers in custom streams](getting-started/migrate-from-v6.md#16-accept-buffers-in-custom-streams)
+  [Accept Buffers in custom streams](getting-started/migrate-from-v6.md#15-accept-buffers-in-custom-streams)
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324).
 - `appendPDFPagesFromPDF()` now ends its writer when copying pages fails.
   Previously callers could continue and produce a corrupted document; create a
@@ -167,7 +167,7 @@ This page collects the compatibility changes formerly maintained in the README.
   `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`
   instead of drawing; `null` still ends the path unpainted. Use `"clip"` explicitly and scope it with `q()`/`Q()`;
   use `"stroke"` or `"fill"` when painting is intended. See the
-  [drawing migration](getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+  [drawing migration](getting-started/migrate-from-v6.md#14-check-low-level-clipping-options).
 - Shape helpers and `writeText()` now finish input conversion before emitting
   operators. Failed getters or coercions no longer leave partial graphics/text
   output; correct the input and retry rather than relying on that partial output.
@@ -176,7 +176,7 @@ This page collects the compatibility changes formerly maintained in the README.
   `drawPath()` requires at least two complete pairs and rejects malformed or
   extra arguments instead of drawing a prefix. Replace `NaN`/infinities with
   finite values, reduce overflowing geometry, and supply complete pairs. See
-  the [drawing migration](getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+  the [drawing migration](getting-started/migrate-from-v6.md#14-check-low-level-clipping-options).
 - Native prebuilds now use Node-API 8 and are named
   `napi-v8-{platform}-{arch}-{libc}.tar.gz` instead of
   `node-v{abi}-{platform}-{arch}-{libc}.tar.gz`. The installed addon now lives
@@ -185,7 +185,7 @@ This page collects the compatibility changes formerly maintained in the README.
   `require("@muhammara/native")` calls continue to work, but custom mirrors,
   direct archive downloads, deployment scripts, and direct addon imports that
   assume the old names or path must use the Node-API names instead. See
-  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#14-update-native-binary-tooling)
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#13-update-native-binary-tooling)
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
   [#504](https://github.com/julianhille/MuhammaraJS/issues/504).
 - Recipe HTML text keeps text outside any element on one line with its
@@ -203,7 +203,7 @@ This page collects the compatibility changes formerly maintained in the README.
   reorder them, or grow taller rows, and a misspelled `order` or `columns`
   name now draws an empty column instead of being dropped; list the intended columns with `order` or
   `columns` to keep a fixed layout. See
-  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly)
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#11-choose-table-columns-explicitly)
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666).
 - Recipe table sizing includes vertical padding, minimum/fixed cell heights,
   and rendered HTML. Rows can grow taller and continue earlier; adjust the cell
@@ -211,7 +211,7 @@ This page collects the compatibility changes formerly maintained in the README.
   area too small for the pending row and repeated header, `table()` now throws
   `RangeError` instead of drawing beyond the bounds. Return `true` to stop or
   provide enough space; see the
-  [table migration steps](getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly)
+  [table migration steps](getting-started/migrate-from-v6.md#11-choose-table-columns-explicitly)
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666).
 - Native Recipe character-spacing measurements now count leading and trailing
   non-breaking spaces, matching Wasm. Text using `charSpace` can measure wider
@@ -239,7 +239,7 @@ This page collects the compatibility changes formerly maintained in the README.
   calls page drawing, configuration, or context methods after `endPage()` now
   fails instead of reusing the completed page and its content context; call
   `createPage()` or `editPage()` before the next page operation. See
-  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#9-reactivate-pages-after-endpage).
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#8-reactivate-pages-after-endpage).
 - Recipe `appendPage()` rejects zero, negative, fractional, reversed, and
   malformed page selections. These values were previously clamped, passed to
   the low-level writer, or partially interpreted; pass positive one-based
@@ -271,13 +271,10 @@ This page collects the compatibility changes formerly maintained in the README.
   `Object ID must be a non-negative integer`). Round or validate the value
   before passing it, bounding page indices with `getPagesCount()` and object IDs
   with `getObjectsCount()`.
-- `Recipe.setPageBox()` now accepts `ePDFPageBox*` constants rather than string
-  names. `recipe.setPageBox("crop", ...)` now throws; replace the string with
-  `muhammara.ePDFPageBoxCropBox`. See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#7-update-recipe-page-boxes).
 - `Recipe.fillOpacity()` was removed. Existing calls now throw because it is no
   longer a Recipe method; use `Recipe.opacity()` to set both fill and stroke
   alpha. Opacity persists for later vector drawing, so call `opacity(1)` to
-  restore opaque output. See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#8-replace-recipefillopacity).
+  restore opaque output. See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#7-replace-recipefillopacity).
 - Native Recipe TypeScript declarations now use named callback and option types
   for `register()`, `layout()`, and `table()`, finite colorspace values, and
   shape-specific polygon, arrow, and triangle options. Code that passed a value
@@ -288,7 +285,7 @@ This page collects the compatibility changes formerly maintained in the README.
   `muhammara.Recipe` types, return documented callback instructions, annotate
   arrow dimensions and triangle definitions with fixed-length tuples, and omit
   unsupported shape values to retain runtime defaults. See
-  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#10-update-recipe-types)
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#9-update-recipe-types)
   [#654](https://github.com/julianhille/MuhammaraJS/issues/654).
 - `Recipe.metadata` now declares the two optional counters the runtime uses: a
   document read from a file has `pages`, while a document created from scratch
@@ -296,7 +293,7 @@ This page collects the compatibility changes formerly maintained in the README.
   not always `number`. Code that read it unconditionally now fails `tsc`; check
   that `recipe.metadata.pages !== undefined`, or use the return value of
   `read()`, which is typed `ReadMetadata` directly.
-  See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#10-update-recipe-types)
+  See [Migrate from v6 to v7](getting-started/migrate-from-v6.md#9-update-recipe-types)
   [#654](https://github.com/julianhille/MuhammaraJS/issues/654).
 - The unscoped `muhammara` package is deprecated and receives no further
   releases. Install `@muhammara/native` instead, or use an npm alias when an
@@ -311,6 +308,11 @@ This page collects the compatibility changes formerly maintained in the README.
 - Windows win32 (32-bit) prebuilds and build tooling were removed. Windows x64
   is the current prebuilt target; Windows arm64 is not part of the prebuilt
   matrix.
+- Node.js `20 || 22 || 24 || >=25` is required. 6.x declared `>=17` and
+  shipped prebuilds for Node.js 19 to 24, so Node.js 17, 18, 19, 21, and 23 are
+  no longer supported and npm warns or refuses to install on them. Upgrade to a
+  supported Node.js release; see
+  [Confirm Prebuilt Coverage](getting-started/migrate-from-v6.md#5-confirm-prebuilt-coverage).
 - Recipe requires a text `size`, or its `fontSize` alias, greater than zero and
   throws `RangeError` naming the option and the value otherwise. `text()`
   previously clamped a negative size to 1pt, drew nothing visible for zero, and
@@ -320,7 +322,7 @@ This page collects the compatibility changes formerly maintained in the README.
   wrote an invalid `inf` font size into the page. Pass a finite size
   greater than zero, or omit the option — `null` and `undefined` still select
   the 14pt default. See
-  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
+  [Migrate from v6 to v7](getting-started/migrate-from-v6.md#12-pass-a-text-size-greater-than-zero)
   [#733](https://github.com/julianhille/MuhammaraJS/issues/733).
 - Recipe `text()` throws `TypeError: charSpace must be a finite number` when
   `charSpace` is `Infinity`, `-Infinity`, `NaN`, or not a number, matching

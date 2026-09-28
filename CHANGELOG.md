@@ -13,9 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 Upgrading from 6.x? Each change below is described in [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x); follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md) for the upgrade steps.
 
-- Recipe `n_gon()` and `star()` throw
-  `RangeError: n_gon sides must be a finite number no greater than 100000`
-  (`star points …` for `star()`) when the side or point count is `NaN`,
+- Throw `RangeError: n_gon sides must be a finite number no greater than 100000`
+  from Recipe `n_gon()` (`star points …` from `star()`) when the side or point count is `NaN`,
   `Infinity`, not a number, or above 100000. An infinite or huge count used to
   build vertices until the process ran out of memory and aborted, and `NaN`
   drew nothing. Pass a finite count; beyond a few hundred sides a polygon is
@@ -30,14 +29,14 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   named like a method new in v7: `deletePage`, `getCurrentPageInfo`,
   `lineStyle`, `link`, `opacity`, `pie`, `removeText`, `replaceText`,
   `rotate`, `rotateContent`, or `setPageBox`. Rename the plugin; see
-  [Rename Recipe plugins that collide with new methods](packages/native/docs/getting-started/migrate-from-v6.md#18-rename-recipe-plugins-that-collide-with-new-methods)
+  [Rename Recipe plugins that collide with new methods](packages/native/docs/getting-started/migrate-from-v6.md#17-rename-recipe-plugins-that-collide-with-new-methods)
   [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
   `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
   Square, Circle, FreeText, or other annotation with a `height` now appears
   `height` points lower. Subtract `height` from `y` to keep the 6.x position;
   see [Move Recipe annotations to their top-left
-  corner](packages/native/docs/getting-started/migrate-from-v6.md#17-move-recipe-annotations-to-their-top-left-corner).
+  corner](packages/native/docs/getting-started/migrate-from-v6.md#16-move-recipe-annotations-to-their-top-left-corner).
   Highlight, Underline, StrikeOut, and Squiggly already hung down from `y` and
   render where they did; their `Rect` now encloses their `QuadPoints`
   [#808](https://github.com/julianhille/MuhammaraJS/issues/808)
@@ -118,7 +117,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   operations. Output arrives in batched chunks of up to 64 KiB, with the last
   one delivered when the writer ends, and `write` must return the full chunk
   length: returning less now fails the writer instead of being ignored. See the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#16-accept-buffers-in-custom-streams)
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-accept-buffers-in-custom-streams)
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
 - Treat an `appendPDFPagesFromPDF()` call that fails while copying pages as
   terminal for its writer. Previously callers could continue after a failed
@@ -132,7 +131,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`
   instead of silently ending the path unpainted; `null` still does that. Use `"clip"` explicitly with
   `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options)
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#14-check-low-level-clipping-options)
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Throw `TypeError: charSpace must be a finite number` from Recipe `text()`
   when `charSpace` is `Infinity`, `-Infinity`, `NaN`, or not a number, as
@@ -144,7 +143,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 - Reject an infinite Recipe text `size`, or its `fontSize` alias, with the
   `RangeError` other invalid sizes get; it used to write an invalid `inf` font
   size into the page. Pass a finite size; see the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#12-pass-a-text-size-greater-than-zero)
   [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Throw a `TypeError` from `UsedFont#calculateTextDimensions()` when the font
   size is not a finite positive number, as `@muhammara/wasm` does. 6.x measured
@@ -487,14 +486,14 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 - Correct low-level shape `type: "clip"` to clip without painting and end the
   path; unrecognized types end the path without painting or clipping. Use `"clip"` explicitly with
   `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options)
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#14-check-low-level-clipping-options)
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Validate low-level shape and `writeText()` arguments before drawing, and
   propagate conversion errors instead of aborting or emitting partial output.
   Supply finite coordinates, dimensions, stroke widths, and text sizes, and
   at least two complete `drawPath()` coordinate pairs; incomplete paths now
   throw instead of silently drawing a prefix. Correct invalid inputs before retrying. See the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options)
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#14-check-low-level-clipping-options)
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Replace runtime-specific Node.js and Electron native binaries with Node-API 8
   prebuilds shared by every supported runtime. Standard npm installs and public
@@ -503,7 +502,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `node-v{abi}-{platform}-{arch}-{libc}.tar.gz` with
   `napi-v8-{platform}-{arch}-{libc}.tar.gz` and use
   `binding/napi-v8/muhammara.node`. See the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#14-update-native-binary-tooling)
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#13-update-native-binary-tooling)
   and [breaking changes](packages/native/docs/breaking-changes.md#version-7x) page
   [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
   [#504](https://github.com/julianhille/MuhammaraJS/issues/504)
@@ -514,7 +513,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   metrics; zero and `NaN` also fell back to the 14pt default in some paths.
   Both now throw before drawing or measuring. Pass a size greater than zero, or
   omit the option — `null` and `undefined` still select the 14pt default. See
-  the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
+  the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#12-pass-a-text-size-greater-than-zero)
   and the [breaking changes](packages/native/docs/breaking-changes.md#version-7x) page
   [#733](https://github.com/julianhille/MuhammaraJS/issues/733)
 - Keep Recipe HTML text outside any element on one line with its neighboring
@@ -530,11 +529,11 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `renderer` result now also sizes its row, and a misspelled `order` or
   `columns` name draws an empty column instead of being dropped. List the intended columns with
   `order` or `columns` to keep a fixed layout; see the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly)
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#11-choose-table-columns-explicitly)
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Include padding, minimum/fixed cell heights, and rendered HTML in Recipe
   table sizing. Tables can grow taller or continue earlier; adjust cell sizing
-  and continuation areas using the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly).
+  and continuation areas using the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#11-choose-table-columns-explicitly).
   An `overflow` destination too small for a row and its repeated header now
   throws `RangeError` instead of drawing beyond the bounds; return `true` to
   stop or provide a large enough area
@@ -699,7 +698,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 - Count leading and trailing non-breaking spaces in native Recipe `charSpace`
   measurements, matching Wasm. Text can measure wider or wrap earlier; use
   regular boundary spaces when they should be trimmed. See
-  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#11-trim-boundary-non-breaking-spaces-from-charspace-text)
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#10-trim-boundary-non-breaking-spaces-from-charspace-text)
   [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
   and malformed page selections instead of clamping or partially interpreting
@@ -717,7 +716,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   context instead of leaving them active. Code that called page drawing,
   configuration, or context methods after `endPage()` now fails; call
   `createPage()` or `editPage()` before the next page operation. See
-  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#9-reactivate-pages-after-endpage)
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#8-reactivate-pages-after-endpage)
   [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Remove the accidentally exposed native `Recipe` prototype members
   `ANNOTATION_PREFIX`, `appendPDFPageFromPDFWithAnnotations()`, and
@@ -732,12 +731,9 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `reader.extractPageText(1.5)`, which used to read page 1, now fail with
   `Page index must be a non-negative integer`; pass a non-negative integer below
   2^32; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
-- Native `Recipe.setPageBox()` now requires an `ePDFPageBox*` constant instead
-  of a string box name. Calls such as `setPageBox("crop", ...)` now fail; pass
-  `muhammara.ePDFPageBoxCropBox` instead; see [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#7-update-recipe-page-boxes) [#619](https://github.com/julianhille/MuhammaraJS/issues/619)
 - Remove native `Recipe.fillOpacity()`. Calls now fail; use `Recipe.opacity()`
   to set both fill and stroke alpha. Opacity persists for later vector drawing,
-  so call `opacity(1)` to restore opaque output. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#8-replace-recipefillopacity)
+  so call `opacity(1)` to restore opaque output. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#7-replace-recipefillopacity)
   [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
 - Tighten native Recipe TypeScript declarations and add named types for
   metadata, HTML text objects, colors, permissions, registered extensions,
@@ -748,11 +744,15 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `recipe.metadata.pages` may now fail `tsc`; use the corresponding
   `muhammara.Recipe` types, return documented callback instructions, and check
   the optional `pages` or `pageCount` counter. See
-  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#10-update-recipe-types)
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#9-update-recipe-types)
   [#654](https://github.com/julianhille/MuhammaraJS/issues/654)
 
 ### Added
 
+- Add Recipe `setPageBox(box, left, bottom, right, top)`, as `@muhammara/wasm`
+  has, to set the media, crop, bleed, trim, or art box of a new page from an
+  `ePDFPageBox*` constant such as `muhammara.ePDFPageBoxCropBox`; see
+  [Set Page Boxes](packages/native/docs/how-to/set-page-boxes.md) [#619](https://github.com/julianhille/MuhammaraJS/issues/619)
 - Add Recipe URL links for arbitrary areas, rendered text, images, and drawing
   bounds [#614](https://github.com/julianhille/MuhammaraJS/issues/614)
 - Document native writer encryption, reader passwords, continuation state, and
@@ -970,6 +970,10 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   installation instead of compiling locally; install
   `@muhammara/native-with-source` for source and Electron builds. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#1-choose-the-replacement-package).
 - Windows win32 (32-bit) prebuilds and build tooling are no longer supported. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#5-confirm-prebuilt-coverage).
+- Require Node.js `20 || 22 || 24 || >=25`. 6.x declared `>=17` and shipped
+  prebuilds for Node.js 19 to 24; Node.js 17, 18, 19, 21, and 23 are no longer
+  supported, and npm warns or refuses to install on them. Upgrade to a
+  supported Node.js release first. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#5-confirm-prebuilt-coverage).
 
 ### Added
 
@@ -1015,10 +1019,6 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 
 - Future publication of the unscoped `muhammara` package; published versions
   are deprecated in favor of the scoped native packages.
-- node version 18
-- node version 19
-- node version 21
-- node version 23
 - Windows win32 (32-bit) build system and binaries; we no longer publish 32-bit artifacts
 
 ## [6.0.6] - 2026-08-22

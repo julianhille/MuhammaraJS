@@ -10,7 +10,7 @@ under the `@muhammara` organization on npm:
 | `@muhammara/native-core`        | Shared JavaScript layer; a dependency of both, never installed direct |
 
 For Node.js applications the migration is a dependency rename, an import rename,
-a page-box constant update, a TypeScript Recipe declaration update, and a check
+a TypeScript Recipe declaration update, and a check
 that a prebuilt binary still exists for your platform.
 
 ## Why Upgrade
@@ -132,8 +132,9 @@ package fails to compile and needs an explicit import.
 
 ## 5. Confirm Prebuilt Coverage
 
-Node.js version support is unchanged: `20 || 22 || 24 || >=25` in both v6 and
-v7.
+v7 supports Node.js `20 || 22 || 24 || >=25`. 6.x declared `>=17` and shipped
+prebuilds for Node.js 19 to 24, so Node.js 17, 18, 19, 21, and 23 are no longer
+supported. Move to a supported Node.js release before upgrading.
 
 Check that your platform, architecture, and runtime are listed in the
 [prebuilt support matrix](installation.md#prebuilt-support-matrix). Install
@@ -146,23 +147,7 @@ Electron applications must install the source-capable package before running
 the bundled source tree. See the
 [Electron support policy](installation.md#electron-support-policy).
 
-## 7. Update Recipe Page Boxes
-
-`Recipe.setPageBox()` no longer accepts string box names. Replace each name with
-its matching `ePDFPageBox*` constant:
-
-```javascript
-// v6
-recipe.setPageBox("crop", 18, 18, 577, 824);
-
-// v7
-recipe.setPageBox(muhammara.ePDFPageBoxCropBox, 18, 18, 577, 824);
-```
-
-Use `ePDFPageBoxMediaBox`, `ePDFPageBoxCropBox`, `ePDFPageBoxBleedBox`,
-`ePDFPageBoxTrimBox`, or `ePDFPageBoxArtBox` for the respective page box.
-
-## 8. Replace `Recipe.fillOpacity()`
+## 7. Replace `Recipe.fillOpacity()`
 
 `Recipe.fillOpacity()` was removed. Replace it with `Recipe.opacity()`, which
 sets both fill and stroke alpha:
@@ -177,7 +162,7 @@ recipe.opacity(0.5);
 recipe.opacity(1);
 ```
 
-## 9. Reactivate Pages After `endPage()`
+## 8. Reactivate Pages After `endPage()`
 
 In v7, `Recipe.endPage()` clears the completed page and its content context.
 Calls that draw on or configure a page must follow `createPage()` or
@@ -200,7 +185,7 @@ recipe.editPage(2);
 recipe.text("More content", 72, 72);
 ```
 
-## 10. Update Recipe Types
+## 9. Update Recipe Types
 
 v7 replaces several broad native Recipe declarations with types that describe
 the values accepted by the runtime. These declaration changes do not alter
@@ -464,7 +449,7 @@ and always has `pages: number`:
 var total: number = recipe.read("in.pdf").pages;
 ```
 
-## 11. Trim Boundary Non-Breaking Spaces From `charSpace` Text
+## 10. Trim Boundary Non-Breaking Spaces From `charSpace` Text
 
 v7 Recipe character-spacing measurements now count leading and trailing
 non-breaking spaces (`U+00A0`), matching Wasm. Text using `charSpace` can
@@ -478,7 +463,7 @@ var text = (nbsp + "Indented label" + nbsp).split(nbsp).join(" ");
 recipe.text(text, 72, 72, { charSpace: 2 });
 ```
 
-## 12. Choose Table Columns Explicitly
+## 11. Choose Table Columns Explicitly
 
 v7 `Recipe.table()` builds its columns from every record instead of only the
 first one, keeps `order` and `columns` entries even when no record has that
@@ -521,7 +506,7 @@ Array-form `order` preserves exact field names, including whitespace and
 empty-string keys; the comma-separated form trims surrounding whitespace.
 Tables with empty contents or no discovered columns preserve the cursor.
 
-## 13. Pass A Text Size Greater Than Zero
+## 12. Pass A Text Size Greater Than Zero
 
 v7 Recipe `text()` and `textDimensions()` require a `size`, or its `fontSize`
 alias, greater than zero and throw `RangeError` naming the option and the value
@@ -541,7 +526,7 @@ recipe.text("Hello", 72, 72, size > 0 ? { size: size } : {});
 `null` and `undefined` still select the default, so an optional property that
 is simply absent needs no change.
 
-## 14. Update Native Binary Tooling
+## 13. Update Native Binary Tooling
 
 v7 uses one Node-API 8 binary across all supported Node.js and Electron
 versions. An ordinary npm install and public package import need no change beyond
@@ -565,7 +550,7 @@ duplicating these values.
 The real `napi_versions: [8]` metadata also allows package analyzers such as
 Turbopack to identify the addon as Node-API compatible.
 
-## 15. Check Low-Level Clipping Options
+## 14. Check Low-Level Clipping Options
 
 The `drawPath`, `drawCircle`, `drawSquare`, and `drawRectangle` helpers now
 interpret `type: "clip"` as clipping without painting. Previously that spelling
@@ -594,7 +579,7 @@ coercions remain supported. Supply at least two complete coordinate pairs to
 drawing a prefix. A failed call emits no operators and can be retried after
 correcting the input.
 
-## 16. Accept Buffers In Custom Streams
+## 15. Accept Buffers In Custom Streams
 
 Custom write streams passed to `createWriter`, `createWriterToModify`,
 `recrypt`, or the `log` option now receive each chunk as a `Buffer` instead of
@@ -638,7 +623,7 @@ TypeScript implementations of `WriteStream` or the `log` option must declare
 `write(bytes: Buffer)`. Custom read streams may keep returning arrays; returning
 a `Uint8Array` or `Buffer` is now also accepted and faster.
 
-## 17. Move Recipe Annotations To Their Top-Left Corner
+## 16. Move Recipe Annotations To Their Top-Left Corner
 
 `annot(x, y, subtype, { width, height })` now places the annotation
 rectangle with (x, y) as its top-left corner, like `rectangle()` and `link()`
@@ -662,7 +647,7 @@ their `Rect` lay above them. Both now cover the same area below `y`. Annotations
 without a `height`, such as `comment()`, and the `highlight`, `underline`,
 `strikeOut`, and `squiggly` options of `text()` stay where they were.
 
-## 18. Rename Recipe Plugins That Collide With New Methods
+## 17. Rename Recipe Plugins That Collide With New Methods
 
 v7 adds these Recipe methods: `deletePage`, `getCurrentPageInfo`,
 `lineStyle`, `link`, `opacity`, `pie`, `removeText`, `replaceText`, `rotate`,
@@ -683,9 +668,13 @@ recipe.register("drawPieChart", drawPie);
 
 ## What Does Not Change
 
-- Supported Node.js versions.
-- The public JavaScript API and package entry points.
-- The `node-pre-gyp` install flow for native prebuilds.
+- The entry points `createWriter()`, `createReader()`, `createWriterToModify()`,
+  and `new Recipe()` keep their names. Changes to individual methods and
+  options that can affect existing code are listed on the
+  [Breaking Changes](../breaking-changes.md#version-7x) page; the steps above
+  cover the ones that need a code change.
+- Prebuilt binaries still install through `node-pre-gyp`; only their archive
+  names change, as described in step 13.
 
 ## Version 6 Status
 

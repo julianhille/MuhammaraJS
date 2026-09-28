@@ -5,9 +5,7 @@ Wasm requires numeric values and throws for numeric strings. Both reject
 non-finite drawing values. Wasm `writeText()` additionally requires a positive
 size and a font owned by the same writer. Wasm `J()`, `j()` and `Tr()` reject
 operands outside the PDF ranges (0 to 2, 0 to 2, and 0 to 7); native writes
-any value. These existing validation differences are retained for compatibility. The drawing
-helpers' `type` option throws a `TypeError` in Wasm for a value that is not a
-`DrawingPathType` value or `null`; native ends such a path unpainted.
+any value. These existing validation differences are retained for compatibility.
 `createWriter` encrypts with native's `userPassword`, `ownerPassword`, and
 `userProtectionFlag` options. Wasm throws a `TypeError` for a password that is
 not a string, where native ignores it, and throws for PDF 2.0 encryption
