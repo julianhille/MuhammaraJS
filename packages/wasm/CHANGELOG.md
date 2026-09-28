@@ -37,9 +37,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#788](https://github.com/julianhille/MuhammaraJS/issues/788)
 - Add a guide for annotating known text regions in existing PDFs with Underline
   or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
+- Add a guide for inspecting PDF dictionaries and their indirect objects with
+  the low-level reader [#328](https://github.com/julianhille/MuhammaraJS/issues/328)
+- Add a guide for reading PDF bookmarks: walking the outline tree for titles
+  and the page numbers of direct destinations [#370](https://github.com/julianhille/MuhammaraJS/issues/370)
 - Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
   an existing page, for example before adding a new OCR text layer, and a
   guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
+  [#829](https://github.com/julianhille/MuhammaraJS/issues/829)
 - Export the frozen `LineCapStyle` and `ETokenSeparator` objects that native
   exports, with the same member names, for `J()` and `endArray()` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Export frozen value sets for finite string options, each with a same-named
@@ -121,9 +126,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   from Recipe `rotate()` on a page opened with `editPage()`, as native does,
   instead of an opaque `_muhammara_wasm_recipe_set_page_rotation` failure
   [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
-- Fix Recipe edge cases found in fuzzing, matching native: `removeText()` no
-  longer writes `undefined` for a malformed `"` operator with fewer than three
-  operands; `rotate()` throws `rotate requires an active page` without an
+- Fix Recipe edge cases found in fuzzing, matching native:
+  `rotate()` throws `rotate requires an active page` without an
   active page and `RangeError: Rotation must be a multiple of 90 degrees`
   instead of an opaque export failure; `setPageBox()` accepts `PageBox` names
   such as `PageBox.CROP`; a BigInt coordinate in `setPageBox()` throws a
@@ -233,7 +237,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#785](https://github.com/julianhille/MuhammaraJS/issues/785)
 - Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
   rewrites it; they were previously re-encoded as UTF-8, corrupting other
-  strings and inline image data on the page.
+  strings and inline image data on the page
+  [#785](https://github.com/julianhille/MuhammaraJS/issues/785)
 - Stop `PDFWStreamForBuffer` from copying all previously written bytes on every
   write, which made building large outputs quadratic
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
@@ -244,9 +249,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `null`, which ends the path without painting
   [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
 - Correct `mergePDFPagesToPage()` callback types to expose their `globalThis` receiver [#756](https://github.com/julianhille/MuhammaraJS/issues/756)
-- Retire modifying writers after malformed or encrypted PDF append failures so
-  callers cannot continue with partially mutated writer state
+- Retire modifying writers when appending pages fails while copying from a
+  malformed PDF, so callers cannot continue with partially mutated writer
+  state. Encrypted input and sources that cannot be parsed are rejected before
+  anything is written and leave the writer usable
   [#758](https://github.com/julianhille/MuhammaraJS/issues/758)
+  [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
 - Prefer `getentropy()` for Wasm CSPRNG calls when available [#742](https://github.com/julianhille/MuhammaraJS/issues/742)
 - Release copying contexts created by `PDFPageMergingHelper` after file- and
   stream-based merges instead of retaining their parser and source resources
@@ -358,7 +366,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   against both packages [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Throw a `TypeError` from `drawRectangle()`, `drawSquare()`, `drawCircle()`, and
   `drawPath()` for a `type` that is not a `DrawingPathType` value or `null`,
-  instead of ending the path unpainted; native keeps the old behavior [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+  instead of ending the path unpainted, as native now does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type returned PDF bytes as `Uint8Array<ArrayBuffer>`, so `new Blob([bytes])`
   and `new Response(bytes)` compile without a cast. The declarations now require
   TypeScript 5.7 or later; older compilers report `Type 'Uint8Array' is not
@@ -379,8 +387,8 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Rework the npm README: it explains how the MuhammaraJS packages fit together, when to use a native package instead, and adds tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
 - Narrow `DrawPathOptions.type` from an arbitrary string to the exported
   `DrawingPathType` (`"stroke" | "fill" | "clip" | null`), matching native.
-  Unsupported paint modes neither paint nor clip, so they are now a compile
-  error rather than silently unpainted geometry; pass a supported type
+  Unsupported paint modes are now a compile error as well as a runtime
+  `TypeError`; pass a supported type
   [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
 
 ## [1.0.0-beta.4] - 2026-09-24
@@ -412,16 +420,19 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Treat low-level shape `type: null` as an unknown type, ending the path without
   painting instead of stroking with stale graphics state, matching native.
   Omit `type` or pass `"stroke"` to draw an outline; see
-  [drawing helpers](docs/low-level.md#drawing-helpers-and-clipping).
+  [drawing helpers](docs/low-level.md#drawing-helpers-and-clipping)
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Correct low-level shape `type: "clip"` to clip without painting instead of
   stroking, and end paths with unknown types without painting. Pass `"stroke"`/`"fill"` to paint,
-  or scope intentional clipping with `q()`/`Q()`.
+  or scope intentional clipping with `q()`/`Q()`
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Validate drawing options before emitting shape or text operators, preventing
   failed option getters from leaving partial output. Reject overflowing circle
   and underline geometry, sparse paths, and incomplete or extra modified-form
   path arguments before drawing. Supply complete finite coordinate pairs and
   reduce coordinates or sizes that overflow. Return stable option
-  values and correct invalid inputs before retrying.
+  values and correct invalid inputs before retrying
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Upgrade the shared PDF-Writer foundation to v4.9.1, fixing cleanup of failed
   writer dictionaries and related parser, encryption, and stream ownership
   defects.
@@ -563,7 +574,7 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ### Changed
 
-- Align `mergePDFPagesToPage` callback receivers with native: strict callbacks now receive `globalThis` instead of `undefined`. Use `callback.bind(undefined)` if an undefined receiver is required.
+- Align `mergePDFPagesToPage` callback receivers with native: strict callbacks now receive `globalThis` instead of `undefined`. Use `callback.bind(undefined)` if an undefined receiver is required [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Resolve table header styles independently of body styles, matching native.
   Headers that inherited a body font, size, or color can change appearance;
   set those properties explicitly in `header` to retain the intended style

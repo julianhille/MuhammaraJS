@@ -25,12 +25,6 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   still open, as Wasm does, and keep the writer usable. Previously `end()`
   wrote the cross-reference table and trailer inside the open dictionary.
   End every dictionary before `end()`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
-- Recipe `rotate()` throws
-  `Error: rotate() is only available on pages created with createPage()` on a
-  page opened with `editPage()`. In 6.x it left the page's `/Rotate` unchanged
-  but recorded the rotation in the Recipe's page geometry, so `pageInfo()` and
-  later coordinate handling disagreed with the written page. Rotate only pages
-  you create; an edited page keeps its source rotation; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
 - Recipe `register()` throws
   `Found conflict in Recipe prototypes. <name> already exists.` for a plugin
   named like a method new in v7: `deletePage`, `getCurrentPageInfo`,
@@ -38,9 +32,6 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `rotate`, `rotateContent`, or `setPageBox`. Rename the plugin; see
   [Rename Recipe plugins that collide with new methods](packages/native/docs/getting-started/migrate-from-v6.md#18-rename-recipe-plugins-that-collide-with-new-methods)
   [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
-- Recipe `rotate()` throws `RangeError: Rotation must be a multiple of 90
-degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
-  value that viewers ignore or round. Pass a multiple of 90; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#829](https://github.com/julianhille/MuhammaraJS/issues/829)
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
   `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
   Square, Circle, FreeText, or other annotation with a `height` now appears
@@ -88,8 +79,9 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   from the low-level drawing helpers and `writeText()` for a color name or
   `#rrggbb` string with `colorspace: "gray"` or `"cmyk"`, as `@muhammara/wasm`
   does. Such a color is RGB; 6.x drew it in RGB and ignored the colorspace.
-  Drop `colorspace`, or pass the gray or CMYK color as a number, see
-  [Draw in Gray and CMYK](packages/native/docs/how-to/draw-in-gray-and-cmyk.md); see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  Drop `colorspace`, or pass the gray or CMYK color as a number; see
+  [Draw in Gray and CMYK](packages/native/docs/how-to/draw-in-gray-and-cmyk.md)
+  and [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Remove the `key` parameter from the `InfoDictionary#getAdditionalInfoEntries()`
   declaration; the runtime ignored it and always returned every entry. Calls
   that pass a key fail `tsc`; drop the argument and pick the entry from the
@@ -101,12 +93,12 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
 - Type `Recipe#info()` without options as `Record<string, string> | undefined`,
   the Info record it returns, instead of `Recipe`. Code that chained on it
   fails `tsc` and failed at runtime before; call `info(options)` to write
-  information; see [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#10-update-recipe-types) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  information; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw `Error: Unknown annotation flag (<name>)` from Recipe `annot()` and
   `comment()` for a `flag` that is not a `Recipe.AnnotFlag` value, instead of
   silently writing no flag bits, as `@muhammara/wasm` does. Numeric bit masks
   are now accepted too. Pass a `Recipe.AnnotFlag` value or a bit mask, or omit
-  `flag`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+  `flag`; see [Check Annotation Flags](packages/native/docs/getting-started/migrate-from-v6.md#check-annotation-flags) [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Throw a `TypeError` from `Tj()`, `Quote()`, `DoubleQuote()` and `TJ()` when
   a glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
   array. Previously such items were skipped, so `TJ(["ab", -100, "c"])` wrote
@@ -149,6 +141,28 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   boolean threw `Wrong Arguments, please provide character space` after
   drawing had started. The check runs before anything is drawn. Pass a finite
   number, or omit the option for no spacing; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#812](https://github.com/julianhille/MuhammaraJS/issues/812)
+- Reject an infinite Recipe text `size`, or its `fontSize` alias, with the
+  `RangeError` other invalid sizes get; it used to write an invalid `inf` font
+  size into the page. Pass a finite size; see the
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#13-pass-a-text-size-greater-than-zero)
+  [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
+- Throw a `TypeError` from `UsedFont#calculateTextDimensions()` when the font
+  size is not a finite positive number, as `@muhammara/wasm` does. 6.x measured
+  a size of `0`, `NaN`, or `Infinity` as zero and wrapped a negative size to a
+  huge integer. Pass a size greater than zero, or omit it to measure at size 1;
+  see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
+- Remove the `input` and `options` parameters from the
+  `DocumentCopyingContext#getSourceDocumentParser()` declaration; the runtime
+  never used them and always returned the parser of the copying context's
+  source document. Calls that pass an argument fail `tsc` with
+  `Expected 0 arguments`; drop the arguments; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#320](https://github.com/julianhille/MuhammaraJS/issues/320)
+- Keep colors registered with Recipe `chroma()` in the Recipe that registered
+  them, as `@muhammara/wasm` does. In 6.x every Recipe in the process shared
+  one color table, so a name registered on one Recipe also resolved in every
+  other Recipe. In another Recipe the name is now unknown: text and shape
+  colors fall back to the default color, and
+  annotation colors throw `TypeError: Unknown annotation color (<name>)`.
+  Register the color with `chroma()` on each Recipe that uses it; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 
 ### Added
 
@@ -209,9 +223,14 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   [#788](https://github.com/julianhille/MuhammaraJS/issues/788)
 - Add a guide for annotating known text regions in existing PDFs with Underline
   or StrikeOut annotations [#290](https://github.com/julianhille/MuhammaraJS/issues/290)
+- Add a guide for inspecting PDF dictionaries and their indirect objects with
+  the low-level reader [#328](https://github.com/julianhille/MuhammaraJS/issues/328)
+- Add a guide for reading PDF bookmarks: walking the outline tree for titles
+  and the page numbers of direct destinations [#370](https://github.com/julianhille/MuhammaraJS/issues/370)
 - Add `Recipe#removeText(pageNumber, { forms })` to remove all shown text from
   an existing page, for example before adding a new OCR text layer, and a
   guide for replacing a PDF's text layer [#388](https://github.com/julianhille/MuhammaraJS/issues/388)
+  [#829](https://github.com/julianhille/MuhammaraJS/issues/829)
 
 ### Fixed
 
@@ -291,8 +310,7 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   Direct page labels on a catalog with a nonzero generation no longer throw,
   and the labels are no longer dropped when the writer also writes a new
   catalog [#826](https://github.com/julianhille/MuhammaraJS/issues/826)
-- Fix Recipe edge cases found in fuzzing: `removeText()` no longer writes
-  `undefined` for a malformed `"` operator with fewer than three operands;
+- Fix Recipe edge cases found in fuzzing:
   `rotate()` without an active page throws `rotate requires an active page`;
   `setPageBox()` accepts `PageBox` names such as `PageBox.CROP`; a BigInt
   coordinate in `setPageBox()` throws a `TypeError`; `null` options act like
@@ -312,9 +330,6 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
 - Draw a low-level `color` with an empty `colorspace` in RGB, as an omitted
   colorspace does and as `@muhammara/wasm` does; it was drawn without setting
   a color [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
-- Keep colors registered with Recipe `chroma()` in the Recipe that registered
-  them, as `@muhammara/wasm` does; every Recipe in the process shared one color
-  table, so a name registered on one Recipe changed the colors of all others [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Treat an inherited object key such as `constructor` as an unknown Recipe
   color name instead of failing with `color.startsWith is not a function`,
   register any `chroma()` name including `__proto__`, also as a Separation
@@ -398,7 +413,8 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   [#785](https://github.com/julianhille/MuhammaraJS/issues/785)
 - Keep non-ASCII bytes in a page's content stream intact when `replaceText()`
   rewrites it; they were previously re-encoded as UTF-8, corrupting other
-  strings and inline image data on the page.
+  strings and inline image data on the page
+  [#785](https://github.com/julianhille/MuhammaraJS/issues/785)
 - Throw `Unable to read PDF stream` from `startReadingFromStream()` and
   `startReadingFromStreamForPlainCopying()`, and `Unable to read PDF stream
 objects` from `startReadingObjectsFromStream()`, when a stream cannot be
@@ -435,15 +451,16 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Changed
 
-- Reject an infinite Recipe text `size`, or its `fontSize` alias, with the
-  `RangeError` other invalid sizes get; it used to write an invalid `inf` font
-  size into the page [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
-- Throw a `TypeError` from `UsedFont#calculateTextDimensions()` when the font
-  size is not a finite positive number, as `@muhammara/wasm` does; a negative
-  size used to wrap to a huge integer and `NaN` measured as size 0 [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
-- Declare `DocumentCopyingContext#getSourceDocumentParser()` without
-  parameters in the TypeScript types, matching the runtime, which never used
-  them [#320](https://github.com/julianhille/MuhammaraJS/issues/320)
+- Throw `Error: rotate() is only available on pages created with createPage()`
+  from Recipe `rotate()`, new in 7.0.0-beta.2, on a page opened with
+  `editPage()`. Earlier prereleases left the page's `/Rotate` unchanged but
+  recorded the rotation in the Recipe's page geometry, so `pageInfo()` and
+  later coordinate handling disagreed with the written page. Rotate only pages
+  you create; an edited page keeps its source rotation [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
+- Throw `RangeError: Rotation must be a multiple of 90 degrees` from Recipe
+  `rotate()` for a rotation such as `45`, which earlier prereleases wrote as an
+  invalid `/Rotate` value that viewers ignore or round. Pass a multiple of 90
+  [#829](https://github.com/julianhille/MuhammaraJS/issues/829)
 - Throw a `TypeError` that reads "No page is active; call createPage() or
   editPage() first" from Recipe drawing and annotation methods called without
   a page, instead of a property-destructuring `TypeError` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
@@ -460,22 +477,25 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 
 - Treat a failed `appendPDFPagesFromPDF()` call as terminal for its writer.
   Previously callers could continue after a failed append and produce a
-  corrupted document; create a fresh writer and retry with a valid source. See [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x). [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  corrupted document; create a fresh writer and retry with a valid source; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Reject custom-stream `getCurrentPosition()` results that convert to non-finite
   numbers or fall outside `[-2^63, 2^63)` with `TypeError`, preventing corrupt
   PDF offsets. Return the actual finite byte position within that range; numeric
   coercion remains supported. See the
-  [stream contract](packages/native/docs/low-level/custom-streams.md); see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+  [stream contract](packages/native/docs/low-level/custom-streams.md) and
+  [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Correct low-level shape `type: "clip"` to clip without painting and end the
   path; unrecognized types end the path without painting or clipping. Use `"clip"` explicitly with
   `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
-  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options).
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options)
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Validate low-level shape and `writeText()` arguments before drawing, and
   propagate conversion errors instead of aborting or emitting partial output.
   Supply finite coordinates, dimensions, stroke widths, and text sizes, and
   at least two complete `drawPath()` coordinate pairs; incomplete paths now
-  throw instead of silently drawing a prefix. Correct invalid inputs before retrying. See
-  [breaking changes](packages/native/docs/breaking-changes.md#version-7x).
+  throw instead of silently drawing a prefix. Correct invalid inputs before retrying. See the
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-check-low-level-clipping-options)
+  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
 - Replace runtime-specific Node.js and Electron native binaries with Node-API 8
   prebuilds shared by every supported runtime. Standard npm installs and public
   package imports require no changes, but custom binary mirrors, direct archive
@@ -510,7 +530,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `renderer` result now also sizes its row, and a misspelled `order` or
   `columns` name draws an empty column instead of being dropped. List the intended columns with
   `order` or `columns` to keep a fixed layout; see the
-  [breaking changes](packages/native/docs/breaking-changes.md#version-7x) page
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#12-choose-table-columns-explicitly)
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Include padding, minimum/fixed cell heights, and rendered HTML in Recipe
   table sizing. Tables can grow taller or continue earlier; adjust cell sizing

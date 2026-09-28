@@ -20,23 +20,12 @@ This page collects the compatibility changes formerly maintained in the README.
   call `end()` again. In 6.x `end()` succeeded and wrote the cross-reference
   table and trailer inside the open dictionary, so the PDF was damaged
   [#815](https://github.com/julianhille/MuhammaraJS/issues/815).
-- Recipe `rotate()` throws
-  `Error: rotate() is only available on pages created with createPage()` on a
-  page opened with `editPage()`. In 6.x it left the page's `/Rotate` unchanged
-  but recorded the rotation in the Recipe's page geometry, so `pageInfo()` and
-  later coordinate handling disagreed with the written page. Rotate only pages
-  you create; an edited page keeps its source rotation
-  [#827](https://github.com/julianhille/MuhammaraJS/issues/827)
 - Recipe `register()` throws
   `Found conflict in Recipe prototypes. <name> already exists.` for a plugin
   named like a method new in v7: `deletePage`, `getCurrentPageInfo`,
   `lineStyle`, `link`, `opacity`, `pie`, `removeText`, `replaceText`,
   `rotate`, `rotateContent`, or `setPageBox`. Rename the plugin; see
   [Rename Recipe plugins that collide with new methods](getting-started/migrate-from-v6.md#18-rename-recipe-plugins-that-collide-with-new-methods)
-  [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
-- Recipe `rotate()` throws `RangeError: Rotation must be a multiple of 90
-degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
-  value that viewers ignore or round. Pass a multiple of 90
   [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
 
 - Recipe `annot(x, y, subtype, { width, height })` places its rectangle with
@@ -67,6 +56,13 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   writes that color instead of the default. Gray `#rr`, CMYK `#ccmmyykk`, and
   numbers throw too. `text()` checks its markup annotations before drawing any
   text. Fix the name, or register it with `chroma()` first [#796](https://github.com/julianhille/MuhammaraJS/issues/796).
+- Colors registered with Recipe `chroma()` belong to the Recipe that registered
+  them, as in `@muhammara/wasm`. In 6.x every Recipe in the process shared one
+  color table, so a name registered on one Recipe also resolved in every other
+  Recipe. In another Recipe the name is now unknown: text and shape colors
+  fall back to the default color, and annotation colors throw
+  `TypeError: Unknown annotation color (<name>)`. Register the color with
+  `chroma()` on each Recipe that uses it [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
 - An annotation `color` array with one number is written as a gray, and one
   with four numbers as a CMYK annotation color. In 6.x both were misread as
   RGB, so `[128]` wrote dark blue and CMYK arrays lost a channel. An array with
@@ -106,6 +102,11 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   `key` parameter, so `getAdditionalInfoEntries("Company")` fails `tsc` with
   `Expected 0 arguments`. The call always returned every entry; drop the
   argument and read the key from the result [#799](https://github.com/julianhille/MuhammaraJS/issues/799).
+- `DocumentCopyingContext#getSourceDocumentParser()` is declared without the
+  `input` and `options` parameters that its runtime never used, so
+  `getSourceDocumentParser("source.pdf")` fails `tsc` with
+  `Expected 0 arguments`. The call always returned the parser of the copying
+  context's source document; drop the arguments [#320](https://github.com/julianhille/MuhammaraJS/issues/320).
 - `WriteTextOptions` no longer declares `strikeOut` and `lineWidth`, which
   `writeText()` never read. Passing them fails `tsc` with an excess-property
   error; remove them, draw the line with `drawPath()`, or use the Recipe
@@ -329,6 +330,11 @@ degrees` for a rotation such as `45`, which 6.x wrote as an invalid `/Rotate`
   The check runs before anything is drawn, and the Recipe stays usable. Pass a
   finite number, or omit the option — `null` and `undefined` still mean no
   spacing [#812](https://github.com/julianhille/MuhammaraJS/issues/812).
+- `UsedFont#calculateTextDimensions()` throws a `TypeError` when the font size
+  is not a finite number greater than zero, matching `@muhammara/wasm`. 6.x
+  converted the size to an unsigned integer, so `0`, `NaN`, and infinite sizes
+  measured as zero and a negative size wrapped to a huge integer. Pass a size
+  greater than zero, or omit it to measure at size 1 [#798](https://github.com/julianhille/MuhammaraJS/issues/798).
 
 ## Version 5.x
 
