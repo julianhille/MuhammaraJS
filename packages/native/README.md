@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/%40muhammara%2Fnative.svg)](https://www.npmjs.com/package/@muhammara/native)
 [![License](https://img.shields.io/npm/l/%40muhammara%2Fnative.svg)](https://github.com/julianhille/MuhammaraJS/blob/develop/LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-readthedocs-blue.svg)](https://muhammarajs.readthedocs.io/)
+[![Documentation status](https://readthedocs.org/projects/muhammarajs/badge/?version=latest)](https://muhammarajs.readthedocs.io/)
 
 Create, read, and modify PDF files from Node.js. `@muhammara/native` is the
 small, prebuilt-only package of MuhammaraJS: it downloads a ready-made native
