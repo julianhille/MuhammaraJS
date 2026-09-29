@@ -1,0 +1,167 @@
+import {
+  Colorspace,
+  DeviceColorSpace,
+  LineCap,
+  LineJoin,
+} from "../value-sets.js";
+import { colorModel, pathColors } from "./colors.js";
+
+/**
+ * Creates shared Recipe vector drawing helpers.
+ * @param {object} runtime - Module and export helpers.
+ * @returns {object} Methods mixed into Recipe.prototype.
+ */
+export function createVectorHelpers(runtime) {
+  /**
+   * Applies a numeric content operator on the page context or through the Recipe export.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {number} code - Native operator code.
+   * @param {...number} values - Operands.
+   * @returns {void}
+   * @throws {Error} If the operator fails.
+   */
+  function operator(recipe, code, ...values) {
+    if (recipe._pageContext) {
+      var context = recipe._pageContext;
+      if (code === 1) context.B();
+      else if (code === 5) context.S();
+      else if (code === 6) context.f();
+      else if (code === 24) context.g(...values);
+      else if (code === 25) context.G(...values);
+      else if (code === 26) context.rg(...values);
+      else if (code === 27) context.RG(...values);
+      else if (code === 28) context.k(...values);
+      else if (code === 29) context.K(...values);
+      return;
+    }
+    runtime.call(
+      "_muhammara_wasm_recipe_operator",
+      recipe._recipe,
+      code,
+      ...values,
+    );
+  }
+  /**
+   * Sets the fill or stroke color from a Recipe color.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {RecipeColor} value - Color.
+   * @param {object} options - Options with `colorspace`.
+   * @param {boolean} stroke - Set the stroking color.
+   * @returns {void}
+   * @throws {TypeError} If the color or color space is invalid.
+   */
+  function setColor(recipe, value, options, stroke) {
+    var model = colorModel(recipe, value, options);
+    if (model.colorspace === Colorspace.SEPARATION)
+      recipe._setSeparationColor(model, stroke);
+    else if (model.colorspace === DeviceColorSpace.RGB)
+      operator(recipe, stroke ? 27 : 26, ...model.values);
+    else if (model.colorspace === DeviceColorSpace.GRAY)
+      operator(recipe, stroke ? 25 : 24, model.values[0]);
+    else operator(recipe, stroke ? 29 : 28, ...model.values);
+  }
+  return {
+    /**
+     * Normalizes path options against the current Recipe graphics state.
+     * @private
+     * @param {object} [options={}] - Line cap, join, miter, dash, width, and opacity.
+     * @returns {object} Native style values; -1 leaves a cap or join unchanged.
+     */
+    _pathOptions: function (options = {}) {
+      var lineStyle = this._lineStyle || {};
+      var opacity =
+        options.opacity === undefined
+          ? (this._opacity ?? 1)
+          : Math.max(0, Math.min(1, Number(options.opacity)));
+      if (!Number.isFinite(opacity)) opacity = 1;
+      var dash = Array.isArray(options.dash)
+        ? options.dash
+        : lineStyle.dash || [];
+      if (dash[0] === 0 && dash[1] === 0) dash = [];
+      return {
+        width:
+          Number(options.lineWidth ?? options.width ?? lineStyle.width) > 0
+            ? Number(options.lineWidth ?? options.width ?? lineStyle.width)
+            : 2,
+        cap:
+          options.lineCap === undefined
+            ? (lineStyle.cap ?? -1)
+            : [LineCap.BUTT, LineCap.ROUND, LineCap.SQUARE].indexOf(
+                options.lineCap,
+              ),
+        join:
+          options.lineJoin === undefined
+            ? (lineStyle.join ?? -1)
+            : [LineJoin.MITER, LineJoin.ROUND, LineJoin.BEVEL].indexOf(
+                options.lineJoin,
+              ),
+        miter: Number.isFinite(options.miterLimit)
+          ? options.miterLimit
+          : (lineStyle.miterLimit ?? 1.414),
+        dash,
+        phase: Number.isFinite(options.dashPhase)
+          ? options.dashPhase
+          : (lineStyle.dashPhase ?? 0),
+        opacity,
+      };
+    },
+    /**
+     * Saves graphics state and applies path styles and transformations.
+     * @private
+     * @param {object} [options={}] - Path options.
+     * @param {number} [x=0] - Default rotation origin x.
+     * @param {number} [y=0] - Default rotation origin y.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If a style cannot be applied.
+     */
+    _beginPath: function (options = {}, x = 0, y = 0) {
+      var style = this._pathOptions(options);
+      this._prepareSeparationColors(options);
+      this._save();
+      if (options.rotation)
+        this.rotateContent(
+          Number(options.rotation),
+          ...(options.rotationOrigin || [x, y]),
+        );
+      if (options.skewX || options.skewY) {
+        this._transform(
+          1,
+          Math.tan(((Number(options.skewX) || 0) * Math.PI) / 180),
+          Math.tan(((Number(options.skewY) || 0) * Math.PI) / 180),
+          1,
+          0,
+          0,
+        );
+      }
+      this._setLineStyle({
+        width: style.width,
+        cap: style.cap < 0 ? 1 : style.cap,
+        join: style.join < 0 ? 1 : style.join,
+        miterLimit: style.miter,
+        dash: style.dash,
+        dashPhase: style.phase,
+      });
+      this._setOpacity(style.opacity);
+      return style;
+    },
+    /**
+     * Paints the current path and restores the saved graphics state.
+     * @private
+     * @param {object} [options={}] - `fill`, `stroke`, `color`, and `colorspace`.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If a color is invalid.
+     */
+    _finishPath: function (options = {}) {
+      var colors = pathColors(options);
+      colors.forEach((color) =>
+        setColor(this, color.value, options, color.stroke),
+      );
+      // Paint what was colored: B for both, f for a fill, S for a stroke.
+      var fills = colors.some((color) => !color.stroke);
+      var strokes = colors.some((color) => color.stroke);
+      operator(this, fills && strokes ? 1 : fills ? 6 : 5);
+      this._restore();
+      return this;
+    },
+  };
+}
