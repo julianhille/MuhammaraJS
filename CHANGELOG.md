@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [7.0.0-rc.1] - 2026-09-28
+## [7.0.0-rc.1] - 2026-09-29
 
 ### Breaking Changes
 
@@ -30,7 +30,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `lineStyle`, `link`, `opacity`, `pie`, `removeText`, `replaceText`,
   `rotate`, `rotateContent`, or `setPageBox`. Rename the plugin; see
   [Rename Recipe plugins that collide with new methods](packages/native/docs/getting-started/migrate-from-v6.md#17-rename-recipe-plugins-that-collide-with-new-methods)
-  [#829](https://github.com/julianhille/MuhammaraJS/issues/829).
+  [#829](https://github.com/julianhille/MuhammaraJS/issues/829)
 - Place Recipe `annot()` rectangles with (x, y) as their top-left corner, like
   `rectangle()` and `link()`. 6.x used (x, y) as the bottom-left corner, so a
   Square, Circle, FreeText, or other annotation with a `height` now appears
@@ -50,7 +50,8 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   annotations, when `color` is not a known color, instead of writing the
   default color. Known colors are `#rrggbb`, `%r,g,b`, colors registered with
   `chroma()`, and CSS color names in any case, which previously fell back to
-  the default too. Gray `#rr`, CMYK `#ccmmyykk`, and numbers also throw.
+  the default too. Gray `#rr` and CMYK `#ccmmyykk` throw as well, and numbers,
+  which failed with an internal error in 6.x, now throw this `TypeError`.
   `text()` checks its markup annotations before drawing any text. Fix
   misspelled names or register them with `chroma()`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#796](https://github.com/julianhille/MuhammaraJS/issues/796)
 - Write a one-number annotation `color` array as a gray and a four-number one
@@ -70,10 +71,9 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   instead of drawing without a color or ignoring the colorspace,
   and Recipe `chroma()`, text and drawing options throw
   `Unknown colorspace: <name>` instead of a plain `Error` or an unrelated
-  `TypeError`. The declarations no longer accept any string for
-  `ColorOptions.colorspace` or the `Recipe#chroma()` colorspace, so a value
-  typed `string` fails `tsc`; use `DeviceColorSpace` or `Recipe.Colorspace`
-  values, and see the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#type-colorspaces) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  `TypeError`. The declaration no longer accepts any string for
+  `ColorOptions.colorspace`, so a value typed `string` fails `tsc`; use
+  `DeviceColorSpace` values, and see the [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#type-colorspaces) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw `TypeError: only a numeric color can use the gray or cmyk colorspace`
   from the low-level drawing helpers and `writeText()` for a color name or
   `#rrggbb` string with `colorspace: "gray"` or `"cmyk"`, as `@muhammara/wasm`
@@ -84,20 +84,44 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 - Remove the `key` parameter from the `InfoDictionary#getAdditionalInfoEntries()`
   declaration; the runtime ignored it and always returned every entry. Calls
   that pass a key fail `tsc`; drop the argument and pick the entry from the
-  returned object; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  returned object. The call also works without an argument now; 6.x threw
+  unless it got one; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+  [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Remove `strikeOut` and `lineWidth` from the `WriteTextOptions` declaration;
   `writeText()` never read them, so `{ strikeOut: true }` drew nothing. Passing
   them fails `tsc`; draw a line with `drawPath()` or use the Recipe `text()`
   `strikeOut` option instead; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
-- Type `Recipe#info()` without options as `Record<string, string> | undefined`,
-  the Info record it returns, instead of `Recipe`. Code that chained on it
-  fails `tsc` and failed at runtime before; call `info(options)` to write
-  information; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Throw `Error: Unknown annotation flag (<name>)` from Recipe `annot()` and
   `comment()` for a `flag` that is not a `Recipe.AnnotFlag` value, instead of
   silently writing no flag bits, as `@muhammara/wasm` does. Numeric bit masks
   are now accepted too. Pass a `Recipe.AnnotFlag` value or a bit mask, or omit
   `flag`; see [Check Annotation Flags](packages/native/docs/getting-started/migrate-from-v6.md#check-annotation-flags) [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Count every character, including leading and trailing whitespace, in native
+  Recipe `charSpace` measurements, as `@muhammara/wasm` does. 6.x trimmed
+  boundary whitespace before counting, so text such as `" Label "` with
+  `charSpace` now measures wider, wraps earlier and aligns differently.
+  Characters outside the Basic Multilingual Plane, such as emoji, count once
+  instead of twice. Trim the text before passing it where boundary whitespace
+  should not add spacing; see [Trim Boundary Whitespace From `charSpace`
+  Text](packages/native/docs/getting-started/migrate-from-v6.md#10-trim-boundary-whitespace-from-charspace-text) [#543](https://github.com/julianhille/MuhammaraJS/issues/543)
+- Throw `TypeError: Invalid annotation options` from Recipe `annot()` and
+  `comment()`, and from the `highlight`, `underline`, `strikeOut`, and
+  `squiggly` options of `text()`, for values that cannot form a valid PDF
+  annotation, as `@muhammara/wasm` does: an `x` or `y` that is neither a
+  finite number nor `"center"`, a `width` or `height` that is not a finite
+  number of at least zero, an `opacity` outside 0 to 1 (also on a
+  reply), a non-finite border width, a `borderDash` with non-numbers, or
+  `quadPoints` that are not finite numbers in groups of eight. In 6.x
+  `annot()` wrote a string size such as `"40"` into a corrupt `/Rect`, a
+  negative size as a reversed one, `NaN` as zero, and `opacity: 2` as an
+  invalid `/CA 2`, and `comment()` ignored `width` and `height`. Both wrote
+  an `x` or `y` of `NaN` as `nan` and joined a numeric string such as `"50"`
+  into the coordinate (`5000`). The call throws before anything is queued or
+  drawn. Pass numbers in range, or omit
+  the option. Recipe `link()`, and the `link` option of text, shapes and
+  images, throw `TypeError: URL link requires a URL and valid PDF rectangle`
+  for a URL that is not a string or a rectangle that is not finite, such as
+  a `NaN` width, as Wasm does; 6.x wrote the invalid numbers into the link; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
 - Throw a `TypeError` from `Tj()`, `Quote()`, `DoubleQuote()` and `TJ()` when
   a glyph list contains an item that is not a `[glyphId, unicodeCodePoint]`
   array. Previously such items were skipped, so `TJ(["ab", -100, "c"])` wrote
@@ -114,23 +138,20 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `startReadingFromStream()`, `startReadingFromStreamForPlainCopying()`,
   `getParserStream()`, and `getSourceDocumentStream()`. Code using array methods on those bytes, or
   TypeScript streams declaring `write(bytes: number[])`, must switch to Buffer
-  operations. Output arrives in batched chunks of up to 64 KiB, with the last
-  one delivered when the writer ends, and `write` must return the full chunk
+  operations. `ReadStream#read()` is declared as returning
+  `Uint8Array | number[]`, so code typing its result as `number[]` fails
+  `tsc`. Output arrives in batched chunks of up to 64 KiB, with the last one
+  delivered when the writer ends, and `write` must return the full chunk
   length: returning less now fails the writer instead of being ignored. See the
   [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#15-accept-buffers-in-custom-streams)
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
-- Treat an `appendPDFPagesFromPDF()` call that fails while copying pages as
-  terminal for its writer. Previously callers could continue after a failed
-  append and produce a corrupted document; create a fresh writer and retry with
-  a valid source. A source that cannot be opened, parsed, or decrypted, and page
-  ranges outside the source, throw before anything is written and leave the
-  writer usable; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
-  [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
-- Correct low-level shape `type: "clip"` to clip without painting and end the
-  path. Any other `type` except `null`, such as the typo `"fil"`, throws
-  `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`
-  instead of silently ending the path unpainted; `null` still does that. Use `"clip"` explicitly with
-  `q()`/`Q()`, or `"stroke"`/`"fill"` to paint. See the
+- Throw `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`
+  from the low-level shape helpers for any other `type`, such as the typo
+  `"fil"`, `false`, `0`, or `""`. 6.x clipped the path with a stray `W` for
+  such a type, and 7.0.0-beta.4 ended it unpainted. `type: undefined` now
+  strokes, as an omitted `type` does, where 6.x clipped and 7.0.0-beta.4 ended
+  the path unpainted. Pass `"stroke"`, `"fill"`, or `"clip"`, or `null` to end
+  the path unpainted; see the
   [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#14-check-low-level-clipping-options)
   [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Throw `TypeError: charSpace must be a finite number` from Recipe `text()`
@@ -165,6 +186,18 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 
 ### Added
 
+- Accept the `@muhammara/wasm` annotation options in Recipe `annot()` and
+  `comment()`: `border` as `{ width, dash }` as well as a number,
+  `borderWidth` and `borderDash`, custom `quadPoints`, `contents` for an empty
+  `text`, `name` for an omitted `icon`, `flags` for an omitted `flag`, and a
+  `Date` for `date`. Replies keep their own `open`, `icon`, and `name`, and
+  accept `contents` and `flags`. A negative border width writes no `/Border`,
+  as in Wasm [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
+- Accept `width` and `height` in Recipe `comment()`, as `@muhammara/wasm`
+  does: like `annot()`, (x, y) is the top-left corner and the rectangle
+  extends `height` down from it. 6.x ignored both and wrote a zero-size
+  rectangle at (x, y), where viewers still draw the comment icon
+  [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
 - Add a `pruneReferences` option to Recipe `deletePage(pageNumbers, options)`
   that removes references to the deleted pages from outlines, link
   annotations, named destinations, form widgets, tagged-PDF structure elements
@@ -179,10 +212,12 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   `Recipe.TextWrap`, `Recipe.LineCap`, and `Recipe.AnnotFlag`, and use them for
   the matching options; the text `align` option is typed as alignment keywords
   instead of any string, still accepting other strings [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add frozen `DeviceColorSpace`, `PageBox`, `PDFImageType`, and `EEncoding`
-  objects, named and valued as in `@muhammara/wasm` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add `DrawingPathType` constants for the `type` option of the low-level
-  drawing helpers [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
+- Add frozen constant objects, named and valued as in `@muhammara/wasm`:
+  `DeviceColorSpace`, `PageBox`, `PDFImageType`, and `EEncoding`;
+  `DrawingPathType` for the `type` option of the low-level drawing helpers;
+  `ImageFit` for the `fit` option of `drawImage()` transformations; and
+  `ObjectReplacementScope` for the `scope` option of
+  `PDFWriter#replaceObject()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare the arguments the native `PDFWriter` already accepts: TIFF options
   for `createFormXObjectFromTIFF()`, the image index and password of
   `getImageDimensions()`, a `PDFReader` source and password for
@@ -190,10 +225,6 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   merge methods [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare `PDFLiteralString#toBytesArray()` and type the values returned by
   `PDFDictionary#toJSObject()` as PDF objects [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add `ImageFit` constants for the `fit` option of `drawImage()`
-  transformations [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Add `ObjectReplacementScope` constants for the `scope` option of
-  `PDFWriter#replaceObject()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Declare the `text`, `border`, `color` and `followOriginalPageRotation`
   options that `Recipe#annot()` already reads [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Add Recipe constants for the string options Recipe accepts:
@@ -233,6 +264,20 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 
 ### Fixed
 
+- Write no `/M` for a Recipe annotation without a `date`, and write a `date`
+  that is not a valid date as the text given, as `@muhammara/wasm` does. 6.x
+  wrote the invalid PDF date `D:00000100000000-00'00'` for both
+  [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
+- Accept 6.x `Recipe#endPDF()` callbacks typed `(buffer: Buffer) => …`, such
+  as a Promise's `resolve`, and the exported `Recipe.EndPDFCallback` again, and
+  custom read streams without `moveStartPosition()`, which the reader never
+  calls. The 7.0.0 prerelease declarations rejected both [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
+- Type `Recipe#info()` without options as `Record<string, string> | undefined`,
+  the Info record it returns, instead of `Recipe`; chaining on it always
+  failed at runtime [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+- Write a valid `/Rect` for a Recipe `annot()` or `comment()` without `width`
+  or `height` on a rotated page; it contained `nan`, as `@muhammara/wasm` never
+  did [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
 - Prevent a segmentation fault when a stream started with
   `objectsContext.startPDFStream()` and never passed to `endPDFStream()` is
   garbage-collected, or when its writer is collected or the process exits
@@ -248,8 +293,8 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   and never passed to `endFormXObject()` is garbage-collected, or when its
   writer is collected or the process exits; `end()` on such a writer throws
   `Unable to end PDF` [#814](https://github.com/julianhille/MuhammaraJS/issues/814)
-- Fix a crash (use-after-free) in `end()`, `_abort()`, and Recipe error
-  recovery after a dictionary was left open, for example by a failed
+- Fix a crash (use-after-free) in `_abort()` and Recipe error recovery after a
+  dictionary was left open, for example by a failed
   `image()`: PDF-Writer's cleanup wrote the dictionary's closing `>>` into the
   already closed output. Open dictionaries are now released without writing,
   a local change to the vendored PDF-Writer [#815](https://github.com/julianhille/MuhammaraJS/issues/815)
@@ -385,14 +430,12 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   for Recipe `comment()` and `annot()`, and the optional arguments of
   `createPDFTextString()`, `startPDFStream()` and
   `calculateTextDimensions()` [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
-- Make `InfoDictionary#getAdditionalInfoEntries()` work without an argument; it
-  previously required an unused key [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix Recipe `movedown(lines, true)` throwing a `TypeError` before any text was
   written; it now moves down from the page origin [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Report an out-of-range object ID from `PDFReader#getXrefEntry()` and a
   non-path `drawImage()` source with accurate error messages [#792](https://github.com/julianhille/MuhammaraJS/issues/792)
 - Fix `Recipe#endPDF()` throwing `Node-API call failed` when the source PDF
-  Info dictionary has a `/Trapped` entry; the entry is now kept.
+  Info dictionary has a `/Trapped` entry; the entry is now kept
   [#779](https://github.com/julianhille/MuhammaraJS/issues/779)
 - Clamp `PDFRStreamForFile` and `PDFRStreamForBuffer` seek methods to the
   available bytes, allowing PDFs smaller than the parser's trailer window to be
@@ -431,16 +474,13 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
   instead of making one call per byte: a 48 MB PDF now takes under a second
   instead of running out of memory or taking tens of minutes, and
   `PDFWStreamForBuffer` no longer copies its whole contents on every write [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
-- Fix Recipe character-spacing measurements for retained boundary whitespace
-  and non-BMP Unicode text, preventing incorrect wrapping and horizontal
-  alignment [#543](https://github.com/julianhille/MuhammaraJS/issues/543)
 - Prevent a crash or hang when `appendPDFPagesFromPDF()` fails on a modifying
   writer with a malformed source such as a PDF with a broken page tree
   [#769](https://github.com/julianhille/MuhammaraJS/issues/769)
 - Fix the low-level drawing `type` declaration to accept the documented
   `null`, which ends the path without painting. The option is now the exported
   `DrawingPathType` (`"stroke" | "fill" | "clip" | null`) so unsupported paint
-  modes stay a compile error instead of silently producing unpainted geometry
+  modes stay a compile error
   [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
 - Correct `mergePDFPagesToPage()` callback types to allow no return value and expose their `globalThis` receiver [#756](https://github.com/julianhille/MuhammaraJS/issues/756)
 - Prefer `getentropy()` for native Linux CSPRNG calls when OpenSSL is unavailable [#742](https://github.com/julianhille/MuhammaraJS/issues/742)
@@ -450,6 +490,11 @@ objects` from `startReadingObjectsFromStream()`, when a stream cannot be
 
 ### Changed
 
+- Keep the writer usable when `appendPDFPagesFromPDF()` rejects a source that
+  cannot be opened, parsed, or decrypted, or a page range outside the source.
+  These now throw before anything is written instead of ending the writer as
+  in 7.0.0-beta.4; a failure while copying pages still ends it
+  [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
 - Throw `Error: rotate() is only available on pages created with createPage()`
   from Recipe `rotate()`, new in 7.0.0-beta.2, on a page opened with
   `editPage()`. Earlier prereleases left the page's `/Rotate` unchanged but
@@ -537,6 +582,14 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   An `overflow` destination too small for a row and its repeated header now
   throws `RangeError` instead of drawing beyond the bounds; return `true` to
   stop or provide a large enough area
+  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
+- Pass `""` instead of `null` to a table column `renderer` for a `null` value,
+  and leave the text cursor at the table's left edge and bottom. 6.x passed
+  `null`, and the table then failed with an internal `TypeError`, and it left
+  the cursor after the last cell, so a `text()` call without
+  coordinates after `table()` now starts below the table. Check for `""` in
+  renderers and pass coordinates to the next `text()`; see the
+  [migration guide](packages/native/docs/getting-started/migrate-from-v6.md#11-choose-table-columns-explicitly)
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 
 ### Added
@@ -631,9 +684,6 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   An `overflow` callback that ends the page without starting another now
   throws a clear `Error` instead of an internal `TypeError`
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
-- Pass `""` instead of `null` to a table column `renderer` for null values, and
-  leave the text cursor at the table's left edge and bottom
-  [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
 - Treat inherited record properties as missing table cells instead of
   rendering prototype methods such as `constructor` and `toString`
   [#666](https://github.com/julianhille/MuhammaraJS/issues/666)
@@ -698,7 +748,7 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 - Count leading and trailing non-breaking spaces in native Recipe `charSpace`
   measurements, matching Wasm. Text can measure wider or wrap earlier; use
   regular boundary spaces when they should be trimmed. See
-  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#10-trim-boundary-non-breaking-spaces-from-charspace-text)
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#10-trim-boundary-whitespace-from-charspace-text)
   [#661](https://github.com/julianhille/MuhammaraJS/issues/661)
 - Native Recipe `appendPage()` now rejects zero, negative, fractional, reversed,
   and malformed page selections instead of clamping or partially interpreting
@@ -713,9 +763,13 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   nothing. Call `pauseContext()` only after creating or editing a page, and call
   `resumeContext()` exactly once after a successful pause; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Native Recipe `endPage()` now clears the completed page and its content
-  context instead of leaving them active. Code that called page drawing,
-  configuration, or context methods after `endPage()` now fails; call
-  `createPage()` or `editPage()` before the next page operation. See
+  context instead of leaving them active. Page methods called after
+  `endPage()` throw instead of reusing the completed page: shapes, `image()`,
+  and `link()` with
+  `TypeError: No page is active; call createPage() or editPage() first`, and
+  `table()`, `overlay()`, `setPageBox()`, `rotate()`, and `pauseContext()` with
+  their own errors. `text()` draws nothing, and `comment()` or `annot()` make
+  `endPDF()` fail. Call `createPage()` or `editPage()` before the next page operation. See
   [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#8-reactivate-pages-after-endpage)
   [#608](https://github.com/julianhille/MuhammaraJS/issues/608)
 - Remove the accidentally exposed native `Recipe` prototype members
@@ -725,30 +779,34 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   for supported page-copying operations; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#623](https://github.com/julianhille/MuhammaraJS/issues/623)
 - The native `PDFReader` methods that take a page index or object ID —
   `parseNewObject()`, `getPageObjectID()`, `parsePageDictionary()`,
-  `parsePage()`, `extractPageText()`, `extractPageContentItems()`, and
-  `getXrefEntry()` — now throw a `TypeError` instead of coercing the argument.
-  `reader.parsePage(-1)`, which used to read page 4294967295, and
-  `reader.extractPageText(1.5)`, which used to read page 1, now fail with
-  `Page index must be a non-negative integer`; pass a non-negative integer below
-  2^32; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
+  `parsePage()`, and `getXrefEntry()` — now throw a `TypeError` instead of
+  converting the argument silently. In 6.x `reader.parsePage(1.5)` read the
+  second page, `reader.getPageObjectID(-1)` returned `0`, and `NaN` or
+  `Infinity` read index 0; such values now throw
+  `TypeError: Page index must be a non-negative integer` (or
+  `Object ID must be a non-negative integer`). The new `extractPageText()` and
+  `extractPageContentItems()` check their page index the same way. Pass a
+  non-negative integer below 2^32; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#581](https://github.com/julianhille/MuhammaraJS/issues/581)
 - Remove native `Recipe.fillOpacity()`. Calls now fail; use `Recipe.opacity()`
   to set both fill and stroke alpha. Opacity persists for later vector drawing,
   so call `opacity(1)` to restore opaque output. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#7-replace-recipefillopacity)
   [#618](https://github.com/julianhille/MuhammaraJS/issues/618)
-- Tighten native Recipe TypeScript declarations and add named types for
-  metadata, HTML text objects, colors, permissions, registered extensions,
-  layouts, tables, text boxes, markup, and vector shapes. Existing TypeScript
-  code that relies on `Function`, unchecked option literals, `object[]` rows,
-  unknown table fields, unsupported callback returns, widened vector styles,
-  broad strings for finite values, or an unconditional
-  `recipe.metadata.pages` may now fail `tsc`; use the corresponding
-  `muhammara.Recipe` types, return documented callback instructions, and check
-  the optional `pages` or `pageCount` counter. See
-  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#9-update-recipe-types)
+- Narrow three Recipe declarations that 6.x typed more loosely: `rectangle()`
+  `rotationOrigin` is a two-number tuple instead of `number[]`, the text
+  `overflow` callback must return `boolean` or overflow instructions instead of
+  `void` (a `void` callback already failed at runtime), and `lineTo()` options
+  no longer declare the `fill` that 6.x ignored. Such 6.x code fails `tsc`;
+  annotate the origin as `[number, number]`, return `true` to stop, and drop
+  `fill`. See
+  [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#9-update-recipe-options-and-types)
   [#654](https://github.com/julianhille/MuhammaraJS/issues/654)
 
 ### Added
 
+- Add named native Recipe types for metadata, HTML text objects, colors,
+  permissions, registered extensions, layouts, tables, text boxes, markup, and
+  vector shapes
+  [#654](https://github.com/julianhille/MuhammaraJS/issues/654)
 - Add Recipe `setPageBox(box, left, bottom, right, top)`, as `@muhammara/wasm`
   has, to set the media, crop, bleed, trim, or art box of a new page from an
   `ePDFPageBox*` constant such as `muhammara.ePDFPageBoxCropBox`; see
@@ -974,6 +1032,20 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   prebuilds for Node.js 19 to 24; Node.js 17, 18, 19, 21, and 23 are no longer
   supported, and npm warns or refuses to install on them. Upgrade to a
   supported Node.js release first. See [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md#5-confirm-prebuilt-coverage).
+- Remove deep imports such as `require("muhammara/lib/Recipe")`: the
+  JavaScript layer moved to `@muhammara/native-core`, and the native packages
+  no longer ship a `lib/` directory, also under an npm alias. Import from the
+  package root instead; see
+  [Update Imports](packages/native/docs/getting-started/migrate-from-v6.md#3-update-imports)
+  [#556](https://github.com/julianhille/MuhammaraJS/issues/556)
+- Tighten declarations that 6.x code compiled against, so such code fails
+  `tsc`: `PDFReader#getXrefPosition()` takes no argument;
+  `PDFWStreamForBuffer#buffer` may be `null`; `InfoDictionary#trapped` and the
+  `J()` and `j()` arguments take `0`, `1`, or `2` instead of any `number`; and
+  `eTokenSeparatorSpace`, `eTokenSeparatorEndLine`, and `eTokenSeparatorNone`
+  are constants, no longer types. Drop the `getXrefPosition()` argument, check
+  `buffer` for `null`, pass a literal `0`, `1`, or `2`, and write `typeof muhammara.eTokenSeparatorSpace` where a separator type is
+  needed; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x)
 
 ### Added
 
@@ -1576,6 +1648,7 @@ with the following changes.
 - Initial release
 
 [unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.1...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.1...HEAD
 [7.0.0-rc.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.4...native-v7.0.0-rc.1
 [7.0.0-beta.4]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.3...native-v7.0.0-beta.4
 [7.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.2...native-v7.0.0-beta.3

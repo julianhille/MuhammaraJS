@@ -33,11 +33,6 @@ visual runs with list prefixes and `indent` values, while native returns its
 nested XML-derived layout tree. Its ellipsis mode writes three ASCII periods
 (`...`) rather than the Unicode ellipsis used by native Recipe.
 
-On new pages, a text run's `opacity` option is scoped to that text in the PDF
-graphics state, but also becomes the default opacity for subsequent Recipe
-vector drawing. Call `opacity(1)` before later vectors when they should be fully
-opaque. The text option is ignored while editing an existing page.
-
 Appending or rebuilding an existing source page does not deep-copy that page's
 `/Annots` graph, although annotations created in the output are written
 normally. `split()` returns named byte arrays rather than writing an output

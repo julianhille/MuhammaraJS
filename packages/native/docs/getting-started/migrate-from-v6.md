@@ -9,9 +9,11 @@ under the `@muhammara` organization on npm:
 | `@muhammara/native-with-source` | Native addon plus the C++ source tree for local and Electron builds   |
 | `@muhammara/native-core`        | Shared JavaScript layer; a dependency of both, never installed direct |
 
-For Node.js applications the migration is a dependency rename, an import rename,
-a TypeScript Recipe declaration update, and a check
-that a prebuilt binary still exists for your platform.
+For most Node.js applications the migration is a dependency rename, an import
+rename, a supported Node.js version, and a check that a prebuilt binary exists
+for your platform (steps 1–6). Steps 7–17 cover API and type changes that
+affect only code using those features; the
+[Breaking Changes](../breaking-changes.md#version-7x) page lists every change.
 
 ## Why Upgrade
 
@@ -97,8 +99,9 @@ var Recipe = require("@muhammara/native").Recipe;
 package is needed.
 
 The shared JavaScript layer now lives in `@muhammara/native-core`, which both
-native packages install as a dependency. Paths under `muhammara/lib/` were never
-public API and have no direct v7 equivalent. Do not import
+native packages install as a dependency. Paths under `muhammara/lib/`, such as
+`require("muhammara/lib/Recipe")`, were never public API and no longer resolve,
+also under the npm alias below; import from the package root instead. Do not import
 `@muhammara/native-core` from an application; it needs an addon supplied by an
 implementation package.
 
@@ -127,8 +130,9 @@ declare const writer: muhammara.PDFWriter;
 declare const recipe: muhammara.Recipe;
 ```
 
-Code that relied on the ambient declaration being visible without importing the
-package fails to compile and needs an explicit import.
+Only the module name changes: `import`, `import = require()`, and module
+augmentation forms that named `"muhammara"` compile once they name the new
+package, or unchanged under the npm alias.
 
 ## 5. Confirm Prebuilt Coverage
 
@@ -185,84 +189,20 @@ recipe.editPage(2);
 recipe.text("More content", 72, 72);
 ```
 
-## 9. Update Recipe Types
+## 9. Update Recipe Options And Types
 
-v7 replaces several broad native Recipe declarations with types that describe
-the values accepted by the runtime. These declaration changes do not alter
-JavaScript behavior, but existing TypeScript can fail to compile in the
-following cases.
+v7 declares native Recipe options more precisely. A few 6.x declarations were
+broader than what the runtime accepts, so TypeScript code written against them
+can fail to compile in the following cases. Recipe members that 6.x did not
+declare at all, such as `register()`, `table()`, `chroma()`, and `metadata`,
+are new declarations and need no migration.
 
-### Type Registered Extensions
+### Type Text Overflow Callbacks
 
-`Recipe.register()` no longer accepts the unspecific `Function` type. Give the
-callback a callable signature, or use `Recipe.ExtensionCallback` when the
-extension uses its Recipe `this` context:
-
-```typescript
-var drawMarker: muhammara.Recipe.ExtensionCallback<
-  [number, number],
-  muhammara.Recipe
-> = function (x, y) {
-  return this.moveTo(x, y).lineTo(x + 10, y + 10);
-};
-
-recipe.register("drawMarker", drawMarker);
-```
-
-One-argument registration still requires a function with a non-empty runtime
-`name`. TypeScript cannot distinguish named and anonymous functions, so use the
-two-argument overload when the callback is anonymous.
-
-### Type Layouts And Tables
-
-`Recipe.layout()` and `Recipe.table()` now declare their supported options.
-Use `LayoutOptions` and `TableOptions<Row>` so object literals are checked. A
-variable typed only as `object` can still bypass structural checking, but it
-provides no option validation. A table column name must identify a non-empty
-field of `Row`, and each array-form `order` entry must identify a field of
-`Row`. A renderer receives the value type for its specific key, the complete
-row, the column-name literal, and a one-based row number:
-
-```typescript
-type ScoreRow = { name: string; score: number };
-
-var tableOptions: muhammara.Recipe.TableOptions<ScoreRow> = {
-  columns: [
-    {
-      name: "score",
-      renderer: (score, row, field) => {
-        var value: number = score;
-        var column: "score" = field;
-        return { bold: row.name === "Ada" && value > 5 && column === "score" };
-      },
-    },
-  ],
-  row: { nth: "odd" },
-  overflow: (currentRecipe) => {
-    currentRecipe.endPage().createPage("letter");
-    return { position: [40, 40] };
-  },
-};
-
-recipe.table(40, 40, [{ name: "Ada", score: 10 }], tableOptions);
-```
-
-Replace unknown option fields, table column names that are not present in the
-row type, `row.nth` values other than `"even"` or `"odd"`, truthy renderer
-return values other than text options, and overflow return values other than a
-boolean or `{ position: [x, y] }`. A renderer can return `false`, `null`, or
-`undefined`, as well as `0` or an empty string, when it has no overrides. Use
-`cell` rather than `textBox` for a column's box options. These values were
-previously accepted by the broad declaration but are not supported table
-instructions.
-
-An empty array-form `order` is populated from `columns` at runtime and must be
-mutable. A non-empty readonly tuple remains accepted because Recipe only reads
-it.
-
-Text overflow callbacks now receive the active `Recipe` and must return `true`
-to stop, `false` to continue, or an object selecting the next `layout` and/or
-`column`. A column can be an index or an `[x, y]` position:
+Text overflow callbacks were typed `() => void` in 6.x, but a callback that
+returns nothing already failed at runtime. They now receive the active `Recipe`
+and must return `true` to stop, `false` to continue, or an object selecting the
+next `layout` and/or `column`. A column can be an index or an `[x, y]` position:
 
 ```typescript
 recipe.layout("article", 72, 72, 468, 600, { columns: 2, gap: 18 });
@@ -282,60 +222,13 @@ for a `flag` that is not a `Recipe.AnnotFlag` value, where 6.x wrote the
 annotation without flags. Fix a misspelled name, use a `Recipe.AnnotFlag`
 value, or pass a numeric bit mask, which 7.x also accepts.
 
-### Type Text Markup Options
-
-Objects passed through `highlight`, `underline`, `strikeOut`, and `squiggly` may
-set `text`, `color`, annotation `opacity`, and `replies`. Put shared annotation
-metadata such as `title`, `open`, `richText`, `flag`, `icon`, `date`, and
-`subject` on the outer text options, where the runtime reads it:
-
-```typescript
-recipe.text("Reviewed", 40, 40, {
-  title: "Reviewer",
-  underline: { text: "Approved", color: "green", opacity: 0.8 },
-});
-```
-
 ### Type Colorspaces
 
-Recipe constructor, text, and drawing options accept `"rgb"`, `"gray"`,
-`"cmyk"`, or `"separation"`. Annotate reusable values with `Colorspace`, or
-with `DeviceColorspace` when separation colors are not appropriate, instead of
-widening them to `string`:
-
-```typescript
-var documentColorspace: muhammara.Recipe.Colorspace = "separation";
-var drawingColorspace: muhammara.Recipe.Colorspace = "separation";
-
-var options: muhammara.Recipe.RecipeOptions = {
-  colorspace: documentColorspace,
-};
-recipe.chroma("spotBlue", [23, 119, 209], "separation");
-recipe.text("Spot color", 40, 40, {
-  color: "spotBlue",
-  colorspace: drawingColorspace,
-});
-```
-
-`Recipe.chroma()` and the low-level `ColorOptions.colorspace` no longer
-accept a value typed `string`, and an unknown colorspace such as `"lab"` throws
-a `TypeError` at runtime: `Unknown colorspace: lab` from Recipe, and
+The low-level `ColorOptions.colorspace` no longer accepts a value typed
+`string`, and an unknown colorspace such as `"lab"` throws a `TypeError` at
+runtime: `Unknown colorspace: lab` from Recipe, and
 `colorspace must be rgb, gray, or cmyk` from the low-level drawing and
-`writeText()` options. Narrow computed values before passing them:
-
-```typescript
-var colorspaces: readonly string[] = Object.values(muhammara.Recipe.Colorspace);
-
-function isColorspace(value: string): value is muhammara.Recipe.Colorspace {
-  return colorspaces.includes(value);
-}
-
-if (isColorspace(configuredColorspace)) {
-  recipe.chroma("brand", "#ff0000", configuredColorspace);
-}
-```
-
-For low-level options, use `muhammara.DeviceColorSpace` values:
+`writeText()` options. Use `muhammara.DeviceColorSpace` values:
 
 ```typescript
 context.drawRectangle(10, 10, 100, 40, {
@@ -350,117 +243,35 @@ so 7.x throws `only a numeric color can use the gray or cmyk colorspace` where
 6.x drew it in RGB; drop `colorspace` for such a color. See
 [Draw in Gray and CMYK](../how-to/draw-in-gray-and-cmyk.md).
 
-### Type Arrows And Triangles
-
-`Recipe.arrow()` now uses `ArrowOptions`. Replace broad string or number
-variables with finite runtime values, and represent `head` and `shaft` arrays as
-one-to-three and one-to-two value tuples respectively:
-
-```typescript
-var arrow: muhammara.Recipe.ArrowOptions = {
-  type: "dart", // 0, 1, 2, "triangle", "dart", or "kite"
-  at: "head", // "head" or "tail"
-};
-var triangle: muhammara.Recipe.TriangleMeasurementOptions = {
-  traitID: "sas", // "sss", "sas", "asa", or "vtx"
-  position: "centroid",
-};
-
-recipe.arrow(100, 100, arrow);
-recipe.triangle(200, 100, [50, 60, 70], triangle);
-```
-
-The runtime historically tolerated unsupported arrow types and anchors by
-using default geometry. Omit the option when that fallback is intended.
-
-Triangle positions are `"a"`, `"b"`, `"c"`, `"centroid"`, `"circumcenter"`,
-or `"incenter"`. Trait identifiers and positions are case-insensitive. Measured
-triangles use exactly three numbers with `TriangleMeasurementOptions`; `"vtx"`
-triangles use exactly three `[x, y]` pairs with `TriangleVertexOptions`:
-
-```typescript
-recipe.triangle(
-  200,
-  100,
-  [
-    [0, 0],
-    [50, 0],
-    [0, 60],
-  ],
-  { traitID: "vtx" },
-);
-```
-
-Vertex tuples may be readonly when `position`, `flipX`, and `flipY` are omitted.
-Positioning or flipping translates coordinates in place, so those vertex tuples
-must be mutable.
-
 ### Type Vector Options
 
-Reusable path options now check `lineCap`, `lineJoin`, and `rotationOrigin`.
-Annotate widened variables and use a two-number tuple for the origin. Use
-`PathOptions` for shared line styling and a shape-specific type when configuring
-fills or transforms:
+`rectangle()` `rotationOrigin` is a two-number tuple instead of `number[]`.
+Annotate a reusable origin as `[number, number]`:
 
 ```typescript
-var polygonOptions: muhammara.Recipe.PolygonOptions = {
-  fill: "#000000",
-  lineCap: "round",
-  lineJoin: "bevel",
-  rotationOrigin: [100, 100],
-};
+var origin: [number, number] = [100, 100];
+recipe.rectangle(50, 50, 100, 40, { rotation: 30, rotationOrigin: origin });
 ```
 
-The `debug` option belongs to `ShapeOptions`, `NGonOptions`, `ArrowOptions`, and
-`TriangleOptions`; direct `polygon()` calls ignore it.
+`lineTo()` options no longer declare `fill`, which 6.x declared but ignored.
+Remove it; fill a closed path with `polygon()` instead.
 
-Direct `rectangle()` calls accept `borderRadius` as a number or a tuple of one
-to four corner radii. Text-box styles additionally accept `true`, which uses the
-Recipe default radius.
+## 10. Trim Boundary Whitespace From `charSpace` Text
 
-`circle()` supports shared drawing fields such as color, width, opacity, and
-dashes, plus `skewX` and `skewY`; it does not consistently support rotation.
-`ellipse()`, `arc()`, and `pie()` additionally use `EllipseOptions` for all
-transforms. Rectangles support transforms but do not apply line-cap/join fields.
-Use `PolygonOptions` for transformed paths with cap, join, and miter controls.
+v7 Recipe character-spacing measurements count every character of the text,
+including leading and trailing whitespace such as spaces, tabs and non-breaking
+spaces (`U+00A0`), matching Wasm. v6 trimmed boundary whitespace before
+counting, so text with `charSpace` can now measure wider, wrap earlier, or
+align differently: `" Label "` adds two more `charSpace` gaps than in v6.
+Characters outside the Basic Multilingual Plane, such as emoji, now count once
+instead of twice.
 
-The more precise `Recipe.read()` metadata and `Recipe.htmlToTextObjects()`
-result types and reusable `Color` and permission types are additive and require
-no migration.
-
-### Type Recipe Metadata
-
-`Recipe.metadata` now reflects the two counters used by the runtime: a document
-read from a file has `pages`, while a document created from scratch has
-`pageCount`. Both fields are optional on `Metadata`, so
-`recipe.metadata.pages` is `number | undefined`, not always `number`. Check the
-counter before using it:
-
-```typescript
-if (recipe.metadata.pages !== undefined) {
-  var total: number = recipe.metadata.pages;
-}
-```
-
-Or use the return value of `read()`, which is typed `ReadMetadata` directly
-and always has `pages: number`:
-
-```typescript
-var total: number = recipe.read("in.pdf").pages;
-```
-
-## 10. Trim Boundary Non-Breaking Spaces From `charSpace` Text
-
-v7 Recipe character-spacing measurements now count leading and trailing
-non-breaking spaces (`U+00A0`), matching Wasm. Text using `charSpace` can
-measure wider or wrap earlier than it did in v6. If boundary non-breaking
-spaces should not contribute to spacing, replace them with regular spaces
-before measuring or rendering:
+If boundary whitespace should not add spacing, trim the text before passing
+it, and move `x` where the indent must stay visible:
 
 ```javascript
-var nbsp = String.fromCharCode(160); // U+00A0 non-breaking space
-var text = (nbsp + "Indented label" + nbsp).split(nbsp).join(" ");
-recipe.text(text, 72, 72, { charSpace: 2 });
+var label = "  Indented label  ";
+recipe.text(label.trim(), 72, 72, { charSpace: 2 });
 ```
 
 ## 11. Choose Table Columns Explicitly
@@ -504,7 +315,12 @@ oversized record into multiple rows. See [Create Multi-Page Tables](../how-to/cr
 
 Array-form `order` preserves exact field names, including whitespace and
 empty-string keys; the comma-separated form trims surrounding whitespace.
-Tables with empty contents or no discovered columns preserve the cursor.
+
+A column `renderer` now receives `""` for a `null` value; in 6.x a `null` value
+made the table fail with an internal `TypeError`. After drawing, `table()` leaves the text cursor
+at the table's left edge and bottom, where 6.x left it after the last cell, so
+pass coordinates to a following `text()` call. Tables with empty contents or no
+discovered columns preserve the cursor.
 
 ## 12. Pass A Text Size Greater Than Zero
 
@@ -560,6 +376,7 @@ as `false`, `0`, or `""`, now throws
 `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`. Replace
 it with `"clip"` when clipping is intended, `"stroke"`/`"fill"` when drawing an
 outline or filled shape is intended, or `null` to end the path unpainted.
+`type: undefined` strokes, as an omitted `type` does; in 6.x it clipped too.
 
 Clipping now ends the path (`W n`). Do not rely on a later painting operator to
 paint that same path: draw the shape again with a painting type if necessary.
@@ -621,7 +438,9 @@ Replace `concat`, `push(...bytes)`, `splice`, and `Array.isArray` checks with
 Buffer operations, or call `Array.from(bytes)` where an array is still needed.
 TypeScript implementations of `WriteStream` or the `log` option must declare
 `write(bytes: Buffer)`. Custom read streams may keep returning arrays; returning
-a `Uint8Array` or `Buffer` is now also accepted and faster.
+a `Uint8Array` or `Buffer` is now also accepted and faster. `ReadStream#read()`
+is declared as returning `Uint8Array | number[]`, so code that types its result
+as `number[]` needs `Array.from()` or a wider type.
 
 ## 16. Move Recipe Annotations To Their Top-Left Corner
 
@@ -644,7 +463,7 @@ recipe.annot(50, 100 - 30, "Square", { width: 120, height: 30 });
 Highlight, Underline, StrikeOut, and Squiggly annotations need no change. In
 v6 their `QuadPoints`, which viewers draw, already hung down from `y`, while
 their `Rect` lay above them. Both now cover the same area below `y`. Annotations
-without a `height`, such as `comment()`, and the `highlight`, `underline`,
+without a `height`, such as a 6.x `comment()`, and the `highlight`, `underline`,
 `strikeOut`, and `squiggly` options of `text()` stay where they were.
 
 ## 17. Rename Recipe Plugins That Collide With New Methods

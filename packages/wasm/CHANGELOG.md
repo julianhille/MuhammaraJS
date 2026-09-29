@@ -4,7 +4,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
-## [1.0.0-rc.1] - 2026-09-28
+## [1.0.0-rc.1] - 2026-09-29
 
 ### Added
 
@@ -24,7 +24,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Draw Recipe Separation (spot) colors, as native Recipe does: register an ink
   with `chroma(name, value, "separation")` or pass `colorName` with a
   `separation` color, and shapes, lines and text paint it at full tint with
-  `value` as the alternate device color. These calls previously threw
+  `value` as the alternate device color. These calls previously threw, and
+  the declarations now accept `"separation"` as a Recipe colorspace
   [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
 - Accept native's `password` option in `createReader()` and
   `createReaderAsync()` to open encrypted PDFs [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
@@ -71,16 +72,25 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   report
 - Add a `Recipe` type namespace with native's names: one type per Recipe value
   set, for example `Recipe.TextWrap` and `Recipe.AnnotFlag`, and the option
-  types, for example `Recipe.TextOptions` and `Recipe.TableOptions`; type
-  `createPage(size)` as `Recipe.PageSize` and text-box `textAlign` as
-  `Recipe.TextBoxAlign` instead of any string [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+  types, for example `Recipe.TextOptions` and `Recipe.TableOptions` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Add native's low-level type names as aliases, for example `EPDFVersion`,
   `UsedFont`, `TextDimension`, `JPEGInformation`, `TransformationObject`, and
   `PageContentContext`, so declarations shared with `@muhammara/native` compile
   against both packages [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Let flat `drawPath(x1, y1, x2, y2, ...)` coordinates omit the options object,
+  as native allows [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ### Fixed
 
+- Write `/Border [0 0 0]` for a Recipe annotation with `border: 0`, as native
+  does. It used to write no `/Border`, so viewers drew their default border
+  [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
+- Write a Recipe annotation reply with its parent's `flag` when the parent
+  sets both `flag` and `flags`, as the parent itself and native do. The reply
+  used `flags` whenever `flag` was 0
+  [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
+- Write a Recipe annotation `date` of `0` as the Unix epoch, as native does,
+  instead of writing no `/M` [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
 - Throw `RangeError: n_gon sides must be a finite number no greater than 100000`
   from Recipe `n_gon()` (`star points …` from `star()`) when the side or point count is `NaN`,
   `Infinity`, not a number, or above 100000. An infinite or huge count used to
@@ -93,7 +103,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   (x, y) as the bottom-left corner, so every annotation with a `height` now
   appears `height` points lower; Highlight, Underline, StrikeOut, and Squiggly
   now render where native draws them. Subtract `height` from `y` to keep the
-  previous position [#808](https://github.com/julianhille/MuhammaraJS/issues/808)
+  previous position. This includes a `comment()` with a `height`; the markup
+  options of `text()` are unchanged [#808](https://github.com/julianhille/MuhammaraJS/issues/808)
 - Throw `TypeError: only a numeric color can use the gray or cmyk colorspace`
   from the low-level drawing helpers and `writeText()` for a color name,
   `#rrggbb` string, or `[r, g, b]` array with `colorspace: "gray"` or
@@ -213,15 +224,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Accept any structural `BlobLike` in the async byte inputs, as
   `AsyncByteSource` declares, instead of only `Blob` instances [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Declare Recipe `text()` and `image()` coordinates as `RecipeCoordinate`,
-  which accepts `"center"` at runtime, and reject a pattern name without color
-  components in the `SCN()`/`scn()` types, as the runtime does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+  which accepts `"center"` at runtime [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Throw when a content-context operator such as `rg()`, `cm()`, `Tm()` or
   `k()` gets fewer operands than it needs, as native does, instead of writing
   `nan` into the content stream; the writer page also rejects a non-finite
   `k()` or `G()` operand [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Keep the source `/Trapped`, `CreationDate`, `Title`, `Author`, `Subject`,
   and `Keywords` Info entries when a Recipe saves an existing PDF; they were
-  silently dropped. `info()` still overrides them.
+  silently dropped. `info()` still overrides them
   [#779](https://github.com/julianhille/MuhammaraJS/issues/779)
 - Clamp `PDFRStreamForBuffer` seek methods to the available bytes, matching
   native built-in stream behavior for PDFs smaller than the parser's trailer
@@ -253,20 +263,21 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Fix Recipe character-spacing measurements for retained boundary whitespace
   and non-BMP Unicode text, preventing incorrect wrapping and horizontal
   alignment [#543](https://github.com/julianhille/MuhammaraJS/issues/543)
-- Fix the low-level drawing `type` declaration to accept the documented
-  `null`, which ends the path without painting
-  [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
 - Correct `mergePDFPagesToPage()` callback types to expose their `globalThis` receiver [#756](https://github.com/julianhille/MuhammaraJS/issues/756)
 - Retire modifying writers when appending pages fails while copying from a
   malformed PDF, so callers cannot continue with partially mutated writer
-  state. Encrypted input and sources that cannot be parsed are rejected before
-  anything is written and leave the writer usable
-  [#758](https://github.com/julianhille/MuhammaraJS/issues/758)
-  [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
-- Prefer `getentropy()` for Wasm CSPRNG calls when available [#742](https://github.com/julianhille/MuhammaraJS/issues/742)
-- Release copying contexts created by `PDFPageMergingHelper` after file- and
-  stream-based merges instead of retaining their parser and source resources
+  state [#758](https://github.com/julianhille/MuhammaraJS/issues/758)
+- Release copying contexts created by `PDFPageMergingHelper` after merges
+  instead of retaining their parser and source resources
   [#759](https://github.com/julianhille/MuhammaraJS/issues/759)
+- Reject inherited object keys such as `toString` as `getPageBox()` box names [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+- Reject an infinite Recipe text `size`, or its `fontSize` alias, with the
+  `RangeError` other invalid sizes get; it used to write an invalid `inf` font
+  size into the page [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
+- Declare the Recipe `metadata` property, accept a `boolean` in
+  `movedown()`, a `number` or options in the third `n_gon()` and `star()`
+  argument, and `string | Glyph` in `Tj()`, `Quote()`, and `DoubleQuote()`, as
+  the native declarations do [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ### Changed
 
@@ -297,31 +308,25 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `PDFRStreamForBuffer#read()`, the `ByteReader` and `ByteReaderWithPosition`
   adapters, and the byte readers returned by `startReadingFromStream()`,
   `startReadingFromStreamForPlainCopying()`, `getParserStream()`, and
-  `getSourceDocumentStream()`, matching native. Replace array methods on the result with
-  typed-array operations, or wrap it in `Array.from()`
+  `getSourceDocumentStream()`, matching native. Replace array methods on the
+  result with typed-array operations, or wrap it in `Array.from()`; TypeScript
+  code that types the result as `number[]` fails to compile
   [#324](https://github.com/julianhille/MuhammaraJS/issues/324)
-- Treat an `appendPDFPagesFromPDF()` call that fails while copying pages as
-  terminal for its writer. Previously callers could continue after a failed
-  append and produce a corrupted document; create a fresh writer and retry with
-  valid source bytes. Source bytes that cannot be parsed, encrypted input, and
-  page ranges outside the source throw before anything is written and leave the
-  writer usable
-  [#750](https://github.com/julianhille/MuhammaraJS/issues/750)
+- Keep the writer or modifier usable when `appendPDFPagesFromPDF()` rejects
+  source bytes that cannot be parsed, encrypted input, or a page range outside
+  the source. These now throw before anything is written instead of ending the
+  writer as in 1.0.0-beta.4; a failure while copying pages still ends it
   [#828](https://github.com/julianhille/MuhammaraJS/issues/828)
 - Draw nothing for a Recipe `line()` with fewer than two coordinate pairs, as
   native does, instead of throwing a `TypeError`; a single pair moves the
   current position [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
-- Declare the Recipe `metadata` property, accept a `boolean` in
-  `movedown()`, a `number` or options in the third `n_gon()` and `star()`
-  argument, and `string | Glyph` in `Tj()`, `Quote()`, and `DoubleQuote()`, as
-  the native declarations do [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Align the Recipe option declarations with native so values typed for
   `@muhammara/native` compile: colors, `dash`, `rotationOrigin`, `borderRadius`,
   text-box `padding`, annotation arrays, and `replies` accept readonly arrays;
   `circle()`, `rectangle()`, `ellipse()`, `arc()`, `pie()`, `link()`, and
   `rotateContent()` accept `"center"` coordinates; the text `overflow` callback
   is typed with the Recipe as `this`; and a text-box `style.borderRadius` accepts
-  `true`. The undocumented `colour` and `colorName` path options and the
+  `true`. The undocumented `colour` path option and the
   `encrypt()` index signature are no longer declared, and `useGivenCoords` is
   declared only on `rectangle()`, the one method that reads it [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Release copying contexts that are still open when `end()` is called on a
@@ -330,8 +335,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   operation instead of reporting an active page [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Throw from `PDFReader#getXrefEntry()` for an object ID outside the xref
   table, with the native message, instead of returning `null` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Let flat `drawPath(x1, y1, x2, y2, ...)` coordinates omit the options object,
-  as native allows [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Check `J()`, `j()` and `Tr()` operands on every content context: a line cap
   or line join must be 0 to 2 and a text rendering mode 0 to 7, otherwise a
   `RangeError` is thrown. `j(3)`, previously accepted, now throws [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
@@ -362,10 +365,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   does; `Tj()`, `Quote()`, `DoubleQuote()`, and `TJ()` take `Glyph` where they took
   `Glyph[]`. Code that annotated one pair as `Glyph` should use `[number, number]` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Type the Recipe `annot()` subtype as `Recipe.AnnotSubtype`, the native
-  `AnnotSubtype` values, and add `lockedcontents` to `Recipe.AnnotFlag` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+  `AnnotSubtype` values [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Throw a `TypeError` from `drawRectangle()`, `drawSquare()`, `drawCircle()`, and
   `drawPath()` for a `type` that is not a `DrawingPathType` value or `null`,
-  instead of ending the path unpainted, as native now does [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+  instead of ending the path unpainted, with native's message
+  `Unknown drawing type; use "stroke", "fill", "clip" or null`
+  [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
+  [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
 - Type returned PDF bytes as `Uint8Array<ArrayBuffer>`, so `new Blob([bytes])`
   and `new Response(bytes)` compile without a cast. The declarations now require
   TypeScript 5.7 or later; older compilers report `Type 'Uint8Array' is not
@@ -379,16 +385,19 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
   `ProcsetName`, and `PDFPageBoxType`, and the matching constants carry their
   literal values. Recipe image `align`, previously any string, takes the
   alignment keywords. Code passing an out-of-set literal now fails `tsc` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Reject inherited object keys such as `toString` as `getPageBox()` box names [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
-- Reject an infinite Recipe text `size`, or its `fontSize` alias, with the
-  `RangeError` other invalid sizes get; it used to write an invalid `inf` font
-  size into the page [#798](https://github.com/julianhille/MuhammaraJS/issues/798)
 - Rework the npm README: it explains how the MuhammaraJS packages fit together, when to use a native package instead, and adds tested quick-start examples [#772](https://github.com/julianhille/MuhammaraJS/issues/772)
 - Narrow `DrawPathOptions.type` from an arbitrary string to the exported
   `DrawingPathType` (`"stroke" | "fill" | "clip" | null`), matching native.
-  Unsupported paint modes are now a compile error as well as a runtime
+  The documented `null`, which ends the path without painting, is accepted,
+  and unsupported paint modes are now a compile error as well as a runtime
   `TypeError`; pass a supported type
   [#760](https://github.com/julianhille/MuhammaraJS/issues/760)
+- Prefer `getentropy()` for Wasm CSPRNG calls when available [#742](https://github.com/julianhille/MuhammaraJS/issues/742)
+- Type `createPage(size)` as `Recipe.PageSize` instead of any string, so a
+  value typed `string` fails `tsc`; use the `Recipe.PageSize` constants. Text-box
+  `textAlign` is typed `Recipe.TextBoxAlign` and no longer accepts an arbitrary
+  word before the vertical alignment
+  [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 
 ## [1.0.0-beta.4] - 2026-09-24
 
