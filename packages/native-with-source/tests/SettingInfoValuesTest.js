@@ -1,6 +1,27 @@
 var muhammara = require("@muhammara/native-with-source");
 var assert = require("chai").assert;
 
+/**
+ * Creates a Date that reports its local time in a fixed UTC offset, such as
+ * India's +05:30, so the test does not depend on the process time zone.
+ * Changing TZ at runtime is not applied consistently in Electron.
+ * @param {number} time - Milliseconds since the Unix epoch.
+ * @param {number} offset - Minutes east of UTC.
+ * @returns {Date} The date, with local-time getters for that offset.
+ */
+function zonedDate(time, offset) {
+  var date = new Date(time);
+  var local = new Date(time + offset * 60000);
+  date.getTimezoneOffset = () => -offset;
+  date.getFullYear = () => local.getUTCFullYear();
+  date.getMonth = () => local.getUTCMonth();
+  date.getDate = () => local.getUTCDate();
+  date.getHours = () => local.getUTCHours();
+  date.getMinutes = () => local.getUTCMinutes();
+  date.getSeconds = () => local.getUTCSeconds();
+  return date;
+}
+
 describe("SettingInfoValues", function () {
   it("should complete without error", function () {
     var pdfWriter = muhammara.createWriter(
@@ -68,5 +89,18 @@ describe("SettingInfoValues", function () {
 
     pdfWriter.writePage(pdfWriter.createPage(0, 0, 595, 842));
     pdfWriter.end();
+  });
+  it("writes a Date's time zone offset with its minutes", function () {
+    var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    var time = Date.UTC(2026, 0, 2, 3, 4, 5);
+    [
+      [330, "D:20260102083405+05'30'"],
+      [-210, "D:20260101233405-03'30'"],
+      [60, "D:20260102040405+01'00'"],
+    ].forEach(function ([offset, expected]) {
+      var date = zonedDate(time, offset);
+      assert.equal(writer.createPDFDate(date).toString(), expected);
+      assert.equal(new muhammara.PDFDate(date).toString(), expected);
+    });
   });
 });

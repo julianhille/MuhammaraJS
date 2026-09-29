@@ -268,6 +268,11 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   that is not a valid date as the text given, as `@muhammara/wasm` does. 6.x
   wrote the invalid PDF date `D:00000100000000-00'00'` for both
   [#853](https://github.com/julianhille/MuhammaraJS/issues/853)
+- Keep the minutes of the time zone offset when a JavaScript `Date` becomes
+  a PDF date, as `@muhammara/wasm` does. In a zone such as India (UTC+05:30)
+  `createPDFDate()`, `PDFDate`, the Info dates and Recipe annotation dates
+  wrote `+05'00'`, 30 minutes off the actual time
+  [#854](https://github.com/julianhille/MuhammaraJS/issues/854)
 - Accept 6.x `Recipe#endPDF()` callbacks typed `(buffer: Buffer) => …`, such
   as a Promise's `resolve`, and the exported `Recipe.EndPDFCallback` again, and
   custom read streams without `moveStartPosition()`, which the reader never

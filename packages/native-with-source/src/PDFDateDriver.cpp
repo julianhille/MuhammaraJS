@@ -38,7 +38,8 @@ napi_value PDFDateDriver::New(const CallbackArgs &args) {
           GetUIntValueFromDateFunction(args.Env(), args[0], "getSeconds"),
           offset < 0 ? PDFDate::eLater : PDFDate::eEarlier,
           static_cast<int>(absoluteOffset / 60),
-          static_cast<int>((absoluteOffset - (absoluteOffset / 60) * 60) / 60));
+          // Half-hour zones such as India (+05'30') keep their minutes.
+          static_cast<int>(absoluteOffset % 60));
     } else if (IsType(args.Env(), args[0], napi_string)) {
       driver->mDate.ParseString(
           muhammara::napi::LegacyString(args.Env(), args[0]));
