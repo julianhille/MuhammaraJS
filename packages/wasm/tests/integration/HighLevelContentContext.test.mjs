@@ -865,4 +865,35 @@ describe("HighLevelContentContext", function () {
     writer.writePage(page);
     writeOutput("HighLevelContentContext-invalid-drawpath", writer.end());
   });
+
+  it("keeps a page's context when restarted through getAssociatedPage()", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var page = writer.createPage(0, 0, 100, 100);
+    var context = writer.startPageContentContext(page);
+    writer.startPageContentContext(context.getAssociatedPage());
+    context.q().re(10, 10, 20, 20).f().Q();
+    writer.writePage(page);
+    var reader = muhammara.createReader(writer.end());
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
+  });
+
+  it("ends every context of a page when any of its wrappers is written", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var page = writer.createPage(0, 0, 100, 100);
+    var context = writer.startPageContentContext(page);
+    var associatedContext = writer.startPageContentContext(
+      context.getAssociatedPage(),
+    );
+    writer.writePage(associatedContext.getAssociatedPage());
+    assert.throws(() => associatedContext.q(), {
+      message: "Page content context is not active",
+    });
+    assert.throws(() => context.q(), {
+      message: "Page content context is not active",
+    });
+    writer.end();
+  });
 });

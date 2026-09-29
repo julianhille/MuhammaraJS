@@ -159,10 +159,8 @@ void PDFWriterDriver::ReleaseOpenContent() {
   for (PDFFormXObject *form : openContent_->forms)
     form->GetContentStream()->FinalizeStreamWrite();
   openContent_->forms.clear();
-  for (PDFPage *page : openContent_->pages)
-    if (page->GetAssociatedContentContext())
-      writer_.EndPageContentContext(page->GetAssociatedContentContext());
-  openContent_->pages.clear();
+  while (!openContent_->pages.empty())
+    EndPageContent(openContent_->pages.begin()->first);
   for (PDFModifiedPage *page : openContent_->modifiedPages)
     page->EndContentContext();
   openContent_->modifiedPages.clear();
@@ -173,12 +171,22 @@ void PDFWriterDriver::ReleaseOpenContent() {
 std::shared_ptr<OpenContent> PDFWriterDriver::GetOpenContent() {
   return openContent_;
 }
+EStatusCode PDFWriterDriver::EndPageContent(PDFPage *page) {
+  auto found = openContent_->pages.find(page);
+  if (found != openContent_->pages.end()) {
+    found->second->End();
+    openContent_->pages.erase(found);
+  }
+  PageContentContext *context = page->GetAssociatedContentContext();
+  return context ? writer_.EndPageContentContext(context) : eSuccess;
+}
 void PDFWriterDriver::AbandonPage(PDFPage *page) {
+  if (!openContent_->pages.count(page))
+    return;
   // A finalizer must not call into JavaScript, so the output keeps what
   // ending writes until the next JavaScript call flushes it.
   NoJavaScriptScope noJavaScript(this);
-  if (page->GetAssociatedContentContext())
-    writer_.EndPageContentContext(page->GetAssociatedContentContext());
+  EndPageContent(page);
 }
 void PDFWriterDriver::AbandonModifiedPage(PDFModifiedPage *page) {
   NoJavaScriptScope noJavaScript(this);
@@ -293,12 +301,14 @@ napi_value PDFWriterDriver::WritePageAndReturnID(const CallbackArgs &a) {
   if (!p)
     return ThrowTypeError(
         a.Env(), "Wrong arguments, provide a page as the single parameter");
-  if (p->ContentContext &&
-      d->writer_.EndPageContentContext(p->ContentContext) != eSuccess)
-    return ThrowTypeError(a.Env(), "Unable to finalize page context");
+  // The page's context may have been started through another wrapper of the
+  // page, such as one from getAssociatedPage(). Ending deletes the context
+  // even when it fails, so its lifecycle ends first.
   p->ContentContext = nullptr;
-  p->EndContentLifecycle();
-  d->openContent_->pages.erase(p->GetPage());
+  if (d->EndPageContent(p->GetPage()) != eSuccess)
+    return ThrowTypeError(a.Env(), "Unable to finalize page context");
+  if (p->mOwnsPage)
+    p->openContent = d->openContent_;
   auto r = d->writer_.WritePageAndReturnPageID(p->GetPage());
   return r.first == eSuccess ? Number(a.Env(), r.second)
                              : ThrowTypeError(a.Env(), "Unable to write page");
@@ -316,17 +326,25 @@ napi_value PDFWriterDriver::StartPageContentContext(const CallbackArgs &a) {
   PageContentContextDriver *c = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), v, &c))
     return nullptr;
-  c->ContentContext = d->writer_.StartPageContentContext(p->GetPage());
-  c->SetResourcesDictionary(&p->GetPage()->GetResourcesDictionary());
-  if (p->ContentContext != c->ContentContext)
-    p->RenewContentLifecycle();
+  PDFPage *page = p->GetPage();
+  bool started = page->GetAssociatedContentContext() == nullptr;
+  c->ContentContext = d->writer_.StartPageContentContext(page);
+  c->SetResourcesDictionary(&page->GetResourcesDictionary());
   p->ContentContext = c->ContentContext;
   c->AddOwner(d->lifecycle_);
-  c->AddOwner(p->ContentLifecycle());
   if (c->ContentContext) {
-    d->openContent_->pages.insert(p->GetPage());
-    p->openContent = d->openContent_;
+    // Every wrapper of the page shares one context and its lifecycle, so
+    // collecting one wrapper does not release the context another uses.
+    DriverLifecycle &lifecycle = d->openContent_->pages[page];
+    if (started || !lifecycle)
+      lifecycle = std::make_shared<DriverLifecycleState>(
+          "Page content context is not active");
+    c->AddOwner(lifecycle);
   }
+  // Only the wrapper that owns the page deletes it, so only that wrapper
+  // releases the page's context when it is collected.
+  if (p->mOwnsPage)
+    p->openContent = d->openContent_;
   return v;
 }
 napi_value PDFWriterDriver::PausePageContentContext(const CallbackArgs &a) {

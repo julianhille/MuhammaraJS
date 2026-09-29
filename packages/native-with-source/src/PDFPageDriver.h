@@ -16,16 +16,11 @@ public:
   ConstructorsHolder *holder;
   PDFPage *mPDFPage;
   bool mOwnsPage;
-  // The content context started for this page is released by writePage(),
-  // which ends this lifecycle.
-  DriverLifecycle ContentLifecycle();
-  void RenewContentLifecycle();
-  void EndContentLifecycle();
-  // Set once a writer starts a content context on this page, see OpenContent.
+  // Set on the page's owner once a writer starts or writes it, see
+  // OpenContent.
   std::shared_ptr<OpenContent> openContent;
 
 private:
-  DriverLifecycle mContentLifecycle;
   static napi_value New(const muhammara::napi::CallbackArgs &);
   static napi_value GetMediaBox(const muhammara::napi::CallbackArgs &);
   static napi_value SetMediaBox(const muhammara::napi::CallbackArgs &);
