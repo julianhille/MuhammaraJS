@@ -35,10 +35,8 @@ non-stroking graphics state. Omit `type` or use `"stroke"` for an outline;
 `null` does not select the default.
 
 `DrawingPathType` names these values at runtime and in the TypeScript
-declarations, so a misspelled paint mode fails to compile instead of producing
-unpainted geometry.
-The runtime still tolerates any other value for compatibility, but it is not a
-supported input.
+declarations, so a misspelled paint mode fails to compile, and at runtime it
+throws instead of producing unpainted geometry.
 
 Coordinates and drawing options are read and converted before emitting any
 operators. A throwing getter or numeric conversion leaves this call's geometry

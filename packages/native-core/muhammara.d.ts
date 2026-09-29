@@ -183,10 +183,11 @@ declare namespace muhammara {
     getCurrentPosition(): number;
     /**
      * Sets the offset that later positions are counted from, for PDF data
-     * that does not begin at byte zero.
+     * that does not begin at byte zero. Optional: the reader never calls it, so
+     * a 6.x stream without it works unchanged.
      * @param inPosition - The absolute byte offset of the start.
      */
-    moveStartPosition(inPosition: number): void;
+    moveStartPosition?(inPosition: number): void;
   }
 
   export interface PDFPageInput {
@@ -315,6 +316,11 @@ declare namespace muhammara {
      * @param inCallback - Called once the file is closed.
      */
     close(inCallback?: () => void): void;
+    /**
+     * Sets the offset that later positions are counted from.
+     * @param inPosition - The absolute byte offset of the start.
+     */
+    moveStartPosition(inPosition: number): void;
   }
 
   export interface PDFRStreamForBuffer extends ReadStream {
@@ -329,6 +335,11 @@ declare namespace muhammara {
      * @returns The bytes read; shorter than requested at the end.
      */
     read(inAmount: number): Buffer;
+    /**
+     * Sets the offset that later positions are counted from.
+     * @param inPosition - The absolute byte offset of the start.
+     */
+    moveStartPosition(inPosition: number): void;
   }
 
   /** Device color space of a drawing color option. */
@@ -3234,33 +3245,48 @@ declare namespace muhammara {
       bottom?: number;
     }
 
-    interface CommentOptions {
-      title?: string;
-      date?: string;
-      open?: boolean;
-      richText?: boolean;
-      flag?: AnnotOptionsFlag | number;
-      /** Replies linked to this comment annotation. */
-      replies?: readonly AnnotReply[];
-    }
+    /**
+     * `comment()` options: the `annot()` options except `text`, which is
+     * `comment()`'s first argument. `width` and `height` size the rectangle
+     * down from (x, y), as for `annot()`.
+     */
+    interface CommentOptions extends Omit<AnnotOptions, "text"> {}
 
     interface AnnotOptions {
       /** The annotation content. */
       text?: string;
+      /** The annotation content when `text` is empty, as in `@muhammara/wasm`. */
+      contents?: string;
       title?: string;
       open?: boolean;
       richText?: boolean;
       flag?: AnnotOptionsFlag | number;
+      /** Flag bits when `flag` is omitted. */
+      flags?: number;
       icon?: AnnotOptionsIcon;
+      /** The `/Name` icon when `icon` is omitted. */
+      name?: string;
+      /** A finite width of at least zero; other values throw a `TypeError`. */
       width?: number;
+      /** A finite height of at least zero; other values throw a `TypeError`. */
       height?: number;
-      /** Annotation opacity from 0 (transparent) to 1 (opaque). Defaults to 1. */
+      /** Annotation opacity from 0 (transparent) to 1 (opaque). Defaults to 1; other values throw a `TypeError`. */
       opacity?: number;
-      date?: string;
+      /** The `/M` modification date; omitted writes no `/M`, and text that is not a date is written as given. */
+      date?: string | Date;
       subject?: string;
       replies?: readonly AnnotReply[];
-      /** The border width. */
-      border?: number;
+      /**
+       * The border width, or its `width` and `dash` pattern. A negative width
+       * writes no `/Border`. Text markup annotations default to 0.
+       */
+      border?: number | { width?: number; dash?: readonly number[] };
+      /** The border width; overrides `border.width`. */
+      borderWidth?: number;
+      /** The border dash pattern; overrides `border.dash`. */
+      borderDash?: readonly number[];
+      /** Quad points, eight numbers per quadrilateral, written as given. */
+      quadPoints?: readonly number[];
       /** `#rrggbb`, `%r,g,b`, a color registered with `chroma()`, a CSS color name, or one (gray), three (RGB), or four (CMYK) numbers from 0 to 255. Other values throw a `TypeError`. */
       color?: Color;
       /** Keep the annotation unrotated on a rotated source page. */
@@ -3270,12 +3296,24 @@ declare namespace muhammara {
     interface AnnotReply {
       /** Ignored: a reply uses the subtype of the annotation it answers. */
       subtype?: AnnotSubtype;
-      text: string;
+      text?: string;
+      /** The reply content when `text` is empty. */
+      contents?: string;
       title?: string;
       richText?: boolean;
       flag?: AnnotOptionsFlag | number;
+      /** Flag bits when `flag` is omitted. */
+      flags?: number;
+      /** Whether the reply opens; defaults to the parent's `open`. */
+      open?: boolean;
+      /** The reply icon; defaults to the parent's icon. */
+      icon?: AnnotOptionsIcon;
+      /** The `/Name` icon when `icon` is omitted. */
+      name?: string;
+      /** Opacity from 0 to 1; defaults to 1. Other values throw a `TypeError`. */
       opacity?: number;
-      date?: string;
+      /** The reply's `/M` date; defaults to the parent's `date`. */
+      date?: string | Date;
       subject?: string;
     }
 
@@ -3988,10 +4026,12 @@ declare namespace muhammara {
      * written when the PDF ends.
      * @param text - The text content; defaults to ''.
      * @param x - The coordinate x
-     * @param y - The coordinate y
+     * @param y - The top coordinate y; (x, y) is the top-left corner, as for `annot()`.
      * @param options - The options
      * @param options.title - The title.
      * @param options.date - The date.
+     * @param options.width - The rectangle width, as for `annot()`.
+     * @param options.height - The rectangle height, extending down from y.
      * @param options.open - Open the annotation by default?; defaults to false.
      * @param options.richText - Display with rich text format, text will be transformed automatically, or you may pass in your own rich text starts with "<?xml..."
      * @param options.replies - Array of annotation replies, each with text and optional title, date, subject, richText, and flag.
@@ -5040,6 +5080,8 @@ declare namespace muhammara {
      */
     endPDF(): void;
     endPDF<T>(callback: (output?: Buffer | string) => T): T;
+    /** The 6.x callback shape, also accepted as `Recipe.EndPDFCallback`. */
+    endPDF<T>(callback: (buffer: Buffer) => T): T;
   }
 }
 

@@ -129,12 +129,15 @@ describe("HighLevelContentContext", function () {
         ];
         for (var [options] of cases)
           target.context.q().drawRectangle(1, 2, 3, 4, options).Q();
-        // Unlike native, which ends such a path unpainted, Wasm rejects any
-        // other type before writing anything.
-        for (var type of [false, 0, "", "unknown", "clipp"]) {
+        // Any other type throws before anything is written, as in native.
+        for (var type of [false, 0, "", "fil", "Fill", "unknown", {}]) {
           assert.throws(
             () => target.context.drawRectangle(9, 9, 9, 9, { type }),
-            TypeError,
+            {
+              name: "TypeError",
+              message:
+                'Unknown drawing type; use "stroke", "fill", "clip" or null',
+            },
           );
         }
         var output = target.finish();

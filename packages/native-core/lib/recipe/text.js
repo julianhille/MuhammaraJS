@@ -331,15 +331,16 @@ exports.text = function text(text = "", x, y, options = {}) {
     return this;
   }
   // Validate before _initOptions moves the text position or resets the flow.
-  _validateCharSpace(typeof x === "object" ? x : options);
-  options = _initOptions(this, x, y, options);
+  const rawOptions = (typeof x === "object" ? x : options) || {};
+  _validateCharSpace(rawOptions);
   // Reject invalid markup annotations before any text is drawn.
-  for (let key in options) {
-    if (this._getTextMarkupAnnotationSubtype(key) && options[key]) {
-      const markup = typeof options[key] === "object" ? options[key] : {};
-      this._validateAnnot({ ...markup, flag: options.flag });
+  for (let key in rawOptions) {
+    if (this._getTextMarkupAnnotationSubtype(key) && rawOptions[key]) {
+      const markup = typeof rawOptions[key] === "object" ? rawOptions[key] : {};
+      this._validateAnnot({ ...markup, flag: rawOptions.flag });
     }
   }
+  options = _initOptions(this, x, y, options);
   const linkX = this.x;
   const linkY = this.y;
 

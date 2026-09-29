@@ -652,6 +652,7 @@ async function usesLowLevelSurface() {
       richText: true,
       replies: [{ text: "reply" }],
     })
+    .comment("comment", 0, 0, { width: 10, height: 10 })
     .annot(0, 0, "Square", { width: 10, height: 10, flag: "print" })
     .annot(0, 0, Recipe.AnnotSubtype.HIGHLIGHT, {
       width: 10,

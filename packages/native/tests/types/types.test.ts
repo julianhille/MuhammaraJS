@@ -205,6 +205,40 @@ recipe.endPDF();
 var callbackResult: string = recipe.endPDF(function () {
   return "result";
 });
+// 6.x typed the callback argument as a Buffer; that still compiles.
+var bufferLength: number = recipe.endPDF((buffer: Buffer) => buffer.length);
+declare const legacyEndPDFCallback: muhammara.Recipe.EndPDFCallback;
+recipe.endPDF(legacyEndPDFCallback);
+var endedBuffer: Promise<Buffer> = new Promise<Buffer>((resolve) =>
+  recipe.endPDF(resolve),
+);
+recipe.endPDF((output) => {
+  // @ts-expect-error An untyped callback argument may be a path or missing.
+  var onlyBuffer: Buffer = output;
+  return onlyBuffer;
+});
+// @ts-expect-error The callback never receives a number.
+recipe.endPDF((count: number) => count);
+var isBuffer: boolean = recipe.endPDF((output) => {
+  var received: Buffer | string | undefined = output;
+  return Buffer.isBuffer(received);
+});
+// A 6.x custom read stream without moveStartPosition() is still a ReadStream.
+var legacyReadStream: muhammara.ReadStream = {
+  read: () => [],
+  notEnded: () => false,
+  setPosition: () => undefined,
+  setPositionFromEnd: () => undefined,
+  skip: () => undefined,
+  getCurrentPosition: () => 0,
+};
+void muhammara.createReader(legacyReadStream);
+void [bufferLength, isBuffer, endedBuffer];
+recipe.comment("Sized note", 10, 10, {
+  width: 40,
+  height: 30,
+  color: "#ff0000",
+});
 
 var extension: muhammara.Recipe.ExtensionCallback<
   [number, number],
@@ -1051,3 +1085,17 @@ new muhammara.Recipe("source.pdf", "output.pdf").replaceText(
   "Ω Größe",
   1,
 );
+
+recipe.annot(10, 10, "Square", {
+  width: 40,
+  height: 30,
+  border: { width: 2, dash: [3, 1] },
+  borderWidth: 1,
+  borderDash: [2],
+  quadPoints: [10, 40, 50, 40, 10, 10, 50, 10],
+  contents: "Contents alias",
+  flags: 4,
+  name: "Key",
+  date: new Date(),
+  replies: [{ contents: "Reply", open: true, icon: "Help", flags: 4 }],
+});

@@ -919,6 +919,12 @@ describe("Recipe annotation parity", function () {
       replies: [{ text: 7, flag: "" }],
     });
     recipe.text("Marked.", 50, 100, { highlight: { text: null } });
+    // A parent's `flag` wins over its `flags`, for its replies too.
+    recipe.comment("Zero flag.", 50, 150, {
+      flag: 0,
+      flags: 4,
+      replies: [{ text: "Reply." }],
+    });
     var annotations = await finish(recipe);
     assert.equal(annotations[0].dictionary.T?.toText() ?? "", "");
     assert.equal(annotations[0].dictionary.Subj.toText(), "42");
@@ -926,6 +932,8 @@ describe("Recipe annotation parity", function () {
     assert.equal(annotations[1].dictionary.F.toNumber(), 4);
     assert.equal(annotations[2].dictionary.Subtype.toString(), "Highlight");
     assert.equal(annotations[2].dictionary.Contents?.toText() ?? "", "");
+    assert.equal(annotations[3].dictionary.F.toNumber(), 0);
+    assert.equal(annotations[4].dictionary.F.toNumber(), 0);
   });
 
   ["new", "edited"].forEach(function (mode) {
@@ -1073,6 +1081,422 @@ describe("Recipe annotation parity", function () {
     });
   });
 
+  ["new", "edited"].forEach(function (mode) {
+    it(`anchors comment() at the rectangle's top-left corner on ${mode} pages`, async function () {
+      var source = await writeSource("source.pdf", function (recipe) {
+        return recipe.createPage(200, 300).endPage();
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(200, 300);
+      else recipe.editPage(1);
+      var annotations = await finish(
+        recipe.comment("note", 10, 100, { width: 40, height: 30 }),
+      );
+      // Recipe y 100..130 on a 300-point page is PDF y 170..200.
+      assert.deepEqual(
+        numbers(annotations[0].dictionary.Rect),
+        [10, 170, 50, 200],
+      );
+    });
+  });
+
+  ["new", "added", "edited"].forEach(function (mode) {
+    it(`rejects invalid link rectangles before writing on ${mode} pages`, async function () {
+      var source = await writeSource("source.pdf", function (recipe) {
+        return recipe.createPage(595, 842).endPage();
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "edited") recipe.editPage(1);
+      else recipe.createPage(595, 842);
+      recipe.text("Before rejected links.", 50, 30);
+      recipe.link("https://before.test", 50, 50, 80, 12);
+      [
+        [Number.NaN, 50, 80, 12],
+        [50, Number.POSITIVE_INFINITY, 80, 12],
+        [50, 50, Number.NaN, 12],
+        [50, 50, 80, Number.NaN],
+        [50, 50, Number.POSITIVE_INFINITY, 12],
+        [Number.MAX_VALUE, 50, Number.MAX_VALUE, 12],
+      ].forEach(function (rectangle) {
+        assert.throws(
+          function () {
+            recipe.link("https://invalid.test", ...rectangle);
+          },
+          {
+            name: "TypeError",
+            message: "URL link requires a URL and valid PDF rectangle",
+          },
+        );
+      });
+      recipe.text("After rejected links.", 50, 80);
+      recipe.link("https://after.test", 50, 100, 80, 12);
+      // Zero-sized rectangles remain valid, as in the low-level writer API.
+      recipe.link("https://empty.test", 50, 120, 0, 0);
+      await new Promise(function (resolve) {
+        recipe.endPage().endPDF(resolve);
+      });
+      writeOutput(outputName, fs.readFileSync(output));
+      reader = muhammara.createReader(output);
+      var annotations = readAnnotations(reader, mode === "added" ? 1 : 0);
+      assert.deepEqual(subtypes(annotations), ["Link", "Link", "Link"]);
+      annotations.forEach(function (annotation) {
+        numbers(annotation.dictionary.Rect).forEach(function (value) {
+          assert.ok(Number.isFinite(value));
+        });
+      });
+    });
+  });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`writes border, quad point, alias and reply options on ${mode} pages`, async function () {
+      var source = await writeSource("source.pdf", function (recipe) {
+        return recipe.createPage(200, 300).endPage();
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(200, 300);
+      else recipe.editPage(1);
+      var annotations = await finish(
+        recipe
+          .annot(10, 20, "Square", {
+            width: 40,
+            height: 30,
+            border: { width: 2, dash: [3, 1] },
+          })
+          .annot(10, 60, "Square", {
+            width: 40,
+            height: 30,
+            border: { width: 5 },
+            borderWidth: 1,
+            borderDash: [2],
+          })
+          .annot(10, 100, "Highlight", {
+            width: 40,
+            height: 10,
+            quadPoints: [10, 90, 50, 90, 10, 80, 50, 80],
+          })
+          .annot(10, 120, "Square", { width: 40, height: 10, border: 0 })
+          .annot(10, 140, "Square", { width: 40, height: 10, border: -1 })
+          .comment("", 10, 160, { contents: "Alias contents", flags: 4 })
+          .annot(10, 180, "Text", { text: "Named", name: "Key" })
+          .comment("Parent", 10, 200, {
+            replies: [
+              { contents: "Reply", open: true, icon: "Help", flags: 4 },
+            ],
+          }),
+      );
+      /**
+       * Summarizes the dictionary entries the Wasm-only options used to set.
+       * @param {object} annotation An annotation read from the page.
+       * @returns {object} Border, QuadPoints, Contents, F, Name, and Open.
+       */
+      var summarize = function ({ dictionary }) {
+        var values = (object) =>
+          object
+            .toPDFArray()
+            .toJSArray()
+            .map((item) =>
+              item.getType() === muhammara.ePDFObjectArray
+                ? values(item)
+                : item.toNumber(),
+            );
+        return {
+          border: dictionary.Border ? values(dictionary.Border) : null,
+          quad: dictionary.QuadPoints ? values(dictionary.QuadPoints) : null,
+          contents: dictionary.Contents ? dictionary.Contents.toText() : null,
+          flags: dictionary.F.toNumber(),
+          name: dictionary.Name ? dictionary.Name.toString() : null,
+          open: dictionary.Open.toPDFBoolean().value,
+        };
+      };
+      assert.deepEqual(annotations.map(summarize), [
+        {
+          border: [0, 0, 2, [3, 1]],
+          quad: null,
+          contents: null,
+          flags: 0,
+          name: null,
+          open: false,
+        },
+        {
+          border: [0, 0, 1, [2]],
+          quad: null,
+          contents: null,
+          flags: 0,
+          name: null,
+          open: false,
+        },
+        {
+          border: [0, 0, 0],
+          quad: [10, 90, 50, 90, 10, 80, 50, 80],
+          contents: null,
+          flags: 0,
+          name: null,
+          open: false,
+        },
+        {
+          border: [0, 0, 0],
+          quad: null,
+          contents: null,
+          flags: 0,
+          name: null,
+          open: false,
+        },
+        {
+          border: null,
+          quad: null,
+          contents: null,
+          flags: 0,
+          name: null,
+          open: false,
+        },
+        {
+          border: null,
+          quad: null,
+          contents: "Alias contents",
+          flags: 4,
+          name: "Comment",
+          open: false,
+        },
+        {
+          border: null,
+          quad: null,
+          contents: "Named",
+          flags: 0,
+          name: "Key",
+          open: false,
+        },
+        {
+          border: null,
+          quad: null,
+          contents: "Parent",
+          flags: 0,
+          name: "Comment",
+          open: false,
+        },
+        {
+          border: null,
+          quad: null,
+          contents: "Reply",
+          flags: 4,
+          name: "Help",
+          open: true,
+        },
+      ]);
+    });
+  });
+
+  it("rejects invalid annotation values alike on new and edited pages", async function () {
+    var source = await writeSource("source.pdf", function (recipe) {
+      return recipe.createPage(595, 842).endPage();
+    });
+    [
+      { opacity: 2 },
+      { borderDash: ["x"] },
+      { quadPoints: [1, 2, 3] },
+      { borderWidth: Number.NaN },
+      { border: { width: Infinity } },
+      { replies: [{ text: "reply", opacity: -1 }] },
+    ].forEach(function (options) {
+      ["new", source].forEach(function (src) {
+        var recipe = new muhammara.Recipe(src, output);
+        if (src === "new") recipe.createPage(595, 842);
+        else recipe.editPage(1);
+        // Invalid options throw at the call and never enter the queue.
+        assert.throws(
+          () =>
+            recipe.annot(50, 50, "Square", {
+              width: 10,
+              height: 10,
+              ...options,
+            }),
+          { name: "TypeError", message: "Invalid annotation options" },
+        );
+        assert.equal(recipe.annotationsToWrite.length, 0);
+        // End the output, so Windows can remove it after the test.
+        recipe.endPage().endPDF();
+      });
+    });
+  });
+
+  /**
+   * Reads a PDF date, `D:YYYYMMDDHHmmSS` with `Z` or a `+HH'mm'` offset.
+   * @param {string} text The PDF date.
+   * @returns {number} Milliseconds since the Unix epoch.
+   */
+  function pdfDateToTime(text) {
+    var match =
+      /^D:(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(Z|([+-])(\d{2})'(\d{2})'?)$/.exec(
+        text,
+      );
+    assert.ok(match, `a PDF date: ${text}`);
+    var [, year, month, day, hour, minute, second, zone, sign, hours, minutes] =
+      match;
+    var offset =
+      zone === "Z" ? 0 : (sign === "-" ? -1 : 1) * (hours * 60 + +minutes);
+    return (
+      Date.UTC(year, month - 1, day, hour, minute, second) - offset * 60000
+    );
+  }
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`writes annotation dates, text, or no /M on ${mode} pages`, async function () {
+      var source = await writeSource("source.pdf", function (recipe) {
+        return recipe.createPage(200, 300).endPage();
+      });
+      var recipe =
+        mode === "new"
+          ? new muhammara.Recipe("new", output).createPage(200, 300)
+          : new muhammara.Recipe(source, output).editPage(1);
+      var time = Date.UTC(2026, 0, 2, 3, 4, 5);
+      [
+        undefined,
+        null,
+        "",
+        "yesterday",
+        "2026-01-02T03:04:05Z",
+        new Date(time),
+        0,
+      ].forEach(function (date, index) {
+        recipe.annot(10, 10 + index * 10, "Square", {
+          width: 5,
+          height: 5,
+          date: date,
+          replies: [{ text: "Reply." }],
+        });
+      });
+      var dates = (await finish(recipe)).map(function (annotation) {
+        return annotation.dictionary.M?.toText();
+      });
+      // A missing date writes no /M, text is kept, and dates, 0 included,
+      // are the same instant on both ends. Replies inherit the date.
+      assert.deepEqual(dates.slice(0, 6), Array(6).fill(undefined));
+      assert.deepEqual(dates.slice(6, 8), ["yesterday", "yesterday"]);
+      dates.slice(8, 12).forEach(function (text) {
+        assert.equal(pdfDateToTime(text), time);
+      });
+      dates.slice(12).forEach(function (text) {
+        assert.equal(pdfDateToTime(text), 0);
+      });
+    });
+  });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`rejects invalid annotation positions on ${mode} pages`, async function () {
+      var source = await writeSource("source.pdf", function (recipe) {
+        return recipe.createPage(200, 300).endPage();
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(200, 300);
+      else recipe.editPage(1);
+      [
+        [Number.NaN, 50],
+        [50, Number.POSITIVE_INFINITY],
+        ["50", 50],
+        [50, "center "],
+        [undefined, 50],
+        [Number.MAX_VALUE, 50, { width: Number.MAX_VALUE }],
+      ].forEach(function ([x, y, size]) {
+        assert.throws(() => recipe.comment("note", x, y, size), {
+          name: "TypeError",
+          message: "Invalid annotation options",
+        });
+        assert.throws(() => recipe.annot(x, y, "Square", size), {
+          name: "TypeError",
+          message: "Invalid annotation options",
+        });
+      });
+      // Rejected annotations are never queued; the center stays valid.
+      var annotations = await finish(
+        recipe.annot("center", "center", "Square", { width: 10, height: 10 }),
+      );
+      assert.deepEqual(
+        annotations.map(function (annotation) {
+          return numbers(annotation.dictionary.Rect);
+        }),
+        [[100, 140, 110, 150]],
+      );
+    });
+  });
+
+  it("rejects invalid text markup before drawing or moving the text", async function () {
+    var recipe = new muhammara.Recipe("new", output);
+    recipe.createPage(595, 842);
+    recipe.text("Keep this content.", 50, 30);
+    var position = recipe.position;
+    assert.throws(
+      function () {
+        recipe.text("Do not draw this text.", 50, 50, {
+          highlight: true,
+          underline: { opacity: 2 },
+        });
+      },
+      { name: "TypeError", message: "Invalid annotation options" },
+    );
+    assert.deepEqual(recipe.position, position);
+    assert.equal(recipe.annotationsToWrite.length, 0);
+    // The page ends with its content and no annotations.
+    await new Promise(function (resolve) {
+      recipe.endPage().endPDF(resolve);
+    });
+    reader = muhammara.createReader(output);
+    var page = reader.parsePage(0).getDictionary();
+    assert.equal(reader.queryDictionaryObject(page, "Annots"), undefined);
+    assert.match(readPageContent(reader), /Tj/);
+  });
+
+  ["new", "edited"].forEach(function (mode) {
+    it(`rejects an invalid comment() or annot() size on ${mode} pages`, async function () {
+      var source = await writeSource("source.pdf", function (recipe) {
+        return recipe.createPage(200, 300).endPage();
+      });
+      var recipe = new muhammara.Recipe(
+        mode === "new" ? "new" : source,
+        output,
+      );
+      if (mode === "new") recipe.createPage(200, 300);
+      else recipe.editPage(1);
+      [
+        { width: "40", height: 30 },
+        { width: 40, height: "30" },
+        { width: -40, height: 30 },
+        { width: 40, height: -30 },
+        { width: Number.NaN },
+        { height: Infinity },
+      ].forEach(function (size) {
+        assert.throws(() => recipe.comment("note", 10, 100, size), {
+          name: "TypeError",
+          message: "Invalid annotation options",
+        });
+        assert.throws(() => recipe.annot(10, 100, "Square", size), {
+          name: "TypeError",
+          message: "Invalid annotation options",
+        });
+      });
+      // Rejected annotations are never queued; a missing size is zero.
+      var annotations = await finish(
+        recipe.comment("note", 10, 100, { width: null, height: undefined }),
+      );
+      assert.deepEqual(
+        annotations.map(function (annotation) {
+          return numbers(annotation.dictionary.Rect);
+        }),
+        [[10, 200, 10, 200]],
+      );
+    });
+  });
+
   it("anchors annot() at the top-left corner on a rotated page", async function () {
     var source = await writeSource("rotated.pdf", function (recipe) {
       return recipe
@@ -1093,6 +1517,32 @@ describe("Recipe annotation parity", function () {
     assert.deepEqual(
       numbers(annotations[0].dictionary.Rect),
       [90, 140, 130, 170],
+    );
+  });
+
+  it("anchors comment() with and without a size on a rotated page", async function () {
+    var source = await writeSource("rotated-comment.pdf", function (recipe) {
+      return recipe
+        .createPage(200, 300)
+        .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 210, 320)
+        .rotate(90)
+        .endPage();
+    });
+    var annotations = await finish(
+      new muhammara.Recipe(source, output)
+        .editPage(1)
+        .comment("sized", 110, 120, { width: 30, height: 40 })
+        .comment("icon", 110, 120),
+    );
+    // A missing size is zero; it used to write nan into the rectangle.
+    assert.deepEqual(
+      annotations.map(function (annotation) {
+        return numbers(annotation.dictionary.Rect);
+      }),
+      [
+        [90, 140, 130, 170],
+        [90, 140, 90, 140],
+      ],
     );
   });
 

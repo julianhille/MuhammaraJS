@@ -67,11 +67,12 @@ function annotationFlags(flag) {
 
 /**
  * Formats a date as a UTC PDF date.
- * @param {string|Date} [value] - Date.
+ * @param {string|number|Date} [value] - Date; like native, only a missing or
+ *   empty value writes no date, so 0 is the Unix epoch.
  * @returns {string} `D:YYYYMMDDHHmmSSZ`, the original text when it is not a date, or empty.
  */
 function annotationDate(value) {
-  if (!value) return "";
+  if (value === undefined || value === null || value === "") return "";
   var date = new Date(value);
   if (Number.isNaN(date.valueOf())) return String(value);
   return `D:${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(date.getUTCDate()).padStart(2, "0")}${String(date.getUTCHours()).padStart(2, "0")}${String(date.getUTCMinutes()).padStart(2, "0")}${String(date.getUTCSeconds()).padStart(2, "0")}Z`;
@@ -487,7 +488,8 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
                 bottom,
               ].map(Math.round)
             : []);
-        var border = options.border || {};
+        // Like native, `border: 0` writes a zero-width /Border.
+        var border = options.border ?? {};
         // Markup annotations default to a zero-width border like native;
         // other subtypes fall back to the PDF viewer's own default.
         var borderWidth =
@@ -513,9 +515,12 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
                   title: reply.title || options.title,
                   subject: reply.subject || options.subject,
                   date: reply.date || options.date,
-                  // Like native, an empty or zero reply flag keeps the parent's.
+                  // Like native, an empty or zero reply flag keeps the
+                  // parent's, which honors `flag` before `flags`.
                   flag:
-                    reply.flag || reply.flags || options.flag || options.flags,
+                    reply.flag ||
+                    reply.flags ||
+                    (options.flag ?? options.flags),
                   open: reply.open ?? options.open,
                   icon: reply.icon ?? options.icon,
                   name: reply.name ?? options.name,

@@ -70,7 +70,9 @@ export function readDrawingOptions(
     setupType !== null &&
     !Object.values(DrawingPathType).includes(setupType)
   ) {
-    throw new TypeError("type must be a DrawingPathType value or null");
+    throw new TypeError(
+      'Unknown drawing type; use "stroke", "fill", "clip" or null',
+    );
   }
   var stroke = setupType === undefined || setupType === DrawingPathType.STROKE;
   var color = readColor(options, colorValue);

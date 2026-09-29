@@ -978,3 +978,44 @@ const extractionOptions: muhammara.PDFTextExtractionOptions = {
   decodeText: false,
 };
 void [rawElements, decodedElements, maybeDecoded, extractionOptions];
+
+declare const legacyRecipe: muhammara.Recipe;
+// 6.x endPDF() callbacks still compile.
+var legacyLength: number = legacyRecipe.endPDF(
+  (buffer: Buffer) => buffer.length,
+);
+declare const legacyCallback: muhammara.Recipe.EndPDFCallback;
+legacyRecipe.endPDF(legacyCallback);
+var legacyEnded: Promise<Buffer> = new Promise<Buffer>((resolve) =>
+  legacyRecipe.endPDF(resolve),
+);
+// A 6.x custom read stream without moveStartPosition() is still a ReadStream.
+var legacyStream: muhammara.ReadStream = {
+  read: () => [],
+  notEnded: () => false,
+  setPosition: () => undefined,
+  setPositionFromEnd: () => undefined,
+  skip: () => undefined,
+  getCurrentPosition: () => 0,
+};
+void muhammara.createReader(legacyStream);
+legacyRecipe.comment("Sized note", 10, 10, {
+  width: 40,
+  height: 30,
+  color: "#ff0000",
+});
+void [legacyLength, legacyEnded];
+
+legacyRecipe.annot(10, 10, "Square", {
+  width: 40,
+  height: 30,
+  border: { width: 2, dash: [3, 1] },
+  borderWidth: 1,
+  borderDash: [2],
+  quadPoints: [10, 40, 50, 40, 10, 10, 50, 10],
+  contents: "Contents alias",
+  flags: 4,
+  name: "Key",
+  date: new Date(),
+  replies: [{ contents: "Reply", open: true, icon: "Help", flags: 4 }],
+});
