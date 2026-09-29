@@ -183,6 +183,14 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   colors fall back to the default color, and
   annotation colors throw `TypeError: Unknown annotation color (<name>)`.
   Register the color with `chroma()` on each Recipe that uses it; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#799](https://github.com/julianhille/MuhammaraJS/issues/799)
+- Report a PDF page used as an image as its media box width by height. 6.x
+  swapped them: for a 595×842 portrait page, `getImageDimensions()` returned
+  `{ width: 842, height: 595 }`, `drawImage()` with
+  `transformation: { width, height }` scaled each axis by the other's size,
+  and Recipe `image()` drew the page at the wrong size and position, 141
+  points wide for `width: 200`. The correction came with the PDF-Writer
+  upgrade in 7.0.0-alpha.1 and matches `@muhammara/wasm`. Remove code that
+  swapped the values back; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#856](https://github.com/julianhille/MuhammaraJS/issues/856)
 
 ### Added
 

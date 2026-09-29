@@ -378,6 +378,13 @@ This page collects the compatibility changes formerly maintained in the README.
   converted the size to an unsigned integer, so `0`, `NaN`, and infinite sizes
   measured as zero and a negative size wrapped to a huge integer. Pass a size
   greater than zero, or omit it to measure at size 1 [#798](https://github.com/julianhille/MuhammaraJS/issues/798).
+- A PDF page used as an image is measured as its media box width by height,
+  as in `@muhammara/wasm`. 6.x swapped them: for a 595×842 portrait page,
+  `getImageDimensions()` returned `{ width: 842, height: 595 }`, `drawImage()`
+  with `transformation: { width, height }` scaled each axis by the other's
+  size, and Recipe `image()` drew the page at the wrong size and position, 141
+  points wide for `width: 200`. Remove code that swapped the values back
+  [#856](https://github.com/julianhille/MuhammaraJS/issues/856).
 
 ## Version 5.x
 
