@@ -24,12 +24,17 @@ function writeBoxes(file) {
  */
 function pageContent(file) {
   var reader = muhammara.createReader(file);
-  var page = reader.parsePage(0).getDictionary();
-  var contents = reader.queryDictionaryObject(page, "Contents");
-  var stream = reader.startReadingFromStream(contents.toPDFStream());
-  var bytes = [];
-  while (stream.notEnded()) bytes.push(...stream.read(4096));
-  return Buffer.from(bytes).toString("latin1").replace(/\s+/g, " ");
+  try {
+    var page = reader.parsePage(0).getDictionary();
+    var contents = reader.queryDictionaryObject(page, "Contents");
+    var stream = reader.startReadingFromStream(contents.toPDFStream());
+    var bytes = [];
+    while (stream.notEnded()) bytes.push(...stream.read(4096));
+    return Buffer.from(bytes).toString("latin1").replace(/\s+/g, " ");
+  } finally {
+    // Windows cannot delete the test directory while the file is open.
+    reader.end();
+  }
 }
 
 describe("ImageDimensions", function () {
