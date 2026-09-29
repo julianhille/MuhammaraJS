@@ -176,7 +176,11 @@ describe("SimpleContentPageTest", function () {
             { type: 1 },
           ),
       ]) {
-        assert.throws(draw, /DrawingPathType value or null/, `${kind} type`);
+        assert.throws(
+          draw,
+          /^TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null$/,
+          `${kind} type`,
+        );
       }
       assert.throws(() => context.Tf({}, 10), TypeError, `${kind}.Tf`);
     }

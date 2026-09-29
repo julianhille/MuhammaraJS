@@ -965,5 +965,49 @@ describe("HighLevelContentContext", function () {
       pages = null;
       await collectGarbage();
     });
+
+    it("keeps a page's context when a wrapper from getAssociatedPage() is collected", async function () {
+      var output = new muhammara.PDFWStreamForBuffer();
+      var pdfWriter = muhammara.createWriter(output);
+      var page = pdfWriter.createPage(0, 0, 100, 100);
+      var context = pdfWriter.startPageContentContext(page);
+      (function () {
+        pdfWriter.startPageContentContext(context.getAssociatedPage());
+      })();
+      await collectGarbage();
+      context.q().re(10, 10, 20, 20).f().Q();
+      pdfWriter.writePage(page);
+      pdfWriter.end();
+      var reader = muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(output.buffer),
+      );
+      expect(reader.getPagesCount()).to.equal(1);
+      reader.end();
+    });
+
+    it("ends every context of a page when any of its wrappers is written", function () {
+      var pdfWriter = muhammara.createWriter(
+        new muhammara.PDFWStreamForBuffer(),
+      );
+      var page = pdfWriter.createPage(0, 0, 100, 100);
+      var context = pdfWriter.startPageContentContext(page);
+      var associated = context.getAssociatedPage();
+      var associatedContext = pdfWriter.startPageContentContext(associated);
+      pdfWriter.writePage(page);
+      expect(() => associatedContext.q()).to.throw(
+        "Page content context is not active",
+      );
+      expect(() => context.q()).to.throw("Page content context is not active");
+
+      var nextPage = pdfWriter.createPage(0, 0, 100, 100);
+      var nextContext = pdfWriter.startPageContentContext(nextPage);
+      pdfWriter.writePage(
+        pdfWriter.startPageContentContext(nextPage).getAssociatedPage(),
+      );
+      expect(() => nextContext.q()).to.throw(
+        "Page content context is not active",
+      );
+      pdfWriter.end();
+    });
   });
 });

@@ -30,9 +30,9 @@ Page and form contexts on new and modifying writers expose `drawPath`,
 `"stroke"` (the default), `"fill"`, or `"clip"`. Clipping intersects the current
 clipping region without painting the shape and emits `W n` to end the path.
 `close: true` closes the path first. Scope the clip with `q()` before defining it
-and `Q()` after the drawing it should affect. Any other `type` throws a
-`TypeError` before anything is written; native instead ends such a path with `n`
-without painting it.
+and `Q()` after the drawing it should affect. Any other `type` except `null`
+throws `TypeError: Unknown drawing type; use "stroke", "fill", "clip" or null`
+before anything is written, as in native.
 
 Pass an RGB `color` to these helpers or `writeText()` as a 24-bit number, a
 CSS color name in any case, or a `#rrggbb` string. Any other color string, including

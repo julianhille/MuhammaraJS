@@ -13,6 +13,7 @@
 #include "PDFWriter.h"
 #include "napi/NapiSupport.h"
 
+#include <map>
 #include <memory>
 #include <set>
 
@@ -33,7 +34,10 @@ class PDFWriterDriver;
 struct OpenContent {
   PDFWriterDriver *writer = nullptr;
   std::set<PDFFormXObject *> forms;
-  std::set<PDFPage *> pages;
+  // Pages with a started content context, and the lifecycle that every
+  // context of the page shares, whichever PDFPage wrapper started it. It ends
+  // when the context is written or released.
+  std::map<PDFPage *, DriverLifecycle> pages;
   std::set<PDFModifiedPage *> modifiedPages;
   std::set<PDFStream *> streams;
 };
@@ -194,6 +198,8 @@ private:
   // Returns false when buffered output could not be delivered.
   bool Retire();
   void ReleaseOpenContent();
+  // Ends a page's content context and the lifecycle its contexts share.
+  PDFHummus::EStatusCode EndPageContent(PDFPage *);
   // Keeps JavaScript out of finalizers: output is buffered, logging dropped
   // and events skipped until the returned value is destroyed.
   class NoJavaScriptScope;

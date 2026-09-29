@@ -3,6 +3,7 @@ const {
   AnnotIcon,
   AnnotFlag,
   Colorspace,
+  Coordinate,
 } = require("../recipe-constants");
 const { cssColors } = require("../css-colors");
 
@@ -21,6 +22,23 @@ function textString(writer, value) {
 }
 
 /**
+ * Formats an annotation's `/M` modification date, as Wasm does: no date
+ * writes no `/M`, and text that is not a date is written as given, which the
+ * PDF specification allows for `/M`. A date is written in local time with its
+ * UTC offset.
+ * @private
+ * @param {Object} writer - The PDF writer.
+ * @param {string|number|Date} [value] - The date.
+ * @returns {string|undefined} The `/M` text, or undefined for no `/M`.
+ */
+function annotationDate(writer, value) {
+  if (value === undefined || value === null || value === "") return undefined;
+  var date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return String(value);
+  return writer.createPDFDate(date).toString();
+}
+
+/**
  * Create a comment annotation: a Text annotation with the Comment icon. It is
  * written when the PDF ends.
  * @name comment
@@ -28,7 +46,8 @@ function textString(writer, value) {
  * @memberof Recipe#
  * @param {string} [text=''] - The text content
  * @param {number|"center"} x - The coordinate x
- * @param {number|"center"} y - The coordinate y
+ * @param {number|"center"} y - The top coordinate y; (x, y) is the top-left
+ *   corner, as for `annot()`.
  * @param {Object} [options] - The options
  * @param {string} [options.title] - The title.
  * @param {string} [options.date] - The date.
@@ -38,18 +57,27 @@ function textString(writer, value) {
  * @param {Recipe.AnnotFlag} [options.flag] - The flag property, one of the `Recipe.AnnotFlag` values.
  * @param {string|number[]} [options.color] - The annotation color, as for
  *   `annot()`.
+ * @param {number} [options.width] - The rectangle width, as for `annot()`.
+ * @param {number} [options.height] - The rectangle height; as for `annot()`,
+ *   (x, y) is the top-left corner and the rectangle extends down from it.
+ *   The other `annot()` options, such as `border`, `opacity`, and
+ *   `quadPoints`, apply too; `contents` is used when `text` is empty.
  * @returns {Recipe} The recipe instance.
- * @throws {TypeError} If `options.color` is not a known color.
+ * @throws {TypeError} If `options.color` is not a known color, or a
+ *   position, size, opacity, border, or `quadPoints` value is invalid.
  */
 exports.comment = function comment(text = "", x, y, options = {}) {
   this._validateAnnot(options);
+  validateAnnotationPosition(x, y, options);
   this.annotationsToWrite.push({
     subtype: AnnotSubtype.TEXT,
     pageNumber: this.pageNumber,
     args: {
-      text,
+      text: text || options.contents,
       x,
       y,
+      width: options.width,
+      height: options.height,
       options: Object.assign({ icon: AnnotIcon.COMMENT }, options),
     },
     replies: options.replies,
@@ -68,7 +96,8 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  * @param {number} width - The link width.
  * @param {number} height - The link height.
  * @returns {Recipe} The recipe instance.
- * @throws {TypeError} If no page is active.
+ * @throws {TypeError} If no page is active, `url` is not a string, or the
+ *   rectangle is not finite.
  */
 exports.link = function link(url, x, y, width, height) {
   const { nx, ny } = this._calibrateCoordinate(x, y, 0, -height);
@@ -87,10 +116,19 @@ exports.link = function link(url, x, y, width, height) {
  * @param {number} height - The link height.
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If no page is active or the link cannot be attached.
+ * @throws {TypeError} If `url` is not a string or the rectangle is not finite.
  */
 function linkPdf(recipe, url, left, bottom, width, height) {
   recipe.pauseContext();
   try {
+    // Reject what cannot form a PDF rectangle before writing, as Wasm does.
+    if (
+      typeof url !== "string" ||
+      ![left, bottom, width, height, left + width, bottom + height].every(
+        Number.isFinite,
+      )
+    )
+      throw new TypeError("URL link requires a URL and valid PDF rectangle");
     recipe.writer.attachURLLinktoCurrentPage(
       url,
       left,
@@ -120,25 +158,39 @@ Object.defineProperty(exports, "linkPdf", { value: linkPdf });
  *   `Recipe.AnnotSubtype` values.
  * @param {Object} [options] - The options
  * @param {string} [options.text=''] - The annotation content.
+ * @param {string} [options.contents] - The content when `text` is empty.
  * @param {string} [options.title] - The title.
  * @param {boolean} [options.open=false] - Open the annotation. Annotation will be closed by default. Specific to text annotations; subtype='Text'
  * @param {boolean} [options.richText] - Rich text
  * @param {Recipe.AnnotFlag} [options.flag] - The flag property, one of the `Recipe.AnnotFlag` values.
  * @param {Recipe.AnnotIcon} [options.icon] - The icon of a Text annotation, one
  *   of the `Recipe.AnnotIcon` values. Viewers show 'Note' when it is omitted.
- * @param {number} [options.width] - Width
- * @param {number} [options.height] - Height
+ * @param {string} [options.name] - The `/Name` icon when `icon` is omitted.
+ * @param {number} [options.flags] - Flag bits when `flag` is omitted.
+ * @param {number} [options.width] - Width; a finite number of at least zero.
+ * @param {number} [options.height] - Height; a finite number of at least zero.
  * @param {string} [options.date] - Date of annotation
  * @param {string} [options.subject] - The subject.
- * @param {Array} [options.replies] - Array of annotation replies
- * @param {number} [options.border] - The border width.
+ * @param {Array} [options.replies] - Array of annotation replies. A reply
+ *   keeps its own `open`, `icon`, `name`, and `opacity`, and otherwise
+ *   inherits the metadata of the annotation it answers.
+ * @param {number|Object} [options.border] - The border width, or an object
+ *   with its `width` and `dash` pattern. A negative width writes no border;
+ *   text markup annotations default to 0.
+ * @param {number} [options.borderWidth] - The border width; overrides
+ *   `border.width`.
+ * @param {number[]} [options.borderDash] - The border dash pattern; overrides
+ *   `border.dash`.
+ * @param {number[]} [options.quadPoints] - Quad points, eight numbers per
+ *   quadrilateral, written as given instead of covering the rectangle.
  * @param {string|number[]} [options.color] - The annotation color: a `#rrggbb`
  *   HexColor, a `%r,g,b` PercentColor, a DecimalColor array, a color registered
  *   with `chroma()`, or a CSS color name in any case.
  * @param {number} [options.opacity=1] - Annotation opacity from 0 (transparent) to 1 (opaque).
  * @param {boolean} [options.followOriginalPageRotation=false] - Preserve the original page rotation when positioning the annotation.
  * @returns {Recipe} The recipe instance.
- * @throws {TypeError} If `options.color` is not a known color.
+ * @throws {TypeError} If `options.color` is not a known color, or a
+ *   position, size, opacity, border, or `quadPoints` value is invalid.
  */
 exports.annot = function annot(
   x,
@@ -146,8 +198,10 @@ exports.annot = function annot(
   subtype,
   options = { text: "", width: 0, height: 0 },
 ) {
-  const { text, width, height, replies } = options;
+  const { width, height, replies } = options;
+  const text = options.text || options.contents;
   this._validateAnnot(options);
+  validateAnnotationPosition(x, y, options);
   this.annotationsToWrite.push({
     subtype,
     args: { text, x, y, width, height, options },
@@ -200,14 +254,18 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
     pageNumber,
   );
 
-  let nWidth = width;
-  let nHeight = height;
+  // A missing size is zero, as in Wasm; undefined would write nan on rotated
+  // pages.
+  const rectWidth = width || 0;
+  const rectHeight = height || 0;
+  let nWidth = rectWidth;
+  let nHeight = rectHeight;
 
   if (!options.followOriginalPageRotation) {
     switch (rotate) {
       case 90:
-        nWidth = height;
-        nHeight = width;
+        nWidth = rectHeight;
+        nHeight = rectWidth;
         nx = nx - nWidth;
         break;
       case 180:
@@ -215,8 +273,8 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
         ny = ny - nHeight;
         break;
       case 270:
-        nWidth = height;
-        nHeight = width;
+        nWidth = rectHeight;
+        nHeight = rectWidth;
         ny = ny - nHeight;
         break;
       default:
@@ -238,13 +296,18 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
   const ey = nHeight ? nHeight : 0;
   const position = [nx, ny, nx + ex, ny + ey];
 
+  params.flag = options.flag ?? options.flags ?? "";
   if (reply && ref) {
-    text = reply.text;
+    text = reply.text || reply.contents;
     params.title = reply.title || params.title;
     params.date = reply.date || params.date;
     params.subject = reply.subject || params.subject;
     params.richText = Boolean(reply.richText);
-    params.flag = reply.flag || params.flag;
+    // Like Wasm, a reply keeps its own open state and icon when it has one.
+    params.flag = reply.flag || reply.flags || params.flag;
+    params.open = reply.open ?? params.open;
+    params.icon = reply.icon ?? params.icon;
+    params.name = reply.name ?? params.name;
   }
 
   this.dictionaryContext
@@ -259,11 +322,14 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
     .writeKey("Subj")
     .writeLiteralStringValue(textString(this.writer, params.subject))
     .writeKey("T")
-    .writeLiteralStringValue(textString(this.writer, params.title))
-    .writeKey("M")
-    .writeLiteralStringValue(
-      this.writer.createPDFDate(new Date(params.date)).toString(),
-    )
+    .writeLiteralStringValue(textString(this.writer, params.title));
+  const date = annotationDate(this.writer, params.date);
+  if (date !== undefined) {
+    this.dictionaryContext
+      .writeKey("M")
+      .writeLiteralStringValue(textString(this.writer, date));
+  }
+  this.dictionaryContext
     .writeKey("Open")
     .writeBooleanValue(params.open)
     .writeKey("F")
@@ -300,56 +366,61 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
       .writeNameValue("R");
   }
 
-  let { border, color } = options;
+  let { color } = options;
+  const markup = Boolean(this._getTextMarkupAnnotationSubtype(subtype));
+  const border = annotationBorder(options, markup);
+  // Custom quad points are written as given; markup annotations otherwise
+  // cover their rectangle, in whole numbers.
+  const quadPoints =
+    options.quadPoints ||
+    (markup
+      ? [
+          nx,
+          ny + nHeight,
+          nx + nWidth,
+          ny + nHeight,
+          nx,
+          ny,
+          nx + nWidth,
+          ny,
+        ].map(Math.round)
+      : []);
 
-  if (this._getTextMarkupAnnotationSubtype(subtype)) {
-    // The quadrilateral covers the annotation rectangle.
+  if (quadPoints.length) {
     this.dictionaryContext.writeKey("QuadPoints");
-    const coordinates = [
-      [nx, ny + nHeight],
-      [nx + nWidth, ny + nHeight],
-      [nx, ny],
-      [nx + nWidth, ny],
-    ];
     this.objectsContext.startArray();
-    coordinates.forEach((coord) => {
-      coord.forEach((point) => {
-        this.objectsContext.writeNumber(Math.round(point));
-      });
-    });
+    quadPoints.forEach((point) => this.objectsContext.writeNumber(point));
     this.objectsContext.endArray().endLine();
+  }
 
-    border = border || 0;
-    if (!color) {
-      switch (subtype) {
-        case AnnotSubtype.HIGHLIGHT:
-          color = [255, 255, 0];
-          break;
-        case AnnotSubtype.STRIKE_OUT:
-          color = [255, 0, 0];
-          break;
-        case AnnotSubtype.UNDERLINE:
-          color = [0, 255, 0];
-          break;
-        case AnnotSubtype.SQUIGGLY:
-          color = [0, 255, 0];
-          break;
-        default:
-          color = [0, 0, 0];
-          break;
-      }
+  if (markup && !color) {
+    switch (subtype) {
+      case AnnotSubtype.HIGHLIGHT:
+        color = [255, 255, 0];
+        break;
+      case AnnotSubtype.STRIKE_OUT:
+        color = [255, 0, 0];
+        break;
+      default:
+        color = [0, 255, 0];
+        break;
     }
   }
 
-  if (border != void 0) {
+  // A negative width writes no /Border, as in Wasm.
+  if (border.width !== undefined && border.width >= 0) {
     this.dictionaryContext.writeKey("Border");
     this.objectsContext
       .startArray()
       .writeNumber(0)
       .writeNumber(0)
-      .writeNumber(border)
-      .endArray()
-      .endLine();
+      .writeNumber(border.width);
+    if (border.dash.length) {
+      this.objectsContext.startArray();
+      border.dash.forEach((value) => this.objectsContext.writeNumber(value));
+      this.objectsContext.endArray();
+    }
+    this.objectsContext.endArray().endLine();
   }
 
   if (color) {
@@ -362,8 +433,9 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
   }
 
   /* Display Icon */
-  if (params.icon) {
-    this.dictionaryContext.writeKey("Name").writeNameValue(params.icon);
+  const icon = params.icon || params.name;
+  if (icon) {
+    this.dictionaryContext.writeKey("Name").writeNameValue(icon);
   }
   return this._endDictionary(pageNumber);
 };
@@ -500,8 +572,94 @@ exports._getTextMarkupAnnotationSubtype =
  */
 function validateAnnotationFlags(options) {
   if (!options) return;
-  getFlagBitNumberByName(options.flag);
+  getFlagBitNumberByName(options.flag ?? options.flags);
   (options.replies || []).forEach(validateAnnotationFlags);
+}
+
+/**
+ * Resolve the border width and dash an annotation writes, as Wasm does: a
+ * number `border` is the width, an object `border` gives `width` and `dash`,
+ * and `borderWidth` and `borderDash` override the object.
+ * @private
+ * @param {Object} options - Annotation options.
+ * @param {boolean} markup - Whether the subtype is a text markup annotation,
+ *   whose border defaults to zero.
+ * @returns {{width: (number|undefined), dash: Array}} The border width, or
+ *   undefined for no `/Border` entry, and the dash array.
+ */
+function annotationBorder(options, markup) {
+  var border = options.border;
+  if (typeof border === "number")
+    return { width: border, dash: options.borderDash ?? [] };
+  var object = border && typeof border === "object" ? border : {};
+  return {
+    width: options.borderWidth ?? object.width ?? (markup ? 0 : undefined),
+    dash: options.borderDash ?? object.dash ?? [],
+  };
+}
+
+/**
+ * Rejects annotation values that cannot be written as a valid PDF
+ * annotation, as Wasm does: `width` and `height` must be finite numbers of at
+ * least zero, `opacity` a finite number from 0 to 1 (also on replies), the
+ * border width a finite number, `borderDash` an array of finite numbers, and
+ * `quadPoints` an array of finite numbers, eight per quadrilateral. A missing
+ * size is zero.
+ * @private
+ * @param {Object} [options] - Annotation options, with optional `replies`.
+ * @returns {void}
+ * @throws {TypeError} If a value is invalid.
+ */
+function validateAnnotationValues(options) {
+  if (!options) return;
+  var invalid = function () {
+    return new TypeError("Invalid annotation options");
+  };
+  var finite = function (value) {
+    return typeof value === "number" && Number.isFinite(value);
+  };
+  [options.width, options.height].forEach(function (size) {
+    if (size !== undefined && size !== null && !(finite(size) && size >= 0))
+      throw invalid();
+  });
+  var border = annotationBorder(options, false);
+  if (border.width !== undefined && !finite(border.width)) throw invalid();
+  if (!Array.isArray(border.dash) || !border.dash.every(finite))
+    throw invalid();
+  var quadPoints = options.quadPoints;
+  if (
+    quadPoints !== undefined &&
+    quadPoints !== null &&
+    (!Array.isArray(quadPoints) ||
+      quadPoints.length % 8 !== 0 ||
+      !quadPoints.every(finite))
+  )
+    throw invalid();
+  [options].concat(options.replies || []).forEach(function (source) {
+    var opacity = (source || {}).opacity ?? 1;
+    if (!(finite(opacity) && opacity >= 0 && opacity <= 1)) throw invalid();
+  });
+}
+
+/**
+ * Rejects an annotation position that cannot form a finite PDF rectangle, as
+ * Wasm does: `x` and `y` must be finite numbers or `Recipe.Coordinate.CENTER`,
+ * and the far corner must stay finite. A numeric string would otherwise be
+ * concatenated into the rectangle.
+ * @private
+ * @param {number|"center"} x - The left coordinate.
+ * @param {number|"center"} y - The top coordinate.
+ * @param {Object} [options] - Annotation options with `width` and `height`.
+ * @returns {void}
+ * @throws {TypeError} If the position is invalid.
+ */
+function validateAnnotationPosition(x, y, options) {
+  var sizes = [(options || {}).width || 0, (options || {}).height || 0];
+  [x, y].forEach(function (value, index) {
+    if (value === Coordinate.CENTER) return;
+    if (!Number.isFinite(value) || !Number.isFinite(value + sizes[index]))
+      throw new TypeError("Invalid annotation options");
+  });
 }
 
 /**
@@ -511,10 +669,12 @@ function validateAnnotationFlags(options) {
  * @param {Object} [options] - Annotation options, with optional `replies`.
  * @returns {void}
  * @throws {Error} If a flag is neither a bit mask nor an AnnotFlag value.
- * @throws {TypeError} If `options.color` is not a known color.
+ * @throws {TypeError} If `options.color` is not a known color, or a size,
+ *   opacity, border, or `quadPoints` value is invalid.
  */
 exports._validateAnnot = function _validateAnnot(options) {
   validateAnnotationFlags(options);
+  validateAnnotationValues(options);
   annotationColorComponents(this, (options || {}).color);
 };
 

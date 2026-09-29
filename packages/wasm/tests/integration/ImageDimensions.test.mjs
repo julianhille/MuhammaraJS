@@ -72,4 +72,36 @@ describe("ImageDimensions", function () {
     writeOutput("ImageDimensions-writer", writer.end());
     assert.throws(() => writer.getImageDimensions(jpg), /ended/);
   });
+
+  it("fits a PDF page to a drawImage() box along its own axes", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var boxes = muhammara.createWriter();
+    boxes.writePage(new muhammara.PDFPage(0, 0, 100, 200));
+    muhammara.registerPdf("fit-boxes", boxes.end());
+    try {
+      var writer = muhammara.createWriter();
+      var page = new muhammara.PDFPage(0, 0, 595, 842);
+      writer.startPageContentContext(page).drawImage(10, 10, "fit-boxes", {
+        transformation: { width: 50, height: 50 },
+      });
+      writer.writePage(page);
+      var pdf = writer.end();
+      writeOutput("ImageDimensions-drawImage", pdf);
+      var reader = muhammara.createReader(pdf);
+      var contents = reader.queryDictionaryObject(
+        reader.parsePage(0).getDictionary(),
+        "Contents",
+      );
+      var stream = reader.startReadingFromStream(contents.toPDFStream());
+      var bytes = [];
+      while (stream.notEnded()) bytes.push(...stream.read(4096));
+      // 50/100 across and 50/200 up, as native.
+      assert.match(
+        new TextDecoder().decode(new Uint8Array(bytes)).replace(/\s+/g, " "),
+        /q 0\.5 0 0 0\.25 10 10 cm/,
+      );
+    } finally {
+      muhammara.unregisterPdf("fit-boxes");
+    }
+  });
 });

@@ -40,27 +40,12 @@ PDFPageDriver::PDFPageDriver()
     : ContentContext(nullptr), holder(nullptr), mPDFPage(nullptr),
       mOwnsPage(false) {}
 PDFPageDriver::~PDFPageDriver() {
-  // A content context of this page refers to the page's resources.
-  EndContentLifecycle();
-  // The page's content context is released only by ending it.
-  if (openContent && openContent->writer && openContent->pages.erase(mPDFPage))
+  // Other wrappers of the page, such as one from getAssociatedPage(), share
+  // its content context; only the owner, which deletes the page, releases it.
+  if (mOwnsPage && openContent && openContent->writer)
     openContent->writer->AbandonPage(mPDFPage);
   if (mOwnsPage)
     delete mPDFPage;
-}
-DriverLifecycle PDFPageDriver::ContentLifecycle() {
-  if (!mContentLifecycle)
-    RenewContentLifecycle();
-  return mContentLifecycle;
-}
-void PDFPageDriver::RenewContentLifecycle() {
-  EndContentLifecycle();
-  mContentLifecycle = std::make_shared<DriverLifecycleState>(
-      "Page content context is not active");
-}
-void PDFPageDriver::EndContentLifecycle() {
-  if (mContentLifecycle)
-    mContentLifecycle->End();
 }
 bool PDFPageDriver::Init(ModuleState &s, napi_value exports) {
   ClassBuilder b(s, "PDFPage", New);

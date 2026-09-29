@@ -5,9 +5,7 @@ Wasm requires numeric values and throws for numeric strings. Both reject
 non-finite drawing values. Wasm `writeText()` additionally requires a positive
 size and a font owned by the same writer. Wasm `J()`, `j()` and `Tr()` reject
 operands outside the PDF ranges (0 to 2, 0 to 2, and 0 to 7); native writes
-any value. These existing validation differences are retained for compatibility. The drawing
-helpers' `type` option throws a `TypeError` in Wasm for a value that is not a
-`DrawingPathType` value or `null`; native ends such a path unpainted.
+any value. These existing validation differences are retained for compatibility.
 `createWriter` encrypts with native's `userPassword`, `ownerPassword`, and
 `userProtectionFlag` options. Wasm throws a `TypeError` for a password that is
 not a string, where native ignores it, and throws for PDF 2.0 encryption
@@ -48,7 +46,7 @@ they never load Node modules, filesystem paths, or Recipe plugins.
 | HTML                    | A DOM-free subset handles text, entities, `br`/`p`/`div`, bold, italic, underline, strikeout, inline color, `<a href>` URL links, and nested `ul`/`ol` lists with native-style visual prefixes and indentation. The parser is lenient where native's XML parser is strict: an omitted `</li>` ends the item at its next sibling or at its list instead of throwing. `recipe.htmlToTextObjects(html, options?)` exposes flat Worker-safe visual runs with prefixes and `indent` values; native returns its nested XML-derived layout tree. Arbitrary DOM, CSS inheritance beyond the supported inline styles, semantic tagged-PDF lists, and plugin HTML handlers are intentionally unavailable.                                                                          |
 | Fonts                   | Recipe bundles Apache-2.0 Roboto Regular as its zero-setup default, while native defaults to Helvetica and bundles additional faces. Metrics and line wrapping can differ. Only regular is bundled in Wasm; bold/italic fall back to regular unless matching faces are registered. Custom byte fonts and face resolution use static or instance `registerFont(name, bytes, type?)`; `registerFontAsync` accepts Blob/File. Explicit unknown names throw. The low-level writer still requires font registration. Installed-font and path discovery are unavailable.                                                                                                                                                                                                       |
 | Colors                  | Named gray, RGB, and CMYK colors can be registered individually. Recipe Separation colors match native. Native Recipe's `chroma("!load", path)` color-file loading is unavailable.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Text                    | Wrapping, box padding/background/border/alignment, top-level alignment, justification, visual `hilite`, `highlight`/`underline`/`strikeOut`/`squiggly` text-markup annotations, char spacing metrics, continuation, columns, decorations, opacity, rotation, and skew are supported with native Wasm drawing. On new pages, a text run's `opacity` option also becomes the default for subsequent vector drawing; the option is ignored while editing an existing page. `clip` retains the complete source for PDF clipping, `trim` omits the non-fitting suffix, and `ellipsis` replaces it with three ASCII periods (`...`) rather than the original Unicode glyph (`…`).                                                                                              |
+| Text                    | Wrapping, box padding/background/border/alignment, top-level alignment, justification, visual `hilite`, `highlight`/`underline`/`strikeOut`/`squiggly` text-markup annotations, char spacing metrics, continuation, columns, decorations, opacity, rotation, and skew are supported with native Wasm drawing. `clip` retains the complete source for PDF clipping, `trim` omits the non-fitting suffix, and `ellipsis` replaces it with three ASCII periods (`...`) rather than the original Unicode glyph (`…`).                                                                                                                                                                                                                                                        |
 | Geometry                | `rectangle` accepts native-PDF `useGivenCoords` and one to four corner radii (top-left clockwise). Regular polygons and stars use the native odd/even traversal geometry. `n_gon.rotationVertice` selects its one-based vertex as a temporary rotation origin. Arrows support `at: "head"` or `"tail"` anchoring and native debug markers. Triangles support vertex/center positioning, axis flips, and native diagnostic geometry. Debug text labels use bundled Roboto unless a registered byte font is selected.                                                                                                                                                                                                                                                      |
 | Tables                  | Column definitions default to 100pt when no width is supplied; numeric layouts divide the available width after gaps. Headers and cells are measured with their actual wrapping, padding, and renderer options before placement. Headers repeat on callback-driven continuations, and each continuation reserves its repeated header before placing the next row.                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Callbacks               | `overflow` and cell `renderer` callbacks are synchronous JavaScript callbacks only. They cannot use Node output, streams, or plugin loading.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -71,16 +69,18 @@ Text-markup rectangles use Wasm's measured ascent-to-descent line box; native
 Recipe uses `1.4 × textHeight`. Both cover the text, but their vertical bounds
 can differ along with the platforms' font metrics.
 
-Wasm Recipe rejects annotation values that cannot form a valid PDF
-annotation, such as an `opacity` outside 0 to 1, non-numeric `borderDash`
-entries, or `quadPoints` whose length is not a multiple of eight, with a
-`TypeError` when the annotation is added, on new and edited pages. Native
-Recipe writes these values unchecked. Wasm Recipe also checks link rectangles
-when adding them: coordinates and dimensions must be finite, and the resulting
-PDF coordinates must not overflow. Invalid rectangles throw a `TypeError`;
-native forwards numeric rectangles unchecked. A negative width or height is
-accepted on both ends and covers the same area, but Wasm writes the `/Rect`
-in normalized order where native writes it reversed.
+A negative link width or height is accepted on both ends and covers the same
+area, but Wasm writes the `/Rect` in normalized order where native writes it
+reversed.
+
+Recipe annotation dates (`/M`) name the same instant on both ends, but Wasm
+writes them in UTC (`D:20260102030405Z`) where native writes local time with
+its offset (`D:20260102083405+05'30'`).
+
+Recipe `image()` places registered JPEG, PNG, or TIFF bytes; native `image()`
+also places a page of a PDF file. Place a registered PDF page with `overlay()`
+or the low-level `drawImage()` instead. Both ends measure a PDF page as its
+media box width by height.
 
 Wasm's async `createRecipe()` factory dynamically imports bundled Roboto only
 when its `defaultFont` option is omitted. Pass custom default bytes/Blob/File or

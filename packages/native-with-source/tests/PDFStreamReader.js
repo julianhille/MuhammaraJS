@@ -39,6 +39,43 @@ describe("PDFReader stream byte readers", function () {
     }
   });
 
+  it("reads a PDF through a custom stream without moveStartPosition()", function () {
+    var bytes = fs.readFileSync(
+      path.join(__dirname, "TestMaterials/appendbreaks.pdf"),
+    );
+    var position = 0;
+    // The six methods a 6.x custom read stream implemented.
+    var stream = {
+      read: function (amount) {
+        var chunk = bytes.subarray(position, position + amount);
+        position += chunk.length;
+        return chunk;
+      },
+      notEnded: function () {
+        return position < bytes.length;
+      },
+      setPosition: function (value) {
+        position = Math.max(0, Math.min(bytes.length, value));
+      },
+      setPositionFromEnd: function (value) {
+        position = Math.max(0, Math.min(bytes.length, bytes.length - value));
+      },
+      skip: function (amount) {
+        position = Math.min(bytes.length, position + amount);
+      },
+      getCurrentPosition: function () {
+        return position;
+      },
+    };
+    var reader = muhammara.createReader(stream);
+    try {
+      expect(reader.getPagesCount()).to.be.above(0);
+      expect(reader.parsePage(0).getMediaBox()).to.have.length(4);
+    } finally {
+      reader.end();
+    }
+  });
+
   // appendbreaks.pdf object 19 has an indirect /Length resolving to a dictionary.
   [
     {

@@ -51,9 +51,8 @@ on their path.
 
 `opacity(value)` sets both fill and stroke alpha for subsequent drawing and
 must be between `0` and `1`. Call `opacity(1)` to restore opaque output. A
-shape's `opacity` option is scoped to that operation. On new pages, a text run's
-`opacity` option also updates the default used by subsequent vector drawing;
-the text option is ignored while editing an existing page.
+shape's or text run's `opacity` option is scoped to that operation, on new and
+edited pages.
 
 Separation (spot) colors name a printing ink, such as a PANTONE color, with an
 alternate device color for screens and ordinary printers. Register the ink with

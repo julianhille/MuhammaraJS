@@ -6,6 +6,10 @@ const htmlCodes = fs.readFileSync(
   "utf8",
 );
 
+// Each text-box and HTML test lays out a full page and takes about 1 s; on
+// slow runners, such as Electron on Intel macOS, that exceeds the default.
+const TEXT_BOX_TIMEOUT = 60000;
+
 describe("Text", () => {
   it("Add watermark", (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
@@ -98,7 +102,7 @@ describe("Text", () => {
       })
       .endPage()
       .endPDF(done);
-  });
+  }).timeout(TEXT_BOX_TIMEOUT);
 
   it("Add text with html codes inside textbox", (done) => {
     const output = path.join(
@@ -125,7 +129,7 @@ describe("Text", () => {
       })
       .endPage()
       .endPDF(done);
-  });
+  }).timeout(TEXT_BOX_TIMEOUT);
 
   it("Add text inside textbox", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
@@ -213,7 +217,7 @@ describe("Text", () => {
       })
       .endPage()
       .endPDF(done);
-  });
+  }).timeout(TEXT_BOX_TIMEOUT);
 
   it("Add text with bolded text inside textbox", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
@@ -308,7 +312,7 @@ describe("Text", () => {
       })
       .endPage()
       .endPDF(done);
-  });
+  }).timeout(TEXT_BOX_TIMEOUT);
 
   it("Add text with italic text inside textbox", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
@@ -403,7 +407,7 @@ describe("Text", () => {
       })
       .endPage()
       .endPDF(done);
-  });
+  }).timeout(TEXT_BOX_TIMEOUT);
 
   it("Add text with underline inside textbox", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
@@ -498,7 +502,7 @@ describe("Text", () => {
       })
       .endPage()
       .endPDF(done);
-  });
+  }).timeout(TEXT_BOX_TIMEOUT);
 
   it("Add text with strikethrough effect inside textbox", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
@@ -590,7 +594,7 @@ describe("Text", () => {
       })
       .endPage()
       .endPDF(done);
-  });
+  }).timeout(TEXT_BOX_TIMEOUT);
 
   it("Add text with highlight inside textbox", (done) => {
     const src = "new"; //path.join(__dirname, '../TestMaterials/recipe/test.pdf');
@@ -682,7 +686,7 @@ describe("Text", () => {
       })
       .endPage()
       .endPDF(done);
-  });
+  }).timeout(TEXT_BOX_TIMEOUT);
 
   it("keeps hilited text on edited pages", () => {
     const assert = require("node:assert/strict");

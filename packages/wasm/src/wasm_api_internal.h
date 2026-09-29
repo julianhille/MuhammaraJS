@@ -1308,14 +1308,16 @@ inline bool fontGlyphDimensions(PDFUsedFont* font, const uint32_t* glyphs, int c
   }
   UIntList list;
   for (int index = 0; index < count; ++index) list.push_back(glyphs[index]);
-  PDFUsedFont::TextMeasures measures =
-      font->CalculateTextDimensions(list, static_cast<long>(fontSize));
-  values[0] = measures.xMin;
-  values[1] = measures.yMin;
-  values[2] = measures.xMax;
-  values[3] = measures.yMax;
-  values[4] = measures.width;
-  values[5] = measures.height;
+  // PDFUsedFont takes an integer size, so measure at 1000 (exact font units)
+  // and scale, as measureTextDimensions does for text.
+  PDFUsedFont::TextMeasures measures = font->CalculateTextDimensions(list, 1000);
+  double scale = fontSize / 1000.0;
+  values[0] = measures.xMin * scale;
+  values[1] = measures.yMin * scale;
+  values[2] = measures.xMax * scale;
+  values[3] = measures.yMax * scale;
+  values[4] = measures.width * scale;
+  values[5] = measures.height * scale;
   return true;
 }
 
