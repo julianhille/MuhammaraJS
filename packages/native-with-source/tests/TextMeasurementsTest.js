@@ -44,6 +44,13 @@ describe("TextMeasurementsTest", function () {
       assert.ok(
         fractional.width > font.calculateTextDimensions("Hi gy", 10).width,
       );
+      // Glyph id lists measure at the same fractional size as text.
+      [10.5, 0.5].forEach(function (size) {
+        assert.deepStrictEqual(
+          font.calculateTextDimensions([43, 76], size),
+          font.calculateTextDimensions("Hi", size),
+        );
+      });
       [0, -5, NaN, Infinity].forEach(function (size) {
         assert.throws(function () {
           font.calculateTextDimensions("Hi gy", size);
