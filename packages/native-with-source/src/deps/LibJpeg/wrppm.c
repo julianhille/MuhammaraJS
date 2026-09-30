@@ -2,7 +2,7 @@
  * wrppm.c
  *
  * Copyright (C) 1991-1996, Thomas G. Lane.
- * Modified 2009-2019 by Guido Vollbeding.
+ * Modified 2009-2026 by Guido Vollbeding.
  * This file is part of the Independent JPEG Group's software.
  * For conditions of distribution and use, see the accompanying README file.
  *
@@ -22,13 +22,13 @@
 
 
 /*
- * For 12-bit JPEG data, we either downscale the values to 8 bits
- * (to write standard byte-per-sample PPM/PGM files), or output
- * nonstandard word-per-sample PPM/PGM files.  Downscaling is done
- * if PPM_NORAWWORD is defined (this can be done in the Makefile
- * or in jconfig.h).
- * (When the core library supports data precision reduction, a cleaner
- * implementation will be to ask for that instead.)
+ * For larger than 8-bit sample data, we either downscale the values
+ * to 8 bits (to write standard byte-per-sample PPM/PGM files),
+ * or output nonstandard word-per-sample PPM/PGM files.
+ * Downscaling is done if PPM_NORAWWORD is defined (this can be done
+ * in the Makefile or in jconfig.h).
+ * (When the core library supports data precision reduction,
+ * a cleaner implementation will be to ask for that instead.)
  */
 
 #if BITS_IN_JSAMPLE == 8
@@ -98,8 +98,9 @@ put_pixel_rows (j_decompress_ptr cinfo, djpeg_dest_ptr dinfo,
 
 
 /*
- * This code is used when we have to copy the data and apply a pixel
- * format translation.  Typically this only happens in 12-bit mode.
+ * This code is used when we have to copy the data and apply
+ * a pixel format translation.
+ * Typically this only happens in larger than 8-bit mode.
  */
 
 METHODDEF(void)
@@ -111,7 +112,7 @@ copy_pixel_rows (j_decompress_ptr cinfo, djpeg_dest_ptr dinfo,
   register JSAMPROW ptr;
   register JDIMENSION col;
 
-  ptr = dest->pub.buffer[0];
+  ptr = dest->pixrow;
   bufferptr = dest->iobuffer;
   for (col = dest->samples_per_row; col > 0; col--) {
     PUTPPMSAMPLE(bufferptr, GETJSAMPLE(*ptr++));
@@ -138,7 +139,7 @@ put_demapped_rgb (j_decompress_ptr cinfo, djpeg_dest_ptr dinfo,
   register JSAMPROW color_map2 = cinfo->colormap[2];
   register JDIMENSION col;
 
-  ptr = dest->pub.buffer[0];
+  ptr = dest->pixrow;
   bufferptr = dest->iobuffer;
   for (col = cinfo->output_width; col > 0; col--) {
     pixval = GETJSAMPLE(*ptr++);
@@ -159,7 +160,7 @@ put_demapped_gray (j_decompress_ptr cinfo, djpeg_dest_ptr dinfo,
   register JSAMPROW color_map0 = cinfo->colormap[0];
   register JDIMENSION col;
 
-  ptr = dest->pub.buffer[0];
+  ptr = dest->pixrow;
   bufferptr = dest->iobuffer;
   for (col = cinfo->output_width; col > 0; col--) {
     PUTPPMSAMPLE(bufferptr, GETJSAMPLE(color_map0[GETJSAMPLE(*ptr++)]));
@@ -239,10 +240,9 @@ jinit_write_ppm (j_decompress_ptr cinfo)
      * that's separate from the physical I/O buffer.  We also need a
      * separate buffer if pixel format translation must take place.
      */
-    dest->pub.buffer = (*cinfo->mem->alloc_sarray)
-      ((j_common_ptr) cinfo, JPOOL_IMAGE,
-       cinfo->output_width * cinfo->output_components, (JDIMENSION) 1);
-    dest->pub.buffer_height = 1;
+    dest->pixrow = (JSAMPROW) (*cinfo->mem->alloc_large)
+      ((j_common_ptr) cinfo, JPOOL_IMAGE, (size_t) cinfo->output_width *
+       (size_t) cinfo->output_components * SIZEOF(JSAMPLE));
     if (! cinfo->quantize_colors)
       dest->pub.put_pixel_rows = copy_pixel_rows;
     else if (cinfo->out_color_space == JCS_GRAYSCALE)
@@ -251,13 +251,13 @@ jinit_write_ppm (j_decompress_ptr cinfo)
       dest->pub.put_pixel_rows = put_demapped_rgb;
   } else {
     /* We will fwrite() directly from decompressor output buffer. */
-    /* Synthesize a JSAMPARRAY pointer structure */
     /* Cast here implies near->far pointer conversion on PCs */
     dest->pixrow = (JSAMPROW) dest->iobuffer;
-    dest->pub.buffer = & dest->pixrow;
-    dest->pub.buffer_height = 1;
     dest->pub.put_pixel_rows = put_pixel_rows;
   }
+  /* Synthesize a JSAMPARRAY pointer structure */
+  dest->pub.buffer = & dest->pixrow;
+  dest->pub.buffer_height = 1;
 
   return &dest->pub;
 }

@@ -63,6 +63,11 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   does not start at 0,0; it was shifted out of it. Numeric strings are accepted as
   `width`, `height`, and `scale`, which threw a binding `TypeError`, and
   another value that is not a finite number throws a `RangeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Decode `DCTDecode` streams with `startReadingFromStream()` in Electron on
+  Linux, where they read as empty. On Linux the addon no longer exports the
+  symbols of its bundled libjpeg, FreeType, libpng, zlib, LibTiff, and
+  OpenSSL, so a copy of one of them already loaded in the process, such as
+  the libjpeg GTK brings into Electron, no longer takes over its calls [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
 - Stop adding `keepAspectRatio: true` to the options object passed to Recipe
   `image()` when that option is omitted [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
@@ -70,6 +75,8 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 
 - Throw `RangeError: miterLimit must be a number of at least 1` from Recipe
   `lineStyle()` for a lower limit or a non-number, as shapes do [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Update the bundled IJG libjpeg from 9d (2020) to 10 (2026), which decodes
+  `DCTDecode` streams read from PDFs [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
 - Collect the output of a Buffer-mode `Recipe` with the bundled
   `PDFWStreamForBuffer` instead of the unmaintained `memory-streams` package,
   which drops that dependency and its five transitive packages

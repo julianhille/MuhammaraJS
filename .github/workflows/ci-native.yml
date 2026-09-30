@@ -102,7 +102,7 @@ jobs:
     env:
       ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:strict_string_checks=1
       LSAN_OPTIONS: print_suppressions=0
-      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=${{ github.workspace }}/.github/sanitizer/ubsan.supp
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

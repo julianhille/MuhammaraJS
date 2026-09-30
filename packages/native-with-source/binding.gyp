@@ -43,6 +43,10 @@
 			},
             'conditions': [
                 ['OS=="linux"', {
+                    # Keep the bundled static libraries' symbols private, so
+                    # a libjpeg or FreeType already loaded by the host, such
+                    # as Electron's GTK, does not take over our calls.
+                    'ldflags': [ '-Wl,--exclude-libs,ALL' ],
                     'libraries': [
                         '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.a',
                         '-ldl',

@@ -76,6 +76,50 @@ describe("PDFReader stream byte readers", function () {
     }
   });
 
+  // DCTDecode is the one filter decoded by the vendored libjpeg.
+  [
+    ["baseline", "images/soundcloud_logo.jpg", 550, 350, 3],
+    ["progressive", "recipe/myCats.jpg", 720, 960, 3],
+    ["grayscale", "images/grayscale.jpg", 40, 30, 1],
+    ["CMYK", "images/cmyk.jpg", 36, 24, 4],
+  ].forEach(function ([kind, file, width, height, components]) {
+    it("decodes a " + kind + " JPEG image stream to its samples", function () {
+      var jpeg = path.join(__dirname, "TestMaterials", file);
+      var buffer = new muhammara.PDFWStreamForBuffer();
+      var writer = muhammara.createWriter(buffer);
+      var imageId = writer.createImageXObjectFromJPG(jpeg).id;
+      // A PDF without pages cannot be parsed back.
+      writer.writePage(writer.createPage(0, 0, 100, 100));
+      writer.end();
+
+      var reader = muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(buffer.buffer),
+      );
+      try {
+        var stream = reader.parseNewObject(imageId);
+        var plain = reader.startReadingFromStreamForPlainCopying(stream);
+        var raw = [];
+        while (plain.notEnded()) raw.push(Buffer.from(plain.read(65536)));
+        expect(Buffer.concat(raw).equals(fs.readFileSync(jpeg))).to.equal(true);
+
+        var decoded = reader.startReadingFromStream(stream);
+        var samples = [];
+        while (decoded.notEnded()) {
+          samples.push(Buffer.from(decoded.read(65536)));
+        }
+        samples = Buffer.concat(samples);
+        expect(samples.length).to.equal(width * height * components);
+        if (components === 1) {
+          // grayscale.jpg is a white-to-black top-to-bottom gradient.
+          expect(samples[0]).to.be.above(250);
+          expect(samples[samples.length - 1]).to.be.below(5);
+        }
+      } finally {
+        reader.end();
+      }
+    });
+  });
+
   // appendbreaks.pdf object 19 has an indirect /Length resolving to a dictionary.
   [
     {

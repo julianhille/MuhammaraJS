@@ -1,0 +1,7 @@
+# UBSan suppressions for the native sanitizer job in ci-native.yml.
+#
+# IJG libjpeg left-shifts negative and overflowing signed values by design:
+# its Huffman bit buffer (jdhuff.c) and fixed-point DCTs (jidct*.c) rely on
+# two's complement shifts. The code is unchanged from 9d through 10, so we
+# suppress only this check, only in the vendored copy, rather than patch it.
+shift-base:*/deps/LibJpeg/*
