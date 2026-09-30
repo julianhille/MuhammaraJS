@@ -395,6 +395,35 @@ describe("Recipe vector", function () {
     assert.equal(content.match(/\S+ \S+ [ml]\b/g)?.length, 3);
   });
 
+  it("throws for a rotation that is no finite number before drawing", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe().createPage(200, 200);
+    ["none", NaN, Infinity, {}].forEach((rotation) => {
+      assert.throws(
+        () => recipe.rectangle(20, 20, 40, 30, { fill: "#000000", rotation }),
+        { name: "TypeError", message: "rotation must be a finite number" },
+      );
+      assert.throws(
+        () =>
+          recipe.polygon(
+            [
+              [100, 20],
+              [140, 20],
+              [120, 60],
+            ],
+            { fill: "#000000", rotation },
+          ),
+        { name: "TypeError", message: "rotation must be a finite number" },
+      );
+    });
+    // A numeric string is its number, and null is no rotation.
+    recipe
+      .rectangle(20, 20, 40, 30, { fill: "#000000", rotation: "30" })
+      .rectangle(20, 20, 40, 30, { fill: "#000000", rotation: null })
+      .endPage()
+      .endPDF();
+  });
+
   it("draws nothing for a line with fewer than two points", async function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();

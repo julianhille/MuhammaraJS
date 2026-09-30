@@ -321,7 +321,7 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {string} [options.subject] - Subject of annotation.
  * @param {string} [options.link] - Make the text open this URL.
  * @returns {Recipe} The recipe instance. Without an active page nothing is drawn.
- * @throws {TypeError} If `options.charSpace` is not a finite number; nothing is drawn.
+ * @throws {TypeError} If `options.charSpace` or `options.rotation` is not a finite number; nothing is drawn.
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 exports.text = function text(text = "", x, y, options = {}) {

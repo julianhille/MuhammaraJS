@@ -1,6 +1,7 @@
 const { xObjectForm } = require("./xObjectForm");
 const { resolveFontSize } = require("./utils");
 const { Colorspace, LineCap, LineJoin } = require("../recipe-constants");
+const { miterLimitOption, rotationOption } = require("../recipe-options");
 
 /**
  * Resolve drawing and text options into path options: font, size, colors
@@ -11,7 +12,9 @@ const { Colorspace, LineCap, LineJoin } = require("../recipe-constants");
  * @param {number} originX - The PDF x of the default rotation origin.
  * @param {number} originY - The PDF y of the default rotation origin.
  * @returns {Object} The resolved path options.
- * @throws {RangeError} If a given font size is not greater than zero.
+ * @throws {RangeError} If a given font size is not greater than zero, or
+ *   `miterLimit` is not a number of at least 1.
+ * @throws {TypeError} If `rotation` is not a finite number.
  * @throws {Error} If the font cannot be loaded.
  */
 exports._getPathOptions = function _getPathOptions(
@@ -20,6 +23,9 @@ exports._getPathOptions = function _getPathOptions(
   originY,
 ) {
   this.current = this.current || {};
+  // Validate before anything is resolved or drawn.
+  const rotation = rotationOption(options.rotation);
+  const miterLimit = miterLimitOption(options.miterLimit);
   const colorspace = options.colorspace || this.options.colorspace;
   const colorName = options.colorName;
 
@@ -94,18 +100,16 @@ exports._getPathOptions = function _getPathOptions(
 
   // A fill or stroke replaces the default color. Resolving that default under
   // colorName would write an unused Separation color space for the ink.
-  const paintsColor =
-    options.color || options.colour || (!options.fill && !options.stroke);
+  const paintsColor = options.color || (!options.fill && !options.stroke);
   pathOptions.colorModel = this._transformColor(
-    options.color || options.colour,
+    options.color,
     paintsColor ? colorOpts : { ...colorOpts, colorName: undefined },
   );
   pathOptions.color = pathOptions.colorModel.color;
   pathOptions.colorspace = pathOptions.colorModel.colorspace;
 
   // rotation
-  if (options.rotation !== void 0) {
-    const rotation = parseFloat(options.rotation);
+  if (rotation !== undefined) {
     pathOptions.rotation = rotation;
     pathOptions.rotationOrigin = options.rotationOrigin || null;
   }
@@ -135,11 +139,7 @@ exports._getPathOptions = function _getPathOptions(
     pathOptions.lineCap = this._lineCap(options.lineCap);
   }
 
-  if (options.miterLimit !== void 0) {
-    if (!isNaN(options.miterLimit)) {
-      pathOptions.miterLimit = options.miterLimit;
-    }
-  }
+  if (miterLimit !== undefined) pathOptions.miterLimit = miterLimit;
 
   return pathOptions;
 };

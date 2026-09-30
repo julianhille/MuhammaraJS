@@ -18,7 +18,10 @@ import {
   updateMediaBox,
 } from "./recipe/page.js";
 import { createShapeMethods } from "./recipe/shapes.js";
-import { createVectorHelpers } from "./recipe/vector.helper.js";
+import {
+  createVectorHelpers,
+  miterLimitOption,
+} from "./recipe/vector.helper.js";
 import { createLineMethods } from "./recipe/vector-line.js";
 import { createPolygonMethods } from "./recipe/vector-polygon.js";
 import { createVectorMethods } from "./recipe/vector.js";
@@ -423,11 +426,15 @@ export function createRecipeFactory({
      * @param {RecipeLineStyleOptions} [options] - Width, cap, join, miter, and dash settings.
      * @returns {Recipe} The Recipe instance.
      * @throws {TypeError} If a dash pattern containing non-finite values is applied to an active page context.
+     * @throws {RangeError} If `miterLimit` is not a number of at least 1.
      * @throws {Error} If the underlying PDF operation fails.
      */
     lineStyle(options = {}) {
       // null options act like omitted options.
       if (options === null) options = {};
+      // Validate before anything is written.
+      var miterLimit = miterLimitOption(options.miterLimit);
+      if (miterLimit !== undefined) options = { ...options, miterLimit };
       this._lineStyle = this._lineStyle || {};
       if (options.width !== undefined || options.lineWidth !== undefined)
         this._lineStyle.width = options.width ?? options.lineWidth;
@@ -602,7 +609,7 @@ export function createRecipeFactory({
       }
       // Resolve like native: registered names, gray/RGB/CMYK codes, and the
       // #1777d1 default for a missing or unknown color.
-      var fill = colorModel(this, options.color || options.colour, options);
+      var fill = colorModel(this, options.color, options);
       var separation = fill.colorspace === Colorspace.SEPARATION;
       if (separation) this._separationColorspace(fill);
       // Resolve like native: a missing or NaN opacity keeps the current
@@ -686,7 +693,7 @@ export function createRecipeFactory({
           { ...options, fontSize },
         ).height;
         var decoration = {
-          stroke: options.color || options.colour || "#1777d1",
+          stroke: options.color || "#1777d1",
           colorspace: options.colorspace,
           colorName: options.colorName,
           width: 2,

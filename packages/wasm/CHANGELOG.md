@@ -4,6 +4,16 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Throw `TypeError: rotation must be a finite number` from Recipe shapes,
+  `text()`, and `image()` when `rotation` is neither a number nor a numeric
+  string, and `RangeError: miterLimit must be a number of at least 1` from
+  Recipe shapes, `image()`, and `lineStyle()` for a lower limit or a
+  non-number, before anything is drawn, as native does. A rotation that is no
+  number was ignored, and a low miter limit threw while the shape was drawn
+  [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
 ## [1.0.0-rc.1] - 2026-09-29
 
 ### Added

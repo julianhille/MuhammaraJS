@@ -61,7 +61,7 @@ export function createVectorMethods(runtime) {
    */
   function paintInsetShape(recipe, options, x, y, drawPath) {
     var fill = options.fill;
-    var stroke = options.stroke || options.color || options.colour;
+    var stroke = options.stroke || options.color;
     // The fill and the stroke are separate paths; prepare both Separation
     // colors first, in native's order, so a shared colorName ink gets the same
     // alternate on both ends.
@@ -71,7 +71,6 @@ export function createVectorMethods(runtime) {
         fill: { value: fill },
         stroke: { value: undefined },
         color: { value: undefined },
-        colour: { value: undefined },
       });
       recipe._beginPath(fillOptions, x, y);
       drawPath(0);
@@ -82,7 +81,6 @@ export function createVectorMethods(runtime) {
         fill: { value: undefined },
         stroke: { value: stroke },
         color: { value: undefined },
-        colour: { value: undefined },
       });
       var style = recipe._beginPath(strokeOptions, x, y);
       drawPath(style.width / 2);

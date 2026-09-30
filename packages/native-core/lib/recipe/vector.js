@@ -14,6 +14,7 @@
 
 const { linkPdf } = require("./annotation");
 const muhammara = require("../muhammara");
+const { miterLimitOption } = require("../recipe-options");
 
 /**
  * Draw a circle
@@ -668,15 +669,19 @@ exports.pie = function pie(x, y, radius, startAngle, endAngle, options = {}) {
  * @param {number} [options.lineWidth] - Alias for width.
  * @param {number} [options.cap] - The PDF line cap style, a `LineCapStyle` value.
  * @param {number} [options.join] - The PDF line join style: 0 miter, 1 round, 2 bevel.
- * @param {number} [options.miterLimit] - The miter limit.
+ * @param {number} [options.miterLimit] - The miter limit, at least 1.
  * @param {number[]} [options.dash] - The dash pattern.
  * @param {number} [options.dashPhase] - The dash pattern phase.
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
+ * @throws {RangeError} If `miterLimit` is not a number of at least 1.
  */
 exports.lineStyle = function lineStyle(options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
+  // Validate before anything is written.
+  const miterLimit = miterLimitOption(options.miterLimit);
+  if (miterLimit !== undefined) options = { ...options, miterLimit };
   this.current = this.current || {};
   this.current.lineStyle = this.current.lineStyle || {};
 

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Throw `TypeError: rotation must be a finite number` from Recipe shapes,
+  `text()`, and `image()` when `rotation` is neither a number nor a numeric
+  string, before anything is drawn. 6.x wrote `NaN` transformation matrices,
+  so the shape was missing or broken in viewers. Pass a number, or omit
+  `rotation`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Throw `RangeError: miterLimit must be a number of at least 1` from Recipe
+  shapes and `image()` for a `miterLimit` below 1 or not a
+  number, before anything is drawn. 6.x wrote the invalid limit into the PDF
+  or ignored a non-number. Pass 1 or more, or omit it; see
+  [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
+### Changed
+
+- Throw `RangeError: miterLimit must be a number of at least 1` from Recipe
+  `lineStyle()` for a lower limit or a non-number, as shapes do [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
 ## [7.0.0-rc.1] - 2026-09-29
 
 ### Breaking Changes

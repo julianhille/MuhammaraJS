@@ -180,7 +180,8 @@ describe("Recipe text color parity", function () {
     [{ color: "%100,0,0" }, "1 0 0 rg"],
     [{ color: [0, 0, 255] }, "0 0 1 rg"],
     [{ color: "nosuchcolor" }, "0.090196 0.466667 0.819608 rg"],
-    [{ colour: "brand" }, "0 1 0 rg"],
+    // Only `color` sets the color; `colour` is no option.
+    [{ colour: "brand" }, "0.090196 0.466667 0.819608 rg"],
   ];
 
   [false, true].forEach(function (editing) {

@@ -7,6 +7,47 @@ import {
 import { colorModel, pathColors } from "./colors.js";
 
 /**
+ * Reads a `rotation` option in degrees. A numeric string counts as its number.
+ * @param {*} value - The option value.
+ * @returns {number|undefined} The rotation, or undefined when omitted or null.
+ * @throws {TypeError} If the value is not a finite number.
+ */
+export function rotationOption(value) {
+  if (value === undefined || value === null) return undefined;
+  var rotation = optionNumber(value);
+  if (!Number.isFinite(rotation))
+    throw new TypeError("rotation must be a finite number");
+  return rotation;
+}
+
+/**
+ * Reads a `miterLimit` option. A numeric string counts as its number.
+ * @param {*} value - The option value.
+ * @returns {number|undefined} The miter limit, or undefined when omitted or
+ *   null.
+ * @throws {RangeError} If the value is not a number of at least 1, which PDF
+ *   requires.
+ */
+export function miterLimitOption(value) {
+  if (value === undefined || value === null) return undefined;
+  var miterLimit = optionNumber(value);
+  if (!(miterLimit >= 1) || !Number.isFinite(miterLimit))
+    throw new RangeError("miterLimit must be a number of at least 1");
+  return miterLimit;
+}
+
+/**
+ * The number of a numeric option: a number, or a string holding one.
+ * @param {*} value - The option value.
+ * @returns {number} The number; NaN for any other value.
+ */
+function optionNumber(value) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.trim() !== "") return Number(value);
+  return NaN;
+}
+
+/**
  * Creates shared Recipe vector drawing helpers.
  * @param {object} runtime - Module and export helpers.
  * @returns {object} Methods mixed into Recipe.prototype.
@@ -66,8 +107,13 @@ export function createVectorHelpers(runtime) {
      * @private
      * @param {object} [options={}] - Line cap, join, miter, dash, width, and opacity.
      * @returns {object} Native style values; -1 leaves a cap or join unchanged.
+     * @throws {TypeError} If `rotation` is not a finite number.
+     * @throws {RangeError} If `miterLimit` is not a number of at least 1.
      */
     _pathOptions: function (options = {}) {
+      // Validate before anything is drawn.
+      rotationOption(options.rotation);
+      var miterLimit = miterLimitOption(options.miterLimit);
       var lineStyle = this._lineStyle || {};
       var opacity =
         options.opacity === undefined
@@ -95,9 +141,7 @@ export function createVectorHelpers(runtime) {
             : [LineJoin.MITER, LineJoin.ROUND, LineJoin.BEVEL].indexOf(
                 options.lineJoin,
               ),
-        miter: Number.isFinite(options.miterLimit)
-          ? options.miterLimit
-          : (lineStyle.miterLimit ?? 1.414),
+        miter: miterLimit ?? lineStyle.miterLimit ?? 1.414,
         dash,
         phase: Number.isFinite(options.dashPhase)
           ? options.dashPhase

@@ -7,6 +7,7 @@ import {
 } from "../value-sets.js";
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
+import { rotationOption } from "./vector.helper.js";
 
 /**
  * Deep-merges plain option objects; arrays and dates are replaced, not merged.
@@ -841,6 +842,7 @@ export function createTextMethods({ drawText, measure, module }) {
      * @returns {Recipe} The Recipe instance.
      * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
      *   not greater than zero.
+     * @throws {TypeError} If `rotation` is not a finite number.
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
      */
     text(value = "", x, y, options = {}) {
@@ -853,6 +855,8 @@ export function createTextMethods({ drawText, measure, module }) {
       }
       var inherited = options.flow ? this._textOptions || {} : {};
       options = merge(inherited, options);
+      // Validate before anything is drawn, as native does.
+      rotationOption(options.rotation);
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
       var layout = options.layout && this._layouts?.[options.layout];
