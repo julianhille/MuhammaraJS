@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Update `serialize-javascript` to 7.1.2 for security vulnerability fixes.
 - Update the bundled libpng from 1.6.37 to 1.6.59, which fixes security
   issues in decoding untrusted PNG images, among them the use-after-frees
   CVE-2026-33416, CVE-2026-34757, and CVE-2026-46675; placed PNG images are
