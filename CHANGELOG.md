@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Update `serialize-javascript` to 7.1.2 for security vulnerability fixes.
+
 ## [7.0.0-rc.2] - 2026-09-30
 
 ### Breaking Changes
