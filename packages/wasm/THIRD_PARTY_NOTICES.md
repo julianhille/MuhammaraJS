@@ -20,7 +20,7 @@ vendored source tree.
 | FreeType  | 2.14.3                                                                 | FreeType License                 |
 | LibAesgm  | Brian Gladman AES snapshot, copyright 1998-2013                        | Brian Gladman permissive license |
 | LibJpeg   | IJG JPEG 10                                                            | Independent JPEG Group license   |
-| LibPng    | 1.6.37                                                                 | libpng License                   |
+| LibPng    | 1.6.59                                                                 | libpng License                   |
 | LibTiff   | 4.6.0                                                                  | libtiff license                  |
 | Zlib      | 1.3.1                                                                  | zlib License                     |
 
@@ -65,7 +65,7 @@ or remove this notice from source distributions. The software is provided
 
 ## LibPng
 
-Copyright (c) 1995-2019 The PNG Reference Library Authors, Cosmin Truta, Glenn
+Copyright (c) 1995-2026 The PNG Reference Library Authors, Cosmin Truta, Glenn
 Randers-Pehrson, Andreas Dilger, and Guy Eric Schalnat, Group 42, Inc.
 
 libpng is supplied "as is", without warranty of any kind. Permission is

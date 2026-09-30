@@ -4,6 +4,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Update the bundled libpng from 1.6.37 to 1.6.59, which fixes security
+  issues in decoding untrusted PNG images, among them the use-after-frees
+  CVE-2026-33416, CVE-2026-34757, and CVE-2026-46675; placed PNG images are
+  unchanged [#863](https://github.com/julianhille/MuhammaraJS/issues/863)
+
 ### Changed
 
 - Build with zlib 1.3.1 instead of 1.2.11, the vendored copy shared with
