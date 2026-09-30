@@ -668,10 +668,10 @@ describe("Recipe image placement", function () {
         () => recipe.image("two-images", 0, 0, { page: 3 }),
         /Unknown image: two-images/,
       );
-      [0, -1, 1.5, "1", NaN].forEach((page) =>
+      [0, -1, 1.5, "1", NaN, 2 ** 32 + 1].forEach((page) =>
         assert.throws(() => recipe.image("doc", 0, 0, { page }), {
           name: "RangeError",
-          message: "image page must be an integer of at least 1",
+          message: "image page must be an integer from 1 to 4294967296",
         }),
       );
       assert.throws(

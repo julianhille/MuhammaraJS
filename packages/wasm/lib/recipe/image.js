@@ -296,8 +296,9 @@ export function createImageMethods(runtime) {
      * @param {RecipeImageOptions} [options] - Image sizing, alignment, page-index, frame, and transformation options.
      * @returns {Recipe} The recipe instance.
      * @throws {Error} If the image name is unknown or no target page is available.
-     * @throws {RangeError} If `page` is not an integer of at least 1, a size is
-     *   not a finite number, or `miterLimit` is not a number of at least 1.
+     * @throws {RangeError} If `page` is not an integer from 1 to 4294967296,
+     *   a size is not a finite number, or `miterLimit` is not a number of at
+     *   least 1.
      * @throws {TypeError} If the colorspace is unknown or `rotation` is not a
      *   finite number.
      */
@@ -452,12 +453,12 @@ export function createImageMethods(runtime) {
  * TIFF image that PDFWriter takes.
  * @param {RecipeImageOptions} options - Image options.
  * @returns {number} The zero-based index; 0 when `page` is omitted.
- * @throws {RangeError} If `page` is not an integer of at least 1.
+ * @throws {RangeError} If `page` is not an integer from 1 to 4294967296.
  */
 function imageIndex(options) {
   var page = options.page ?? 1;
   if (!Number.isInteger(page) || page < 1 || page > 0x100000000)
-    throw new RangeError("image page must be an integer of at least 1");
+    throw new RangeError("image page must be an integer from 1 to 4294967296");
   return page - 1;
 }
 

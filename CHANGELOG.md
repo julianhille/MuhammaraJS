@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Breaking Changes
 
+Upgrading from 6.x? Each change below is described in [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x); follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md) for the upgrade steps.
+
 - Place a Recipe `image()` with `align: "<horizontal> bottom"` half its height
   below the placement point, as documented. 6.x drew it 1.5 times its height
   above that point, so such images now appear twice their height lower; see
@@ -25,6 +27,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   number, before anything is drawn. 6.x wrote the invalid limit into the PDF
   or ignored a non-number. Pass 1 or more, or omit it; see
   [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Frame a Recipe `image()` given `fill`, `stroke`, or `color`, which 6.x
+  ignored for images: `fill` paints beneath the image, and `stroke` or `color`
+  outlines it. Leave these options out of `image()` to keep the 6.x output; see
+  [Check Recipe image and color options](packages/native/docs/getting-started/migrate-from-v6.md#check-recipe-image-and-color-options) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Turn a PDF page placed with Recipe `image()` by its `/Rotate` entry, as
+  viewers display it; a page turned by 90 or 270 degrees is measured with its
+  width and height swapped. 6.x drew it unturned. Pass the size of the
+  displayed page; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Stop reading the undocumented `colour` alias of `color` in Recipe; a shape
+  or text given only `colour` uses the default color. Rename it to `color`;
+  see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
 ### Added
 
@@ -35,19 +48,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `lineWidth`, `dash`, `dashPhase`, `lineCap`, `lineJoin`, and `miterLimit`,
   with the image's rotation, skew, and opacity. `debug` outlines the image box
   and marks the placement point. A `page` past the last page throws
-  `Unknown image`, and one that is not an integer of at least 1 throws a
-  `RangeError`; see [Place and Transform Images](packages/native/docs/how-to/place-and-transform-images.md) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+  `Unknown image`, and one that is not an integer from 1 to 4294967296 throws
+  a `RangeError`; see [Place and Transform Images](packages/native/docs/how-to/place-and-transform-images.md) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
 ### Fixed
 
 - Accept `center` coordinates together with `link` in Recipe `image()`,
   which threw `URL link requires a URL and valid PDF rectangle`, and accept
   `null` options, which threw a `TypeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
-- Place a PDF page with Recipe `image()` as it is displayed: a page with a
-  `/Rotate` entry is turned, and a media box that does not start at 0,0 no
-  longer shifts the page out of its box. Numeric strings are accepted as
+- Keep a PDF page placed with Recipe `image()` in its box when its media box
+  does not start at 0,0; it was shifted out of it. Numeric strings are accepted as
   `width`, `height`, and `scale`, which threw a binding `TypeError`, and
   another value that is not a finite number throws a `RangeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Stop adding `keepAspectRatio: true` to the options object passed to Recipe
+  `image()` when that option is omitted [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
 ### Changed
 

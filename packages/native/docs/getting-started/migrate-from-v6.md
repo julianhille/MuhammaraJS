@@ -256,6 +256,26 @@ recipe.rectangle(50, 50, 100, 40, { rotation: 30, rotationOrigin: origin });
 `lineTo()` options no longer declare `fill`, which 6.x declared but ignored.
 Remove it; fill a closed path with `polygon()` instead.
 
+### Check Recipe Image And Color Options
+
+`image()` now uses `fill`, `stroke`, and `color`, which 6.x ignored for images:
+`fill` paints the image box beneath the image, and `stroke` or `color` outlines
+it [#857](https://github.com/julianhille/MuhammaraJS/issues/857). If you pass
+one options object to both shapes and images, leave these options out of the
+`image()` call to keep the 6.x output:
+
+```javascript
+var style = { color: "#003366", opacity: 0.8 };
+recipe.rectangle(50, 50, 100, 40, style);
+
+// v7: without color, the image is drawn without an outline, as in v6.
+var { color, ...imageStyle } = style;
+recipe.image("photo.jpg", 50, 120, { ...imageStyle, width: 100 });
+```
+
+Recipe also no longer reads the undocumented `colour` alias of `color`. Rename
+`colour` to `color`, or the shape or text is drawn in the default color.
+
 ## 10. Trim Boundary Whitespace From `charSpace` Text
 
 v7 Recipe character-spacing measurements count every character of the text,
