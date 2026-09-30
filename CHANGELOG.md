@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Update the bundled libpng from 1.6.37 to 1.6.59, which fixes security
+  issues in decoding untrusted PNG images, among them the use-after-frees
+  CVE-2026-33416, CVE-2026-34757, and CVE-2026-46675; placed PNG images are
+  unchanged [#863](https://github.com/julianhille/MuhammaraJS/issues/863)
+- Update the bundled libtiff from 4.6.0 to 4.7.2, which fixes memory-safety
+  bugs when reading malformed TIFF images, including CVE-2023-52356 and
+  CVE-2024-7006 [#865](https://github.com/julianhille/MuhammaraJS/issues/865)
+
 ### Changed
 
 - Update the vendored zlib from 1.2.11 to 1.3.1, which carries the upstream

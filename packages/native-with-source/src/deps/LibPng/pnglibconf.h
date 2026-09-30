@@ -1,10 +1,9 @@
-/* libpng 1.6.32 STANDARD API DEFINITION */
-
 /* pnglibconf.h - library build configuration */
 
-/* Libpng version 1.6.32 - August 24, 2017 */
+/* libpng version 1.6.59 */
 
-/* Copyright (c) 1998-2017 Glenn Randers-Pehrson */
+/* Copyright (c) 2018-2026 Cosmin Truta */
+/* Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson */
 
 /* This code is released under the libpng license. */
 /* For conditions of distribution and use, see the disclaimer */
@@ -18,14 +17,8 @@
 /* options */
 #define PNG_16BIT_SUPPORTED
 #define PNG_ALIGNED_MEMORY_SUPPORTED
-#undef PNG_ARM_NEON_API_SUPPORTED
-#undef PNG_ARM_NEON_CHECK_SUPPORTED
-#define PNG_ARM_NEON_OPT 0
-#define PNG_ARM_NEON "off"
-#undef PNG_ARM_NEON_API_SUPPORTED
-#undef PNG_ARM_NEON_CHECK_SUPPORTED
-/*#undef PNG_POWERPC_VSX_API_SUPPORTED*/
-/*#undef PNG_POWERPC_VSX_CHECK_SUPPORTED*/
+/*#undef PNG_ARM_NEON_API_SUPPORTED*/
+/*#undef PNG_ARM_NEON_CHECK_SUPPORTED*/
 #define PNG_BENIGN_ERRORS_SUPPORTED
 #define PNG_BENIGN_READ_ERRORS_SUPPORTED
 /*#undef PNG_BENIGN_WRITE_ERRORS_SUPPORTED*/
@@ -34,6 +27,7 @@
 #define PNG_COLORSPACE_SUPPORTED
 #define PNG_CONSOLE_IO_SUPPORTED
 #define PNG_CONVERT_tIME_SUPPORTED
+/*#undef PNG_DISABLE_ADLER32_CHECK_SUPPORTED*/
 #define PNG_EASY_ACCESS_SUPPORTED
 /*#undef PNG_ERROR_NUMBERS_SUPPORTED*/
 #define PNG_ERROR_TEXT_SUPPORTED
@@ -48,8 +42,14 @@
 #define PNG_INCH_CONVERSIONS_SUPPORTED
 #define PNG_INFO_IMAGE_SUPPORTED
 #define PNG_IO_STATE_SUPPORTED
+/*#undef PNG_MIPS_MMI_API_SUPPORTED*/
+/*#undef PNG_MIPS_MMI_CHECK_SUPPORTED*/
+/*#undef PNG_MIPS_MSA_API_SUPPORTED*/
+/*#undef PNG_MIPS_MSA_CHECK_SUPPORTED*/
 #define PNG_MNG_FEATURES_SUPPORTED
 #define PNG_POINTER_INDEXING_SUPPORTED
+/*#undef PNG_POWERPC_VSX_API_SUPPORTED*/
+/*#undef PNG_POWERPC_VSX_CHECK_SUPPORTED*/
 #define PNG_PROGRESSIVE_READ_SUPPORTED
 #define PNG_READ_16BIT_SUPPORTED
 #define PNG_READ_ALPHA_MODE_SUPPORTED
@@ -88,11 +88,14 @@
 #define PNG_READ_USER_TRANSFORM_SUPPORTED
 #define PNG_READ_bKGD_SUPPORTED
 #define PNG_READ_cHRM_SUPPORTED
+#define PNG_READ_cICP_SUPPORTED
+#define PNG_READ_cLLI_SUPPORTED
 #define PNG_READ_eXIf_SUPPORTED
 #define PNG_READ_gAMA_SUPPORTED
 #define PNG_READ_hIST_SUPPORTED
 #define PNG_READ_iCCP_SUPPORTED
 #define PNG_READ_iTXt_SUPPORTED
+#define PNG_READ_mDCV_SUPPORTED
 #define PNG_READ_oFFs_SUPPORTED
 #define PNG_READ_pCAL_SUPPORTED
 #define PNG_READ_pHYs_SUPPORTED
@@ -158,11 +161,14 @@
 #define PNG_WRITE_WEIGHTED_FILTER_SUPPORTED
 #define PNG_WRITE_bKGD_SUPPORTED
 #define PNG_WRITE_cHRM_SUPPORTED
+#define PNG_WRITE_cICP_SUPPORTED
+#define PNG_WRITE_cLLI_SUPPORTED
 #define PNG_WRITE_eXIf_SUPPORTED
 #define PNG_WRITE_gAMA_SUPPORTED
 #define PNG_WRITE_hIST_SUPPORTED
 #define PNG_WRITE_iCCP_SUPPORTED
 #define PNG_WRITE_iTXt_SUPPORTED
+#define PNG_WRITE_mDCV_SUPPORTED
 #define PNG_WRITE_oFFs_SUPPORTED
 #define PNG_WRITE_pCAL_SUPPORTED
 #define PNG_WRITE_pHYs_SUPPORTED
@@ -176,11 +182,14 @@
 #define PNG_WRITE_zTXt_SUPPORTED
 #define PNG_bKGD_SUPPORTED
 #define PNG_cHRM_SUPPORTED
+#define PNG_cICP_SUPPORTED
+#define PNG_cLLI_SUPPORTED
 #define PNG_eXIf_SUPPORTED
 #define PNG_gAMA_SUPPORTED
 #define PNG_hIST_SUPPORTED
 #define PNG_iCCP_SUPPORTED
 #define PNG_iTXt_SUPPORTED
+#define PNG_mDCV_SUPPORTED
 #define PNG_oFFs_SUPPORTED
 #define PNG_pCAL_SUPPORTED
 #define PNG_pHYs_SUPPORTED
@@ -215,13 +224,24 @@
 #define PNG_USER_HEIGHT_MAX 1000000
 #define PNG_USER_WIDTH_MAX 1000000
 #define PNG_ZBUF_SIZE 8192
-#define PNG_ZLIB_VERNUM 0 /* unknown */
+#define PNG_ZLIB_VERNUM 0 /* unknown: zlib may be bundled or system */
 #define PNG_Z_DEFAULT_COMPRESSION (-1)
 #define PNG_Z_DEFAULT_NOFILTER_STRATEGY 0
 #define PNG_Z_DEFAULT_STRATEGY 1
 #define PNG_sCAL_PRECISION 5
 #define PNG_sRGB_PROFILE_CHECKS 2
 /* end of settings */
+/* MuhammaraJS: the SIMD filter sources (arm/, intel/, mips/, powerpc/,
+ * loongarch/, riscv/) are not vendored, so every hardware optimization stays
+ * off on every target.
+ */
+#define PNG_ARM_NEON_OPT 0
+#define PNG_INTEL_SSE_OPT 0
+#define PNG_MIPS_MMI_OPT 0
+#define PNG_MIPS_MSA_OPT 0
+#define PNG_POWERPC_VSX_OPT 0
+#define PNG_LOONGARCH_LSX_OPT 0
+#define PNG_RISCV_RVV_OPT 0
 #define png_access_version_number HJS_png_access_version_number
 #define png_benign_error HJS_png_benign_error
 #define png_build_grayscale_palette HJS_png_build_grayscale_palette
@@ -254,6 +274,9 @@
 #define png_get_cHRM_XYZ HJS_png_get_cHRM_XYZ
 #define png_get_cHRM_XYZ_fixed HJS_png_get_cHRM_XYZ_fixed
 #define png_get_cHRM_fixed HJS_png_get_cHRM_fixed
+#define png_get_cICP HJS_png_get_cICP
+#define png_get_cLLI HJS_png_get_cLLI
+#define png_get_cLLI_fixed HJS_png_get_cLLI_fixed
 #define png_get_channels HJS_png_get_channels
 #define png_get_chunk_cache_max HJS_png_get_chunk_cache_max
 #define png_get_chunk_malloc_max HJS_png_get_chunk_malloc_max
@@ -281,6 +304,8 @@
 #define png_get_io_ptr HJS_png_get_io_ptr
 #define png_get_io_state HJS_png_get_io_state
 #define png_get_libpng_ver HJS_png_get_libpng_ver
+#define png_get_mDCV HJS_png_get_mDCV
+#define png_get_mDCV_fixed HJS_png_get_mDCV_fixed
 #define png_get_mem_ptr HJS_png_get_mem_ptr
 #define png_get_oFFs HJS_png_get_oFFs
 #define png_get_pCAL HJS_png_get_pCAL
@@ -371,6 +396,9 @@
 #define png_set_cHRM_XYZ HJS_png_set_cHRM_XYZ
 #define png_set_cHRM_XYZ_fixed HJS_png_set_cHRM_XYZ_fixed
 #define png_set_cHRM_fixed HJS_png_set_cHRM_fixed
+#define png_set_cICP HJS_png_set_cICP
+#define png_set_cLLI HJS_png_set_cLLI
+#define png_set_cLLI_fixed HJS_png_set_cLLI_fixed
 #define png_set_check_for_invalid_index HJS_png_set_check_for_invalid_index
 #define png_set_chunk_cache_max HJS_png_set_chunk_cache_max
 #define png_set_chunk_malloc_max HJS_png_set_chunk_malloc_max
@@ -405,6 +433,8 @@
 #define png_set_invert_mono HJS_png_set_invert_mono
 #define png_set_keep_unknown_chunks HJS_png_set_keep_unknown_chunks
 #define png_set_longjmp_fn HJS_png_set_longjmp_fn
+#define png_set_mDCV HJS_png_set_mDCV
+#define png_set_mDCV_fixed HJS_png_set_mDCV_fixed
 #define png_set_mem_fn HJS_png_set_mem_fn
 #define png_set_oFFs HJS_png_set_oFFs
 #define png_set_option HJS_png_set_option

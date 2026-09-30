@@ -130,3 +130,32 @@ License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 ```
+
+## LibPng
+
+The native addon statically links [libpng](http://www.libpng.org/pub/png/libpng.html)
+1.6.59 from MuhammaraJS's vendored source tree to decode PNG images.
+
+Copyright (c) 1995-2026 The PNG Reference Library Authors, Cosmin Truta, Glenn
+Randers-Pehrson, Andreas Dilger, and Guy Eric Schalnat, Group 42, Inc.
+
+libpng is supplied "as is", without warranty of any kind. Permission is
+granted to use, copy, modify, and distribute it for any purpose without fee,
+provided that its origin is not misrepresented, altered versions are plainly
+marked, and its copyright notice is retained. See the
+[libpng License](http://www.libpng.org/pub/png/libpng-licenses.html).
+
+## LibTiff
+
+The native addon statically links [libtiff](https://libtiff.gitlab.io/libtiff/)
+4.7.2 from MuhammaraJS's vendored source tree to read TIFF images.
+
+Copyright (c) 1988-1997 Sam Leffler. Copyright (c) 1991-1997 Silicon Graphics,
+Inc.
+
+Permission to use, copy, modify, distribute, and sell this software and its
+documentation for any purpose is granted without fee, provided that the above
+copyright notices and permission notice appear in all copies and related
+documentation. The names Sam Leffler and Silicon Graphics may not be used in
+advertising or publicity without prior written permission. The software is
+provided "AS-IS" without warranty of any kind.
