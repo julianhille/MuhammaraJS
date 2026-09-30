@@ -77,11 +77,6 @@ Recipe annotation dates (`/M`) name the same instant on both ends, but Wasm
 writes them in UTC (`D:20260102030405Z`) where native writes local time with
 its offset (`D:20260102083405+05'30'`).
 
-Recipe `image()` places registered JPEG, PNG, or TIFF bytes; native `image()`
-also places a page of a PDF file. Place a registered PDF page with `overlay()`
-or the low-level `drawImage()` instead. Both ends measure a PDF page as its
-media box width by height.
-
 Wasm's async `createRecipe()` factory dynamically imports bundled Roboto only
 when its `defaultFont` option is omitted. Pass custom default bytes/Blob/File or
 `false` (named-font registration only) to skip that download. Custom default

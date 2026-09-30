@@ -64,8 +64,8 @@ export var HOW_TO_EXAMPLES = [
     label: "Images",
     title: "Place and transform an image",
     description:
-      "Upload one JPEG, PNG, or TIFF and compare fitted, rotated, skewed, and translucent placements.",
-    assets: ["jpeg", "png", "tiff"],
+      "Upload one JPEG, PNG, or TIFF and compare fitted, rotated, skewed, and translucent placements, then place a framed page of your PDF, or of a built-in sample, as an image.",
+    assets: ["jpeg", "png", "tiff", "pdf"],
     requirement: "Requires at least one JPEG, PNG, or TIFF upload.",
   },
   {
@@ -525,10 +525,12 @@ async function imageTransformExample(assets) {
     selected,
     "Choose a JPEG, PNG, or TIFF file before running the image example",
   );
+  var source = await sourcePdf(assets);
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
   try {
     Recipe.registerImage("how-to-image", selected[0], selected[1]);
+    Recipe.registerPdf("how-to-pdf", source.bytes);
     recipe
       .createPage(595, 842)
       .rectangle(0, 0, 595, 842, { fill: "#f8fafc", useGivenCoords: true })
@@ -562,6 +564,17 @@ async function imageTransformExample(assets) {
         rotation: -8,
         opacity: 0.82,
       })
+      // The first page of a PDF, fitted and framed like an image.
+      .image("how-to-pdf", 297.5, 690, {
+        page: 1,
+        width: 180,
+        height: 110,
+        align: "center center",
+        fill: "#ffffff",
+        stroke: "#102a43",
+        lineWidth: 1.5,
+        dash: [4, 2],
+      })
       .endPage();
     var bytes = recipe.endPDF();
     return {
@@ -570,12 +583,20 @@ async function imageTransformExample(assets) {
       summary: await summarize(bytes, {
         howTo: "Place and transform images",
         sourceType: selected[1],
-        placements: ["fit", "rotate", "skew and opacity", "stretch"],
+        pdfPage: source.origin,
+        placements: [
+          "fit",
+          "rotate",
+          "skew and opacity",
+          "stretch",
+          "framed PDF page",
+        ],
       }),
     };
   } finally {
     recipe.dispose();
     Recipe.unregisterImage("how-to-image");
+    Recipe.unregisterPdf("how-to-pdf");
     Recipe.disposeAssets();
   }
 }

@@ -485,6 +485,38 @@ recipe.register("pie", drawPie);
 recipe.register("drawPieChart", drawPie);
 ```
 
+## 18. Move Bottom-Aligned Images Back Where v6 Drew Them
+
+`image()` with `align: "left bottom"`, `"center bottom"`, or `"right bottom"`
+now moves the image down by half its height from its top-left placement, as
+the option has always been documented [#857](https://github.com/julianhille/MuhammaraJS/issues/857). v6 moved it up by 1.5 times its
+height instead, so the image now appears twice its drawn height lower.
+
+To keep the v6 position, subtract twice the drawn height from `y`. With both
+`width` and `height` given, the drawn height is `height` unless
+`keepAspectRatio` fits the image into a smaller one:
+
+```javascript
+// v6: this image appeared with its top edge 150 points above y = 400.
+recipe.image("photo.jpg", 100, 400, {
+  width: 200,
+  height: 100,
+  keepAspectRatio: false,
+  align: "left bottom",
+});
+
+// v7: move y up by twice the drawn height to draw it at the same place.
+recipe.image("photo.jpg", 100, 400 - 2 * 100, {
+  width: 200,
+  height: 100,
+  keepAspectRatio: false,
+  align: "left bottom",
+});
+```
+
+When only `width` or `scale` is given, compute the drawn height from the image
+size, which `writer.getImageDimensions()` returns.
+
 ## What Does Not Change
 
 - The entry points `createWriter()`, `createReader()`, `createWriterToModify()`,

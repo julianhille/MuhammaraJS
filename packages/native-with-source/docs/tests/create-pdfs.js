@@ -5,6 +5,8 @@ var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var deviceColors = require("../../../native/docs/examples/draw-device-colors");
+var placePdfPageAsImage = require("../../../native/docs/examples/place-pdf-page-as-image");
+var { imagePlacements } = require("../../tests/helpers/imagePlacement");
 
 describe("Documentation examples", function () {
   var outputDirectory;
@@ -148,5 +150,33 @@ describe("Documentation examples", function () {
     var reader = muhammara.createReader(outputPath);
     assert.strictEqual(reader.getPagesCount(), 1);
     reader.end();
+  });
+
+  it("places a PDF page as a framed image", function () {
+    var sourcePath = path.join(outputDirectory, "two-pages.pdf");
+    var outputPath = path.join(outputDirectory, "pdf-page-image.pdf");
+    var source = new muhammara.Recipe("new", sourcePath);
+    source.createPage(595, 842).endPage().createPage(300, 150).endPage();
+    source.endPDF();
+
+    placePdfPageAsImage(sourcePath, outputPath);
+
+    var placements = imagePlacements(fs.readFileSync(outputPath), {
+      pageBoxes: [[0, 0, 300, 150]],
+    });
+    var box = [
+      [72, 670],
+      [272, 670],
+      [272, 770],
+      [72, 770],
+    ];
+    assert.deepStrictEqual(
+      placements.map((placement) => placement.kind),
+      ["fill", "page", "stroke"],
+    );
+    assert.deepStrictEqual(placements[0].corners, box);
+    assert.deepStrictEqual(placements[1].corners, box);
+    assert.strictEqual(placements[2].lineWidth, 2);
+    assert.deepStrictEqual(placements[2].dash, [4, 2]);
   });
 });

@@ -4,6 +4,34 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Place a page of a registered PDF with Recipe `image()`, as native Recipe
+  places a PDF file: `page` selects the page, one-based as in `overlay()`,
+  sized by its media box, and a `page` that is not an integer of at least 1
+  throws a `RangeError`. The one-based `page` replaces the zero-based `index`
+  option of the prereleases. Frame an image with `fill`, `stroke`, or `color`, styled by
+  `lineWidth`, `dash`, `dashPhase`, `lineCap`, `lineJoin`, and `miterLimit`,
+  and outline it for `debug`; see [Place and Transform Images](docs/how-to/place-and-transform-images.md) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
+### Fixed
+
+- Draw Recipe `image()` at the requested size on new pages; images were drawn
+  at their source size. Placement now matches native Recipe: `scale` wins over
+  `width` and `height`, `rotation` turns around the image's bottom-left corner
+  unless `rotationOrigin` is given, skew applies at the image instead of the
+  page origin, `center` coordinates work with `align`, `opacity` no longer
+  carries over to later drawing and keeps the current opacity when it is not a
+  number, a falsy `keepAspectRatio` stretches the image, an unknown
+  `colorspace` throws before anything is drawn, and an image or PDF page placed
+  again on an edited page reuses one form instead of embedding another copy [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Place a PDF page with Recipe `image()` as it is displayed, as native Recipe
+  does: a page with a `/Rotate` entry is turned, and a media box that does not
+  start at 0,0 no longer shifts the page out of its box. A width, height, or
+  scale that is not a finite number throws a `RangeError`, and replacing or
+  unregistering an image or PDF before its page ends no longer makes
+  `endPage()` fail [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
 ### Changed
 
 - Throw `TypeError: rotation must be a finite number` from Recipe shapes,
