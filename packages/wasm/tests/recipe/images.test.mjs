@@ -674,6 +674,14 @@ describe("Recipe image placement", function () {
           message: "image page must be an integer from 1 to 4294967296",
         }),
       );
+      // The prereleases' zero-based `index` would now place the wrong page.
+      [0, 1].forEach((index) =>
+        assert.throws(() => recipe.image("doc", 0, 0, { index }), {
+          name: "TypeError",
+          message:
+            "image index was replaced by the one-based page option; pass page: index + 1",
+        }),
+      );
       assert.throws(
         () =>
           recipe.image("doc", 0, 0, { stroke: "#000000", colorspace: "bogus" }),

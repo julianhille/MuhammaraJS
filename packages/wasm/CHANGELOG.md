@@ -6,6 +6,15 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [1.0.0-rc.2] - 2026-09-30
 
+### Breaking Changes
+
+- Throw a `TypeError` from Recipe `image()` when the zero-based `index` option
+  of the prereleases is given, as it would now place the wrong page. Select the
+  page of a PDF, or the image of a TIFF, with the one-based `page` option:
+  `index: 1` placed the second page, which is `page: 2` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Stop reading the undocumented `colour` alias of `color` in Recipe; a shape
+  or text given only `colour` uses the default color. Rename it to `color` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
 ### Added
 
 - Place a page of a registered PDF with Recipe `image()`, as native Recipe
@@ -42,12 +51,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   non-number, before anything is drawn, as native does. A rotation that is no
   number was ignored, and a low miter limit threw while the shape was drawn
   [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
-- Select the page of a PDF, or the image of a TIFF, placed with Recipe
-  `image()` with the one-based `page` option instead of the zero-based `index`
-  option of the prereleases. `index` is no longer read, so it now places the
-  first page: pass `page: index + 1` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
-- Stop reading the undocumented `colour` alias of `color` in Recipe; a shape
-  given only `colour` uses the default color. Rename it to `color` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
 ## [1.0.0-rc.1] - 2026-09-29
 

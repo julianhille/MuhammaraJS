@@ -299,8 +299,8 @@ export function createImageMethods(runtime) {
      * @throws {RangeError} If `page` is not an integer from 1 to 4294967296,
      *   a size is not a finite number, or `miterLimit` is not a number of at
      *   least 1.
-     * @throws {TypeError} If the colorspace is unknown or `rotation` is not a
-     *   finite number.
+     * @throws {TypeError} If the colorspace is unknown, `rotation` is not a
+     *   finite number, or the removed zero-based `index` option is given.
      */
     image: function (name, x, y, options = {}) {
       // null options act like omitted options.
@@ -456,6 +456,11 @@ export function createImageMethods(runtime) {
  * @throws {RangeError} If `page` is not an integer from 1 to 4294967296.
  */
 function imageIndex(options) {
+  // The zero-based `index` of the prereleases would place the wrong page.
+  if (options.index !== undefined)
+    throw new TypeError(
+      "image index was replaced by the one-based page option; pass page: index + 1",
+    );
   var page = options.page ?? 1;
   if (!Number.isInteger(page) || page < 1 || page > 0x100000000)
     throw new RangeError("image page must be an integer from 1 to 4294967296");
