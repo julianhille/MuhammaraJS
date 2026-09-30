@@ -46,6 +46,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   longer shifts the page out of its box. Numeric strings are accepted as
   `width`, `height`, and `scale`, which threw a binding `TypeError`, and
   another value that is not a finite number throws a `RangeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Decode `DCTDecode` streams with `startReadingFromStream()` in Electron on
+  Linux, where they read as empty. On Linux the addon no longer exports the
+  symbols of its bundled libjpeg, FreeType, libpng, zlib, LibTiff, and
+  OpenSSL, so a copy of one of them already loaded in the process, such as
+  the libjpeg GTK brings into Electron, no longer takes over its calls [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
 
 ### Changed
 
