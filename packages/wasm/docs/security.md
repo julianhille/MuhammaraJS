@@ -14,7 +14,7 @@ below describe the source currently in this repository.
 | `LibAesgm`         | Unversioned Brian Gladman AES snapshot (copyright 1998-2013) | [Source](https://github.com/BrianGladman/AES)                                                                          |
 | `LibJpeg`          | [IJG JPEG 10](https://ijg.org/files/jpegsrc.v10.tar.gz)      | [Source](https://ijg.org/)                                                                                             |
 | `LibPng`           | [1.6.59](https://github.com/pnggroup/libpng/tree/v1.6.59)    | [Source](https://github.com/pnggroup/libpng) and [issues](https://github.com/pnggroup/libpng/issues)                   |
-| `LibTiff`          | [4.6.0](https://gitlab.com/libtiff/libtiff/-/tree/v4.6.0)    | [Source](https://gitlab.com/libtiff/libtiff) and [issues](https://gitlab.com/libtiff/libtiff/-/issues)                 |
+| `LibTiff`          | [4.7.2](https://gitlab.com/libtiff/libtiff/-/tree/v4.7.2)    | [Source](https://gitlab.com/libtiff/libtiff) and [issues](https://gitlab.com/libtiff/libtiff/-/issues)                 |
 | `Zlib`             | 1.3.1                                                        | [Source](https://github.com/madler/zlib) and [issues](https://github.com/madler/zlib/issues)                           |
 
 The PDFWriter tag is the vendored tree's upstream baseline. MuhammaraJS carries
