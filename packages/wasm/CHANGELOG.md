@@ -4,6 +4,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Build with zlib 1.3.1 instead of 1.2.11, the vendored copy shared with
+  native, which carries the upstream fixes for CVE-2018-25032 in `deflate()`
+  and CVE-2022-37434 in `inflateGetHeader()`. Flate streams decode to the same
+  bytes as before; the compressed bytes of written PDFs may differ from
+  earlier output [#862](https://github.com/julianhille/MuhammaraJS/issues/862)
+
 ## [1.0.0-rc.2] - 2026-09-30
 
 ### Breaking Changes

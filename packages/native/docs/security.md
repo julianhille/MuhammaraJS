@@ -17,7 +17,7 @@ describe the source currently in this repository.
 | `LibPng`           | 1.6.37                                                       | [Source](https://github.com/pnggroup/libpng) and [issues](https://github.com/pnggroup/libpng/issues)                                                                                                                   |
 | `LibTiff`          | [4.6.0](https://gitlab.com/libtiff/libtiff/-/tree/v4.6.0)    | [Source](https://gitlab.com/libtiff/libtiff) and [issues](https://gitlab.com/libtiff/libtiff/-/issues)                                                                                                                 |
 | `OpenSSL`          | 3.5.4                                                        | Source bundled as `native-with-source/src/deps/openssl-3.5.4.tar.gz`, compiled by GYP into ignored architecture-specific `openssl-build/` output, then statically linked; [source](https://github.com/openssl/openssl) |
-| `Zlib`             | 1.2.11                                                       | [Source](https://github.com/madler/zlib) and [issues](https://github.com/madler/zlib/issues)                                                                                                                           |
+| `Zlib`             | 1.3.1                                                        | [Source](https://github.com/madler/zlib) and [issues](https://github.com/madler/zlib/issues)                                                                                                                           |
 
 The PDFWriter tag is the vendored tree's upstream baseline. MuhammaraJS carries
 changes on top of it, so `packages/native-with-source/src/deps/PDFWriter` is not necessarily byte-for-byte

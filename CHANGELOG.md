@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Update the vendored zlib from 1.2.11 to 1.3.1, which carries the upstream
+  fixes for CVE-2018-25032 in `deflate()` and CVE-2022-37434 in
+  `inflateGetHeader()`. Flate streams decode to the same bytes as before; the
+  compressed bytes of written PDFs may differ from 6.x output [#862](https://github.com/julianhille/MuhammaraJS/issues/862)
+
 ## [7.0.0-rc.2] - 2026-09-30
 
 ### Breaking Changes
