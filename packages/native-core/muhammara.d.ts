@@ -4186,8 +4186,9 @@ declare namespace muhammara {
      *   placement point in red.
      * @param options.link - Make the image open this URL.
      * @throws {TypeError} If no page is active.
-     * @throws {RangeError} If `page` is not an integer of at least 1, a size is
-     *   not a finite number, or `miterLimit` is not a number of at least 1.
+     * @throws {RangeError} If `page` is not an integer from 1 to 4294967296,
+     *   a size is not a finite number, or `miterLimit` is not a number of at
+     *   least 1.
      * @throws {TypeError} If `rotation` is not a finite number.
      * @throws {Error} If the image, or the PDF page `page` selects, cannot be read.
      */

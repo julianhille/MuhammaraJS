@@ -50,7 +50,7 @@ describe("Recipe lineStyle", () => {
       ])
       .endPage()
       .endPDF();
-    const content = getContentStream(recipe.outStream.toBuffer());
+    const content = getContentStream(recipe.outStream.buffer);
     assert.match(content, /4 M/);
     assert.doesNotMatch(content, /-1 M|0\.5 M/);
   });
@@ -74,7 +74,7 @@ describe("Recipe lineStyle", () => {
       .endPage()
       .endPDF();
 
-    const bytes = recipe.outStream.toBuffer();
+    const bytes = recipe.outStream.buffer;
     writeOutput("lineStyle-dashed", bytes);
     const content = getContentStream(bytes);
     assert.match(
@@ -95,7 +95,7 @@ describe("Recipe lineStyle", () => {
       .endPage()
       .endPDF();
 
-    const bytes = recipe.outStream.toBuffer();
+    const bytes = recipe.outStream.buffer;
     writeOutput("lineStyle-width", bytes);
     const content = getContentStream(bytes);
     assert.match(content, /q[\s\S]*?5 w[\s\S]*?S\s+Q/);
