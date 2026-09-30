@@ -17,12 +17,12 @@ vendored source tree.
 | Library   | Version or baseline                                                    | License                          |
 | --------- | ---------------------------------------------------------------------- | -------------------------------- |
 | PDFWriter | [v4.9.1](https://github.com/galkahana/PDF-Writer/tree/v4.9.1) baseline | Apache License 2.0               |
-| FreeType  | 2.13.0                                                                 | FreeType License                 |
+| FreeType  | 2.14.3                                                                 | FreeType License                 |
 | LibAesgm  | Brian Gladman AES snapshot, copyright 1998-2013                        | Brian Gladman permissive license |
-| LibJpeg   | IJG JPEG 9d                                                            | Independent JPEG Group license   |
-| LibPng    | 1.6.37                                                                 | libpng License                   |
-| LibTiff   | 4.6.0                                                                  | libtiff license                  |
-| Zlib      | 1.2.11                                                                 | zlib License                     |
+| LibJpeg   | IJG JPEG 10                                                            | Independent JPEG Group license   |
+| LibPng    | 1.6.59                                                                 | libpng License                   |
+| LibTiff   | 4.7.2                                                                  | libtiff license                  |
+| Zlib      | 1.3.1                                                                  | zlib License                     |
 
 ## PDFWriter
 
@@ -36,7 +36,7 @@ kind, either express or implied.
 
 ## FreeType
 
-Copyright 1996-2023 by David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright 1996-2026 by David Turner, Robert Wilhelm, and Werner Lemberg.
 
 FreeType is distributed under the FreeType License, a BSD-style permissive
 license. The full license is available from the
@@ -54,8 +54,8 @@ explicit or implied warranties, including correctness and fitness for purpose.
 
 ## LibJpeg
 
-Copyright (C) 1991-1998, Thomas G. Lane. Modified 2002-2019 by Guido
-Vollbeding. This software is part of the Independent JPEG Group's software.
+Copyright (C) 1991-2026, Thomas G. Lane, Guido Vollbeding. This software is
+part of the Independent JPEG Group's software.
 
 The Independent JPEG Group license permits use, copying, modification, and
 distribution for any purpose, with these conditions: do not misrepresent the
@@ -65,7 +65,7 @@ or remove this notice from source distributions. The software is provided
 
 ## LibPng
 
-Copyright (c) 1995-2019 The PNG Reference Library Authors, Cosmin Truta, Glenn
+Copyright (c) 1995-2026 The PNG Reference Library Authors, Cosmin Truta, Glenn
 Randers-Pehrson, Andreas Dilger, and Guy Eric Schalnat, Group 42, Inc.
 
 libpng is supplied "as is", without warranty of any kind. Permission is
@@ -88,7 +88,7 @@ provided "AS-IS" without warranty of any kind.
 
 ## Zlib
 
-Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler.
+Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler.
 
 zlib is provided "as-is", without any express or implied warranty. Permission
 is granted to use it for any purpose, including commercial applications, and to

@@ -4,6 +4,24 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Update the bundled libpng from 1.6.37 to 1.6.59, which fixes security
+  issues in decoding untrusted PNG images, among them the use-after-frees
+  CVE-2026-33416, CVE-2026-34757, and CVE-2026-46675; placed PNG images are
+  unchanged [#863](https://github.com/julianhille/MuhammaraJS/issues/863)
+- Update the bundled libtiff from 4.6.0 to 4.7.2, which fixes memory-safety
+  bugs when reading malformed TIFF images, including CVE-2023-52356 and
+  CVE-2024-7006 [#865](https://github.com/julianhille/MuhammaraJS/issues/865)
+
+### Changed
+
+- Build with zlib 1.3.1 instead of 1.2.11, the vendored copy shared with
+  native, which carries the upstream fixes for CVE-2018-25032 in `deflate()`
+  and CVE-2022-37434 in `inflateGetHeader()`. Flate streams decode to the same
+  bytes as before; the compressed bytes of written PDFs may differ from
+  earlier output [#862](https://github.com/julianhille/MuhammaraJS/issues/862)
+
 ## [1.0.0-rc.2] - 2026-09-30
 
 ### Breaking Changes
@@ -26,6 +44,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Update the bundled FreeType from 2.13.0 to 2.14.3, which fixes an
+  out-of-bounds write when parsing TrueType GX and variable font data
+  (CVE-2025-27363) [#864](https://github.com/julianhille/MuhammaraJS/issues/864)
 - Draw Recipe `image()` at the requested size on new pages; images were drawn
   at their source size. Placement now matches native Recipe: `scale` wins over
   `width` and `height`, `rotation` turns around the image's bottom-left corner
@@ -51,6 +72,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   non-number, before anything is drawn, as native does. A rotation that is no
   number was ignored, and a low miter limit threw while the shape was drawn
   [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Update the bundled IJG libjpeg from 9d (2020) to 10 (2026), which decodes
+  `DCTDecode` streams read from PDFs [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
 
 ## [1.0.0-rc.1] - 2026-09-29
 

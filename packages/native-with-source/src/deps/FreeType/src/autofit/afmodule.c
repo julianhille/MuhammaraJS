@@ -4,7 +4,7 @@
  *
  *   Auto-fitter module implementation (body).
  *
- * Copyright (C) 2003-2023 by
+ * Copyright (C) 2003-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -89,10 +89,8 @@
       error = af_face_globals_new( face, &globals, module );
       if ( !error )
       {
-        face->autohint.data =
-          (FT_Pointer)globals;
-        face->autohint.finalizer =
-          (FT_Generic_Finalizer)af_face_globals_free;
+        face->autohint.data      = (FT_Pointer)globals;
+        face->autohint.finalizer = af_face_globals_free;
       }
     }
 
@@ -148,7 +146,7 @@
 
       if ( !af_style_classes[ss] )
       {
-        FT_TRACE2(( "af_property_set: Invalid value %d for property `%s'\n",
+        FT_TRACE2(( "af_property_set: Invalid value %u for property `%s'\n",
                     *fallback_script, property_name ));
         return FT_THROW( Invalid_Argument );
       }
@@ -374,8 +372,9 @@
   FT_DEFINE_SERVICE_PROPERTIESREC(
     af_service_properties,
 
-    (FT_Properties_SetFunc)af_property_set,        /* set_property */
-    (FT_Properties_GetFunc)af_property_get )       /* get_property */
+    af_property_set,  /* FT_Properties_SetFunc set_property */
+    af_property_get   /* FT_Properties_GetFunc get_property */
+  )
 
 
   FT_DEFINE_SERVICEDESCREC1(
@@ -413,6 +412,11 @@
     module->darken_params[6]  = CFF_CONFIG_OPTION_DARKENING_PARAMETER_X4;
     module->darken_params[7]  = CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y4;
 
+#if defined( FT_CONFIG_OPTION_USE_HARFBUZZ )         && \
+    defined( FT_CONFIG_OPTION_USE_HARFBUZZ_DYNAMIC )
+    ft_hb_funcs_init( module );
+#endif
+
     return FT_Err_Ok;
   }
 
@@ -422,6 +426,11 @@
   {
     FT_UNUSED( ft_module );
 
+#if defined( FT_CONFIG_OPTION_USE_HARFBUZZ )         && \
+    defined( FT_CONFIG_OPTION_USE_HARFBUZZ_DYNAMIC )
+    ft_hb_funcs_done( (AF_Module)ft_module );
+#endif
+
 #ifdef FT_DEBUG_AUTOFIT
     if ( af_debug_hints_rec_->memory )
       af_glyph_hints_done( af_debug_hints_rec_ );
@@ -430,14 +439,16 @@
 
 
   FT_CALLBACK_DEF( FT_Error )
-  af_autofitter_load_glyph( AF_Module     module,
-                            FT_GlyphSlot  slot,
-                            FT_Size       size,
-                            FT_UInt       glyph_index,
-                            FT_Int32      load_flags )
+  af_autofitter_load_glyph( FT_AutoHinter  module_,
+                            FT_GlyphSlot   slot,
+                            FT_Size        size,
+                            FT_UInt        glyph_index,
+                            FT_Int32       load_flags )
   {
+    AF_Module  module = (AF_Module)module_;
+
     FT_Error   error  = FT_Err_Ok;
-    FT_Memory  memory = module->root.library->memory;
+    FT_Memory  memory = module->root.memory;
 
 #ifdef FT_DEBUG_AUTOFIT
 
@@ -499,10 +510,10 @@
   FT_DEFINE_AUTOHINTER_INTERFACE(
     af_autofitter_interface,
 
-    NULL,                                                    /* reset_face */
-    NULL,                                              /* get_global_hints */
-    NULL,                                             /* done_global_hints */
-    (FT_AutoHinter_GlyphLoadFunc)af_autofitter_load_glyph    /* load_glyph */
+    NULL,                     /* FT_AutoHinter_GlobalResetFunc reset_face        */
+    NULL,                     /* FT_AutoHinter_GlobalGetFunc   get_global_hints  */
+    NULL,                     /* FT_AutoHinter_GlobalDoneFunc  done_global_hints */
+    af_autofitter_load_glyph  /* FT_AutoHinter_GlyphLoadFunc   load_glyph        */
   )
 
   FT_DEFINE_MODULE(
@@ -517,9 +528,9 @@
 
     (const void*)&af_autofitter_interface,
 
-    (FT_Module_Constructor)af_autofitter_init,  /* module_init   */
-    (FT_Module_Destructor) af_autofitter_done,  /* module_done   */
-    (FT_Module_Requester)  af_get_interface     /* get_interface */
+    af_autofitter_init,  /* FT_Module_Constructor module_init   */
+    af_autofitter_done,  /* FT_Module_Destructor  module_done   */
+    af_get_interface     /* FT_Module_Requester   get_interface */
   )
 
 

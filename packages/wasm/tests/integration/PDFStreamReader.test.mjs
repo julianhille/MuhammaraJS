@@ -191,6 +191,54 @@ describe("PDFReader stream byte readers", function () {
     foreignReader.end();
   });
 
+  // DCTDecode is the one filter decoded by the vendored libjpeg.
+  for (var [kind, file, width, height, components] of [
+    ["baseline", "images/soundcloud_logo.jpg", 550, 350, 3],
+    ["progressive", "recipe/myCats.jpg", 720, 960, 3],
+    ["grayscale", "images/grayscale.jpg", 40, 30, 1],
+    ["CMYK", "images/cmyk.jpg", 36, 24, 4],
+  ]) {
+    it(`decodes a ${kind} JPEG image stream to its samples`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var jpeg = new Uint8Array(
+        await readFile(
+          new URL(
+            `../../../native-with-source/tests/TestMaterials/${file}`,
+            import.meta.url,
+          ),
+        ),
+      );
+      muhammara.registerImage("jpg", jpeg, "jpg");
+      var writer = muhammara.createWriter();
+      var imageId = writer.createImageXObjectFromJPGBytes("jpg").id;
+      // A PDF without pages cannot be parsed back.
+      writer.writePage(writer.createPage(0, 0, 100, 100));
+      var bytes = writer.end();
+
+      var reader = muhammara.createReader(bytes);
+      try {
+        var stream = reader.parseNewObject(imageId).toPDFStream();
+        var plain = reader.startReadingFromStreamForPlainCopying(stream);
+        var raw = [];
+        while (plain.notEnded()) raw.push(plain.read(65536));
+        assert.deepEqual(joinBytes(raw), jpeg);
+
+        var decoded = reader.startReadingFromStream(stream);
+        var chunks = [];
+        while (decoded.notEnded()) chunks.push(decoded.read(65536));
+        var samples = joinBytes(chunks);
+        assert.equal(samples.length, width * height * components);
+        if (components === 1) {
+          // grayscale.jpg is a white-to-black top-to-bottom gradient.
+          assert.ok(samples[0] > 250);
+          assert.ok(samples[samples.length - 1] < 5);
+        }
+      } finally {
+        reader.end();
+      }
+    });
+  }
+
   // appendbreaks.pdf object 19 has an indirect /Length resolving to a dictionary.
   [
     {

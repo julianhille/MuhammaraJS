@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Update `serialize-javascript` to 7.1.2 for security vulnerability fixes.
+- Update the bundled libpng from 1.6.37 to 1.6.59, which fixes security
+  issues in decoding untrusted PNG images, among them the use-after-frees
+  CVE-2026-33416, CVE-2026-34757, and CVE-2026-46675; placed PNG images are
+  unchanged [#863](https://github.com/julianhille/MuhammaraJS/issues/863)
+- Update the bundled libtiff from 4.6.0 to 4.7.2, which fixes memory-safety
+  bugs when reading malformed TIFF images, including CVE-2023-52356 and
+  CVE-2024-7006 [#865](https://github.com/julianhille/MuhammaraJS/issues/865)
+
+### Changed
+
+- Update the vendored zlib from 1.2.11 to 1.3.1, which carries the upstream
+  fixes for CVE-2018-25032 in `deflate()` and CVE-2022-37434 in
+  `inflateGetHeader()`. Flate streams decode to the same bytes as before; the
+  compressed bytes of written PDFs may differ from 6.x output [#862](https://github.com/julianhille/MuhammaraJS/issues/862)
 
 ## [7.0.0-rc.2] - 2026-09-30
 
@@ -57,6 +71,9 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 
 ### Fixed
 
+- Update the bundled FreeType from 2.13.0 to 2.14.3, which fixes an
+  out-of-bounds write when parsing TrueType GX and variable font data
+  (CVE-2025-27363) in fonts embedded or read from PDFs [#864](https://github.com/julianhille/MuhammaraJS/issues/864)
 - Accept `center` coordinates together with `link` in Recipe `image()`,
   which threw `URL link requires a URL and valid PDF rectangle`, and accept
   `null` options, which threw a `TypeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
@@ -64,6 +81,11 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
   does not start at 0,0; it was shifted out of it. Numeric strings are accepted as
   `width`, `height`, and `scale`, which threw a binding `TypeError`, and
   another value that is not a finite number throws a `RangeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Decode `DCTDecode` streams with `startReadingFromStream()` in Electron on
+  Linux, where they read as empty. On Linux the addon no longer exports the
+  symbols of its bundled libjpeg, FreeType, libpng, zlib, LibTiff, and
+  OpenSSL, so a copy of one of them already loaded in the process, such as
+  the libjpeg GTK brings into Electron, no longer takes over its calls [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
 - Stop adding `keepAspectRatio: true` to the options object passed to Recipe
   `image()` when that option is omitted [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
@@ -71,6 +93,8 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 
 - Throw `RangeError: miterLimit must be a number of at least 1` from Recipe
   `lineStyle()` for a lower limit or a non-number, as shapes do [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Update the bundled IJG libjpeg from 9d (2020) to 10 (2026), which decodes
+  `DCTDecode` streams read from PDFs [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
 - Collect the output of a Buffer-mode `Recipe` with the bundled
   `PDFWStreamForBuffer` instead of the unmaintained `memory-streams` package,
   which drops that dependency and its five transitive packages
