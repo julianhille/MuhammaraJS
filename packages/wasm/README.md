@@ -13,7 +13,7 @@ bytes (`Uint8Array`, `ArrayBuffer`, `Blob`, `File`).
 npm install @muhammara/wasm
 ```
 
-[Run the browser example for version 1.0.0-rc.1](https://julianhille.github.io/MuhammaraJS/wasm/browser-example/1.0.0-rc.1/index.html).
+[Run the browser example for version 1.0.0-rc.2](https://julianhille.github.io/MuhammaraJS/wasm/browser-example/1.0.0-rc.2/index.html).
 
 ## How The Packages Fit Together
 

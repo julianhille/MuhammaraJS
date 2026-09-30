@@ -4,18 +4,31 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+## [1.0.0-rc.2] - 2026-09-30
+
+### Breaking Changes
+
+- Throw a `TypeError` from Recipe `image()` when the zero-based `index` option
+  of the prereleases is given, as it would now place the wrong page. Select the
+  page of a PDF, or the image of a TIFF, with the one-based `page` option:
+  `index: 1` placed the second page, which is `page: 2` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Stop reading the undocumented `colour` alias of `color` in Recipe; a shape
+  or text given only `colour` uses the default color. Rename it to `color` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
 ### Added
 
 - Place a page of a registered PDF with Recipe `image()`, as native Recipe
   places a PDF file: `page` selects the page, one-based as in `overlay()`,
-  sized by its media box, and a `page` that is not an integer of at least 1
-  throws a `RangeError`. The one-based `page` replaces the zero-based `index`
-  option of the prereleases. Frame an image with `fill`, `stroke`, or `color`, styled by
-  `lineWidth`, `dash`, `dashPhase`, `lineCap`, `lineJoin`, and `miterLimit`,
+  sized by its media box, and a `page` that is not an integer from 1 to
+  4294967296 throws a `RangeError`. Frame an image with `fill`, `stroke`, or
+  `color`, styled by `lineWidth`, `dash`, `dashPhase`, `lineCap`, `lineJoin`, and `miterLimit`,
   and outline it for `debug`; see [Place and Transform Images](docs/how-to/place-and-transform-images.md) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
 ### Fixed
 
+- Update the bundled FreeType from 2.13.0 to 2.14.3, which fixes an
+  out-of-bounds write when parsing TrueType GX and variable font data
+  (CVE-2025-27363) [#864](https://github.com/julianhille/MuhammaraJS/issues/864)
 - Draw Recipe `image()` at the requested size on new pages; images were drawn
   at their source size. Placement now matches native Recipe: `scale` wins over
   `width` and `height`, `rotation` turns around the image's bottom-left corner
@@ -866,7 +879,8 @@ generic` [#794](https://github.com/julianhille/MuhammaraJS/issues/794)
 - Validate Wasm ABI exports, resource ownership, temporary-file cleanup, and
   bounded byte input/output handling.
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-rc.1...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-rc.2...HEAD
+[1.0.0-rc.2]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-rc.1...wasm-v1.0.0-rc.2
 [1.0.0-rc.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.4...wasm-v1.0.0-rc.1
 [1.0.0-beta.4]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.3...wasm-v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0-beta.2...wasm-v1.0.0-beta.3

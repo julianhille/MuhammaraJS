@@ -1,7 +1,7 @@
 const muhammara = require("./muhammara");
 const path = require("path");
 const fs = require("fs");
-const streams = require("memory-streams");
+const PDFWStreamForBuffer = require("./PDFWStreamForBuffer");
 var { standardInfoKeys } = require("./recipe-info");
 var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
 
@@ -53,7 +53,7 @@ class Recipe {
     );
 
     if (this.isBufferSrc) {
-      this.outStream = new streams.WritableStream();
+      this.outStream = new PDFWStreamForBuffer();
       this.output = output;
     } else {
       this.output = output || src;
@@ -109,7 +109,7 @@ class Recipe {
         );
       } else {
         this.writer = muhammara.createWriter(
-          new muhammara.PDFStreamForResponse(this.outStream),
+          this.outStream,
           Object.assign({}, this.encryptOptions, {
             version: this._getVersion(this.options.version),
             log: this.logFile,
@@ -122,7 +122,7 @@ class Recipe {
         if (this.isBufferSrc) {
           this.writer = muhammara.createWriterToModify(
             new muhammara.PDFRStreamForBuffer(this.src),
-            new muhammara.PDFStreamForResponse(this.outStream),
+            this.outStream,
             Object.assign({}, this.encryptOptions, {
               log: this.logFile,
             }),
@@ -319,7 +319,7 @@ class Recipe {
     if (this.ended) {
       if (!callback) return;
       if (!this.isBufferSrc) return callback();
-      return callback(this.output || this.outStream.toBuffer());
+      return callback(this.output || this.outStream.buffer || Buffer.alloc(0));
     }
     var deletingPages = Boolean(this.deletedPages?.size);
     var deletionState = deletingPages
@@ -350,11 +350,13 @@ class Recipe {
       ) {
         if (this.isBufferSrc) {
           const oldStream = this.outStream;
-          this.outStream = new streams.WritableStream();
+          this.outStream = new PDFWStreamForBuffer();
 
           this.writer = muhammara.createWriterToModify(
-            new muhammara.PDFRStreamForBuffer(oldStream.toBuffer()),
-            new muhammara.PDFStreamForResponse(this.outStream),
+            new muhammara.PDFRStreamForBuffer(
+              oldStream.buffer || Buffer.alloc(0),
+            ),
+            this.outStream,
             Object.assign({}, this.encryptOptions, {
               log: this.logFile,
             }),
@@ -401,7 +403,7 @@ class Recipe {
       }
 
       if (this.isBufferSrc && this.output) {
-        fs.writeFileSync(this.output, this.outStream.toBuffer());
+        fs.writeFileSync(this.output, this.outStream.buffer || Buffer.alloc(0));
       }
 
       this.ended = true;
@@ -436,7 +438,7 @@ class Recipe {
         if (this.output) {
           return callback(this.output);
         } else {
-          return callback(this.outStream.toBuffer());
+          return callback(this.outStream.buffer || Buffer.alloc(0));
         }
       } else {
         return callback();

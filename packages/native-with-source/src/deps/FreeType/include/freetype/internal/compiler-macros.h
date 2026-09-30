@@ -4,7 +4,7 @@
  *
  *   Compiler-specific macro definitions used internally by FreeType.
  *
- * Copyright (C) 2020-2023 by
+ * Copyright (C) 2020-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -41,8 +41,11 @@ FT_BEGIN_HEADER
 #  if ( defined( __STDC_VERSION__ ) && __STDC_VERSION__ > 201710L ) || \
       ( defined( __cplusplus ) && __cplusplus > 201402L )
 #    define FALL_THROUGH  [[__fallthrough__]]
-#  elif ( defined( __GNUC__ ) && __GNUC__ >= 7 )          || \
-        ( defined( __clang__ ) && __clang_major__ >= 10 )
+#  elif ( defined( __GNUC__ ) && __GNUC__ >= 7 )       || \
+        ( defined( __clang__ )                      &&    \
+          ( defined( __apple_build_version__ )            \
+              ? __apple_build_version__ >= 12000000       \
+              : __clang_major__ >= 10 ) )
 #    define FALL_THROUGH  __attribute__(( __fallthrough__ ))
 #  else
 #    define FALL_THROUGH  ( (void)0 )
@@ -125,8 +128,8 @@ FT_BEGIN_HEADER
    * before a function declaration.
    */
 
-  /* Visual C, mingw */
-#if defined( _WIN32 )
+  /* Visual C, MinGW, Cygwin */
+#if defined( _WIN32 ) || defined( __CYGWIN__ )
 #define FT_INTERNAL_FUNCTION_ATTRIBUTE  /* empty */
 
   /* gcc, clang */

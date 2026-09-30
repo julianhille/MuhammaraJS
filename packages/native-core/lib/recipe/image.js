@@ -50,8 +50,9 @@ const { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
  *   mark the placement point in red.
  * @param {string} [options.link] - Make the image open this URL.
  * @throws {TypeError} If no page is active.
- * @throws {RangeError} If `page` is not an integer of at least 1, a size is not
- *   a finite number, or `miterLimit` is not a number of at least 1.
+ * @throws {RangeError} If `page` is not an integer from 1 to 4294967296,
+ *   a size is not a finite number, or `miterLimit` is not a number of at
+ *   least 1.
  * @throws {TypeError} If `rotation` is not a finite number.
  * @throws {Error} If the image, or the PDF page `page` selects, cannot be read.
  */
@@ -153,12 +154,12 @@ exports.image = function image(imgSrc, x, y, options = {}) {
  * @private
  * @param {Object} options - The image() options.
  * @returns {number} The zero-based index; 0 when `page` is omitted.
- * @throws {RangeError} If `page` is not an integer of at least 1.
+ * @throws {RangeError} If `page` is not an integer from 1 to 4294967296.
  */
 function imageIndex(options) {
   const page = options.page ?? 1;
   if (!Number.isInteger(page) || page < 1 || page > 0x100000000) {
-    throw new RangeError("image page must be an integer of at least 1");
+    throw new RangeError("image page must be an integer from 1 to 4294967296");
   }
   return page - 1;
 }
@@ -387,7 +388,7 @@ function drawFrame(recipe, nx, ny, width, height, options) {
 
 /**
  * Compute the drawn size of an image and the offset its alignment applies.
- * Sets `options.keepAspectRatio` to true when it is not given.
+ * A missing `options.keepAspectRatio` keeps the aspect ratio.
  * @private
  * @param {string} [imgSrc=''] - The image path.
  * @param {Object} [options] - The image() options; `page` selects the page or
@@ -398,9 +399,8 @@ function drawFrame(recipe, nx, ny, width, height, options) {
  * @throws {Error} If the image, or the PDF page `page` selects, cannot be read.
  */
 exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
-  // set default to true
-  options.keepAspectRatio =
-    options.keepAspectRatio == void 0 ? true : options.keepAspectRatio;
+  // A missing keepAspectRatio keeps it; the caller's options stay untouched.
+  const keepAspectRatio = options.keepAspectRatio ?? true;
   const index = imageIndex(options);
   const page = pdfPage(this, imgSrc, index);
   const dimensions = page
@@ -428,7 +428,7 @@ exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
     width = wantedHeight * ratio;
     height = wantedHeight;
   } else if (wantedWidth && wantedHeight) {
-    if (!options.keepAspectRatio) {
+    if (!keepAspectRatio) {
       width = wantedWidth;
       height = wantedHeight;
     } else {

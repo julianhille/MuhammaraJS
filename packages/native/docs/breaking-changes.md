@@ -24,6 +24,23 @@ This page collects the compatibility changes formerly maintained in the README.
   was written into the PDF, which PDF does not allow, and a non-number was
   ignored. Pass 1 or more, or omit `miterLimit` to keep the default of 1.414
   [#857](https://github.com/julianhille/MuhammaraJS/issues/857).
+- Recipe `image()` frames the image when given `fill`, `stroke`, or `color`,
+  which 6.x ignored for images: `fill` paints the image box beneath the image,
+  and `stroke` or `color` outlines it above the image. Code that passes shared
+  style options to `image()` now draws a background or a border. Leave these
+  options out of the `image()` options to keep the 6.x output; see
+  [Check Recipe image and color options](getting-started/migrate-from-v6.md#check-recipe-image-and-color-options)
+  [#857](https://github.com/julianhille/MuhammaraJS/issues/857).
+- Recipe `image()` places a PDF page with a `/Rotate` entry as viewers display
+  it: the page is turned, and a page turned by 90 or 270 degrees is measured
+  with its width and height swapped. 6.x drew such a page unturned, so the
+  same `width`, `height`, or `scale` now gives a turned page of a different
+  size. Pass the size of the displayed page
+  [#857](https://github.com/julianhille/MuhammaraJS/issues/857).
+- Recipe no longer reads `colour` as an alias of `color`. The alias was
+  undocumented and undeclared; a shape or text given only `colour` now uses
+  the default color. Rename `colour` to `color`
+  [#857](https://github.com/julianhille/MuhammaraJS/issues/857).
 - Recipe `n_gon()` and `star()` throw
   `RangeError: n_gon sides must be a finite number no greater than 100000`
   (`star points …` for `star()`) when the side or point count is `NaN`,

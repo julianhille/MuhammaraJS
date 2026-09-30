@@ -726,11 +726,11 @@ describe("Recipe image placement", () => {
         () => recipe.image(twoImages, 0, 0, { page: 3 }),
         /Unknown image/,
       );
-      [0, -1, 1.5, "1", NaN].forEach((page) =>
+      [0, -1, 1.5, "1", NaN, 2 ** 32 + 1].forEach((page) =>
         assert.throws(
           () => recipe.image(source, 0, 0, { page }),
           RangeError,
-          "image page must be an integer of at least 1",
+          "image page must be an integer from 1 to 4294967296",
         ),
       );
       assert.throws(
@@ -776,5 +776,13 @@ describe("Recipe image placement", () => {
         opacity: 1,
       },
     ]);
+  });
+
+  it("does not add keepAspectRatio to the caller's options", () => {
+    const options = { width: 50 };
+    recipeBytes((recipe) =>
+      recipe.createPage(400, 500).image(logo, 10, 10, options).endPage(),
+    );
+    assert.equal("keepAspectRatio" in options, false);
   });
 });

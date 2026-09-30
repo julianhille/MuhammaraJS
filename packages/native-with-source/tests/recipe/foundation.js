@@ -41,6 +41,6 @@ describe("Recipe foundation", function () {
       recipe.setPageBox(5, 0, 0, 1, 1);
     }, /Unknown page box: 5/);
     recipe.endPage().endPDF();
-    writeOutput("foundation-unknown-page-box", recipe.outStream.toBuffer());
+    writeOutput("foundation-unknown-page-box", recipe.outStream.buffer);
   });
 });

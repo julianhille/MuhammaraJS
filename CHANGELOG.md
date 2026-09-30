@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [7.0.0-rc.2] - 2026-09-30
+
 ### Breaking Changes
+
+Upgrading from 6.x? Each change below is described in [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x); follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md) for the upgrade steps.
 
 - Place a Recipe `image()` with `align: "<horizontal> bottom"` half its height
   below the placement point, as documented. 6.x drew it 1.5 times its height
@@ -23,6 +27,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   number, before anything is drawn. 6.x wrote the invalid limit into the PDF
   or ignored a non-number. Pass 1 or more, or omit it; see
   [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Frame a Recipe `image()` given `fill`, `stroke`, or `color`, which 6.x
+  ignored for images: `fill` paints beneath the image, and `stroke` or `color`
+  outlines it. Leave these options out of `image()` to keep the 6.x output; see
+  [Check Recipe image and color options](packages/native/docs/getting-started/migrate-from-v6.md#check-recipe-image-and-color-options) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Turn a PDF page placed with Recipe `image()` by its `/Rotate` entry, as
+  viewers display it; a page turned by 90 or 270 degrees is measured with its
+  width and height swapped. 6.x drew it unturned. Pass the size of the
+  displayed page; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Stop reading the undocumented `colour` alias of `color` in Recipe; a shape
+  or text given only `colour` uses the default color. Rename it to `color`;
+  see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
 ### Added
 
@@ -33,17 +48,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `lineWidth`, `dash`, `dashPhase`, `lineCap`, `lineJoin`, and `miterLimit`,
   with the image's rotation, skew, and opacity. `debug` outlines the image box
   and marks the placement point. A `page` past the last page throws
-  `Unknown image`, and one that is not an integer of at least 1 throws a
-  `RangeError`; see [Place and Transform Images](packages/native/docs/how-to/place-and-transform-images.md) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+  `Unknown image`, and one that is not an integer from 1 to 4294967296 throws
+  a `RangeError`; see [Place and Transform Images](packages/native/docs/how-to/place-and-transform-images.md) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
 ### Fixed
 
+- Update the bundled FreeType from 2.13.0 to 2.14.3, which fixes an
+  out-of-bounds write when parsing TrueType GX and variable font data
+  (CVE-2025-27363) in fonts embedded or read from PDFs [#864](https://github.com/julianhille/MuhammaraJS/issues/864)
 - Accept `center` coordinates together with `link` in Recipe `image()`,
   which threw `URL link requires a URL and valid PDF rectangle`, and accept
   `null` options, which threw a `TypeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
-- Place a PDF page with Recipe `image()` as it is displayed: a page with a
-  `/Rotate` entry is turned, and a media box that does not start at 0,0 no
-  longer shifts the page out of its box. Numeric strings are accepted as
+- Keep a PDF page placed with Recipe `image()` in its box when its media box
+  does not start at 0,0; it was shifted out of it. Numeric strings are accepted as
   `width`, `height`, and `scale`, which threw a binding `TypeError`, and
   another value that is not a finite number throws a `RangeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 - Decode `DCTDecode` streams with `startReadingFromStream()` in Electron on
@@ -51,6 +68,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   symbols of its bundled libjpeg, FreeType, libpng, zlib, LibTiff, and
   OpenSSL, so a copy of one of them already loaded in the process, such as
   the libjpeg GTK brings into Electron, no longer takes over its calls [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
+- Stop adding `keepAspectRatio: true` to the options object passed to Recipe
+  `image()` when that option is omitted [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 
 ### Changed
 
@@ -58,6 +77,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `lineStyle()` for a lower limit or a non-number, as shapes do [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
 - Update the bundled IJG libjpeg from 9d (2020) to 10 (2026), which decodes
   `DCTDecode` streams read from PDFs [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
+- Collect the output of a Buffer-mode `Recipe` with the bundled
+  `PDFWStreamForBuffer` instead of the unmaintained `memory-streams` package,
+  which drops that dependency and its five transitive packages
 
 ## [7.0.0-rc.1] - 2026-09-29
 
@@ -1712,8 +1734,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.1...HEAD
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.1...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.2...HEAD
+[7.0.0-rc.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.1...native-v7.0.0-rc.2
 [7.0.0-rc.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.4...native-v7.0.0-rc.1
 [7.0.0-beta.4]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.3...native-v7.0.0-beta.4
 [7.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.2...native-v7.0.0-beta.3
