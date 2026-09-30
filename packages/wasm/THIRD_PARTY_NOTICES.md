@@ -21,7 +21,7 @@ vendored source tree.
 | LibAesgm  | Brian Gladman AES snapshot, copyright 1998-2013                        | Brian Gladman permissive license |
 | LibJpeg   | IJG JPEG 10                                                            | Independent JPEG Group license   |
 | LibPng    | 1.6.59                                                                 | libpng License                   |
-| LibTiff   | 4.6.0                                                                  | libtiff license                  |
+| LibTiff   | 4.7.2                                                                  | libtiff license                  |
 | Zlib      | 1.3.1                                                                  | zlib License                     |
 
 ## PDFWriter
