@@ -70,7 +70,7 @@ function setKnownColor(colors, name, code) {
  * @param {string} colorspace - The requested colorspace.
  * @returns {boolean} Whether it is a `Colorspace` value.
  */
-function isColorspace(colorspace) {
+export function isColorspace(colorspace) {
   return Object.values(Colorspace).includes(colorspace);
 }
 
@@ -167,7 +167,7 @@ export function colorModel(recipe, value, options = {}) {
  */
 export function pathColors(options) {
   var fill = options.fill;
-  var stroke = options.stroke || options.color || options.colour;
+  var stroke = options.stroke || options.color;
   var colors = [];
   if (fill !== undefined) colors.push({ value: fill, stroke: false });
   if (stroke !== undefined || fill === undefined)

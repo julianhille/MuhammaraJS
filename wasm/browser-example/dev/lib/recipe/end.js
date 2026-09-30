@@ -41,5 +41,6 @@ export function endPDF(recipe, module, assertOutputSize) {
   } finally {
     module._muhammara_wasm_recipe_destroy(recipe._recipe);
     recipe._recipe = 0;
+    recipe._releaseImageCopies();
   }
 }

@@ -7,6 +7,7 @@ import { createChildLifecycle } from "./lifecycle.js";
 import { isPageBoxType } from "./constants.js";
 import { imageXObjects } from "./image-xobjects.js";
 import { selectedPageRanges } from "./page-ranges.js";
+import { DRAW_IMAGE_PATH } from "./writer.js";
 import {
   readTextOptions,
   validateDrawingGeometry,
@@ -55,6 +56,7 @@ export function createWriterToModifyFactory({
   resourcesDictionary,
   createAnnotation,
   drawImageCall,
+  drawStoredImage,
   removeAssets,
   removeFile,
   assertOutputSize,
@@ -131,6 +133,10 @@ export function createWriterToModifyFactory({
     var page = null;
     var objectsContext = null;
     var directImagePaths = [];
+    // Copies of files drawn with `DRAW_IMAGE_PATH`, by their original path.
+    // PDFWriter reads a drawn image again when the page ends, so the modifier
+    // keeps its own copy in case the original is removed or replaced first.
+    var storedImageCopies = new Map();
     var lifecycle = createChildLifecycle();
     var modifiedReaders = [];
 
@@ -913,6 +919,48 @@ export function createWriterToModifyFactory({
             image,
             options,
             directImagePaths,
+          );
+          return result;
+        },
+        /**
+         * Draws the image stored at a virtual path; see `DRAW_IMAGE_PATH`.
+         * @param {number} x - Left position.
+         * @param {number} y - Bottom position.
+         * @param {string} path - Virtual file system path.
+         * @param {DrawImageOptions} [options] - Page index and transformation.
+         * @returns {this} The content context, for chaining.
+         * @throws {TypeError} If a coordinate or option is invalid.
+         * @throws {Error} If the context is inactive or drawing fails.
+         */
+        [DRAW_IMAGE_PATH]: function (x, y, path, options) {
+          requireContext(result);
+          var copy = storedImageCopies.get(path);
+          if (!copy) {
+            copy = `/images/stored-${state.nextAsset++}${path.slice(path.lastIndexOf("."))}`;
+            module.FS.mkdirTree("/images");
+            module.FS.writeFile(copy, module.FS.readFile(path));
+            directImagePaths.push(copy);
+            storedImageCopies.set(path, copy);
+          }
+          drawStoredImage(
+            (pointer, drawOptions, matrixPointer) =>
+              module._muhammara_wasm_modifier_draw_image(
+                modifier,
+                x,
+                y,
+                pointer,
+                drawOptions.index,
+                drawOptions.method,
+                matrixPointer,
+                drawOptions.width,
+                drawOptions.height,
+                drawOptions.proportional ? 1 : 0,
+                drawOptions.fit,
+              ),
+            x,
+            y,
+            copy,
+            options,
           );
           return result;
         },

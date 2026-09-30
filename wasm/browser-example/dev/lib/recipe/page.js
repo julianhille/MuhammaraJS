@@ -890,6 +890,7 @@ export function createPageMethods(
       if (this._recipe) {
         module._muhammara_wasm_recipe_destroy(this._recipe);
         this._recipe = 0;
+        this._releaseImageCopies();
       }
       this.writer = createWriterToModify(bytes, {
         version: this._version,

@@ -117,13 +117,13 @@ export function createRegistrationMethods({
       );
     },
     /**
-     * Registers PDF bytes under a name for composition and inspection.
-     * Registering the same name replaces and removes the prior asset.
+     * Registers PDF bytes under a name for composition, inspection, and
+     * `image()`. Registering the same name replaces and removes the prior asset.
      *
      * @name registerPdf
      * @function
      * @memberof Recipe
-     * @param {string} name PDF name used by composition and inspection methods.
+     * @param {string} name PDF name used by composition, inspection, and `image()`.
      * @param {ByteSource} bytes PDF bytes.
      * @returns {void}
      * @throws {TypeError} If the bytes are unsupported.
