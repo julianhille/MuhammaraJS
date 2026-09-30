@@ -221,6 +221,7 @@ export function createRecipeFactory({
       if (this.writer?.dispose) this.writer.dispose();
       if (this._recipe) module._muhammara_wasm_recipe_destroy(this._recipe);
       this._recipe = 0;
+      this._releaseImageCopies();
       this._disposed = true;
     }
 
@@ -775,7 +776,15 @@ export function createRecipeFactory({
     createTableMethods(),
   );
 
-  var runtime = { module, call, withString, images };
+  var runtime = {
+    module,
+    call,
+    withString,
+    images,
+    pdfs,
+    createReader,
+    removeFile,
+  };
   Object.assign(
     Recipe.prototype,
     coordinateMethods,

@@ -184,13 +184,22 @@ export interface RecipePathOptions {
   /** Draw shape-specific diagnostic geometry. */
   debug?: boolean | number;
 }
+/**
+ * Options of `image()`. `fill`, `stroke`, or `color` frame the drawn image box:
+ * the fill beneath the image, the outline above it and inside the box, as a
+ * `rectangle()` stroke. The line options style that outline, and `debug`
+ * outlines the box in green and marks the placement point in red.
+ */
 export interface RecipeImageOptions extends RecipePathOptions {
+  /** The drawn image width. `lineWidth` sets the frame outline width. */
   width?: number;
   height?: number;
+  /** Scale the source size; wins over `width` and `height`. */
   scale?: number;
   keepAspectRatio?: boolean;
   align?: Recipe.ImageAlign;
-  index?: number;
+  /** The one-based page of a registered PDF, or image of a multi-image TIFF, as in `overlay()`; defaults to 1. */
+  page?: number;
 }
 export interface RecipeRectangleOptions extends RecipePathOptions {
   /** Read `x` and `y` as native PDF bottom-left coordinates. */

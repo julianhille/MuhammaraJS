@@ -70,7 +70,7 @@ function setKnownColor(colors, name, code) {
  * @param {string} colorspace - The requested colorspace.
  * @returns {boolean} Whether it is a `Colorspace` value.
  */
-function isColorspace(colorspace) {
+export function isColorspace(colorspace) {
   return Object.values(Colorspace).includes(colorspace);
 }
 

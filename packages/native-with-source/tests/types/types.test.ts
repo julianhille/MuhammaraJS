@@ -170,6 +170,24 @@ recipe
     skewY: 5,
   })
   .rectangle(72, 180, 100, 20, { link: "https://shape.example.com" });
+// A PDF page as an image, framed and debugged.
+var framedImage: muhammara.Recipe.ImageOptions = {
+  page: 2,
+  width: 100,
+  fill: "#eeeeee",
+  stroke: "#000000",
+  color: "#000000",
+  colorspace: muhammara.Recipe.Colorspace.RGB,
+  lineWidth: 2,
+  dash: [3],
+  dashPhase: 1,
+  lineCap: muhammara.Recipe.LineCap.BUTT,
+  lineJoin: muhammara.Recipe.LineJoin.MITER,
+  miterLimit: 2,
+  rotationOrigin: [72, 128] as const,
+  debug: true,
+};
+recipe.image("document.pdf", 72, 300, framedImage);
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
 var pages: number | undefined = recipe.metadata.pages;

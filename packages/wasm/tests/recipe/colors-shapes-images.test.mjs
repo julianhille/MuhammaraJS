@@ -302,7 +302,7 @@ describe("Recipe colors, shapes, and images", function () {
         ],
         { traitID: "vtx" },
       )
-      .image("multipage-tiff", 20, 200, { width: 80, index: 1 })
+      .image("multipage-tiff", 20, 200, { width: 80, page: 2 })
       .endPage();
     var bytes = recipe.endPDF();
     writeOutput("colors-shapes-arrows-triangles-tiff", bytes);

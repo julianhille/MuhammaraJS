@@ -635,7 +635,7 @@ async function usesLowLevelSurface() {
     .stroke()
     .fillAndStroke()
     .image("image", 10, 10, {
-      index: 1,
+      page: 2,
       align: "center center",
       link: "https://image.example.test",
     })
@@ -877,6 +877,23 @@ async function usesAlignedDeclarations() {
     .createPage("A4")
     .text("centered", "center", "center")
     .image("logo", "center", "center", { width: 10 });
+  // A registered PDF page as an image, framed and debugged.
+  var framedImage: RecipeImageOptions = {
+    page: 2,
+    width: 100,
+    fill: "#eeeeee",
+    stroke: "#000000",
+    color: "#000000",
+    colorspace: Recipe.Colorspace.RGB,
+    lineWidth: 2,
+    dash: [3],
+    dashPhase: 1,
+    lineCap: Recipe.LineCap.BUTT,
+    lineJoin: Recipe.LineJoin.MITER,
+    miterLimit: 2,
+    debug: true,
+  };
+  new Recipe().createPage("A4").image("document", 72, 300, framedImage);
 
   // Shapes, links, and rotateContent accept `center`, as in native.
   var shapes = new Recipe()
