@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [7.0.0-rc.2] - 2026-09-30
+
 ### Breaking Changes
 
 - Place a Recipe `image()` with `align: "<horizontal> bottom"` half its height
@@ -1705,8 +1707,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.1...HEAD
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.1...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.2...HEAD
+[7.0.0-rc.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-rc.1...native-v7.0.0-rc.2
 [7.0.0-rc.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.4...native-v7.0.0-rc.1
 [7.0.0-beta.4]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.3...native-v7.0.0-beta.4
 [7.0.0-beta.3]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0-beta.2...native-v7.0.0-beta.3
