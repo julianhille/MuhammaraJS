@@ -130,3 +130,17 @@ License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 ```
+
+## LibPng
+
+The native addon statically links [libpng](http://www.libpng.org/pub/png/libpng.html)
+1.6.59 from MuhammaraJS's vendored source tree to decode PNG images.
+
+Copyright (c) 1995-2026 The PNG Reference Library Authors, Cosmin Truta, Glenn
+Randers-Pehrson, Andreas Dilger, and Guy Eric Schalnat, Group 42, Inc.
+
+libpng is supplied "as is", without warranty of any kind. Permission is
+granted to use, copy, modify, and distribute it for any purpose without fee,
+provided that its origin is not misrepresented, altered versions are plainly
+marked, and its copyright notice is retained. See the
+[libpng License](http://www.libpng.org/pub/png/libpng-licenses.html).
