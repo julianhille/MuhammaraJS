@@ -22,7 +22,7 @@ vendored source tree.
 | LibJpeg   | IJG JPEG 10                                                            | Independent JPEG Group license   |
 | LibPng    | 1.6.37                                                                 | libpng License                   |
 | LibTiff   | 4.6.0                                                                  | libtiff license                  |
-| Zlib      | 1.2.11                                                                 | zlib License                     |
+| Zlib      | 1.3.1                                                                  | zlib License                     |
 
 ## PDFWriter
 
@@ -88,7 +88,7 @@ provided "AS-IS" without warranty of any kind.
 
 ## Zlib
 
-Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler.
+Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler.
 
 zlib is provided "as-is", without any express or implied warranty. Permission
 is granted to use it for any purpose, including commercial applications, and to
