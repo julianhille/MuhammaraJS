@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Throw `RangeError: miterLimit must be a number of at least 1` from Recipe
   `lineStyle()` for a lower limit or a non-number, as shapes do [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
-- Update the bundled IJG libjpeg from 9d (2020) to 9f (2024), which decodes
+- Update the bundled IJG libjpeg from 9d (2020) to 10 (2026), which decodes
   `DCTDecode` streams read from PDFs [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
 
 ## [7.0.0-rc.1] - 2026-09-29
