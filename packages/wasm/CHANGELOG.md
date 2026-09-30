@@ -41,6 +41,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   non-number, before anything is drawn, as native does. A rotation that is no
   number was ignored, and a low miter limit threw while the shape was drawn
   [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Update the bundled IJG libjpeg from 9d (2020) to 9f (2024), which decodes
+  `DCTDecode` streams read from PDFs [#866](https://github.com/julianhille/MuhammaraJS/issues/866)
 
 ## [1.0.0-rc.1] - 2026-09-29
 

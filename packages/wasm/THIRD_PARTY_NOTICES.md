@@ -19,7 +19,7 @@ vendored source tree.
 | PDFWriter | [v4.9.1](https://github.com/galkahana/PDF-Writer/tree/v4.9.1) baseline | Apache License 2.0               |
 | FreeType  | 2.13.0                                                                 | FreeType License                 |
 | LibAesgm  | Brian Gladman AES snapshot, copyright 1998-2013                        | Brian Gladman permissive license |
-| LibJpeg   | IJG JPEG 9d                                                            | Independent JPEG Group license   |
+| LibJpeg   | IJG JPEG 9f                                                            | Independent JPEG Group license   |
 | LibPng    | 1.6.37                                                                 | libpng License                   |
 | LibTiff   | 4.6.0                                                                  | libtiff license                  |
 | Zlib      | 1.2.11                                                                 | zlib License                     |
@@ -54,8 +54,8 @@ explicit or implied warranties, including correctness and fitness for purpose.
 
 ## LibJpeg
 
-Copyright (C) 1991-1998, Thomas G. Lane. Modified 2002-2019 by Guido
-Vollbeding. This software is part of the Independent JPEG Group's software.
+Copyright (C) 1991-2024, Thomas G. Lane, Guido Vollbeding. This software is
+part of the Independent JPEG Group's software.
 
 The Independent JPEG Group license permits use, copying, modification, and
 distribution for any purpose, with these conditions: do not misrepresent the
