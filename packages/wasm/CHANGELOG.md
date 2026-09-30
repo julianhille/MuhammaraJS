@@ -16,6 +16,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Update the bundled FreeType from 2.13.0 to 2.14.3, which fixes an
+  out-of-bounds write when parsing TrueType GX and variable font data
+  (CVE-2025-27363) [#864](https://github.com/julianhille/MuhammaraJS/issues/864)
 - Draw Recipe `image()` at the requested size on new pages; images were drawn
   at their source size. Placement now matches native Recipe: `scale` wins over
   `width` and `height`, `rotation` turns around the image's bottom-left corner

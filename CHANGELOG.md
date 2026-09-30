@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Update the bundled FreeType from 2.13.0 to 2.14.3, which fixes an
+  out-of-bounds write when parsing TrueType GX and variable font data
+  (CVE-2025-27363) in fonts embedded or read from PDFs [#864](https://github.com/julianhille/MuhammaraJS/issues/864)
 - Accept `center` coordinates together with `link` in Recipe `image()`,
   which threw `URL link requires a URL and valid PDF rectangle`, and accept
   `null` options, which threw a `TypeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)

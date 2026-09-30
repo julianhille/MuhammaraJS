@@ -17,7 +17,7 @@ vendored source tree.
 | Library   | Version or baseline                                                    | License                          |
 | --------- | ---------------------------------------------------------------------- | -------------------------------- |
 | PDFWriter | [v4.9.1](https://github.com/galkahana/PDF-Writer/tree/v4.9.1) baseline | Apache License 2.0               |
-| FreeType  | 2.13.0                                                                 | FreeType License                 |
+| FreeType  | 2.14.3                                                                 | FreeType License                 |
 | LibAesgm  | Brian Gladman AES snapshot, copyright 1998-2013                        | Brian Gladman permissive license |
 | LibJpeg   | IJG JPEG 9d                                                            | Independent JPEG Group license   |
 | LibPng    | 1.6.37                                                                 | libpng License                   |
@@ -36,7 +36,7 @@ kind, either express or implied.
 
 ## FreeType
 
-Copyright 1996-2023 by David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright 1996-2026 by David Turner, Robert Wilhelm, and Werner Lemberg.
 
 FreeType is distributed under the FreeType License, a BSD-style permissive
 license. The full license is available from the
