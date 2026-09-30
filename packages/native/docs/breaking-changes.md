@@ -4,6 +4,26 @@ This page collects the compatibility changes formerly maintained in the README.
 
 ## Version 7.x
 
+- Recipe `image()` with `align: "<horizontal> bottom"` places the image half
+  its height below the placement point, as the option has always been
+  documented. 6.x placed it 1.5 times its height above that point, so a
+  bottom-aligned image now appears twice its height lower. Subtract twice the
+  drawn height from `y` to keep the 6.x position; see [Move bottom-aligned
+  images back where v6 drew
+  them](getting-started/migrate-from-v6.md#18-move-bottom-aligned-images-back-where-v6-drew-them)
+  [#857](https://github.com/julianhille/MuhammaraJS/issues/857).
+- Recipe shapes, `text()`, and `image()` throw
+  `TypeError: rotation must be a finite number` when `rotation` is neither a
+  number nor a numeric string, such as `NaN` or `"abc"`, before anything is
+  drawn. In 6.x the shape was written with `NaN` transformation matrices and
+  was missing or broken in viewers. Pass a number, or omit `rotation`
+  [#857](https://github.com/julianhille/MuhammaraJS/issues/857).
+- Recipe shapes and `image()` throw
+  `RangeError: miterLimit must be a number of at least 1` for a `miterLimit`
+  below 1 or not a number, before anything is drawn. In 6.x a limit below 1
+  was written into the PDF, which PDF does not allow, and a non-number was
+  ignored. Pass 1 or more, or omit `miterLimit` to keep the default of 1.414
+  [#857](https://github.com/julianhille/MuhammaraJS/issues/857).
 - Recipe `n_gon()` and `star()` throw
   `RangeError: n_gon sides must be a finite number no greater than 100000`
   (`star points …` for `star()`) when the side or point count is `NaN`,

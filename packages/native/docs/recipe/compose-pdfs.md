@@ -29,6 +29,8 @@ pdfDoc.editPage(1).overlay("overlay.pdf").endPage().endPDF();
 ```
 
 The overlay options support placement, scaling, page selection, aspect-ratio
-preservation, and fit-to-width or fit-to-height behavior. To split a PDF, open
+preservation, and fit-to-width or fit-to-height behavior. To place a page like an image,
+with alignment, rotation, or a frame, pass the PDF to `image()`; see
+[Place and Transform Images](../how-to/place-and-transform-images.md#place-a-pdf-page). To split a PDF, open
 it without an output file and call `split(outputDirectory, prefix)` before
 `endPDF()`.

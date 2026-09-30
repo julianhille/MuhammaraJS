@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { createMuhammaraWasm } from "../../index.js";
+import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import {
   HOW_TO_EXAMPLES,
   runHowToExample,
 } from "../../examples/browser/how-tos.mjs";
 import { writeOutput } from "../testOutput.mjs";
+import { imagePlacements } from "../recipe/image-placement.mjs";
 
 describe("Browser how-to examples", function () {
   var assets;
@@ -81,6 +82,34 @@ describe("Browser how-to examples", function () {
       assert.match(result.filename, /^muhammara-.+\.pdf$/);
     });
   }
+
+  it("places a framed page of an uploaded PDF in the image example", async function () {
+    var Recipe = await createRecipe();
+    var pdf = new Recipe().createPage(200, 100).endPage().endPDF();
+    var result = await runHowToExample("image-transform", {
+      assets: { png: assets.png, pdf },
+    });
+    writeOutput("BrowserExamples-image-transform-pdf", result.bytes);
+    assert.equal(result.summary.pdfPage, "Uploaded PDF");
+    var muhammara = await createMuhammaraWasm();
+    var placements = imagePlacements(muhammara, result.bytes, {
+      pageBoxes: [[0, 0, 200, 100]],
+    });
+    var box = [
+      [207.5, 107],
+      [387.5, 107],
+      [387.5, 197],
+      [207.5, 197],
+    ];
+    var framed = placements.slice(-3);
+    assert.deepEqual(
+      framed.map((placement) => placement.kind),
+      ["fill", "page", "stroke"],
+    );
+    assert.deepEqual(framed[0].corners, box);
+    assert.deepEqual(framed[1].corners, box);
+    assert.deepEqual(framed[2].dash, [4, 2]);
+  });
 
   it("renders table text without any uploaded assets", async function () {
     var result = await runHowToExample("table");

@@ -3332,20 +3332,30 @@ declare namespace muhammara {
       userProtectionFlag?: number;
     }
 
-    interface ImageOptions {
+    /**
+     * Options of `image()`. `fill`, `stroke`, or `color` frame the drawn image
+     * box: the fill beneath the image, the outline above it and inside the
+     * box, as a `rectangle()` stroke. The line options style that outline.
+     */
+    interface ImageOptions extends PathOptions, TransformOptions {
       /** Make the rendered image open this URL. */
       link?: string;
+      /** The drawn image width. `lineWidth` sets the frame outline width. */
       width?: number;
       height?: number;
+      /** Scale the source size; wins over `width` and `height`. */
       scale?: number;
       keepAspectRatio?: boolean;
+      /** The opacity of the image and its frame. */
       opacity?: number;
       /** `Recipe.HorizontalAlign`, optionally followed by a space and `Recipe.VerticalAlign`. */
       align?: ImageAlign;
-      rotation?: number;
-      rotationOrigin?: [number, number];
-      skewX?: number;
-      skewY?: number;
+      /** The one-based page of a PDF source, or image of a multi-image TIFF, as in `overlay()`; defaults to 1. */
+      page?: number;
+      /** Paint the image box beneath the image. */
+      fill?: Color;
+      /** Outline the image box in green and mark the placement point in red. */
+      debug?: boolean | number;
     }
 
     interface InfoOptions {
@@ -4151,19 +4161,35 @@ declare namespace muhammara {
      * @param y - The coordinate y of the top-left corner
      * @param options - The options
      * @returns The recipe instance.
-     * @param options.width - The new width
+     * @param options.page - The one-based page of a PDF source, or image of a
+     *   multi-image TIFF, as in `overlay()`; defaults to 1.
+     * @param options.width - The new width. The frame outline width is
+     *   `options.lineWidth`.
      * @param options.height - The new height
      * @param options.scale - Scale the image from the original width and height.
      * @param options.keepAspectRatio - Keep the aspect ratio; defaults to true.
-     * @param options.opacity - The opacity.
+     * @param options.opacity - The opacity of the image and its frame.
      * @param options.align - A `Recipe.HorizontalAlign` value, optionally
      *   followed by a space and a `Recipe.VerticalAlign` value, for example
      *   "center center". Horizontal center moves the image left by half its width
      *   and right moves it right by half; vertical center moves it up by half its
      *   height and bottom moves it down by half from its top-left placement.
+     * @param options.rotation - Rotate the image, in degrees.
+     * @param options.rotationOrigin - [x, y] of the rotation origin; the
+     *   bottom-left corner of the drawn image when omitted.
+     * @param options.fill - Paint the image box beneath the image.
+     * @param options.stroke - Outline the image box above the image.
+     * @param options.color - Outline color when `stroke` is not given.
+     * @param options.lineWidth - The outline width; the outline lies inside
+     *   the image box, as a `rectangle()` stroke does.
+     * @param options.debug - Outline the image box in green and mark the
+     *   placement point in red.
      * @param options.link - Make the image open this URL.
      * @throws {TypeError} If no page is active.
-     * @throws {Error} If the image cannot be read.
+     * @throws {RangeError} If `page` is not an integer of at least 1, a size is
+     *   not a finite number, or `miterLimit` is not a number of at least 1.
+     * @throws {TypeError} If `rotation` is not a finite number.
+     * @throws {Error} If the image, or the PDF page `page` selects, cannot be read.
      */
     image(
       imgSrc: string,

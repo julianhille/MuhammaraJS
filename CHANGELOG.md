@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Place a Recipe `image()` with `align: "<horizontal> bottom"` half its height
+  below the placement point, as documented. 6.x drew it 1.5 times its height
+  above that point, so such images now appear twice their height lower; see
+  [Move bottom-aligned images back where v6 drew them](packages/native/docs/getting-started/migrate-from-v6.md#18-move-bottom-aligned-images-back-where-v6-drew-them) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Throw `TypeError: rotation must be a finite number` from Recipe shapes,
+  `text()`, and `image()` when `rotation` is neither a number nor a numeric
+  string, before anything is drawn. 6.x wrote `NaN` transformation matrices,
+  so the shape was missing or broken in viewers. Pass a number, or omit
+  `rotation`; see [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Throw `RangeError: miterLimit must be a number of at least 1` from Recipe
+  shapes and `image()` for a `miterLimit` below 1 or not a
+  number, before anything is drawn. 6.x wrote the invalid limit into the PDF
+  or ignored a non-number. Pass 1 or more, or omit it; see
+  [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
+### Added
+
+- Add a `page` option to Recipe `image()` that selects the page of a PDF
+  source, one-based as in `overlay()`, and frame an image with `fill`,
+  `stroke`, or `color`:
+  the fill paints beneath the image and the outline above it, styled by
+  `lineWidth`, `dash`, `dashPhase`, `lineCap`, `lineJoin`, and `miterLimit`,
+  with the image's rotation, skew, and opacity. `debug` outlines the image box
+  and marks the placement point. A `page` past the last page throws
+  `Unknown image`, and one that is not an integer of at least 1 throws a
+  `RangeError`; see [Place and Transform Images](packages/native/docs/how-to/place-and-transform-images.md) [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
+### Fixed
+
+- Accept `center` coordinates together with `link` in Recipe `image()`,
+  which threw `URL link requires a URL and valid PDF rectangle`, and accept
+  `null` options, which threw a `TypeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Place a PDF page with Recipe `image()` as it is displayed: a page with a
+  `/Rotate` entry is turned, and a media box that does not start at 0,0 no
+  longer shifts the page out of its box. Numeric strings are accepted as
+  `width`, `height`, and `scale`, which threw a binding `TypeError`, and
+  another value that is not a finite number throws a `RangeError` [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
+### Changed
+
+- Throw `RangeError: miterLimit must be a number of at least 1` from Recipe
+  `lineStyle()` for a lower limit or a non-number, as shapes do [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+
 ## [7.0.0-rc.1] - 2026-09-29
 
 ### Breaking Changes

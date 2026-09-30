@@ -40,7 +40,9 @@ its final page.
 `insertPage(afterPageNumber, name, sourcePageNumber)` accepts zero as the output
 position before page one and defers rebuilding until `endPDF()`. `overlay()`
 requires an active created or edited page and supports `page`, `scale`,
-`fitWidth`, `fitHeight`, and `keepAspectRatio`.
+`fitWidth`, `fitHeight`, and `keepAspectRatio`. To place a page like an image, with
+alignment, rotation, or a frame, pass the registered name to `image()`; see
+[Place and Transform Images](../how-to/place-and-transform-images.md#place-a-pdf-page).
 
 ## Split Into Byte Outputs
 

@@ -22,9 +22,18 @@ import {
 } from "./drawing-options.js";
 
 /**
+ * Key of a content-context method that draws an image already stored in the
+ * virtual file system, by its path. Recipe draws its registered assets with it
+ * so that PDFWriter, which caches forms by path, reuses one form per image or
+ * PDF page. The context draws its own copy of the file, so the original may be
+ * removed or replaced before the page ends. It is not part of the public API.
+ */
+export var DRAW_IMAGE_PATH = Symbol("drawImagePath");
+
+/**
  * Creates shared support functions used by low-level PDF writers.
  * @param {object} dependencies - Module, asset registries, and byte helpers.
- * @returns {object} `imageAssetPath`, `drawImageCall`, `removeAssets`,
+ * @returns {object} `imageAssetPath`, `drawImageCall`, `drawStoredImage`, `removeAssets`,
  * `resourcesDictionary`, and `createAnnotation`.
  */
 export function createWriterSupport({
@@ -224,7 +233,19 @@ export function createWriterSupport({
       throw new TypeError("drawImage requires finite x and y coordinates");
     }
     var drawOptions = imageDrawOptions(options);
-    var path = imageAssetPath(image, retainedPaths);
+    drawImagePath(call, imageAssetPath(image, retainedPaths), drawOptions);
+  }
+
+  /**
+   * Draws the image stored at a virtual path with validated options.
+   * @param {function(number, object, number): boolean} call - Native draw
+   *   call receiving the path pointer, options, and matrix pointer.
+   * @param {string} path - Virtual file system path.
+   * @param {object} drawOptions - Options from `imageDrawOptions()`.
+   * @returns {void}
+   * @throws {Error} If the image cannot be drawn.
+   */
+  function drawImagePath(call, path, drawOptions) {
     var matrixPointer = module._malloc(48);
     try {
       module.HEAPF64.set(drawOptions.matrix, matrixPointer >>> 3);
@@ -495,9 +516,29 @@ export function createWriterSupport({
     );
   }
 
+  /**
+   * Draws the image stored at a virtual path, validating coordinates and
+   * options as `drawImage()` does.
+   * @param {function(number, object, number): boolean} call - Native draw call.
+   * @param {number} x - Left position.
+   * @param {number} y - Bottom position.
+   * @param {string} path - Virtual file system path.
+   * @param {DrawImageOptions} [options] - Page index and transformation.
+   * @returns {void}
+   * @throws {TypeError} If a coordinate is not finite or an option is invalid.
+   * @throws {Error} If the image cannot be drawn.
+   */
+  function drawStoredImage(call, x, y, path, options) {
+    if (![x, y].every(Number.isFinite)) {
+      throw new TypeError("drawImage requires finite x and y coordinates");
+    }
+    drawImagePath(call, path, imageDrawOptions(options));
+  }
+
   return {
     imageAssetPath,
     drawImageCall,
+    drawStoredImage,
     removeAssets,
     resourcesDictionary,
     createAnnotation,

@@ -23,7 +23,8 @@ build the package, run
 - [Add Content to Rotated Pages](how-to/add-content-to-rotated-pages.md) places
   Recipe content and annotations on a rotated page.
 - [Place and Transform Images](how-to/place-and-transform-images.md) accepts a
-  JPEG, PNG, or TIFF upload.
+  JPEG, PNG, or TIFF upload and places a framed page of an uploaded PDF, or of
+  a built-in sample when none is chosen.
 - [Create Multi-Page Tables](how-to/create-tables.md) accepts a TTF or OTF font
   upload.
 - [Change PDF Passwords](how-to/change-pdf-passwords.md) encrypts a PDF and

@@ -944,13 +944,15 @@ WASM_EXPORT int muhammara_wasm_recipe_image_page(WasmRecipe* recipe,
 }
 
 int muhammara_wasm_recipe_image_dimensions(WasmRecipe* recipe,
-                                           const char* imagePath, double* width,
-                                           double* height) {
+                                           const char* imagePath,
+                                           unsigned int imageIndex,
+                                           double* width, double* height) {
   if (recipe == nullptr || imagePath == nullptr || width == nullptr ||
       height == nullptr) {
     return 0;
   }
-  DoubleAndDoublePair dimensions = recipe->writer.GetImageDimensions(imagePath);
+  DoubleAndDoublePair dimensions =
+      recipe->writer.GetImageDimensions(imagePath, imageIndex);
   if (dimensions.first <= 0 || dimensions.second <= 0) {
     return 0;
   }

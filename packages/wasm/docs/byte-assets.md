@@ -29,7 +29,8 @@ var modifier = await muhammara.createWriterToModifyAsync(pdfFile);
 The low-level API also has async variants for image inspection, TIFF and PDF
 form creation, copying contexts, append/merge operations, and
 `ContentContext.drawImage`. Recipe has `registerFontAsync`,
-`registerImageAsync`, and `registerPdfAsync`.
+`registerImageAsync`, and `registerPdfAsync`. Recipe `image()` places a registered
+image or a page of a registered PDF.
 
 In Node, `Buffer` works only because it is a `Uint8Array` subclass. It is not a
 separate Wasm input type. Filesystem paths, Node streams, and browser-sounding

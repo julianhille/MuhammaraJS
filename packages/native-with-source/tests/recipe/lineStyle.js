@@ -20,6 +20,41 @@ function getContentStream(pdf) {
 }
 
 describe("Recipe lineStyle", () => {
+  it("throws for a miter limit below 1 before drawing", () => {
+    const recipe = new Recipe(Buffer.from("new")).createPage(100, 100);
+    [-1, 0.5, NaN, "wide"].forEach((miterLimit) => {
+      assert.throws(
+        () =>
+          recipe.line(
+            [
+              [10, 10],
+              [90, 90],
+            ],
+            { miterLimit },
+          ),
+        {
+          name: "RangeError",
+          message: "miterLimit must be a number of at least 1",
+        },
+      );
+      assert.throws(() => recipe.lineStyle({ miterLimit }), {
+        name: "RangeError",
+        message: "miterLimit must be a number of at least 1",
+      });
+    });
+    recipe
+      .lineStyle({ miterLimit: "4" })
+      .line([
+        [10, 10],
+        [90, 90],
+      ])
+      .endPage()
+      .endPDF();
+    const content = getContentStream(recipe.outStream.toBuffer());
+    assert.match(content, /4 M/);
+    assert.doesNotMatch(content, /-1 M|0\.5 M/);
+  });
+
   it("writes line style operators", () => {
     const recipe = new Recipe(Buffer.from("new"));
     recipe
