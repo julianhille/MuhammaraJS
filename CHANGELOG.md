@@ -67,6 +67,9 @@ Upgrading from 6.x? Each change below is described in [Breaking Changes](package
 
 - Throw `RangeError: miterLimit must be a number of at least 1` from Recipe
   `lineStyle()` for a lower limit or a non-number, as shapes do [#857](https://github.com/julianhille/MuhammaraJS/issues/857)
+- Collect the output of a Buffer-mode `Recipe` with the bundled
+  `PDFWStreamForBuffer` instead of the unmaintained `memory-streams` package,
+  which drops that dependency and its five transitive packages
 
 ## [7.0.0-rc.1] - 2026-09-29
 
