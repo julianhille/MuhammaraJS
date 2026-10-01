@@ -1,8 +1,8 @@
 // The third-party components of @muhammara/wasm and where each one's license
 // and copyright notice is read from at build time: the verbatim license files
-// in packages/native-with-source/src/deps/licenses, the Emscripten
-// installation in the pinned emsdk image that linked the wasm, and the bundled
-// Roboto font.
+// in each vendored library's licenses/ folder, the Emscripten installation in
+// the pinned emsdk image that linked the wasm, the bundled Roboto font, and
+// native-core's licenses/ folder for the Adobe Glyph List.
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,7 +13,6 @@ export var packageRoot = path.resolve(
 );
 var repositoryRoot = path.resolve(packageRoot, "../..");
 var deps = "packages/native-with-source/src/deps";
-var licenses = `${deps}/licenses`;
 
 export var header =
   "MuhammaraJS itself is licensed under the Apache License, Version 2.0 (see LICENSE). The @muhammara/wasm package contains the third-party components below; each one's license and copyright notice follows the table in full.";
@@ -24,12 +23,13 @@ export var acknowledgements = [
 ];
 
 /**
- * A verbatim license file in packages/native-with-source/src/deps/licenses.
+ * A verbatim license file in a vendored library's licenses/ folder.
+ * @param {string} library - Folder in packages/native-with-source/src/deps.
  * @param {string} name - File name.
  * @returns {object} The piece.
  */
-function license(name) {
-  return { file: `${licenses}/${name}` };
+function license(library, name) {
+  return { file: `${deps}/${library}/licenses/${name}` };
 }
 
 /**
@@ -49,11 +49,11 @@ export var components = [
     source: "https://github.com/galkahana/PDF-Writer/tree/v4.9.1",
     shippedIn: "dist/muhammara-wasm.wasm",
     pieces: [
-      license("PDFWriter-NOTICE.txt"),
-      license("PDFWriter-LICENSE.txt"),
-      license("PDFWriter-MD5Generator.txt"),
-      license("PDFWriter-ShadingWriter-Skia.txt"),
-      license("PDFWriter-TIFFImageHandler-tiff2pdf.txt"),
+      license("PDFWriter", "NOTICE.txt"),
+      license("PDFWriter", "LICENSE"),
+      license("PDFWriter", "MD5Generator.txt"),
+      license("PDFWriter", "ShadingWriter-Skia.txt"),
+      license("PDFWriter", "TIFFImageHandler-tiff2pdf.txt"),
     ],
   },
   {
@@ -64,7 +64,10 @@ export var components = [
       "https://gitlab.freedesktop.org/freetype/freetype/-/tree/VER-2-14-3",
     shippedIn: "dist/muhammara-wasm.wasm",
     // Dual-licensed FTL OR GPL-2.0-or-later; MuhammaraJS uses the FTL.
-    pieces: [license("FreeType-LICENSE.TXT"), license("FreeType-FTL.TXT")],
+    pieces: [
+      license("FreeType", "LICENSE.TXT"),
+      license("FreeType", "FTL.TXT"),
+    ],
   },
   {
     name: "FreeType BDF driver",
@@ -73,7 +76,7 @@ export var components = [
     source:
       "https://gitlab.freedesktop.org/freetype/freetype/-/tree/VER-2-14-3/src/bdf",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [license("FreeType-BDF-README-License.txt")],
+    pieces: [license("FreeType", "bdf-README-License.txt")],
   },
   {
     name: "FreeType PCF driver",
@@ -83,8 +86,8 @@ export var components = [
       "https://gitlab.freedesktop.org/freetype/freetype/-/tree/VER-2-14-3/src/pcf",
     shippedIn: "dist/muhammara-wasm.wasm",
     pieces: [
-      license("FreeType-PCF-README-License.txt"),
-      license("FreeType-PCF-pcfutil.txt"),
+      license("FreeType", "pcf-README-License.txt"),
+      license("FreeType", "pcfutil.txt"),
     ],
   },
   {
@@ -94,7 +97,7 @@ export var components = [
     source:
       "https://gitlab.freedesktop.org/freetype/freetype/-/blob/VER-2-14-3/src/base/fthash.c",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [license("FreeType-fthash.txt")],
+    pieces: [license("FreeType", "fthash.txt")],
   },
   {
     name: "Zlib",
@@ -104,7 +107,7 @@ export var components = [
     shippedIn: "dist/muhammara-wasm.wasm",
     // FreeType is built with FT_CONFIG_OPTION_SYSTEM_ZLIB and uses this copy,
     // so FreeType's own src/gzip copy of zlib is not compiled.
-    pieces: [license("Zlib.txt")],
+    pieces: [license("Zlib", "LICENSE.txt")],
   },
   {
     name: "LibAesgm",
@@ -112,7 +115,7 @@ export var components = [
     license: "LicenseRef-Brian-Gladman",
     source: "https://github.com/BrianGladman/aes",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [license("LibAesgm.txt")],
+    pieces: [license("LibAesgm", "LICENSE.txt")],
   },
   {
     name: "LibJpeg",
@@ -120,7 +123,7 @@ export var components = [
     license: "IJG",
     source: "https://www.ijg.org/files/jpegsrc.v10.tar.gz",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [license("LibJpeg.txt")],
+    pieces: [license("LibJpeg", "README-LEGAL-ISSUES.txt")],
   },
   {
     name: "LibPng",
@@ -128,7 +131,7 @@ export var components = [
     license: "libpng-2.0",
     source: "https://github.com/pnggroup/libpng/tree/v1.6.59",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [license("LibPng-LICENSE.txt")],
+    pieces: [license("LibPng", "LICENSE")],
   },
   {
     name: "LibTiff",
@@ -137,11 +140,11 @@ export var components = [
     source: "https://gitlab.com/libtiff/libtiff/-/tree/v4.7.2",
     shippedIn: "dist/muhammara-wasm.wasm",
     pieces: [
-      license("LibTiff-LICENSE.md"),
-      license("LibTiff-tif_hash_set.txt"),
-      license("LibTiff-tif_luv.txt"),
-      license("LibTiff-tif_ojpeg.txt"),
-      license("LibTiff-tif_pixarlog.txt"),
+      license("LibTiff", "LICENSE.md"),
+      license("LibTiff", "tif_hash_set.txt"),
+      license("LibTiff", "tif_luv.txt"),
+      license("LibTiff", "tif_ojpeg.txt"),
+      license("LibTiff", "tif_pixarlog.txt"),
     ],
   },
   {
@@ -224,7 +227,7 @@ export var components = [
     license: "Adobe-Glyph",
     source: "https://github.com/adobe-type-tools/agl-aglfn",
     shippedIn: "lib/glyph-list.js (not in the .wasm)",
-    pieces: [license("AdobeGlyphList.txt")],
+    pieces: [{ file: "packages/native-core/licenses/AdobeGlyphList.txt" }],
   },
 ];
 

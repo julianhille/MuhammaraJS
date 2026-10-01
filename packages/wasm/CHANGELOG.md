@@ -24,7 +24,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `@muhammara/wasm/THIRD_PARTY_LICENSES.md`. It replaces
   `THIRD_PARTY_NOTICES.md`, which summarized some licenses and linked to
   others instead of reproducing them. The build assembles it from the
-  verbatim license files in `native-with-source/src/deps/licenses` and the
+  verbatim license files in each vendored library's `licenses/` folder and the
   Emscripten toolchain that linked the binary [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
 
 ## [1.0.0] - 2026-10-01

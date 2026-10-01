@@ -80,12 +80,15 @@ silently shipping without notices.
 Nothing license-related is committed in `packages/wasm`. The build assembles
 the notices from:
 
-- the verbatim license files in `packages/native-with-source/src/deps/licenses/`,
-  one file per text, next to the vendored sources they belong to;
+- the verbatim license files in each vendored library's `licenses/` folder,
+  such as `packages/native-with-source/src/deps/LibPng/licenses/`, one file per
+  text;
 - the Emscripten installation in the pinned emsdk image that linked the binary
   (Emscripten, musl, libc++, libc++abi, compiler-rt, and dlmalloc), so those
   texts always match the toolchain;
-- the Roboto font's name table and `fonts/LICENSE.txt`.
+- the Roboto font's name table and `fonts/LICENSE.txt`, and
+  `packages/native-core/licenses/` for the Adobe Glyph List, next to the
+  `lib/glyph-list.js` table it covers.
 
 `scripts/third-party-licenses.mjs` lists each component, its version, SPDX
 expression, upstream source, where it ships, and its license files. After
@@ -94,11 +97,11 @@ inserts the text into `dist/muhammara-wasm.wasm`, because `emcc` runs
 `wasm-opt`, which would otherwise move custom sections to the end of the
 module.
 
-When you update a vendored library, update its files in `deps/licenses` and
+When you update a vendored library, update the files in its `licenses/` folder and
 its entry in `third-party-licenses.mjs`. The build fails when a license file is
 missing or a component's version disagrees with the version its headers state,
 and when the binary is not a version-1 module or already has a `license`
 section. `npm run test:licenses --workspace=@muhammara/wasm` checks a built
 package: the section is first and appears once, equals
 `dist/THIRD_PARTY_LICENSES.md`, lists every component, still contains the
-current license files, and every file in `deps/licenses` is used.
+current license files, and every file in those `licenses/` folders is used.

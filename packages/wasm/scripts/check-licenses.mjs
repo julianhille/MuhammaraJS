@@ -18,19 +18,29 @@ import {
  */
 export async function checkLicenses() {
   var errors = await checkVersions();
-  var licensesDirectory = path.join(
-    packageRoot,
-    "../native-with-source/src/deps/licenses",
-  );
   var referenced = new Set(
     components.flatMap((component) =>
       component.pieces.map((piece) => piece.file),
     ),
   );
-  for (var name of await readdir(licensesDirectory)) {
-    var file = `packages/native-with-source/src/deps/licenses/${name}`;
-    if (name !== "README.md" && !referenced.has(file)) {
-      errors.push(`${file} is not used by third-party-licenses.mjs`);
+  var repositoryRoot = path.resolve(packageRoot, "../..");
+  var deps = "packages/native-with-source/src/deps";
+  var folders = [
+    ...(await readdir(path.join(repositoryRoot, deps), { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => `${deps}/${entry.name}/licenses`),
+    "packages/native-core/licenses",
+  ];
+  for (var folder of folders) {
+    var names = await readdir(path.join(repositoryRoot, folder)).catch(
+      () => [],
+    );
+    for (var name of names) {
+      if (!referenced.has(`${folder}/${name}`)) {
+        errors.push(
+          `${folder}/${name} is not used by third-party-licenses.mjs`,
+        );
+      }
     }
   }
   var licensesFile = path.join(packageRoot, "dist/THIRD_PARTY_LICENSES.md");
