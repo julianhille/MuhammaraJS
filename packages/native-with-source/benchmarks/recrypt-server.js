@@ -276,17 +276,23 @@ async function measureMode(port, mode, options) {
     var recrypts = /** @type {number[]} */ ([]);
     var next = 0;
     var start = perfHooks.performance.now();
-    await Promise.all(
-      Array.from({ length: options.concurrency }, async function () {
-        while (next < options.requests) {
-          next += 1;
-          recrypts.push((await get(agent, port, "/recrypt?mode=" + mode)).ms);
-        }
-      }),
-    );
-    var wallMs = perfHooks.performance.now() - start;
-    running = false;
-    await pinger;
+    var wallMs = 0;
+    try {
+      await Promise.all(
+        Array.from({ length: options.concurrency }, async function () {
+          while (next < options.requests) {
+            next += 1;
+            recrypts.push((await get(agent, port, "/recrypt?mode=" + mode)).ms);
+          }
+        }),
+      );
+      wallMs = perfHooks.performance.now() - start;
+    } finally {
+      // Stop the pinger even when a recrypt failed, so the recrypt error is
+      // the one reported.
+      running = false;
+      await pinger.catch(function () {});
+    }
 
     /** @type {LoopStats} */
     var loop = JSON.parse((await get(agent, port, "/stats")).body);
