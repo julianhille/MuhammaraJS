@@ -1,7 +1,7 @@
 // Checks a built package: dist/THIRD_PARTY_LICENSES.md is the first and only
 // "license" section of dist/muhammara-wasm.wasm, lists every component, and
 // still matches the license texts and versions of the current sources.
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkVersions, extractLicenses } from "./generate-licenses.mjs";
@@ -18,6 +18,21 @@ import {
  */
 export async function checkLicenses() {
   var errors = await checkVersions();
+  var licensesDirectory = path.join(
+    packageRoot,
+    "../native-with-source/src/deps/licenses",
+  );
+  var referenced = new Set(
+    components.flatMap((component) =>
+      component.pieces.map((piece) => piece.file),
+    ),
+  );
+  for (var name of await readdir(licensesDirectory)) {
+    var file = `packages/native-with-source/src/deps/licenses/${name}`;
+    if (name !== "README.md" && !referenced.has(file)) {
+      errors.push(`${file} is not used by third-party-licenses.mjs`);
+    }
+  }
   var licensesFile = path.join(packageRoot, "dist/THIRD_PARTY_LICENSES.md");
   var wasmFile = path.join(packageRoot, "dist/muhammara-wasm.wasm");
   var text = await readFile(licensesFile, "utf8").catch(() => null);

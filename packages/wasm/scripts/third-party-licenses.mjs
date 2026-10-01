@@ -1,7 +1,8 @@
 // The third-party components of @muhammara/wasm and where each one's license
-// and copyright notice is read from at build time: license files and source
-// headers of the vendored libraries, the pinned Emscripten installation, and
-// the package's own font and glyph list. Nothing here is a copy of a license.
+// and copyright notice is read from at build time: the verbatim license files
+// in packages/native-with-source/src/deps/licenses, the Emscripten
+// installation in the pinned emsdk image that linked the wasm, and the bundled
+// Roboto font.
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +13,7 @@ export var packageRoot = path.resolve(
 );
 var repositoryRoot = path.resolve(packageRoot, "../..");
 var deps = "packages/native-with-source/src/deps";
+var licenses = `${deps}/licenses`;
 
 export var header =
   "MuhammaraJS itself is licensed under the Apache License, Version 2.0 (see LICENSE). The @muhammara/wasm package contains the third-party components below; each one's license and copyright notice follows the table in full.";
@@ -21,30 +23,22 @@ export var acknowledgements = [
   "This software is based in part on the work of the Independent JPEG Group.",
 ];
 
-var closingComment = (line) => line.trim() === "*/";
-
 /**
- * A whole file, in the repository or (with `emscripten`) in the Emscripten
- * installation the wasm was linked with.
- * @param {string} file - Path.
- * @param {object} [options] - `emscripten: true` for Emscripten files.
+ * A verbatim license file in packages/native-with-source/src/deps/licenses.
+ * @param {string} name - File name.
  * @returns {object} The piece.
  */
-function whole(file, options = {}) {
-  return { file, ...options };
+function license(name) {
+  return { file: `${licenses}/${name}` };
 }
 
 /**
- * The lines of a file from the first line matching `start` to the line
- * matching `end`, with comment decoration removed by `strip`.
- * @param {string} file - Path.
- * @param {object} range - `start`, `end` (string contained in the line, or a
- * predicate), `endInclusive`, `strip` (RegExp removed from each line), and
- * `emscripten`.
+ * A whole file in the Emscripten installation the wasm was linked with.
+ * @param {string} file - Path inside the installation.
  * @returns {object} The piece.
  */
-function excerpt(file, range) {
-  return { file, ...range };
+function emscripten(file) {
+  return { file, emscripten: true };
 }
 
 export var components = [
@@ -55,29 +49,11 @@ export var components = [
     source: "https://github.com/galkahana/PDF-Writer/tree/v4.9.1",
     shippedIn: "dist/muhammara-wasm.wasm",
     pieces: [
-      excerpt(`${deps}/PDFWriter/PDFWriter.cpp`, {
-        start: "Copyright 2011 Gal Kahana PDFWriter",
-        end: "limitations under the License.",
-        endInclusive: true,
-        strip: /^ {3}/,
-      }),
-      whole(`${deps}/PDFWriter/LICENSE`),
-      excerpt(`${deps}/PDFWriter/MD5Generator.cpp`, {
-        start: "Additional Copyright Information:",
-        end: "documentation and/or software.",
-        endInclusive: true,
-        strip: /^ /,
-      }),
-      excerpt(`${deps}/PDFWriter/ShadingWriter.cpp`, {
-        start: "Copyright (c) 2011 Google Inc.",
-        end: closingComment,
-        strip: /^ {4}/,
-      }),
-      excerpt(`${deps}/PDFWriter/TIFFImageHandler.cpp`, {
-        start: "The majority of this code is converted from tiff2pdf",
-        end: closingComment,
-        strip: /^ {2}/,
-      }),
+      license("PDFWriter-NOTICE.txt"),
+      license("PDFWriter-LICENSE.txt"),
+      license("PDFWriter-MD5Generator.txt"),
+      license("PDFWriter-ShadingWriter-Skia.txt"),
+      license("PDFWriter-TIFFImageHandler-tiff2pdf.txt"),
     ],
   },
   {
@@ -88,7 +64,7 @@ export var components = [
       "https://gitlab.freedesktop.org/freetype/freetype/-/tree/VER-2-14-3",
     shippedIn: "dist/muhammara-wasm.wasm",
     // Dual-licensed FTL OR GPL-2.0-or-later; MuhammaraJS uses the FTL.
-    pieces: [whole(`${deps}/FreeType/docs/FTL.TXT`)],
+    pieces: [license("FreeType-LICENSE.TXT"), license("FreeType-FTL.TXT")],
   },
   {
     name: "FreeType BDF driver",
@@ -97,12 +73,7 @@ export var components = [
     source:
       "https://gitlab.freedesktop.org/freetype/freetype/-/tree/VER-2-14-3/src/bdf",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [
-      excerpt(`${deps}/FreeType/src/bdf/README`, {
-        start: (line) => line === "License",
-        end: (line) => line === "Credits",
-      }),
-    ],
+    pieces: [license("FreeType-BDF-README-License.txt")],
   },
   {
     name: "FreeType PCF driver",
@@ -112,14 +83,8 @@ export var components = [
       "https://gitlab.freedesktop.org/freetype/freetype/-/tree/VER-2-14-3/src/pcf",
     shippedIn: "dist/muhammara-wasm.wasm",
     pieces: [
-      excerpt(`${deps}/FreeType/src/pcf/README`, {
-        start: (line) => line === "License",
-        end: (line) => line === "Credits",
-      }),
-      excerpt(`${deps}/FreeType/src/pcf/pcfutil.c`, {
-        start: "Copyright 1990, 1994, 1998  The Open Group",
-        end: closingComment,
-      }),
+      license("FreeType-PCF-README-License.txt"),
+      license("FreeType-PCF-pcfutil.txt"),
     ],
   },
   {
@@ -129,13 +94,7 @@ export var components = [
     source:
       "https://gitlab.freedesktop.org/freetype/freetype/-/blob/VER-2-14-3/src/base/fthash.c",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [
-      excerpt(`${deps}/FreeType/src/base/fthash.c`, {
-        start: "Copyright 2000 Computing Research Labs",
-        end: closingComment,
-        strip: /^ \* ?/,
-      }),
-    ],
+    pieces: [license("FreeType-fthash.txt")],
   },
   {
     name: "Zlib",
@@ -145,14 +104,7 @@ export var components = [
     shippedIn: "dist/muhammara-wasm.wasm",
     // FreeType is built with FT_CONFIG_OPTION_SYSTEM_ZLIB and uses this copy,
     // so FreeType's own src/gzip copy of zlib is not compiled.
-    pieces: [
-      excerpt(`${deps}/Zlib/zlib.h`, {
-        start: "Copyright (C) 1995-",
-        end: "jloup@gzip.org",
-        endInclusive: true,
-        strip: /^ {2}/,
-      }),
-    ],
+    pieces: [license("Zlib.txt")],
   },
   {
     name: "LibAesgm",
@@ -160,13 +112,7 @@ export var components = [
     license: "LicenseRef-Brian-Gladman",
     source: "https://github.com/BrianGladman/aes",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [
-      excerpt(`${deps}/LibAesgm/aes.h`, {
-        start: "Copyright (c) 1998-2013, Brian Gladman",
-        end: "and fitness for purpose.",
-        endInclusive: true,
-      }),
-    ],
+    pieces: [license("LibAesgm.txt")],
   },
   {
     name: "LibJpeg",
@@ -174,13 +120,7 @@ export var components = [
     license: "IJG",
     source: "https://www.ijg.org/files/jpegsrc.v10.tar.gz",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [
-      excerpt(`${deps}/LibJpeg/README`, {
-        start: (line) => line === "LEGAL ISSUES",
-        end: (line) => line === "REFERENCES",
-        optionalEnd: true,
-      }),
-    ],
+    pieces: [license("LibJpeg.txt")],
   },
   {
     name: "LibPng",
@@ -188,7 +128,7 @@ export var components = [
     license: "libpng-2.0",
     source: "https://github.com/pnggroup/libpng/tree/v1.6.59",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [whole(`${deps}/LibPng/LICENSE`)],
+    pieces: [license("LibPng-LICENSE.txt")],
   },
   {
     name: "LibTiff",
@@ -197,27 +137,11 @@ export var components = [
     source: "https://gitlab.com/libtiff/libtiff/-/tree/v4.7.2",
     shippedIn: "dist/muhammara-wasm.wasm",
     pieces: [
-      whole(`${deps}/LibTiff/LICENSE.md`),
-      excerpt(`${deps}/LibTiff/tif_hash_set.c`, {
-        start: "Copyright (c) 2008-2009, Even Rouault",
-        end: (line) => /^\s*\*{20,}\/?$/.test(line),
-        strip: /^ \* ?/,
-      }),
-      excerpt(`${deps}/LibTiff/tif_luv.c`, {
-        start: "Copyright (c) 1997 Greg Ward Larson",
-        end: (line) => line.trim() === "*/",
-        strip: /^ \* ?/,
-      }),
-      excerpt(`${deps}/LibTiff/tif_ojpeg.c`, {
-        start: "Copyright (c) Joris Van Damme",
-        end: "Joris Van Damme and/or AWare Systems may be available",
-        strip: /^ {3}/,
-      }),
-      excerpt(`${deps}/LibTiff/tif_pixarlog.c`, {
-        start: "Copyright (c) 1996-1997 Sam Leffler",
-        end: (line) => line.trim() === "*/",
-        strip: /^ \* ?/,
-      }),
+      license("LibTiff-LICENSE.md"),
+      license("LibTiff-tif_hash_set.txt"),
+      license("LibTiff-tif_luv.txt"),
+      license("LibTiff-tif_ojpeg.txt"),
+      license("LibTiff-tif_pixarlog.txt"),
     ],
   },
   {
@@ -226,7 +150,7 @@ export var components = [
     license: "MIT OR NCSA",
     source: "https://github.com/emscripten-core/emscripten/tree/3.1.74",
     shippedIn: "dist/muhammara-wasm.wasm and dist/muhammara-wasm.js",
-    pieces: [whole("LICENSE", { emscripten: true })],
+    pieces: [emscripten("LICENSE")],
   },
   {
     name: "musl libc",
@@ -235,7 +159,7 @@ export var components = [
     source:
       "https://github.com/emscripten-core/emscripten/tree/3.1.74/system/lib/libc/musl",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [whole("system/lib/libc/musl/COPYRIGHT", { emscripten: true })],
+    pieces: [emscripten("system/lib/libc/musl/COPYRIGHT")],
   },
   {
     name: "libc++",
@@ -244,7 +168,7 @@ export var components = [
     source:
       "https://github.com/emscripten-core/emscripten/tree/3.1.74/system/lib/libcxx",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [whole("system/lib/libcxx/LICENSE.TXT", { emscripten: true })],
+    pieces: [emscripten("system/lib/libcxx/LICENSE.TXT")],
   },
   {
     name: "libc++abi",
@@ -253,7 +177,7 @@ export var components = [
     source:
       "https://github.com/emscripten-core/emscripten/tree/3.1.74/system/lib/libcxxabi",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [whole("system/lib/libcxxabi/LICENSE.TXT", { emscripten: true })],
+    pieces: [emscripten("system/lib/libcxxabi/LICENSE.TXT")],
   },
   {
     name: "compiler-rt",
@@ -262,7 +186,7 @@ export var components = [
     source:
       "https://github.com/emscripten-core/emscripten/tree/3.1.74/system/lib/compiler-rt",
     shippedIn: "dist/muhammara-wasm.wasm",
-    pieces: [whole("system/lib/compiler-rt/LICENSE.TXT", { emscripten: true })],
+    pieces: [emscripten("system/lib/compiler-rt/LICENSE.TXT")],
   },
   {
     name: "dlmalloc",
@@ -273,13 +197,14 @@ export var components = [
     shippedIn: "dist/muhammara-wasm.wasm",
     // The build does not set -sMALLOC, so Emscripten's default is linked.
     pieces: [
-      excerpt("system/lib/dlmalloc.c", {
-        emscripten: true,
+      {
+        // dlmalloc.c has no license file; its dedication opens the source.
+        ...emscripten("system/lib/dlmalloc.c"),
         start: "This is a version (aka dlmalloc) of malloc/free/realloc",
         end: "comments, complaints, performance data",
         endInclusive: true,
         strip: /^ /,
-      }),
+      },
     ],
   },
   {
@@ -290,7 +215,7 @@ export var components = [
     shippedIn: "fonts/Roboto-Regular.js (not in the .wasm)",
     pieces: [
       { font: "packages/native-core/fonts/Roboto.ttf" },
-      whole("packages/wasm/fonts/LICENSE.txt"),
+      { file: "packages/wasm/fonts/LICENSE.txt" },
     ],
   },
   {
@@ -299,14 +224,7 @@ export var components = [
     license: "Adobe-Glyph",
     source: "https://github.com/adobe-type-tools/agl-aglfn",
     shippedIn: "lib/glyph-list.js (not in the .wasm)",
-    pieces: [
-      excerpt("packages/wasm/lib/glyph-list.js", {
-        start: "// Copyright (c) 1997,1998,2002,2007 Adobe",
-        end: "// materials.",
-        endInclusive: true,
-        strip: /^\/\/ ?/,
-      }),
-    ],
+    pieces: [license("AdobeGlyphList.txt")],
   },
 ];
 

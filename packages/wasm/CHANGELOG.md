@@ -14,8 +14,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   drivers, zlib, LibAesgm, libjpeg, libpng, libtiff, the Emscripten runtime,
   musl, libc++, libc++abi, compiler-rt, dlmalloc, and the JavaScript-shipped
   Roboto Regular and Adobe Glyph List), then each component's license in full.
-  It grows the `.wasm` by 127,215 bytes raw (2,106,511 to 2,233,726) and by
-  26,903 bytes gzipped at level 9 (779,984 to 806,887) [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
+  It grows the `.wasm` by 129,371 bytes raw (2,106,511 to 2,235,882) and by
+  28,018 bytes gzipped at level 9 (779,984 to 808,002) [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
 - Add `thirdPartyLicenses()`, which returns those notices from the module that
   `createMuhammaraWasm()` or `createRecipe()` loaded, without fetching
   anything. It throws before a module is loaded and when the binary has no
@@ -23,8 +23,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Ship the same text as `dist/THIRD_PARTY_LICENSES.md`, exported as
   `@muhammara/wasm/THIRD_PARTY_LICENSES.md`. It replaces
   `THIRD_PARTY_NOTICES.md`, which summarized some licenses and linked to
-  others instead of reproducing them. The build extracts every text from the
-  vendored sources and the Emscripten toolchain that linked the binary [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
+  others instead of reproducing them. The build assembles it from the
+  verbatim license files in `native-with-source/src/deps/licenses` and the
+  Emscripten toolchain that linked the binary [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
 
 ## [1.0.0] - 2026-10-01
 
