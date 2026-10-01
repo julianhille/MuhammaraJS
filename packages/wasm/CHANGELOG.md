@@ -31,6 +31,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   accepts a `Blob` or `File`. It recrypts on the calling thread; call it from a
   Worker to keep a page responsive
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+- A Benchmark tab in the browser example, which recrypts the same PDF with
+  synchronous `recrypt()` and `recryptAsync()`, each on the page and in a
+  module Worker, and measures how long the page stops responding
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 
 ## [1.0.0] - 2026-10-01
 
