@@ -19,7 +19,7 @@
       "types": "./index.d.ts",
       "import": "./index.js"
     },
-    "./THIRD_PARTY_LICENSES.md": "./THIRD_PARTY_LICENSES.md"
+    "./THIRD_PARTY_LICENSES.md": "./dist/THIRD_PARTY_LICENSES.md"
   },
   "files": [
     "index.js",
@@ -30,7 +30,6 @@
     "README.md",
     "CHANGELOG.md",
     "DIFFERENCES.md",
-    "THIRD_PARTY_LICENSES.md",
     "LICENSE"
   ],
   "scripts": {
@@ -40,11 +39,10 @@
     "test:paths": "node ./scripts/check-internal-paths.mjs",
     "test:exports": "node ./scripts/check-exports.mjs",
     "test:manifests": "node ./scripts/check-source-manifests.mjs",
-    "test:licenses": "node ./scripts/generate-licenses.mjs --check",
+    "test:licenses": "node ./scripts/check-licenses.mjs",
     "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types/types.test.ts && tsc --noEmit --strict --lib es2022 --module nodenext --moduleResolution nodenext tests/types/types-node.test.ts",
     "docs:generate": "node ./scripts/generate-reference.mjs && prettier --write docs/reference.md",
     "docs:check": "npm run docs:generate && mkdocs build --strict --config-file mkdocs.yml",
-    "licenses:generate": "node ./scripts/generate-licenses.mjs",
     "pages:stage-example": "node ./scripts/stage-pages-example.mjs",
     "serve:browser": "node ./tests/browser/serve.mjs",
     "server:browser": "npm run serve:browser",

@@ -1,11 +1,10 @@
-// Inserts THIRD_PARTY_LICENSES.md into the linked wasm as a custom section
-// named "license", directly after the 8-byte header, so the notices travel
-// with the binary when a bundler copies it without the package's files.
+// Inserts the generated THIRD_PARTY_LICENSES.md into the linked wasm as a
+// custom section named "license", directly after the 8-byte header, so the
+// notices travel with the binary when a bundler copies it without the
+// package's other files.
 //
-//   node scripts/embed-licenses.mjs dist/muhammara-wasm.wasm
+//   node scripts/embed-licenses.mjs <module.wasm> <THIRD_PARTY_LICENSES.md>
 import { readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { generateLicenses, licensesFile } from "./generate-licenses.mjs";
 import {
   customSections,
   insertLicenseSection,
@@ -13,18 +12,13 @@ import {
   readSections,
 } from "./wasm-section.mjs";
 
-var target = process.argv[2];
-if (!target) {
-  console.error("usage: embed-licenses.mjs <module.wasm>");
+var [target, licensesFile] = process.argv.slice(2);
+if (!target || !licensesFile) {
+  console.error("usage: embed-licenses.mjs <module.wasm> <licenses.md>");
   process.exit(2);
 }
 
 var text = await readFile(licensesFile, "utf8");
-if (text !== (await generateLicenses())) {
-  throw new Error(
-    "THIRD_PARTY_LICENSES.md is out of date; run npm run licenses:generate --workspace=@muhammara/wasm",
-  );
-}
 var output = insertLicenseSection(new Uint8Array(await readFile(target)), text);
 var first = readSections(output)[0];
 var embedded = customSections(output, licenseSectionName);
@@ -41,5 +35,5 @@ if (
 }
 await writeFile(target, output);
 console.log(
-  `Embedded ${path.basename(licensesFile)} (${embedded[0].length} bytes) into ${target}`,
+  `Embedded ${licensesFile} (${embedded[0].length} bytes) into ${target}`,
 );

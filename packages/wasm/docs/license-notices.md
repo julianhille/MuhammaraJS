@@ -15,7 +15,7 @@ ship no notices. To prevent that, the notices travel inside the binary itself.
   section of the module, directly after the 8-byte header. It holds the
   notices as plain, uncompressed UTF-8 Markdown. WebAssembly engines ignore
   custom sections, so it does not change how the module runs.
-- **As a file**: `THIRD_PARTY_LICENSES.md`, byte for byte the same text,
+- **As a file**: `dist/THIRD_PARTY_LICENSES.md`, byte for byte the same text,
   importable as `@muhammara/wasm/THIRD_PARTY_LICENSES.md`.
 
 The text starts with a table of every component (name, version, SPDX license
@@ -70,26 +70,35 @@ removes all of them by default. Bundlers that only copy the file keep the
 section intact.
 
 If your pipeline post-processes the binary, either configure the tool to keep
-the section named `license`, or ship `THIRD_PARTY_LICENSES.md` alongside your
+the section named `license`, or ship `dist/THIRD_PARTY_LICENSES.md` alongside your
 application yourself. `thirdPartyLicenses()` throws with a message naming that
 file when it finds no section, so a stripped build is noticed rather than
 silently shipping without notices.
 
 ## For Package Maintainers
 
-The verbatim license files live in `packages/wasm/licenses/`, with
-`licenses/manifest.json` listing each component, its version, SPDX expression,
-upstream source, and where it ships. Regenerate the notices after changing
-either:
+Nothing license-related is committed in `packages/wasm`. The build extracts
+each text from where it lives:
 
-```sh
-npm run licenses:generate --workspace=@muhammara/wasm
-```
+- the license files and source headers of the vendored libraries in
+  `packages/native-with-source/src/deps/` (for example `FreeType/docs/FTL.TXT`,
+  `LibPng/LICENSE`, and the notices at the top of `zlib.h` or `aes.h`);
+- the Emscripten installation in the pinned emsdk image that linked the binary
+  (Emscripten, musl, libc++, libc++abi, compiler-rt, and dlmalloc);
+- the package's own files (the Roboto font's name table and
+  `fonts/LICENSE.txt`, and the header of `lib/glyph-list.js`).
 
-`build.sh` inserts the generated text into `dist/muhammara-wasm.wasm` after
-linking, because `emcc` runs `wasm-opt`, which would otherwise move custom
-sections to the end of the module. The build fails when the binary is not a
-version-1 module, already has a `license` section, or the generated file is
-out of date. `npm run test:licenses --workspace=@muhammara/wasm` fails when the
-generated file, the license files, and, once built, the embedded section
-disagree.
+`scripts/third-party-licenses.mjs` lists each component, its version, SPDX
+expression, upstream source, where it ships, and where its text is read from.
+After linking, `build.sh` generates `dist/THIRD_PARTY_LICENSES.md` from it and
+inserts the text into `dist/muhammara-wasm.wasm`, because `emcc` runs
+`wasm-opt`, which would otherwise move custom sections to the end of the
+module.
+
+The build fails when a license source or one of its start and end markers is
+missing, when a component's version disagrees with the version its headers
+state, when the binary is not a version-1 module, or when it already has a
+`license` section. `npm run test:licenses --workspace=@muhammara/wasm` checks a
+built package: the section is first and appears once, equals
+`dist/THIRD_PARTY_LICENSES.md`, lists every component, and still matches the
+current sources.

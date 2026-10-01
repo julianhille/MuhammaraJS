@@ -84,6 +84,12 @@ docker run --rm \
 emcmake cmake -S /src/packages/wasm -B /build -DCMAKE_BUILD_TYPE="$MUHAMMARA_WASM_BUILD_TYPE" -DMUHAMMARA_WASM_SANITIZE="$MUHAMMARA_WASM_SANITIZE" -DMUHAMMARA_BUILD_CPP_TESTS="$MUHAMMARA_WASM_BUILD_TESTS" -DPDFHUMMUS_NO_OPENSSL=ON
 cmake --build /build --target muhammara-wasm --parallel
 cp /build/muhammara-wasm.js /build/muhammara-wasm.wasm /out/
+# The Emscripten-side license texts come from the toolchain that linked the
+# wasm; copy them out of the image for the license generator on the host.
+emscripten=$(em-config EMSCRIPTEN_ROOT 2>/dev/null || printf "%s" "$EMSDK/upstream/emscripten")
+rm -rf /build/emscripten-licenses
+mkdir -p /build/emscripten-licenses
+(cd "$emscripten" && cp --parents emscripten-version.txt LICENSE system/lib/libc/musl/COPYRIGHT system/lib/libcxx/LICENSE.TXT system/lib/libcxxabi/LICENSE.TXT system/lib/compiler-rt/LICENSE.TXT system/lib/dlmalloc.c /build/emscripten-licenses/)
 if [ "$MUHAMMARA_WASM_BUILD_TESTS" = ON ]; then
   cmake --build /build --target objects-context-cleanup-test pdf-page-merging-helper-cleanup-test --parallel
   node /build/objects-context-cleanup-test.js
@@ -91,8 +97,13 @@ if [ "$MUHAMMARA_WASM_BUILD_TESTS" = ON ]; then
 fi
 if command -v ccache >/dev/null 2>&1; then ccache --show-stats; fi'
 
-# wasm-opt, run by emcc, moves custom sections to the end of the module, so the
-# third-party licenses are inserted into the finished binary as its first
-# section. The copy in dist is fresh from the build tree, so a rebuild never
+# The third-party licenses are extracted from the vendored sources and the
+# Emscripten installation, then inserted into the finished binary as its first
+# section: wasm-opt, run by emcc, would move a linker-added custom section to
+# the end. The copy in dist is fresh from the build tree, so a rebuild never
 # finds a section left over from an earlier run.
-node "$root/packages/wasm/scripts/embed-licenses.mjs" "$dist/muhammara-wasm.wasm"
+node "$root/packages/wasm/scripts/generate-licenses.mjs" \
+  --emscripten-root "$build/emscripten-licenses" \
+  --output "$dist/THIRD_PARTY_LICENSES.md"
+node "$root/packages/wasm/scripts/embed-licenses.mjs" \
+  "$dist/muhammara-wasm.wasm" "$dist/THIRD_PARTY_LICENSES.md"

@@ -6,10 +6,9 @@ import {
   createRecipe,
   thirdPartyLicenses,
 } from "../index.js";
-import {
-  generateLicenses,
-  readManifest,
-} from "../scripts/generate-licenses.mjs";
+import { checkLicenses } from "../scripts/check-licenses.mjs";
+import { extractLicenses } from "../scripts/generate-licenses.mjs";
+import { components, extractPiece } from "../scripts/third-party-licenses.mjs";
 import {
   customSections,
   encodeCustomSection,
@@ -18,7 +17,7 @@ import {
 } from "../scripts/wasm-section.mjs";
 
 var packageRoot = new URL("../", import.meta.url);
-var licensesUrl = new URL("THIRD_PARTY_LICENSES.md", packageRoot);
+var licensesUrl = new URL("dist/THIRD_PARTY_LICENSES.md", packageRoot);
 var wasmUrl = new URL("dist/muhammara-wasm.wasm", packageRoot);
 // A module with only a type section declaring one () -> () function type.
 var minimalModule = new Uint8Array([
@@ -125,69 +124,86 @@ describe("Third-party licenses", function () {
   });
 
   describe("generated notices", function () {
-    it("matches the committed THIRD_PARTY_LICENSES.md", async function () {
-      assert.equal(
-        await readFile(licensesUrl, "utf8"),
-        await generateLicenses(),
-      );
+    /**
+     * Returns one component's section of the notices.
+     * @param {string} text - The notices.
+     * @param {string} name - Component name.
+     * @returns {string} The section.
+     */
+    function section(text, name) {
+      var heading = `\n## ${name}\n`;
+      var start = text.indexOf(heading);
+      var next = text.indexOf("\n## ", start + heading.length);
+      return text.slice(start, next === -1 ? undefined : next);
+    }
+
+    it("passes the build output check against the current sources", async function () {
+      assert.deepEqual(await checkLicenses(), []);
     });
 
     it("lists every component in the table and gives each its own section", async function () {
       var text = await readFile(licensesUrl, "utf8");
-      var { components } = await readManifest();
       var table = text.slice(0, text.indexOf("\n## "));
+      var extracted = await extractLicenses({ skipEmscripten: true });
       for (var component of components) {
         assert.equal(
           count(table, `\n| ${component.name} | `),
           1,
           component.name,
         );
-        var heading = `\n## ${component.name}\n`;
-        assert.equal(count(text, heading), 1, component.name);
-        var start = text.indexOf(heading);
-        var next = text.indexOf("\n## ", start + heading.length);
-        var section = text.slice(start, next === -1 ? undefined : next);
-        for (var file of component.files) {
-          var license = (
-            await readFile(new URL(file, packageRoot), "utf8")
-          ).replace(/\n+$/, "");
-          assert.ok(section.includes(license), `${component.name}: ${file}`);
+        assert.equal(count(text, `\n## ${component.name}\n`), 1);
+        if (extracted.has(component.name)) {
+          assert.ok(
+            section(text, component.name).includes(
+              extracted.get(component.name),
+            ),
+            component.name,
+          );
         }
       }
     });
 
-    it("repeats each license text for every component that uses it", async function () {
+    it("repeats a license text for every component that uses it", async function () {
       var text = await readFile(licensesUrl, "utf8");
-      var { components } = await readManifest();
-      var bodies = await Promise.all(
-        components.map(async (component) =>
-          (
-            await Promise.all(
-              component.files.map((file) =>
-                readFile(new URL(file, packageRoot), "utf8"),
-              ),
-            )
-          ).join("\n"),
-        ),
-      );
-      for (var phrase of [
-        "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION",
-        "Permission is hereby granted, free of charge, to any person obtaining",
-        "The FreeType Project LICENSE",
+      var apache =
+        "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION";
+      for (var name of [
+        "PDFWriter",
+        "Roboto Regular",
+        "libc++",
+        "libc++abi",
+        "compiler-rt",
       ]) {
-        var expected = bodies.reduce(
-          (sum, body) => sum + count(body, phrase),
-          0,
-        );
-        assert.ok(expected > 0, phrase);
-        assert.equal(count(text, phrase), expected, phrase);
+        assert.equal(count(section(text, name), apache), 1, name);
       }
-      var apacheUsers = bodies.filter((body) =>
-        body.includes(
-          "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION",
-        ),
-      ).length;
-      assert.ok(apacheUsers >= 5);
+      assert.equal(count(text, apache), 5);
+    });
+
+    it("fails loudly when a license source or marker is missing", async function () {
+      await assert.rejects(
+        extractPiece({ file: "packages/wasm/missing-license.txt" }),
+        /missing-license\.txt cannot be read/,
+      );
+      await assert.rejects(
+        extractPiece({
+          file: "packages/wasm/package.json",
+          start: "no such start marker",
+          end: "}",
+        }),
+        /Start of the license text not found/,
+      );
+      await assert.rejects(
+        extractPiece({
+          file: "packages/wasm/package.json",
+          start: '"name"',
+          end: "no such end marker",
+        }),
+        /End of the license text not found/,
+      );
+      await assert.rejects(
+        extractPiece({ file: "LICENSE", emscripten: true }),
+        /--emscripten-root/,
+      );
     });
   });
 

@@ -7,7 +7,7 @@ var required = [
   "index.d.ts",
   "index.js",
   "lib/recipe.js",
-  "THIRD_PARTY_LICENSES.md",
+  "dist/THIRD_PARTY_LICENSES.md",
 ];
 var chunks = [];
 for await (var chunk of process.stdin) chunks.push(chunk);

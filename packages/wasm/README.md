@@ -135,5 +135,4 @@ Next steps:
 - [Changelog](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/CHANGELOG.md)
 - [Breaking changes](https://muhammarajs-wasm.readthedocs.io/latest/breaking-changes.html)
 - [Differences from the native packages](https://muhammarajs-wasm.readthedocs.io/latest/differences.html)
-- [Third-party licenses](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/THIRD_PARTY_LICENSES.md)
 - [Issues](https://github.com/julianhille/MuhammaraJS/issues)
