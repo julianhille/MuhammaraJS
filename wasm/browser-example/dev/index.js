@@ -372,6 +372,22 @@ async function createRuntime(options) {
     PDFTextString,
     createWriter,
     recrypt,
+    /**
+     * Rewrites a PDF like `recrypt()`, after reading an asynchronous byte
+     * source. Recrypting itself runs on the calling thread; call it from a
+     * Worker to keep a page responsive.
+     * @async
+     * @param {AsyncByteSource} source - PDF bytes, Blob, or File.
+     * @param {PDFRecryptOptions} [options] - Source `password`, new `userPassword`/`ownerPassword`,
+     *   `userProtectionFlag`, `version`, and `compress`.
+     * @returns {Promise<Uint8Array>} The rewritten PDF.
+     * @throws {TypeError} If `source` is not a supported byte source.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
+     */
+    recryptAsync: async function (source, options = {}) {
+      return recrypt(await normalizeBytesAsync(source, "PDF input"), options);
+    },
     ByteReader,
     ByteReaderWithPosition,
     ByteWriter,

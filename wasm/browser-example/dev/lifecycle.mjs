@@ -17,6 +17,7 @@
  * @property {Uint8Array<ArrayBuffer>} [jpeg] - JPEG bytes.
  * @property {Uint8Array<ArrayBuffer>} [png] - PNG bytes.
  * @property {Uint8Array<ArrayBuffer>} [tiff] - TIFF bytes.
+ * @property {string|number} [runs] - Recrypts per mode in the benchmark.
  */
 
 /**
@@ -34,6 +35,10 @@
  * @property {ExampleAssets} [assets] - Optional byte assets.
  * @property {AbortSignal} [signal] - Cancels the example between steps.
  * @property {ProgressCallback} [progress] - Receives progress updates.
+ * @property {function(Uint8Array, number, boolean): Promise<number[]>} [runInWorker] -
+ *   Benchmark only: runs the recrypts in a module Worker, with
+ *   `recryptAsync()` when the last argument is true, and resolves with each
+ *   one's duration.
  */
 
 /**
