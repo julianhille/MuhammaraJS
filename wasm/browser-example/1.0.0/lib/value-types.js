@@ -1,0 +1,304 @@
+import { PageBox } from "./value-sets.js";
+
+/**
+ * Creates PDF value encoders and constructors backed by the Wasm module.
+ * @param {{module: object, withString: Function, withBytes: Function}} dependencies - Module and memory helpers.
+ * @returns {{PDFTextString: Function, PDFDate: Function, PDFPage: Function, normalizePDFDate: Function, textStringValue: Function}} The value types.
+ */
+export function createValueTypes({ module, withString, withBytes }) {
+  var encoder = new TextEncoder();
+  /**
+   * Encodes text as a PDF text string: PDFDocEncoding, or UTF-16BE with a byte order mark.
+   * @param {string} value - Text.
+   * @returns {Uint8Array} The encoded bytes.
+   * @throws {Error} If the text cannot be encoded.
+   */
+  function textStringBytes(value) {
+    var bytes = encoder.encode(value);
+    var lengthPointer = module._malloc(4);
+    try {
+      return withBytes(bytes, (pointer) => {
+        var result = module._muhammara_wasm_pdf_text_string_from_utf8(
+          pointer,
+          bytes.length,
+          lengthPointer,
+        );
+        var length = module.HEAPU32[lengthPointer >>> 2];
+        if (!result && length)
+          throw new Error("Unable to encode PDF text string");
+        try {
+          return result
+            ? module.HEAPU8.slice(result, result + length)
+            : new Uint8Array();
+        } finally {
+          if (result) module._muhammara_wasm_free(result);
+        }
+      });
+    } finally {
+      module._free(lengthPointer);
+    }
+  }
+
+  /**
+   * Decodes PDF text string bytes.
+   * @param {Uint8Array} bytes - PDFDocEncoding or UTF-16BE bytes.
+   * @returns {string} The text.
+   * @throws {Error} If the bytes cannot be decoded.
+   */
+  function textStringValue(bytes) {
+    var lengthPointer = module._malloc(4);
+    try {
+      return withBytes(bytes, (pointer) => {
+        var result = module._muhammara_wasm_pdf_text_string_to_utf8(
+          pointer,
+          bytes.length,
+          lengthPointer,
+        );
+        var length = module.HEAPU32[lengthPointer >>> 2];
+        if (!result && length)
+          throw new Error("Unable to decode PDF text string");
+        try {
+          return result
+            ? new TextDecoder().decode(
+                module.HEAPU8.slice(result, result + length),
+              )
+            : "";
+        } finally {
+          if (result) module._muhammara_wasm_free(result);
+        }
+      });
+    } finally {
+      module._free(lengthPointer);
+    }
+  }
+
+  /**
+   * Normalizes a date to a PDF date string.
+   * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+   * @returns {string} A PDF date such as `D:20240102030405+01'00'`.
+   * @throws {TypeError} If `value` is an invalid Date or not a date.
+   * @throws {Error} If a string cannot be parsed.
+   */
+  function normalizePDFDate(value) {
+    if (value instanceof PDFDate) return value.toString();
+    if (value instanceof Date) {
+      if (Number.isNaN(value.getTime()))
+        throw new TypeError("PDFDate requires a valid Date");
+      var offset = -value.getTimezoneOffset();
+      var sign = offset < 0 ? "-" : "+";
+      /**
+       * Formats the absolute value of a number with at least two digits.
+       * @param {number} number - Date part.
+       * @returns {string} The padded digits.
+       */
+      var pad = (number) => String(Math.abs(number)).padStart(2, "0");
+      value = `D:${value.getFullYear()}${pad(value.getMonth() + 1)}${pad(value.getDate())}${pad(value.getHours())}${pad(value.getMinutes())}${pad(value.getSeconds())}${sign}${pad(Math.trunc(offset / 60))}'${pad(offset % 60)}'`;
+    }
+    if (typeof value !== "string") {
+      throw new TypeError("PDFDate requires a PDF date string or Date");
+    }
+    return withString(value, (pointer) => {
+      var lengthPointer = module._malloc(4);
+      try {
+        var result = module._muhammara_wasm_pdf_date_normalize(
+          pointer,
+          lengthPointer,
+        );
+        var length = module.HEAPU32[lengthPointer >>> 2];
+        if (!result && length) throw new Error("Unable to parse PDF date");
+        try {
+          return result
+            ? new TextDecoder().decode(
+                module.HEAPU8.slice(result, result + length),
+              )
+            : "";
+        } finally {
+          if (result) module._muhammara_wasm_free(result);
+        }
+      } finally {
+        module._free(lengthPointer);
+      }
+    });
+  }
+
+  class PDFTextString {
+    constructor(value = "") {
+      this._bytes = new Uint8Array();
+      if (typeof value === "string") {
+        this.fromString(value);
+      } else if (
+        Array.isArray(value) ||
+        value instanceof Uint8Array ||
+        value instanceof ArrayBuffer
+      ) {
+        value = value instanceof ArrayBuffer ? new Uint8Array(value) : value;
+        if (
+          !Array.from(value).every(
+            (byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255,
+          )
+        ) {
+          throw new TypeError(
+            "PDFTextString bytes must be integers from 0 to 255",
+          );
+        }
+        this._bytes = Uint8Array.from(value);
+      } else {
+        throw new TypeError("PDFTextString requires a string or byte array");
+      }
+    }
+
+    /**
+     * Reads the encoded PDF text string bytes.
+     * @returns {number[]} The bytes, PDFDocEncoding or UTF-16BE with a byte order mark.
+     */
+    toBytesArray() {
+      return Array.from(this._bytes);
+    }
+
+    /**
+     * Decodes the text string.
+     * @returns {string} The text.
+     */
+    toString() {
+      return textStringValue(this._bytes);
+    }
+
+    /**
+     * Replaces the text, encoding it as PDFDocEncoding or UTF-16BE.
+     * @param {string} value - New text.
+     * @returns {this} The text string.
+     * @throws {TypeError} If `value` is not a string.
+     */
+    fromString(value) {
+      if (typeof value !== "string")
+        throw new TypeError("PDFTextString requires a string");
+      this._bytes = textStringBytes(value);
+      return this;
+    }
+  }
+
+  class PDFDate {
+    constructor(value) {
+      this._value = value === undefined ? "" : normalizePDFDate(value);
+    }
+
+    /**
+     * Formats the date.
+     * @returns {string} A PDF date such as `D:20240102030405+01'00'`, or an empty string.
+     */
+    toString() {
+      return this._value;
+    }
+
+    /**
+     * Sets the date to now, in the local time zone.
+     * @returns {this} The date.
+     */
+    setToCurrentTime() {
+      this._value = normalizePDFDate(new Date());
+      return this;
+    }
+  }
+
+  class PDFPage {
+    constructor(left = 0, bottom = 0, right = 595, top = 842) {
+      if (
+        ![left, bottom, right, top].every(Number.isFinite) ||
+        right <= left ||
+        top <= bottom
+      ) {
+        throw new RangeError(
+          "PDFPage requires valid left, bottom, right, and top coordinates",
+        );
+      }
+      this._boxes = { [PageBox.MEDIA]: [left, bottom, right, top] };
+      this._rotation = undefined;
+      this._setNativeBox = null;
+      this._setNativeRotation = null;
+      this._getNativeResources = null;
+    }
+  }
+
+  /**
+   * Defines the `<name>Box` accessor on PDFPage.
+   * @param {PageBox} name - Box name.
+   * @returns {void}
+   */
+  function definePageBox(name) {
+    Object.defineProperty(PDFPage.prototype, `${name}Box`, {
+      /**
+       * Reads the box.
+       * @returns {PDFRectangle|undefined} The box, or undefined when unset.
+       */
+      get: function () {
+        return this._boxes[name];
+      },
+      /**
+       * Sets the box, and the native page box when the page is active.
+       * @param {PDFRectangle} value - `[left, bottom, right, top]` with a positive size.
+       * @returns {void}
+       * @throws {RangeError} If `value` is not four finite coordinates with a positive size.
+       * @throws {Error} If the active native page box cannot be set.
+       */
+      set: function (value) {
+        if (
+          !Array.isArray(value) ||
+          value.length !== 4 ||
+          !value.every(Number.isFinite) ||
+          value[2] <= value[0] ||
+          value[3] <= value[1]
+        ) {
+          throw new RangeError(
+            `${name}Box requires four valid PDF coordinates`,
+          );
+        }
+        this._boxes[name] = [...value];
+        if (this._setNativeBox) this._setNativeBox(name, value);
+      },
+    });
+  }
+
+  Object.values(PageBox).forEach(definePageBox);
+  /**
+   * Returns the page resources dictionary, starting a new writer page when needed.
+   * @returns {ResourcesDictionary} The resources dictionary.
+   * @throws {Error} If the page is not active and cannot be started.
+   */
+  PDFPage.prototype.getResourcesDictionary = function () {
+    if (!this._getNativeResources && this._activate) this._activate();
+    if (!this._getNativeResources) {
+      throw new Error("PDFPage resources are not active");
+    }
+    return this._getNativeResources();
+  };
+  Object.defineProperty(PDFPage.prototype, "rotate", {
+    /**
+     * Reads `/Rotate`.
+     * @returns {number|undefined} The rotation in degrees, or undefined when unset.
+     */
+    get: function () {
+      return this._rotation;
+    },
+    /**
+     * Sets `/Rotate`, and the native page rotation when the page is active.
+     * @param {number} value - Multiple of 90 degrees.
+     * @returns {void}
+     * @throws {RangeError} If `value` is not an integer multiple of 90.
+     * @throws {Error} If the active native rotation cannot be set.
+     */
+    set: function (value) {
+      if (!Number.isInteger(value) || value % 90 !== 0) {
+        throw new RangeError("rotate must be a multiple of 90 degrees");
+      }
+      this._rotation = value;
+      if (this._setNativeRotation) this._setNativeRotation(value);
+    },
+  });
+  return {
+    PDFTextString,
+    PDFDate,
+    PDFPage,
+    normalizePDFDate,
+    textStringValue,
+  };
+}
