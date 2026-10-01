@@ -1373,6 +1373,17 @@ export interface RecipeConstructor {
   splitPdf(name: string, prefix?: string): RecipeSplitResult[];
   inspectPdf(name: string): RecipePdfInspection;
   permission(flags?: RecipePermission): number;
+  /**
+   * Returns the third-party license notices (Markdown) embedded in this
+   * runtime's `muhammara-wasm.wasm` as its `license` custom section. The text
+   * is read from the already loaded module; nothing is fetched, compiled, or
+   * instantiated. It equals `@muhammara/wasm/THIRD_PARTY_LICENSES.md`.
+   *
+   * Throws when the WebAssembly module is not loaded (a custom
+   * `instantiateWasm` hook did not pass it back) or has no `license` section,
+   * for example after `wasm-strip`.
+   */
+  thirdPartyLicenses(): string;
 }
 export interface TextOptions {
   encoding?: EEncoding;

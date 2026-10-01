@@ -26,6 +26,7 @@
     "index.d.ts",
     "lib",
     "fonts",
+    "licenses",
     "muhammara.d.ts",
     "THIRD_PARTY_NOTICES.md"
   ],

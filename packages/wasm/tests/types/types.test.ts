@@ -536,6 +536,16 @@ async function usesLowLevelSurface() {
   await createRecipe({ wasmBinary: new Blob() });
   // @ts-expect-error Use locateFile to load the binary from a URL.
   await createMuhammaraWasm({ wasmBinary: "muhammara-wasm.wasm" });
+  const LicensedRecipe = await createRecipe();
+  const licenses: string = LicensedRecipe.thirdPartyLicenses();
+  void licenses;
+  // @ts-expect-error The notices come from the loaded module; nothing is passed.
+  LicensedRecipe.thirdPartyLicenses(new Uint8Array());
+  // @ts-expect-error The notices are returned synchronously as a string.
+  const pendingLicenses: Promise<string> = LicensedRecipe.thirdPartyLicenses();
+  void pendingLicenses;
+  // @ts-expect-error The notices are read through Recipe, not the low-level API.
+  (await createMuhammaraWasm()).thirdPartyLicenses();
   await createRecipe({ defaultFont: new Uint8Array() });
   await createRecipe({ defaultFont: new ArrayBuffer(0) });
   await createRecipe({ defaultFont: new Blob() });

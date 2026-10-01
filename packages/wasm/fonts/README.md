@@ -2,7 +2,7 @@
 
 `Roboto-Regular.js` contains a base64 encoding of the complete, unmodified
 `packages/native-core/fonts/Roboto.ttf` face (Copyright 2012 Google Inc.,
-Apache-2.0). See `LICENSE.txt` and `../THIRD_PARTY_NOTICES.md`.
+Apache-2.0). See `LICENSE.txt`.
 
 Regenerate from the repository root with:
 
