@@ -112,6 +112,42 @@ declare namespace muhammara {
     newPdfStream: PDFWStreamForFile | PDFWStreamForBuffer,
     options?: PDFRecryptOptions,
   ): void;
+  /**
+   * Like `recrypt()`, but re-encrypts on libuv's thread pool and returns a
+   * promise, so the event loop keeps running. Recrypts run one at a time,
+   * in call order; a thread's waiting jobs do not hold pool threads. Relative
+   * paths are resolved when called.
+   * @param originalPdfPath - The source PDF path.
+   * @param newPdfPath - The output path.
+   * @param options - The source password and the new encryption settings.
+   * @returns Resolves once the output is written; rejects with a TypeError if
+   *   the PDF cannot be recrypted.
+   * @throws {TypeError} If the arguments are wrong, or one side is a path and
+   *   the other a stream.
+   */
+  export function recryptAsync(
+    originalPdfPath: FilePath,
+    newPdfPath: FilePath,
+    options?: PDFRecryptOptions,
+  ): Promise<void>;
+  /**
+   * Like `recrypt()`, but re-encrypts on libuv's thread pool and returns a
+   * promise. The source stream is read into memory when called, and the
+   * output is written to `newPdfStream` before the promise resolves; both
+   * steps run on the calling thread.
+   * @param originalPdfStream - The source PDF.
+   * @param newPdfStream - The output stream.
+   * @param options - The source password and the new encryption settings.
+   * @returns Resolves once the output is written; rejects with a TypeError if
+   *   the PDF cannot be recrypted, with an Error if the output stream was
+   *   written to while the job ran, or with the error the output stream threw.
+   * @throws {TypeError} If the arguments are wrong.
+   */
+  export function recryptAsync(
+    originalPdfStream: PDFRStreamForFile | PDFRStreamForBuffer,
+    newPdfStream: PDFWStreamForFile | PDFWStreamForBuffer,
+    options?: PDFRecryptOptions,
+  ): Promise<void>;
 
   /**
    * A JavaScript output stream. `write` receives each chunk as a `Buffer` the

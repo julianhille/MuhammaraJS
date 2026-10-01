@@ -14,8 +14,11 @@ diff -ru --strip-trailing-cr PDF-Writer/PDFWriter packages/native-with-source/sr
 
 ## Thread Safety
 
-A recrypt on a libuv pool thread must not share state with writers on the
-JavaScript thread. These changes are marked with `MuhammaraJS:` comments.
+`recryptAsync()` runs `PDFWriter::RecryptPDF` on a libuv pool thread while
+writers keep running on the JavaScript thread. These changes are marked with
+`MuhammaraJS:` comments; the reasons and the audit of the remaining global state
+are in
+[Security And Vendored Dependencies](../../../../native/docs/security.md#thread-safety-patches-in-pdfwriter).
 
 | File                     | Change                                                        |
 | ------------------------ | ------------------------------------------------------------- |

@@ -1117,3 +1117,15 @@ recipe.annot(10, 10, "Square", {
   date: new Date(),
   replies: [{ contents: "Reply", open: true, icon: "Help", flags: 4 }],
 });
+
+var recrypted: Promise<void> = muhammara.recryptAsync("in.pdf", "out.pdf", {
+  password: "user",
+  userPassword: "new",
+});
+void recrypted;
+void muhammara.recryptAsync(
+  new muhammara.PDFRStreamForBuffer(Buffer.alloc(0)),
+  new muhammara.PDFWStreamForBuffer(),
+);
+// @ts-expect-error Paths and streams cannot be mixed.
+void muhammara.recryptAsync("in.pdf", new muhammara.PDFWStreamForBuffer());
