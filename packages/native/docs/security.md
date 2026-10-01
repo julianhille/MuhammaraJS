@@ -20,8 +20,10 @@ describe the source currently in this repository.
 | `Zlib`             | 1.3.1                                                        | [Source](https://github.com/madler/zlib) and [issues](https://github.com/madler/zlib/issues)                                                                                                                           |
 
 The PDFWriter tag is the vendored tree's upstream baseline. MuhammaraJS carries
-changes on top of it, so `packages/native-with-source/src/deps/PDFWriter` is not necessarily byte-for-byte
-identical to that tag. The other version identifiers come from the vendored
+changes on top of it, so `packages/native-with-source/src/deps/PDFWriter` is not
+byte-for-byte identical to that tag;
+[`MUHAMMARAJS_PATCHES.md`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/src/deps/PDFWriter/MUHAMMARAJS_PATCHES.md)
+in that directory lists each change and why it was made. The other version identifiers come from the vendored
 source headers; `LibAesgm` does not declare an upstream release version.
 OpenSSL's pinned source archive is included only in the source-capable npm package,
 which remains below npm's 256 MiB tarball limit. Local source builds and CI extract
