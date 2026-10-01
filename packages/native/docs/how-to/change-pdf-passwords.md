@@ -81,8 +81,13 @@ await muhammara.recryptAsync("plain.pdf", "output.pdf", {
       written to the target stream when the work is done. Both block the event
       loop while they run, and every waiting stream job keeps its source in
       memory. Use paths for large documents or many jobs.
-    - **Relative paths are resolved when `recryptAsync` is called**, so a
-      later change of the working directory does not affect a waiting job.
+    - **Do not write to the target stream while a job runs.** The output's
+      offsets are computed from the stream position at the call. If the
+      position changed when the job finishes, the promise rejects and nothing
+      is written.
+    - **Relative paths are resolved when `recryptAsync` is called**,
+      including `log`, so a later change of the working directory does not
+      affect a waiting job.
     - **Use a separate output for each job,** and do not change a source file
       while a job that reads it is waiting.
     - **Pass `log` to each call.** Each thread has its own log settings, so a

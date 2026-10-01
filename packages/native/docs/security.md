@@ -66,6 +66,10 @@ global state was reviewed and left unchanged:
 - `rand()` is only used by the Type 2 (CFF) charstring interpreter for font
   embedding, which recrypt does not call.
 
+The addon also initializes OpenSSL with `OPENSSL_INIT_NO_ATEXIT`, so
+`process.exit()` does not free OpenSSL's global state while a job still uses
+it on a pool thread. The process ends right after and releases it anyway.
+
 When updating PDFWriter, reapply these three changes. Keep the `recryptAsync`
 tests in `packages/native-with-source/tests/Xcryption.js` and the sanitizer CI
 job passing.

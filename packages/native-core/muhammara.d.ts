@@ -139,7 +139,8 @@ declare namespace muhammara {
    * @param newPdfStream - The output stream.
    * @param options - The source password and the new encryption settings.
    * @returns Resolves once the output is written; rejects with a TypeError if
-   *   the PDF cannot be recrypted, or with the error the output stream threw.
+   *   the PDF cannot be recrypted, with an Error if the output stream was
+   *   written to while the job ran, or with the error the output stream threw.
    * @throws {TypeError} If the arguments are wrong.
    */
   export function recryptAsync(

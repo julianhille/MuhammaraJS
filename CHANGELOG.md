@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- `recrypt()` and `recryptAsync()` share one process-wide lock, so only one
+  recrypt runs at a time. Synchronous `recrypt()` calls on different worker
+  threads now run one after another, and a `recrypt()` call waits for a
+  running `recryptAsync()` job, blocking its thread meanwhile
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 - Native log settings belong to the thread that sets them. A writer created
   in a worker thread no longer changes where writers on other threads log
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
