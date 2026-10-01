@@ -505,73 +505,55 @@ describe("Xcryption", function () {
     });
 
     it("keeps waiting jobs off the libuv pool", async function () {
-      if (process.platform === "win32") {
-        this.skip();
+      this.timeout(120000);
+      // A large source keeps the first job on a pool thread for a while.
+      var big = __dirname + "/output/RecryptAsyncPoolSource.pdf";
+      var writer = muhammara.createWriter(big);
+      for (var i = 0; i < 4; i++) {
+        writer.appendPDFPagesFromPDF(
+          __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+        );
       }
-      var path = require("path");
-      var directory = fs.mkdtempSync(
-        path.join(__dirname, "output/recrypt-queue-"),
-      );
-      var fifo = path.join(directory, "source.fifo");
-      require("child_process").execFileSync("mkfifo", [fifo]);
-      // The first job blocks a pool thread reading the FIFO; the ones behind it
-      // must wait in the queue, not on pool threads, or fs would starve.
-      var blocked = assert.rejects(
-        muhammara.recryptAsync(fifo, path.join(directory, "blocked.pdf")),
-        /Unable to recrypt files/,
-      );
+      writer.end();
+
+      var firstDone = false;
+      var first = muhammara
+        .recryptAsync(big, __dirname + "/output/RecryptAsyncPoolFirst.pdf", {
+          userPassword: "pool",
+        })
+        .then(function () {
+          firstDone = true;
+        });
+      // Waiting behind the first job, these must stay in the queue. On pool
+      // threads they would block on the lock, leaving none for fs until the
+      // first job ends.
       var waiting = Array.from({ length: 8 }, function (_, index) {
         return muhammara.recryptAsync(
           __dirname + "/TestMaterials/Original.pdf",
-          path.join(directory, "waiting-" + index + ".pdf"),
+          __dirname + "/output/RecryptAsyncPoolWaiting-" + index + ".pdf",
         );
       });
-      var fd;
-      var timer;
       try {
-        // ENXIO means the native reader has not opened the FIFO yet. Keeping
-        // the writer open after this handshake blocks its first read, not JS.
-        var deadline = Date.now() + 5000;
-        while (fd === undefined) {
-          try {
-            fd = fs.openSync(
-              fifo,
-              fs.constants.O_WRONLY | fs.constants.O_NONBLOCK,
-            );
-          } catch (error) {
-            if (error.code !== "ENXIO" || Date.now() > deadline) throw error;
-            await new Promise(function (resolve) {
-              setTimeout(resolve, 5);
-            });
-          }
-        }
-        var reads = Array.from(
-          { length: Number(process.env.UV_THREADPOOL_SIZE || 4) * 2 },
-          function () {
-            return fs.promises.readFile(
-              __dirname + "/TestMaterials/Original.pdf",
-            );
-          },
+        await Promise.all(
+          Array.from(
+            { length: Number(process.env.UV_THREADPOOL_SIZE || 4) * 2 },
+            function () {
+              return fs.promises.readFile(
+                __dirname + "/TestMaterials/Original.pdf",
+              );
+            },
+          ),
         );
-        await Promise.race([
-          Promise.all(reads),
-          new Promise(function (_, reject) {
-            timer = setTimeout(function () {
-              reject(new Error("Waiting recrypt jobs starved the libuv pool"));
-            }, 5000);
-          }),
-        ]);
+        assert.equal(
+          firstDone,
+          false,
+          "fs reads waited for the first recrypt, so waiting jobs held pool threads",
+        );
       } finally {
-        clearTimeout(timer);
-        if (fd === undefined)
-          fd = fs.openSync(fifo, fs.constants.O_RDWR | fs.constants.O_NONBLOCK);
-        fs.closeSync(fd);
-        await blocked;
+        await first;
         await Promise.all(waiting);
-        fs.rmSync(directory, { recursive: true, force: true });
       }
     });
-
     it("rejects with the error a write stream throws", async function () {
       var failure = new Error("disk full");
       await assert.rejects(
