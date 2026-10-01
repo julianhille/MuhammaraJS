@@ -752,32 +752,47 @@ describe("Xcryption", function () {
       assertRecryptedPdf(nested, undefined, false);
     });
 
-    it("exits cleanly when process.exit() runs during a job", function () {
+    it("survives process.exit() in a worker thread during a job", async function () {
       this.timeout(60000);
-      var result = require("child_process").spawnSync(
-        process.execPath,
-        [
-          __dirname + "/helpers/recrypt-exit.js",
-          __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
-          __dirname + "/output/RecryptAsyncExit-",
-        ],
+      var { Worker } = require("worker_threads");
+      var worker = new Worker(
+        `
+        const { workerData } = require("worker_threads");
+        const muhammara = require(workerData.module);
+        for (let i = 0; i < 4; i++)
+          muhammara.recryptAsync(
+            workerData.source,
+            workerData.outputPrefix + i + ".pdf",
+            { userPassword: "exit", version: muhammara.ePDFVersion20 },
+          );
+        setTimeout(() => process.exit(0), 20);
+        `,
         {
-          encoding: "utf8",
-          // process.exit() skips V8 teardown, so LeakSanitizer would report
-          // the live heap; keep the use-after-free checks this test is for.
-          // Under electron-mocha, execPath is Electron, which runs a script
-          // only as Node.
-          env: {
-            ...process.env,
-            ASAN_OPTIONS: (process.env.ASAN_OPTIONS || "") + ":detect_leaks=0",
-            ELECTRON_RUN_AS_NODE: "1",
+          eval: true,
+          workerData: {
+            module: require.resolve("@muhammara/native-with-source"),
+            source: __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+            outputPrefix: __dirname + "/output/RecryptAsyncExit-",
           },
         },
       );
-      assert.equal(result.signal, null, result.stderr);
-      assert.equal(result.status, 0, result.stderr);
+      var code = await new Promise(function (resolve, reject) {
+        worker.once("exit", resolve);
+        worker.once("error", reject);
+      });
+      assert.equal(code, 0);
+      // The process survives the worker's exit, and recrypt still works.
+      await muhammara.recryptAsync(
+        __dirname + "/TestMaterials/Original.pdf",
+        __dirname + "/output/RecryptAsyncAfterExit.pdf",
+        { version: muhammara.ePDFVersion20, userPassword: "after" },
+      );
+      assertRecryptedPdf(
+        __dirname + "/output/RecryptAsyncAfterExit.pdf",
+        "after",
+        true,
+      );
     });
-
     it("drops waiting jobs when a worker thread ends", async function () {
       var { Worker } = require("worker_threads");
       var worker = new Worker(
