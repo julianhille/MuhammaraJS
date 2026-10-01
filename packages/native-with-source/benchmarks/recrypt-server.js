@@ -203,9 +203,12 @@ function serve(input, outputDirectory) {
     if (process.send && address && typeof address === "object")
       process.send({ port: address.port });
   });
+  // Close instead of process.exit(), so the process ends after a normal
+  // shutdown that leak checkers can follow.
   process.on("disconnect", function () {
+    delay.disable();
     server.close();
-    process.exit(0);
+    server.closeAllConnections();
   });
 }
 
