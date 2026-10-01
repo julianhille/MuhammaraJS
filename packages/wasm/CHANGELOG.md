@@ -36,6 +36,19 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   synchronous `recrypt()` and `recryptAsync()`, each on the page and in a
   module Worker, and measures how long the page stops responding
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+- Draw right-to-left text such as Hebrew in visual order when `writeText()`
+  or Recipe `text()` is given the new `direction` option (`TextDirection` /
+  `Recipe.TextDirection`). `"auto"` takes each paragraph's direction from its
+  first strong letter, and `"ltr"` and `"rtl"` set it. Text is reordered with
+  the Unicode Bidirectional Algorithm ([bidi-js](https://github.com/lojjic/bidi-js),
+  MIT,
+  vendored as `lib/vendor/bidi-js.js`): numbers and Latin words inside Hebrew keep their order, brackets are
+  mirrored, and points stay on their letters. Recipe reorders each wrapped
+  line with its paragraph's direction, also across the styled runs of HTML
+  and flowed text, and places justified words from right to left. The
+  default, `"none"`, draws text exactly as given, as before; see [Write
+  Right-to-Left Text](docs/how-to/write-right-to-left-text.md)
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 
 ## [1.0.0] - 2026-10-01
 

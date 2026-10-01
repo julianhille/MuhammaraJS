@@ -8,6 +8,11 @@ import {
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 import { rotationOption } from "./vector.helper.js";
+import {
+  readDirection,
+  resolveDirection,
+  toVisual,
+} from "../text-direction.js";
 
 /**
  * Deep-merges plain option objects; arrays and dates are replaced, not merged.
@@ -100,13 +105,16 @@ function endsWithBreakableSpace(value) {
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Text options.
  * @param {Recipe.TextWrap|boolean} wrap - Wrap mode; `true` means auto.
- * @returns {Array<{text: string, last: boolean}>} Lines; `last` ends a paragraph.
+ * @returns {Array<{text: string, last: boolean, direction: string}>} Lines in
+ *   logical order; `last` ends a paragraph and `direction` is the resolved
+ *   direction of the paragraph the line was wrapped from.
  */
 function lines(value, width, measure, options, wrap) {
   var result = [];
   String(value)
     .split("\n")
     .forEach((paragraph) => {
+      var direction = resolveDirection(paragraph, options.direction);
       var line = "";
       var truncated = false;
       var words = splitWords(paragraph);
@@ -120,7 +128,7 @@ function lines(value, width, measure, options, wrap) {
         if (fits || !line) {
           line = next;
         } else if (wrap === TextWrap.AUTO || wrap === true) {
-          result.push({ text: trimBreakableEnd(line), last: false });
+          result.push({ text: trimBreakableEnd(line), last: false, direction });
           line = word;
         } else if (wrap === TextWrap.CLIP) {
           line = next;
@@ -135,6 +143,7 @@ function lines(value, width, measure, options, wrap) {
         result.push({
           text: wrap === TextWrap.CLIP ? line : trimBreakableEnd(line),
           last: true,
+          direction,
         });
       }
     });
@@ -842,7 +851,8 @@ export function createTextMethods({ drawText, measure, module }) {
      * @returns {Recipe} The Recipe instance.
      * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
      *   not greater than zero.
-     * @throws {TypeError} If `rotation` is not a finite number.
+     * @throws {TypeError} If `rotation` is not a finite number, or `direction`
+     *   is not a `Recipe.TextDirection` value.
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
      */
     text(value = "", x, y, options = {}) {
@@ -857,6 +867,7 @@ export function createTextMethods({ drawText, measure, module }) {
       options = merge(inherited, options);
       // Validate before anything is drawn, as native does.
       rotationOption(options.rotation);
+      readDirection(options.direction);
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
       var layout = options.layout && this._layouts?.[options.layout];
@@ -1142,7 +1153,13 @@ export function createTextMethods({ drawText, measure, module }) {
                 partHilite,
               );
             }
-            drawText.call(this, part.text, drawX, baseline, partOptions);
+            drawText.call(
+              this,
+              toVisual(part.text, options.direction),
+              drawX,
+              baseline,
+              partOptions,
+            );
             if (partOptions.link) {
               var linkBounds = dimensions(this, part.text, partOptions);
               var coversGap =
@@ -1171,7 +1188,9 @@ export function createTextMethods({ drawText, measure, module }) {
           });
           linkWidth = drawX - linkX;
         } else if (isJustifiedLine) {
-          var words = entry.text.match(/\S+\s*/g) || [entry.text];
+          // Justified words are placed left to right in visual order.
+          var visualText = toVisual(entry.text, entry.direction);
+          var words = visualText.match(/\S+\s*/g) || [visualText];
           var wordsWidth = words.reduce(
             (sum, word) => sum + dimensions(this, word, textOptions).width,
             0,
@@ -1186,7 +1205,13 @@ export function createTextMethods({ drawText, measure, module }) {
           });
           linkWidth = width - left - right;
         } else {
-          drawText.call(this, entry.text, drawX, baseline, textOptions);
+          drawText.call(
+            this,
+            toVisual(entry.text, entry.direction),
+            drawX,
+            baseline,
+            textOptions,
+          );
         }
         if (clipping) this._restore();
         // Text-markup annotations span to the run's right glyph edge, like

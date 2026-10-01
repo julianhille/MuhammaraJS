@@ -7,7 +7,9 @@ XObjectContentContextDriver::XObjectContentContextDriver()
 bool XObjectContentContextDriver::Init(ModuleState &s, napi_value exports) {
   ClassBuilder b(s, "XObjectContentContext", New);
   AbstractContentContextDriver::Init(b);
-  return b.Define(exports, false) != nullptr;
+  // Exported so the JavaScript layer can extend writeText; it removes the
+  // export again, so XObjectContentContext is not public API.
+  return b.Define(exports) != nullptr;
 }
 napi_value XObjectContentContextDriver::New(const CallbackArgs &a) {
   auto *d = new XObjectContentContextDriver();

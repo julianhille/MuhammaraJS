@@ -1061,10 +1061,12 @@ declare namespace muhammara {
      * @param text - The text.
      * @param x - The baseline start x.
      * @param y - The baseline y.
-     * @param options - The font, size, color, underline and strike-out.
+     * @param options - The font, size, color, underline and text direction.
+     *   Right-to-left text is reordered into the visual order PDF draws in.
      * @returns This context.
      * @throws {TypeError} If fewer than 3 arguments are given, or the coordinates,
-     *   font size or underline geometry are not finite.
+     *   font size or underline geometry are not finite, or `direction` is not a
+     *   `TextDirection` value.
      * @throws {TypeError} If there is no content context.
      */
     writeText(text: string, x: PosX, y: PosY, options?: WriteTextOptions): this;
@@ -1117,7 +1119,26 @@ declare namespace muhammara {
 
   export interface WriteTextOptions extends FontOptions, ColorOptions {
     underline?: boolean;
+    /**
+     * How right-to-left text such as Hebrew is ordered before it is drawn.
+     * Defaults to `TextDirection.AUTO`.
+     */
+    direction?: TextDirection;
   }
+
+  /** How `writeText()` and Recipe `text()` order text before drawing it. */
+  export const TextDirection: {
+    /** Each paragraph takes the direction of its first strong letter. */
+    readonly AUTO: "auto";
+    /** A left-to-right paragraph; right-to-left runs inside it are reordered. */
+    readonly LTR: "ltr";
+    /** A right-to-left paragraph. */
+    readonly RTL: "rtl";
+    /** Draw the text exactly as given, for text already in visual order. */
+    readonly NONE: "none";
+  };
+  export type TextDirection =
+    (typeof TextDirection)[keyof typeof TextDirection];
 
   export interface XObjectContentContext extends AbstractContentContext {}
 
@@ -3244,6 +3265,8 @@ declare namespace muhammara {
     type HorizontalAlign = "left" | "center" | "right";
     type VerticalAlign = "top" | "center" | "bottom";
     type TextAlign = "left" | "center" | "right" | "justify";
+    /** A `Recipe.TextDirection` value. */
+    type TextDirection = "auto" | "ltr" | "rtl" | "none";
     /** Known text-box alignments, with string compatibility for computed values. */
     type TextBoxAlign =
       TextAlign | `${TextAlign} ${VerticalAlign}` | (string & {});
@@ -3520,6 +3543,12 @@ declare namespace muhammara {
       strikeOut?: boolean | TextMarkupOptions;
       squiggly?: boolean | TextMarkupOptions;
       html?: boolean;
+      /**
+       * How right-to-left text such as Hebrew is ordered: `"auto"` (default)
+       * takes each paragraph's direction from its first strong letter, `"ltr"`
+       * and `"rtl"` set it, and `"none"` draws the text exactly as given.
+       */
+      direction?: TextDirection;
       hilite?:
         | boolean
         | {
@@ -3829,6 +3858,13 @@ declare namespace muhammara {
       readonly CENTER: "center";
       readonly RIGHT: "right";
       readonly JUSTIFY: "justify";
+    };
+    /** How text() orders right-to-left text such as Hebrew before drawing it. */
+    static readonly TextDirection: {
+      readonly AUTO: "auto";
+      readonly LTR: "ltr";
+      readonly RTL: "rtl";
+      readonly NONE: "none";
     };
     /** Which table rows the `row` options apply to. */
     static readonly TableRowNth: {

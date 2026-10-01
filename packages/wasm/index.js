@@ -34,6 +34,7 @@ import {
   LineCapStyle,
   EEncoding,
 } from "./lib/value-sets.js";
+import { TextDirection } from "./lib/text-direction.js";
 
 export {
   ByteReader,
@@ -51,6 +52,7 @@ export {
   PDFImageType,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
+  TextDirection,
 };
 
 /**

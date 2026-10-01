@@ -19,7 +19,9 @@ bool PageContentContextDriver::Init(ModuleState &s, napi_value exports) {
   b.Method("getCurrentPageContentStream", GetCurrentPageContentStream)
       .Method("getAssociatedPage", GetAssociatedPage);
   AbstractContentContextDriver::Init(b);
-  return b.Define(exports, false) != nullptr;
+  // Exported so the JavaScript layer can extend writeText; it removes the
+  // export again, so PageContentContext is not public API.
+  return b.Define(exports) != nullptr;
 }
 napi_value PageContentContextDriver::New(const CallbackArgs &a) {
   auto *d = new PageContentContextDriver();

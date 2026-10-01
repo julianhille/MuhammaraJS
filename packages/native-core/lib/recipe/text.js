@@ -4,6 +4,11 @@ const { htmlToTextObjects, HtmlTag } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
 const { linkPdf } = require("./annotation");
 const {
+  readDirection,
+  paragraphDirections,
+  toVisual,
+} = require("../text-direction");
+const {
   TextWrap,
   TextAlign,
   VerticalAlign,
@@ -277,6 +282,9 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {Object|Boolean} [options.underline] - Text markup annotation.
  * @param {Object|Boolean} [options.strikeOut] - Text markup annotation.
  * @param {Boolean} [options.html] - Interpret text as html
+ * @param {Recipe.TextDirection} [options.direction='auto'] - How right-to-left text such as Hebrew is ordered:
+ * 'auto' picks each paragraph's direction from its first strong letter, 'ltr' and 'rtl' set it, and 'none' writes
+ * the text exactly as given, for text that is already in visual order. Each laid-out line is reordered on its own.
  * @param {Boolean} [options.flow=false] - Used to activate/deactivate text flow which is the
  * ability to use multiple calls to 'text' to create an overall text box.
  * @param {number|string} [options.layout] - An identifier of the layout to be associated with given text.
@@ -319,7 +327,8 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {string} [options.subject] - Subject of annotation.
  * @param {string} [options.link] - Make the text open this URL.
  * @returns {Recipe} The recipe instance. Without an active page nothing is drawn.
- * @throws {TypeError} If `options.charSpace` or `options.rotation` is not a finite number; nothing is drawn.
+ * @throws {TypeError} If `options.charSpace` or `options.rotation` is not a finite number, or
+ * `options.direction` is not a `Recipe.TextDirection` value; nothing is drawn.
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 exports.text = function text(text = "", x, y, options = {}) {
@@ -331,6 +340,7 @@ exports.text = function text(text = "", x, y, options = {}) {
   // Validate before _initOptions moves the text position or resets the flow.
   const rawOptions = (typeof x === "object" ? x : options) || {};
   _validateCharSpace(rawOptions);
+  readDirection(rawOptions.direction);
   // Reject invalid markup annotations before any text is drawn.
   for (let key in rawOptions) {
     if (this._getTextMarkupAnnotationSubtype(key) && rawOptions[key]) {
@@ -358,6 +368,7 @@ exports.text = function text(text = "", x, y, options = {}) {
   pathOptions.html = options.html;
   pathOptions.link = options.link;
   pathOptions.hilite = options.hilite;
+  pathOptions.direction = options.direction;
 
   // save text state for continued text?
   this._textOptions = this._flow ? options : { textBox: {} };
@@ -546,6 +557,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         }
       };
 
+      // Lines are laid out in logical order and drawn in visual order.
       const emitText = (word, x, y, ctx) => {
         ctx.Tm(1, 0, 0, 1, x, y);
         ctx.Tj(word);
@@ -649,7 +661,7 @@ exports.text = function text(text = "", x, y, options = {}) {
               context,
               options,
               (word, xx) => {
-                emitText(word.value, xx, y + baseline, context);
+                emitText(word, xx, y + baseline, context);
               },
             );
           } else {
@@ -665,7 +677,13 @@ exports.text = function text(text = "", x, y, options = {}) {
                 .n();
             }
 
-            emitTextObject(text, x, y + baseline, context, options);
+            emitTextObject(
+              toVisual(text, wto.direction),
+              x,
+              y + baseline,
+              context,
+              options,
+            );
           }
 
           context.Q();
@@ -695,11 +713,17 @@ exports.text = function text(text = "", x, y, options = {}) {
               xObjectCtx,
               options,
               (word, xx) => {
-                emitText(word.value, xx - nx, baseline, xObjectCtx, options);
+                emitText(word, xx - nx, baseline, xObjectCtx, options);
               },
             );
           } else {
-            emitTextObject(text, x - nx, baseline, xObjectCtx, options);
+            emitTextObject(
+              toVisual(text, wto.direction),
+              x - nx,
+              baseline,
+              xObjectCtx,
+              options,
+            );
           }
 
           xObjectCtx.Q();
@@ -1322,7 +1346,8 @@ function drawTextBox(self, nx, ny, textBox, pathOptions) {
  * @param {number} x is starting position for text placement
  * @param {Object[]} wto is a write object
  * @param {Object} textBox holds text box properties
- * @param {Function} [position] used to place given word at a postion on the line
+ * @param {Function} [position] called as position(text, x) to draw each word,
+ * in visual order, at its place on the line
  * @returns {number} The x where the next run on the line starts.
  */
 function justify(left, x, wto, textBox, position) {
@@ -1333,9 +1358,15 @@ function justify(left, x, wto, textBox, position) {
   // computation, the final wrinkle to make sure the last word in the line smacks up against
   // the right side boundary is to perform a special computation on the last word positioning
   // relative to that right side bounds.
-  const wordsInLine = wto.wordsInLine;
-  const textWidth = wto.totalTextWidth ? wto.totalTextWidth : wto.textWidth;
-  const spaceCount = wto.wordCount ? wto.wordCount - 1 : wordsInLine.length - 1;
+  const visualWords = visualLineWords(wto);
+  const wordsInLine = visualWords || wto.wordsInLine;
+  const textWidth = visualWords
+    ? visualWords.reduce((width, word) => width + word.dimensions.xMax, 0)
+    : wto.totalTextWidth
+      ? wto.totalTextWidth
+      : wto.textWidth;
+  const spaceCount =
+    wto.wordCount && !visualWords ? wto.wordCount - 1 : wordsInLine.length - 1;
   const spaceBetweenWords =
     spaceCount > 0
       ? (textBox.width -
@@ -1363,7 +1394,11 @@ function justify(left, x, wto, textBox, position) {
     const nextWord = wordsInLine[index + 1];
 
     word = wordsInLine[index];
-    position && position(word, x);
+    position &&
+      position(
+        visualWords ? word.value : toVisual(word.value, wto.direction),
+        x,
+      );
 
     // Ready to compute last word spacing?
     if (nextWord && nextWord.last) {
@@ -1378,6 +1413,44 @@ function justify(left, x, wto, textBox, position) {
   // to compensate for text fragments that have not been
   // split on whitespace boundaries.
   return word.value.endsWith(" ") ? x : x - spaceBetweenWords;
+}
+
+/**
+ * The words of a justified line in visual order, measured again. Only a line
+ * written as one run is reordered as a whole; the words of a line shared by
+ * several runs keep their places and are each reordered on their own. Leading
+ * indent words stay first, and non-breaking spaces stay inside their word.
+ * The result is cached on the run, which is justified once to measure a
+ * hilite and once to draw.
+ * @private
+ * @param {Object} wto - The laid-out run.
+ * @returns {Word[]|null} The visual words, or null when the line keeps its
+ *   logical word order.
+ */
+function visualLineWords(wto) {
+  if (wto.visualWords !== undefined) return wto.visualWords;
+  wto.visualWords = null;
+  const words = wto.wordsInLine;
+  if (wto.wordCount || !words.length) return null;
+  let indent = 0;
+  while (indent < words.length && words[indent].value.trim() === "") {
+    indent++;
+  }
+  const text = words
+    .slice(indent)
+    .map((word) => word.value)
+    .join("");
+  const visual = toVisual(text, wto.direction);
+  if (visual === text) return null;
+  const pathOptions = words[0]._pathOptions;
+  const visualWords = visual
+    .split(/(?:(?![\u00a0\u2007\u202f])\s)+/)
+    .filter((value) => value !== "")
+    .map((value) => new Word(value, pathOptions));
+  if (!visualWords.length) return null;
+  visualWords[visualWords.length - 1].lastWord();
+  wto.visualWords = words.slice(0, indent).concat(visualWords);
+  return wto.visualWords;
 }
 
 /**
@@ -1453,7 +1526,7 @@ function elideNonFittingText(textBox, line, word, pathOptions) {
  * @param {number} lineID - The ID tying the first HTML line to its group.
  * @param {Object} textBox - The laid-out text box.
  * @param {Object} [options] - html, lastLine, lineComplete, wordCount,
- *   totalTextWidth and writeOptions.
+ *   totalTextWidth, writeOptions and the line's resolved direction.
  * @returns {Object} The run: text, line metrics and justification data.
  */
 function makeTextObject(lines, line, lineID, textBox, options = {}) {
@@ -1489,6 +1562,7 @@ function makeTextObject(lines, line, lineID, textBox, options = {}) {
     lastLine: options.lastLine === true,
     writeOptions: options.writeOptions,
     lineComplete: options.lineComplete === true,
+    direction: options.direction,
   };
 }
 
@@ -1595,6 +1669,9 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
 
   const breaker = new LineBreaker(text);
   const lines = [];
+  // Each line keeps the direction of the paragraph it was wrapped from.
+  const directionAt = paragraphDirections(text, pathOptions.direction);
+  let lineStart = 0;
   const indent = textObject.indent || 0;
 
   const lineMaxWidth = textBox.width
@@ -1701,6 +1778,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
               wordCount: wordCount,
               totalTextWidth: totalTextWidth,
               lineComplete: true,
+              direction: directionAt(lineStart),
             }),
           ),
         );
@@ -1726,6 +1804,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
               textBox,
               Object.assign({}, lineOpts, {
                 lineComplete: true,
+                direction: directionAt(lineStart),
               }),
             ),
           );
@@ -1734,6 +1813,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
         // this is the auto wrap section
         newLine = new Line(lineMaxWidth, lineHeight, size, pathOptions);
         newLine.indent(indent);
+        lineStart = last;
 
         if (textObject.prependValue) {
           const space = Array(textObject.prependValue.length + 1)
@@ -1750,6 +1830,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
         if (bk.required) {
           flushLine = false;
           newLine = new Line(lineMaxWidth, lineHeight, size, pathOptions);
+          lineStart = bk.position;
           word = null;
           break;
         }
@@ -1768,11 +1849,19 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
             newLine,
             lineID,
             textBox,
-            Object.assign({ lineComplete: true, lastLine: true }, lineOpts),
+            Object.assign(
+              {
+                lineComplete: true,
+                lastLine: true,
+                direction: directionAt(lineStart),
+              },
+              lineOpts,
+            ),
           ),
         );
         markLineComplete(toWriteTextObjects);
         newLine = new Line(lineMaxWidth, lineHeight, size, pathOptions);
+        lineStart = bk.position;
       }
     }
 
@@ -1803,6 +1892,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
           wordCount: wordCount,
           totalTextWidth: totalTextWidth,
           lastLine: isLastLine,
+          direction: directionAt(lineStart),
         }),
       ),
     );
