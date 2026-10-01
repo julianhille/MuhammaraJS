@@ -53,6 +53,12 @@
                         '-pthread'
                     ]
                 }],
+                ['OS=="linux" and target_arch=="riscv64"', {
+                    # OpenSSL's riscv64 AES assembly reaches its own functions
+                    # with jal, which fails to link ("relocation truncated")
+                    # when the symbols can be interposed in a shared module.
+                    'ldflags': [ '-Wl,-Bsymbolic' ]
+                }],
                 ['OS=="mac"', {
                     'libraries': [
                         '<(module_root_dir)/openssl-build/<(target_arch)/libcrypto.a'

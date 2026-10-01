@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Publish a Linux glibc riscv64 prebuild of `@muhammara/native`, and let
+  `@muhammara/native-with-source` build OpenSSL for riscv64. The release
+  workflow cross-builds the Node-API 8 binary in Dockcross and runs the native
+  test suite on it under QEMU with Node.js 20 and 22; musl riscv64 is not prebuilt.
+  riscv64 Node.js comes from a distribution package or an unofficial build,
+  because nodejs.org publishes none; see the [Prebuilt Support Matrix](packages/native/docs/getting-started/installation.md#prebuilt-support-matrix) [#877](https://github.com/julianhille/MuhammaraJS/issues/877)
+
 ## [7.0.0] - 2026-10-01
 
 Upgrading from `muhammara` 6.x? Follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md).
