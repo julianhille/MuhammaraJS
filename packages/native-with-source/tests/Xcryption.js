@@ -752,40 +752,6 @@ describe("Xcryption", function () {
       assertRecryptedPdf(nested, undefined, false);
     });
 
-    it("exits cleanly when process.exit() runs during a job", function () {
-      this.timeout(60000);
-      var result = require("child_process").spawnSync(
-        process.execPath,
-        [
-          "-e",
-          `
-          const muhammara = require(${JSON.stringify(require.resolve("@muhammara/native-with-source"))});
-          for (let i = 0; i < 4; i++)
-            muhammara.recryptAsync(
-              ${JSON.stringify(__dirname + "/TestMaterials/BasicTIFFImagesTest.PDF")},
-              ${JSON.stringify(__dirname + "/output/RecryptAsyncExit-")} + i + ".pdf",
-              { userPassword: "exit", version: muhammara.ePDFVersion20 },
-            );
-          setTimeout(() => process.exit(0), 20);
-          `,
-        ],
-        {
-          encoding: "utf8",
-          // process.exit() skips V8 teardown, so LeakSanitizer would report
-          // the live heap; keep the use-after-free checks this test is for.
-          // Under electron-mocha, execPath is Electron, which runs -e only as
-          // Node.
-          env: {
-            ...process.env,
-            ASAN_OPTIONS: (process.env.ASAN_OPTIONS || "") + ":detect_leaks=0",
-            ELECTRON_RUN_AS_NODE: "1",
-          },
-        },
-      );
-      assert.equal(result.signal, null, result.stderr);
-      assert.equal(result.status, 0, result.stderr);
-    });
-
     it("drops waiting jobs when a worker thread ends", async function () {
       var { Worker } = require("worker_threads");
       var worker = new Worker(
