@@ -4,6 +4,7 @@ import {
   PDFImageType,
   createMuhammaraWasm,
   createRecipe,
+  thirdPartyLicenses,
   DeviceColorSpace as DeviceColorSpaces,
   ImageFit as ImageFitPolicies,
   PageBox as PageBoxes,
@@ -536,6 +537,13 @@ async function usesLowLevelSurface() {
   await createRecipe({ wasmBinary: new Blob() });
   // @ts-expect-error Use locateFile to load the binary from a URL.
   await createMuhammaraWasm({ wasmBinary: "muhammara-wasm.wasm" });
+  const licenses: string = thirdPartyLicenses();
+  void licenses;
+  // @ts-expect-error The notices come from the loaded module; nothing is passed.
+  thirdPartyLicenses(new Uint8Array());
+  // @ts-expect-error The notices are returned synchronously as a string.
+  const pendingLicenses: Promise<string> = thirdPartyLicenses();
+  void pendingLicenses;
   await createRecipe({ defaultFont: new Uint8Array() });
   await createRecipe({ defaultFont: new ArrayBuffer(0) });
   await createRecipe({ defaultFont: new Blob() });

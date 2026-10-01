@@ -3,6 +3,7 @@ import {
   ByteWriterWithPosition,
   createMuhammaraWasm,
   createRecipe,
+  thirdPartyLicenses,
 } from "../../index.js";
 import {
   runExampleWorkflow,
@@ -50,6 +51,13 @@ export async function runValidation() {
   assertions += 1;
 
   var muhammara = await createMuhammaraWasm();
+  var licenses = thirdPartyLicenses();
+  assert(
+    licenses.startsWith("# Third-Party Licenses\n") &&
+      licenses.includes("\n## FreeType\n"),
+    "embedded third-party licenses",
+  );
+  assertions += 1;
   var writer = muhammara.createWriter({ version: muhammara.ePDFVersion14 });
   var page = new muhammara.PDFPage(0, 0, 200, 300);
   writer

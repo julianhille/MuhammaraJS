@@ -11,6 +11,11 @@ byte-backed PDFs can be read, modified, and copied, but persistent-file
 continuation, password-protected Recipe source editing, and the path-based Recipe
 constructor are unavailable. See [Change PDF Passwords](how-to/change-pdf-passwords.md).
 
+`thirdPartyLicenses()` is Wasm-only: it returns the third-party notices
+embedded in the `.wasm` (see [License Notices](license-notices.md)). The native
+packages ship their notices as `THIRD_PARTY_NOTICES.md` and have no such
+function.
+
 Recipe bundles Roboto Regular as its default rather than native Recipe's
 Helvetica family. Bold and italic fall back to regular unless their byte fonts
 are registered, and the different metrics can change wrapping. The low-level

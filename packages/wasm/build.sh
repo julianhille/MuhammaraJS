@@ -90,3 +90,9 @@ if [ "$MUHAMMARA_WASM_BUILD_TESTS" = ON ]; then
   node /build/pdf-page-merging-helper-cleanup-test.js
 fi
 if command -v ccache >/dev/null 2>&1; then ccache --show-stats; fi'
+
+# wasm-opt, run by emcc, moves custom sections to the end of the module, so the
+# third-party licenses are inserted into the finished binary as its first
+# section. The copy in dist is fresh from the build tree, so a rebuild never
+# finds a section left over from an earlier run.
+node "$root/packages/wasm/scripts/embed-licenses.mjs" "$dist/muhammara-wasm.wasm"

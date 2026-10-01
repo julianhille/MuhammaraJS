@@ -125,6 +125,9 @@ Next steps:
 - [Recipe guide](https://muhammarajs-wasm.readthedocs.io/latest/recipe/index.html) and
   [low-level API](https://muhammarajs-wasm.readthedocs.io/latest/low-level.html)
 - [How-to guides](https://muhammarajs-wasm.readthedocs.io/latest/how-to/index.html)
+- [License notices](https://muhammarajs-wasm.readthedocs.io/latest/license-notices.html) —
+  the notices embedded in the `.wasm`, `thirdPartyLicenses()`, and what to
+  keep when bundling or self-hosting the binary
 
 ## Links
 
@@ -132,4 +135,5 @@ Next steps:
 - [Changelog](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/CHANGELOG.md)
 - [Breaking changes](https://muhammarajs-wasm.readthedocs.io/latest/breaking-changes.html)
 - [Differences from the native packages](https://muhammarajs-wasm.readthedocs.io/latest/differences.html)
+- [Third-party licenses](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/wasm/THIRD_PARTY_LICENSES.md)
 - [Issues](https://github.com/julianhille/MuhammaraJS/issues)
