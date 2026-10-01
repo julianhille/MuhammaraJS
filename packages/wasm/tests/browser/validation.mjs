@@ -49,7 +49,16 @@ export async function runValidation() {
   equal(input.notEnded(), false, "byte reader end state");
   assertions += 1;
 
+  var licenses = (
+    await createRecipe({ defaultFont: false })
+  ).thirdPartyLicenses();
   var muhammara = await createMuhammaraWasm();
+  assert(
+    licenses.startsWith("# Third-Party Licenses\n") &&
+      licenses.includes("\n## FreeType\n"),
+    "embedded third-party licenses",
+  );
+  assertions += 1;
   var writer = muhammara.createWriter({ version: muhammara.ePDFVersion14 });
   var page = new muhammara.PDFPage(0, 0, 200, 300);
   writer

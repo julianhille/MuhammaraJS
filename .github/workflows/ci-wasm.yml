@@ -71,6 +71,7 @@ jobs:
       - run: npm run wasm:test:paths
       - run: npm run wasm:test:exports
       - run: npm run wasm:test:manifests
+      - run: npm run wasm:test:licenses
       - name: Install Chrome for Testing
         id: chrome
         uses: browser-actions/setup-chrome@v2.2.0

@@ -4,6 +4,30 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Embed every third-party license and copyright notice in
+  `muhammara-wasm.wasm` as its first section, a custom section named
+  `license` holding plain UTF-8 Markdown, so the notices travel with the
+  binary when a bundler copies it without the package's other files. The text
+  is a table of every component (PDFWriter, FreeType with its BDF and PCF
+  drivers, zlib, LibAesgm, libjpeg, libpng, libtiff, the Emscripten runtime,
+  musl, libc++, libc++abi, compiler-rt, dlmalloc, and the JavaScript-shipped
+  Roboto Regular and Adobe Glyph List), then each component's license in full.
+  It grows the `.wasm` by 129,371 bytes raw (2,106,511 to 2,235,882) and by
+  28,018 bytes gzipped at level 9 (779,984 to 808,002) [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
+- Add `Recipe.thirdPartyLicenses()`, which returns those notices from the
+  module that `createRecipe()` loaded, without fetching, compiling, or
+  instantiating anything. It throws when the WebAssembly module is not loaded
+  and when the binary has no `license` section, for example after
+  `wasm-strip` [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
+- Ship the same text as `dist/THIRD_PARTY_LICENSES.md`, exported as
+  `@muhammara/wasm/THIRD_PARTY_LICENSES.md`. It replaces
+  `THIRD_PARTY_NOTICES.md`, which summarized some licenses and linked to
+  others instead of reproducing them. The build assembles it from the
+  verbatim license files in each vendored library's `licenses/` folder and the
+  Emscripten toolchain that linked the binary [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
+
 ## [1.0.0] - 2026-10-01
 
 ### Added

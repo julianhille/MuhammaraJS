@@ -25,6 +25,12 @@ String writers and `PDFWStreamForBuffer.write()` accept an array of byte
 values on both ends; Wasm throws a `TypeError` for an item that is not an
 integer from 0 to 255, where native coerces it to a byte.
 
+`Recipe.thirdPartyLicenses()` exists only in Wasm. It returns the notices embedded in
+`muhammara-wasm.wasm`, which bundlers copy without the package's other files.
+The native packages keep their notices in `THIRD_PARTY_NOTICES.md` next to the
+`.node` binary, which stays inside the installed package, and have no such
+function.
+
 Recipe value constants are static properties with the native names and members
 (`Recipe.TextWrap`, `Recipe.AnnotFlag`, and so on). Wasm has no `Recipe.Source`,
 because it has no `"new"` output-path sentinel, and adds `Recipe.StructureFormat`

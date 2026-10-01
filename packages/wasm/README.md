@@ -125,6 +125,9 @@ Next steps:
 - [Recipe guide](https://muhammarajs-wasm.readthedocs.io/latest/recipe/index.html) and
   [low-level API](https://muhammarajs-wasm.readthedocs.io/latest/low-level.html)
 - [How-to guides](https://muhammarajs-wasm.readthedocs.io/latest/how-to/index.html)
+- [License notices](https://muhammarajs-wasm.readthedocs.io/latest/license-notices.html) —
+  the notices embedded in the `.wasm`, `Recipe.thirdPartyLicenses()`, and what to
+  keep when bundling or self-hosting the binary
 
 ## Links
 
