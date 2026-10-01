@@ -769,7 +769,15 @@ describe("Xcryption", function () {
           setTimeout(() => process.exit(0), 20);
           `,
         ],
-        { encoding: "utf8" },
+        {
+          encoding: "utf8",
+          // process.exit() skips V8 teardown, so LeakSanitizer would report
+          // the live heap; keep the use-after-free checks this test is for.
+          env: {
+            ...process.env,
+            ASAN_OPTIONS: (process.env.ASAN_OPTIONS || "") + ":detect_leaks=0",
+          },
+        },
       );
       assert.equal(result.signal, null, result.stderr);
       assert.equal(result.status, 0, result.stderr);
