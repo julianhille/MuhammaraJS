@@ -594,6 +594,99 @@ describe("Xcryption", function () {
       );
     });
 
+    it("does not run waiting jobs while a worker thread ends", async function () {
+      this.timeout(60000);
+      var path = require("path");
+      var { Worker } = require("worker_threads");
+      var directory = fs.mkdtempSync(
+        path.join(__dirname, "output/recrypt-terminate-"),
+      );
+      var worker = new Worker(
+        `
+        const { parentPort, workerData } = require("worker_threads");
+        const muhammara = require(workerData.module);
+        for (let i = 0; i < 10; i++)
+          muhammara.recryptAsync(
+            workerData.source,
+            workerData.directory + "/out-" + i + ".pdf",
+            { userPassword: "worker" },
+          );
+        parentPort.postMessage("queued");
+        `,
+        {
+          eval: true,
+          workerData: {
+            module: require.resolve("@muhammara/native-with-source"),
+            source: __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
+            directory: directory,
+          },
+        },
+      );
+      try {
+        await new Promise(function (resolve, reject) {
+          worker.once("message", resolve);
+          worker.once("error", reject);
+        });
+        await worker.terminate();
+        // The running job finishes; the ones behind it never start.
+        assert.ok(fs.readdirSync(directory).length < 10);
+      } finally {
+        fs.rmSync(directory, { recursive: true, force: true });
+      }
+    });
+
+    it("writes offsets that match a stream with earlier bytes", async function () {
+      var prefix = Buffer.from("%prefix written before the PDF\n");
+      var source = fs.readFileSync(__dirname + "/TestMaterials/Original.pdf");
+      var syncTarget = new muhammara.PDFWStreamForBuffer();
+      var asyncTarget = new muhammara.PDFWStreamForBuffer();
+      syncTarget.write(prefix);
+      asyncTarget.write(prefix);
+      muhammara.recrypt(new muhammara.PDFRStreamForBuffer(source), syncTarget);
+      await muhammara.recryptAsync(
+        new muhammara.PDFRStreamForBuffer(source),
+        asyncTarget,
+      );
+      var startxref = function (buffer) {
+        return /startxref\s+(\d+)/.exec(
+          buffer.toString("latin1").slice(-64),
+        )[1];
+      };
+      assert.equal(startxref(asyncTarget.buffer), startxref(syncTarget.buffer));
+    });
+
+    it("returns a built-in promise when globalThis.Promise is replaced", async function () {
+      var BuiltinPromise = Promise;
+      var promise;
+      global.Promise = function NotAPromise() {};
+      try {
+        promise = muhammara.recryptAsync(
+          __dirname + "/TestMaterials/Original.pdf",
+          __dirname + "/output/RecryptAsyncReplacedPromise.pdf",
+        );
+      } finally {
+        global.Promise = BuiltinPromise;
+      }
+      assert.ok(promise instanceof BuiltinPromise);
+      await promise;
+    });
+
+    it("resolves relative paths when it is called", async function () {
+      var path = require("path");
+      var original = process.cwd();
+      process.chdir(__dirname);
+      var target = "output/RecryptAsyncRelative.pdf";
+      fs.rmSync(path.join(__dirname, target), { force: true });
+      var promise;
+      try {
+        promise = muhammara.recryptAsync("TestMaterials/Original.pdf", target);
+      } finally {
+        process.chdir(original);
+      }
+      await promise;
+      assertRecryptedPdf(path.join(__dirname, target), undefined, false);
+    });
+
     it("drops waiting jobs when a worker thread ends", async function () {
       var { Worker } = require("worker_threads");
       var worker = new Worker(
@@ -699,6 +792,7 @@ describe("Xcryption", function () {
     });
 
     it("leaves the event loop free while the synchronous call blocks it", async function () {
+      this.timeout(120000);
       // A single small fixture recrypts too fast to observe, so build a bigger
       // one first. Appending the same document repeatedly is enough.
       var big = __dirname + "/output/RecryptAsyncLargeSource.pdf";

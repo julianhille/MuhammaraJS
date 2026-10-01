@@ -65,6 +65,45 @@ function decodeExtractedText(muhammara) {
  * @param {object} muhammara The native addon loaded by an implementation package.
  * @returns {object} The public MuhammaraJS API.
  */
+// Addons whose recryptAsync already resolves relative paths.
+var resolvingAddons = new WeakSet();
+
+/**
+ * Make `recryptAsync()` resolve relative paths when it is called. A queued job
+ * opens its files later, and the working directory may change in between.
+ *
+ * @param {object} muhammara The native addon.
+ * @returns {void}
+ */
+function resolveRecryptAsyncPaths(muhammara) {
+  var recryptAsync = muhammara.recryptAsync;
+  if (typeof recryptAsync !== "function" || resolvingAddons.has(muhammara))
+    return;
+  resolvingAddons.add(muhammara);
+  /**
+   * Re-encrypt a PDF on libuv's thread pool.
+   *
+   * @param {string|object} source The source path or read stream.
+   * @param {string|object} target The output path or write stream.
+   * @param {object} [options] The source password and encryption settings.
+   * @returns {Promise<void>} Settles once the output is written.
+   * @throws {TypeError} If the arguments are wrong.
+   */
+  muhammara.recryptAsync = function (source, target, options) {
+    var args = Array.prototype.slice.call(arguments);
+    if (
+      typeof source === "string" &&
+      typeof target === "string" &&
+      source !== "" &&
+      target !== ""
+    ) {
+      args[0] = path.resolve(source);
+      args[1] = path.resolve(target);
+    }
+    return recryptAsync.apply(this, args);
+  };
+}
+
 exports.createMuhammara = function createMuhammara(muhammara) {
   var bindingModule = require.resolve("./lib/muhammara");
   var recipeDirectory = path.join(__dirname, "lib", "recipe") + path.sep;
@@ -152,6 +191,7 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     return this;
   };
   decodeExtractedText(muhammara);
+  resolveRecryptAsyncPaths(muhammara);
   muhammara.PDFStreamForResponse = require("./lib/PDFStreamForResponse");
   muhammara.PDFWStreamForFile = require("./lib/PDFWStreamForFile");
   muhammara.PDFRStreamForFile = require("./lib/PDFRStreamForFile");

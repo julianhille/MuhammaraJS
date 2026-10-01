@@ -4,6 +4,7 @@
 #include "PDFWriter.h"
 #include "napi/NapiSupport.h"
 
+#include <mutex>
 #include <string>
 
 // The options recrypt() and recryptAsync() share, so both accept the same
@@ -24,6 +25,10 @@ bool ReadRecryptArguments(const muhammara::napi::CallbackArgs &args,
 inline constexpr const char *kRecryptFailure =
     "Unable to recrypt files, check that input and output files are clear and "
     "arguments are coool";
+
+// Held while any recrypt runs, synchronous or not. PDFWriter is not audited
+// for concurrent recrypts, so at most one runs in the process at a time.
+std::mutex &RecryptMutex();
 
 // Returns a promise and re-encrypts on libuv's thread pool. Jobs run one at a
 // time, in call order.
