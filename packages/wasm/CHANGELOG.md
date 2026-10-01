@@ -14,8 +14,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   drivers, zlib, LibAesgm, libjpeg, libpng, libtiff, the Emscripten runtime,
   musl, libc++, libc++abi, compiler-rt, dlmalloc, and the JavaScript-shipped
   Roboto Regular and Adobe Glyph List), then each component's license in full.
-  It grows the `.wasm` by 117,660 bytes raw (2,106,511 to 2,224,171) and by
-  25,242 bytes gzipped at level 9 (779,984 to 805,226) [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
+  It grows the `.wasm` by 127,237 bytes raw (2,106,511 to 2,233,748) and by
+  26,906 bytes gzipped at level 9 (779,984 to 806,890) [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
 - Add `thirdPartyLicenses()`, which returns those notices from the module that
   `createMuhammaraWasm()` or `createRecipe()` loaded, without fetching
   anything. It throws before a module is loaded and when the binary has no

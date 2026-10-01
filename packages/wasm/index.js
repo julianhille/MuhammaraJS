@@ -104,9 +104,12 @@ async function compileWasm(options) {
   var node = isNode();
   var fs = node ? nodeBuiltin("fs") : undefined;
   if (node && !fs) return undefined;
-  var location = new URL(`./dist/${wasmFileName}`, import.meta.url).href;
+  // A string literal, so that bundlers detect the reference and emit the
+  // binary, as they do for Emscripten's own default.
+  var url = new URL("./dist/muhammara-wasm.wasm", import.meta.url);
+  var location = url.href;
   if (typeof options.locateFile === "function") {
-    var directory = new URL("./dist/", import.meta.url);
+    var directory = new URL(".", url);
     var prefix =
       node && directory.protocol === "file:"
         ? nodeBuiltin("url").fileURLToPath(directory)

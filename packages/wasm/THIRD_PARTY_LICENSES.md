@@ -21,9 +21,9 @@ This software is based in part on the work of the Independent JPEG Group.
 | libc++abi | as shipped in Emscripten 3.1.74 | Apache-2.0 WITH LLVM-exception | https://github.com/emscripten-core/emscripten/tree/3.1.74/system/lib/libcxxabi | dist/muhammara-wasm.wasm |
 | LibJpeg | IJG JPEG 10 (25-Jan-2026) | IJG | https://www.ijg.org/files/jpegsrc.v10.tar.gz | dist/muhammara-wasm.wasm |
 | LibPng | 1.6.59 | libpng-2.0 | https://github.com/pnggroup/libpng/tree/v1.6.59 | dist/muhammara-wasm.wasm |
-| LibTiff | 4.7.2 | libtiff | https://gitlab.com/libtiff/libtiff/-/tree/v4.7.2 | dist/muhammara-wasm.wasm |
+| LibTiff | 4.7.2 | libtiff AND MIT | https://gitlab.com/libtiff/libtiff/-/tree/v4.7.2 | dist/muhammara-wasm.wasm |
 | musl libc | as shipped in Emscripten 3.1.74 | MIT | https://github.com/emscripten-core/emscripten/tree/3.1.74/system/lib/libc/musl | dist/muhammara-wasm.wasm |
-| PDFWriter | v4.9.1 baseline, patched by MuhammaraJS | Apache-2.0 | https://github.com/galkahana/PDF-Writer/tree/v4.9.1 | dist/muhammara-wasm.wasm |
+| PDFWriter | v4.9.1 baseline, patched by MuhammaraJS | Apache-2.0 AND RSA-MD AND BSD-3-Clause AND libtiff | https://github.com/galkahana/PDF-Writer/tree/v4.9.1 | dist/muhammara-wasm.wasm |
 | Roboto Regular | Roboto.ttf as bundled with @muhammara/native-core | Apache-2.0 | https://github.com/googlefonts/roboto | fonts/Roboto-Regular.js (not in the .wasm) |
 | Zlib | 1.3.1 | Zlib | https://github.com/madler/zlib/tree/v1.3.1 | dist/muhammara-wasm.wasm |
 
@@ -1704,7 +1704,7 @@ be appreciated.
 ## LibTiff
 
 Version: 4.7.2  
-License: libtiff  
+License: libtiff AND MIT  
 Source: https://gitlab.com/libtiff/libtiff/-/tree/v4.7.2  
 Shipped in: dist/muhammara-wasm.wasm
 
@@ -1758,6 +1758,83 @@ from this software without specific prior written permission.
 THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+Copyright (c) 2008-2009, Even Rouault <even dot rouault at spatialys.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+Copyright (c) 1997 Greg Ward Larson
+Copyright (c) 1997 Silicon Graphics, Inc.
+
+Permission to use, copy, modify, distribute, and sell this software and
+its documentation for any purpose is hereby granted without fee, provided
+that (i) the above copyright notices and this permission notice appear in
+all copies of the software and related documentation, and (ii) the names of
+Sam Leffler, Greg Larson and Silicon Graphics may not be used in any
+advertising or publicity relating to the software without the specific,
+prior written permission of Sam Leffler, Greg Larson and Silicon Graphics.
+
+THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+IN NO EVENT SHALL SAM LEFFLER, GREG LARSON OR SILICON GRAPHICS BE LIABLE
+FOR ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+OF THIS SOFTWARE.
+
+Copyright (c) Joris Van Damme <info@awaresystems.be>
+Copyright (c) AWare Systems <http://www.awaresystems.be/>
+
+The licence agreement for this file is the same as the rest of the LibTiff
+library.
+
+IN NO EVENT SHALL JORIS VAN DAMME OR AWARE SYSTEMS BE LIABLE FOR
+ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+OF THIS SOFTWARE.
+
+Copyright (c) 1996-1997 Sam Leffler
+Copyright (c) 1996 Pixar
+
+Permission to use, copy, modify, distribute, and sell this software and
+its documentation for any purpose is hereby granted without fee, provided
+that (i) the above copyright notices and this permission notice appear in
+all copies of the software and related documentation, and (ii) the names of
+Pixar, Sam Leffler and Silicon Graphics may not be used in any advertising or
+publicity relating to the software without the specific, prior written
+permission of Pixar, Sam Leffler and Silicon Graphics.
+
+THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+IN NO EVENT SHALL PIXAR, SAM LEFFLER OR SILICON GRAPHICS BE LIABLE FOR
+ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+OF THIS SOFTWARE.
 ```
 
 ## musl libc
@@ -1966,7 +2043,7 @@ obstacle to adoption, that text has been removed.
 ## PDFWriter
 
 Version: v4.9.1 baseline, patched by MuhammaraJS  
-License: Apache-2.0  
+License: Apache-2.0 AND RSA-MD AND BSD-3-Clause AND libtiff  
 Source: https://github.com/galkahana/PDF-Writer/tree/v4.9.1  
 Shipped in: dist/muhammara-wasm.wasm
 
@@ -2186,6 +2263,127 @@ limitations under the License.
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+Additional Copyright Information:
+
+Gal Kahana 8/5/2010. my code is completely copied/adapted from this:
+
+MD5.CC - source code for the C++/object oriented translation and 
+         modification of MD5.
+
+Translation and modification (c) 1995 by Mordechai T. Abzug 
+
+This translation/ modification is provided "as is," without express or 
+implied warranty of any kind.
+
+The translator/ modifier does not claim (1) that MD5 will do what you think 
+it does; (2) that this translation/ modification is accurate; or (3) that 
+this software is "merchantible."  (Language for this disclaimer partially 
+copied from the disclaimer below).
+
+the code is based on:
+
+MD5.H - header file for MD5C.C
+MDDRIVER.C - test driver for MD2, MD4 and MD5
+
+Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
+rights reserved.
+
+License to copy and use this software is granted provided that it
+is identified as the "RSA Data Security, Inc. MD5 Message-Digest
+Algorithm" in all material mentioning or referencing this software
+or this function.
+
+License is also granted to make and use derivative works provided
+that such works are identified as "derived from the RSA Data
+Security, Inc. MD5 Message-Digest Algorithm" in all material
+mentioning or referencing the derived work.
+
+RSA Data Security, Inc. makes no representations concerning either
+the merchantability of this software or the suitability of this
+software for any particular purpose. It is provided "as is"
+without express or implied warranty of any kind.
+
+These notices must be retained in any copies of any part of this
+documentation and/or software.
+
+Copyright (c) 2011 Google Inc. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+* Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+* Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+The majority of this code is converted from tiff2pdf tool that comes with the
+tifflib library. in accordance with the code instructions the header of tiff2pdf
+is provided here:
+
+Copyright (c) 2003 Ross Finlayson
+
+Permission to use, copy, modify, distribute, and sell this software and
+its documentation for any purpose is hereby granted without fee, provided
+that (i) the above copyright notices and this permission notice appear in
+all copies of the software and related documentation, and (ii) the name of
+Ross Finlayson may not be used in any advertising or
+publicity relating to the software without the specific, prior written
+permission of Ross Finlayson.
+
+THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+IN NO EVENT SHALL ROSS FINLAYSON BE LIABLE FOR
+ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+OF THIS SOFTWARE.
+
+let's get nice libtiff copyright as well
+Copyright (c) 1991-1997 Sam Leffler
+Copyright (c) 1991-1997 Silicon Graphics, Inc.
+
+Permission to use, copy, modify, distribute, and sell this software and
+its documentation for any purpose is hereby granted without fee, provided
+that (i) the above copyright notices and this permission notice appear in
+all copies of the software and related documentation, and (ii) the names of
+Sam Leffler and Silicon Graphics may not be used in any advertising or
+publicity relating to the software without the specific, prior written
+permission of Sam Leffler and Silicon Graphics.
+
+THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+IN NO EVENT SHALL SAM LEFFLER OR SILICON GRAPHICS BE LIABLE FOR
+ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+OF THIS SOFTWARE.
 ```
 
 ## Roboto Regular

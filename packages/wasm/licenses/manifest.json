@@ -8,14 +8,17 @@
     {
       "name": "PDFWriter",
       "version": "v4.9.1 baseline, patched by MuhammaraJS",
-      "license": "Apache-2.0",
+      "license": "Apache-2.0 AND RSA-MD AND BSD-3-Clause AND libtiff",
       "source": "https://github.com/galkahana/PDF-Writer/tree/v4.9.1",
       "shippedIn": "dist/muhammara-wasm.wasm",
       "files": [
         "licenses/PDFWriter-NOTICE.txt",
-        "licenses/PDFWriter-LICENSE.txt"
+        "licenses/PDFWriter-LICENSE.txt",
+        "licenses/PDFWriter-MD5Generator.txt",
+        "licenses/PDFWriter-ShadingWriter-Skia.txt",
+        "licenses/PDFWriter-TIFFImageHandler-tiff2pdf.txt"
       ],
-      "origin": "Notice from the header of deps/PDFWriter/PDFWriter.cpp; LICENSE from the v4.9.1 tag."
+      "origin": "Notice from the header of deps/PDFWriter/PDFWriter.cpp; LICENSE from the v4.9.1 tag. The additional notices are kept in the headers of MD5Generator.cpp (RSA MD5, via Mordechai T. Abzug's C++ translation), ShadingWriter.cpp (code from Google's Skia), and TIFFImageHandler.cpp (converted from libtiff's tiff2pdf)."
     },
     {
       "name": "FreeType",
@@ -95,11 +98,17 @@
     {
       "name": "LibTiff",
       "version": "4.7.2",
-      "license": "libtiff",
+      "license": "libtiff AND MIT",
       "source": "https://gitlab.com/libtiff/libtiff/-/tree/v4.7.2",
       "shippedIn": "dist/muhammara-wasm.wasm",
-      "files": ["licenses/LibTiff-LICENSE.txt"],
-      "origin": "LICENSE.md from the v4.7.2 tag; it includes the notice for tif_lzw.c."
+      "files": [
+        "licenses/LibTiff-LICENSE.txt",
+        "licenses/LibTiff-tif_hash_set.txt",
+        "licenses/LibTiff-tif_luv.txt",
+        "licenses/LibTiff-tif_ojpeg.txt",
+        "licenses/LibTiff-tif_pixarlog.txt"
+      ],
+      "origin": "LICENSE.md from the v4.7.2 tag; it includes the notice for tif_lzw.c. The notices of tif_hash_set.c, tif_luv.c, tif_ojpeg.c, and tif_pixarlog.c, which name further copyright holders, are taken from those files."
     },
     {
       "name": "Emscripten runtime",
