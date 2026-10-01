@@ -7,7 +7,11 @@
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { customSections, licenseSectionName } from "./wasm-section.mjs";
+import {
+  customSections,
+  licenseSectionName,
+  readSections,
+} from "./wasm-section.mjs";
 
 export var packageRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -75,6 +79,18 @@ function compare(left, right) {
   var b = right.toLowerCase();
   if (a !== b) return a < b ? -1 : 1;
   return left < right ? -1 : left > right ? 1 : 0;
+}
+
+/**
+ * Tells whether a manifest version names exactly the given version, so that
+ * 1.3.1 does not match 1.3.10.
+ * @param {string} text - Manifest version text.
+ * @param {string} version - Version read from the vendored headers.
+ * @returns {boolean} True when the version appears as a whole token.
+ */
+function mentionsVersion(text, version) {
+  var escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\w.])${escaped}(?![\\w]|\\.\\d)`).test(text);
 }
 
 /**
@@ -159,7 +175,7 @@ export async function generateLicenses() {
     "",
     manifest.header,
     "",
-    ...manifest.acknowledgements.flatMap((line) => [line, ""]),
+    ...(manifest.acknowledgements ?? []).flatMap((line) => [line, ""]),
     "| Component | Version | License (SPDX) | Source | Shipped in |",
     "| --- | --- | --- | --- | --- |",
     ...components.map(
@@ -226,7 +242,11 @@ export async function checkLicenses() {
     var version = check.read(source);
     for (var name of check.names) {
       var component = manifest.components.find((c) => c.name === name);
-      if (!component || !version || !component.version.includes(version)) {
+      if (
+        !component ||
+        !version ||
+        !mentionsVersion(component.version, version)
+      ) {
         errors.push(
           `licenses/manifest.json lists ${name} as ${component?.version}, but ${check.file} is version ${version}`,
         );
@@ -241,7 +261,13 @@ export async function checkLicenses() {
   }
   var wasm = await readFile(wasmFile).catch(() => null);
   if (wasm) {
-    var sections = customSections(new Uint8Array(wasm), licenseSectionName);
+    var bytes = new Uint8Array(wasm);
+    var sections = customSections(bytes, licenseSectionName);
+    if (readSections(bytes)[0]?.name !== licenseSectionName) {
+      errors.push(
+        `The first section of dist/muhammara-wasm.wasm is not "${licenseSectionName}"; rebuild the wasm`,
+      );
+    }
     if (sections.length !== 1) {
       errors.push(
         `dist/muhammara-wasm.wasm has ${sections.length} "${licenseSectionName}" sections instead of 1`,

@@ -2639,8 +2639,8 @@ export function createRecipe(
 /**
  * Returns the third-party license notices (Markdown) embedded in the loaded
  * `muhammara-wasm.wasm` as its `license` custom section. Reads the module
- * already loaded by `createMuhammaraWasm()` or `createRecipe()` and fetches
- * nothing. The text equals `@muhammara/wasm/THIRD_PARTY_LICENSES.md`.
+ * most recently loaded by `createMuhammaraWasm()` or `createRecipe()` and
+ * fetches nothing. The text equals `@muhammara/wasm/THIRD_PARTY_LICENSES.md`.
  *
  * Throws before a module is initialized, and when the loaded module has no
  * `license` section, for example after `wasm-strip`.

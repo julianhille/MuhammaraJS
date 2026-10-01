@@ -181,7 +181,7 @@ async function instantiate(moduleOptions) {
  * Returns the third-party license notices embedded in the loaded
  * `muhammara-wasm.wasm` as its `license` custom section. Nothing is fetched:
  * the text is read from the module that `createMuhammaraWasm()` or
- * `createRecipe()` already loaded.
+ * `createRecipe()` most recently loaded.
  * @returns {string} The notices, Markdown, identical to
  * `@muhammara/wasm/THIRD_PARTY_LICENSES.md`.
  * @throws {Error} If no module has been initialized yet, or the loaded module
