@@ -27,6 +27,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   others instead of reproducing them. The build assembles it from the
   verbatim license files in each vendored library's `licenses/` folder and the
   Emscripten toolchain that linked the binary [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
+- `recryptAsync()`, which resolves with the bytes `recrypt()` returns and also
+  accepts a `Blob` or `File`. It recrypts on the calling thread; call it from a
+  Worker to keep a page responsive
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 
 ## [1.0.0] - 2026-10-01
 

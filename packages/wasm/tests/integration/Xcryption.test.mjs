@@ -211,4 +211,54 @@ describe("Xcryption", function () {
     assert.ok(ivs.length >= 2);
     assert.notDeepEqual(ivs[0], ivs[1]);
   });
+
+  describe("recryptAsync", function () {
+    it("resolves with the same encryption as recrypt from a Blob", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var source = muhammara.createBlankPdf(100, 100);
+      var promise = muhammara.recryptAsync(new Blob([source]), {
+        userPassword: "view",
+        ownerPassword: "edit",
+        version: muhammara.ePDFVersion17,
+      });
+      assert.ok(promise instanceof Promise);
+      var encrypted = await promise;
+      writeOutput("Xcryption-recryptAsync-encrypted", encrypted);
+      assert.ok(encrypted instanceof Uint8Array);
+      var reader = muhammara.createReader(encrypted, { password: "view" });
+      assert.equal(reader.isEncrypted(), true);
+      assert.equal(reader.getPagesCount(), 1);
+      reader.end();
+
+      var plain = await muhammara.recryptAsync(encrypted, { password: "view" });
+      var plainReader = muhammara.createReader(plain);
+      assert.equal(plainReader.isEncrypted(), false);
+      plainReader.end();
+    });
+
+    it("rejects instead of throwing for unsupported input and options", async function () {
+      var muhammara = await createMuhammaraWasm();
+      await assert.rejects(
+        muhammara.recryptAsync("not bytes"),
+        /PDF input must be a Uint8Array or ArrayBuffer/,
+      );
+      await assert.rejects(
+        muhammara.recryptAsync(muhammara.createBlankPdf(100, 100), {
+          userPassword: "view",
+          version: muhammara.ePDFVersion20,
+        }),
+        /PDF 2\.0\/AES-256 encryption is unavailable in WebAssembly/,
+      );
+    });
+
+    it("enforces maxInputBytes before reading a Blob", async function () {
+      var muhammara = await createMuhammaraWasm({
+        limits: { maxInputBytes: 16 },
+      });
+      await assert.rejects(
+        muhammara.recryptAsync(new Blob([new Uint8Array(32)])),
+        /PDF input exceeds maxInputBytes/,
+      );
+    });
+  });
 });

@@ -22,6 +22,23 @@ omitting it removes encryption. `version` defaults to `0`, preserving the source
 PDF version, and `compress` defaults to `true`. Encryption supports PDF 1.0
 through 1.7; PDF 2.0/AES-256 is unavailable in WebAssembly.
 
+## With A Promise
+
+`recryptAsync()` takes the same options and resolves with the rewritten bytes.
+It also accepts a `Blob` or `File`, like the other `*Async` methods, and rejects
+instead of throwing.
+
+```js
+var protectedPdf = await muhammara.recryptAsync(file, {
+  userPassword: "view",
+  ownerPassword: "edit",
+});
+```
+
+The recrypt itself still runs on the calling thread: a page cannot handle input
+or draw until it finishes. To keep a page responsive, call `recrypt()` or
+`recryptAsync()` from a module Worker.
+
 ## Encrypt A New PDF
 
 Pass `userPassword`, `ownerPassword`, and optionally `userProtectionFlag` to

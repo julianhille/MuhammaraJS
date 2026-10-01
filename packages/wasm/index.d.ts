@@ -2529,6 +2529,14 @@ export interface MuhammaraWasm {
     source: ByteSource,
     options?: PDFRecryptOptions,
   ): Uint8Array<ArrayBuffer>;
+  /**
+   * Like `recrypt()`, after reading a Blob, File, or bytes. Recrypting runs on
+   * the calling thread; call it from a Worker to keep a page responsive.
+   */
+  recryptAsync(
+    source: AsyncByteSource,
+    options?: PDFRecryptOptions,
+  ): Promise<Uint8Array<ArrayBuffer>>;
   createWriterToModify(
     source: ByteSource,
     options?: WriterOptions,
