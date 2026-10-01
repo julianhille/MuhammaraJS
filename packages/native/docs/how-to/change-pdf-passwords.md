@@ -67,14 +67,22 @@ await muhammara.recryptAsync("plain.pdf", "output.pdf", {
 !!! note "One recrypt at a time"
 
     - **Jobs run one after another**, in the order they were started, and
-      never in parallel, including jobs from different worker threads. The
-      bundled PDF library is not yet audited for concurrent recrypts. Waiting
-      jobs do not hold libuv pool threads, so file system, DNS and zlib work
-      keeps running.
-    - **Stream input is held in memory.** The source stream is read when
-      `recryptAsync` is called, and the output is buffered until the work
-      finishes. Every waiting stream job keeps its source in memory, so use
-      paths for large documents or many jobs.
+      never in parallel. The bundled PDF library is not yet audited for
+      concurrent recrypts, so one lock covers every recrypt in the process:
+      `recryptAsync` jobs from all threads and the synchronous `recrypt`. A
+      `recrypt` call waits for a running job, blocking its thread meanwhile.
+    - **Waiting jobs stay off the thread pool.** Each thread passes one job at
+      a time to libuv's pool, so file system, DNS and zlib work keeps running.
+      When several worker threads each have a job waiting, each of those jobs
+      holds a pool thread while it waits for the lock. Raise
+      `UV_THREADPOOL_SIZE` or recrypt from one thread if that matters.
+    - **Stream jobs read and write on the calling thread.** The source stream
+      is read into memory when `recryptAsync` is called, and the output is
+      written to the target stream when the work is done. Both block the event
+      loop while they run, and every waiting stream job keeps its source in
+      memory. Use paths for large documents or many jobs.
+    - **Relative paths are resolved when `recryptAsync` is called**, so a
+      later change of the working directory does not affect a waiting job.
     - **Use a separate output for each job,** and do not change a source file
       while a job that reads it is waiting.
     - **Pass `log` to each call.** Each thread has its own log settings, so a

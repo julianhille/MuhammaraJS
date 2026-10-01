@@ -51,8 +51,9 @@ writer's `log` option in a worker thread no longer changes where writers on
 other threads log.
 
 The patches do not make PDFWriter safe for concurrent recrypts. The rest of the
-library has not been audited for that, so `recryptAsync()` also holds a
-process-wide mutex while a job runs, and only one recrypt runs at a time. Other
+library has not been audited for that, so every recrypt, synchronous or not,
+holds a process-wide mutex while it runs, and only one recrypt runs at a time.
+Other
 global state was reviewed and left unchanged:
 
 - Function-local statics such as `PDFTextString::Empty()` and
