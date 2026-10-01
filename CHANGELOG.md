@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   libuv's thread pool, so the event loop keeps running. Jobs run one at a
   time in call order, and waiting jobs do not hold pool threads
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+- A server benchmark comparing `recrypt()` and `recryptAsync()`, including
+  how long each blocks the event loop, run with `npm run bench:recrypt`
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 
 ### Changed
 
