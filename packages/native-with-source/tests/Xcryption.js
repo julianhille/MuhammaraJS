@@ -890,10 +890,12 @@ describe("Xcryption", function () {
     it("leaves the event loop free while the synchronous call blocks it", async function () {
       this.timeout(120000);
       // A single small fixture recrypts too fast to observe, so build a bigger
-      // one first. Appending the same document repeatedly is enough.
+      // one first, about 32 MB. The synchronous call blocks the loop at any
+      // size; the asynchronous one only has to outlast a few timer ticks, and
+      // a larger file only slows the sanitizer job.
       var big = __dirname + "/output/RecryptAsyncLargeSource.pdf";
       var writer = muhammara.createWriter(big);
-      for (var i = 0; i < 12; i++) {
+      for (var i = 0; i < 4; i++) {
         writer.appendPDFPagesFromPDF(
           __dirname + "/TestMaterials/BasicTIFFImagesTest.PDF",
         );
