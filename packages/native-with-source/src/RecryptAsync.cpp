@@ -86,12 +86,13 @@ void DeleteJob(RecryptJob *job) {
   delete job;
 }
 
-// Settles the job's promise. False once the environment can no longer run
-// JavaScript, because it is ending.
-bool Settle(RecryptJob *job, napi_value error) {
+// Settles the job's promise, rejecting with error when failed. error may be
+// null when creating it failed; the promise still rejects. False once the
+// environment can no longer run JavaScript, because it is ending.
+bool Settle(RecryptJob *job, bool failed, napi_value error) {
   napi_value undefined = Undefined(job->env);
-  napi_value function = error ? job->reject.Get() : job->resolve.Get();
-  napi_value argument = error ? error : undefined;
+  napi_value function = failed ? job->reject.Get() : job->resolve.Get();
+  napi_value argument = failed && error ? error : undefined;
   napi_value result = nullptr;
   return function &&
          napi_call_function(job->env, undefined, function, 1, &argument,
@@ -188,8 +189,9 @@ void StartNextJob() {
     if (napi_create_string_utf8(job->env,
                                 "Unable to schedule the recrypt operation",
                                 NAPI_AUTO_LENGTH, &message) == napi_ok &&
-        napi_create_error(job->env, nullptr, message, &error) == napi_ok)
-      Settle(job, error);
+        napi_create_error(job->env, nullptr, message, &error) != napi_ok)
+      error = nullptr;
+    Settle(job, true, error);
     DeleteJob(job);
   }
 }
@@ -200,13 +202,14 @@ bool DrainReadStream(napi_env env, napi_value stream,
                      std::vector<IOBasicTypes::Byte> &out) {
   ObjectByteReaderWithPosition reader(env, stream);
   reader.SetPosition(0);
-  std::vector<IOBasicTypes::Byte> chunk(kStreamChunkSize);
   while (!HasPendingException(env) && reader.NotEnded()) {
+    size_t size = out.size();
+    out.resize(size + kStreamChunkSize);
     IOBasicTypes::LongBufferSizeType read =
-        reader.Read(chunk.data(), chunk.size());
+        reader.Read(out.data() + size, kStreamChunkSize);
+    out.resize(size + read);
     if (read == 0)
       break;
-    out.insert(out.end(), chunk.begin(), chunk.begin() + read);
   }
   return !HasPendingException(env);
 }
@@ -229,7 +232,7 @@ bool FlushWriteStream(napi_env env, napi_value stream,
 
 void Execute(napi_env, void *data) {
   RecryptJob *job = static_cast<RecryptJob *>(data);
-  std::lock_guard<std::mutex> lock(RecryptMutex());
+  std::lock_guard<std::recursive_mutex> lock(RecryptMutex());
   // Each thread has its own trace. Recrypt parses the source before StartPDF
   // applies the log settings, so apply them first, and clear them afterwards
   // so a reused pool thread keeps nothing from this job.
@@ -254,31 +257,56 @@ void Execute(napi_env, void *data) {
   OPENSSL_thread_stop();
 }
 
+napi_value NewError(napi_env env, bool typeError, const char *text) {
+  napi_value message = nullptr;
+  napi_value error = nullptr;
+  if (napi_create_string_utf8(env, text, NAPI_AUTO_LENGTH, &message) !=
+      napi_ok)
+    return nullptr;
+  napi_status status =
+      typeError ? napi_create_type_error(env, nullptr, message, &error)
+                : napi_create_error(env, nullptr, message, &error);
+  return status == napi_ok ? error : nullptr;
+}
+
+// The exception a JavaScript stream method threw, if any.
+bool TakeException(napi_env env, napi_value *error) {
+  bool pending = false;
+  if (napi_is_exception_pending(env, &pending) != napi_ok || !pending)
+    return false;
+  napi_get_and_clear_last_exception(env, error);
+  return true;
+}
+
 void Complete(napi_env env, napi_status status, void *data) {
   RecryptJob *job = static_cast<RecryptJob *>(data);
   ThreadQueue().running = false;
   {
     HandleScope scope(env);
+    bool failed = false;
     napi_value error = nullptr;
     if (status != napi_ok || job->status != eSuccess) {
-      napi_value message = nullptr;
-      if (napi_create_string_utf8(env, kRecryptFailure, NAPI_AUTO_LENGTH,
-                                  &message) == napi_ok)
-        napi_create_type_error(env, nullptr, message, &error);
-    } else if (job->usesStreams &&
-               !FlushWriteStream(env, job->writeStream.Get(),
-                                 job->output.bytes)) {
-      bool pending = false;
-      if (napi_is_exception_pending(env, &pending) == napi_ok && pending)
-        napi_get_and_clear_last_exception(env, &error);
-      else {
-        napi_value message = nullptr;
-        if (napi_create_string_utf8(env, kRecryptFailure, NAPI_AUTO_LENGTH,
-                                    &message) == napi_ok)
-          napi_create_type_error(env, nullptr, message, &error);
+      failed = true;
+      error = NewError(env, true, kRecryptFailure);
+    } else if (job->usesStreams) {
+      napi_value stream = job->writeStream.Get();
+      ObjectByteWriterWithPosition probe(env, stream);
+      IOBasicTypes::LongFilePositionType position = probe.GetCurrentPosition();
+      if (TakeException(env, &error)) {
+        failed = true;
+      } else if (position != job->output.start) {
+        // The xref offsets assume the stream position at the call.
+        failed = true;
+        error = NewError(env, false,
+                         "The output stream was written to while "
+                         "recryptAsync() was running");
+      } else if (!FlushWriteStream(env, stream, job->output.bytes)) {
+        failed = true;
+        if (!TakeException(env, &error))
+          error = NewError(env, true, kRecryptFailure);
       }
     }
-    if (!Settle(job, error)) {
+    if (!Settle(job, failed, error)) {
       // The environment is ending. Node waits for queued work before its
       // cleanup hooks run, so drop the waiting jobs now instead of running
       // every one of them first.
@@ -335,7 +363,9 @@ napi_value RecryptAsync(const CallbackArgs &args) {
   return promise;
 }
 
-std::mutex &RecryptMutex() {
-  static std::mutex mutex;
-  return mutex;
+std::recursive_mutex &RecryptMutex() {
+  // Never destroyed: process.exit() runs static destructors while a job may
+  // still hold the lock on a pool thread.
+  static std::recursive_mutex *mutex = new std::recursive_mutex();
+  return *mutex;
 }

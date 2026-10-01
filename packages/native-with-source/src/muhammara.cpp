@@ -50,6 +50,8 @@
 #include "XObjectContentContextDriver.h"
 #include "text-extraction/PDFTextExtractor.h"
 
+#include <openssl/crypto.h>
+
 using namespace muhammara::napi;
 using namespace PDFHummus;
 
@@ -282,7 +284,7 @@ napi_value Recrypt(const CallbackArgs &args) {
   RecryptArguments options;
   if (!ReadRecryptArguments(args, options))
     return nullptr;
-  std::lock_guard<std::mutex> lock(RecryptMutex());
+  std::lock_guard<std::recursive_mutex> lock(RecryptMutex());
   EStatusCode status;
   if (IsObject(args.Env(), args[0])) {
     ObjectByteReaderWithPosition r(args.Env(), args[0]);
@@ -356,6 +358,10 @@ bool ExportFunction(ModuleState &state, napi_value exports, const char *name,
 }
 
 bool Initialize(ModuleState &state, napi_value exports) {
+  // A recryptAsync() job may still use OpenSSL on a pool thread when
+  // process.exit() runs atexit handlers, so OpenSSL must not free its global
+  // state there. The process ends right after, which releases it anyway.
+  OPENSSL_init_crypto(OPENSSL_INIT_NO_ATEXIT, nullptr);
   if (!PDFWriterDriver::Init(state, exports) ||
       !PDFTextStringDriver::Init(state, exports) ||
       !PDFDateDriver::Init(state, exports) ||

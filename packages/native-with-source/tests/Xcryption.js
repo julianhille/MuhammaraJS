@@ -687,6 +687,94 @@ describe("Xcryption", function () {
       assertRecryptedPdf(path.join(__dirname, target), undefined, false);
     });
 
+    it("rejects when the output stream moves while the job runs", async function () {
+      var target = new muhammara.PDFWStreamForBuffer();
+      var promise = muhammara.recryptAsync(
+        new muhammara.PDFRStreamForBuffer(
+          fs.readFileSync(__dirname + "/TestMaterials/Original.pdf"),
+        ),
+        target,
+      );
+      target.write(Buffer.from("%written meanwhile\n"));
+      await assert.rejects(promise, /written to while recryptAsync/);
+    });
+
+    it("resolves a relative log path when it is called", async function () {
+      var path = require("path");
+      var original = process.cwd();
+      var log = path.join(__dirname, "output/RecryptAsyncRelative.log");
+      fs.rmSync(log, { force: true });
+      process.chdir(__dirname);
+      var promise;
+      try {
+        promise = assert.rejects(
+          muhammara.recryptAsync(
+            "output/MissingRelativeLogSource.pdf",
+            "output/RecryptAsyncRelativeLog.pdf",
+            { log: "output/RecryptAsyncRelative.log" },
+          ),
+          /Unable to recrypt files/,
+        );
+      } finally {
+        process.chdir(original);
+      }
+      await promise;
+      assert.ok(
+        fs.readFileSync(log, "utf8").includes("MissingRelativeLogSource"),
+      );
+    });
+
+    it("lets a stream callback call recrypt() on the same thread", function () {
+      var nested = __dirname + "/output/RecryptNestedInCallback.pdf";
+      var inner = new muhammara.PDFWStreamForBuffer();
+      var called = false;
+      muhammara.recrypt(
+        new muhammara.PDFRStreamForBuffer(
+          fs.readFileSync(__dirname + "/TestMaterials/Original.pdf"),
+        ),
+        {
+          write: function (bytes) {
+            if (!called) {
+              called = true;
+              muhammara.recrypt(
+                __dirname + "/TestMaterials/Original.pdf",
+                nested,
+              );
+            }
+            return inner.write(bytes);
+          },
+          getCurrentPosition: function () {
+            return inner.getCurrentPosition();
+          },
+        },
+      );
+      assert.ok(called);
+      assertRecryptedPdf(nested, undefined, false);
+    });
+
+    it("exits cleanly when process.exit() runs during a job", function () {
+      this.timeout(60000);
+      var result = require("child_process").spawnSync(
+        process.execPath,
+        [
+          "-e",
+          `
+          const muhammara = require(${JSON.stringify(require.resolve("@muhammara/native-with-source"))});
+          for (let i = 0; i < 4; i++)
+            muhammara.recryptAsync(
+              ${JSON.stringify(__dirname + "/TestMaterials/BasicTIFFImagesTest.PDF")},
+              ${JSON.stringify(__dirname + "/output/RecryptAsyncExit-")} + i + ".pdf",
+              { userPassword: "exit", version: muhammara.ePDFVersion20 },
+            );
+          setTimeout(() => process.exit(0), 20);
+          `,
+        ],
+        { encoding: "utf8" },
+      );
+      assert.equal(result.signal, null, result.stderr);
+      assert.equal(result.status, 0, result.stderr);
+    });
+
     it("drops waiting jobs when a worker thread ends", async function () {
       var { Worker } = require("worker_threads");
       var worker = new Worker(

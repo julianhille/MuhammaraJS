@@ -59,18 +59,13 @@ function decodeExtractedText(muhammara) {
   };
 }
 
-/**
- * Attach the shared JavaScript API to an implementation package's loaded addon.
- *
- * @param {object} muhammara The native addon loaded by an implementation package.
- * @returns {object} The public MuhammaraJS API.
- */
 // Addons whose recryptAsync already resolves relative paths.
 var resolvingAddons = new WeakSet();
 
 /**
- * Make `recryptAsync()` resolve relative paths when it is called. A queued job
- * opens its files later, and the working directory may change in between.
+ * Make `recryptAsync()` resolve relative paths, including `options.log`, when
+ * it is called. A queued job opens its files later, and the working directory
+ * may change in between.
  *
  * @param {object} muhammara The native addon.
  * @returns {void}
@@ -100,10 +95,24 @@ function resolveRecryptAsyncPaths(muhammara) {
       args[0] = path.resolve(source);
       args[1] = path.resolve(target);
     }
+    if (
+      options &&
+      typeof options === "object" &&
+      typeof options.log === "string" &&
+      options.log !== ""
+    ) {
+      args[2] = Object.assign({}, options, { log: path.resolve(options.log) });
+    }
     return recryptAsync.apply(this, args);
   };
 }
 
+/**
+ * Attach the shared JavaScript API to an implementation package's loaded addon.
+ *
+ * @param {object} muhammara The native addon loaded by an implementation package.
+ * @returns {object} The public MuhammaraJS API.
+ */
 exports.createMuhammara = function createMuhammara(muhammara) {
   var bindingModule = require.resolve("./lib/muhammara");
   var recipeDirectory = path.join(__dirname, "lib", "recipe") + path.sep;

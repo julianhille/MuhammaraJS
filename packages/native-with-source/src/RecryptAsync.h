@@ -28,7 +28,9 @@ inline constexpr const char *kRecryptFailure =
 
 // Held while any recrypt runs, synchronous or not. PDFWriter is not audited
 // for concurrent recrypts, so at most one runs in the process at a time.
-std::mutex &RecryptMutex();
+// Recursive, because a synchronous recrypt() may call into JavaScript stream
+// methods that call recrypt() again on the same thread, as before the lock.
+std::recursive_mutex &RecryptMutex();
 
 // Returns a promise and re-encrypts on libuv's thread pool. Jobs run one at a
 // time, in call order.
