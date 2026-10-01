@@ -142,6 +142,76 @@ assert.match(
   "Publishing must wait for native ARM64 musl tests",
 );
 
+var riscvBuild = getJob("build-prebuild-riscv64");
+assert.match(
+  riscvBuild,
+  /runs-on: ubuntu-22\.04\n\s+container:\n\s+image: dockcross\/linux-riscv64/,
+  "RISC-V must cross-build in Dockcross on an x64 runner",
+);
+assert.match(
+  riscvBuild,
+  /run: npm run package --workspace=@muhammara\/native-with-source -- --target_arch=riscv64 --target_libc=glibc/,
+  "Cross-built RISC-V addons must be packaged without host load-testing",
+);
+assert.doesNotMatch(
+  riscvBuild,
+  /testpackage/,
+  "The x64 host cannot load the cross-built RISC-V addon",
+);
+var riscvTests = getJob("test-node-riscv64");
+assert.match(riscvTests, /needs: build-prebuild-riscv64/);
+assert.match(riscvTests, /uses: docker\/login-action@v\d+/);
+assert.match(
+  riscvTests,
+  /uses: docker\/setup-qemu-action@v\d+\n\s+with:\n\s+platforms: riscv64/,
+  "The RISC-V tests need QEMU registered for riscv64",
+);
+assert.match(
+  riscvTests,
+  /- image: ubuntu:25\.10\n\s+node: 20\n\s+- image: ubuntu:26\.04\n\s+node: 22/,
+  "The RISC-V tests must cover Node.js 20 and 22 on the Ubuntu releases that package them",
+);
+assert.match(riscvTests, /--platform linux\/riscv64/);
+assert.match(riscvTests, /docker exec riscv64-tests npm ci --ignore-scripts/);
+assert.match(riscvTests, /\.\.\/\.\.\/node_modules\/mocha\/bin\/mocha\.js/);
+assert.match(
+  riscvTests,
+  /docker exec riscv64-tests node \.github\/scripts\/prepare-native-prebuild\.mjs verify/,
+);
+var publishJob = getJob("publish");
+assert.match(
+  publishJob,
+  /build-prebuild-riscv64,/,
+  "Publishing must wait for the RISC-V prebuild",
+);
+assert.match(
+  publishJob,
+  /test-node-riscv64,/,
+  "Publishing must wait for the emulated RISC-V tests",
+);
+assert.match(
+  publishJob,
+  /napi-v\$\{NAPI_VERSION\}-linux-riscv64-glibc\.tar\.gz/,
+  "Releases must expect the RISC-V prebuild",
+);
+var riscvOpenssl = readFileSync(
+  new URL(
+    "../../packages/native-with-source/scripts/build-openssl.sh",
+    import.meta.url,
+  ),
+  "utf8",
+);
+assert.match(
+  riscvOpenssl,
+  /Linux-riscv64\) openssl_target=linux64-riscv64/,
+  "OpenSSL must build for RISC-V",
+);
+assert.match(
+  bindingGyp,
+  /'OS=="linux" and target_arch=="riscv64"', \{[^}]*'ldflags': \[ '-Wl,-Bsymbolic' \]/,
+  "RISC-V must link with -Bsymbolic for OpenSSL's AES assembly",
+);
+
 console.log(
-  `Validated ${cases.length} Electron Node-API boundary checks and musl build/test separation.`,
+  `Validated ${cases.length} Electron Node-API boundary checks, musl build/test separation, and the RISC-V prebuild.`,
 );

@@ -121,6 +121,7 @@ architecture, runtime, or libc combination, install
 | Runtime  | Supported versions    | Operating system and architecture | Prebuilt binary    |
 | -------- | --------------------- | --------------------------------- | ------------------ |
 | Node.js  | 20, 22, 24, >=25      | Linux glibc x64 and arm64         | Yes                |
+| Node.js  | 20 and 22 (tested)    | Linux glibc riscv64               | Yes                |
 | Node.js  | 20, 22, 24, >=25      | Linux musl x64 and arm64          | Yes                |
 | Node.js  | 20, 22, 24, >=25      | macOS x64 and arm64               | Yes                |
 | Node.js  | 20, 22, 24, >=25      | Windows x64                       | Yes                |
@@ -133,6 +134,15 @@ architecture, runtime, or libc combination, install
 
 Windows arm64 and Linux arm64 Electron builds are not part of the current
 prebuilt matrix, and macOS x64 Electron builds cover only 36.0 through 38.1.
+
+The Linux glibc riscv64 prebuild is cross-built and then tested under QEMU
+emulation with Node.js 20 (Ubuntu 25.10) and 22 (Ubuntu 26.04), because
+nodejs.org does not publish riscv64 Node.js binaries and no CI runner is RISC-V
+hardware. Use a Node.js packaged for riscv64 by your distribution or an
+unofficial build; the same Node-API 8 binary is expected to work with Node.js
+24 and later, but CI does not cover them.
+Electron has no riscv64 build, and musl riscv64 is not prebuilt: use
+`@muhammara/native-with-source` there.
 The package `engines` field is the authoritative
 Node.js version policy; this table describes the release workflow's binary
 coverage.

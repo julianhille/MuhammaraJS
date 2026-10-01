@@ -173,6 +173,43 @@ jobs:
           path: canonical-upload/napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc.tar.gz
           if-no-files-found: error
 
+  build-prebuild-riscv64:
+    runs-on: ubuntu-22.04
+    container:
+      image: dockcross/linux-riscv64
+      credentials:
+        username: "${{ secrets.DOCKER_USERNAME }}"
+        password: "${{ secrets.DOCKER_PASSWORD }}"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20.19.0
+          architecture: x64
+      - name: Install Dockcross build tools
+        run: apt-get update && apt-get install -y ccache perl python3
+      - uses: ./.github/actions/setup-native-build-cache
+        with:
+          key: native-prebuild-napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc-container-v1-${{ hashFiles('packages/native-with-source/binding.gyp', 'packages/native-with-source/src/**') }}
+          restore-keys: native-prebuild-napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc-container-v1-
+      - run: npm ci --ignore-scripts
+      - name: Build canonical Node-API ${{ env.NAPI_VERSION }} prebuild
+        run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+        env:
+          npm_config_arch: riscv64
+          npm_config_target_arch: riscv64
+          npm_config_target_libc: glibc
+      # The cross-built addon cannot be loaded by the x64 host Node.
+      # test-node-riscv64 runs this exact archive under QEMU.
+      - name: Package the cross-built RISC-V prebuild
+        run: npm run package --workspace=@muhammara/native-with-source -- --target_arch=riscv64 --target_libc=glibc
+      - run: node .github/scripts/prepare-native-prebuild.mjs stage packages/native-with-source/build/stage napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc.tar.gz canonical-upload
+      - uses: actions/upload-artifact@v7
+        with:
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc
+          path: canonical-upload/napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc.tar.gz
+          if-no-files-found: error
+
   build-prebuild-musl:
     strategy:
       fail-fast: false
@@ -474,6 +511,60 @@ jobs:
         if: always()
         run: docker rm --force musl-tests
 
+  test-node-riscv64:
+    needs: build-prebuild-riscv64
+    strategy:
+      fail-fast: false
+      matrix:
+        # The Node.js each Ubuntu release packages for riscv64: the oldest
+        # supported line and the newest one a distribution ships.
+        include:
+          - image: ubuntu:25.10
+            node: 20
+          - image: ubuntu:26.04
+            node: 22
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+    steps:
+      # No GitHub runner is RISC-V, so the exact cross-built archive runs in an
+      # emulated Ubuntu with the Node.js it packages for riscv64.
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: prebuild-napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc
+          path: canonical-prebuild
+      # Authenticate like the build jobs' container credentials, so pulling the
+      # test image is not rate limited. Forks without the secrets skip the login.
+      - name: Log in to Docker Hub
+        if: ${{ env.DOCKER_USERNAME != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Register RISC-V emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: riscv64
+      - name: Start RISC-V Ubuntu test container
+        run: docker run --detach --name riscv64-tests --platform linux/riscv64 --volume "$PWD:/workspace" --workdir /workspace ${{ matrix.image }} sleep infinity
+      - name: Install Node.js
+        run: docker exec riscv64-tests sh -c "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs npm && node --version && test \"\$(node -p 'process.versions.node.split(\".\")[0]')\" = '${{ matrix.node }}'"
+      - name: Install test dependencies without rebuilding
+        run: docker exec riscv64-tests npm ci --ignore-scripts
+      - name: Install the canonical RISC-V prebuild
+        run: docker exec riscv64-tests node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc.tar.gz napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc.tar.gz
+      # Emulation is far slower than hardware, so the per-test timeout is longer
+      # than the 15 seconds of `npm test`.
+      - name: Run native tests under emulation
+        run: docker exec --workdir /workspace/packages/native-with-source riscv64-tests node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R spec --recursive ./tests --ignore "./tests/helpers/**" --timeout 120000
+      - name: Verify the tested prebuild is unchanged
+        run: docker exec riscv64-tests node .github/scripts/prepare-native-prebuild.mjs verify
+      - name: Remove the RISC-V test container
+        if: always()
+        run: docker rm --force riscv64-tests
+
   test-node-desktop:
     needs: build-prebuild-desktop
     strategy:
@@ -521,10 +612,12 @@ jobs:
         packed-source-fallback,
         sanitizer,
         build-prebuild-glibc,
+        build-prebuild-riscv64,
         build-prebuild-musl,
         build-prebuild-desktop,
         test-electron,
         test-node-glibc,
+        test-node-riscv64,
         test-node-musl,
         test-node-musl-arm64,
         test-node-desktop,
@@ -572,6 +665,7 @@ jobs:
           expected=(
             napi-v${NAPI_VERSION}-linux-x64-glibc.tar.gz
             napi-v${NAPI_VERSION}-linux-arm64-glibc.tar.gz
+            napi-v${NAPI_VERSION}-linux-riscv64-glibc.tar.gz
             napi-v${NAPI_VERSION}-linux-x64-musl.tar.gz
             napi-v${NAPI_VERSION}-linux-arm64-musl.tar.gz
             napi-v${NAPI_VERSION}-darwin-x64-unknown.tar.gz

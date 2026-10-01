@@ -9,6 +9,7 @@ if [ -z "$target_architecture" ]; then
   case "$(uname -m)" in
     x86_64) target_architecture=x64 ;;
     aarch64|arm64) target_architecture=arm64 ;;
+    riscv64) target_architecture=riscv64 ;;
     *)
       echo "Unsupported OpenSSL build architecture: $(uname -m)" >&2
       exit 1
@@ -32,6 +33,7 @@ fi
 case "$(uname -s)-$target_architecture" in
   Linux-x64) openssl_target=linux-x86_64 ;;
   Linux-arm64) openssl_target=linux-aarch64 ;;
+  Linux-riscv64) openssl_target=linux64-riscv64 ;;
   Darwin-x64)
     openssl_target=darwin64-x86_64-cc
     export CFLAGS="${CFLAGS:-} -arch x86_64"
