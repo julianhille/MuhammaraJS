@@ -48,6 +48,22 @@ such as a wrong input password or an unreadable source, rejects the promise
 with the message `recrypt` throws. An error thrown by the output stream rejects
 the promise with that error.
 
+`Recipe.encrypt()` encrypts with the synchronous `recrypt` when `endPDF()`
+runs. To keep that step off the event loop, leave out `encrypt()` and recrypt
+the finished file instead:
+
+```javascript
+var recipe = new muhammara.Recipe("new", "plain.pdf");
+recipe.createPage(595, 842).text("hello", 50, 50).endPage();
+recipe.endPDF();
+
+await muhammara.recryptAsync("plain.pdf", "output.pdf", {
+  userPassword: "user",
+  ownerPassword: "owner",
+  userProtectionFlag: 4,
+});
+```
+
 !!! note "One recrypt at a time"
 
     - **Jobs run one after another**, in the order they were started, and
