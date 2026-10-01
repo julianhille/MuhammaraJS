@@ -41,6 +41,7 @@ import { createInspectPdf } from "./recipe/inspection.js";
 import { createRegistrationMethods } from "./recipe/registration.js";
 import { createSecurityMethods, permission } from "./recipe/security.js";
 import { createReplaceTextMethods } from "./recipe/replace-text.js";
+import { createThirdPartyLicenses } from "./recipe/licenses.js";
 import { standardInfoKeys } from "./recipe-info.js";
 
 /**
@@ -73,6 +74,7 @@ function textColor(model) {
 export function createRecipeFactory({
   defaultFont,
   module,
+  wasmModule,
   encoder,
   normalizeBytes,
   normalizeBytesAsync,
@@ -827,6 +829,7 @@ export function createRecipeFactory({
   Object.assign(Recipe, registration, {
     inspectPdf,
     permission,
+    thirdPartyLicenses: createThirdPartyLicenses(wasmModule),
     splitPdf: createSplitPdf({
       module,
       pdfs,
