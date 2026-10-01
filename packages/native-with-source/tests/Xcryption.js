@@ -773,9 +773,12 @@ describe("Xcryption", function () {
           encoding: "utf8",
           // process.exit() skips V8 teardown, so LeakSanitizer would report
           // the live heap; keep the use-after-free checks this test is for.
+          // Under electron-mocha, execPath is Electron, which runs -e only as
+          // Node.
           env: {
             ...process.env,
             ASAN_OPTIONS: (process.env.ASAN_OPTIONS || "") + ":detect_leaks=0",
+            ELECTRON_RUN_AS_NODE: "1",
           },
         },
       );
