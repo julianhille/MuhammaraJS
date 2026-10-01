@@ -160,6 +160,12 @@ assert.doesNotMatch(
 );
 var riscvTests = getJob("test-node-riscv64");
 assert.match(riscvTests, /needs: build-prebuild-riscv64/);
+assert.match(riscvTests, /uses: docker\/login-action@v\d+/);
+assert.match(
+  riscvTests,
+  /uses: docker\/setup-qemu-action@v\d+\n\s+with:\n\s+platforms: riscv64/,
+  "The RISC-V tests need QEMU registered for riscv64",
+);
 assert.match(riscvTests, /--platform linux\/riscv64/);
 assert.match(riscvTests, /docker exec riscv64-tests npm ci --ignore-scripts/);
 assert.match(riscvTests, /\.\.\/\.\.\/node_modules\/mocha\/bin\/mocha\.js/);
