@@ -64,8 +64,8 @@ list what is native-only.
 
 - **Node.js** 20, 22, 24, and 25 or later.
 - **Electron** 36 or later, tested up to 44.
-- **Prebuilt binaries** for Linux x64 and arm64 (glibc and musl), macOS x64
-  and arm64, and Windows x64. One Node-API 8 binary per platform serves every
+- **Prebuilt binaries** for Linux x64 and arm64 (glibc and musl), Linux riscv64
+  (glibc), macOS x64 and arm64, and Windows x64. One Node-API 8 binary per platform serves every
   supported Node.js and Electron version.
 
 Installation problems, pnpm 10 build approval, and source-build requirements
