@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- `recryptAsync()`, a promise-returning `recrypt()` that re-encrypts on
+  libuv's thread pool, so the event loop keeps running. Jobs run one at a
+  time in call order, and waiting jobs do not hold pool threads
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+
+### Changed
+
+- Native log settings belong to the thread that sets them. A writer created
+  in a worker thread no longer changes where writers on other threads log
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+
 ## [7.0.0] - 2026-10-01
 
 Upgrading from `muhammara` 6.x? Follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md).

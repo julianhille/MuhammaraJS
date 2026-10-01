@@ -87,7 +87,8 @@
 	#define	SAFE_SWPRINTF_4(BUFFER,BUFFER_SIZE,FORMAT,ARG1,ARG2,ARG3,ARG4) swprintf(BUFFER,FORMAT,ARG1,ARG2,ARG3,ARG4)
 	#define	SAFE_SWPRINTF_5(BUFFER,BUFFER_SIZE,FORMAT,ARG1,ARG2,ARG3,ARG4,ARG5) swprintf(BUFFER,FORMAT,ARG1,ARG2,ARG3,ARG4,ARG5)
 	#define SAFE_SWPRINTF_6(BUFFER,BUFFER_SIZE,FORMAT,ARG1,ARG2,ARG3,ARG4,ARG5,ARG6) swprintf(BUFFER,FORMAT,ARG1,ARG2,ARG3,ARG4,ARG5,ARG6)
-	#define SAFE_LOCAL_TIME(structuredLocalTime,currentTime) structuredLocalTime = *localtime(&currentTime)
+	// MuhammaraJS: reentrant, because recryptAsync() formats dates off the JavaScript thread.
+	#define SAFE_LOCAL_TIME(structuredLocalTime,currentTime) localtime_r(&currentTime,&structuredLocalTime)
 	#define SAFE_VSWPRINTF(BUFFER,BUFFER_SIZE,FORMAT,ARGLIST) vswprintf(BUFFER,FORMAT,ARGLIST)
 	#define SAFE_VSPRINTF(BUFFER,BUFFER_SIZE,FORMAT,ARGLIST) vsprintf(BUFFER,FORMAT,ARGLIST)
 	#define SAFE_FOPEN(FILESTREAM_P,FILE_PATH,MODE) {FILESTREAM_P = fopen(FILE_PATH,MODE);}

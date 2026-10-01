@@ -27,7 +27,8 @@
             'include_dirs': [
                 '<(muhammara_source_root)',
                 '<(muhammara_source_root)/deps/PDFWriter',
-                '<(muhammara_source_root)/deps/FreeType/include'
+                '<(muhammara_source_root)/deps/FreeType/include',
+                '<(module_root_dir)/openssl-build/<(target_arch)/include'
             ],
             'msvs_settings':
 			{
@@ -129,6 +130,7 @@
                  '<(muhammara_source_root)/ObjectByteWriterWithPosition.cpp',
                  '<(muhammara_source_root)/PDFObjectParserDriver.cpp',
                  '<(muhammara_source_root)/text-extraction/PDFTextExtractor.cpp',
+                 '<(muhammara_source_root)/RecryptAsync.cpp',
                  '<(muhammara_source_root)/muhammara.cpp'
             ]
 

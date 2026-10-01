@@ -198,7 +198,7 @@ void PDFDate::SetToCurrentTime()
 #if defined (__MWERKS__) || defined (__GNUC__)  || defined(_AIX32) || defined(WIN32)
 	int status;
 #if !defined(__MWERKS__) // (using c methods)
-	struct tm *gmTime;
+	struct tm gmTime;
 
 	time_t localEpoch, gmEpoch;
 
@@ -206,10 +206,15 @@ void PDFDate::SetToCurrentTime()
 	localEpoch = time(NULL);
 
 	/* Using local time epoch get the GM Time */
-	gmTime = gmtime(&localEpoch);
-	gmTime->tm_isdst = -1;
+	// MuhammaraJS: reentrant, because recryptAsync() runs this off the JavaScript thread.
+#if defined(_WIN32)
+	gmtime_s(&gmTime, &localEpoch);
+#else
+	gmtime_r(&localEpoch, &gmTime);
+#endif
+	gmTime.tm_isdst = -1;
 	/* Convert gm time in to epoch format */
-	gmEpoch = mktime(gmTime);
+	gmEpoch = mktime(&gmTime);
 
 	timeZoneSecondsDifference =difftime(gmEpoch, localEpoch);
 	status = 0;

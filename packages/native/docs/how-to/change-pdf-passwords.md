@@ -16,6 +16,55 @@ muhammara.recrypt("input.pdf", "output.pdf", {
 To remove encryption, provide the input `password` without new output password
 options.
 
+## Without Blocking the Event Loop
+
+`recrypt` does all of its work on the JavaScript thread, so a server answers no
+other request while a document is re-encrypted. `recryptAsync` takes the same
+arguments and options, re-encrypts on libuv's thread pool, and returns a
+promise.
+
+```javascript
+await muhammara.recryptAsync("input.pdf", "output.pdf", {
+  password: "current-password",
+  userPassword: "new-open-password",
+});
+```
+
+Stream objects work as with `recrypt`:
+
+```javascript
+var target = new muhammara.PDFWStreamForFile("output.pdf");
+await muhammara.recryptAsync(
+  new muhammara.PDFRStreamForBuffer(sourceBuffer),
+  target,
+  { userPassword: "new-open-password" },
+);
+await new Promise((resolve) => target.close(resolve));
+```
+
+Wrong arguments, such as a missing destination or a path mixed with a stream,
+throw synchronously, as with `recrypt`. A failure once the work has started,
+such as a wrong input password or an unreadable source, rejects the promise
+with the message `recrypt` throws. An error thrown by the output stream rejects
+the promise with that error.
+
+!!! note "One recrypt at a time"
+
+    - **Jobs run one after another**, in the order they were started, and
+      never in parallel, including jobs from different worker threads. The
+      bundled PDF library is not yet audited for concurrent recrypts. Waiting
+      jobs do not hold libuv pool threads, so file system, DNS and zlib work
+      keeps running.
+    - **Stream input is held in memory.** The source stream is read when
+      `recryptAsync` is called, and the output is buffered until the work
+      finishes. Every waiting stream job keeps its source in memory, so use
+      paths for large documents or many jobs.
+    - **Use a separate output for each job,** and do not change a source file
+      while a job that reads it is waiting.
+    - **Pass `log` to each call.** Each thread has its own log settings, so a
+      writer's `log` on the JavaScript thread does not apply to a job, and a
+      job's `log` does not apply to anything else.
+
 ## Encrypt A New PDF
 
 Pass `userPassword`, `ownerPassword`, and optionally `userProtectionFlag` to

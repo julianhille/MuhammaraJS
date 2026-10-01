@@ -42,6 +42,7 @@
 #include "PDFSymbolDriver.h"
 #include "PDFTextStringDriver.h"
 #include "PDFWriterDriver.h"
+#include "RecryptAsync.h"
 #include "PageContentContextDriver.h"
 #include "ProcsetResourcesConstants.h"
 #include "ResourcesDictionaryDriver.h"
@@ -233,56 +234,69 @@ napi_value CreateWriterToModify(const CallbackArgs &args) {
                    "target is available and that it is not protected");
 }
 
-napi_value Recrypt(const CallbackArgs &args) {
-  if (args.Length() < 2 || args.Length() > 3)
-    return ThrowTypeError(
-        args.Env(), "Wrong number of arguments, Provide one argument stating "
-                    "the location of the source file, a second one for the "
-                    "destination file, and an optional options object");
+} // namespace
+
+bool ReadRecryptArguments(const CallbackArgs &args, RecryptArguments &out) {
+  if (args.Length() < 2 || args.Length() > 3) {
+    ThrowTypeError(args.Env(),
+                   "Wrong number of arguments, Provide one argument stating "
+                   "the location of the source file, a second one for the "
+                   "destination file, and an optional options object");
+    return false;
+  }
   if (!IsType(args.Env(), args[0], napi_string) &&
-      !IsObject(args.Env(), args[0]))
-    return ThrowTypeError(
-        args.Env(), "Wrong arguments, please provide a path to a file as the "
-                    "first argument or a stream object");
+      !IsObject(args.Env(), args[0])) {
+    ThrowTypeError(args.Env(),
+                   "Wrong arguments, please provide a path to a file as the "
+                   "first argument or a stream object");
+    return false;
+  }
   if (!IsType(args.Env(), args[1], napi_string) &&
-      !IsObject(args.Env(), args[1]))
-    return ThrowTypeError(
-        args.Env(), "Wrong arguments, please provide a path to a file as the "
-                    "second argument or a stream object");
-  if (IsObject(args.Env(), args[0]) != IsObject(args.Env(), args[1]))
-    return ThrowTypeError(
-        args.Env(), "Wrong arguments, please either provide two paths or two "
-                    "stream objects for the first two arguments");
-  EPDFVersion version = ePDFVersionUndefined;
-  PDFCreationSettings creation(true, true);
-  LogConfiguration log = LogConfiguration::DefaultLogConfiguration();
-  std::string password;
+      !IsObject(args.Env(), args[1])) {
+    ThrowTypeError(args.Env(),
+                   "Wrong arguments, please provide a path to a file as the "
+                   "second argument or a stream object");
+    return false;
+  }
+  if (IsObject(args.Env(), args[0]) != IsObject(args.Env(), args[1])) {
+    ThrowTypeError(args.Env(),
+                   "Wrong arguments, please either provide two paths or two "
+                   "stream objects for the first two arguments");
+    return false;
+  }
   if (args.Length() == 3) {
-    if (!ReadCreationOptions(args.Env(), args[2], version, log, creation, true))
-      return nullptr;
+    if (!ReadCreationOptions(args.Env(), args[2], out.version, out.log,
+                             out.creation, true))
+      return false;
     if (Has(args.Env(), args[2], "password") &&
         IsType(args.Env(), Get(args.Env(), args[2], "password"), napi_string))
-      password =
+      out.password =
           LegacyString(args.Env(), Get(args.Env(), args[2], "password"));
   }
-  if (HasPendingException(args.Env()))
+  return !HasPendingException(args.Env());
+}
+
+namespace {
+
+napi_value Recrypt(const CallbackArgs &args) {
+  RecryptArguments options;
+  if (!ReadRecryptArguments(args, options))
     return nullptr;
   EStatusCode status;
   if (IsObject(args.Env(), args[0])) {
     ObjectByteReaderWithPosition r(args.Env(), args[0]);
     ObjectByteWriterWithPosition w(args.Env(), args[1]);
-    status = PDFWriter::RecryptPDF(&r, password, &w, log, creation, version);
+    status = PDFWriter::RecryptPDF(&r, options.password, &w, options.log,
+                                   options.creation, options.version);
     if (w.Flush() != eSuccess && status == eSuccess)
       status = eFailure;
   } else
     status = PDFWriter::RecryptPDF(
-        LegacyString(args.Env(), args[0]), password,
-        LegacyString(args.Env(), args[1]), log, creation, version);
-  return status == eSuccess
-             ? Undefined(args.Env())
-             : ThrowTypeError(args.Env(),
-                              "Unable to recrypt files, check that input and "
-                              "output files are clear and arguments are coool");
+        LegacyString(args.Env(), args[0]), options.password,
+        LegacyString(args.Env(), args[1]), options.log, options.creation,
+        options.version);
+  return status == eSuccess ? Undefined(args.Env())
+                            : ThrowTypeError(args.Env(), kRecryptFailure);
 }
 
 napi_value CreateReader(const CallbackArgs &args) {
@@ -389,6 +403,7 @@ bool Initialize(ModuleState &state, napi_value exports) {
                       CreateWriterToModify) ||
       !ExportFunction(state, exports, "createReader", CreateReader) ||
       !ExportFunction(state, exports, "recrypt", Recrypt) ||
+      !ExportFunction(state, exports, "recryptAsync", RecryptAsync) ||
       !ExportFunction(state, exports, "getTypeLabel", GetTypeLabel)) {
     return false;
   }
