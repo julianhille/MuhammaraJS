@@ -15,10 +15,11 @@
     "test": "node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R spec --recursive ./tests --ignore ./tests/helpers/** --timeout 15000",
     "test:codestyle": "npx prettier -c ./",
     "test:electron": "electron-mocha --js-flags=--expose-gc --require ./tests/hooks/sanitizer-gc.js -R spec --recursive ./tests --ignore ./tests/helpers/** --timeout 15000",
-    "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types/types.test.ts",
+    "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types/types.test.ts && tsc --noEmit --strict --allowJs --checkJs --module nodenext --moduleResolution nodenext --types node benchmarks/recrypt-server.js",
     "package": "node-pre-gyp package",
     "clean:source": "node scripts/remove-source.js",
-    "test:docs": "mocha docs/tests/**/*.js --timeout 15000"
+    "test:docs": "mocha docs/tests/**/*.js --timeout 15000",
+    "bench:recrypt": "node benchmarks/recrypt-server.js"
   },
   "repository": {
     "type": "git",

@@ -94,6 +94,9 @@ await muhammara.recryptAsync("plain.pdf", "output.pdf", {
       writer's `log` on the JavaScript thread does not apply to a job, and a
       job's `log` does not apply to anything else.
 
+To measure the difference in a server, see
+[Benchmark Sync And Async Recrypt](benchmark-recrypt.md).
+
 ## Encrypt A New PDF
 
 Pass `userPassword`, `ownerPassword`, and optionally `userProtectionFlag` to
