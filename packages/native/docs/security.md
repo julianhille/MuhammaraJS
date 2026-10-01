@@ -20,8 +20,10 @@ describe the source currently in this repository.
 | `Zlib`             | 1.3.1                                                        | [Source](https://github.com/madler/zlib) and [issues](https://github.com/madler/zlib/issues)                                                                                                                           |
 
 The PDFWriter tag is the vendored tree's upstream baseline. MuhammaraJS carries
-changes on top of it, so `packages/native-with-source/src/deps/PDFWriter` is not necessarily byte-for-byte
-identical to that tag. The other version identifiers come from the vendored
+changes on top of it, so `packages/native-with-source/src/deps/PDFWriter` is not
+byte-for-byte identical to that tag;
+[`MUHAMMARAJS_PATCHES.md`](https://github.com/julianhille/MuhammaraJS/blob/develop/packages/native-with-source/src/deps/PDFWriter/MUHAMMARAJS_PATCHES.md)
+in that directory lists each change and why it was made. The other version identifiers come from the vendored
 source headers; `LibAesgm` does not declare an upstream release version.
 OpenSSL's pinned source archive is included only in the source-capable npm package,
 which remains below npm's 256 MiB tarball limit. Local source builds and CI extract
@@ -29,6 +31,50 @@ it through a GYP action into ignored architecture-specific `openssl-build/`
 output, compile `libcrypto`, and link that static library into the addon.
 Official native prebuilts statically link OpenSSL libcrypto and therefore do
 not require a system OpenSSL installation at runtime.
+
+## Thread-Safety Patches In PDFWriter
+
+`recryptAsync()` runs `PDFWriter::RecryptPDF` on a libuv pool thread while
+writers and readers keep running on the JavaScript thread. The upstream
+PDFWriter keeps some state process-wide, so MuhammaraJS changes three places in
+`packages/native-with-source/src/deps/PDFWriter`. Each change carries a
+`MuhammaraJS:` comment in the source and is listed in `MUHAMMARAJS_PATCHES.md`
+with the other local changes.
+
+| File                     | Upstream                                                                 | MuhammaraJS                                                    | Why                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Trace.cpp`              | `Trace::DefaultTrace()` returns one `static Trace` for the whole process | `static thread_local Trace`, one trace per thread              | `StartPDF` writes the default trace's log settings, and `TRACE_LOG` reads them. A job on a pool thread would race with writers on the JavaScript thread.    |
+| `SafeBufferMacrosDefs.h` | `SAFE_LOCAL_TIME` uses `localtime()` on POSIX                            | `localtime_r()` on POSIX; Windows already used `localtime_s()` | `localtime()` returns a shared static buffer. `PDFDate::SetToCurrentTime()` and log timestamps call it, and recrypt sets the file ID and `ModDate` from it. |
+| `PDFDate.cpp`            | `SetToCurrentTime()` calls `gmtime()`                                    | `gmtime_r()` on POSIX, `gmtime_s()` on Windows                 | Same shared static buffer as `localtime()`.                                                                                                                 |
+
+These changes keep the behavior on a single thread the same. One effect is
+visible to callers: log settings now belong to the thread that sets them, so a
+writer's `log` option in a worker thread no longer changes where writers on
+other threads log.
+
+The patches do not make PDFWriter safe for concurrent recrypts. The rest of the
+library has not been audited for that, so every recrypt, synchronous or not,
+holds a process-wide mutex while it runs, and only one recrypt runs at a time.
+Other global state was checked and left unchanged:
+
+- Function-local statics such as `PDFTextString::Empty()` and
+  `PDFParsingOptions::DefaultPDFParsingOptions()` are initialized thread-safely
+  and never written afterwards.
+- `AbstractContentContext`'s CSS color map is built at load time and only read.
+- LibAesgm's AES-NI and VIA detection caches only exist in builds with `-maes`
+  or on 32-bit x86. The default x64 build uses neither, and its tables are
+  static.
+- `rand()` is only used by the Type 2 (CFF) charstring interpreter for font
+  embedding, which recrypt does not call.
+
+The addon also initializes OpenSSL with `OPENSSL_INIT_NO_ATEXIT`, so
+`process.exit()` does not free OpenSSL's global state while a job still uses
+it on a pool thread. The process ends right after and releases it anyway.
+
+When updating PDFWriter, reapply these three changes with the others in
+`MUHAMMARAJS_PATCHES.md`. Keep the `recryptAsync` tests in
+`packages/native-with-source/tests/Xcryption.js` and the sanitizer CI job
+passing.
 
 ## Reporting A Defect
 

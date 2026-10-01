@@ -127,6 +127,15 @@
           role="tab"
           aria-selected="false"
           tabindex="-1"
+          data-example="benchmark"
+        >
+          Benchmark
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
           data-example="replace-text"
         >
           Replace text
@@ -177,7 +186,7 @@
           <p id="example-requirement" class="requirement" hidden></p>
         </div>
         <form id="example-form">
-          <div class="mode-switch">
+          <div id="mode-switch" class="mode-switch">
             <label
               ><input type="radio" name="mode" value="worker" checked /> Module
               Worker</label
@@ -200,6 +209,14 @@
                 type="text"
                 placeholder="CONFIDENTIAL"
                 maxlength="40"
+            /></label>
+            <label data-asset="runs"
+              >Recrypts per mode<input
+                name="runs"
+                type="number"
+                min="1"
+                max="50"
+                value="5"
             /></label>
             <label data-asset="search"
               >Text to find<input

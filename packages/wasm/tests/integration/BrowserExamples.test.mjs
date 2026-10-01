@@ -46,6 +46,7 @@ describe("Browser how-to examples", function () {
         "image-transform",
         "table",
         "passwords",
+        "benchmark",
         "replace-text",
         "watermark",
         "find-text",
@@ -67,11 +68,26 @@ describe("Browser how-to examples", function () {
 
   for (const example of HOW_TO_EXAMPLES) {
     it(`generates the ${example.label} PDF`, async function () {
-      var result = await runHowToExample(example.id, { assets });
+      // The benchmark generates a 120-page PDF and recrypts it; one recrypt
+      // per mode keeps it short, and the sanitizer build is much slower.
+      if (example.id === "benchmark") this.timeout(120000);
+      var result = await runHowToExample(example.id, {
+        assets: example.id === "benchmark" ? { ...assets, runs: 1 } : assets,
+      });
       writeOutput(`BrowserExamples-${example.id}`, result.bytes);
       assert(result.bytes instanceof Uint8Array);
       assert(result.bytes.length > 100);
       assert.equal(result.summary.pages, example.expectedPages || 1);
+      if (example.id === "benchmark") {
+        assert.deepEqual(
+          result.summary.results.map((entry) => entry.mode),
+          ["sync recrypt() on the page", "recryptAsync() on the page"],
+        );
+        for (var entry of result.summary.results) {
+          assert.equal(entry.runs, 1);
+          assert.ok(entry.recryptMedianMs > 0);
+        }
+      }
       if (example.id === "delete-pages") {
         assert.deepEqual(result.summary.pageWidths, [300, 340]);
       }

@@ -14,6 +14,10 @@ watermarks, text search, and PDF inspection. Each focused example generates and
 parses its own previewable PDF; only image transformations require an upload.
 The Watermark, Find text, and Inspect PDF tabs read an uploaded PDF, or a
 built-in two-page sample with bookmarks and metadata when no PDF is chosen. The
+Benchmark tab recrypts an uploaded PDF, or a generated 120-page sample, with
+synchronous `recrypt()` and `recryptAsync()`, each on the page and in a module
+Worker, and reports how long the page could not run a 10 ms timer during each;
+it ignores the Worker/main-thread switch. The
 Tables tab and complete Recipe workflow use bundled Roboto Regular when no
 custom font is uploaded. With an upload, they skip importing Roboto: Tables passes
 the uploaded bytes as `createRecipe({ defaultFont: assets.font })`, while the
@@ -53,6 +57,8 @@ automated test injects existing repository fixtures into these byte parameters.
 - `workflow.mjs`: staged orchestration and parse-back results.
 - `example-worker.mjs`: structured progress/results/errors across a transferable
   module Worker boundary.
+- `benchmark.mjs` and `benchmark-worker.mjs`: the Benchmark tab's measurements,
+  its generated sample PDF, and the Worker that recrypts off the page.
 - `lifecycle.mjs`: cancellation checks, structured errors, and object-URL cleanup.
 - `app.mjs`: responsive UI, preview/download selection, and Worker termination.
 

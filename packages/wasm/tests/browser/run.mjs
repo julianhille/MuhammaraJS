@@ -155,6 +155,7 @@ try {
       "image-transform",
       "table",
       "passwords",
+      "benchmark",
       "replace-text",
       "watermark",
       "find-text",
@@ -212,6 +213,16 @@ try {
     await runExample("watermark", "worker");
     await runExample("find-text", "page");
     await runExample("inspect-pdf", "worker");
+    // The benchmark ignores the mode switch: it runs on the page and in a Worker.
+    document.querySelector('input[name="runs"]').value = "2";
+    await runExample("benchmark", "page");
+    var benchmark = JSON.parse(document.querySelector("#output").textContent);
+    var modes = benchmark.results.map((entry) => entry.mode).join(", ");
+    if (
+      modes !==
+      "sync recrypt() on the page, recryptAsync() on the page, sync recrypt() in a Worker, recryptAsync() in a Worker"
+    )
+      throw new Error(`Unexpected benchmark modes: ${modes}`);
     return {
       tabs: tabs.length,
       selected: "delete-pages",

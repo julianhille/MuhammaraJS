@@ -1,5 +1,6 @@
 import { createMuhammaraWasm, createRecipe } from "./module-options.mjs";
 import { throwIfCancelled } from "./lifecycle.mjs";
+import { benchmarkExample } from "./benchmark.mjs";
 
 export var HOW_TO_EXAMPLES = [
   {
@@ -83,6 +84,14 @@ export var HOW_TO_EXAMPLES = [
     description:
       "Encrypt a byte-first Recipe PDF, then decrypt a verification copy with recrypt.",
     assets: [],
+  },
+  {
+    id: "benchmark",
+    label: "Benchmark",
+    title: "Benchmark recrypt on the page and in a Worker",
+    description:
+      "Encrypt the same PDF several times with synchronous recrypt() and promise-based recryptAsync(), on the page and in a module Worker, and measure how long the page stops responding. Uses your PDF, or a generated 120-page sample.",
+    assets: ["pdf", "runs"],
   },
   {
     id: "replace-text",
@@ -1537,6 +1546,7 @@ var runners = {
   "image-transform": imageTransformExample,
   table: tableExample,
   passwords: passwordsExample,
+  benchmark: benchmarkExample,
   "replace-text": replaceTextExample,
   watermark: watermarkExample,
   "find-text": findTextExample,
@@ -1557,7 +1567,7 @@ export async function runHowToExample(id, options = {}) {
   var progress = options.progress || (() => {});
   throwIfCancelled(options.signal);
   progress(`Running ${id.replaceAll("-", " ")} how-to`, 20);
-  var result = await runner(options.assets || {});
+  var result = await runner(options.assets || {}, options);
   throwIfCancelled(options.signal);
   progress("PDF generated and parsed back successfully", 100);
   return result;

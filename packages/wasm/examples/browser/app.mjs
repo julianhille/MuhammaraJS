@@ -16,6 +16,7 @@ var title = document.querySelector("#controls-title");
 var description = document.querySelector("#example-description");
 var requirement = document.querySelector("#example-requirement");
 var fileGrid = document.querySelector(".file-grid");
+var modeSwitch = document.querySelector("#mode-switch");
 var assetFields = Array.from(document.querySelectorAll("[data-asset]"));
 var versionPicker = document.querySelector("#version-picker");
 var versionSelect = document.querySelector("#version");
@@ -98,6 +99,7 @@ async function assets() {
     jpeg: await fileBytes("jpeg"),
     png: await fileBytes("png"),
     tiff: await fileBytes("tiff"),
+    runs: form.elements.runs.value,
   };
 }
 
@@ -209,6 +211,38 @@ function runInWorker(byteAssets, selectedExample) {
 }
 
 /**
+ * Recrypts a PDF in a module Worker for the benchmark.
+ * @param {Uint8Array} source - PDF to encrypt; it is copied to the Worker.
+ * @param {number} runs - Recrypt count.
+ * @param {boolean} useAsync - Call `recryptAsync()` instead of `recrypt()`.
+ * @param {function(function(): void): void} onCancel - Receives the function
+ *   that stops the Worker.
+ * @returns {Promise<number[]>} Each recrypt's duration in milliseconds.
+ * @throws {Error} If the Worker fails or reports an error.
+ */
+function recryptInWorker(source, runs, useAsync, onCancel) {
+  return new Promise((resolve, reject) => {
+    var worker = new Worker("./benchmark-worker.mjs", { type: "module" });
+    var finish = (callback, value) => {
+      worker.terminate();
+      callback(value);
+    };
+    onCancel(() =>
+      finish(
+        reject,
+        new DOMException("Worker operation cancelled", "AbortError"),
+      ),
+    );
+    worker.onmessage = (event) => {
+      if (event.data.type === "result") finish(resolve, event.data.durations);
+      else finish(reject, new Error(event.data.message));
+    };
+    worker.onerror = (event) => finish(reject, new Error(event.message));
+    worker.postMessage({ source, runs, useAsync });
+  });
+}
+
+/**
  * Activates an example tab unless a run is active.
  * @param {string} selectedId - Example id.
  * @param {boolean} [focus=false] - Move keyboard focus to the tab.
@@ -232,6 +266,8 @@ function selectExample(selectedId, focus = false) {
     field.hidden = !selected.assets.includes(field.dataset.asset);
   });
   fileGrid.hidden = selected.assets.length === 0;
+  // The benchmark runs on the page and in a Worker itself.
+  modeSwitch.hidden = selectedId === "benchmark";
   runButton.textContent =
     selectedId === "complete"
       ? "Run complete workflow"
@@ -270,22 +306,36 @@ form.addEventListener("submit", async (event) => {
   result = undefined;
   try {
     var byteAssets = await assets();
-    if (form.elements.mode.value === "worker")
+    if (
+      selectedExample !== "benchmark" &&
+      form.elements.mode.value === "worker"
+    )
       result = await runInWorker(byteAssets, selectedExample);
     else {
       var controller = new AbortController();
+      var stopWorker;
       active = {
         /**
-         * Cancels the in-page run.
+         * Cancels the in-page run and a running benchmark Worker.
          * @returns {void}
          */
-        cancel: () => controller.abort(),
+        cancel: () => {
+          controller.abort();
+          stopWorker?.();
+        },
       };
       result = await runBrowserExample({
         exampleId: selectedExample,
         assets: byteAssets,
         signal: controller.signal,
         progress: report,
+        runInWorker: (source, runs, useAsync) =>
+          recryptInWorker(
+            source,
+            runs,
+            useAsync,
+            (stop) => (stopWorker = stop),
+          ),
       });
     }
     output.textContent = JSON.stringify(summary(result), null, 2);

@@ -9,7 +9,10 @@ OpenSSL is excluded, but bundled RC4 and AES-128 support byte-first `recrypt`
 and Recipe `encrypt()`. PDF 2.0/AES-256 encryption remains unavailable. Existing
 byte-backed PDFs can be read, modified, and copied, but persistent-file
 continuation, password-protected Recipe source editing, and the path-based Recipe
-constructor are unavailable. See [Change PDF Passwords](how-to/change-pdf-passwords.md).
+constructor are unavailable. Wasm `recryptAsync()` returns a promise like
+native's, but recrypts on the calling thread, because Wasm has no thread pool;
+call it from a Worker to keep a page responsive. See
+[Change PDF Passwords](how-to/change-pdf-passwords.md).
 
 `Recipe.thirdPartyLicenses()` is Wasm-only: it returns the third-party notices
 embedded in the `.wasm` (see [License Notices](license-notices.md)). The native
