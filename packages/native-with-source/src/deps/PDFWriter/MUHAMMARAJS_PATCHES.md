@@ -12,6 +12,17 @@ git clone --depth 1 --branch v4.9.1 https://github.com/galkahana/PDF-Writer.git
 diff -ru --strip-trailing-cr PDF-Writer/PDFWriter packages/native-with-source/src/deps/PDFWriter
 ```
 
+## Thread Safety
+
+A recrypt on a libuv pool thread must not share state with writers on the
+JavaScript thread. These changes are marked with `MuhammaraJS:` comments.
+
+| File                     | Change                                                        |
+| ------------------------ | ------------------------------------------------------------- |
+| `Trace.cpp`              | `Trace::DefaultTrace()` returns a `static thread_local` trace |
+| `SafeBufferMacrosDefs.h` | `SAFE_LOCAL_TIME` uses `localtime_r()` on POSIX               |
+| `PDFDate.cpp`            | `SetToCurrentTime()` uses `gmtime_r()` / `gmtime_s()`         |
+
 ## Robustness Fixes
 
 | File                                           | Change                                                                                                                                                                                                                                                                                  |

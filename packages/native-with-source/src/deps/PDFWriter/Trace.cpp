@@ -25,7 +25,9 @@
 #include <stdarg.h>
 
 Trace& Trace::DefaultTrace(){
-	static Trace default_trace;
+	// MuhammaraJS: one trace per thread, so a recryptAsync() job on a libuv
+	// worker never shares log settings with writers on the JavaScript thread.
+	static thread_local Trace default_trace;
 	return default_trace;
 }
 
