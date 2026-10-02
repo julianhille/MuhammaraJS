@@ -16,11 +16,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   Roboto Regular and Adobe Glyph List), then each component's license in full.
   It grows the `.wasm` by 129,371 bytes raw (2,106,511 to 2,235,882) and by
   28,018 bytes gzipped at level 9 (779,984 to 808,002) [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
-- Add `Recipe.thirdPartyLicenses()`, which returns those notices from the
-  module that `createRecipe()` loaded, without fetching, compiling, or
-  instantiating anything. It throws when the WebAssembly module is not loaded
-  and when the binary has no `license` section, for example after
+- Add `Recipe.thirdPartyLicenses(source)`, which resolves to those notices,
+  read from a `muhammara-wasm.wasm` given as a URL, its bytes, or a `Blob` or
+  `File`. The bytes are read without compiling them. It rejects when the binary
+  has no `license` section, for example after
   `wasm-strip` [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
+  [#902](https://github.com/julianhille/MuhammaraJS/issues/902)
 - Ship the same text as `dist/THIRD_PARTY_LICENSES.md`, exported as
   `@muhammara/wasm/THIRD_PARTY_LICENSES.md`. It replaces
   `THIRD_PARTY_NOTICES.md`, which summarized some licenses and linked to

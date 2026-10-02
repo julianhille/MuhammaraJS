@@ -11,6 +11,7 @@ import {
 } from "../../index.js";
 import type {
   DeletePageOptions,
+  ThirdPartyLicensesSource,
   RecipeConstructor,
   PDFWriterOptions,
   PDFReaderOptions,
@@ -542,13 +543,24 @@ async function usesLowLevelSurface() {
   // @ts-expect-error Use locateFile to load the binary from a URL.
   await createMuhammaraWasm({ wasmBinary: "muhammara-wasm.wasm" });
   const LicensedRecipe = await createRecipe();
-  const licenses: string = LicensedRecipe.thirdPartyLicenses();
+  const wasmUrl = new URL("muhammara-wasm.wasm", "https://example.com/");
+  const licenses: string = await LicensedRecipe.thirdPartyLicenses(wasmUrl);
   void licenses;
-  // @ts-expect-error The notices come from the loaded module; nothing is passed.
-  LicensedRecipe.thirdPartyLicenses(new Uint8Array());
-  // @ts-expect-error The notices are returned synchronously as a string.
-  const pendingLicenses: Promise<string> = LicensedRecipe.thirdPartyLicenses();
-  void pendingLicenses;
+  await LicensedRecipe.thirdPartyLicenses("/assets/muhammara-wasm.wasm");
+  await LicensedRecipe.thirdPartyLicenses(new Uint8Array());
+  await LicensedRecipe.thirdPartyLicenses(new ArrayBuffer(0));
+  await LicensedRecipe.thirdPartyLicenses(new Blob());
+  const licensesSource: ThirdPartyLicensesSource = new File([], "a.wasm");
+  await LicensedRecipe.thirdPartyLicenses(licensesSource);
+  // @ts-expect-error The runtime does not keep its binary; pass it.
+  LicensedRecipe.thirdPartyLicenses();
+  // @ts-expect-error The notices are read asynchronously.
+  const syncLicenses: string = LicensedRecipe.thirdPartyLicenses(wasmUrl);
+  void syncLicenses;
+  // @ts-expect-error Other views are not read as wasm bytes.
+  LicensedRecipe.thirdPartyLicenses(new Uint16Array());
+  // @ts-expect-error Read a compiled module with WebAssembly.Module.customSections.
+  LicensedRecipe.thirdPartyLicenses(new WebAssembly.Module(new Uint8Array()));
   // @ts-expect-error The notices are read through Recipe, not the low-level API.
   (await createMuhammaraWasm()).thirdPartyLicenses();
   await createRecipe({ defaultFont: new Uint8Array() });

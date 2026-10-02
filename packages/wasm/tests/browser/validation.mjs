@@ -49,9 +49,11 @@ export async function runValidation() {
   equal(input.notEnded(), false, "byte reader end state");
   assertions += 1;
 
-  var licenses = (
+  var licenses = await (
     await createRecipe({ defaultFont: false })
-  ).thirdPartyLicenses();
+  ).thirdPartyLicenses(
+    new URL("../../dist/muhammara-wasm.wasm", import.meta.url),
+  );
   var muhammara = await createMuhammaraWasm();
   assert(
     licenses.startsWith("# Third-Party Licenses\n") &&

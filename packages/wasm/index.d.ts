@@ -7,6 +7,8 @@ export interface BlobLike {
 }
 export type ByteSource = Uint8Array | ArrayBuffer | PDFRStreamForBuffer;
 export type AsyncByteSource = ByteSource | BlobLike;
+/** A `muhammara-wasm.wasm` to read the third-party license notices from. */
+export type ThirdPartyLicensesSource = string | URL | AsyncByteSource;
 export type PDFRectangle = [
   lowerLeftX: number,
   lowerLeftY: number,
@@ -1374,16 +1376,19 @@ export interface RecipeConstructor {
   inspectPdf(name: string): RecipePdfInspection;
   permission(flags?: RecipePermission): number;
   /**
-   * Returns the third-party license notices (Markdown) embedded in this
-   * runtime's `muhammara-wasm.wasm` as its `license` custom section. The text
-   * is read from the already loaded module; nothing is fetched, compiled, or
-   * instantiated. It equals `@muhammara/wasm/THIRD_PARTY_LICENSES.md`.
+   * Resolves to the third-party license notices (Markdown) embedded in a
+   * `muhammara-wasm.wasm` as its `license` custom section. They equal
+   * `@muhammara/wasm/THIRD_PARTY_LICENSES.md`.
    *
-   * Throws when the WebAssembly module is not loaded (a custom
-   * `instantiateWasm` hook did not pass it back) or has no `license` section,
-   * for example after `wasm-strip`.
+   * The runtime does not keep the binary it was loaded from, so pass that
+   * binary: a URL, which is fetched, or its bytes or a Blob/File. The section
+   * is read from the bytes without compiling them.
+   *
+   * Rejects when the URL cannot be loaded, the bytes are not a WebAssembly
+   * module, or the module has no `license` section, for example after
+   * `wasm-strip`.
    */
-  thirdPartyLicenses(): string;
+  thirdPartyLicenses(source: ThirdPartyLicensesSource): Promise<string>;
 }
 export interface TextOptions {
   encoding?: EEncoding;

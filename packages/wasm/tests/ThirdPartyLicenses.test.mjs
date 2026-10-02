@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createMuhammaraWasm, createRecipe } from "../index.js";
 import { checkLicenses } from "../scripts/check-licenses.mjs";
 import { extractLicenses } from "../scripts/generate-licenses.mjs";
@@ -232,48 +234,131 @@ describe("Third-party licenses", function () {
       );
     });
 
-    it("returns the embedded notices of the loaded module", async function () {
-      var Recipe = await createRecipe({ defaultFont: false });
-      assert.equal(
-        Recipe.thirdPartyLicenses(),
-        await readFile(licensesUrl, "utf8"),
-      );
-    });
-
-    it("reads the module compiled from wasmBinary", async function () {
+    it("reads the notices from the binary's bytes, Blob or File", async function () {
       var bytes = new Uint8Array(await readFile(wasmUrl));
+      var expected = await readFile(licensesUrl, "utf8");
       var Recipe = await createRecipe({
-        wasmBinary: bytes.buffer,
+        wasmBinary: bytes,
         defaultFont: false,
       });
-      assert.ok(new Recipe().createPage("A4").endPage().endPDF().length > 0);
-      assert.equal(
-        Recipe.thirdPartyLicenses(),
-        await readFile(licensesUrl, "utf8"),
-      );
+      for (var source of [
+        bytes,
+        bytes.buffer,
+        new Blob([bytes]),
+        new File([bytes], "muhammara-wasm.wasm"),
+      ]) {
+        assert.equal(await Recipe.thirdPartyLicenses(source), expected);
+      }
     });
 
-    it("reads each runtime's own module", async function () {
+    it("fetches the binary from a URL", async function () {
+      var bytes = await readFile(wasmUrl);
+      var expected = await readFile(licensesUrl, "utf8");
+      var Recipe = await createRecipe({ defaultFont: false });
+      var dataUrl = `data:application/wasm;base64,${bytes.toString("base64")}`;
+      assert.equal(await Recipe.thirdPartyLicenses(dataUrl), expected);
+      assert.equal(await Recipe.thirdPartyLicenses(new URL(dataUrl)), expected);
+      // Node's fetch() cannot load file: URLs.
+      for (var fileSource of [wasmUrl, wasmUrl.href]) {
+        await assert.rejects(Recipe.thirdPartyLicenses(fileSource), (error) => {
+          assert.ok(error instanceof TypeError);
+          assert.ok(error.cause instanceof Error);
+          assert.equal(
+            error.message,
+            `Recipe.thirdPartyLicenses() could not fetch ${wasmUrl.href}; where fetch() cannot load file: URLs, as in Node, read the file and pass its bytes`,
+          );
+          return true;
+        });
+      }
+
+      var fetchFunction = globalThis.fetch;
+      var requests = [];
+      try {
+        globalThis.fetch = async (url, init) => {
+          requests.push([url, init]);
+          return String(url).endsWith("/missing.wasm")
+            ? new Response(null, { status: 404 })
+            : new Response(bytes);
+        };
+        assert.equal(
+          await Recipe.thirdPartyLicenses("/assets/muhammara-wasm.wasm"),
+          expected,
+        );
+        await assert.rejects(
+          Recipe.thirdPartyLicenses("/assets/missing.wasm"),
+          /^Error: Failed to load \/assets\/missing\.wasm: HTTP 404$/,
+        );
+        assert.deepEqual(requests, [
+          ["/assets/muhammara-wasm.wasm", { credentials: "same-origin" }],
+          ["/assets/missing.wasm", { credentials: "same-origin" }],
+        ]);
+        // An Electron renderer can fetch file: URLs, so they are not rejected,
+        // and a failure there keeps the request's error as its cause.
+        assert.equal(await Recipe.thirdPartyLicenses(wasmUrl), expected);
+        var missingFile = new URL("missing.wasm", packageRoot);
+        var fetchFailure = new TypeError("Failed to fetch");
+        globalThis.fetch = async () => {
+          throw fetchFailure;
+        };
+        await assert.rejects(
+          Recipe.thirdPartyLicenses(missingFile),
+          (error) => {
+            assert.ok(error instanceof TypeError);
+            assert.equal(error.cause, fetchFailure);
+            assert.equal(
+              error.message,
+              `Recipe.thirdPartyLicenses() could not fetch ${missingFile.href}; where fetch() cannot load file: URLs, as in Node, read the file and pass its bytes`,
+            );
+            return true;
+          },
+        );
+        // Other failed requests reject with fetch()'s own error.
+        await assert.rejects(
+          Recipe.thirdPartyLicenses("https://example.com/muhammara-wasm.wasm"),
+          (error) => error === fetchFailure,
+        );
+      } finally {
+        globalThis.fetch = fetchFunction;
+      }
+    });
+
+    it("rejects a binary without a license section or that is not wasm", async function () {
+      var Recipe = await createRecipe({ defaultFont: false });
       var stripped = stripSection(
         new Uint8Array(await readFile(wasmUrl)),
         "license",
       );
-      var Stripped = await createRecipe({
-        wasmBinary: stripped,
-        defaultFont: false,
-      });
-      var Full = await createRecipe({ defaultFont: false });
-      assert.throws(
-        () => Stripped.thirdPartyLicenses(),
+      await assert.rejects(
+        Recipe.thirdPartyLicenses(stripped),
         /no "license" section; a tool such as wasm-strip.*THIRD_PARTY_LICENSES\.md/,
       );
-      assert.equal(
-        Full.thirdPartyLicenses(),
-        await readFile(licensesUrl, "utf8"),
+      await assert.rejects(
+        Recipe.thirdPartyLicenses(new TextEncoder().encode("not wasm")),
+        /Not a version-1 WebAssembly module/,
       );
     });
 
-    it("passes locateFile the package's dist directory, as Emscripten does", async function () {
+    it("rejects a source that is not a URL, bytes, Blob or File", async function () {
+      var Recipe = await createRecipe({ defaultFont: false });
+      for (var source of [
+        undefined,
+        42,
+        new Uint16Array(4),
+        {},
+        await WebAssembly.compile(minimalModule),
+      ]) {
+        await assert.rejects(
+          Recipe.thirdPartyLicenses(source),
+          new TypeError(
+            "Recipe.thirdPartyLicenses() source must be a URL, a Uint8Array or ArrayBuffer, or a Blob or File",
+          ),
+        );
+      }
+    });
+  });
+
+  describe("loading through Emscripten", function () {
+    it("passes locateFile the package's dist directory", async function () {
       var calls = [];
       var Recipe = await createRecipe({
         defaultFont: false,
@@ -285,13 +370,56 @@ describe("Third-party licenses", function () {
       assert.deepEqual(calls, [
         ["muhammara-wasm.wasm", fileURLToPath(new URL("dist/", packageRoot))],
       ]);
-      assert.equal(
-        Recipe.thirdPartyLicenses(),
-        await readFile(licensesUrl, "utf8"),
-      );
+      assert.ok(new Recipe().createPage("A4").endPage().endPDF().length > 0);
     });
 
-    it("fails to load through onAbort and printErr, as Emscripten does", async function () {
+    it("loads the binary next to the glue when bundled without dist/", async function () {
+      // A bundler that does not rewrite import.meta.url puts the glue and the
+      // binary next to the bundle; the runtime must not look in a dist/ folder.
+      var bundle = await mkdtemp(path.join(tmpdir(), "muhammara-wasm-bundle-"));
+      try {
+        var packagePath = fileURLToPath(packageRoot);
+        for (var name of ["lib", "fonts"]) {
+          await cp(path.join(packagePath, name), path.join(bundle, name), {
+            recursive: true,
+          });
+        }
+        for (var name of ["muhammara-wasm.js", "muhammara-wasm.wasm"]) {
+          await cp(
+            path.join(packagePath, "dist", name),
+            path.join(bundle, name),
+          );
+        }
+        var index = await readFile(new URL("index.js", packageRoot), "utf8");
+        assert.ok(index.includes('from "./dist/muhammara-wasm.js"'));
+        await writeFile(
+          path.join(bundle, "index.js"),
+          index.replace(
+            'from "./dist/muhammara-wasm.js"',
+            'from "./muhammara-wasm.js"',
+          ),
+        );
+        var bundled = await import(
+          pathToFileURL(path.join(bundle, "index.js")).href
+        );
+        var prefixes = [];
+        var Recipe = await bundled.createRecipe({
+          defaultFont: false,
+          locateFile(file, prefix) {
+            prefixes.push(prefix);
+            return prefix + file;
+          },
+        });
+        assert.deepEqual(prefixes, [bundle + path.sep]);
+        assert.ok(new Recipe().createPage("A4").endPage().endPDF().length > 0);
+        var Default = await bundled.createRecipe({ defaultFont: false });
+        assert.ok(new Default().createPage("A4").endPage().endPDF().length > 0);
+      } finally {
+        await rm(bundle, { recursive: true, force: true });
+      }
+    });
+
+    it("fails to load through onAbort and printErr", async function () {
       // Imports x.y, which the runtime does not provide.
       var unlinkable = new Uint8Array([
         ...minimalModule,
@@ -338,86 +466,21 @@ describe("Third-party licenses", function () {
       }
     });
 
-    it("reports a failed streaming compile before falling back, as Emscripten does", async function () {
-      var bytes = await readFile(wasmUrl);
-      var fetchFunction = globalThis.fetch;
-      var processType = process.type;
-      var requests = 0;
-      var printed = [];
-      // Run the browser loader: Emscripten's own test treats an Electron
-      // renderer as a browser.
-      process.type = "renderer";
-      try {
-        globalThis.fetch = async () => {
-          requests += 1;
-          return new Response(bytes, {
-            headers: { "Content-Type": "application/octet-stream" },
-          });
-        };
-        var Recipe = await createRecipe({
-          defaultFont: false,
-          printErr: (message) => printed.push(message),
-        });
-        assert.equal(requests, 2);
-        assert.equal(printed.length, 2);
-        assert.match(printed[0], /^wasm streaming compile failed: TypeError/);
-        assert.equal(printed[1], "falling back to ArrayBuffer instantiation");
-        assert.equal(
-          Recipe.thirdPartyLicenses(),
-          await readFile(licensesUrl, "utf8"),
-        );
-
-        globalThis.fetch = async () => new Response(null, { status: 404 });
-        printed = [];
-        var error = await createRecipe({
-          defaultFont: false,
-          printErr: (message) => printed.push(message),
-        }).catch((caught) => caught);
-        assert.ok(error instanceof WebAssembly.RuntimeError);
-        assert.match(error.message, /^Aborted\(Error: 404 : /);
-        assert.equal(printed.at(-1), "Aborted(Error: 404 : )");
-      } finally {
-        globalThis.fetch = fetchFunction;
-        if (processType === undefined) delete process.type;
-        else process.type = processType;
-      }
-    });
-
-    it("keeps the module from a caller's instantiateWasm hook", async function () {
+    it("lets a caller's instantiateWasm hook load the module", async function () {
       var bytes = await readFile(wasmUrl);
       var hooked = 0;
       var Hooked = await createRecipe({
         defaultFont: false,
         instantiateWasm(imports, receiveInstance) {
           hooked += 1;
-          WebAssembly.instantiate(bytes, imports).then(({ instance, module }) =>
-            receiveInstance(instance, module),
-          );
-          return {};
-        },
-      });
-      assert.equal(hooked, 1);
-      assert.equal(
-        Hooked.thirdPartyLicenses(),
-        await readFile(licensesUrl, "utf8"),
-      );
-    });
-
-    it("throws when the WebAssembly module is not loaded", async function () {
-      var bytes = await readFile(wasmUrl);
-      var Unloaded = await createRecipe({
-        defaultFont: false,
-        instantiateWasm(imports, receiveInstance) {
           WebAssembly.instantiate(bytes, imports).then(({ instance }) =>
             receiveInstance(instance),
           );
           return {};
         },
       });
-      assert.throws(
-        () => Unloaded.thirdPartyLicenses(),
-        /The WebAssembly module is not loaded.*THIRD_PARTY_LICENSES\.md/,
-      );
+      assert.equal(hooked, 1);
+      assert.ok(new Hooked().createPage("A4").endPage().endPDF().length > 0);
     });
   });
 });

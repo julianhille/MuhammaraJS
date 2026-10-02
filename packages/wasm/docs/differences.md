@@ -14,8 +14,8 @@ native's, but recrypts on the calling thread, because Wasm has no thread pool;
 call it from a Worker to keep a page responsive. See
 [Change PDF Passwords](how-to/change-pdf-passwords.md).
 
-`Recipe.thirdPartyLicenses()` is Wasm-only: it returns the third-party notices
-embedded in the `.wasm` (see [License Notices](license-notices.md)). The native
+`Recipe.thirdPartyLicenses()` is Wasm-only: it reads the third-party notices
+embedded in a `.wasm` (see [License Notices](license-notices.md)). The native
 packages ship their notices as `THIRD_PARTY_NOTICES.md` and have no such
 function.
 
