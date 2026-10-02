@@ -63,7 +63,13 @@ context
     size: 12,
     color: "#0000ff",
     underline: true,
-  });
+  })
+  .writeText("שלום עולם", 10, 30, {
+    font: writer.getFontForFile("font.ttf"),
+    direction: muhammara.TextDirection.AUTO,
+  })
+  // @ts-expect-error direction takes a TextDirection value.
+  .writeText("No direction", 10, 35, { direction: "up" });
 context.c(0, 0, 1, 1, 2, 2).S();
 context.drawCircle(10, 10, 5).drawSquare(10, 10, 5);
 api.createWriter("output.pdf");
@@ -138,6 +144,9 @@ var margins: Required<muhammara.Recipe.RecipeMargins> = recipe.margins();
 var title: string = recipe.getPageInfo().title;
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
+recipe.textDimensions("שלום", {
+  direction: muhammara.Recipe.TextDirection.AUTO,
+}).width;
 recipe
   .text("Default size", 72, 72, { link: "https://text.example.com" })
   .text("Explicit size", 72, 100, { size: 12 })
@@ -1062,6 +1071,15 @@ annotationRecipe.line(
     lineJoin: muhammara.Recipe.LineJoin.BEVEL,
   },
 );
+
+annotationRecipe.text("שלום עולם", 10, 10, {
+  direction: muhammara.Recipe.TextDirection.RTL,
+  textBox: { width: 100, textAlign: muhammara.Recipe.TextAlign.RIGHT },
+});
+// @ts-expect-error direction takes a Recipe.TextDirection value.
+annotationRecipe.text("abc", 10, 10, { direction: "up" });
+const textDirection: muhammara.TextDirection = muhammara.TextDirection.NONE;
+void textDirection;
 
 annotationRecipe.text("boxed", 10, 10, {
   textBox: {

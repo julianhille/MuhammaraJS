@@ -36,6 +36,37 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   synchronous `recrypt()` and `recryptAsync()`, each on the page and in a
   module Worker, and measures how long the page stops responding
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+- Draw right-to-left text such as Hebrew in visual order when `writeText()`
+  or Recipe `text()` is given the new `direction` option (`TextDirection` /
+  `Recipe.TextDirection`). `"auto"` takes each paragraph's direction from its
+  first strong letter, and `"ltr"` and `"rtl"` set it. Text is reordered with
+  the Unicode Bidirectional Algorithm ([bidi-js](https://github.com/lojjic/bidi-js),
+  MIT, vendored as `lib/vendor/bidi-js.js` and listed in the embedded license
+  notices and `THIRD_PARTY_LICENSES.md`): numbers and Latin words inside
+  Hebrew keep their order, brackets are mirrored, points are drawn on their
+  letters, and invisible direction marks are neither drawn nor measured. Recipe reorders each wrapped line with
+  its paragraph's direction, also across the styled runs of an HTML line,
+  places justified words from right to left, and ends the last line of a
+  justified right-to-left paragraph at the right edge; `textDimensions()`
+  takes the same option. The default, `"none"`, draws text exactly as given,
+  as before; see [Write Right-to-Left Text](docs/how-to/write-right-to-left-text.md)
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+
+### Fixed
+
+- Keep a word joined by a non-breaking space (U+00A0) together on a
+  justified Recipe line instead of widening the gap inside it, as native does
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- End right-aligned Recipe text where its glyphs end, at the right edge of a
+  text box's content, as native does. It ended the box's left padding plus
+  the first glyph's side bearing past that edge. Centered text in a box
+  without padding was off by half that bearing, and the text-markup
+  annotations of HTML lines ended that bearing short of their glyphs
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Start a new line of plain (non-HTML) Recipe text at every mandatory line
+  break, as native does: `\r\n`, `\r`, vertical tab, form feed, U+0085,
+  U+2028 and U+2029 no longer draw as missing glyphs on the same line
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 
 ## [1.0.0] - 2026-10-01
 

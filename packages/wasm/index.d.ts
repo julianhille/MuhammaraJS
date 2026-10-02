@@ -385,6 +385,8 @@ export interface RecipeTextOptions
   italic?: boolean;
   charSpace?: number;
   html?: boolean;
+  /** How right-to-left text such as Hebrew is ordered: `"auto"` takes each paragraph's direction from its first strong letter, `"ltr"` and `"rtl"` set it, and `"none"` (default) draws the text exactly as given. */
+  direction?: TextDirection;
   flow?: boolean;
   align?: Recipe.ImageAlign;
   layout?: string | number;
@@ -909,6 +911,8 @@ export declare namespace Recipe {
   type TextWrap = "auto" | "clip" | "trim" | "ellipsis";
   /** Horizontal alignment of the lines inside a Recipe text box. */
   type TextAlign = Recipe.HorizontalAlign | "justify";
+  /** How Recipe text() orders right-to-left text before drawing it. */
+  type TextDirection = "auto" | "ltr" | "rtl" | "none";
   /** Horizontal placement keyword for Recipe text and images. */
   type HorizontalAlign = "left" | "center" | "right";
   /** Vertical placement keyword for Recipe text, images, and text boxes. */
@@ -1146,6 +1150,13 @@ export interface RecipeConstructor {
     readonly CENTER: "center";
     readonly RIGHT: "right";
     readonly JUSTIFY: "justify";
+  };
+  /** How text() orders right-to-left text such as Hebrew before drawing it. */
+  readonly TextDirection: {
+    readonly AUTO: "auto";
+    readonly LTR: "ltr";
+    readonly RTL: "rtl";
+    readonly NONE: "none";
   };
   /** Which table rows the `row` options apply to. */
   readonly TableRowNth: {
@@ -1498,7 +1509,21 @@ export interface WriteTextOptions extends DrawPathOptions {
   font: PDFUsedFont;
   size?: number;
   underline?: boolean;
+  /** How right-to-left text such as Hebrew is ordered before it is drawn; defaults to `"none"`, which draws the text as given. */
+  direction?: TextDirection;
 }
+/**
+ * How `writeText()` and Recipe `text()` order text before drawing it: `auto`
+ * takes each paragraph's direction from its first strong letter, `ltr` and
+ * `rtl` set it, and `none`, the default, draws the text exactly as given.
+ */
+export type TextDirection = "auto" | "ltr" | "rtl" | "none";
+export declare const TextDirection: {
+  readonly AUTO: "auto";
+  readonly LTR: "ltr";
+  readonly RTL: "rtl";
+  readonly NONE: "none";
+};
 export interface DrawImageOptions {
   index?: number;
   transformation?:

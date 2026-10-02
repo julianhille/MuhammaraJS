@@ -49,8 +49,9 @@ Use `textBox` for wrapping, alignment, padding, and styling. `text` also accepts
 HTML input with `html: true`, but it is a limited markup parser rather
 than a browser layout engine.
 
-Complex-script shaping and right-to-left layout do not have focused coverage and
-are not documented as supported behavior.
+Recipe does not shape complex scripts, so Arabic letters do not join. Hebrew
+and other right-to-left text can be drawn in visual order; see
+[Right-To-Left Text](#right-to-left-text).
 
 ## Clip Text To A Fixed-Height Box
 
@@ -78,3 +79,10 @@ pdfDoc
 
 `onClip` is called only when clipping is enabled and leaves text unrendered. The
 library warns when `onClip` is configured without `clipIfExceedsBox`.
+
+## Right-To-Left Text
+
+Pass `direction: "auto"` to draw Hebrew in visual order. Recipe wraps each
+paragraph in logical order and reorders every line on its own; set
+`textAlign: "right"` for right-to-left paragraphs. See
+[Write Right-to-Left Text](../how-to/write-right-to-left-text.md).

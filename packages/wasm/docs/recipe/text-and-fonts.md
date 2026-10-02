@@ -52,7 +52,8 @@ writers require explicit font registration before drawing text.
 Only Roboto's regular face is bundled. Bold and italic requests fall back to
 regular until matching faces are registered, and Recipe does not synthesize
 styles. Register fonts that cover glyphs outside Roboto; font registration does
-not add complex-script shaping or right-to-left layout. Native Recipe defaults
+not add complex-script shaping, so Arabic letters do not join. For Hebrew, see
+[Right-To-Left Text](#right-to-left-text). Native Recipe defaults
 to Helvetica and bundles more faces, so select the same face on both platforms
 when matching metrics, wrapping, or layout matters.
 
@@ -163,3 +164,10 @@ var pdfBytes = new Recipe()
 
 console.log(remainder, pdfBytes.byteLength);
 ```
+
+## Right-To-Left Text
+
+Pass `direction: "auto"` to draw Hebrew in visual order. Recipe wraps each
+paragraph in logical order and reorders every line on its own; set
+`textAlign: "right"` for right-to-left paragraphs. See
+[Write Right-to-Left Text](../how-to/write-right-to-left-text.md).

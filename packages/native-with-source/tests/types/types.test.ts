@@ -99,6 +99,12 @@ writer
     size: 12,
     underline: true,
   })
+  .writeText("שלום עולם", 10, 30, {
+    font: writer.getFontForFile("font.ttf"),
+    direction: muhammara.TextDirection.AUTO,
+  })
+  // @ts-expect-error direction takes a TextDirection value.
+  .writeText("No direction", 10, 35, { direction: "up" })
   // @ts-expect-error writeText() has no strikeOut option.
   .writeText("No strike-out", 10, 40, { strikeOut: true })
   // @ts-expect-error writeText() has no lineWidth option.
@@ -190,6 +196,9 @@ var framedImage: muhammara.Recipe.ImageOptions = {
 recipe.image("document.pdf", 72, 300, framedImage);
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
+recipe.textDimensions("שלום", {
+  direction: muhammara.Recipe.TextDirection.AUTO,
+}).width;
 var pages: number | undefined = recipe.metadata.pages;
 var pageCount: number | undefined = recipe.metadata.pageCount;
 recipe.createPage(595, 842).rotate(90).endPage();
@@ -1037,3 +1046,14 @@ legacyRecipe.annot(10, 10, "Square", {
   date: new Date(),
   replies: [{ contents: "Reply", open: true, icon: "Help", flags: 4 }],
 });
+
+const textDirection: muhammara.TextDirection = muhammara.TextDirection.RTL;
+const recipeDirection: muhammara.Recipe.TextDirection =
+  muhammara.Recipe.TextDirection.NONE;
+recipe.text("שלום עולם", 10, 10, {
+  direction: textDirection,
+  textBox: { width: 100, textAlign: muhammara.Recipe.TextAlign.RIGHT },
+});
+recipe.text("abc", 10, 10, { direction: recipeDirection });
+// @ts-expect-error direction takes a Recipe.TextDirection value.
+recipe.text("abc", 10, 10, { direction: "up" });

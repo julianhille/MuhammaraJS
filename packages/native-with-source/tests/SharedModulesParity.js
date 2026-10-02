@@ -44,16 +44,19 @@ function functionSource(file, name) {
 }
 
 describe("SharedModulesParity", function () {
-  ["content-stream.js", "font-text.js", "glyph-list.js"].forEach(
-    function (name) {
-      it("keeps " + name + " identical on native and Wasm", function () {
-        assert.equal(
-          mirroredSource(path.join(wasmLib, name)),
-          mirroredSource(path.join(nativeLib, name)),
-        );
-      });
-    },
-  );
+  [
+    "content-stream.js",
+    "font-text.js",
+    "glyph-list.js",
+    "text-direction.js",
+  ].forEach(function (name) {
+    it("keeps " + name + " identical on native and Wasm", function () {
+      assert.equal(
+        mirroredSource(path.join(wasmLib, name)),
+        mirroredSource(path.join(nativeLib, name)),
+      );
+    });
+  });
 
   ["replaceShownText", "removeTextShowingOperators"].forEach(function (name) {
     it("keeps the Recipe " + name + " identical on both ends", function () {

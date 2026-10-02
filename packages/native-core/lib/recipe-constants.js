@@ -338,6 +338,14 @@ var TextAlign = Object.freeze({
 });
 
 /**
+ * How text is ordered before it is drawn, the `direction` text option. Right-to-
+ * left text such as Hebrew is typed in logical order and drawn in visual order.
+ * @readonly
+ * @enum {string}
+ */
+var TextDirection = require("./text-direction").TextDirection;
+
+/**
  * Special Recipe sources.
  * @readonly
  * @enum {string}
@@ -351,6 +359,7 @@ module.exports = {
   Source,
   TextWrap,
   TextAlign,
+  TextDirection,
   TableRowNth,
   LineCap,
   LineJoin,

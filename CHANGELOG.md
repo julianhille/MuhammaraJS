@@ -24,6 +24,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - A server benchmark comparing `recrypt()` and `recryptAsync()`, including
   how long each blocks the event loop, run with `npm run bench:recrypt`
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+- Draw right-to-left text such as Hebrew in visual order when `writeText()`
+  or Recipe `text()` is given the new `direction` option (`TextDirection` /
+  `Recipe.TextDirection`). `"auto"` takes each paragraph's direction from its
+  first strong letter, and `"ltr"` and `"rtl"` set it. Text is reordered with
+  the Unicode Bidirectional Algorithm ([bidi-js](https://github.com/lojjic/bidi-js),
+  MIT): numbers and Latin words inside Hebrew keep their order, brackets
+  are mirrored, points are drawn on their letters, and invisible direction
+  marks are neither drawn nor measured. Recipe reorders each wrapped line with
+  its paragraph's direction, also across the styled runs of an HTML line,
+  places justified words from right to left, and ends the last line of a
+  justified right-to-left paragraph at the right edge; `textDimensions()`
+  takes the same option. The default, `"none"`, draws text exactly as given,
+  as before; see [Write Right-to-Left Text](packages/native/docs/how-to/write-right-to-left-text.md)
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 
 ### Changed
 
