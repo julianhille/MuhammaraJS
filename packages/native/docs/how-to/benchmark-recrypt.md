@@ -16,14 +16,17 @@ server the whole time, so the client never shares the server's event loop.
 
 ## Run It
 
-From a source checkout with a built addon:
+The benchmark is a script you run by hand; it is not part of the test suite.
+From the root of a source checkout with a built addon:
 
 ```sh
-cd packages/native-with-source
-npm run bench:recrypt
-npm run bench:recrypt -- --input large.pdf --requests 32 --concurrency 8
-npm run bench:recrypt -- --json
+npm run native:bench:recrypt
+npm run native:bench:recrypt -- --input large.pdf --requests 32 --concurrency 8
+npm run native:bench:recrypt -- --json
 ```
+
+Inside `packages/native-with-source`, `npm run bench:recrypt` takes the same
+options.
 
 | Option            | Default       | Meaning                                                           |
 | ----------------- | ------------- | ----------------------------------------------------------------- |
