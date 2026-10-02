@@ -90,6 +90,34 @@ describe("Text Rotation", function () {
     }
   });
 
+  it("turns a clipped line's clip box with its text", async function () {
+    var Recipe = await getRecipe();
+    var pdf = new Recipe({ compress: false })
+      .createPage(400, 400)
+      .text("alpha beta gamma", 100, 100, {
+        font: "arial",
+        rotation: 30,
+        textBox: { width: 60, height: 20, wrap: "clip" },
+      })
+      .endPage()
+      .endPDF();
+    writeOutput("text-rotation-clip", pdf);
+    var content = new TextDecoder("latin1").decode(pdf);
+    // Native clips each rotated line inside its form, so the clip turns with
+    // the text: turn, clip, turn back, then draw the turned text.
+    var turn = clockwiseAround(100, 300).join("\\s+cm\\s+");
+    var turnBack = turn.replace(
+      "0.866025 -0.5 0.5 0.866025",
+      "0.866025 0.5 -0.5 0.866025",
+    );
+    assert.match(
+      content,
+      new RegExp(
+        `${turn}\\s+cm\\s+[\\d.\\s-]+re\\s+W\\s+n\\s+${turnBack}\\s+cm[\\s\\S]*${turn}\\s+cm`,
+      ),
+    );
+  });
+
   it("turns a text link with its text", async function () {
     var Recipe = await getRecipe();
     var pdf = new Recipe({ compress: false })

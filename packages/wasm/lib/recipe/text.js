@@ -1052,6 +1052,13 @@ export function createTextMethods({ drawText, measure, module }) {
             -lineHeight,
           );
           this._save();
+          // Native clips each rotated line inside its form, so the clip box
+          // turns with the text. Turn, clip, and turn back.
+          var clipRotation = textOptions.rotation
+            ? Number(textOptions.rotation)
+            : 0;
+          if (clipRotation)
+            this._rotate(clipRotation, ...textOptions.rotationOrigin);
           if (this._pageContext) {
             this._pageContext
               .re(clipPoint.nx, clipPoint.ny, width - left - right, lineHeight)
@@ -1069,6 +1076,8 @@ export function createTextMethods({ drawText, measure, module }) {
             this._restore();
             throw new Error("Unable to clip text box");
           }
+          if (clipRotation)
+            this._rotate(-clipRotation, ...textOptions.rotationOrigin);
         }
         if (textOptions.hilite && !entry.parts) {
           var hilite =

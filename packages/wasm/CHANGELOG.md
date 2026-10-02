@@ -11,7 +11,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   the page, as native Recipe and Wasm `image()` already did; it turned
   counter-clockwise before. Text without `rotationOrigin` turns around the `x`
   and `y` given to `text()`, as one block, instead of around each line's own
-  baseline start. To keep the earlier direction, negate the angle; see
+  baseline start, and a clipped line's clip box turns with it. To keep the
+  earlier direction, negate the angle; see
   [Breaking Changes](https://muhammarajs-wasm.readthedocs.io/latest/breaking-changes.html)
   [#916](https://github.com/julianhille/MuhammaraJS/issues/916)
 
