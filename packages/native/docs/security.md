@@ -35,8 +35,9 @@ not require a system OpenSSL installation at runtime.
 ## Thread-Safety Patches In PDFWriter
 
 `recryptAsync()` runs `PDFWriter::RecryptPDF` on a libuv pool thread while
-writers and readers keep running on the JavaScript thread. The upstream
-PDFWriter keeps some state process-wide, so MuhammaraJS changes three places in
+writers, readers and other recrypts keep running on the JavaScript thread and
+on worker threads. The upstream PDFWriter keeps some state process-wide, so
+MuhammaraJS changes three places in
 `packages/native-with-source/src/deps/PDFWriter`. Each change carries a
 `MuhammaraJS:` comment in the source and is listed in `MUHAMMARAJS_PATCHES.md`
 with the other local changes.
@@ -52,10 +53,11 @@ visible to callers: log settings now belong to the thread that sets them, so a
 writer's `log` option in a worker thread no longer changes where writers on
 other threads log.
 
-The patches do not make PDFWriter safe for concurrent recrypts. The rest of the
-library has not been audited for that, so every recrypt, synchronous or not,
-holds a process-wide mutex while it runs, and only one recrypt runs at a time.
-Other global state was checked and left unchanged:
+Every writer, reader and recrypt owns its own PDFWriter objects. With these
+patches, the remaining process-wide state below is either read-only or absent
+from the default builds, so recrypts run in parallel without a lock, as writers
+in worker threads always have. Other global state was checked and left
+unchanged:
 
 - Function-local statics such as `PDFTextString::Empty()` and
   `PDFParsingOptions::DefaultPDFParsingOptions()` are initialized thread-safely

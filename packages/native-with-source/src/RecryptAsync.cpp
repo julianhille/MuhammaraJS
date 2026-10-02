@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <deque>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -65,8 +64,7 @@ struct RecryptJob {
 
 // Jobs started from this thread that wait for the running one. Only one job
 // per thread is on the libuv pool at a time, so this thread's queued jobs
-// never hold pool threads that fs, dns and zlib need. A job from another
-// thread can still wait for the mutex on a pool thread.
+// never hold pool threads that fs, dns and zlib need.
 struct JobQueue {
   std::deque<RecryptJob *> pending;
   bool running = false;
@@ -232,7 +230,6 @@ bool FlushWriteStream(napi_env env, napi_value stream,
 
 void Execute(napi_env, void *data) {
   RecryptJob *job = static_cast<RecryptJob *>(data);
-  std::lock_guard<std::recursive_mutex> lock(RecryptMutex());
   // Each thread has its own trace. Recrypt parses the source before StartPDF
   // applies the log settings, so apply them first, and clear them afterwards
   // so a reused pool thread keeps nothing from this job.
@@ -361,11 +358,4 @@ napi_value RecryptAsync(const CallbackArgs &args) {
   ThreadQueue().pending.push_back(job);
   StartNextJob();
   return promise;
-}
-
-std::recursive_mutex &RecryptMutex() {
-  // Never destroyed: process.exit() runs static destructors while a job may
-  // still hold the lock on a pool thread.
-  static std::recursive_mutex *mutex = new std::recursive_mutex();
-  return *mutex;
 }

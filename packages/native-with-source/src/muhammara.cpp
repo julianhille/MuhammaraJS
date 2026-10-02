@@ -284,7 +284,6 @@ napi_value Recrypt(const CallbackArgs &args) {
   RecryptArguments options;
   if (!ReadRecryptArguments(args, options))
     return nullptr;
-  std::lock_guard<std::recursive_mutex> lock(RecryptMutex());
   EStatusCode status;
   if (IsObject(args.Env(), args[0])) {
     ObjectByteReaderWithPosition r(args.Env(), args[0]);

@@ -64,18 +64,15 @@ await muhammara.recryptAsync("plain.pdf", "output.pdf", {
 });
 ```
 
-!!! note "One recrypt at a time"
+!!! note "One job per thread at a time"
 
-    - **Jobs run one after another**, in the order they were started, and
-      never in parallel. The bundled PDF library is not yet audited for
-      concurrent recrypts, so one lock covers every recrypt in the process:
-      `recryptAsync` jobs from all threads and the synchronous `recrypt`. A
-      `recrypt` call waits for a running job, blocking its thread meanwhile.
+    - **A thread's jobs run one after another**, in the order they were
+      started. Jobs started from different worker threads, and synchronous
+      `recrypt` calls, run in parallel and do not wait for each other.
     - **Waiting jobs stay off the thread pool.** Each thread passes one job at
       a time to libuv's pool, so file system, DNS and zlib work keeps running.
-      When several worker threads each have a job waiting, each of those jobs
-      holds a pool thread while it waits for the lock. Raise
-      `UV_THREADPOOL_SIZE` or recrypt from one thread if that matters.
+      Each worker thread with a running job holds one pool thread. Raise
+      `UV_THREADPOOL_SIZE` when many worker threads recrypt at once.
     - **Stream jobs read and write on the calling thread.** The source stream
       is read into memory when `recryptAsync` is called, and the output is
       written to the target stream when the work is done. Both block the event

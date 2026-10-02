@@ -525,8 +525,8 @@ describe("Xcryption", function () {
           firstDone = true;
         });
       // Waiting behind the first job, these must stay in the queue. On pool
-      // threads they would block on the lock, leaving none for fs until the
-      // first job ends.
+      // threads they would occupy every one, leaving none for fs until they
+      // end.
       var waiting = Array.from({ length: 8 }, function (_, index) {
         return muhammara.recryptAsync(
           __dirname + "/TestMaterials/Original.pdf",
@@ -732,6 +732,75 @@ describe("Xcryption", function () {
       );
       assert.ok(called);
       assertRecryptedPdf(nested, undefined, false);
+    });
+
+    it("recrypts in a worker thread while this thread is inside recrypt()", async function () {
+      this.timeout(60000);
+      var { Worker } = require("worker_threads");
+      // flags[0]: this thread is inside recrypt(); flags[1]: the worker is done.
+      var flags = new Int32Array(new SharedArrayBuffer(8));
+      var worker = new Worker(
+        `
+        const { workerData } = require("worker_threads");
+        const muhammara = require(workerData.module);
+        const flags = new Int32Array(workerData.flags);
+        Atomics.wait(flags, 0, 0);
+        muhammara.recrypt(workerData.source, workerData.prefix + "Sync.pdf", {
+          userPassword: "worker",
+        });
+        muhammara
+          .recryptAsync(workerData.source, workerData.prefix + "Async.pdf", {
+            userPassword: "worker",
+          })
+          .finally(function () {
+            Atomics.store(flags, 1, 1);
+            Atomics.notify(flags, 1);
+          });
+        `,
+        {
+          eval: true,
+          workerData: {
+            module: require.resolve("@muhammara/native-with-source"),
+            source: __dirname + "/TestMaterials/Original.pdf",
+            prefix: __dirname + "/output/RecryptParallelWorker",
+            flags: flags.buffer,
+          },
+        },
+      );
+      var exited = new Promise(function (resolve, reject) {
+        worker.once("exit", resolve);
+        worker.once("error", reject);
+      });
+      var source = new muhammara.PDFRStreamForBuffer(
+        fs.readFileSync(__dirname + "/TestMaterials/Original.pdf"),
+      );
+      var read = source.read;
+      var waited;
+      source.read = function (amount) {
+        if (waited === undefined) {
+          // Block inside recrypt() until the worker has recrypted. A lock
+          // shared by all recrypts would make both threads wait forever.
+          Atomics.store(flags, 0, 1);
+          Atomics.notify(flags, 0);
+          waited = Atomics.wait(flags, 1, 0, 30000);
+        }
+        return read.call(this, amount);
+      };
+      muhammara.recrypt(source, new muhammara.PDFWStreamForBuffer(), {
+        userPassword: "main",
+      });
+      await exited;
+      assert.equal(waited, "ok", "the worker could not recrypt in parallel");
+      assertRecryptedPdf(
+        __dirname + "/output/RecryptParallelWorkerSync.pdf",
+        "worker",
+        true,
+      );
+      assertRecryptedPdf(
+        __dirname + "/output/RecryptParallelWorkerAsync.pdf",
+        "worker",
+        true,
+      );
     });
 
     it("survives process.exit() in a worker thread during a job", async function () {

@@ -114,9 +114,10 @@ declare namespace muhammara {
   ): void;
   /**
    * Like `recrypt()`, but re-encrypts on libuv's thread pool and returns a
-   * promise, so the event loop keeps running. Recrypts run one at a time,
-   * in call order; a thread's waiting jobs do not hold pool threads. Relative
-   * paths are resolved when called.
+   * promise, so the event loop keeps running. A thread's jobs run one at a
+   * time, in call order, and its waiting jobs do not hold pool threads; jobs
+   * from different threads run in parallel. Relative paths are resolved when
+   * called.
    * @param originalPdfPath - The source PDF path.
    * @param newPdfPath - The output path.
    * @param options - The source password and the new encryption settings.
