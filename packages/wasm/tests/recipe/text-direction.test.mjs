@@ -488,8 +488,7 @@ describe("Recipe text direction", function () {
       var visible = lineRuns(runs, line);
       var rightmost = visible[visible.length - 1];
       assert.ok(
-        // Wasm aligns by glyph bounds, so the edge may differ by a bearing.
-        Math.abs(inkRight(rightmost, 12) - 163) < 1.5,
+        Math.abs(inkRight(rightmost, 12) - 163) < 1,
         JSON.stringify(visible),
       );
       assert.ok(visible[0].x < 31, JSON.stringify(visible));

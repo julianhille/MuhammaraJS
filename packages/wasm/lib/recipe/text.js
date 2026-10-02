@@ -1070,6 +1070,22 @@ export function createTextMethods({ drawText, measure, module }) {
               { ...options, fontSize },
             )
           : entryDimensions.width;
+        // Lines are aligned by where their glyphs end, as native does: the
+        // width of the glyphs before the last run plus the last run's xMax,
+        // so right-aligned text ends at the edge instead of a bearing past it.
+        var lastRun = entry.parts
+          ? groupedHtmlParts(entry.parts).pop()
+          : undefined;
+        var alignWidth = entry.parts
+          ? textWidth +
+            (lastRun
+              ? dimensions(
+                  this,
+                  lastRun.text,
+                  fragmentOptions(options, lastRun.styles, fontSize),
+                ).xMin
+              : 0)
+          : entryDimensions.xMax;
         var horizontal = box.textAlign?.split(" ")[0];
         var isJustifiedLine =
           horizontal === TextAlign.JUSTIFY && !entry.last && width;
@@ -1086,9 +1102,9 @@ export function createTextMethods({ drawText, measure, module }) {
           x +
           left +
           (horizontal === TextAlign.CENTER
-            ? (width - left - right - textWidth) / 2
+            ? (width - left - right - alignWidth) / 2
             : horizontal === TextAlign.RIGHT
-              ? width - left - right - textWidth
+              ? width - left - right - alignWidth
               : 0);
         var baseline = currentY + lineHeight;
         if (textOptions.rotation && !textOptions.rotationOrigin) {
@@ -1100,9 +1116,9 @@ export function createTextMethods({ drawText, measure, module }) {
           wrap === TextWrap.CLIP &&
           width &&
           entry.direction === TextDirection.RTL &&
-          textWidth > width - left - right
+          alignWidth > width - left - right
         ) {
-          drawX = x + width - right - textWidth;
+          drawX = x + width - right - alignWidth;
         }
         var linkX = drawX;
         var linkWidth = textWidth;

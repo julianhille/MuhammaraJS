@@ -752,18 +752,25 @@ describe("Text", () => {
         size: 12,
         textBox: { width: 200, textAlign: "right", padding: [0, 10, 0, 30] },
       })
+      .text("hello world", 20, 60, {
+        font: "arial",
+        size: 12,
+        textBox: { width: 200, textAlign: "center" },
+      })
       .endPage()
       .endPDF(() => {
         const reader = muhammara.createReader(output);
-        const run = reader.extractPageText(0)[0];
+        const [rightRun, centerRun] = reader.extractPageText(0);
         reader.end();
         const font = muhammara
           .createWriter(new muhammara.PDFWStreamForBuffer())
           .getFontForFile(arial);
-        const right =
-          run.textMatrix[4] +
-          font.calculateTextDimensions("hello world", 12).xMax;
+        const glyphsEnd = font.calculateTextDimensions("hello world", 12).xMax;
+        const right = rightRun.textMatrix[4] + glyphsEnd;
         assert.ok(Math.abs(right - 210) < 0.5, String(right));
+        // Centered between the text's start and where its glyphs end.
+        const center = centerRun.textMatrix[4] + glyphsEnd / 2;
+        assert.ok(Math.abs(center - 120) < 0.5, String(center));
         done();
       });
   });

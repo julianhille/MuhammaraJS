@@ -94,17 +94,24 @@ describe("Recipe text", function () {
         size: 12,
         textBox: { width: 200, textAlign: "right", padding: [0, 10, 0, 30] },
       })
+      .text("hello world", 20, 60, {
+        font: "arial",
+        size: 12,
+        textBox: { width: 200, textAlign: "center" },
+      })
       .endPage()
       .endPDF();
     writeOutput("text-right-padding", pdf);
     var reader = muhammara.createReader(pdf);
-    var run = reader.extractPageText(0)[0];
+    var [rightRun, centerRun] = reader.extractPageText(0);
     reader.end();
     var font = muhammara.createWriter().getFontForBytes("arial");
-    var right =
-      run.textMatrix[4] + font.calculateTextDimensions("hello world", 12).xMax;
-    // Wasm aligns by glyph bounds, so the edge may differ by a bearing.
-    assert.ok(Math.abs(right - 210) < 1.5, String(right));
+    var glyphsEnd = font.calculateTextDimensions("hello world", 12).xMax;
+    var right = rightRun.textMatrix[4] + glyphsEnd;
+    assert.ok(Math.abs(right - 210) < 0.5, String(right));
+    // Centered between the text's start and where its glyphs end.
+    var center = centerRun.textMatrix[4] + glyphsEnd / 2;
+    assert.ok(Math.abs(center - 120) < 0.5, String(center));
   });
 
   it("drops the leading spaces of a justified line", async function () {
