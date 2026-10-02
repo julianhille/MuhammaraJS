@@ -402,11 +402,13 @@ describe("HTML to TextObjects", function () {
         charSpace: 5,
         html: true,
       });
-    var alphaWidth = spacedRecipe.textDimensions("alpha ", {
-      font: "arial",
-      size: 12,
-      charSpace: 5,
-    }).width;
+    // As in native, "bravo" starts at the right edge of "alpha ", with its
+    // character spacing, plus the width of an "o" for the space that ends it.
+    var spacedOptions = { font: "arial", size: 12, charSpace: 5 };
+    var bravoStart =
+      20 +
+      spacedRecipe.textDimensions("alpha ", spacedOptions).xMax +
+      spacedRecipe.textDimensions("o", spacedOptions).width;
     var spacedBytes = spacedRecipe.endPage().endPDF();
     writeOutput("htmlToTextObjects-spacing-charspace", spacedBytes);
     var spacedRuns;
@@ -428,8 +430,8 @@ describe("HTML to TextObjects", function () {
       "character spacing must be emitted for styled HTML runs",
     );
     assert.ok(
-      Math.abs(spacedRuns[1].textMatrix[4] - (20 + alphaWidth + 5)) < 0.001,
-      "styled whitespace boundaries must retain every character-space interval",
+      Math.abs(spacedRuns[1].textMatrix[4] - bravoStart) < 0.001,
+      "styled runs keep their character spacing and the space between them",
     );
 
     var rotatedBytes = new Recipe({ compress: false })
@@ -684,11 +686,12 @@ describe("HTML to TextObjects", function () {
     });
 
     var justifiedRecipe = new Recipe({ compress: false }).createPage(300, 200);
-    var helWidth = justifiedRecipe.textDimensions("hel", {
+    // As in native, "lo" starts at the right edge of "hel".
+    var helAdvance = justifiedRecipe.textDimensions("hel", {
       font: "arial",
       size: 12,
       bold: true,
-    }).width;
+    }).xMax;
     justifiedRecipe.text("<b>hel</b>lo xx yy", 20, 20, {
       font: "arial",
       size: 12,
@@ -702,7 +705,7 @@ describe("HTML to TextObjects", function () {
     assert.equal(justified[0].content, "hel");
     assert.equal(justified[1].content, "lo ");
     assert.ok(
-      Math.abs(justified[1].textMatrix[4] - (20 + helWidth)) < 0.001,
+      Math.abs(justified[1].textMatrix[4] - (20 + helAdvance)) < 0.001,
       "inline styling must not create a justified gap inside a word",
     );
 

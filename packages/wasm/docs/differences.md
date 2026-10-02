@@ -40,6 +40,11 @@ end of its list rather than throwing. Wasm `htmlToTextObjects()` returns flat
 visual runs with list prefixes and `indent` values, while native returns its
 nested XML-derived layout tree.
 
+A flowed `text()` sequence that is not ended with `flow: false` is drawn by
+the next `text()` call with coordinates, `table()`, or `endPage()`. Native
+Recipe currently drops such a flow instead
+([#889](https://github.com/julianhille/MuhammaraJS/issues/889)).
+
 Appending or rebuilding an existing source page does not deep-copy that page's
 `/Annots` graph, although annotations created in the output are written
 normally. `split()` returns named byte arrays rather than writing an output
