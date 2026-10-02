@@ -454,7 +454,10 @@ function parseArguments(argv) {
     var name = argv[i];
     var value = argv[i + 1];
     if (name === "--json") options.json = true;
-    else if (name === "--input") ((options.input = value), i++);
+    // npm runs the script inside the workspace; resolve against the
+    // directory the user ran it from.
+    else if (name === "--input")
+      ((options.input = path.resolve(process.env.INIT_CWD || "", value)), i++);
     else if (name === "--requests") ((options.requests = Number(value)), i++);
     else if (name === "--concurrency")
       ((options.concurrency = Number(value)), i++);
