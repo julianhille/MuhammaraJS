@@ -706,6 +706,54 @@ describe("Xcryption", function () {
       );
     });
 
+    it("keeps getter, inherited and Proxy options when log is set", async function () {
+      var source = __dirname + "/TestMaterials/Original.pdf";
+      var encryption = {
+        password: "",
+        userPassword: "user",
+        ownerPassword: "owner",
+        userProtectionFlag: 4,
+      };
+      var getters = {
+        log: __dirname + "/output/RecryptAsyncGetterOptions.log",
+      };
+      Object.keys(encryption).forEach(function (key) {
+        Object.defineProperty(getters, key, {
+          get: function () {
+            return encryption[key];
+          },
+        });
+      });
+      var inherited = Object.create(encryption);
+      inherited.log = __dirname + "/output/RecryptAsyncInheritedOptions.log";
+      var proxied = new Proxy(
+        {},
+        {
+          has: function (target, key) {
+            return key === "log" || key in encryption;
+          },
+          get: function (target, key) {
+            return key === "log"
+              ? __dirname + "/output/RecryptAsyncProxyOptions.log"
+              : encryption[key];
+          },
+        },
+      );
+      var cases = {
+        Getter: getters,
+        Inherited: inherited,
+        Proxy: proxied,
+      };
+      for (var name of Object.keys(cases)) {
+        var target = __dirname + "/output/RecryptAsync" + name + "Options.pdf";
+        var syncTarget = __dirname + "/output/Recrypt" + name + "Options.pdf";
+        muhammara.recrypt(source, syncTarget, cases[name]);
+        assertRecryptedPdf(syncTarget, "user", true);
+        await muhammara.recryptAsync(source, target, cases[name]);
+        assertRecryptedPdf(target, "user", true);
+      }
+    });
+
     it("lets a stream callback call recrypt() on the same thread", function () {
       var nested = __dirname + "/output/RecryptNestedInCallback.pdf";
       var inner = new muhammara.PDFWStreamForBuffer();

@@ -118,16 +118,36 @@ function resolveRecryptAsyncPaths(muhammara) {
       args[0] = path.resolve(source);
       args[1] = path.resolve(target);
     }
-    if (
-      options &&
-      typeof options === "object" &&
-      typeof options.log === "string" &&
-      options.log !== ""
-    ) {
-      args[2] = Object.assign({}, options, { log: path.resolve(options.log) });
+    var log = options && typeof options === "object" ? options.log : undefined;
+    if (typeof log === "string" && log !== "") {
+      args[2] = withLog(options, path.resolve(log));
     }
     return recryptAsync.apply(this, args);
   };
+}
+
+/**
+ * View options with `log` replaced, reading every other property from the
+ * original. Copying would lose getters, inherited properties, and Proxy-backed
+ * values that the addon reads with a plain property get.
+ *
+ * @param {object} options The caller's options.
+ * @param {string} log The log path to report instead.
+ * @returns {object} A Proxy over `options`.
+ */
+function withLog(options, log) {
+  return new Proxy(options, {
+    /**
+     * Read `log` as the replacement and every other key from the options.
+     *
+     * @param {object} target The caller's options.
+     * @param {string|symbol} key The property name.
+     * @returns {*} The property value.
+     */
+    get: function (target, key) {
+      return key === "log" ? log : Reflect.get(target, key);
+    },
+  });
 }
 
 /**
