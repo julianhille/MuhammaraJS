@@ -1,5 +1,31 @@
 import { constants } from "./constants.js";
 
+// Every option `recrypt()` reads.
+var recryptOptionKeys = [
+  "password",
+  "userPassword",
+  "ownerPassword",
+  "userProtectionFlag",
+  "version",
+  "compress",
+  "log",
+];
+
+/**
+ * Copies the recrypt options as they are now, like native reads them when
+ * `recryptAsync()` is called. Each key is read with a plain property get, so
+ * getters, inherited properties, and Proxy values are kept.
+ * @param {PDFRecryptOptions} [options] - The caller's options.
+ * @returns {PDFRecryptOptions|*} A plain copy, or `options` itself when it is
+ *   not an object.
+ */
+export function copyRecryptOptions(options) {
+  if (!options || typeof options !== "object") return options;
+  var copy = {};
+  for (var key of recryptOptionKeys) copy[key] = options[key];
+  return copy;
+}
+
 /**
  * Creates the byte-first equivalent of native `recrypt`.
  * @param {object} dependencies - Module, constants, and byte helpers.

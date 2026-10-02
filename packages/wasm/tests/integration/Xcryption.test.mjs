@@ -236,6 +236,43 @@ describe("Xcryption", function () {
       plainReader.end();
     });
 
+    it("reads the options when called, not after reading the source", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var source = new Blob([muhammara.createBlankPdf(100, 100)]);
+      var options = { userPassword: "first", ownerPassword: "edit" };
+      var first = muhammara.recryptAsync(source, options);
+      options.userPassword = "second";
+      var second = muhammara.recryptAsync(source, options);
+      delete options.userPassword;
+
+      var firstReader = muhammara.createReader(await first, {
+        password: "first",
+      });
+      assert.equal(firstReader.isEncrypted(), true);
+      firstReader.end();
+      var secondReader = muhammara.createReader(await second, {
+        password: "second",
+      });
+      assert.equal(secondReader.isEncrypted(), true);
+      secondReader.end();
+    });
+
+    it("reads getter and inherited options like recrypt", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var options = Object.create({ userPassword: "view" });
+      Object.defineProperty(options, "ownerPassword", {
+        get: () => "edit",
+        enumerable: false,
+      });
+      var encrypted = await muhammara.recryptAsync(
+        new Blob([muhammara.createBlankPdf(100, 100)]),
+        options,
+      );
+      var reader = muhammara.createReader(encrypted, { password: "view" });
+      assert.equal(reader.isEncrypted(), true);
+      reader.end();
+    });
+
     it("rejects instead of throwing for unsupported input and options", async function () {
       var muhammara = await createMuhammaraWasm();
       await assert.rejects(
