@@ -70,6 +70,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   glyph `…`, matching native, instead of three periods (`...`). Text that
   gets shortened can now keep more characters, because the glyph is narrower
   than three periods [#907](https://github.com/julianhille/MuhammaraJS/issues/907)
+- Wrap and truncate plain `text()` with `charSpace` at the spaced width, as
+  native does. The spacing was counted twice, so lines broke too early and
+  ellipsized text was cut too short.
+  [#893](https://github.com/julianhille/MuhammaraJS/issues/893)
 
 ## [1.0.0] - 2026-10-01
 

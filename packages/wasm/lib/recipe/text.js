@@ -97,7 +97,7 @@ function endsWithBreakableSpace(value) {
  * Lays out plain text into lines for a width and wrap mode.
  * @param {string} value - Text; `\n` starts a paragraph.
  * @param {number} width - Available width; 0 disables wrapping.
- * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options, including character spacing.
  * @param {object} options - Text options.
  * @param {Recipe.TextWrap|boolean} wrap - Wrap mode; `true` means auto.
  * @returns {Array<{text: string, last: boolean}>} Lines; `last` ends a paragraph.
@@ -113,10 +113,8 @@ function lines(value, width, measure, options, wrap) {
       words.forEach((word) => {
         if (truncated) return;
         var next = line + word;
-        var fits =
-          !width ||
-          measure(next, options).width + charSpacing(next, options.charSpace) <=
-            width;
+        // measure() already includes the character spacing.
+        var fits = !width || measure(next, options).width <= width;
         if (fits || !line) {
           line = next;
         } else if (wrap === TextWrap.AUTO || wrap === true) {
@@ -386,12 +384,7 @@ function ellipsizeHtmlParts(parts, width, measure, options) {
 function ellipsize(value, width, measure, options) {
   var suffix = "…";
   var result = trimBreakableEnd(value);
-  while (
-    result.length &&
-    measure(result + suffix, options).width +
-      charSpacing(result + suffix, options.charSpace) >
-      width
-  ) {
+  while (result.length && measure(result + suffix, options).width > width) {
     result = trimBreakableEnd(result.slice(0, -1));
   }
   return result + suffix;
