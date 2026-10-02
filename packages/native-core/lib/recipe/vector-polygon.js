@@ -27,7 +27,7 @@
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash pattern [dashSize, gapSize] or [dashAndGapSize]
  * @param {number} [options.dashPhase] - distance into dash pattern at which to start dash (default: 0, immediately)
- * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
+ * @param {number} [options.rotation] - Clockwise rotation in degrees, +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @param {Recipe.LineCap} [options.lineCap] -  open line end style, a `Recipe.LineCap` value (default: 'round')
  * @param {Recipe.LineJoin} [options.lineJoin] - joined line end style, a `Recipe.LineJoin` value (default: 'round')

@@ -4,6 +4,17 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- A positive Recipe `rotation` option on `text()` and the shapes (`rectangle()`,
+  `circle()`, `polygon()`, `line()`, and the rest) turns content clockwise on
+  the page, as native Recipe and Wasm `image()` already did; it turned
+  counter-clockwise before. Text without `rotationOrigin` turns around the `x`
+  and `y` given to `text()`, as one block, instead of around each line's own
+  baseline start. To keep the earlier direction, negate the angle; see
+  [Breaking Changes](https://muhammarajs-wasm.readthedocs.io/latest/breaking-changes.html)
+  [#916](https://github.com/julianhille/MuhammaraJS/issues/916)
+
 ### Added
 
 - Embed every third-party license and copyright notice in

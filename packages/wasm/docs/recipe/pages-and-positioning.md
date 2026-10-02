@@ -24,10 +24,17 @@ The rotation argument to `createPage("A4", 90)` swaps the named page's width
 and height. `rotate(degrees)` sets `/Rotate` on the active page, including pages
 with explicit dimensions. If both are used, `rotate()` supplies the final
 rotation value while the named size remains swapped. `rotate()` throws on a page
-opened with `editPage()`, whose `/Rotate` the page modifier keeps. Positive
-`rotateContent()` angles rotate subsequent content clockwise because Recipe's Y
-axis points down. Its optional `x` and `y` values select the Recipe-coordinate
-point around which subsequent drawing rotates.
+opened with `editPage()`, whose `/Rotate` the page modifier keeps.
+
+A positive `rotation` option turns a shape, text, or image clockwise on the
+page, around `rotationOrigin`, as on native. Text without `rotationOrigin`
+turns around the `x` and `y` given to `text()`, before `align` moves it, so
+every line of a text box turns as one block.
+
+Positive `rotateContent()` angles turn subsequent content counter-clockwise on
+the page, as on native and unlike the `rotation` option. Its optional `x` and
+`y` values select the Recipe-coordinate point around which subsequent drawing
+rotates.
 
 `pageInfo(pageNumber)` returns geometry for a specific one-based page.
 `getCurrentPageInfo()` returns geometry for the active or most recently ended
