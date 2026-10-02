@@ -21,7 +21,7 @@ import { createWriterFactory, createWriterSupport } from "./lib/writer.js";
 import { createModifierFactory } from "./lib/modifier.js";
 import { createWriterToModifyFactory } from "./lib/writer-to-modify.js";
 import { createRecipeFactory } from "./lib/recipe.js";
-import { createRecrypt } from "./lib/recrypt.js";
+import { copyRecryptOptions, createRecrypt } from "./lib/recrypt.js";
 import {
   DeviceColorSpace,
   ImageFit,
@@ -263,6 +263,7 @@ async function createRuntime(options) {
      * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
      */
     recryptAsync: async function (source, options = {}) {
+      options = copyRecryptOptions(options);
       return recrypt(await normalizeBytesAsync(source, "PDF input"), options);
     },
     ByteReader,

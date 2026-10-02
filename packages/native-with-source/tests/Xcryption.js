@@ -1,6 +1,18 @@
 var muhammara = require("@muhammara/native-with-source");
 var assert = require("assert");
+var path = require("path");
 var { writeOutput } = require("./helpers/testOutput");
+
+/**
+ * Path of a test output file relative to the working directory, so that
+ * `recryptAsync()` has to resolve it.
+ *
+ * @param {string} name The output file name.
+ * @returns {string} The relative path.
+ */
+function relativeOutput(name) {
+  return path.relative(process.cwd(), path.join(__dirname, "output", name));
+}
 
 function assertRecryptedPdf(filePath, password, encrypted) {
   var reader = muhammara.createReader(filePath, password ? { password } : {});
@@ -704,6 +716,91 @@ describe("Xcryption", function () {
       assert.ok(
         fs.readFileSync(log, "utf8").includes("MissingRelativeLogSource"),
       );
+    });
+
+    it("keeps getter, inherited, Proxy, frozen and class options when log is set", async function () {
+      var source = __dirname + "/TestMaterials/Original.pdf";
+      var encryption = {
+        password: "",
+        userPassword: "user",
+        ownerPassword: "owner",
+        userProtectionFlag: 4,
+      };
+      var getters = {
+        log: __dirname + "/output/RecryptAsyncGetterOptions.log",
+      };
+      Object.keys(encryption).forEach(function (key) {
+        Object.defineProperty(getters, key, {
+          get: function () {
+            return encryption[key];
+          },
+        });
+      });
+      var inherited = Object.create(encryption);
+      inherited.log = __dirname + "/output/RecryptAsyncInheritedOptions.log";
+      var proxied = new Proxy(
+        {},
+        {
+          has: function (target, key) {
+            return key === "log" || key in encryption;
+          },
+          get: function (target, key) {
+            return key === "log"
+              ? __dirname + "/output/RecryptAsyncProxyOptions.log"
+              : encryption[key];
+          },
+        },
+      );
+      var frozen = Object.freeze(
+        Object.assign({}, encryption, {
+          log: relativeOutput("RecryptAsyncFrozenOptions.log"),
+        }),
+      );
+      var readOnly = Object.assign({}, encryption);
+      Object.defineProperty(readOnly, "log", {
+        value: relativeOutput("RecryptAsyncReadOnlyOptions.log"),
+        enumerable: true,
+      });
+      /** Options whose getters need the original object as `this`. */
+      class PrivateOptions {
+        #password = "user";
+        /** @returns {string} The empty source password. */
+        get password() {
+          return "";
+        }
+        /** @returns {string} The user password from a private field. */
+        get userPassword() {
+          return this.#password;
+        }
+        /** @returns {string} The owner password. */
+        get ownerPassword() {
+          return "owner";
+        }
+        /** @returns {number} The user protection flags. */
+        get userProtectionFlag() {
+          return 4;
+        }
+        /** @returns {string} The relative log path. */
+        get log() {
+          return relativeOutput("RecryptAsyncPrivateOptions.log");
+        }
+      }
+      var cases = {
+        Getter: getters,
+        Inherited: inherited,
+        Proxy: proxied,
+        Frozen: frozen,
+        ReadOnly: readOnly,
+        Private: new PrivateOptions(),
+      };
+      for (var name of Object.keys(cases)) {
+        var target = __dirname + "/output/RecryptAsync" + name + "Options.pdf";
+        var syncTarget = __dirname + "/output/Recrypt" + name + "Options.pdf";
+        muhammara.recrypt(source, syncTarget, cases[name]);
+        assertRecryptedPdf(syncTarget, "user", true);
+        await muhammara.recryptAsync(source, target, cases[name]);
+        assertRecryptedPdf(target, "user", true);
+      }
     });
 
     it("lets a stream callback call recrypt() on the same thread", function () {

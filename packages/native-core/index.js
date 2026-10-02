@@ -118,16 +118,52 @@ function resolveRecryptAsyncPaths(muhammara) {
       args[0] = path.resolve(source);
       args[1] = path.resolve(target);
     }
-    if (
-      options &&
-      typeof options === "object" &&
-      typeof options.log === "string" &&
-      options.log !== ""
-    ) {
-      args[2] = Object.assign({}, options, { log: path.resolve(options.log) });
+    var log = options && typeof options === "object" ? options.log : undefined;
+    if (typeof log === "string" && log !== "") {
+      args[2] = withLog(options, path.resolve(log));
     }
     return recryptAsync.apply(this, args);
   };
+}
+
+/**
+ * View options with `log` replaced, reading every other property from the
+ * original with the original as `this`. Copying would lose getters, inherited
+ * properties, and Proxy-backed values that the addon reads with a plain
+ * property get. Inheriting from the options would run getters against the
+ * wrong object, and a Proxy targeting the options would throw when `log` is
+ * read-only and non-configurable, so the Proxy targets an empty object.
+ *
+ * @param {object} options The caller's options.
+ * @param {string} log The log path to report instead.
+ * @returns {object} A Proxy reading through to `options`.
+ */
+function withLog(options, log) {
+  return new Proxy(
+    {},
+    {
+      /**
+       * Report `log` and every key the options have.
+       *
+       * @param {object} target The empty Proxy target.
+       * @param {string|symbol} key The property name.
+       * @returns {boolean} Whether the property exists.
+       */
+      has: function (target, key) {
+        return key === "log" || Reflect.has(options, key);
+      },
+      /**
+       * Read `log` as the replacement and every other key from the options.
+       *
+       * @param {object} target The empty Proxy target.
+       * @param {string|symbol} key The property name.
+       * @returns {*} The property value.
+       */
+      get: function (target, key) {
+        return key === "log" ? log : Reflect.get(options, key);
+      },
+    },
+  );
 }
 
 /**
