@@ -718,7 +718,7 @@ describe("Xcryption", function () {
       );
     });
 
-    it("keeps getter, inherited, Proxy and frozen options when log is set", async function () {
+    it("keeps getter, inherited, Proxy, frozen and class options when log is set", async function () {
       var source = __dirname + "/TestMaterials/Original.pdf";
       var encryption = {
         password: "",
@@ -761,12 +761,37 @@ describe("Xcryption", function () {
         value: relativeOutput("RecryptAsyncReadOnlyOptions.log"),
         enumerable: true,
       });
+      /** Options whose getters need the original object as `this`. */
+      class PrivateOptions {
+        #password = "user";
+        /** @returns {string} The empty source password. */
+        get password() {
+          return "";
+        }
+        /** @returns {string} The user password from a private field. */
+        get userPassword() {
+          return this.#password;
+        }
+        /** @returns {string} The owner password. */
+        get ownerPassword() {
+          return "owner";
+        }
+        /** @returns {number} The user protection flags. */
+        get userProtectionFlag() {
+          return 4;
+        }
+        /** @returns {string} The relative log path. */
+        get log() {
+          return relativeOutput("RecryptAsyncPrivateOptions.log");
+        }
+      }
       var cases = {
         Getter: getters,
         Inherited: inherited,
         Proxy: proxied,
         Frozen: frozen,
         ReadOnly: readOnly,
+        Private: new PrivateOptions(),
       };
       for (var name of Object.keys(cases)) {
         var target = __dirname + "/output/RecryptAsync" + name + "Options.pdf";
