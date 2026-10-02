@@ -13,7 +13,6 @@
 //   PercentColor component values range from 1 to 100.
 
 const { linkPdf } = require("./annotation");
-const muhammara = require("../muhammara");
 const { miterLimitOption } = require("../recipe-options");
 
 /**
@@ -44,7 +43,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
 
   if (options.fill) {
     const pathOptions = this._getPathOptions(options, nx, ny);
-    pathOptions.type = muhammara.DrawingPathType.FILL;
+    pathOptions.type = this.muhammara.DrawingPathType.FILL;
 
     if (pathOptions.fill !== undefined) {
       pathOptions.color = pathOptions.fill;
@@ -72,7 +71,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
   }
   if (options.stroke || options.color || !options.fill) {
     const pathOptions = this._getPathOptions(options);
-    pathOptions.type = muhammara.DrawingPathType.STROKE;
+    pathOptions.type = this.muhammara.DrawingPathType.STROKE;
 
     if (pathOptions.stroke !== undefined) {
       pathOptions.color = pathOptions.stroke;
@@ -152,7 +151,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   pathOptions.useGivenCoords = options.useGivenCoords;
 
   if (options.fill) {
-    pathOptions.type = muhammara.DrawingPathType.FILL;
+    pathOptions.type = this.muhammara.DrawingPathType.FILL;
 
     if (pathOptions.fill !== undefined) {
       pathOptions.color = pathOptions.fill;
@@ -188,7 +187,7 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
   }
 
   if (options.stroke || options.color || !options.fill) {
-    pathOptions.type = muhammara.DrawingPathType.STROKE;
+    pathOptions.type = this.muhammara.DrawingPathType.STROKE;
 
     // The fill above may have replaced the color; stroke with `color`.
     colorModel =

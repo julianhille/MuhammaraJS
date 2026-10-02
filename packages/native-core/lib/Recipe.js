@@ -1,4 +1,3 @@
-const muhammara = require("./muhammara");
 const path = require("path");
 const fs = require("fs");
 const PDFWStreamForBuffer = require("./PDFWStreamForBuffer");
@@ -61,7 +60,6 @@ class Recipe {
         this.filename = path.basename(this.src);
       }
     }
-    this.muhammara = muhammara;
     this.logFile = "muhammara-error.log";
 
     this.textMarkupAnnotations = [
@@ -101,14 +99,14 @@ class Recipe {
   _createWriter() {
     if (this.isNewPDF) {
       if (!this.isBufferSrc) {
-        this.writer = muhammara.createWriter(
+        this.writer = this.muhammara.createWriter(
           this.output,
           Object.assign({}, this.encryptOptions, {
             version: this._getVersion(this.options.version),
           }),
         );
       } else {
-        this.writer = muhammara.createWriter(
+        this.writer = this.muhammara.createWriter(
           this.outStream,
           Object.assign({}, this.encryptOptions, {
             version: this._getVersion(this.options.version),
@@ -120,15 +118,15 @@ class Recipe {
       this.read();
       try {
         if (this.isBufferSrc) {
-          this.writer = muhammara.createWriterToModify(
-            new muhammara.PDFRStreamForBuffer(this.src),
+          this.writer = this.muhammara.createWriterToModify(
+            new this.muhammara.PDFRStreamForBuffer(this.src),
             this.outStream,
             Object.assign({}, this.encryptOptions, {
               log: this.logFile,
             }),
           );
         } else {
-          this.writer = muhammara.createWriterToModify(
+          this.writer = this.muhammara.createWriterToModify(
             this.src,
             Object.assign({}, this.encryptOptions, {
               modifiedFilePath: this.output,
@@ -159,7 +157,7 @@ class Recipe {
     if (!supportedVersions.includes(version)) {
       version = 1.7;
     }
-    version = muhammara[`ePDFVersion${version * 10}`];
+    version = this.muhammara[`ePDFVersion${version * 10}`];
 
     return version;
   }
@@ -195,9 +193,9 @@ class Recipe {
     try {
       let src = isForExternal ? inSrc : this.src;
       if (src instanceof Buffer) {
-        src = new muhammara.PDFRStreamForBuffer(src);
+        src = new this.muhammara.PDFRStreamForBuffer(src);
       }
-      pdfReader = muhammara.createReader(src, this.encryptOptions);
+      pdfReader = this.muhammara.createReader(src, this.encryptOptions);
       const pages = pdfReader.getPagesCount();
       if (pages == 0) {
         // broken or modify password protected
@@ -352,8 +350,8 @@ class Recipe {
           const oldStream = this.outStream;
           this.outStream = new PDFWStreamForBuffer();
 
-          this.writer = muhammara.createWriterToModify(
-            new muhammara.PDFRStreamForBuffer(
+          this.writer = this.muhammara.createWriterToModify(
+            new this.muhammara.PDFRStreamForBuffer(
               oldStream.buffer || Buffer.alloc(0),
             ),
             this.outStream,
@@ -362,7 +360,7 @@ class Recipe {
             }),
           );
         } else {
-          this.writer = muhammara.createWriterToModify(
+          this.writer = this.muhammara.createWriterToModify(
             this.output,
             Object.assign({}, this.encryptOptions, {
               modifiedFilePath: this.output,
@@ -509,4 +507,22 @@ loadPrototypes();
 // Named values for string options, for example Recipe.AnnotSubtype.HIGHLIGHT.
 Object.assign(Recipe, require("./recipe-constants"));
 
-module.exports = Recipe;
+const SharedRecipe = Recipe;
+
+/**
+ * Create the Recipe class for one loaded addon. Every call returns a new
+ * subclass, so each implementation package keeps its own addon and its own
+ * `register()`ed callbacks; the Recipe methods reach the addon through
+ * `this.muhammara`.
+ * @private
+ * @param {Object} muhammara - The public API built by createMuhammara().
+ * @returns {Function} The Recipe class bound to that addon.
+ */
+function createRecipe(muhammara) {
+  class Recipe extends SharedRecipe {}
+  Recipe.prototype.muhammara = muhammara;
+  Object.assign(Recipe, require("./recipe-constants"));
+  return Recipe;
+}
+
+module.exports = { createRecipe };

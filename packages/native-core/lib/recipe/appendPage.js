@@ -1,4 +1,3 @@
-const muhammara = require("../muhammara");
 const utils = require("./utils");
 
 /**
@@ -18,6 +17,7 @@ const utils = require("./utils");
  * @throws {Error} If the source PDF cannot be read.
  */
 exports.appendPage = function appendPage(pdfSrc, pages = []) {
+  const muhammara = this.muhammara;
   if (this.deletedPages?.size) {
     throw new Error("appendPage cannot be combined with deletePage");
   }

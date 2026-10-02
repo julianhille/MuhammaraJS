@@ -34,6 +34,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   in a worker thread no longer changes where writers on other threads log
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 
+### Fixed
+
+- `@muhammara/native` and `@muhammara/native-with-source` load in Jest and
+  other module systems without Node's `require.cache`. `Recipe` is now created
+  per addon by a factory instead of through a `require.cache` entry, and
+  loading the package again in another Jest test file no longer fails with
+  "The muhammara native addon does not export PDFReader"
+  [#881](https://github.com/julianhille/MuhammaraJS/issues/881)
+
 ## [7.0.0] - 2026-10-01
 
 Upgrading from `muhammara` 6.x? Follow [Migrate from v6 to v7](packages/native/docs/getting-started/migrate-from-v6.md).

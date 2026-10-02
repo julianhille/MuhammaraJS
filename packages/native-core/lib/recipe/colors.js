@@ -1,4 +1,3 @@
-const muhammara = require("../muhammara");
 const fs = require("fs");
 const { Colorspace, ChromaCommand } = require("../recipe-constants");
 
@@ -162,7 +161,7 @@ function createColorSpaces(self, colorName, color) {
       .writeName(colorName)
       .writeName(altCS)
       .writeIndirectObjectReference(transformFunction)
-      .endArray(muhammara.eTokenSeparatorEndLine)
+      .endArray(self.muhammara.eTokenSeparatorEndLine)
       .endIndirectObject();
     self.resumeContext();
     self.colorSpaces.set(key, colorSpaceID);

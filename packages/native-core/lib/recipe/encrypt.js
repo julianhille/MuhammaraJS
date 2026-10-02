@@ -1,4 +1,3 @@
-const muhammara = require("../muhammara");
 const fs = require("fs");
 const { Permission } = require("../recipe-constants");
 
@@ -126,6 +125,6 @@ exports._encrypt = function _encrypt() {
 
   const tmp = this.output + ".tmp.pdf";
   fs.renameSync(this.output, tmp);
-  muhammara.recrypt(tmp, this.output, this.encryption_);
+  this.muhammara.recrypt(tmp, this.output, this.encryption_);
   fs.unlinkSync(tmp);
 };

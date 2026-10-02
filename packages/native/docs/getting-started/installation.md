@@ -18,6 +18,9 @@ Both packages contain the same API and native prebuild metadata.
 normally by npm. `@muhammara/native` intentionally does not fetch or cache a
 source fallback.
 
+Install only one of them. To keep `require("@muhammara/native")` while building
+from source, use the [npm alias](#install-as-an-npm-alias).
+
 Official binaries target Node-API 8. Each operating system, architecture, and
 libc combination has one prebuild shared by all supported Node.js and Electron
 versions, rather than a separate binary for each runtime ABI.

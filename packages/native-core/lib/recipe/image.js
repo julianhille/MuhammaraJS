@@ -1,5 +1,4 @@
 const fs = require("fs");
-const muhammara = require("../muhammara");
 const { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
 
 /**
@@ -67,7 +66,7 @@ exports.image = function image(imgSrc, x, y, options = {}) {
   const imgOptions = {
     index,
     transformation: {
-      fit: muhammara.ImageFit.ALWAYS,
+      fit: this.muhammara.ImageFit.ALWAYS,
       // proportional: true,
       width,
       height,
@@ -208,14 +207,16 @@ function pdfPage(recipe, imgSrc, index) {
   let source = recipe._pdfSources.get(key);
   if (!source) {
     source = {
-      pdf: recipe.writer.getImageType(imgSrc) === muhammara.PDFImageType.PDF,
+      pdf:
+        recipe.writer.getImageType(imgSrc) ===
+        recipe.muhammara.PDFImageType.PDF,
       pages: new Map(),
     };
     recipe._pdfSources.set(key, source);
   }
   if (!source.pdf) return null;
   if (!source.pages.has(index)) {
-    source.pages.set(index, readPdfPage(imgSrc, index));
+    source.pages.set(index, readPdfPage(recipe.muhammara, imgSrc, index));
   }
   const page = source.pages.get(index);
   if (!page) throw new Error(`Unknown image: ${imgSrc}`);
@@ -225,12 +226,13 @@ function pdfPage(recipe, imgSrc, index) {
 /**
  * Read the media box and rotation of one page of a PDF file.
  * @private
+ * @param {Object} muhammara - The addon API the Recipe was created for.
  * @param {string} imgSrc - The PDF path.
  * @param {number} index - The zero-based page.
  * @returns {?{mediaBox: number[], rotate: number}} The page geometry, or null
  *   when the PDF cannot be read or has no such page.
  */
-function readPdfPage(imgSrc, index) {
+function readPdfPage(muhammara, imgSrc, index) {
   let reader;
   try {
     reader = muhammara.createReader(imgSrc);
@@ -319,6 +321,7 @@ const DEBUG_ANCHOR = "#ff0000";
  * @returns {void}
  */
 function drawFrame(recipe, nx, ny, width, height, options) {
+  const muhammara = recipe.muhammara;
   const pathOptions = recipe._getPathOptions(options, nx, ny);
   // A negative size mirrors the image into the other side of its corner.
   const left = Math.min(0, width);
