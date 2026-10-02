@@ -111,11 +111,11 @@ var muhammara = await createMuhammaraWasm({
 
 ## Handle A Binary That Fails To Load
 
-When the binary cannot be fetched, read, compiled, or instantiated, the package
-fails the way Emscripten does. It calls an `onAbort(reason)` option with the
-underlying error, logs the reason through a `printErr(message)` option, or
-`console.error` when none is given, and rejects with a
-`WebAssembly.RuntimeError` whose message starts with `Aborted(`:
+When the binary cannot be fetched, read, compiled, or instantiated, Emscripten's
+loader, which the package uses, fails the load. It calls an `onAbort(reason)`
+option with the underlying error, logs the reason through a
+`printErr(message)` option, or `console.error` when none is given, and rejects
+with a `WebAssembly.RuntimeError` whose message starts with `Aborted(`:
 
 ```javascript
 try {

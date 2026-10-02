@@ -53,179 +53,6 @@ export {
   PDFWStreamForBuffer,
 };
 
-var wasmFileName = "muhammara-wasm.wasm";
-
-/**
- * Tells whether this is Node, using Emscripten's own test.
- * @returns {boolean} True under Node (but not an Electron renderer).
- */
-function isNode() {
-  return (
-    typeof process == "object" &&
-    typeof process.versions == "object" &&
-    typeof process.versions.node == "string" &&
-    process.type != "renderer"
-  );
-}
-
-/**
- * Returns a Node built-in module without an import statement, so browser
- * bundlers never see a Node dependency.
- * @param {string} name - Built-in module name.
- * @returns {object|undefined} The module, or undefined before Node 20.16/22.3.
- */
-function nodeBuiltin(name) {
-  return typeof process.getBuiltinModule == "function"
-    ? process.getBuiltinModule(name)
-    : undefined;
-}
-
-/**
- * Prints an error message the way Emscripten's runtime does, through
- * `printErr` when given and `console.error` otherwise.
- * @param {MuhammaraWasmOptions} options - Emscripten module options.
- * @param {string} message - Message to print.
- * @returns {void}
- */
-function printError(options, message) {
-  if (typeof options.printErr === "function") options.printErr(message);
-  else console.error(message);
-}
-
-/**
- * Reports a failed load the way Emscripten's own loader does: prints
- * "failed to asynchronously prepare wasm", calls `onAbort` with the reason,
- * prints "Aborted(reason)", and returns the `WebAssembly.RuntimeError` that
- * Emscripten rejects its module promise with.
- * @param {MuhammaraWasmOptions} options - Emscripten module options.
- * @param {*} reason - Why the binary could not be loaded, compiled, or
- * instantiated.
- * @returns {WebAssembly.RuntimeError} The error to reject with.
- */
-function abortLoad(options, reason) {
-  printError(options, `failed to asynchronously prepare wasm: ${reason}`);
-  if (typeof options.onAbort === "function") options.onAbort(reason);
-  var what = `Aborted(${reason})`;
-  printError(options, what);
-  return new WebAssembly.RuntimeError(
-    `${what}. Build with -sASSERTIONS for more info.`,
-  );
-}
-
-/**
- * Compiles `muhammara-wasm.wasm` the way Emscripten would load it: from
- * `wasmBinary` when given, otherwise from `locateFile`'s result or the file
- * next to the package, read from disk under Node and fetched with
- * `credentials: "same-origin"` and streaming compilation elsewhere.
- * @param {MuhammaraWasmOptions} options - Emscripten module options.
- * @returns {Promise<WebAssembly.Module|undefined>} The compiled module, or
- * undefined when this Node version cannot read files without an import, in
- * which case Emscripten loads the binary itself.
- * @throws {Error} If the binary cannot be loaded or compiled.
- */
-async function compileWasm(options) {
-  if (options.wasmBinary !== undefined) {
-    return WebAssembly.compile(options.wasmBinary);
-  }
-  var node = isNode();
-  var fs = node ? nodeBuiltin("fs") : undefined;
-  if (node && !fs) return undefined;
-  // A string literal, so that bundlers detect the reference and emit the
-  // binary, as they do for Emscripten's own default.
-  var url = new URL("./dist/muhammara-wasm.wasm", import.meta.url);
-  var location = url.href;
-  if (typeof options.locateFile === "function") {
-    var directory = new URL(".", url);
-    var prefix =
-      node && directory.protocol === "file:"
-        ? nodeBuiltin("url").fileURLToPath(directory)
-        : directory.href;
-    location = options.locateFile(wasmFileName, prefix);
-  }
-  if (node) {
-    return WebAssembly.compile(
-      await fs.promises.readFile(
-        String(location).startsWith("file:") ? new URL(location) : location,
-      ),
-    );
-  }
-  var request = () => fetch(location, { credentials: "same-origin" });
-  if (
-    typeof WebAssembly.compileStreaming == "function" &&
-    !String(location).startsWith("data:")
-  ) {
-    try {
-      return await WebAssembly.compileStreaming(request());
-    } catch (reason) {
-      // A wrong MIME type or a failed stream falls back to an ArrayBuffer,
-      // with the same messages as in Emscripten.
-      printError(options, `wasm streaming compile failed: ${reason}`);
-      printError(options, "falling back to ArrayBuffer instantiation");
-    }
-  }
-  var response = await request();
-  if (!response.ok) {
-    throw new Error(`${response.status} : ${response.url}`);
-  }
-  return WebAssembly.compile(await response.arrayBuffer());
-}
-
-/**
- * Instantiates the Emscripten module and keeps its compiled WebAssembly.Module.
- * Emscripten does not keep the compiled module, so the runtime compiles it and
- * hands Emscripten the instance; Recipe reads its "license" section. A binary
- * that cannot be loaded, compiled, or instantiated fails as in Emscripten.
- * @param {MuhammaraWasmOptions} moduleOptions - Emscripten module options.
- * @returns {Promise<{module: object, wasmModule: (WebAssembly.Module|undefined)}>}
- * The Emscripten module and, when available, the compiled WebAssembly.Module.
- * @throws {WebAssembly.RuntimeError} If the binary cannot be loaded, compiled,
- * or instantiated, after `onAbort` and `printErr` were called.
- */
-async function instantiate(moduleOptions) {
-  var options = { ...moduleOptions };
-  var wasmModule;
-  var module;
-  var customHook = options.instantiateWasm;
-  if (typeof customHook === "function") {
-    // A caller's own hook does the loading; keep the module if it passes one.
-    options.instantiateWasm = (imports, receiveInstance) =>
-      customHook(imports, (instance, module) => {
-        if (module instanceof WebAssembly.Module) wasmModule = module;
-        return receiveInstance(instance, module);
-      });
-    module = await createModule(options);
-    return { module, wasmModule };
-  }
-  try {
-    wasmModule = await compileWasm(options);
-  } catch (reason) {
-    throw abortLoad(options, reason);
-  }
-  if (!wasmModule) {
-    module = await createModule(options);
-  } else {
-    var failed;
-    var failure = new Promise((resolve, reject) => {
-      failed = reject;
-    });
-    options.instantiateWasm = (imports, receiveInstance) => {
-      WebAssembly.instantiate(wasmModule, imports).then(
-        (instance) => {
-          try {
-            receiveInstance(instance, wasmModule);
-          } catch (error) {
-            failed(error);
-          }
-        },
-        (reason) => failed(abortLoad(options, reason)),
-      );
-      return {};
-    };
-    module = await Promise.race([createModule(options), failure]);
-  }
-  return { module, wasmModule };
-}
-
 /**
  * Loads the Muhammara WebAssembly module and its byte-first PDF API.
  * @param {MuhammaraWasmOptions} [options] - Emscripten options and byte `limits`.
@@ -256,7 +83,7 @@ async function createRuntime(options) {
   ) {
     throw new TypeError("wasmBinary must be a Uint8Array or ArrayBuffer");
   }
-  var { module, wasmModule } = await instantiate(moduleOptions);
+  var module = await createModule(moduleOptions);
   /**
    * Copies byte input and enforces `maxInputBytes`.
    * @param {ByteSource} value - Bytes.
@@ -703,7 +530,6 @@ async function createRuntime(options) {
   return {
     api,
     module,
-    wasmModule,
     helpers,
     normalizeBytes,
     normalizeBytesAsync,
@@ -747,7 +573,6 @@ export async function createRecipe(options) {
   var {
     api: muhammara,
     module,
-    wasmModule,
     helpers,
     normalizeBytes,
     normalizeBytesAsync,
@@ -774,7 +599,6 @@ export async function createRecipe(options) {
   return createRecipeFactory({
     defaultFont,
     module,
-    wasmModule,
     encoder,
     normalizeBytes,
     normalizeBytesAsync,

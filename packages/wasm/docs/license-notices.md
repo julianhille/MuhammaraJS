@@ -28,25 +28,49 @@ one text covers the whole package.
 
 ## Read The Notices In Code
 
-`Recipe.thirdPartyLicenses()` returns the section's text from the module that
-`createRecipe()` loaded. The module is already compiled, so nothing is fetched,
-compiled, or instantiated again:
+`Recipe.thirdPartyLicenses(source)` resolves to the section's text. The
+runtime lets Emscripten load the binary and does not keep it, so pass the
+binary you want the notices of. It accepts:
+
+- a URL, as a string or `URL`, which is fetched with
+  `credentials: "same-origin"`, the same way the package loads the binary;
+- the binary's bytes (`Uint8Array` or `ArrayBuffer`), or a `Blob` or `File`.
+
+Bytes are not compiled: the section is read straight from them. The function
+does not need the Recipe runtime that it hangs off; call it only where you
+show the notices, such as an "Open source licenses" dialog or an about page.
+
+In a page, pass the URL you serve the binary from, the same one you return
+from `locateFile`:
 
 ```javascript
 import { createRecipe } from "@muhammara/wasm";
 
-var Recipe = await createRecipe();
-var notices = Recipe.thirdPartyLicenses(); // Markdown string
+var wasmUrl = "/assets/muhammara-wasm.wasm";
+var Recipe = await createRecipe({
+  locateFile: (path) => (path.endsWith(".wasm") ? wasmUrl : path),
+});
+var notices = await Recipe.thirdPartyLicenses(wasmUrl); // Markdown string
 ```
 
-Use it to fill an "Open source licenses" dialog or an about page. It throws
-when the WebAssembly module is not loaded, and when the loaded binary has no
-`license` section (see below). If you load the binary through your own
-`instantiateWasm` hook, pass the compiled `WebAssembly.Module` as the second
-argument of its callback, or the function cannot read the section.
+Under Node, `fetch()` cannot load `file:` URLs, so read the installed binary
+and pass its bytes:
 
-Reading the section yourself works too, for example on a server that has the
-bytes:
+```javascript
+import { readFile } from "node:fs/promises";
+import { createRecipe } from "@muhammara/wasm";
+
+var Recipe = await createRecipe();
+var wasmBytes = await readFile(
+  new URL("dist/muhammara-wasm.wasm", import.meta.resolve("@muhammara/wasm")),
+);
+var notices = await Recipe.thirdPartyLicenses(wasmBytes);
+```
+
+It rejects when the URL cannot be loaded, when the source is not a
+WebAssembly binary, and when the binary has no `license` section (see below).
+
+For a module you already compiled, read the section with the WebAssembly API:
 
 ```javascript
 var module = await WebAssembly.compile(wasmBytes);
@@ -71,7 +95,7 @@ section intact.
 
 If your pipeline post-processes the binary, either configure the tool to keep
 the section named `license`, or ship `dist/THIRD_PARTY_LICENSES.md` alongside your
-application yourself. `Recipe.thirdPartyLicenses()` throws with a message naming that
+application yourself. `Recipe.thirdPartyLicenses()` rejects with a message naming that
 file when it finds no section, so a stripped build is noticed rather than
 silently shipping without notices.
 
