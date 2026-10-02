@@ -207,6 +207,86 @@ describe("Recipe finalization with an active page", function () {
     assert.ok(bytes instanceof Uint8Array);
   });
 
+  it("rejects createPage while a created page is still active", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var recipe = new Recipe();
+    recipe.createPage(400, 400).text("first", 20, 20, { font: "arial" });
+
+    assert.throws(
+      () => recipe.createPage(400, 400),
+      /^Error: Finish the current page before creating another page$/,
+    );
+    // The rejected call left the first page open, so it still finishes.
+    recipe.text("still here", 20, 40, { font: "arial" }).endPage();
+    var bytes = recipe.createPage(400, 400).endPage().endPDF();
+    writeOutput("active-page-create", bytes);
+    assert.equal(pageCount(muhammara, bytes), 2);
+    assert.match(pageContent(muhammara, bytes), /Tj|TJ/);
+  });
+
+  it("rejects createPage while an edited page is still active", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var source = new Recipe().createPage(300, 300).endPage().endPDF();
+    writeOutput("active-page-create-edit-source", source);
+    var recipe = new Recipe(source);
+    recipe.editPage(1);
+
+    assert.throws(
+      () => recipe.createPage(400, 400),
+      /^Error: Finish the current page before creating another page$/,
+    );
+    var bytes = recipe.endPage().createPage(400, 400).endPage().endPDF();
+    writeOutput("active-page-create-edit", bytes);
+    assert.equal(pageCount(muhammara, bytes), 2);
+  });
+
+  it("rejects editPage while an edited page is still active", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var source = new Recipe()
+      .createPage(300, 300)
+      .endPage()
+      .createPage(300, 300)
+      .endPage()
+      .endPDF();
+    writeOutput("active-page-edit-edit-source", source);
+    var recipe = new Recipe(source);
+    recipe.editPage(1).text("x", 20, 20, { font: "arial" });
+
+    assert.throws(
+      () => recipe.editPage(2),
+      /^Error: Finish the current page before editing another page$/,
+    );
+    // The rejected call left page 1 open, so it still finishes.
+    var bytes = recipe
+      .endPage()
+      .editPage(2)
+      .text("y", 20, 20, { font: "arial" })
+      .endPage()
+      .endPDF();
+    writeOutput("active-page-edit-edit", bytes);
+    assert.equal(pageCount(muhammara, bytes), 2);
+  });
+
+  it("rejects editPage while a created page is still active", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var source = new Recipe().createPage(300, 300).endPage().endPDF();
+    writeOutput("active-page-edit-create-source", source);
+    var recipe = new Recipe(source);
+    recipe.createPage(400, 400);
+
+    assert.throws(
+      () => recipe.editPage(1),
+      /^Error: Finish the current page before editing another page$/,
+    );
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("active-page-edit-create", bytes);
+    assert.equal(pageCount(muhammara, bytes), 2);
+  });
+
   it("rejects editPage on a new document", async function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe();

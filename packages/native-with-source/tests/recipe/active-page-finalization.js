@@ -149,6 +149,68 @@ describe("Recipe finalization with an active page", () => {
     expect(() => recipe.endPage().endPDF()).to.not.throw();
   });
 
+  it("rejects createPage while a created page is still active", () => {
+    const output = path.join(__dirname, "../output/active-page-create.pdf");
+    const recipe = new Recipe("new", output);
+    recipe.createPage(400, 400).text("first", 20, 20, { font: "arial" });
+
+    expect(() => recipe.createPage(400, 400)).to.throw(
+      "Finish the current page before creating another page",
+    );
+    // The rejected call left the first page open, so it still finishes.
+    recipe.text("still here", 20, 40, { font: "arial" }).endPage();
+    recipe.createPage(400, 400).endPage().endPDF();
+
+    expect(pageCount(output)).to.equal(2);
+    expect(pageContent(output)).to.match(/Tj|TJ/);
+  });
+
+  it("rejects createPage while an edited page is still active", () => {
+    const output = path.join(
+      __dirname,
+      "../output/active-page-create-edit.pdf",
+    );
+    const recipe = new Recipe(source, output);
+    recipe.editPage(1);
+
+    expect(() => recipe.createPage(400, 400)).to.throw(
+      "Finish the current page before creating another page",
+    );
+    recipe.endPage().createPage(400, 400).endPage().endPDF();
+
+    expect(pageCount(output)).to.equal(pageCount(source) + 1);
+  });
+
+  it("rejects editPage while an edited page is still active", () => {
+    const output = path.join(__dirname, "../output/active-page-edit-edit.pdf");
+    const recipe = new Recipe(source, output);
+    recipe.editPage(1).text("x", 20, 20);
+
+    expect(() => recipe.editPage(2)).to.throw(
+      "Finish the current page before editing another page",
+    );
+    // The rejected call left page 1 open, so it still finishes.
+    recipe.endPage().editPage(2).text("y", 20, 20).endPage().endPDF();
+
+    expect(pageCount(output)).to.equal(pageCount(source));
+  });
+
+  it("rejects editPage while a created page is still active", () => {
+    const output = path.join(
+      __dirname,
+      "../output/active-page-edit-create.pdf",
+    );
+    const recipe = new Recipe(source, output);
+    recipe.createPage(400, 400);
+
+    expect(() => recipe.editPage(1)).to.throw(
+      "Finish the current page before editing another page",
+    );
+    recipe.endPage().endPDF();
+
+    expect(pageCount(output)).to.equal(pageCount(source) + 1);
+  });
+
   it("rejects editPage on a new document", () => {
     const recipe = new Recipe(
       "new",

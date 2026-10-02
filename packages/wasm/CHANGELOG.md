@@ -37,6 +37,15 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   module Worker, and measures how long the page stops responding
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 
+### Fixed
+
+- `Recipe#createPage()` throws "Finish the current page before creating
+  another page" when a page is still active, matching native. It threw
+  "Muhammara WebAssembly operation failed: \_muhammara_wasm_recipe_add_page"
+  on a new document and "Finish the active page first" on a Recipe built from
+  PDF bytes
+  [#912](https://github.com/julianhille/MuhammaraJS/issues/912)
+
 ## [1.0.0] - 2026-10-01
 
 ### Added
