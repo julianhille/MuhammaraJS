@@ -365,6 +365,28 @@ describe("TextDirection", function () {
       }, /direction must be/);
     });
 
+    it("reorders once when the module is loaded again", function () {
+      // Jest loads native-core again for every test file while the addon
+      // stays loaded; writeText must keep wrapping the addon's original.
+      var indexPath = require.resolve("@muhammara/native-core");
+      var bindingPath = require("@mapbox/node-pre-gyp").find(
+        require.resolve("@muhammara/native-with-source/package.json"),
+      );
+      var cached = require.cache[indexPath];
+      delete require.cache[indexPath];
+      try {
+        require(indexPath).createMuhammara(require(bindingPath));
+      } finally {
+        require.cache[indexPath] = cached;
+      }
+      assert.deepEqual(
+        writeLines("TextDirectionReload", [
+          { text: "שלום עולם", options: { direction: "auto" } },
+        ]),
+        ["םלוע םולש"],
+      );
+    });
+
     it("refuses an addon that does not export its content contexts", function () {
       var createMuhammara = require("@muhammara/native-core").createMuhammara;
       /** A reader class stub. */
