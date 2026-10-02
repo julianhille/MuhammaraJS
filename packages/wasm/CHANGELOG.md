@@ -6,6 +6,21 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+These bring Wasm Recipe in line with native Recipe; see
+[Breaking Changes](docs/breaking-changes.md#version-1x).
+
+- `text()` without coordinates starts a flow unless it passes
+  `flow: false`, as on native. `text("a", {})` followed by `text("b", {})`
+  now draws `ab` on one line when the flow ends, instead of two lines at
+  once. Pass `flow: false` to draw a call right away
+  [#889](https://github.com/julianhille/MuhammaraJS/issues/889)
+- After a text box, the text cursor stays on the box's last line, as on
+  native, instead of below the box: one first-line height above the bottom
+  of the last line, which is its top when the lines share a height, without
+  padding or vertical alignment. `movedown()` now moves to the line right
+  after the box, so `text()`, `movedown()`, `text()` no longer leaves a blank
+  line; call `movedown(2)` to keep one
+  [#889](https://github.com/julianhille/MuhammaraJS/issues/889)
 - A positive Recipe `rotation` option on `text()` and the shapes (`rectangle()`,
   `circle()`, `polygon()`, `line()`, and the rest) turns content clockwise on
   the page, as native Recipe and Wasm `image()` already did; it turned
@@ -73,8 +88,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Continue a flowed `text()` call on the line where the previous run ended,
   as native does, instead of starting a new line. Flowed runs wrap together
   in one text box, and alignment, justification, and the box style apply to
-  the whole flow, which is laid out when a call passes `flow: false`. A call
-  without coordinates continues an open flow even when it omits `flow`.
+  the whole flow, which is laid out when a call passes `flow: false`. Each
+  run keeps its own styles, including `rotation` and skew. A call without
+  coordinates continues an open flow even when it omits `flow`.
   [#888](https://github.com/julianhille/MuhammaraJS/issues/888)
 - Wrap and truncate plain `text()` with `charSpace` at the spaced width, as
   native does. The spacing was counted twice, so lines broke too early and
@@ -84,7 +100,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   HTML `text()`: at the right edge of the run before, plus the width of an
   "o" when that run ends with a space. A space that ended a run was left
   out, so `<b>Hello </b>world` drew as `Helloworld`, and with `charSpace` an
-  extra interval was added between runs
+  extra interval was added between runs. Every gap of a justified line gets
+  the same width, as on native, whatever the size of the runs around it
   [#888](https://github.com/julianhille/MuhammaraJS/issues/888)
 
 ## [1.0.0] - 2026-10-01

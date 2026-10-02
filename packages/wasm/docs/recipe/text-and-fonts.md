@@ -170,8 +170,9 @@ Pass `flow: true` to build one text box from several `text()` calls, for
 example to style a single word in a sentence. The first call sets the
 position; later calls without coordinates continue the line where the previous
 run ended and wrap together inside the shared text box. A call without
-coordinates continues an open flow even when it omits `flow`, and inherits the
-options of the runs before it.
+coordinates flows unless it passes `flow: false`: it continues the open flow
+and inherits the options of the runs before it, or starts a flow at the text
+cursor.
 
 Flowed text is laid out when the flow ends, so `textBox` alignment,
 justification, and styling apply to the whole box. End it with
@@ -193,5 +194,4 @@ var pdfBytes = new Recipe()
 ```
 
 A flow that is not ended explicitly is drawn by the next `text()` call with
-coordinates, `table()`, or `endPage()`. Native drops such a flow; see
-[Differences And Restrictions](../differences.md).
+coordinates, `table()`, or `endPage()`.

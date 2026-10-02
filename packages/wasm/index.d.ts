@@ -389,7 +389,8 @@ export interface RecipeTextOptions
   /**
    * Builds one text box from several text() calls. Later calls without
    * coordinates continue the line where the previous run ended; `false` adds
-   * that call's text and ends the flow. Defaults to `false`.
+   * that call's text and ends the flow. Defaults to `true` for a call without
+   * coordinates and `false` for a call with them.
    */
   flow?: boolean;
   align?: Recipe.ImageAlign;

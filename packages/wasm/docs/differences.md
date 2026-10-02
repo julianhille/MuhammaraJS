@@ -40,10 +40,14 @@ end of its list rather than throwing. Wasm `htmlToTextObjects()` returns flat
 visual runs with list prefixes and `indent` values, while native returns its
 nested XML-derived layout tree.
 
-A flowed `text()` sequence that is not ended with `flow: false` is drawn by
-the next `text()` call with coordinates, `table()`, or `endPage()`. Native
-Recipe currently drops such a flow instead
-([#889](https://github.com/julianhille/MuhammaraJS/issues/889)).
+In a flowed `text()`, `highlight`, `underline`, `strikeOut`, and `squiggly`
+annotate the run that sets them, as links do on both ends. Native Recipe
+currently takes them from the call that ends the flow and spans each over the
+whole line ([#909](https://github.com/julianhille/MuhammaraJS/issues/909)).
+Its `textBox.textAlign` aligns the whole flow as the call that ends it sets
+it, merged over the earlier runs' options. Native Recipe places each run by
+that run's own alignment, so runs of one line that set different alignments
+overlap or leave a gap.
 
 Appending or rebuilding an existing source page does not deep-copy that page's
 `/Annots` graph, although annotations created in the output are written
