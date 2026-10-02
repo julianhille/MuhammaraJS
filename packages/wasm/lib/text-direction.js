@@ -235,6 +235,7 @@ function paragraphDirections(text, direction) {
  */
 function clusterStarts(text) {
   var starts = new Array(text.length);
+  var joined = graphemeContinuations(text);
   // The start of the last cluster that is drawn, if any.
   var base = -1;
   for (var index = 0; index < text.length; ++index) {
@@ -244,6 +245,7 @@ function clusterStarts(text) {
     } else if (
       base !== -1 &&
       (lowSurrogate ||
+        joined[index] ||
         COMBINING_MARK.test(String.fromCodePoint(text.codePointAt(index))))
     ) {
       starts[index] = base;
@@ -268,6 +270,29 @@ function isLowSurrogateAt(text, index) {
   return (
     code >= 0xdc00 && code <= 0xdfff && previous >= 0xd800 && previous <= 0xdbff
   );
+}
+
+/**
+ * The UTF-16 indices that continue a user-perceived character, such as the
+ * parts of an emoji joined with U+200D or a skin tone modifier, so
+ * reordering keeps them together. Without `Intl.Segmenter` no index is
+ * marked, and only combining marks and surrogate pairs stay together.
+ *
+ * @param {string} text The text.
+ * @returns {boolean[]} True at every index that does not start a character.
+ */
+function graphemeContinuations(text) {
+  var joined = new Array(text.length);
+  if (typeof Intl === "undefined" || typeof Intl.Segmenter !== "function") {
+    return joined;
+  }
+  var segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+  Array.from(segmenter.segment(text)).forEach(function (segment) {
+    for (var offset = 1; offset < segment.segment.length; ++offset) {
+      joined[segment.index + offset] = true;
+    }
+  });
+  return joined;
 }
 
 /**
@@ -516,6 +541,8 @@ function visualRuns(texts, direction) {
     indent.push({ index: index, character: line[index] });
   }
   indent = group(indent, true);
+  // A line of nothing but formatting characters keeps its order.
+  if (!segments.length) return null;
   return visual.rtl ? segments.concat(indent) : indent.concat(segments);
 }
 

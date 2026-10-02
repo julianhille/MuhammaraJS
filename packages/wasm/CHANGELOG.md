@@ -56,6 +56,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 - Keep a word joined by a non-breaking space (U+00A0) together on a
   justified Recipe line instead of widening the gap inside it, as native does.
+- End right-aligned Recipe text at the right edge of a text box's content, as
+  native does, instead of the box's left padding past it.
 - Start a new Recipe text line at every mandatory line break, as native does:
   `\r\n`, `\r`, vertical tab, form feed, U+0085, U+2028 and U+2029 no longer
   draw as missing glyphs on the same line.

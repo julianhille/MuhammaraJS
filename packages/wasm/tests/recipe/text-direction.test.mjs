@@ -451,6 +451,81 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("draws an HTML line that holds only a direction mark", function () {
+    var runs = drawPage("text-direction-mark-line", (recipe) => {
+      recipe.text("שלום<br>\u200f", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        direction: "rtl",
+        textBox: { width: 200 },
+      });
+    });
+    assert.deepEqual(
+      runs.map((run) => run.text),
+      ["םולש"],
+    );
+  });
+
+  it("clips overflowing right-to-left lines at the padded right edge", function () {
+    var runs = drawPage("text-direction-clip-padding", (recipe) => {
+      var options = {
+        font: "arial",
+        size: 12,
+        direction: "rtl",
+        textBox: { width: 150, wrap: "clip", padding: [5, 7, 9, 11] },
+      };
+      recipe
+        .text("שלום עולם זה טקסט ארוך מאוד מאוד בעברית", 20, 20, options)
+        .text("<p>שלום <u>עולם</u> זה טקסט ארוך מאוד מאוד בעברית</p>", 20, 60, {
+          ...options,
+          html: true,
+        })
+        .text("אבגדהוזחטיכלמנסעפצקרשתאבגדה", 20, 100, options);
+    });
+    // Every line keeps its start, its first word, at the content edge, 163.
+    [0, 1, 2].forEach((line) => {
+      var visible = lineRuns(runs, line);
+      var rightmost = visible[visible.length - 1];
+      assert.ok(
+        // Wasm aligns by glyph bounds, so the edge may differ by a bearing.
+        Math.abs(inkRight(rightmost, 12) - 163) < 1.5,
+        JSON.stringify(visible),
+      );
+      assert.ok(visible[0].x < 31, JSON.stringify(visible));
+    });
+  });
+
+  it("measures table rows without direction marks", function () {
+    var heights = [];
+    for (var text of [
+      "שלום abc עולם def זה ghi טקסט jk ארוך",
+      "שלום \u2067abc\u2069 עולם \u2067def\u2069 זה \u2067ghi\u2069 טקסט \u2067jk\u2069 ארוך",
+    ]) {
+      drawPage("text-direction-table-" + heights.length, (recipe) => {
+        var rectangle = recipe.rectangle;
+        recipe.rectangle = function (x, y, width, height, options) {
+          heights.push(height);
+          return rectangle.call(this, x, y, width, height, options);
+        };
+        recipe.table(20, 20, [{ text }], {
+          columns: [
+            {
+              name: "text",
+              width: 160,
+              font: "arial",
+              size: 14,
+              direction: "rtl",
+            },
+          ],
+          border: true,
+        });
+      });
+    }
+    assert.ok(heights.length >= 2, JSON.stringify(heights));
+    assert.equal(heights[heights.length - 1], heights[0]);
+  });
+
   it("rejects an unknown direction before drawing", function () {
     var recipe = new Recipe().createPage(200, 200);
     try {

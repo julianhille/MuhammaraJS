@@ -738,6 +738,36 @@ describe("Text", () => {
     require("node:assert/strict").ok(fs.statSync(output).size > 0);
   });
 
+  it("ends right-aligned text at the padded right edge", function (done) {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const arial = path.join(__dirname, "../TestMaterials/fonts/arial.ttf");
+    const output = path.join(__dirname, "../output/text-right-padding.pdf");
+    const recipe = new Recipe("new", output);
+    recipe.registerFont("arial", arial);
+    recipe
+      .createPage(400, 400)
+      .text("hello world", 20, 20, {
+        font: "arial",
+        size: 12,
+        textBox: { width: 200, textAlign: "right", padding: [0, 10, 0, 30] },
+      })
+      .endPage()
+      .endPDF(() => {
+        const reader = muhammara.createReader(output);
+        const run = reader.extractPageText(0)[0];
+        reader.end();
+        const font = muhammara
+          .createWriter(new muhammara.PDFWStreamForBuffer())
+          .getFontForFile(arial);
+        const right =
+          run.textMatrix[4] +
+          font.calculateTextDimensions("hello world", 12).xMax;
+        assert.ok(Math.abs(right - 210) < 0.5, String(right));
+        done();
+      });
+  });
+
   it("starts a new line at every mandatory line break", function (done) {
     const assert = require("node:assert/strict");
     const muhammara = require("@muhammara/native-with-source");

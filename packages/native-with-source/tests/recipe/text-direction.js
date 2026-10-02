@@ -481,6 +481,123 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("draws an HTML line that holds only a direction mark", async function () {
+    const runs = await drawPage("text-direction-mark-line", (recipe) => {
+      recipe.text("שלום<br>\u200f", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        direction: "rtl",
+        textBox: { width: 200 },
+      });
+    });
+    assert.deepEqual(
+      runs.map((run) => run.text),
+      ["םולש"],
+    );
+  });
+
+  it("clips overflowing right-to-left lines at the padded right edge", async function () {
+    const font = muhammara
+      .createWriter(new muhammara.PDFWStreamForBuffer())
+      .getFontForFile(ARIAL);
+    const inkRight = (run) =>
+      run.x + font.calculateTextDimensions(run.text.trim(), 12).xMax;
+    const runs = await drawPage("text-direction-clip-padding", (recipe) => {
+      const options = {
+        font: "arial",
+        size: 12,
+        direction: "rtl",
+        textBox: { width: 150, wrap: "clip", padding: [5, 7, 9, 11] },
+      };
+      recipe
+        .text("שלום עולם זה טקסט ארוך מאוד מאוד בעברית", 20, 20, options)
+        .text("<p>שלום <u>עולם</u> זה טקסט ארוך מאוד מאוד בעברית</p>", 20, 60, {
+          ...options,
+          html: true,
+        })
+        .text("אבגדהוזחטיכלמנסעפצקרשתאבגדה", 20, 100, options);
+    });
+    // Every line keeps its start, its first word, at the content edge, 163.
+    [0, 1, 2].forEach((line) => {
+      const visible = lineRuns(runs, line);
+      const rightmost = visible[visible.length - 1];
+      assert.ok(
+        Math.abs(inkRight(rightmost) - 163) < 1,
+        JSON.stringify(visible),
+      );
+      assert.ok(visible[0].x < 31, JSON.stringify(visible));
+    });
+  });
+
+  it("keeps links and text markup on the visible part of a clipped right-to-left line", async function () {
+    const output = path.join(
+      __dirname,
+      "../output/text-direction-clip-markup.pdf",
+    );
+    const recipe = new Recipe("new", output);
+    recipe.registerFont("arial", ARIAL);
+    recipe.createPage(400, 400).text("שלום עולם זה טקסט ארוך בעברית", 50, 20, {
+      font: "arial",
+      size: 12,
+      direction: "rtl",
+      underline: true,
+      link: "https://example.com",
+      textBox: { width: 150, wrap: "clip" },
+    });
+    await new Promise((resolve) => recipe.endPage().endPDF(resolve));
+    const reader = muhammara.createReader(output);
+    const rects = reader
+      .parsePage(0)
+      .getDictionary()
+      .toJSObject()
+      .Annots.toJSArray()
+      .map((reference) =>
+        reader
+          .parseNewObject(reference.getObjectID())
+          .toJSObject()
+          .Rect.toJSArray()
+          .map((value) => value.value),
+      );
+    reader.end();
+    assert.equal(rects.length, 2);
+    // The text fills the box from its left edge, 50, to its right edge, 200.
+    rects.forEach((rect) => {
+      assert.ok(Math.abs(rect[0] - 50) < 1, JSON.stringify(rects));
+      assert.ok(rect[2] <= 200.5 && rect[2] > 190, JSON.stringify(rects));
+    });
+  });
+
+  it("measures table rows without direction marks", async function () {
+    const heights = [];
+    for (const text of [
+      "שלום abc עולם def זה ghi טקסט jk ארוך",
+      "שלום \u2067abc\u2069 עולם \u2067def\u2069 זה \u2067ghi\u2069 טקסט \u2067jk\u2069 ארוך",
+    ]) {
+      await drawPage("text-direction-table-" + heights.length, (recipe) => {
+        const rectangle = recipe.rectangle;
+        recipe.rectangle = function (x, y, width, height, options) {
+          heights.push(height);
+          return rectangle.call(this, x, y, width, height, options);
+        };
+        recipe.table(20, 20, [{ text }], {
+          columns: [
+            {
+              name: "text",
+              width: 160,
+              font: "arial",
+              size: 14,
+              direction: "rtl",
+            },
+          ],
+          border: true,
+        });
+      });
+    }
+    assert.ok(heights.length >= 2, JSON.stringify(heights));
+    assert.equal(heights[heights.length - 1], heights[0]);
+  });
+
   it("rejects an unknown direction before drawing", function () {
     const recipe = new Recipe(
       "new",

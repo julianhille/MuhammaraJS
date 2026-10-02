@@ -562,6 +562,29 @@ exports.text = function text(text = "", x, y, options = {}) {
         }
       };
 
+      /**
+       * Where a run's text starts. A clipped right-to-left line that
+       * overflows its box ends at the box's right content edge, so it keeps
+       * its start and the clip cuts its end on the left.
+       * @param {Object} wto - The laid-out run.
+       * @param {number} x - Where the run is placed.
+       * @returns {number} The x the text is drawn from.
+       */
+      const clippedTextX = (wto, x) => {
+        if (
+          textBox.wrap !== TextWrap.CLIP ||
+          wto.direction !== TextDirection.RTL
+        ) {
+          return x;
+        }
+        const width = new Word(wto.text, wto.writeOptions).dimensions.xMax;
+        const right = nx + textBox.width - textBox.paddingRight;
+        return width >
+          textBox.width - textBox.paddingLeft - textBox.paddingRight
+          ? right - width
+          : x;
+      };
+
       // Lines are laid out in logical order and drawn in visual order.
       const emitText = (word, x, y, ctx) => {
         ctx.Tm(1, 0, 0, 1, x, y);
@@ -657,13 +680,8 @@ exports.text = function text(text = "", x, y, options = {}) {
         // Note that the last line of a text box ignores justification.
         const _justify =
           options.alignHorizontal === TextAlign.JUSTIFY && !wto.lastLine;
-        // A clipped line keeps its first overflowing word. A right-to-left
-        // line draws that word on its left, so it starts further left and
-        // the clip cuts the overflow instead of the line's start.
-        const clipShift =
-          textBox.wrap === TextWrap.CLIP && wto.direction === TextDirection.RTL
-            ? Math.max(0, new Word(text, options).dimensions.xMax - lineWidth)
-            : 0;
+        // A clipped right-to-left line keeps its start; see clippedTextX().
+        const clipShift = x - clippedTextX(wto, x);
 
         // write directly to page when not dealing with opacity, rotation and special colorspace.
         if (
@@ -779,13 +797,18 @@ exports.text = function text(text = "", x, y, options = {}) {
         var markupHeight = textHeight * 1.4;
         if (textBox.wrap === TextWrap.CLIP) {
           // Clipped runs retain the first overflowing word, so measure the
-          // drawn text instead of using the preceding fitting line's width.
+          // drawn text instead of using the preceding fitting line's width;
+          // a reordered line spans its measured width.
+          var markupStart = lineX - clipShift;
           var markupRight = Math.min(
-            lineX + new Word(text, options).dimensions.xMax,
+            markupStart +
+              (wto.markupWidth !== undefined
+                ? wto.markupWidth
+                : new Word(text, options).dimensions.xMax),
             nx + textBox.width,
           );
           var markupTop = Math.min(markupBottom + markupHeight, y + lineHeight);
-          markupLeft = Math.max(markupLeft, nx);
+          markupLeft = Math.max(markupStart, nx);
           markupBottom = Math.max(markupBottom, y);
           markupWidth = markupRight - markupLeft;
           markupHeight = markupTop - markupBottom;
@@ -834,11 +857,13 @@ exports.text = function text(text = "", x, y, options = {}) {
         var left = x;
         var width = nextX ? nextX - x : content.lineWidth;
         if (textBox.wrap === TextWrap.CLIP) {
+          var start = clippedTextX(content, x);
           var right = Math.min(
-            x + new Word(content.text, content.writeOptions).dimensions.xMax,
+            start +
+              new Word(content.text, content.writeOptions).dimensions.xMax,
             nx + textBox.width,
           );
-          left = Math.max(left, nx);
+          left = Math.max(start, nx);
           width = right - left;
           if (width <= 0) return;
         }
@@ -969,6 +994,15 @@ exports.text = function text(text = "", x, y, options = {}) {
           default:
             x += textBox.paddingLeft;
             break;
+        }
+        // A clipped right-to-left line that overflows keeps its start, at
+        // the right content edge, and the clip cuts its end on the left.
+        if (
+          textBox.wrap === TextWrap.CLIP &&
+          lineDirection === TextDirection.RTL &&
+          lineWidth > textBox.width - textBox.paddingLeft - textBox.paddingRight
+        ) {
+          x = first.startX + textBox.width - textBox.paddingRight - lineWidth;
         }
         pieces.forEach((piece, index) => {
           const content = contents[piece.run];

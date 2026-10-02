@@ -1088,7 +1088,7 @@ export function createTextMethods({ drawText, measure, module }) {
           (horizontal === TextAlign.CENTER
             ? (width - left - right - textWidth) / 2
             : horizontal === TextAlign.RIGHT
-              ? width - right - textWidth
+              ? width - left - right - textWidth
               : 0);
         var baseline = currentY + lineHeight;
         if (textOptions.rotation && !textOptions.rotationOrigin) {
@@ -1263,7 +1263,7 @@ export function createTextMethods({ drawText, measure, module }) {
                     (wrap === TextWrap.CLIP &&
                       entry.direction === TextDirection.RTL &&
                       piecesWidth > width - left - right)
-                  ? width - right - piecesWidth
+                  ? width - left - right - piecesWidth
                   : 0);
             // Links and text markup start where the line now starts.
             linkX = drawX;

@@ -72,6 +72,24 @@ describe("TextDirection", function () {
       ["whitespace in a left-to-right line", "  abc שלום ", "  abc םולש "],
       ["left-to-right text", "Hello, world.", "Hello, world."],
       [
+        "an emoji with a skin tone",
+        "\u05d0 \u{1f44b}\u{1f3fd} \u05d1",
+        "\u05d1 \u{1f44b}\u{1f3fd} \u05d0",
+        "rtl",
+      ],
+      [
+        "an emoji joined with U+200D",
+        "\u05d0 \u{1f468}\u200d\u{1f469}\u200d\u{1f467} \u05d1",
+        "\u05d1 \u{1f468}\u200d\u{1f469}\u200d\u{1f467} \u05d0",
+        "rtl",
+      ],
+      [
+        "a flag",
+        "\u05d0 \u{1f1ee}\u{1f1f1} \u05d1",
+        "\u05d1 \u{1f1ee}\u{1f1f1} \u05d0",
+        "rtl",
+      ],
+      [
         "an astral mark on its letter",
         "\u05d0\u{101fd}\u05d1",
         "\u05d1\u{101fd}\u05d0",
@@ -207,6 +225,8 @@ describe("TextDirection", function () {
       assert.isNull(textDirection.visualRuns(["Hello ", "world"], "auto"));
       assert.isNull(textDirection.visualRuns(["שלום ", "עולם"]));
       assert.isNull(textDirection.visualRuns(["שלום\n", "עולם"], "auto"));
+      assert.isNull(textDirection.visualRuns(["\u200f"], "rtl"));
+      assert.isNull(textDirection.visualRuns(["  ", "\u202b"], "rtl"));
     });
 
     it("splits segments into justifiable words", function () {

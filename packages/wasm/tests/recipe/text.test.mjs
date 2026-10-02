@@ -1,5 +1,6 @@
 // Ports text and decoration behavior from tests/recipe/text.js and text-highlight-descenders.js.
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
@@ -77,6 +78,33 @@ describe("Recipe text", function () {
       .endPDF();
     writeOutput("text-long-line", pdf);
     assert.ok(pdf.length > 0);
+  });
+
+  it("ends right-aligned text at the padded right edge", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    muhammara.registerFont(
+      "arial",
+      new Uint8Array(await readFile("tests/TestMaterials/fonts/arial.ttf")),
+    );
+    var pdf = new Recipe()
+      .createPage(400, 400)
+      .text("hello world", 20, 20, {
+        font: "arial",
+        size: 12,
+        textBox: { width: 200, textAlign: "right", padding: [0, 10, 0, 30] },
+      })
+      .endPage()
+      .endPDF();
+    writeOutput("text-right-padding", pdf);
+    var reader = muhammara.createReader(pdf);
+    var run = reader.extractPageText(0)[0];
+    reader.end();
+    var font = muhammara.createWriter().getFontForBytes("arial");
+    var right =
+      run.textMatrix[4] + font.calculateTextDimensions("hello world", 12).xMax;
+    // Wasm aligns by glyph bounds, so the edge may differ by a bearing.
+    assert.ok(Math.abs(right - 210) < 1.5, String(right));
   });
 
   it("drops the leading spaces of a justified line", async function () {
