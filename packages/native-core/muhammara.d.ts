@@ -1062,7 +1062,8 @@ declare namespace muhammara {
      * @param x - The baseline start x.
      * @param y - The baseline y.
      * @param options - The font, size, color, underline and text direction.
-     *   Right-to-left text is reordered into the visual order PDF draws in.
+     *   With a `direction` other than `TextDirection.NONE`, right-to-left
+     *   text is reordered into the visual order PDF draws in.
      * @returns This context.
      * @throws {TypeError} If fewer than 3 arguments are given, or the coordinates,
      *   font size or underline geometry are not finite, or `direction` is not a
@@ -1121,7 +1122,7 @@ declare namespace muhammara {
     underline?: boolean;
     /**
      * How right-to-left text such as Hebrew is ordered before it is drawn.
-     * Defaults to `TextDirection.AUTO`.
+     * Defaults to `TextDirection.NONE`, which draws the text as given.
      */
     direction?: TextDirection;
   }
@@ -1134,7 +1135,7 @@ declare namespace muhammara {
     readonly LTR: "ltr";
     /** A right-to-left paragraph. */
     readonly RTL: "rtl";
-    /** Draw the text exactly as given, for text already in visual order. */
+    /** Draw the text exactly as given; the default. */
     readonly NONE: "none";
   };
   export type TextDirection =
@@ -3544,9 +3545,10 @@ declare namespace muhammara {
       squiggly?: boolean | TextMarkupOptions;
       html?: boolean;
       /**
-       * How right-to-left text such as Hebrew is ordered: `"auto"` (default)
-       * takes each paragraph's direction from its first strong letter, `"ltr"`
-       * and `"rtl"` set it, and `"none"` draws the text exactly as given.
+       * How right-to-left text such as Hebrew is ordered: `"auto"` takes
+       * each paragraph's direction from its first strong letter, `"ltr"` and
+       * `"rtl"` set it, and `"none"` (default) draws the text exactly as
+       * given.
        */
       direction?: TextDirection;
       hilite?:

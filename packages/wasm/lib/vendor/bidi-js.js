@@ -1,5 +1,6 @@
 // bidi-js 1.1.0 (https://github.com/lojjic/bidi-js), dist/bidi.mjs, unmodified.
-// Copyright (c) 2021 Jason Johnston. MIT License; see THIRD_PARTY_NOTICES.md.
+// Copyright (c) 2021 Jason Johnston. MIT License; see
+// packages/native-core/licenses/bidi-js.txt and dist/THIRD_PARTY_LICENSES.md.
 // Vendored because @muhammara/wasm ships browser ES modules without bare
 // package imports; @muhammara/native-core installs the same version from npm.
 

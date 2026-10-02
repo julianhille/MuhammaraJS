@@ -78,4 +78,21 @@ describe("Recipe text", function () {
     writeOutput("text-long-line", pdf);
     assert.ok(pdf.length > 0);
   });
+
+  it("starts a new line at every mandatory line break", async function () {
+    var Recipe = await getRecipe();
+    var pdf = new Recipe()
+      .createPage(400, 400)
+      .text("one\ntwo\r\nthree\rfour\u2028five\u2029six", 20, 20, {
+        textBox: { width: 300 },
+      })
+      .endPage()
+      .endPDF();
+    writeOutput("text-line-breaks", pdf);
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(pdf);
+    var lines = reader.extractPageText(0).map((element) => element.text);
+    reader.end();
+    assert.deepEqual(lines, ["one", "two", "three", "four", "five", "six"]);
+  });
 });

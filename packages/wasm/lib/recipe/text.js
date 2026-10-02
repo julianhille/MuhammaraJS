@@ -9,9 +9,13 @@ import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 import { rotationOption } from "./vector.helper.js";
 import {
+  TextDirection,
+  drawnText,
   readDirection,
   resolveDirection,
   toVisual,
+  visualRuns,
+  visualWords,
 } from "../text-direction.js";
 
 /**
@@ -98,9 +102,13 @@ function endsWithBreakableSpace(value) {
   return value[value.length - 1] !== "\u00a0" && /\s$/.test(value);
 }
 
+// The mandatory breaks that start a new paragraph, as native Recipe wraps.
+var PARAGRAPH_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/;
+
 /**
  * Lays out plain text into lines for a width and wrap mode.
- * @param {string} value - Text; `\n` starts a paragraph.
+ * @param {string} value - Text; a line break such as `\n` or U+2028 starts a
+ *   paragraph.
  * @param {number} width - Available width; 0 disables wrapping.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Text options.
@@ -112,7 +120,7 @@ function endsWithBreakableSpace(value) {
 function lines(value, width, measure, options, wrap) {
   var result = [];
   String(value)
-    .split("\n")
+    .split(PARAGRAPH_BREAK)
     .forEach((paragraph) => {
       var direction = resolveDirection(paragraph, options.direction);
       var line = "";
@@ -440,7 +448,9 @@ export function createTextMethods({ drawText, measure, module }) {
    * @returns {TextDimensions} Bounds and width in points.
    */
   function dimensions(recipe, value, options = {}) {
-    var result = measure.call(recipe, String(value), options);
+    // Formatting characters that reordering drops are not measured.
+    value = drawnText(String(value), options.direction);
+    var result = measure.call(recipe, value, options);
     result.width += charSpacing(value, options.charSpace);
     result.xMax += charSpacing(value, options.charSpace);
     return result;
@@ -1028,6 +1038,21 @@ export function createTextMethods({ drawText, measure, module }) {
         var horizontal = box.textAlign?.split(" ")[0];
         var isJustifiedLine =
           horizontal === TextAlign.JUSTIFY && !entry.last && width;
+        // The last line of a justified paragraph starts at the paragraph's
+        // start, which is the right edge for a right-to-left paragraph.
+        if (
+          horizontal === TextAlign.JUSTIFY &&
+          entry.last &&
+          (entry.direction ||
+            resolveDirection(
+              entry.parts
+                ? entry.parts.map((part) => part.text).join("")
+                : entry.text,
+              options.direction,
+            )) === TextDirection.RTL
+        ) {
+          horizontal = TextAlign.RIGHT;
+        }
         var drawX =
           x +
           left +
@@ -1094,7 +1119,22 @@ export function createTextMethods({ drawText, measure, module }) {
         if (entry.parts) {
           var justify =
             horizontal === TextAlign.JUSTIFY && !entry.last && width;
-          var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
+          var logicalParts = justify
+            ? entry.parts
+            : groupedHtmlParts(entry.parts);
+          // Parts that reorder are drawn as one line in visual order, piece
+          // by piece, each piece with its own part's styles.
+          var segments = visualRuns(
+            logicalParts.map((part) => part.text),
+            options.direction,
+          );
+          var drawParts = segments
+            ? (justify ? visualWords(segments) : segments).map((piece) => ({
+                ...logicalParts[piece.run],
+                text: piece.text,
+                visual: true,
+              }))
+            : logicalParts;
           /**
            * Reports whether this fragment owns an expandable justification gap.
            * @param {{text: string, marker: (boolean|undefined)}} part - Fragment.
@@ -1117,6 +1157,52 @@ export function createTextMethods({ drawText, measure, module }) {
             : textWidth;
           var partGap =
             partGaps > 0 ? (width - left - right - drawnWidth) / partGaps : 0;
+          /**
+           * The room a reordered piece takes before the next piece: its
+           * glyphs plus a real space advance for each trailing space, which
+           * measured text bounds leave out.
+           * @param {string} text - Piece text in visual order.
+           * @param {object} partOptions - The piece's text options.
+           * @returns {number} The advance in points.
+           */
+          var pieceAdvance = (text, partOptions) => {
+            var trimmed = text.replace(/\s+$/, "");
+            var spaces = text.length - trimmed.length;
+            var space = spaces
+              ? dimensions(this, "o o", partOptions).xMax -
+                dimensions(this, "oo", partOptions).xMax
+              : 0;
+            return (
+              (trimmed ? dimensions(this, trimmed, partOptions).xMax : 0) +
+              spaces * space
+            );
+          };
+          if (segments && !justify) {
+            // Align the reordered pieces by their own width; trailing
+            // whitespace at the end of the line takes no room.
+            var pieceWidths = drawParts.map((part) =>
+              pieceAdvance(
+                part.text,
+                fragmentOptions(options, part.styles, fontSize),
+              ),
+            );
+            var lastPart = drawParts[drawParts.length - 1];
+            var piecesWidth =
+              pieceWidths.reduce((sum, value) => sum + value, 0) -
+              pieceWidths[pieceWidths.length - 1] +
+              pieceAdvance(
+                lastPart.text.replace(/\s+$/, ""),
+                fragmentOptions(options, lastPart.styles, fontSize),
+              );
+            drawX =
+              x +
+              left +
+              (horizontal === TextAlign.CENTER
+                ? (width - left - right - piecesWidth) / 2
+                : horizontal === TextAlign.RIGHT
+                  ? width - right - piecesWidth
+                  : 0);
+          }
           var drawnText = "";
           var rotationOrigin = options.rotationOrigin || [drawX, baseline];
           drawParts.forEach((part, partIndex) => {
@@ -1129,7 +1215,10 @@ export function createTextMethods({ drawText, measure, module }) {
               part.text,
               partOptions.charSpace,
             );
-            var partWidth = dimensions(this, part.text, partOptions).width;
+            var partWidth =
+              part.visual && !justify
+                ? pieceAdvance(part.text, partOptions)
+                : dimensions(this, part.text, partOptions).width;
             if (partOptions.hilite) {
               var partHilite =
                 typeof partOptions.hilite === "object"
@@ -1155,7 +1244,7 @@ export function createTextMethods({ drawText, measure, module }) {
             }
             drawText.call(
               this,
-              toVisual(part.text, options.direction),
+              part.visual ? part.text : toVisual(part.text, options.direction),
               drawX,
               baseline,
               partOptions,
@@ -1188,20 +1277,22 @@ export function createTextMethods({ drawText, measure, module }) {
           });
           linkWidth = drawX - linkX;
         } else if (isJustifiedLine) {
-          // Justified words are placed left to right in visual order.
-          var visualText = toVisual(entry.text, entry.direction);
-          var words = visualText.match(/\S+\s*/g) || [visualText];
+          // Justified words are placed left to right in visual order, and
+          // non-breaking spaces stay inside their word.
+          var words = visualWords([
+            { run: 0, text: toVisual(entry.text, entry.direction) },
+          ]).filter((word) => hasText(word.text));
           var wordsWidth = words.reduce(
-            (sum, word) => sum + dimensions(this, word, textOptions).width,
+            (sum, word) => sum + dimensions(this, word.text, textOptions).width,
             0,
           );
-          var gap =
-            words.length > 1
-              ? (width - left - right - wordsWidth) / (words.length - 1)
-              : 0;
+          var gaps = words.filter((word) => word.gap).length;
+          var gap = gaps > 0 ? (width - left - right - wordsWidth) / gaps : 0;
           words.forEach((word) => {
-            drawText.call(this, word, drawX, baseline, textOptions);
-            drawX += dimensions(this, word, textOptions).width + gap;
+            drawText.call(this, word.text, drawX, baseline, textOptions);
+            drawX +=
+              dimensions(this, word.text, textOptions).width +
+              (word.gap ? gap : 0);
           });
           linkWidth = width - left - right;
         } else {

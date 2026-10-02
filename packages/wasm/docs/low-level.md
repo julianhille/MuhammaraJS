@@ -60,9 +60,9 @@ getters propagate their original exception without partial output from the
 call. Wasm still requires finite numeric coordinates and a font from the same
 writer; native retains its historical numeric coercions.
 
-`writeText` draws Hebrew and other right-to-left text in visual order; its
-`direction` option chooses the paragraph direction. See [Write Right-to-Left
-Text](how-to/write-right-to-left-text.md).
+With a `direction` option such as `"auto"`, `writeText` draws Hebrew and
+other right-to-left text in visual order; without it, text is drawn as given.
+See [Write Right-to-Left Text](how-to/write-right-to-left-text.md).
 
 Stroke widths and text sizes must also be finite. Circle control points and
 underline endpoints are checked for overflow before drawing. Paths must contain

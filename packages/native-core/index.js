@@ -174,7 +174,7 @@ function reorderWrittenText(muhammara) {
      * @param {number} x Baseline start x.
      * @param {number} y Baseline y.
      * @param {object} [options] Text options; `direction` is a
-     * `TextDirection` value and defaults to "auto".
+     * `TextDirection` value and defaults to "none".
      * @returns {object} This content context.
      * @throws {TypeError} If `direction` is not a `TextDirection` value.
      */

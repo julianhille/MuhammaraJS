@@ -1,5 +1,6 @@
 var { cloneOptions, resolveFontSize } = require("./utils");
 var { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
+var { drawnText } = require("../text-direction");
 
 /**
  * The width character spacing adds between the characters of a text.
@@ -29,7 +30,9 @@ const Word = class Word {
     this._value = word;
     this._pathOptions = pathOptions;
     this._last = false;
-    this._text = word === " " ? "o" : word; // allows space to get an actual dimension
+    // allows space to get an actual dimension; formatting characters that
+    // reordering drops are not measured
+    this._text = word === " " ? "o" : drawnText(word, pathOptions.direction);
   }
 
   /**
@@ -80,7 +83,7 @@ const Word = class Word {
     this._last = value;
     if (this._last) {
       this._value = this._value.trim(); // wack any trailing space
-      this._text = this._value;
+      this._text = drawnText(this._value, this._pathOptions.direction);
       this._dimensions = this._pathOptions.font.calculateTextDimensions(
         this._text,
         this._pathOptions.size,
@@ -192,6 +195,16 @@ exports.Line = class Line {
   }
 
   /**
+   * The characters of a text that are drawn, without the formatting
+   * characters that reordering drops, so measuring matches drawing.
+   * @param {string} text - The text in logical order.
+   * @returns {string} The text to measure.
+   */
+  measured(text) {
+    return drawnText(text, this._pathOptions.direction);
+  }
+
+  /**
    * @param {Word} wordObject - The word to test.
    * @returns {boolean} Whether the line still fits its width with the word appended.
    */
@@ -199,7 +212,7 @@ exports.Line = class Line {
     // Measuring the whole line for every word is quadratic in its length, and
     // a line without a text box never wraps.
     if (this._width >= UNBOUNDED_LINE_WIDTH) return true;
-    const tempValue = this.value + wordObject.value;
+    const tempValue = this.measured(this.value + wordObject.value);
     const toWidth =
       this._pathOptions.font.calculateTextDimensions(tempValue, this.size)
         .xMax + this.charSpacing(tempValue);
@@ -249,9 +262,10 @@ exports.Line = class Line {
    * @returns {number} The measured width of the line text.
    */
   get currentWidth() {
+    const value = this.measured(this.value);
     return (
-      this._pathOptions.font.calculateTextDimensions(this.value, this.size)
-        .xMax + this.charSpacing(this.value)
+      this._pathOptions.font.calculateTextDimensions(value, this.size).xMax +
+      this.charSpacing(value)
     );
   }
 
@@ -350,12 +364,16 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
  * @param {number} [options.charSpace=0] - character spacing being applied to the given text.
  * @param {boolean} [options.bold] - Measure with the bold style of the font.
  * @param {boolean} [options.italic] - Measure with the italic style of the font.
+ * @param {Recipe.TextDirection} [options.direction='none'] - The direction text() would draw the text with;
+ * other than 'none', the formatting characters that reordering drops are not measured.
  * @returns {Object} measurement components of given text: width, height, xMin, xMax, yMin, yMax
  * @throws {Error} If the font file cannot be loaded.
+ * @throws {TypeError} If `options.direction` is not a `Recipe.TextDirection` value.
  */
 exports.textDimensions = function textDimensions(text, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
+  text = drawnText(text, options.direction);
   const font = this._getFont(options);
   let dimensions = {};
   let charSpaces = 0;

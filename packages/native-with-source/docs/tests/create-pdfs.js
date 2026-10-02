@@ -6,6 +6,7 @@ var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
 var deviceColors = require("../../../native/docs/examples/draw-device-colors");
 var placePdfPageAsImage = require("../../../native/docs/examples/place-pdf-page-as-image");
+var rightToLeftText = require("../../../native/docs/examples/write-right-to-left-text");
 var { imagePlacements } = require("../../tests/helpers/imagePlacement");
 
 describe("Documentation examples", function () {
@@ -178,5 +179,40 @@ describe("Documentation examples", function () {
     assert.deepStrictEqual(placements[1].corners, box);
     assert.strictEqual(placements[2].lineWidth, 2);
     assert.deepStrictEqual(placements[2].dash, [4, 2]);
+  });
+
+  it("writes right-to-left text", function () {
+    var readText = function (inputPath) {
+      var reader = muhammara.createReader(inputPath);
+      try {
+        return reader.extractPageText(0).map(function (element) {
+          return { text: element.text, x: element.textMatrix[4] };
+        });
+      } finally {
+        reader.end();
+      }
+    };
+    var lowLevelPath = path.join(outputDirectory, "hebrew.pdf");
+    var recipePath = path.join(outputDirectory, "recipe-hebrew.pdf");
+    rightToLeftText.writeHebrew(
+      lowLevelPath,
+      path.join(__dirname, "../../tests/TestMaterials/fonts/arial.ttf"),
+    );
+    rightToLeftText.writeRecipeHebrew(recipePath);
+
+    var lines = readText(lowLevelPath);
+    assert.deepEqual(
+      lines.map(function (line) {
+        return line.text;
+      }),
+      ["םלוע םולש", "ח״ש 120 ריחמ", "םלוע םולש"],
+    );
+    assert.isAbove(lines[2].x, 400);
+    assert.deepEqual(
+      readText(recipePath).map(function (line) {
+        return line.text;
+      }),
+      ["בלכה לעמ ץפק ריהמה םוחה לעושה", "ןלצעה"],
+    );
   });
 });

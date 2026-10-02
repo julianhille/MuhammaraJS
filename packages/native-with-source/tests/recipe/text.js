@@ -737,4 +737,24 @@ describe("Text", () => {
       .endPDF();
     require("node:assert/strict").ok(fs.statSync(output).size > 0);
   });
+
+  it("starts a new line at every mandatory line break", function (done) {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const output = path.join(__dirname, "../output/text-line-breaks.pdf");
+    const recipe = new Recipe("new", output);
+    recipe
+      .createPage(400, 400)
+      .text("one\ntwo\r\nthree\rfour\u2028five\u2029six", 20, 20, {
+        textBox: { width: 300 },
+      })
+      .endPage()
+      .endPDF(() => {
+        const reader = muhammara.createReader(output);
+        const lines = reader.extractPageText(0).map((element) => element.text);
+        reader.end();
+        assert.deepEqual(lines, ["one", "two", "three", "four", "five", "six"]);
+        done();
+      });
+  });
 });

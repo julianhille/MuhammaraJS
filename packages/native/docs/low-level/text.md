@@ -23,9 +23,9 @@ such as `setOpacity(0.5)`.
 Use `font.calculateTextDimensions(text, size)` when positioning needs the text
 bounds.
 
-`writeText` draws Hebrew and other right-to-left text in visual order; its
-`direction` option chooses the paragraph direction. See [Write Right-to-Left
-Text](../how-to/write-right-to-left-text.md).
+With a `direction` option such as `"auto"`, `writeText` draws Hebrew and
+other right-to-left text in visual order; without it, text is drawn as given.
+See [Write Right-to-Left Text](../how-to/write-right-to-left-text.md).
 
 For kerned text, pass the `TJ` array items as separate arguments: either
 strings or glyph lists, not both in one call, with numeric adjustments in

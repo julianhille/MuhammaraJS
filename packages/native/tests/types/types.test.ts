@@ -63,7 +63,13 @@ context
     size: 12,
     color: "#0000ff",
     underline: true,
-  });
+  })
+  .writeText("שלום עולם", 10, 30, {
+    font: writer.getFontForFile("font.ttf"),
+    direction: muhammara.TextDirection.AUTO,
+  })
+  // @ts-expect-error direction takes a TextDirection value.
+  .writeText("No direction", 10, 35, { direction: "up" });
 context.c(0, 0, 1, 1, 2, 2).S();
 context.drawCircle(10, 10, 5).drawSquare(10, 10, 5);
 api.createWriter("output.pdf");
@@ -1062,6 +1068,15 @@ annotationRecipe.line(
     lineJoin: muhammara.Recipe.LineJoin.BEVEL,
   },
 );
+
+annotationRecipe.text("שלום עולם", 10, 10, {
+  direction: muhammara.Recipe.TextDirection.RTL,
+  textBox: { width: 100, textAlign: muhammara.Recipe.TextAlign.RIGHT },
+});
+// @ts-expect-error direction takes a Recipe.TextDirection value.
+annotationRecipe.text("abc", 10, 10, { direction: "up" });
+const textDirection: muhammara.TextDirection = muhammara.TextDirection.NONE;
+void textDirection;
 
 annotationRecipe.text("boxed", 10, 10, {
   textBox: {

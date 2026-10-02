@@ -42,13 +42,24 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   first strong letter, and `"ltr"` and `"rtl"` set it. Text is reordered with
   the Unicode Bidirectional Algorithm ([bidi-js](https://github.com/lojjic/bidi-js),
   MIT,
-  vendored as `lib/vendor/bidi-js.js`): numbers and Latin words inside Hebrew keep their order, brackets are
-  mirrored, and points stay on their letters. Recipe reorders each wrapped
-  line with its paragraph's direction, also across the styled runs of HTML
-  and flowed text, and places justified words from right to left. The
-  default, `"none"`, draws text exactly as given, as before; see [Write
-  Right-to-Left Text](docs/how-to/write-right-to-left-text.md)
+  vendored as `lib/vendor/bidi-js.js`): numbers and Latin words inside Hebrew keep their order, brackets
+  are mirrored, points are drawn on their letters, and invisible direction
+  marks are neither drawn nor measured. Recipe reorders each wrapped line with
+  its paragraph's direction, also across the styled runs of an HTML line,
+  places justified words from right to left, and ends the last line of a
+  justified right-to-left paragraph at the right edge; `textDimensions()`
+  takes the same option. The default, `"none"`, draws text exactly as given,
+  as before; see [Write Right-to-Left Text](docs/how-to/write-right-to-left-text.md)
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+
+### Fixed
+
+- Keep a word joined by a non-breaking space, such as `120\u00a0kg`, together
+  on a justified Recipe line instead of widening the gap inside it, as native
+  does.
+- Start a new Recipe text line at every mandatory line break, as native does:
+  `\r\n`, `\r`, vertical tab, form feed, U+0085, U+2028 and U+2029 no longer
+  draw as missing glyphs on the same line.
 
 ## [1.0.0] - 2026-10-01
 

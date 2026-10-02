@@ -5,12 +5,16 @@ const { Color, xObjectForm } = require("./xObjectForm");
 const { linkPdf } = require("./annotation");
 const {
   readDirection,
+  resolveDirection,
   paragraphDirections,
   toVisual,
+  visualRuns,
+  visualWords,
 } = require("../text-direction");
 const {
   TextWrap,
   TextAlign,
+  TextDirection,
   VerticalAlign,
   HorizontalAlign,
   Colorspace,
@@ -282,9 +286,10 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {Object|Boolean} [options.underline] - Text markup annotation.
  * @param {Object|Boolean} [options.strikeOut] - Text markup annotation.
  * @param {Boolean} [options.html] - Interpret text as html
- * @param {Recipe.TextDirection} [options.direction='auto'] - How right-to-left text such as Hebrew is ordered:
+ * @param {Recipe.TextDirection} [options.direction='none'] - How right-to-left text such as Hebrew is ordered:
  * 'auto' picks each paragraph's direction from its first strong letter, 'ltr' and 'rtl' set it, and 'none' writes
- * the text exactly as given, for text that is already in visual order. Each laid-out line is reordered on its own.
+ * the text exactly as given. Each laid-out line is reordered on its own; a line made of several HTML or flowed runs
+ * is reordered as one line, taking its own direction for 'auto'.
  * @param {Boolean} [options.flow=false] - Used to activate/deactivate text flow which is the
  * ability to use multiple calls to 'text' to create an overall text box.
  * @param {number|string} [options.layout] - An identifier of the layout to be associated with given text.
@@ -478,7 +483,7 @@ exports.text = function text(text = "", x, y, options = {}) {
       const getStartX = (startX, content) => {
         let spaceWidth = content.text.endsWith(" ") ? content.spaceWidth : 0;
         let offsetX;
-        switch (content.writeOptions.alignHorizontal) {
+        switch (lineAlign(content.writeOptions.alignHorizontal, content)) {
           case TextAlign.CENTER:
             offsetX = (textBox.width - currentLineWidth) / 2;
             break;
@@ -761,7 +766,7 @@ exports.text = function text(text = "", x, y, options = {}) {
           if (markupWidth <= 0 || markupHeight <= 0) return next_x;
         }
 
-        for (let key in targetAnnotations) {
+        for (let key in wto.noMarkup ? {} : targetAnnotations) {
           const subtype = this._getTextMarkupAnnotationSubtype(key);
           if (subtype && targetAnnotations[key]) {
             // Copy so the caller's markup options are not modified.
@@ -820,15 +825,127 @@ exports.text = function text(text = "", x, y, options = {}) {
         });
       };
 
+      /**
+       * Write the runs of one line, such as the styled runs of HTML text.
+       * Runs that reorder are drawn as one line in visual order, piece by
+       * piece, each piece with its own run's options.
+       * @param {Object[]} contents - The runs of the line in logical order.
+       * @returns {void}
+       */
+      const flushLine = (contents) => {
+        const y = currentY;
+        const first = contents[0];
+        const segments =
+          contents.length > 1
+            ? visualRuns(
+                contents.map((content) => content.text),
+                first.writeOptions.direction,
+              )
+            : null;
+        if (!segments) {
+          let next_x = 0;
+          contents.forEach((content) => {
+            const x = next_x || getStartX(content.startX, content);
+            next_x = writeText(x, y, content);
+            queueTextLink(content, x, y, next_x);
+          });
+          return;
+        }
+        const justified =
+          first.writeOptions.alignHorizontal === TextAlign.JUSTIFY &&
+          !contents[contents.length - 1].lastLine;
+        const pieces = justified
+          ? visualWords(segments)
+          : segments.map((segment) => Object.assign({ gap: false }, segment));
+        const inkWidth = (piece) => {
+          const trimmed = piece.text.replace(/\s+$/, "");
+          return trimmed
+            ? new Word(trimmed, contents[piece.run].writeOptions).dimensions
+                .xMax
+            : 0;
+        };
+        let gapWidth = 0;
+        if (justified) {
+          const gaps = pieces.filter((piece) => piece.gap).length;
+          const drawn = pieces.reduce((sum, piece) => sum + inkWidth(piece), 0);
+          gapWidth = gaps
+            ? (textBox.width -
+                textBox.paddingLeft -
+                textBox.paddingRight -
+                drawn) /
+              gaps
+            : 0;
+        }
+        /**
+         * The room a piece takes before the next piece: its glyphs plus a
+         * real space advance for each trailing space, which measured text
+         * bounds leave out, or the justified gap.
+         */
+        const advanceOf = (piece) => {
+          const spaces =
+            piece.text.length - piece.text.replace(/\s+$/, "").length;
+          if (justified) return inkWidth(piece) + (piece.gap ? gapWidth : 0);
+          if (!spaces) return inkWidth(piece);
+          const options = contents[piece.run].writeOptions;
+          const space =
+            new Word("o o", options).dimensions.xMax -
+            new Word("oo", options).dimensions.xMax;
+          return inkWidth(piece) + spaces * space;
+        };
+        // The pieces are measured again, so align their own width; trailing
+        // whitespace at the end of the line takes no room.
+        const lineWidth =
+          pieces.reduce((sum, piece) => sum + advanceOf(piece), 0) -
+          (advanceOf(pieces[pieces.length - 1]) -
+            inkWidth(pieces[pieces.length - 1]));
+        let x = first.startX;
+        switch (
+          lineAlign(first.writeOptions.alignHorizontal, {
+            lastLine: contents[contents.length - 1].lastLine,
+            direction: resolveDirection(
+              contents.map((content) => content.text).join(""),
+              first.writeOptions.direction,
+            ),
+          })
+        ) {
+          case TextAlign.CENTER:
+            x += (textBox.width - lineWidth) / 2;
+            break;
+          case TextAlign.RIGHT:
+            x += textBox.width - textBox.paddingRight - lineWidth;
+            break;
+          default:
+            x += textBox.paddingLeft;
+            break;
+        }
+        const markedRuns = new Set();
+        pieces.forEach((piece) => {
+          const content = contents[piece.run];
+          const width = inkWidth(piece);
+          const advance = advanceOf(piece);
+          const drawnContent = Object.assign({}, content, {
+            text: piece.text,
+            // The piece is already in visual order.
+            direction: TextDirection.NONE,
+            lineWidth: width,
+            // Text-markup annotations are added once per run.
+            noMarkup: markedRuns.has(piece.run),
+            writeOptions: justified
+              ? Object.assign({}, content.writeOptions, {
+                  alignHorizontal: TextAlign.LEFT,
+                })
+              : content.writeOptions,
+          });
+          markedRuns.add(piece.run);
+          writeText(x, y, drawnContent);
+          queueTextLink(drawnContent, x, y, x + advance);
+          x += advance;
+        });
+      };
+
       if (!isContinued) {
         // flush out current line before processing next one
-        let next_x = 0;
-        toWriteContents.forEach((content) => {
-          const x = next_x || getStartX(content.startX, content);
-          const y = currentY;
-          next_x = writeText(x, y, content);
-          queueTextLink(content, x, y, next_x);
-        });
+        flushLine(toWriteContents);
         // The line offset from the last line in the
         // group determines Y positioning for next line.
         let lineOffset = toWriteContents.length
@@ -918,14 +1035,7 @@ exports.text = function text(text = "", x, y, options = {}) {
           }
         }
 
-        let next_x = 0;
-        for (let ii = 0; ii < toWriteContents.length; ii++) {
-          const content = toWriteContents[ii];
-          const x = next_x || getStartX(content.startX, content);
-          const y = currentY;
-          next_x = writeText(x, y, content);
-          queueTextLink(content, x, y, next_x);
-        }
+        flushLine(toWriteContents);
 
         // Flush any left over text objects.
         if (!this._flow) {
@@ -1413,6 +1523,23 @@ function justify(left, x, wto, textBox, position) {
   // to compensate for text fragments that have not been
   // split on whitespace boundaries.
   return word.value.endsWith(" ") ? x : x - spaceBetweenWords;
+}
+
+/**
+ * The alignment a laid-out line is placed with. The last line of a justified
+ * paragraph is not justified: it starts at the paragraph's start, which is
+ * the right edge for a right-to-left paragraph.
+ * @private
+ * @param {string} [align] - The text box's `Recipe.TextAlign` value.
+ * @param {Object} line - The line: `lastLine` and its resolved `direction`.
+ * @returns {string|undefined} The alignment to place the line with.
+ */
+function lineAlign(align, line) {
+  return align === TextAlign.JUSTIFY &&
+    line.lastLine &&
+    line.direction === TextDirection.RTL
+    ? TextAlign.RIGHT
+    : align;
 }
 
 /**
