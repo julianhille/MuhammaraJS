@@ -1,4 +1,3 @@
-const muhammara = require("../muhammara");
 const { PAGE_CONTEXT_STATE } = require("./utils");
 const { PageLayout, Colorspace } = require("../recipe-constants");
 const {
@@ -608,14 +607,22 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
   return this;
 };
 
-// setPageBox() also accepts the PageBox names.
-const PAGE_BOX_CONSTANTS = {
-  [muhammara.PageBox.MEDIA]: muhammara.ePDFPageBoxMediaBox,
-  [muhammara.PageBox.CROP]: muhammara.ePDFPageBoxCropBox,
-  [muhammara.PageBox.BLEED]: muhammara.ePDFPageBoxBleedBox,
-  [muhammara.PageBox.TRIM]: muhammara.ePDFPageBoxTrimBox,
-  [muhammara.PageBox.ART]: muhammara.ePDFPageBoxArtBox,
-};
+/**
+ * Map the PageBox names, which setPageBox() also accepts, to the addon's
+ * ePDFPageBox constants.
+ * @private
+ * @param {Object} muhammara - The addon API the Recipe was created for.
+ * @returns {Object<string, number>} The page box constants by name.
+ */
+function pageBoxConstants(muhammara) {
+  return {
+    [muhammara.PageBox.MEDIA]: muhammara.ePDFPageBoxMediaBox,
+    [muhammara.PageBox.CROP]: muhammara.ePDFPageBoxCropBox,
+    [muhammara.PageBox.BLEED]: muhammara.ePDFPageBoxBleedBox,
+    [muhammara.PageBox.TRIM]: muhammara.ePDFPageBoxTrimBox,
+    [muhammara.PageBox.ART]: muhammara.ePDFPageBoxArtBox,
+  };
+}
 
 /**
  * Validate a page rotation. PDF allows only multiples of 90 degrees.
@@ -677,7 +684,8 @@ exports.rotate = function rotate(rotation) {
  * @throws {TypeError} If no page is active.
  */
 exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
-  box = PAGE_BOX_CONSTANTS[box] ?? box;
+  const muhammara = this.muhammara;
+  box = pageBoxConstants(muhammara)[box] ?? box;
   if ([left, bottom, right, top].some((value) => typeof value === "bigint")) {
     throw new TypeError("setPageBox coordinates must be numbers");
   }
@@ -755,7 +763,7 @@ exports.editPage = function editPage(pageNumber) {
   }
   const pdfWriter = this.writer;
   const pageIndex = pageNumber - 1;
-  const pageModifier = new muhammara.PDFPageModifier(
+  const pageModifier = new this.muhammara.PDFPageModifier(
     pdfWriter,
     pageIndex,
     true,

@@ -2,10 +2,32 @@
 
 var path = require("path");
 var fontText = require("./lib/font-text");
+var { createRecipe } = require("./lib/Recipe");
 
-// Addons whose reader already decodes text, so a second createMuhammara call
-// on the same addon does not wrap it twice.
-var decodingAddons = new WeakSet();
+// The addon's own functions, kept on the addon so every createMuhammara call
+// wraps the originals, never an earlier wrapper. Module state would not do:
+// Jest loads this module again for every test file while the addon stays
+// loaded. Symbol.for keys are shared by those module registries.
+var nativeReaderClass = Symbol.for("@muhammara/native-core:PDFReader");
+var nativeExtractPageText = Symbol.for(
+  "@muhammara/native-core:extractPageText",
+);
+var nativeRecryptAsync = Symbol.for("@muhammara/native-core:recryptAsync");
+
+/**
+ * Keep an addon's own function under a hidden key, unless it is already kept.
+ *
+ * @param {object} target The object holding the function.
+ * @param {symbol} key The hidden key.
+ * @param {*} value The function to keep.
+ * @returns {*} The kept function.
+ */
+function keepNative(target, key, value) {
+  if (!Object.prototype.hasOwnProperty.call(target, key)) {
+    Object.defineProperty(target, key, { value: value });
+  }
+  return target[key];
+}
 
 /**
  * Make `extractPageText()` add decoded Unicode `text` to each element. The
@@ -18,17 +40,19 @@ var decodingAddons = new WeakSet();
  * text would silently be missing.
  */
 function decodeExtractedText(muhammara) {
-  if (decodingAddons.has(muhammara)) return;
-  var PDFReader = muhammara.PDFReader;
+  var PDFReader = keepNative(muhammara, nativeReaderClass, muhammara.PDFReader);
   if (typeof PDFReader !== "function") {
     throw new Error(
       "The muhammara native addon does not export PDFReader; rebuild it from this version's sources",
     );
   }
   delete muhammara.PDFReader;
-  decodingAddons.add(muhammara);
 
-  var extractPageText = PDFReader.prototype.extractPageText;
+  var extractPageText = keepNative(
+    PDFReader.prototype,
+    nativeExtractPageText,
+    PDFReader.prototype.extractPageText,
+  );
   /**
    * Extract a page's text operations with their decoded Unicode `text`.
    *
@@ -59,9 +83,6 @@ function decodeExtractedText(muhammara) {
   };
 }
 
-// Addons whose recryptAsync already resolves relative paths.
-var resolvingAddons = new WeakSet();
-
 /**
  * Make `recryptAsync()` resolve relative paths, including `options.log`, when
  * it is called. A queued job opens its files later, and the working directory
@@ -71,10 +92,12 @@ var resolvingAddons = new WeakSet();
  * @returns {void}
  */
 function resolveRecryptAsyncPaths(muhammara) {
-  var recryptAsync = muhammara.recryptAsync;
-  if (typeof recryptAsync !== "function" || resolvingAddons.has(muhammara))
-    return;
-  resolvingAddons.add(muhammara);
+  if (typeof muhammara.recryptAsync !== "function") return;
+  var recryptAsync = keepNative(
+    muhammara,
+    nativeRecryptAsync,
+    muhammara.recryptAsync,
+  );
   /**
    * Re-encrypt a PDF on libuv's thread pool.
    *
@@ -114,9 +137,6 @@ function resolveRecryptAsyncPaths(muhammara) {
  * @returns {object} The public MuhammaraJS API.
  */
 exports.createMuhammara = function createMuhammara(muhammara) {
-  var bindingModule = require.resolve("./lib/muhammara");
-  var recipeDirectory = path.join(__dirname, "lib", "recipe") + path.sep;
-
   /**
    * Returns the writer's event emitter, created on first use.
    * @returns {import("events").EventEmitter} The emitter for writer events.
@@ -252,28 +272,9 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     eTokenSeparatorNone: muhammara.eTokenSeparatorNone,
   });
 
-  Object.keys(require.cache).forEach(function (filename) {
-    if (
-      filename === require.resolve("./lib/Recipe") ||
-      filename.startsWith(recipeDirectory)
-    ) {
-      delete require.cache[filename];
-    }
-  });
-
-  // Recipe modules historically import lib/muhammara directly. Supply this
-  // factory's addon while they initialize, without retaining global addon state.
-  require.cache[bindingModule] = {
-    id: bindingModule,
-    filename: bindingModule,
-    loaded: true,
-    exports: muhammara,
-  };
-  try {
-    muhammara.Recipe = require("./lib/Recipe");
-  } finally {
-    delete require.cache[bindingModule];
-  }
+  // A factory instead of module state, so module systems without Node's
+  // require.cache (Jest, bundlers) load Recipe too.
+  muhammara.Recipe = createRecipe(muhammara);
 
   return muhammara;
 };

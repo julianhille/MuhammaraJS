@@ -1,5 +1,4 @@
 const fs = require("fs");
-const muhammara = require("../muhammara");
 var { recipeInfoKeys, standardInfoKeys } = require("../recipe-info");
 
 // Source Info dictionary keys that _readInfo() keeps as raw values.
@@ -27,11 +26,19 @@ var InfoFieldType = Object.freeze({
   ARRAY: "array",
 });
 
-var trappedValues = {
-  True: muhammara.EInfoTrappedTrue,
-  False: muhammara.EInfoTrappedFalse,
-  Unknown: muhammara.EInfoTrappedUnknown,
-};
+/**
+ * Map the Trapped names in cached info to the addon's EInfoTrapped values.
+ * @private
+ * @param {Object} muhammara - The addon API the Recipe was created for.
+ * @returns {Object<string, number>} The Trapped values by name.
+ */
+function trappedValues(muhammara) {
+  return {
+    True: muhammara.EInfoTrappedTrue,
+    False: muhammara.EInfoTrappedFalse,
+    Unknown: muhammara.EInfoTrappedUnknown,
+  };
+}
 
 /**
  * @name info
@@ -81,7 +88,7 @@ exports.info = function info(options) {
 exports._readInfo = function _readInfo() {
   if (!this.isNewPDF && !this.infoDictionary) {
     const copyFrom = this.isBufferSrc
-      ? new muhammara.PDFRStreamForBuffer(this.src)
+      ? new this.muhammara.PDFRStreamForBuffer(this.src)
       : this.src;
     const copyCtx = this.writer.createPDFCopyingContext(copyFrom);
     try {
@@ -157,6 +164,7 @@ exports._readInfo = function _readInfo() {
  * @throws {Error} If the source information cannot be read.
  */
 exports._writeInfo = function _writeInfo() {
+  const trapped = trappedValues(this.muhammara);
   const options = this.toWriteInfo_ || {};
   const oldInfo = this._readInfo();
   /*
@@ -185,9 +193,8 @@ exports._writeInfo = function _writeInfo() {
 
       switch (key) {
         case CachedInfoKey.TRAPPED:
-          if (trappedValues[oldInfo[CachedInfoKey.TRAPPED]] !== undefined) {
-            infoDictionary.trapped =
-              trappedValues[oldInfo[CachedInfoKey.TRAPPED]];
+          if (trapped[oldInfo[CachedInfoKey.TRAPPED]] !== undefined) {
+            infoDictionary.trapped = trapped[oldInfo[CachedInfoKey.TRAPPED]];
           }
           break;
         case CachedInfoKey.CREATION_DATE:

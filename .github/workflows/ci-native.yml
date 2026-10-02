@@ -446,6 +446,8 @@ jobs:
           path: canonical-prebuild
       - run: node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc.tar.gz napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc.tar.gz
       - run: npm run test
+      - name: Load the package in Jest
+        run: npm run test:jest
       - run: node .github/scripts/prepare-native-prebuild.mjs verify
 
   test-node-musl:

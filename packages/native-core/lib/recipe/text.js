@@ -3,8 +3,6 @@ const { Word, Line, Column } = require("./text.helper");
 const { htmlToTextObjects, HtmlTag } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
 const { linkPdf } = require("./annotation");
-const muhammara = require("../muhammara");
-const { UsedFont } = require("../muhammara");
 const {
   TextWrap,
   TextAlign,

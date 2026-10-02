@@ -1,4 +1,3 @@
-const muhammara = require("../muhammara");
 const { Colorspace } = require("../recipe-constants");
 
 /**
@@ -62,7 +61,7 @@ exports._strokePolyline = function _strokePolyline(points, options) {
   // edited page resumes into a new context, so read the context afterwards.
   const pathOptions = this._getPathOptions(options);
   const context = this.pageContext;
-  pathOptions.type = muhammara.DrawingPathType.STROKE;
+  pathOptions.type = this.muhammara.DrawingPathType.STROKE;
 
   if (pathOptions.stroke !== undefined) {
     pathOptions.color = pathOptions.stroke;

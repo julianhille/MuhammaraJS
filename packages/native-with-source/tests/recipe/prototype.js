@@ -3,8 +3,18 @@ var muhammara = require("@muhammara/native-with-source");
 var Recipe = require("../../../native-core").createMuhammara(muhammara).Recipe;
 
 describe("Recipe prototype", function () {
-  it("exposes only the intended Recipe API", function () {
+  it("binds each Recipe class to its addon", function () {
     assert.deepEqual(Object.getOwnPropertyNames(Recipe.prototype).sort(), [
+      "constructor",
+      "muhammara",
+    ]);
+    assert.equal(Recipe.prototype.muhammara, muhammara);
+    assert.equal(Recipe.name, "Recipe");
+  });
+
+  it("exposes only the intended Recipe API", function () {
+    var shared = Object.getPrototypeOf(Recipe.prototype);
+    assert.deepEqual(Object.getOwnPropertyNames(shared).sort(), [
       "Column",
       "Line",
       "Word",

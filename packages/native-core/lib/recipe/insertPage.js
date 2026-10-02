@@ -1,4 +1,3 @@
-const muhammara = require("../muhammara");
 const fs = require("fs");
 const utils = require("./utils");
 /**
@@ -61,7 +60,7 @@ exports._insertPages = function _insertPages() {
   const tmp = this.output + ".tmp.pdf";
   fs.renameSync(this.output, tmp);
 
-  const pdfWriter = muhammara.createWriter(this.output);
+  const pdfWriter = this.muhammara.createWriter(this.output);
   let lastInsertedOriginal = 0;
   pagesForInsert.forEach((pageNumber) => {
     const toAppendPage = pageNumber - 1;
