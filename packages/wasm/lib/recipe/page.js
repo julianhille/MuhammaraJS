@@ -619,12 +619,16 @@ export function createPageMethods(
      * @param {RecipeMargins} [margins] - Margins for the new page.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If the PDF has already been ended.
+     * @throws {Error} If another page is still active; call `endPage()` first.
      */
     createPage: function (width, height, margins) {
       if (this._endedBytes)
         throw new Error("Cannot create a page after endPDF");
       if (this._deletedPages?.size) {
         throw new Error("createPage cannot be combined with deletePage");
+      }
+      if (this._editingPage || this._pageHeight) {
+        throw new Error("Finish the current page before creating another page");
       }
       if (typeof width === "string") {
         var rotation = height;

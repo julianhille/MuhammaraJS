@@ -540,10 +540,16 @@ function writePageLabels(writer, copyingContext, pageLabels) {
  * @param {number} [margins.bottom] - Bottom margin.
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+ * @throws {Error} If another page is still active; call endPage() first.
  */
 exports.createPage = function createPage(pageWidth, pageHeight, margins) {
   if (this.deletedPages?.size) {
     throw new Error("createPage cannot be combined with deletePage");
+  }
+  // Opening a second page over an active one leaves the first page
+  // unfinished: the writer then crashes or silently drops it at endPDF().
+  if (this.page) {
+    throw new Error("Finish the current page before creating another page");
   }
   if (!pageWidth && !pageHeight) {
     [pageWidth, pageHeight] = this.default.pageSize;
@@ -754,12 +760,18 @@ exports.endPage = function endPage() {
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If the Recipe was not constructed from an existing PDF.
  * @throws {Error} If the page does not exist in the source PDF.
+ * @throws {Error} If another page is still active; call endPage() first.
  */
 exports.editPage = function editPage(pageNumber) {
   if (this.isNewPDF) {
     throw new Error(
       "editPage requires a Recipe constructed from an existing PDF",
     );
+  }
+  // As in createPage, an active page left unfinished crashes the writer or is
+  // silently dropped at endPDF().
+  if (this.page) {
+    throw new Error("Finish the current page before editing another page");
   }
   const pdfWriter = this.writer;
   const pageIndex = pageNumber - 1;

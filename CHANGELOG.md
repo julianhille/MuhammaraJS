@@ -39,6 +39,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   loading the package again in another Jest test file no longer fails with
   "The muhammara native addon does not export PDFReader"
   [#881](https://github.com/julianhille/MuhammaraJS/issues/881)
+- `Recipe#createPage()` throws "Finish the current page before creating
+  another page" when a page is still active. It used to accept the call, and
+  `endPDF()` then crashed the process with a segmentation fault or, when the
+  open page was empty, wrote the PDF without it. Call `endPage()` before
+  creating the next page
+  [#912](https://github.com/julianhille/MuhammaraJS/issues/912)
+- `Recipe#editPage()` throws "Finish the current page before editing another
+  page" when a page is still active, as Wasm already does. It used to accept
+  the call, and `endPDF()` then crashed the process with a segmentation fault
+  when an edited page was open, or wrote the PDF without an open created page.
+  Call `endPage()` before editing the next page
+  [#911](https://github.com/julianhille/MuhammaraJS/issues/911)
 
 ## [7.0.0] - 2026-10-01
 
