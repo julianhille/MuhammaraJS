@@ -1,4 +1,4 @@
-// Byte-first ports of tests/security/GHSA-*.js and GH-518.js.
+// Byte-first ports of tests/security/GHSA-*.js, GH-518.js and GH-917.js.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../../index.js";
@@ -136,5 +136,33 @@ describe("parser security regressions", function () {
         reader.end();
       }
     });
+  });
+  // Port of tests/security/GH-917.js.
+  it("rejects an object stream count larger than the xref table", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile(
+      "tests/TestMaterials/ObjectStreamHugeCount.pdf",
+    );
+
+    assert.throws(() => muhammara.createReader(source), /Unable to parse PDF/);
+    assert.throws(() => muhammara.recrypt(source), /Unable to recrypt PDF/);
+    await assert.rejects(
+      muhammara.recryptAsync(source),
+      /Unable to recrypt PDF/,
+    );
+    assert.throws(
+      () => muhammara.createWriterToModify(source),
+      /Unable to modify PDF/,
+    );
+
+    // The instance was not aborted and still parses a valid PDF.
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/Original.pdf"),
+    );
+    try {
+      assert.ok(reader.getPagesCount() > 0);
+    } finally {
+      reader.end();
+    }
   });
 });

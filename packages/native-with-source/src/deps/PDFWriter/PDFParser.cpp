@@ -1895,7 +1895,19 @@ PDFObject* PDFParser::ParseExistingInDirectStreamObject(ObjectIDType inObjectId)
 			status = PDFHummus::eFailure;
 			break;
 		}
-		ObjectIDType objectsCount = (ObjectIDType)streamObjectsCount->GetValue();
+		long long objectsCountValue = streamObjectsCount->GetValue();
+		// reject negative counts and counts larger than the actual xref table can hold.
+		// every object in an object stream has an xref entry, so /N cannot legitimately
+		// exceed the number of entries we read. this also bounds the header allocation below,
+		// which would otherwise throw (and terminate, as exceptions are disabled) on a crafted /N.
+		ObjectIDType actualXrefSize = GetXrefSize();
+		if(objectsCountValue < 0 || (unsigned long long)objectsCountValue > actualXrefSize)
+		{
+			TRACE_LOG2("PDFParser::ParseExistingInDirectStreamObject, invalid objects count %lld (actual xref size %lu)", objectsCountValue, actualXrefSize);
+			status = PDFHummus::eFailure;
+			break;
+		}
+		ObjectIDType objectsCount = (ObjectIDType)objectsCountValue;
 
 		PDFObjectCastPtr<PDFInteger> firstStreamObjectPosition(QueryDictionaryObject(streamDictionary.GetPtr(),"First"));
 		if(!firstStreamObjectPosition)
