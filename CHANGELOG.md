@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Reject a PDF whose object stream declares more objects (`/N`) than its xref
+  table holds. Parsing it with `createReader()`, `recrypt()`,
+  `recryptAsync()`, `createWriterToModify()`, or Recipe on an existing PDF
+  ended the Node.js process with exit code 134 (`std::bad_array_new_length` or
+  `std::bad_alloc`); it now fails with the usual parse error [#917](https://github.com/julianhille/MuhammaraJS/issues/917)
 - `@muhammara/native` and `@muhammara/native-with-source` load in Jest and
   other module systems without Node's `require.cache`. `Recipe` is now created
   per addon by a factory instead of through a `require.cache` entry, and

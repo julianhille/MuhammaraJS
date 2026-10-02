@@ -45,6 +45,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   on a new document and "Finish the active page first" on a Recipe built from
   PDF bytes
   [#912](https://github.com/julianhille/MuhammaraJS/issues/912)
+- Reject a PDF whose object stream declares more objects (`/N`) than its xref
+  table holds. Parsing it with `createReader()`, `recrypt()`,
+  `recryptAsync()`, `createWriterToModify()`, or Recipe on an existing PDF
+  aborted the Wasm instance with `RuntimeError: Aborted()`; it now throws the
+  usual parse error and the instance stays usable [#917](https://github.com/julianhille/MuhammaraJS/issues/917)
 
 ## [1.0.0] - 2026-10-01
 
