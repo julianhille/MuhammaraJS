@@ -1,6 +1,18 @@
 var muhammara = require("@muhammara/native-with-source");
 var assert = require("assert");
+var path = require("path");
 var { writeOutput } = require("./helpers/testOutput");
+
+/**
+ * Path of a test output file relative to the working directory, so that
+ * `recryptAsync()` has to resolve it.
+ *
+ * @param {string} name The output file name.
+ * @returns {string} The relative path.
+ */
+function relativeOutput(name) {
+  return path.relative(process.cwd(), path.join(__dirname, "output", name));
+}
 
 function assertRecryptedPdf(filePath, password, encrypted) {
   var reader = muhammara.createReader(filePath, password ? { password } : {});
@@ -706,7 +718,7 @@ describe("Xcryption", function () {
       );
     });
 
-    it("keeps getter, inherited and Proxy options when log is set", async function () {
+    it("keeps getter, inherited, Proxy and frozen options when log is set", async function () {
       var source = __dirname + "/TestMaterials/Original.pdf";
       var encryption = {
         password: "",
@@ -739,10 +751,22 @@ describe("Xcryption", function () {
           },
         },
       );
+      var frozen = Object.freeze(
+        Object.assign({}, encryption, {
+          log: relativeOutput("RecryptAsyncFrozenOptions.log"),
+        }),
+      );
+      var readOnly = Object.assign({}, encryption);
+      Object.defineProperty(readOnly, "log", {
+        value: relativeOutput("RecryptAsyncReadOnlyOptions.log"),
+        enumerable: true,
+      });
       var cases = {
         Getter: getters,
         Inherited: inherited,
         Proxy: proxied,
+        Frozen: frozen,
+        ReadOnly: readOnly,
       };
       for (var name of Object.keys(cases)) {
         var target = __dirname + "/output/RecryptAsync" + name + "Options.pdf";

@@ -128,25 +128,18 @@ function resolveRecryptAsyncPaths(muhammara) {
 
 /**
  * View options with `log` replaced, reading every other property from the
- * original. Copying would lose getters, inherited properties, and Proxy-backed
- * values that the addon reads with a plain property get.
+ * original through the prototype chain. Copying would lose getters, inherited
+ * properties, and Proxy-backed values that the addon reads with a plain
+ * property get. A Proxy over the options would throw when `log` is a
+ * read-only, non-configurable property, as on frozen options.
  *
  * @param {object} options The caller's options.
  * @param {string} log The log path to report instead.
- * @returns {object} A Proxy over `options`.
+ * @returns {object} An object inheriting from `options` with its own `log`.
  */
 function withLog(options, log) {
-  return new Proxy(options, {
-    /**
-     * Read `log` as the replacement and every other key from the options.
-     *
-     * @param {object} target The caller's options.
-     * @param {string|symbol} key The property name.
-     * @returns {*} The property value.
-     */
-    get: function (target, key) {
-      return key === "log" ? log : Reflect.get(target, key);
-    },
+  return Object.create(options, {
+    log: { value: log, enumerable: true },
   });
 }
 
