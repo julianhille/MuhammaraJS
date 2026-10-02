@@ -16,20 +16,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   riscv64 Node.js comes from a distribution package or an unofficial build,
   because nodejs.org publishes none; see the [Prebuilt Support Matrix](packages/native/docs/getting-started/installation.md#prebuilt-support-matrix) [#877](https://github.com/julianhille/MuhammaraJS/issues/877)
 - `recryptAsync()`, a promise-returning `recrypt()` that re-encrypts on
-  libuv's thread pool, so the event loop keeps running. Recrypts run one at
-  a time, and a thread's waiting jobs do not hold pool threads
+  libuv's thread pool, so the event loop keeps running. A thread's jobs run
+  one at a time and its waiting jobs do not hold pool threads; jobs from
+  different worker threads run in parallel
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+  [#895](https://github.com/julianhille/MuhammaraJS/issues/895)
 - A server benchmark comparing `recrypt()` and `recryptAsync()`, including
   how long each blocks the event loop, run with `npm run bench:recrypt`
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 
 ### Changed
 
-- `recrypt()` and `recryptAsync()` share one process-wide lock, so only one
-  recrypt runs at a time. Synchronous `recrypt()` calls on different worker
-  threads now run one after another, and a `recrypt()` call waits for a
-  running `recryptAsync()` job, blocking its thread meanwhile
-  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 - Native log settings belong to the thread that sets them. A writer created
   in a worker thread no longer changes where writers on other threads log
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
