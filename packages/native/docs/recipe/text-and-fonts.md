@@ -52,6 +52,38 @@ than a browser layout engine.
 Complex-script shaping and right-to-left layout do not have focused coverage and
 are not documented as supported behavior.
 
+## Continue Text Across Calls
+
+Pass `flow: true` to build one text box from several `text()` calls, for
+example to style a single word in a sentence. The first call sets the
+position; later calls without coordinates continue the line where the previous
+run ended and wrap together inside the shared text box. A call without
+coordinates continues an open flow even when it omits `flow`, and inherits the
+options of the runs before it.
+
+Flowed text is laid out when the flow ends, so `textBox` alignment,
+justification, and styling apply to the whole box. End it with
+`flow: false`, which adds that call's text first; `text("", { flow: false })`
+ends it without adding any. Inside a flow, `movedown()` ends the current line.
+Because the flow is drawn when it ends, shapes or images drawn between its
+calls end up beneath its text, and `movedown(lines, true)` reports the flow's
+starting position until then.
+
+```javascript
+pdfDoc
+  .createPage("letter")
+  .text("Only ", 72, 72, { flow: true, textBox: { width: 300 } })
+  .text("this", { color: "#c62828", bold: true })
+  .text(" word is red.", { color: "#000000", bold: false })
+  .text("", { flow: false })
+  .endPage()
+  .endPDF();
+```
+
+A flow that is never ended is not drawn, and a later `text()` call with
+coordinates discards it, so end every flow with `flow: false`
+([#889](https://github.com/julianhille/MuhammaraJS/issues/889)).
+
 ## Clip Text To A Fixed-Height Box
 
 Set `textBox.clipIfExceedsBox` with an explicit `height` to render only complete
