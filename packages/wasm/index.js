@@ -81,6 +81,38 @@ function nodeBuiltin(name) {
 }
 
 /**
+ * Prints an error message the way Emscripten's runtime does, through
+ * `printErr` when given and `console.error` otherwise.
+ * @param {MuhammaraWasmOptions} options - Emscripten module options.
+ * @param {string} message - Message to print.
+ * @returns {void}
+ */
+function printError(options, message) {
+  if (typeof options.printErr === "function") options.printErr(message);
+  else console.error(message);
+}
+
+/**
+ * Reports a failed load the way Emscripten's own loader does: prints
+ * "failed to asynchronously prepare wasm", calls `onAbort` with the reason,
+ * prints "Aborted(reason)", and returns the `WebAssembly.RuntimeError` that
+ * Emscripten rejects its module promise with.
+ * @param {MuhammaraWasmOptions} options - Emscripten module options.
+ * @param {*} reason - Why the binary could not be loaded, compiled, or
+ * instantiated.
+ * @returns {WebAssembly.RuntimeError} The error to reject with.
+ */
+function abortLoad(options, reason) {
+  printError(options, `failed to asynchronously prepare wasm: ${reason}`);
+  if (typeof options.onAbort === "function") options.onAbort(reason);
+  var what = `Aborted(${reason})`;
+  printError(options, what);
+  return new WebAssembly.RuntimeError(
+    `${what}. Build with -sASSERTIONS for more info.`,
+  );
+}
+
+/**
  * Compiles `muhammara-wasm.wasm` the way Emscripten would load it: from
  * `wasmBinary` when given, otherwise from `locateFile`'s result or the file
  * next to the package, read from disk under Node and fetched with
@@ -124,14 +156,16 @@ async function compileWasm(options) {
   ) {
     try {
       return await WebAssembly.compileStreaming(request());
-    } catch {
+    } catch (reason) {
       // A wrong MIME type or a failed stream falls back to an ArrayBuffer,
-      // as in Emscripten.
+      // with the same messages as in Emscripten.
+      printError(options, `wasm streaming compile failed: ${reason}`);
+      printError(options, "falling back to ArrayBuffer instantiation");
     }
   }
   var response = await request();
   if (!response.ok) {
-    throw new Error(`Failed to load ${location}: HTTP ${response.status}`);
+    throw new Error(`${response.status} : ${response.url}`);
   }
   return WebAssembly.compile(await response.arrayBuffer());
 }
@@ -139,10 +173,13 @@ async function compileWasm(options) {
 /**
  * Instantiates the Emscripten module and keeps its compiled WebAssembly.Module.
  * Emscripten does not keep the compiled module, so the runtime compiles it and
- * hands Emscripten the instance; Recipe reads its "license" section.
+ * hands Emscripten the instance; Recipe reads its "license" section. A binary
+ * that cannot be loaded, compiled, or instantiated fails as in Emscripten.
  * @param {MuhammaraWasmOptions} moduleOptions - Emscripten module options.
  * @returns {Promise<{module: object, wasmModule: (WebAssembly.Module|undefined)}>}
  * The Emscripten module and, when available, the compiled WebAssembly.Module.
+ * @throws {WebAssembly.RuntimeError} If the binary cannot be loaded, compiled,
+ * or instantiated, after `onAbort` and `printErr` were called.
  */
 async function instantiate(moduleOptions) {
   var options = { ...moduleOptions };
@@ -157,7 +194,14 @@ async function instantiate(moduleOptions) {
         return receiveInstance(instance, module);
       });
     module = await createModule(options);
-  } else if (!(wasmModule = await compileWasm(options))) {
+    return { module, wasmModule };
+  }
+  try {
+    wasmModule = await compileWasm(options);
+  } catch (reason) {
+    throw abortLoad(options, reason);
+  }
+  if (!wasmModule) {
     module = await createModule(options);
   } else {
     var failed;
@@ -166,8 +210,14 @@ async function instantiate(moduleOptions) {
     });
     options.instantiateWasm = (imports, receiveInstance) => {
       WebAssembly.instantiate(wasmModule, imports).then(
-        (instance) => receiveInstance(instance, wasmModule),
-        failed,
+        (instance) => {
+          try {
+            receiveInstance(instance, wasmModule);
+          } catch (error) {
+            failed(error);
+          }
+        },
+        (reason) => failed(abortLoad(options, reason)),
       );
       return {};
     };

@@ -291,14 +291,96 @@ describe("Third-party licenses", function () {
       );
     });
 
-    it("rejects when the binary cannot be loaded", async function () {
-      await assert.rejects(
-        createRecipe({
+    it("fails to load through onAbort and printErr, as Emscripten does", async function () {
+      // Imports x.y, which the runtime does not provide.
+      var unlinkable = new Uint8Array([
+        ...minimalModule,
+        0x02,
+        0x07,
+        0x01,
+        0x01,
+        0x78,
+        0x01,
+        0x79,
+        0x00,
+        0x00,
+      ]);
+      for (var [options, reason] of [
+        [
+          {
+            locateFile: () =>
+              fileURLToPath(new URL("missing.wasm", packageRoot)),
+          },
+          /ENOENT/,
+        ],
+        [{ wasmBinary: new TextEncoder().encode("not wasm") }, /CompileError/],
+        [{ wasmBinary: unlinkable }, /LinkError|TypeError/],
+      ]) {
+        var aborted = [];
+        var printed = [];
+        var error = await createRecipe({
+          ...options,
           defaultFont: false,
-          locateFile: () => fileURLToPath(new URL("missing.wasm", packageRoot)),
-        }),
-        /ENOENT/,
-      );
+          onAbort: (what) => aborted.push(what),
+          printErr: (message) => printed.push(message),
+        }).catch((caught) => caught);
+        assert.ok(error instanceof WebAssembly.RuntimeError);
+        assert.match(error.message, /^Aborted\(/);
+        assert.match(error.message, reason);
+        assert.equal(aborted.length, 1);
+        assert.match(String(aborted[0]), reason);
+        assert.equal(printed.length, 2);
+        assert.equal(
+          printed[0],
+          `failed to asynchronously prepare wasm: ${aborted[0]}`,
+        );
+        assert.equal(printed[1], `Aborted(${aborted[0]})`);
+      }
+    });
+
+    it("reports a failed streaming compile before falling back, as Emscripten does", async function () {
+      var bytes = await readFile(wasmUrl);
+      var fetchFunction = globalThis.fetch;
+      var processType = process.type;
+      var requests = 0;
+      var printed = [];
+      // Run the browser loader: Emscripten's own test treats an Electron
+      // renderer as a browser.
+      process.type = "renderer";
+      try {
+        globalThis.fetch = async () => {
+          requests += 1;
+          return new Response(bytes, {
+            headers: { "Content-Type": "application/octet-stream" },
+          });
+        };
+        var Recipe = await createRecipe({
+          defaultFont: false,
+          printErr: (message) => printed.push(message),
+        });
+        assert.equal(requests, 2);
+        assert.equal(printed.length, 2);
+        assert.match(printed[0], /^wasm streaming compile failed: TypeError/);
+        assert.equal(printed[1], "falling back to ArrayBuffer instantiation");
+        assert.equal(
+          Recipe.thirdPartyLicenses(),
+          await readFile(licensesUrl, "utf8"),
+        );
+
+        globalThis.fetch = async () => new Response(null, { status: 404 });
+        printed = [];
+        var error = await createRecipe({
+          defaultFont: false,
+          printErr: (message) => printed.push(message),
+        }).catch((caught) => caught);
+        assert.ok(error instanceof WebAssembly.RuntimeError);
+        assert.match(error.message, /^Aborted\(Error: 404 : /);
+        assert.equal(printed.at(-1), "Aborted(Error: 404 : )");
+      } finally {
+        globalThis.fetch = fetchFunction;
+        if (processType === undefined) delete process.type;
+        else process.type = processType;
+      }
     });
 
     it("keeps the module from a caller's instantiateWasm hook", async function () {
