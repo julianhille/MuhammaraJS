@@ -21,6 +21,7 @@
 #include "Log.h"
 #include "SafeBufferMacrosDefs.h"
 #include "IByteWriterWithPosition.h"
+#include "PDFDate.h"
 #include <ctime>
 #include <stdio.h>
 #ifdef __MINGW32__
@@ -135,7 +136,10 @@ std::string Log::GetFormattedTimeString()
 	tm structuredLocalTime;
 
 	time(&currentTime);
-	SAFE_LOCAL_TIME(structuredLocalTime,currentTime);
+	// MuhammaraJS: use the thread's fixed time zone when it has one, see
+	// PDFDate::SetThreadTimeZone().
+	if(!PDFDate::GetThreadLocalTime(currentTime,structuredLocalTime))
+		SAFE_LOCAL_TIME(structuredLocalTime,currentTime);
 
 	SAFE_SPRINTF_6(buffer,26,"[ %02d/%02d/%04d %02d:%02d:%02d ] ",structuredLocalTime.tm_mday,
 																	structuredLocalTime.tm_mon + 1,

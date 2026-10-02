@@ -803,6 +803,47 @@ describe("Xcryption", function () {
       }
     });
 
+    it("uses the time zone of the call, not of the pool thread", async function () {
+      var path = require("path");
+      var log = path.join(__dirname, "output/RecryptAsyncTimeZone.log");
+      fs.rmSync(log, { force: true });
+      var originalTimeZone = process.env.TZ;
+      var promise;
+      // Asia/Kolkata has no daylight saving time: always 5:30 ahead of UTC.
+      process.env.TZ = "Asia/Kolkata";
+      try {
+        promise = muhammara.recryptAsync(
+          path.join(__dirname, "output/MissingTimeZoneSource.pdf"),
+          path.join(__dirname, "output/RecryptAsyncTimeZone.pdf"),
+          { log: log },
+        );
+        // The job reads no time zone on its pool thread, where it would race
+        // this write.
+        process.env.TZ = "America/New_York";
+        await assert.rejects(promise, /Unable to recrypt files/);
+      } finally {
+        if (originalTimeZone === undefined) delete process.env.TZ;
+        else process.env.TZ = originalTimeZone;
+      }
+      var stamp = /^\[ (\d\d)\/(\d\d)\/(\d{4}) (\d\d):(\d\d):(\d\d) \]/.exec(
+        fs.readFileSync(log, "utf8"),
+      );
+      assert.ok(stamp, "the log starts with a timestamp");
+      var loggedAsUtc = Date.UTC(
+        +stamp[3],
+        +stamp[2] - 1,
+        +stamp[1],
+        +stamp[4],
+        +stamp[5],
+        +stamp[6],
+      );
+      var minutesAhead = (loggedAsUtc - Date.now()) / 60000;
+      assert.ok(
+        Math.abs(minutesAhead - 330) < 2,
+        "expected Asia/Kolkata time, got " + minutesAhead + " minutes from UTC",
+      );
+    });
+
     it("lets a stream callback call recrypt() on the same thread", function () {
       var nested = __dirname + "/output/RecryptNestedInCallback.pdf";
       var inner = new muhammara.PDFWStreamForBuffer();

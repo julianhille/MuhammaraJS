@@ -3,6 +3,7 @@
 #include "InputByteArrayStream.h"
 #include "ObjectByteReaderWithPosition.h"
 #include "ObjectByteWriterWithPosition.h"
+#include "PDFDate.h"
 #include "Trace.h"
 
 #include <openssl/crypto.h>
@@ -55,6 +56,10 @@ struct RecryptJob {
   std::string sourcePath;
   std::string targetPath;
   RecryptArguments options;
+  // The local time zone when recryptAsync() was called. The job uses it for
+  // ModDate, the file ID and log timestamps, because reading the time zone on
+  // the pool thread calls getenv("TZ"), which races process.env writes.
+  PDFDate timeZone;
 
   std::vector<IOBasicTypes::Byte> input;
   MemoryOutput output;
@@ -237,6 +242,7 @@ void Execute(napi_env, void *data) {
   trace.SetLogSettings(job->options.log.LogFileLocation,
                        job->options.log.ShouldLog,
                        job->options.log.StartWithBOM);
+  PDFDate::SetThreadTimeZone(job->timeZone);
   if (job->usesStreams) {
     InputByteArrayStream input(job->input.data(), job->input.size());
     job->status = PDFWriter::RecryptPDF(&input, job->options.password,
@@ -249,6 +255,7 @@ void Execute(napi_env, void *data) {
         job->options.log, job->options.creation, job->options.version);
   }
   trace.SetLogSettings(static_cast<IByteWriter *>(nullptr), false);
+  PDFDate::ClearThreadTimeZone();
   // Pool threads outlive every job. Release the random generator and error
   // state RAND_bytes allocated on this thread.
   OPENSSL_thread_stop();
@@ -324,6 +331,7 @@ napi_value RecryptAsync(const CallbackArgs &args) {
     delete job;
     return nullptr;
   }
+  job->timeZone.SetToCurrentTime();
   job->usesStreams = IsObject(env, args[0]);
   if (job->usesStreams) {
     if (!job->writeStream.Reset(env, args[1])) {

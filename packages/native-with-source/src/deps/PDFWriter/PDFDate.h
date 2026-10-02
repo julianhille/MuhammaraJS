@@ -20,6 +20,7 @@
 */
 #pragma once
 
+#include <ctime>
 #include <string>
 
 
@@ -56,6 +57,18 @@ public:
     
 	// set PDF Date to the current time
 	void SetToCurrentTime();
+
+	// MuhammaraJS: a time zone fixed for the calling thread. Reading the time
+	// zone calls getenv("TZ") (mktime() always does, and localtime_r() does on
+	// musl), which races setenv() on other threads, such as process.env writes
+	// on the JavaScript thread. recryptAsync() takes the UTC relation of a date
+	// set on the JavaScript thread and fixes it on its pool thread, so that
+	// SetToCurrentTime() and log timestamps there do not read the time zone.
+	static void SetThreadTimeZone(const PDFDate& inReference);
+	static void ClearThreadTimeZone();
+	// Fills outLocalTime from the thread's fixed time zone. False when the
+	// thread has none, so the caller reads the time zone as usual.
+	static bool GetThreadLocalTime(time_t inTime, tm& outLocalTime);
 
 	int Year;
 	int Month;
