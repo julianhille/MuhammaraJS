@@ -4518,8 +4518,9 @@ declare namespace muhammara {
      * @param options.underline - Text markup annotation.
      * @param options.strikeOut - Text markup annotation.
      * @param options.html - Interpret text as html
-     * @param options.flow - Used to activate/deactivate text flow which is the; defaults to false.
-     * ability to use multiple calls to 'text' to create an overall text box.
+     * @param options.flow - Used to activate/deactivate text flow which is the
+     * ability to use multiple calls to 'text' to create an overall text box. Defaults to
+     * `true` for a call without coordinates and `false` for a call with them.
      * @param options.layout - An identifier of the layout to be associated with given text.
      * @param options.overflow - Called when the text is going to exceed the area
      * of the given text object. Intended for column layouts. Its parameter is (self) where 'self' is the recipe handle so

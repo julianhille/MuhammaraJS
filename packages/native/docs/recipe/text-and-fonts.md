@@ -58,11 +58,14 @@ Pass `flow: true` to build one text box from several `text()` calls, for
 example to style a single word in a sentence. The first call sets the
 position; later calls without coordinates continue the line where the previous
 run ended and wrap together inside the shared text box. A call without
-coordinates continues an open flow even when it omits `flow`, and inherits the
-options of the runs before it.
+coordinates flows unless it passes `flow: false`: it continues the open flow
+and inherits the options of the runs before it, or starts a flow at the text
+cursor.
 
-Flowed text is laid out when the flow ends, so `textBox` alignment,
-justification, and styling apply to the whole box. End it with
+Flowed text is laid out when the flow ends, so `textBox` justification and
+styling apply to the whole box. Set `textBox.textAlign` on the call that
+starts the flow, and later runs inherit it; a run that sets a different
+alignment is placed by its own, so the runs of one line can overlap. End it with
 `flow: false`, which adds that call's text first; `text("", { flow: false })`
 ends it without adding any. Inside a flow, `movedown()` ends the current line.
 Because the flow is drawn when it ends, shapes or images drawn between its
@@ -80,9 +83,8 @@ pdfDoc
   .endPDF();
 ```
 
-A flow that is never ended is not drawn, and a later `text()` call with
-coordinates discards it, so end every flow with `flow: false`
-([#889](https://github.com/julianhille/MuhammaraJS/issues/889)).
+A flow that is not ended explicitly is drawn by the next `text()` call with
+coordinates, `table()`, or `endPage()`.
 
 ## Clip Text To A Fixed-Height Box
 

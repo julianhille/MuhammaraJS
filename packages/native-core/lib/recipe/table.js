@@ -212,6 +212,8 @@ exports.table = function table(x, y, contents, options = {}) {
   if (!Array.isArray(contents) || contents.length === 0) {
     return this;
   }
+  // An open text flow is drawn before the table starts its own text.
+  this._flushTextFlow();
   var columns = tableFields(contents, options).map((field) => {
     var column =
       options.columns &&

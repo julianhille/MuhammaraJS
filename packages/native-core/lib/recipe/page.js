@@ -754,6 +754,8 @@ exports.endPage = function endPage() {
   if (!this.page) {
     return this;
   }
+  // A flow still waiting for its end is drawn on the page it started on.
+  this._flushTextFlow();
 
   if (this.page.endContext) {
     if (this.contextState === PAGE_CONTEXT_STATE.ACTIVE_EDIT)

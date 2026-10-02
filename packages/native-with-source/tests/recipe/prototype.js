@@ -31,6 +31,7 @@ describe("Recipe prototype", function () {
       "_drawObject",
       "_encrypt",
       "_endDictionary",
+      "_flushTextFlow",
       "_getDistance",
       "_getEncryptOptions",
       "_getFont",
