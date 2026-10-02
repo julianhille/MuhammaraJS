@@ -49,8 +49,9 @@ Use `textBox` for wrapping, alignment, padding, and styling. `text` also accepts
 HTML input with `html: true`, but it is a limited markup parser rather
 than a browser layout engine.
 
-Complex-script shaping and right-to-left layout do not have focused coverage and
-are not documented as supported behavior.
+Recipe does not shape complex scripts, so Arabic letters do not join. Hebrew
+and other right-to-left text can be drawn in visual order; see
+[Right-To-Left Text](#right-to-left-text).
 
 ## Clip Text To A Fixed-Height Box
 

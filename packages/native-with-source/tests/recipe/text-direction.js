@@ -54,6 +54,59 @@ function lineRuns(runs, line = 0) {
     .sort((left, right) => left.x - right.x);
 }
 
+/**
+ * The rectangles of a page's annotations, as [x1, y1, x2, y2].
+ *
+ * @param {string} file PDF path.
+ * @returns {number[][]} The rectangles.
+ */
+function annotationRects(file) {
+  const reader = muhammara.createReader(file);
+  const rects = reader
+    .parsePage(0)
+    .getDictionary()
+    .toJSObject()
+    .Annots.toJSArray()
+    .map((reference) =>
+      reader
+        .parseNewObject(reference.getObjectID())
+        .toJSObject()
+        .Rect.toJSArray()
+        .map((value) => value.value),
+    );
+  reader.end();
+  return rects;
+}
+
+/**
+ * Read a page's decoded content stream.
+ *
+ * @param {string} file PDF path.
+ * @returns {string} The content operators, as Latin-1 text.
+ */
+function pageContent(file) {
+  const reader = muhammara.createReader(file);
+  let contents = reader.parsePageDictionary(0).queryObject("Contents");
+  if (contents.getType() === muhammara.ePDFObjectIndirectObjectReference) {
+    contents = reader.parseNewObject(contents.getObjectID());
+  }
+  const streams =
+    contents.getType() === muhammara.ePDFObjectArray
+      ? contents
+          .toJSArray()
+          .map((reference) => reader.parseNewObject(reference.getObjectID()))
+      : [contents];
+  const chunks = [];
+  streams.forEach((stream) => {
+    const streamReader = reader.startReadingFromStream(stream);
+    while (streamReader.notEnded()) {
+      chunks.push(Buffer.from(streamReader.read(65536)));
+    }
+  });
+  reader.end();
+  return Buffer.concat(chunks).toString("latin1");
+}
+
 describe("Recipe text direction", function () {
   this.timeout(15000);
 
@@ -129,52 +182,98 @@ describe("Recipe text direction", function () {
   it("indents justified right-to-left list items from the right", async function () {
     const writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
     const font = writer.getFontForFile(ARIAL);
-    const gaps = {};
-    for (const direction of ["auto", "none"]) {
-      const runs = await drawPage(
-        "text-direction-indent-" + direction,
-        (recipe) => {
-          recipe.text(
-            "<ul><li>אחת שתיים שלוש ארבע חמש שש שבע שמונה</li></ul>",
-            20,
-            20,
-            {
-              font: "arial",
-              size: 12,
-              html: true,
-              direction,
-              textBox: { width: 120, textAlign: "justify" },
-            },
-          );
+    /**
+     * Where a string's glyphs end at 12 points.
+     *
+     * @param {string} text The text.
+     * @returns {number} Its xMax.
+     */
+    const xMax = (text) => font.calculateTextDimensions(text, 12).xMax;
+    const list = "<ul><li>אחת שתיים שלוש ארבע חמש שש שבע שמונה</li></ul>";
+    // The indent of a wrapped list line that is neither reordered nor
+    // justified: the advance of its leading spaces.
+    const plain = lineRuns(
+      await drawPage("text-direction-indent-none", (recipe) => {
+        recipe.text(list, 20, 20, {
+          font: "arial",
+          size: 12,
+          html: true,
+          textBox: { width: 120 },
+        });
+      }),
+      1,
+    )[0].text;
+    const indent = xMax(plain) - xMax(plain.trimStart());
+    assert.ok(indent > 20, plain);
+    const hilites = [];
+    const runs = await drawPage("text-direction-indent-auto", (recipe) => {
+      const rectangle = recipe.rectangle;
+      /**
+       * Record each hilite rectangle's horizontal extent, then draw it.
+       *
+       * @param {number} x Left.
+       * @param {number} y Top.
+       * @param {number} width Width.
+       * @param {number} height Height.
+       * @param {Object} options Rectangle options.
+       * @returns {Recipe} The recipe.
+       */
+      recipe.rectangle = function (x, y, width, height, options) {
+        hilites.push([x, x + width]);
+        return rectangle.call(this, x, y, width, height, options);
+      };
+      recipe.text(list, 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        direction: "auto",
+        hilite: true,
+        highlight: true,
+        textBox: { width: 120, textAlign: "justify" },
+      });
+      // A wrapped line of Latin words keeps its indent on the right too.
+      recipe.text(
+        "<ul><li>שלום עולם abc defgh ijk lmnop qrs tuv wxyz abc def</li></ul>",
+        20,
+        200,
+        {
+          font: "arial",
+          size: 12,
+          html: true,
+          direction: "rtl",
+          textBox: { width: 120, textAlign: "justify" },
         },
       );
-      // The second line is wrapped, indented and justified.
-      const visible = lineRuns(runs, 1).filter((run) => run.text.trim());
-      gaps[direction] = {
-        left:
-          Math.min(
-            ...visible.map(
-              (run) => run.x + font.calculateTextDimensions(run.text, 12).xMin,
-            ),
-          ) - 20,
-        right:
-          140 -
-          Math.max(
-            ...visible.map(
-              (run) =>
-                run.x +
-                font.calculateTextDimensions(run.text.trimEnd(), 12).xMax,
-            ),
-          ),
-      };
-    }
-    assert.ok(gaps.none.left > 30, JSON.stringify(gaps));
-    // Reordered, the indent moves to the right side by the same width.
-    assert.ok(
-      Math.abs(gaps.auto.right - gaps.none.left) < 2,
-      JSON.stringify(gaps),
+    });
+    const lines = [...new Set(runs.map((run) => run.y))];
+    [1, lines.length - 2].forEach((line) => {
+      const visible = lineRuns(runs, line).filter((run) => run.text.trim());
+      // The words fill the line from its left edge to the indent.
+      assert.ok(Math.abs(visible[0].x - 20) < 2, JSON.stringify(visible));
+      const last = visible[visible.length - 1];
+      assert.ok(
+        Math.abs(140 - indent - (last.x + xMax(last.text.trimEnd()))) < 1,
+        JSON.stringify(visible),
+      );
+    });
+    // The text markup of the justified lines ends at the box edge.
+    const rects = annotationRects(
+      path.join(__dirname, "../output/text-direction-indent-auto.pdf"),
     );
-    assert.ok(gaps.auto.left < 2, JSON.stringify(gaps));
+    assert.ok(rects.length > 1, JSON.stringify(rects));
+    rects.forEach((rect) => {
+      assert.ok(rect[2] < 140.01, JSON.stringify(rects));
+    });
+    // The hilite of the justified lines spans their widened gaps: every
+    // rectangle ends where another starts, or at the box edge.
+    assert.ok(hilites.length > 1, JSON.stringify(hilites));
+    hilites.forEach((hilite) => {
+      assert.ok(
+        hilite[1] > 139 ||
+          hilites.some((other) => Math.abs(other[0] - hilite[1]) < 1),
+        JSON.stringify(hilites),
+      );
+    });
   });
 
   it("orders the styled runs of an HTML line as one line", async function () {
@@ -267,6 +366,12 @@ describe("Recipe text direction", function () {
   it("aligns a reordered HTML line by its drawn width, with its spaces", async function () {
     const writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
     const font = writer.getFontForFile(ARIAL);
+    /**
+     * Where a drawn run's glyphs end, without its trailing spaces.
+     *
+     * @param {{text: string, x: number}} run A drawn run.
+     * @returns {number} The x of its right glyph edge.
+     */
     const inkRight = (run) =>
       run.x + font.calculateTextDimensions(run.text.trim(), 16).xMax;
     const runs = await drawPage("text-direction-html-align", (recipe) => {
@@ -376,7 +481,11 @@ describe("Recipe text direction", function () {
       Math.abs(annotations[0][0] - left) < 1,
       JSON.stringify(annotations),
     );
-    assert.ok(annotations[0][2] <= 381, JSON.stringify(annotations));
+    // The one annotation spans every piece, to the box's right edge.
+    assert.ok(
+      Math.abs(annotations[0][2] - 380) < 0.05,
+      JSON.stringify(annotations),
+    );
   });
 
   it("keeps an HTML paragraph's direction on its wrapped lines", async function () {
@@ -430,6 +539,16 @@ describe("Recipe text direction", function () {
     const rectangles = [];
     await drawPage("text-direction-hilite", (recipe) => {
       const rectangle = recipe.rectangle;
+      /**
+       * Record each hilite rectangle's horizontal extent, then draw it.
+       *
+       * @param {number} x Left.
+       * @param {number} y Top.
+       * @param {number} width Width.
+       * @param {number} height Height.
+       * @param {Object} options Rectangle options.
+       * @returns {Recipe} The recipe.
+       */
       recipe.rectangle = function (x, y, width, height, options) {
         rectangles.push({ x, width });
         return rectangle.call(this, x, y, width, height, options);
@@ -448,6 +567,108 @@ describe("Recipe text direction", function () {
       Math.abs(rectangles[0].x + rectangles[0].width - 300) < 1,
       JSON.stringify(rectangles),
     );
+  });
+
+  it("gives flowed runs the direction of the paragraph they continue", async function () {
+    const lines = {};
+    for (const flow of [true, false]) {
+      const runs = await drawPage(
+        "text-direction-flow-paragraph-" + flow,
+        (recipe) => {
+          const options = {
+            font: "arial",
+            size: 12,
+            direction: "auto",
+            textBox: { width: 90 },
+          };
+          if (flow) {
+            recipe
+              .text("Hello there ", 20, 20, { ...options, flow: true })
+              .text("שלום abc עולם def", options)
+              .text("", { flow: false });
+          } else {
+            recipe.text("Hello there שלום abc עולם def", 20, 20, options);
+          }
+        },
+      );
+      lines[flow] = lineRuns(runs, 1).map((run) => run.text.trim());
+    }
+    // The paragraph starts with a Latin word, so it runs left to right.
+    assert.deepEqual(lines[true], ["abc םלוע def"]);
+    assert.deepEqual(lines[true], lines[false]);
+  });
+
+  it("lets a flowed run without letters take the direction of the runs after it", async function () {
+    const lines = {};
+    for (const flow of [true, false]) {
+      const runs = await drawPage(
+        "text-direction-flow-number-" + flow,
+        (recipe) => {
+          const options = {
+            font: "arial",
+            size: 12,
+            direction: "auto",
+            textBox: { width: 200 },
+          };
+          if (flow) {
+            recipe
+              .text("(1) ", 20, 20, { ...options, flow: true })
+              .text("שלום עולם", options)
+              .text("", { flow: false });
+          } else {
+            recipe.text("(1) שלום עולם", 20, 20, options);
+          }
+        },
+      );
+      lines[flow] = lineRuns(runs)
+        .map((run) => run.text.trim())
+        .join(" ");
+    }
+    assert.equal(lines[true], "םלוע םולש (1)");
+    assert.equal(lines[true], lines[false]);
+  });
+
+  it("keeps the hilite of a clipped right-to-left line inside the box", async function () {
+    // Native draws hilites outside the clip, so it limits them to the box.
+    const hilites = { rtl: [], none: [] };
+    for (const direction of ["rtl", "none"]) {
+      await drawPage("text-direction-clip-hilite-" + direction, (recipe) => {
+        const rectangle = recipe.rectangle;
+        /**
+         * Record each hilite rectangle's horizontal extent, then draw it.
+         *
+         * @param {number} x Left.
+         * @param {number} y Top.
+         * @param {number} width Width.
+         * @param {number} height Height.
+         * @param {Object} options Rectangle options.
+         * @returns {Recipe} The recipe.
+         */
+        recipe.rectangle = function (x, y, width, height, options) {
+          hilites[direction].push([x, x + width]);
+          return rectangle.call(this, x, y, width, height, options);
+        };
+        recipe.text(
+          direction === "rtl"
+            ? "<p>אאאאאאאאאאאאא<u>בבבבבבבבבבבבבבבבבבב</u>גגגגגגגגגגגגגגג</p>"
+            : "Supercalifragilisticexpialidocious",
+          20,
+          20,
+          {
+            font: "arial",
+            size: 12,
+            html: direction === "rtl",
+            direction,
+            hilite: true,
+            textBox: { width: 60, wrap: "clip", textAlign: "center" },
+          },
+        );
+      });
+    }
+    assert.deepEqual(hilites.rtl, [[20, 80]]);
+    // Text that is not reordered keeps its hilite as before.
+    assert.equal(hilites.none.length, 1);
+    assert.ok(hilites.none[0][0] < 20, JSON.stringify(hilites.none));
   });
 
   it("ends the last line of a flowed justified right-to-left paragraph at the right edge", async function () {
@@ -501,6 +722,12 @@ describe("Recipe text direction", function () {
     const font = muhammara
       .createWriter(new muhammara.PDFWStreamForBuffer())
       .getFontForFile(ARIAL);
+    /**
+     * Where a drawn run's glyphs end, without its trailing spaces.
+     *
+     * @param {{text: string, x: number}} run A drawn run.
+     * @returns {number} The x of its right glyph edge.
+     */
     const inkRight = (run) =>
       run.x + font.calculateTextDimensions(run.text.trim(), 12).xMax;
     const runs = await drawPage("text-direction-clip-padding", (recipe) => {
@@ -537,34 +764,264 @@ describe("Recipe text direction", function () {
     );
     const recipe = new Recipe("new", output);
     recipe.registerFont("arial", ARIAL);
+    const hilites = [];
+    const rectangle = recipe.rectangle;
+    /**
+     * Record each hilite rectangle's horizontal extent, then draw it.
+     *
+     * @param {number} x Left.
+     * @param {number} y Top.
+     * @param {number} width Width.
+     * @param {number} height Height.
+     * @param {Object} options Rectangle options.
+     * @returns {Recipe} The recipe.
+     */
+    recipe.rectangle = function (x, y, width, height, options) {
+      hilites.push([x, x + width]);
+      return rectangle.call(this, x, y, width, height, options);
+    };
     recipe.createPage(400, 400).text("שלום עולם זה טקסט ארוך בעברית", 50, 20, {
       font: "arial",
       size: 12,
       direction: "rtl",
       underline: true,
+      hilite: true,
       link: "https://example.com",
       textBox: { width: 150, wrap: "clip" },
     });
     await new Promise((resolve) => recipe.endPage().endPDF(resolve));
-    const reader = muhammara.createReader(output);
-    const rects = reader
-      .parsePage(0)
-      .getDictionary()
-      .toJSObject()
-      .Annots.toJSArray()
-      .map((reference) =>
-        reader
-          .parseNewObject(reference.getObjectID())
-          .toJSObject()
-          .Rect.toJSArray()
-          .map((value) => value.value),
-      );
-    reader.end();
+    const rects = annotationRects(output);
     assert.equal(rects.length, 2);
     // The text fills the box from its left edge, 50, to its right edge, 200.
     rects.forEach((rect) => {
       assert.ok(Math.abs(rect[0] - 50) < 1, JSON.stringify(rects));
       assert.ok(rect[2] <= 200.5 && rect[2] > 190, JSON.stringify(rects));
+    });
+    // The hilite covers the visible part of the line, the whole box; the
+    // drawn text overflows on the left.
+    const start = Math.min(...pageText(output).map((run) => run.x));
+    assert.ok(start < 50, String(start));
+    assert.equal(hilites.length, 1);
+    assert.ok(hilites[0][0] < 50.5, JSON.stringify(hilites));
+    assert.ok(hilites[0][1] > 195, JSON.stringify(hilites));
+  });
+
+  it("keeps the hilite and links of right-to-left lines inside the box", async function () {
+    const output = path.join(
+      __dirname,
+      "../output/text-direction-link-edge.pdf",
+    );
+    const recipe = new Recipe("new", output);
+    recipe.registerFont("arial", ARIAL);
+    const hilites = [];
+    const rectangle = recipe.rectangle;
+    /**
+     * Record each hilite rectangle's horizontal extent, then draw it.
+     *
+     * @param {number} x Left.
+     * @param {number} y Top.
+     * @param {number} width Width.
+     * @param {number} height Height.
+     * @param {Object} options Rectangle options.
+     * @returns {Recipe} The recipe.
+     */
+    recipe.rectangle = function (x, y, width, height, options) {
+      hilites.push([x, x + width]);
+      return rectangle.call(this, x, y, width, height, options);
+    };
+    const options = {
+      font: "arial",
+      size: 14,
+      direction: "rtl",
+      hilite: true,
+      link: "https://example.com",
+    };
+    recipe
+      .createPage(400, 400)
+      .text("שלום Hello עולם", 20, 20, {
+        ...options,
+        textBox: { width: 300, textAlign: "right" },
+      })
+      .text("שלום עולם טוב מאוד ונהדר מאוד היום", 20, 100, {
+        ...options,
+        textBox: { width: 160, textAlign: "justify" },
+      });
+    await new Promise((resolve) => recipe.endPage().endPDF(resolve));
+    const links = annotationRects(output).sort(
+      (a, b) => a[1] - b[1] || a[0] - b[0],
+    );
+    // The right-aligned line ends at its box edge, 320.
+    assert.ok(Math.abs(hilites[0][1] - 320) < 0.05, JSON.stringify(hilites));
+    const right = links.find((rect) => rect[2] > 200);
+    assert.ok(Math.abs(right[2] - 320) < 0.05, JSON.stringify(links));
+    // The justified line's links cover the gaps between its words and end
+    // at its box edge, 180.
+    const lineBottom = links.find((rect) => Math.abs(rect[0] - 20) < 0.5)[1];
+    const justified = links
+      .filter((rect) => rect[1] === lineBottom)
+      .sort((a, b) => a[0] - b[0]);
+    assert.ok(justified.length > 1, JSON.stringify(links));
+    justified.slice(1).forEach((rect, index) => {
+      assert.ok(
+        Math.abs(rect[0] - justified[index][2]) < 0.5,
+        JSON.stringify(justified),
+      );
+    });
+    assert.ok(
+      Math.abs(justified[justified.length - 1][2] - 180) < 0.05,
+      JSON.stringify(justified),
+    );
+  });
+
+  it("keeps right-to-left pieces and their hilite on the line", async function () {
+    const font = muhammara
+      .createWriter(new muhammara.PDFWStreamForBuffer())
+      .getFontForFile(ARIAL);
+    const hilites = {};
+    const draws = {
+      // One long word on a justified line starts at the right edge, 130.
+      oneWord: [
+        "אבגדהוזחטיכלמנסע פצקרשת אבג",
+        { textAlign: "justify", width: 110 },
+      ],
+      // The hilites of styled runs meet without overlapping.
+      runs: ["<p>שלום <u>עולם</u> יפה</p>", { textAlign: "right", width: 300 }],
+      // The hilite of a list line covers its whole indent, up to 140.
+      indent: [
+        "<ul><li>אחת שתיים שלוש ארבע חמש שש שבע</li></ul>",
+        { textAlign: "right", width: 120 },
+      ],
+      // A trimmed line and a line of only marks and spaces stay in the box.
+      trim: [
+        "שלום עולם זהו טקסט ארוך בעברית",
+        { textAlign: "right", width: 100, wrap: "trim" },
+      ],
+      marks: ["\u200f  \u200f", { textAlign: "right", width: 100 }],
+    };
+    const runs = {};
+    for (const name of Object.keys(draws)) {
+      const [text, box] = draws[name];
+      hilites[name] = [];
+      runs[name] = await drawPage("text-direction-pieces-" + name, (recipe) => {
+        const rectangle = recipe.rectangle;
+        /**
+         * Record each hilite rectangle's horizontal extent, then draw it.
+         *
+         * @param {number} x Left.
+         * @param {number} y Top.
+         * @param {number} width Width.
+         * @param {number} height Height.
+         * @param {Object} options Rectangle options.
+         * @returns {Recipe} The recipe.
+         */
+        recipe.rectangle = function (x, y, width, height, options) {
+          hilites[name].push([x, x + width]);
+          return rectangle.call(this, x, y, width, height, options);
+        };
+        recipe.text(text, 20, 20, {
+          font: "arial",
+          size: 12,
+          html: text.startsWith("<"),
+          direction: "rtl",
+          hilite: name !== "oneWord",
+          textBox: box,
+        });
+      });
+    }
+    const first = lineRuns(runs.oneWord)[0];
+    assert.ok(
+      Math.abs(
+        first.x + font.calculateTextDimensions(first.text, 12).xMax - 130,
+      ) < 0.05,
+      JSON.stringify(first),
+    );
+    const pieces = hilites.runs.slice().sort((a, b) => a[0] - b[0]);
+    assert.equal(pieces.length, 3);
+    pieces.slice(1).forEach((piece, index) => {
+      assert.ok(
+        Math.abs(piece[0] - pieces[index][1]) < 0.05,
+        JSON.stringify(pieces),
+      );
+    });
+    assert.ok(Math.abs(pieces[2][1] - 320) < 0.05, JSON.stringify(pieces));
+    assert.ok(
+      hilites.indent.filter((hilite) => Math.abs(hilite[1] - 140) < 0.05)
+        .length >= 3,
+      JSON.stringify(hilites.indent),
+    );
+    ["trim", "marks"].forEach((name) => {
+      assert.ok(hilites[name].length > 0, name);
+      hilites[name].forEach((hilite) => {
+        assert.ok(
+          hilite[0] >= 20 && hilite[1] < 120.05,
+          name + JSON.stringify(hilites[name]),
+        );
+      });
+    });
+  });
+
+  it("keeps the underline of a reordered run under its glyphs", async function () {
+    const font = muhammara
+      .createWriter(new muhammara.PDFWStreamForBuffer())
+      .getFontForFile(ARIAL);
+    const output = path.join(
+      __dirname,
+      "../output/text-direction-underline.pdf",
+    );
+    const runs = await drawPage("text-direction-underline", (recipe) => {
+      recipe.text("<p>שלום <u>עולם</u> יפה</p>", 20, 20, {
+        font: "arial",
+        size: 12,
+        html: true,
+        direction: "rtl",
+        textBox: { width: 300, textAlign: "right" },
+      });
+    });
+    const word = runs.find((run) => run.text.trim() === "םלוע");
+    const [, start, end] = /([\d.]+) [\d.]+ m\s+([\d.]+) [\d.]+ l/.exec(
+      pageContent(output),
+    );
+    assert.ok(Math.abs(Number(start) - word.x) < 0.05, start);
+    assert.ok(
+      Math.abs(
+        Number(end) - word.x - font.calculateTextDimensions("םלוע", 12).xMax,
+      ) < 0.05,
+      end,
+    );
+  });
+
+  it("draws nothing for a line of only direction marks", async function () {
+    const runs = await drawPage("text-direction-mark-only", (recipe) => {
+      recipe.text("\u200f", 20, 20, {
+        font: "arial",
+        size: 12,
+        direction: "rtl",
+      });
+      recipe.text("שלום\n\u200f", 20, 60, {
+        font: "arial",
+        size: 12,
+        direction: "rtl",
+      });
+    });
+    assert.deepEqual(
+      runs.map((run) => run.text).filter((text) => text.trim() !== ""),
+      ["םולש"],
+    );
+  });
+
+  it("marks only the word of a justified right-to-left line without gaps", async function () {
+    const output = path.join(__dirname, "../output/text-direction-no-gaps.pdf");
+    await drawPage("text-direction-no-gaps", (recipe) => {
+      recipe.text("אאא בבבבבבבבבבבבבבבבבבבבב גג", 20, 20, {
+        font: "arial",
+        size: 12,
+        direction: "rtl",
+        highlight: true,
+        textBox: { width: 100, textAlign: "justify" },
+      });
+    });
+    annotationRects(output).forEach((rect) => {
+      assert.ok(rect[2] < 120.05, JSON.stringify(rect));
     });
   });
 
@@ -576,6 +1033,16 @@ describe("Recipe text direction", function () {
     ]) {
       await drawPage("text-direction-table-" + heights.length, (recipe) => {
         const rectangle = recipe.rectangle;
+        /**
+         * Record each hilite rectangle's horizontal extent, then draw it.
+         *
+         * @param {number} x Left.
+         * @param {number} y Top.
+         * @param {number} width Width.
+         * @param {number} height Height.
+         * @param {Object} options Rectangle options.
+         * @returns {Recipe} The recipe.
+         */
         recipe.rectangle = function (x, y, width, height, options) {
           heights.push(height);
           return rectangle.call(this, x, y, width, height, options);

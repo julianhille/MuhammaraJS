@@ -196,6 +196,9 @@ var framedImage: muhammara.Recipe.ImageOptions = {
 recipe.image("document.pdf", 72, 300, framedImage);
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
+recipe.textDimensions("שלום", {
+  direction: muhammara.Recipe.TextDirection.AUTO,
+}).width;
 var pages: number | undefined = recipe.metadata.pages;
 var pageCount: number | undefined = recipe.metadata.pageCount;
 recipe.createPage(595, 842).rotate(90).endPage();

@@ -10,8 +10,9 @@ Use `q()` and `Q()` to scope graphics state and `cm()` for transformations.
 is required before operations that create image objects or attach low-level page
 links while a page context is active.
 
-Text options use `size`, `font`, `colorspace`, and `color`; opacity is controlled
-with `setOpacity`. Primitive options include fill or stroke type, color, and
+Text options use `size`, `font`, `colorspace`, `color`, `underline`, and
+`direction`, which draws right-to-left text such as Hebrew in visual order;
+opacity is controlled with `setOpacity`. Primitive options include fill or stroke type, color, and
 line width. Raw operators cover path construction and painting, graphics state,
 color, clipping, text, and XObject placement.
 

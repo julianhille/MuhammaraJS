@@ -709,6 +709,7 @@ async function usesLowLevelSurface() {
   var textWidth: number = recipe.textDimensions("text").width;
   recipe.textDimensions("text", { size: 12 }).width;
   recipe.textDimensions("text", { fontSize: 12 }).width;
+  recipe.textDimensions("שלום", { direction: TextDirection.AUTO }).width;
   void textWidth;
   recipe.pageInfo(1)?.mediaBox[3];
   var pageInfo: RecipePageInfo | null = recipe.pageInfo(1);

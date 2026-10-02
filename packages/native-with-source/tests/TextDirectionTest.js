@@ -322,17 +322,35 @@ describe("TextDirection", function () {
       );
       var modifier = muhammara.createWriterToModify(output, {
         modifiedFilePath: modified,
+        compress: false,
       });
       var pageModifier = new muhammara.PDFPageModifier(modifier, 0);
-      // Page edits draw into a form, through the same reordering writeText.
-      var form = modifier.createFormXObject(0, 0, 10, 10);
-      assert.strictEqual(
-        pageModifier.startContext().getContext().writeText,
-        form.getContentContext().writeText,
-      );
-      modifier.endFormXObject(form);
+      var modifiedFont = modifier.getFontForFile(ARIAL);
+      // Logical text written with "auto" draws like visual text written as
+      // is, the default.
+      pageModifier
+        .startContext()
+        .getContext()
+        .writeText("שלום עולם", 10, 100, {
+          font: modifiedFont,
+          size: 12,
+          direction: "auto",
+        })
+        .writeText("םלוע םולש", 10, 80, { font: modifiedFont, size: 12 })
+        .writeText("שלום עולם", 10, 60, { font: modifiedFont, size: 12 });
       pageModifier.endContext().writePage();
       modifier.end();
+      var shown = Array.from(
+        require("fs")
+          .readFileSync(modified, "latin1")
+          .matchAll(/(<[0-9A-F]+>) Tj/g),
+        function (match) {
+          return match[1];
+        },
+      );
+      assert.equal(shown.length, 3);
+      assert.equal(shown[0], shown[1]);
+      assert.notEqual(shown[0], shown[2]);
     });
 
     it("rejects an unknown direction before writing", function () {
@@ -349,10 +367,18 @@ describe("TextDirection", function () {
 
     it("refuses an addon that does not export its content contexts", function () {
       var createMuhammara = require("@muhammara/native-core").createMuhammara;
+      /** A reader class stub. */
       var PDFReader = function () {};
+      /**
+       * A text extraction stub.
+       *
+       * @returns {void}
+       */
       PDFReader.prototype.extractPageText = function () {};
+      /** A writer class stub. */
+      var PDFWriter = function () {};
       assert.throws(function () {
-        createMuhammara({ PDFWriter: function () {}, PDFReader: PDFReader });
+        createMuhammara({ PDFWriter: PDFWriter, PDFReader: PDFReader });
       }, "does not export PageContentContext");
     });
   });

@@ -120,6 +120,10 @@ function bidiText(text) {
   return result;
 }
 
+// The bidirectional classes of strong right-to-left letters, as bidi-js
+// names them.
+var RIGHT_TO_LEFT_CLASSES = Object.freeze(["R", "AL"]);
+
 /**
  * Whether a character is a strong right-to-left letter, whose marks fonts
  * place before it in a right-to-left run.
@@ -132,7 +136,7 @@ function isRightToLeftLetter(text, index) {
   var type = getBidi().getBidiCharTypeName(
     String.fromCodePoint(text.codePointAt(index)),
   );
-  return type === "R" || type === "AL";
+  return RIGHT_TO_LEFT_CLASSES.indexOf(type) !== -1;
 }
 
 /**
@@ -477,8 +481,9 @@ function drawnText(text, direction) {
  * "auto" takes the direction of the line's first strong letter.
  * @returns {Array<{run: number, text: string, indent: (boolean|undefined)}>|null}
  * The segments, with the index of the run each one belongs to, or null when
- * the line keeps its logical order: for "none", for left-to-right text, and
- * for a line holding a paragraph break.
+ * the line keeps its logical order: for "none", for left-to-right text, for
+ * a line of only whitespace and formatting characters, and for a line
+ * holding a paragraph break.
  * @throws {TypeError} If `direction` is not a `TextDirection` value.
  */
 function visualRuns(texts, direction) {
@@ -541,8 +546,15 @@ function visualRuns(texts, direction) {
     indent.push({ index: index, character: line[index] });
   }
   indent = group(indent, true);
-  // A line of nothing but formatting characters keeps its order.
-  if (!segments.length) return null;
+  // A line of nothing but formatting characters and whitespace keeps its
+  // order.
+  if (
+    !segments.some(function (segment) {
+      return segment.text.trim() !== "";
+    })
+  ) {
+    return null;
+  }
   return visual.rtl ? segments.concat(indent) : indent.concat(segments);
 }
 

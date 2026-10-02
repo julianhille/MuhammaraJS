@@ -15,7 +15,9 @@ Bidirectional Algorithm:
   order and are neither drawn nor measured.
 
 Without a `direction`, text is drawn exactly as given, as in earlier versions.
-Text without right-to-left characters draws the same either way.
+With `"auto"` or `"ltr"`, text without right-to-left characters draws the same
+as without; `"rtl"` still moves punctuation and spaces at its edges to the
+other end, so `"Hello world!"` draws as `"!Hello world"`.
 
 Use a font that has Hebrew glyphs, such as Arial or Noto Sans Hebrew, and
 register its bytes; the bundled Roboto default has none.
@@ -99,7 +101,7 @@ value, exported as `TextDirection` and also available as
 | Value    | Paragraph direction                                                            |
 | -------- | ------------------------------------------------------------------------------ |
 | `"none"` | Default. No reordering: the text is drawn exactly as given.                    |
-| `"auto"` | Each paragraph takes the direction of its first Hebrew or Latin letter.        |
+| `"auto"` | Each paragraph takes the direction of its first strong letter.                 |
 | `"rtl"`  | Right to left, for Hebrew paragraphs that start with a Latin word or a number. |
 | `"ltr"`  | Left to right; Hebrew words inside are still reordered.                        |
 

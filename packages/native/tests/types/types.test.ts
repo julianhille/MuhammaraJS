@@ -144,6 +144,9 @@ var margins: Required<muhammara.Recipe.RecipeMargins> = recipe.margins();
 var title: string = recipe.getPageInfo().title;
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;
+recipe.textDimensions("שלום", {
+  direction: muhammara.Recipe.TextDirection.AUTO,
+}).width;
 recipe
   .text("Default size", 72, 72, { link: "https://text.example.com" })
   .text("Explicit size", 72, 100, { size: 12 })

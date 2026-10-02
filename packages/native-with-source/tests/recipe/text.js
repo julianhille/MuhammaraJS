@@ -782,16 +782,87 @@ describe("Text", () => {
     const recipe = new Recipe("new", output);
     recipe
       .createPage(400, 400)
-      .text("one\ntwo\r\nthree\rfour\u2028five\u2029six", 20, 20, {
-        textBox: { width: 300 },
-      })
+      .text(
+        "one\ntwo\r\nthree\rfour\u2028five\u2029six\u000bseven\feight\u0085nine",
+        20,
+        20,
+        {
+          textBox: { width: 300 },
+        },
+      )
       .endPage()
       .endPDF(() => {
         const reader = muhammara.createReader(output);
-        const lines = reader.extractPageText(0).map((element) => element.text);
+        // Native still draws U+0085 itself at the end of its line.
+        const lines = reader
+          .extractPageText(0)
+          .map((element) => element.text.replace(/[\u0085\ufffd]$/, ""));
         reader.end();
-        assert.deepEqual(lines, ["one", "two", "three", "four", "five", "six"]);
+        assert.deepEqual(lines, [
+          "one",
+          "two",
+          "three",
+          "four",
+          "five",
+          "six",
+          "seven",
+          "eight",
+          "nine",
+        ]);
         done();
       });
+  });
+
+  it("keeps non-breaking spaces inside justified words", async function () {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const output = path.join(__dirname, "../output/text-justify-nbsp.pdf");
+    const recipe = new Recipe("new", output);
+    recipe
+      .createPage(400, 400)
+      .text("aa bb\u00a0cc dd ee ff gg hh ii jj kk ll mm nn", 20, 20, {
+        font: "Arial",
+        size: 12,
+        textBox: { width: 100, textAlign: "justify" },
+      });
+    await new Promise((resolve) => recipe.endPage().endPDF(resolve));
+    const reader = muhammara.createReader(output);
+    const runs = reader.extractPageText(0).map((element) => element.text);
+    reader.end();
+    assert.ok(
+      runs.some((text) => text.trim() === "bb\u00a0cc"),
+      JSON.stringify(runs),
+    );
+  });
+
+  it("ends the text markup of a right-aligned HTML line at the box edge", async function () {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const output = path.join(__dirname, "../output/text-html-markup-edge.pdf");
+    const recipe = new Recipe("new", output);
+    recipe.createPage(400, 400).text("<p>WqWq Hello WqWq</p>", 20, 20, {
+      font: "Arial",
+      size: 14,
+      html: true,
+      underline: true,
+      textBox: { width: 300, textAlign: "right" },
+    });
+    await new Promise((resolve) => recipe.endPage().endPDF(resolve));
+    const reader = muhammara.createReader(output);
+    const rects = reader
+      .parsePage(0)
+      .getDictionary()
+      .toJSObject()
+      .Annots.toJSArray()
+      .map((reference) =>
+        reader
+          .parseNewObject(reference.getObjectID())
+          .toJSObject()
+          .Rect.toJSArray()
+          .map((value) => value.value),
+      );
+    reader.end();
+    assert.equal(rects.length, 1);
+    assert.ok(Math.abs(rects[0][2] - 320) < 0.05, JSON.stringify(rects));
   });
 });

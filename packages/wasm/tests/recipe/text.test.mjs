@@ -139,9 +139,14 @@ describe("Recipe text", function () {
     var Recipe = await getRecipe();
     var pdf = new Recipe()
       .createPage(400, 400)
-      .text("one\ntwo\r\nthree\rfour\u2028five\u2029six", 20, 20, {
-        textBox: { width: 300 },
-      })
+      .text(
+        "one\ntwo\r\nthree\rfour\u2028five\u2029six\u000bseven\feight\u0085nine",
+        20,
+        20,
+        {
+          textBox: { width: 300 },
+        },
+      )
       .endPage()
       .endPDF();
     writeOutput("text-line-breaks", pdf);
@@ -149,6 +154,82 @@ describe("Recipe text", function () {
     var reader = muhammara.createReader(pdf);
     var lines = reader.extractPageText(0).map((element) => element.text);
     reader.end();
-    assert.deepEqual(lines, ["one", "two", "three", "four", "five", "six"]);
+    assert.deepEqual(lines, [
+      "one",
+      "two",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+    ]);
+  });
+
+  it("keeps non-breaking spaces inside justified words", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    muhammara.registerFont(
+      "arial",
+      new Uint8Array(await readFile("tests/TestMaterials/fonts/arial.ttf")),
+    );
+    var pdf = new Recipe()
+      .createPage(400, 400)
+      .text("aa bb\u00a0cc dd ee ff gg hh ii jj kk ll mm nn", 20, 20, {
+        font: "arial",
+        size: 12,
+        textBox: { width: 100, textAlign: "justify" },
+      })
+      .endPage()
+      .endPDF();
+    writeOutput("text-justify-nbsp", pdf);
+    var reader = muhammara.createReader(pdf);
+    var runs = reader.extractPageText(0).map((element) => element.text);
+    reader.end();
+    assert.ok(
+      runs.some((text) => text.trim() === "bb\u00a0cc"),
+      JSON.stringify(runs),
+    );
+  });
+
+  it("ends the text markup of a right-aligned HTML line at the box edge", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    muhammara.registerFont(
+      "arial",
+      new Uint8Array(await readFile("tests/TestMaterials/fonts/arial.ttf")),
+    );
+    var pdf = new Recipe()
+      .createPage(400, 400)
+      .text("<p>WqWq Hello WqWq</p>", 20, 20, {
+        font: "arial",
+        size: 14,
+        html: true,
+        underline: true,
+        textBox: { width: 300, textAlign: "right" },
+      })
+      .endPage()
+      .endPDF();
+    writeOutput("text-html-markup-edge", pdf);
+    var reader = muhammara.createReader(pdf);
+    try {
+      var rects = reader
+        .parsePage(0)
+        .getDictionary()
+        .toJSObject()
+        .Annots.toJSArray()
+        .map((reference) =>
+          reader
+            .parseNewObject(reference.getObjectID())
+            .toJSObject()
+            .Rect.toJSArray()
+            .map((value) => value.value),
+        );
+    } finally {
+      reader.end();
+    }
+    assert.equal(rects.length, 1);
+    assert.ok(Math.abs(rects[0][2] - 320) < 0.05, JSON.stringify(rects));
   });
 });

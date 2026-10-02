@@ -23,8 +23,8 @@ expression, upstream source, and the file that ships it), followed by each
 component's license and copyright notice in full. A license used by several
 components is repeated for each one. The table also covers the bundled Roboto
 Regular font (`fonts/Roboto-Regular.js`), the Adobe Glyph List table
-(`lib/glyph-list.js`), and bidi-js (`lib/vendor/bidi-js.js`), which ship in JavaScript rather than in the `.wasm`, so
-one text covers the whole package.
+(`lib/glyph-list.js`), and bidi-js (`lib/vendor/bidi-js.js`), which ship in
+JavaScript rather than in the `.wasm`, so one text covers the whole package.
 
 ## Read The Notices In Code
 

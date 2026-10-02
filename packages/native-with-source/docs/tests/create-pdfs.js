@@ -182,6 +182,12 @@ describe("Documentation examples", function () {
   });
 
   it("writes right-to-left text", function () {
+    /**
+     * Read the text runs of a PDF's first page with their x.
+     *
+     * @param {string} inputPath PDF path.
+     * @returns {Array<{text: string, x: number}>} The runs.
+     */
     var readText = function (inputPath) {
       var reader = muhammara.createReader(inputPath);
       try {
