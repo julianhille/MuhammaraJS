@@ -109,5 +109,28 @@ var muhammara = await createMuhammaraWasm({
   under `connect-src` and allow compilation with `'wasm-unsafe-eval'` in
   `script-src`.
 
+## Handle A Binary That Fails To Load
+
+When the binary cannot be fetched, read, compiled, or instantiated, the package
+fails the way Emscripten does. It calls an `onAbort(reason)` option with the
+underlying error, logs the reason through a `printErr(message)` option, or
+`console.error` when none is given, and rejects with a
+`WebAssembly.RuntimeError` whose message starts with `Aborted(`:
+
+```javascript
+try {
+  var muhammara = await createMuhammaraWasm({
+    locateFile: () => wasmUrl,
+    onAbort: (reason) => reportLoadFailure(reason),
+  });
+} catch (error) {
+  // error instanceof WebAssembly.RuntimeError
+  // error.message: "Aborted(Error: 404 : https://...). Build with ..."
+}
+```
+
+A failed streaming compile, such as one caused by a wrong MIME type, is logged
+through `printErr` as well before the package downloads the file again.
+
 See [Browser Setup](../browser-setup.md) for installing the package and the
 [API Reference](../reference.md) for the `MuhammaraWasmOptions` declaration.
