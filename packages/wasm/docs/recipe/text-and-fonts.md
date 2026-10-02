@@ -163,3 +163,10 @@ var pdfBytes = new Recipe()
 
 console.log(remainder, pdfBytes.byteLength);
 ```
+
+## Right-To-Left Text
+
+Pass `direction: "auto"` to draw Hebrew in visual order. Recipe wraps each
+paragraph in logical order and reorders every line on its own; set
+`textAlign: "right"` for right-to-left paragraphs. See
+[Write Right-to-Left Text](../how-to/write-right-to-left-text.md).

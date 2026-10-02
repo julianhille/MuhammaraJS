@@ -79,10 +79,12 @@ new muhammara.Recipe("new", "recipe-hebrew.pdf")
   a right-to-left paragraph ends at the right edge.
 - An indent, such as that of a list item, stays at the start of the line:
   the right edge of a right-to-left line.
+- With `wrap: "clip"`, a right-to-left line that overflows its box keeps
+  its start and loses its end, on the left.
 - A line made of several styled runs, from HTML or from flowed `text()`
   calls, is reordered as one line, so `<p>שלום <b>עולם</b></p>` reads in the
-  right order. With `"auto"`, such a line takes the direction of its own first
-  strong letter.
+  right order. Every line of an HTML paragraph takes that paragraph's
+  direction, even a line inside one styled run.
 - `textDimensions()` takes the same `direction` option and then leaves out
   invisible direction marks, as `text()` does.
 
@@ -115,9 +117,6 @@ reversal and pass `"auto"`; doing both reverses the text twice.
   such as Arial and Noto Sans Hebrew, expect them, but they are not positioned
   by the font's shaping rules. In fonts that rely on those rules some points
   sit slightly off.
-- A Recipe text box with `wrap: "clip"` cuts lines at its edges. A
-  right-to-left line that overflows a left-aligned box loses its start on the
-  right; set `textAlign: "right"` so it loses its end instead.
 - The PDF stores the text in visual order, so copying or extracting it, for
   example with `extractPageText()`, returns the visual order. `replaceText()`
   also matches and writes text in the order it is stored.

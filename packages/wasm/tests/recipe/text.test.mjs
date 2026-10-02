@@ -79,6 +79,27 @@ describe("Recipe text", function () {
     assert.ok(pdf.length > 0);
   });
 
+  it("drops the leading spaces of a justified line", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var firstWords = ["   ", ""].map((prefix) => {
+      var pdf = new Recipe()
+        .createPage(400, 400)
+        .text(prefix + "leading spaces here and more words to wrap", 20, 20, {
+          font: "arial",
+          size: 12,
+          textBox: { width: 200, textAlign: "justify" },
+        })
+        .endPage()
+        .endPDF();
+      var reader = muhammara.createReader(pdf);
+      var runs = reader.extractPageText(0);
+      reader.end();
+      return { text: runs[0].text, x: runs[0].textMatrix[4] };
+    });
+    assert.deepEqual(firstWords[0], firstWords[1]);
+  });
+
   it("starts a new line at every mandatory line break", async function () {
     var Recipe = await getRecipe();
     var pdf = new Recipe()

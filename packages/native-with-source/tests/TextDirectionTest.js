@@ -71,9 +71,48 @@ describe("TextDirection", function () {
       ["whitespace at both ends", "  שלום ", "םולש   "],
       ["whitespace in a left-to-right line", "  abc שלום ", "  abc םולש "],
       ["left-to-right text", "Hello, world.", "Hello, world."],
+      [
+        "an astral mark on its letter",
+        "\u05d0\u{101fd}\u05d1",
+        "\u05d1\u{101fd}\u05d0",
+        "rtl",
+      ],
+      [
+        "emoji as neutral characters",
+        "\u05d0 \u{1f600}\u{1f603} \u05d1",
+        "\u05d1 \u{1f603}\u{1f600} \u05d0",
+        "rtl",
+      ],
+      [
+        "a number after an emoji",
+        "\u05d0 \u{1f600} 12",
+        "12 \u{1f600} \u05d0",
+        "rtl",
+      ],
+      [
+        "an astral right-to-left script",
+        "\u{10900}\u{10901} abc",
+        "abc \u{10901}\u{10900}",
+        "auto",
+      ],
+      [
+        "a variation selector after its character",
+        "\u05d0 \u2764\ufe0f \u05d1",
+        "\u05d1 \u2764\ufe0f \u05d0",
+        "rtl",
+      ],
+      [
+        "an information separator inside a paragraph",
+        "abc\u001c\u05d0\u05d1",
+        "abc\u001c\u05d1\u05d0",
+        "auto",
+      ],
     ].forEach(function (testCase) {
       it("reorders " + testCase[0], function () {
-        assert.equal(textDirection.toVisual(testCase[1], "auto"), testCase[2]);
+        assert.equal(
+          textDirection.toVisual(testCase[1], testCase[3] || "auto"),
+          testCase[2],
+        );
       });
     });
 
@@ -121,6 +160,10 @@ describe("TextDirection", function () {
       assert.equal(directionAt(15), "ltr");
       assert.equal(textDirection.paragraphDirections("שלום", "ltr")(0), "ltr");
       assert.equal(textDirection.paragraphDirections("שלום")(0), "none");
+      assert.equal(
+        textDirection.resolveDirection("\u{1f600} שלום", "auto"),
+        "rtl",
+      );
     });
   });
 

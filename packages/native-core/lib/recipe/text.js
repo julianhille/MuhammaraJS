@@ -289,7 +289,7 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {Recipe.TextDirection} [options.direction='none'] - How right-to-left text such as Hebrew is ordered:
  * 'auto' picks each paragraph's direction from its first strong letter, 'ltr' and 'rtl' set it, and 'none' writes
  * the text exactly as given. Each laid-out line is reordered on its own; a line made of several HTML or flowed runs
- * is reordered as one line, taking its own direction for 'auto'.
+ * is reordered as one line in its paragraph's direction.
  * @param {Boolean} [options.flow=false] - Used to activate/deactivate text flow which is the
  * ability to use multiple calls to 'text' to create an overall text box.
  * @param {number|string} [options.layout] - An identifier of the layout to be associated with given text.
@@ -568,10 +568,20 @@ exports.text = function text(text = "", x, y, options = {}) {
         ctx.Tj(word);
       };
 
-      const emitTextObject = (text, x, y, ctx, options) => {
+      /**
+       * Draw one run of text with its underline and strike-out lines.
+       * @param {string} text - The text in visual order.
+       * @param {number} x - Where the run's lines start.
+       * @param {number} y - The baseline.
+       * @param {Object} ctx - The content context.
+       * @param {Object} options - The run's write options.
+       * @param {number} [textX=x] - Where the text starts, left of `x` when
+       *   a clipped right-to-left line draws its overflow on the left.
+       */
+      const emitTextObject = (text, x, y, ctx, options, textX = x) => {
         ctx.BT();
         addTextTraits(ctx, options);
-        emitText(text, x, y, ctx);
+        emitText(text, textX, y, ctx);
         ctx.ET();
 
         addUnderline(x, y, ctx, options);
@@ -621,13 +631,15 @@ exports.text = function text(text = "", x, y, options = {}) {
 
           // The hiliting rectangle cannot use the text box line
           // width when justification is activated because the
-          // spaces between words is calculated dynamically.
-          if (options.alignHorizontal === TextAlign.JUSTIFY) {
+          // spaces between words is calculated dynamically. The last line
+          // of a right-to-left paragraph is right-aligned instead.
+          const hiliteAlign = lineAlign(options.alignHorizontal, wto);
+          if (hiliteAlign === TextAlign.JUSTIFY) {
             bxWidth = justify(nx, x, wto, textBox) - x;
 
             // Except for 'right' alignment cases, have to consider
             // text on line ending with spaces to tweak box width.
-          } else if (options.alignHorizontal !== TextAlign.RIGHT) {
+          } else if (hiliteAlign !== TextAlign.RIGHT) {
             if (text.endsWith(" ")) {
               bxWidth += wto.spaceWidth;
             }
@@ -645,6 +657,13 @@ exports.text = function text(text = "", x, y, options = {}) {
         // Note that the last line of a text box ignores justification.
         const _justify =
           options.alignHorizontal === TextAlign.JUSTIFY && !wto.lastLine;
+        // A clipped line keeps its first overflowing word. A right-to-left
+        // line draws that word on its left, so it starts further left and
+        // the clip cuts the overflow instead of the line's start.
+        const clipShift =
+          textBox.wrap === TextWrap.CLIP && wto.direction === TextDirection.RTL
+            ? Math.max(0, new Word(text, options).dimensions.xMax - lineWidth)
+            : 0;
 
         // write directly to page when not dealing with opacity, rotation and special colorspace.
         if (
@@ -688,6 +707,7 @@ exports.text = function text(text = "", x, y, options = {}) {
               y + baseline,
               context,
               options,
+              x - clipShift,
             );
           }
 
@@ -728,6 +748,7 @@ exports.text = function text(text = "", x, y, options = {}) {
               baseline,
               xObjectCtx,
               options,
+              x - nx - clipShift,
             );
           }
 
@@ -840,11 +861,16 @@ exports.text = function text(text = "", x, y, options = {}) {
       const flushLine = (contents) => {
         const y = currentY;
         const first = contents[0];
+        // The line takes the direction of the paragraph its first run is in,
+        // as a line of one run does.
+        const lineDirection = (
+          contents.find((content) => content.text.trim()) || first
+        ).direction;
         const segments =
           contents.length > 1
             ? visualRuns(
                 contents.map((content) => content.text),
-                first.writeOptions.direction,
+                lineDirection,
               )
             : null;
         if (!segments) {
@@ -931,10 +957,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         switch (
           lineAlign(first.writeOptions.alignHorizontal, {
             lastLine: contents[contents.length - 1].lastLine,
-            direction: resolveDirection(
-              contents.map((content) => content.text).join(""),
-              first.writeOptions.direction,
-            ),
+            direction: lineDirection,
           })
         ) {
           case TextAlign.CENTER:
@@ -961,11 +984,10 @@ exports.text = function text(text = "", x, y, options = {}) {
             markupWidth: justified
               ? textBox.width - textBox.paddingLeft - textBox.paddingRight
               : lineWidth,
-            writeOptions: justified
-              ? Object.assign({}, content.writeOptions, {
-                  alignHorizontal: TextAlign.LEFT,
-                })
-              : content.writeOptions,
+            // The piece is placed already: never justify it again.
+            writeOptions: Object.assign({}, content.writeOptions, {
+              alignHorizontal: TextAlign.LEFT,
+            }),
           });
           writeText(x, y, drawnContent);
           queueTextLink(drawnContent, x, y, x + advance);
@@ -1285,6 +1307,9 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       });
     }
   };
+  if (pathOptions.html) {
+    assignParagraphDirections(textObjects, pathOptions.direction);
+  }
   // Top-level nodes share a line, as children of a block element do, so
   // inline runs outside any element are not split onto separate lines.
   const topLevelLineID = Date.now() * Math.random();
@@ -1553,6 +1578,47 @@ function justify(left, x, wto, textBox, position) {
   // to compensate for text fragments that have not been
   // split on whitespace boundaries.
   return word.value.endsWith(" ") ? x : x - spaceBetweenWords;
+}
+
+/**
+ * Resolve the direction of every HTML paragraph once over all of its runs and
+ * record it on each run, so a wrapped line keeps its paragraph's direction
+ * even when it holds only part of one run. Block elements and line breaks
+ * end a paragraph.
+ * @private
+ * @param {Object[]} textObjects - The HTML layout nodes from htmlToTextObjects().
+ * @param {string} [direction] - The `direction` text option.
+ * @returns {void}
+ */
+function assignParagraphDirections(textObjects, direction) {
+  const paragraphs = [[]];
+  /** Start a new paragraph unless the current one is still empty. */
+  const endParagraph = () => {
+    if (paragraphs[paragraphs.length - 1].length) paragraphs.push([]);
+  };
+  /** Collect a node's text in the order the layout writes it. */
+  const visit = (node) => {
+    if (node.lineBreak) {
+      endParagraph();
+      return;
+    }
+    if (node.needsLineBreaker) endParagraph();
+    if (typeof node.value === "string" && node.value !== "") {
+      paragraphs[paragraphs.length - 1].push(node);
+    }
+    (node.childs || []).forEach(visit);
+    if (node.needsLineBreaker) endParagraph();
+  };
+  textObjects.forEach(visit);
+  paragraphs.forEach((nodes) => {
+    const resolved = resolveDirection(
+      nodes.map((node) => node.value).join(""),
+      direction,
+    );
+    nodes.forEach((node) => {
+      node.paragraphDirection = resolved;
+    });
+  });
 }
 
 /**
@@ -1834,8 +1900,11 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
 
   const breaker = new LineBreaker(text);
   const lines = [];
-  // Each line keeps the direction of the paragraph it was wrapped from.
-  const directionAt = paragraphDirections(text, pathOptions.direction);
+  // Each line keeps the direction of the paragraph it was wrapped from; an
+  // HTML run knows its paragraph's direction already.
+  const directionAt = textObject.paragraphDirection
+    ? () => textObject.paragraphDirection
+    : paragraphDirections(text, pathOptions.direction);
   let lineStart = 0;
   const indent = textObject.indent || 0;
 

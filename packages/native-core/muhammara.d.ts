@@ -4553,6 +4553,10 @@ declare namespace muhammara {
      * @param options.underline - Text markup annotation.
      * @param options.strikeOut - Text markup annotation.
      * @param options.html - Interpret text as html
+     * @param options.direction - How right-to-left text such as Hebrew is ordered, a `Recipe.TextDirection` value:
+     * 'auto' picks each paragraph's direction from its first strong letter, 'ltr' and 'rtl' set it, and 'none' writes
+     * the text exactly as given. Each laid-out line is reordered on its own; a line made of several HTML or flowed runs
+     * is reordered as one line in its paragraph's direction; defaults to 'none'.
      * @param options.flow - Used to activate/deactivate text flow which is the; defaults to false.
      * ability to use multiple calls to 'text' to create an overall text box.
      * @param options.layout - An identifier of the layout to be associated with given text.
@@ -4595,7 +4599,8 @@ declare namespace muhammara {
      * @param options.subject - Subject of annotation.
      * @param options.link - Make the text open this URL.
      * @returns The recipe instance. Without an active page nothing is drawn.
-     * @throws {TypeError} If `options.charSpace` is not a finite number; nothing is drawn.
+     * @throws {TypeError} If `options.charSpace` is not a finite number, or `options.direction` is not a
+     * `Recipe.TextDirection` value; nothing is drawn.
      * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
      */
     text(text: string, options?: Recipe.TextOptions): Recipe;
@@ -4614,8 +4619,11 @@ declare namespace muhammara {
      * @param options.charSpace - character spacing being applied to the given text; defaults to 0.
      * @param options.bold - Measure with the bold style of the font.
      * @param options.italic - Measure with the italic style of the font.
+     * @param options.direction - The direction text() would draw the text with; other than 'none', the formatting
+     * characters that reordering drops are not measured; defaults to 'none'.
      * @returns measurement components of given text: width, height, xMin, xMax, yMin, yMax
      * @throws {Error} If the font file cannot be loaded.
+     * @throws {TypeError} If `options.direction` is not a `Recipe.TextDirection` value.
      */
     textDimensions(text: string, options?: Recipe.TextOptions): TextDimension;
     /**

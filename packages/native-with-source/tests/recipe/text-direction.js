@@ -379,6 +379,108 @@ describe("Recipe text direction", function () {
     assert.ok(annotations[0][2] <= 381, JSON.stringify(annotations));
   });
 
+  it("keeps an HTML paragraph's direction on its wrapped lines", async function () {
+    const runs = await drawPage("text-direction-html-paragraph", (recipe) => {
+      const options = {
+        font: "arial",
+        size: 12,
+        html: true,
+        direction: "auto",
+        textBox: { width: 120 },
+      };
+      recipe
+        .text("<p>אחת שתיים שלוש ארבע hello חמש שש</p>", 20, 20, options)
+        .text("<p>hello עולם</p><p>שלום world</p>", 20, 100, {
+          ...options,
+          textBox: { width: 300 },
+        });
+    });
+    assert.deepEqual(
+      runs.map((run) => run.text),
+      ["עברא שולש םייתש תחא", "שש שמח hello", "hello םלוע", "world םולש"],
+    );
+  });
+
+  it("clips an overflowing right-to-left line at its end", async function () {
+    const font = muhammara
+      .createWriter(new muhammara.PDFWStreamForBuffer())
+      .getFontForFile(ARIAL);
+    const runs = await drawPage("text-direction-clip", (recipe) => {
+      recipe.text("שלום עולם זהו טקסט ארוך בעברית שצריך", 100, 20, {
+        font: "arial",
+        size: 12,
+        direction: "rtl",
+        textBox: { width: 150, wrap: "clip", textAlign: "right" },
+      });
+    });
+    const run = runs[0];
+    // The line's start, its first word, ends at the right edge; the
+    // overflowing word is cut on the left.
+    assert.ok(run.text.trimEnd().endsWith("םולש"), run.text);
+    assert.ok(
+      Math.abs(
+        run.x + font.calculateTextDimensions(run.text.trimEnd(), 12).xMax - 250,
+      ) < 1,
+      JSON.stringify(run),
+    );
+    assert.ok(run.x < 100, JSON.stringify(run));
+  });
+
+  it("highlights the last line of a justified right-to-left paragraph inside the box", async function () {
+    const rectangles = [];
+    await drawPage("text-direction-hilite", (recipe) => {
+      const rectangle = recipe.rectangle;
+      recipe.rectangle = function (x, y, width, height, options) {
+        rectangles.push({ x, width });
+        return rectangle.call(this, x, y, width, height, options);
+      };
+      recipe.text("שלום עולם זהו טקסט", 100, 20, {
+        font: "arial",
+        size: 12,
+        direction: "rtl",
+        hilite: true,
+        textBox: { width: 200, textAlign: "justify" },
+      });
+    });
+    assert.equal(rectangles.length, 1);
+    assert.ok(rectangles[0].x > 150, JSON.stringify(rectangles));
+    assert.ok(
+      Math.abs(rectangles[0].x + rectangles[0].width - 300) < 1,
+      JSON.stringify(rectangles),
+    );
+  });
+
+  it("ends the last line of a flowed justified right-to-left paragraph at the right edge", async function () {
+    const font = muhammara
+      .createWriter(new muhammara.PDFWStreamForBuffer())
+      .getFontForFile(ARIAL);
+    const runs = await drawPage("text-direction-flow-justify", (recipe) => {
+      const options = {
+        font: "arial",
+        size: 12,
+        direction: "rtl",
+        flow: true,
+        textBox: { width: 200, textAlign: "justify" },
+      };
+      recipe
+        .text("שלום עולם ", 100, 20, options)
+        .text("זהו טקסט", options)
+        .text("", { flow: false });
+    });
+    const line = lineRuns(runs);
+    assert.deepEqual(
+      line.map((run) => run.text.trim()),
+      ["טסקט והז", "םלוע םולש"],
+    );
+    const last = line[line.length - 1];
+    assert.ok(
+      Math.abs(
+        last.x + font.calculateTextDimensions(last.text.trim(), 12).xMax - 300,
+      ) < 1,
+      JSON.stringify(line),
+    );
+  });
+
   it("rejects an unknown direction before drawing", function () {
     const recipe = new Recipe(
       "new",

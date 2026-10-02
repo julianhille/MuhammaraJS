@@ -21,12 +21,12 @@ var DIRECTIONS = Object.keys(TextDirection).map(function (key) {
 });
 
 // Characters that can change the order text is drawn in: right-to-left
-// letters, Arabic digits and the bidirectional formatting characters. Text
+// letters, Arabic digits and the bidirectional formatting characters,
+// including the right-to-left scripts outside the Basic Multilingual Plane,
+// U+10800-U+10FFF and U+1E800-U+1EFFF, matched by their high surrogates. Text
 // without any of them draws exactly as typed in a left-to-right paragraph.
-// bidi-js classifies UTF-16 code units, so right-to-left scripts outside the
-// Basic Multilingual Plane are not reordered and are not listed.
 var REORDERING_CHARACTER =
-  /[\u0590-\u08ff\u200e\u200f\u202a-\u202e\u2066-\u2069\ufb1d-\ufdff\ufe70-\ufefe]/;
+  /[\u0590-\u08ff\u200e\u200f\u202a-\u202e\u2066-\u2069\ufb1d-\ufdff\ufe70-\ufefe\ud802\ud803\ud83a\ud83b]/;
 
 // Invisible bidirectional formatting characters. They only steer the
 // reordering, so they are dropped instead of drawn as missing glyphs.
@@ -36,6 +36,32 @@ var FORMATTING_CHARACTERS = /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
 
 // Marks that combine with the character before them, such as Hebrew points.
 var COMBINING_MARK = /^\p{M}$/u;
+// Variation selectors, which choose the form of the character before them and
+// always follow it.
+var VARIATION_SELECTOR = /^[\ufe00-\ufe0f\u{e0100}-\u{e01ef}]$/u;
+
+// Characters that need a stand-in before bidi-js classifies the text: it
+// reads UTF-16 code units, so it would take each surrogate as a strong
+// left-to-right letter, and it would end a paragraph at U+001C-U+001E, which
+// Recipe does not break at.
+var NEEDS_STAND_IN = /[\ud800-\udfff\u001c-\u001e]/;
+// A character of each bidirectional class, to stand in for a character
+// bidi-js cannot classify in place. None of them is mirrored.
+var CLASS_STAND_IN = {
+  L: "a",
+  R: "\u05d0",
+  AL: "\u0627",
+  EN: "0",
+  ES: "+",
+  ET: "#",
+  AN: "\u0660",
+  CS: ",",
+  NSM: "\u0300",
+  BN: "\u200b",
+  S: "\t",
+  WS: " ",
+  ON: "\u2605",
+};
 
 // The breaks that end a paragraph; the same mandatory breaks Recipe wraps at.
 var PARAGRAPH_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/g;
@@ -55,6 +81,58 @@ var bidi = null;
 function getBidi() {
   if (!bidi) bidi = bidiFactory();
   return bidi;
+}
+
+/**
+ * The text bidi-js classifies in place of `text`: the same length, with each
+ * character outside the Basic Multilingual Plane replaced by a character of
+ * its bidirectional class followed by a non-spacing mark, which takes that
+ * class too, and U+001C-U+001E replaced by a neutral character.
+ *
+ * @param {string} text The text.
+ * @returns {string} The text to pass to bidi-js.
+ */
+function bidiText(text) {
+  if (!NEEDS_STAND_IN.test(text)) return text;
+  var api = getBidi();
+  var result = "";
+  for (var index = 0; index < text.length; ++index) {
+    var code = text.charCodeAt(index);
+    if (code >= 0x1c && code <= 0x1e) {
+      result += CLASS_STAND_IN.ON;
+    } else if (
+      code >= 0xd800 &&
+      code <= 0xdbff &&
+      isLowSurrogateAt(text, index + 1)
+    ) {
+      var type = api.getBidiCharTypeName(
+        String.fromCodePoint(text.codePointAt(index)),
+      );
+      result += (CLASS_STAND_IN[type] || CLASS_STAND_IN.L) + CLASS_STAND_IN.NSM;
+      ++index;
+    } else if (code >= 0xd800 && code <= 0xdfff) {
+      // A lone surrogate draws as a missing glyph; treat it as neutral.
+      result += CLASS_STAND_IN.ON;
+    } else {
+      result += text[index];
+    }
+  }
+  return result;
+}
+
+/**
+ * Whether a character is a strong right-to-left letter, whose marks fonts
+ * place before it in a right-to-left run.
+ *
+ * @param {string} text The text.
+ * @param {number} index The UTF-16 index of the character.
+ * @returns {boolean} True for a letter of bidirectional class R or AL.
+ */
+function isRightToLeftLetter(text, index) {
+  var type = getBidi().getBidiCharTypeName(
+    String.fromCodePoint(text.codePointAt(index)),
+  );
+  return type === "R" || type === "AL";
 }
 
 /**
@@ -95,7 +173,7 @@ function resolveDirection(text, direction) {
   direction = readDirection(direction);
   if (direction !== TextDirection.AUTO) return direction;
   if (!hasReorderingCharacters(text)) return TextDirection.LTR;
-  return getBidi().getEmbeddingLevels(text).paragraphs[0].level % 2
+  return getBidi().getEmbeddingLevels(bidiText(text)).paragraphs[0].level % 2
     ? TextDirection.RTL
     : TextDirection.LTR;
 }
@@ -220,12 +298,13 @@ function clusterMembers(starts) {
  */
 function visualCharacters(core, direction) {
   var api = getBidi();
+  var classified = bidiText(core);
   var levels = api.getEmbeddingLevels(
-    core,
+    classified,
     direction === TextDirection.AUTO ? undefined : direction,
   );
-  var order = api.getReorderedIndices(core, levels);
-  var mirrored = api.getMirroredCharactersMap(core, levels.levels);
+  var order = api.getReorderedIndices(classified, levels);
+  var mirrored = api.getMirroredCharactersMap(classified, levels.levels);
   var starts = clusterStarts(core);
   var members = clusterMembers(starts);
   var written = new Array(core.length);
@@ -235,19 +314,32 @@ function visualCharacters(core, direction) {
     if (written[start]) return;
     written[start] = true;
     var cluster = members[start];
-    if (levels.levels[start] % 2) {
+    if (levels.levels[start] % 2 && isRightToLeftLetter(core, start)) {
       // Right-to-left fonts place a mark over the glyph drawn after it, so
-      // in a right-to-left run the marks come first, as the bidirectional
-      // algorithm orders them; a surrogate pair keeps its order.
-      var base = cluster.filter(function (position) {
-        return position === start || isLowSurrogateAt(core, position);
+      // on a right-to-left letter the marks come first, as the
+      // bidirectional algorithm orders them. Surrogate pairs keep their
+      // order, and variation selectors stay after the letter.
+      var units = [];
+      cluster.forEach(function (position) {
+        if (isLowSurrogateAt(core, position)) {
+          units[units.length - 1].push(position);
+        } else units.push([position]);
       });
-      cluster = cluster
-        .filter(function (position) {
-          return base.indexOf(position) === -1;
-        })
-        .reverse()
-        .concat(base);
+      var base = units.shift();
+      var selectors = units.filter(function (unit) {
+        return VARIATION_SELECTOR.test(
+          String.fromCodePoint(core.codePointAt(unit[0])),
+        );
+      });
+      cluster = [].concat.apply(
+        [],
+        units
+          .filter(function (unit) {
+            return selectors.indexOf(unit) === -1;
+          })
+          .reverse()
+          .concat([base], selectors),
+      );
     }
     cluster.forEach(function (position) {
       var character = core[position];
@@ -458,14 +550,16 @@ function visualWords(segments) {
       words.push({ run: segment.run, text: match[0], gap: false });
     }
   });
-  words.forEach(function (word, index) {
-    word.gap =
-      word.text.trim() !== "" &&
-      TRAILING_BREAKABLE_SPACE.test(word.text) &&
-      words.slice(index + 1).some(function (next) {
-        return next.text.trim() !== "";
-      });
-  });
+  // From the right, so each word knows whether visible text follows it.
+  var textFollows = false;
+  for (var index = words.length - 1; index >= 0; --index) {
+    var visible = words[index].text.trim() !== "";
+    words[index].gap =
+      visible &&
+      textFollows &&
+      TRAILING_BREAKABLE_SPACE.test(words[index].text);
+    textFollows = textFollows || visible;
+  }
   return words;
 }
 

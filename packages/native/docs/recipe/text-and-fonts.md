@@ -78,3 +78,10 @@ pdfDoc
 
 `onClip` is called only when clipping is enabled and leaves text unrendered. The
 library warns when `onClip` is configured without `clipIfExceedsBox`.
+
+## Right-To-Left Text
+
+Pass `direction: "auto"` to draw Hebrew in visual order. Recipe wraps each
+paragraph in logical order and reorders every line on its own; set
+`textAlign: "right"` for right-to-left paragraphs. See
+[Write Right-to-Left Text](../how-to/write-right-to-left-text.md).

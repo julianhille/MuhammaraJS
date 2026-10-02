@@ -10,6 +10,7 @@ import {
   drawnText,
   paragraphDirections,
   readDirection,
+  resolveDirection,
   toVisual,
   visualRuns,
   visualWords,
@@ -49,7 +50,7 @@ describe("TextDirection", function () {
   }
 
   describe("toVisual", function () {
-    for (var [name, text, visual] of [
+    for (var [name, text, visual, direction] of [
       ["Hebrew", "שלום עולם", "םלוע םולש"],
       ["numbers inside Hebrew", "מחיר 120 ש״ח", "ח״ש 120 ריחמ"],
       ["English inside Hebrew", "שלום abc def!", "!abc def םולש"],
@@ -72,14 +73,50 @@ describe("TextDirection", function () {
       ["whitespace at both ends", "  שלום ", "םולש   "],
       ["whitespace in a left-to-right line", "  abc שלום ", "  abc םולש "],
       ["left-to-right text", "Hello, world.", "Hello, world."],
+      [
+        "an astral mark on its letter",
+        "\u05d0\u{101fd}\u05d1",
+        "\u05d1\u{101fd}\u05d0",
+        "rtl",
+      ],
+      [
+        "emoji as neutral characters",
+        "\u05d0 \u{1f600}\u{1f603} \u05d1",
+        "\u05d1 \u{1f603}\u{1f600} \u05d0",
+        "rtl",
+      ],
+      [
+        "a number after an emoji",
+        "\u05d0 \u{1f600} 12",
+        "12 \u{1f600} \u05d0",
+        "rtl",
+      ],
+      [
+        "an astral right-to-left script",
+        "\u{10900}\u{10901} abc",
+        "abc \u{10901}\u{10900}",
+        "auto",
+      ],
+      [
+        "a variation selector after its character",
+        "\u05d0 \u2764\ufe0f \u05d1",
+        "\u05d1 \u2764\ufe0f \u05d0",
+        "rtl",
+      ],
+      [
+        "an information separator inside a paragraph",
+        "abc\u001c\u05d0\u05d1",
+        "abc\u001c\u05d1\u05d0",
+        "auto",
+      ],
     ]) {
-      addToVisualTest(name, text, visual);
+      addToVisualTest(name, text, visual, direction);
     }
 
-    /** Check that `text` reorders to `visual` with direction "auto". */
-    function addToVisualTest(name, text, visual) {
+    /** Check that `text` reorders to `visual`, with direction "auto" by default. */
+    function addToVisualTest(name, text, visual, direction = "auto") {
       it("reorders " + name, function () {
-        assert.equal(toVisual(text, "auto"), visual);
+        assert.equal(toVisual(text, direction), visual);
       });
     }
 
@@ -114,6 +151,7 @@ describe("TextDirection", function () {
       assert.equal(directionAt(15), "ltr");
       assert.equal(paragraphDirections("שלום", "ltr")(0), "ltr");
       assert.equal(paragraphDirections("שלום")(0), "none");
+      assert.equal(resolveDirection("\u{1f600} שלום", "auto"), "rtl");
     });
   });
 

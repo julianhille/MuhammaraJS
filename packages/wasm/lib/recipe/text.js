@@ -286,11 +286,41 @@ function htmlLines(source, width, measure, options, wrap) {
       text: parts.map((part) => part.text).join(""),
       parts,
       last,
+      // The direction of the paragraph the line was wrapped from.
+      direction: parts[0]?.direction,
     });
     parts = [];
     if (!last) linePrefix = continuationPrefix;
   };
 
+  // Every paragraph resolves its direction once over all of its runs, as
+  // native does, so a wrapped line keeps its paragraph's direction.
+  var directions = [];
+  var paragraph = 0;
+  var paragraphText = "";
+  var paragraphDirection;
+  source.forEach((sourcePart) => {
+    String(sourcePart.value)
+      .split(/(\n)/)
+      .forEach((fragment) => {
+        if (fragment === "\n") {
+          directions.push(
+            resolveDirection(
+              paragraphText,
+              paragraphDirection ?? options.direction,
+            ),
+          );
+          paragraphText = "";
+          paragraphDirection = undefined;
+          return;
+        }
+        paragraphDirection ??= sourcePart.styles?.direction;
+        paragraphText += fragment;
+      });
+  });
+  directions.push(
+    resolveDirection(paragraphText, paragraphDirection ?? options.direction),
+  );
   source.forEach((sourcePart) => {
     var listMarker = false;
     if (sourcePart.indent !== undefined) {
@@ -307,8 +337,10 @@ function htmlLines(source, width, measure, options, wrap) {
     String(sourcePart.value)
       .split(/(\n)/)
       .forEach((fragment) => {
+        var direction = directions[paragraph];
         if (!fragment) return;
         if (fragment === "\n") {
+          paragraph++;
           flush(true, true);
           // Native re-applies the indent on every line of a list item, so a
           // <br> or block break inside one stays indented.
@@ -329,6 +361,7 @@ function htmlLines(source, width, measure, options, wrap) {
               text: word,
               styles: sourcePart.styles,
               marker: listMarker,
+              direction,
             },
           ];
           var breakBefore =
@@ -359,6 +392,7 @@ function htmlLines(source, width, measure, options, wrap) {
             text: word,
             styles: sourcePart.styles,
             marker: listMarker,
+            direction,
           });
         });
       });
@@ -1044,13 +1078,7 @@ export function createTextMethods({ drawText, measure, module }) {
         if (
           horizontal === TextAlign.JUSTIFY &&
           entry.last &&
-          (entry.direction ||
-            resolveDirection(
-              entry.parts
-                ? entry.parts.map((part) => part.text).join("")
-                : entry.text,
-              options.direction,
-            )) === TextDirection.RTL
+          entry.direction === TextDirection.RTL
         ) {
           horizontal = TextAlign.RIGHT;
         }
@@ -1065,6 +1093,16 @@ export function createTextMethods({ drawText, measure, module }) {
         var baseline = currentY + lineHeight;
         if (textOptions.rotation && !textOptions.rotationOrigin) {
           textOptions.rotationOrigin = [drawX, baseline];
+        }
+        // A clipped right-to-left line that overflows keeps its start, at
+        // the right edge, and loses its end.
+        if (
+          wrap === TextWrap.CLIP &&
+          width &&
+          entry.direction === TextDirection.RTL &&
+          textWidth > width - left - right
+        ) {
+          drawX = x + width - right - textWidth;
         }
         var linkX = drawX;
         var linkWidth = textWidth;
@@ -1147,7 +1185,7 @@ export function createTextMethods({ drawText, measure, module }) {
           // by piece, each piece with its own part's styles.
           var segments = visualRuns(
             logicalParts.map((part) => part.text),
-            options.direction,
+            entry.direction,
           );
           var drawParts = segments
             ? (justify ? visualWords(segments) : segments).map((piece) => ({
@@ -1221,7 +1259,10 @@ export function createTextMethods({ drawText, measure, module }) {
               left +
               (horizontal === TextAlign.CENTER
                 ? (width - left - right - piecesWidth) / 2
-                : horizontal === TextAlign.RIGHT
+                : horizontal === TextAlign.RIGHT ||
+                    (wrap === TextWrap.CLIP &&
+                      entry.direction === TextDirection.RTL &&
+                      piecesWidth > width - left - right)
                   ? width - right - piecesWidth
                   : 0);
             // Links and text markup start where the line now starts.
@@ -1268,7 +1309,7 @@ export function createTextMethods({ drawText, measure, module }) {
             }
             drawText.call(
               this,
-              part.visual ? part.text : toVisual(part.text, options.direction),
+              part.visual ? part.text : toVisual(part.text, entry.direction),
               drawX,
               baseline,
               partOptions,
@@ -1303,9 +1344,10 @@ export function createTextMethods({ drawText, measure, module }) {
         } else if (isJustifiedLine) {
           // Justified words are placed left to right in visual order, and
           // non-breaking spaces stay inside their word.
+          // A line that keeps its order drops its leading spaces, as before.
           var words = visualWords(
             visualRuns([entry.text], entry.direction) || [
-              { run: 0, text: entry.text },
+              { run: 0, text: entry.text.replace(/^(?:(?!\u00a0)\s)+/, "") },
             ],
           ).filter((word) => word.indent || hasText(word.text));
           /**
