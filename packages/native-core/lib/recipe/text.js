@@ -749,7 +749,12 @@ exports.text = function text(text = "", x, y, options = {}) {
 
         var markupLeft = lineX;
         var markupBottom = y - textHeight * 0.2;
-        var markupWidth = _justify ? next_x - lineX : currentLineWidth;
+        var markupWidth =
+          wto.markupWidth !== undefined
+            ? wto.markupWidth
+            : _justify
+              ? next_x - lineX
+              : currentLineWidth;
         var markupHeight = textHeight * 1.4;
         if (textBox.wrap === TextWrap.CLIP) {
           // Clipped runs retain the first overflowing word, so measure the
@@ -857,6 +862,11 @@ exports.text = function text(text = "", x, y, options = {}) {
         const pieces = justified
           ? visualWords(segments)
           : segments.map((segment) => Object.assign({ gap: false }, segment));
+        /**
+         * The width of a piece's glyphs, without its trailing whitespace.
+         * @param {Object} piece - A piece from visualRuns() or visualWords().
+         * @returns {number} The width in points.
+         */
         const inkWidth = (piece) => {
           const trimmed = piece.text.replace(/\s+$/, "");
           return trimmed
@@ -864,10 +874,35 @@ exports.text = function text(text = "", x, y, options = {}) {
                 .xMax
             : 0;
         };
+        /**
+         * The advance of the trailing whitespace of a piece, or of a whole
+         * indent piece, measured as real spaces; text bounds leave it out.
+         * @param {Object} piece - A piece from visualRuns() or visualWords().
+         * @returns {number} The width in points.
+         */
+        const spaceWidth = (piece) => {
+          const spaces =
+            piece.text.length - piece.text.replace(/\s+$/, "").length;
+          if (!spaces) return 0;
+          const options = contents[piece.run].writeOptions;
+          return (
+            spaces *
+            (new Word("o o", options).dimensions.xMax -
+              new Word("oo", options).dimensions.xMax)
+          );
+        };
+        /**
+         * The room a piece needs on the line: its glyphs, and all of an
+         * indent.
+         * @param {Object} piece - A piece from visualRuns() or visualWords().
+         * @returns {number} The width in points.
+         */
+        const roomOf = (piece) =>
+          piece.indent ? spaceWidth(piece) : inkWidth(piece);
         let gapWidth = 0;
         if (justified) {
           const gaps = pieces.filter((piece) => piece.gap).length;
-          const drawn = pieces.reduce((sum, piece) => sum + inkWidth(piece), 0);
+          const drawn = pieces.reduce((sum, piece) => sum + roomOf(piece), 0);
           gapWidth = gaps
             ? (textBox.width -
                 textBox.paddingLeft -
@@ -877,27 +912,21 @@ exports.text = function text(text = "", x, y, options = {}) {
             : 0;
         }
         /**
-         * The room a piece takes before the next piece: its glyphs plus a
-         * real space advance for each trailing space, which measured text
-         * bounds leave out, or the justified gap.
+         * The room a piece takes before the next piece: its glyphs and its
+         * trailing spaces, or, justified, its glyphs and the widened gap.
+         * @param {Object} piece - A piece from visualRuns() or visualWords().
+         * @returns {number} The width in points.
          */
-        const advanceOf = (piece) => {
-          const spaces =
-            piece.text.length - piece.text.replace(/\s+$/, "").length;
-          if (justified) return inkWidth(piece) + (piece.gap ? gapWidth : 0);
-          if (!spaces) return inkWidth(piece);
-          const options = contents[piece.run].writeOptions;
-          const space =
-            new Word("o o", options).dimensions.xMax -
-            new Word("oo", options).dimensions.xMax;
-          return inkWidth(piece) + spaces * space;
-        };
+        const advanceOf = (piece) =>
+          justified
+            ? roomOf(piece) + (piece.gap ? gapWidth : 0)
+            : inkWidth(piece) + spaceWidth(piece);
         // The pieces are measured again, so align their own width; trailing
-        // whitespace at the end of the line takes no room.
+        // whitespace at the end of the line takes no room, an indent does.
+        const lastPiece = pieces[pieces.length - 1];
         const lineWidth =
           pieces.reduce((sum, piece) => sum + advanceOf(piece), 0) -
-          (advanceOf(pieces[pieces.length - 1]) -
-            inkWidth(pieces[pieces.length - 1]));
+          (lastPiece.indent ? 0 : advanceOf(lastPiece) - roomOf(lastPiece));
         let x = first.startX;
         switch (
           lineAlign(first.writeOptions.alignHorizontal, {
@@ -918,8 +947,7 @@ exports.text = function text(text = "", x, y, options = {}) {
             x += textBox.paddingLeft;
             break;
         }
-        const markedRuns = new Set();
-        pieces.forEach((piece) => {
+        pieces.forEach((piece, index) => {
           const content = contents[piece.run];
           const width = inkWidth(piece);
           const advance = advanceOf(piece);
@@ -928,15 +956,17 @@ exports.text = function text(text = "", x, y, options = {}) {
             // The piece is already in visual order.
             direction: TextDirection.NONE,
             lineWidth: width,
-            // Text-markup annotations are added once per run.
-            noMarkup: markedRuns.has(piece.run),
+            // Text-markup annotations span the line from its first piece.
+            noMarkup: index > 0,
+            markupWidth: justified
+              ? textBox.width - textBox.paddingLeft - textBox.paddingRight
+              : lineWidth,
             writeOptions: justified
               ? Object.assign({}, content.writeOptions, {
                   alignHorizontal: TextAlign.LEFT,
                 })
               : content.writeOptions,
           });
-          markedRuns.add(piece.run);
           writeText(x, y, drawnContent);
           queueTextLink(drawnContent, x, y, x + advance);
           x += advance;
@@ -1546,7 +1576,8 @@ function lineAlign(align, line) {
  * The words of a justified line in visual order, measured again. Only a line
  * written as one run is reordered as a whole; the words of a line shared by
  * several runs keep their places and are each reordered on their own. Leading
- * indent words stay first, and non-breaking spaces stay inside their word.
+ * indent words stay at the line's start, last in a right-to-left line, and
+ * non-breaking spaces stay inside their word.
  * The result is cached on the run, which is justified once to measure a
  * hilite and once to draw.
  * @private
@@ -1575,8 +1606,15 @@ function visualLineWords(wto) {
     .filter((value) => value !== "")
     .map((value) => new Word(value, pathOptions));
   if (!visualWords.length) return null;
-  visualWords[visualWords.length - 1].lastWord();
-  wto.visualWords = words.slice(0, indent).concat(visualWords);
+  const indentWords = words.slice(0, indent);
+  if (wto.direction === TextDirection.RTL) {
+    // The indent stays at the line's start, its right edge; the indent's own
+    // words end the line, so no word is pinned to the right edge.
+    wto.visualWords = visualWords.concat(indentWords);
+  } else {
+    visualWords[visualWords.length - 1].lastWord();
+    wto.visualWords = indentWords.concat(visualWords);
+  }
   return wto.visualWords;
 }
 

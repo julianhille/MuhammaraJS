@@ -67,7 +67,9 @@ describe("TextDirection", function () {
         "\u05d0\u05d1\u200f\u05b8",
         "\u05b8\u05d1\u05d0",
       ],
-      ["whitespace at both ends", " שלום ", " םולש "],
+      // An indent stays at the start of a right-to-left line, its right end.
+      ["whitespace at both ends", "  שלום ", "םולש   "],
+      ["whitespace in a left-to-right line", "  abc שלום ", "  abc םולש "],
       ["left-to-right text", "Hello, world.", "Hello, world."],
     ].forEach(function (testCase) {
       it("reorders " + testCase[0], function () {
@@ -151,7 +153,8 @@ describe("TextDirection", function () {
         { run: 1, text: "םלוע " },
         { run: 0, text: "םולש abc" },
       ]);
-      assert.deepEqual(textDirection.visualRuns(["abc ", "שלום"], "ltr"), [
+      assert.deepEqual(textDirection.visualRuns(["  abc ", "שלום"], "ltr"), [
+        { run: 0, text: "  ", indent: true },
         { run: 0, text: "abc " },
         { run: 1, text: "םולש" },
       ]);
@@ -169,11 +172,11 @@ describe("TextDirection", function () {
           textDirection.visualRuns(["  מחיר 120\u00a0ש״ח ", "עולם"], "rtl"),
         ),
         [
-          // Whitespace at the start of the line stays in place.
-          { run: 0, text: "  ", gap: false },
           { run: 1, text: "םלוע ", gap: true },
           { run: 0, text: "ח״ש\u00a0120 ", gap: true },
           { run: 0, text: "ריחמ", gap: false },
+          // The indent stays at the line's start, its right end.
+          { run: 0, text: "  ", gap: false, indent: true },
         ],
       );
     });

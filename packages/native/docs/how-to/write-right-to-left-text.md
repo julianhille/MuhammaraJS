@@ -40,11 +40,11 @@ context
 ```
 
 `x` is still the left edge of the drawn text. To end a right-to-left line at a
-right margin, subtract its width:
+right margin, subtract where its glyphs end, `xMax`:
 
 ```javascript
 var text = "שלום עולם";
-var width = font.calculateTextDimensions(text, 14).width;
+var width = font.calculateTextDimensions(text, 14).xMax;
 context.writeText(text, 523 - width, 700, options);
 
 writer.writePage(page);
@@ -77,6 +77,8 @@ new muhammara.Recipe("new", "recipe-hebrew.pdf")
 
 - Justified lines place their words from right to left, and the last line of
   a right-to-left paragraph ends at the right edge.
+- An indent, such as that of a list item, stays at the start of the line:
+  the right edge of a right-to-left line.
 - A line made of several styled runs, from HTML or from flowed `text()`
   calls, is reordered as one line, so `<p>שלום <b>עולם</b></p>` reads in the
   right order. With `"auto"`, such a line takes the direction of its own first
@@ -113,8 +115,6 @@ reversal and pass `"auto"`; doing both reverses the text twice.
   such as Arial and Noto Sans Hebrew, expect them, but they are not positioned
   by the font's shaping rules. In fonts that rely on those rules some points
   sit slightly off.
-- Whitespace at either end of a line stays where it is, so leading spaces
-  indent a right-to-left line on its left side.
 - A Recipe text box with `wrap: "clip"` cuts lines at its edges. A
   right-to-left line that overflows a left-aligned box loses its start on the
   right; set `textAlign: "right"` so it loses its end instead.

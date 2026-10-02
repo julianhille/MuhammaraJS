@@ -710,6 +710,7 @@ export function createTextMethods({ drawText, measure, module }) {
      * @returns {TextDimensions} Text bounds and dimensions in PDF points.
      * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
      *   not greater than zero.
+     * @throws {TypeError} If `direction` is not a `Recipe.TextDirection` value.
      * @throws {Error} If the requested font is not registered or cannot be loaded.
      */
     textDimensions(value, options = {}) {
@@ -1102,6 +1103,26 @@ export function createTextMethods({ drawText, measure, module }) {
             throw new Error("Unable to clip text box");
           }
         }
+        /**
+         * The room a reordered piece takes before the next piece: its
+         * glyphs plus a real space advance for each trailing space, which
+         * measured text bounds leave out. An indent piece is only spaces.
+         * @param {string} text - Piece text in visual order.
+         * @param {object} partOptions - The piece's text options.
+         * @returns {number} The advance in points.
+         */
+        var pieceAdvance = (text, partOptions) => {
+          var trimmed = text.replace(/\s+$/, "");
+          var spaces = text.length - trimmed.length;
+          var space = spaces
+            ? dimensions(this, "o o", partOptions).xMax -
+              dimensions(this, "oo", partOptions).xMax
+            : 0;
+          return (
+            (trimmed ? dimensions(this, trimmed, partOptions).xMax : 0) +
+            spaces * space
+          );
+        };
         if (textOptions.hilite && !entry.parts) {
           var hilite =
             typeof textOptions.hilite === "object" ? textOptions.hilite : {};
@@ -1132,6 +1153,8 @@ export function createTextMethods({ drawText, measure, module }) {
             ? (justify ? visualWords(segments) : segments).map((piece) => ({
                 ...logicalParts[piece.run],
                 text: piece.text,
+                gap: piece.gap,
+                indent: piece.indent,
                 visual: true,
               }))
             : logicalParts;
@@ -1143,40 +1166,33 @@ export function createTextMethods({ drawText, measure, module }) {
            */
           var hasGapAfter = (part, index) =>
             justify &&
-            !part.marker &&
-            endsWithBreakableSpace(part.text) &&
-            drawParts.slice(index + 1).some((next) => hasText(next.text));
+            (part.visual
+              ? part.gap
+              : !part.marker &&
+                endsWithBreakableSpace(part.text) &&
+                drawParts.slice(index + 1).some((next) => hasText(next.text)));
           var partGaps = drawParts.filter(hasGapAfter).length;
           var drawnWidth = justify
             ? htmlPartsWidth(
-                drawParts,
+                drawParts.filter((part) => !part.indent),
                 (text, partOptions) => dimensions(this, text, partOptions),
                 { ...options, fontSize },
                 false,
-              )
+              ) +
+              drawParts
+                .filter((part) => part.indent)
+                .reduce(
+                  (sum, part) =>
+                    sum +
+                    pieceAdvance(
+                      part.text,
+                      fragmentOptions(options, part.styles, fontSize),
+                    ),
+                  0,
+                )
             : textWidth;
           var partGap =
             partGaps > 0 ? (width - left - right - drawnWidth) / partGaps : 0;
-          /**
-           * The room a reordered piece takes before the next piece: its
-           * glyphs plus a real space advance for each trailing space, which
-           * measured text bounds leave out.
-           * @param {string} text - Piece text in visual order.
-           * @param {object} partOptions - The piece's text options.
-           * @returns {number} The advance in points.
-           */
-          var pieceAdvance = (text, partOptions) => {
-            var trimmed = text.replace(/\s+$/, "");
-            var spaces = text.length - trimmed.length;
-            var space = spaces
-              ? dimensions(this, "o o", partOptions).xMax -
-                dimensions(this, "oo", partOptions).xMax
-              : 0;
-            return (
-              (trimmed ? dimensions(this, trimmed, partOptions).xMax : 0) +
-              spaces * space
-            );
-          };
           if (segments && !justify) {
             // Align the reordered pieces by their own width; trailing
             // whitespace at the end of the line takes no room.
@@ -1186,14 +1202,20 @@ export function createTextMethods({ drawText, measure, module }) {
                 fragmentOptions(options, part.styles, fontSize),
               ),
             );
+            // Trailing whitespace at the end of the line takes no room, an
+            // indent does.
             var lastPart = drawParts[drawParts.length - 1];
-            var piecesWidth =
-              pieceWidths.reduce((sum, value) => sum + value, 0) -
-              pieceWidths[pieceWidths.length - 1] +
-              pieceAdvance(
-                lastPart.text.replace(/\s+$/, ""),
-                fragmentOptions(options, lastPart.styles, fontSize),
-              );
+            var piecesWidth = pieceWidths.reduce(
+              (sum, value) => sum + value,
+              0,
+            );
+            if (!lastPart.indent) {
+              piecesWidth +=
+                pieceAdvance(
+                  lastPart.text.replace(/\s+$/, ""),
+                  fragmentOptions(options, lastPart.styles, fontSize),
+                ) - pieceWidths[pieceWidths.length - 1];
+            }
             drawX =
               x +
               left +
@@ -1202,6 +1224,8 @@ export function createTextMethods({ drawText, measure, module }) {
                 : horizontal === TextAlign.RIGHT
                   ? width - right - piecesWidth
                   : 0);
+            // Links and text markup start where the line now starts.
+            linkX = drawX;
           }
           var drawnText = "";
           var rotationOrigin = options.rotationOrigin || [drawX, baseline];
@@ -1216,7 +1240,7 @@ export function createTextMethods({ drawText, measure, module }) {
               partOptions.charSpace,
             );
             var partWidth =
-              part.visual && !justify
+              part.visual && (!justify || part.indent)
                 ? pieceAdvance(part.text, partOptions)
                 : dimensions(this, part.text, partOptions).width;
             if (partOptions.hilite) {
@@ -1279,20 +1303,31 @@ export function createTextMethods({ drawText, measure, module }) {
         } else if (isJustifiedLine) {
           // Justified words are placed left to right in visual order, and
           // non-breaking spaces stay inside their word.
-          var words = visualWords([
-            { run: 0, text: toVisual(entry.text, entry.direction) },
-          ]).filter((word) => hasText(word.text));
+          var words = visualWords(
+            visualRuns([entry.text], entry.direction) || [
+              { run: 0, text: entry.text },
+            ],
+          ).filter((word) => word.indent || hasText(word.text));
+          /**
+           * The room a justified word needs: its glyphs, or all of an indent.
+           * @param {{text: string, indent: (boolean|undefined)}} word - Word.
+           * @returns {number} The width in points.
+           */
+          var wordWidth = (word) =>
+            word.indent
+              ? pieceAdvance(word.text, textOptions)
+              : dimensions(this, word.text, textOptions).width;
           var wordsWidth = words.reduce(
-            (sum, word) => sum + dimensions(this, word.text, textOptions).width,
+            (sum, word) => sum + wordWidth(word),
             0,
           );
           var gaps = words.filter((word) => word.gap).length;
           var gap = gaps > 0 ? (width - left - right - wordsWidth) / gaps : 0;
           words.forEach((word) => {
-            drawText.call(this, word.text, drawX, baseline, textOptions);
-            drawX +=
-              dimensions(this, word.text, textOptions).width +
-              (word.gap ? gap : 0);
+            if (!word.indent) {
+              drawText.call(this, word.text, drawX, baseline, textOptions);
+            }
+            drawX += wordWidth(word) + (word.gap ? gap : 0);
           });
           linkWidth = width - left - right;
         } else {

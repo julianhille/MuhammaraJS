@@ -23,10 +23,10 @@ function writeHebrew(outputPath, fontPath) {
     .writeText("שלום עולם", 72, 760, options)
     .writeText("מחיר 120 ש״ח", 72, 730, options);
 
-  // x is the left edge of the drawn text, so subtract the width to end the
-  // line at the right margin.
+  // x is the left edge of the drawn text, so subtract where its glyphs end
+  // to end the line at the right margin.
   var text = "שלום עולם";
-  var width = font.calculateTextDimensions(text, 14).width;
+  var width = font.calculateTextDimensions(text, 14).xMax;
   context.writeText(text, 523 - width, 700, options);
 
   writer.writePage(page);

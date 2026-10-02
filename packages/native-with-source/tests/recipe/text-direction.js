@@ -126,8 +126,10 @@ describe("Recipe text direction", function () {
     );
   });
 
-  it("keeps the indent of justified list items", async function () {
-    const lefts = {};
+  it("indents justified right-to-left list items from the right", async function () {
+    const writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    const font = writer.getFontForFile(ARIAL);
+    const gaps = {};
     for (const direction of ["auto", "none"]) {
       const runs = await drawPage(
         "text-direction-indent-" + direction,
@@ -147,12 +149,32 @@ describe("Recipe text direction", function () {
         },
       );
       // The second line is wrapped, indented and justified.
-      lefts[direction] = lineRuns(runs, 1).find(
-        (run) => run.text.trim() !== "",
-      ).x;
+      const visible = lineRuns(runs, 1).filter((run) => run.text.trim());
+      gaps[direction] = {
+        left:
+          Math.min(
+            ...visible.map(
+              (run) => run.x + font.calculateTextDimensions(run.text, 12).xMin,
+            ),
+          ) - 20,
+        right:
+          140 -
+          Math.max(
+            ...visible.map(
+              (run) =>
+                run.x +
+                font.calculateTextDimensions(run.text.trimEnd(), 12).xMax,
+            ),
+          ),
+      };
     }
-    assert.ok(lefts.none > 60, String(lefts.none));
-    assert.ok(Math.abs(lefts.auto - lefts.none) < 2);
+    assert.ok(gaps.none.left > 30, JSON.stringify(gaps));
+    // Reordered, the indent moves to the right side by the same width.
+    assert.ok(
+      Math.abs(gaps.auto.right - gaps.none.left) < 2,
+      JSON.stringify(gaps),
+    );
+    assert.ok(gaps.auto.left < 2, JSON.stringify(gaps));
   });
 
   it("orders the styled runs of an HTML line as one line", async function () {
@@ -192,8 +214,18 @@ describe("Recipe text direction", function () {
       line.slice(-3).map((run) => run.text.trim()),
       ["שולש", "םייתש", "תחא"],
     );
-    // Justified, the line starts at the left edge of the box.
-    assert.ok(line[0].x < 25, JSON.stringify(line));
+    // Justified, the line spans the box from edge to edge.
+    const font = muhammara
+      .createWriter(new muhammara.PDFWStreamForBuffer())
+      .getFontForFile(ARIAL);
+    const last = line[line.length - 1];
+    assert.ok(Math.abs(line[0].x - 20) < 1, JSON.stringify(line));
+    assert.ok(
+      Math.abs(
+        last.x + font.calculateTextDimensions(last.text.trim(), 12).xMax - 140,
+      ) < 1,
+      JSON.stringify(line),
+    );
   });
 
   it("orders flowed runs of one line as one line", async function () {
@@ -308,6 +340,43 @@ describe("Recipe text direction", function () {
       plain,
     );
     assert.ok(recipe.textDimensions("\u2067שלום\u2069", options).xMax > plain);
+  });
+
+  it("adds one text-markup annotation across a reordered line", async function () {
+    const output = path.join(__dirname, "../output/text-direction-markup.pdf");
+    const recipe = new Recipe("new", output);
+    recipe.registerFont("arial", ARIAL);
+    recipe.createPage(400, 400).text("<p>שלום <u>עולם</u> יפה</p>", 20, 20, {
+      font: "arial",
+      size: 16,
+      html: true,
+      direction: "auto",
+      highlight: true,
+      textBox: { width: 360, textAlign: "right" },
+    });
+    await new Promise((resolve) => recipe.endPage().endPDF(resolve));
+    const reader = muhammara.createReader(output);
+    const runs = reader.extractPageText(0);
+    const annotations = reader
+      .parsePage(0)
+      .getDictionary()
+      .toJSObject()
+      .Annots.toJSArray()
+      .map((reference) =>
+        reader
+          .parseNewObject(reference.getObjectID())
+          .toJSObject()
+          .Rect.toJSArray()
+          .map((value) => value.value),
+      );
+    reader.end();
+    assert.equal(annotations.length, 1);
+    const left = Math.min(...runs.map((run) => run.textMatrix[4]));
+    assert.ok(
+      Math.abs(annotations[0][0] - left) < 1,
+      JSON.stringify(annotations),
+    );
+    assert.ok(annotations[0][2] <= 381, JSON.stringify(annotations));
   });
 
   it("rejects an unknown direction before drawing", function () {

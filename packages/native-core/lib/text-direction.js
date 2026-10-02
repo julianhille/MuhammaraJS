@@ -214,8 +214,9 @@ function clusterMembers(starts) {
  *
  * @param {string} core The paragraph text.
  * @param {string} direction "auto", "ltr" or "rtl".
- * @returns {Array<{index: number, character: string}>} Each drawn
- * character with its UTF-16 index in `core`, from left to right.
+ * @returns {{characters: Array<{index: number, character: string}>, rtl:
+ * boolean}} Each drawn character with its UTF-16 index in `core`, from left
+ * to right, and whether the paragraph is right to left.
  */
 function visualCharacters(core, direction) {
   var api = getBidi();
@@ -258,22 +259,29 @@ function visualCharacters(core, direction) {
       }
     });
   });
-  return visual;
+  return { characters: visual, rtl: levels.paragraphs[0].level % 2 === 1 };
 }
 
 /**
- * Reorder one paragraph, without its edge whitespace, to visual order.
+ * Reorder one paragraph to visual order. Whitespace at its end stays at the
+ * end of the text; whitespace at its start, such as an indent, stays at the
+ * paragraph's start: on the left of a left-to-right paragraph and on the
+ * right of a right-to-left one.
  *
- * @param {string} core The paragraph text.
+ * @param {string} paragraph The paragraph text.
  * @param {string} direction "auto", "ltr" or "rtl".
  * @returns {string} The paragraph in visual order.
  */
-function reorderParagraph(core, direction) {
-  return visualCharacters(core, direction)
+function reorderParagraph(paragraph, direction) {
+  var edges = /^(\s*)([\s\S]*?)(\s*)$/.exec(paragraph);
+  if (!edges[2]) return paragraph;
+  var visual = visualCharacters(edges[2], direction);
+  var core = visual.characters
     .map(function (entry) {
       return entry.character;
     })
     .join("");
+  return visual.rtl ? core + edges[3] + edges[1] : edges[1] + core + edges[3];
 }
 
 /**
@@ -296,8 +304,10 @@ function reorders(text, direction) {
  * left-to-right words inside them keep their order, brackets in right-to-left
  * runs are mirrored, combining marks stay on their letter (drawn before it in
  * right-to-left runs, where fonts expect them), and formatting
- * characters are dropped. Whitespace at either end of the text stays where it
- * is, so measuring and aligning the line are unchanged. Text holding
+ * characters are dropped. Whitespace at the end of the text stays at the end,
+ * and whitespace at its start, such as an indent, stays at the paragraph's
+ * start: the left for a left-to-right paragraph and the right for a
+ * right-to-left one, after any trailing whitespace. Text holding
  * paragraph breaks is reordered paragraph by paragraph, and the breaks stay
  * in place.
  *
@@ -314,10 +324,7 @@ function toVisual(text, direction) {
   return text
     .split(PARAGRAPH_SPLIT)
     .map(function (part, index) {
-      if (index % 2) return part;
-      var edges = /^(\s*)([\s\S]*?)(\s*)$/.exec(part);
-      if (!edges[2]) return part;
-      return edges[1] + reorderParagraph(edges[2], direction) + edges[3];
+      return index % 2 ? part : reorderParagraph(part, direction);
     })
     .join("");
 }
@@ -343,16 +350,18 @@ function drawnText(text, direction) {
  * as one line. Each returned segment is a piece of one run, already in visual
  * order, and the segments are listed from left to right. Whitespace that
  * would start a segment ends the segment before it instead, so, as in logical
- * order, a segment ends with the space that follows its word. Whitespace at
- * either end of the line stays where it is, as in `toVisual()`.
+ * order, a segment ends with the space that follows its word, and no segment
+ * is only whitespace. Whitespace at the start of the line, such as a list
+ * indent, becomes `indent` segments at the line's start: first in a
+ * left-to-right line and last in a right-to-left one, as in `toVisual()`.
  *
  * @param {string[]} texts The runs of the line in logical order.
  * @param {string} [direction] A `TextDirection` value; defaults to "none".
  * "auto" takes the direction of the line's first strong letter.
- * @returns {Array<{run: number, text: string}>|null} The segments, with the
- * index of the run each one belongs to, or null when the line keeps its
- * logical order: for "none", for left-to-right text, and for a line holding a
- * paragraph break.
+ * @returns {Array<{run: number, text: string, indent: (boolean|undefined)}>|null}
+ * The segments, with the index of the run each one belongs to, or null when
+ * the line keeps its logical order: for "none", for left-to-right text, and
+ * for a line holding a paragraph break.
  * @throws {TypeError} If `direction` is not a `TextDirection` value.
  */
 function visualRuns(texts, direction) {
@@ -366,30 +375,40 @@ function visualRuns(texts, direction) {
     for (var index = 0; index < text.length; ++index) owners.push(run);
   });
   var edges = /^(\s*)([\s\S]*?)(\s*)$/.exec(line);
+  if (!edges[2]) return null;
   var leading = edges[1].length;
-  var characters = [];
+  var visual = visualCharacters(edges[2], direction);
+  var characters = visual.characters.map(function (entry) {
+    return { index: entry.index + leading, character: entry.character };
+  });
   var index;
-  for (index = 0; index < leading; ++index) {
-    characters.push({ index: index, character: line[index] });
-  }
-  if (edges[2]) {
-    visualCharacters(edges[2], direction).forEach(function (entry) {
-      characters.push({
-        index: entry.index + leading,
-        character: entry.character,
-      });
-    });
-  }
   for (index = leading + edges[2].length; index < line.length; ++index) {
     characters.push({ index: index, character: line[index] });
   }
-  var segments = [];
-  characters.forEach(function (entry) {
-    var run = owners[entry.index];
-    var last = segments[segments.length - 1];
-    if (last && last.run === run) last.text += entry.character;
-    else segments.push({ run: run, text: entry.character });
-  });
+  /**
+   * Group characters into segments of consecutive characters of one run.
+   *
+   * @param {Array<{index: number, character: string}>} entries Characters.
+   * @param {boolean} indent Whether the segments are the line's indent.
+   * @returns {Array<{run: number, text: string}>} The segments.
+   */
+  function group(entries, indent) {
+    var groups = [];
+    entries.forEach(function (entry) {
+      var run = owners[entry.index];
+      var last = groups[groups.length - 1];
+      if (last && last.run === run) last.text += entry.character;
+      else {
+        groups.push(
+          indent
+            ? { run: run, text: entry.character, indent: true }
+            : { run: run, text: entry.character },
+        );
+      }
+    });
+    return groups;
+  }
+  var segments = group(characters, false);
   for (index = 1; index < segments.length; ++index) {
     var space = BREAKABLE_SPACE.exec(segments[index].text);
     if (space) {
@@ -397,9 +416,15 @@ function visualRuns(texts, direction) {
       segments[index].text = segments[index].text.slice(space[0].length);
     }
   }
-  return segments.filter(function (segment) {
+  segments = segments.filter(function (segment) {
     return segment.text !== "";
   });
+  var indent = [];
+  for (index = 0; index < leading; ++index) {
+    indent.push({ index: index, character: line[index] });
+  }
+  indent = group(indent, true);
+  return visual.rtl ? segments.concat(indent) : indent.concat(segments);
 }
 
 /**
@@ -409,13 +434,23 @@ function visualRuns(texts, direction) {
  *
  * @param {Array<{run: number, text: string}>} segments Segments from
  * `visualRuns()`.
- * @returns {Array<{run: number, text: string, gap: boolean}>} The words from
- * left to right; `gap` marks a visible word followed by breakable whitespace
- * and more text, whose gap justification may widen.
+ * @returns {Array<{run: number, text: string, gap: boolean, indent:
+ * (boolean|undefined)}>} The words from left to right; `gap` marks a visible
+ * word followed by breakable whitespace and more text, whose gap
+ * justification may widen, and `indent` keeps an indent segment whole.
  */
 function visualWords(segments) {
   var words = [];
   segments.forEach(function (segment) {
+    if (segment.indent) {
+      words.push({
+        run: segment.run,
+        text: segment.text,
+        gap: false,
+        indent: true,
+      });
+      return;
+    }
     var pattern =
       /(?:(?![\u00a0\u2007\u202f])\s)*(?:[^\s]|[\u00a0\u2007\u202f])+(?:(?![\u00a0\u2007\u202f])\s)*|\s+/g;
     var match;

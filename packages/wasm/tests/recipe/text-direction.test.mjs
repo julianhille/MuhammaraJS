@@ -139,8 +139,21 @@ describe("Recipe text direction", function () {
     );
   });
 
-  it("keeps the indent of justified list items", function () {
-    var indents = {};
+  it("indents justified right-to-left list items from the right", function () {
+    var font = muhammara.createWriter().getFontForBytes("arial");
+    var space =
+      font.calculateTextDimensions("o o", 12).xMax -
+      font.calculateTextDimensions("oo", 12).xMax;
+    /**
+     * Where a run's glyphs start, after its leading spaces.
+     * @param {{text: string, x: number}} run A drawn run.
+     * @returns {number} The x of the run's first glyph edge.
+     */
+    var inkLeft = (run) =>
+      run.x +
+      (run.text.length - run.text.trimStart().length) * space +
+      font.calculateTextDimensions(run.text.trimStart(), 12).xMin;
+    var gaps = {};
     for (var direction of ["auto", "none"]) {
       var runs = drawPage("text-direction-indent-" + direction, (recipe) => {
         recipe.text(
@@ -156,14 +169,28 @@ describe("Recipe text direction", function () {
           },
         );
       });
-      // The second line is wrapped, indented and justified. Wasm draws the
-      // indent as the leading spaces of the line's first run.
-      var first = lineRuns(runs, 1)[0];
-      assert.ok(Math.abs(first.x - 20) < 1, JSON.stringify(first));
-      indents[direction] = first.text.match(/^ */)[0].length;
+      // The second line is wrapped, indented and justified.
+      var visible = lineRuns(runs, 1).filter((run) => run.text.trim());
+      gaps[direction] = {
+        left: Math.min(...visible.map(inkLeft)) - 20,
+        right:
+          140 -
+          Math.max(
+            ...visible.map(
+              (run) =>
+                run.x +
+                font.calculateTextDimensions(run.text.trimEnd(), 12).xMax,
+            ),
+          ),
+      };
     }
-    assert.ok(indents.none > 0, JSON.stringify(indents));
-    assert.equal(indents.auto, indents.none);
+    assert.ok(gaps.none.left > 20, JSON.stringify(gaps));
+    // Reordered, the indent moves to the right side by the same width.
+    assert.ok(
+      Math.abs(gaps.auto.right - gaps.none.left) < 2,
+      JSON.stringify(gaps),
+    );
+    assert.ok(gaps.auto.left < 2, JSON.stringify(gaps));
   });
 
   it("orders the styled runs of an HTML line as one line", function () {
@@ -203,8 +230,12 @@ describe("Recipe text direction", function () {
       line.slice(-3).map((run) => run.text.trim()),
       ["שולש", "םייתש", "תחא"],
     );
-    // Justified, the line starts at the left edge of the box.
-    assert.ok(line[0].x < 25, JSON.stringify(line));
+    // Justified, the line spans the box from edge to edge.
+    assert.ok(Math.abs(line[0].x - 20) < 1, JSON.stringify(line));
+    assert.ok(
+      Math.abs(inkRight(line[line.length - 1], 12) - 140) < 1,
+      JSON.stringify(line),
+    );
   });
 
   it("aligns text by the width it draws, without formatting characters", function () {
@@ -309,6 +340,52 @@ describe("Recipe text direction", function () {
     } finally {
       recipe.dispose();
     }
+  });
+
+  it("adds one text-markup annotation across a reordered line", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    var bytes;
+    try {
+      bytes = recipe
+        .text("<p>שלום <u>עולם</u> יפה</p>", 20, 20, {
+          font: "arial",
+          size: 16,
+          html: true,
+          direction: "auto",
+          highlight: true,
+          textBox: { width: 360, textAlign: "right" },
+        })
+        .endPage()
+        .endPDF();
+    } finally {
+      recipe.dispose();
+    }
+    writeOutput("text-direction-markup", bytes);
+    var reader = muhammara.createReader(bytes);
+    try {
+      var runs = reader.extractPageText(0);
+      var annotations = reader
+        .parsePage(0)
+        .getDictionary()
+        .toJSObject()
+        .Annots.toJSArray()
+        .map((reference) =>
+          reader
+            .parseNewObject(reference.getObjectID())
+            .toJSObject()
+            .Rect.toJSArray()
+            .map((value) => value.value),
+        );
+    } finally {
+      reader.end();
+    }
+    assert.equal(annotations.length, 1);
+    var left = Math.min(...runs.map((run) => run.textMatrix[4]));
+    assert.ok(
+      Math.abs(annotations[0][0] - left) < 1,
+      JSON.stringify(annotations),
+    );
+    assert.ok(annotations[0][2] <= 381, JSON.stringify(annotations));
   });
 
   it("rejects an unknown direction before drawing", function () {
