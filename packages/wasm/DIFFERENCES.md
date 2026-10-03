@@ -19,7 +19,9 @@ a source `password` throws a `TypeError`. Decrypt the source with
 `recrypt(bytes, { password })` first.
 Wasm `recryptAsync()` returns a promise like native's, but recrypts on the
 calling thread, because Wasm has no thread pool; call it from a Worker to keep a
-page responsive.
+page responsive. It also rejects for an unsupported source or option, where
+native `recryptAsync()` throws synchronously for wrong arguments, as every Wasm
+`*Async` method rejects.
 Drawing helpers and `writeText` accept only `rgb`, `gray`, or `cmyk` as
 `colorspace` and throw a `TypeError` otherwise, and only a numeric `color` can
 use `gray` or `cmyk`, as in native. Wasm also accepts an `[r, g, b]` array as a

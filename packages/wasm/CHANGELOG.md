@@ -57,8 +57,9 @@ These bring Wasm Recipe in line with native Recipe; see
   Emscripten toolchain that linked the binary [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
 - `recryptAsync()`, which resolves with the bytes `recrypt()` returns and also
   accepts a `Blob` or `File`. It recrypts on the calling thread; call it from a
-  Worker to keep a page responsive
-  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+  Worker to keep a page responsive. It holds no more copies of the input than
+  `recrypt()` [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+  [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
 - A Benchmark tab in the browser example, which recrypts the same PDF with
   synchronous `recrypt()` and `recryptAsync()`, each on the page and in a
   module Worker, and measures how long the page stops responding
@@ -103,6 +104,16 @@ These bring Wasm Recipe in line with native Recipe; see
   extra interval was added between runs. Every gap of a justified line gets
   the same width, as on native, whatever the size of the runs around it
   [#888](https://github.com/julianhille/MuhammaraJS/issues/888)
+- Accept `null` options for `recrypt()` in `index.d.ts`, as it already does
+  at runtime
+  [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
+
+### Changed
+
+- Copy byte input once instead of twice while an `*Async` method reads it, and
+  use the bytes a `Blob` or `File` returns without copying them again, so a
+  large input needs less memory at once
+  [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
 
 ## [1.0.0] - 2026-10-01
 

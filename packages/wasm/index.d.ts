@@ -2544,9 +2544,13 @@ export interface MuhammaraWasm {
   ByteWriter: typeof ByteWriter;
   ByteWriterWithPosition: typeof ByteWriterWithPosition;
   createWriter(options?: CreateWriterOptions): PDFWriter;
+  /**
+   * Decrypts, re-encrypts, or rewrites a PDF, like native `recrypt()`.
+   * `null` options mean no options.
+   */
   recrypt(
     source: ByteSource,
-    options?: PDFRecryptOptions,
+    options?: PDFRecryptOptions | null,
   ): Uint8Array<ArrayBuffer>;
   /**
    * Like `recrypt()`, after reading a Blob, File, or bytes. Recrypting runs on
@@ -2554,7 +2558,7 @@ export interface MuhammaraWasm {
    */
   recryptAsync(
     source: AsyncByteSource,
-    options?: PDFRecryptOptions,
+    options?: PDFRecryptOptions | null,
   ): Promise<Uint8Array<ArrayBuffer>>;
   createWriterToModify(
     source: ByteSource,

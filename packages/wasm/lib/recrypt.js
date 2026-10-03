@@ -19,7 +19,7 @@ var recryptOptionKeys = [
  * @returns {PDFRecryptOptions|*} A plain copy, or `options` itself when it is
  *   not an object.
  */
-export function copyRecryptOptions(options) {
+function copyRecryptOptions(options) {
   if (!options || typeof options !== "object") return options;
   var copy = {};
   for (var key of recryptOptionKeys) copy[key] = options[key];
@@ -27,28 +27,28 @@ export function copyRecryptOptions(options) {
 }
 
 /**
- * Creates the byte-first equivalent of native `recrypt`.
+ * Creates the byte-first equivalents of native `recrypt` and `recryptAsync`.
  * @param {object} dependencies - Module, constants, and byte helpers.
- * @returns {Function} `recrypt(bytes, options)`.
+ * @returns {{recrypt: Function, recryptAsync: Function}} `recrypt(bytes,
+ *   options)` and `recryptAsync(source, options)`.
  */
 export function createRecrypt({
   module,
   normalizeBytes,
+  normalizeBytesAsync,
   withBytes,
   withString,
   assertOutputSize,
 }) {
   /**
-   * Decrypts, re-encrypts, or rewrites a PDF, like native `muhammara.recrypt`.
-   * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} source - PDF to rewrite.
-   * @param {PDFRecryptOptions} [options] - Source `password`, new `userPassword`/`ownerPassword`,
-   *   `userProtectionFlag`, `version`, and `compress`.
+   * Rewrites a PDF that is already normalized, so neither caller copies it a
+   * second time.
+   * @param {Uint8Array} source - PDF to rewrite, owned by this call.
+   * @param {PDFRecryptOptions|null} [options] - Recrypt options.
    * @returns {Uint8Array} The rewritten PDF.
-   * @throws {TypeError} If `source` is not a supported byte source.
    * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
    */
-  return function recrypt(source, options = {}) {
-    source = normalizeBytes(source, "PDF input");
+  function recryptBytes(source, options) {
     if (!options || typeof options !== "object") options = {};
     if (typeof options.log === "string") {
       throw new Error("recrypt log files are unavailable in WebAssembly");
@@ -121,5 +121,42 @@ export function createRecrypt({
         ),
       ),
     );
+  }
+
+  return {
+    /**
+     * Decrypts, re-encrypts, or rewrites a PDF, like native `muhammara.recrypt`.
+     * @param {Uint8Array|ArrayBuffer|PDFRStreamForBuffer} source - PDF to rewrite.
+     * @param {PDFRecryptOptions|null} [options] - Source `password`, new `userPassword`/`ownerPassword`,
+     *   `userProtectionFlag`, `version`, and `compress`; `null` means none.
+     * @returns {Uint8Array} The rewritten PDF.
+     * @throws {TypeError} If `source` is not a supported byte source.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
+     */
+    recrypt: function recrypt(source, options = {}) {
+      return recryptBytes(normalizeBytes(source, "PDF input"), options);
+    },
+    /**
+     * Rewrites a PDF like `recrypt()`, after reading an asynchronous byte
+     * source. Recrypting itself runs on the calling thread; call it from a
+     * Worker to keep a page responsive.
+     * @async
+     * @param {AsyncByteSource} source - PDF bytes, Blob, or File.
+     * @param {PDFRecryptOptions|null} [options] - Source `password`, new `userPassword`/`ownerPassword`,
+     *   `userProtectionFlag`, `version`, and `compress`; `null` means none.
+     * @returns {Promise<Uint8Array>} The rewritten PDF.
+     * @throws {TypeError} If `source` is not a supported byte source.
+     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+     * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
+     */
+    recryptAsync: async function recryptAsync(source, options = {}) {
+      options = copyRecryptOptions(options);
+      // The normalized bytes are already this call's own copy.
+      return recryptBytes(
+        await normalizeBytesAsync(source, "PDF input"),
+        options,
+      );
+    },
   };
 }
