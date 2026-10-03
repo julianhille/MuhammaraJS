@@ -62,8 +62,10 @@ These bring Wasm Recipe in line with native Recipe; see
   [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
 - A Benchmark tab in the browser example, which recrypts the same PDF with
   synchronous `recrypt()` and `recryptAsync()`, each on the page and in a
-  module Worker, and measures how long the page stops responding
+  module Worker, and measures how long the page stops responding. Cancel stops
+  it before the next recrypt
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+  [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
 
 ### Fixed
 

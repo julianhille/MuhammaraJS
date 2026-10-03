@@ -384,4 +384,123 @@ describe("Browser how-to examples", function () {
     assert.deepEqual(inspected.bookmarks, []);
     assert.equal(result.summary.pages, 1);
   });
+
+  describe("benchmark tab", function () {
+    var originalSetTimeout = globalThis.setTimeout;
+    var originalClearTimeout = globalThis.clearTimeout;
+    var pending;
+    var calls;
+
+    beforeEach(function () {
+      // Track the timers the example starts, to find leaks and count the
+      // macrotasks it yields to between recrypts.
+      pending = new Set();
+      calls = [];
+      /**
+       * Records each delay and tracks the timer until it fires or is cleared.
+       * @param {Function} callback - Timer callback.
+       * @param {number} delay - Delay in milliseconds.
+       * @param {...*} rest - Callback arguments.
+       * @returns {*} The timer.
+       */
+      globalThis.setTimeout = function (callback, delay, ...rest) {
+        calls.push(delay);
+        var timer = originalSetTimeout(function () {
+          pending.delete(timer);
+          callback(...rest);
+        }, delay);
+        pending.add(timer);
+        return timer;
+      };
+      /**
+       * Clears a timer and stops tracking it.
+       * @param {*} timer - The timer.
+       * @returns {void}
+       */
+      globalThis.clearTimeout = function (timer) {
+        pending.delete(timer);
+        originalClearTimeout(timer);
+      };
+    });
+
+    afterEach(function () {
+      globalThis.setTimeout = originalSetTimeout;
+      globalThis.clearTimeout = originalClearTimeout;
+      for (var timer of pending) originalClearTimeout(timer);
+    });
+
+    it("does not block the other tabs with its hidden runs field", async function () {
+      var page = await readFile(
+        new URL("../../examples/browser/index.html", import.meta.url),
+        "utf8",
+      );
+      // The runs field is a constrained number input in the shared form; a
+      // hidden invalid value must not stop the form from submitting.
+      assert.match(page, /<form id="example-form"[^>]*\snovalidate[\s>]/);
+    });
+
+    it("runs a whole number of recrypts from 1 to 50 without form validation", async function () {
+      this.timeout(60000);
+      var Recipe = await createRecipe();
+      var pdf = new Recipe().createPage(100, 100).endPage().endPDF();
+      for (var [runs, expected] of [
+        ["2.4", 2],
+        ["0", 1],
+        ["-3", 1],
+        ["80", 50],
+        ["", 5],
+        [" ", 5],
+        ["many", 5],
+      ]) {
+        var yields = calls.filter((delay) => delay === 0).length;
+        var result = await runHowToExample("benchmark", {
+          assets: { pdf, runs },
+        });
+        for (var mode of result.summary.results) {
+          assert.equal(mode.runs, expected, `runs ${JSON.stringify(runs)}`);
+        }
+        // Each recrypt on the page yields once; both page modes ran.
+        assert.equal(
+          calls.filter((delay) => delay === 0).length - yields,
+          2 * expected,
+        );
+      }
+    });
+
+    it("stops sampling when a mode fails", async function () {
+      await assert.rejects(
+        runHowToExample("benchmark", {
+          assets: { pdf: new TextEncoder().encode("not a pdf"), runs: 1 },
+        }),
+        /Unable to recrypt PDF/,
+      );
+      var before = calls.length;
+      await new Promise((resolve) => originalSetTimeout(resolve, 50));
+      assert.equal(calls.length, before, "the sampler kept rescheduling");
+      assert.equal(pending.size, 0);
+    });
+
+    it("stops recrypting when cancelled during a mode", async function () {
+      this.timeout(60000);
+      var Recipe = await createRecipe();
+      var pdf = new Recipe().createPage(100, 100).endPage().endPDF();
+      var controller = new AbortController();
+      var running = runHowToExample("benchmark", {
+        assets: { pdf, runs: 50 },
+        signal: controller.signal,
+      });
+      // Cancel once the first recrypt yielded to the event loop.
+      /**
+       * Counts the zero-delay timers: one per recrypt on the page.
+       * @returns {number} The count so far.
+       */
+      var yields = () => calls.filter((delay) => delay === 0).length;
+      while (yields() === 0) {
+        await new Promise((resolve) => originalSetTimeout(resolve, 0));
+      }
+      controller.abort();
+      await assert.rejects(running, { name: "AbortError" });
+      assert.ok(yields() <= 2, `ran ${yields()} recrypts after Cancel`);
+    });
+  });
 });
