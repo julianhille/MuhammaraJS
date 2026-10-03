@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Recipe `text()` without coordinates starts at the page margins after
+  `createPage()` or `editPage()`, as in Wasm, instead of at the previous
+  page's text box origin, and `movedown()` no longer starts from the previous
+  page's text position [#914](https://github.com/julianhille/MuhammaraJS/issues/914)
 - Reject a PDF whose object stream declares more objects (`/N`) than its xref
   table holds. Parsing it with `createReader()`, `recrypt()`,
   `recryptAsync()`, `createWriterToModify()`, or Recipe on an existing PDF

@@ -570,6 +570,19 @@ function planPageDeletion(recipe, copyingContext, deletedPages, prune) {
 }
 
 /**
+ * Forgets the previous page's text box, so text() without coordinates starts
+ * at the margins of the new active page and movedown() does not return to the
+ * previous page's text box origin.
+ * @private
+ * @param {Recipe} recipe - Recipe instance.
+ * @returns {void}
+ */
+function resetTextBox(recipe) {
+  recipe._textBoxOrigin = null;
+  recipe._textOptions = null;
+}
+
+/**
  * Reports whether a page is still open, for new pages and edited pages alike.
  * Document-level operations close the active page before they run, so the
  * writer never has to finalize around an open content stream.
@@ -671,6 +684,7 @@ export function createPageMethods(
       // layout still use their margin fallbacks when the text cursor is zero.
       this._cursor = { x: 0, y: 0 };
       this._textCursor = { x: 0, y: 0 };
+      resetTextBox(this);
       return this;
     },
 
@@ -955,6 +969,7 @@ export function createPageMethods(
       this._pageWidth = page.width;
       this._pageHeight = page.height;
       this._textCursor = { x: this._margin.left, y: this._margin.top };
+      resetTextBox(this);
       this._resumePageRotation();
       return this;
     },

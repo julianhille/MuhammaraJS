@@ -610,8 +610,28 @@ exports.createPage = function createPage(pageWidth, pageHeight, margins) {
   }
 
   this.moveTo(0, 0);
+  resetTextBox(this, 0, 0);
   return this;
 };
+
+/**
+ * Forget the previous page's text box, so text() without coordinates starts
+ * at the margins of the new active page instead of the last text position,
+ * and movedown() starts from the given cursor.
+ * @private
+ * @param {Recipe} recipe - The recipe instance.
+ * @param {number} x - The text cursor x on the new active page.
+ * @param {number} y - The text cursor y on the new active page.
+ * @returns {void}
+ */
+function resetTextBox(recipe, x, y) {
+  recipe.x = x;
+  recipe.y = y;
+  recipe.box = undefined;
+  recipe._textOptions = undefined;
+  recipe._previousTextObjects = [];
+  recipe._firstLineHeight = 0;
+}
 
 /**
  * Map the PageBox names, which setPageBox() also accepts, to the addon's
@@ -786,6 +806,7 @@ exports.editPage = function editPage(pageNumber) {
   this.editingPage = true;
   this.contextState = PAGE_CONTEXT_STATE.ACTIVE_EDIT;
   this.modifiedSourcePages.add(pageNumber);
+  resetTextBox(this, this._margin.left, this._margin.top);
 
   this._resumePageRotation(pageNumber);
 
