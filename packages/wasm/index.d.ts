@@ -2553,10 +2553,10 @@ export interface MuhammaraWasm {
     options?: PDFRecryptOptions | null,
   ): Uint8Array<ArrayBuffer>;
   /**
-   * Like `recrypt()`, after reading a Blob, File, or bytes. Recrypting runs on
-   * the calling thread, so it is as fast and as blocking as `recrypt()`. It
-   * does not start a Worker of its own yet; call it from a Worker to keep a
-   * page responsive.
+   * Like `recrypt()`, after reading a Blob, File, or bytes. Recrypting runs in
+   * a worker, so the calling thread stays free; see
+   * `MuhammaraWasmOptions.recryptWorker` for when it runs on the calling
+   * thread instead.
    */
   recryptAsync(
     source: AsyncByteSource,
@@ -2660,6 +2660,15 @@ export interface MuhammaraWasmOptions {
     maxInputBytes?: number;
     maxOutputBytes?: number;
   };
+  /**
+   * Whether `recryptAsync()` recrypts in a worker: a module `Worker` in
+   * browsers, Deno, and Bun, `worker_threads` in Node. Defaults to `true`.
+   * The worker loads the binary from `wasmBinary` or from the location
+   * `locateFile` returned. With `false`, inside a worker, where no worker can
+   * start, or with module options other than `wasmBinary`, `locateFile`, and
+   * `limits`, it recrypts on the calling thread.
+   */
+  recryptWorker?: boolean;
   [key: string]: unknown;
 }
 export function createMuhammaraWasm(

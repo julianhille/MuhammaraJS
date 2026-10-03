@@ -17,12 +17,14 @@ source PDFs for `appendPDFPagesFromPDF`, `mergePDFPagesToPage`,
 `drawImage` cannot be encrypted:
 a source `password` throws a `TypeError`. Decrypt the source with
 `recrypt(bytes, { password })` first.
-Wasm `recryptAsync()` returns a promise like native's, but recrypts on the
-calling thread, because Wasm has no thread pool, so it is as fast and as
-blocking as `recrypt()`. It does not start a Worker of its own yet, which is in
-preparation; call it from a Worker to keep a page responsive. It also rejects for an unsupported source or option, where
-native `recryptAsync()` throws synchronously for wrong arguments, as every Wasm
-`*Async` method rejects.
+Wasm `recryptAsync()` returns a promise like native's. Native recrypts on a
+libuv pool thread; Wasm has no thread pool, so it recrypts in a worker it starts
+itself: a module `Worker` in browsers, Deno, and Bun, and `worker_threads` in
+Node. Inside a worker, where no worker can start, with module options a worker
+cannot receive, or with the Wasm-only module option `recryptWorker: false`, it
+recrypts on the calling thread, as fast and as blocking as `recrypt()`. It also
+rejects for an unsupported source or option, where native `recryptAsync()`
+throws synchronously for wrong arguments, as every Wasm `*Async` method rejects.
 Drawing helpers and `writeText` accept only `rgb`, `gray`, or `cmyk` as
 `colorspace` and throw a `TypeError` otherwise, and only a numeric `color` can
 use `gray` or `cmyk`, as in native. Wasm also accepts an `[r, g, b]` array as a

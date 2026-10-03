@@ -22,6 +22,7 @@ import { createModifierFactory } from "./lib/modifier.js";
 import { createWriterToModifyFactory } from "./lib/writer-to-modify.js";
 import { createRecipeFactory } from "./lib/recipe.js";
 import { createRecrypt } from "./lib/recrypt.js";
+import { createRecryptWorkerHost } from "./lib/recrypt-worker-client.js";
 import {
   DeviceColorSpace,
   ImageFit,
@@ -57,7 +58,8 @@ export {
  * Loads the Muhammara WebAssembly module and its byte-first PDF API.
  * @param {MuhammaraWasmOptions} [options] - Emscripten options and byte `limits`.
  * @returns {Promise<object>} The API, module, helpers, and byte guards.
- * @throws {TypeError} If `limits` is not an object or `wasmBinary` is not bytes.
+ * @throws {TypeError} If `limits` is not an object, `wasmBinary` is not bytes,
+ *   or `recryptWorker` is not a boolean.
  * @throws {RangeError} If a byte limit is not a positive safe integer.
  */
 async function createRuntime(options) {
@@ -74,6 +76,33 @@ async function createRuntime(options) {
   });
   var moduleOptions = { ...options };
   delete moduleOptions.limits;
+  var useRecryptWorker = moduleOptions.recryptWorker ?? true;
+  if (typeof useRecryptWorker !== "boolean") {
+    throw new TypeError("recryptWorker must be a boolean");
+  }
+  delete moduleOptions.recryptWorker;
+  // A worker loads its own instance. It receives wasmBinary, and the binary
+  // location locateFile returns here; any other module option, such as
+  // instantiateWasm, keeps recrypting on this thread. Checked before
+  // createModule(), which adds its own keys to the object.
+  useRecryptWorker &&= Object.keys(moduleOptions).every(
+    (key) => key === "wasmBinary" || key === "locateFile",
+  );
+  var userLocateFile = moduleOptions.locateFile;
+  var wasmLocation;
+  if (useRecryptWorker && typeof userLocateFile === "function") {
+    /**
+     * Calls the caller's locateFile and remembers where the binary loads from.
+     * @param {string} path - File Emscripten wants to load.
+     * @param {string} prefix - Emscripten's script directory.
+     * @returns {string} The caller's location for `path`.
+     */
+    moduleOptions.locateFile = function locateFile(path, prefix) {
+      var location = userLocateFile.call(this, path, prefix);
+      if (path.endsWith(".wasm")) wasmLocation = location;
+      return location;
+    };
+  }
   // Emscripten copies wasmBinary with new Uint8Array(), which converts other
   // views element by element instead of copying their bytes.
   var wasmBinary = moduleOptions.wasmBinary;
@@ -251,7 +280,31 @@ async function createRuntime(options) {
     ...dependencies,
     ...support,
   });
-  var { recrypt, recryptAsync } = createRecrypt(dependencies);
+  // A binary located by the caller but not recorded cannot be found again.
+  if (
+    userLocateFile !== undefined &&
+    wasmBinary === undefined &&
+    typeof wasmLocation !== "string"
+  ) {
+    useRecryptWorker = false;
+  }
+  var recryptWorker = useRecryptWorker
+    ? createRecryptWorkerHost({
+        wasmBinary,
+        // A worker resolves a relative URL against its own script, not the
+        // page, so hand it an absolute one.
+        wasmLocation:
+          typeof wasmLocation === "string" && globalThis.location?.href
+            ? new URL(wasmLocation, globalThis.location.href).href
+            : wasmLocation,
+        maxInputBytes,
+        maxOutputBytes,
+      })
+    : null;
+  var { recrypt, recryptAsync } = createRecrypt({
+    ...dependencies,
+    recryptWorker,
+  });
 
   var api = {
     ...constants,
@@ -547,6 +600,9 @@ async function createRuntime(options) {
  * `muhammara-wasm.wasm`; when supplied the binary is not fetched or read.
  * @param {Function} [options.locateFile] Maps the requested file name to the
  * URL or path to load it from.
+ * @param {boolean} [options.recryptWorker=true] Whether `recryptAsync()` runs
+ * in a worker. With `false`, or with module options other than `wasmBinary`,
+ * `locateFile`, and `limits`, it recrypts on the calling thread.
  * @returns {Promise<object>} The initialized Muhammara API.
  */
 export async function createMuhammaraWasm(options) {

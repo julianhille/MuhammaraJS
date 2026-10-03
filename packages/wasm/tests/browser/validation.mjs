@@ -727,6 +727,37 @@ export async function runValidation() {
   equal(urlLifecycle.revoked, 2, "example object URLs revoked");
   assertions += 6;
 
+  // recryptAsync() recrypts in a Worker on the page, and on the calling
+  // thread inside a Worker, which starts no second one.
+  var recryptRuntime = await createMuhammaraWasm();
+  var recryptSource = recryptRuntime.createBlankPdf(100, 100);
+  var timerTurns = 0;
+  var counting = true;
+  var countTurn = () => {
+    if (!counting) return;
+    timerTurns++;
+    setTimeout(countTurn, 0);
+  };
+  setTimeout(countTurn, 0);
+  try {
+    var recrypted = await recryptRuntime.recryptAsync(recryptSource, {
+      userPassword: "view",
+    });
+  } finally {
+    counting = false;
+  }
+  if (typeof window === "undefined") {
+    equal(timerTurns, 0, "recryptAsync timer turns inside a Worker");
+  } else {
+    assert(timerTurns > 0, "recryptAsync leaves the page free");
+  }
+  var recryptedReader = recryptRuntime.createReader(recrypted, {
+    password: "view",
+  });
+  assert(recryptedReader.isEncrypted(), "recryptAsync output is encrypted");
+  recryptedReader.end();
+  assertions += 2;
+
   return { assertions };
 }
 

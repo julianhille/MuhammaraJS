@@ -33,6 +33,9 @@ These bring Wasm Recipe in line with native Recipe; see
 
 ### Added
 
+- Add the `recryptWorker` module option of `createMuhammaraWasm()` and
+  `createRecipe()`; `recryptWorker: false` keeps `recryptAsync()` on the
+  calling thread [#943](https://github.com/julianhille/MuhammaraJS/issues/943)
 - Embed every third-party license and copyright notice in
   `muhammara-wasm.wasm` as its first section, a custom section named
   `license` holding plain UTF-8 Markdown, so the notices travel with the
@@ -112,6 +115,12 @@ These bring Wasm Recipe in line with native Recipe; see
 
 ### Changed
 
+- Run `recryptAsync()` in a worker, like native runs it on a thread pool, so a
+  page keeps responding while a PDF is recrypted: a module `Worker` in
+  browsers, Deno, and Bun, `worker_threads` in Node. Results and errors do not
+  change. Inside a worker, where no worker can start, or with module options a
+  worker cannot receive, it recrypts on the calling thread as before
+  [#943](https://github.com/julianhille/MuhammaraJS/issues/943)
 - Copy byte input once instead of twice while an `*Async` method reads it, and
   use the bytes a `Blob` or `File` returns without copying them again, so a
   large input needs less memory at once

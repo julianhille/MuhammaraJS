@@ -306,7 +306,8 @@ describe("Xcryption", function () {
     });
 
     it("holds no more copies of the input than recrypt", async function () {
-      var muhammara = await createMuhammaraWasm();
+      // Counts the copies on this thread, so recrypt on it.
+      var muhammara = await createMuhammaraWasm({ recryptWorker: false });
       var writer = muhammara.createWriter({ compress: false });
       for (var index = 0; index < 40; index++) {
         var page = writer.createPage(0, 0, 595, 842);
@@ -389,6 +390,193 @@ describe("Xcryption", function () {
       await assert.rejects(
         muhammara.recryptAsync(new Blob([new Uint8Array(32)])),
         /PDF input exceeds maxInputBytes/,
+      );
+    });
+
+    /**
+     * Counts how often the event loop turns while a call runs.
+     * @param {function(): Promise<*>} run - Starts the call.
+     * @returns {Promise<{result: *, turns: number}>} Its result and the turns.
+     */
+    async function turnsDuring(run) {
+      var turns = 0;
+      var running = true;
+      /**
+       * Counts one turn and queues the next.
+       * @returns {void}
+       */
+      function turn() {
+        if (!running) return;
+        turns++;
+        setImmediate(turn);
+      }
+      setImmediate(turn);
+      try {
+        return { result: await run(), turns };
+      } finally {
+        running = false;
+      }
+    }
+
+    /**
+     * Reads whether a recrypted PDF opens with `password` and is encrypted.
+     * @param {object} muhammara - The Wasm API.
+     * @param {Uint8Array} pdf - The recrypted PDF.
+     * @param {string} [password] - The user password.
+     * @returns {{encrypted: boolean, pages: number}} What the reader sees.
+     */
+    function readBack(muhammara, pdf, password) {
+      var reader = muhammara.createReader(
+        pdf,
+        password ? { password } : undefined,
+      );
+      try {
+        return {
+          encrypted: reader.isEncrypted(),
+          pages: reader.getPagesCount(),
+        };
+      } finally {
+        reader.end();
+      }
+    }
+
+    it("recrypts in a worker, leaving the event loop free", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var source = muhammara.createBlankPdf(100, 100);
+      var { result, turns } = await turnsDuring(() =>
+        muhammara.recryptAsync(source, { userPassword: "view" }),
+      );
+      // On the calling thread the recrypt runs in one turn; a worker needs
+      // many turns just to start.
+      assert.ok(turns > 10, `the event loop turned ${turns} times`);
+      assert.deepEqual(readBack(muhammara, result, "view"), {
+        encrypted: true,
+        pages: 1,
+      });
+      // The worker is reused and the source stays the caller's.
+      var again = await muhammara.recryptAsync(source, {
+        userPassword: "edit",
+      });
+      assert.deepEqual(readBack(muhammara, again, "edit"), {
+        encrypted: true,
+        pages: 1,
+      });
+      assert.equal(readBack(muhammara, source).encrypted, false);
+    });
+
+    it("recrypts on the calling thread with recryptWorker: false", async function () {
+      var muhammara = await createMuhammaraWasm({ recryptWorker: false });
+      var source = muhammara.createBlankPdf(100, 100);
+      var { result, turns } = await turnsDuring(() =>
+        muhammara.recryptAsync(source, { userPassword: "view" }),
+      );
+      assert.ok(turns <= 2, `the event loop turned ${turns} times`);
+      assert.equal(readBack(muhammara, result, "view").encrypted, true);
+    });
+
+    it("loads the binary its locateFile found in the worker", async function () {
+      var located = [];
+      var muhammara = await createMuhammaraWasm({
+        locateFile: (file, prefix) => {
+          located.push(file);
+          return prefix + file;
+        },
+      });
+      var source = muhammara.createBlankPdf(100, 100);
+      var { result, turns } = await turnsDuring(() =>
+        muhammara.recryptAsync(source, { userPassword: "view" }),
+      );
+      assert.ok(turns > 10, `the event loop turned ${turns} times`);
+      assert.equal(readBack(muhammara, result, "view").encrypted, true);
+      // The worker reused the location instead of calling locateFile.
+      assert.deepEqual(located, ["muhammara-wasm.wasm"]);
+    });
+
+    it("recrypts on the calling thread with options a worker cannot receive", async function () {
+      var printed = [];
+      var muhammara = await createMuhammaraWasm({
+        print: (text) => printed.push(text),
+      });
+      var { result, turns } = await turnsDuring(() =>
+        muhammara.recryptAsync(muhammara.createBlankPdf(100, 100), {
+          userPassword: "view",
+        }),
+      );
+      assert.ok(turns <= 2, `the event loop turned ${turns} times`);
+      assert.equal(readBack(muhammara, result, "view").encrypted, true);
+    });
+
+    it("rejects with the errors of recrypt from its worker", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var encrypted = muhammara.recrypt(muhammara.createBlankPdf(100, 100), {
+        userPassword: "view",
+      });
+      for (var [source, options] of [
+        [new Uint8Array([1, 2, 3]), undefined],
+        [encrypted, { password: "wrong" }],
+        [encrypted, { password: "view", version: 99 }],
+      ]) {
+        var thrown;
+        try {
+          muhammara.recrypt(source, options);
+        } catch (error) {
+          thrown = error;
+        }
+        assert.ok(thrown, "recrypt throws");
+        await assert.rejects(
+          muhammara.recryptAsync(source, options),
+          (error) => {
+            assert.equal(error.constructor, thrown.constructor);
+            assert.equal(error.message, thrown.message);
+            return true;
+          },
+        );
+      }
+      // A failed job leaves the worker usable.
+      var plain = await muhammara.recryptAsync(encrypted, { password: "view" });
+      assert.equal(readBack(muhammara, plain).encrypted, false);
+    });
+
+    it("runs concurrent jobs in their own order and results", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var source = muhammara.createBlankPdf(100, 100);
+      var passwords = ["one", "two", "three", "four"];
+      var results = await Promise.all(
+        passwords.map((userPassword) =>
+          muhammara.recryptAsync(source, { userPassword }),
+        ),
+      );
+      results.forEach((result, index) => {
+        assert.equal(
+          readBack(muhammara, result, passwords[index]).encrypted,
+          true,
+        );
+      });
+    });
+
+    it("applies the instance limits in its worker", async function () {
+      var source = (await createMuhammaraWasm()).createBlankPdf(100, 100);
+      var muhammara = await createMuhammaraWasm({
+        limits: { maxOutputBytes: source.length / 2 },
+      });
+      var { turns } = await turnsDuring(() =>
+        assert.rejects(muhammara.recryptAsync(source), (error) => {
+          assert.ok(error instanceof RangeError);
+          assert.equal(error.message, "PDF output exceeds maxOutputBytes");
+          return true;
+        }),
+      );
+      assert.ok(turns > 10, `the event loop turned ${turns} times`);
+    });
+
+    it("rejects a recryptWorker option that is not a boolean", async function () {
+      await assert.rejects(
+        createMuhammaraWasm({ recryptWorker: "no" }),
+        (error) => {
+          assert.ok(error instanceof TypeError);
+          assert.equal(error.message, "recryptWorker must be a boolean");
+          return true;
+        },
       );
     });
   });

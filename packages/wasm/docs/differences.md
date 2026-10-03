@@ -10,12 +10,14 @@ and Recipe `encrypt()`. PDF 2.0/AES-256 encryption remains unavailable. Existing
 byte-backed PDFs can be read, modified, and copied, but persistent-file
 continuation, password-protected Recipe source editing, and the path-based Recipe
 constructor are unavailable. Wasm `recryptAsync()` returns a promise like
-native's, but recrypts on the calling thread, because Wasm has no thread pool,
-so it is as fast and as blocking as `recrypt()`. It does not start a Worker of
-its own yet, which is in preparation; call it from a Worker to keep a page
-responsive. It also rejects for an
-unsupported source or option, where native `recryptAsync()` throws
-synchronously for wrong arguments, as every Wasm `*Async` method rejects. See
+native's. Native recrypts on a libuv pool thread; Wasm has no thread pool, so it
+recrypts in a worker it starts itself: a module `Worker` in browsers, Deno, and
+Bun, and `worker_threads` in Node. Inside a worker, where no worker can start,
+with module options a worker cannot receive, or with the Wasm-only module
+option `recryptWorker: false`, it recrypts on the calling thread, as fast and as
+blocking as `recrypt()`. It also rejects for an unsupported source or option,
+where native `recryptAsync()` throws synchronously for wrong arguments, as every
+Wasm `*Async` method rejects. See
 [Change PDF Passwords](how-to/change-pdf-passwords.md).
 
 `Recipe.thirdPartyLicenses()` is Wasm-only: it reads the third-party notices
