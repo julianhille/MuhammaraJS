@@ -758,6 +758,36 @@ export async function runValidation() {
   recryptedReader.end();
   assertions += 2;
 
+  // On a page with <base href>, a relative locateFile result loads the binary
+  // from the base URL, and the worker must load it from there too.
+  if (typeof window !== "undefined") {
+    var base = document.createElement("base");
+    base.href = new URL("../../dist/", import.meta.url).href;
+    document.head.append(base);
+    try {
+      var basedRuntime = await createMuhammaraWasm({
+        locateFile: (file) => file,
+        // Limits of its own, so it does not share the worker loaded above.
+        limits: { maxOutputBytes: 123456789 },
+      });
+    } finally {
+      base.remove();
+    }
+    // The first call starts the worker; a worker that could not load the
+    // binary leaves the second one on the page.
+    await basedRuntime.recryptAsync(recryptSource);
+    timerTurns = 0;
+    counting = true;
+    setTimeout(countTurn, 0);
+    try {
+      await basedRuntime.recryptAsync(recryptSource, { userPassword: "view" });
+    } finally {
+      counting = false;
+    }
+    assert(timerTurns > 0, "recryptAsync worker loads from the base URL");
+    assertions += 1;
+  }
+
   return { assertions };
 }
 

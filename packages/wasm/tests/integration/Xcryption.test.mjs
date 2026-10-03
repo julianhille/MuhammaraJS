@@ -3,6 +3,7 @@ import fs from "node:fs";
 import v8 from "node:v8";
 import vm from "node:vm";
 import { createMuhammaraWasm } from "../../index.js";
+import { recryptWorkerHost } from "../../lib/recrypt-worker-client.js";
 import { writeOutput } from "../testOutput.mjs";
 
 function readStreamIVs(pdf) {
@@ -444,15 +445,31 @@ describe("Xcryption", function () {
     it("recrypts in a worker, leaving the event loop free", async function () {
       var muhammara = await createMuhammaraWasm();
       var source = muhammara.createBlankPdf(100, 100);
+      // Earlier tests may have started the shared worker already, so recrypt
+      // a PDF that takes long enough for the event loop to turn many times.
+      var writer = muhammara.createWriter({ compress: false });
+      for (var index = 0; index < 200; index++) {
+        var page = writer.createPage(0, 0, 595, 842);
+        var context = writer.startPageContentContext(page);
+        for (var row = 0; row < 120; row++) {
+          context
+            .q()
+            .rg(0.2, 0.4, 0.6)
+            .re(40, 40 + row * 6, 500, 4)
+            .f()
+            .Q();
+        }
+        writer.writePage(page);
+      }
+      var large = writer.end();
       var { result, turns } = await turnsDuring(() =>
-        muhammara.recryptAsync(source, { userPassword: "view" }),
+        muhammara.recryptAsync(large, { userPassword: "view" }),
       );
-      // On the calling thread the recrypt runs in one turn; a worker needs
-      // many turns just to start.
+      // On the calling thread the recrypt runs in one turn.
       assert.ok(turns > 10, `the event loop turned ${turns} times`);
       assert.deepEqual(readBack(muhammara, result, "view"), {
         encrypted: true,
-        pages: 1,
+        pages: 200,
       });
       // The worker is reused and the source stays the caller's.
       var again = await muhammara.recryptAsync(source, {
@@ -661,6 +678,87 @@ describe("Xcryption", function () {
         counts.restore();
       }
       assert.equal(counts.exited, 1);
+    });
+
+    it("finishes running jobs when a wasmBinary instance's worker closes", async function () {
+      var muhammara = await createMuhammaraWasm();
+      // Installed first: the host reads worker_threads when it is created.
+      var counts = countWorkers();
+      var host = recryptWorkerHost({
+        wasmBinary: new Uint8Array(
+          fs.readFileSync(
+            new URL("../../dist/muhammara-wasm.wasm", import.meta.url),
+          ),
+        ),
+        maxInputBytes: 1024 * 1024,
+        maxOutputBytes: 1024 * 1024,
+      });
+      var options = {
+        password: "",
+        userPassword: "view",
+        ownerPassword: "",
+        userProtectionFlag: 4,
+        version: 0,
+        compress: true,
+      };
+      try {
+        // Start the worker, then close while the next job is in it.
+        await host.run(muhammara.createBlankPdf(100, 100), options);
+        var running = host.run(muhammara.createBlankPdf(100, 100), options);
+        await new Promise((resolve) => setImmediate(resolve));
+        // What a garbage-collected instance does to its worker.
+        host.close();
+        var timeout;
+        var result = await Promise.race([
+          running,
+          new Promise((resolve, reject) => {
+            timeout = setTimeout(
+              () => reject(new Error("the job never settled")),
+              10000,
+            );
+          }),
+        ]);
+        clearTimeout(timeout);
+        // Closed hosts keep later jobs on the calling thread.
+        assert.equal(
+          await host.run(muhammara.createBlankPdf(100, 100), options),
+          null,
+        );
+        for (var attempt = 0; attempt < 50 && counts.exited < 1; attempt++) {
+          await new Promise((resolve) => setTimeout(resolve, 20));
+        }
+      } finally {
+        counts.restore();
+      }
+      assert.ok(result, "the job ran in the worker");
+      assert.equal(readBack(muhammara, result, "view").encrypted, true);
+      assert.equal(counts.started, 1);
+      assert.equal(counts.exited, 1);
+    });
+
+    it("keeps its own copy of a Buffer wasmBinary the caller transfers away", async function () {
+      var binary = Buffer.from(
+        fs.readFileSync(
+          new URL("../../dist/muhammara-wasm.wasm", import.meta.url),
+        ),
+      );
+      // A Buffer of its own, not a slice of Node's shared pool.
+      binary = Buffer.from(
+        binary.buffer.slice(
+          binary.byteOffset,
+          binary.byteOffset + binary.length,
+        ),
+      );
+      var muhammara = await createMuhammaraWasm({ wasmBinary: binary });
+      structuredClone(binary.buffer, { transfer: [binary.buffer] });
+      assert.equal(binary.length, 0, "the caller's Buffer is detached");
+      var { result, turns } = await turnsDuring(() =>
+        muhammara.recryptAsync(muhammara.createBlankPdf(100, 100), {
+          userPassword: "view",
+        }),
+      );
+      assert.ok(turns > 10, `the event loop turned ${turns} times`);
+      assert.equal(readBack(muhammara, result, "view").encrypted, true);
     });
 
     it("rejects a recryptWorker option that is not a boolean", async function () {

@@ -55,6 +55,20 @@ export {
 };
 
 /**
+ * Resolves a binary location against the base URL the calling thread fetched
+ * it from: the document's base URL on a page, the script URL in a worker.
+ * Paths outside a browser stay as they are.
+ * @param {string|undefined} location - Where `locateFile` pointed.
+ * @returns {string|undefined} The absolute location.
+ */
+function absoluteLocation(location) {
+  var base = globalThis.document?.baseURI ?? globalThis.location?.href;
+  return typeof location === "string" && base
+    ? new URL(location, base).href
+    : location;
+}
+
+/**
  * Loads the Muhammara WebAssembly module and its byte-first PDF API.
  * @param {MuhammaraWasmOptions} [options] - Emscripten options and byte `limits`.
  * @returns {Promise<object>} The API, module, helpers, and byte guards.
@@ -116,10 +130,11 @@ async function createRuntime(options) {
   // buffer while this instance loads, or later.
   var workerBinary;
   if (useRecryptWorker && wasmBinary !== undefined) {
+    // Uint8Array's own slice() copies; a Node Buffer's slice() is a view.
     workerBinary =
       wasmBinary instanceof ArrayBuffer
         ? wasmBinary.slice(0)
-        : wasmBinary.slice();
+        : Uint8Array.prototype.slice.call(wasmBinary);
   }
   var module = await createModule(moduleOptions);
   /**
@@ -301,11 +316,9 @@ async function createRuntime(options) {
     ? recryptWorkerHost({
         wasmBinary: workerBinary,
         // A worker resolves a relative URL against its own script, not the
-        // page, so hand it an absolute one.
-        wasmLocation:
-          typeof wasmLocation === "string" && globalThis.location?.href
-            ? new URL(wasmLocation, globalThis.location.href).href
-            : wasmLocation,
+        // page's base URL the binary was fetched against, so hand it an
+        // absolute one.
+        wasmLocation: absoluteLocation(wasmLocation),
         maxInputBytes,
         maxOutputBytes,
       })

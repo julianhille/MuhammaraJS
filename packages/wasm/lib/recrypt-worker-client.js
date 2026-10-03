@@ -206,6 +206,21 @@ function createRecryptWorkerHost(settings) {
   var ready = null;
   var nextId = 0;
   var jobs = new Map();
+  var closed = false;
+
+  /**
+   * Stops a worker for good.
+   * @param {object} handle - The worker.
+   * @returns {void}
+   */
+  function stop(handle) {
+    handle.failed = true;
+    try {
+      handle.terminate();
+    } catch {
+      // Already gone.
+    }
+  }
 
   /**
    * Rejects every running job and forgets the worker, so the next job starts
@@ -272,7 +287,11 @@ function createRecryptWorkerHost(settings) {
         var job = jobs.get(message.id);
         if (!job) return;
         jobs.delete(message.id);
-        if (jobs.size === 0) handle.unref();
+        if (jobs.size === 0) {
+          handle.unref();
+          // A closed host stops its worker once the last job has answered.
+          if (closed) stop(handle);
+        }
         if (message.error) job.reject(reportedError(message.error));
         else job.resolve(message.result);
       });
@@ -341,18 +360,15 @@ function createRecryptWorkerHost(settings) {
       });
     },
     /**
-     * Stops the worker and keeps later jobs on the calling thread.
+     * Stops the worker once its running jobs have answered, and keeps later
+     * jobs on the calling thread.
      * @returns {void}
      */
     close() {
       available = false;
-      var closing = ready;
-      ready = null;
-      closing?.then((handle) => {
-        if (handle && !handle.failed) {
-          handle.failed = true;
-          handle.terminate();
-        }
+      closed = true;
+      ready?.then((handle) => {
+        if (handle && !handle.failed && jobs.size === 0) stop(handle);
       });
     },
   };
