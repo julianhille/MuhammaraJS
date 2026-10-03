@@ -67,6 +67,51 @@ describe("Recipe text", function () {
     assert.equal(textObjects, 1);
   });
 
+  it("starts text without coordinates at the margins of a new page", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var recipe = new Recipe()
+      .createPage(400, 400)
+      .text("first", 20, 20, { flow: true, size: 30 })
+      .endPage()
+      .createPage(400, 400);
+    // Before any text, movedown() starts from the page origin, as in native.
+    assert.deepEqual(recipe.movedown(0, true), [0, 0]);
+    var bytes = recipe
+      .text("second", { flow: true })
+      .text("", { flow: false })
+      .endPage()
+      .endPDF();
+    writeOutput("text-new-page-origin", bytes);
+    var reader = muhammara.createReader(bytes);
+    var [second] = reader.extractPageText(1);
+    reader.end();
+    assert.equal(second.content, "second");
+    assert.equal(Math.round(second.textMatrix[4]), 72);
+    // Flow options from the previous page do not carry over.
+    assert.equal(second.fontSize, 14);
+  });
+
+  it("starts text without coordinates at the margins of an edited page", async function () {
+    var Recipe = await getRecipe();
+    var source = new Recipe()
+      .createPage(400, 400)
+      .endPage()
+      .createPage(400, 400)
+      .endPage()
+      .endPDF();
+    writeOutput("text-edit-origin-source", source);
+    var recipe = new Recipe(source)
+      .editPage(1)
+      .text("first", 20, 20)
+      .endPage()
+      .editPage(2);
+    assert.deepEqual(recipe.movedown(0, true), [72, 72]);
+    recipe.text("second", { flow: false });
+    assert.equal(recipe.movedown(0, true)[0], 72);
+    writeOutput("text-edit-origin", recipe.endPage().endPDF());
+  });
+
   it("lays out a long line without a text box in linear time", async function () {
     this.timeout(10000);
     var Recipe = await getRecipe();

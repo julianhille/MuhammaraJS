@@ -51,6 +51,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Recipe `movedown()` after `createPage()` or `editPage()` starts from the
+  new page's text cursor instead of the previous page's text box origin, and
+  `text({ flow: true })` no longer inherits options from the previous page's
+  text [#914](https://github.com/julianhille/MuhammaraJS/issues/914)
 - `Recipe#createPage()` throws "Finish the current page before creating
   another page" when a page is still active, matching native. It threw
   "Muhammara WebAssembly operation failed: \_muhammara_wasm_recipe_add_page"

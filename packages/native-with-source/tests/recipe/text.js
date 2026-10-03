@@ -725,6 +725,54 @@ describe("Text", () => {
     assert.equal(textObjects, 1);
   });
 
+  it("starts text without coordinates at the margins of a new page", () => {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const output = path.join(__dirname, "../output/text-new-page-origin.pdf");
+    const recipe = new Recipe("new", output)
+      .createPage(400, 400)
+      .text("first", 20, 20, { flow: true, size: 30 })
+      .endPage()
+      .createPage(400, 400);
+    // Before any text, movedown() starts from the page origin, as in Wasm.
+    assert.deepEqual(recipe.movedown(0, true), [0, 0]);
+    recipe
+      .text("second", { flow: true })
+      .text("", { flow: false })
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    const [second] = reader.extractPageText(1);
+    assert.equal(second.content, "second");
+    assert.equal(Math.round(second.textMatrix[4]), 72);
+    // Flow options from the previous page do not carry over.
+    assert.equal(second.fontSize, 14);
+  });
+
+  it("starts text without coordinates at the margins of an edited page", () => {
+    const assert = require("node:assert/strict");
+    const source = path.join(
+      __dirname,
+      "../output/text-edit-origin-source.pdf",
+    );
+    const output = path.join(__dirname, "../output/text-edit-origin.pdf");
+    new Recipe("new", source)
+      .createPage(400, 400)
+      .endPage()
+      .createPage(400, 400)
+      .endPage()
+      .endPDF();
+    const recipe = new Recipe(source, output)
+      .editPage(1)
+      .text("first", 20, 20)
+      .endPage()
+      .editPage(2);
+    assert.deepEqual(recipe.movedown(0, true), [72, 72]);
+    recipe.text("second", { flow: false });
+    assert.equal(recipe.movedown(0, true)[0], 72);
+    recipe.endPage().endPDF();
+  });
+
   it("lays out a long line without a text box in linear time", function () {
     // Measuring the whole line for every word took about 25 s for 3 000
     // characters; the mocha timeout catches a regression.
