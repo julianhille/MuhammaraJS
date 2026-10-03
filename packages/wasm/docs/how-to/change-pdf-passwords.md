@@ -35,9 +35,18 @@ var protectedPdf = await muhammara.recryptAsync(file, {
 });
 ```
 
-The recrypt itself still runs on the calling thread: a page cannot handle input
-or draw until it finishes. To keep a page responsive, call `recrypt()` or
-`recryptAsync()` from a module Worker. The Benchmark tab of the
+Unlike native, where `recryptAsync()` runs on a thread pool, the Wasm
+`recryptAsync()` runs the recrypt on the calling thread. It is therefore as fast
+as `recrypt()` and blocks that thread just as long: a page cannot handle input
+or draw until it finishes. The promise covers reading a `Blob` or `File`, not
+the recrypt. `recryptAsync()` does not start a Worker of its own yet: a
+library-managed Worker depends on bundler support for its script, a Content
+Security Policy that allows it, and a second Wasm instance with its own startup
+time and memory. Running the recrypt in a Worker for you is in preparation;
+until then, your application decides where the recrypt runs.
+
+To keep a page responsive, call `recrypt()` or `recryptAsync()` from a module
+Worker. The Benchmark tab of the
 [browser example](https://github.com/julianhille/MuhammaraJS/tree/develop/packages/wasm/examples/browser)
 measures the difference, running synchronous `recrypt()` and `recryptAsync()`
 both on the page and in a Worker. With a generated 2.5 MB PDF and five recrypts
@@ -51,7 +60,8 @@ per mode in Chromium:
 | 10 ms timer ticks  |                2 |                 4 |               67 |                57 |
 
 Where the recrypt runs decides whether the page responds; `recryptAsync()` on
-the page blocks it as long as `recrypt()` does.
+the page blocks it as long as `recrypt()` does. The differences between the
+medians are run-to-run noise: every mode does the same work on one thread.
 
 ## Encrypt A New PDF
 

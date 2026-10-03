@@ -139,8 +139,9 @@ export function createRecrypt({
     },
     /**
      * Rewrites a PDF like `recrypt()`, after reading an asynchronous byte
-     * source. Recrypting itself runs on the calling thread; call it from a
-     * Worker to keep a page responsive.
+     * source. Recrypting itself runs on the calling thread, so it is as fast
+     * and as blocking as `recrypt()`. It does not start a Worker of its own
+     * yet; call it from a Worker to keep a page responsive.
      * @async
      * @param {AsyncByteSource} source - PDF bytes, Blob, or File.
      * @param {PDFRecryptOptions|null} [options] - Source `password`, new `userPassword`/`ownerPassword`,

@@ -2554,7 +2554,9 @@ export interface MuhammaraWasm {
   ): Uint8Array<ArrayBuffer>;
   /**
    * Like `recrypt()`, after reading a Blob, File, or bytes. Recrypting runs on
-   * the calling thread; call it from a Worker to keep a page responsive.
+   * the calling thread, so it is as fast and as blocking as `recrypt()`. It
+   * does not start a Worker of its own yet; call it from a Worker to keep a
+   * page responsive.
    */
   recryptAsync(
     source: AsyncByteSource,
