@@ -139,6 +139,7 @@ export function createTableMethods() {
      */
     table(x, y, contents, options = {}) {
       if (!Array.isArray(contents) || !contents.length) return this;
+      this._flushTextFlow();
       var definitions = tableFields(contents, options).map(
         (field) =>
           options.columns?.find((column) => column.name === field) || {
