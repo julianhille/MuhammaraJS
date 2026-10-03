@@ -799,6 +799,69 @@ describe("Xcryption", function () {
       assert.equal(readBack(muhammara, result, "view").encrypted, true);
     });
 
+    /**
+     * Defines a global for one call, then restores what was there.
+     * @param {string} name - The global's name.
+     * @param {PropertyDescriptor} descriptor - Its definition.
+     * @param {function(): Promise<*>} run - The call.
+     * @returns {Promise<*>} What `run` resolved with.
+     */
+    async function withGlobal(name, descriptor, run) {
+      var previous = Object.getOwnPropertyDescriptor(globalThis, name);
+      Object.defineProperty(globalThis, name, {
+        configurable: true,
+        ...descriptor,
+      });
+      try {
+        return await run();
+      } finally {
+        if (previous) Object.defineProperty(globalThis, name, previous);
+        else delete globalThis[name];
+      }
+    }
+
+    it("loads where reading location throws, as in Deno without --location", async function () {
+      var throwing = {
+        get() {
+          throw new ReferenceError("Access to location without --location");
+        },
+      };
+      for (var options of [
+        undefined,
+        { locateFile: (file, prefix) => prefix + file },
+      ]) {
+        var muhammara = await withGlobal("location", throwing, () =>
+          createMuhammaraWasm(options),
+        );
+        var result = await muhammara.recryptAsync(
+          muhammara.createBlankPdf(100, 100),
+          { userPassword: "view" },
+        );
+        assert.equal(readBack(muhammara, result, "view").encrypted, true);
+      }
+    });
+
+    it("loads where the base URL resolves no path, as in jsdom", async function () {
+      var muhammara = await withGlobal(
+        "document",
+        { value: { baseURI: "about:blank" }, writable: true },
+        () =>
+          createMuhammaraWasm({
+            locateFile: (file, prefix) => prefix + file,
+            // Limits of its own, so it starts a worker of its own.
+            limits: { maxOutputBytes: 987654321 },
+          }),
+      );
+      var { result, turns } = await turnsDuring(() =>
+        muhammara.recryptAsync(muhammara.createBlankPdf(100, 100), {
+          userPassword: "view",
+        }),
+      );
+      // The worker loads the binary from the path locateFile returned.
+      assert.ok(turns > 10, `the event loop turned ${turns} times`);
+      assert.equal(readBack(muhammara, result, "view").encrypted, true);
+    });
+
     it("rejects a recryptWorker option that is not a boolean", async function () {
       await assert.rejects(
         createMuhammaraWasm({ recryptWorker: "no" }),
