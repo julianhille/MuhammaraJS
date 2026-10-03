@@ -112,6 +112,12 @@ These bring Wasm Recipe in line with native Recipe; see
 - Accept `null` options for `recrypt()` in `index.d.ts`, as it already does
   at runtime
   [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
+- Reject a `miterLimit` below 1, or one that is not a finite number, in
+  Recipe `text()` with
+  `RangeError: miterLimit must be a number of at least 1` before anything is
+  drawn, as native Recipe and the Wasm shapes, `image()`, and `lineStyle()`
+  already did; `text()` ignored the option and drew the text
+  [#932](https://github.com/julianhille/MuhammaraJS/issues/932)
 
 ### Changed
 
