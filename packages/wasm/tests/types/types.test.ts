@@ -177,6 +177,11 @@ async function usesLowLevelSurface() {
     { userPassword: "viewer" },
   );
   void recryptedAsync;
+  var onCallingThread = await createMuhammaraWasm({ recryptWorker: false });
+  var recryptedHere: Promise<Uint8Array> = onCallingThread.recryptAsync(source);
+  void recryptedHere;
+  // @ts-expect-error recryptWorker is a boolean.
+  void createMuhammaraWasm({ recryptWorker: "no" });
   muhammara.recrypt(source, null);
   void muhammara.recryptAsync(source, null);
   var reader = muhammara.createReader(source);

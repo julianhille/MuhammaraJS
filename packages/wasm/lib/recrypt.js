@@ -28,7 +28,8 @@ function copyRecryptOptions(options) {
 
 /**
  * Creates the byte-first equivalents of native `recrypt` and `recryptAsync`.
- * @param {object} dependencies - Module, constants, and byte helpers.
+ * @param {object} dependencies - Module, constants, byte helpers, and the
+ *   `recryptWorker` host, or null to recrypt on the calling thread.
  * @returns {{recrypt: Function, recryptAsync: Function}} `recrypt(bytes,
  *   options)` and `recryptAsync(source, options)`.
  */
@@ -39,16 +40,18 @@ export function createRecrypt({
   withBytes,
   withString,
   assertOutputSize,
+  recryptWorker,
 }) {
   /**
-   * Rewrites a PDF that is already normalized, so neither caller copies it a
-   * second time.
-   * @param {Uint8Array} source - PDF to rewrite, owned by this call.
+   * Checks the recrypt options and reads them into plain values, which a
+   * worker can receive and `recrypt()` reads the same way.
    * @param {PDFRecryptOptions|null} [options] - Recrypt options.
-   * @returns {Uint8Array} The rewritten PDF.
-   * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
+   * @returns {{password: string, userPassword: (string|undefined),
+   *   ownerPassword: string, userProtectionFlag: number, version: number,
+   *   compress: boolean}} The options as plain values.
+   * @throws {Error} If `log` is set or the version is 2.0 or unsupported.
    */
-  function recryptBytes(source, options) {
+  function readRecryptOptions(options) {
     if (!options || typeof options !== "object") options = {};
     if (typeof options.log === "string") {
       throw new Error("recrypt log files are unavailable in WebAssembly");
@@ -76,19 +79,44 @@ export function createRecrypt({
         "Wrong argument for PDF version, please provide a valid PDF version",
       );
     }
-    var password = typeof options.password === "string" ? options.password : "";
-    var userPassword =
-      typeof options.userPassword === "string" ? options.userPassword : "";
-    var ownerPassword =
-      typeof options.ownerPassword === "string" ? options.ownerPassword : "";
-    var shouldEncrypt = typeof options.userPassword === "string";
-    var protection =
-      typeof options.userProtectionFlag === "number"
-        ? options.userProtectionFlag | 0
-        : 4;
+    return {
+      password: typeof options.password === "string" ? options.password : "",
+      userPassword:
+        typeof options.userPassword === "string"
+          ? options.userPassword
+          : undefined,
+      ownerPassword:
+        typeof options.ownerPassword === "string" ? options.ownerPassword : "",
+      userProtectionFlag:
+        typeof options.userProtectionFlag === "number"
+          ? options.userProtectionFlag | 0
+          : 4,
+      version,
+      compress: options.compress !== false,
+    };
+  }
+
+  /**
+   * Rewrites a PDF that is already normalized, so neither caller copies it a
+   * second time.
+   * @param {Uint8Array} source - PDF to rewrite, owned by this call.
+   * @param {PDFRecryptOptions|null} [options] - Recrypt options.
+   * @returns {Uint8Array} The rewritten PDF.
+   * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
+   */
+  function recryptBytes(source, options) {
+    var {
+      password,
+      userPassword,
+      ownerPassword,
+      userProtectionFlag: protection,
+      version,
+      compress,
+    } = readRecryptOptions(options);
+    var shouldEncrypt = userPassword !== undefined;
     return withBytes(source, (sourcePointer) =>
       withString(password, (passwordPointer) =>
-        withString(userPassword, (userPasswordPointer) =>
+        withString(userPassword ?? "", (userPasswordPointer) =>
           withString(ownerPassword, (ownerPasswordPointer) => {
             var lengthPointer = module._malloc(4);
             try {
@@ -101,7 +129,7 @@ export function createRecrypt({
                 shouldEncrypt ? 1 : 0,
                 protection,
                 version,
-                options.compress === false ? 0 : 1,
+                compress ? 1 : 0,
                 lengthPointer,
               );
               var length = module.HEAPU32[lengthPointer >>> 2];
@@ -139,9 +167,9 @@ export function createRecrypt({
     },
     /**
      * Rewrites a PDF like `recrypt()`, after reading an asynchronous byte
-     * source. Recrypting itself runs on the calling thread, so it is as fast
-     * and as blocking as `recrypt()`. It does not start a Worker of its own
-     * yet; call it from a Worker to keep a page responsive.
+     * source. Recrypting runs in a worker, so the calling thread stays free,
+     * unless no worker can start or the instance was loaded with
+     * `recryptWorker: false`; then it runs on the calling thread.
      * @async
      * @param {AsyncByteSource} source - PDF bytes, Blob, or File.
      * @param {PDFRecryptOptions|null} [options] - Source `password`, new `userPassword`/`ownerPassword`,
@@ -154,10 +182,11 @@ export function createRecrypt({
     recryptAsync: async function recryptAsync(source, options = {}) {
       options = copyRecryptOptions(options);
       // The normalized bytes are already this call's own copy.
-      return recryptBytes(
-        await normalizeBytesAsync(source, "PDF input"),
-        options,
-      );
+      var bytes = await normalizeBytesAsync(source, "PDF input");
+      var plain = readRecryptOptions(options);
+      var result = recryptWorker ? await recryptWorker.run(bytes, plain) : null;
+      // Without a worker, recrypt here, as recrypt() does.
+      return result || recryptBytes(bytes, plain);
     },
   };
 }

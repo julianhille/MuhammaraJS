@@ -727,6 +727,67 @@ export async function runValidation() {
   equal(urlLifecycle.revoked, 2, "example object URLs revoked");
   assertions += 6;
 
+  // recryptAsync() recrypts in a Worker on the page, and on the calling
+  // thread inside a Worker, which starts no second one.
+  var recryptRuntime = await createMuhammaraWasm();
+  var recryptSource = recryptRuntime.createBlankPdf(100, 100);
+  var timerTurns = 0;
+  var counting = true;
+  var countTurn = () => {
+    if (!counting) return;
+    timerTurns++;
+    setTimeout(countTurn, 0);
+  };
+  setTimeout(countTurn, 0);
+  try {
+    var recrypted = await recryptRuntime.recryptAsync(recryptSource, {
+      userPassword: "view",
+    });
+  } finally {
+    counting = false;
+  }
+  if (typeof window === "undefined") {
+    equal(timerTurns, 0, "recryptAsync timer turns inside a Worker");
+  } else {
+    assert(timerTurns > 0, "recryptAsync leaves the page free");
+  }
+  var recryptedReader = recryptRuntime.createReader(recrypted, {
+    password: "view",
+  });
+  assert(recryptedReader.isEncrypted(), "recryptAsync output is encrypted");
+  recryptedReader.end();
+  assertions += 2;
+
+  // On a page with <base href>, a relative locateFile result loads the binary
+  // from the base URL, and the worker must load it from there too.
+  if (typeof window !== "undefined") {
+    var base = document.createElement("base");
+    base.href = new URL("../../dist/", import.meta.url).href;
+    document.head.append(base);
+    try {
+      var basedRuntime = await createMuhammaraWasm({
+        locateFile: (file) => file,
+        // Limits of its own, so it does not share the worker loaded above.
+        limits: { maxOutputBytes: 123456789 },
+      });
+    } finally {
+      base.remove();
+    }
+    // The first call starts the worker; a worker that could not load the
+    // binary leaves the second one on the page.
+    await basedRuntime.recryptAsync(recryptSource);
+    timerTurns = 0;
+    counting = true;
+    setTimeout(countTurn, 0);
+    try {
+      await basedRuntime.recryptAsync(recryptSource, { userPassword: "view" });
+    } finally {
+      counting = false;
+    }
+    assert(timerTurns > 0, "recryptAsync worker loads from the base URL");
+    assertions += 1;
+  }
+
   return { assertions };
 }
 

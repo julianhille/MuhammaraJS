@@ -35,33 +35,49 @@ var protectedPdf = await muhammara.recryptAsync(file, {
 });
 ```
 
-Unlike native, where `recryptAsync()` runs on a thread pool, the Wasm
-`recryptAsync()` runs the recrypt on the calling thread. It is therefore as fast
-as `recrypt()` and blocks that thread just as long: a page cannot handle input
-or draw until it finishes. The promise covers reading a `Blob` or `File`, not
-the recrypt. `recryptAsync()` does not start a Worker of its own yet: a
-library-managed Worker depends on bundler support for its script, a Content
-Security Policy that allows it, and a second Wasm instance with its own startup
-time and memory. Running the recrypt in a Worker for you is in preparation;
-until then, your application decides where the recrypt runs.
+Like native, where `recryptAsync()` runs on a thread pool, the Wasm
+`recryptAsync()` recrypts off the calling thread, so a page keeps handling input
+and drawing while it runs. It starts a worker on its first call and reuses it: a
+module `Worker` in browsers, Deno, and Bun, and `worker_threads` in Node.
+Instances loaded the same way share one worker; an instance loaded with its own
+`wasmBinary` has its own, which stops after five seconds without jobs and starts
+again on the next call.
+The worker loads its own Wasm instance, which adds its startup time to the first
+call and holds a second Wasm memory; under Node it does not keep the process
+alive between calls. A single recrypt is not faster than `recrypt()`: only the
+calling thread is free while it runs.
 
-To keep a page responsive, call `recrypt()` or `recryptAsync()` from a module
-Worker. The Benchmark tab of the
+`recryptAsync()` recrypts on the calling thread instead, as fast and as blocking
+as `recrypt()`, when:
+
+- it is called inside a Worker, which needs no second one;
+- no worker can start, for example because a Content Security Policy forbids
+  it or a bundler did not include `lib/recrypt-worker.js`;
+- the module options include anything a worker cannot receive: only
+  `wasmBinary`, `locateFile`, and `limits` carry over, and the worker loads the
+  binary from where `locateFile` pointed;
+- the instance was loaded with `recryptWorker: false`.
+
+```js
+var muhammara = await createMuhammaraWasm({ recryptWorker: false });
+```
+
+The Benchmark tab of the
 [browser example](https://github.com/julianhille/MuhammaraJS/tree/develop/packages/wasm/examples/browser)
 measures the difference, running synchronous `recrypt()` and `recryptAsync()`
 both on the page and in a Worker. With a generated 2.5 MB PDF and five recrypts
-per mode in Chromium:
+per mode in Chrome:
 
 |                    | sync on the page | async on the page | sync in a Worker | async in a Worker |
 | ------------------ | ---------------: | ----------------: | ---------------: | ----------------: |
-| Median per recrypt |            90 ms |             83 ms |            88 ms |             77 ms |
-| Page blocked       |           416 ms |            385 ms |            25 ms |             13 ms |
-| Longest page stall |           171 ms |             81 ms |             3 ms |              1 ms |
-| 10 ms timer ticks  |                2 |                 4 |               67 |                57 |
+| Median per recrypt |            55 ms |             55 ms |            56 ms |             54 ms |
+| Page blocked       |           256 ms |              3 ms |             4 ms |              3 ms |
+| Longest page stall |           110 ms |             <1 ms |            <1 ms |             <1 ms |
+| 10 ms timer ticks  |                2 |                32 |               32 |                32 |
 
-Where the recrypt runs decides whether the page responds; `recryptAsync()` on
-the page blocks it as long as `recrypt()` does. The differences between the
-medians are run-to-run noise: every mode does the same work on one thread.
+`recryptAsync()` on the page keeps it as free as running the recrypt in your own
+Worker, while synchronous `recrypt()` blocks it for the whole run. The medians
+differ only by run-to-run noise: every mode does the same work.
 
 ## Encrypt A New PDF
 
