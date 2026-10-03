@@ -417,7 +417,7 @@ export async function runValidation() {
     .extractPageText(0);
   equal(overflowText[0].content, "alpha bravo charlie", "clip source");
   equal(overflowText[1].content, "alpha", "trim source");
-  assert(/\.\.\.$/.test(overflowText[2].content), "ellipsis source");
+  assert(/…$/.test(overflowText[2].text), "ellipsis source");
   var continuationHeaders = overflowText.filter(
     (entry) => entry.content === "name",
   );

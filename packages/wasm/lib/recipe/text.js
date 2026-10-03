@@ -351,7 +351,7 @@ function htmlLines(source, width, measure, options, wrap) {
 }
 
 /**
- * Truncates styled fragments in place until an ellipsis fits the width.
+ * Truncates styled fragments in place until a `…` fits the width.
  * @param {Array<{text: string, styles: object}>} parts - Fragments, changed in place.
  * @param {number} width - Available width.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
@@ -359,7 +359,7 @@ function htmlLines(source, width, measure, options, wrap) {
  * @returns {void}
  */
 function ellipsizeHtmlParts(parts, width, measure, options) {
-  var suffix = "...";
+  var suffix = "…";
   while (parts.length) {
     var last = parts[parts.length - 1];
     var candidate = parts.map((part) => ({ ...part }));
@@ -381,10 +381,10 @@ function ellipsizeHtmlParts(parts, width, measure, options) {
  * @param {number} width - Available width.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Text options.
- * @returns {string} The truncated text ending in `...`.
+ * @returns {string} The truncated text ending in `…`.
  */
 function ellipsize(value, width, measure, options) {
-  var suffix = "...";
+  var suffix = "…";
   var result = trimBreakableEnd(value);
   while (
     result.length &&
