@@ -399,6 +399,38 @@ function createRecryptWorkerHost(settings) {
   };
 }
 
+/**
+ * Returns where the worker loads the binary the calling thread loaded from
+ * `location`. On a page that is the location resolved against the document's
+ * base URL (in a worker, its script URL), because a worker resolves relative
+ * URLs against its own script. Under Node, Emscripten reads the binary as a
+ * path or `file:` URL, which a `worker_threads` worker in the same process
+ * reads the same way, so the location stays as it is; the check is
+ * Emscripten's own, so jsdom counts as Node. A location that cannot be
+ * resolved stays as well: reading `location` throws in Deno without
+ * `--location`.
+ * @param {string|undefined} location - Where `locateFile` pointed.
+ * @param {object} [environment=globalThis] - The global object to read.
+ * @returns {string|undefined} The location for the worker.
+ */
+export function workerWasmLocation(location, environment = globalThis) {
+  if (typeof location !== "string") return location;
+  var node = environment.process;
+  if (
+    typeof node === "object" &&
+    typeof node?.versions?.node === "string" &&
+    node.type !== "renderer"
+  ) {
+    return location;
+  }
+  try {
+    var base = environment.document?.baseURI ?? environment.location?.href;
+    return base ? new URL(location, base).href : location;
+  } catch {
+    return location;
+  }
+}
+
 // Instances loaded the same way share one worker, as native shares its pool
 // threads, so creating an instance per request adds no workers.
 var sharedHosts = new Map();

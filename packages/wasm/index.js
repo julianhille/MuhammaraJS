@@ -22,7 +22,10 @@ import { createModifierFactory } from "./lib/modifier.js";
 import { createWriterToModifyFactory } from "./lib/writer-to-modify.js";
 import { createRecipeFactory } from "./lib/recipe.js";
 import { createRecrypt } from "./lib/recrypt.js";
-import { recryptWorkerHost } from "./lib/recrypt-worker-client.js";
+import {
+  recryptWorkerHost,
+  workerWasmLocation,
+} from "./lib/recrypt-worker-client.js";
 import {
   DeviceColorSpace,
   ImageFit,
@@ -53,25 +56,6 @@ export {
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
 };
-
-/**
- * Resolves a binary location against the base URL the calling thread fetched
- * it from: the document's base URL on a page, the script URL in a worker.
- * Paths outside a browser stay as they are, and so does a location that
- * cannot be resolved: reading `location` throws in Deno without
- * `--location`, and jsdom's `about:blank` base resolves no relative path.
- * @param {string|undefined} location - Where `locateFile` pointed.
- * @returns {string|undefined} The absolute location.
- */
-function absoluteLocation(location) {
-  if (typeof location !== "string") return location;
-  try {
-    var base = globalThis.document?.baseURI ?? globalThis.location?.href;
-    return base ? new URL(location, base).href : location;
-  } catch {
-    return location;
-  }
-}
 
 /**
  * Loads the Muhammara WebAssembly module and its byte-first PDF API.
@@ -323,7 +307,7 @@ async function createRuntime(options) {
         // A worker resolves a relative URL against its own script, not the
         // page's base URL the binary was fetched against, so hand it an
         // absolute one.
-        wasmLocation: absoluteLocation(wasmLocation),
+        wasmLocation: workerWasmLocation(wasmLocation),
         maxInputBytes,
         maxOutputBytes,
       })
