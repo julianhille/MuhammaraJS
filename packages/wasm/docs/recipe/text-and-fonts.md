@@ -122,8 +122,8 @@ lifecycle details.
 
 `textBox` supports wrapping, alignment, padding, background, border, fixed-height
 clipping, and continuation callbacks. Its `clip`, `trim`, and `ellipsis` modes
-have different output semantics; Wasm's ellipsis is three ASCII periods
-(`...`). `html: true` enables a DOM-free subset for text runs, paragraphs,
+have different output semantics; `ellipsis` ends the line with `…`, as native
+does. `html: true` enables a DOM-free subset for text runs, paragraphs,
 simple emphasis, decoration, inline color, URL links through `<a href>`, and
 visual unordered and ordered lists through `ul`, `ol`, and `li`. Lists use `* `
 or one-based numeric prefixes and native-compatible nesting indentation. Inline

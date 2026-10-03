@@ -785,4 +785,32 @@ describe("Text", () => {
       .endPDF();
     require("node:assert/strict").ok(fs.statSync(output).size > 0);
   });
+
+  it("ends ellipsized text with the ellipsis glyph", () => {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const output = path.join(__dirname, "../output/text-ellipsis.pdf");
+    new Recipe("new", output, { compress: false })
+      .createPage(220, 120)
+      .text("alpha bravo charlie", 10, 10, {
+        font: "arial",
+        size: 12,
+        textBox: { width: 70, wrap: "ellipsis" },
+      })
+      .endPage()
+      .endPDF();
+
+    const reader = muhammara.createReader(output);
+    const stream = reader.startReadingFromStream(
+      reader
+        .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+        .toPDFStream(),
+    );
+    const chunks = [];
+    while (stream.notEnded()) chunks.push(Buffer.from(stream.read(4096)));
+    const content = Buffer.concat(chunks).toString("latin1");
+    // U+2026 is WinAnsi byte 0x85, written as the octal escape \205.
+    assert.match(content, /\(alpha brav\\205\) Tj/);
+    assert.doesNotMatch(content, /\.\.\.\) Tj/);
+  });
 });

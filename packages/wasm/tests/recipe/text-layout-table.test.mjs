@@ -227,7 +227,7 @@ describe("Recipe text layout and tables", function () {
     var output = reader.extractPageText(0);
     assert.equal(output[0].content, "alpha bravo charlie");
     assert.equal(output[1].content, "alpha");
-    assert.match(output[2].content, /\.\.\.$/);
+    assert.match(output[2].text, /…$/);
     assert.ok(output[2].content.length < output[0].content.length);
     reader.end();
   });

@@ -320,7 +320,7 @@ var TextWrap = Object.freeze({
   CLIP: "clip",
   /** Drop the words that do not fit. */
   TRIM: "trim",
-  /** Replace the text that does not fit with "...". */
+  /** Replace the text that does not fit with "…". */
   ELLIPSIS: "ellipsis",
 });
 

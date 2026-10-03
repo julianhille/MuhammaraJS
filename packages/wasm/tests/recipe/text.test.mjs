@@ -123,4 +123,32 @@ describe("Recipe text", function () {
     writeOutput("text-long-line", pdf);
     assert.ok(pdf.length > 0);
   });
+
+  it("ends ellipsized text with the ellipsis glyph", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var bytes = new Recipe({ compress: false })
+      .createPage(220, 120)
+      .text("alpha bravo charlie", 10, 10, {
+        font: "arial",
+        size: 12,
+        textBox: { width: 70, wrap: "ellipsis" },
+      })
+      .endPage()
+      .endPDF();
+    writeOutput("text-ellipsis", bytes);
+    var reader = muhammara.createReader(bytes);
+    var stream = reader.startReadingFromStream(
+      reader
+        .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+        .toPDFStream(),
+    );
+    var chunks = [];
+    while (stream.notEnded()) chunks.push(...stream.read(4096));
+    reader.end();
+    var content = new TextDecoder("latin1").decode(new Uint8Array(chunks));
+    // U+2026 is WinAnsi byte 0x85, written as the octal escape \205.
+    assert.match(content, /\(alpha brav\\205\) Tj/);
+    assert.doesNotMatch(content, /\.\.\.\) Tj/);
+  });
 });

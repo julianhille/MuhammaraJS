@@ -66,6 +66,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `recryptAsync()`, `createWriterToModify()`, or Recipe on an existing PDF
   aborted the Wasm instance with `RuntimeError: Aborted()`; it now throws the
   usual parse error and the instance stays usable [#917](https://github.com/julianhille/MuhammaraJS/issues/917)
+- Recipe `textBox.wrap: "ellipsis"` ends shortened text with the ellipsis
+  glyph `…`, matching native, instead of three periods (`...`). Text that
+  gets shortened can now keep more characters, because the glyph is narrower
+  than three periods [#907](https://github.com/julianhille/MuhammaraJS/issues/907)
 
 ## [1.0.0] - 2026-10-01
 

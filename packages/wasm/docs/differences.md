@@ -38,8 +38,7 @@ lists, or plugin HTML handlers. It is also more forgiving than the XML-strict
 native parser: an omitted `</li>` ends that item at its next sibling or at the
 end of its list rather than throwing. Wasm `htmlToTextObjects()` returns flat
 visual runs with list prefixes and `indent` values, while native returns its
-nested XML-derived layout tree. Its ellipsis mode writes three ASCII periods
-(`...`) rather than the Unicode ellipsis used by native Recipe.
+nested XML-derived layout tree.
 
 Appending or rebuilding an existing source page does not deep-copy that page's
 `/Annots` graph, although annotations created in the output are written

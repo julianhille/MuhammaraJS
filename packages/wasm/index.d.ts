@@ -338,7 +338,7 @@ export interface RecipeTextBox {
   minHeight?: number;
   padding?: number | readonly [number, number?, number?, number?];
   lineHeight?: number;
-  /** `clip` retains and clips the source, `trim` omits its non-fitting suffix, and `ellipsis` replaces it with `...`. */
+  /** `clip` retains and clips the source, `trim` omits its non-fitting suffix, and `ellipsis` replaces it with `…`. */
   wrap?: boolean | Recipe.TextWrap;
   textAlign?: Recipe.TextBoxAlign;
   /** Render only complete lines that fit within this fixed-height text box. */
