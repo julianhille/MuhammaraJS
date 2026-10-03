@@ -57,15 +57,20 @@ export {
 /**
  * Resolves a binary location against the base URL the calling thread fetched
  * it from: the document's base URL on a page, the script URL in a worker.
- * Paths outside a browser stay as they are.
+ * Paths outside a browser stay as they are, and so does a location that
+ * cannot be resolved: reading `location` throws in Deno without
+ * `--location`, and jsdom's `about:blank` base resolves no relative path.
  * @param {string|undefined} location - Where `locateFile` pointed.
  * @returns {string|undefined} The absolute location.
  */
 function absoluteLocation(location) {
-  var base = globalThis.document?.baseURI ?? globalThis.location?.href;
-  return typeof location === "string" && base
-    ? new URL(location, base).href
-    : location;
+  if (typeof location !== "string") return location;
+  try {
+    var base = globalThis.document?.baseURI ?? globalThis.location?.href;
+    return base ? new URL(location, base).href : location;
+  } catch {
+    return location;
+  }
 }
 
 /**
