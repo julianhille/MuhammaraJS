@@ -396,6 +396,31 @@ describe("Xcryption", function () {
     });
 
     /**
+     * Writes an uncompressed PDF whose recrypt takes long enough for the event
+     * loop to turn many times.
+     * @param {object} muhammara - The Wasm API.
+     * @param {number} [pages=200] - Page count.
+     * @returns {Uint8Array} The PDF.
+     */
+    function largePdf(muhammara, pages = 200) {
+      var writer = muhammara.createWriter({ compress: false });
+      for (var index = 0; index < pages; index++) {
+        var page = writer.createPage(0, 0, 595, 842);
+        var context = writer.startPageContentContext(page);
+        for (var row = 0; row < 120; row++) {
+          context
+            .q()
+            .rg(0.2, 0.4, 0.6)
+            .re(40, 40 + row * 6, 500, 4)
+            .f()
+            .Q();
+        }
+        writer.writePage(page);
+      }
+      return writer.end();
+    }
+
+    /**
      * Counts how often the event loop turns while a call runs.
      * @param {function(): Promise<*>} run - Starts the call.
      * @returns {Promise<{result: *, turns: number}>} Its result and the turns.
@@ -447,21 +472,7 @@ describe("Xcryption", function () {
       var source = muhammara.createBlankPdf(100, 100);
       // Earlier tests may have started the shared worker already, so recrypt
       // a PDF that takes long enough for the event loop to turn many times.
-      var writer = muhammara.createWriter({ compress: false });
-      for (var index = 0; index < 200; index++) {
-        var page = writer.createPage(0, 0, 595, 842);
-        var context = writer.startPageContentContext(page);
-        for (var row = 0; row < 120; row++) {
-          context
-            .q()
-            .rg(0.2, 0.4, 0.6)
-            .re(40, 40 + row * 6, 500, 4)
-            .f()
-            .Q();
-        }
-        writer.writePage(page);
-      }
-      var large = writer.end();
+      var large = largePdf(muhammara);
       var { result, turns } = await turnsDuring(() =>
         muhammara.recryptAsync(large, { userPassword: "view" }),
       );
@@ -652,81 +663,85 @@ describe("Xcryption", function () {
       assert.equal(readBack(muhammara, result, "view").encrypted, true);
     });
 
-    it("stops the worker of a wasmBinary instance once it is collected", async function () {
-      var binary = new Uint8Array(
+    /**
+     * Reads the package's Wasm binary.
+     * @returns {Uint8Array} Its bytes.
+     */
+    function wasmBytes() {
+      return new Uint8Array(
         fs.readFileSync(
           new URL("../../dist/muhammara-wasm.wasm", import.meta.url),
         ),
       );
-      var counts = countWorkers();
-      v8.setFlagsFromString("--expose-gc");
-      var gc = vm.runInNewContext("gc");
-      v8.setFlagsFromString("--no-expose-gc");
-      try {
-        // Keeps the instance out of this function's scope, so it can be
-        // collected.
-        await (async () => {
-          var muhammara = await createMuhammaraWasm({ wasmBinary: binary });
-          await muhammara.recryptAsync(muhammara.createBlankPdf(100, 100));
-        })();
-        assert.equal(counts.started, 1);
-        for (var attempt = 0; attempt < 50 && counts.exited < 1; attempt++) {
-          gc();
-          await new Promise((resolve) => setTimeout(resolve, 20));
-        }
-      } finally {
-        counts.restore();
-      }
-      assert.equal(counts.exited, 1);
-    });
+    }
 
-    it("finishes running jobs when a wasmBinary instance's worker closes", async function () {
+    // Plain options as recryptAsync() hands them to its worker.
+    var plainOptions = {
+      password: "",
+      userPassword: "view",
+      ownerPassword: "",
+      userProtectionFlag: 4,
+      version: 0,
+      compress: true,
+    };
+
+    /**
+     * Waits until `condition` holds, for up to a second.
+     * @param {function(): boolean} condition - What to wait for.
+     * @returns {Promise<void>}
+     */
+    async function waitFor(condition) {
+      for (var attempt = 0; attempt < 50 && !condition(); attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+    }
+
+    it("stops an idle wasmBinary worker and starts it again when needed", async function () {
       var muhammara = await createMuhammaraWasm();
       // Installed first: the host reads worker_threads when it is created.
       var counts = countWorkers();
-      var host = recryptWorkerHost({
-        wasmBinary: new Uint8Array(
-          fs.readFileSync(
-            new URL("../../dist/muhammara-wasm.wasm", import.meta.url),
-          ),
-        ),
-        maxInputBytes: 1024 * 1024,
-        maxOutputBytes: 1024 * 1024,
-      });
-      var options = {
-        password: "",
-        userPassword: "view",
-        ownerPassword: "",
-        userProtectionFlag: 4,
-        version: 0,
-        compress: true,
-      };
       try {
-        // Start the worker, then close while the next job is in it.
-        await host.run(muhammara.createBlankPdf(100, 100), options);
-        var running = host.run(muhammara.createBlankPdf(100, 100), options);
-        await new Promise((resolve) => setImmediate(resolve));
-        // What a garbage-collected instance does to its worker.
-        host.close();
-        var timeout;
-        var result = await Promise.race([
-          running,
-          new Promise((resolve, reject) => {
-            timeout = setTimeout(
-              () => reject(new Error("the job never settled")),
-              10000,
-            );
-          }),
-        ]);
-        clearTimeout(timeout);
-        // Closed hosts keep later jobs on the calling thread.
-        assert.equal(
-          await host.run(muhammara.createBlankPdf(100, 100), options),
-          null,
+        var host = recryptWorkerHost({
+          wasmBinary: wasmBytes(),
+          maxInputBytes: 1024 * 1024,
+          maxOutputBytes: 1024 * 1024,
+          idleTimeout: 50,
+        });
+        var first = await host.run(
+          muhammara.createBlankPdf(100, 100),
+          plainOptions,
         );
-        for (var attempt = 0; attempt < 50 && counts.exited < 1; attempt++) {
-          await new Promise((resolve) => setTimeout(resolve, 20));
-        }
+        await waitFor(() => counts.exited === 1);
+        assert.equal(counts.exited, 1, "the idle worker stopped");
+        var second = await host.run(
+          muhammara.createBlankPdf(100, 100),
+          plainOptions,
+        );
+        await waitFor(() => counts.exited === 2);
+      } finally {
+        counts.restore();
+      }
+      for (var result of [first, second]) {
+        assert.ok(result, "the job ran in a worker");
+        assert.equal(readBack(muhammara, result, "view").encrypted, true);
+      }
+      assert.equal(counts.started, 2);
+      assert.equal(counts.exited, 2);
+    });
+
+    it("keeps a wasmBinary worker while a job outlasts its idle timeout", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var source = largePdf(muhammara);
+      var counts = countWorkers();
+      try {
+        var host = recryptWorkerHost({
+          wasmBinary: wasmBytes(),
+          maxInputBytes: 64 * 1024 * 1024,
+          maxOutputBytes: 64 * 1024 * 1024,
+          idleTimeout: 1,
+        });
+        var result = await host.run(source, plainOptions);
+        await waitFor(() => counts.exited === 1);
       } finally {
         counts.restore();
       }
@@ -734,6 +749,29 @@ describe("Xcryption", function () {
       assert.equal(readBack(muhammara, result, "view").encrypted, true);
       assert.equal(counts.started, 1);
       assert.equal(counts.exited, 1);
+    });
+
+    it("keeps using its worker when only recryptAsync is kept", async function () {
+      v8.setFlagsFromString("--expose-gc");
+      var gc = vm.runInNewContext("gc");
+      v8.setFlagsFromString("--no-expose-gc");
+      var helper = await createMuhammaraWasm();
+      var source = largePdf(helper);
+      // Only the method outlives this function, not the instance.
+      var recryptAsync = await (async () => {
+        var muhammara = await createMuhammaraWasm({ wasmBinary: wasmBytes() });
+        await muhammara.recryptAsync(helper.createBlankPdf(10, 10));
+        return muhammara.recryptAsync;
+      })();
+      for (var attempt = 0; attempt < 10; attempt++) {
+        gc();
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      var { result, turns } = await turnsDuring(() =>
+        recryptAsync(source, { userPassword: "view" }),
+      );
+      assert.ok(turns > 10, `the event loop turned ${turns} times`);
+      assert.equal(readBack(helper, result, "view").encrypted, true);
     });
 
     it("keeps its own copy of a Buffer wasmBinary the caller transfers away", async function () {

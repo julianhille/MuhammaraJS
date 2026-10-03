@@ -598,8 +598,6 @@ async function createRuntime(options) {
       );
     },
   };
-  // A worker of its own stops once nothing uses this instance any more.
-  recryptWorker?.own(api);
   return {
     api,
     module,

@@ -193,10 +193,11 @@ function reportedError(reported) {
  *   loaded the binary from.
  * @param {number} settings.maxInputBytes - Input limit of the instance.
  * @param {number} settings.maxOutputBytes - Output limit of the instance.
- * @returns {{run: function(Uint8Array, object): Promise<Uint8Array|null>,
- *   close: function(): void}} `run` resolves with null when no worker can run
- *   the job, so the caller recrypts on its own thread; `close` stops the
- *   worker for good.
+ * @param {number} [settings.idleTimeout] - Milliseconds the worker stays
+ *   without jobs before it stops; without one it stays.
+ * @returns {{run: function(Uint8Array, object): Promise<Uint8Array|null>}}
+ *   `run` resolves with null when no worker can run the job, so the caller
+ *   recrypts on its own thread.
  */
 function createRecryptWorkerHost(settings) {
   var workerThreads = nodeWorkerThreads();
@@ -206,20 +207,45 @@ function createRecryptWorkerHost(settings) {
   var ready = null;
   var nextId = 0;
   var jobs = new Map();
-  var closed = false;
+  // The running worker, and the timer that stops it once it has been idle.
+  var current = null;
+  var idleTimer = null;
 
   /**
-   * Stops a worker for good.
-   * @param {object} handle - The worker.
+   * Cancels a pending idle stop.
    * @returns {void}
    */
-  function stop(handle) {
-    handle.failed = true;
-    try {
-      handle.terminate();
-    } catch {
-      // Already gone.
-    }
+  function cancelIdleStop() {
+    if (idleTimer === null) return;
+    clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+
+  /**
+   * Stops the worker after `settings.idleTimeout` milliseconds without jobs;
+   * the next job starts a new one. Without a timeout the worker stays.
+   * @param {object} handle - The idle worker.
+   * @returns {void}
+   */
+  function stopWhenIdle(handle) {
+    if (settings.idleTimeout === undefined) return;
+    cancelIdleStop();
+    idleTimer = setTimeout(() => {
+      idleTimer = null;
+      if (jobs.size !== 0 || handle.failed) return;
+      handle.failed = true;
+      if (current === handle) {
+        current = null;
+        ready = null;
+      }
+      try {
+        handle.terminate();
+      } catch {
+        // Already gone.
+      }
+    }, settings.idleTimeout);
+    // An idle stop never keeps a Node process alive.
+    idleTimer.unref?.();
   }
 
   /**
@@ -281,6 +307,8 @@ function createRecryptWorkerHost(settings) {
             return;
           }
           handle.unref();
+          current = handle;
+          stopWhenIdle(handle);
           resolve(handle);
           return;
         }
@@ -289,8 +317,7 @@ function createRecryptWorkerHost(settings) {
         jobs.delete(message.id);
         if (jobs.size === 0) {
           handle.unref();
-          // A closed host stops its worker once the last job has answered.
-          if (closed) stop(handle);
+          stopWhenIdle(handle);
         }
         if (message.error) job.reject(reportedError(message.error));
         else job.resolve(message.result);
@@ -324,22 +351,29 @@ function createRecryptWorkerHost(settings) {
      *   worker can run it.
      */
     async run(source, options) {
-      if (!available) return null;
-      if (!ready) {
-        ready = start();
-        // A worker that cannot start never will: stop trying.
-        ready.then(
-          (started) => {
-            if (!started) available = false;
-          },
-          () => {
-            available = false;
-          },
-        );
+      var handle = null;
+      // A worker stopped while this call waited for it is started again once.
+      for (var attempt = 0; attempt < 2 && !handle; attempt++) {
+        if (!available) return null;
+        if (!ready) {
+          ready = start();
+          // A worker that cannot start never will: stop trying.
+          ready.then(
+            (started) => {
+              if (!started) available = false;
+            },
+            () => {
+              available = false;
+            },
+          );
+        }
+        handle = await ready.catch(() => null);
+        if (handle === null) return null;
+        // A stopped worker would never answer.
+        if (handle.failed) handle = null;
       }
-      var handle = await ready.catch(() => null);
-      // A worker that failed since it started would never answer.
-      if (!handle || handle.failed) return null;
+      if (!handle) return null;
+      cancelIdleStop();
       return new Promise((resolve, reject) => {
         var id = nextId++;
         jobs.set(id, { resolve, reject });
@@ -354,21 +388,12 @@ function createRecryptWorkerHost(settings) {
           );
         } catch (error) {
           jobs.delete(id);
-          if (jobs.size === 0) handle.unref();
+          if (jobs.size === 0) {
+            handle.unref();
+            stopWhenIdle(handle);
+          }
           reject(error);
         }
-      });
-    },
-    /**
-     * Stops the worker once its running jobs have answered, and keeps later
-     * jobs on the calling thread.
-     * @returns {void}
-     */
-    close() {
-      available = false;
-      closed = true;
-      ready?.then((handle) => {
-        if (handle && !handle.failed && jobs.size === 0) stop(handle);
       });
     },
   };
@@ -378,12 +403,10 @@ function createRecryptWorkerHost(settings) {
 // threads, so creating an instance per request adds no workers.
 var sharedHosts = new Map();
 
-// An instance with its own wasmBinary has its own worker, stopped once the
-// instance is garbage-collected.
-var ownHosts =
-  typeof FinalizationRegistry === "function"
-    ? new FinalizationRegistry((host) => host.close())
-    : null;
+// How long the worker of an instance with its own wasmBinary stays without
+// jobs. Such workers are not shared, so an instance per request would
+// otherwise keep one worker per request.
+var OWN_WORKER_IDLE_MS = 5000;
 
 /**
  * Returns the recryptAsync() worker host for a Wasm instance.
@@ -394,8 +417,11 @@ var ownHosts =
  *   loaded the binary from.
  * @param {number} settings.maxInputBytes - Input limit of the instance.
  * @param {number} settings.maxOutputBytes - Output limit of the instance.
- * @returns {object} The host, with `run`, `close`, and `own(instance)`, which
- *   ties a host of its own to the instance's lifetime.
+ * @param {number} [settings.idleTimeout] - Milliseconds a worker of its own
+ *   stays without jobs; tests shorten it.
+ * @returns {{run: function(Uint8Array, object): Promise<Uint8Array|null>}}
+ *   The host; `run` resolves with null when no worker can run the job, so the
+ *   caller recrypts on its own thread.
  */
 export function recryptWorkerHost(settings) {
   if (settings.wasmBinary === undefined) {
@@ -406,28 +432,14 @@ export function recryptWorkerHost(settings) {
     ]);
     var shared = sharedHosts.get(key);
     if (!shared) {
-      shared = createRecryptWorkerHost(settings);
+      // Shared workers stay, as native's pool threads do.
+      shared = createRecryptWorkerHost({ ...settings, idleTimeout: undefined });
       sharedHosts.set(key, shared);
     }
-    return {
-      ...shared,
-      /**
-       * Does nothing: a shared worker outlives every instance using it.
-       * @returns {void}
-       */
-      own() {},
-    };
+    return shared;
   }
-  var host = createRecryptWorkerHost(settings);
-  return {
-    ...host,
-    /**
-     * Stops this host's worker once `instance` is garbage-collected.
-     * @param {object} instance - The Wasm API the host belongs to.
-     * @returns {void}
-     */
-    own(instance) {
-      ownHosts?.register(instance, host);
-    },
-  };
+  return createRecryptWorkerHost({
+    ...settings,
+    idleTimeout: settings.idleTimeout ?? OWN_WORKER_IDLE_MS,
+  });
 }
