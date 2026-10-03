@@ -451,6 +451,120 @@ describe("Xcryption", function () {
       );
     });
 
+    it("rejects instead of throwing when a source or target stream fails", async function () {
+      var pdf = fs.readFileSync(__dirname + "/TestMaterials/Original.pdf");
+      /**
+       * Makes an output stream.
+       * @returns {object} A new PDFWStreamForBuffer.
+       */
+      var output = function () {
+        return new muhammara.PDFWStreamForBuffer();
+      };
+      var cases = [
+        [
+          function () {
+            var source = new muhammara.PDFRStreamForFile(
+              __dirname + "/TestMaterials/Original.pdf",
+            );
+            fs.closeSync(source.rs);
+            // A closed descriptor's number may be reused by another thread;
+            // this one is beyond any open file limit.
+            source.rs = 2 ** 31 - 1;
+            return [source, output()];
+          },
+          /EBADF/,
+        ],
+        [
+          function () {
+            var source = new muhammara.PDFRStreamForBuffer(pdf);
+            source.read = function () {
+              throw new Error("read failed");
+            };
+            return [source, output()];
+          },
+          /read failed/,
+        ],
+        [
+          function () {
+            var target = output();
+            target.getCurrentPosition = function () {
+              throw new Error("position failed");
+            };
+            return [new muhammara.PDFRStreamForBuffer(pdf), target];
+          },
+          /position failed/,
+        ],
+      ];
+      // Windows refuses to open a directory, so the stream cannot be made.
+      if (process.platform !== "win32") {
+        cases.push([
+          function () {
+            return [
+              new muhammara.PDFRStreamForFile(__dirname + "/TestMaterials"),
+              output(),
+            ];
+          },
+          /EISDIR/,
+        ]);
+      }
+      for (var [streams, error] of cases) {
+        var [source, target] = streams();
+        var promise;
+        try {
+          assert.doesNotThrow(function () {
+            promise = muhammara.recryptAsync(source, target);
+          });
+          await assert.rejects(promise, error);
+        } finally {
+          if (error.source === "EISDIR") fs.closeSync(source.rs);
+        }
+      }
+    });
+
+    it("rejects instead of aborting when the source does not fit in memory", async function () {
+      // Electron ends the process when an allocation fails, and so does ASan
+      // unless allocator_may_return_null is set.
+      var asan = /asan/.test(process.env.LD_PRELOAD || "");
+      if (
+        process.versions.electron ||
+        (asan &&
+          !/allocator_may_return_null=1/.test(process.env.ASAN_OPTIONS || ""))
+      )
+        this.skip();
+      var pdf = fs.readFileSync(__dirname + "/TestMaterials/Original.pdf");
+      var source = new muhammara.PDFRStreamForBuffer(pdf);
+      var atEnd = false;
+      // Claim a length no allocation can hold.
+      source.setPositionFromEnd = function () {
+        atEnd = true;
+      };
+      source.setPosition = function (position) {
+        atEnd = false;
+        muhammara.PDFRStreamForBuffer.prototype.setPosition.call(
+          this,
+          position,
+        );
+      };
+      source.getCurrentPosition = function () {
+        return atEnd
+          ? 2 ** 52
+          : muhammara.PDFRStreamForBuffer.prototype.getCurrentPosition.call(
+              this,
+            );
+      };
+      var promise;
+      assert.doesNotThrow(function () {
+        promise = muhammara.recryptAsync(
+          source,
+          new muhammara.PDFWStreamForBuffer(),
+        );
+      });
+      await assert.rejects(promise, {
+        name: "RangeError",
+        message: "Not enough memory to buffer the recryptAsync() streams",
+      });
+    });
+
     it("rejects when the input password is wrong", async function () {
       await assert.rejects(
         muhammara.recryptAsync(
@@ -475,6 +589,32 @@ describe("Xcryption", function () {
           ),
         );
       }, /please either provide two paths or two stream objects/);
+    });
+
+    it("treats undefined and null options as no options, like Wasm", async function () {
+      for (var options of [undefined, null]) {
+        var name = "RecryptOptions-" + options;
+        muhammara.recrypt(
+          __dirname + "/TestMaterials/Original.pdf",
+          __dirname + "/output/" + name + ".pdf",
+          options,
+        );
+        await muhammara.recryptAsync(
+          __dirname + "/TestMaterials/Original.pdf",
+          __dirname + "/output/" + name + "-async.pdf",
+          options,
+        );
+        assertRecryptedPdf(
+          __dirname + "/output/" + name + ".pdf",
+          undefined,
+          false,
+        );
+        assertRecryptedPdf(
+          __dirname + "/output/" + name + "-async.pdf",
+          undefined,
+          false,
+        );
+      }
     });
 
     it("runs concurrent calls to completion", async function () {
@@ -665,6 +805,103 @@ describe("Xcryption", function () {
       await promise;
     });
 
+    it("ignores a kept promise executor once its job is gone", async function () {
+      var pdf = fs.readFileSync(__dirname + "/TestMaterials/Original.pdf");
+      var constructor = Object.getOwnPropertyDescriptor(
+        Promise.prototype,
+        "constructor",
+      );
+      var executors = [];
+      /**
+       * A Promise constructor that keeps every executor it is given.
+       * @param {Function} executor - The executor.
+       * @returns {Promise<*>} A built-in promise.
+       */
+      function KeepingPromise(executor) {
+        executors.push(executor);
+        return new constructor.value(executor);
+      }
+      Object.defineProperty(Promise.prototype, "constructor", {
+        ...constructor,
+        value: KeepingPromise,
+      });
+      try {
+        var promise = muhammara.recryptAsync(
+          new muhammara.PDFRStreamForBuffer(pdf),
+          new muhammara.PDFWStreamForBuffer(),
+        );
+      } finally {
+        Object.defineProperty(Promise.prototype, "constructor", constructor);
+      }
+      await promise;
+      assert.equal(executors.length, 1);
+      // The job was freed when it settled; this must not touch it.
+      executors[0](
+        function () {},
+        function () {},
+      );
+      await muhammara.recryptAsync(
+        new muhammara.PDFRStreamForBuffer(pdf),
+        new muhammara.PDFWStreamForBuffer(),
+      );
+    });
+
+    it("settles the other jobs when a replaced settle function throws", async function () {
+      var pdf = fs.readFileSync(__dirname + "/TestMaterials/Original.pdf");
+      var constructor = Object.getOwnPropertyDescriptor(
+        Promise.prototype,
+        "constructor",
+      );
+      /**
+       * A Promise constructor whose resolve function throws.
+       * @param {Function} executor - The executor.
+       * @returns {Promise<*>} A built-in promise that never resolves.
+       */
+      function ThrowingPromise(executor) {
+        return new constructor.value(function (resolve, reject) {
+          executor(function () {
+            throw new Error("hostile resolve");
+          }, reject);
+        });
+      }
+      // Node reports the exception as uncaught; take it from mocha.
+      var listeners = process.rawListeners("uncaughtException");
+      process.removeAllListeners("uncaughtException");
+      var timer;
+      // Fail before mocha's timeout so that finally gives mocha its
+      // listeners back.
+      var uncaught = new Promise(function (resolve, reject) {
+        process.once("uncaughtException", resolve);
+        timer = setTimeout(reject, 10000, new Error("No uncaught exception"));
+      });
+      try {
+        Object.defineProperty(Promise.prototype, "constructor", {
+          ...constructor,
+          value: ThrowingPromise,
+        });
+        try {
+          muhammara.recryptAsync(
+            new muhammara.PDFRStreamForBuffer(pdf),
+            new muhammara.PDFWStreamForBuffer(),
+          );
+        } finally {
+          Object.defineProperty(Promise.prototype, "constructor", constructor);
+        }
+        var waiting = muhammara.recryptAsync(
+          new muhammara.PDFRStreamForBuffer(pdf),
+          new muhammara.PDFWStreamForBuffer(),
+        );
+        assert.equal((await uncaught).message, "hostile resolve");
+        await waiting;
+      } finally {
+        clearTimeout(timer);
+        process.removeAllListeners("uncaughtException");
+        listeners.forEach(function (listener) {
+          process.on("uncaughtException", listener);
+        });
+      }
+    });
+
     it("resolves relative paths when it is called", async function () {
       var path = require("path");
       var original = process.cwd();
@@ -681,6 +918,30 @@ describe("Xcryption", function () {
       assertRecryptedPdf(path.join(__dirname, target), undefined, false);
     });
 
+    it("resolves relative paths through a symlink like recrypt", async function () {
+      if (process.platform === "win32") this.skip();
+      var path = require("path");
+      // link points to real/sub, so the system resolves link/.. to real.
+      var root = path.join(__dirname, "output/RecryptAsyncSymlink");
+      fs.rmSync(root, { recursive: true, force: true });
+      fs.mkdirSync(path.join(root, "real/sub"), { recursive: true });
+      fs.symlinkSync(path.join(root, "real/sub"), path.join(root, "link"));
+      var source = path.join(__dirname, "TestMaterials/Original.pdf");
+      var original = process.cwd();
+      process.chdir(root);
+      var promise;
+      try {
+        muhammara.recrypt(source, "link/../sync.pdf");
+        promise = muhammara.recryptAsync(source, "link/../async.pdf");
+      } finally {
+        process.chdir(original);
+      }
+      await promise;
+      assert.ok(fs.existsSync(path.join(root, "real/sync.pdf")));
+      assert.ok(fs.existsSync(path.join(root, "real/async.pdf")));
+      assert.ok(!fs.existsSync(path.join(root, "async.pdf")));
+    });
+
     it("rejects when the output stream moves while the job runs", async function () {
       var target = new muhammara.PDFWStreamForBuffer();
       var promise = muhammara.recryptAsync(
@@ -690,7 +951,53 @@ describe("Xcryption", function () {
         target,
       );
       target.write(Buffer.from("%written meanwhile\n"));
-      await assert.rejects(promise, /written to while recryptAsync/);
+      await assert.rejects(
+        promise,
+        /^Error: The output stream was written to after recryptAsync\(\) was called$/,
+      );
+    });
+
+    it("names the earlier job when a queued job shares the output stream", async function () {
+      var pdf = fs.readFileSync(__dirname + "/TestMaterials/Original.pdf");
+      var target = new muhammara.PDFWStreamForBuffer();
+      var results = await Promise.allSettled([
+        muhammara.recryptAsync(new muhammara.PDFRStreamForBuffer(pdf), target),
+        muhammara.recryptAsync(new muhammara.PDFRStreamForBuffer(pdf), target),
+      ]);
+      assert.equal(results[0].status, "fulfilled");
+      // The second job had not started while the first one wrote.
+      assert.equal(results[1].status, "rejected");
+      assert.equal(
+        results[1].reason.message,
+        "An earlier recryptAsync() call wrote to the same output stream " +
+          "before this one started; use a separate output stream for each call",
+      );
+      var reader = muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(target.buffer),
+      );
+      assert.ok(reader.getPagesCount() > 0);
+    });
+
+    it("names the earlier job when its write to the shared stream fails", async function () {
+      var pdf = fs.readFileSync(__dirname + "/TestMaterials/Original.pdf");
+      var target = new muhammara.PDFWStreamForBuffer();
+      var write = target.write;
+      var writes = 0;
+      // The first chunk is stored, then the stream fails.
+      target.write = function (bytes) {
+        var written = write.call(this, bytes);
+        if (++writes === 1) throw new Error("disk full");
+        return written;
+      };
+      var results = await Promise.allSettled([
+        muhammara.recryptAsync(new muhammara.PDFRStreamForBuffer(pdf), target),
+        muhammara.recryptAsync(new muhammara.PDFRStreamForBuffer(pdf), target),
+      ]);
+      assert.equal(results[0].reason.message, "disk full");
+      assert.match(
+        results[1].reason.message,
+        /^An earlier recryptAsync\(\) call wrote to the same output stream/,
+      );
     });
 
     it("resolves a relative log path when it is called", async function () {
@@ -867,6 +1174,235 @@ describe("Xcryption", function () {
         Math.abs(minutesAhead - 330) < 2,
         "expected UTC+5:30, got " + minutesAhead + " minutes from UTC",
       );
+    });
+
+    it("reads log only when the options have one, like recrypt", async function () {
+      // Every get throws, but no key exists, so the addon reads none.
+      var options = new Proxy(
+        {},
+        {
+          has: function () {
+            return false;
+          },
+          get: function () {
+            throw new Error("read an option that does not exist");
+          },
+        },
+      );
+      muhammara.recrypt(
+        __dirname + "/TestMaterials/Original.pdf",
+        __dirname + "/output/RecryptHasOnlyOptions.pdf",
+        options,
+      );
+      await muhammara.recryptAsync(
+        __dirname + "/TestMaterials/Original.pdf",
+        __dirname + "/output/RecryptAsyncHasOnlyOptions.pdf",
+        options,
+      );
+    });
+
+    it("rejects instead of throwing when the working directory is gone", async function () {
+      // Windows cannot remove the working directory.
+      if (process.platform === "win32") this.skip();
+      var path = require("path");
+      var gone = path.join(__dirname, "output/RecryptAsyncRemovedDirectory");
+      var next = path.join(__dirname, "output/RecryptAsyncNextDirectory");
+      fs.rmSync(gone, { recursive: true, force: true });
+      fs.rmSync(next, { recursive: true, force: true });
+      fs.mkdirSync(gone);
+      fs.mkdirSync(next);
+      // The directory the caller moves on to has the source, so a job that
+      // resolved the relative paths only when it ran would recrypt it there.
+      fs.copyFileSync(
+        __dirname + "/TestMaterials/Original.pdf",
+        path.join(next, "in.pdf"),
+      );
+      // A thread runs its jobs one at a time, so a job queued now cannot
+      // start before the caller has moved on.
+      var first = muhammara.recryptAsync(
+        __dirname + "/TestMaterials/Original.pdf",
+        __dirname + "/output/RecryptAsyncBeforeRemoved.pdf",
+      );
+      var BuiltinPromise = Promise;
+      var original = process.cwd();
+      var promise;
+      process.chdir(gone);
+      try {
+        fs.rmdirSync(gone);
+        assert.throws(function () {
+          muhammara.recrypt("in.pdf", "out.pdf");
+        }, /Unable to recrypt files/);
+        global.Promise = function NotAPromise() {};
+        try {
+          promise = muhammara.recryptAsync("in.pdf", "out.pdf", {
+            log: "recrypt.log",
+          });
+        } finally {
+          global.Promise = BuiltinPromise;
+        }
+        process.chdir(next);
+        assert.ok(promise instanceof BuiltinPromise);
+        var rejected = assert.rejects(promise);
+        await first;
+        await rejected;
+      } finally {
+        process.chdir(original);
+      }
+      assert.deepEqual(fs.readdirSync(next), ["in.pdf"]);
+    });
+
+    it("skips a relative log in a removed working directory, like recrypt", async function () {
+      // Windows cannot remove the working directory.
+      if (process.platform === "win32") this.skip();
+      var path = require("path");
+      var gone = path.join(__dirname, "output/RecryptAsyncRemovedLogDirectory");
+      var next = path.join(__dirname, "output/RecryptAsyncNextLogDirectory");
+      fs.rmSync(gone, { recursive: true, force: true });
+      fs.rmSync(next, { recursive: true, force: true });
+      fs.mkdirSync(gone);
+      fs.mkdirSync(next);
+      var source = __dirname + "/TestMaterials/Original.pdf";
+      var missing = __dirname + "/output/MissingLogRecrypt.pdf";
+      // A thread runs its jobs one at a time, so the jobs queued after this
+      // one cannot start before the caller has moved on.
+      var first = muhammara.recryptAsync(
+        source,
+        __dirname + "/output/RecryptAsyncBeforeRemovedLog.pdf",
+      );
+      var original = process.cwd();
+      var written;
+      var failed;
+      process.chdir(gone);
+      try {
+        fs.rmdirSync(gone);
+        // recrypt() cannot create the log there: it writes the PDF without
+        // one, and a failure logs nothing.
+        muhammara.recrypt(source, path.join(next, "sync.pdf"), {
+          log: "recrypt.log",
+        });
+        assert.throws(function () {
+          muhammara.recrypt(missing, path.join(next, "never.pdf"), {
+            log: "recrypt.log",
+          });
+        }, /Unable to recrypt files/);
+        written = muhammara.recryptAsync(source, path.join(next, "async.pdf"), {
+          log: "recrypt.log",
+        });
+        failed = muhammara.recryptAsync(missing, path.join(next, "never.pdf"), {
+          log: "recrypt.log",
+        });
+        process.chdir(next);
+        var rejected = assert.rejects(failed, /Unable to recrypt files/);
+        await first;
+        await written;
+        await rejected;
+      } finally {
+        process.chdir(original);
+      }
+      assert.deepEqual(fs.readdirSync(next).sort(), ["async.pdf", "sync.pdf"]);
+    });
+
+    it("rejects a path that is too long once made absolute", async function () {
+      // Windows makes relative paths absolute for recrypt() as well.
+      if (process.platform === "win32") this.skip();
+      var path = require("path");
+      var top = path.join(__dirname, "output/RecryptAsyncLongDirectory");
+      var name = "d".repeat(200);
+      var original = process.cwd();
+      /**
+       * Removes the nested directories by relative paths, as their absolute
+       * paths are too long to remove directly.
+       * @returns {void}
+       */
+      var removeNested = function () {
+        if (!fs.existsSync(top)) return;
+        process.chdir(top);
+        try {
+          var levels = 0;
+          while (fs.existsSync(name)) {
+            process.chdir(name);
+            levels++;
+          }
+          fs.readdirSync(".").forEach(function (file) {
+            fs.rmSync(file, { force: true });
+          });
+          for (; levels > 0; levels--) {
+            process.chdir("..");
+            fs.rmdirSync(name);
+          }
+        } finally {
+          process.chdir(original);
+        }
+        fs.rmdirSync(top);
+      };
+      removeNested();
+      fs.mkdirSync(top);
+      process.chdir(top);
+      try {
+        // Longer than PATH_MAX on Linux (4096) and macOS (1024).
+        for (var level = 0; level < 25; level++) {
+          fs.mkdirSync(name);
+          process.chdir(name);
+        }
+        fs.copyFileSync(__dirname + "/TestMaterials/Original.pdf", "in.pdf");
+        // recrypt() opens the relative paths from inside the directory.
+        muhammara.recrypt("in.pdf", "sync.pdf");
+        // Checked where it was run: glibc makes the working directory
+        // absolute and the addon rejects, while musl fails to and the wrapper
+        // rejects with the same message.
+        var message =
+          process.platform === "linux" ? /too long for this system/ : undefined;
+        var rejected = [
+          assert.rejects(
+            muhammara.recryptAsync("in.pdf", "async.pdf"),
+            message,
+          ),
+          assert.rejects(
+            muhammara.recryptAsync(
+              __dirname + "/TestMaterials/Original.pdf",
+              __dirname + "/output/RecryptAsyncLongLog.pdf",
+              { log: "recrypt.log" },
+            ),
+            message,
+          ),
+        ];
+        await Promise.all(rejected);
+        assert.deepEqual(fs.readdirSync(".").sort(), ["in.pdf", "sync.pdf"]);
+      } finally {
+        process.chdir(original);
+        removeNested();
+      }
+    });
+
+    it("resolves relative paths in a renamed working directory, like recrypt", async function () {
+      // Windows cannot rename the working directory.
+      if (process.platform === "win32") this.skip();
+      var path = require("path");
+      var before = path.join(__dirname, "output/RecryptAsyncBeforeRename");
+      var after = path.join(__dirname, "output/RecryptAsyncAfterRename");
+      fs.rmSync(before, { recursive: true, force: true });
+      fs.rmSync(after, { recursive: true, force: true });
+      fs.mkdirSync(before);
+      fs.copyFileSync(
+        __dirname + "/TestMaterials/Original.pdf",
+        path.join(before, "in.pdf"),
+      );
+      var original = process.cwd();
+      process.chdir(before);
+      try {
+        // Node keeps this path until the next chdir().
+        assert.equal(fs.realpathSync(process.cwd()), fs.realpathSync(before));
+        fs.renameSync(before, after);
+        muhammara.recrypt("in.pdf", "sync.pdf");
+        await muhammara.recryptAsync("in.pdf", "async.pdf");
+      } finally {
+        process.chdir(original);
+      }
+      assert.deepEqual(fs.readdirSync(after).sort(), [
+        "async.pdf",
+        "in.pdf",
+        "sync.pdf",
+      ]);
     });
 
     it("lets a stream callback call recrypt() on the same thread", function () {
@@ -1109,6 +1645,227 @@ describe("Xcryption", function () {
       logs.forEach(function (log, index) {
         assert.equal(fs.readFileSync(log, "utf8"), contents[index]);
       });
+    });
+
+    it("logs early errors of recrypt() to its own log, like recryptAsync", async function () {
+      var output = __dirname + "/output/";
+      var logs = {
+        writer: output + "RecryptEarlyErrorWriter.log",
+        sync: output + "RecryptEarlyErrorSync.log",
+        async: output + "RecryptEarlyErrorAsync.log",
+      };
+      Object.values(logs).forEach(function (log) {
+        fs.rmSync(log, { force: true });
+      });
+      // Another writer on this thread holds its own log meanwhile.
+      var writer = muhammara.createWriter(
+        output + "RecryptEarlyErrorWriter.pdf",
+        { log: logs.writer },
+      );
+      try {
+        assert.throws(function () {
+          muhammara.recrypt(
+            output + "MissingSyncRecrypt.pdf",
+            output + "RecryptEarlyErrorSync.pdf",
+            { log: logs.sync },
+          );
+        }, /Unable to recrypt files/);
+        // Without a log of its own, it logs nowhere, as recryptAsync() does.
+        assert.throws(function () {
+          muhammara.recrypt(
+            output + "MissingUnloggedRecrypt.pdf",
+            output + "RecryptEarlyErrorUnlogged.pdf",
+          );
+        }, /Unable to recrypt files/);
+        await assert.rejects(
+          muhammara.recryptAsync(
+            output + "MissingAsyncRecrypt.pdf",
+            output + "RecryptEarlyErrorAsync.pdf",
+            { log: logs.async },
+          ),
+          /Unable to recrypt files/,
+        );
+      } finally {
+        writer.end();
+        // A writer without a log turns this thread's logging off again, so
+        // later tests do not log into these files.
+        muhammara.createWriter(new muhammara.PDFWStreamForBuffer()).end();
+      }
+      /**
+       * Reads a log file.
+       * @param {string} log - The log path.
+       * @returns {string} Its text, or "" when it does not exist.
+       */
+      var read = function (log) {
+        return fs.existsSync(log) ? fs.readFileSync(log, "utf8") : "";
+      };
+      assert.ok(read(logs.async).includes("MissingAsyncRecrypt.pdf"));
+      assert.ok(read(logs.sync).includes("MissingSyncRecrypt.pdf"));
+      assert.ok(!read(logs.writer).includes("MissingSyncRecrypt.pdf"));
+      assert.ok(!read(logs.writer).includes("MissingUnloggedRecrypt.pdf"));
+    });
+
+    it("skips a log file it cannot append to instead of crashing", async function () {
+      var output = __dirname + "/output/";
+      var directory = output + "RecryptLogDirectory";
+      var readOnly = output + "RecryptReadOnly.log";
+      fs.mkdirSync(directory, { recursive: true });
+      // A run that ended early may have left the file read-only.
+      if (fs.existsSync(readOnly)) fs.chmodSync(readOnly, 0o644);
+      fs.writeFileSync(readOnly, "");
+      fs.chmodSync(readOnly, 0o444);
+      var logs = [directory, readOnly];
+      // A device that opens for reading but not for appending, as /dev/autofs
+      // does for users other than root, where the system has one.
+      var device = ["/dev/autofs", "/dev/kmsg"].find(function (candidate) {
+        try {
+          fs.closeSync(fs.openSync(candidate, "r"));
+        } catch (error) {
+          return false;
+        }
+        try {
+          fs.closeSync(fs.openSync(candidate, "a"));
+          return false;
+        } catch (error) {
+          return true;
+        }
+      });
+      if (device) logs.push(device);
+      var writerLog = output + "RecryptUnusableLogWriter.log";
+      fs.rmSync(writerLog, { force: true });
+      // Another writer on this thread holds its own log meanwhile.
+      var writer = muhammara.createWriter(
+        output + "RecryptUnusableLogWriter.pdf",
+        { log: writerLog },
+      );
+      /**
+       * Reads the other writer's log.
+       * @returns {string} Its text, or "" when it does not exist.
+       */
+      var read = function () {
+        return fs.existsSync(writerLog)
+          ? fs.readFileSync(writerLog, "utf8")
+          : "";
+      };
+      var before = read();
+      try {
+        for (var log of logs) {
+          // Each fails while parsing, so it logs before writing anything.
+          assert.throws(function () {
+            muhammara.recrypt(
+              output + "MissingLogRecrypt.pdf",
+              output + "RecryptUnusableLog.pdf",
+              { log },
+            );
+          }, /Unable to recrypt files/);
+          assert.throws(function () {
+            muhammara.recrypt(
+              new muhammara.PDFRStreamForBuffer(Buffer.from("not a PDF")),
+              new muhammara.PDFWStreamForBuffer(),
+              { log },
+            );
+          }, /Unable to recrypt files/);
+          await assert.rejects(
+            muhammara.recryptAsync(
+              output + "MissingLogRecrypt.pdf",
+              output + "RecryptAsyncUnusableLog.pdf",
+              { log },
+            ),
+            /Unable to recrypt files/,
+          );
+        }
+        // Without a usable log of their own, the calls log nowhere, not into
+        // the other writer's log.
+        assert.equal(read(), before);
+      } finally {
+        fs.chmodSync(readOnly, 0o644);
+        writer.end();
+        // A writer without a log turns this thread's logging off again, so
+        // later tests do not log into the other writer's log.
+        muhammara.createWriter(new muhammara.PDFWStreamForBuffer()).end();
+      }
+    });
+
+    it("gives an open writer its log back once recrypt() returns", function () {
+      var output = __dirname + "/output/";
+      var writerLog = output + "RecryptWriterLogBack.log";
+      var ownLog = output + "RecryptWriterLogBackOwn.log";
+      fs.rmSync(writerLog, { force: true });
+      fs.rmSync(ownLog, { force: true });
+      var writer = muhammara.createWriter(output + "RecryptWriterLogBack.pdf", {
+        log: writerLog,
+      });
+      /**
+       * Makes the writer log an error that names a missing file.
+       * @param {string} name - The missing file's name.
+       * @returns {void}
+       */
+      var fail = function (name) {
+        assert.throws(function () {
+          writer.appendPDFPagesFromPDF(output + name);
+        });
+      };
+      try {
+        // After a call that fails early, one that succeeds with a log of its
+        // own, and one that succeeds without.
+        assert.throws(function () {
+          muhammara.recrypt(
+            output + "MissingWriterLogBack.pdf",
+            output + "RecryptWriterLogBackFailed.pdf",
+            { log: ownLog },
+          );
+        }, /Unable to recrypt files/);
+        fail("MissingAfterFailedRecrypt.pdf");
+        muhammara.recrypt(
+          __dirname + "/TestMaterials/Original.pdf",
+          output + "RecryptWriterLogBackOwn.pdf",
+          { log: ownLog },
+        );
+        fail("MissingAfterLoggedRecrypt.pdf");
+        muhammara.recrypt(
+          __dirname + "/TestMaterials/Original.pdf",
+          output + "RecryptWriterLogBackNone.pdf",
+        );
+        fail("MissingAfterUnloggedRecrypt.pdf");
+      } finally {
+        writer.end();
+        // A writer without a log turns this thread's logging off again, so
+        // later tests do not log into the writer's log.
+        muhammara.createWriter(new muhammara.PDFWStreamForBuffer()).end();
+      }
+      var text = fs.readFileSync(writerLog, "utf8");
+      [
+        "MissingAfterFailedRecrypt.pdf",
+        "MissingAfterLoggedRecrypt.pdf",
+        "MissingAfterUnloggedRecrypt.pdf",
+      ].forEach(function (name) {
+        assert.ok(text.includes(name), name);
+      });
+      var own = fs.readFileSync(ownLog, "utf8");
+      assert.ok(own.includes("MissingWriterLogBack.pdf"));
+      assert.ok(!own.includes("MissingAfter"));
+    });
+
+    it("stops logging to its log once recrypt() returns", function () {
+      var output = __dirname + "/output/";
+      var log = output + "RecryptOwnLogOnly.log";
+      fs.rmSync(log, { force: true });
+      assert.throws(function () {
+        muhammara.recrypt(
+          output + "MissingOwnLogFirst.pdf",
+          output + "RecryptOwnLogOnly.pdf",
+          { log },
+        );
+      }, /Unable to recrypt files/);
+      assert.throws(function () {
+        muhammara.recrypt(
+          output + "MissingOwnLogSecond.pdf",
+          output + "RecryptOwnLogOnly.pdf",
+        );
+      }, /Unable to recrypt files/);
+      var text = fs.readFileSync(log, "utf8");
+      assert.ok(text.includes("MissingOwnLogFirst.pdf"));
+      assert.ok(!text.includes("MissingOwnLogSecond.pdf"));
     });
 
     it("leaves the event loop free while the synchronous call blocks it", async function () {

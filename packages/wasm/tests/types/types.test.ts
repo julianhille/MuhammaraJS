@@ -177,6 +177,8 @@ async function usesLowLevelSurface() {
     { userPassword: "viewer" },
   );
   void recryptedAsync;
+  muhammara.recrypt(source, null);
+  void muhammara.recryptAsync(source, null);
   var reader = muhammara.createReader(source);
   var textElement = reader.extractPageText(0)[0];
   textElement.content;

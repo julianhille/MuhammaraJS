@@ -55,7 +55,17 @@ export async function normalizeBytesAsync(value, label) {
     !ArrayBuffer.isView(value) &&
     typeof value.arrayBuffer === "function"
   ) {
-    return normalizeBytes(await value.arrayBuffer(), label);
+    // Blob's own arrayBuffer() returns a new buffer on every call, so that
+    // buffer is already a copy. A BlobLike, or a subclass with its own
+    // arrayBuffer(), may return one it keeps.
+    var fresh =
+      typeof Blob !== "undefined" &&
+      value instanceof Blob &&
+      value.arrayBuffer === Blob.prototype.arrayBuffer;
+    var buffer = await value.arrayBuffer();
+    return fresh && buffer instanceof ArrayBuffer
+      ? new Uint8Array(buffer)
+      : normalizeBytes(buffer, label);
   }
   return normalizeBytes(value, label);
 }

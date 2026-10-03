@@ -23,6 +23,9 @@ var versionSelect = document.querySelector("#version");
 var urls = new ObjectUrlStore();
 var active;
 var result;
+// Counts runs and cancellations. A cancelled page run settles later, and must
+// then leave the status, output and buttons to whatever came after it.
+var currentRun = 0;
 var exampleId = "complete";
 var examples = new Map(
   BROWSER_EXAMPLES.map((example) => [example.id, example]),
@@ -297,6 +300,12 @@ tabs.forEach((tab, index) => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  var run = ++currentRun;
+  /**
+   * Tells whether this run was neither cancelled nor followed by another.
+   * @returns {boolean} True while the run owns the page controls.
+   */
+  var isCurrent = () => run === currentRun;
   var selectedExample = exampleId;
   runButton.disabled = true;
   tabs.forEach((tab) => (tab.disabled = true));
@@ -306,11 +315,15 @@ form.addEventListener("submit", async (event) => {
   result = undefined;
   try {
     var byteAssets = await assets();
+    // Cancelled while the files were read: start nothing, and leave `active`
+    // unset so the tabs stay usable.
+    if (!isCurrent()) return;
+    var finished;
     if (
       selectedExample !== "benchmark" &&
       form.elements.mode.value === "worker"
     )
-      result = await runInWorker(byteAssets, selectedExample);
+      finished = await runInWorker(byteAssets, selectedExample);
     else {
       var controller = new AbortController();
       var stopWorker;
@@ -324,11 +337,18 @@ form.addEventListener("submit", async (event) => {
           stopWorker?.();
         },
       };
-      result = await runBrowserExample({
+      finished = await runBrowserExample({
         exampleId: selectedExample,
         assets: byteAssets,
         signal: controller.signal,
-        progress: report,
+        /**
+         * Shows progress while this run is current.
+         * @param {...*} details - `report()` arguments.
+         * @returns {void}
+         */
+        progress: (...details) => {
+          if (isCurrent()) report(...details);
+        },
         runInWorker: (source, runs, useAsync) =>
           recryptInWorker(
             source,
@@ -338,21 +358,27 @@ form.addEventListener("submit", async (event) => {
           ),
       });
     }
+    if (!isCurrent()) return;
+    result = finished;
     output.textContent = JSON.stringify(summary(result), null, 2);
     report("Complete. The PDF was parsed back successfully.", 100);
     showResult();
   } catch (error) {
+    if (!isCurrent()) return;
     var details = error.exampleDetails || errorDetails(error, "application");
     report(`${details.name}: ${details.message}`, 0, details);
   } finally {
-    active = undefined;
-    runButton.disabled = false;
-    tabs.forEach((tab) => (tab.disabled = false));
-    cancelButton.disabled = true;
+    if (isCurrent()) {
+      active = undefined;
+      runButton.disabled = false;
+      tabs.forEach((tab) => (tab.disabled = false));
+      cancelButton.disabled = true;
+    }
   }
 });
 
 cancelButton.addEventListener("click", () => {
+  currentRun++;
   active?.cancel();
   active = undefined;
   report(

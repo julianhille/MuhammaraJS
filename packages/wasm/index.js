@@ -21,7 +21,7 @@ import { createWriterFactory, createWriterSupport } from "./lib/writer.js";
 import { createModifierFactory } from "./lib/modifier.js";
 import { createWriterToModifyFactory } from "./lib/writer-to-modify.js";
 import { createRecipeFactory } from "./lib/recipe.js";
-import { copyRecryptOptions, createRecrypt } from "./lib/recrypt.js";
+import { createRecrypt } from "./lib/recrypt.js";
 import {
   DeviceColorSpace,
   ImageFit,
@@ -93,7 +93,16 @@ async function createRuntime(options) {
    * @throws {RangeError} If the bytes exceed `maxInputBytes`.
    */
   function normalizeBytes(value, label) {
-    var bytes = normalizeByteSource(value, label);
+    return assertInputSize(normalizeByteSource(value, label), label);
+  }
+  /**
+   * Rejects input larger than `maxInputBytes`.
+   * @param {Uint8Array} bytes - Normalized bytes.
+   * @param {string} [label] - Name used in error messages.
+   * @returns {Uint8Array} `bytes`, unchanged.
+   * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+   */
+  function assertInputSize(bytes, label) {
     if (bytes.length > maxInputBytes) {
       throw new RangeError(`${label || "Byte input"} exceeds maxInputBytes`);
     }
@@ -116,7 +125,9 @@ async function createRuntime(options) {
     ) {
       throw new RangeError(`${label || "Byte input"} exceeds maxInputBytes`);
     }
-    return normalizeBytes(await normalizeByteSourceAsync(value, label), label);
+    // normalizeByteSourceAsync already returns a copy; copying it again would
+    // hold the input twice.
+    return assertInputSize(await normalizeByteSourceAsync(value, label), label);
   }
   /**
    * Rejects PDF output larger than `maxOutputBytes`.
@@ -240,7 +251,7 @@ async function createRuntime(options) {
     ...dependencies,
     ...support,
   });
-  var recrypt = createRecrypt(dependencies);
+  var { recrypt, recryptAsync } = createRecrypt(dependencies);
 
   var api = {
     ...constants,
@@ -249,23 +260,7 @@ async function createRuntime(options) {
     PDFTextString,
     createWriter,
     recrypt,
-    /**
-     * Rewrites a PDF like `recrypt()`, after reading an asynchronous byte
-     * source. Recrypting itself runs on the calling thread; call it from a
-     * Worker to keep a page responsive.
-     * @async
-     * @param {AsyncByteSource} source - PDF bytes, Blob, or File.
-     * @param {PDFRecryptOptions} [options] - Source `password`, new `userPassword`/`ownerPassword`,
-     *   `userProtectionFlag`, `version`, and `compress`.
-     * @returns {Promise<Uint8Array>} The rewritten PDF.
-     * @throws {TypeError} If `source` is not a supported byte source.
-     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
-     * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
-     */
-    recryptAsync: async function (source, options = {}) {
-      options = copyRecryptOptions(options);
-      return recrypt(await normalizeBytesAsync(source, "PDF input"), options);
-    },
+    recryptAsync,
     ByteReader,
     ByteReaderWithPosition,
     ByteWriter,

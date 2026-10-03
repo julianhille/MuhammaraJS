@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import v8 from "node:v8";
+import vm from "node:vm";
 import { createMuhammaraWasm } from "../../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
@@ -285,6 +287,98 @@ describe("Xcryption", function () {
           version: muhammara.ePDFVersion20,
         }),
         /PDF 2\.0\/AES-256 encryption is unavailable in WebAssembly/,
+      );
+    });
+
+    it("treats undefined and null options as no options, like native", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var source = muhammara.createBlankPdf(100, 100);
+      for (var options of [undefined, null]) {
+        for (var output of [
+          muhammara.recrypt(source, options),
+          await muhammara.recryptAsync(source, options),
+        ]) {
+          var reader = muhammara.createReader(output);
+          assert.equal(reader.isEncrypted(), false);
+          reader.end();
+        }
+      }
+    });
+
+    it("holds no more copies of the input than recrypt", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var writer = muhammara.createWriter({ compress: false });
+      for (var index = 0; index < 40; index++) {
+        var page = writer.createPage(0, 0, 595, 842);
+        var context = writer.startPageContentContext(page);
+        for (var row = 0; row < 120; row++) {
+          context
+            .q()
+            .rg(0.2, 0.4, 0.6)
+            .re(40, 40 + row * 6, 500, 4)
+            .f()
+            .Q();
+        }
+        writer.writePage(page);
+      }
+      var source = writer.end();
+      var blob = new Blob([source]);
+      var options = { userPassword: "view" };
+      // A full collection before each reading leaves only the ArrayBuffers
+      // still referenced, so the difference counts the copies a call holds.
+      // Sweeping on the calling thread makes the count exact.
+      v8.setFlagsFromString("--expose-gc");
+      v8.setFlagsFromString("--no-concurrent-array-buffer-sweeping");
+      var gc = vm.runInNewContext("gc");
+      v8.setFlagsFromString("--no-expose-gc");
+      var encode = TextEncoder.prototype.encode;
+      /**
+       * Counts the copies of the source a call holds while it recrypts.
+       * @param {function(): *} run - Starts the call.
+       * @returns {Promise<number>} Copies beyond those held before the call.
+       */
+      var copies = async function (run) {
+        var during;
+        try {
+          // Let earlier tests' pending work release its buffers first.
+          await new Promise((resolve) => setImmediate(resolve));
+          gc();
+          var before = process.memoryUsage().arrayBuffers;
+          // Recrypt encodes its passwords after it copied the input to the
+          // Wasm heap, so the first encode sees everything the call holds.
+          /**
+           * Measures the held buffers on the first encode, then encodes.
+           * @param {...*} args - encode() arguments.
+           * @returns {Uint8Array} The encoded text.
+           */
+          TextEncoder.prototype.encode = function (...args) {
+            if (during === undefined) {
+              gc();
+              during = process.memoryUsage().arrayBuffers;
+            }
+            return encode.apply(this, args);
+          };
+          await run();
+        } finally {
+          TextEncoder.prototype.encode = encode;
+        }
+        assert.notEqual(during, undefined);
+        return Math.round((during - before) / source.length);
+      };
+      try {
+        var sync = await copies(() => muhammara.recrypt(source, options));
+        var bytes = await copies(() => muhammara.recryptAsync(source, options));
+        var fromBlob = await copies(() =>
+          muhammara.recryptAsync(blob, options),
+        );
+      } finally {
+        v8.setFlagsFromString("--concurrent-array-buffer-sweeping");
+      }
+      assert.ok(sync >= 1, `recrypt holds ${sync} copies`);
+      assert.ok(bytes <= sync, `recryptAsync holds ${bytes}, recrypt ${sync}`);
+      assert.ok(
+        fromBlob <= sync,
+        `recryptAsync(Blob) holds ${fromBlob}, recrypt ${sync}`,
       );
     });
 

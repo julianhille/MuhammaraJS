@@ -270,7 +270,9 @@ bool ReadRecryptArguments(const CallbackArgs &args, RecryptArguments &out) {
     if (!ReadCreationOptions(args.Env(), args[2], out.version, out.log,
                              out.creation, true))
       return false;
-    if (Has(args.Env(), args[2], "password") &&
+    // undefined and null mean no options, as in Wasm.
+    if (IsObject(args.Env(), args[2]) &&
+        Has(args.Env(), args[2], "password") &&
         IsType(args.Env(), Get(args.Env(), args[2], "password"), napi_string))
       out.password =
           LegacyString(args.Env(), Get(args.Env(), args[2], "password"));
@@ -284,19 +286,26 @@ napi_value Recrypt(const CallbackArgs &args) {
   RecryptArguments options;
   if (!ReadRecryptArguments(args, options))
     return nullptr;
+  LogConfiguration log = UsableRecryptLog(options.log);
+  // The call logs only to its own log, or nowhere without a usable one, as
+  // recryptAsync() does, not to the log of another open writer.
+  UseRecryptLog(log);
   EStatusCode status;
   if (IsObject(args.Env(), args[0])) {
     ObjectByteReaderWithPosition r(args.Env(), args[0]);
     ObjectByteWriterWithPosition w(args.Env(), args[1]);
-    status = PDFWriter::RecryptPDF(&r, options.password, &w, options.log,
+    status = PDFWriter::RecryptPDF(&r, options.password, &w, log,
                                    options.creation, options.version);
     if (w.Flush() != eSuccess && status == eSuccess)
       status = eFailure;
   } else
-    status = PDFWriter::RecryptPDF(
-        LegacyString(args.Env(), args[0]), options.password,
-        LegacyString(args.Env(), args[1]), options.log, options.creation,
-        options.version);
+    status = PDFWriter::RecryptPDF(LegacyString(args.Env(), args[0]),
+                                   options.password,
+                                   LegacyString(args.Env(), args[1]), log,
+                                   options.creation, options.version);
+  // StartPDF pointed the thread's trace at this call's log, or at none; give
+  // an open writer its log back.
+  RestoreWriterLog();
   return status == eSuccess ? Undefined(args.Env())
                             : ThrowTypeError(args.Env(), kRecryptFailure);
 }

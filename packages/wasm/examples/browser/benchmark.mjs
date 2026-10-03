@@ -120,9 +120,13 @@ function round(value) {
 async function measure(label, run, runs) {
   var sampler = startSampler();
   var start = performance.now();
-  var durations = await run();
-  var wallMs = performance.now() - start;
-  var { lags, frames } = sampler.stop();
+  try {
+    var durations = await run();
+  } finally {
+    // A failed or cancelled mode must not leave the sampler running.
+    var wallMs = performance.now() - start;
+    var { lags, frames } = sampler.stop();
+  }
   return {
     mode: label,
     runs,
@@ -146,12 +150,15 @@ async function measure(label, run, runs) {
  * @param {Uint8Array} source - PDF to encrypt.
  * @param {number} runs - Recrypt count.
  * @param {boolean} useAsync - Call `recryptAsync()` instead of `recrypt()`.
+ * @param {AbortSignal} [signal] - Stops before the next recrypt.
  * @returns {Promise<number[]>} Each recrypt's duration in milliseconds.
+ * @throws {DOMException} An `AbortError` if the signal is aborted.
  */
-async function recryptOnThisThread(muhammara, source, runs, useAsync) {
+async function recryptOnThisThread(muhammara, source, runs, useAsync, signal) {
   var durations = [];
   for (var index = 0; index < runs; index++) {
     await yieldToEventLoop();
+    throwIfCancelled(signal);
     var start = performance.now();
     if (useAsync) await muhammara.recryptAsync(source, BENCHMARK_OPTIONS);
     else muhammara.recrypt(source, BENCHMARK_OPTIONS);
@@ -217,6 +224,21 @@ async function renderReport(results, input) {
 }
 
 /**
+ * Reads the recrypt count the way the form field allows it: a whole number
+ * from 1 to 50, or 5 when the field is empty or not a number. The form does
+ * not validate it, so a hidden field cannot block another tab.
+ * @param {string|number} [value] - The requested count.
+ * @returns {number} The count to run.
+ */
+function recryptCount(value) {
+  var count =
+    value === undefined || String(value).trim() === "" ? NaN : Number(value);
+  return Number.isFinite(count)
+    ? Math.min(50, Math.max(1, Math.round(count)))
+    : 5;
+}
+
+/**
  * Benchmarks synchronous recrypt() and promise-based recryptAsync() on this
  * thread and, when the page provides `runInWorker`, both in a module Worker,
  * while the page samples how long it stops responding.
@@ -228,7 +250,7 @@ async function renderReport(results, input) {
  *   and the measurements.
  */
 export async function benchmarkExample(assets, options = {}) {
-  var runs = Math.min(50, Math.max(1, Number(assets.runs) || 5));
+  var runs = recryptCount(assets.runs);
   var source = assets.pdf || (await createBenchmarkSource());
   var input = {
     label: assets.pdf ? "Uploaded PDF" : "Generated 120-page PDF",
@@ -239,11 +261,13 @@ export async function benchmarkExample(assets, options = {}) {
     var modes = [
       [
         "sync recrypt() on the page",
-        () => recryptOnThisThread(muhammara, source, runs, false),
+        () =>
+          recryptOnThisThread(muhammara, source, runs, false, options.signal),
       ],
       [
         "recryptAsync() on the page",
-        () => recryptOnThisThread(muhammara, source, runs, true),
+        () =>
+          recryptOnThisThread(muhammara, source, runs, true, options.signal),
       ],
     ];
     if (options.runInWorker) {

@@ -43,10 +43,15 @@ await new Promise((resolve) => target.close(resolve));
 ```
 
 Wrong arguments, such as a missing destination or a path mixed with a stream,
-throw synchronously, as with `recrypt`. A failure once the work has started,
-such as a wrong input password or an unreadable source, rejects the promise
-with the message `recrypt` throws. An error thrown by the output stream rejects
-the promise with that error.
+throw synchronously, as with `recrypt`. Every other failure rejects the
+promise. A wrong input password or an unreadable source rejects with the
+message `recrypt` throws. An error thrown by the source or output stream, even
+while `recryptAsync` reads the source, rejects with that error. A stream job
+whose source or output is too large to hold in memory rejects with a
+`RangeError`. A path that is too long for the system once made absolute
+rejects with an `Error`; see the limitations below. An allocation that fails
+inside the recrypt itself still ends the process, as with `recrypt`, and so
+does any failed allocation in Electron.
 
 `Recipe.encrypt()` encrypts with the synchronous `recrypt` when `endPDF()`
 runs. To keep that step off the event loop, leave out `encrypt()` and recrypt
@@ -78,13 +83,17 @@ await muhammara.recryptAsync("plain.pdf", "output.pdf", {
       written to the target stream when the work is done. Both block the event
       loop while they run, and every waiting stream job keeps its source in
       memory. Use paths for large documents or many jobs.
-    - **Do not write to the target stream while a job runs.** The output's
+    - **Do not write to the target stream after the call.** The output's
       offsets are computed from the stream position at the call. If the
       position changed when the job finishes, the promise rejects and nothing
-      is written.
+      is written. This includes an earlier job that wrote to the same stream
+      while this one waited.
     - **Relative paths are resolved when `recryptAsync` is called**,
       including `log`, so a later change of the working directory does not
-      affect a waiting job.
+      affect a waiting job. They name the files `recrypt` would open at that
+      moment, also when the path passes through a symbolic link. A path that
+      is longer than the system allows once made absolute rejects, even where
+      `recrypt` can still open it relative to the working directory.
     - **Use a separate output for each job,** and do not change a source file
       while a job that reads it is waiting.
     - **Pass `log` to each call.** Each thread has its own log settings, so a
