@@ -65,6 +65,34 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `rotateContent()` angle turns counter-clockwise; the `rotateContent()`
   reference and type declaration said clockwise. Behavior is unchanged
   [#916](https://github.com/julianhille/MuhammaraJS/issues/916)
+- Draw flowed `text()` that is not ended with `flow: false` instead of
+  dropping it. An open flow is now drawn when the page ends and before a
+  `text()` call with coordinates or a `table()`. Flows with HTML runs are no
+  longer lost when they end with empty text, HTML without text such as
+  `<p></p>` no longer discards the runs before it, and HTML runs continue
+  the line instead of starting a new one, unless the run before closed a
+  block element. A `text()` call whose options are rejected leaves the open
+  flow open, also when it has coordinates or passes `flow: false`. A flow
+  that starts with empty text no longer throws a `TypeError`
+  reading `lastWord`, also not on `movedown()`, and its next run starts on
+  its first line. Ending a flow whose last run has a `link` no longer adds a
+  second, empty link annotation
+  [#889](https://github.com/julianhille/MuhammaraJS/issues/889)
+- Keep the space that ends a flowed run before the next run, which was
+  trimmed and joined words such as `two` and `three`, keep runs of only
+  spaces, and end the line at line breaks that end a flowed run instead of
+  drawing them. Consecutive `movedown()` calls in a flow add up, as one call
+  with the summed count does, instead of moving one line
+  [#889](https://github.com/julianhille/MuhammaraJS/issues/889)
+- Put runs of different sizes on one line on a shared baseline, so a larger
+  run no longer rises above the top of its text box and `movedown()` moves by
+  the full line. Keep the space between the runs of a right-aligned line,
+  which overlapped when a run ended with a space. Both apply to flowed and
+  HTML `text()`
+  [#889](https://github.com/julianhille/MuhammaraJS/issues/889)
+- Start a line that a flowed run wraps onto with its first word, instead of
+  the spaces that started the run
+  [#915](https://github.com/julianhille/MuhammaraJS/issues/915)
 
 ## [7.0.0] - 2026-10-01
 

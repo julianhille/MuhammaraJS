@@ -44,12 +44,15 @@ describe("Recipe position parity", function () {
     recipe.text("first", 50, 60, { font: "arial", size: 10 });
     var [cursorX, cursorY] = recipe.movedown(0, true);
     assert.equal(cursorX, 50, "the text cursor keeps the text box origin");
-    assert.ok(cursorY > 60, "the text cursor sits below the drawn line");
-    var lineHeight = cursorY - 60;
+    // As in native, the cursor stays on the drawn line, so movedown() moves
+    // to the next one.
+    assert.equal(cursorY, 60, "the text cursor stays on the drawn line");
+    var lineHeight = recipe.movedown(1, true)[1] - cursorY;
+    assert.ok(lineHeight > 0);
     var [movedX, movedY] = recipe.movedown(2, true);
     assert.equal(movedX, 50);
     assert.ok(
-      Math.abs(movedY - (cursorY + 2 * lineHeight)) < 0.01,
+      Math.abs(movedY - (cursorY + 3 * lineHeight)) < 0.01,
       "movedown advances whole line heights",
     );
     assert.deepEqual(recipe.position, { x: 11, y: 22 });

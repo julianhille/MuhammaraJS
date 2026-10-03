@@ -67,6 +67,32 @@ describe("Recipe character spacing", function () {
     recipe.dispose();
   });
 
+  // Issue #893: measure() already includes the spacing, so wrapping must not
+  // add it again. The native test of the same name asserts the same breaks.
+  it("wraps character-spaced text at the spaced width", async function () {
+    var Recipe = await getRecipe();
+    var bytes = new Recipe({ compress: false })
+      .createPage(400, 400)
+      .text(
+        "Spaced letters wrap the same way in a flow as in one call.",
+        20,
+        20,
+        {
+          font: "arial",
+          charSpace: 3,
+          textBox: { width: 150 },
+        },
+      )
+      .endPage()
+      .endPDF();
+    writeOutput("text-charSpace-wrap", bytes);
+    var content = Buffer.from(bytes).toString("latin1");
+    assert.deepEqual(
+      [...content.matchAll(/\(([^)]*)\) Tj/g)].map((match) => match[1]),
+      ["Spaced letters", "wrap the same", "way in a flow as", "in one call."],
+    );
+  });
+
   it("contains character spacing and rejects non-finite values", async function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe({ compress: false }).createPage(200, 200);

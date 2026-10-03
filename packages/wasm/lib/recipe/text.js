@@ -97,7 +97,7 @@ function endsWithBreakableSpace(value) {
  * Lays out plain text into lines for a width and wrap mode.
  * @param {string} value - Text; `\n` starts a paragraph.
  * @param {number} width - Available width; 0 disables wrapping.
- * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options, including character spacing.
  * @param {object} options - Text options.
  * @param {Recipe.TextWrap|boolean} wrap - Wrap mode; `true` means auto.
  * @returns {Array<{text: string, last: boolean}>} Lines; `last` ends a paragraph.
@@ -113,10 +113,8 @@ function lines(value, width, measure, options, wrap) {
       words.forEach((word) => {
         if (truncated) return;
         var next = line + word;
-        var fits =
-          !width ||
-          measure(next, options).width + charSpacing(next, options.charSpace) <=
-            width;
+        // measure() already includes the character spacing.
+        var fits = !width || measure(next, options).width <= width;
         if (fits || !line) {
           line = next;
         } else if (wrap === TextWrap.AUTO || wrap === true) {
@@ -170,7 +168,8 @@ function fragmentOptions(options, styles = {}, fontSize) {
   return {
     ...options,
     ...rest,
-    fontSize,
+    // A flowed run keeps its own size; HTML fragments use the call's size.
+    fontSize: rest.fontSize ?? fontSize,
     htmlUnderline: Boolean(underline),
     htmlStrikeOut: Boolean(strikeOut),
   };
@@ -194,45 +193,53 @@ function groupedHtmlParts(parts) {
 }
 
 /**
- * Measures styled HTML fragments and spacing across separate drawing runs.
- * @param {Array<{text: string, styles: object}>} parts - Fragments.
- * @param {function(string, object): TextDimensions} measure - Measures a run with options.
- * @param {object} options - Base text options.
- * @param {boolean} [group=true] - Whether to group equal styles first.
- * @returns {number} The width in points.
+ * Measures where the fragment after this one starts, as native Recipe places
+ * separately drawn runs: at this fragment's right edge, plus the width of an
+ * "o" when it ends with a space, the space width native measures.
+ * @param {string} text - Fragment text.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options, including character spacing.
+ * @param {object} options - Fragment text options.
+ * @returns {number} The advance in points, with spacing between its own
+ *   characters but not after the last one.
  */
-function htmlPartsWidth(parts, measure, options, group = true) {
-  var groups = group ? groupedHtmlParts(parts) : parts;
-  var text = groups.map((part) => part.text).join("");
-  var measured = groups.reduce((sum, part) => {
-    var textOptions = { ...options, ...part.styles };
-    return sum + measure(part.text, textOptions).width;
-  }, 0);
-  var groupedSpacing = groups.reduce((sum, part) => {
-    var textOptions = { ...options, ...part.styles };
-    return sum + charSpacing(part.text, textOptions.charSpace);
-  }, 0);
-  return measured + charSpacing(text, options.charSpace) - groupedSpacing;
-}
-
-/**
- * Calculates the character spacing needed between separately drawn runs.
- * @param {string} left - Text before the boundary.
- * @param {string} right - Text after it.
- * @param {number} [charSpace] - Character spacing.
- * @returns {number} The extra spacing in points.
- */
-function boundaryCharSpacing(left, right, charSpace) {
+function fragmentAdvance(text, measure, options) {
+  if (!text) return 0;
   return (
-    charSpacing(left + right, charSpace) -
-    charSpacing(left, charSpace) -
-    charSpacing(right, charSpace)
+    measure(text, options).xMax +
+    (endsWithBreakableSpace(text) ? measure("o", options).width : 0)
   );
 }
 
 /**
+ * Measures styled HTML fragments and spacing across separate drawing runs.
+ * @param {Array<{text: string, styles: object}>} parts - Fragments.
+ * @param {function(string, object): TextDimensions} measure - Measures a run with options.
+ * @param {object} options - Base text options.
+ * @returns {number} The width in points.
+ */
+function htmlPartsWidth(parts, measure, options) {
+  var groups = groupedHtmlParts(parts);
+  // Fragments before the last span their advance, as they are drawn, with
+  // their own character spacing; the line ends where the last one's glyphs
+  // end. One fragment keeps the plain text width.
+  return groups.reduce((sum, part, index) => {
+    var textOptions = { ...options, ...part.styles };
+    return (
+      sum +
+      (groups.length === 1
+        ? measure(part.text, textOptions).width
+        : index < groups.length - 1
+          ? fragmentAdvance(part.text, measure, textOptions)
+          : measure(part.text, textOptions).xMax)
+    );
+  }, 0);
+}
+
+/**
  * Lays out styled HTML into lines while preserving list and break structure.
- * @param {object[]} source - Text objects from htmlToTextObjects.
+ * @param {object[]} source - Text objects from htmlToTextObjects(), or
+ *   flowed runs from flowRunSource(); a `keepLeadingSpace` run keeps the
+ *   spaces that start a line, as plain text does.
  * @param {number} width - Available width; 0 disables wrapping.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Base text options.
@@ -276,6 +283,8 @@ function htmlLines(source, width, measure, options, wrap) {
 
   source.forEach((sourcePart) => {
     var listMarker = false;
+    if (sourcePart.breakBefore && parts.length) flush(true);
+    var collapseLeadingSpace = sourcePart.collapseLeadingSpace;
     if (sourcePart.indent !== undefined) {
       indent = sourcePart.indent;
       linePrefix = " ".repeat(indent);
@@ -304,6 +313,14 @@ function htmlLines(source, width, measure, options, wrap) {
         var words = splitWords(fragment);
         words.forEach((word) => {
           if (truncated) return;
+          if (collapseLeadingSpace) {
+            collapseLeadingSpace = false;
+            var lastPart = parts[parts.length - 1];
+            if (lastPart && endsWithBreakableSpace(lastPart.text)) {
+              word = word.replace(/^(?:(?!\u00a0)\s)+/, "");
+              if (!word) return;
+            }
+          }
           word = linePrefix + word;
           linePrefix = "";
           var candidate = [
@@ -314,10 +331,15 @@ function htmlLines(source, width, measure, options, wrap) {
               marker: listMarker,
             },
           ];
+          var previousPart = parts[parts.length - 1];
+          // As in native, a line may also break where one flowed run ends
+          // and the next begins.
           var breakBefore =
             parts.length &&
-            (endsWithBreakableSpace(parts[parts.length - 1].text) ||
-              startsWithBreakableSpace(word));
+            (endsWithBreakableSpace(previousPart.text) ||
+              startsWithBreakableSpace(word) ||
+              (sourcePart.styles?._flowRun !== undefined &&
+                previousPart.styles?._flowRun !== sourcePart.styles._flowRun));
           if (
             width &&
             breakBefore &&
@@ -337,7 +359,8 @@ function htmlLines(source, width, measure, options, wrap) {
               return;
             }
           }
-          if (!parts.length && !hasText(word)) return;
+          if (!parts.length && !hasText(word) && !sourcePart.keepLeadingSpace)
+            return;
           parts.push({
             text: word,
             styles: sourcePart.styles,
@@ -386,12 +409,7 @@ function ellipsizeHtmlParts(parts, width, measure, options) {
 function ellipsize(value, width, measure, options) {
   var suffix = "…";
   var result = trimBreakableEnd(value);
-  while (
-    result.length &&
-    measure(result + suffix, options).width +
-      charSpacing(result + suffix, options.charSpace) >
-      width
-  ) {
+  while (result.length && measure(result + suffix, options).width > width) {
     result = trimBreakableEnd(result.slice(0, -1));
   }
   return result + suffix;
@@ -401,11 +419,19 @@ function ellipsize(value, width, measure, options) {
  * Keeps the lines that fit a height and joins the rest for overflow handling.
  * @param {Array<{text: string}>} entries - Laid-out lines.
  * @param {number} availableHeight - Height of the box content.
- * @param {number} lineHeight - Line height.
+ * @param {number[]} lineHeights - Height of each line.
  * @returns {{entries: object[], linesWritten: number, remainder: string}} Visible lines and the remaining text.
  */
-function clipEntries(entries, availableHeight, lineHeight) {
-  var linesWritten = Math.max(0, Math.floor(availableHeight / lineHeight));
+function clipEntries(entries, availableHeight, lineHeights) {
+  var used = 0;
+  var linesWritten = 0;
+  while (
+    linesWritten < entries.length &&
+    // Tolerates rounding in the summed heights.
+    used + lineHeights[linesWritten] <= availableHeight + 1e-9
+  ) {
+    used += lineHeights[linesWritten++];
+  }
   var visibleEntries = entries.slice(0, linesWritten);
   return {
     entries: visibleEntries,
@@ -415,6 +441,89 @@ function clipEntries(entries, availableHeight, lineHeight) {
       .map((entry) => entry.text)
       .join("\n"),
   };
+}
+
+/**
+ * Text options that describe the whole flowed text box rather than one run.
+ * The call that ends a flow decides them, as in native, except that native
+ * aligns each run by its own `textBox.textAlign`.
+ */
+var FLOW_BOX_OPTIONS = [
+  "align",
+  "cell",
+  "flow",
+  "html",
+  "layout",
+  "overflow",
+  "textBox",
+];
+
+/**
+ * Text-markup annotation subtypes by the text() option that requests them.
+ */
+var textMarkupSubtypes = {
+  highlight: AnnotSubtype.HIGHLIGHT,
+  underline: AnnotSubtype.UNDERLINE,
+  strikeOut: AnnotSubtype.STRIKE_OUT,
+  squiggly: AnnotSubtype.SQUIGGLY,
+};
+
+/**
+ * Text options that add text-markup annotations to the run that sets them.
+ */
+var TEXT_MARKUP_OPTIONS = Object.keys(textMarkupSubtypes);
+
+/**
+ * HTML that opens with a block element, which starts a new line in a flow.
+ */
+var BLOCK_START = /^\s*<(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\b/i;
+
+/**
+ * Matches HTML that ends with a closed block element, which ends its line.
+ */
+var BLOCK_END = /<\/(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\s*>\s*$/i;
+
+/**
+ * Turns one flowed text() call into source fragments for htmlLines(), so a
+ * flow lays out as one text box: each run continues the line where the
+ * previous one ended and wraps with it.
+ * @param {string} value - Text, or HTML when `options.html` is set.
+ * @param {RecipeTextOptions} options - The run's options, merged with the flow's.
+ * @param {number} fontSize - The run's resolved font size.
+ * @param {number} index - Position of the run in its flow; keeps runs apart.
+ * @returns {object[]} Fragments shaped like htmlToTextObjects() output.
+ */
+function flowRunSource(value, options, fontSize, index) {
+  var styles = {};
+  var markup = {};
+  Object.keys(options).forEach((key) => {
+    if (TEXT_MARKUP_OPTIONS.includes(key)) markup[key] = options[key];
+    else if (!FLOW_BOX_OPTIONS.includes(key)) styles[key] = options[key];
+  });
+  delete styles.size;
+  styles.fontSize = fontSize;
+  styles._flowRun = index;
+  // Text-markup annotations stay apart from HTML underline and strike-out
+  // styles, which draw lines instead.
+  if (TEXT_MARKUP_OPTIONS.some((key) => markup[key])) styles._markup = markup;
+  // An empty run still gives an empty flow its font and line height. Plain
+  // text keeps the spaces that start a line; HTML collapses them.
+  if (!options.html) {
+    return [{ value: String(value), styles, keepLeadingSpace: true }];
+  }
+  // Each HTML text node is a run of its own, as in native, even when the
+  // run's options give its elements the same styles.
+  var parts = htmlToTextObjects(value, options).map((part, node) => ({
+    ...part,
+    styles: { ...styles, ...part.styles, _flowNode: node },
+  }));
+  if (index > 0 && parts.length) {
+    // As in native, a later HTML run that opens with a block element starts
+    // a new line, and its first space collapses into one that ends the line.
+    parts[0].breakBefore = BLOCK_START.test(value);
+    parts[0].collapseLeadingSpace = true;
+  }
+  return parts;
 }
 
 /**
@@ -569,13 +678,6 @@ export function createTextMethods({ drawText, measure, module }) {
     recipe._linkPdf(url, left, bottom, right - left, top - bottom);
   }
 
-  var textMarkupSubtypes = {
-    highlight: AnnotSubtype.HIGHLIGHT,
-    underline: AnnotSubtype.UNDERLINE,
-    strikeOut: AnnotSubtype.STRIKE_OUT,
-    squiggly: AnnotSubtype.SQUIGGLY,
-  };
-
   /**
    * Adds the text-markup annotations requested by text() options over one
    * drawn line. Only the outer text() options request annotations; HTML
@@ -675,6 +777,45 @@ export function createTextMethods({ drawText, measure, module }) {
         opacity: hilite.opacity ?? 0.5,
       });
     });
+  }
+
+  /**
+   * Validates the options of a text() call before it changes any state, as
+   * native does.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {RecipeTextOptions} options - The call's options.
+   * @returns {number} The resolved font size.
+   * @throws {RangeError} If the font size is not greater than zero.
+   * @throws {TypeError} If `rotation` or `charSpace` is not a finite number.
+   * @throws {Error} If a markup option is invalid or the font cannot be loaded.
+   */
+  function validateRun(recipe, options) {
+    rotationOption(options.rotation);
+    // Drawing checks this only when the flow ends; native rejects the call.
+    if (!Number.isFinite(options.charSpace ?? 0)) {
+      throw new TypeError("charSpace must be a finite number");
+    }
+    var fontSize = resolveFontSize(options);
+    addTextMarkup(recipe, { ...options, fontSize }, 0, 0, 1, true);
+    dimensions(recipe, "", { ...options, fontSize });
+    return fontSize;
+  }
+
+  /**
+   * Validates one flowed text() call like an immediate one and returns its
+   * source fragments.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} value - Text, or HTML when `options.html` is set.
+   * @param {RecipeTextOptions} options - The run's options, merged with the flow's.
+   * @param {number} index - Position of the run in its flow.
+   * @returns {object[]} The run's fragments.
+   * @throws {RangeError} If the font size is not greater than zero.
+   * @throws {TypeError} If `rotation` or `charSpace` is not a finite number.
+   * @throws {Error} If a markup option is invalid or the font cannot be loaded.
+   */
+  function flowRun(recipe, value, options, index) {
+    var fontSize = validateRun(recipe, options);
+    return flowRunSource(value, options, fontSize, index);
   }
 
   return {
@@ -812,14 +953,39 @@ export function createTextMethods({ drawText, measure, module }) {
      * current text box origin when one exists. The current line height defaults
      * to 14 points until text has established another value.
      *
+     * Inside an open flow it ends the current line instead, even for a count
+     * of 0, and leaves `count - 1` empty lines; the flow continues below them.
+     * The cursor does not move until the flow is drawn, so the coordinates
+     * are the flow's origin, as in native.
+     *
      * @name movedown
      * @function
      * @memberof Recipe#
      * @param {number} [count=1] - Number of line heights to move.
      * @param {boolean} [returnCoords=false] - Return the new coordinates instead of the Recipe instance.
-     * @returns {Recipe|RecipePosition} The Recipe instance, or the new `[x, y]` coordinates.
+     * @returns {Recipe|RecipePosition} The Recipe instance, or the new `[x, y]`
+     *   coordinates; inside a flow, the flow's origin.
      */
     movedown(count = 1, returnCoords = false) {
+      var flow = this._pendingFlow;
+      if (flow) {
+        // Inside a flow, as in native, it ends the current line, even for a
+        // count of 0, and leaves count - 1 empty lines; the flow continues
+        // below them. A count of 0 leaves an ended line alone. The flow is
+        // not laid out yet, so the coordinates are its origin, as in native.
+        var lastValue = flow.source[flow.source.length - 1]?.value ?? "";
+        flow.endsBlock = false;
+        if (count > 0 || !/\n$/.test(lastValue))
+          flow.source.push(
+            ...flowRunSource(
+              "\n".repeat(Math.max(count, 1)),
+              flow.options,
+              resolveFontSize(flow.options),
+              flow.runs++,
+            ),
+          );
+        return returnCoords ? [flow.x, flow.y] : this;
+      }
       this._textCursor.x = this._textBoxOrigin?.x ?? this._textCursor.x;
       this._textCursor.y += count * (this._lastLineHeight || 14);
       return returnCoords ? [this._textCursor.x, this._textCursor.y] : this;
@@ -833,6 +999,12 @@ export function createTextMethods({ drawText, measure, module }) {
      * HTML styling, links, highlighting, clipping, and named layouts are
      * controlled by `RecipeTextOptions`.
      *
+     * With `flow: true`, later calls without coordinates continue the line
+     * where the previous run ended and wrap with it in one text box, as in
+     * native. A call without coordinates flows unless it passes
+     * `flow: false`. The flow is laid out when a call passes `flow: false`,
+     * or when a call with coordinates, `table()`, or `endPage()` follows.
+     *
      * @name text
      * @function
      * @memberof Recipe#
@@ -843,19 +1015,80 @@ export function createTextMethods({ drawText, measure, module }) {
      * @returns {Recipe} The Recipe instance.
      * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
      *   not greater than zero.
-     * @throws {TypeError} If `rotation` is not a finite number.
+     * @throws {TypeError} If `rotation` or `charSpace` is not a finite number.
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
+     * @throws {Error} If a flow is started without an active page.
      */
     text(value = "", x, y, options = {}) {
       // null options act like omitted options.
       if (options === null) options = {};
-      if (typeof x === "object" || x === undefined) {
-        options = x || {};
+      var positioned = typeof x !== "object" && x !== undefined;
+      if (!positioned) options = x || {};
+      var flow = this._pendingFlow;
+      if (flow && !positioned) {
+        // Without coordinates the call continues the flow, as in native,
+        // unless it passes flow: false, which adds its text and ends it.
+        options = merge(flow.options, options);
+        var run = flowRun(this, value, options, flow.runs++);
+        // As in native, an HTML run after one that closed a block element
+        // starts a new line.
+        if (options.html && flow.endsBlock && run.length) {
+          run[0].breakBefore = true;
+        }
+        flow.source.push(...run);
+        // A run without text leaves the line where the run before it did.
+        if (run.some((part) => hasText(String(part.value)))) {
+          flow.endsBlock = Boolean(options.html) && BLOCK_END.test(value);
+        }
+        flow.options = options;
+        if (options.flow === false) this._flushTextFlow();
+        return this;
+      }
+      // An invalid call leaves the open flow open, as in native.
+      if (flow) validateRun(this, options);
+      this._flushTextFlow();
+      if (!positioned) {
         x = this._textCursor.x || this._margin.left;
         y = this._textCursor.y || this._margin.top;
       }
-      var inherited = options.flow ? this._textOptions || {} : {};
-      options = merge(inherited, options);
+      // As in native, a call without coordinates flows unless it passes
+      // flow: false.
+      if (positioned ? options.flow : options.flow !== false) {
+        // Text without a page throws when it is drawn; a flow is drawn later,
+        // possibly on another page, so it is rejected up front.
+        if (!this._pageHeight) {
+          throw new Error("A page is required for coordinates");
+        }
+        // Flowed text is laid out when the flow ends, so later runs can
+        // continue its last line.
+        this._pendingFlow = {
+          x,
+          y,
+          options,
+          runs: 1,
+          source: flowRun(this, value, options, 0),
+          endsBlock: Boolean(options.html) && BLOCK_END.test(value),
+        };
+        return this;
+      }
+      return this._drawTextBox(value, x, y, options);
+    },
+
+    /**
+     * Lays out and draws one text box: the text of a single text() call, or
+     * every run of a flow when `flowSource` is given.
+     * @private
+     * @param {string} value - Text or supported HTML source to draw.
+     * @param {number} x - Left coordinate in Recipe's top-left system.
+     * @param {number} y - Top coordinate in Recipe's top-left system.
+     * @param {RecipeTextOptions} options - Text and layout options of the box.
+     * @param {object[]} [flowSource] - Fragments of a flow's runs, from flowRunSource().
+     * @returns {Recipe} The Recipe instance.
+     * @throws {RangeError} If the font size is not greater than zero.
+     * @throws {TypeError} If `rotation` is not a finite number.
+     * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
+     */
+    _drawTextBox(value, x, y, options, flowSource) {
       // Validate before anything is drawn, as native does.
       rotationOption(options.rotation);
       var box = options.textBox || options.cell || {};
@@ -873,7 +1106,7 @@ export function createTextMethods({ drawText, measure, module }) {
       var fontSize = resolveFontSize(options);
       var width =
         box.width ||
-        (options.flow ? this._pageWidth - x - this._margin.right : 0);
+        (flowSource ? this._pageWidth - x - this._margin.right : 0);
       // Validate every requested markup option before drawing any part of
       // this text call, so a later invalid subtype cannot leave partial output.
       addTextMarkup(this, { ...options, fontSize }, x, y, 1, true);
@@ -887,8 +1120,9 @@ export function createTextMethods({ drawText, measure, module }) {
        */
       var measureText = (text, textOptions) =>
         dimensions(this, text, textOptions);
-      var source = options.html ? htmlToTextObjects(value, options) : null;
-      var entries = options.html
+      var source =
+        flowSource || (options.html ? htmlToTextObjects(value, options) : null);
+      var entries = source
         ? htmlLines(
             source,
             width ? width - left - right : 0,
@@ -903,23 +1137,52 @@ export function createTextMethods({ drawText, measure, module }) {
             { ...options, fontSize },
             wrap,
           ).map((line) => ({ ...line, styles: {} }));
-      var lineHeight =
-        box.lineHeight ||
+      /**
+       * Measures the line height of text with the given run styles.
+       * @param {object} [styles] - Run styles over the box options.
+       * @returns {number} The line height in points.
+       */
+      var styledLineHeight = (styles) =>
         dimensions(this, "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}", {
           ...options,
           fontSize,
+          ...styles,
         }).height;
+      var lineHeight =
+        box.lineHeight || styledLineHeight(flowSource?.[0]?.styles);
+      // As in native, each line of a flow is as tall as its tallest run; an
+      // empty line takes the height of the next line with text, or of the
+      // line before it at the end.
+      var entryHeights = entries.map(() => lineHeight);
+      if (flowSource && !box.lineHeight) {
+        var textHeights = entries.map((entry) => {
+          var heights = (entry.parts || [])
+            .filter((part) => part.text)
+            .map((part) => styledLineHeight(part.styles));
+          return heights.length ? Math.max(...heights) : undefined;
+        });
+        for (var index = entries.length - 1; index >= 0; index--) {
+          entryHeights[index] =
+            textHeights[index] ??
+            (index < entries.length - 1 ? entryHeights[index + 1] : undefined);
+        }
+        entryHeights.forEach((height, index) => {
+          if (height === undefined) {
+            entryHeights[index] = index ? entryHeights[index - 1] : lineHeight;
+          }
+        });
+      }
       if (box.onClip && !box.clipIfExceedsBox) {
         console.warn(
           "textBox.onClip will not be called unless textBox.clipIfExceedsBox is true.",
         );
       }
       var clipResult;
-      if (box.clipIfExceedsBox && box.height !== undefined && !options.flow) {
+      if (box.clipIfExceedsBox && box.height !== undefined) {
         var clipped = clipEntries(
           entries,
           box.height - top - bottom,
-          lineHeight,
+          entryHeights,
         );
         entries = clipped.entries;
         if (clipped.remainder.length) {
@@ -933,7 +1196,9 @@ export function createTextMethods({ drawText, measure, module }) {
       }
       var contentHeight = Math.max(
         box.minHeight || 0,
-        entries.length * lineHeight + top + bottom,
+        entries.reduce((sum, entry, index) => sum + entryHeights[index], 0) +
+          top +
+          bottom,
       );
       var height = box.height || contentHeight;
       var topAlign = options.align?.split(" ") || [];
@@ -967,16 +1232,18 @@ export function createTextMethods({ drawText, measure, module }) {
             : box.style,
         );
       var vertical = box.textAlign?.split(" ")[1];
-      var currentY =
-        y +
-        top +
-        (vertical === VerticalAlign.CENTER
+      var verticalOffset =
+        vertical === VerticalAlign.CENTER
           ? (height - contentHeight) / 2
           : vertical === VerticalAlign.BOTTOM
             ? height - contentHeight
-            : 0);
+            : 0;
+      var currentY = y + top + verticalOffset;
       var columnIndex = 0;
+      var lastLineY;
+      var lastLineIndex;
       entries.some((entry, index) => {
+        var lineHeight = entryHeights[index];
         if (
           layout &&
           currentY + lineHeight >
@@ -1108,30 +1375,53 @@ export function createTextMethods({ drawText, measure, module }) {
             !part.marker &&
             endsWithBreakableSpace(part.text) &&
             drawParts.slice(index + 1).some((next) => hasText(next.text));
+          /**
+           * Measures how far the pen moves past a fragment, before its
+           * justification gap. As in native, a justified word ends at its
+           * glyphs, so every gap on the line gets the same width whatever
+           * the size of the space before it.
+           * @param {{text: string}} part - Fragment.
+           * @param {number} index - Fragment index.
+           * @param {object} partOptions - The fragment's text options.
+           * @returns {number} The advance in points.
+           */
+          var partAdvance = (part, index, partOptions) => {
+            var measured = dimensions(this, part.text, partOptions);
+            if (hasGapAfter(part, index)) return measured.xMax;
+            // The pen moves on by each fragment's advance; the line, as
+            // htmlPartsWidth() measures it, ends at the last one's glyphs.
+            if (index < drawParts.length - 1) {
+              return fragmentAdvance(
+                part.text,
+                (text, textOptions) => dimensions(this, text, textOptions),
+                partOptions,
+              );
+            }
+            return drawParts.length > 1 ? measured.xMax : measured.width;
+          };
           var partGaps = drawParts.filter(hasGapAfter).length;
           var drawnWidth = justify
-            ? htmlPartsWidth(
-                drawParts,
-                (text, partOptions) => dimensions(this, text, partOptions),
-                { ...options, fontSize },
-                false,
+            ? drawParts.reduce(
+                (sum, part, index) =>
+                  sum +
+                  partAdvance(
+                    part,
+                    index,
+                    fragmentOptions(options, part.styles, fontSize),
+                  ),
+                0,
               )
             : textWidth;
           var partGap =
             partGaps > 0 ? (width - left - right - drawnWidth) / partGaps : 0;
-          var drawnText = "";
           var rotationOrigin = options.rotationOrigin || textOrigin;
           drawParts.forEach((part, partIndex) => {
             var partOptions = fragmentOptions(options, part.styles, fontSize);
             if (partOptions.rotation && !partOptions.rotationOrigin) {
               partOptions.rotationOrigin = rotationOrigin;
             }
-            drawX += boundaryCharSpacing(
-              drawnText,
-              part.text,
-              partOptions.charSpace,
-            );
-            var partWidth = dimensions(this, part.text, partOptions).width;
+            var partDimensions = dimensions(this, part.text, partOptions);
+            var partWidth = partDimensions.width;
             if (partOptions.hilite) {
               var partHilite =
                 typeof partOptions.hilite === "object"
@@ -1178,9 +1468,19 @@ export function createTextMethods({ drawText, measure, module }) {
                   clip,
                 );
             }
-            drawX += partWidth;
+            if (partOptions._markup) {
+              addTextMarkup(
+                this,
+                { ...partOptions, ...partOptions._markup },
+                drawX,
+                baseline,
+                hasText(part.text) ? partWidth : 0,
+                false,
+                clip,
+              );
+            }
+            drawX += partAdvance(part, partIndex, partOptions);
             if (hasGapAfter(part, partIndex)) drawX += partGap;
-            drawnText += part.text;
           });
           linkWidth = drawX - linkX;
         } else if (isJustifiedLine) {
@@ -1238,17 +1538,64 @@ export function createTextMethods({ drawText, measure, module }) {
             clip,
           );
         }
+        // The vertical alignment offset only applies in the first column.
+        lastLineY = currentY - (columnIndex ? 0 : verticalOffset);
+        lastLineIndex = index;
         currentY += lineHeight;
         return false;
       });
-      this._lastLineHeight = lineHeight;
-      this._textCursor = { x, y: currentY };
+      // movedown() moves by the first line's height, as in native.
+      this._lastLineHeight = entryHeights[0] ?? lineHeight;
+      // As in native, the cursor sits one first-line height above the bottom
+      // of the last line, without padding or vertical alignment, so
+      // movedown() moves right below the box and a call without coordinates
+      // starts on its last line. With lines of one height, that is the top of
+      // the last line.
+      this._textCursor = {
+        x,
+        y:
+          lastLineY === undefined
+            ? y
+            : lastLineY -
+              top +
+              (entryHeights[lastLineIndex] - this._lastLineHeight),
+      };
+      // As in native, styled text that ends its last line, with a line
+      // break or with movedown() in a flow, leaves the cursor on the line
+      // after it.
+      var lastPart = source?.findLast((part) => String(part.value) !== "");
+      if (/\n$/.test(lastPart?.value ?? "")) {
+        this._textCursor.y += this._lastLineHeight;
+      }
       this._textBoxOrigin = { x, y };
-      this._textOptions = options.flow ? options : null;
       if (clipResult && typeof box.onClip === "function") {
         box.onClip(this, clipResult);
       }
       return this;
+    },
+
+    /**
+     * Draws the pending flow, if any, as one text box. text() with
+     * coordinates, table(), and endPage() end a flow the same way.
+     * @private
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If a requested overflow layout is undefined or text
+     *   clipping cannot be applied.
+     */
+    _flushTextFlow() {
+      var flow = this._pendingFlow;
+      if (!flow) return this;
+      this._pendingFlow = null;
+      // Only the box comes from the call that ended the flow; every run
+      // carries its own styles, so the last run's cannot leak onto the
+      // runs before it.
+      var options = {};
+      FLOW_BOX_OPTIONS.forEach((key) => {
+        if (key in flow.options) options[key] = flow.options[key];
+      });
+      delete options.flow;
+      delete options.html;
+      return this._drawTextBox("", flow.x, flow.y, options, flow.source);
     },
   };
 }

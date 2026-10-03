@@ -699,6 +699,8 @@ export function createPageMethods(
      * @returns {Recipe} The Recipe instance.
      */
     endPage: function () {
+      // A flow still waiting for its end is drawn on the page it started on.
+      if (this._pageHeight) this._flushTextFlow();
       // Validate before closing a content context or consuming the queue, so
       // invalid options leave the page in the same state on every attempt.
       if (this._pageHeight) this._flushAnnotations(true);

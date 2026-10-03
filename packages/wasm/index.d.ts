@@ -386,6 +386,12 @@ export interface RecipeTextOptions
   italic?: boolean;
   charSpace?: number;
   html?: boolean;
+  /**
+   * Builds one text box from several text() calls. Later calls without
+   * coordinates continue the line where the previous run ended; `false` adds
+   * that call's text and ends the flow. Defaults to `true` for a call without
+   * coordinates and `false` for a call with them.
+   */
   flow?: boolean;
   align?: Recipe.ImageAlign;
   layout?: string | number;

@@ -25,6 +25,7 @@ var pdf = new Recipe()
     font: "body-font",
     fontSize: 11,
     layout: "article",
+    flow: false,
     overflow: nextPage,
     textBox: { textAlign: "justify" },
   });

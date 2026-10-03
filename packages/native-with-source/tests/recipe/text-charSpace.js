@@ -129,6 +129,39 @@ facilisis risus eu lacinia. Sed eu leo in turpis fringilla hendrerit.";
       .endPDF(done);
   });
 
+  // Issue #893: the Wasm test of the same name asserts the same line breaks.
+  it("wraps character-spaced text at the spaced width", () => {
+    const output = path.join(__dirname, "../output/text-charSpace-wrap.pdf");
+    const recipe = new Recipe("new", output, { compress: false });
+    recipe
+      .createPage(400, 400)
+      .text(
+        "Spaced letters wrap the same way in a flow as in one call.",
+        20,
+        20,
+        {
+          font: "arial",
+          charSpace: 3,
+          textBox: { width: 150 },
+        },
+      )
+      .endPage()
+      .endPDF();
+    const reader = muhammara.createReader(output);
+    const stream = reader.startReadingFromStream(
+      reader
+        .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+        .toPDFStream(),
+    );
+    const chunks = [];
+    while (stream.notEnded()) chunks.push(Buffer.from(stream.read(4096)));
+    const content = Buffer.concat(chunks).toString("latin1");
+    assert.deepEqual(
+      [...content.matchAll(/\(([^)]*)\) Tj/g)].map((match) => match[1]),
+      ["Spaced letters", "wrap the same", "way in a flow as", "in one call."],
+    );
+  });
+
   it("contains character spacing and rejects non-finite values", () => {
     const output = path.join(
       __dirname,

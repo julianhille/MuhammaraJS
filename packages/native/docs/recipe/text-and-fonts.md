@@ -52,6 +52,40 @@ than a browser layout engine.
 Complex-script shaping and right-to-left layout do not have focused coverage and
 are not documented as supported behavior.
 
+## Continue Text Across Calls
+
+Pass `flow: true` to build one text box from several `text()` calls, for
+example to style a single word in a sentence. The first call sets the
+position; later calls without coordinates continue the line where the previous
+run ended and wrap together inside the shared text box. A call without
+coordinates flows unless it passes `flow: false`: it continues the open flow
+and inherits the options of the runs before it, or starts a flow at the text
+cursor.
+
+Flowed text is laid out when the flow ends, so `textBox` justification and
+styling apply to the whole box. Set `textBox.textAlign` on the call that
+starts the flow, and later runs inherit it; a run that sets a different
+alignment is placed by its own, so the runs of one line can overlap. End it with
+`flow: false`, which adds that call's text first; `text("", { flow: false })`
+ends it without adding any. Inside a flow, `movedown()` ends the current line.
+Because the flow is drawn when it ends, shapes or images drawn between its
+calls end up beneath its text, and `movedown(lines, true)` reports the flow's
+starting position until then.
+
+```javascript
+pdfDoc
+  .createPage("letter")
+  .text("Only ", 72, 72, { flow: true, textBox: { width: 300 } })
+  .text("this", { color: "#c62828", bold: true })
+  .text(" word is red.", { color: "#000000", bold: false })
+  .text("", { flow: false })
+  .endPage()
+  .endPDF();
+```
+
+A flow that is not ended explicitly is drawn by the next `text()` call with
+coordinates, `table()`, or `endPage()`.
+
 ## Clip Text To A Fixed-Height Box
 
 Set `textBox.clipIfExceedsBox` with an explicit `height` to render only complete

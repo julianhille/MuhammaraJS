@@ -3,6 +3,8 @@ const { Word, Line, Column } = require("./text.helper");
 const { htmlToTextObjects, HtmlTag } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
 const { linkPdf } = require("./annotation");
+const { resolveFontSize } = require("./utils");
+const { miterLimitOption, rotationOption } = require("../recipe-options");
 const {
   TextWrap,
   TextAlign,
@@ -10,6 +12,46 @@ const {
   HorizontalAlign,
   Colorspace,
 } = require("../recipe-constants");
+
+/**
+ * Matches HTML that ends with a closed block element, which ends its line.
+ */
+const BLOCK_END = /<\/(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\s*>\s*$/i;
+
+/**
+ * Matches HTML that opens with a block element, which starts a new line.
+ */
+const BLOCK_START = /^\s*<(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\b/i;
+
+/**
+ * Find the first node with text, unless a line break or block element comes
+ * before it.
+ * @private
+ * @param {Object[]} nodes - HTML layout nodes in drawing order.
+ * @returns {Object|undefined} The node, or undefined.
+ */
+function firstInlineText(nodes) {
+  for (const node of nodes) {
+    if (node.lineBreak || node.needsLineBreaker) return undefined;
+    if (node.value) return node;
+    if (node.childs?.some(hasLayout)) return firstInlineText(node.childs);
+  }
+  return undefined;
+}
+
+/**
+ * Report whether an HTML layout node has text or a line break to lay out.
+ * @private
+ * @param {Object} textObject - The layout node.
+ * @returns {boolean} Whether laying the node out adds a run.
+ */
+function hasLayout(textObject) {
+  return Boolean(
+    textObject.lineBreak ||
+    textObject.value ||
+    textObject.childs?.some(hasLayout),
+  );
+}
 
 //  Table indicating how to specify coloration of elements
 //  -------------------------------------------------------------------
@@ -277,8 +319,9 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {Object|Boolean} [options.underline] - Text markup annotation.
  * @param {Object|Boolean} [options.strikeOut] - Text markup annotation.
  * @param {Boolean} [options.html] - Interpret text as html
- * @param {Boolean} [options.flow=false] - Used to activate/deactivate text flow which is the
- * ability to use multiple calls to 'text' to create an overall text box.
+ * @param {Boolean} [options.flow] - Used to activate/deactivate text flow which is the
+ * ability to use multiple calls to 'text' to create an overall text box. Defaults to
+ * `true` for a call without coordinates and `false` for a call with them.
  * @param {number|string} [options.layout] - An identifier of the layout to be associated with given text.
  * @param {function} [options.overflow] - Called when the text is going to exceed the area
  * of the given text object. Intended for column layouts. Its parameter is (self) where 'self' is the recipe handle so
@@ -320,6 +363,8 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {string} [options.link] - Make the text open this URL.
  * @returns {Recipe} The recipe instance. Without an active page nothing is drawn.
  * @throws {TypeError} If `options.charSpace` or `options.rotation` is not a finite number; nothing is drawn.
+ * @throws {RangeError} If `options.size` is not greater than zero or
+ *   `options.miterLimit` is below 1; nothing is drawn.
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 exports.text = function text(text = "", x, y, options = {}) {
@@ -328,15 +373,24 @@ exports.text = function text(text = "", x, y, options = {}) {
   if (!this.pageContext) {
     return this;
   }
-  // Validate before _initOptions moves the text position or resets the flow.
+  // A call with coordinates starts a new text box, so an open flow is drawn
+  // first instead of being discarded.
+  // Validate before _initOptions moves the text position or resets the flow,
+  // and before an open flow is drawn.
   const rawOptions = (typeof x === "object" ? x : options) || {};
   _validateCharSpace(rawOptions);
+  rotationOption(rawOptions.rotation);
+  miterLimitOption(rawOptions.miterLimit);
+  resolveFontSize(rawOptions);
   // Reject invalid markup annotations before any text is drawn.
   for (let key in rawOptions) {
     if (this._getTextMarkupAnnotationSubtype(key) && rawOptions[key]) {
       const markup = typeof rawOptions[key] === "object" ? rawOptions[key] : {};
       this._validateAnnot({ ...markup, flag: rawOptions.flag });
     }
+  }
+  if (typeof x !== "object" && x !== undefined) {
+    this._flushTextFlow();
   }
   options = _initOptions(this, x, y, options);
   const linkX = this.x;
@@ -362,9 +416,61 @@ exports.text = function text(text = "", x, y, options = {}) {
   // save text state for continued text?
   this._textOptions = this._flow ? options : { textBox: {} };
 
-  const textObjects = options.html
-    ? htmlToTextObjects(text, options)
-    : this._makeTextObject(text, pathOptions.size, options);
+  // Line breaks that end a flowed run end its line, as movedown() does,
+  // instead of being drawn.
+  let trailingBreaks = 0;
+  if (this._flow) {
+    const breaks = /\n+$/.exec(text);
+    if (breaks) {
+      trailingBreaks = breaks[0].length;
+      text = text.slice(0, breaks.index);
+      if (text === "" && this._previousTextObjects.length) {
+        return this.movedown(trailingBreaks);
+      }
+    }
+  }
+
+  // HTML without text or line breaks has nothing to lay out, which would
+  // discard the runs of an open flow, so it is laid out as empty plain text.
+  let textObjects =
+    options.html && text !== "" ? htmlToTextObjects(text, options) : null;
+  if (
+    textObjects &&
+    this._previousTextObjects.length &&
+    !textObjects.some(hasLayout)
+  ) {
+    textObjects = this._makeTextObject("", pathOptions.size, options);
+  }
+  textObjects =
+    textObjects || this._makeTextObject(text, pathOptions.size, options);
+
+  // HTML continues the open line of a flow unless it opens with a block
+  // element or the run before closed one. It then keeps one space that
+  // starts it, as HTML text after inline content does, unless the run
+  // before ends with a space.
+  pathOptions.startsBlock = Boolean(options.html) && BLOCK_START.test(text);
+  const openRun =
+    this._previousTextObjects[this._previousTextObjects.length - 1];
+  if (
+    options.html &&
+    /^\s/.test(text) &&
+    openRun &&
+    !openRun.lineComplete &&
+    /\S$/.test(openRun.text) &&
+    !this._flowEndsBlock &&
+    !pathOptions.startsBlock
+  ) {
+    const first = firstInlineText(textObjects);
+    if (first && !/^\s/.test(first.value)) {
+      // A space before an element is a run of its own, as in one call.
+      if (textObjects.includes(first)) first.value = " " + first.value;
+      else {
+        textObjects.unshift(
+          ...this._makeTextObject(" ", pathOptions.size, options),
+        );
+      }
+    }
+  }
   const textBox = this._makeTextBox(options);
 
   if (textBox.onClip && !textBox.clipIfExceedsBox) {
@@ -389,7 +495,22 @@ exports.text = function text(text = "", x, y, options = {}) {
   // need to collect all the text that is 'flowing' before processing.
   if (this._flow) {
     this._previousTextObjects = [...toWriteTextObjects];
+    // A later HTML run starts a new line after a closed block element.
+    this._flowEndsBlock = Boolean(options.html) && BLOCK_END.test(text);
+    if (trailingBreaks) this.movedown(trailingBreaks);
   } else {
+    this._flowEndsBlock = false;
+    // Runs of different sizes on one line share its baseline and height; the
+    // first line moves down by what it grew so its tallest run fits the box,
+    // and movedown() moves by its full height.
+    // An empty first run that a later run replaced does not size it either.
+    const firstLineHeight = toWriteTextObjects[0]?.lineHeight;
+    alignLineBaselines(toWriteTextObjects);
+    if (firstLineHeight !== undefined) {
+      this._lineHeight += toWriteTextObjects[0].lineHeight - firstLineHeight;
+      this._firstLineHeight = toWriteTextObjects[0].lineHeight;
+      textBox.firstLineHeight = this._firstLineHeight;
+    }
     textBox.textHeight = getTextBoxHeight(toWriteTextObjects);
 
     let clipResult;
@@ -464,8 +585,23 @@ exports.text = function text(text = "", x, y, options = {}) {
       currentLineID = currentLineID || lineID;
       const isContinued = currentLineID == lineID ? true : false;
 
+      /**
+       * Where a line's first run starts, from the box edge and the line's
+       * alignment.
+       * @param {number} startX - The x of the box edge plus the width of the
+       *   line's runs before the run.
+       * @param {Object} content - The run, whose alignment places the line.
+       * @returns {number} The x of the run.
+       */
       const getStartX = (startX, content) => {
-        let spaceWidth = content.text.endsWith(" ") ? content.spaceWidth : 0;
+        // Right alignment leaves out the space that ends the line, which
+        // belongs to its last run with text; every run of the line shifts
+        // alike.
+        const lastContent =
+          toWriteContents.findLast((run) => run.text !== "") || content;
+        let spaceWidth = lastContent.text.endsWith(" ")
+          ? lastContent.spaceWidth
+          : 0;
         let offsetX;
         switch (content.writeOptions.alignHorizontal) {
           case TextAlign.CENTER:
@@ -775,7 +911,8 @@ exports.text = function text(text = "", x, y, options = {}) {
 
       /** Queues a text link limited to the run's visible clipping region. */
       var queueTextLink = function (content, x, y, nextX) {
-        if (!content.writeOptions.link) return;
+        // The empty run that ends a flow inherits the link but covers nothing.
+        if (!content.writeOptions.link || !content.text) return;
         var left = x;
         var width = nextX ? nextX - x : content.lineWidth;
         if (textBox.wrap === TextWrap.CLIP) {
@@ -1001,10 +1138,38 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       textObject.value !== null &&
       textObject.value !== "") ||
     textObject.childs?.some(hasRenderableContent);
+  /**
+   * Finds the node laid out last that has more than spaces, after its
+   * parents' text.
+   * @param {Object[]} nodes - Layout nodes in drawing order.
+   * @returns {Object|undefined} The node, or undefined when none has text.
+   */
+  const lastTextNode = (nodes) => {
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const node = nodes[i];
+      const child =
+        node.tag && node.childs?.length && lastTextNode(node.childs);
+      if (child) return child;
+      if (!node.lineBreak && /\S/.test(node.value ?? "")) return node;
+    }
+    return undefined;
+  };
+  // Only the call's last text and the spaces after it end its line, so the
+  // spaces between its HTML elements stay when the call ends a flow.
+  const lastText = lastTextNode(textObjects);
+  let atEnd = !lastText;
 
+  // Every object is laid out after the runs of an open flow, which each
+  // result repeats; the first result keeps them and later ones drop them.
+  const previousRuns = new Set(this._previousTextObjects);
   /** Adds laid-out objects, recording the first line height. */
   const addLaidOutObjects = (newToWriteObjects, paragraphHeight) => {
-    toWriteTextObjects = [...toWriteTextObjects, ...newToWriteObjects];
+    toWriteTextObjects = [
+      ...toWriteTextObjects,
+      ...(toWriteTextObjects.length
+        ? newToWriteObjects.filter((textObj) => !previousRuns.has(textObj))
+        : newToWriteObjects),
+    ];
 
     if (!firstLineHeight) {
       this._lineHeight = firstLineHeight = toWriteTextObjects[0].lineHeight;
@@ -1015,8 +1180,19 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     totalHeight += paragraphHeight;
   };
 
+  /**
+   * Lays out a layout node and then its HTML children, adding the runs.
+   * @param {Object} textObject - The layout node; list markers, indents,
+   *   sizes and styles are passed on to its children in place.
+   * @returns {void}
+   */
+  // A run whose first word wraps ends the open line of a flow; the call's
+  // later runs continue the line it wrapped onto instead.
+  const wrappedLineIDs = new Map();
   const writeValue = (textObject) => {
     textObject.lineID = textObject.lineID || Date.now() * Math.random();
+    textObject.lineID =
+      wrappedLineIDs.get(textObject.lineID) ?? textObject.lineID;
     textObject.lineID =
       textObject.needsLineBreaker || textObject.lineBreak
         ? Date.now() * Math.random()
@@ -1046,9 +1222,16 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       textObject.styles.color = textObject.styles.color
         ? this._transformColor(textObject.styles.color)
         : pathOptions.color;
+      atEnd = atEnd || textObject === lastText;
       const { toWriteTextObjects: newToWriteObjects, paragraphHeight } =
-        makeTextObjects(this, textObject, pathOptions, textBox);
+        makeTextObjects(this, textObject, pathOptions, textBox, atEnd);
       addLaidOutObjects(newToWriteObjects, paragraphHeight);
+      if (openLine?.lineComplete && textObject.lineID === openLine.lineID) {
+        wrappedLineIDs.set(
+          openLine.lineID,
+          newToWriteObjects[newToWriteObjects.length - 1].lineID,
+        );
+      }
     }
     if (textObject.tag && textObject.childs.length) {
       // console.log(textObject);
@@ -1122,8 +1305,17 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     }
   };
   // Top-level nodes share a line, as children of a block element do, so
-  // inline runs outside any element are not split onto separate lines.
-  const topLevelLineID = Date.now() * Math.random();
+  // inline runs outside any element are not split onto separate lines. In a
+  // flow they continue the line the previous run left open, unless both are
+  // HTML and the previous one closed a block element or this one opens one.
+  const openLine =
+    this._previousTextObjects?.[this._previousTextObjects.length - 1];
+  const topLevelLineID =
+    openLine &&
+    !openLine.lineComplete &&
+    !(pathOptions.html && (this._flowEndsBlock || pathOptions.startsBlock))
+      ? openLine.lineID
+      : Date.now() * Math.random();
   textObjects.forEach((textObject) => {
     textObject.lineID = textObject.lineID || topLevelLineID;
     writeValue(textObject);
@@ -1143,7 +1335,15 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
         ...breakObject,
         lineID: previous ? pendingBreaks[index].lineID : breakObject.lineID,
         text: "",
-        lineComplete: true,
+        // A later call of the flow lays the blank lines out again; they are
+        // no longer breaks, and the last one is the line it continues.
+        lineBreak: false,
+        blankLine: true,
+        lineComplete: !(
+          this._flow &&
+          !nextTextObject &&
+          index === blankBreaks.length - 1
+        ),
         lineWidth: 0,
         textWidth: 0,
       });
@@ -1160,6 +1360,7 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     // Whitespace that only precedes a line break would start a blank line.
     const beforeLineBreak =
       !textObject.lineBreak &&
+      !textObject.blankLine &&
       textObject.text.trim() == "" &&
       objects[index + 1]?.lineBreak;
     if (beforeLineBreak) return;
@@ -1180,6 +1381,36 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     textHeight: getTextBoxHeight(toWriteTextObjects) || totalHeight,
   };
 };
+
+/**
+ * Give the runs of each line one height and one baseline, so runs of
+ * different sizes sit on the same baseline and the tallest one fits the
+ * line.
+ * @private
+ * @param {Object[]} textObjs - The laid-out runs; updated in place.
+ * @returns {void}
+ */
+function alignLineBaselines(textObjs) {
+  // Runs without visible text, such as an empty run or the space before a
+  // wrapped word, size only a line that has nothing else.
+  const visibleLines = new Set(
+    textObjs.filter(({ text }) => /\S/.test(text)).map(({ lineID }) => lineID),
+  );
+  const lines = new Map();
+  for (const { lineID, lineHeight, baseline, text } of textObjs) {
+    if (visibleLines.has(lineID) && !/\S/.test(text)) continue;
+    const line = lines.get(lineID) || { lineHeight: 0, ascent: 0 };
+    line.lineHeight = Math.max(line.lineHeight, lineHeight);
+    // Each run's baseline offset is its line height less its ascent.
+    line.ascent = Math.max(line.ascent, lineHeight - baseline);
+    lines.set(lineID, line);
+  }
+  for (const textObj of textObjs) {
+    const line = lines.get(textObj.lineID);
+    textObj.lineHeight = line.lineHeight;
+    textObj.baseline = line.lineHeight - line.ascent;
+  }
+}
 
 /**
  * The height of laid-out text: the sum of the line heights, counting each
@@ -1499,12 +1730,20 @@ function makeTextObject(lines, line, lineID, textBox, options = {}) {
  * @param {Object[]} textObjects - The runs laid out so far; updated in place.
  * @param {number} wordCount - The words counted so far on the line.
  * @param {number} totalTextWidth - The text width counted so far on the line.
+ * @param {boolean} [ends=true] - Whether the line ends here. A line that a
+ *   later flowed run continues keeps the space after its last word.
  * @returns {number[]} The updated [wordCount, totalTextWidth].
  */
-function bindTextToLine(line, textObjects, wordCount, totalTextWidth) {
+function bindTextToLine(
+  line,
+  textObjects,
+  wordCount,
+  totalTextWidth,
+  ends = true,
+) {
   // Apply justification information to previous text objects.
   if (wordCount > 0) {
-    line.markLastWord();
+    if (ends) line.markLastWord();
     wordCount += line.words.length;
     totalTextWidth += line.textWidth;
 
@@ -1546,11 +1785,19 @@ function bindTextToLine(line, textObjects, wordCount, totalTextWidth) {
  * @param {Object} [textObject] - The text layout object.
  * @param {Object} pathOptions - The resolved text options.
  * @param {Object} [textBox] - The text box; line and baseline heights are set in place.
+ * @param {boolean} [atEnd=true] - Whether only spaces follow the object in
+ *   its call, so its line ends with the call when the call ends a flow.
  * @returns {{toWriteTextObjects: Object[], paragraphHeight: number}} The runs,
  *   including the carried-over flowed ones, and the paragraph height.
  * @throws {Error} If the font cannot be loaded.
  */
-function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
+function makeTextObjects(
+  self,
+  textObject = {},
+  pathOptions,
+  textBox = {},
+  atEnd = true,
+) {
   const toWriteTextObjects = [...self._previousTextObjects];
   let text =
     (textObject.prependValue ? textObject.prependValue : "") +
@@ -1613,19 +1860,36 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
   let lineHeight =
     textHeight > textBox.lineHeight ? textHeight : textBox.lineHeight;
 
+  // An empty flowed run that leaves its line open has no words to join, so
+  // it is dropped and the next run starts that line instead of a new one.
+  while (
+    toWriteTextObjects.length > 0 &&
+    toWriteTextObjects[toWriteTextObjects.length - 1].text === "" &&
+    !toWriteTextObjects[toWriteTextObjects.length - 1].lineComplete &&
+    !toWriteTextObjects[toWriteTextObjects.length - 1].blankLine
+  ) {
+    toWriteTextObjects.pop();
+  }
+
   // When text flow is involved, there may be lines that are
   // incomplete. So need to determine previous line word count
   // and remove last line marks because more text is being processed.
   if (toWriteTextObjects.length > 0) {
     let lineWidth = 0;
-    let spaceSz = 0;
     const end = toWriteTextObjects.length - 1;
     const previousLine = toWriteTextObjects[end];
     let lineComplete, fini;
 
-    if (text === "" && !self._flow && !textObject.lineBreak) {
+    if (
+      !self._flow &&
+      !textObject.lineBreak &&
+      (text === "" || (!pathOptions.html && /^[^\S\n]+$/.test(text)))
+    ) {
       // turning off flow with empty text so
       previousLine.lastLine = true; // need to make previous line, the last.
+      // The flow's line ends with its last run with text, as when a run with
+      // text ends the flow.
+      if (!previousLine.lineComplete) trimLineEnd(toWriteTextObjects, end);
     }
 
     for (let i = end; i >= 0; i--) {
@@ -1635,26 +1899,27 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
       if (textObj.lineID !== previousLine.lineID) {
         break;
       }
-      spaceSz = textObj.spaceWidth;
       textLine = textObj.text + textLine;
       totalTextWidth += textObj.textWidth;
-      lineWidth += textObj.lineWidth;
+      // Each run is drawn after the one before it, plus a space after a run
+      // that ends with one.
+      lineWidth +=
+        textObj.lineWidth +
+        (textObj.text.endsWith(" ") ? textObj.spaceWidth : 0);
       if (i === end) {
         fini = lineComplete = textObj.lineComplete;
       } else {
         fini = textObj.lineComplete;
       }
-      textObj.wordsInLine[textObj.wordsInLine.length - 1].lastWord(fini);
+      // An empty flowed run has no words.
+      textObj.wordsInLine[textObj.wordsInLine.length - 1]?.lastWord(fini);
     }
 
     if (lineComplete) {
       totalTextWidth = 0;
     } else if (textLine) {
       wordCount = textLine.trim().split(/\s+/).length;
-      if (!textLine.endsWith(" ")) {
-        spaceSz = 0;
-      }
-      remainderWidth = lineMaxWidth - lineWidth - spaceSz;
+      remainderWidth = lineMaxWidth - lineWidth;
     }
   }
 
@@ -1676,7 +1941,11 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
           // and mark last word of previous line in case justifying.
           wordCount = 0;
           totalTextWidth = 0;
+          trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1);
           markLineComplete(toWriteTextObjects);
+          // The word wraps, so an HTML run's first line is a new line, not
+          // the open one it would have continued.
+          lineID = newLine.lineID;
         }
       } else {
         // remove any trailing space on previous word so right justification works appropriately
@@ -1704,6 +1973,8 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
             }),
           ),
         );
+        // The line may end with this run's spaces, after earlier runs.
+        trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1);
         wordCount = 0;
         totalTextWidth = 0;
       }
@@ -1741,7 +2012,14 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
             .join("");
           newLine.addWord(new Word(space, pathOptions));
         }
-        newLine.addWord(word);
+        // A wrapped line starts with its first word, without the spaces
+        // that started the run before it wrapped.
+        const wrapped = word.value.replace(/^[^\S\u00a0]+/, "");
+        if (wrapped) {
+          newLine.addWord(
+            wrapped === word.value ? word : new Word(wrapped, pathOptions),
+          );
+        }
       }
     }
 
@@ -1791,6 +2069,7 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
       toWriteTextObjects,
       wordCount,
       totalTextWidth,
+      !self._flow && atEnd,
     );
 
     toWriteTextObjects.push(
@@ -1820,6 +2099,30 @@ function makeTextObjects(self, textObject = {}, pathOptions, textBox = {}) {
 }
 
 /**
+ * Drop the spaces that end a line, back to its last word: the line's runs of
+ * only spaces become empty, and the run with its last word loses the spaces
+ * after it, as the last run of a line does.
+ * @private
+ * @param {Object[]} textObjs - The laid-out runs; the line's are updated in place.
+ * @param {number} end - The index of the line's last run.
+ * @returns {void}
+ */
+function trimLineEnd(textObjs, end) {
+  const { lineID } = textObjs[end];
+  for (let i = end; i >= 0; i--) {
+    const run = textObjs[i];
+    if (run.lineID !== lineID || (i < end && run.lineComplete)) break;
+    const lastWord = run.wordsInLine[run.wordsInLine.length - 1];
+    if (lastWord && /\s$/.test(run.text)) {
+      lastWord.lastWord();
+      run.text = run.text.trimEnd();
+      run.lineWidth = new Word(run.text, run.writeOptions).dimensions.xMax;
+    }
+    if (run.text) break;
+  }
+}
+
+/**
  * Mark the last run as ending its line: trim it, mark its last word and
  * optionally move the next line down.
  * @private
@@ -1831,15 +2134,39 @@ function markLineComplete(toWriteTextObjects, lines = null) {
   // Get last element in text objects and mark it.
   const textObj = toWriteTextObjects[toWriteTextObjects.length - 1];
   const lastWordIdx = textObj.wordsInLine.length - 1;
+  const alreadyComplete = textObj.lineComplete;
 
-  textObj.wordsInLine[lastWordIdx].lastWord();
+  // An empty flowed run has no words.
+  textObj.wordsInLine[lastWordIdx]?.lastWord();
   textObj.text = textObj.text.trim();
   textObj.lineComplete = true;
 
   if (lines) {
-    textObj.lineOffset = lines;
+    // Ending a line that already ended adds blank lines, as one movedown()
+    // with the summed count does.
+    textObj.lineOffset = alreadyComplete
+      ? (textObj.lineOffset || 1) + lines
+      : lines;
   }
 }
+
+/**
+ * Draw the open text flow, if any, as `text("", { flow: false })` would.
+ * text() with coordinates, table(), and endPage() call it, so flowed text
+ * that is never ended explicitly is still drawn.
+ * @name _flushTextFlow
+ * @function
+ * @memberof Recipe#
+ * @private
+ * @returns {Recipe} The recipe instance.
+ * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
+ */
+exports._flushTextFlow = function _flushTextFlow() {
+  if (this._flow && this.pageContext && this._previousTextObjects?.length) {
+    this.text("", { flow: false });
+  }
+  return this;
+};
 
 /** Move text positioning down N lines in text box
  * @name movedown
