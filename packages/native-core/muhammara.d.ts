@@ -89,47 +89,52 @@ declare namespace muhammara {
    * no passwords are given.
    * @param originalPdfPath - The source PDF path.
    * @param newPdfPath - The output path.
-   * @param options - The source password and the new encryption settings.
+   * @param options - The source password and the new encryption settings;
+   *   `null` means no options.
    * @throws {TypeError} If the arguments are wrong, one side is a path and the
    *   other a stream, or the PDF cannot be recrypted.
    */
   export function recrypt(
     originalPdfPath: FilePath,
     newPdfPath: FilePath,
-    options?: PDFRecryptOptions,
+    options?: PDFRecryptOptions | null,
   ): void;
   /**
    * Writes a copy of a PDF stream with new encryption settings, or decrypted
    * when no passwords are given.
    * @param originalPdfStream - The source PDF.
    * @param newPdfStream - The output stream.
-   * @param options - The source password and the new encryption settings.
+   * @param options - The source password and the new encryption settings;
+   *   `null` means no options.
    * @throws {TypeError} If the arguments are wrong or the PDF cannot be
    *   recrypted.
    */
   export function recrypt(
     originalPdfStream: PDFRStreamForFile | PDFRStreamForBuffer,
     newPdfStream: PDFWStreamForFile | PDFWStreamForBuffer,
-    options?: PDFRecryptOptions,
+    options?: PDFRecryptOptions | null,
   ): void;
   /**
    * Like `recrypt()`, but re-encrypts on libuv's thread pool and returns a
    * promise, so the event loop keeps running. A thread's jobs run one at a
    * time, in call order, and its waiting jobs do not hold pool threads; jobs
    * from different threads run in parallel. Relative paths are resolved when
-   * called.
+   * called, naming the files `recrypt()` would open at that moment.
    * @param originalPdfPath - The source PDF path.
    * @param newPdfPath - The output path.
-   * @param options - The source password and the new encryption settings.
+   * @param options - The source password and the new encryption settings;
+   *   `null` means no options.
    * @returns Resolves once the output is written; rejects with a TypeError if
-   *   the PDF cannot be recrypted.
+   *   the PDF cannot be recrypted, or with an Error if the source or output
+   *   path is relative and the working directory was removed, or if a path
+   *   is too long for the system once made absolute.
    * @throws {TypeError} If the arguments are wrong, or one side is a path and
    *   the other a stream.
    */
   export function recryptAsync(
     originalPdfPath: FilePath,
     newPdfPath: FilePath,
-    options?: PDFRecryptOptions,
+    options?: PDFRecryptOptions | null,
   ): Promise<void>;
   /**
    * Like `recrypt()`, but re-encrypts on libuv's thread pool and returns a
@@ -138,16 +143,19 @@ declare namespace muhammara {
    * steps run on the calling thread.
    * @param originalPdfStream - The source PDF.
    * @param newPdfStream - The output stream.
-   * @param options - The source password and the new encryption settings.
+   * @param options - The source password and the new encryption settings;
+   *   `null` means no options.
    * @returns Resolves once the output is written; rejects with a TypeError if
    *   the PDF cannot be recrypted, with an Error if the output stream was
-   *   written to while the job ran, or with the error the output stream threw.
+   *   written to after the call, with a RangeError if the source or output is
+   *   too large to hold in memory, with the error a stream threw, or with an
+   *   Error if `log` is too long for the system once made absolute.
    * @throws {TypeError} If the arguments are wrong.
    */
   export function recryptAsync(
     originalPdfStream: PDFRStreamForFile | PDFRStreamForBuffer,
     newPdfStream: PDFWStreamForFile | PDFWStreamForBuffer,
-    options?: PDFRecryptOptions,
+    options?: PDFRecryptOptions | null,
   ): Promise<void>;
 
   /**

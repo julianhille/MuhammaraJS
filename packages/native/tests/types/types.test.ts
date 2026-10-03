@@ -1129,3 +1129,15 @@ void muhammara.recryptAsync(
 );
 // @ts-expect-error Paths and streams cannot be mixed.
 void muhammara.recryptAsync("in.pdf", new muhammara.PDFWStreamForBuffer());
+muhammara.recrypt("in.pdf", "out.pdf", null);
+muhammara.recrypt(
+  new muhammara.PDFRStreamForBuffer(Buffer.alloc(0)),
+  new muhammara.PDFWStreamForBuffer(),
+  null,
+);
+void muhammara.recryptAsync("in.pdf", "out.pdf", null);
+void muhammara.recryptAsync(
+  new muhammara.PDFRStreamForBuffer(Buffer.alloc(0)),
+  new muhammara.PDFWStreamForBuffer(),
+  null,
+);

@@ -18,17 +18,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `recryptAsync()`, a promise-returning `recrypt()` that re-encrypts on
   libuv's thread pool, so the event loop keeps running. A thread's jobs run
   one at a time and its waiting jobs do not hold pool threads; jobs from
-  different worker threads run in parallel
+  different worker threads run in parallel. An error a stream throws, and
+  stream data too large to hold in memory, reject the promise. Relative paths
+  are made absolute when it is called, and a path that is then too long for
+  the system rejects
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
   [#895](https://github.com/julianhille/MuhammaraJS/issues/895)
+  [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
 - A server benchmark comparing `recrypt()` and `recryptAsync()`, including
   how long each blocks the event loop, run with `npm run bench:recrypt`
-  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
-
-### Changed
-
-- Native log settings belong to the thread that sets them. A writer created
-  in a worker thread no longer changes where writers on other threads log
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 
 ### Fixed
@@ -93,6 +91,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Start a line that a flowed run wraps onto with its first word, instead of
   the spaces that started the run
   [#915](https://github.com/julianhille/MuhammaraJS/issues/915)
+- Accept `undefined` and `null` options in `recrypt()`, as `@muhammara/wasm`
+  does, instead of throwing "TypeError: Cannot convert undefined or null to
+  object" [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
+- Write the errors `recrypt()` logs while it opens and parses the source to
+  its own `log`, or nowhere without one. They went to whichever log the
+  thread used last, such as that of another open writer. Once `recrypt()`
+  returns, that writer logs to its own log again; it used to log to the
+  call's `log`, or nowhere when the call had none
+  [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
+- Skip a `log` that `recrypt()` cannot append to, such as a directory, a
+  read-only file or device, or a FIFO without a reader, instead of crashing
+  or hanging the process when an error is logged
+  [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
+
+### Changed
+
+- Native log settings belong to the thread that sets them. A writer created
+  in a worker thread no longer changes where writers on other threads log
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
 
 ## [7.0.0] - 2026-10-01
 

@@ -21,9 +21,9 @@
 #include "PDFRectangle.h"
 #include "PDFStream.h"
 #include "PageContentContextDriver.h"
+#include "RecryptAsync.h"
 #include "ResourcesDictionaryDriver.h"
 #include "TIFFImageHandler.h"
-#include "Trace.h"
 #include "UsedFontDriver.h"
 
 using namespace muhammara::napi;
@@ -587,6 +587,7 @@ PDFHummus::EStatusCode PDFWriterDriver::StartPDF(const std::string &p,
                                                  const LogConfiguration &l,
                                                  const PDFCreationSettings &c) {
   startedWithStream_ = false;
+  RecordWriterLog(l);
   return Setup(writer_.StartPDF(p, v, l, c));
 }
 PDFHummus::EStatusCode PDFWriterDriver::StartPDF(napi_env e, napi_value stream,
@@ -596,6 +597,7 @@ PDFHummus::EStatusCode PDFWriterDriver::StartPDF(napi_env e, napi_value stream,
   writeProxy_ = new ObjectByteWriterWithPosition(e, stream);
   writeProxy_->SetCallbackDepth(callbackDepth_);
   startedWithStream_ = true;
+  RecordWriterLog(l);
   return Setup(writer_.StartPDFForStream(writeProxy_, v, l, c));
 }
 PDFHummus::EStatusCode PDFWriterDriver::ContinuePDF(const std::string &o,
@@ -603,6 +605,7 @@ PDFHummus::EStatusCode PDFWriterDriver::ContinuePDF(const std::string &o,
                                                     const std::string &m,
                                                     const LogConfiguration &l) {
   startedWithStream_ = false;
+  RecordWriterLog(l);
   return Setup(writer_.ContinuePDF(o, s, m, l));
 }
 PDFHummus::EStatusCode PDFWriterDriver::ContinuePDF(napi_env e, napi_value o,
@@ -616,6 +619,7 @@ PDFHummus::EStatusCode PDFWriterDriver::ContinuePDF(napi_env e, napi_value o,
     readProxy_ = new ObjectByteReaderWithPosition(e, m);
     readProxy_->SetCallbackDepth(callbackDepth_);
   }
+  RecordWriterLog(l);
   return Setup(writer_.ContinuePDFForStream(writeProxy_, s, readProxy_, l));
 }
 PDFHummus::EStatusCode
@@ -623,6 +627,7 @@ PDFWriterDriver::ModifyPDF(const std::string &s, EPDFVersion v,
                            const std::string &o, const LogConfiguration &l,
                            const PDFCreationSettings &c) {
   startedWithStream_ = false;
+  RecordWriterLog(l);
   return Setup(writer_.ModifyPDF(s, v, o, l, c));
 }
 PDFHummus::EStatusCode
@@ -634,6 +639,7 @@ PDFWriterDriver::ModifyPDF(napi_env e, napi_value s, napi_value o,
   writeProxy_->SetCallbackDepth(callbackDepth_);
   readProxy_ = new ObjectByteReaderWithPosition(e, s);
   readProxy_->SetCallbackDepth(callbackDepth_);
+  RecordWriterLog(l);
   return Setup(
       writer_.ModifyPDFForStream(readProxy_, writeProxy_, false, v, l, c));
 }
@@ -1160,12 +1166,12 @@ void PDFWriterDriver::SetLogStream(napi_env e, napi_value stream,
   c.LogStream = logProxy_;
 }
 // The proxy is handed to the process-global trace, which keeps a raw pointer to
-// it. Detach it there before freeing it, or the next trace of any writer writes
-// through freed memory.
+// it. Detach it there, and from the record recrypt() restores, before freeing
+// it, or the next trace of any writer writes through freed memory.
 void PDFWriterDriver::ReleaseLogProxy() {
   if (!logProxy_)
     return;
-  Trace::DefaultTrace().SetLogSettings("", false, false);
+  ClearWriterLog();
   delete logProxy_;
   logProxy_ = nullptr;
 }

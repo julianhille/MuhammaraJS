@@ -206,6 +206,19 @@ describe("UseAfterEndTest", function () {
               "log chunks are delivered as Buffers",
             );
           });
+          // recrypt() points the trace at its own log, here none, and gives
+          // the live writer its log stream back once it returns.
+          var beforeRecrypt = logged.written.length;
+          muhammara.recrypt(
+            __dirname + "/TestMaterials/Original.pdf",
+            path.join(directory, "recrypted.pdf"),
+          );
+          traceAFailure(directory);
+          assert.isAbove(
+            logged.written.length,
+            beforeRecrypt,
+            "a live writer's log stream should receive trace output after recrypt()",
+          );
           var writtenWhileLive = logged.written.length;
 
           if (mode === "end") {
@@ -220,7 +233,13 @@ describe("UseAfterEndTest", function () {
 
           // The trace keeps a raw pointer to the native proxy behind this
           // stream. Tracing once the proxy has been freed wrote through freed
-          // memory and aborted the process.
+          // memory and aborted the process. recrypt() must not give the freed
+          // proxy back either.
+          traceAFailure(directory);
+          muhammara.recrypt(
+            __dirname + "/TestMaterials/Original.pdf",
+            path.join(directory, "recrypted-after.pdf"),
+          );
           traceAFailure(directory);
           assert.equal(
             logged.written.length,

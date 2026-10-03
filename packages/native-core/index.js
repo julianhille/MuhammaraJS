@@ -1,5 +1,6 @@
 "use strict";
 
+var fs = require("fs");
 var path = require("path");
 var fontText = require("./lib/font-text");
 var { createRecipe } = require("./lib/Recipe");
@@ -13,6 +14,10 @@ var nativeExtractPageText = Symbol.for(
   "@muhammara/native-core:extractPageText",
 );
 var nativeRecryptAsync = Symbol.for("@muhammara/native-core:recryptAsync");
+// The addon rejects with the same message for a path it cannot open.
+var pathTooLong =
+  "A path is too long for this system; recryptAsync() opens its files by " +
+  "absolute path, so use a shorter path or working directory";
 
 /**
  * Keep an addon's own function under a hidden key, unless it is already kept.
@@ -84,6 +89,62 @@ function decodeExtractedText(muhammara) {
 }
 
 /**
+ * Make a path absolute, naming the file that opening it now would. POSIX
+ * follows a symlink before it applies a later `..`, so `link/..` is the parent
+ * of the link's target, and `path.resolve()` would drop both instead; only the
+ * working directory is put in front. Windows removes `..` from the text, as
+ * `path.resolve()` does, which also fixes the drive of `\file` and `C:file`.
+ *
+ * @param {string} file A path.
+ * @returns {string} An absolute path naming the same file.
+ */
+function resolveLikeOpen(file) {
+  if (process.platform === "win32") return path.resolve(file);
+  if (path.isAbsolute(file)) return file;
+  var directory = workingDirectory();
+  return directory.endsWith("/") ? directory + file : directory + "/" + file;
+}
+
+/**
+ * Read the working directory as it is now. `process.cwd()` keeps the path it
+ * read until the next `process.chdir()`, so it still names the old place
+ * after the directory is renamed, while a relative path opens in the
+ * directory itself.
+ *
+ * @returns {string} The working directory.
+ * @throws {Error} If the working directory has no path, as when it was
+ * removed, or its path is too long for the system.
+ */
+function workingDirectory() {
+  try {
+    return fs.realpathSync.native(".");
+  } catch (error) {
+    // Node's permission model may deny reading the directory, while
+    // process.cwd() still reports it. Other failures leave no path to name
+    // the directory by, as when it was removed, and process.cwd() would only
+    // repeat a path it read before.
+    if (error.code === "ERR_ACCESS_DENIED") return process.cwd();
+    // musl and macOS cannot name a working directory whose path is too long.
+    if (error.code === "ENAMETOOLONG" || error.code === "ERANGE") {
+      throw new Error(pathTooLong);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Reject the way the addon settles: with a built-in promise, even when
+ * `globalThis.Promise` is replaced.
+ *
+ * @async
+ * @param {Error} error The rejection reason.
+ * @returns {Promise<never>} A promise rejected with `error`.
+ */
+async function rejected(error) {
+  throw error;
+}
+
+/**
  * Make `recryptAsync()` resolve relative paths, including `options.log`, when
  * it is called. A queued job opens its files later, and the working directory
  * may change in between.
@@ -103,24 +164,47 @@ function resolveRecryptAsyncPaths(muhammara) {
    *
    * @param {string|object} source The source path or read stream.
    * @param {string|object} target The output path or write stream.
-   * @param {object} [options] The source password and encryption settings.
+   * @param {object|null} [options] The source password and encryption
+   * settings; `null` means none.
    * @returns {Promise<void>} Settles once the output is written.
    * @throws {TypeError} If the arguments are wrong.
    */
   muhammara.recryptAsync = function (source, target, options) {
     var args = Array.prototype.slice.call(arguments);
+    // Read `log` as the addon does: only when the options have one, and from
+    // functions too.
+    var log =
+      options &&
+      (typeof options === "object" || typeof options === "function") &&
+      "log" in options
+        ? options.log
+        : undefined;
     if (
       typeof source === "string" &&
       typeof target === "string" &&
       source !== "" &&
       target !== ""
     ) {
-      args[0] = path.resolve(source);
-      args[1] = path.resolve(target);
+      try {
+        args[0] = resolveLikeOpen(source);
+        args[1] = resolveLikeOpen(target);
+      } catch (error) {
+        // The working directory was removed, so recrypt() could not open
+        // these paths either. A job given them unresolved would open them in
+        // whatever directory is current when it runs.
+        return rejected(error);
+      }
     }
-    var log = options && typeof options === "object" ? options.log : undefined;
     if (typeof log === "string" && log !== "") {
-      args[2] = withLog(options, path.resolve(log));
+      var resolved;
+      try {
+        resolved = resolveLikeOpen(log);
+      } catch (error) {
+        // recrypt() cannot create its log in a removed working directory, so
+        // it logs nothing and still writes the PDF. The job does the same.
+        if (error.code !== "ENOENT") return rejected(error);
+      }
+      args[2] = withLog(options, resolved);
     }
     return recryptAsync.apply(this, args);
   };
@@ -135,7 +219,8 @@ function resolveRecryptAsyncPaths(muhammara) {
  * read-only and non-configurable, so the Proxy targets an empty object.
  *
  * @param {object} options The caller's options.
- * @param {string} log The log path to report instead.
+ * @param {string|undefined} log The log path to report instead, or
+ * `undefined` for no log.
  * @returns {object} A Proxy reading through to `options`.
  */
 function withLog(options, log) {
