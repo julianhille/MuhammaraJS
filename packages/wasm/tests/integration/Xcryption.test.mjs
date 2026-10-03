@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import v8 from "node:v8";
 import vm from "node:vm";
 import { createMuhammaraWasm } from "../../index.js";
@@ -567,6 +568,99 @@ describe("Xcryption", function () {
         }),
       );
       assert.ok(turns > 10, `the event loop turned ${turns} times`);
+    });
+
+    /**
+     * Counts the worker_threads workers recryptAsync() hosts start and stop
+     * while it is installed.
+     * @returns {{started: number, exited: number, restore: function(): void}}
+     *   The live counts and a function that removes the counter.
+     */
+    function countWorkers() {
+      var getBuiltinModule = process.getBuiltinModule;
+      var workerThreads = getBuiltinModule("node:worker_threads");
+      var counts = { started: 0, exited: 0 };
+      /** A worker that counts its start and exit. */
+      class CountingWorker extends workerThreads.Worker {
+        constructor(...args) {
+          super(...args);
+          counts.started++;
+          this.on("exit", () => counts.exited++);
+        }
+      }
+      var counting = { ...workerThreads, Worker: CountingWorker };
+      process.getBuiltinModule = (id) =>
+        id === "node:worker_threads"
+          ? counting
+          : getBuiltinModule.call(process, id);
+      counts.restore = () => {
+        process.getBuiltinModule = getBuiltinModule;
+      };
+      return counts;
+    }
+
+    it("shares one worker between instances loaded the same way", async function () {
+      var counts = countWorkers();
+      try {
+        // Limits no other test uses, so the instances get a new shared worker.
+        var limits = { maxOutputBytes: 123456789 };
+        var first = await createMuhammaraWasm({ limits });
+        var second = await createMuhammaraWasm({ limits });
+        var source = first.createBlankPdf(100, 100);
+        await Promise.all([
+          first.recryptAsync(source, { userPassword: "one" }),
+          second.recryptAsync(source, { userPassword: "two" }),
+        ]);
+        await first.recryptAsync(source);
+      } finally {
+        counts.restore();
+      }
+      assert.equal(counts.started, 1);
+    });
+
+    it("keeps its own copy of a wasmBinary the caller transfers away", async function () {
+      var binary = fs.readFileSync(
+        new URL("../../dist/muhammara-wasm.wasm", import.meta.url),
+      ).buffer;
+      binary = binary.slice(0);
+      var muhammara = await createMuhammaraWasm({ wasmBinary: binary });
+      structuredClone(binary, { transfer: [binary] });
+      assert.equal(binary.byteLength, 0, "the caller's buffer is detached");
+      var { result, turns } = await turnsDuring(() =>
+        muhammara.recryptAsync(muhammara.createBlankPdf(100, 100), {
+          userPassword: "view",
+        }),
+      );
+      assert.ok(turns > 10, `the event loop turned ${turns} times`);
+      assert.equal(readBack(muhammara, result, "view").encrypted, true);
+    });
+
+    it("stops the worker of a wasmBinary instance once it is collected", async function () {
+      var binary = new Uint8Array(
+        fs.readFileSync(
+          new URL("../../dist/muhammara-wasm.wasm", import.meta.url),
+        ),
+      );
+      var counts = countWorkers();
+      v8.setFlagsFromString("--expose-gc");
+      var gc = vm.runInNewContext("gc");
+      v8.setFlagsFromString("--no-expose-gc");
+      try {
+        // Keeps the instance out of this function's scope, so it can be
+        // collected.
+        await (async () => {
+          var muhammara = await createMuhammaraWasm({ wasmBinary: binary });
+          await muhammara.recryptAsync(muhammara.createBlankPdf(100, 100));
+        })();
+        assert.equal(counts.started, 1);
+        for (var attempt = 0; attempt < 50 && counts.exited < 1; attempt++) {
+          gc();
+          await new Promise((resolve) => setTimeout(resolve, 20));
+        }
+      } finally {
+        counts.restore();
+      }
+      assert.equal(counts.exited, 1);
     });
 
     it("rejects a recryptWorker option that is not a boolean", async function () {

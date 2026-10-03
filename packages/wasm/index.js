@@ -22,7 +22,7 @@ import { createModifierFactory } from "./lib/modifier.js";
 import { createWriterToModifyFactory } from "./lib/writer-to-modify.js";
 import { createRecipeFactory } from "./lib/recipe.js";
 import { createRecrypt } from "./lib/recrypt.js";
-import { createRecryptWorkerHost } from "./lib/recrypt-worker-client.js";
+import { recryptWorkerHost } from "./lib/recrypt-worker-client.js";
 import {
   DeviceColorSpace,
   ImageFit,
@@ -111,6 +111,15 @@ async function createRuntime(options) {
     !(wasmBinary instanceof Uint8Array || wasmBinary instanceof ArrayBuffer)
   ) {
     throw new TypeError("wasmBinary must be a Uint8Array or ArrayBuffer");
+  }
+  // The worker's copy is taken now: the caller may change or transfer its
+  // buffer while this instance loads, or later.
+  var workerBinary;
+  if (useRecryptWorker && wasmBinary !== undefined) {
+    workerBinary =
+      wasmBinary instanceof ArrayBuffer
+        ? wasmBinary.slice(0)
+        : wasmBinary.slice();
   }
   var module = await createModule(moduleOptions);
   /**
@@ -289,8 +298,8 @@ async function createRuntime(options) {
     useRecryptWorker = false;
   }
   var recryptWorker = useRecryptWorker
-    ? createRecryptWorkerHost({
-        wasmBinary,
+    ? recryptWorkerHost({
+        wasmBinary: workerBinary,
         // A worker resolves a relative URL against its own script, not the
         // page, so hand it an absolute one.
         wasmLocation:
@@ -576,6 +585,8 @@ async function createRuntime(options) {
       );
     },
   };
+  // A worker of its own stops once nothing uses this instance any more.
+  recryptWorker?.own(api);
   return {
     api,
     module,

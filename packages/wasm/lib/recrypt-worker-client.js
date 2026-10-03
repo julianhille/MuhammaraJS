@@ -185,20 +185,20 @@ function reportedError(reported) {
 }
 
 /**
- * Creates the recryptAsync() worker host for one Wasm instance. The worker
- * starts on the first job and is reused; under Node it keeps the process
- * alive only while a job runs.
+ * Creates a recryptAsync() worker host. The worker starts on the first job
+ * and is reused; under Node it keeps the process alive only while a job runs.
  * @param {object} settings - What the worker needs to load the same module.
  * @param {Uint8Array|ArrayBuffer} [settings.wasmBinary] - The caller's binary.
  * @param {string} [settings.wasmLocation] - Where the caller's `locateFile`
  *   loaded the binary from.
  * @param {number} settings.maxInputBytes - Input limit of the instance.
  * @param {number} settings.maxOutputBytes - Output limit of the instance.
- * @returns {{run: function(Uint8Array, object): Promise<Uint8Array|null>}}
- *   `run` resolves with null when no worker can run the job, so the caller
- *   recrypts on its own thread.
+ * @returns {{run: function(Uint8Array, object): Promise<Uint8Array|null>,
+ *   close: function(): void}} `run` resolves with null when no worker can run
+ *   the job, so the caller recrypts on its own thread; `close` stops the
+ *   worker for good.
  */
-export function createRecryptWorkerHost(settings) {
+function createRecryptWorkerHost(settings) {
   var workerThreads = nodeWorkerThreads();
   var available =
     (typeof Worker === "function" || workerThreads !== undefined) &&
@@ -276,15 +276,22 @@ export function createRecryptWorkerHost(settings) {
         if (message.error) job.reject(reportedError(message.error));
         else job.resolve(message.result);
       });
-      handle.post({
-        type: "init",
-        wasmBinary: settings.wasmBinary,
-        wasmLocation: settings.wasmLocation,
-        limits: {
-          maxInputBytes: settings.maxInputBytes,
-          maxOutputBytes: settings.maxOutputBytes,
-        },
-      });
+      try {
+        handle.post({
+          type: "init",
+          wasmBinary: settings.wasmBinary,
+          wasmLocation: settings.wasmLocation,
+          limits: {
+            maxInputBytes: settings.maxInputBytes,
+            maxOutputBytes: settings.maxOutputBytes,
+          },
+        });
+      } catch {
+        loaded = true;
+        handle.failed = true;
+        handle.terminate();
+        resolve(null);
+      }
     });
   }
 
@@ -302,12 +309,18 @@ export function createRecryptWorkerHost(settings) {
       if (!ready) {
         ready = start();
         // A worker that cannot start never will: stop trying.
-        ready.then((handle) => {
-          if (!handle) available = false;
-        });
+        ready.then(
+          (started) => {
+            if (!started) available = false;
+          },
+          () => {
+            available = false;
+          },
+        );
       }
-      var handle = await ready;
-      if (!handle) return null;
+      var handle = await ready.catch(() => null);
+      // A worker that failed since it started would never answer.
+      if (!handle || handle.failed) return null;
       return new Promise((resolve, reject) => {
         var id = nextId++;
         jobs.set(id, { resolve, reject });
@@ -326,6 +339,79 @@ export function createRecryptWorkerHost(settings) {
           reject(error);
         }
       });
+    },
+    /**
+     * Stops the worker and keeps later jobs on the calling thread.
+     * @returns {void}
+     */
+    close() {
+      available = false;
+      var closing = ready;
+      ready = null;
+      closing?.then((handle) => {
+        if (handle && !handle.failed) {
+          handle.failed = true;
+          handle.terminate();
+        }
+      });
+    },
+  };
+}
+
+// Instances loaded the same way share one worker, as native shares its pool
+// threads, so creating an instance per request adds no workers.
+var sharedHosts = new Map();
+
+// An instance with its own wasmBinary has its own worker, stopped once the
+// instance is garbage-collected.
+var ownHosts =
+  typeof FinalizationRegistry === "function"
+    ? new FinalizationRegistry((host) => host.close())
+    : null;
+
+/**
+ * Returns the recryptAsync() worker host for a Wasm instance.
+ * @param {object} settings - What the worker needs to load the same module.
+ * @param {Uint8Array|ArrayBuffer} [settings.wasmBinary] - A copy of the
+ *   caller's binary, taken when the instance started loading.
+ * @param {string} [settings.wasmLocation] - Where the caller's `locateFile`
+ *   loaded the binary from.
+ * @param {number} settings.maxInputBytes - Input limit of the instance.
+ * @param {number} settings.maxOutputBytes - Output limit of the instance.
+ * @returns {object} The host, with `run`, `close`, and `own(instance)`, which
+ *   ties a host of its own to the instance's lifetime.
+ */
+export function recryptWorkerHost(settings) {
+  if (settings.wasmBinary === undefined) {
+    var key = JSON.stringify([
+      settings.wasmLocation ?? null,
+      settings.maxInputBytes,
+      settings.maxOutputBytes,
+    ]);
+    var shared = sharedHosts.get(key);
+    if (!shared) {
+      shared = createRecryptWorkerHost(settings);
+      sharedHosts.set(key, shared);
+    }
+    return {
+      ...shared,
+      /**
+       * Does nothing: a shared worker outlives every instance using it.
+       * @returns {void}
+       */
+      own() {},
+    };
+  }
+  var host = createRecryptWorkerHost(settings);
+  return {
+    ...host,
+    /**
+     * Stops this host's worker once `instance` is garbage-collected.
+     * @param {object} instance - The Wasm API the host belongs to.
+     * @returns {void}
+     */
+    own(instance) {
+      ownHosts?.register(instance, host);
     },
   };
 }
