@@ -1103,7 +1103,8 @@ describe("Xcryption", function () {
     });
 
     it("reuses OpenSSL on pooled threads after successful and failed jobs", async function () {
-      this.timeout(60000);
+      // Under RISC-V emulation the 24 PDF 2.0 jobs alone can pass 60 seconds.
+      this.timeout(process.arch === "riscv64" ? 180000 : 60000);
       var randomBytes = require("crypto").randomBytes;
       // PDF 2.0 initializes OpenSSL's per-thread RNG. Repeated batches exercise
       // cleanup and reinitialization; the sanitizer run checks process exit.
