@@ -32,6 +32,24 @@
 #include <math.h>
 #include <stdlib.h>
 
+namespace
+{
+	// MuhammaraJS: the thread's fixed time zone, see SetThreadTimeZone().
+	struct ThreadTimeZone
+	{
+		bool IsSet = false;
+		PDFDate::EUTCRelation UTC = PDFDate::eUndefined;
+		int HourFromUTC = 0;
+		int MinuteFromUTC = 0;
+	};
+
+	ThreadTimeZone& CurrentThreadTimeZone()
+	{
+		static thread_local ThreadTimeZone timeZone;
+		return timeZone;
+	}
+}
+
 PDFDate::PDFDate(void)
 {
 	SetTime(-1);
@@ -185,7 +203,10 @@ void PDFDate::SetToCurrentTime()
 	long timeZoneSecondsDifference;
 
 	time(&currentTime);
-	SAFE_LOCAL_TIME(structuredLocalTime,currentTime);
+	// MuhammaraJS: use the thread's fixed time zone when it has one.
+	const ThreadTimeZone& threadTimeZone = CurrentThreadTimeZone();
+	if(!GetThreadLocalTime(currentTime,structuredLocalTime))
+		SAFE_LOCAL_TIME(structuredLocalTime,currentTime);
 
 	Year = structuredLocalTime.tm_year + 1900;
 	Month = structuredLocalTime.tm_mon + 1;
@@ -193,6 +214,14 @@ void PDFDate::SetToCurrentTime()
 	Hour = structuredLocalTime.tm_hour;
 	Minute = structuredLocalTime.tm_min;
 	Second = structuredLocalTime.tm_sec;
+
+	if(threadTimeZone.IsSet)
+	{
+		UTC = threadTimeZone.UTC;
+		HourFromUTC = threadTimeZone.HourFromUTC;
+		MinuteFromUTC = threadTimeZone.MinuteFromUTC;
+		return;
+	}
 
 	// if unsuccesful or method unknown don't provide UTC info (currently only knows for WIN32 and OSX
 #if defined (__MWERKS__) || defined (__GNUC__)  || defined(_AIX32) || defined(WIN32)
@@ -252,6 +281,44 @@ void PDFDate::SetToCurrentTime()
 
 #else
 	UTC = eUndefined;
+#endif
+}
+
+void PDFDate::SetThreadTimeZone(const PDFDate& inReference)
+{
+	ThreadTimeZone& timeZone = CurrentThreadTimeZone();
+	timeZone.IsSet = true;
+	timeZone.UTC = inReference.UTC;
+	timeZone.HourFromUTC = inReference.HourFromUTC;
+	timeZone.MinuteFromUTC = inReference.MinuteFromUTC;
+}
+
+void PDFDate::ClearThreadTimeZone()
+{
+	CurrentThreadTimeZone() = ThreadTimeZone();
+}
+
+bool PDFDate::GetThreadLocalTime(time_t inTime, tm& outLocalTime)
+{
+	const ThreadTimeZone& timeZone = CurrentThreadTimeZone();
+	if(!timeZone.IsSet)
+		return false;
+
+	// eLater means local time is ahead of UTC, as ToString() writes '+' for it.
+	long offset = 0;
+	if(timeZone.UTC == eLater || timeZone.UTC == eEarlier)
+	{
+		offset = timeZone.HourFromUTC * 3600L + timeZone.MinuteFromUTC * 60L;
+		if(timeZone.UTC == eEarlier)
+			offset = -offset;
+	}
+	time_t localTime = inTime + offset;
+	// gmtime_r() does not read TZ: musl never does, and glibc only to
+	// initialize, which the reference date on the setting thread already did.
+#if defined(_WIN32)
+	return gmtime_s(&outLocalTime, &localTime) == 0;
+#else
+	return gmtime_r(&localTime, &outLocalTime) != NULL;
 #endif
 }
 

@@ -37,21 +37,26 @@ not require a system OpenSSL installation at runtime.
 `recryptAsync()` runs `PDFWriter::RecryptPDF` on a libuv pool thread while
 writers, readers and other recrypts keep running on the JavaScript thread and
 on worker threads. The upstream PDFWriter keeps some state process-wide, so
-MuhammaraJS changes three places in
+MuhammaraJS changes four places in
 `packages/native-with-source/src/deps/PDFWriter`. Each change carries a
 `MuhammaraJS:` comment in the source and is listed in `MUHAMMARAJS_PATCHES.md`
 with the other local changes.
 
-| File                     | Upstream                                                                 | MuhammaraJS                                                    | Why                                                                                                                                                         |
-| ------------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Trace.cpp`              | `Trace::DefaultTrace()` returns one `static Trace` for the whole process | `static thread_local Trace`, one trace per thread              | `StartPDF` writes the default trace's log settings, and `TRACE_LOG` reads them. A job on a pool thread would race with writers on the JavaScript thread.    |
-| `SafeBufferMacrosDefs.h` | `SAFE_LOCAL_TIME` uses `localtime()` on POSIX                            | `localtime_r()` on POSIX; Windows already used `localtime_s()` | `localtime()` returns a shared static buffer. `PDFDate::SetToCurrentTime()` and log timestamps call it, and recrypt sets the file ID and `ModDate` from it. |
-| `PDFDate.cpp`            | `SetToCurrentTime()` calls `gmtime()`                                    | `gmtime_r()` on POSIX, `gmtime_s()` on Windows                 | Same shared static buffer as `localtime()`.                                                                                                                 |
+| File                     | Upstream                                                                 | MuhammaraJS                                                    | Why                                                                                                                                                                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Trace.cpp`              | `Trace::DefaultTrace()` returns one `static Trace` for the whole process | `static thread_local Trace`, one trace per thread              | `StartPDF` writes the default trace's log settings, and `TRACE_LOG` reads them. A job on a pool thread would race with writers on the JavaScript thread.                                                                                                |
+| `SafeBufferMacrosDefs.h` | `SAFE_LOCAL_TIME` uses `localtime()` on POSIX                            | `localtime_r()` on POSIX; Windows already used `localtime_s()` | `localtime()` returns a shared static buffer. `PDFDate::SetToCurrentTime()` and log timestamps call it, and recrypt sets the file ID and `ModDate` from it.                                                                                             |
+| `PDFDate.cpp`            | `SetToCurrentTime()` calls `gmtime()`                                    | `gmtime_r()` on POSIX, `gmtime_s()` on Windows                 | Same shared static buffer as `localtime()`.                                                                                                                                                                                                             |
+| `PDFDate.cpp`, `Log.cpp` | `SetToCurrentTime()` and log timestamps read the time zone               | A time zone fixed per thread, set by `recryptAsync()`          | `mktime()` always calls `getenv("TZ")`, and musl's `localtime_r()` does too. That races `process.env` writes on the JavaScript thread: `setenv()` can free the environment while the pool thread reads it, a crash on glibc 2.40 and older and on musl. |
 
-These changes keep the behavior on a single thread the same. One effect is
+These changes keep the behavior on a single thread the same. Two effects are
 visible to callers: log settings now belong to the thread that sets them, so a
 writer's `log` option in a worker thread no longer changes where writers on
-other threads log.
+other threads log; and `recryptAsync()` reads the local time zone when it is
+called, then keeps that offset from UTC for the file ID and log timestamps.
+On its pool thread, local time is the current time plus that offset, broken
+down with `gmtime_r()`, which does not read `TZ` once the time zone is
+initialized. A job does not call `getenv()` on the pool thread.
 
 Every writer, reader and recrypt owns its own PDFWriter objects. With these
 patches, the remaining process-wide state below is either read-only or absent
@@ -73,7 +78,7 @@ The addon also initializes OpenSSL with `OPENSSL_INIT_NO_ATEXIT`, so
 `process.exit()` does not free OpenSSL's global state while a job still uses
 it on a pool thread. The process ends right after and releases it anyway.
 
-When updating PDFWriter, reapply these three changes with the others in
+When updating PDFWriter, reapply these four changes with the others in
 `MUHAMMARAJS_PATCHES.md`. Keep the `recryptAsync` tests in
 `packages/native-with-source/tests/Xcryption.js` and the sanitizer CI job
 passing.

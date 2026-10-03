@@ -25,6 +25,7 @@ are in
 | `Trace.cpp`              | `Trace::DefaultTrace()` returns a `static thread_local` trace |
 | `SafeBufferMacrosDefs.h` | `SAFE_LOCAL_TIME` uses `localtime_r()` on POSIX               |
 | `PDFDate.cpp`            | `SetToCurrentTime()` uses `gmtime_r()` / `gmtime_s()`         |
+| `PDFDate.h`, `PDFDate.cpp`, `Log.cpp` | `PDFDate::SetThreadTimeZone()` fixes a thread's time zone; `SetToCurrentTime()` and log timestamps then use it instead of reading `TZ` |
 
 ## Robustness Fixes
 
