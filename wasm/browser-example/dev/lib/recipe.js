@@ -394,14 +394,15 @@ export function createRecipeFactory({
 
     /**
      * Rotates subsequent content around a point in Recipe coordinates.
-     * Positive angles rotate clockwise because Recipe's y axis points downward.
-     * The transformation remains active until the current graphics state is
-     * restored or the page ends.
+     * Positive angles rotate counter-clockwise on the page, as in native
+     * Recipe; the `rotation` option of shapes, text, and images turns
+     * clockwise instead. The transformation remains active until the current
+     * graphics state is restored or the page ends.
      *
      * @name rotateContent
      * @function
      * @memberof Recipe#
-     * @param {number} degrees - Rotation angle in degrees.
+     * @param {number} degrees - Counter-clockwise rotation angle in degrees.
      * @param {number|string} [x=0] - Horizontal rotation origin, or `center`.
      * @param {number|string} [y=0] - Vertical rotation origin, or `center`.
      * @returns {Recipe} The Recipe instance.
@@ -415,6 +416,21 @@ export function createRecipeFactory({
       return this._transform(1, 0, 0, 1, point.nx, point.ny)
         ._transform(cosine, sine, -sine, cosine, 0, 0)
         ._transform(1, 0, 0, 1, -point.nx, -point.ny);
+    }
+
+    /**
+     * Rotates subsequent content for a `rotation` drawing option. Like native
+     * Recipe, positive angles turn clockwise on the page, the opposite of
+     * `rotateContent()`.
+     * @private
+     * @param {number} degrees - Clockwise rotation angle in degrees.
+     * @param {number|string} x - Horizontal rotation origin, or `center`.
+     * @param {number|string} y - Vertical rotation origin, or `center`.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If there is no active page or the PDF operation fails.
+     */
+    _rotate(degrees, x, y) {
+      return this.rotateContent(-degrees, x, y);
     }
 
     /**
@@ -631,7 +647,7 @@ export function createRecipeFactory({
         if (opacity !== undefined) this._setOpacity(opacity);
         var origin = options.rotationOrigin || [x, y];
         if (options.rotation)
-          this.rotateContent(options.rotation, origin[0], origin[1]);
+          this._rotate(options.rotation, origin[0], origin[1]);
         if (options.skewX || options.skewY) {
           this._transform(
             1,
