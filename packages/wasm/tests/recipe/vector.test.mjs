@@ -424,6 +424,33 @@ describe("Recipe vector", function () {
       .endPDF();
   });
 
+  it("turns rotated shapes clockwise on the page", async function () {
+    var Recipe = await getRecipe();
+    // A positive rotation turns clockwise: [cos -sin sin cos]. Native Recipe
+    // asserts the same matrix in vector.js.
+    [
+      (recipe) =>
+        recipe.rectangle(100, 100, 50, 20, { fill: "#000000", rotation: 30 }),
+      (recipe) =>
+        recipe.circle(100, 100, 20, { fill: "#000000", rotation: 30 }),
+      (recipe) =>
+        recipe.polygon(
+          [
+            [100, 100],
+            [150, 100],
+            [150, 120],
+          ],
+          { fill: "#000000", rotation: 30 },
+        ),
+    ].forEach((draw) => {
+      var recipe = new Recipe({ compress: false }).createPage(400, 400);
+      draw(recipe);
+      var content = new TextDecoder("latin1").decode(recipe.endPage().endPDF());
+      assert.match(content, /0\.866025 -0\.5 0\.5 0\.866025 0 0 cm/);
+      assert.doesNotMatch(content, /0\.866025 0\.5 -0\.5 0\.866025/);
+    });
+  });
+
   it("draws nothing for a line with fewer than two points", async function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();

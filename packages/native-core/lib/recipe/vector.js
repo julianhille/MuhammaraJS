@@ -128,7 +128,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
- * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
+ * @param {number} [options.rotation] - Clockwise rotation in degrees, +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @param {number|number[]} [options.borderRadius] - Radius size for rounded corners.
  * When a one to four number array can be used to give specific sizees to each corner.
@@ -361,7 +361,7 @@ function drawRoundedRectangle(
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
- * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
+ * @param {number} [options.rotation] - Clockwise rotation in degrees, +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
@@ -543,7 +543,7 @@ function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
- * @param {number} [options.rotation=0] - Accept: +/- 0 through 360.
+ * @param {number} [options.rotation=0] - Clockwise rotation in degrees, +/- 0 through 360.
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.

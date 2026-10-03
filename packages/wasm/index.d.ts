@@ -179,6 +179,7 @@ export interface RecipePathOptions {
   lineCap?: Recipe.LineCap;
   lineJoin?: Recipe.LineJoin;
   miterLimit?: number;
+  /** Clockwise rotation in degrees, around `rotationOrigin`, as on native. */
   rotation?: number;
   rotationOrigin?: readonly [number, number];
   skewX?: number;
@@ -678,6 +679,13 @@ export interface Recipe {
     top: number,
   ): this;
   rotate(rotation: number): this;
+  /**
+   * Rotates subsequent content around a point in Recipe coordinates.
+   * @param degrees - Counter-clockwise rotation in degrees, as on native. The
+   *   `rotation` option of shapes, text, and images turns clockwise instead.
+   * @param x - Rotation origin x coordinate; defaults to 0.
+   * @param y - Rotation origin y coordinate; defaults to 0.
+   */
   rotateContent(
     degrees: number,
     x?: RecipeCoordinate,

@@ -56,6 +56,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   when an edited page was open, or wrote the PDF without an open created page.
   Call `endPage()` before editing the next page
   [#911](https://github.com/julianhille/MuhammaraJS/issues/911)
+- Document which way Recipe rotates. A positive `rotation` option on text,
+  shapes, and images turns clockwise on the page, and a positive
+  `rotateContent()` angle turns counter-clockwise; the `rotateContent()`
+  reference and type declaration said clockwise. Behavior is unchanged
+  [#916](https://github.com/julianhille/MuhammaraJS/issues/916)
 
 ## [7.0.0] - 2026-10-01
 

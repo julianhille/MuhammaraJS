@@ -452,7 +452,7 @@ export function createTextMethods({ drawText, measure, module }) {
     recipe._save();
     if (options.rotation) {
       var origin = options.rotationOrigin || [0, 0];
-      recipe.rotateContent(options.rotation, origin[0], origin[1]);
+      recipe._rotate(options.rotation, origin[0], origin[1]);
     }
     if (options.skewX || options.skewY) {
       recipe._transform(
@@ -518,9 +518,10 @@ export function createTextMethods({ drawText, measure, module }) {
       points = points.map(([pointX, pointY]) => {
         var offsetX = pointX - pdfOrigin.nx;
         var offsetY = pointY - pdfOrigin.ny;
+        // Clockwise, as the text it links is drawn.
         return [
-          pdfOrigin.nx + cosine * offsetX - sine * offsetY,
-          pdfOrigin.ny + sine * offsetX + cosine * offsetY,
+          pdfOrigin.nx + cosine * offsetX + sine * offsetY,
+          pdfOrigin.ny - sine * offsetX + cosine * offsetY,
         ];
       });
     }
@@ -866,6 +867,9 @@ export function createTextMethods({ drawText, measure, module }) {
         y = column.y;
         box = merge(box, { width: column.width, height: column.height });
       }
+      // Like native, rotation turns the whole text around the given point,
+      // before alignment moves it.
+      var textOrigin = [x, y];
       var fontSize = resolveFontSize(options);
       var width =
         box.width ||
@@ -1027,7 +1031,7 @@ export function createTextMethods({ drawText, measure, module }) {
               : 0);
         var baseline = currentY + lineHeight;
         if (textOptions.rotation && !textOptions.rotationOrigin) {
-          textOptions.rotationOrigin = [drawX, baseline];
+          textOptions.rotationOrigin = textOrigin;
         }
         var linkX = drawX;
         var linkWidth = textWidth;
@@ -1048,6 +1052,13 @@ export function createTextMethods({ drawText, measure, module }) {
             -lineHeight,
           );
           this._save();
+          // Native clips each rotated line inside its form, so the clip box
+          // turns with the text. Turn, clip, and turn back.
+          var clipRotation = textOptions.rotation
+            ? Number(textOptions.rotation)
+            : 0;
+          if (clipRotation)
+            this._rotate(clipRotation, ...textOptions.rotationOrigin);
           if (this._pageContext) {
             this._pageContext
               .re(clipPoint.nx, clipPoint.ny, width - left - right, lineHeight)
@@ -1065,6 +1076,8 @@ export function createTextMethods({ drawText, measure, module }) {
             this._restore();
             throw new Error("Unable to clip text box");
           }
+          if (clipRotation)
+            this._rotate(-clipRotation, ...textOptions.rotationOrigin);
         }
         if (textOptions.hilite && !entry.parts) {
           var hilite =
@@ -1107,7 +1120,7 @@ export function createTextMethods({ drawText, measure, module }) {
           var partGap =
             partGaps > 0 ? (width - left - right - drawnWidth) / partGaps : 0;
           var drawnText = "";
-          var rotationOrigin = options.rotationOrigin || [drawX, baseline];
+          var rotationOrigin = options.rotationOrigin || textOrigin;
           drawParts.forEach((part, partIndex) => {
             var partOptions = fragmentOptions(options, part.styles, fontSize);
             if (partOptions.rotation && !partOptions.rotationOrigin) {

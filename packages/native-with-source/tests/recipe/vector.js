@@ -5,6 +5,29 @@ const muhammara = require("@muhammara/native-with-source");
 const Recipe = muhammara.Recipe;
 const { writeOutput } = require("../helpers/testOutput");
 
+/**
+ * Join every stream of a PDF, inflating the compressed ones, so page and
+ * Form XObject operators can be matched together.
+ * @param {Buffer} pdf - The PDF bytes.
+ * @returns {string} The decoded streams.
+ */
+function contentOperators(pdf) {
+  const streams = [];
+  let start = pdf.indexOf("stream\r\n");
+  while (start !== -1) {
+    start += "stream\r\n".length;
+    const end = pdf.indexOf("endstream", start);
+    const data = pdf.subarray(start, end);
+    try {
+      streams.push(zlib.inflateSync(data).toString("latin1"));
+    } catch {
+      streams.push(data.toString("latin1"));
+    }
+    start = pdf.indexOf("stream\r\n", end + "endstream".length);
+  }
+  return streams.join("\n");
+}
+
 function getFirstContentStream(pdf) {
   const start = pdf.indexOf("stream\r\n") + "stream\r\n".length;
   const end = pdf.indexOf("\r\nendstream", start);
@@ -509,6 +532,33 @@ describe("Vector", () => {
       .rectangle(20, 20, 40, 30, { fill: "#000000", rotation: null })
       .endPage()
       .endPDF();
+  });
+
+  it("turns rotated shapes clockwise on the page", () => {
+    // A positive rotation turns clockwise: [cos -sin sin cos]. Wasm Recipe
+    // asserts the same matrix in vector.test.mjs.
+    const clockwise = /0\.866025 -0\.5 0\.5 0\.866025 \S+ \S+ cm/;
+    [
+      (recipe) =>
+        recipe.rectangle(100, 100, 50, 20, { fill: "#000000", rotation: 30 }),
+      (recipe) =>
+        recipe.circle(100, 100, 20, { fill: "#000000", rotation: 30 }),
+      (recipe) =>
+        recipe.polygon(
+          [
+            [100, 100],
+            [150, 100],
+            [150, 120],
+          ],
+          { fill: "#000000", rotation: 30 },
+        ),
+    ].forEach((draw) => {
+      const recipe = new Recipe(Buffer.from("new"), null, { compress: false });
+      draw(recipe.createPage(400, 400));
+      recipe.endPage().endPDF((bytes) => {
+        assert.match(contentOperators(bytes), clockwise);
+      });
+    });
   });
 
   it("draws nothing for a line with fewer than two points", () => {

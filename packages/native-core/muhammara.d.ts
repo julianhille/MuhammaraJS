@@ -3504,6 +3504,7 @@ declare namespace muhammara {
       overflow?: TextOverflowCallback;
       layout?: number | string;
       opacity?: number;
+      /** Clockwise rotation in degrees, around `rotationOrigin` or the text position. */
       rotation?: number;
       rotationOrigin?: readonly [number, number];
       font?: string;
@@ -3680,6 +3681,7 @@ declare namespace muhammara {
     }
 
     interface TransformOptions extends SkewOptions {
+      /** Clockwise rotation in degrees, around `rotationOrigin`. */
       rotation?: number;
       rotationOrigin?: readonly [number, number];
     }
@@ -4211,7 +4213,7 @@ declare namespace muhammara {
      *   "center center". Horizontal center moves the image left by half its width
      *   and right moves it right by half; vertical center moves it up by half its
      *   height and bottom moves it down by half from its top-left placement.
-     * @param options.rotation - Rotate the image, in degrees.
+     * @param options.rotation - Clockwise rotation of the image, in degrees.
      * @param options.rotationOrigin - [x, y] of the rotation origin; the
      *   bottom-left corner of the drawn image when omitted.
      * @param options.fill - Paint the image box beneath the image.
@@ -4471,7 +4473,8 @@ declare namespace muhammara {
     resumeContext(): Recipe;
     /**
      * Rotate subsequent content around a point in Recipe coordinates.
-     * @param degrees - Clockwise rotation in degrees.
+     * @param degrees - Counter-clockwise rotation in degrees. The `rotation`
+     *   option of shapes, text, and images turns clockwise instead.
      * @param x - Rotation origin x coordinate; defaults to 0.
      * @param y - Rotation origin y coordinate; defaults to 0.
      * @returns The recipe instance.

@@ -23,5 +23,11 @@ active page, including after `endPage()`. Despite its similar name,
 use a top-left anchor; circles and ellipses use center coordinates.
 `rotationOrigin` selects the point used for transformations.
 
+A positive `rotation` option turns a shape, text, or image clockwise on the
+page, around `rotationOrigin`. Text without `rotationOrigin` turns around the
+`x` and `y` given to `text()`, before `align` moves it, so every line of a text
+box turns as one block.
+
 `rotateContent(degrees, x, y)` rotates subsequent drawing around a point in
-Recipe's top-left coordinates.
+Recipe's top-left coordinates. Unlike the `rotation` option, a positive angle
+turns counter-clockwise on the page.

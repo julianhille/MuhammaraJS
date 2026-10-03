@@ -163,7 +163,7 @@ export function createVectorHelpers(runtime) {
       this._prepareSeparationColors(options);
       this._save();
       if (options.rotation)
-        this.rotateContent(
+        this._rotate(
           Number(options.rotation),
           ...(options.rotationOrigin || [x, y]),
         );

@@ -214,7 +214,7 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
- * @param {number} [options.rotation=0] - Accept: +/- 0 through 360.
+ * @param {number} [options.rotation=0] - Clockwise rotation in degrees, +/- 0 through 360.
  * @param {number[]} [options.rotationOrigin=[cx,cy]] - [originX, originY]
  * @param {number} [options.rotationVertice] - the number of the vertice to be used as rotation origin
  * @param {number} [options.skewX] - the angle skew off the x-axis
@@ -293,7 +293,7 @@ function _oddStar(ngon) {
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
- * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
+ * @param {number} [options.rotation] - Clockwise rotation in degrees, +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.
@@ -508,7 +508,7 @@ function flipY(x, ngon) {
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
- * @param {number} [options.rotation] - Accept: +/- 0 through 360. Default: 0
+ * @param {number} [options.rotation] - Clockwise rotation in degrees, +/- 0 through 360. Default: 0
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: x, y
  * @param {number} [options.skewX] - the angle skew off the x-axis
  * @param {number} [options.skewY] - the angle skew off the y-axis.

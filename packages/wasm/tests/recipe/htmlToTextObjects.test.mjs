@@ -446,7 +446,7 @@ describe("HTML to TextObjects", function () {
     var rotationPivots = Array.from(
       new TextDecoder()
         .decode(rotatedBytes)
-        .matchAll(/1 0 0 1 ([\d.-]+) [\d.-]+ cm\s+0 1 -1 0 0 0 cm/g),
+        .matchAll(/1 0 0 1 ([\d.-]+) [\d.-]+ cm\s+0 -1 1 0 0 0 cm/g),
       (match) => Number(match[1]),
     );
     assert.ok(rotationPivots.length >= 2);
@@ -476,7 +476,7 @@ describe("HTML to TextObjects", function () {
     );
     assert.ok(
       Array.from(
-        transformedSource.matchAll(/1 0 0 1 20 [\d.-]+ cm\s+0 1 -1 0 0 0 cm/g),
+        transformedSource.matchAll(/1 0 0 1 20 [\d.-]+ cm\s+0 -1 1 0 0 0 cm/g),
       ).length >= 2,
       "the visual highlight and text must use the same rotation",
     );
@@ -505,7 +505,7 @@ describe("HTML to TextObjects", function () {
     assert.ok(
       Array.from(
         editedTransformSource.matchAll(
-          /1 0 0 1 20 [\d.-]+ cm\s+0 1 -1 0 0 0 cm/g,
+          /1 0 0 1 20 [\d.-]+ cm\s+0 -1 1 0 0 0 cm/g,
         ),
       ).length >= 2,
       "edited styled text must retain the shared rotation",

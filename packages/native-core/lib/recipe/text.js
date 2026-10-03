@@ -265,7 +265,7 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {Object} [options] - The options
  * @param {string|number[]} [options.color] - Text color (HexColor, PercentColor or DecimalColor)
  * @param {number} [options.opacity=1] - opacity
- * @param {number} [options.rotation=0] - Accept: +/- 0 through 360.
+ * @param {number} [options.rotation=0] - Clockwise rotation in degrees, +/- 0 through 360.
  * @param {number[]} [options.rotationOrigin=[x,y]] - [originX, originY]
  * @param {string} [options.font=Helvetica] - The font. 'Arial', 'Helvetica'...
  * @param {number} [options.size=14] - The font size

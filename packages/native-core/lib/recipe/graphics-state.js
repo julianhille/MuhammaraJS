@@ -3,7 +3,8 @@
  * @name rotateContent
  * @function
  * @memberof Recipe#
- * @param {number} degrees - Clockwise rotation in degrees.
+ * @param {number} degrees - Counter-clockwise rotation in degrees. The
+ *   `rotation` option of shapes, text, and images turns clockwise instead.
  * @param {number|"center"} [x=0] - Rotation origin x coordinate.
  * @param {number|"center"} [y=0] - Rotation origin y coordinate.
  * @returns {Recipe} The recipe instance.

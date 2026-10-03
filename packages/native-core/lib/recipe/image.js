@@ -24,7 +24,7 @@ const { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
  *   "center center". Horizontal center moves the image left by half its width
  *   and right moves it right by half; vertical center moves it up by half its
  *   height and bottom moves it down by half from its top-left placement.
- * @param {number} [options.rotation] - Rotate the image, in degrees.
+ * @param {number} [options.rotation] - Clockwise rotation of the image, in degrees.
  * @param {number[]} [options.rotationOrigin] - [x, y] of the rotation origin;
  *   the bottom-left corner of the drawn image when omitted.
  * @param {number} [options.skewX] - Skew angle off the x axis, in degrees.
