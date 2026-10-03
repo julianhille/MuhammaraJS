@@ -185,7 +185,9 @@
           </p>
           <p id="example-requirement" class="requirement" hidden></p>
         </div>
-        <form id="example-form">
+        <!-- A hidden field of another tab must not block submitting, so the
+          examples check their own inputs; the benchmark clamps runs. -->
+        <form id="example-form" novalidate>
           <div id="mode-switch" class="mode-switch">
             <label
               ><input type="radio" name="mode" value="worker" checked /> Module

@@ -21,7 +21,8 @@ import { createWriterFactory, createWriterSupport } from "./lib/writer.js";
 import { createModifierFactory } from "./lib/modifier.js";
 import { createWriterToModifyFactory } from "./lib/writer-to-modify.js";
 import { createRecipeFactory } from "./lib/recipe.js";
-import { copyRecryptOptions, createRecrypt } from "./lib/recrypt.js";
+import { createRecrypt } from "./lib/recrypt.js";
+import { recryptWorkerHost } from "./lib/recrypt-worker-client.js";
 import {
   DeviceColorSpace,
   ImageFit,
@@ -54,10 +55,25 @@ export {
 };
 
 /**
+ * Resolves a binary location against the base URL the calling thread fetched
+ * it from: the document's base URL on a page, the script URL in a worker.
+ * Paths outside a browser stay as they are.
+ * @param {string|undefined} location - Where `locateFile` pointed.
+ * @returns {string|undefined} The absolute location.
+ */
+function absoluteLocation(location) {
+  var base = globalThis.document?.baseURI ?? globalThis.location?.href;
+  return typeof location === "string" && base
+    ? new URL(location, base).href
+    : location;
+}
+
+/**
  * Loads the Muhammara WebAssembly module and its byte-first PDF API.
  * @param {MuhammaraWasmOptions} [options] - Emscripten options and byte `limits`.
  * @returns {Promise<object>} The API, module, helpers, and byte guards.
- * @throws {TypeError} If `limits` is not an object or `wasmBinary` is not bytes.
+ * @throws {TypeError} If `limits` is not an object, `wasmBinary` is not bytes,
+ *   or `recryptWorker` is not a boolean.
  * @throws {RangeError} If a byte limit is not a positive safe integer.
  */
 async function createRuntime(options) {
@@ -74,6 +90,33 @@ async function createRuntime(options) {
   });
   var moduleOptions = { ...options };
   delete moduleOptions.limits;
+  var useRecryptWorker = moduleOptions.recryptWorker ?? true;
+  if (typeof useRecryptWorker !== "boolean") {
+    throw new TypeError("recryptWorker must be a boolean");
+  }
+  delete moduleOptions.recryptWorker;
+  // A worker loads its own instance. It receives wasmBinary, and the binary
+  // location locateFile returns here; any other module option, such as
+  // instantiateWasm, keeps recrypting on this thread. Checked before
+  // createModule(), which adds its own keys to the object.
+  useRecryptWorker &&= Object.keys(moduleOptions).every(
+    (key) => key === "wasmBinary" || key === "locateFile",
+  );
+  var userLocateFile = moduleOptions.locateFile;
+  var wasmLocation;
+  if (useRecryptWorker && typeof userLocateFile === "function") {
+    /**
+     * Calls the caller's locateFile and remembers where the binary loads from.
+     * @param {string} path - File Emscripten wants to load.
+     * @param {string} prefix - Emscripten's script directory.
+     * @returns {string} The caller's location for `path`.
+     */
+    moduleOptions.locateFile = function locateFile(path, prefix) {
+      var location = userLocateFile.call(this, path, prefix);
+      if (path.endsWith(".wasm")) wasmLocation = location;
+      return location;
+    };
+  }
   // Emscripten copies wasmBinary with new Uint8Array(), which converts other
   // views element by element instead of copying their bytes.
   var wasmBinary = moduleOptions.wasmBinary;
@@ -82,6 +125,16 @@ async function createRuntime(options) {
     !(wasmBinary instanceof Uint8Array || wasmBinary instanceof ArrayBuffer)
   ) {
     throw new TypeError("wasmBinary must be a Uint8Array or ArrayBuffer");
+  }
+  // The worker's copy is taken now: the caller may change or transfer its
+  // buffer while this instance loads, or later.
+  var workerBinary;
+  if (useRecryptWorker && wasmBinary !== undefined) {
+    // Uint8Array's own slice() copies; a Node Buffer's slice() is a view.
+    workerBinary =
+      wasmBinary instanceof ArrayBuffer
+        ? wasmBinary.slice(0)
+        : Uint8Array.prototype.slice.call(wasmBinary);
   }
   var module = await createModule(moduleOptions);
   /**
@@ -93,7 +146,16 @@ async function createRuntime(options) {
    * @throws {RangeError} If the bytes exceed `maxInputBytes`.
    */
   function normalizeBytes(value, label) {
-    var bytes = normalizeByteSource(value, label);
+    return assertInputSize(normalizeByteSource(value, label), label);
+  }
+  /**
+   * Rejects input larger than `maxInputBytes`.
+   * @param {Uint8Array} bytes - Normalized bytes.
+   * @param {string} [label] - Name used in error messages.
+   * @returns {Uint8Array} `bytes`, unchanged.
+   * @throws {RangeError} If the bytes exceed `maxInputBytes`.
+   */
+  function assertInputSize(bytes, label) {
     if (bytes.length > maxInputBytes) {
       throw new RangeError(`${label || "Byte input"} exceeds maxInputBytes`);
     }
@@ -116,7 +178,9 @@ async function createRuntime(options) {
     ) {
       throw new RangeError(`${label || "Byte input"} exceeds maxInputBytes`);
     }
-    return normalizeBytes(await normalizeByteSourceAsync(value, label), label);
+    // normalizeByteSourceAsync already returns a copy; copying it again would
+    // hold the input twice.
+    return assertInputSize(await normalizeByteSourceAsync(value, label), label);
   }
   /**
    * Rejects PDF output larger than `maxOutputBytes`.
@@ -240,7 +304,29 @@ async function createRuntime(options) {
     ...dependencies,
     ...support,
   });
-  var recrypt = createRecrypt(dependencies);
+  // A binary located by the caller but not recorded cannot be found again.
+  if (
+    userLocateFile !== undefined &&
+    wasmBinary === undefined &&
+    typeof wasmLocation !== "string"
+  ) {
+    useRecryptWorker = false;
+  }
+  var recryptWorker = useRecryptWorker
+    ? recryptWorkerHost({
+        wasmBinary: workerBinary,
+        // A worker resolves a relative URL against its own script, not the
+        // page's base URL the binary was fetched against, so hand it an
+        // absolute one.
+        wasmLocation: absoluteLocation(wasmLocation),
+        maxInputBytes,
+        maxOutputBytes,
+      })
+    : null;
+  var { recrypt, recryptAsync } = createRecrypt({
+    ...dependencies,
+    recryptWorker,
+  });
 
   var api = {
     ...constants,
@@ -249,23 +335,7 @@ async function createRuntime(options) {
     PDFTextString,
     createWriter,
     recrypt,
-    /**
-     * Rewrites a PDF like `recrypt()`, after reading an asynchronous byte
-     * source. Recrypting itself runs on the calling thread; call it from a
-     * Worker to keep a page responsive.
-     * @async
-     * @param {AsyncByteSource} source - PDF bytes, Blob, or File.
-     * @param {PDFRecryptOptions} [options] - Source `password`, new `userPassword`/`ownerPassword`,
-     *   `userProtectionFlag`, `version`, and `compress`.
-     * @returns {Promise<Uint8Array>} The rewritten PDF.
-     * @throws {TypeError} If `source` is not a supported byte source.
-     * @throws {RangeError} If the bytes exceed `maxInputBytes`.
-     * @throws {Error} If `log` is set, the version is 2.0 or unsupported, recrypting fails, or the output exceeds the limit.
-     */
-    recryptAsync: async function (source, options = {}) {
-      options = copyRecryptOptions(options);
-      return recrypt(await normalizeBytesAsync(source, "PDF input"), options);
-    },
+    recryptAsync,
     ByteReader,
     ByteReaderWithPosition,
     ByteWriter,
@@ -552,6 +622,9 @@ async function createRuntime(options) {
  * `muhammara-wasm.wasm`; when supplied the binary is not fetched or read.
  * @param {Function} [options.locateFile] Maps the requested file name to the
  * URL or path to load it from.
+ * @param {boolean} [options.recryptWorker=true] Whether `recryptAsync()` runs
+ * in a worker. With `false`, or with module options other than `wasmBinary`,
+ * `locateFile`, and `limits`, it recrypts on the calling thread.
  * @returns {Promise<object>} The initialized Muhammara API.
  */
 export async function createMuhammaraWasm(options) {
