@@ -804,43 +804,68 @@ describe("Xcryption", function () {
     });
 
     it("uses the time zone of the call, not of the pool thread", async function () {
-      var path = require("path");
-      var log = path.join(__dirname, "output/RecryptAsyncTimeZone.log");
-      fs.rmSync(log, { force: true });
-      var originalTimeZone = process.env.TZ;
-      var promise;
-      // Asia/Kolkata has no daylight saving time: always 5:30 ahead of UTC.
-      process.env.TZ = "Asia/Kolkata";
-      try {
-        promise = muhammara.recryptAsync(
-          path.join(__dirname, "output/MissingTimeZoneSource.pdf"),
-          path.join(__dirname, "output/RecryptAsyncTimeZone.pdf"),
-          { log: log },
+      /**
+       * Reads how far the first log timestamp is ahead of UTC.
+       * @param {string} log - The log file path.
+       * @returns {number} The offset from UTC in minutes.
+       */
+      function loggedMinutesAhead(log) {
+        var stamp = /^\[ (\d\d)\/(\d\d)\/(\d{4}) (\d\d):(\d\d):(\d\d) \]/.exec(
+          fs.readFileSync(log, "utf8"),
         );
+        assert.ok(stamp, "the log starts with a timestamp");
+        var loggedAsUtc = Date.UTC(
+          +stamp[3],
+          +stamp[2] - 1,
+          +stamp[1],
+          +stamp[4],
+          +stamp[5],
+          +stamp[6],
+        );
+        return (loggedAsUtc - Date.now()) / 60000;
+      }
+      /**
+       * Starts a recrypt of a missing source that logs to `name`.
+       * @param {string} name - The log file name in the test output folder.
+       * @returns {{log: string, promise: Promise<void>}} The log path and job.
+       */
+      function recryptMissingSource(name) {
+        var log = path.join(__dirname, "output", name + ".log");
+        fs.rmSync(log, { force: true });
+        return {
+          log: log,
+          promise: muhammara.recryptAsync(
+            path.join(__dirname, "output/MissingTimeZoneSource.pdf"),
+            path.join(__dirname, "output", name + ".pdf"),
+            { log: log },
+          ),
+        };
+      }
+      var originalTimeZone = process.env.TZ;
+      var control;
+      var job;
+      // POSIX zone strings need no tz database, which Alpine images lack:
+      // always 5:30 ahead of UTC, then 5:00 behind it.
+      process.env.TZ = "IST-5:30";
+      try {
+        control = recryptMissingSource("RecryptAsyncTimeZoneControl");
+        await assert.rejects(control.promise, /Unable to recrypt files/);
+        job = recryptMissingSource("RecryptAsyncTimeZone");
         // The job reads no time zone on its pool thread, where it would race
         // this write.
-        process.env.TZ = "America/New_York";
-        await assert.rejects(promise, /Unable to recrypt files/);
+        process.env.TZ = "EST5";
+        await assert.rejects(job.promise, /Unable to recrypt files/);
       } finally {
         if (originalTimeZone === undefined) delete process.env.TZ;
         else process.env.TZ = originalTimeZone;
       }
-      var stamp = /^\[ (\d\d)\/(\d\d)\/(\d{4}) (\d\d):(\d\d):(\d\d) \]/.exec(
-        fs.readFileSync(log, "utf8"),
-      );
-      assert.ok(stamp, "the log starts with a timestamp");
-      var loggedAsUtc = Date.UTC(
-        +stamp[3],
-        +stamp[2] - 1,
-        +stamp[1],
-        +stamp[4],
-        +stamp[5],
-        +stamp[6],
-      );
-      var minutesAhead = (loggedAsUtc - Date.now()) / 60000;
+      // The Windows C runtime does not see process.env.TZ, so the native side
+      // keeps the system zone there and the switch cannot be observed.
+      if (Math.abs(loggedMinutesAhead(control.log) - 330) >= 2) this.skip();
+      var minutesAhead = loggedMinutesAhead(job.log);
       assert.ok(
         Math.abs(minutesAhead - 330) < 2,
-        "expected Asia/Kolkata time, got " + minutesAhead + " minutes from UTC",
+        "expected UTC+5:30, got " + minutesAhead + " minutes from UTC",
       );
     });
 
