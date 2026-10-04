@@ -151,4 +151,28 @@ describe("Recipe text", function () {
     assert.match(content, /\(alpha brav\\205\) Tj/);
     assert.doesNotMatch(content, /\.\.\.\) Tj/);
   });
+
+  it("rejects a miterLimit below 1 before drawing", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var error = {
+      name: "RangeError",
+      message: "miterLimit must be a number of at least 1",
+    };
+    var recipe = new Recipe().createPage(200, 200);
+    assert.throws(
+      () => recipe.text("alpha", 20, 20, { font: "arial", miterLimit: 0 }),
+      error,
+    );
+    recipe.text("bravo", 20, 20, { flow: true });
+    assert.throws(() => recipe.text("charlie", { miterLimit: 0.5 }), error);
+    assert.throws(() => recipe.text("delta", 20, 60, { miterLimit: 0 }), error);
+    recipe.text("", { flow: false }).text("echo", 20, 100, { miterLimit: 1 });
+    var bytes = recipe.endPage().endPDF();
+    writeOutput("text-miter-limit", bytes);
+    var reader = muhammara.createReader(bytes);
+    var runs = reader.extractPageText(0).map((run) => run.content);
+    reader.end();
+    assert.deepEqual(runs, ["bravo", "echo"]);
+  });
 });
