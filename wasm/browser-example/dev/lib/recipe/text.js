@@ -7,7 +7,7 @@ import {
 } from "../value-sets.js";
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
-import { rotationOption } from "./vector.helper.js";
+import { miterLimitOption, rotationOption } from "./vector.helper.js";
 
 /**
  * Deep-merges plain option objects; arrays and dates are replaced, not merged.
@@ -785,12 +785,15 @@ export function createTextMethods({ drawText, measure, module }) {
    * @param {Recipe} recipe - Recipe instance.
    * @param {RecipeTextOptions} options - The call's options.
    * @returns {number} The resolved font size.
-   * @throws {RangeError} If the font size is not greater than zero.
+   * @throws {RangeError} If the font size is not greater than zero or
+   *   `miterLimit` is not a number of at least 1.
    * @throws {TypeError} If `rotation` or `charSpace` is not a finite number.
    * @throws {Error} If a markup option is invalid or the font cannot be loaded.
    */
   function validateRun(recipe, options) {
     rotationOption(options.rotation);
+    // Text does not use the miter limit, but native rejects it like shapes do.
+    miterLimitOption(options.miterLimit);
     // Drawing checks this only when the flow ends; native rejects the call.
     if (!Number.isFinite(options.charSpace ?? 0)) {
       throw new TypeError("charSpace must be a finite number");
@@ -809,7 +812,8 @@ export function createTextMethods({ drawText, measure, module }) {
    * @param {RecipeTextOptions} options - The run's options, merged with the flow's.
    * @param {number} index - Position of the run in its flow.
    * @returns {object[]} The run's fragments.
-   * @throws {RangeError} If the font size is not greater than zero.
+   * @throws {RangeError} If the font size is not greater than zero or
+   *   `miterLimit` is not a number of at least 1.
    * @throws {TypeError} If `rotation` or `charSpace` is not a finite number.
    * @throws {Error} If a markup option is invalid or the font cannot be loaded.
    */
@@ -1014,7 +1018,7 @@ export function createTextMethods({ drawText, measure, module }) {
      * @param {RecipeTextOptions} [options] - Text and layout options.
      * @returns {Recipe} The Recipe instance.
      * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
-     *   not greater than zero.
+     *   not greater than zero, or `miterLimit` is not a number of at least 1.
      * @throws {TypeError} If `rotation` or `charSpace` is not a finite number.
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
      * @throws {Error} If a flow is started without an active page.
@@ -1084,13 +1088,15 @@ export function createTextMethods({ drawText, measure, module }) {
      * @param {RecipeTextOptions} options - Text and layout options of the box.
      * @param {object[]} [flowSource] - Fragments of a flow's runs, from flowRunSource().
      * @returns {Recipe} The Recipe instance.
-     * @throws {RangeError} If the font size is not greater than zero.
+     * @throws {RangeError} If the font size is not greater than zero or
+     *   `miterLimit` is not a number of at least 1.
      * @throws {TypeError} If `rotation` is not a finite number.
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
      */
     _drawTextBox(value, x, y, options, flowSource) {
       // Validate before anything is drawn, as native does.
       rotationOption(options.rotation);
+      miterLimitOption(options.miterLimit);
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
       var layout = options.layout && this._layouts?.[options.layout];
