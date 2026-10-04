@@ -132,10 +132,22 @@ function resolveFontSize(options = {}, fallback) {
   return size;
 }
 
+/**
+ * Remove the breakable whitespace that ends a text; a non-breaking space
+ * (U+00A0) stays, as in Wasm.
+ * @private
+ * @param {string} value - The text.
+ * @returns {string} The trimmed text.
+ */
+function trimBreakableEnd(value) {
+  return value.replace(/(?:(?!\u00a0)\s)+$/, "");
+}
+
 exports.ANNOTATION_PREFIX = ANNOTATION_PREFIX;
 exports.PAGE_CONTEXT_STATE = PAGE_CONTEXT_STATE;
 exports.cloneOptions = cloneOptions;
 exports.resolveFontSize = resolveFontSize;
+exports.trimBreakableEnd = trimBreakableEnd;
 exports.appendPDFPageFromPDFWithAnnotations =
   appendPDFPageFromPDFWithAnnotations;
 exports.appendPDFPagesFromPDFWithAnnotations =
