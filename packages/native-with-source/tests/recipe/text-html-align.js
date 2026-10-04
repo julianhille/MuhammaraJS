@@ -99,6 +99,21 @@ describe("Recipe HTML text alignment", function () {
     });
   });
 
+  // Regression for #930: the spaces that end a text() call were measured as
+  // part of its last line, so centered and right-aligned text moved left.
+  ["center", "right"].forEach(function (textAlign) {
+    it(`ignores trailing spaces when ${textAlign} aligned`, function () {
+      var expected = layout("alpha bravo", false, textAlign);
+      assert.deepEqual(layout("alpha bravo ", false, textAlign), expected);
+      assert.deepEqual(layout("alpha bravo   ", false, textAlign), expected);
+      assert.deepEqual(layout("alpha bravo   ", true, textAlign), expected);
+      assert.deepEqual(
+        layout("alpha bravo\ncharlie   ", false, textAlign),
+        layout("alpha bravo\ncharlie", false, textAlign),
+      );
+    });
+  });
+
   /** xMax of a run measured with the fixture font, as the layout measures it. */
   function runExtent(text) {
     var recipe = new Recipe(Buffer.from("new")).createPage(300, 300);

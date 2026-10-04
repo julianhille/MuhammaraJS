@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `createPage()` or `editPage()`, as in Wasm, instead of at the previous
   page's text box origin, and `movedown()` no longer starts from the previous
   page's text position [#914](https://github.com/julianhille/MuhammaraJS/issues/914)
+- Recipe `text()` ignores the spaces that end its text when centering or
+  right-aligning it in a text box, as in Wasm and in text flows, instead of
+  moving the last line left [#930](https://github.com/julianhille/MuhammaraJS/issues/930)
 - Reject a PDF whose object stream declares more objects (`/N`) than its xref
   table holds. Parsing it with `createReader()`, `recrypt()`,
   `recryptAsync()`, `createWriterToModify()`, or Recipe on an existing PDF

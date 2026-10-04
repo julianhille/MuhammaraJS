@@ -145,6 +145,32 @@ describe("Recipe HTML text alignment", function () {
     });
   });
 
+  // Mirrors the native assertions for #930, where the spaces that end a
+  // text() call moved centered and right-aligned text left. Wasm already
+  // ignored them; these hold the two ends together.
+  ["center", "right"].forEach(function (textAlign) {
+    it(`ignores trailing spaces when ${textAlign} aligned`, function () {
+      var name = `text-html-align-trailing-${textAlign}`;
+      var expected = layout("alpha bravo", false, textAlign, `${name}-none`);
+      assert.deepEqual(
+        layout("alpha bravo ", false, textAlign, `${name}-one`),
+        expected,
+      );
+      assert.deepEqual(
+        layout("alpha bravo   ", false, textAlign, `${name}-three`),
+        expected,
+      );
+      assert.deepEqual(
+        layout("alpha bravo   ", true, textAlign, `${name}-html`),
+        expected,
+      );
+      assert.deepEqual(
+        layout("alpha bravo\ncharlie   ", false, textAlign, `${name}-lines`),
+        layout("alpha bravo\ncharlie", false, textAlign, `${name}-lines-none`),
+      );
+    });
+  });
+
   it("ends a multi-segment HTML line at the box edge when right aligned", function () {
     var starts = layout(
       "<b>a</b> b",

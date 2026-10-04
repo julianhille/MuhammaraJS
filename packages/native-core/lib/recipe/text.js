@@ -1870,6 +1870,8 @@ function makeTextObjects(
   ) {
     toWriteTextObjects.pop();
   }
+  // The runs before this index were laid out by earlier calls.
+  const firstRun = toWriteTextObjects.length;
 
   // When text flow is involved, there may be lines that are
   // incomplete. So need to determine previous line word count
@@ -2085,6 +2087,13 @@ function makeTextObjects(
         }),
       ),
     );
+    // The call's last line ends here, so its trailing spaces do not move
+    // aligned text, as when a flow ends. Only this text's runs are trimmed:
+    // an HTML call's earlier segments are not among the runs, so a segment
+    // of only spaces must not reach past them into a flow's runs.
+    if (!self._flow && atEnd) {
+      trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1, firstRun);
+    }
   } else {
     toWriteTextObjects[toWriteTextObjects.length - 1].lastLine = isLastLine;
   }
@@ -2105,11 +2114,12 @@ function makeTextObjects(
  * @private
  * @param {Object[]} textObjs - The laid-out runs; the line's are updated in place.
  * @param {number} end - The index of the line's last run.
+ * @param {number} [start=0] - The index of the first run that may be trimmed.
  * @returns {void}
  */
-function trimLineEnd(textObjs, end) {
+function trimLineEnd(textObjs, end, start = 0) {
   const { lineID } = textObjs[end];
-  for (let i = end; i >= 0; i--) {
+  for (let i = end; i >= start; i--) {
     const run = textObjs[i];
     if (run.lineID !== lineID || (i < end && run.lineComplete)) break;
     const lastWord = run.wordsInLine[run.wordsInLine.length - 1];
