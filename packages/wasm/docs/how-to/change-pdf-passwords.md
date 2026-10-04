@@ -37,8 +37,8 @@ var protectedPdf = await muhammara.recryptAsync(file, {
 
 Like native, where `recryptAsync()` runs on a thread pool, the Wasm
 `recryptAsync()` recrypts off the calling thread, so a page keeps handling input
-and drawing while it runs. It starts a worker on its first call and reuses it: a
-module `Worker` in browsers, Deno, and Bun, and `worker_threads` in Node.
+and drawing while it runs. It starts a worker on its first call and reuses it:
+`worker_threads` in Node, Deno, and Bun, and a module `Worker` in browsers.
 Instances loaded the same way share one worker; an instance loaded with its own
 `wasmBinary` has its own, which stops after five seconds without jobs and starts
 again on the next call.

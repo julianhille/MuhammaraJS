@@ -19,8 +19,8 @@ a source `password` throws a `TypeError`. Decrypt the source with
 `recrypt(bytes, { password })` first.
 Wasm `recryptAsync()` returns a promise like native's. Native recrypts on a
 libuv pool thread; Wasm has no thread pool, so it recrypts in a worker it starts
-itself: a module `Worker` in browsers, Deno, and Bun, and `worker_threads` in
-Node. Inside a worker, where no worker can start, with module options a worker
+itself: `worker_threads` in Node, Deno, and Bun, and a module `Worker` in
+browsers. Inside a worker, where no worker can start, with module options a worker
 cannot receive, or with the Wasm-only module option `recryptWorker: false`, it
 recrypts on the calling thread, as fast and as blocking as `recrypt()`. It also
 rejects for an unsupported source or option, where native `recryptAsync()`

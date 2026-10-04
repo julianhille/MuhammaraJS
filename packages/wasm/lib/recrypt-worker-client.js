@@ -2,12 +2,30 @@
 // a PDF is recrypted, as native runs them on a libuv pool thread.
 
 /**
+ * Tells whether Emscripten runs as Node here, with its own check: Node, and
+ * Deno, Bun, and jsdom, which provide Node's `process`, but not an Electron
+ * renderer. Emscripten then reads the binary as a path or `file:` URL.
+ * @param {object} [environment=globalThis] - The global object to read.
+ * @returns {boolean} Whether this is a Node-like runtime.
+ */
+function runsAsNode(environment = globalThis) {
+  var node = environment.process;
+  return (
+    typeof node === "object" &&
+    typeof node?.versions?.node === "string" &&
+    node.type !== "renderer"
+  );
+}
+
+/**
  * Reads the Node `worker_threads` module without an import a browser bundler
  * would try to resolve.
- * @returns {object|undefined} The module, or undefined outside Node.
+ * @returns {object|undefined} The module, or undefined outside a Node-like
+ *   runtime.
  */
 function nodeWorkerThreads() {
-  var getBuiltinModule = globalThis.process?.getBuiltinModule;
+  if (!runsAsNode()) return undefined;
+  var getBuiltinModule = globalThis.process.getBuiltinModule;
   if (typeof getBuiltinModule !== "function") return undefined;
   try {
     return getBuiltinModule("node:worker_threads");
@@ -147,24 +165,25 @@ function nodeHandle(thread) {
 }
 
 /**
- * Starts the worker for this environment: a module Worker in browsers, Deno,
- * and Bun, `worker_threads` in Node.
+ * Starts the worker for this environment: `worker_threads` in Node, Deno,
+ * and Bun, whose workers can be unref'd so an idle one never keeps the
+ * process alive, and a module Worker in browsers.
  * @param {object|undefined} workerThreads - Node `worker_threads`, if any.
  * @returns {object|null} The worker handle, or null without worker support.
  * @throws {Error} If the environment refuses to create the worker.
  */
 function startWorker(workerThreads) {
+  if (workerThreads) {
+    return nodeHandle(
+      new workerThreads.Worker(new URL("./recrypt-worker.js", import.meta.url)),
+    );
+  }
   if (typeof Worker === "function") {
     // Bundlers find the worker script only in this exact form.
     return browserHandle(
       new Worker(new URL("./recrypt-worker.js", import.meta.url), {
         type: "module",
       }),
-    );
-  }
-  if (workerThreads) {
-    return nodeHandle(
-      new workerThreads.Worker(new URL("./recrypt-worker.js", import.meta.url)),
     );
   }
   return null;
@@ -415,14 +434,7 @@ function createRecryptWorkerHost(settings) {
  */
 export function workerWasmLocation(location, environment = globalThis) {
   if (typeof location !== "string") return location;
-  var node = environment.process;
-  if (
-    typeof node === "object" &&
-    typeof node?.versions?.node === "string" &&
-    node.type !== "renderer"
-  ) {
-    return location;
-  }
+  if (runsAsNode(environment)) return location;
   try {
     var base = environment.document?.baseURI ?? environment.location?.href;
     return base ? new URL(location, base).href : location;

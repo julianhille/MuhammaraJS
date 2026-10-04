@@ -920,6 +920,38 @@ describe("Xcryption", function () {
       }
     });
 
+    it("uses worker_threads in a Node-like runtime that also has a Worker global", async function () {
+      // Deno has both; only a worker_threads worker can be unref'd, so a
+      // module Worker would keep the process alive once idle.
+      var constructed = 0;
+      var muhammara = await withGlobal(
+        "Worker",
+        {
+          value: class {
+            constructor() {
+              constructed++;
+              throw new Error("a module Worker was started");
+            }
+          },
+          writable: true,
+        },
+        async () => {
+          var instance = await createMuhammaraWasm({
+            // Limits of its own, so it starts a worker of its own.
+            limits: { maxOutputBytes: 987654330 },
+          });
+          await instance.recryptAsync(instance.createBlankPdf(10, 10));
+          return instance;
+        },
+      );
+      var { result, turns } = await turnsDuring(() =>
+        muhammara.recryptAsync(largePdf(muhammara), { userPassword: "view" }),
+      );
+      assert.equal(constructed, 0);
+      assert.ok(turns > 10, `the event loop turned ${turns} times`);
+      assert.equal(readBack(muhammara, result, "view").encrypted, true);
+    });
+
     it("rejects a recryptWorker option that is not a boolean", async function () {
       await assert.rejects(
         createMuhammaraWasm({ recryptWorker: "no" }),
