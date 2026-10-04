@@ -58,15 +58,19 @@ describe("Recipe HTML text alignment", function () {
    * @param {boolean} html Whether the text is HTML.
    * @param {string} textAlign Text box alignment.
    * @param {string} outputName Test output file name without extension.
+   * @param {Object} [box] Text box options that replace the defaults.
    * @returns {number[]} Horizontal start of each drawn text run.
    */
-  function layout(text, html, textAlign, outputName) {
+  function layout(text, html, textAlign, outputName, box) {
     var recipe = new Recipe().createPage(300, 300);
     recipe.text(text, BOX_X, 20, {
       font: "arial",
       size: 12,
       html: html,
-      textBox: { width: BOX_WIDTH, padding: 0, textAlign: textAlign },
+      textBox: Object.assign(
+        { width: BOX_WIDTH, padding: 0, textAlign: textAlign },
+        box,
+      ),
     });
     var bytes = recipe.endPage().endPDF();
     writeOutput(outputName, bytes);
@@ -145,9 +149,10 @@ describe("Recipe HTML text alignment", function () {
     });
   });
 
-  // Mirrors the native assertions for #930, where the spaces that end a
-  // text() call moved centered and right-aligned text left. Wasm already
-  // ignored them; these hold the two ends together.
+  // Mirrors the native assertions for #930, where the spaces that end a line
+  // moved centered and right-aligned text left. Wasm already ended every line
+  // with its last word and kept non-breaking spaces and clipped text; these
+  // hold the two ends together.
   ["center", "right"].forEach(function (textAlign) {
     it(`ignores trailing spaces when ${textAlign} aligned`, function () {
       var name = `text-html-align-trailing-${textAlign}`;
@@ -167,6 +172,118 @@ describe("Recipe HTML text alignment", function () {
       assert.deepEqual(
         layout("alpha bravo\ncharlie   ", false, textAlign, `${name}-lines`),
         layout("alpha bravo\ncharlie", false, textAlign, `${name}-lines-none`),
+      );
+    });
+
+    it(`ignores the trailing spaces of every HTML block when ${textAlign} aligned`, function () {
+      var name = `text-html-align-trailing-${textAlign}`;
+      assert.deepEqual(
+        layout("<p>alpha   </p><p>bravo</p>", true, textAlign, `${name}-p`),
+        layout("<p>alpha</p><p>bravo</p>", true, textAlign, `${name}-p-none`),
+      );
+      assert.deepEqual(
+        layout(
+          "<ul><li>alpha  </li><li>bravo  </li></ul>",
+          true,
+          textAlign,
+          `${name}-li`,
+        ),
+        layout(
+          "<ul><li>alpha</li><li>bravo</li></ul>",
+          true,
+          textAlign,
+          `${name}-li-none`,
+        ),
+      );
+    });
+
+    it(`ignores the trailing spaces of every HTML block in a flow when ${textAlign} aligned`, function () {
+      /**
+       * Lays HTML out as a flow that the next call ends.
+       * @param {string} html HTML to lay out.
+       * @param {string} outputName Test output file name without extension.
+       * @returns {number[]} Horizontal start of each drawn text run.
+       */
+      var flowLayout = function (html, outputName) {
+        var recipe = new Recipe().createPage(300, 300);
+        recipe
+          .text(html, BOX_X, 20, {
+            font: "arial",
+            size: 12,
+            html: true,
+            flow: true,
+            textBox: { width: BOX_WIDTH, padding: 0, textAlign: textAlign },
+          })
+          .text("", { flow: false });
+        var bytes = recipe.endPage().endPDF();
+        writeOutput(outputName, bytes);
+        return textStarts(muhammara, bytes);
+      };
+      var name = `text-html-align-trailing-${textAlign}-flow`;
+      assert.deepEqual(
+        flowLayout("<p>alpha   </p><p>bravo</p>", `${name}-p`),
+        flowLayout("<p>alpha</p><p>bravo</p>", `${name}-p-none`),
+      );
+    });
+
+    it(`keeps trailing non-breaking spaces when ${textAlign} aligned`, function () {
+      var name = `text-html-align-nbsp-${textAlign}`;
+      var nbsp = layout("alpha\u00a0\u00a0", false, textAlign, name);
+      assert.notDeepEqual(
+        nbsp,
+        layout("alpha", false, textAlign, `${name}-none`),
+      );
+      assert.deepEqual(
+        layout("alpha\u00a0\u00a0 ", false, textAlign, `${name}-space`),
+        nbsp,
+      );
+      assert.equal(
+        layout(
+          "alpha\u00a0\u00a0\nbravo",
+          false,
+          textAlign,
+          `${name}-lines`,
+        )[0],
+        nbsp[0],
+      );
+      assert.equal(
+        layout(
+          "<p>alpha&nbsp;&nbsp;</p><p>bravo</p>",
+          true,
+          textAlign,
+          `${name}-html`,
+        )[0],
+        nbsp[0],
+      );
+      var narrow = { width: 60 };
+      assert.equal(
+        layout(
+          "alpha\u00a0\u00a0 bravo",
+          false,
+          textAlign,
+          `${name}-wrapped`,
+          narrow,
+        )[0],
+        layout(
+          "alpha\u00a0\u00a0",
+          false,
+          textAlign,
+          `${name}-narrow`,
+          narrow,
+        )[0],
+      );
+    });
+
+    it(`keeps the trailing spaces of clipped text when ${textAlign} aligned`, function () {
+      var name = `text-html-align-clip-${textAlign}`;
+      var clip = { wrap: "clip" };
+      assert.ok(
+        layout("alpha   ", false, textAlign, name, clip)[0] <
+          layout("alpha", false, textAlign, `${name}-none`, clip)[0],
+      );
+      assert.equal(
+        layout("alpha   \nbravo", false, textAlign, `${name}-lines`, clip)[0],
+        layout("alpha   ", false, textAlign, `${name}-plain`, clip)[0],
       );
     });
   });

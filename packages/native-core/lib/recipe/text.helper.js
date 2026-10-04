@@ -1,4 +1,4 @@
-var { cloneOptions, resolveFontSize } = require("./utils");
+var { cloneOptions, resolveFontSize, trimBreakableEnd } = require("./utils");
 var { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
 
 /**
@@ -70,8 +70,8 @@ const Word = class Word {
   }
 
   /**
-   * Mark the word as the last of its line, trimming trailing space and
-   * measuring it again.
+   * Mark the word as the last of its line, trimming the spaces around it
+   * but a trailing non-breaking space, and measuring it again when trimmed.
    * @param {boolean} [value=true] - Whether the word is last.
    * @returns {void}
    */
@@ -79,7 +79,9 @@ const Word = class Word {
     // indicate last word in line (for justification)
     this._last = value;
     if (this._last) {
-      this._value = this._value.trim(); // wack any trailing space
+      const trimmed = trimBreakableEnd(this._value.trimStart());
+      if (trimmed === this._text) return;
+      this._value = trimmed;
       this._text = this._value;
       this._dimensions = this._pathOptions.font.calculateTextDimensions(
         this._text,

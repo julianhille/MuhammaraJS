@@ -3,7 +3,7 @@ const { Word, Line, Column } = require("./text.helper");
 const { htmlToTextObjects, HtmlTag } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
 const { linkPdf } = require("./annotation");
-const { resolveFontSize } = require("./utils");
+const { resolveFontSize, trimBreakableEnd } = require("./utils");
 const { miterLimitOption, rotationOption } = require("../recipe-options");
 const {
   TextWrap,
@@ -22,6 +22,11 @@ const BLOCK_END = /<\/(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\s*>\s*$/i;
  * Matches HTML that opens with a block element, which starts a new line.
  */
 const BLOCK_START = /^\s*<(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\b/i;
+
+/**
+ * Matches the line break that ends a word at a required break.
+ */
+const LINE_BREAK_END = /(?:\r\n|[\n\r\v\f\u0085\u2028\u2029])$/;
 
 /**
  * Find the first node with text, unless a line break or block element comes
@@ -1375,6 +1380,17 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
   });
   if (pendingBreaks.length) appendPendingBreaks();
   toWriteTextObjects = normalizedTextObjects;
+  // Every line the call ends, ends with its last word, so its trailing
+  // spaces do not widen it, as in Wasm. A flow's open line may continue
+  // in a later call, and clipped text keeps its spaces.
+  if (textBox.wrap !== TextWrap.CLIP) {
+    toWriteTextObjects.forEach((textObj, index) => {
+      const next = toWriteTextObjects[index + 1];
+      if (next && next.lineID === textObj.lineID) return;
+      if (this._flow && !next && !textObj.lineComplete) return;
+      trimLineEnd(toWriteTextObjects, index);
+    });
+  }
 
   return {
     toWriteTextObjects: toWriteTextObjects,
@@ -1618,14 +1634,18 @@ function justify(left, x, wto, textBox, position) {
  * @param {Object} brk - The line break opportunity: position and required.
  * @param {number} previousPosition - The position of the previous break.
  * @param {Object} pathOptions - The resolved text options.
+ * @param {boolean} [keepEnd=false] - Whether a required break drops only
+ *   the line break, keeping the spaces before it, as clipped text does.
  * @returns {Word} The word; trimmed at a required break.
  */
-function nextWord(text, brk, previousPosition, pathOptions) {
+function nextWord(text, brk, previousPosition, pathOptions, keepEnd = false) {
   let nextWord = text.slice(previousPosition, brk.position);
 
   if (brk.required) {
     // effectively saw a '\n' in text.
-    nextWord = nextWord.trim();
+    nextWord = keepEnd
+      ? nextWord.trimStart().replace(LINE_BREAK_END, "")
+      : trimBreakableEnd(nextWord.trimStart());
   }
 
   return new Word(nextWord, pathOptions);
@@ -1689,8 +1709,12 @@ function elideNonFittingText(textBox, line, word, pathOptions) {
  */
 function makeTextObject(lines, line, lineID, textBox, options = {}) {
   const lineHeight = line.height;
+  // Clipped text is measured with the spaces that end it, as in Wasm.
   const spaceSz =
-    options.lastLine && line.lastWord && line.lastWord.value.endsWith(" ")
+    textBox.wrap !== TextWrap.CLIP &&
+    options.lastLine &&
+    line.lastWord &&
+    line.lastWord.value.endsWith(" ")
       ? line.spaceWidth / 2
       : 0;
   let lid;
@@ -1847,6 +1871,8 @@ function makeTextObjects(
   const lineMaxWidth = textBox.width
     ? textBox.width - textBox.paddingLeft - textBox.paddingRight
     : null;
+  // Clipped text keeps the spaces that end its lines, as in Wasm.
+  const keepLineEnd = textBox.wrap === TextWrap.CLIP;
   let remainderWidth = lineMaxWidth;
   let newLine;
   let last = 0;
@@ -1870,8 +1896,6 @@ function makeTextObjects(
   ) {
     toWriteTextObjects.pop();
   }
-  // The runs before this index were laid out by earlier calls.
-  const firstRun = toWriteTextObjects.length;
 
   // When text flow is involved, there may be lines that are
   // incomplete. So need to determine previous line word count
@@ -1929,7 +1953,7 @@ function makeTextObjects(
   newLine.indent(indent);
 
   while (bk) {
-    let word = nextWord(text, bk, last, pathOptions);
+    let word = nextWord(text, bk, last, pathOptions, keepLineEnd);
 
     if (newLine.canFit(word)) {
       newLine.addWord(word);
@@ -1952,7 +1976,9 @@ function makeTextObjects(
       } else {
         // remove any trailing space on previous word so right justification works appropriately
         if (previousWord && textBox.wrap === TextWrap.AUTO) {
-          newLine.replaceLastWord(previousWord.value.trim());
+          newLine.replaceLastWord(
+            trimBreakableEnd(previousWord.value.trimStart()),
+          );
         }
 
         [wordCount, totalTextWidth] = bindTextToLine(
@@ -2051,7 +2077,7 @@ function makeTextObjects(
             Object.assign({ lineComplete: true, lastLine: true }, lineOpts),
           ),
         );
-        markLineComplete(toWriteTextObjects);
+        markLineComplete(toWriteTextObjects, null, keepLineEnd);
         newLine = new Line(lineMaxWidth, lineHeight, size, pathOptions);
       }
     }
@@ -2087,13 +2113,6 @@ function makeTextObjects(
         }),
       ),
     );
-    // The call's last line ends here, so its trailing spaces do not move
-    // aligned text, as when a flow ends. Only this text's runs are trimmed:
-    // an HTML call's earlier segments are not among the runs, so a segment
-    // of only spaces must not reach past them into a flow's runs.
-    if (!self._flow && atEnd) {
-      trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1, firstRun);
-    }
   } else {
     toWriteTextObjects[toWriteTextObjects.length - 1].lastLine = isLastLine;
   }
@@ -2110,23 +2129,25 @@ function makeTextObjects(
 /**
  * Drop the spaces that end a line, back to its last word: the line's runs of
  * only spaces become empty, and the run with its last word loses the spaces
- * after it, as the last run of a line does.
+ * after it, as the last run of a line does. Non-breaking spaces stay.
  * @private
  * @param {Object[]} textObjs - The laid-out runs; the line's are updated in place.
  * @param {number} end - The index of the line's last run.
- * @param {number} [start=0] - The index of the first run that may be trimmed.
  * @returns {void}
  */
-function trimLineEnd(textObjs, end, start = 0) {
+function trimLineEnd(textObjs, end) {
   const { lineID } = textObjs[end];
-  for (let i = end; i >= start; i--) {
+  for (let i = end; i >= 0; i--) {
     const run = textObjs[i];
     if (run.lineID !== lineID || (i < end && run.lineComplete)) break;
     const lastWord = run.wordsInLine[run.wordsInLine.length - 1];
-    if (lastWord && /\s$/.test(run.text)) {
+    const trimmed = trimBreakableEnd(run.text);
+    if (lastWord && trimmed !== run.text) {
       lastWord.lastWord();
-      run.text = run.text.trimEnd();
-      run.lineWidth = new Word(run.text, run.writeOptions).dimensions.xMax;
+      run.text = trimmed;
+      run.lineWidth = trimmed
+        ? new Word(trimmed, run.writeOptions).dimensions.xMax
+        : 0;
     }
     if (run.text) break;
   }
@@ -2138,9 +2159,11 @@ function trimLineEnd(textObjs, end, start = 0) {
  * @private
  * @param {Object[]} toWriteTextObjects - The runs; the last one is updated.
  * @param {number|null} [lines=null] - The line offset for the next line.
+ * @param {boolean} [keepEnd=false] - Whether the run keeps the spaces that
+ *   end it, as clipped text does.
  * @returns {void}
  */
-function markLineComplete(toWriteTextObjects, lines = null) {
+function markLineComplete(toWriteTextObjects, lines = null, keepEnd = false) {
   // Get last element in text objects and mark it.
   const textObj = toWriteTextObjects[toWriteTextObjects.length - 1];
   const lastWordIdx = textObj.wordsInLine.length - 1;
@@ -2148,7 +2171,8 @@ function markLineComplete(toWriteTextObjects, lines = null) {
 
   // An empty flowed run has no words.
   textObj.wordsInLine[lastWordIdx]?.lastWord();
-  textObj.text = textObj.text.trim();
+  textObj.text = textObj.text.trimStart();
+  if (!keepEnd) textObj.text = trimBreakableEnd(textObj.text);
   textObj.lineComplete = true;
 
   if (lines) {
