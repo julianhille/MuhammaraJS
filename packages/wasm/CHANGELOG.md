@@ -122,8 +122,8 @@ These bring Wasm Recipe in line with native Recipe; see
 ### Changed
 
 - Run `recryptAsync()` in a worker, like native runs it on a thread pool, so a
-  page keeps responding while a PDF is recrypted: a module `Worker` in
-  browsers, Deno, and Bun, `worker_threads` in Node. Results and errors do not
+  page keeps responding while a PDF is recrypted: `worker_threads` in
+  Node, Deno, and Bun, a module `Worker` in browsers. Results and errors do not
   change. Inside a worker, where no worker can start, or with module options a
   worker cannot receive, it recrypts on the calling thread as before
   [#943](https://github.com/julianhille/MuhammaraJS/issues/943)

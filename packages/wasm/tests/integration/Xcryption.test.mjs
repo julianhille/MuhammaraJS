@@ -3,7 +3,10 @@ import fs from "node:fs";
 import v8 from "node:v8";
 import vm from "node:vm";
 import { createMuhammaraWasm } from "../../index.js";
-import { recryptWorkerHost } from "../../lib/recrypt-worker-client.js";
+import {
+  recryptWorkerHost,
+  workerWasmLocation,
+} from "../../lib/recrypt-worker-client.js";
 import { writeOutput } from "../testOutput.mjs";
 
 function readStreamIVs(pdf) {
@@ -795,6 +798,156 @@ describe("Xcryption", function () {
           userPassword: "view",
         }),
       );
+      assert.ok(turns > 10, `the event loop turned ${turns} times`);
+      assert.equal(readBack(muhammara, result, "view").encrypted, true);
+    });
+
+    /**
+     * Defines a global for one call, then restores what was there.
+     * @param {string} name - The global's name.
+     * @param {PropertyDescriptor} descriptor - Its definition.
+     * @param {function(): Promise<*>} run - The call.
+     * @returns {Promise<*>} What `run` resolved with.
+     */
+    async function withGlobal(name, descriptor, run) {
+      var previous = Object.getOwnPropertyDescriptor(globalThis, name);
+      Object.defineProperty(globalThis, name, {
+        configurable: true,
+        ...descriptor,
+      });
+      try {
+        return await run();
+      } finally {
+        if (previous) Object.defineProperty(globalThis, name, previous);
+        else delete globalThis[name];
+      }
+    }
+
+    it("loads where reading location throws, as in Deno without --location", async function () {
+      var throwing = {
+        get() {
+          throw new ReferenceError("Access to location without --location");
+        },
+      };
+      for (var options of [
+        undefined,
+        { locateFile: (file, prefix) => prefix + file },
+      ]) {
+        var muhammara = await withGlobal("location", throwing, () =>
+          createMuhammaraWasm(options),
+        );
+        var result = await muhammara.recryptAsync(
+          muhammara.createBlankPdf(100, 100),
+          { userPassword: "view" },
+        );
+        assert.equal(readBack(muhammara, result, "view").encrypted, true);
+      }
+    });
+
+    it("resolves the worker's binary location only where it was fetched", function () {
+      var throwingLocation = {
+        get location() {
+          throw new ReferenceError("Access to location without --location");
+        },
+      };
+      // Deno without --location.
+      assert.equal(workerWasmLocation("a.wasm", throwingLocation), "a.wasm");
+      // A page resolves against its base URL, a worker against its script.
+      assert.equal(
+        workerWasmLocation("a.wasm", {
+          document: { baseURI: "https://example.test/app/" },
+          location: { href: "https://example.test/app/page.html?x" },
+        }),
+        "https://example.test/app/a.wasm",
+      );
+      assert.equal(
+        workerWasmLocation("a.wasm", {
+          location: { href: "https://example.test/js/worker.js" },
+        }),
+        "https://example.test/js/a.wasm",
+      );
+      // An Electron renderer fetches like a page.
+      assert.equal(
+        workerWasmLocation("a.wasm", {
+          process: { type: "renderer", versions: { node: "22.0.0" } },
+          document: { baseURI: "file:///app/index.html" },
+        }),
+        "file:///app/a.wasm",
+      );
+      // Under Node, jsdom included, the binary is read as a path.
+      assert.equal(
+        workerWasmLocation("/pkg/dist/a.wasm", {
+          process: { versions: { node: "22.0.0" } },
+          document: { baseURI: "http://localhost/" },
+        }),
+        "/pkg/dist/a.wasm",
+      );
+      // A base that resolves nothing leaves the location as it is.
+      assert.equal(
+        workerWasmLocation("a.wasm", { document: { baseURI: "about:blank" } }),
+        "a.wasm",
+      );
+      assert.equal(workerWasmLocation(undefined, throwingLocation), undefined);
+    });
+
+    it("hands its worker the binary path under jsdom, whatever its base URL", async function () {
+      // jsdom's default and Jest's default base URLs.
+      for (var [index, baseURI] of [
+        "about:blank",
+        "http://localhost/",
+      ].entries()) {
+        var muhammara = await withGlobal(
+          "document",
+          { value: { baseURI }, writable: true },
+          () =>
+            createMuhammaraWasm({
+              locateFile: (file, prefix) => prefix + file,
+              // Limits of its own, so it starts a worker of its own.
+              limits: { maxOutputBytes: 987654321 + index },
+            }),
+        );
+        // The first call starts the worker; one that could not load the
+        // binary leaves the second on the calling thread.
+        await muhammara.recryptAsync(muhammara.createBlankPdf(10, 10));
+        var { result, turns } = await turnsDuring(() =>
+          muhammara.recryptAsync(largePdf(muhammara), { userPassword: "view" }),
+        );
+        assert.ok(
+          turns > 10,
+          `${baseURI}: the event loop turned ${turns} times`,
+        );
+        assert.equal(readBack(muhammara, result, "view").encrypted, true);
+      }
+    });
+
+    it("uses worker_threads in a Node-like runtime that also has a Worker global", async function () {
+      // Deno has both; only a worker_threads worker can be unref'd, so a
+      // module Worker would keep the process alive once idle.
+      var constructed = 0;
+      var muhammara = await withGlobal(
+        "Worker",
+        {
+          value: class {
+            constructor() {
+              constructed++;
+              throw new Error("a module Worker was started");
+            }
+          },
+          writable: true,
+        },
+        async () => {
+          var instance = await createMuhammaraWasm({
+            // Limits of its own, so it starts a worker of its own.
+            limits: { maxOutputBytes: 987654330 },
+          });
+          await instance.recryptAsync(instance.createBlankPdf(10, 10));
+          return instance;
+        },
+      );
+      var { result, turns } = await turnsDuring(() =>
+        muhammara.recryptAsync(largePdf(muhammara), { userPassword: "view" }),
+      );
+      assert.equal(constructed, 0);
       assert.ok(turns > 10, `the event loop turned ${turns} times`);
       assert.equal(readBack(muhammara, result, "view").encrypted, true);
     });

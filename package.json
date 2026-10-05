@@ -25,6 +25,8 @@
     "wasm:serve:browser": "npm run serve:browser --workspace=@muhammara/wasm",
     "wasm:server:browser": "npm run server:browser --workspace=@muhammara/wasm",
     "wasm:test:browser": "npm run test:browser --workspace=@muhammara/wasm",
+    "wasm:test:jsdom": "npm run test:jsdom --workspace=@muhammara/wasm",
+    "wasm:test:deno": "npm run test:deno --workspace=@muhammara/wasm",
     "docs:generate": "npm run docs:generate --workspace=@muhammara/native",
     "docs:build": "npm run docs:generate && mkdocs build --config-file packages/native/mkdocs.yml",
     "docs:check": "npm run docs:generate && mkdocs build --strict --config-file packages/native/mkdocs.yml",

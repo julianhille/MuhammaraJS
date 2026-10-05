@@ -2661,8 +2661,8 @@ export interface MuhammaraWasmOptions {
     maxOutputBytes?: number;
   };
   /**
-   * Whether `recryptAsync()` recrypts in a worker: a module `Worker` in
-   * browsers, Deno, and Bun, `worker_threads` in Node. Defaults to `true`.
+   * Whether `recryptAsync()` recrypts in a worker: `worker_threads` in
+   * Node, Deno, and Bun, a module `Worker` in browsers. Defaults to `true`.
    * The worker loads the binary from `wasmBinary` or from the location
    * `locateFile` returned. With `false`, inside a worker, where no worker can
    * start, or with module options other than `wasmBinary`, `locateFile`, and

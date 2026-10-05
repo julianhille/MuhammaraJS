@@ -2,12 +2,30 @@
 // a PDF is recrypted, as native runs them on a libuv pool thread.
 
 /**
+ * Tells whether Emscripten runs as Node here, with its own check: Node, and
+ * Deno, Bun, and jsdom, which provide Node's `process`, but not an Electron
+ * renderer. Emscripten then reads the binary as a path or `file:` URL.
+ * @param {object} [environment=globalThis] - The global object to read.
+ * @returns {boolean} Whether this is a Node-like runtime.
+ */
+function runsAsNode(environment = globalThis) {
+  var node = environment.process;
+  return (
+    typeof node === "object" &&
+    typeof node?.versions?.node === "string" &&
+    node.type !== "renderer"
+  );
+}
+
+/**
  * Reads the Node `worker_threads` module without an import a browser bundler
  * would try to resolve.
- * @returns {object|undefined} The module, or undefined outside Node.
+ * @returns {object|undefined} The module, or undefined outside a Node-like
+ *   runtime.
  */
 function nodeWorkerThreads() {
-  var getBuiltinModule = globalThis.process?.getBuiltinModule;
+  if (!runsAsNode()) return undefined;
+  var getBuiltinModule = globalThis.process.getBuiltinModule;
   if (typeof getBuiltinModule !== "function") return undefined;
   try {
     return getBuiltinModule("node:worker_threads");
@@ -147,24 +165,25 @@ function nodeHandle(thread) {
 }
 
 /**
- * Starts the worker for this environment: a module Worker in browsers, Deno,
- * and Bun, `worker_threads` in Node.
+ * Starts the worker for this environment: `worker_threads` in Node, Deno,
+ * and Bun, whose workers can be unref'd so an idle one never keeps the
+ * process alive, and a module Worker in browsers.
  * @param {object|undefined} workerThreads - Node `worker_threads`, if any.
  * @returns {object|null} The worker handle, or null without worker support.
  * @throws {Error} If the environment refuses to create the worker.
  */
 function startWorker(workerThreads) {
+  if (workerThreads) {
+    return nodeHandle(
+      new workerThreads.Worker(new URL("./recrypt-worker.js", import.meta.url)),
+    );
+  }
   if (typeof Worker === "function") {
     // Bundlers find the worker script only in this exact form.
     return browserHandle(
       new Worker(new URL("./recrypt-worker.js", import.meta.url), {
         type: "module",
       }),
-    );
-  }
-  if (workerThreads) {
-    return nodeHandle(
-      new workerThreads.Worker(new URL("./recrypt-worker.js", import.meta.url)),
     );
   }
   return null;
@@ -397,6 +416,31 @@ function createRecryptWorkerHost(settings) {
       });
     },
   };
+}
+
+/**
+ * Returns where the worker loads the binary the calling thread loaded from
+ * `location`. On a page that is the location resolved against the document's
+ * base URL (in a worker, its script URL), because a worker resolves relative
+ * URLs against its own script. Under Node, Emscripten reads the binary as a
+ * path or `file:` URL, which a `worker_threads` worker in the same process
+ * reads the same way, so the location stays as it is; the check is
+ * Emscripten's own, so jsdom counts as Node. A location that cannot be
+ * resolved stays as well: reading `location` throws in Deno without
+ * `--location`.
+ * @param {string|undefined} location - Where `locateFile` pointed.
+ * @param {object} [environment=globalThis] - The global object to read.
+ * @returns {string|undefined} The location for the worker.
+ */
+export function workerWasmLocation(location, environment = globalThis) {
+  if (typeof location !== "string") return location;
+  if (runsAsNode(environment)) return location;
+  try {
+    var base = environment.document?.baseURI ?? environment.location?.href;
+    return base ? new URL(location, base).href : location;
+  } catch {
+    return location;
+  }
 }
 
 // Instances loaded the same way share one worker, as native shares its pool

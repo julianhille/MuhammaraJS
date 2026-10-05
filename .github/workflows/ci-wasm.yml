@@ -72,6 +72,9 @@ jobs:
       - run: npm run wasm:test:exports
       - run: npm run wasm:test:manifests
       - run: npm run wasm:test:licenses
+      - name: Run under jsdom, as Jest's jsdom environment does
+        run: npm run wasm:test:jsdom
+        timeout-minutes: 5
       - name: Install Chrome for Testing
         id: chrome
         uses: browser-actions/setup-chrome@v2.2.0
@@ -81,6 +84,21 @@ jobs:
       - run: npm run wasm:test:browser
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+  deno:
+    needs: [build]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: muhammara-wasm
+          path: packages/wasm/dist
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Run under Deno without --location
+        run: deno run --allow-read packages/wasm/tests/runtimes/deno.mjs
+        timeout-minutes: 5
   sanitizer:
     needs: [build]
     runs-on: ubuntu-22.04
