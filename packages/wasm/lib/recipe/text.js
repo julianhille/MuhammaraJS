@@ -590,16 +590,21 @@ export function createTextMethods({ drawText, measure, module }) {
    * @returns {void}
    */
   function transformedLink(recipe, url, x, y, width, height, options, clip) {
+    // A rotated clip box turns with its text, so the link is clipped before
+    // it turns, where both are still upright.
+    if (clip && (options.rotation || (!options.skewX && !options.skewY))) {
+      var clippedRight = Math.min(x + width, clip.x + clip.width);
+      var clippedBottom = Math.min(y + height, clip.y + clip.height);
+      var origin = options.rotationOrigin || [x, y + height];
+      x = Math.max(x, clip.x);
+      y = Math.max(y, clip.y);
+      width = clippedRight - x;
+      height = clippedBottom - y;
+      if (width <= 0 || height <= 0) return;
+      options = { ...options, rotationOrigin: origin };
+      clip = undefined;
+    }
     if (!options.rotation && !options.skewX && !options.skewY) {
-      if (clip) {
-        var clippedRight = Math.min(x + width, clip.x + clip.width);
-        var clippedBottom = Math.min(y + height, clip.y + clip.height);
-        x = Math.max(x, clip.x);
-        y = Math.max(y, clip.y);
-        width = clippedRight - x;
-        height = clippedBottom - y;
-        if (width <= 0 || height <= 0) return;
-      }
       recipe.link(url, x, y, width, height);
       return;
     }
@@ -1317,7 +1322,14 @@ export function createTextMethods({ drawText, measure, module }) {
               height: lineHeight,
             }
           : undefined;
-        if (clipping) {
+        /**
+         * Saves the graphics state and clips to the line's box. Native clips
+         * each rotated run inside its form, so the clip box turns with the
+         * text: turn, clip, and turn back.
+         * @param {object} runOptions - The text options of what is clipped.
+         * @returns {void}
+         */
+        var clipLine = (runOptions) => {
           var clipPoint = this._calibrateCoordinate(
             x + left,
             currentY,
@@ -1325,13 +1337,11 @@ export function createTextMethods({ drawText, measure, module }) {
             -lineHeight,
           );
           this._save();
-          // Native clips each rotated line inside its form, so the clip box
-          // turns with the text. Turn, clip, and turn back.
-          var clipRotation = textOptions.rotation
-            ? Number(textOptions.rotation)
+          var clipRotation = runOptions.rotation
+            ? Number(runOptions.rotation)
             : 0;
           if (clipRotation)
-            this._rotate(clipRotation, ...textOptions.rotationOrigin);
+            this._rotate(clipRotation, ...runOptions.rotationOrigin);
           if (this._pageContext) {
             this._pageContext
               .re(clipPoint.nx, clipPoint.ny, width - left - right, lineHeight)
@@ -1350,8 +1360,17 @@ export function createTextMethods({ drawText, measure, module }) {
             throw new Error("Unable to clip text box");
           }
           if (clipRotation)
-            this._rotate(-clipRotation, ...textOptions.rotationOrigin);
-        }
+            this._rotate(-clipRotation, ...runOptions.rotationOrigin);
+        };
+        // A flow keeps rotation on its runs, which may turn differently, so
+        // each run of a rotated flow is clipped on its own.
+        var clipEachPart =
+          clipping &&
+          !textOptions.rotation &&
+          entry.parts?.some(
+            (part) => fragmentOptions(options, part.styles, fontSize).rotation,
+          );
+        if (clipping && !clipEachPart) clipLine(textOptions);
         if (textOptions.hilite && !entry.parts) {
           var hilite =
             typeof textOptions.hilite === "object" ? textOptions.hilite : {};
@@ -1428,6 +1447,7 @@ export function createTextMethods({ drawText, measure, module }) {
             }
             var partDimensions = dimensions(this, part.text, partOptions);
             var partWidth = partDimensions.width;
+            if (clipEachPart) clipLine(partOptions);
             if (partOptions.hilite) {
               var partHilite =
                 typeof partOptions.hilite === "object"
@@ -1452,6 +1472,7 @@ export function createTextMethods({ drawText, measure, module }) {
               );
             }
             drawText.call(this, part.text, drawX, baseline, partOptions);
+            if (clipEachPart) this._restore();
             if (partOptions.link) {
               var linkBounds = dimensions(this, part.text, partOptions);
               var coversGap =
@@ -1507,7 +1528,7 @@ export function createTextMethods({ drawText, measure, module }) {
         } else {
           drawText.call(this, entry.text, drawX, baseline, textOptions);
         }
-        if (clipping) this._restore();
+        if (clipping && !clipEachPart) this._restore();
         // Text-markup annotations span to the run's right glyph edge, like
         // native, while links, multi-run, and justified lines keep the
         // advance width they need for accurate click and gap placement.
