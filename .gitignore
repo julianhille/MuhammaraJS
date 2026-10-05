@@ -79,3 +79,6 @@ packages/wasm/docs/reference.md
 packages/native/docs/recipe/reference.md
 packages/native/docs/api/type-declarations.md
 *.tgz
+
+# Fuzzer output
+packages/native-with-source/fuzz/out/

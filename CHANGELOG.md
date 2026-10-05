@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - A server benchmark comparing `recrypt()` and `recryptAsync()`, including
   how long each blocks the event loop, run with `npm run bench:recrypt`
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+- A sanitizer fuzzer for the native addon, `npm run fuzz` in
+  `packages/native-with-source`, that feeds mutated PDFs, fonts, images,
+  content streams and ToUnicode CMaps through reading, modification, copying,
+  recrypt, font and image APIs, one crash-isolated worker per job. It reports
+  crashes, leaks under LeakSanitizer, hangs, slow cases and memory growth;
+  see `packages/native-with-source/fuzz/README.md`. The sanitizer CI job runs
+  a short fixed-seed fuzz pass
+  [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 
 ### Fixed
 
