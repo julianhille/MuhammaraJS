@@ -974,6 +974,47 @@ describe("Recipe text direction", function () {
     assert.deepEqual(counts, [1, 1]);
   });
 
+  it("measures each piece of a justified right-to-left line once", function () {
+    var base = new Recipe().createPage(400, 400).endPage().endPDF();
+    var words = ["אחת", "שתיים", "שלוש", "ארבע", "חמש"];
+    var text = Array.from({ length: 40 }, (_, index) => words[index % 5]).join(
+      " ",
+    );
+    var counts = {};
+    for (var direction of ["none", "rtl"]) {
+      // A Recipe that edits a PDF measures through its writer's fonts.
+      var recipe = new Recipe(base);
+      var calls = 0;
+      var getFont = recipe.writer.getFontForBytes;
+      recipe.writer.getFontForBytes = function (...args) {
+        var font = getFont.apply(this, args);
+        if (!font.counted) {
+          var measure = font.calculateTextDimensions;
+          font.counted = true;
+          font.calculateTextDimensions = function (...measureArgs) {
+            calls++;
+            return measure.apply(this, measureArgs);
+          };
+        }
+        return font;
+      };
+      try {
+        recipe.editPage(1).text(text, 20, 20, {
+          font: "arial",
+          size: 12,
+          direction,
+          textBox: { width: 200, textAlign: "justify" },
+        });
+        recipe.endPage().endPDF();
+      } finally {
+        recipe.dispose();
+      }
+      counts[direction] = calls;
+    }
+    // Drawing the words in visual order reuses their measurements.
+    assert.ok(counts.rtl <= counts.none, JSON.stringify(counts));
+  });
+
   it("rejects an unknown direction before drawing", function () {
     var recipe = new Recipe().createPage(200, 200);
     try {

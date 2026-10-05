@@ -1060,35 +1060,57 @@ exports.text = function text(text = "", x, y, options = {}) {
         const pieces = justified
           ? visualWords(segments)
           : segments.map((segment) => Object.assign({ gap: false }, segment));
+        // Each piece is measured once: the width of its glyphs, without
+        // its trailing whitespace, and the advance of that whitespace,
+        // measured as real spaces, which text bounds leave out. A run's
+        // space advance is measured once.
+        const runSpaces = new Map();
+        /**
+         * The advance of one space in a run.
+         * @param {number} run - The index of the run.
+         * @returns {number} The width in points.
+         */
+        const runSpace = (run) => {
+          if (!runSpaces.has(run)) {
+            const options = contents[run].writeOptions;
+            runSpaces.set(
+              run,
+              new Word("o o", options).dimensions.xMax -
+                new Word("oo", options).dimensions.xMax,
+            );
+          }
+          return runSpaces.get(run);
+        };
+        const metrics = new Map(
+          pieces.map((piece) => {
+            const trimmed = piece.text.replace(/\s+$/, "");
+            const spaces = piece.text.length - trimmed.length;
+            return [
+              piece,
+              {
+                ink: trimmed
+                  ? new Word(trimmed, contents[piece.run].writeOptions)
+                      .dimensions.xMax
+                  : 0,
+                space: spaces ? spaces * runSpace(piece.run) : 0,
+              },
+            ];
+          }),
+        );
         /**
          * The width of a piece's glyphs, without its trailing whitespace.
          * @param {Object} piece - A piece from visualRuns() or visualWords().
          * @returns {number} The width in points.
          */
-        const inkWidth = (piece) => {
-          const trimmed = piece.text.replace(/\s+$/, "");
-          return trimmed
-            ? new Word(trimmed, contents[piece.run].writeOptions).dimensions
-                .xMax
-            : 0;
-        };
+        const inkWidth = (piece) => metrics.get(piece).ink;
         /**
          * The advance of the trailing whitespace of a piece, or of a whole
-         * indent piece, measured as real spaces; text bounds leave it out.
+         * indent piece.
          * @param {Object} piece - A piece from visualRuns() or visualWords().
          * @returns {number} The width in points.
          */
-        const spaceWidth = (piece) => {
-          const spaces =
-            piece.text.length - piece.text.replace(/\s+$/, "").length;
-          if (!spaces) return 0;
-          const options = contents[piece.run].writeOptions;
-          return (
-            spaces *
-            (new Word("o o", options).dimensions.xMax -
-              new Word("oo", options).dimensions.xMax)
-          );
-        };
+        const spaceWidth = (piece) => metrics.get(piece).space;
+        const hasGaps = pieces.some((piece) => piece.gap);
         /**
          * The room a piece needs on the line: its glyphs, and all of an
          * indent.
@@ -1132,11 +1154,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         });
         // A justified line with no gap to widen, such as one long word,
         // starts at its start edge: the right edge in a right-to-left line.
-        if (
-          justified &&
-          !pieces.some((piece) => piece.gap) &&
-          lineDirection === TextDirection.RTL
-        ) {
+        if (justified && !hasGaps && lineDirection === TextDirection.RTL) {
           align = TextAlign.RIGHT;
         }
         switch (align) {
@@ -1177,7 +1195,7 @@ exports.text = function text(text = "", x, y, options = {}) {
             // Text-markup annotations span the line from its first piece.
             noMarkup: index > 0,
             markupWidth:
-              justified && pieces.some((other) => other.gap)
+              justified && hasGaps
                 ? textBox.width - textBox.paddingLeft - textBox.paddingRight
                 : lineWidth,
             // The pieces of a line, whose hilite a clip keeps in the box.

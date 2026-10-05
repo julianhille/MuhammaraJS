@@ -1466,26 +1466,35 @@ export function createTextMethods({ drawText, measure, module }) {
             (part) => fragmentOptions(options, part.styles, fontSize).rotation,
           );
         if (clipping && !clipEachPart) clipLine(textOptions);
+        // Each reordered piece is measured once: where its glyphs end,
+        // without its trailing whitespace, and the advance of that
+        // whitespace at a real space advance, which measured text bounds
+        // leave out. The space advance is measured once per style.
+        var spaceAdvances = new Map();
+        var pieceMetrics = new Map();
         /**
-         * The room a reordered piece takes before the next piece: where its
-         * glyphs end plus a real space advance for each trailing space,
-         * which measured text bounds leave out. An indent piece is only
-         * spaces.
-         * @param {string} text - Piece text in visual order.
-         * @param {object} partOptions - The piece's text options.
-         * @returns {number} The advance in points.
+         * The glyph width and trailing-space advance of a reordered piece.
+         * @param {{text: string, styles: object}} part - Piece in visual order.
+         * @returns {{ink: number, space: number}} The widths in points.
          */
-        var pieceAdvance = (text, partOptions) => {
-          var trimmed = text.replace(/\s+$/, "");
-          var spaces = text.length - trimmed.length;
-          var space = spaces
-            ? dimensions(this, "o o", partOptions).xMax -
-              dimensions(this, "oo", partOptions).xMax
-            : 0;
-          return (
-            (trimmed ? dimensions(this, trimmed, partOptions).xMax : 0) +
-            spaces * space
-          );
+        var metricsOf = (part) => {
+          if (!pieceMetrics.has(part)) {
+            var partOptions = fragmentOptions(options, part.styles, fontSize);
+            var trimmed = part.text.replace(/\s+$/, "");
+            var spaces = part.text.length - trimmed.length;
+            if (spaces && !spaceAdvances.has(part.styles)) {
+              spaceAdvances.set(
+                part.styles,
+                dimensions(this, "o o", partOptions).xMax -
+                  dimensions(this, "oo", partOptions).xMax,
+              );
+            }
+            pieceMetrics.set(part, {
+              ink: trimmed ? dimensions(this, trimmed, partOptions).xMax : 0,
+              space: spaces ? spaces * spaceAdvances.get(part.styles) : 0,
+            });
+          }
+          return pieceMetrics.get(part);
         };
         if (textOptions.hilite && !entry.parts) {
           var hilite =
@@ -1571,13 +1580,8 @@ export function createTextMethods({ drawText, measure, module }) {
            * @param {{text: string, styles: object, indent: (boolean|undefined)}} part - Piece.
            * @returns {number} The width in points.
            */
-          var justifiedRoom = (part) => {
-            var partOptions = fragmentOptions(options, part.styles, fontSize);
-            return pieceAdvance(
-              part.indent ? part.text : part.text.replace(/\s+$/, ""),
-              partOptions,
-            );
-          };
+          var justifiedRoom = (part) =>
+            metricsOf(part).ink + (part.indent ? metricsOf(part).space : 0);
           var drawnWidth = textWidth;
           if (justify && segments) {
             drawnWidth = drawParts.reduce(
@@ -1612,11 +1616,8 @@ export function createTextMethods({ drawText, measure, module }) {
           if (segments && !justify) {
             // Align the reordered pieces by their own width; trailing
             // whitespace at the end of the line takes no room.
-            var pieceWidths = drawParts.map((part) =>
-              pieceAdvance(
-                part.text,
-                fragmentOptions(options, part.styles, fontSize),
-              ),
+            var pieceWidths = drawParts.map(
+              (part) => metricsOf(part).ink + metricsOf(part).space,
             );
             // Trailing whitespace at the end of the line takes no room, an
             // indent does.
@@ -1626,11 +1627,7 @@ export function createTextMethods({ drawText, measure, module }) {
               0,
             );
             if (!lastPart.indent) {
-              piecesWidth +=
-                pieceAdvance(
-                  lastPart.text.replace(/\s+$/, ""),
-                  fragmentOptions(options, lastPart.styles, fontSize),
-                ) - pieceWidths[pieceWidths.length - 1];
+              piecesWidth -= metricsOf(lastPart).space;
             }
             drawX =
               x +
@@ -1656,7 +1653,7 @@ export function createTextMethods({ drawText, measure, module }) {
               ? dimensions(this, part.text, partOptions).width
               : justify
                 ? justifiedRoom(part)
-                : pieceAdvance(part.text, partOptions);
+                : metricsOf(part).ink + metricsOf(part).space;
             if (clipEachPart) clipLine(partOptions);
             if (partOptions.hilite) {
               var partHilite =
@@ -1692,10 +1689,7 @@ export function createTextMethods({ drawText, measure, module }) {
             var drawOptions = partOptions;
             if (part.visual) {
               drawOptions = { ...partOptions };
-              drawOptions._decorationWidth = pieceAdvance(
-                part.text.replace(/\s+$/, ""),
-                partOptions,
-              );
+              drawOptions._decorationWidth = metricsOf(part).ink;
             }
             drawText.call(
               this,

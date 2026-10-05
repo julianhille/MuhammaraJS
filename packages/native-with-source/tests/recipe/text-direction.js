@@ -1174,6 +1174,44 @@ describe("Recipe text direction", function () {
     assert.deepEqual(counts, [1, 1]);
   });
 
+  it("measures each piece of a justified right-to-left line once", async function () {
+    const font = muhammara
+      .createWriter(new muhammara.PDFWStreamForBuffer())
+      .getFontForFile(ARIAL);
+    const proto = Object.getPrototypeOf(font);
+    const measure = proto.calculateTextDimensions;
+    let calls = 0;
+    proto.calculateTextDimensions = function (...args) {
+      calls++;
+      return measure.apply(this, args);
+    };
+    const words = ["אחת", "שתיים", "שלוש", "ארבע", "חמש"];
+    const text = Array.from(
+      { length: 40 },
+      (_, index) => words[index % 5],
+    ).join(" ");
+    const counts = {};
+    try {
+      for (const direction of ["none", "rtl"]) {
+        calls = 0;
+        await drawPage("text-direction-measure-" + direction, (recipe) => {
+          recipe.text(text, 20, 20, {
+            font: "arial",
+            size: 12,
+            direction,
+            textBox: { width: 200, textAlign: "justify" },
+          });
+        });
+        counts[direction] = calls;
+      }
+    } finally {
+      proto.calculateTextDimensions = measure;
+    }
+    // Laying out the words measures them already; drawing them in visual
+    // order adds about one measurement per word, not one per use.
+    assert.ok(counts.rtl <= counts.none * 1.6, JSON.stringify(counts));
+  });
+
   it("rejects an unknown direction before drawing", function () {
     const recipe = new Recipe(
       "new",
