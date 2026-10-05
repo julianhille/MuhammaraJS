@@ -773,3 +773,23 @@ IByteReader* PDFObjectParser::StartExternalRead() {
 void PDFObjectParser::EndExternalRead() {
 	ResetReadState();
 }
+
+void PDFObjectParser::SetReadLimit(IOBasicTypes::LongFilePositionType inLimit)
+{
+	mTokenizer.SetReadLimit(inLimit);
+}
+
+bool PDFObjectParser::ReachedReadLimit()
+{
+	return mTokenizer.ReachedReadLimit();
+}
+
+bool PDFObjectParser::ConsumeReadBudget(IOBasicTypes::LongFilePositionType inBytes)
+{
+	return mTokenizer.ConsumeReadBudget(inBytes);
+}
+
+void PDFObjectParser::SetMaxTokenSize(IOBasicTypes::LongFilePositionType inMaxTokenSize)
+{
+	mTokenizer.SetMaxTokenSize(inMaxTokenSize);
+}

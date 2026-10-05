@@ -1733,11 +1733,18 @@ EStatusCode PDFDocumentHandler::ScanStreamForResourcesTokens(PDFStreamInput* inS
 	// There's still risk here, in that there will be a string that like a resource name with forward slash which will be mistaken
 	// for a resource usage. this is something to tackle still.
 	SimpleStringTokenizer tokenizer;
-	tokenizer.SetReadStream(streamReader);
+	// MuhammaraJS: decoded content expands far beyond the input, so keep
+	// only the start of a long token; no resource name comes near the cap.
+	tokenizer.SetMaxTokenSize(SimpleStringTokenizer::scMaxStreamTokenSize);
+	// MuhammaraJS: the tokenizer reads bytewise; read the decoded stream,
+	// which nothing else reads, in blocks instead. The skipper owns it.
+	InputStreamSkipperStream* source = new InputStreamSkipperStream(streamReader);
+	source->EnableReadAhead(64 * 1024);
+	tokenizer.SetReadStream(source);
 
 	BoolAndString tokenizerResult;
 
-	while(streamReader->NotEnded())
+	while(source->NotEnded())
 	{
 		BoolAndString tokenizerResult = tokenizer.GetNextToken();
 
@@ -1751,7 +1758,7 @@ EStatusCode PDFDocumentHandler::ScanStreamForResourcesTokens(PDFStreamInput* inS
 				outResourceMarkers.push_back(ResourceTokenMarker(tokenizerResult.second.substr(1),tokenizer.GetRecentTokenPosition()));
 	}
 
-	delete streamReader;
+	delete source;
 	return PDFHummus::eSuccess;
 }
 

@@ -2,6 +2,7 @@
 // findings. Each patches a shared fixture or assembles a minimal file, so a
 // regression test needs no saved input. Mirrored by
 // packages/wasm/tests/malformedInputs.mjs.
+var zlib = require("zlib");
 var fs = require("fs");
 var path = require("path");
 
@@ -296,6 +297,60 @@ function pdfWithXrefStream(widths, catalogOffset) {
   ]);
 }
 
+/**
+ * Builds a one-page PDF whose content stream is `content`, Flate-compressed,
+ * so a small file decodes to far more bytes.
+ * @param {Buffer} content - Decoded page content.
+ * @param {string} resources - The page's /Resources dictionary.
+ * @returns {Buffer} The PDF.
+ */
+function pdfWithFlateContent(content, resources) {
+  var stream = zlib.deflateSync(content, { level: 9 });
+  var objects = [
+    Buffer.from("<< /Type /Catalog /Pages 2 0 R >>"),
+    Buffer.from("<< /Type /Pages /Kids [3 0 R] /Count 1 >>"),
+    Buffer.from(
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources " +
+        resources +
+        " /Contents 4 0 R >>",
+    ),
+    Buffer.concat([
+      Buffer.from(
+        "<< /Filter /FlateDecode /Length " + stream.length + " >>\nstream\n",
+      ),
+      stream,
+      Buffer.from("\nendstream"),
+    ]),
+  ];
+  var parts = [Buffer.from("%PDF-1.7\n")];
+  var length = parts[0].length;
+  var offsets = [];
+  objects.forEach(function (object, index) {
+    offsets.push(length);
+    var bytes = Buffer.concat([
+      Buffer.from(index + 1 + " 0 obj\n"),
+      object,
+      Buffer.from("\nendobj\n"),
+    ]);
+    parts.push(bytes);
+    length += bytes.length;
+  });
+  parts.push(
+    Buffer.from(
+      "xref\n0 5\n0000000000 65535 f \n" +
+        offsets
+          .map(function (offset) {
+            return String(offset).padStart(10, "0") + " 00000 n \n";
+          })
+          .join("") +
+        "trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n" +
+        length +
+        "\n%%EOF\n",
+    ),
+  );
+  return Buffer.concat(parts);
+}
+
 module.exports = {
   materials: materials,
   fuzzInputs: fuzzInputs,
@@ -307,6 +362,7 @@ module.exports = {
   cffDict: cffDict,
   cffTopDict: cffTopDict,
   pdfWith: pdfWith,
+  pdfWithFlateContent: pdfWithFlateContent,
   encryptedPdfWithCryptFilters: encryptedPdfWithCryptFilters,
   pdfWithXrefStream: pdfWithXrefStream,
 };

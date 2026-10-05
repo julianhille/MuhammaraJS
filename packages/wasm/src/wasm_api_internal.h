@@ -501,6 +501,11 @@ static const size_t kWasmMaxExtractedElements = 100000;
 static const size_t kWasmMaxOperands = 1024;
 static const size_t kWasmMaxExtractedTextBytes = 16 * 1024 * 1024;
 static const size_t kWasmMaxParsedObjects = 1000000;
+// Decoded content-stream bytes one extraction reads. A compressed stream
+// expands to far more than its file size, and whitespace or one unterminated
+// string is a single object, so the object ceiling alone does not bound the
+// work.
+static const size_t kWasmMaxContentBytes = 64 * 1024 * 1024;
 
 static size_t clampExtractionLimit(size_t requested, size_t ceiling) {
   if (requested == 0 || requested > ceiling) return ceiling;
@@ -558,7 +563,10 @@ static bool isInlineImageWhitespace(IOBasicTypes::Byte byte) {
 // burning the parsed-object budget. Reads raw bytes up to the EI delimiter
 // instead. EI must be surrounded by whitespace, the same heuristic every PDF
 // consumer uses, since nothing records the payload length.
-static void skipInlineImageData(PDFObjectParser* objectParser) {
+// Returns false when the payload exhausts the content read limit, which the
+// skipped bytes share with the tokens around them.
+static bool skipInlineImageData(PDFObjectParser* objectParser) {
+  bool withinLimits = true;
   IByteReader* stream = objectParser->StartExternalRead();
   if (stream != nullptr) {
     // The byte before the payload was the whitespace that follows ID, so an
@@ -566,6 +574,10 @@ static void skipInlineImageData(PDFObjectParser* objectParser) {
     IOBasicTypes::Byte window[3] = {0x20, 0x20, 0x20};
     IOBasicTypes::Byte current = 0;
     while (stream->NotEnded()) {
+      if (!objectParser->ConsumeReadBudget(1)) {
+        withinLimits = false;
+        break;
+      }
       if (stream->Read(&current, 1) != 1) break;
       if (isInlineImageWhitespace(window[0]) && window[1] == 'E' &&
           window[2] == 'I' && isInlineImageWhitespace(current))
@@ -576,6 +588,7 @@ static void skipInlineImageData(PDFObjectParser* objectParser) {
     }
   }
   objectParser->EndExternalRead();
+  return withinLimits;
 }
 
 static bool isPathPaintingOperation(const std::string& operation) {
@@ -613,6 +626,7 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
         static_cast<PDFArray*>(contents.GetPtr()));
   }
   if (!objectParser) return true;
+  objectParser->SetReadLimit(kWasmMaxContentBytes);
 
   bool inTextObject = false;
   std::string fontResource;
@@ -692,7 +706,10 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
     } else if (inTextObject && operation == "T*" && operands.empty()) {
       moveTextLine(textMatrix, textLineMatrix, 0, -textLeading);
     } else if (operation == "ID") {
-      skipInlineImageData(objectParser);
+      if (!skipInlineImageData(objectParser)) {
+        withinLimits = false;
+        break;
+      }
       operands.clear();
       continue;
     } else if (inTextObject &&
@@ -730,6 +747,7 @@ static bool extractPageText(PDFParser* parser, PDFDictionary* page,
     }
     operands.clear();
   }
+  if (objectParser->ReachedReadLimit()) withinLimits = false;
   delete objectParser;
   return withinLimits;
 }
@@ -752,6 +770,7 @@ static bool extractPageContentItems(PDFParser* parser, PDFDictionary* page,
         static_cast<PDFArray*>(contents.GetPtr()));
   }
   if (!objectParser) return true;
+  objectParser->SetReadLimit(kWasmMaxContentBytes);
 
   bool inTextObject = false;
   int textRenderingMode = 0;
@@ -788,7 +807,10 @@ static bool extractPageContentItems(PDFParser* parser, PDFDictionary* page,
       textRenderingMode = textRenderingModes.back();
       textRenderingModes.pop_back();
     } else if (operation == "ID") {
-      skipInlineImageData(objectParser);
+      if (!skipInlineImageData(objectParser)) {
+        withinLimits = false;
+        break;
+      }
       operands.clear();
       continue;
     }
@@ -831,6 +853,7 @@ static bool extractPageContentItems(PDFParser* parser, PDFDictionary* page,
     }
     operands.clear();
   }
+  if (objectParser->ReachedReadLimit()) withinLimits = false;
   delete objectParser;
   return withinLimits;
 }

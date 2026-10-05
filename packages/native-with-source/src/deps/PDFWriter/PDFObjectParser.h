@@ -70,6 +70,12 @@ public:
 	IByteReader* StartExternalRead();
 	void EndExternalRead();
 
+	// MuhammaraJS: see PDFParserTokenizer::SetReadLimit
+	void SetReadLimit(IOBasicTypes::LongFilePositionType inLimit);
+	bool ReachedReadLimit();
+	bool ConsumeReadBudget(IOBasicTypes::LongFilePositionType inBytes);
+	void SetMaxTokenSize(IOBasicTypes::LongFilePositionType inMaxTokenSize);
+
 private:
 	PDFParserTokenizer mTokenizer;
 	StringList mTokenBuffer;

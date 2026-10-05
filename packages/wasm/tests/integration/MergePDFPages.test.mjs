@@ -384,6 +384,33 @@ describe("MergePDFPages", function () {
     );
   });
 
+  // A token of decoded content grew without bound while merging scanned the
+  // content for resource names; it now keeps 32 MiB of it.
+  it("renames resources after a name longer than 32 MiB", function () {
+    var source = malformed.pdfWithFlateContent(
+      Buffer.concat([
+        Buffer.from("q /"),
+        Buffer.alloc(40 << 20, 0x61),
+        Buffer.from(" gs Q q /G1 gs Q"),
+      ]),
+      "<< /ExtGState << /G1 << /CA 0.5 >> >> >>",
+    );
+    var writer = muhammara.createWriter({ compress: false });
+    var page = writer.createPage(0, 0, 200, 200);
+    writer.createPDFCopyingContext(source).mergePDFPageToPage(page, 0);
+    writer.writePage(page);
+    var output = Buffer.from(writer.end()).toString("latin1");
+    // The long name is copied as it is, and /G1 after it is renamed to the
+    // name the merged page's ExtGState dictionary gives it.
+    var renamed = /a gs Q q \/(\S+) gs Q/.exec(output);
+    assert.ok(renamed);
+    assert.notEqual(renamed[1], "G1");
+    assert.match(
+      output,
+      new RegExp("/ExtGState <<\\s*/" + renamed[1] + " \\d+ 0 R"),
+    );
+  });
+
   // Each /ProcSet entry was read as a name, whatever its type.
   describe("a page whose /ProcSet holds a number", function () {
     var source = malformed.pdfWith([

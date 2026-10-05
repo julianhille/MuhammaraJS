@@ -82,6 +82,10 @@ These bring Wasm Recipe in line with native Recipe; see
 
 ### Fixed
 
+- `extractPageText()` and `extractPageContentItems()` stop after 64 MiB of
+  decoded page content, inline images included, and throw their limit error,
+  and a parser from `startReadingObjectsFromStream()` stops at a token over
+  32 MiB. A few hundred KB of compressed PDF used to take minutes [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 - Reading a DCTDecode stream with corrupt JPEG data, as the reader, copying
   and drawing a JPEG do, no longer leaks Wasm stack. libjpeg errors escaped the
   module as a bare number instead of being caught, and after a few such reads
@@ -115,6 +119,11 @@ function or function signature mismatch` and later calls read freed
     shift; it is now rejected
   - A PNG that fails after its rows are read, such as one without `IEND`,
     made libpng jump into a function that had returned
+- Merging a page (`mergePDFPageToPage()`, `mergePDFPageToFormXObject()`)
+  whose decoded content holds one huge token, such as a name of hundreds of
+  MB from a few hundred KB of compressed PDF, keeps at most 32 MiB of that
+  token while scanning for resource names instead of copying all of it into
+  memory several times; the merged page is unchanged [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 - Fix memory leaks on malformed input found by fuzzing [#951](https://github.com/julianhille/MuhammaraJS/issues/951): a PNG
   whose rows fail to decode leaked the image stream, row buffer and decoder
   state (a 6 KB PNG leaked 1 MB per call); a CFF font whose local subroutines
@@ -170,6 +179,10 @@ function or function signature mismatch` and later calls read freed
   [#932](https://github.com/julianhille/MuhammaraJS/issues/932)
 
 ### Changed
+
+- Parsing a decoded content stream reads it in blocks instead of one
+  decode call per byte, about four times faster, for text extraction,
+  `startReadingObjectsFromStream()` and page merging [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 
 - Run `recryptAsync()` in a worker, like native runs it on a thread pool, so a
   page keeps responding while a PDF is recrypted: `worker_threads` in

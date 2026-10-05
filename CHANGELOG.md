@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- `extractPageText()` and `extractPageContentItems()` stop after 64 MiB of
+  decoded page content, inline images included, and throw their limit error,
+  and a parser from `startReadingObjectsFromStream()` stops at a token over
+  32 MiB. A few hundred KB of compressed PDF used to take minutes [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 - Fix crashes on malformed input found by fuzzing the native addon and the
   Wasm build, which share this code [#951](https://github.com/julianhille/MuhammaraJS/issues/951):
   - `calculateTextDimensions()` on a font with a glyph FreeType cannot load
@@ -67,6 +71,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     `notEnded()` stayed true while `read()` returned nothing, and on
     riscv64 the libjpeg error aborted the process. Decoding now ends at the
     error with the rows read so far
+- Merging a page (`mergePDFPageToPage()`, `mergePDFPageToFormXObject()`)
+  whose decoded content holds one huge token, such as a name of hundreds of
+  MB from a few hundred KB of compressed PDF, keeps at most 32 MiB of that
+  token while scanning for resource names instead of copying all of it into
+  memory several times; the merged page is unchanged [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 - Fix memory leaks on malformed input found by fuzzing [#951](https://github.com/julianhille/MuhammaraJS/issues/951): a PNG
   whose rows fail to decode leaked the image stream, row buffer and decoder
   state; a CFF font whose local subroutines cannot be read leaked them and
@@ -159,6 +168,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
 
 ### Changed
+
+- Parsing a decoded content stream reads it in blocks instead of one
+  decode call per byte, about four times faster, for text extraction,
+  `startReadingObjectsFromStream()` and page merging [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 
 - Native log settings belong to the thread that sets them. A writer created
   in a worker thread no longer changes where writers on other threads log

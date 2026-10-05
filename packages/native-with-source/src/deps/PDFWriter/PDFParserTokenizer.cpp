@@ -29,7 +29,41 @@ using namespace IOBasicTypes;
 PDFParserTokenizer::PDFParserTokenizer(void)
 {
 	mStream = NULL;
+	mReadLimit = 0;
+	mBytesRead = 0;
+	mTokenBytes = 0;
+	mMaxTokenSize = 0;
+	mReachedReadLimit = false;
+	mTokenTooLong = false;
 	ResetReadState();
+}
+
+void PDFParserTokenizer::SetReadLimit(LongFilePositionType inLimit)
+{
+	mReadLimit = inLimit;
+	mBytesRead = 0;
+	mReachedReadLimit = false;
+}
+
+bool PDFParserTokenizer::ReachedReadLimit()
+{
+	return mReachedReadLimit;
+}
+
+bool PDFParserTokenizer::ConsumeReadBudget(LongFilePositionType inBytes)
+{
+	mBytesRead += inBytes;
+	if(mReadLimit > 0 && mBytesRead > mReadLimit)
+	{
+		mReachedReadLimit = true;
+		return false;
+	}
+	return true;
+}
+
+void PDFParserTokenizer::SetMaxTokenSize(LongFilePositionType inMaxTokenSize)
+{
+	mMaxTokenSize = inMaxTokenSize;
 }
 
 PDFParserTokenizer::~PDFParserTokenizer(void)
@@ -44,6 +78,8 @@ void PDFParserTokenizer::SetReadStream(IByteReader* inSourceStream)
 
 void PDFParserTokenizer::ResetReadState()
 {
+	// MuhammaraJS: a seek resynchronizes after a token that was too long
+	mTokenTooLong = false;
 	mHasTokenBuffer = false;
 	mStreamPositionTracker = 0;
 	mRecentTokenPosition = 0;
@@ -86,6 +122,7 @@ BoolAndString PDFParserTokenizer::GetNextToken()
 
 		// before reading the first byte save the token position, for external queries
 		mRecentTokenPosition = mStreamPositionTracker;
+		mTokenBytes = 0;
 
 		// get the first byte of the token
 		if(GetNextByteForToken(buffer) != PDFHummus::eSuccess)
@@ -338,6 +375,10 @@ BoolAndString PDFParserTokenizer::GetNextToken()
 
 
 
+	// MuhammaraJS: the byte reads above take a failed read for the end of the
+	// stream; a token cut off at the size cap is no token
+	if(mTokenTooLong)
+		result.first = false;
 	return result;
 }
 
@@ -356,15 +397,32 @@ void PDFParserTokenizer::SkipTillToken()
 			SaveTokenBuffer(buffer);
 			break;
 		}
+		mTokenBytes = 0; // whitespace between tokens is no part of a token
 	}
 }
 
 bool PDFParserTokenizer::CanGetNextByte() {
-	return !!mStream && (mHasTokenBuffer || mStream->NotEnded());
+	if(mTokenTooLong || !mStream || !(mHasTokenBuffer || mStream->NotEnded()))
+		return false;
+	// MuhammaraJS: an ended stream is no reason to report the read limit
+	if(!mHasTokenBuffer && mReadLimit > 0 && mBytesRead >= mReadLimit)
+	{
+		mReachedReadLimit = true;
+		return false;
+	}
+	return true;
 }
 
 EStatusCode PDFParserTokenizer::GetNextByteForToken(Byte& outByte)
 {
+	// MuhammaraJS: bound what one token and one read may consume. A byte saved
+	// back to the token buffer was counted when it was first read.
+	if(mMaxTokenSize > 0 && ++mTokenBytes > mMaxTokenSize)
+	{
+		mReachedReadLimit = true;
+		mTokenTooLong = true;
+		return PDFHummus::eFailure;
+	}
 	++mStreamPositionTracker; // advance position tracker, because we are reading the next byte.
 	if(mHasTokenBuffer)
 	{
@@ -372,8 +430,14 @@ EStatusCode PDFParserTokenizer::GetNextByteForToken(Byte& outByte)
 		mHasTokenBuffer = false;
 		return PDFHummus::eSuccess;
 	}
-	else
-		return (mStream->Read(&outByte,1) != 1) ? PDFHummus::eFailure:PDFHummus::eSuccess;
+	if(mReadLimit > 0 && mBytesRead >= mReadLimit)
+	{
+		--mStreamPositionTracker;
+		mReachedReadLimit = true;
+		return PDFHummus::eFailure;
+	}
+	++mBytesRead;
+	return (mStream->Read(&outByte,1) != 1) ? PDFHummus::eFailure:PDFHummus::eSuccess;
 }
 
 static const Byte scWhiteSpaces[] = {0,0x9,0xA,0xC,0xD,0x20};

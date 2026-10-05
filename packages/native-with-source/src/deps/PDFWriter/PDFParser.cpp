@@ -2381,7 +2381,11 @@ PDFObjectParser* PDFParser::StartReadingObjectsFromStream(PDFStreamInput* inStre
 
 	PDFObjectParser* objectsParser = new PDFObjectParser();
 	InputStreamSkipperStream* source = new InputStreamSkipperStream(readStream);
+	// MuhammaraJS: the parser owns this decoded stream and reads it bytewise
+	source->EnableReadAhead(64 * 1024);
 	objectsParser->SetReadStream(source,source,true);
+	// MuhammaraJS: decoded content expands far beyond the input, so bound one token
+	objectsParser->SetMaxTokenSize(PDFParserTokenizer::scMaxStreamTokenSize);
 	// Not setting decryption filter cause shuoldnt decrypt at lower level. if at all - the stream is encrypted already
 	objectsParser->SetParserExtender(mParserExtender);
 
@@ -2393,7 +2397,11 @@ PDFObjectParser* PDFParser::StartReadingObjectsFromStreams(PDFArray* inArrayOfSt
 
 	PDFObjectParser* objectsParser = new PDFObjectParser();
 	InputStreamSkipperStream* source = new InputStreamSkipperStream(readStream);
+	// MuhammaraJS: the parser owns this decoded stream and reads it bytewise
+	source->EnableReadAhead(64 * 1024);
 	objectsParser->SetReadStream(source, source, true);
+	// MuhammaraJS: decoded content expands far beyond the input, so bound one token
+	objectsParser->SetMaxTokenSize(PDFParserTokenizer::scMaxStreamTokenSize);
 	// Not setting decryption filter cause shuoldnt decrypt at lower level. if at all - the stream is encrypted already
 	objectsParser->SetParserExtender(mParserExtender);
 

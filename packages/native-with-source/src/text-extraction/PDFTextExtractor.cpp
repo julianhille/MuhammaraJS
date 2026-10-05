@@ -79,8 +79,11 @@ bool IsInlineImageWhitespace(IOBasicTypes::Byte inByte)
 // burning the parsed-object budget. Reads raw bytes up to the EI delimiter
 // instead. EI must be surrounded by whitespace, the same heuristic every PDF
 // consumer uses, since nothing records the payload length.
-void SkipInlineImageData(PDFObjectParser* inObjectParser)
+// Returns false when the payload exhausts the content read limit, which the
+// skipped bytes share with the tokens around them.
+bool SkipInlineImageData(PDFObjectParser* inObjectParser)
 {
+  bool withinLimits = true;
   IByteReader* stream = inObjectParser->StartExternalRead();
   if (stream != NULL)
   {
@@ -90,6 +93,11 @@ void SkipInlineImageData(PDFObjectParser* inObjectParser)
     IOBasicTypes::Byte current = 0;
     while (stream->NotEnded())
     {
+      if (!inObjectParser->ConsumeReadBudget(1))
+      {
+        withinLimits = false;
+        break;
+      }
       if (stream->Read(&current, 1) != 1)
         break;
       if (IsInlineImageWhitespace(window[0]) && window[1] == 'E' &&
@@ -101,6 +109,7 @@ void SkipInlineImageData(PDFObjectParser* inObjectParser)
     }
   }
   inObjectParser->EndExternalRead();
+  return withinLimits;
 }
 
 bool IsPathPaintingOperation(const std::string& inOperation)
@@ -226,6 +235,7 @@ bool PDFTextExtractor::Extract(
     objectParser = inParser->StartReadingObjectsFromStreams(static_cast<PDFArray*>(contents.GetPtr()));
   if (!objectParser)
     return true;
+  objectParser->SetReadLimit(kMaxContentBytes);
 
   bool inTextObject = false;
   std::string fontResource;
@@ -317,7 +327,11 @@ bool PDFTextExtractor::Extract(
       MoveTextLine(textMatrix, textLineMatrix, 0, -textLeading);
     else if (operation == "ID")
     {
-      SkipInlineImageData(objectParser);
+      if (!SkipInlineImageData(objectParser))
+      {
+        withinLimits = false;
+        break;
+      }
       operands.clear();
       continue;
     }
@@ -355,6 +369,8 @@ bool PDFTextExtractor::Extract(
     operands.clear();
   }
 
+  if (objectParser->ReachedReadLimit())
+    withinLimits = false;
   delete objectParser;
   return withinLimits;
 }
@@ -380,6 +396,7 @@ bool PDFTextExtractor::ExtractPageContentItems(
     objectParser = inParser->StartReadingObjectsFromStreams(static_cast<PDFArray*>(contents.GetPtr()));
   if (!objectParser)
     return true;
+  objectParser->SetReadLimit(kMaxContentBytes);
 
   bool inTextObject = false;
   int textRenderingMode = 0;
@@ -424,7 +441,11 @@ bool PDFTextExtractor::ExtractPageContentItems(
     }
     else if (operation == "ID")
     {
-      SkipInlineImageData(objectParser);
+      if (!SkipInlineImageData(objectParser))
+      {
+        withinLimits = false;
+        break;
+      }
       operands.clear();
       continue;
     }
@@ -478,6 +499,8 @@ bool PDFTextExtractor::ExtractPageContentItems(
     operands.clear();
   }
 
+  if (objectParser->ReachedReadLimit())
+    withinLimits = false;
   delete objectParser;
   return withinLimits;
 }

@@ -75,6 +75,11 @@ reader.end();
 
 A page that exceeds the budget throws rather than returning partial results.
 
+Independent of `limits`, an extraction reads at most 64 MiB of a page's decoded
+content, inline image data included, and throws the same error past it. A
+compressed content stream can expand far beyond its file size, so this bounds
+the work one small PDF can cause.
+
 Decoding `text` also reads the page's fonts. The PDF objects it reads count
 against `maxParsedObjects` on their own, and exceeding it throws the same error.
 Fonts are cached per reader, but each call still counts a cached font's objects
