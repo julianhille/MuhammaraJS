@@ -70,9 +70,10 @@ These bring Wasm Recipe in line with native Recipe; see
   verbatim license files in each vendored library's `licenses/` folder and the
   Emscripten toolchain that linked the binary [#876](https://github.com/julianhille/MuhammaraJS/issues/876)
 - `recryptAsync()`, which resolves with the bytes `recrypt()` returns and also
-  accepts a `Blob` or `File`. It recrypts on the calling thread; call it from a
-  Worker to keep a page responsive. It holds no more copies of the input than
-  `recrypt()` [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+  accepts a `Blob` or `File`. It recrypts in a worker, so a page keeps
+  responding; see the Changed entry below. It holds no more copies of the
+  input than `recrypt()`
+  [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
   [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
 - A Benchmark tab in the browser example, which recrypts the same PDF with
   synchronous `recrypt()` and `recryptAsync()`, each on the page and in a
