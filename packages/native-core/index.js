@@ -14,6 +14,9 @@ var nativeExtractPageText = Symbol.for(
   "@muhammara/native-core:extractPageText",
 );
 var nativeRecryptAsync = Symbol.for("@muhammara/native-core:recryptAsync");
+var nativeRegisterBufferReadStream = Symbol.for(
+  "@muhammara/native-core:registerBufferReadStream",
+);
 // The addon rejects with the same message for a path it cannot open.
 var pathTooLong =
   "A path is too long for this system; recryptAsync() opens its files by " +
@@ -86,6 +89,29 @@ function decodeExtractedText(muhammara) {
         )
       : elements;
   };
+}
+
+/**
+ * Let readers read a `PDFRStreamForBuffer` through its fields instead of
+ * calling `read()` for every byte the parser takes. The addon checks that a
+ * stream's prototype and methods are the registered ones, so subclasses and
+ * patched streams keep their calls. The hook is removed from the public API
+ * and kept under a hidden key, as each module registry registers its own
+ * class.
+ *
+ * @param {object} muhammara The native addon, with `PDFRStreamForBuffer` set.
+ * @returns {void}
+ */
+function registerBufferReadStream(muhammara) {
+  var register = keepNative(
+    muhammara,
+    nativeRegisterBufferReadStream,
+    muhammara.registerBufferReadStream,
+  );
+  delete muhammara.registerBufferReadStream;
+  if (typeof register === "function") {
+    register(muhammara.PDFRStreamForBuffer.prototype);
+  }
 }
 
 /**
@@ -346,6 +372,7 @@ exports.createMuhammara = function createMuhammara(muhammara) {
   muhammara.PDFWStreamForFile = require("./lib/PDFWStreamForFile");
   muhammara.PDFRStreamForFile = require("./lib/PDFRStreamForFile");
   muhammara.PDFRStreamForBuffer = require("./lib/PDFRStreamForBuffer");
+  registerBufferReadStream(muhammara);
   muhammara.PDFWStreamForBuffer = require("./lib/PDFWStreamForBuffer");
   muhammara.DrawingPathType = Object.freeze({
     STROKE: "stroke",

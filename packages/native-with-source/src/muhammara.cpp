@@ -341,6 +341,20 @@ napi_value CreateReader(const CallbackArgs &args) {
              : ThrowTypeError(args.Env(), "Unable to start parsing PDF file");
 }
 
+// Internal: @muhammara/native-core registers PDFRStreamForBuffer.prototype,
+// so readers can read such streams through their fields. Not public API.
+napi_value RegisterBufferReadStream(const CallbackArgs &args) {
+  ModuleState *state = ModuleState::Get(args.Env());
+  if (args.Length() < 1 || !state ||
+      !state->RegisterBufferReadStream(args[0])) {
+    if (!HasPendingException(args.Env()))
+      ThrowTypeError(args.Env(),
+                     "Expected the PDFRStreamForBuffer prototype");
+    return nullptr;
+  }
+  return Undefined(args.Env());
+}
+
 napi_value GetTypeLabel(const CallbackArgs &args) {
   if (args.Length() != 1 || !IsType(args.Env(), args[0], napi_number)) {
     return ThrowTypeError(args.Env(), "Wrong arguments, provide a single "
@@ -417,6 +431,8 @@ bool Initialize(ModuleState &state, napi_value exports) {
       !ExportFunction(state, exports, "createWriterToModify",
                       CreateWriterToModify) ||
       !ExportFunction(state, exports, "createReader", CreateReader) ||
+      !ExportFunction(state, exports, "registerBufferReadStream",
+                      RegisterBufferReadStream) ||
       !ExportFunction(state, exports, "recrypt", Recrypt) ||
       !ExportFunction(state, exports, "recryptAsync", RecryptAsync) ||
       !ExportFunction(state, exports, "getTypeLabel", GetTypeLabel)) {

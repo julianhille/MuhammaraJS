@@ -169,6 +169,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Readers, copying contexts, modifiers and `recrypt()` read a
+  `PDFRStreamForBuffer` without calling into JavaScript for every byte the
+  parser takes: a PDF with a 33 MiB object parses about eight times faster.
+  The stream's position is kept natively during a call and written back to
+  the object before the call returns. Other stream classes, subclasses of
+  `PDFRStreamForBuffer`, and streams whose methods were replaced are called
+  as before [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 - Parsing a decoded content stream reads it in blocks instead of one
   decode call per byte, about four times faster, for text extraction,
   `startReadingObjectsFromStream()` and page merging [#951](https://github.com/julianhille/MuhammaraJS/issues/951)

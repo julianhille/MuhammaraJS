@@ -622,7 +622,36 @@ napi_value ClassBuilder::Define(napi_value exports, bool exportConstructor) {
 }
 
 ModuleState::ModuleState(napi_env env)
-    : env_(env), constructors_(env), nextTypeTag_(1) {}
+    : env_(env), constructors_(env),
+      boundary_(std::make_shared<CallBoundary>()), nextTypeTag_(1) {}
+
+std::shared_ptr<CallBoundary> ModuleState::Boundary() const {
+  return boundary_;
+}
+
+void CallBoundary::Add(Listener *listener) { listeners_.push_back(listener); }
+
+void CallBoundary::Remove(Listener *listener) {
+  listeners_.erase(
+      std::remove(listeners_.begin(), listeners_.end(), listener),
+      listeners_.end());
+}
+
+void CallBoundary::Enter() {
+  if (depth_++ == 0) {
+    for (Listener *listener : std::vector<Listener *>(listeners_))
+      listener->OnEnter();
+  }
+}
+
+void CallBoundary::Return() {
+  if (depth_ > 0 && --depth_ == 0) {
+    for (Listener *listener : std::vector<Listener *>(listeners_))
+      listener->OnReturn();
+  }
+}
+
+bool CallBoundary::Inside() const { return depth_ > 0; }
 
 napi_env ModuleState::Env() const { return env_; }
 
@@ -663,6 +692,66 @@ void* ModuleState::AddAccessor(Callback getter, Callback setter, void* data,
   callbacks_.push_back(std::make_unique<CallbackBinding>(
       CallbackBinding{getter, setter, data, typeTag, {}, false, true, {}}));
   return callbacks_.back().get();
+}
+
+namespace {
+// The methods PDFRStreamForBuffer implements and IByteReaderWithPosition calls.
+const char *const kBufferReadStreamMethods[] = {
+    "read", "notEnded", "setPosition", "setPositionFromEnd",
+    "skip", "getCurrentPosition", "moveStartPosition"};
+const size_t kBufferReadStreamMethodCount =
+    sizeof(kBufferReadStreamMethods) / sizeof(kBufferReadStreamMethods[0]);
+} // namespace
+
+struct ModuleState::BufferReadStreamPrototype {
+  Reference prototype;
+  std::vector<Reference> methods;
+};
+
+bool ModuleState::RegisterBufferReadStream(napi_value prototype) {
+  if (!IsObject(env_, prototype))
+    return false;
+  auto entry = std::make_unique<BufferReadStreamPrototype>();
+  if (!entry->prototype.Reset(env_, prototype))
+    return false;
+  for (size_t i = 0; i < kBufferReadStreamMethodCount; ++i) {
+    napi_value method = napi::Get(env_, prototype, kBufferReadStreamMethods[i]);
+    if (!method || !IsType(env_, method, napi_function))
+      return false;
+    entry->methods.emplace_back(env_, method);
+  }
+  bufferReadStreams_.push_back(std::move(entry));
+  return true;
+}
+
+bool ModuleState::IsBufferReadStream(napi_value object) {
+  if (bufferReadStreams_.empty() || !IsObject(env_, object))
+    return false;
+  napi_value prototype = nullptr;
+  if (napi_get_prototype(env_, object, &prototype) != napi_ok)
+    return false;
+  for (const auto &entry : bufferReadStreams_) {
+    bool same = false;
+    if (napi_strict_equals(env_, prototype, entry->prototype.Get(), &same) !=
+            napi_ok ||
+        !same)
+      continue;
+    for (size_t i = 0; i < kBufferReadStreamMethodCount; ++i) {
+      napi_value name = String(env_, kBufferReadStreamMethods[i]);
+      bool own = true;
+      if (napi_has_own_property(env_, object, name, &own) != napi_ok || own)
+        return false;
+      napi_value method = napi::Get(env_, prototype, kBufferReadStreamMethods[i]);
+      bool unchanged = false;
+      if (!method ||
+          napi_strict_equals(env_, method, entry->methods[i].Get(),
+                             &unchanged) != napi_ok ||
+          !unchanged)
+        return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 napi_type_tag ModuleState::NextTypeTag() {
@@ -738,7 +827,14 @@ napi_value Dispatch(napi_env env, napi_callback_info info) {
       return ThrowError(env, message.c_str());
     }
   }
+  ModuleState* state = ModuleState::Get(env);
+  std::shared_ptr<CallBoundary> boundary =
+      state ? state->Boundary() : nullptr;
+  if (boundary)
+    boundary->Enter();
   napi_value result = binding->callback(args);
+  if (boundary)
+    boundary->Return();
   if (result && binding->tagsThis) {
     if (!binding->instanceProperties.empty() &&
         !Check(env, napi_define_properties(
