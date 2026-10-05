@@ -340,6 +340,83 @@ function pdfWithFlateContent(content, resources) {
   return Buffer.concat(parts);
 }
 
+/**
+ * Builds a PDF whose objects 1 to 3 live in an object stream whose header
+ * ends right where its first object starts, with no separator, as Cairo
+ * writes them, and whose /Length is an indirect object. Reading the header
+ * overshoots the first object, so the parser opens the stream again, which
+ * resolves the /Length.
+ * @returns {Buffer} The PDF.
+ */
+function pdfWithTightObjectStream() {
+  var objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>",
+  ];
+  var offsets = [];
+  var body = "";
+  objects.forEach(function (object) {
+    offsets.push(body.length);
+    body += object;
+  });
+  var header = objects
+    .map(function (object, index) {
+      return index + 1 + " " + offsets[index];
+    })
+    .join(" ");
+  var content = header + body;
+  var out = "%PDF-1.5\n";
+  var at = {};
+  at[5] = out.length;
+  out +=
+    "5 0 obj\n<< /Type /ObjStm /N 3 /First " +
+    header.length +
+    " /Length 6 0 R >>\nstream\n" +
+    content +
+    "\nendstream\nendobj\n";
+  at[6] = out.length;
+  out += "6 0 obj\n" + content.length + "\nendobj\n";
+  at[4] = out.length;
+  /**
+   * Encodes one xref stream entry with /W [1 4 2].
+   * @param {number} type - Entry type.
+   * @param {number} field2 - Offset, or object stream number.
+   * @param {number} field3 - Generation, or index in the object stream.
+   * @returns {Buffer} The entry.
+   */
+  function entry(type, field2, field3) {
+    var bytes = Buffer.alloc(7);
+    bytes[0] = type;
+    bytes.writeUInt32BE(field2, 1);
+    bytes.writeUInt16BE(field3, 5);
+    return bytes;
+  }
+  var rows = Buffer.concat([
+    entry(0, 0, 65535),
+    entry(2, 5, 0),
+    entry(2, 5, 1),
+    entry(2, 5, 2),
+    entry(1, at[4], 0),
+    entry(1, at[5], 0),
+    entry(1, at[6], 0),
+  ]);
+  return Buffer.concat([
+    Buffer.from(out, "latin1"),
+    Buffer.from(
+      "4 0 obj\n<< /Type /XRef /Size 7 /W [1 4 2] /Root 1 0 R /Length " +
+        rows.length +
+        " >>\nstream\n",
+      "latin1",
+    ),
+    rows,
+    Buffer.from(
+      "\nendstream\nendobj\nstartxref\n" + at[4] + "\n%%EOF\n",
+      "latin1",
+    ),
+  ]);
+}
+
 export {
   materials,
   fuzzInputs,
@@ -353,4 +430,5 @@ export {
   pdfWithFlateContent,
   encryptedPdfWithCryptFilters,
   pdfWithXrefStream,
+  pdfWithTightObjectStream,
 };

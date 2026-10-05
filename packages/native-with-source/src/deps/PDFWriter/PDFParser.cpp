@@ -1966,6 +1966,10 @@ PDFObject* PDFParser::ParseExistingInDirectStreamObject(ObjectIDType inObjectId)
 		// so we can still reach it, rather than skipping to a position we've already passed.
 		if(!skipperStream.CanSkipTo(objectPositionInStream))
 		{
+			// MuhammaraJS: CreateInputStreamReader() may parse objects, such as an
+			// indirect /Length, through mObjectParser, which still reads the
+			// object stream's reader deleted here. Point it back at the file first.
+			mObjectParser.SetReadStream(&mStream,&mCurrentPositionProvider);
 			delete objectSource;
 			objectSource = CreateInputStreamReader(objectStream.GetPtr());
 			skipperStream.Assign(objectSource);

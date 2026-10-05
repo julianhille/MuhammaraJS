@@ -194,6 +194,24 @@ describe("PDFParser", function () {
 
   // Field values were accumulated in a signed 64-bit integer, so an 8-byte
   // field with its top bit set, or a wider field, overflowed it.
+  // Reading the header of an object stream that ends right at its first
+  // object overshoots it, so the parser opens the stream again. It deleted
+  // the stream's reader first while still parsing through it, and an
+  // indirect /Length read freed memory: a trap on Cairo PDFs.
+  it("reads an object stream whose header ends at its first object", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(malformed.pdfWithTightObjectStream());
+    assert.equal(reader.getPagesCount(), 1);
+    var catalog = reader.parseNewObject(1);
+    assert.equal(catalog.getType(), muhammara.ePDFObjectDictionary);
+    assert.equal(catalog.queryObject("Type").value, "Catalog");
+    assert.equal(
+      reader.parsePageDictionary(0).queryObject("Type").value,
+      "Page",
+    );
+    reader.end();
+  });
+
   it("rejects an xref stream field wider than 8 bytes", async function () {
     var muhammara = await createMuhammaraWasm();
     assert.throws(() =>

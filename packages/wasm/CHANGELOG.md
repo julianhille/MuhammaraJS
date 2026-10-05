@@ -82,6 +82,12 @@ These bring Wasm Recipe in line with native Recipe; see
 
 ### Fixed
 
+- Reading a PDF whose object stream header ends right where its first
+  object starts, as Cairo writes them, no longer reads freed memory when the
+  stream's `/Length` is an indirect object. It usually trapped with
+  `table index is out of bounds`, and affected `createReader()`, copying,
+  appending, modifying and `recrypt()` of such PDFs since 1.0.0
+  [#959](https://github.com/julianhille/MuhammaraJS/issues/959)
 - `extractPageText()` and `extractPageContentItems()` stop after 64 MiB of
   decoded page content, inline images included, and throw their limit error,
   and a parser from `startReadingObjectsFromStream()` stops at a token over

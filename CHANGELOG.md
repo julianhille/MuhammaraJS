@@ -39,6 +39,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Reading a PDF whose object stream header ends right where its first
+  object starts, as Cairo writes them, no longer crashes the process with a
+  segmentation fault when the stream's `/Length` is an indirect object. Since
+  7.0.0, re-opening such a stream read memory it had just freed; this affected
+  `createReader()`, copying, appending, modifying and `recrypt()` of such
+  PDFs [#959](https://github.com/julianhille/MuhammaraJS/issues/959)
 - `extractPageText()` and `extractPageContentItems()` stop after 64 MiB of
   decoded page content, inline images included, and throw their limit error,
   and a parser from `startReadingObjectsFromStream()` stops at a token over
