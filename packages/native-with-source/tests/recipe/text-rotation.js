@@ -117,4 +117,47 @@ describe("Text Rotation", () => {
     assert.closeTo(pivotX, 100, 0.01);
     assert.closeTo(pivotY, 300, 0.01);
   });
+
+  it("turns a flowed clipped line's clip box with its text", () => {
+    let matrices;
+    new Recipe(Buffer.from("new"), null, { compress: false })
+      .createPage(400, 400)
+      .text("alpha beta gamma", {
+        font: "arial",
+        rotation: 30,
+        textBox: { width: 60, wrap: "clip" },
+      })
+      .endPage()
+      .endPDF((bytes) => {
+        matrices = cmOperators(Buffer.from(bytes));
+      });
+    // The clipped line is drawn in a Form XObject that is placed turned, so
+    // its clip turns with it. Wasm Recipe asserts the same in
+    // text-rotation.test.mjs.
+    assert.deepEqual(
+      matrices[matrices.length - 1].slice(0, 4),
+      [0.866025, -0.5, 0.5, 0.866025],
+    );
+  });
+
+  it("keeps the link of rotated clipped text", () => {
+    for (const flow of [true, false]) {
+      let pdf;
+      const recipe = new Recipe(Buffer.from("new"), null, {
+        compress: false,
+      }).createPage(400, 400);
+      const options = {
+        font: "arial",
+        rotation: 90,
+        link: "https://example.com",
+        textBox: { width: 60, wrap: "clip" },
+      };
+      if (flow) recipe.text("alpha bravo charlie", options);
+      else recipe.text("alpha bravo charlie", 100, 100, options);
+      recipe.endPage().endPDF((bytes) => {
+        pdf = Buffer.from(bytes).toString("latin1");
+      });
+      assert.match(pdf, /\/Subtype \/Link/, `flow ${flow} keeps its link`);
+    }
+  });
 });

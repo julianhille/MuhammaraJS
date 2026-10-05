@@ -118,6 +118,58 @@ describe("Text Rotation", function () {
     );
   });
 
+  it("turns a flowed clipped line's clip box with its text", async function () {
+    var Recipe = await getRecipe();
+    var pdf = new Recipe({ compress: false })
+      .createPage(400, 400)
+      // Without coordinates the call flows and starts at the page margins,
+      // Recipe (72, 72), which is PDF (72, 328).
+      .text("alpha beta gamma", {
+        font: "arial",
+        rotation: 30,
+        textBox: { width: 60, wrap: "clip" },
+      })
+      .endPage()
+      .endPDF();
+    writeOutput("text-rotation-flow-clip", pdf);
+    var content = new TextDecoder("latin1").decode(pdf);
+    // The clip is written inside the turn, as for a positioned call, not
+    // upright before the turned text.
+    var turn = clockwiseAround(72, 328).join("\\s+cm\\s+");
+    assert.match(
+      content,
+      new RegExp(`${turn}\\s+cm\\s+[\\d.\\s-]+re\\s+W\\s+n`),
+    );
+    assert.doesNotMatch(content, /re\s+W\s+n\s+Q/);
+  });
+
+  it("keeps the link of rotated clipped text", async function () {
+    var Recipe = await getRecipe();
+    var rects = [true, false].map((flow) => {
+      var recipe = new Recipe({ compress: false }).createPage(400, 400);
+      var options = {
+        font: "arial",
+        rotation: 90,
+        link: "https://example.com",
+        textBox: { width: 60, wrap: "clip" },
+      };
+      if (flow) recipe.text("alpha bravo charlie", options);
+      else recipe.text("alpha bravo charlie", 100, 100, options);
+      var pdf = recipe.endPage().endPDF();
+      var match = new TextDecoder("latin1")
+        .decode(pdf)
+        .match(/\/Rect \[\s*([^\]]+)\]/);
+      assert.ok(match, "the clipped text keeps its link");
+      return match[1].trim().split(/\s+/).map(Number);
+    });
+    // Turned a quarter clockwise around the text's top-left corner, the line
+    // runs down from it, and the clip ends it 60 points below.
+    var [left, bottom, right, top] = rects[1];
+    assert.ok(right <= 100 && left < right, `x ${left}..${right}`);
+    assert.ok(top <= 300 && bottom >= 240 - 0.001, `y ${bottom}..${top}`);
+    assert.ok(rects[0][1] >= 328 - 60 - 0.001, "the flowed link is clipped");
+  });
+
   it("turns a text link with its text", async function () {
     var Recipe = await getRecipe();
     var pdf = new Recipe({ compress: false })
