@@ -185,6 +185,16 @@ describe("TextDirection", function () {
     });
   });
 
+  describe("hasStrongCharacter", function () {
+    it("finds letters and direction marks, not digits or brackets", function () {
+      assert.isTrue(textDirection.hasStrongCharacter("(1) abc"));
+      assert.isTrue(textDirection.hasStrongCharacter("12 שלום"));
+      assert.isTrue(textDirection.hasStrongCharacter("\u200f(1)"));
+      assert.isFalse(textDirection.hasStrongCharacter("(1) 2345, 6789!"));
+      assert.isFalse(textDirection.hasStrongCharacter(""));
+    });
+  });
+
   describe("drawnText", function () {
     it("leaves out the formatting characters reordering drops", function () {
       assert.equal(textDirection.drawnText("\u2067שלום\u2069", "auto"), "שלום");

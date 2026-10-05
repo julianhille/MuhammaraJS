@@ -8,6 +8,7 @@ import {
 } from "../../index.js";
 import {
   drawnText,
+  hasStrongCharacter,
   paragraphDirections,
   readDirection,
   resolveDirection,
@@ -170,6 +171,16 @@ describe("TextDirection", function () {
       assert.equal(paragraphDirections("שלום", "ltr")(0), "ltr");
       assert.equal(paragraphDirections("שלום")(0), "none");
       assert.equal(resolveDirection("\u{1f600} שלום", "auto"), "rtl");
+    });
+  });
+
+  describe("hasStrongCharacter", function () {
+    it("finds letters and direction marks, not digits or brackets", function () {
+      assert.equal(hasStrongCharacter("(1) abc"), true);
+      assert.equal(hasStrongCharacter("12 שלום"), true);
+      assert.equal(hasStrongCharacter("\u200f(1)"), true);
+      assert.equal(hasStrongCharacter("(1) 2345, 6789!"), false);
+      assert.equal(hasStrongCharacter(""), false);
     });
   });
 

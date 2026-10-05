@@ -628,6 +628,54 @@ describe("Recipe text direction", function () {
     assert.equal(lines[true], lines[false]);
   });
 
+  it("gives earlier wrapped lines of a flowed paragraph the direction found later", async function () {
+    const lines = {};
+    for (const flow of [true, false]) {
+      const runs = await drawPage(
+        "text-direction-flow-wrapped-" + flow,
+        (recipe) => {
+          const options = {
+            font: "arial",
+            size: 12,
+            direction: "auto",
+            textBox: { width: 60 },
+          };
+          if (flow) {
+            recipe
+              .text("(1) 2345 6789 1234 5678 9012 ", 20, 20, {
+                ...options,
+                flow: true,
+              })
+              .text("שלום עולם", options)
+              .text("", { flow: false });
+          } else {
+            recipe.text(
+              "(1) 2345 6789 1234 5678 9012 שלום עולם",
+              20,
+              20,
+              options,
+            );
+          }
+        },
+      );
+      const ys = [...new Set(runs.map((run) => run.y))];
+      lines[flow] = ys.map((y, index) =>
+        lineRuns(runs, index)
+          .map((run) => run.text.trim())
+          .join(" "),
+      );
+    }
+    // The first strong letter is Hebrew, on the last line, so every line of
+    // the paragraph runs right to left.
+    assert.deepEqual(lines[false], [
+      "2345 (1)",
+      "1234 6789",
+      "9012 5678",
+      "םלוע םולש",
+    ]);
+    assert.deepEqual(lines[true], lines[false]);
+  });
+
   it("keeps the hilite of a clipped right-to-left line inside the box", async function () {
     // Native draws hilites outside the clip, so it limits them to the box.
     const hilites = { rtl: [], none: [] };

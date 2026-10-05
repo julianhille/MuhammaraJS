@@ -153,6 +153,28 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("gives earlier wrapped lines the direction of a later letter, as native does", function () {
+    var runs = drawPage("text-direction-wrapped-later-letter", (recipe) => {
+      recipe.text("(1) 2345 6789 1234 5678 9012 שלום עולם", 20, 20, {
+        font: "arial",
+        size: 12,
+        direction: "auto",
+        textBox: { width: 60 },
+      });
+    });
+    var ys = [...new Set(runs.map((run) => run.y))];
+    assert.deepEqual(
+      ys.map((y) =>
+        runs
+          .filter((run) => run.y === y)
+          .sort((left, right) => left.x - right.x)
+          .map((run) => run.text.trim())
+          .join(" "),
+      ),
+      ["2345 (1)", "1234 6789", "9012 5678", "םלוע םולש"],
+    );
+  });
+
   it("places justified words from right to left", function () {
     var runs = drawPage("text-direction-justify", (recipe) => {
       recipe.text("אחת שתיים שלוש ארבע חמש", 20, 20, {

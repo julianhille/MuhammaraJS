@@ -7,6 +7,7 @@ const { resolveFontSize, trimBreakableEnd } = require("./utils");
 const { miterLimitOption, rotationOption } = require("../recipe-options");
 const {
   readDirection,
+  hasStrongCharacter,
   resolveDirection,
   paragraphDirections,
   toVisual,
@@ -2190,8 +2191,8 @@ function makeTextObjects(
        */
       () => textObject.paragraphDirection
     : paragraphDirections(flowParagraph + text, pathOptions.direction);
-  // While a flow's open paragraph has no letter yet, its direction comes
-  // from the runs that follow.
+  // While a flow's open paragraph has no strong character yet, its
+  // direction comes from the runs that follow.
   const paragraphs = (flowParagraph + text).split(PARAGRAPH_BREAK);
   const openParagraph = paragraphs[paragraphs.length - 1];
   const openStart = flowParagraph.length + text.length - openParagraph.length;
@@ -2199,7 +2200,7 @@ function makeTextObjects(
     !textObject.paragraphDirection &&
     self._flow &&
     readDirection(pathOptions.direction) === TextDirection.AUTO &&
-    !/\p{L}/u.test(openParagraph);
+    !hasStrongCharacter(openParagraph);
   /**
    * The direction of the paragraph holding an offset of this run's text.
    * @param {number} offset - A UTF-16 offset of `text`.
@@ -2210,6 +2211,16 @@ function makeTextObjects(
     pending && offset + flowParagraph.length >= openStart
       ? null
       : paragraphDirectionAt(offset + flowParagraph.length);
+  // Lines laid out while the open paragraph had no direction yet take it
+  // once this run gives it one.
+  const openDirection = directionAt(-flowParagraph.length);
+  if (openDirection !== null) {
+    toWriteTextObjects.forEach((toWriteTextObject) => {
+      if (toWriteTextObject.direction === null) {
+        toWriteTextObject.direction = openDirection;
+      }
+    });
+  }
   if (!textObject.paragraphDirection) {
     self._flowParagraph = self._flow
       ? (flowParagraph + text).split(PARAGRAPH_BREAK).pop()

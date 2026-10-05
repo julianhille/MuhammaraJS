@@ -139,6 +139,29 @@ function isRightToLeftLetter(text, index) {
   return RIGHT_TO_LEFT_CLASSES.indexOf(type) !== -1;
 }
 
+// The bidirectional classes of strong letters, which set the direction of
+// the paragraph they start.
+var STRONG_CLASSES = Object.freeze(["L", "R", "AL"]);
+
+/**
+ * Whether text holds a character that can set its paragraph's direction: a
+ * letter of either direction, or a left-to-right or right-to-left mark.
+ *
+ * @param {string} text The text.
+ * @returns {boolean} True for text with a character of class L, R or AL.
+ */
+function hasStrongCharacter(text) {
+  var api = getBidi();
+  for (var index = 0; index < text.length; ++index) {
+    var type = api.getBidiCharTypeName(
+      String.fromCodePoint(text.codePointAt(index)),
+    );
+    if (STRONG_CLASSES.indexOf(type) !== -1) return true;
+    if (isLowSurrogateAt(text, index + 1)) ++index;
+  }
+  return false;
+}
+
 /**
  * Validate a `direction` option.
  *
@@ -606,6 +629,7 @@ export {
   TextDirection,
   readDirection,
   hasReorderingCharacters,
+  hasStrongCharacter,
   resolveDirection,
   paragraphDirections,
   toVisual,
