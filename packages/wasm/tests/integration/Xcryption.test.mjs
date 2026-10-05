@@ -732,6 +732,46 @@ describe("Xcryption", function () {
       assert.equal(counts.exited, 2);
     });
 
+    it("stops an idle shared worker and releases its loading key", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var counts = countWorkers();
+      try {
+        // Limits no other test uses, so the host is a new shared one.
+        var settings = {
+          maxInputBytes: 7654321,
+          maxOutputBytes: 7654321,
+          idleTimeout: 50,
+        };
+        var host = recryptWorkerHost(settings);
+        assert.equal(recryptWorkerHost(settings), host, "the host is shared");
+        var first = await host.run(
+          muhammara.createBlankPdf(100, 100),
+          plainOptions,
+        );
+        await waitFor(() => counts.exited === 1);
+        assert.equal(counts.exited, 1, "the idle shared worker stopped");
+        assert.notEqual(
+          recryptWorkerHost(settings),
+          host,
+          "the stopped host no longer holds its key",
+        );
+        // An instance that kept the host still runs its jobs.
+        var second = await host.run(
+          muhammara.createBlankPdf(100, 100),
+          plainOptions,
+        );
+        await waitFor(() => counts.exited === 2);
+      } finally {
+        counts.restore();
+      }
+      for (var result of [first, second]) {
+        assert.ok(result, "the job ran in a worker");
+        assert.equal(readBack(muhammara, result, "view").encrypted, true);
+      }
+      assert.equal(counts.started, 2);
+      assert.equal(counts.exited, 2);
+    });
+
     it("keeps a wasmBinary worker while a job outlasts its idle timeout", async function () {
       var muhammara = await createMuhammaraWasm();
       var source = largePdf(muhammara);
