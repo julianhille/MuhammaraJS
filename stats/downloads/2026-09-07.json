@@ -1,0 +1,12 @@
+{
+ "note": "Totals only, as reported in an earlier session; per-asset counts were not stored.",
+ "releases": {
+  "6.0.6": {"total": 9169},
+  "native-v7.0.0-alpha.1": {"total": 280},
+  "wasm-v1.0.0-alpha.1": {"total": 0},
+  "wasm-v1.0.0-beta.1": {"total": 0}
+ },
+ "npm_last_30_days": {"@muhammara/wasm": 308, "muhammara": 211762},
+ "source": "github-release-assets + api.npmjs.org",
+ "taken_at": "2026-09-07T20:00:00Z"
+}
