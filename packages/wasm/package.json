@@ -45,6 +45,7 @@
     "docs:generate": "node ./scripts/generate-reference.mjs && prettier --write docs/reference.md",
     "docs:check": "npm run docs:generate && mkdocs build --strict --config-file mkdocs.yml",
     "pages:stage-example": "node ./scripts/stage-pages-example.mjs",
+    "pages:index": "node ./scripts/generate-pages-index.mjs",
     "serve:browser": "node ./tests/browser/serve.mjs",
     "server:browser": "npm run serve:browser",
     "test:browser": "node ./tests/browser/run.mjs",
