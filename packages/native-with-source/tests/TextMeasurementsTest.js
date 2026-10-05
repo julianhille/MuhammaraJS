@@ -1,3 +1,6 @@
+var path = require("path");
+var malformed = require("./helpers/malformedInputs");
+
 describe("TextMeasurementsTest", function () {
   it("snapshots glyph array length before coercing elements", function () {
     var assert = require("assert");
@@ -105,5 +108,40 @@ describe("TextMeasurementsTest", function () {
 
     pdfWriter.writePage(page);
     pdfWriter.end();
+  });
+
+  it("measures text in a font with a glyph FreeType cannot load", function () {
+    var assert = require("assert");
+    var muhammara = require("@muhammara/native-with-source");
+    var writer = muhammara.createWriter(
+      path.join(__dirname, "output", "FuzzGlyphWithoutOutline.pdf"),
+    );
+    var font = writer.getFontForFile(
+      path.join(malformed.fuzzInputs, "font-glyph-without-outline-bbox.bin"),
+    );
+    var dimensions = font.calculateTextDimensions("Hello, 世界 ﬁ €", 12);
+    assert.ok(Number.isFinite(dimensions.width));
+    writer.end();
+  });
+
+  it("measures text with a glyph that fails to load", function () {
+    var assert = require("assert");
+    var muhammara = require("@muhammara/native-with-source");
+    var broken = malformed.fontWithBrokenGlyph();
+    var fontPath = malformed.writeFixture("FuzzBrokenGlyph.ttf", broken.font);
+    var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    var font = writer.getFontForFile(fontPath);
+    var good = broken.broken === 1 ? 2 : 1;
+    // FreeType keeps a failed FT_Get_Glyph's output unset, so the broken glyph
+    // used to reuse the glyph freed in the previous iteration.
+    var expected = font.calculateTextDimensions([good], 12);
+    var dimensions = font.calculateTextDimensions(
+      [good, broken.broken, good],
+      12,
+    );
+    assert.equal(dimensions.yMin, expected.yMin);
+    assert.equal(dimensions.yMax, expected.yMax);
+    assert.ok(Number.isFinite(dimensions.width));
+    writer.end();
   });
 });

@@ -39,6 +39,41 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Fix crashes on malformed input found by fuzzing the native addon and the
+  Wasm build, which share this code [#951](https://github.com/julianhille/MuhammaraJS/issues/951):
+  - `calculateTextDimensions()` on a font with a glyph FreeType cannot load
+    read an uninitialized glyph and crashed. Such a glyph now adds no box
+  - Writing a CFF (OpenType) font whose charstrings call local subroutines
+    that its private dictionary does not have read through a null pointer
+  - A failed `createFormXObjectsFromPDF()` or
+    `createFormXObjectFromPDFPage()`, for example on a page whose content
+    cannot be read, deleted the writer's output stream and left the form
+    open, so `end()` used freed memory. The writer now stays usable
+  - Copying, merging, appending or making a form from a page whose
+    `/Contents` array holds something other than a reference, and reading an
+    encrypted PDF whose `/CF` entry is not a dictionary, used freed memory
+  - Merging a page whose `/ProcSet` holds something other than a name read
+    past the end of a heap buffer
+  - Reading an encrypted PDF whose crypt filter has no `/CFM`, which is
+    optional, read through a null pointer
+  - A CFF font with an empty Name INDEX or FDArray, mismatched Top DICT count
+    or out-of-range font index, and a font whose OS/2 width class is outside
+    1..9, read out of bounds
+  - An xref stream with a `/W` field wider than 8 bytes overflowed a signed
+    shift; it is now rejected
+  - A PNG that fails after its rows are read, such as one without `IEND`,
+    made libpng jump into a function that had returned
+  - Reading a DCTDecode stream with corrupt JPEG data never ended:
+    `notEnded()` stayed true while `read()` returned nothing, and on
+    riscv64 the libjpeg error aborted the process. Decoding now ends at the
+    error with the rows read so far
+- Fix memory leaks on malformed input found by fuzzing [#951](https://github.com/julianhille/MuhammaraJS/issues/951): a PNG
+  whose rows fail to decode leaked the image stream, row buffer and decoder
+  state; a CFF font whose local subroutines cannot be read leaked them and
+  read past the end of a map; TIFF strip and tile buffers leaked on decode
+  errors; a TrueType composite glyph naming a missing glyph leaked; and a
+  failed stream copy or `recrypt()` left dictionaries open that leaked when
+  the writer was destroyed
 - Recipe `text()` without coordinates starts at the page margins after
   `createPage()` or `editPage()`, as in Wasm, instead of at the previous
   page's text box origin, and `movedown()` no longer starts from the previous

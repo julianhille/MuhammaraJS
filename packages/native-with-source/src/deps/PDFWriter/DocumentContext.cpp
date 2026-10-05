@@ -1949,7 +1949,7 @@ void DocumentContext::ReadTrailerInfoState(PDFParser* inStateReader,PDFDictionar
 	while(it.MoveNext())
 	{
 		keyState = it.GetKey();
-		valueState = it.GetValue();
+		valueState.Borrow(it.GetValue());
 
 		mTrailerInformation.GetInfo().AddAdditionalInfoEntry(keyState->GetValue(),PDFTextString(valueState->GetValue()));
 	}
@@ -2027,7 +2027,7 @@ void DocumentContext::ReadPageTreeState(PDFParser* inStateReader,PDFDictionary* 
 		SingleValueContainerIterator<PDFObjectVector> it = kidsIDsState->GetIterator();
 		while(it.MoveNext())
 		{
-			kidID = it.GetItem();
+			kidID.Borrow(it.GetItem());
 			inPageTree->AddNodeToTree((ObjectIDType)kidID->GetValue(),mObjectsContext->GetInDirectObjectsRegistry());
 		}
 	}

@@ -1,5 +1,29 @@
 var muhammara = require("@muhammara/native-with-source");
 var assert = require("node:assert/strict");
+var path = require("path");
+var malformed = require("./helpers/malformedInputs");
+
+/**
+ * Writes text in a font and ends the document, which subsets the font. The
+ * broken fonts may fail to embed, but must not crash.
+ * @param {string} fontPath - Font file.
+ * @param {string} text - Text to write.
+ */
+function embedText(fontPath, text) {
+  var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+  // Loading the font must work; only embedding it may be rejected.
+  var font = writer.getFontForFile(fontPath);
+  var page = writer.createPage(0, 0, 200, 200);
+  try {
+    writer
+      .startPageContentContext(page)
+      .writeText(text, 10, 100, { font: font, size: 12 });
+    writer.writePage(page);
+    writer.end();
+  } catch (error) {
+    if (!(error instanceof Error)) throw error;
+  }
+}
 
 describe("SimpleTextUsageTest", function () {
   it("should complete without error", function () {
@@ -218,6 +242,108 @@ describe("SimpleTextUsageTest", function () {
           NUL_BYTES,
         );
       },
+    );
+  });
+
+  it("embeds a CFF font whose charstrings call missing local subroutines", function () {
+    var writer = muhammara.createWriter(
+      path.join(__dirname, "output", "FuzzCFFWithoutSubrs.pdf"),
+    );
+    var font = writer.getFontForFile(
+      path.join(malformed.fuzzInputs, "font-cff-callsubr-without-subrs.bin"),
+    );
+    var page = writer.createPage(0, 0, 595, 842);
+    writer
+      .startPageContentContext(page)
+      .writeText("Hello", 10, 100, { font: font, size: 12 });
+    writer.writePage(page);
+    // Writing the font subset interprets the charstrings.
+    try {
+      writer.end();
+    } catch (error) {
+      assert.match(error.message, /end/i);
+    }
+  });
+
+  it("embeds a CFF font whose local subroutines cannot be read", function () {
+    var writer = muhammara.createWriter(
+      path.join(__dirname, "output", "FuzzCFFUnreadableSubrs.pdf"),
+    );
+    var font = writer.getFontForFile(
+      path.join(malformed.fuzzInputs, "font-cff-unreadable-local-subrs.bin"),
+    );
+    var page = writer.createPage(0, 0, 595, 842);
+    writer
+      .startPageContentContext(page)
+      .writeText("Hello", 10, 100, { font: font, size: 12 });
+    writer.writePage(page);
+    try {
+      writer.end();
+    } catch (error) {
+      assert.match(error.message, /end/i);
+    }
+  });
+
+  it("embeds a CFF font whose glyphs call local subrs that the font lacks", function () {
+    var font = malformed.material("fonts", "BrushScriptStd.otf");
+    var top = malformed.cffTopDict(font);
+    var privateDict = top.dict[18].operands;
+    var start = top.cff + privateDict[1];
+    var subrs = malformed.cffDict(font, start, start + privateDict[0])[19];
+    // Turn /Subrs into a second /defaultWidthX, so the font has no local subrs.
+    font[subrs.at] = 20;
+    embedText(malformed.writeFixture("FuzzNoLocalSubrs.otf", font), "Hello");
+  });
+
+  it("embeds a CID CFF font with an empty FDArray", function () {
+    var font = malformed.material("fonts", "KozGoPro-Regular.otf");
+    var top = malformed.cffTopDict(font);
+    font.writeUInt16BE(0, top.cff + top.dict[1236].operands[0]);
+    embedText(malformed.writeFixture("FuzzEmptyFDArray.otf", font), "Hello");
+  });
+
+  it("embeds a font with an invalid OS/2 width class", function () {
+    var font = malformed.material("fonts", "BrushScriptStd.otf");
+    for (var i = 0, count = font.readUInt16BE(4); i < count; ++i) {
+      var record = 12 + i * 16;
+      if (font.toString("latin1", record, record + 4) === "OS/2")
+        // usWidthClass indexed a 10-entry table of FontStretch names.
+        font.writeUInt16BE(0x7000, font.readUInt32BE(record + 8) + 6);
+    }
+    embedText(malformed.writeFixture("FuzzWidthClass.otf", font), "Hello");
+  });
+
+  it("rejects a CID CFF font whose local subrs index is invalid", function () {
+    var font = malformed.material("fonts", "KozGoPro-Regular.otf");
+    var top = malformed.cffTopDict(font);
+    var fontDict = malformed.cffIndex(
+      font,
+      top.cff + top.dict[1236].operands[0],
+    ).first;
+    var privateDict = malformed.cffDict(font, fontDict[0], fontDict[1])[18]
+      .operands;
+    var start = top.cff + privateDict[1];
+    var subrs =
+      start +
+      malformed.cffDict(font, start, start + privateDict[0])[19].operands[0];
+    // Raise the second offset above the third. FreeType reads subrs lazily and
+    // accepts the font, the embedder rejects the INDEX. That failure used to
+    // leak the subrs and dereference the end of their map.
+    font[subrs + 3 + font[subrs + 2]] = 0xff;
+    embedText(malformed.writeFixture("FuzzBadLocalSubrs.otf", font), "Hello");
+  });
+
+  it("frees a composite glyph that refers to a missing glyph", function () {
+    // numberOfContours -1, an empty box, then one component naming glyph 65535
+    var glyph = Buffer.from([
+      0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x01, 0xff, 0xff, 0, 0, 0, 0,
+    ]);
+    embedText(
+      malformed.writeFixture(
+        "FuzzMissingComponent.ttf",
+        malformed.fontWithOnlyGlyph(glyph),
+      ),
+      "Hello",
     );
   });
 });

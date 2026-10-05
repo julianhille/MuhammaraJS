@@ -289,7 +289,11 @@ BoolAndFTShort FreeTypeFaceWrapper::GetYBearingForUnicodeChar(unsigned short uni
 
 FT_UShort FreeTypeFaceWrapper::GetStemV()
 {
-	return mFormatParticularWrapper ? GetInPDFMeasurements(mFormatParticularWrapper->GetStemV()):0;
+	FT_UShort stemV = mFormatParticularWrapper ? GetInPDFMeasurements(mFormatParticularWrapper->GetStemV()):0;
+	// MuhammaraJS: the OpenType extender measures stemV by loading "l" into
+	// the face directly, so the glyph LoadGlyph() cached is gone
+	mGlyphIsLoaded = false;
+	return stemV;
 }
 
 EFontStretch FreeTypeFaceWrapper::GetFontStretch()
@@ -800,10 +804,16 @@ FT_Error FreeTypeFaceWrapper::LoadGlyph(FT_UInt inGlyphIndex, FT_Int32 inFlags)
 		else
 			status = FT_Load_Glyph(mFace,inGlyphIndex, inFlags | FT_LOAD_NO_HINTING | FT_LOAD_NO_AUTOHINT | FT_LOAD_NO_SCALE);
 
-		mGlyphIsLoaded = true;
+		// Cache only a glyph that loaded, so a failure is reported every time.
+		mGlyphIsLoaded = (status == FT_Err_Ok);
 		mCurrentGlyph = inGlyphIndex;
 	}
 	return status;
+}
+
+void FreeTypeFaceWrapper::ForgetLoadedGlyph()
+{
+	mGlyphIsLoaded = false;
 }
 
 FT_Error FreeTypeFaceWrapper::SelectDefaultPalette(FT_Color** outPalette, unsigned short* outPaletteSize) {

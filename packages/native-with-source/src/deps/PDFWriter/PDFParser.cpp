@@ -1676,6 +1676,13 @@ EStatusCode PDFParser::ParseXrefFromXrefStream(XrefEntryInputVector& inXrefTable
 				status = PDFHummus::eFailure;
 				break;
 			}
+			// values are read into 64 bits, so a field can be at most 8 bytes wide
+			if(widthObject->GetValue() < 0 || widthObject->GetValue() > 8)
+			{
+				TRACE_LOG1("PDFParser::ParseXrefFromXrefStream, width %lld in W array is out of range 0..8", widthObject->GetValue());
+				status = PDFHummus::eFailure;
+				break;
+			}
 			widthsArray[i] = (int)widthObject->GetValue();
 		}
 		if(status != PDFHummus::eSuccess)
@@ -1828,7 +1835,8 @@ EStatusCode PDFParser::ReadXrefStreamSegment(XrefEntryInputVector& inXrefTable,
 
 EStatusCode PDFParser::ReadXrefSegmentValue(IByteReader* inSource,int inEntrySize,long long& outValue)
 {
-	outValue = 0;
+	// accumulate unsigned, as shifting a set top bit into the sign of a long long is undefined
+	unsigned long long value = 0;
 	Byte buffer;
 	EStatusCode status = PDFHummus::eSuccess;
 
@@ -1836,8 +1844,9 @@ EStatusCode PDFParser::ReadXrefSegmentValue(IByteReader* inSource,int inEntrySiz
 	{
 		status = (inSource->Read(&buffer,1) == 1 ? PDFHummus::eSuccess : PDFHummus::eFailure);
 		if(status != PDFHummus::eFailure)
-			outValue = (outValue<<8) + buffer;
+			value = (value<<8) + buffer;
 	}
+	outValue = (long long)value;
 	return status;
 }
 

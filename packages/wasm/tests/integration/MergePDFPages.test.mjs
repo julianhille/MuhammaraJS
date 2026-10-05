@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
+import * as malformed from "../malformedInputs.mjs";
 
 describe("MergePDFPages", function () {
   var muhammara;
@@ -381,5 +382,42 @@ describe("MergePDFPages", function () {
       () => writer.mergePDFPagesToPage(page, sourcePdf(1)),
       /has ended/,
     );
+  });
+
+  // Each /ProcSet entry was read as a name, whatever its type.
+  describe("a page whose /ProcSet holds a number", function () {
+    var source = malformed.pdfWith([
+      "<< /Type /Catalog /Pages 2 0 R >>",
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200]" +
+        " /Resources << /ProcSet [1 /PDF] >> /Contents 4 0 R >>",
+      "<< /Length 8 >>\nstream\n0 0 m S\n\nendstream",
+    ]);
+
+    /**
+     * Runs `action` on a copying context of the source and ends the writer.
+     * @param {Function} action - Receives the writer and copying context.
+     */
+    function merge(action) {
+      var writer = muhammara.createWriter();
+      action(writer, writer.createPDFCopyingContext(source));
+      writer.end();
+    }
+
+    it("merges into a page", function () {
+      merge((writer, copying) => {
+        var page = writer.createPage(0, 0, 200, 200);
+        copying.mergePDFPageToPage(page, 0);
+        writer.writePage(page);
+      });
+    });
+
+    it("merges into a form", function () {
+      merge((writer, copying) => {
+        var form = writer.createFormXObject(0, 0, 200, 200);
+        copying.mergePDFPageToFormXObject(form, 0);
+        writer.endFormXObject(form);
+      });
+    });
   });
 });

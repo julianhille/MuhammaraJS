@@ -34,6 +34,10 @@ public:
 	OutputFlateEncodeStream(IByteWriterWithPosition* inTargetWriter, bool inInitiallyOn = true);
 
 	// Assing makes OutputFlateEncodeStream the owner of inWriter, so if you don't want the class to delete it upon destructions - use Assign(NULL)
+	// MuhammaraJS: drops the target without finishing the encoding or writing
+	// to it, for an encoder abandoned before its data is complete
+	void Detach();
+
 	void Assign(IByteWriterWithPosition* inWriter,bool inInitiallyOn = true);
 
 	virtual IOBasicTypes::LongBufferSizeType Write(const IOBasicTypes::Byte* inBuffer,IOBasicTypes::LongBufferSizeType inSize);

@@ -1,6 +1,7 @@
 var muhammara = require("@muhammara/native-with-source");
 var assert = require("chai").assert;
 var fs = require("fs");
+var malformed = require("./helpers/malformedInputs");
 
 describe("PDFParser", function () {
   it("should complete without error", function () {
@@ -159,5 +160,27 @@ describe("PDFParser", function () {
     }, /Unable to read object xref entry, object ID is out of range/);
 
     pdfReader.end();
+  });
+
+  // Field values were accumulated in a signed 64-bit integer, so an 8-byte
+  // field with its top bit set, or a wider field, overflowed it.
+  it("rejects an xref stream field wider than 8 bytes", function () {
+    assert.throws(function () {
+      muhammara.createReader(
+        new muhammara.PDFRStreamForBuffer(
+          malformed.pdfWithXrefStream([1, 9, 1]),
+        ),
+      );
+    }, /Unable to start parsing PDF file/);
+  });
+
+  it("reads an 8-byte xref stream offset with its top bit set", function () {
+    var reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(
+        malformed.pdfWithXrefStream([1, 8, 1], "0xfffffffffffffff0"),
+      ),
+    );
+    reader.getPagesCount();
+    reader.end();
   });
 });

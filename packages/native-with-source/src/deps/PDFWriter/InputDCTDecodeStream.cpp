@@ -28,14 +28,11 @@
 using namespace IOBasicTypes;
 using namespace PDFHummus;
 
-class HummusJPGException
-{
-};
-
 METHODDEF(void) HummusJPGErrorExit (j_common_ptr cinfo)
 {
     (*cinfo->err->output_message) (cinfo);
-    throw HummusJPGException();
+    // MuhammaraJS: see HummusJPGErrorManager
+    longjmp(((HummusJPGErrorManager*)cinfo->err)->jump, 1);
 }
 
 METHODDEF(void) HummusJPGOutputMessage(j_common_ptr cinfo)
@@ -177,28 +174,31 @@ void InputDCTDecodeStream::Assign(IByteReader* inSourceReader)
 
 void InputDCTDecodeStream::InitializeDecodingState()
 {
-    mJPGState.err = jpeg_std_error(&mJPGError);
-    mJPGError.error_exit = HummusJPGErrorExit;
-    mJPGError.output_message = HummusJPGOutputMessage;
+    mJPGState.err = jpeg_std_error(&mJPGError.pub);
+    mJPGError.pub.error_exit = HummusJPGErrorExit;
+    mJPGError.pub.output_message = HummusJPGOutputMessage;
     
-    try {
-        jpeg_create_decompress(&mJPGState);
-        HummusJPGSourceInitialization(&mJPGState,mStream);
-        mIsDecoding = true;
-    }
-    catch(HummusJPGException)
+    // MuhammaraJS: no C++ object lives in this frame across the jump
+    if(setjmp(mJPGError.jump))
     {
-        TRACE_LOG("InputDCTDecodeStream::InitializeDecodingState, caught exception in jpg decoding");
-        
+        TRACE_LOG("InputDCTDecodeStream::InitializeDecodingState, caught error in jpg decoding");
+        return;
     }
+    jpeg_create_decompress(&mJPGState);
+    HummusJPGSourceInitialization(&mJPGState,mStream);
+    mIsDecoding = true;
 }
 
 
 EStatusCode InputDCTDecodeStream::StartRead()
 {
-    EStatusCode status = eSuccess;
-    
-    try
+    // MuhammaraJS: no C++ object lives in this frame across the jump
+    if(setjmp(mJPGError.jump))
+    {
+        TRACE_LOG("InputDCTDecodeStream::StartRead, caught error in jpg decoding");
+        return eFailure;
+    }
+
     {
         jpeg_read_header(&mJPGState, TRUE);
         jpeg_start_decompress(&mJPGState);
@@ -212,12 +212,7 @@ EStatusCode InputDCTDecodeStream::StartRead()
         
         mIsHeaderRead = true;
     }
-    catch(HummusJPGException)
-    {
-        TRACE_LOG("InputDCTDecodeStream::StartRead, caught exception in jpg decoding");
-        status = eFailure;
-    }
-    return status;
+    return eSuccess;
     
 }
 
@@ -231,7 +226,12 @@ LongBufferSizeType InputDCTDecodeStream::Read(
     if(!mIsHeaderRead)
     {
         if(StartRead() != eSuccess)
+        {
+            // MuhammaraJS: end decoding, so NotEnded() stops reporting
+            // pending data that Read() can never return.
+            FinalizeDecoding();
             return 0;
+        }
     }
 
     Byte* indexInBuffer = inBuffer;
@@ -243,15 +243,19 @@ LongBufferSizeType InputDCTDecodeStream::Read(
     // if while reading for samples encountered end of filter, stop
     while(((LongBufferSizeType)(indexInBuffer - inBuffer) < inBufferSize) && (mJPGState.output_scanline < mJPGState.output_height))
     {
-        try
+        // MuhammaraJS: only plain locals live in this frame across the jump,
+        // and none changes between setjmp and the libjpeg call
+        if(setjmp(mJPGError.jump))
         {
-            mTotalSampleRows = jpeg_read_scanlines(&mJPGState, mSamplesBuffer, mJPGState.rec_outbuf_height);
-        }
-        catch(HummusJPGException)
-        {
-            TRACE_LOG("InputDCTDecodeStream::Read, caught exception in jpg decoding");
+            TRACE_LOG("InputDCTDecodeStream::Read, caught error in jpg decoding");
             mTotalSampleRows = 0;
+            // MuhammaraJS: libjpeg cannot continue after error_exit, and
+            // output_scanline no longer advances, so retrying would loop
+            // forever. End the stream with what was decoded so far.
+            FinalizeDecoding();
+            break;
         }
+        mTotalSampleRows = jpeg_read_scanlines(&mJPGState, mSamplesBuffer, mJPGState.rec_outbuf_height);
         mIndexInRow = 0;
         mCurrentSampleRow = 0;
         indexInBuffer = CopySamplesArrayToBuffer(indexInBuffer,inBufferSize - (indexInBuffer - inBuffer));

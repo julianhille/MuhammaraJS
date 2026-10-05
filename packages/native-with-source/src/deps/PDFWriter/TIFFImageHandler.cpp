@@ -2485,6 +2485,7 @@ EStatusCode TIFFImageHandler::WriteImageTileData(PDFStream* inImageStream,int in
 			inImageStream->GetWriteStream()->Write(
 									(const IOBasicTypes::Byte*)buffer,mT2p->tiff_datasize);
 			_TIFFfree(buffer);
+			buffer = NULL;
 			break; // finish here if recompression is not required
 		}
 
@@ -2559,7 +2560,9 @@ EStatusCode TIFFImageHandler::WriteImageTileData(PDFStream* inImageStream,int in
 							inTileIndex + i*tilecount, 
 							mT2p->inputFilePath.c_str());
 						_TIFFfree(samplebuffer);
+						samplebuffer = NULL;
 						_TIFFfree(buffer);
+						buffer = NULL;
 						status = PDFHummus::eFailure;
 						break;
 					}
@@ -2571,6 +2574,7 @@ EStatusCode TIFFImageHandler::WriteImageTileData(PDFStream* inImageStream,int in
 					samplebufferoffset); 
 				bufferoffset+=samplebufferoffset;
 				_TIFFfree(samplebuffer);
+				samplebuffer = NULL;
 			}
 
 			if(buffer==NULL)
@@ -2597,6 +2601,7 @@ EStatusCode TIFFImageHandler::WriteImageTileData(PDFStream* inImageStream,int in
 						inTileIndex, 
 						mT2p->inputFilePath.c_str());
 					_TIFFfree(buffer);
+					buffer = NULL;
 					status = PDFHummus::eFailure;
 					break;
 				}
@@ -2660,6 +2665,10 @@ EStatusCode TIFFImageHandler::WriteImageTileData(PDFStream* inImageStream,int in
 			buffer = NULL;
 		}
 	}while(false);
+
+	// error paths break out with the buffers still allocated
+	_TIFFfree(samplebuffer);
+	_TIFFfree(buffer);
 	return status;
 }
 
@@ -2972,6 +2981,7 @@ EStatusCode TIFFImageHandler::WriteImageData(PDFStream* inImageStream)
 				inImageStream->GetWriteStream()->Write(
 										(const IOBasicTypes::Byte*)buffer,mT2p->tiff_datasize);
 				_TIFFfree(buffer);
+				buffer = NULL;
 				break; // stop here if can write directly with no recompression
 			}
 		}
@@ -3005,6 +3015,7 @@ EStatusCode TIFFImageHandler::WriteImageData(PDFStream* inImageStream)
 						i, 
 						mT2p->inputFilePath.c_str());
 					_TIFFfree(buffer);
+					buffer = NULL;
 					status = PDFHummus::eFailure;
 					break;
 				}
@@ -3066,6 +3077,7 @@ EStatusCode TIFFImageHandler::WriteImageData(PDFStream* inImageStream)
 								i + j*stripcount, 
 								mT2p->inputFilePath.c_str());
 								_TIFFfree(buffer);
+								buffer = NULL;
 							status = PDFHummus::eFailure;
 							break;
 						}
@@ -3080,6 +3092,7 @@ EStatusCode TIFFImageHandler::WriteImageData(PDFStream* inImageStream)
 					bufferoffset+=samplebufferoffset;
 				}
 				_TIFFfree(samplebuffer);
+				samplebuffer = NULL;
 				if(status!= PDFHummus::eSuccess)
 					break;
 				status = WriteImageBufferToStream(inImageStream,
@@ -3122,7 +3135,9 @@ EStatusCode TIFFImageHandler::WriteImageData(PDFStream* inImageStream)
 						i, 
 						mT2p->inputFilePath.c_str());
 					_TIFFfree(samplebuffer);
+					samplebuffer = NULL;
 					_TIFFfree(buffer);
+					buffer = NULL;
 					status = PDFHummus::eFailure;
 					break;
 				}
@@ -3161,6 +3176,7 @@ EStatusCode TIFFImageHandler::WriteImageData(PDFStream* inImageStream)
 						mT2p->inputFilePath.c_str());
 					status = PDFHummus::eFailure;
 					_TIFFfree(buffer);
+					buffer = NULL;
 					break;
 				}
 				samplebuffer=(unsigned char*)_TIFFrealloc(
@@ -3174,11 +3190,14 @@ EStatusCode TIFFImageHandler::WriteImageData(PDFStream* inImageStream)
 						mT2p->inputFilePath.c_str());
 					status = PDFHummus::eFailure;
 					_TIFFfree(buffer);
+					buffer = NULL;
 					break;
 				} 
 				else 
 				{
+					// realloc moved buffer here, so only buffer owns it now
 					buffer=samplebuffer;
+					samplebuffer=NULL;
 				}
 				if(!TIFFReadRGBAImageOriented(
 					mT2p->input, 
@@ -3219,6 +3238,10 @@ EStatusCode TIFFImageHandler::WriteImageData(PDFStream* inImageStream)
 			buffer=NULL;
 		}
 	}while(false);
+
+	// error paths break out with the buffers still allocated
+	_TIFFfree(samplebuffer);
+	_TIFFfree(buffer);
 	return status;
 }
 

@@ -229,9 +229,12 @@ PDFUsedFont::TextMeasures PDFUsedFont::CalculateTextDimensions(const UIntList& i
     
     for(; it != inGlyphsList.end();++it,++itPos)
     {
-		mFaceWrapper.LoadGlyph(mFaceWrapper.GetGlyphIndexInFreeTypeIndexes(*it));
-        FT_Glyph aGlyph;
-        FT_Get_Glyph( mFaceWrapper->glyph,&aGlyph);
+        // MuhammaraJS: a glyph that does not load leaves aGlyph unset, and
+        // FT_Glyph_Get_CBox would call through its garbage class pointer.
+        FT_Glyph aGlyph = NULL;
+        if (mFaceWrapper.LoadGlyph(mFaceWrapper.GetGlyphIndexInFreeTypeIndexes(*it)) != 0 ||
+            FT_Get_Glyph( mFaceWrapper->glyph,&aGlyph) != 0 || !aGlyph)
+            continue;
         FT_Glyph_Get_CBox(aGlyph, FT_GLYPH_BBOX_UNSCALED,&glyph_bbox);
         FT_Done_Glyph(aGlyph);
         

@@ -1,4 +1,7 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("assert");
+var path = require("path");
+var malformed = require("./helpers/malformedInputs");
 
 describe("PDFEmbedTest", function () {
   it("should complete without error", function () {
@@ -35,5 +38,22 @@ describe("PDFEmbedTest", function () {
       .S();
 
     pdfWriter.writePage(page).end();
+  });
+
+  it("keeps the writer's output stream when forms from a PDF fail", function () {
+    var writer = muhammara.createWriter(
+      path.join(__dirname, "output", "FuzzFormFromPDF.pdf"),
+    );
+    assert.throws(function () {
+      writer.createFormXObjectsFromPDF(
+        path.join(
+          malformed.fuzzInputs,
+          "copy-form-from-unreadable-page-content.bin",
+        ),
+      );
+    });
+    // The failed form used to delete the writer's output stream and leave its
+    // object open; the writer now stays usable.
+    writer.end();
   });
 });

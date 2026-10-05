@@ -26,6 +26,19 @@
 #include "IByteReader.h"
 #include "jpeglib.h"
 
+#include <setjmp.h>
+
+// MuhammaraJS: libjpeg reports a fatal error through error_exit, which must
+// not return. It used to throw a C++ exception through libjpeg's C frames,
+// which aborts the process where C code has no unwind tables (riscv64) and
+// which MSVC's /EHsc may not catch. error_exit now longjmps to `jump`, as
+// libjpeg's own example does.
+struct HummusJPGErrorManager
+{
+    struct jpeg_error_mgr pub;
+    jmp_buf jump;
+};
+
 class InputDCTDecodeStream : public IByteReader
 {
 public:
@@ -48,7 +61,7 @@ public:
     
 private:
     jpeg_decompress_struct mJPGState;
-    jpeg_error_mgr mJPGError;
+    HummusJPGErrorManager mJPGError;
 
     IByteReader* mStream;
     JSAMPARRAY mSamplesBuffer;

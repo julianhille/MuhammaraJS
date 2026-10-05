@@ -8,6 +8,8 @@ import {
   workerWasmLocation,
 } from "../../lib/recrypt-worker-client.js";
 import { writeOutput } from "../testOutput.mjs";
+import { classifyError } from "../fuzz/targets.mjs";
+import * as malformed from "../malformedInputs.mjs";
 
 function readStreamIVs(pdf) {
   var marker = new TextEncoder().encode("stream");
@@ -1002,5 +1004,37 @@ describe("Xcryption", function () {
         },
       );
     });
+  });
+
+  it("reads an encrypted PDF whose crypt filter is not a dictionary", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = malformed.encryptedPdfWithCryptFilters("<< /StdCF 5 >>");
+    try {
+      muhammara.createReader(source).end();
+    } catch (error) {
+      assert.equal(classifyError(error), null, error?.stack);
+    }
+  });
+
+  it("reads an encrypted PDF whose crypt filter has no /CFM", async function () {
+    // /CFM is optional and defaults to None; its absence was read through a
+    // null pointer.
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      malformed.encryptedPdfWithCryptFilters("<< /StdCF << /Length 16 >> >>"),
+    );
+    assert.equal(reader.isEncrypted(), true);
+    assert.equal(reader.getPagesCount(), 0);
+    reader.end();
+  });
+
+  it("frees the open dictionaries of a recrypt that fails", async function () {
+    var muhammara = await createMuhammaraWasm({ recryptWorker: false });
+    assert.throws(() =>
+      muhammara.recrypt(malformed.material("appendbreaks.pdf"), {
+        userPassword: "user",
+        ownerPassword: "owner",
+      }),
+    );
   });
 });

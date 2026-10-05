@@ -109,10 +109,15 @@ napi_value UsedFontDriver::CalculateTextDimensions(const CallbackArgs &args) {
   FT_BBox box{32000, 32000, -32000, -32000};
   auto position = positions.begin();
   for (auto glyph : glyphs) {
-    FT_Load_Glyph(face, wrapper->GetGlyphIndexInFreeTypeIndexes(glyph),
-                  FT_LOAD_NO_SCALE);
-    FT_Glyph loaded;
-    FT_Get_Glyph(face->glyph, &loaded);
+    // A glyph that fails to load adds nothing to the box. FT_Get_Glyph leaves
+    // its output untouched on some failures, so never reuse it unchecked.
+    FT_Glyph loaded = nullptr;
+    if (FT_Load_Glyph(face, wrapper->GetGlyphIndexInFreeTypeIndexes(glyph),
+                      FT_LOAD_NO_SCALE) ||
+        FT_Get_Glyph(face->glyph, &loaded) || !loaded) {
+      ++position;
+      continue;
+    }
     FT_BBox glyphBox;
     FT_Glyph_Get_CBox(loaded, FT_GLYPH_BBOX_UNSCALED, &glyphBox);
     FT_Done_Glyph(loaded);
@@ -126,6 +131,8 @@ napi_value UsedFontDriver::CalculateTextDimensions(const CallbackArgs &args) {
     box.yMax = std::max(box.yMax, glyphBox.yMax);
     ++position;
   }
+  // The glyph slot was loaded behind the wrapper's back.
+  wrapper->ForgetLoadedGlyph();
   if (box.xMin > box.xMax)
     box = {0, 0, 0, 0};
   napi_value result = Object(args.Env());

@@ -82,6 +82,46 @@ These bring Wasm Recipe in line with native Recipe; see
 
 ### Fixed
 
+- Reading a DCTDecode stream with corrupt JPEG data, as the reader, copying
+  and drawing a JPEG do, no longer leaks Wasm stack. libjpeg errors escaped the
+  module as a bare number instead of being caught, and after a few such reads
+  the stack overflowed into static data, so later, unrelated calls crashed with
+  `memory access out of bounds`, `null function or function signature
+mismatch`, or `Aborted()`. Decoding now ends at the error with the rows
+  read so far [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
+- Fix crashes on malformed input found by fuzzing the Wasm build and the
+  native addon, which share this code [#951](https://github.com/julianhille/MuhammaraJS/issues/951):
+  - `calculateTextDimensions()` and text measuring crashed with `null function
+or function signature mismatch` on a font with a glyph FreeType cannot
+    load; such a glyph now adds no box
+  - Writing a CFF (OpenType) font whose charstrings call local subroutines
+    that its private dictionary does not have read through a null pointer
+  - A failed `createFormXObjectsFromPDF()` or
+    `createFormXObjectFromPDFPage()`, for example on a page whose content
+    cannot be read, freed the writer's output stream, so `end()` threw `null
+function or function signature mismatch` and later calls read freed
+    memory. The writer now stays usable
+  - Copying, merging, appending or making a form from a page whose
+    `/Contents` array holds something other than a reference, and reading an
+    encrypted PDF whose `/CF` entry is not a dictionary, used freed memory
+  - Merging a page whose `/ProcSet` holds something other than a name read
+    past the end of a heap buffer
+  - Reading an encrypted PDF whose crypt filter has no `/CFM`, which is
+    optional, read through a null pointer
+  - A CFF font with an empty Name INDEX or FDArray, mismatched Top DICT count
+    or out-of-range font index, and a font whose OS/2 width class is outside
+    1..9, read out of bounds
+  - An xref stream with a `/W` field wider than 8 bytes overflowed a signed
+    shift; it is now rejected
+  - A PNG that fails after its rows are read, such as one without `IEND`,
+    made libpng jump into a function that had returned
+- Fix memory leaks on malformed input found by fuzzing [#951](https://github.com/julianhille/MuhammaraJS/issues/951): a PNG
+  whose rows fail to decode leaked the image stream, row buffer and decoder
+  state (a 6 KB PNG leaked 1 MB per call); a CFF font whose local subroutines
+  cannot be read leaked them and read past the end of a map; TIFF strip and
+  tile buffers leaked on decode errors; a TrueType composite glyph naming a
+  missing glyph leaked; and a failed stream copy or `recrypt()` left
+  dictionaries open that leaked when the writer was disposed
 - Recipe `movedown()` after `createPage()` or `editPage()` starts from the
   new page's text cursor instead of the previous page's text box origin, and
   `text({ flow: true })` no longer inherits options from the previous page's

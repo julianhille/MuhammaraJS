@@ -221,13 +221,13 @@ EStatusCode UsedFontsRepository::ReadState(PDFParser* inStateReader,ObjectIDType
 	{
 		PDFTextString aKey;
 
-		aStringValue = it.GetItem();
+		aStringValue.Borrow(it.GetItem());
 		aKey = aStringValue->GetValue();
 
 		PDFTextString aValue;
 
 		it.MoveNext();
-		aStringValue = it.GetItem();
+		aStringValue.Borrow(it.GetItem());
 		aValue = aStringValue->GetValue();
 
 		mOptionaMetricsFiles.insert(StringToStringMap::value_type(aKey.ToUTF8String(),aValue.ToUTF8String()));
@@ -245,11 +245,11 @@ EStatusCode UsedFontsRepository::ReadState(PDFParser* inStateReader,ObjectIDType
 
 	while(it.MoveNext() && PDFHummus::eSuccess == status)
 	{
-		keyStringItem = it.GetItem();
+		keyStringItem.Borrow(it.GetItem());
 		it.MoveNext();
-        keyIndexItem = it.GetItem();
+        keyIndexItem.Borrow(it.GetItem());
         it.MoveNext();
-		valueItem = it.GetItem();
+		valueItem.Borrow(it.GetItem());
 
 		PDFTextString aTextString(keyStringItem->GetValue());
 		std::string filePath = aTextString.ToUTF8String();

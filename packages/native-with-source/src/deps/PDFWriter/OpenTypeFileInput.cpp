@@ -786,7 +786,7 @@ EStatusCode OpenTypeFileInput::ReadGlyfForDependencies()
 	}
 
 	// it->second.Offset, is the offset to the beginning of the table
-	mGlyf = new GlyphEntry*[mMaxp.NumGlyphs];
+	mGlyf = new GlyphEntry*[mMaxp.NumGlyphs]();
 
 	for(unsigned short i=0; i < mMaxp.NumGlyphs; ++i)
 	{
@@ -797,6 +797,8 @@ EStatusCode OpenTypeFileInput::ReadGlyfForDependencies()
 		else
 		{
 			mGlyf[i] = new GlyphEntry;
+			// register before parsing, so the entry is freed on an early failure too
+			mActualGlyphs.insert(UShortToGlyphEntryMap::value_type(i,mGlyf[i]));
 
 			mPrimitivesReader.SetOffset(it->second.Offset + mLoca[i]);
 			mPrimitivesReader.ReadSHORT(mGlyf[i]->NumberOfContours);
@@ -839,8 +841,6 @@ EStatusCode OpenTypeFileInput::ReadGlyfForDependencies()
 				}while(hasMoreComponents);
 
 			}
-
-			mActualGlyphs.insert(UShortToGlyphEntryMap::value_type(i,mGlyf[i]));
 		}
 	}	
 

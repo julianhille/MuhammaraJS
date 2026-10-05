@@ -405,6 +405,13 @@ EStatusCode CFFFileInput::ReadNameIndex()
 		if(status != PDFHummus::eSuccess)
 			break;
 
+		if(0 == mFontsCount)
+		{
+			TRACE_LOG("CFFFileInput::ReadNameIndex, name index is empty");
+			status = PDFHummus::eFailure;
+			break;
+		}
+
 		if(offsets[0] != 1)
 			mPrimitivesReader.Skip(offsets[0] - 1);
 
@@ -414,7 +421,8 @@ EStatusCode CFFFileInput::ReadNameIndex()
 			mPrimitivesReader.Read(buffer,offsets[i+1] - offsets[i]);
 			std::string aName((char*)buffer,offsets[i+1] - offsets[i]);
 			mName.push_back(aName);
-			if(buffer[0] != 0) // put in map only valid names
+			// MuhammaraJS: an empty name has no first byte to check
+			if(!aName.empty() && aName[0] != 0) // put in map only valid names
 				mNameToIndex.insert(StringToUShort::value_type(aName,i));
 			delete[] buffer;
 		}
@@ -450,6 +458,14 @@ EStatusCode CFFFileInput::ReadTopDictIndex()
 	{
 		if(status != PDFHummus::eSuccess)
 			break;
+
+		// the rest of the parser indexes top dicts by font, so the counts must match
+		if(dictionariesCount != mFontsCount)
+		{
+			TRACE_LOG2("CFFFileInput::ReadTopDictIndex, top dict count (%d) differs from fonts count (%d)",dictionariesCount,mFontsCount);
+			status = PDFHummus::eFailure;
+			break;
+		}
 
 		if(offsets[0] != 1)
 			mPrimitivesReader.Skip(offsets[0] - 1);
@@ -784,9 +800,17 @@ EStatusCode CFFFileInput::ReadLocalSubrsForPrivateDict(PrivateDictInfo* inPrivat
 			status = ReadSubrsFromIndex(charStrings->mCharStringsCount,
 										&(charStrings->mCharStringsIndex));
 			if(status != PDFHummus::eSuccess)
+			{
 				TRACE_LOG("CFFFileInput::ReadLocalSubrs, failed to read local subrs");
-			else
-				it = mLocalSubrs.insert(LongFilePositionTypeToCharStringsMap::value_type(inPrivateDict->mPrivateDictStart + subrsPosition,charStrings)).first;
+				// MuhammaraJS: the subrs were not stored, so release them, and
+				// leave the dictionary without subrs instead of reading the end
+				// iterator
+				delete[] charStrings->mCharStringsIndex;
+				delete charStrings;
+				inPrivateDict->mLocalSubrs = NULL;
+				return status;
+			}
+			it = mLocalSubrs.insert(LongFilePositionTypeToCharStringsMap::value_type(inPrivateDict->mPrivateDictStart + subrsPosition,charStrings)).first;
 		}
 		inPrivateDict->mLocalSubrs = it->second;
 	}
@@ -1324,6 +1348,12 @@ CharString* CFFFileInput::GetLocalSubr(long inSubrIndex)
 {
 	// locate local subr and return. also - push it to the dependendecy stack to start calculating dependencies for it
 	// also - record dependency on this subr.
+
+	// MuhammaraJS: a private dictionary without Subrs leaves no local subrs,
+	// and a charstring may still call one.
+	if(!mCurrentLocalSubrs)
+		return NULL;
+
 	long biasedIndex = GetBiasedIndex(mCurrentLocalSubrs->mCharStringsCount,inSubrIndex);
 
 	if(biasedIndex >= 0 && biasedIndex < (long)mCurrentLocalSubrs->mCharStringsCount)
@@ -1486,6 +1516,14 @@ EStatusCode CFFFileInput::ReadFDArray(unsigned short inFontIndex)
 	{
 		if(status != PDFHummus::eSuccess)
 			break;
+
+		// CID fonts select their private dicts from the FDArray, so it can't be empty
+		if(0 == dictionariesCount)
+		{
+			TRACE_LOG("CFFFileInput::ReadFDArray, FDArray is empty");
+			status = PDFHummus::eFailure;
+			break;
+		}
 
 		if(offsets[0] != 1)
 			mPrimitivesReader.Skip(offsets[0] - 1);
@@ -1670,6 +1708,7 @@ EStatusCode CFFFileInput::ReadCFFFileByIndexOrName(IByteReaderWithPosition* inCF
 			else
 			{
 				TRACE_LOG1("CFFFileInput::ReadCFFFile, font name %s was not found in font stream",inFontName.c_str());
+				status = PDFHummus::eFailure;
 				break;
 			}
 		}
@@ -1679,6 +1718,7 @@ EStatusCode CFFFileInput::ReadCFFFileByIndexOrName(IByteReaderWithPosition* inCF
 			if(inFontIndex >= mFontsCount)
 			{
 				TRACE_LOG2("CFFFileInput::ReadCFFFile, input index (%d) is larger than the maximum possible index (%d)",inFontIndex,mFontsCount-1);
+				status = PDFHummus::eFailure;
 				break;
 			}
 			fontIndex = inFontIndex;
@@ -1765,6 +1805,21 @@ EStatusCode CFFFileInput::ReadTopDictIndex(unsigned short inFontIndex)
 	{
 		if(status != PDFHummus::eSuccess)
 			break;
+
+		// MuhammaraJS: FreeData() walks mFontsCount top dicts, so the counts must match
+		if(dictionariesCount != mFontsCount)
+		{
+			TRACE_LOG2("CFFFileInput::ReadTopDictIndex, top dict count (%d) differs from fonts count (%d)",dictionariesCount,mFontsCount);
+			status = PDFHummus::eFailure;
+			break;
+		}
+
+		if(inFontIndex >= dictionariesCount)
+		{
+			TRACE_LOG2("CFFFileInput::ReadTopDictIndex, font index (%d) is out of the top dict index (%d entries)",inFontIndex,dictionariesCount);
+			status = PDFHummus::eFailure;
+			break;
+		}
 
 		// allocate all, but read just the required font
 		mTopDictIndex = new TopDictInfo[dictionariesCount];

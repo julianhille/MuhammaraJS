@@ -151,12 +151,15 @@ BoolAndFTUShort FreeTypeOpenTypeWrapper::StemVFromLowerLWidth()
 
 EFontStretch FreeTypeOpenTypeWrapper::GetFontStretch()
 {
+	// usWidthClass is 1..9. anything else is invalid, and left for the style name to decide
+	if(mOS2Table)
+		return (mOS2Table->usWidthClass >= eFontStretchUltraCondensed && mOS2Table->usWidthClass < eFontStretchMax) ?
+			(EFontStretch)mOS2Table->usWidthClass :
+			eFontStretchUknown;
 	return 
-		mOS2Table ? 
-			(EFontStretch)mOS2Table->usWidthClass : 
-			mPCLTTable ? 
-				GetFontStretchForPCLTValue(mPCLTTable->WidthType) :
-				eFontStretchUknown;
+		mPCLTTable ? 
+			GetFontStretchForPCLTValue(mPCLTTable->WidthType) :
+			eFontStretchUknown;
 }
 
 

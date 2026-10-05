@@ -2,6 +2,7 @@ var muhammara = require("@muhammara/native-with-source");
 var assert = require("assert");
 var path = require("path");
 var { writeOutput } = require("./helpers/testOutput");
+var malformed = require("./helpers/malformedInputs");
 
 /**
  * Path of a test output file relative to the working directory, so that
@@ -1956,5 +1957,42 @@ describe("Xcryption", function () {
         );
       }
     });
+  });
+
+  it("reads an encrypted PDF whose crypt filter is not a dictionary", function () {
+    var source = malformed.encryptedPdfWithCryptFilters("<< /StdCF 5 >>");
+    try {
+      muhammara.createReader(new muhammara.PDFRStreamForBuffer(source)).end();
+    } catch (error) {
+      if (!(error instanceof Error)) throw error;
+    }
+  });
+
+  it("reads an encrypted PDF whose crypt filter has no /CFM", function () {
+    // /CFM is optional and defaults to None; its absence was read through a
+    // null pointer.
+    var source = malformed.encryptedPdfWithCryptFilters(
+      "<< /StdCF << /Length 16 >> >>",
+    );
+    var reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(source),
+    );
+    assert.equal(reader.isEncrypted(), true);
+    assert.equal(reader.getPagesCount(), 0);
+    reader.end();
+  });
+
+  // The sanitizer CI job runs the tests with LeakSanitizer, which catches
+  // the leak this test covers.
+  it("frees the open dictionaries of a recrypt that fails", function () {
+    assert.throws(function () {
+      muhammara.recrypt(
+        new muhammara.PDFRStreamForBuffer(
+          malformed.material("appendbreaks.pdf"),
+        ),
+        new muhammara.PDFWStreamForBuffer(),
+        { userPassword: "user", ownerPassword: "owner" },
+      );
+    }, /Unable to recrypt/);
   });
 });
