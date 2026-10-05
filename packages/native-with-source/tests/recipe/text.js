@@ -814,6 +814,37 @@ describe("Text", () => {
     assert.doesNotMatch(content, /\.\.\.\) Tj/);
   });
 
+  it("keeps the space before the word that clip or ellipsis cuts", () => {
+    const assert = require("node:assert/strict");
+    const muhammara = require("@muhammara/native-with-source");
+    const content = (wrap) => {
+      const output = path.join(__dirname, `../output/text-${wrap}-space.pdf`);
+      new Recipe("new", output, { compress: false })
+        .createPage(220, 120)
+        .text("one two three\nfour five six seven", 10, 10, {
+          font: "arial",
+          size: 12,
+          textBox: { width: 60, wrap },
+        })
+        .endPage()
+        .endPDF();
+      const reader = muhammara.createReader(output);
+      const stream = reader.startReadingFromStream(
+        reader
+          .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+          .toPDFStream(),
+      );
+      const chunks = [];
+      while (stream.notEnded()) chunks.push(Buffer.from(stream.read(4096)));
+      return Buffer.concat(chunks).toString("latin1");
+    };
+
+    const clipped = content("clip");
+    assert.match(clipped, /\(one two three\) Tj/);
+    assert.match(clipped, /\(four five six \) Tj/);
+    assert.match(content("ellipsis"), /\(one two t\\205\) Tj/);
+  });
+
   it("rejects a miterLimit below 1 before drawing", () => {
     const assert = require("node:assert/strict");
     const muhammara = require("@muhammara/native-with-source");
