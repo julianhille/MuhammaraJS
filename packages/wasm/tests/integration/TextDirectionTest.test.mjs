@@ -214,6 +214,17 @@ describe("TextDirection", function () {
       ]);
     });
 
+    it("never returns a segment of only whitespace", function () {
+      assert.deepEqual(visualRuns(["abc", " ", " def שלום"], "ltr"), [
+        { run: 0, text: "abc  " },
+        { run: 2, text: "def םולש" },
+      ]);
+      assert.deepEqual(visualRuns(["שלום ", "\u00a0", "עולם"], "rtl"), [
+        { run: 2, text: "םלוע\u00a0 " },
+        { run: 0, text: "םולש" },
+      ]);
+    });
+
     it("keeps lines that do not reorder", function () {
       assert.equal(visualRuns(["Hello ", "world"], "auto"), null);
       assert.equal(visualRuns(["שלום ", "עולם"]), null);

@@ -561,9 +561,15 @@ function visualRuns(texts, direction) {
       segments[index].text = segments[index].text.slice(space[0].length);
     }
   }
-  segments = segments.filter(function (segment) {
-    return segment.text !== "";
-  });
+  // Moving spaces can leave a segment with only whitespace, such as the
+  // space between two words of other runs; it joins the segment before it.
+  segments = segments.reduce(function (kept, segment) {
+    if (segment.text === "") return kept;
+    if (kept.length && segment.text.trim() === "") {
+      kept[kept.length - 1].text += segment.text;
+    } else kept.push(segment);
+    return kept;
+  }, []);
   var indent = [];
   for (index = 0; index < leading; ++index) {
     indent.push({ index: index, character: line[index] });
