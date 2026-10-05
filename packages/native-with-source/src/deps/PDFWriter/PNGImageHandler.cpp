@@ -39,6 +39,7 @@
 
 #include <list>
 #include <stdlib.h> 
+#include <string.h>
 
 using namespace PDFHummus;
 using namespace std;
@@ -73,6 +74,24 @@ static const std::string scDeviceGray = "DeviceGray";
 static const std::string scDeviceRGB = "DeviceRGB";
 static const std::string scBitsPerComponent = "BitsPerComponent";
 static const std::string scSMask = "SMask";
+
+// MuhammaraJS: reads one row, returning false on a libpng error. libpng
+// reports errors by longjmp to png_jmpbuf, which belongs to the caller's frame,
+// so catch them here and restore it before returning. No C++ objects live in this frame, so
+// the jump skips no destructors.
+static bool ReadRow(png_structp png_ptr, png_bytep row, png_bytep display_row)
+{
+	jmp_buf callerJump;
+	volatile bool ok = true;
+	memcpy(&callerJump, png_jmpbuf(png_ptr), sizeof(jmp_buf));
+	if (setjmp(png_jmpbuf(png_ptr)))
+		ok = false;
+	else
+		png_read_row(png_ptr, row, display_row);
+	memcpy(png_jmpbuf(png_ptr), &callerJump, sizeof(jmp_buf));
+	return ok;
+}
+
 PDFImageXObject* CreateImageXObjectForData(png_structp png_ptr, png_infop info_ptr, png_bytep row, ObjectsContext* inObjectsContext) {
 	PDFImageXObject* imageXObject = NULL;
 	PDFStream* imageStream = NULL;
@@ -80,14 +99,9 @@ PDFImageXObject* CreateImageXObjectForData(png_structp png_ptr, png_infop info_p
 
 	do
 	{
-
-		if (setjmp(png_jmpbuf(png_ptr)))
-		{
-			// reset failure pointer
-			status = eFailure;
-			break;
-		}
-
+		// MuhammaraJS: this function has no setjmp of its own. Read rows through
+		// ReadRow(), and call no other libpng function that can fail here: its
+		// longjmp would skip the destructors below and leave the dictionary open.
 		// get info
 		png_uint_32 transformed_width = png_get_image_width(png_ptr, info_ptr);
 		png_uint_32 transformed_height = png_get_image_height(png_ptr, info_ptr);
@@ -144,13 +158,20 @@ PDFImageXObject* CreateImageXObjectForData(png_structp png_ptr, png_infop info_p
 		IByteWriter* writerStream = imageStream->GetWriteStream();
 		
 		png_uint_32 y = transformed_height;
+		// MuhammaraJS: stop at the first row that fails to decode. The stream is
+		// still ended below, so the objects stay well formed, but no padding is
+		// written: the declared size can be far larger than the data.
+		bool readFailed = false;
 
 		if (isAlpha) {
 			OutputStringBufferStream alphaWriteStream(&alphaComponentsData);
 
 			while (y-- > 0) {
 				// read (using "rectangle" method)
-				png_read_row(png_ptr, NULL, row);
+				if (!ReadRow(png_ptr, NULL, row)) {
+					readFailed = true;
+					break;
+				}
 				// write. iterate per sample, splitting color components and alpha
 				for (png_uint_32 i = 0; i < transformed_width; ++i) {
 					
@@ -166,7 +187,10 @@ PDFImageXObject* CreateImageXObjectForData(png_structp png_ptr, png_infop info_p
 		else {
 			while (y-- > 0) {
 				// read
-				png_read_row(png_ptr, row, NULL);
+				if (!ReadRow(png_ptr, row, NULL)) {
+					readFailed = true;
+					break;
+				}
 				// write
 				writerStream->Write((IOBasicTypes::Byte*)(row), transformed_width*colorComponents);
 			}
@@ -228,6 +252,12 @@ PDFImageXObject* CreateImageXObjectForData(png_structp png_ptr, png_infop info_p
 				TRACE_LOG("PNGImageHandler::CreateImageXObjectForData. Unexpected Error, could not finalize image mask stream");
 				break;
 			}
+		}
+
+		if (readFailed) {
+			TRACE_LOG("PNGImageHandler::CreateImageXObjectForData. Failed to read image rows");
+			status = eFailure;
+			break;
 		}
 
 		imageXObject = new PDFImageXObject(imageXObjectObjectId, 1 == colorComponents ? KProcsetImageB : KProcsetImageC);
@@ -354,8 +384,9 @@ PDFFormXObject* CreateFormXObjectForPNGStream(IByteReaderWithPosition* inPNGStre
 	PDFImageXObjectList listOfImages;
 	EStatusCode status = eSuccess;
 	png_structp png_ptr = NULL;
-	png_infop info_ptr = NULL;
-	png_bytep row = NULL;
+	// MuhammaraJS: set after setjmp, so volatile to survive a libpng error
+	png_infop volatile info_ptr = NULL;
+	png_bytep volatile row = NULL;
 
 	do {
 		png_ptr = CreatePngReadStruct();
@@ -429,7 +460,8 @@ PDFFormXObject* CreateFormXObjectForPNGStream(IByteReaderWithPosition* inPNGStre
 		}
 	} while (false);
 
-	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+	png_infop info = info_ptr;
+	png_destroy_read_struct(&png_ptr, &info, NULL);
 	if (row != NULL) free(row);
 	PDFImageXObjectList::iterator it = listOfImages.begin();
 	for (; it != listOfImages.end(); ++it)
@@ -472,7 +504,8 @@ PNGImageHandler::PNGImageInfo PNGImageHandler::ReadImageInfo(IByteReaderWithPosi
 
 	EStatusCode status = eSuccess;
 	png_structp png_ptr = NULL;
-	png_infop info_ptr = NULL;
+	// MuhammaraJS: set after setjmp, so volatile to survive a libpng error
+	png_infop volatile info_ptr = NULL;
 	PNGImageHandler::PNGImageInfo data;
 
 	do {
@@ -509,7 +542,8 @@ PNGImageHandler::PNGImageInfo PNGImageHandler::ReadImageInfo(IByteReaderWithPosi
 
 	} while (false);
 
-	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+	png_infop info = info_ptr;
+	png_destroy_read_struct(&png_ptr, &info, NULL);
 	return data;
 }
 

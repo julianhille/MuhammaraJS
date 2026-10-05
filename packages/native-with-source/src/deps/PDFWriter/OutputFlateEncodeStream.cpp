@@ -122,6 +122,16 @@ void OutputFlateEncodeStream::StartEncoding()
 }
 
 
+void OutputFlateEncodeStream::Detach()
+{
+	if(mCurrentlyEncoding)
+	{
+		deflateEnd(mZLibState);
+		mCurrentlyEncoding = false;
+	}
+	mTargetStream = NULL;
+}
+
 void OutputFlateEncodeStream::Assign(IByteWriterWithPosition* inWriter,bool inInitiallyOn)
 {
 	Flush();

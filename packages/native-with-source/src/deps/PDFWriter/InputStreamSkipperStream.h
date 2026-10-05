@@ -60,8 +60,18 @@ public:
 	// this will reset the read count
 	void Reset();
 
+	// MuhammaraJS: read the source in blocks of inSize bytes instead of the
+	// sizes asked for. The object parser reads one byte at a time, which
+	// costs a full decode-filter call per byte otherwise. Only for a source
+	// nobody else reads from, since bytes are taken from it ahead of use.
+	void EnableReadAhead(IOBasicTypes::LongBufferSizeType inSize);
+
 
 private:
 	IByteReader* mStream;
 	IOBasicTypes::LongFilePositionType mAmountRead;
+	IOBasicTypes::Byte* mReadAhead;
+	IOBasicTypes::LongBufferSizeType mReadAheadSize;
+	IOBasicTypes::LongBufferSizeType mReadAheadStart;
+	IOBasicTypes::LongBufferSizeType mReadAheadEnd;
 };

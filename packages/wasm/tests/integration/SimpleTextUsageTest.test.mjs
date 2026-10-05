@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
+import { classifyError } from "../fuzz/targets.mjs";
+import * as malformed from "../malformedInputs.mjs";
 
 function assertTextStateOperations(reader, stream, operations) {
   var found = new Set();
@@ -70,6 +72,35 @@ function assertRawGrayOperators(reader, streams, count) {
     parser.end();
   }
   assert.ok(found >= count, `expected ${count} raw 0.25 g operations`);
+}
+
+/**
+ * Writes text in a font registered from `bytes` and ends the document, which
+ * subsets the font. The broken fonts may fail to embed, but must not crash.
+ * @param {object} muhammara - Module instance.
+ * @param {Uint8Array} bytes - Font file.
+ * @param {string} text - Text to write.
+ */
+function embedText(muhammara, bytes, text) {
+  muhammara.registerFont("malformed-font", bytes);
+  var writer = muhammara.createWriter();
+  try {
+    // Loading the font must work; only embedding it may be rejected.
+    var font = writer.getFontForBytes("malformed-font");
+    var page = writer.createPage(0, 0, 200, 200);
+    try {
+      writer
+        .startPageContentContext(page)
+        .writeText(text, 10, 100, { font: font, size: 12 });
+      writer.writePage(page);
+      writer.end();
+    } catch (error) {
+      assert.equal(classifyError(error), null, error?.stack);
+    }
+  } finally {
+    writer.dispose();
+    muhammara.unregisterFont("malformed-font");
+  }
 }
 
 describe("SimpleTextUsageTest", function () {
@@ -510,5 +541,66 @@ describe("SimpleTextUsageTest", function () {
     var modifiedReader = muhammara.createReader(modified);
     assertRawGrayOperators(modifiedReader, allStreams(modifiedReader), 3);
     modifiedReader.end();
+  });
+
+  it("embeds a CFF font whose glyphs call local subrs that the font lacks", async function () {
+    var font = malformed.material("fonts", "BrushScriptStd.otf");
+    var top = malformed.cffTopDict(font);
+    var privateDict = top.dict[18].operands;
+    var start = top.cff + privateDict[1];
+    var subrs = malformed.cffDict(font, start, start + privateDict[0])[19];
+    // Turn /Subrs into a second /defaultWidthX, so the font has no local subrs.
+    font[subrs.at] = 20;
+    embedText(await createMuhammaraWasm(), font, "Hello");
+  });
+
+  it("embeds a CID CFF font with an empty FDArray", async function () {
+    var font = malformed.material("fonts", "KozGoPro-Regular.otf");
+    var top = malformed.cffTopDict(font);
+    font.writeUInt16BE(0, top.cff + top.dict[1236].operands[0]);
+    embedText(await createMuhammaraWasm(), font, "Hello");
+  });
+
+  it("embeds a font with an invalid OS/2 width class", async function () {
+    var font = malformed.material("fonts", "BrushScriptStd.otf");
+    for (var i = 0, count = font.readUInt16BE(4); i < count; ++i) {
+      var record = 12 + i * 16;
+      if (font.toString("latin1", record, record + 4) === "OS/2")
+        // usWidthClass indexed a 10-entry table of FontStretch names.
+        font.writeUInt16BE(0x7000, font.readUInt32BE(record + 8) + 6);
+    }
+    embedText(await createMuhammaraWasm(), font, "Hello");
+  });
+
+  it("rejects a CID CFF font whose local subrs index is invalid", async function () {
+    var font = malformed.material("fonts", "KozGoPro-Regular.otf");
+    var top = malformed.cffTopDict(font);
+    var fontDict = malformed.cffIndex(
+      font,
+      top.cff + top.dict[1236].operands[0],
+    ).first;
+    var privateDict = malformed.cffDict(font, fontDict[0], fontDict[1])[18]
+      .operands;
+    var start = top.cff + privateDict[1];
+    var subrs =
+      start +
+      malformed.cffDict(font, start, start + privateDict[0])[19].operands[0];
+    // Raise the second offset above the third. FreeType reads subrs lazily and
+    // accepts the font, the embedder rejects the INDEX. That failure used to
+    // leak the subrs and dereference the end of their map.
+    font[subrs + 3 + font[subrs + 2]] = 0xff;
+    embedText(await createMuhammaraWasm(), font, "Hello");
+  });
+
+  it("frees a composite glyph that refers to a missing glyph", async function () {
+    // numberOfContours -1, an empty box, then one component naming glyph 65535
+    var glyph = Buffer.from([
+      0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x01, 0xff, 0xff, 0, 0, 0, 0,
+    ]);
+    embedText(
+      await createMuhammaraWasm(),
+      malformed.fontWithOnlyGlyph(glyph),
+      "Hello",
+    );
   });
 });

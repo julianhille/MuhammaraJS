@@ -34,6 +34,16 @@ These bring Wasm Recipe in line with native Recipe; see
 
 ### Added
 
+- A mutation fuzzer for the Wasm API, `npm run fuzz`, that feeds mutated PDFs,
+  fonts and images through the reader, modifier, copying, recrypt, Recipe,
+  font and image entry points. It reports crashes (traps, aborts, escaped
+  exceptions), memory leaks, confirmed by repetition and attributed by
+  LeakSanitizer, and denial of service: hangs, and API calls that take too
+  long or grow memory too much, named by the call responsible; see
+  `tests/fuzz/README.md`. `MUHAMMARA_WASM_SANITIZE=address` builds with
+  AddressSanitizer, stack overflow checks and the allocator hooks the leak
+  check needs, and a weekly workflow fuzzes that build and the release build
+  [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 - Add the `recryptWorker` module option of `createMuhammaraWasm()` and
   `createRecipe()`; `recryptWorker: false` keeps `recryptAsync()` on the
   calling thread [#943](https://github.com/julianhille/MuhammaraJS/issues/943)
@@ -73,6 +83,61 @@ These bring Wasm Recipe in line with native Recipe; see
 
 ### Fixed
 
+- Reading a PDF whose object stream header ends right where its first
+  object starts, as Cairo writes them, no longer reads freed memory when the
+  stream's `/Length` is an indirect object. It usually trapped with
+  `table index is out of bounds`, and affected `createReader()`, copying,
+  appending, modifying and `recrypt()` of such PDFs since 1.0.0
+  [#959](https://github.com/julianhille/MuhammaraJS/issues/959)
+- `extractPageText()` and `extractPageContentItems()` stop after 64 MiB of
+  decoded page content, inline images included, and throw their limit error,
+  and a parser from `startReadingObjectsFromStream()` stops at a token over
+  32 MiB. A few hundred KB of compressed PDF used to take minutes [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
+- Reading a DCTDecode stream with corrupt JPEG data, as the reader, copying
+  and drawing a JPEG do, no longer leaks Wasm stack. libjpeg errors escaped the
+  module as a bare number instead of being caught, and after a few such reads
+  the stack overflowed into static data, so later, unrelated calls crashed with
+  `memory access out of bounds`, `null function or function signature
+mismatch`, or `Aborted()`. Decoding now ends at the error with the rows
+  read so far [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
+- Fix crashes on malformed input found by fuzzing the Wasm build and the
+  native addon, which share this code [#951](https://github.com/julianhille/MuhammaraJS/issues/951):
+  - `calculateTextDimensions()` and text measuring crashed with `null function
+or function signature mismatch` on a font with a glyph FreeType cannot
+    load; such a glyph now adds no box
+  - Writing a CFF (OpenType) font whose charstrings call local subroutines
+    that its private dictionary does not have read through a null pointer
+  - A failed `createFormXObjectsFromPDF()` or
+    `createFormXObjectFromPDFPage()`, for example on a page whose content
+    cannot be read, freed the writer's output stream, so `end()` threw `null
+function or function signature mismatch` and later calls read freed
+    memory. The writer now stays usable
+  - Copying, merging, appending or making a form from a page whose
+    `/Contents` array holds something other than a reference, and reading an
+    encrypted PDF whose `/CF` entry is not a dictionary, used freed memory
+  - Merging a page whose `/ProcSet` holds something other than a name read
+    past the end of a heap buffer
+  - Reading an encrypted PDF whose crypt filter has no `/CFM`, which is
+    optional, read through a null pointer
+  - A CFF font with an empty Name INDEX or FDArray, mismatched Top DICT count
+    or out-of-range font index, and a font whose OS/2 width class is outside
+    1..9, read out of bounds
+  - An xref stream with a `/W` field wider than 8 bytes overflowed a signed
+    shift; it is now rejected
+  - A PNG that fails after its rows are read, such as one without `IEND`,
+    made libpng jump into a function that had returned
+- Merging a page (`mergePDFPageToPage()`, `mergePDFPageToFormXObject()`)
+  whose decoded content holds one huge token, such as a name of hundreds of
+  MB from a few hundred KB of compressed PDF, keeps at most 32 MiB of that
+  token while scanning for resource names instead of copying all of it into
+  memory several times; the merged page is unchanged [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
+- Fix memory leaks on malformed input found by fuzzing [#951](https://github.com/julianhille/MuhammaraJS/issues/951): a PNG
+  whose rows fail to decode leaked the image stream, row buffer and decoder
+  state (a 6 KB PNG leaked 1 MB per call); a CFF font whose local subroutines
+  cannot be read leaked them and read past the end of a map; TIFF strip and
+  tile buffers leaked on decode errors; a TrueType composite glyph naming a
+  missing glyph leaked; and a failed stream copy or `recrypt()` left
+  dictionaries open that leaked when the writer was disposed
 - Recipe `movedown()` after `createPage()` or `editPage()` starts from the
   new page's text cursor instead of the previous page's text box origin, and
   `text({ flow: true })` no longer inherits options from the previous page's
@@ -121,6 +186,10 @@ These bring Wasm Recipe in line with native Recipe; see
   [#932](https://github.com/julianhille/MuhammaraJS/issues/932)
 
 ### Changed
+
+- Parsing a decoded content stream reads it in blocks instead of one
+  decode call per byte, about four times faster, for text extraction,
+  `startReadingObjectsFromStream()` and page merging [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 
 - Run `recryptAsync()` in a worker, like native runs it on a thread pool, so a
   page keeps responding while a PDF is recrypted: `worker_threads` in

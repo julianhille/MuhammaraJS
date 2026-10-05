@@ -36,6 +36,11 @@ const size_t kMaxExtractedElements = 100000;
 const size_t kMaxOperands = 1024;
 const size_t kMaxExtractedTextBytes = 16 * 1024 * 1024;
 const size_t kMaxParsedObjects = 1000000;
+// Decoded content-stream bytes one extraction reads. A compressed stream
+// expands to far more than its file size, and whitespace or one unterminated
+// string is a single object, so the object ceiling alone does not bound the
+// work.
+const size_t kMaxContentBytes = 64 * 1024 * 1024;
 
 // Per-call extraction budget. A default-constructed instance uses the ceilings
 // above. Clamp() folds a caller's request into them.

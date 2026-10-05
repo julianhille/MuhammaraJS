@@ -4,10 +4,24 @@ project(MuhammaraWasm VERSION 6.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-option(MUHAMMARA_WASM_SANITIZE "Build with Emscripten LeakSanitizer" OFF)
-if(MUHAMMARA_WASM_SANITIZE)
+set(MUHAMMARA_WASM_SANITIZE OFF CACHE STRING
+  "OFF, ON for Emscripten LeakSanitizer, or address for AddressSanitizer")
+string(TOLOWER "${MUHAMMARA_WASM_SANITIZE}" MUHAMMARA_WASM_SANITIZER)
+if(MUHAMMARA_WASM_SANITIZER STREQUAL "address")
+  # For fuzzing: linear-memory overflows and use-after-free trap with a report
+  # instead of silently corrupting the heap, and a stack overflow aborts
+  # instead of overwriting static data. Function names keep the reports and
+  # Wasm stack traces readable.
+  add_compile_options("-fsanitize=address")
+  add_link_options("-fsanitize=address" "-sSTACK_OVERFLOW_CHECK=2" "--profiling-funcs")
+  # Shadow memory and the free quarantine come out of the same linear memory.
+  set(MUHAMMARA_WASM_MAXIMUM_MEMORY 2147483648)
+elseif(MUHAMMARA_WASM_SANITIZE)
   add_compile_options("-fsanitize=leak")
   add_link_options("-fsanitize=leak" "-sEXIT_RUNTIME=1")
+endif()
+if(NOT DEFINED MUHAMMARA_WASM_MAXIMUM_MEMORY)
+  set(MUHAMMARA_WASM_MAXIMUM_MEMORY 536870912)
 endif()
 set(PDFHummus_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(PDFHummus_VERSION_MINOR ${PROJECT_VERSION_MINOR})
@@ -71,7 +85,7 @@ if(EMSCRIPTEN)
     "-sEXPORT_ES6=1"
     "-sENVIRONMENT=web,worker,node"
     "-sALLOW_MEMORY_GROWTH=1"
-    "-sMAXIMUM_MEMORY=536870912"
+    "-sMAXIMUM_MEMORY=${MUHAMMARA_WASM_MAXIMUM_MEMORY}"
     "-sFORCE_FILESYSTEM=1"
     "-sEXPORTED_RUNTIME_METHODS=['FS']"
     "-sEXPORTED_FUNCTIONS=['_malloc','_free','_muhammara_wasm_create_blank_pdf','_muhammara_wasm_free','_muhammara_wasm_recipe_destroy','_muhammara_wasm_recipe_add_page','_muhammara_wasm_recipe_add_page_with_box','_muhammara_wasm_recipe_end_page','_muhammara_wasm_recipe_pause_page','_muhammara_wasm_recipe_set_page_box','_muhammara_wasm_recipe_set_page_rotation','_muhammara_wasm_recipe_move_to','_muhammara_wasm_recipe_line_to','_muhammara_wasm_recipe_curve_to','_muhammara_wasm_recipe_close_path','_muhammara_wasm_recipe_save','_muhammara_wasm_recipe_restore','_muhammara_wasm_recipe_rectangle_path','_muhammara_wasm_recipe_transform','_muhammara_wasm_recipe_set_line_style','_muhammara_wasm_recipe_set_opacity','_muhammara_wasm_recipe_text','_muhammara_wasm_recipe_text_dimensions','_muhammara_wasm_recipe_image_dimensions','_muhammara_wasm_recipe_set_info','_muhammara_wasm_recipe_link','_muhammara_wasm_recipe_append_pdf','_muhammara_wasm_recipe_append_pdf_range','_muhammara_wasm_recipe_end_pdf','_muhammara_wasm_reader_create','_muhammara_wasm_reader_destroy','_muhammara_wasm_reader_get_pages_count','_muhammara_wasm_reader_get_page_object_id','_muhammara_wasm_reader_get_pdf_level','_muhammara_wasm_reader_get_page_info','_muhammara_wasm_reader_get_objects_count','_muhammara_wasm_reader_is_encrypted','_muhammara_wasm_reader_get_page_box','_muhammara_wasm_reader_get_xref_size','_muhammara_wasm_reader_get_xref_position','_muhammara_wasm_reader_get_xref_entry','_muhammara_wasm_reader_get_trailer_entry_type','_muhammara_wasm_modifier_create','_muhammara_wasm_modifier_destroy','_muhammara_wasm_modifier_start_page','_muhammara_wasm_modifier_rectangle','_muhammara_wasm_modifier_circle','_muhammara_wasm_modifier_line','_muhammara_wasm_modifier_text','_muhammara_wasm_modifier_image','_muhammara_wasm_modifier_end_page','_muhammara_wasm_modifier_end_pdf']"
@@ -126,5 +140,14 @@ if(EMSCRIPTEN)
   )
   target_link_options(muhammara-wasm PRIVATE
     "-sEXPORTED_FUNCTIONS+=['_muhammara_wasm_modifier_write_current_page_stream','_muhammara_wasm_modifier_font_text_dimensions','_muhammara_wasm_modifier_create_tiff_form','_muhammara_wasm_modifier_get_form_resources','_muhammara_wasm_modifier_form_operator','_muhammara_wasm_modifier_form_set_font','_muhammara_wasm_modifier_form_set_font_name','_muhammara_wasm_modifier_form_write_free_code','_muhammara_wasm_modifier_form_write_stream','_muhammara_wasm_object_indirect_reference','_muhammara_wasm_object_stream_content_start']"
+  )
+endif()
+
+if(EMSCRIPTEN AND MUHAMMARA_WASM_SANITIZER STREQUAL "address")
+  # The fuzzer measures the heap each input leaves allocated, and asks
+  # LeakSanitizer where a leak was allocated; see tests/fuzz/README.md.
+  target_sources(muhammara-wasm PRIVATE src/wasm_fuzz_support.cpp)
+  target_link_options(muhammara-wasm PRIVATE
+    "-sEXPORTED_FUNCTIONS+=['_muhammara_fuzz_allocated_bytes','_muhammara_fuzz_leak_check']"
   )
 endif()

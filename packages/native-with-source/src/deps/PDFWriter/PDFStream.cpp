@@ -110,7 +110,16 @@ PDFStream::PDFStream(
 
 PDFStream::~PDFStream(void)
 {
-    
+	// MuhammaraJS: a stream deleted without FinalizeStreamWrite(), such as the
+	// content of a form whose page failed to copy, still has the flate encoder
+	// pointing at its target. The encoder deletes its target on destruction,
+	// and that target is the document's output stream, this object's temporary
+	// stream, or the encryption stream deleted below, so detach it first.
+	// Detach() drops the unfinished encoding instead of writing its tail into
+	// the document.
+	if(mCompressStream)
+		mFlateEncodingStream.Detach();
+	delete mEncryptionStream;
 }
 
 IByteWriter* PDFStream::GetWriteStream()

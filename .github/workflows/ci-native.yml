@@ -123,6 +123,16 @@ jobs:
       - name: Run tests with the sanitizer runtime preloaded
         working-directory: packages/native-with-source
         run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R tap --recursive ./tests --timeout 15000
+      # A short, fixed-seed fuzz run for crashes, leaks and hangs.
+      - name: Fuzz smoke run
+        working-directory: packages/native-with-source
+        run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node fuzz/fuzz.js --iterations 4000 --jobs 4 --seed 1 --leaks --batch 100
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fuzz-crashes
+          path: packages/native-with-source/fuzz/out/crashes
+          if-no-files-found: ignore
   build-prebuild-glibc:
     strategy:
       fail-fast: false

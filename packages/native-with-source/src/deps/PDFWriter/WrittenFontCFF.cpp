@@ -309,10 +309,10 @@ EStatusCode WrittenFontCFF::ReadState(PDFParser* inStateReader,ObjectIDType inOb
 	UCharAndUChar aPair;
 	while(it.MoveNext())
 	{
-		item = it.GetItem();
+		item.Borrow(it.GetItem());
 		aPair.first = (unsigned char)item->GetValue();
 		it.MoveNext();
-		item = it.GetItem();
+		item.Borrow(it.GetItem());
 		aPair.second = (unsigned char)item->GetValue();
 		mFreeList.push_back(aPair);
 	}
@@ -324,7 +324,7 @@ EStatusCode WrittenFontCFF::ReadState(PDFParser* inStateReader,ObjectIDType inOb
 	PDFObjectCastPtr<PDFInteger> assignedPositionItem;
 	while(it.MoveNext())
 	{
-		assignedPositionItem = it.GetItem();
+		assignedPositionItem.Borrow(it.GetItem());
 		mAssignedPositions[i] = (unsigned int)assignedPositionItem->GetValue();
 		++i;
 	}
@@ -336,7 +336,7 @@ EStatusCode WrittenFontCFF::ReadState(PDFParser* inStateReader,ObjectIDType inOb
 	PDFObjectCastPtr<PDFBoolean> assignedPositionAvailableItem;
 	while(it.MoveNext())
 	{
-		assignedPositionAvailableItem = it.GetItem();
+		assignedPositionAvailableItem.Borrow(it.GetItem());
 		mAssignedPositionsAvailable[i] = assignedPositionAvailableItem->GetValue();
 		++i;
 	}

@@ -35,13 +35,13 @@ sources. Cached and uncached builds produce identical `dist/` bytes.
 
 These environment variables adjust the build:
 
-| Variable                        | Default                 | Effect                                                |
-| ------------------------------- | ----------------------- | ----------------------------------------------------- |
-| `MUHAMMARA_WASM_SANITIZE`       | `OFF`                   | Build with Emscripten LeakSanitizer.                  |
-| `MUHAMMARA_WASM_BUILD_TYPE`     | `Release`               | `CMAKE_BUILD_TYPE` for the build.                     |
-| `MUHAMMARA_WASM_CCACHE`         | `ON`                    | Set to `OFF` to build straight from the pinned image. |
-| `MUHAMMARA_WASM_CCACHE_DIR`     | `packages/wasm/.ccache` | Root directory holding the per-configuration caches.  |
-| `MUHAMMARA_WASM_CCACHE_MAXSIZE` | `1G`                    | Upper bound for one configuration's cache.            |
+| Variable                        | Default                 | Effect                                                                                                             |
+| ------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `MUHAMMARA_WASM_SANITIZE`       | `OFF`                   | `ON` builds with Emscripten LeakSanitizer; `address` with AddressSanitizer and stack overflow checks, for fuzzing. |
+| `MUHAMMARA_WASM_BUILD_TYPE`     | `Release`               | `CMAKE_BUILD_TYPE` for the build.                                                                                  |
+| `MUHAMMARA_WASM_CCACHE`         | `ON`                    | Set to `OFF` to build straight from the pinned image.                                                              |
+| `MUHAMMARA_WASM_CCACHE_DIR`     | `packages/wasm/.ccache` | Root directory holding the per-configuration caches.                                                               |
+| `MUHAMMARA_WASM_CCACHE_MAXSIZE` | `1G`                    | Upper bound for one configuration's cache.                                                                         |
 
 `./packages/wasm/build.sh --print-cache-directory` and
 `--print-build-directory` report the directories for the current settings
@@ -73,6 +73,14 @@ Wasm documentation sources are package-local and are not published in the npm
 package. The standalone WebAssembly documentation site is configured by
 `packages/wasm/.readthedocs.yaml`; configure its Read the Docs project to use
 that file. Native documentation is maintained separately in `packages/native/docs/`.
+
+## Fuzzing
+
+`npm run fuzz --workspace=@muhammara/wasm` runs a mutation fuzzer against the
+built package; build with `MUHAMMARA_WASM_SANITIZE=address` first so memory
+errors are reported where they happen. See `tests/fuzz/README.md` for targets,
+options, and how to turn a finding into a regression test. The Wasm Fuzzing
+workflow runs it weekly and on demand.
 
 ## Documentation
 

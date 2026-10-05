@@ -20,19 +20,27 @@
 */
 #include "InputStreamSkipperStream.h"
 
+#include <string.h>
+
 InputStreamSkipperStream::InputStreamSkipperStream(void)
 {
 	mStream = NULL;
+	mAmountRead = 0;
+	mReadAhead = NULL;
+	mReadAheadSize = mReadAheadStart = mReadAheadEnd = 0;
 }
 
 InputStreamSkipperStream::~InputStreamSkipperStream(void)
 {
 	if(mStream != NULL)
 		delete mStream;
+	delete[] mReadAhead;
 }
 
 InputStreamSkipperStream::InputStreamSkipperStream(IByteReader* inSourceStream)
 {
+	mReadAhead = NULL;
+	mReadAheadSize = 0;
 	Assign(inSourceStream);
 }
 
@@ -41,18 +49,52 @@ void InputStreamSkipperStream::Assign(IByteReader* inSourceStream)
 {
 	mStream = inSourceStream;
 	mAmountRead = 0;
+	mReadAheadStart = mReadAheadEnd = 0;
+}
+
+void InputStreamSkipperStream::EnableReadAhead(IOBasicTypes::LongBufferSizeType inSize)
+{
+	delete[] mReadAhead;
+	mReadAhead = inSize > 0 ? new IOBasicTypes::Byte[inSize] : NULL;
+	mReadAheadSize = inSize;
+	mReadAheadStart = mReadAheadEnd = 0;
 }
 
 IOBasicTypes::LongBufferSizeType InputStreamSkipperStream::Read(IOBasicTypes::Byte* inBuffer,IOBasicTypes::LongBufferSizeType inBufferSize)
 {
-	IOBasicTypes::LongBufferSizeType readThisTime = mStream->Read(inBuffer,inBufferSize);
-	mAmountRead+=readThisTime;
+	if(!mReadAhead)
+	{
+		IOBasicTypes::LongBufferSizeType readThisTime = mStream->Read(inBuffer,inBufferSize);
+		mAmountRead+=readThisTime;
+		return readThisTime;
+	}
 
-	return readThisTime;
+	IOBasicTypes::LongBufferSizeType delivered = 0;
+	while(delivered < inBufferSize)
+	{
+		if(mReadAheadStart == mReadAheadEnd)
+		{
+			if(!mStream || !mStream->NotEnded())
+				break;
+			mReadAheadStart = 0;
+			mReadAheadEnd = mStream->Read(mReadAhead,mReadAheadSize);
+			if(mReadAheadEnd == 0)
+				break;
+		}
+		IOBasicTypes::LongBufferSizeType available = mReadAheadEnd - mReadAheadStart;
+		IOBasicTypes::LongBufferSizeType amount = inBufferSize - delivered < available ? inBufferSize - delivered : available;
+		memcpy(inBuffer + delivered,mReadAhead + mReadAheadStart,amount);
+		mReadAheadStart += amount;
+		delivered += amount;
+	}
+	mAmountRead+=delivered;
+	return delivered;
 }
 
 bool InputStreamSkipperStream::NotEnded()
 {
+	if(mReadAheadStart != mReadAheadEnd)
+		return true;
 	return mStream ? mStream->NotEnded() : false;
 }
 
@@ -86,6 +128,8 @@ void InputStreamSkipperStream::SkipBy(IOBasicTypes::LongFilePositionType inAmoun
 void InputStreamSkipperStream::Reset()
 {
 	mAmountRead = 0;
+	// the source moved; what was read ahead is no longer next
+	mReadAheadStart = mReadAheadEnd = 0;
 }
 
 IOBasicTypes::LongFilePositionType InputStreamSkipperStream::GetCurrentPosition()

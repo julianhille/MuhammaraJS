@@ -28,9 +28,67 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - A server benchmark comparing `recrypt()` and `recryptAsync()`, including
   how long each blocks the event loop, run with `npm run bench:recrypt`
   [#98](https://github.com/julianhille/MuhammaraJS/issues/98)
+- A sanitizer fuzzer for the native addon, `npm run fuzz` in
+  `packages/native-with-source`, that feeds mutated PDFs, fonts, images,
+  content streams and ToUnicode CMaps through reading, modification, copying,
+  recrypt, font and image APIs, one crash-isolated worker per job. It reports
+  crashes, leaks under LeakSanitizer, hangs, slow cases and memory growth;
+  see `packages/native-with-source/fuzz/README.md`. The sanitizer CI job runs
+  a short fixed-seed fuzz pass
+  [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 
 ### Fixed
 
+- Reading a PDF whose object stream header ends right where its first
+  object starts, as Cairo writes them, no longer crashes the process with a
+  segmentation fault when the stream's `/Length` is an indirect object. Since
+  7.0.0, re-opening such a stream read memory it had just freed; this affected
+  `createReader()`, copying, appending, modifying and `recrypt()` of such
+  PDFs [#959](https://github.com/julianhille/MuhammaraJS/issues/959)
+- `extractPageText()` and `extractPageContentItems()` stop after 64 MiB of
+  decoded page content, inline images included, and throw their limit error,
+  and a parser from `startReadingObjectsFromStream()` stops at a token over
+  32 MiB. A few hundred KB of compressed PDF used to take minutes [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
+- Fix crashes on malformed input found by fuzzing the native addon and the
+  Wasm build, which share this code [#951](https://github.com/julianhille/MuhammaraJS/issues/951):
+  - `calculateTextDimensions()` on a font with a glyph FreeType cannot load
+    read an uninitialized glyph and crashed. Such a glyph now adds no box
+  - Writing a CFF (OpenType) font whose charstrings call local subroutines
+    that its private dictionary does not have read through a null pointer
+  - A failed `createFormXObjectsFromPDF()` or
+    `createFormXObjectFromPDFPage()`, for example on a page whose content
+    cannot be read, deleted the writer's output stream and left the form
+    open, so `end()` used freed memory. The writer now stays usable
+  - Copying, merging, appending or making a form from a page whose
+    `/Contents` array holds something other than a reference, and reading an
+    encrypted PDF whose `/CF` entry is not a dictionary, used freed memory
+  - Merging a page whose `/ProcSet` holds something other than a name read
+    past the end of a heap buffer
+  - Reading an encrypted PDF whose crypt filter has no `/CFM`, which is
+    optional, read through a null pointer
+  - A CFF font with an empty Name INDEX or FDArray, mismatched Top DICT count
+    or out-of-range font index, and a font whose OS/2 width class is outside
+    1..9, read out of bounds
+  - An xref stream with a `/W` field wider than 8 bytes overflowed a signed
+    shift; it is now rejected
+  - A PNG that fails after its rows are read, such as one without `IEND`,
+    made libpng jump into a function that had returned
+  - Reading a DCTDecode stream with corrupt JPEG data never ended:
+    `notEnded()` stayed true while `read()` returned nothing, and on
+    riscv64 the libjpeg error aborted the process. Decoding now ends at the
+    error with the rows read so far
+- Merging a page (`mergePDFPageToPage()`, `mergePDFPageToFormXObject()`)
+  whose decoded content holds one huge token, such as a name of hundreds of
+  MB from a few hundred KB of compressed PDF, keeps at most 32 MiB of that
+  token while scanning for resource names instead of copying all of it into
+  memory several times; the merged page is unchanged [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
+- Fix memory leaks on malformed input found by fuzzing [#951](https://github.com/julianhille/MuhammaraJS/issues/951): a PNG
+  whose rows fail to decode leaked the image stream, row buffer and decoder
+  state; a CFF font whose local subroutines cannot be read leaked them and
+  read past the end of a map; TIFF strip and tile buffers leaked on decode
+  errors; a TrueType composite glyph naming a missing glyph leaked; and a
+  failed stream copy or `recrypt()` left dictionaries open that leaked when
+  the writer was destroyed
 - Recipe `text()` without coordinates starts at the page margins after
   `createPage()` or `editPage()`, as in Wasm, instead of at the previous
   page's text box origin, and `movedown()` no longer starts from the previous
@@ -116,6 +174,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#908](https://github.com/julianhille/MuhammaraJS/issues/908)
 
 ### Changed
+
+- Readers, copying contexts, modifiers and `recrypt()` read a
+  `PDFRStreamForBuffer` without calling into JavaScript for every byte the
+  parser takes: a PDF with a 33 MiB object parses about eight times faster.
+  The stream's position is kept natively during a call and written back to
+  the object before the call returns. Other stream classes, subclasses of
+  `PDFRStreamForBuffer`, and streams whose methods were replaced are called
+  as before [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
+- Parsing a decoded content stream reads it in blocks instead of one
+  decode call per byte, about four times faster, for text extraction,
+  `startReadingObjectsFromStream()` and page merging [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 
 - Native log settings belong to the thread that sets them. A writer created
   in a worker thread no longer changes where writers on other threads log

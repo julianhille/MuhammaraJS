@@ -46,6 +46,13 @@ public:
 	void ResetReadState(const SimpleStringTokenizer& inExternalTokenizer);
 	IOBasicTypes::LongFilePositionType GetRecentTokenPosition();
 	IOBasicTypes::LongFilePositionType GetReadBufferSize();
+
+	// MuhammaraJS: keep at most inMaxTokenSize bytes of a token (0 = no
+	// limit). The rest of a longer token is read and dropped, so positions and
+	// the tokens after it are unchanged, but a token of decoded content cannot
+	// grow a string until allocation fails.
+	void SetMaxTokenSize(IOBasicTypes::LongFilePositionType inMaxTokenSize);
+	static const IOBasicTypes::LongFilePositionType scMaxStreamTokenSize = 32 * 1024 * 1024;
 private:
 
 	IByteReader* mStream;
@@ -53,6 +60,7 @@ private:
 	IOBasicTypes::Byte mTokenBuffer;
 	IOBasicTypes::LongFilePositionType mStreamPositionTracker;
 	IOBasicTypes::LongFilePositionType mRecentTokenPosition;
+	IOBasicTypes::LongFilePositionType mMaxTokenSize;
 
 
 	void SkipTillToken();

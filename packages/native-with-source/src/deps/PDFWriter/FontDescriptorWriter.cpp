@@ -96,7 +96,10 @@ EStatusCode FontDescriptorWriter::WriteFontDescriptor(	ObjectIDType inFontDescri
 
 	// FontStretch
 	fontDescriptorDictionary->WriteKey(scFontStretch);
-	fontDescriptorDictionary->WriteNameValue(scFontStretchLabels[inFontInfo->GetFontStretch()]);
+	EFontStretch fontStretch = inFontInfo->GetFontStretch();
+	if(fontStretch < eFontStretchUltraCondensed || fontStretch >= eFontStretchMax)
+		fontStretch = eFontStretchNormal;
+	fontDescriptorDictionary->WriteNameValue(scFontStretchLabels[fontStretch]);
 
 	// FontWeight
 	fontDescriptorDictionary->WriteKey(scFontWeight);

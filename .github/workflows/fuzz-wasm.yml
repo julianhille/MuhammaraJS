@@ -1,0 +1,83 @@
+name: Wasm Fuzzing
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: How long each job fuzzes
+        default: "45"
+      targets:
+        description: Comma-separated fuzz targets; empty fuzzes all
+        default: ""
+
+concurrency:
+  group: wasm-fuzz-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: fuzz (${{ matrix.name }})
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # AddressSanitizer finds memory errors where they happen and leaks;
+          # it runs inputs 20 to 50 times slower, so timing is not checked.
+          - name: crashes and leaks
+            sanitize: address
+            timeout: 120000
+            # Decompression bombs take minutes under the sanitizer.
+            flags: --no-dos-seeds --report-only growth
+          # The release build is the one users run: crashes, plus inputs that
+          # are too slow or need too much memory.
+          - name: crashes and denial of service
+            sanitize: "OFF"
+            timeout: 20000
+            # Slow and memory-hungry inputs are kept as artifacts to triage;
+            # bounded work, such as recrypt({ compress: false }) writing
+            # every decoded stream, would otherwise fail every run.
+            flags: --report-only slow,memory,growth
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Node.js and restore npm cache
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: ./.github/actions/setup-wasm-build-cache
+        with:
+          sanitize: ${{ matrix.sanitize }}
+      - run: npm ci --ignore-scripts
+      - run: npm run wasm:build
+        env:
+          MUHAMMARA_WASM_SANITIZE: ${{ matrix.sanitize }}
+      - name: Replay fuzz regressions
+        run: npm run fuzz --workspace=@muhammara/wasm -- --replay ../native-with-source/tests/TestMaterials/fuzz --timeout "$TIMEOUT"
+        env:
+          TIMEOUT: ${{ matrix.timeout }}
+      - name: Fuzz
+        run: |
+          case "${MINUTES:-45}" in
+            '' | *[!0-9]*) echo "minutes must be a whole number" >&2; exit 1 ;;
+          esac
+          set -- --time "$(( ${MINUTES:-45} * 60 ))" --jobs 3 --timeout "$TIMEOUT" --seed "$GITHUB_RUN_ID" $FLAGS
+          if [ -n "$TARGETS" ]; then set -- "$@" --targets "$TARGETS"; fi
+          npm run fuzz --workspace=@muhammara/wasm -- "$@"
+        env:
+          MINUTES: ${{ inputs.minutes }}
+          TARGETS: ${{ inputs.targets }}
+          TIMEOUT: ${{ matrix.timeout }}
+          FLAGS: ${{ matrix.flags }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: wasm-fuzz-findings-${{ matrix.sanitize }}
+          path: packages/wasm/tests/fuzz/findings/
+          if-no-files-found: ignore

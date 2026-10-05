@@ -330,6 +330,29 @@ private:
   std::vector<napi_property_descriptor> instanceProperties_;
 };
 
+// Tells native objects that cache JavaScript state when JavaScript calls into
+// the addon and when that outermost call returns, so they can load the state
+// on entry and write it back before JavaScript runs again.
+class CallBoundary {
+public:
+  class Listener {
+  public:
+    virtual ~Listener() = default;
+    virtual void OnEnter() = 0;
+    virtual void OnReturn() = 0;
+  };
+
+  void Add(Listener *listener);
+  void Remove(Listener *listener);
+  void Enter();
+  void Return();
+  bool Inside() const;
+
+private:
+  std::vector<Listener *> listeners_;
+  int depth_ = 0;
+};
+
 class ModuleState {
 public:
   explicit ModuleState(napi_env env);
@@ -350,11 +373,24 @@ public:
                     const napi_type_tag &typeTag);
   napi_type_tag NextTypeTag();
 
+  // Remembers the prototype of the JavaScript PDFRStreamForBuffer and its
+  // methods as they are now. A module registry that loads the JavaScript API
+  // again (Jest does, per test file) registers its own copy.
+  bool RegisterBufferReadStream(napi_value prototype);
+  // True when `object` is a PDFRStreamForBuffer of a registered prototype
+  // whose stream methods are the registered ones, with none of its own, so
+  // its state may be read and updated directly instead of calling them.
+  bool IsBufferReadStream(napi_value object);
+  // Shared, so a listener that outlives the module state can still remove
+  // itself.
+  std::shared_ptr<CallBoundary> Boundary() const;
+
   static ModuleState *Create(napi_env env);
   static ModuleState *Get(napi_env env);
 
 private:
   struct CallbackBinding;
+  struct BufferReadStreamPrototype;
 
   friend napi_value Dispatch(napi_env env, napi_callback_info info);
   friend napi_value DispatchGetter(napi_env env, napi_callback_info info);
@@ -365,6 +401,8 @@ private:
   napi_env env_;
   ::ConstructorsHolder constructors_;
   std::vector<std::unique_ptr<CallbackBinding>> callbacks_;
+  std::vector<std::unique_ptr<BufferReadStreamPrototype>> bufferReadStreams_;
+  std::shared_ptr<CallBoundary> boundary_;
   uint64_t nextTypeTag_;
 };
 

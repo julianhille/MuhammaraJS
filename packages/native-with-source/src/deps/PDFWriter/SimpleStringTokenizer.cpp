@@ -28,7 +28,13 @@ using namespace IOBasicTypes;
 SimpleStringTokenizer::SimpleStringTokenizer(void)
 {
 	mStream = NULL;
+	mMaxTokenSize = 0;
 	ResetReadState();
+}
+
+void SimpleStringTokenizer::SetMaxTokenSize(LongFilePositionType inMaxTokenSize)
+{
+	mMaxTokenSize = inMaxTokenSize;
 }
 
 SimpleStringTokenizer::~SimpleStringTokenizer(void)
@@ -92,6 +98,7 @@ BoolAndString SimpleStringTokenizer::GetNextToken()
 			break;
 		}
 		tokenBuffer.Write(&buffer,1);
+		LongFilePositionType tokenSize = 1;
 
 		result.first = true; // will only be changed to false in case of read error
 
@@ -111,8 +118,12 @@ BoolAndString SimpleStringTokenizer::GetNextToken()
 				SaveTokenBuffer(buffer); // for a non-space breaker, save the token for next token read
 				break;
 			}
-			else
+			else if(mMaxTokenSize == 0 || tokenSize < mMaxTokenSize)
+			{
 				tokenBuffer.Write(&buffer,1);
+				++tokenSize;
+			}
+			// MuhammaraJS: else drop the byte, see SetMaxTokenSize()
 		}
 		result.second = tokenBuffer.ToString();
 	}while(false);

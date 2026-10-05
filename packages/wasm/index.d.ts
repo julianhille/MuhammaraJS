@@ -1989,7 +1989,8 @@ export interface PDFPageContentItem {
 /**
  * Per-call extraction budget. Every field is clamped to a built-in ceiling,
  * so a caller may tighten a limit but never raise it above the default.
- * Omitted fields keep the ceiling.
+ * Omitted fields keep the ceiling. Independent of these, an extraction reads
+ * at most 64 MiB of decoded content and throws past it.
  */
 export interface PDFExtractionLimits {
   /** Extracted elements or items. Default and ceiling: 100000. */

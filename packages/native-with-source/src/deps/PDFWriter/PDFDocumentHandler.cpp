@@ -320,6 +320,8 @@ PDFFormXObject* PDFDocumentHandler::CreatePDFFormXObjectForPage(PDFDictionary* i
 		// copy the page content to the target XObject stream
 		if(WritePageContentToSingleStream(result->GetContentStream()->GetWriteStream(),inPageObject) != PDFHummus::eSuccess)
 		{
+			// close the form object that was already started, so the output stays writable
+			mDocumentContext->EndFormXObjectNoRelease(result);
 			delete result;
 			result = NULL;
 			break;
@@ -434,7 +436,7 @@ EStatusCode PDFDocumentHandler::WritePageContentToSingleStream(IByteWriter* inTa
 		PDFObjectCastPtr<PDFIndirectObjectReference> refItem;
 		while(it.MoveNext() && status == PDFHummus::eSuccess)
 		{
-			refItem = it.GetItem();
+			refItem.Borrow(it.GetItem());
 			if(!refItem)
 			{
 				status = PDFHummus::eFailure;
@@ -879,7 +881,7 @@ EStatusCode PDFDocumentHandler::CopyPageContentToTargetPagePassthrough(PDFPage* 
 		PDFObjectCastPtr<PDFIndirectObjectReference> refItem;
 		while (it.MoveNext() && status == PDFHummus::eSuccess)
 		{
-			refItem = it.GetItem();
+			refItem.Borrow(it.GetItem());
 			if (!refItem)
 			{
 				status = PDFHummus::eFailure;
@@ -923,7 +925,7 @@ EStatusCode PDFDocumentHandler::CopyPageContentToTargetPageRecoded(PDFPage* inPa
 		PDFObjectCastPtr<PDFIndirectObjectReference> refItem;
 		while(it.MoveNext() && status == PDFHummus::eSuccess)
 		{
-			refItem = it.GetItem();
+			refItem.Borrow(it.GetItem());
 			if(!refItem)
 			{
 				status = PDFHummus::eFailure;
@@ -1390,7 +1392,9 @@ EStatusCode PDFDocumentHandler::MergeResourcesToPage(PDFPage* inTargetPage,PDFDi
 	{
 		SingleValueContainerIterator<PDFObjectVector> it(procsets->GetIterator());
 		while(it.MoveNext())
-			inTargetPage->GetResourcesDictionary().AddProcsetResource(((PDFName*)it.GetItem())->GetValue());
+			// procsets are names. skip anything else rather than read it as one
+			if(it.GetItem()->GetType() == PDFObject::ePDFObjectName)
+				inTargetPage->GetResourcesDictionary().AddProcsetResource(((PDFName*)it.GetItem())->GetValue());
 	}
 
 
@@ -1626,7 +1630,7 @@ EStatusCode PDFDocumentHandler::MergePageContentToTargetPage(PDFPage* inTargetPa
 		PDFObjectCastPtr<PDFIndirectObjectReference> refItem;
 		while(it.MoveNext() && status == PDFHummus::eSuccess)
 		{
-			refItem = it.GetItem();
+			refItem.Borrow(it.GetItem());
 			if(!refItem)
 			{
 				status = PDFHummus::eFailure;
@@ -1729,11 +1733,18 @@ EStatusCode PDFDocumentHandler::ScanStreamForResourcesTokens(PDFStreamInput* inS
 	// There's still risk here, in that there will be a string that like a resource name with forward slash which will be mistaken
 	// for a resource usage. this is something to tackle still.
 	SimpleStringTokenizer tokenizer;
-	tokenizer.SetReadStream(streamReader);
+	// MuhammaraJS: decoded content expands far beyond the input, so keep
+	// only the start of a long token; no resource name comes near the cap.
+	tokenizer.SetMaxTokenSize(SimpleStringTokenizer::scMaxStreamTokenSize);
+	// MuhammaraJS: the tokenizer reads bytewise; read the decoded stream,
+	// which nothing else reads, in blocks instead. The skipper owns it.
+	InputStreamSkipperStream* source = new InputStreamSkipperStream(streamReader);
+	source->EnableReadAhead(64 * 1024);
+	tokenizer.SetReadStream(source);
 
 	BoolAndString tokenizerResult;
 
-	while(streamReader->NotEnded())
+	while(source->NotEnded())
 	{
 		BoolAndString tokenizerResult = tokenizer.GetNextToken();
 
@@ -1747,7 +1758,7 @@ EStatusCode PDFDocumentHandler::ScanStreamForResourcesTokens(PDFStreamInput* inS
 				outResourceMarkers.push_back(ResourceTokenMarker(tokenizerResult.second.substr(1),tokenizer.GetRecentTokenPosition()));
 	}
 
-	delete streamReader;
+	delete source;
 	return PDFHummus::eSuccess;
 }
 
@@ -2115,6 +2126,10 @@ EStatusCode PDFDocumentHandler::WriteStreamObject(PDFStreamInput* inStream, IObj
 	if (status != PDFHummus::eSuccess)
 	{
 		TRACE_LOG("PDFDocumentHandler::WriteStreamObject, failed to write stream dictionary");
+		// MuhammaraJS: close the dictionary started above instead of leaving it
+		// open on the objects context
+		newStreamDictionary->Discard();
+		mObjectsContext->EndDictionary(newStreamDictionary);
 		delete streamReader;
 		return PDFHummus::eFailure;
 	}
@@ -2318,7 +2333,9 @@ EStatusCode PDFDocumentHandler::RegisterResourcesForForm(PDFFormXObject* inTarge
         {
             SingleValueContainerIterator<PDFObjectVector> it(procsets->GetIterator());
             while(it.MoveNext())
-                inTargetFormXObject->GetResourcesDictionary().AddProcsetResource(((PDFName*)it.GetItem())->GetValue());
+                // procsets are names. skip anything else rather than read it as one
+                if(it.GetItem()->GetType() == PDFObject::ePDFObjectName)
+                    inTargetFormXObject->GetResourcesDictionary().AddProcsetResource(((PDFName*)it.GetItem())->GetValue());
         }
             
         // ExtGState
@@ -2475,7 +2492,7 @@ EStatusCode PDFDocumentHandler::MergePageContentToTargetXObject(PDFFormXObject* 
 		PDFObjectCastPtr<PDFIndirectObjectReference> refItem;
 		while(it.MoveNext() && status == PDFHummus::eSuccess)
 		{
-			refItem = it.GetItem();
+			refItem.Borrow(it.GetItem());
 			if(!refItem)
 			{
 				status = PDFHummus::eFailure;

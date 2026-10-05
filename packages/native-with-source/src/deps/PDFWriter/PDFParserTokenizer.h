@@ -72,6 +72,26 @@ public:
 	// if you are trying to determine the current position reading the stream, take this size into account (substracting from the current position)
 	// to get the "virtual" position from the tokenizer point of view.
 	IOBasicTypes::LongFilePositionType GetReadBufferSize();
+
+	// MuhammaraJS: stop reading after inLimit bytes (0 = no limit), counted
+	// across streams and ResetReadState() until the next SetReadLimit(). Lets
+	// a caller bound the decoded content a single token, such as whitespace or
+	// an unterminated string, may consume. ReachedReadLimit() reports whether
+	// tokenizing stopped there, or at a token longer than SetMaxTokenSize().
+	void SetReadLimit(IOBasicTypes::LongFilePositionType inLimit);
+	bool ReachedReadLimit();
+	// MuhammaraJS: charges bytes read past the tokenizer, such as an inline
+	// image skipped through an external read, to the read limit. Returns false,
+	// and reports the limit as reached, once they exceed it.
+	bool ConsumeReadBudget(IOBasicTypes::LongFilePositionType inBytes);
+
+	// MuhammaraJS: the longest token GetNextToken() builds (0 = no limit). A
+	// longer one fails instead of growing a string until allocation fails, and
+	// tokenizing stops until the next ResetReadState(). Set for decoded
+	// streams, which expand far beyond the input; a file's own tokens are
+	// bounded by its size.
+	void SetMaxTokenSize(IOBasicTypes::LongFilePositionType inMaxTokenSize);
+	static const IOBasicTypes::LongFilePositionType scMaxStreamTokenSize = 32 * 1024 * 1024;
 private:
 
 	IByteReader* mStream;
@@ -79,6 +99,12 @@ private:
 	IOBasicTypes::Byte mTokenBuffer;
 	IOBasicTypes::LongFilePositionType mStreamPositionTracker;
 	IOBasicTypes::LongFilePositionType mRecentTokenPosition;
+	IOBasicTypes::LongFilePositionType mReadLimit;
+	IOBasicTypes::LongFilePositionType mBytesRead;
+	IOBasicTypes::LongFilePositionType mTokenBytes;
+	IOBasicTypes::LongFilePositionType mMaxTokenSize;
+	bool mReachedReadLimit;
+	bool mTokenTooLong;
 
 
 	void SkipTillToken();

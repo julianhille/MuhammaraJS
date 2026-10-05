@@ -112,7 +112,9 @@ LongBufferSizeType InputBufferedStream::Read(Byte* inBuffer,LongBufferSizeType i
 
 bool InputBufferedStream::NotEnded()
 {
-	return mSourceStream->NotEnded() || (mCurrentBufferIndex != mLastAvailableIndex);
+	// MuhammaraJS: the buffer first, so a buffered byte costs no call down
+	// the source chain
+	return (mCurrentBufferIndex != mLastAvailableIndex) || mSourceStream->NotEnded();
 }
 
 void InputBufferedStream::Initiate(IByteReaderWithPosition* inSourceReader,IOBasicTypes::LongBufferSizeType inBufferSize)

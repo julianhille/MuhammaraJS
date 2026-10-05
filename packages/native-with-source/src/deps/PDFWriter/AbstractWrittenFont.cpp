@@ -466,9 +466,9 @@ void AbstractWrittenFont::ReadWrittenFontState(PDFParser* inStateReader,PDFDicti
 
 	while(it.MoveNext())
 	{
-		firstState = it.GetItem();
+		firstState.Borrow(it.GetItem());
 		it.MoveNext();
-		secondState = it.GetItem();
+		secondState.Borrow(it.GetItem());
 
 		GlyphEncodingInfo glyphEncodingInfo;		
 		ReadGlyphEncodingInfoState(inStateReader,secondState->mObjectID,glyphEncodingInfo);
@@ -493,7 +493,7 @@ void AbstractWrittenFont::ReadGlyphEncodingInfoState(PDFParser* inStateReader,Ob
 	PDFObjectCastPtr<PDFInteger> item;
 	while(it.MoveNext())
 	{
-		item = it.GetItem();
+		item.Borrow(it.GetItem());
 		inGlyphEncodingInfo.mUnicodeCharacters.push_back((unsigned long)item->GetValue());
 	}
 }

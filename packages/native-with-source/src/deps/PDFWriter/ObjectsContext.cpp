@@ -47,6 +47,15 @@ ObjectsContext::ObjectsContext(void)
 
 ObjectsContext::~ObjectsContext(void)
 {
+	// MuhammaraJS: an operation that failed may leave dictionaries open, and a
+	// writer destroyed without Cleanup() would leak them. Release them without
+	// writing, as Cleanup() does; the output stream may be gone.
+	DictionaryContextList::iterator it = mDictionaryStack.begin();
+	for(; it != mDictionaryStack.end(); ++it)
+	{
+		(*it)->Discard();
+		delete *it;
+	}
 }
 
 

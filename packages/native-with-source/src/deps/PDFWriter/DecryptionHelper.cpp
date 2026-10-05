@@ -282,12 +282,15 @@ EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPasswor
 					// A little caveat of those smart ptrs need to be handled here
 					// make sure to pass the pointer after init...otherwise cast wont do addref
 					// and object will be released
-					cryptFilter = cryptFiltersIt.GetValue();
+					cryptFilter.Borrow(cryptFiltersIt.GetValue());
 					if (!!cryptFilter) {
 						PDFObjectCastPtr<PDFName> cfmNameObject(inParser->QueryDictionaryObject(cryptFilter.GetPtr(), "CFM"));
 						RefCountPtr<PDFObject> lengthObject(inParser->QueryDictionaryObject(cryptFilter.GetPtr(), "Length"));
 						unsigned int cryptLength = !lengthObject ? mLength : ComputeByteLength(lengthObject.GetPtr());
 						// setup encryption method (based on cfmName) and key (based on length)
+						// MuhammaraJS: /CFM is optional and defaults to None
+						if (!cfmNameObject)
+							continue;
 						string cfmName = cfmNameObject->GetValue();
 						if(cfmName != "AESV2" && cfmName != "AESV3" && cfmName != "RC4") {
 							continue; // probably "None"". could also be unsupported. in any case, ignore and this means that this crypt filter will not encrypt

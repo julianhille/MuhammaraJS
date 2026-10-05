@@ -119,6 +119,8 @@ public:
 	// Hummus requirements, which is SPEED SPEED. as i don't normally need rendering
 	// hinting and scaling is always removed. inFlags are added on top of the default flags
 	FT_Error LoadGlyph(FT_UInt inGlyphIndex, FT_Int32 inFlags = 0);
+	// Call after loading a glyph into the face directly, bypassing LoadGlyph.
+	void ForgetLoadedGlyph();
 
 	// a very simple memoized version of selecting a palette
 	FT_Error SelectDefaultPalette(FT_Color** outPalette, unsigned short* outPaletteSize);

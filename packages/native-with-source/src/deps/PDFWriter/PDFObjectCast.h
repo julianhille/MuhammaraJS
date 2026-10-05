@@ -68,6 +68,14 @@ public:
 		RefCountPtr<T>::operator =(PDFObjectCast<T>(inValue));
 		return *this;
 	}
+
+	// For a borrowed object, such as the result of a Get*** operation: takes a reference if
+	// the type matches, and leaves the object alone if it doesn't
+	PDFObjectCastPtr<T>&  Borrow(PDFObject* inValue)
+	{
+		RefCountPtr<T>::operator =((inValue && inValue->GetType() == (PDFObject::EPDFObjectType)T::eType) ? (T*)inValue : NULL);
+		return *this;
+	}
 };
 
 

@@ -1676,6 +1676,13 @@ EStatusCode PDFParser::ParseXrefFromXrefStream(XrefEntryInputVector& inXrefTable
 				status = PDFHummus::eFailure;
 				break;
 			}
+			// values are read into 64 bits, so a field can be at most 8 bytes wide
+			if(widthObject->GetValue() < 0 || widthObject->GetValue() > 8)
+			{
+				TRACE_LOG1("PDFParser::ParseXrefFromXrefStream, width %lld in W array is out of range 0..8", widthObject->GetValue());
+				status = PDFHummus::eFailure;
+				break;
+			}
 			widthsArray[i] = (int)widthObject->GetValue();
 		}
 		if(status != PDFHummus::eSuccess)
@@ -1828,7 +1835,8 @@ EStatusCode PDFParser::ReadXrefStreamSegment(XrefEntryInputVector& inXrefTable,
 
 EStatusCode PDFParser::ReadXrefSegmentValue(IByteReader* inSource,int inEntrySize,long long& outValue)
 {
-	outValue = 0;
+	// accumulate unsigned, as shifting a set top bit into the sign of a long long is undefined
+	unsigned long long value = 0;
 	Byte buffer;
 	EStatusCode status = PDFHummus::eSuccess;
 
@@ -1836,8 +1844,9 @@ EStatusCode PDFParser::ReadXrefSegmentValue(IByteReader* inSource,int inEntrySiz
 	{
 		status = (inSource->Read(&buffer,1) == 1 ? PDFHummus::eSuccess : PDFHummus::eFailure);
 		if(status != PDFHummus::eFailure)
-			outValue = (outValue<<8) + buffer;
+			value = (value<<8) + buffer;
 	}
+	outValue = (long long)value;
 	return status;
 }
 
@@ -1957,6 +1966,10 @@ PDFObject* PDFParser::ParseExistingInDirectStreamObject(ObjectIDType inObjectId)
 		// so we can still reach it, rather than skipping to a position we've already passed.
 		if(!skipperStream.CanSkipTo(objectPositionInStream))
 		{
+			// MuhammaraJS: CreateInputStreamReader() may parse objects, such as an
+			// indirect /Length, through mObjectParser, which still reads the
+			// object stream's reader deleted here. Point it back at the file first.
+			mObjectParser.SetReadStream(&mStream,&mCurrentPositionProvider);
 			delete objectSource;
 			objectSource = CreateInputStreamReader(objectStream.GetPtr());
 			skipperStream.Assign(objectSource);
@@ -2372,7 +2385,11 @@ PDFObjectParser* PDFParser::StartReadingObjectsFromStream(PDFStreamInput* inStre
 
 	PDFObjectParser* objectsParser = new PDFObjectParser();
 	InputStreamSkipperStream* source = new InputStreamSkipperStream(readStream);
+	// MuhammaraJS: the parser owns this decoded stream and reads it bytewise
+	source->EnableReadAhead(64 * 1024);
 	objectsParser->SetReadStream(source,source,true);
+	// MuhammaraJS: decoded content expands far beyond the input, so bound one token
+	objectsParser->SetMaxTokenSize(PDFParserTokenizer::scMaxStreamTokenSize);
 	// Not setting decryption filter cause shuoldnt decrypt at lower level. if at all - the stream is encrypted already
 	objectsParser->SetParserExtender(mParserExtender);
 
@@ -2384,7 +2401,11 @@ PDFObjectParser* PDFParser::StartReadingObjectsFromStreams(PDFArray* inArrayOfSt
 
 	PDFObjectParser* objectsParser = new PDFObjectParser();
 	InputStreamSkipperStream* source = new InputStreamSkipperStream(readStream);
+	// MuhammaraJS: the parser owns this decoded stream and reads it bytewise
+	source->EnableReadAhead(64 * 1024);
 	objectsParser->SetReadStream(source, source, true);
+	// MuhammaraJS: decoded content expands far beyond the input, so bound one token
+	objectsParser->SetMaxTokenSize(PDFParserTokenizer::scMaxStreamTokenSize);
 	// Not setting decryption filter cause shuoldnt decrypt at lower level. if at all - the stream is encrypted already
 	objectsParser->SetParserExtender(mParserExtender);
 

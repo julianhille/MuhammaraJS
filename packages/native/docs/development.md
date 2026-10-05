@@ -49,6 +49,16 @@ npm pack --workspace=@muhammara/native
 npm run test:docs
 ```
 
+## Fuzzing
+
+`npm run fuzz --workspace=@muhammara/native-with-source` runs a mutation
+fuzzer against the native addon; build it with AddressSanitizer and
+UndefinedBehaviorSanitizer first so memory errors are reported where they
+happen. `packages/native-with-source/fuzz/README.md` lists the targets, the
+options, and how to turn a finding into a regression test. The sanitizer job in
+`ci-native.yml` runs a short fixed-seed pass on every change. The Wasm build is
+fuzzed separately; see the Wasm development guide.
+
 ## Documentation
 
 Create a Python virtual environment and install the native site's pinned

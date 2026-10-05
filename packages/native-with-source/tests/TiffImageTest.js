@@ -1,4 +1,6 @@
 var muhammara = require("@muhammara/native-with-source");
+var assert = require("assert");
+var malformed = require("./helpers/malformedInputs");
 
 function addPageForTiff(inPDFWriter, inTiffPath) {
   var page = inPDFWriter.createPage(0, 0, 595, 842);
@@ -155,5 +157,18 @@ describe("TiffImageTest", function () {
       __dirname + "/TestMaterials/images/tiff/flower-separated-planar-8.tif",
     );
     pdfWriter.end();
+  });
+
+  it("frees the tile buffer of a TIFF tile that fails to decode", function () {
+    var tiff = malformed.material("images", "tiff", "quad-tile.tif");
+    // Garble LZW data in the middle of tile 9, as the fuzzer did.
+    tiff.writeUInt32BE(0xffffffff, 155530 + 14550);
+    var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    assert.throws(function () {
+      writer.createFormXObjectFromTIFF(
+        malformed.writeFixture("FuzzBadTile.tif", tiff),
+      );
+    });
+    writer.end();
   });
 });
