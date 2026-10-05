@@ -125,8 +125,11 @@ These bring Wasm Recipe in line with native Recipe; see
   page keeps responding while a PDF is recrypted: `worker_threads` in
   Node, Deno, and Bun, a module `Worker` in browsers. Results and errors do not
   change. Inside a worker, where no worker can start, or with module options a
-  worker cannot receive, it recrypts on the calling thread as before
+  worker cannot receive, it recrypts on the calling thread as before. A worker
+  stops after five seconds without jobs, also one that instances loaded the
+  same way share
   [#943](https://github.com/julianhille/MuhammaraJS/issues/943)
+  [#954](https://github.com/julianhille/MuhammaraJS/issues/954)
 - Copy byte input once instead of twice while an `*Async` method reads it, and
   use the bytes a `Blob` or `File` returns without copying them again, so a
   large input needs less memory at once

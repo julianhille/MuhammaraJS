@@ -40,8 +40,8 @@ Like native, where `recryptAsync()` runs on a thread pool, the Wasm
 and drawing while it runs. It starts a worker on its first call and reuses it:
 `worker_threads` in Node, Deno, and Bun, and a module `Worker` in browsers.
 Instances loaded the same way share one worker; an instance loaded with its own
-`wasmBinary` has its own, which stops after five seconds without jobs and starts
-again on the next call.
+`wasmBinary` has its own. A worker stops after five seconds without jobs and
+starts again on the next call.
 The worker loads its own Wasm instance, which adds its startup time to the first
 call and holds a second Wasm memory; under Node it does not keep the process
 alive between calls. A single recrypt is not faster than `recrypt()`: only the

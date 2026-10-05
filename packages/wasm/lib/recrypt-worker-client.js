@@ -214,6 +214,8 @@ function reportedError(reported) {
  * @param {number} settings.maxOutputBytes - Output limit of the instance.
  * @param {number} [settings.idleTimeout] - Milliseconds the worker stays
  *   without jobs before it stops; without one it stays.
+ * @param {function(): void} [settings.onIdleStop] - Called after the worker
+ *   stopped for being idle.
  * @returns {{run: function(Uint8Array, object): Promise<Uint8Array|null>}}
  *   `run` resolves with null when no worker can run the job, so the caller
  *   recrypts on its own thread.
@@ -262,6 +264,7 @@ function createRecryptWorkerHost(settings) {
       } catch {
         // Already gone.
       }
+      settings.onIdleStop?.();
     }, settings.idleTimeout);
     // An idle stop never keeps a Node process alive.
     idleTimer.unref?.();
@@ -444,13 +447,14 @@ export function workerWasmLocation(location, environment = globalThis) {
 }
 
 // Instances loaded the same way share one worker, as native shares its pool
-// threads, so creating an instance per request adds no workers.
+// threads, so creating an instance per request adds no workers. A shared
+// host leaves the map when its worker stops for being idle.
 var sharedHosts = new Map();
 
-// How long the worker of an instance with its own wasmBinary stays without
-// jobs. Such workers are not shared, so an instance per request would
-// otherwise keep one worker per request.
-var OWN_WORKER_IDLE_MS = 5000;
+// How long a worker stays without jobs. Instances with their own wasmBinary,
+// limits of their own, or a binary location of their own each get a worker,
+// so an instance per request would otherwise keep one worker per request.
+var WORKER_IDLE_MS = 5000;
 
 /**
  * Returns the recryptAsync() worker host for a Wasm instance.
@@ -461,8 +465,8 @@ var OWN_WORKER_IDLE_MS = 5000;
  *   loaded the binary from.
  * @param {number} settings.maxInputBytes - Input limit of the instance.
  * @param {number} settings.maxOutputBytes - Output limit of the instance.
- * @param {number} [settings.idleTimeout] - Milliseconds a worker of its own
- *   stays without jobs; tests shorten it.
+ * @param {number} [settings.idleTimeout] - Milliseconds the worker stays
+ *   without jobs; tests shorten it.
  * @returns {{run: function(Uint8Array, object): Promise<Uint8Array|null>}}
  *   The host; `run` resolves with null when no worker can run the job, so the
  *   caller recrypts on its own thread.
@@ -475,15 +479,50 @@ export function recryptWorkerHost(settings) {
       settings.maxOutputBytes,
     ]);
     var shared = sharedHosts.get(key);
-    if (!shared) {
-      // Shared workers stay, as native's pool threads do.
-      shared = createRecryptWorkerHost({ ...settings, idleTimeout: undefined });
-      sharedHosts.set(key, shared);
-    }
+    if (!shared) shared = sharedRecryptWorkerHost(key, settings);
     return shared;
   }
   return createRecryptWorkerHost({
     ...settings,
-    idleTimeout: settings.idleTimeout ?? OWN_WORKER_IDLE_MS,
+    idleTimeout: settings.idleTimeout ?? WORKER_IDLE_MS,
   });
+}
+
+/**
+ * Creates the host instances loaded the same way share and records it under
+ * `key`. Once its worker stopped for being idle, the host leaves the map, so
+ * keys nobody uses any more hold neither a worker nor an entry; an instance
+ * that kept the host records it again when it runs a job.
+ * @param {string} key - The way the instances were loaded.
+ * @param {object} settings - The settings of recryptWorkerHost().
+ * @returns {{run: function(Uint8Array, object): Promise<Uint8Array|null>}}
+ *   The shared host.
+ */
+function sharedRecryptWorkerHost(key, settings) {
+  var host = createRecryptWorkerHost({
+    ...settings,
+    idleTimeout: settings.idleTimeout ?? WORKER_IDLE_MS,
+    /**
+     * Releases the key once the worker stopped for being idle.
+     * @returns {void}
+     */
+    onIdleStop() {
+      if (sharedHosts.get(key) === shared) sharedHosts.delete(key);
+    },
+  });
+  var shared = {
+    /**
+     * Recrypts in the shared worker.
+     * @param {Uint8Array} source - PDF bytes owned by this call.
+     * @param {object} options - Recrypt options with plain values only.
+     * @returns {Promise<Uint8Array|null>} The rewritten PDF, or null when no
+     *   worker can run it.
+     */
+    run(source, options) {
+      if (!sharedHosts.has(key)) sharedHosts.set(key, shared);
+      return host.run(source, options);
+    },
+  };
+  sharedHosts.set(key, shared);
+  return shared;
 }
