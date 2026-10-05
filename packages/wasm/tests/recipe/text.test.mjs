@@ -152,6 +152,41 @@ describe("Recipe text", function () {
     assert.doesNotMatch(content, /\.\.\.\) Tj/);
   });
 
+  it("keeps the space before the word that clip or ellipsis cuts", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var content = function (wrap) {
+      var bytes = new Recipe({ compress: false })
+        .createPage(220, 120)
+        .text("one two three\nfour five six seven", 10, 10, {
+          font: "arial",
+          size: 12,
+          textBox: { width: 60, wrap: wrap },
+        })
+        .endPage()
+        .endPDF();
+      writeOutput("text-" + wrap + "-space", bytes);
+      var reader = muhammara.createReader(bytes);
+      var stream = reader.startReadingFromStream(
+        reader
+          .queryDictionaryObject(reader.parsePageDictionary(0), "Contents")
+          .toPDFStream(),
+      );
+      var chunks = [];
+      while (stream.notEnded()) chunks.push(...stream.read(4096));
+      reader.end();
+      return new TextDecoder("latin1").decode(new Uint8Array(chunks));
+    };
+
+    // Clipped lines keep the whole source and clip it to the box.
+    var clipped = content("clip");
+    assert.match(clipped, /\(one two three\) Tj/);
+    assert.match(clipped, /\(four five six seven\) Tj/);
+    var ellipsized = content("ellipsis");
+    assert.match(ellipsized, /\(one two/);
+    assert.doesNotMatch(ellipsized, /twot/);
+  });
+
   it("rejects a miterLimit below 1 before drawing", async function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();

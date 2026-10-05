@@ -2002,7 +2002,11 @@ function makeTextObjects(
           ),
         );
         // The line may end with this run's spaces, after earlier runs.
-        trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1);
+        // Clipped and ellipsized lines continue with the word that does
+        // not fit, so they keep the space before it.
+        if (textBox.wrap === TextWrap.AUTO) {
+          trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1);
+        }
         wordCount = 0;
         totalTextWidth = 0;
       }

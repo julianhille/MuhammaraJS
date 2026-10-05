@@ -41,8 +41,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   longer drawn, underlined or highlighted on left-aligned text either, and a
   text box without a `width` takes the width of the trimmed text, so
   `text("   ")` draws no text. Non-breaking spaces stay at line ends, where
-  they were dropped before, and `wrap: "clip"` text keeps its spaces
+  they were dropped before, and `wrap: "clip"` and `wrap: "ellipsis"` text
+  keeps the space before the word it cuts
   [#930](https://github.com/julianhille/MuhammaraJS/issues/930)
+  [#953](https://github.com/julianhille/MuhammaraJS/issues/953)
 - Reject a PDF whose object stream declares more objects (`/N`) than its xref
   table holds. Parsing it with `createReader()`, `recrypt()`,
   `recryptAsync()`, `createWriterToModify()`, or Recipe on an existing PDF
