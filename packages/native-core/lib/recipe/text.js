@@ -875,6 +875,15 @@ exports.text = function text(text = "", x, y, options = {}) {
           }
 
           context.Q();
+        } else if (wto.batch) {
+          // The pieces of a reordered line share one form per run, drawn
+          // when the line is complete.
+          wto.batch.items.push({
+            text: toVisual(text, wto.direction),
+            x: x - nx,
+            options,
+          });
+          x = nx;
         } else {
           this.pauseContext();
 
@@ -1177,8 +1186,18 @@ exports.text = function text(text = "", x, y, options = {}) {
         ) {
           x = first.startX + textBox.width - textBox.paddingRight - lineWidth;
         }
+        // Pieces that need a form, for opacity, rotation or a separation
+        // color, are drawn into one form per run.
+        const batches = new Map();
         pieces.forEach((piece, index) => {
           const content = contents[piece.run];
+          if (!batches.has(piece.run)) {
+            batches.set(piece.run, {
+              items: [],
+              baseline: content.baseline,
+              lineHeight: content.lineHeight,
+            });
+          }
           const advance = advanceOf(piece);
           // A piece's hilite, lines and link reach the next piece, across
           // its spaces or widened gap; the line's last piece ends at its
@@ -1200,6 +1219,7 @@ exports.text = function text(text = "", x, y, options = {}) {
                 : lineWidth,
             // The pieces of a line, whose hilite a clip keeps in the box.
             piece: true,
+            batch: batches.get(piece.run),
             // The piece is placed already: never justify it again.
             writeOptions: Object.assign({}, content.writeOptions, {
               alignHorizontal: TextAlign.LEFT,
@@ -1209,6 +1229,37 @@ exports.text = function text(text = "", x, y, options = {}) {
           // An indent is only whitespace; it links nowhere.
           if (!piece.indent) queueTextLink(drawnContent, x, y, x + span);
           x += advance;
+        });
+        batches.forEach((batch) => {
+          if (!batch.items.length) return;
+          const options = batch.items[0].options;
+          this.pauseContext();
+          const xObject = new xObjectForm(
+            this.writer,
+            textBox.width,
+            batch.lineHeight,
+          );
+          const xObjectCtx = xObject.getContentContext();
+          if (options.colorModel) {
+            options.colorModel.xObject = xObject;
+          }
+          xObjectCtx.q();
+          xObjectCtx.gs(xObject.getGsName(options.fillGsId));
+          batch.items.forEach((item) => {
+            emitTextObject(
+              item.text,
+              item.x,
+              batch.baseline,
+              xObjectCtx,
+              item.options,
+            );
+          });
+          xObjectCtx.Q();
+          xObject.end();
+          this.resumeContext();
+          this.pageContext.q();
+          this._setRotationContext(this.pageContext, nx, y, options);
+          this.pageContext.doXObject(xObject).Q();
         });
       };
 

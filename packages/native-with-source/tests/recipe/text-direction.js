@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const muhammara = require("@muhammara/native-with-source");
+const fs = require("fs");
 const path = require("path");
 
 const Recipe = muhammara.Recipe;
@@ -1210,6 +1211,35 @@ describe("Recipe text direction", function () {
     // Laying out the words measures them already; drawing them in visual
     // order adds about one measurement per word, not one per use.
     assert.ok(counts.rtl <= counts.none * 1.6, JSON.stringify(counts));
+  });
+
+  it("draws the pieces of a translucent line in one form per run", async function () {
+    const words = ["אחת", "שתיים", "שלוש", "ארבע", "חמש"];
+    const text = Array.from(
+      { length: 40 },
+      (_, index) => words[index % 5],
+    ).join(" ");
+    const forms = {};
+    for (const direction of ["none", "rtl"]) {
+      const name = "text-direction-translucent-" + direction;
+      await drawPage(name, (recipe) => {
+        recipe.text(text, 20, 20, {
+          font: "arial",
+          size: 12,
+          direction,
+          opacity: 0.5,
+          textBox: { width: 200, textAlign: "justify" },
+        });
+      });
+      const bytes = fs.readFileSync(
+        path.join(__dirname, "../output", name + ".pdf"),
+        "latin1",
+      );
+      forms[direction] = (bytes.match(/\/Subtype\s*\/Form/g) || []).length;
+    }
+    // One form per line, not one per word.
+    assert.ok(forms.none > 0);
+    assert.equal(forms.rtl, forms.none);
   });
 
   it("rejects an unknown direction before drawing", function () {

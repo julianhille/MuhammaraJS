@@ -1015,6 +1015,37 @@ describe("Recipe text direction", function () {
     assert.ok(counts.rtl <= counts.none, JSON.stringify(counts));
   });
 
+  it("draws a translucent justified right-to-left line without a form per word, as native", function () {
+    var words = ["אחת", "שתיים", "שלוש", "ארבע", "חמש"];
+    var text = Array.from({ length: 40 }, (_, index) => words[index % 5]).join(
+      " ",
+    );
+    var forms = {};
+    for (var direction of ["none", "rtl"]) {
+      var recipe = new Recipe().createPage(400, 400);
+      try {
+        recipe.text(text, 20, 20, {
+          font: "arial",
+          size: 12,
+          direction,
+          opacity: 0.5,
+          textBox: { width: 200, textAlign: "justify" },
+        });
+        var bytes = recipe.endPage().endPDF();
+        writeOutput("text-direction-translucent-" + direction, bytes);
+        forms[direction] = (
+          new TextDecoder("latin1")
+            .decode(bytes)
+            .match(/\/Subtype\s*\/Form/g) || []
+        ).length;
+      } finally {
+        recipe.dispose();
+      }
+    }
+    // Reordering adds no forms to a translucent line.
+    assert.equal(forms.rtl, forms.none);
+  });
+
   it("rejects an unknown direction before drawing", function () {
     var recipe = new Recipe().createPage(200, 200);
     try {
