@@ -41,6 +41,7 @@
     "test:manifests": "node ./scripts/check-source-manifests.mjs",
     "test:licenses": "node ./scripts/check-licenses.mjs",
     "test:types": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext tests/types/types.test.ts && tsc --noEmit --strict --lib es2022 --module nodenext --moduleResolution nodenext tests/types/types-node.test.ts",
+    "fuzz": "node ./tests/fuzz/fuzz.mjs",
     "docs:generate": "node ./scripts/generate-reference.mjs && prettier --write docs/reference.md",
     "docs:check": "npm run docs:generate && mkdocs build --strict --config-file mkdocs.yml",
     "pages:stage-example": "node ./scripts/stage-pages-example.mjs",

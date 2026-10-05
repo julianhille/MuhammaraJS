@@ -33,6 +33,16 @@ These bring Wasm Recipe in line with native Recipe; see
 
 ### Added
 
+- A mutation fuzzer for the Wasm API, `npm run fuzz`, that feeds mutated PDFs,
+  fonts and images through the reader, modifier, copying, recrypt, Recipe,
+  font and image entry points. It reports crashes (traps, aborts, escaped
+  exceptions), memory leaks, confirmed by repetition and attributed by
+  LeakSanitizer, and denial of service: hangs, and API calls that take too
+  long or grow memory too much, named by the call responsible; see
+  `tests/fuzz/README.md`. `MUHAMMARA_WASM_SANITIZE=address` builds with
+  AddressSanitizer, stack overflow checks and the allocator hooks the leak
+  check needs, and a weekly workflow fuzzes that build and the release build
+  [#951](https://github.com/julianhille/MuhammaraJS/issues/951)
 - Add the `recryptWorker` module option of `createMuhammaraWasm()` and
   `createRecipe()`; `recryptWorker: false` keeps `recryptAsync()` on the
   calling thread [#943](https://github.com/julianhille/MuhammaraJS/issues/943)
