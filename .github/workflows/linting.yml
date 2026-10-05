@@ -20,6 +20,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run test:codestyle
       - run: npm run test:electron-matrix
+      - run: npm run test:release-notes
 
   line-endings:
     runs-on: ubuntu-22.04
