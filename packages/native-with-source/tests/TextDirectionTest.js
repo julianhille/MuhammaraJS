@@ -195,6 +195,26 @@ describe("TextDirection", function () {
     });
   });
 
+  describe("grapheme segmenter", function () {
+    it("is created once, not for every reordered text", function () {
+      textDirection.toVisual("שלום עולם", "rtl");
+      const Segmenter = Intl.Segmenter;
+      let created = 0;
+      Intl.Segmenter = function (...args) {
+        created++;
+        return new Segmenter(...args);
+      };
+      try {
+        for (let index = 0; index < 3; index++) {
+          assert.equal(textDirection.toVisual("שלום עולם", "rtl"), "םלוע םולש");
+        }
+      } finally {
+        Intl.Segmenter = Segmenter;
+      }
+      assert.equal(created, 0);
+    });
+  });
+
   describe("drawnText", function () {
     it("leaves out the formatting characters reordering drops", function () {
       assert.equal(textDirection.drawnText("\u2067שלום\u2069", "auto"), "שלום");

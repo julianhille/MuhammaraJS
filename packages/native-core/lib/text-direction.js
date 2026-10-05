@@ -72,6 +72,9 @@ var BREAKABLE_SPACE = /^(?:(?![\u00a0\u2007\u202f])\s)+/;
 var TRAILING_BREAKABLE_SPACE = /(?:(?![\u00a0\u2007\u202f])\s)+$/;
 
 var bidi = null;
+// The grapheme segmenter, created on first use; false without
+// Intl.Segmenter.
+var graphemeSegmenter = null;
 
 /**
  * The bidi-js instance, created on first use.
@@ -310,11 +313,14 @@ function isLowSurrogateAt(text, index) {
  */
 function graphemeContinuations(text) {
   var joined = new Array(text.length);
-  if (typeof Intl === "undefined" || typeof Intl.Segmenter !== "function") {
-    return joined;
+  if (graphemeSegmenter === null) {
+    graphemeSegmenter =
+      typeof Intl !== "undefined" && typeof Intl.Segmenter === "function"
+        ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+        : false;
   }
-  var segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
-  Array.from(segmenter.segment(text)).forEach(function (segment) {
+  if (!graphemeSegmenter) return joined;
+  Array.from(graphemeSegmenter.segment(text)).forEach(function (segment) {
     for (var offset = 1; offset < segment.segment.length; ++offset) {
       joined[segment.index + offset] = true;
     }
