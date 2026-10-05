@@ -1,6 +1,7 @@
 # MuhammaraJS
 
 [![Native npm version](https://img.shields.io/npm/v/%40muhammara%2Fnative.svg?style=flat&label=native%20npm)](https://www.npmjs.com/package/@muhammara/native)
+[![Native with source npm version](https://img.shields.io/npm/v/%40muhammara%2Fnative-with-source.svg?style=flat&label=native-with-source%20npm)](https://www.npmjs.com/package/@muhammara/native-with-source)
 [![Native docs status](https://readthedocs.org/projects/muhammarajs/badge/?version=latest)](https://muhammarajs.readthedocs.io/)
 [![Native CI status](https://github.com/julianhille/MuhammaraJS/actions/workflows/ci-native.yml/badge.svg?branch=develop)](https://github.com/julianhille/MuhammaraJS/actions/workflows/ci-native.yml)
 
