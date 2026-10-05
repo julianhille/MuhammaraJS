@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- GitHub releases carry generated notes: the changelog section of the
+  released version, the pull requests merged since the previous release with
+  the issues they close, the contributors, the first-time contributors, and a
+  compare link. A release tag whose version has no changelog section fails
+  before anything is published
+  [#962](https://github.com/julianhille/MuhammaraJS/issues/962)
+
 ## [7.1.0] - 2026-10-05
 
 ### Added

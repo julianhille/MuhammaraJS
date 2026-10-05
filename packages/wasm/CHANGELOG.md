@@ -2,6 +2,17 @@
 
 All notable changes to `@muhammara/wasm` are documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- GitHub releases carry generated notes: the changelog section of the
+  released version, the pull requests merged since the previous release with
+  the issues they close, the contributors, the first-time contributors, and a
+  compare link. A release tag whose version has no changelog section fails
+  before anything is published
+  [#962](https://github.com/julianhille/MuhammaraJS/issues/962)
+
 ## [1.1.0] - 2026-10-05
 
 ### Breaking Changes
