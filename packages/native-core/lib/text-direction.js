@@ -166,6 +166,17 @@ function hasStrongCharacter(text) {
 }
 
 /**
+ * Split text into paragraphs at the mandatory breaks Recipe wraps at, the
+ * same breaks that end a paragraph's direction.
+ *
+ * @param {string} text The text.
+ * @returns {string[]} The paragraphs, without their breaks.
+ */
+function splitParagraphs(text) {
+  return text.split(PARAGRAPH_BREAK);
+}
+
+/**
  * Validate a `direction` option.
  *
  * @param {*} value The option value; undefined and null mean "none".
@@ -644,6 +655,7 @@ module.exports = {
   hasStrongCharacter: hasStrongCharacter,
   resolveDirection: resolveDirection,
   paragraphDirections: paragraphDirections,
+  splitParagraphs: splitParagraphs,
   toVisual: toVisual,
   drawnText: drawnText,
   visualRuns: visualRuns,

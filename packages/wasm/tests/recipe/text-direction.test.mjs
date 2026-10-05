@@ -1046,6 +1046,33 @@ describe("Recipe text direction", function () {
     assert.equal(forms.rtl, forms.none);
   });
 
+  it("starts a paragraph with its own direction at every mandatory break, as native", function () {
+    var breaks = [
+      "\n",
+      "\r",
+      "\r\n",
+      "\u000b",
+      "\f",
+      "\u0085",
+      "\u2028",
+      "\u2029",
+    ];
+    breaks.forEach((lineBreak, index) => {
+      var runs = drawPage("text-direction-break-" + index, (recipe) => {
+        recipe.text("abc" + lineBreak + "שלום abc", 20, 20, {
+          font: "arial",
+          size: 12,
+          direction: "auto",
+        });
+      });
+      assert.deepEqual(
+        runs.map((run) => run.text),
+        ["abc", "abc םולש"],
+        JSON.stringify(lineBreak),
+      );
+    });
+  });
+
   it("rejects an unknown direction before drawing", function () {
     var recipe = new Recipe().createPage(200, 200);
     try {

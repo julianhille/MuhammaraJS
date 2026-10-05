@@ -13,6 +13,7 @@ import {
   drawnText,
   readDirection,
   resolveDirection,
+  splitParagraphs,
   toVisual,
   visualRuns,
   visualWords,
@@ -102,9 +103,6 @@ function endsWithBreakableSpace(value) {
   return value[value.length - 1] !== "\u00a0" && /\s$/.test(value);
 }
 
-// The mandatory breaks that start a new paragraph, as native Recipe wraps.
-var PARAGRAPH_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/;
-
 /**
  * Lays out plain text into lines for a width and wrap mode.
  * @param {string} value - Text; a line break such as `\n` or U+2028 starts a
@@ -119,40 +117,38 @@ var PARAGRAPH_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/;
  */
 function lines(value, width, measure, options, wrap) {
   var result = [];
-  String(value)
-    .split(PARAGRAPH_BREAK)
-    .forEach((paragraph) => {
-      var direction = resolveDirection(paragraph, options.direction);
-      var line = "";
-      var truncated = false;
-      var words = splitWords(paragraph);
-      words.forEach((word) => {
-        if (truncated) return;
-        var next = line + word;
-        // measure() already includes the character spacing.
-        var fits = !width || measure(next, options).width <= width;
-        if (fits || !line) {
-          line = next;
-        } else if (wrap === TextWrap.AUTO || wrap === true) {
-          result.push({ text: trimBreakableEnd(line), last: false, direction });
-          line = word;
-        } else if (wrap === TextWrap.CLIP) {
-          line = next;
-        } else if (wrap === TextWrap.ELLIPSIS) {
-          line = ellipsize(line || word, width, measure, options);
-          truncated = true;
-        } else {
-          truncated = true;
-        }
-      });
-      if (line || !result.length) {
-        result.push({
-          text: wrap === TextWrap.CLIP ? line : trimBreakableEnd(line),
-          last: true,
-          direction,
-        });
+  splitParagraphs(String(value)).forEach((paragraph) => {
+    var direction = resolveDirection(paragraph, options.direction);
+    var line = "";
+    var truncated = false;
+    var words = splitWords(paragraph);
+    words.forEach((word) => {
+      if (truncated) return;
+      var next = line + word;
+      // measure() already includes the character spacing.
+      var fits = !width || measure(next, options).width <= width;
+      if (fits || !line) {
+        line = next;
+      } else if (wrap === TextWrap.AUTO || wrap === true) {
+        result.push({ text: trimBreakableEnd(line), last: false, direction });
+        line = word;
+      } else if (wrap === TextWrap.CLIP) {
+        line = next;
+      } else if (wrap === TextWrap.ELLIPSIS) {
+        line = ellipsize(line || word, width, measure, options);
+        truncated = true;
+      } else {
+        truncated = true;
       }
     });
+    if (line || !result.length) {
+      result.push({
+        text: wrap === TextWrap.CLIP ? line : trimBreakableEnd(line),
+        last: true,
+        direction,
+      });
+    }
+  });
   return result;
 }
 

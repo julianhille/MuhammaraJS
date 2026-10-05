@@ -10,6 +10,7 @@ const {
   hasStrongCharacter,
   resolveDirection,
   paragraphDirections,
+  splitParagraphs,
   toVisual,
   visualRuns,
   visualWords,
@@ -67,9 +68,6 @@ function hasLayout(textObject) {
     textObject.childs?.some(hasLayout),
   );
 }
-
-// Mandatory line breaks, which end a paragraph.
-const PARAGRAPH_BREAK = /\r\n|[\n\r\u000b\f\u0085\u2028\u2029]/;
 
 //  Table indicating how to specify coloration of elements
 //  -------------------------------------------------------------------
@@ -2022,10 +2020,11 @@ function nextWord(text, brk, previousPosition, pathOptions, keepEnd = false) {
   let nextWord = text.slice(previousPosition, brk.position);
 
   if (brk.required) {
-    // effectively saw a '\n' in text.
+    // effectively saw a '\n' in text. The break itself is removed first:
+    // trimming keeps U+0085 NEXT LINE, a mandatory break too.
     nextWord = keepEnd
       ? nextWord.trimStart().replace(LINE_BREAK_END, "")
-      : trimBreakableEnd(nextWord.trimStart());
+      : trimBreakableEnd(nextWord.trimStart().replace(LINE_BREAK_END, ""));
   }
 
   return new Word(nextWord, pathOptions);
@@ -2262,7 +2261,7 @@ function makeTextObjects(
     : paragraphDirections(flowParagraph + text, pathOptions.direction);
   // While a flow's open paragraph has no strong character yet, its
   // direction comes from the runs that follow.
-  const paragraphs = (flowParagraph + text).split(PARAGRAPH_BREAK);
+  const paragraphs = splitParagraphs(flowParagraph + text);
   const openParagraph = paragraphs[paragraphs.length - 1];
   const openStart = flowParagraph.length + text.length - openParagraph.length;
   const pending =
@@ -2291,9 +2290,7 @@ function makeTextObjects(
     });
   }
   if (!textObject.paragraphDirection) {
-    self._flowParagraph = self._flow
-      ? (flowParagraph + text).split(PARAGRAPH_BREAK).pop()
-      : "";
+    self._flowParagraph = self._flow ? openParagraph : "";
   }
   let lineStart = 0;
   const indent = textObject.indent || 0;

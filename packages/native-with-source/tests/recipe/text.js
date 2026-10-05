@@ -925,10 +925,7 @@ describe("Text", () => {
       .endPage()
       .endPDF(() => {
         const reader = muhammara.createReader(output);
-        // Native still draws U+0085 itself at the end of its line.
-        const lines = reader
-          .extractPageText(0)
-          .map((element) => element.text.replace(/[\u0085\ufffd]$/, ""));
+        const lines = reader.extractPageText(0).map((element) => element.text);
         reader.end();
         assert.deepEqual(lines, [
           "one",
