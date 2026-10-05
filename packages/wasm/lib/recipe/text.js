@@ -1334,9 +1334,16 @@ export function createTextMethods({ drawText, measure, module }) {
           currentY = y + top;
         }
         // A plain line that reorders is drawn like a line of one styled
-        // run, piece by piece in visual order, as native does.
-        if (!entry.parts && visualRuns([entry.text], entry.direction)) {
-          entry = { ...entry, parts: [{ text: entry.text, styles: {} }] };
+        // run, piece by piece in visual order, as native does. It keeps its
+        // segments, so it is reordered once.
+        var plainSegments =
+          !entry.parts && visualRuns([entry.text], entry.direction);
+        if (plainSegments) {
+          entry = {
+            ...entry,
+            parts: [{ text: entry.text, styles: {} }],
+            segments: plainSegments,
+          };
         }
         var textOptions = fragmentOptions(options, entry.styles, fontSize);
         var entryDimensions = entry.parts
@@ -1502,10 +1509,12 @@ export function createTextMethods({ drawText, measure, module }) {
             : groupedHtmlParts(entry.parts);
           // Parts that reorder are drawn as one line in visual order, piece
           // by piece, each piece with its own part's styles.
-          var segments = visualRuns(
-            logicalParts.map((part) => part.text),
-            entry.direction,
-          );
+          var segments =
+            entry.segments ||
+            visualRuns(
+              logicalParts.map((part) => part.text),
+              entry.direction,
+            );
           var drawParts = segments
             ? (justify ? visualWords(segments) : segments).map((piece) => ({
                 ...logicalParts[piece.run],

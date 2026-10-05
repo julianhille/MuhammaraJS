@@ -946,6 +946,34 @@ describe("Recipe text direction", function () {
     assert.equal(heights[heights.length - 1], heights[0]);
   });
 
+  it("reorders each line once, as native does", function () {
+    var segment = Intl.Segmenter.prototype.segment;
+    var calls = 0;
+    Intl.Segmenter.prototype.segment = function (...args) {
+      calls++;
+      return segment.apply(this, args);
+    };
+    var counts = [];
+    try {
+      for (var textBox of [{}, { width: 300, textAlign: "justify" }]) {
+        calls = 0;
+        drawPage("text-direction-reorder-once", (recipe) => {
+          recipe.text("שלום עולם", 20, 20, {
+            font: "arial",
+            size: 12,
+            direction: "rtl",
+            textBox,
+          });
+        });
+        counts.push(calls);
+      }
+    } finally {
+      Intl.Segmenter.prototype.segment = segment;
+    }
+    // Every reordering segments the line's graphemes once.
+    assert.deepEqual(counts, [1, 1]);
+  });
+
   it("rejects an unknown direction before drawing", function () {
     var recipe = new Recipe().createPage(200, 200);
     try {
