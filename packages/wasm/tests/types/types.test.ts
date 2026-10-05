@@ -1,6 +1,7 @@
 import {
   ETokenSeparator,
   LineCapStyle,
+  TextDirection,
   PDFImageType,
   createMuhammaraWasm,
   createRecipe,
@@ -10,6 +11,7 @@ import {
   EEncoding as EEncodings,
 } from "../../index.js";
 import type {
+  RecipeTextOptions,
   DeletePageOptions,
   ThirdPartyLicensesSource,
   RecipeConstructor,
@@ -128,6 +130,9 @@ async function usesLowLevelSurface() {
       size: 12,
       underline: true,
     })
+    .writeText("שלום עולם", 10, 30, { font, direction: TextDirection.AUTO })
+    // @ts-expect-error direction takes a TextDirection value.
+    .writeText("No direction", 10, 35, { font, direction: "up" })
     .Q();
   context
     .q()
@@ -711,6 +716,7 @@ async function usesLowLevelSurface() {
   var textWidth: number = recipe.textDimensions("text").width;
   recipe.textDimensions("text", { size: 12 }).width;
   recipe.textDimensions("text", { fontSize: 12 }).width;
+  recipe.textDimensions("שלום", { direction: TextDirection.AUTO }).width;
   void textWidth;
   recipe.pageInfo(1)?.mediaBox[3];
   var pageInfo: RecipePageInfo | null = recipe.pageInfo(1);
@@ -1173,6 +1179,14 @@ async function usesNamedValueSets() {
   var namedIcon: Recipe.AnnotIcon = recipeClass.AnnotIcon.COMMENT;
   var textAlign: Recipe.TextAlign = recipeClass.TextAlign.JUSTIFY;
   void textAlign;
+  var textDirection: Recipe.TextDirection = recipeClass.TextDirection.RTL;
+  var writeDirection: TextDirection = TextDirection.NONE;
+  var directedText: RecipeTextOptions = { direction: textDirection };
+  // @ts-expect-error direction takes a Recipe.TextDirection value.
+  var unknownDirection: RecipeTextOptions = { direction: "up" };
+  void writeDirection;
+  void directedText;
+  void unknownDirection;
   var pageSize: string = recipeClass.PageSize.A4;
   void pageSize;
   void namedIcon;

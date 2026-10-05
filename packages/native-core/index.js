@@ -4,6 +4,7 @@ var fs = require("fs");
 var path = require("path");
 var fontText = require("./lib/font-text");
 var { createRecipe } = require("./lib/Recipe");
+var textDirection = require("./lib/text-direction");
 
 // The addon's own functions, kept on the addon so every createMuhammara call
 // wraps the originals, never an earlier wrapper. Module state would not do:
@@ -21,6 +22,7 @@ var nativeRegisterBufferReadStream = Symbol.for(
 var pathTooLong =
   "A path is too long for this system; recryptAsync() opens its files by " +
   "absolute path, so use a shorter path or working directory";
+var nativeWriteText = Symbol.for("@muhammara/native-core:writeText");
 
 /**
  * Keep an addon's own function under a hidden key, unless it is already kept.
@@ -236,6 +238,66 @@ function resolveRecryptAsyncPaths(muhammara) {
   };
 }
 
+// Content context classes the addon exports only so writeText can be wrapped.
+var CONTENT_CONTEXT_CLASSES = ["PageContentContext", "XObjectContentContext"];
+
+/**
+ * Make `writeText()` on every content context reorder right-to-left text into
+ * the visual order PDF draws glyphs in, steered by its `direction` option.
+ * The addon exports the content context classes for this step only; the
+ * exports are removed again so they stay out of the public API.
+ *
+ * @param {object} muhammara The native addon.
+ * @returns {void}
+ * @throws {Error} If the addon does not export its content context classes,
+ * so right-to-left text would silently be drawn reversed.
+ */
+function reorderWrittenText(muhammara) {
+  var contexts = CONTENT_CONTEXT_CLASSES.map(function (name) {
+    var ContentContext = keepNative(
+      muhammara,
+      Symbol.for("@muhammara/native-core:" + name),
+      muhammara[name],
+    );
+    if (typeof ContentContext !== "function") {
+      throw new Error(
+        "The muhammara native addon does not export " +
+          name +
+          "; rebuild it from this version's sources",
+      );
+    }
+    return ContentContext;
+  });
+  CONTENT_CONTEXT_CLASSES.forEach(function (name, index) {
+    var ContentContext = contexts[index];
+    delete muhammara[name];
+
+    var writeText = keepNative(
+      ContentContext.prototype,
+      nativeWriteText,
+      ContentContext.prototype.writeText,
+    );
+    /**
+     * Write one line of text, reordered for its direction.
+     *
+     * @param {string} text The text in logical order.
+     * @param {number} x Baseline start x.
+     * @param {number} y Baseline y.
+     * @param {object} [options] Text options; `direction` is a
+     * `TextDirection` value and defaults to "none".
+     * @returns {object} This content context.
+     * @throws {TypeError} If `direction` is not a `TextDirection` value.
+     */
+    ContentContext.prototype.writeText = function (text, x, y, options) {
+      var args = Array.prototype.slice.call(arguments);
+      var direction =
+        options && typeof options === "object" ? options.direction : undefined;
+      args[0] = textDirection.toVisual(text, direction);
+      return writeText.apply(this, args);
+    };
+  });
+}
+
 /**
  * View options with `log` replaced, reading every other property from the
  * original with the original as `this`. Copying would lose getters, inherited
@@ -368,6 +430,7 @@ exports.createMuhammara = function createMuhammara(muhammara) {
   };
   decodeExtractedText(muhammara);
   resolveRecryptAsyncPaths(muhammara);
+  reorderWrittenText(muhammara);
   muhammara.PDFStreamForResponse = require("./lib/PDFStreamForResponse");
   muhammara.PDFWStreamForFile = require("./lib/PDFWStreamForFile");
   muhammara.PDFRStreamForFile = require("./lib/PDFRStreamForFile");
@@ -406,6 +469,7 @@ exports.createMuhammara = function createMuhammara(muhammara) {
     CODE: "code",
     HEX: "hex",
   });
+  muhammara.TextDirection = textDirection.TextDirection;
   muhammara.ObjectReplacementScope = Object.freeze({
     GLOBAL: "global",
   });

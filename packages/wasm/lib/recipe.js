@@ -700,10 +700,14 @@ export function createRecipeFactory({
       // Text-markup annotations are added per line by text(); only HTML
       // underline and strike-out styles draw a visible decoration line.
       if (options.htmlUnderline || options.htmlStrikeOut) {
-        var runWidth = this.textDimensions(value, {
-          ...options,
-          fontSize,
-        }).xMax;
+        // A reordered piece's lines stay under its glyphs, without the
+        // spaces that end it.
+        var runWidth =
+          options._decorationWidth ??
+          this.textDimensions(value, {
+            ...options,
+            fontSize,
+          }).xMax;
         // Native measures markup against one sample so every run on a line
         // gets the same height, including descenders and tall glyphs.
         var textHeight = this.textDimensions(

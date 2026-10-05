@@ -46,6 +46,8 @@ function getCellHeight(self, text, column, options) {
     originCoord.ny,
   );
   pathOptions.html = colOptions.html;
+  // Measure what text() draws: reordering drops direction marks.
+  pathOptions.direction = colOptions.direction;
   var textObjects = colOptions.html
     ? htmlToTextObjects(text, colOptions)
     : self._makeTextObject(text, pathOptions.size, colOptions);

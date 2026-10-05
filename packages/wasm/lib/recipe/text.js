@@ -8,6 +8,15 @@ import {
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 import { miterLimitOption, rotationOption } from "./vector.helper.js";
+import {
+  TextDirection,
+  drawnText,
+  readDirection,
+  resolveDirection,
+  toVisual,
+  visualRuns,
+  visualWords,
+} from "../text-direction.js";
 
 /**
  * Deep-merges plain option objects; arrays and dates are replaced, not merged.
@@ -93,20 +102,27 @@ function endsWithBreakableSpace(value) {
   return value[value.length - 1] !== "\u00a0" && /\s$/.test(value);
 }
 
+// The mandatory breaks that start a new paragraph, as native Recipe wraps.
+var PARAGRAPH_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/;
+
 /**
  * Lays out plain text into lines for a width and wrap mode.
- * @param {string} value - Text; `\n` starts a paragraph.
+ * @param {string} value - Text; a line break such as `\n` or U+2028 starts a
+ *   paragraph.
  * @param {number} width - Available width; 0 disables wrapping.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options, including character spacing.
  * @param {object} options - Text options.
  * @param {Recipe.TextWrap|boolean} wrap - Wrap mode; `true` means auto.
- * @returns {Array<{text: string, last: boolean}>} Lines; `last` ends a paragraph.
+ * @returns {Array<{text: string, last: boolean, direction: string}>} Lines in
+ *   logical order; `last` ends a paragraph and `direction` is the resolved
+ *   direction of the paragraph the line was wrapped from.
  */
 function lines(value, width, measure, options, wrap) {
   var result = [];
   String(value)
-    .split("\n")
+    .split(PARAGRAPH_BREAK)
     .forEach((paragraph) => {
+      var direction = resolveDirection(paragraph, options.direction);
       var line = "";
       var truncated = false;
       var words = splitWords(paragraph);
@@ -118,7 +134,7 @@ function lines(value, width, measure, options, wrap) {
         if (fits || !line) {
           line = next;
         } else if (wrap === TextWrap.AUTO || wrap === true) {
-          result.push({ text: trimBreakableEnd(line), last: false });
+          result.push({ text: trimBreakableEnd(line), last: false, direction });
           line = word;
         } else if (wrap === TextWrap.CLIP) {
           line = next;
@@ -133,6 +149,7 @@ function lines(value, width, measure, options, wrap) {
         result.push({
           text: wrap === TextWrap.CLIP ? line : trimBreakableEnd(line),
           last: true,
+          direction,
         });
       }
     });
@@ -244,7 +261,9 @@ function htmlPartsWidth(parts, measure, options) {
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Base text options.
  * @param {Recipe.TextWrap|boolean} wrap - Wrap mode.
- * @returns {Array<{parts: object[], last: boolean}>} Lines of styled fragments.
+ * @returns {Array<{text: string, parts: object[], last: boolean, direction: (Recipe.TextDirection|undefined)}>}
+ *   Lines of styled fragments, each with the resolved direction of the
+ *   paragraph it was wrapped from.
  */
 function htmlLines(source, width, measure, options, wrap) {
   var result = [];
@@ -276,11 +295,31 @@ function htmlLines(source, width, measure, options, wrap) {
       text: parts.map((part) => part.text).join(""),
       parts,
       last,
+      // The direction of the paragraph the line was wrapped from.
+      direction: parts[0]?.direction,
     });
     parts = [];
     if (!last) linePrefix = continuationPrefix;
   };
 
+  // Every paragraph resolves its direction once over all of its runs, as
+  // native does, so a wrapped line keeps its paragraph's direction.
+  var directions = [];
+  var paragraph = 0;
+  var paragraphText = "";
+  source.forEach((sourcePart) => {
+    String(sourcePart.value)
+      .split(/(\n)/)
+      .forEach((fragment) => {
+        if (fragment === "\n") {
+          directions.push(resolveDirection(paragraphText, options.direction));
+          paragraphText = "";
+          return;
+        }
+        paragraphText += fragment;
+      });
+  });
+  directions.push(resolveDirection(paragraphText, options.direction));
   source.forEach((sourcePart) => {
     var listMarker = false;
     if (sourcePart.breakBefore && parts.length) flush(true);
@@ -299,8 +338,10 @@ function htmlLines(source, width, measure, options, wrap) {
     String(sourcePart.value)
       .split(/(\n)/)
       .forEach((fragment) => {
+        var direction = directions[paragraph];
         if (!fragment) return;
         if (fragment === "\n") {
+          paragraph++;
           flush(true, true);
           // Native re-applies the indent on every line of a list item, so a
           // <br> or block break inside one stays indented.
@@ -329,6 +370,7 @@ function htmlLines(source, width, measure, options, wrap) {
               text: word,
               styles: sourcePart.styles,
               marker: listMarker,
+              direction,
             },
           ];
           var previousPart = parts[parts.length - 1];
@@ -365,6 +407,7 @@ function htmlLines(source, width, measure, options, wrap) {
             text: word,
             styles: sourcePart.styles,
             marker: listMarker,
+            direction,
           });
         });
       });
@@ -540,7 +583,9 @@ export function createTextMethods({ drawText, measure, module }) {
    * @returns {TextDimensions} Bounds and width in points.
    */
   function dimensions(recipe, value, options = {}) {
-    var result = measure.call(recipe, String(value), options);
+    // Formatting characters that reordering drops are not measured.
+    value = drawnText(String(value), options.direction);
+    var result = measure.call(recipe, value, options);
     result.width += charSpacing(value, options.charSpace);
     result.xMax += charSpacing(value, options.charSpace);
     return result;
@@ -842,6 +887,7 @@ export function createTextMethods({ drawText, measure, module }) {
      * @returns {TextDimensions} Text bounds and dimensions in PDF points.
      * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
      *   not greater than zero.
+     * @throws {TypeError} If `direction` is not a `Recipe.TextDirection` value.
      * @throws {Error} If the requested font is not registered or cannot be loaded.
      */
     textDimensions(value, options = {}) {
@@ -1024,7 +1070,8 @@ export function createTextMethods({ drawText, measure, module }) {
      * @returns {Recipe} The Recipe instance.
      * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
      *   not greater than zero, or `miterLimit` is not a number of at least 1.
-     * @throws {TypeError} If `rotation` or `charSpace` is not a finite number.
+     * @throws {TypeError} If `rotation` or `charSpace` is not a finite number,
+     *   or `direction` is not a `Recipe.TextDirection` value.
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
      * @throws {Error} If a flow is started without an active page.
      */
@@ -1102,6 +1149,7 @@ export function createTextMethods({ drawText, measure, module }) {
       // Validate before anything is drawn, as native does.
       rotationOption(options.rotation);
       miterLimitOption(options.miterLimit);
+      readDirection(options.direction);
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
       var layout = options.layout && this._layouts?.[options.layout];
@@ -1285,6 +1333,11 @@ export function createTextMethods({ drawText, measure, module }) {
           y = layout[columnIndex].y;
           currentY = y + top;
         }
+        // A plain line that reorders is drawn like a line of one styled
+        // run, piece by piece in visual order, as native does.
+        if (!entry.parts && visualRuns([entry.text], entry.direction)) {
+          entry = { ...entry, parts: [{ text: entry.text, styles: {} }] };
+        }
         var textOptions = fragmentOptions(options, entry.styles, fontSize);
         var entryDimensions = entry.parts
           ? null
@@ -1296,20 +1349,55 @@ export function createTextMethods({ drawText, measure, module }) {
               { ...options, fontSize },
             )
           : entryDimensions.width;
+        // Lines are aligned by where their glyphs end, as native does: the
+        // width of the glyphs before the last run plus the last run's xMax,
+        // so right-aligned text ends at the edge instead of a bearing past it.
+        var lastRun = entry.parts
+          ? groupedHtmlParts(entry.parts).pop()
+          : undefined;
+        var alignWidth = entry.parts
+          ? textWidth +
+            (lastRun
+              ? dimensions(
+                  this,
+                  lastRun.text,
+                  fragmentOptions(options, lastRun.styles, fontSize),
+                ).xMin
+              : 0)
+          : entryDimensions.xMax;
         var horizontal = box.textAlign?.split(" ")[0];
         var isJustifiedLine =
           horizontal === TextAlign.JUSTIFY && !entry.last && width;
+        // The last line of a justified paragraph starts at the paragraph's
+        // start, which is the right edge for a right-to-left paragraph.
+        if (
+          horizontal === TextAlign.JUSTIFY &&
+          entry.last &&
+          entry.direction === TextDirection.RTL
+        ) {
+          horizontal = TextAlign.RIGHT;
+        }
         var drawX =
           x +
           left +
           (horizontal === TextAlign.CENTER
-            ? (width - left - right - textWidth) / 2
+            ? (width - left - right - alignWidth) / 2
             : horizontal === TextAlign.RIGHT
-              ? width - right - textWidth
+              ? width - left - right - alignWidth
               : 0);
         var baseline = currentY + lineHeight;
         if (textOptions.rotation && !textOptions.rotationOrigin) {
           textOptions.rotationOrigin = textOrigin;
+        }
+        // A clipped right-to-left line that overflows keeps its start, at
+        // the right edge, and loses its end.
+        if (
+          wrap === TextWrap.CLIP &&
+          width &&
+          entry.direction === TextDirection.RTL &&
+          alignWidth > width - left - right
+        ) {
+          drawX = x + width - right - alignWidth;
         }
         var linkX = drawX;
         var linkWidth = textWidth;
@@ -1371,6 +1459,27 @@ export function createTextMethods({ drawText, measure, module }) {
             (part) => fragmentOptions(options, part.styles, fontSize).rotation,
           );
         if (clipping && !clipEachPart) clipLine(textOptions);
+        /**
+         * The room a reordered piece takes before the next piece: where its
+         * glyphs end plus a real space advance for each trailing space,
+         * which measured text bounds leave out. An indent piece is only
+         * spaces.
+         * @param {string} text - Piece text in visual order.
+         * @param {object} partOptions - The piece's text options.
+         * @returns {number} The advance in points.
+         */
+        var pieceAdvance = (text, partOptions) => {
+          var trimmed = text.replace(/\s+$/, "");
+          var spaces = text.length - trimmed.length;
+          var space = spaces
+            ? dimensions(this, "o o", partOptions).xMax -
+              dimensions(this, "oo", partOptions).xMax
+            : 0;
+          return (
+            (trimmed ? dimensions(this, trimmed, partOptions).xMax : 0) +
+            spaces * space
+          );
+        };
         if (textOptions.hilite && !entry.parts) {
           var hilite =
             typeof textOptions.hilite === "object" ? textOptions.hilite : {};
@@ -1388,7 +1497,27 @@ export function createTextMethods({ drawText, measure, module }) {
         if (entry.parts) {
           var justify =
             horizontal === TextAlign.JUSTIFY && !entry.last && width;
-          var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
+          var logicalParts = justify
+            ? entry.parts
+            : groupedHtmlParts(entry.parts);
+          // Parts that reorder are drawn as one line in visual order, piece
+          // by piece, each piece with its own part's styles.
+          var segments = visualRuns(
+            logicalParts.map((part) => part.text),
+            entry.direction,
+          );
+          var drawParts = segments
+            ? (justify ? visualWords(segments) : segments).map((piece) => ({
+                ...logicalParts[piece.run],
+                text: piece.text,
+                // The whole run the piece is cut from, which gives every
+                // piece of the run the same hilite height.
+                runText: logicalParts[piece.run].text,
+                gap: piece.gap,
+                indent: piece.indent,
+                visual: true,
+              }))
+            : logicalParts;
           /**
            * Reports whether this fragment owns an expandable justification gap.
            * @param {{text: string, marker: (boolean|undefined)}} part - Fragment.
@@ -1397,9 +1526,11 @@ export function createTextMethods({ drawText, measure, module }) {
            */
           var hasGapAfter = (part, index) =>
             justify &&
-            !part.marker &&
-            endsWithBreakableSpace(part.text) &&
-            drawParts.slice(index + 1).some((next) => hasText(next.text));
+            (part.visual
+              ? part.gap
+              : !part.marker &&
+                endsWithBreakableSpace(part.text) &&
+                drawParts.slice(index + 1).some((next) => hasText(next.text)));
           /**
            * Measures how far the pen moves past a fragment, before its
            * justification gap. As in native, a justified word ends at its
@@ -1425,35 +1556,109 @@ export function createTextMethods({ drawText, measure, module }) {
             return drawParts.length > 1 ? measured.xMax : measured.width;
           };
           var partGaps = drawParts.filter(hasGapAfter).length;
-          var drawnWidth = justify
-            ? drawParts.reduce(
-                (sum, part, index) =>
-                  sum +
-                  partAdvance(
-                    part,
-                    index,
-                    fragmentOptions(options, part.styles, fontSize),
-                  ),
-                0,
-              )
-            : textWidth;
+          /**
+           * The room a reordered piece needs on a justified line, as on
+           * native: where its glyphs end, or all of an indent.
+           * @param {{text: string, styles: object, indent: (boolean|undefined)}} part - Piece.
+           * @returns {number} The width in points.
+           */
+          var justifiedRoom = (part) => {
+            var partOptions = fragmentOptions(options, part.styles, fontSize);
+            return pieceAdvance(
+              part.indent ? part.text : part.text.replace(/\s+$/, ""),
+              partOptions,
+            );
+          };
+          var drawnWidth = textWidth;
+          if (justify && segments) {
+            drawnWidth = drawParts.reduce(
+              (sum, part) => sum + justifiedRoom(part),
+              0,
+            );
+          } else if (justify) {
+            drawnWidth = drawParts.reduce(
+              (sum, part, index) =>
+                sum +
+                partAdvance(
+                  part,
+                  index,
+                  fragmentOptions(options, part.styles, fontSize),
+                ),
+              0,
+            );
+          }
           var partGap =
             partGaps > 0 ? (width - left - right - drawnWidth) / partGaps : 0;
+          // A justified right-to-left line with no gap to widen, such as one
+          // long word, starts at its start edge, the right edge, as native.
+          if (
+            segments &&
+            justify &&
+            !partGaps &&
+            entry.direction === TextDirection.RTL
+          ) {
+            drawX = x + width - right - drawnWidth;
+            linkX = drawX;
+          }
+          if (segments && !justify) {
+            // Align the reordered pieces by their own width; trailing
+            // whitespace at the end of the line takes no room.
+            var pieceWidths = drawParts.map((part) =>
+              pieceAdvance(
+                part.text,
+                fragmentOptions(options, part.styles, fontSize),
+              ),
+            );
+            // Trailing whitespace at the end of the line takes no room, an
+            // indent does.
+            var lastPart = drawParts[drawParts.length - 1];
+            var piecesWidth = pieceWidths.reduce(
+              (sum, value) => sum + value,
+              0,
+            );
+            if (!lastPart.indent) {
+              piecesWidth +=
+                pieceAdvance(
+                  lastPart.text.replace(/\s+$/, ""),
+                  fragmentOptions(options, lastPart.styles, fontSize),
+                ) - pieceWidths[pieceWidths.length - 1];
+            }
+            drawX =
+              x +
+              left +
+              (horizontal === TextAlign.CENTER
+                ? (width - left - right - piecesWidth) / 2
+                : horizontal === TextAlign.RIGHT ||
+                    (wrap === TextWrap.CLIP &&
+                      entry.direction === TextDirection.RTL &&
+                      piecesWidth > width - left - right)
+                  ? width - left - right - piecesWidth
+                  : 0);
+            // Links and text markup start where the line now starts.
+            linkX = drawX;
+          }
           var rotationOrigin = options.rotationOrigin || textOrigin;
           drawParts.forEach((part, partIndex) => {
             var partOptions = fragmentOptions(options, part.styles, fontSize);
             if (partOptions.rotation && !partOptions.rotationOrigin) {
               partOptions.rotationOrigin = rotationOrigin;
             }
-            var partDimensions = dimensions(this, part.text, partOptions);
-            var partWidth = partDimensions.width;
+            var partWidth = !part.visual
+              ? dimensions(this, part.text, partOptions).width
+              : justify
+                ? justifiedRoom(part)
+                : pieceAdvance(part.text, partOptions);
             if (clipEachPart) clipLine(partOptions);
             if (partOptions.hilite) {
               var partHilite =
                 typeof partOptions.hilite === "object"
                   ? partOptions.hilite
                   : {};
-              var partBounds = dimensions(this, part.text, partOptions);
+              var partBounds = dimensions(
+                this,
+                part.visual ? part.runText : part.text,
+                partOptions,
+              );
               var partHiliteBounds = partBounds.height
                 ? partBounds
                 : dimensions(
@@ -1461,9 +1666,11 @@ export function createTextMethods({ drawText, measure, module }) {
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
                     partOptions,
                   );
+              // A reordered piece's width is measured from its start, as on
+              // native, not from its first glyph's edge.
               drawHilite(
                 this,
-                drawX + partHiliteBounds.xMin,
+                drawX + (part.visual ? 0 : partHiliteBounds.xMin),
                 baseline - partHiliteBounds.yMax,
                 partWidth + (hasGapAfter(part, partIndex) ? partGap : 0),
                 partHiliteBounds.yMax - partHiliteBounds.yMin,
@@ -1471,17 +1678,39 @@ export function createTextMethods({ drawText, measure, module }) {
                 partHilite,
               );
             }
-            drawText.call(this, part.text, drawX, baseline, partOptions);
+            // A reordered piece's underline and strike-out end at its
+            // glyphs, without the spaces that end the piece.
+            var drawOptions = partOptions;
+            if (part.visual) {
+              drawOptions = { ...partOptions };
+              drawOptions._decorationWidth = pieceAdvance(
+                part.text.replace(/\s+$/, ""),
+                partOptions,
+              );
+            }
+            drawText.call(
+              this,
+              part.visual ? part.text : toVisual(part.text, entry.direction),
+              drawX,
+              baseline,
+              drawOptions,
+            );
             if (clipEachPart) this._restore();
             if (partOptions.link) {
               var linkBounds = dimensions(this, part.text, partOptions);
+              var nextPart = drawParts
+                .slice(partIndex + 1)
+                .find((next) => hasText(next.text));
+              // A gap is linked when the text after it opens the same link.
+              // A plain reordered line is one part whose link is the text
+              // option's; HTML parts keep their own links.
               var coversGap =
                 hasGapAfter(part, partIndex) &&
-                drawParts
-                  .slice(partIndex + 1)
-                  .find((next) => hasText(next.text))?.styles.link ===
-                  partOptions.link;
-              var partLinkX = drawX + linkBounds.xMin;
+                nextPart !== undefined &&
+                (part.visual
+                  ? fragmentOptions(options, nextPart.styles, fontSize).link
+                  : nextPart.styles.link) === partOptions.link;
+              var partLinkX = drawX + (part.visual ? 0 : linkBounds.xMin);
               var partLinkWidth = partWidth + (coversGap ? partGap : 0);
               if (partLinkWidth)
                 transformedLink(
@@ -1506,12 +1735,20 @@ export function createTextMethods({ drawText, measure, module }) {
                 clip,
               );
             }
-            drawX += partAdvance(part, partIndex, partOptions);
+            // A reordered piece moves the pen by the room it was given.
+            drawX += part.visual
+              ? partWidth
+              : partAdvance(part, partIndex, partOptions);
             if (hasGapAfter(part, partIndex)) drawX += partGap;
           });
-          linkWidth = drawX - linkX;
+          // Text markup of a line that keeps its order ends where its
+          // glyphs end, as the line is aligned.
+          linkWidth = segments || justify ? drawX - linkX : alignWidth;
         } else if (isJustifiedLine) {
-          var words = entry.text.match(/\S+\s*/g) || [entry.text];
+          // Non-breaking spaces stay inside their word, as on native.
+          var words = entry.text.match(
+            /(?:[^\s]|[\u00a0\u2007\u202f])+(?:(?![\u00a0\u2007\u202f])\s)*/g,
+          ) || [entry.text];
           var wordsWidth = words.reduce(
             (sum, word) => sum + dimensions(this, word, textOptions).width,
             0,
@@ -1526,7 +1763,15 @@ export function createTextMethods({ drawText, measure, module }) {
           });
           linkWidth = width - left - right;
         } else {
-          drawText.call(this, entry.text, drawX, baseline, textOptions);
+          // A line of only direction marks and spaces draws without the
+          // marks, as native does.
+          drawText.call(
+            this,
+            toVisual(entry.text, entry.direction),
+            drawX,
+            baseline,
+            textOptions,
+          );
         }
         if (clipping && !clipEachPart) this._restore();
         // Text-markup annotations span to the run's right glyph edge, like

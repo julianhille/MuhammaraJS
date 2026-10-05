@@ -42,7 +42,12 @@ function functionSource(file, name) {
 }
 
 describe("SharedModulesParity", function () {
-  for (const name of ["content-stream.js", "font-text.js", "glyph-list.js"]) {
+  for (const name of [
+    "content-stream.js",
+    "font-text.js",
+    "glyph-list.js",
+    "text-direction.js",
+  ]) {
     it(`keeps ${name} identical on native and Wasm`, function () {
       assert.equal(
         mirroredSource(new URL(name, WASM_LIB)),

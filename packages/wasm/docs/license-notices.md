@@ -22,9 +22,9 @@ The text starts with a table of every component (name, version, SPDX license
 expression, upstream source, and the file that ships it), followed by each
 component's license and copyright notice in full. A license used by several
 components is repeated for each one. The table also covers the bundled Roboto
-Regular font (`fonts/Roboto-Regular.js`) and the Adobe Glyph List table
-(`lib/glyph-list.js`), which ship in JavaScript rather than in the `.wasm`, so
-one text covers the whole package.
+Regular font (`fonts/Roboto-Regular.js`), the Adobe Glyph List table
+(`lib/glyph-list.js`), and bidi-js (`lib/vendor/bidi-js.js`), which ship in
+JavaScript rather than in the `.wasm`, so one text covers the whole package.
 
 ## Read The Notices In Code
 
@@ -112,7 +112,8 @@ the notices from:
   texts always match the toolchain;
 - the Roboto font's name table and `fonts/LICENSE.txt`, and
   `packages/native-core/licenses/` for the Adobe Glyph List, next to the
-  `lib/glyph-list.js` table it covers.
+  `lib/glyph-list.js` table it covers, and for bidi-js, which native-core
+  installs from npm and `lib/vendor/bidi-js.js` vendors unmodified.
 
 `scripts/third-party-licenses.mjs` lists each component, its version, SPDX
 expression, upstream source, where it ships, and its license files. After
