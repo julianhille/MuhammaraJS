@@ -14,6 +14,8 @@ import {
   paragraphDirections,
   readDirection,
   resolveDirection,
+  spacedGaps,
+  spacedPieces,
   toVisual,
   useBidi,
   visualRuns,
@@ -213,6 +215,23 @@ describe("TextDirection", function () {
       assert.equal(hasStrongCharacter("\u2068\u2066שלום\u2069\u2069"), false);
       assert.equal(hasStrongCharacter("\u2067abc\u2069 שלום"), true);
       assert.equal(hasStrongCharacter("\u202babc\u202c"), true);
+    });
+  });
+
+  describe("spacedPieces", function () {
+    it("keeps character spacing out of a right-to-left letter and its points", function () {
+      // Drawn order: the points of each letter come before it.
+      assert.deepEqual(spacedPieces("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1"), [
+        "\u05d0\u05b5",
+        "\u05e8\u05b0",
+        "\u05bc",
+        "\u05d1",
+      ]);
+      assert.equal(spacedGaps("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1"), 2);
+      // Marks after a left-to-right letter keep their spacing, as before.
+      assert.deepEqual(spacedPieces("e\u0301x"), ["e\u0301x"]);
+      assert.equal(spacedGaps("e\u0301x"), 2);
+      assert.equal(spacedGaps(""), 0);
     });
   });
 

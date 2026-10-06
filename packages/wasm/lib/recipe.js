@@ -28,6 +28,7 @@ import { createVectorMethods } from "./recipe/vector.js";
 import { createTextMethods } from "./recipe/text.js";
 import { resolveFontSize } from "./recipe/text.helper.js";
 import { htmlToTextObjects } from "./recipe/htmlToTextObjects.js";
+import { spacedPieces, TextDirection } from "./text-direction.js";
 import { createTableMethods } from "./recipe/table.js";
 import { createAnnotationMethods } from "./recipe/annotation.js";
 import {
@@ -661,6 +662,11 @@ export function createRecipeFactory({
       }
       var fontPath = resolveFont(options);
       var fontSize = resolveFontSize(options);
+      // Character spacing leaves out the points drawn before a right-to-left
+      // letter, so they stay over it.
+      var pieces = characterSpacing
+        ? spacedPieces(String(value))
+        : [String(value)];
       if (this._pageContext) {
         var editContext = this._pageContext
           .BT()
@@ -672,29 +678,60 @@ export function createRecipeFactory({
         else if (fill.colorspace === DeviceColorSpace.CMYK)
           editContext.k(...fill.values);
         else editContext.rg(...fill.values);
-        editContext.Tm(1, 0, 0, 1, point.nx, point.ny).Tj(String(value)).ET();
+        editContext.Tm(1, 0, 0, 1, point.nx, point.ny);
+        if (pieces.length === 1) editContext.Tj(String(value));
+        else {
+          // A positive adjustment moves the next glyph back by the spacing
+          // added after the previous one.
+          var back = (characterSpacing * 1000) / fontSize;
+          editContext.TJ(
+            ...pieces.flatMap((piece, index) =>
+              index ? [back, piece] : [piece],
+            ),
+          );
+        }
+        editContext.ET();
       } else {
         var packedFill = textColor(fill);
         if (separation) {
           this._save();
           this._setSeparationColor(fill, false);
         }
-        withString(value, (textPointer) =>
-          withString(fontPath, (fontPointer) => {
-            call(
-              "_muhammara_wasm_recipe_text",
-              this._recipe,
-              point.nx,
-              point.ny,
-              textPointer,
-              fontPointer,
-              fontSize,
-              packedFill.space,
-              packedFill.value,
-              characterSpacing,
-            );
-          }),
-        );
+        // Each piece is drawn where the spacing before it leaves it: after
+        // the advance of the text before it and the spacing inside that.
+        var measureOptions = {
+          ...options,
+          fontSize,
+          charSpace: 0,
+          direction: TextDirection.NONE,
+        };
+        var drawn = "";
+        var spacing = 0;
+        pieces.forEach((piece, index) => {
+          var offset = index
+            ? this.textDimensions(drawn + "o", measureOptions).xMax -
+              this.textDimensions("o", measureOptions).xMax +
+              spacing
+            : 0;
+          drawn += piece;
+          spacing += (Array.from(piece).length - 1) * characterSpacing;
+          withString(piece, (textPointer) =>
+            withString(fontPath, (fontPointer) => {
+              call(
+                "_muhammara_wasm_recipe_text",
+                this._recipe,
+                point.nx + offset,
+                point.ny,
+                textPointer,
+                fontPointer,
+                fontSize,
+                packedFill.space,
+                packedFill.value,
+                characterSpacing,
+              );
+            }),
+          );
+        });
         if (separation) this._restore();
       }
       // Text-markup annotations are added per line by text(); only HTML

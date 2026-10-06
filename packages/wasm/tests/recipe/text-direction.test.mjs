@@ -1555,6 +1555,35 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("adds no character spacing between a right-to-left letter and its points", function () {
+    var options = { font: "arial", size: 40, direction: "rtl" };
+    var pointed = "\u05d1\u05b0\u05bc\u05e8\u05b5\u05d0";
+    var recipe = new Recipe();
+    try {
+      // Three letters take two spacings; their points take none.
+      assert.ok(
+        Math.abs(
+          recipe.textDimensions(pointed, { ...options, charSpace: 10 }).xMax -
+            recipe.textDimensions(pointed, options).xMax -
+            20,
+        ) < 0.01,
+      );
+    } finally {
+      recipe.dispose();
+    }
+    var runs = drawPage("text-direction-char-space", (page) => {
+      page.text(pointed, 50, 50, { ...options, charSpace: 10 });
+    });
+    // A point is drawn where the letter after it starts, so it stays over
+    // that letter.
+    var bet = runs.find((run) => run.text === "\u05d1");
+    assert.ok(bet, JSON.stringify(runs));
+    assert.ok(
+      runs.some((run) => run !== bet && Math.abs(run.x - bet.x) < 0.01),
+      JSON.stringify(runs),
+    );
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {

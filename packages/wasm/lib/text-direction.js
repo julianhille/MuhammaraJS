@@ -35,6 +35,12 @@ var FORMATTING_CHARACTERS = /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
 // Marks that combine with the character before them, such as Hebrew points.
 var COMBINING_MARK = /^\p{M}$/u;
 var HAS_COMBINING_MARK = /\p{M}/u;
+// Marks a font draws over a letter, without an advance of their own.
+var NONSPACING_MARK = /^[\p{Mn}\p{Me}]$/u;
+// Letters of right-to-left scripts, without asking bidi-js, so character
+// spacing works without it.
+var RIGHT_TO_LEFT_SCRIPT_LETTER =
+  /^(?=\p{L})[\p{sc=Hebrew}\p{sc=Arabic}\p{sc=Syriac}\p{sc=Thaana}\p{sc=Nko}\p{sc=Samaritan}\p{sc=Mandaic}]$/u;
 // Variation selectors, which choose the form of the character before them and
 // always follow it.
 var VARIATION_SELECTOR = /^[\ufe00-\ufe0f\u{e0100}-\u{e01ef}]$/u;
@@ -598,6 +604,47 @@ function drawnText(text, direction) {
 }
 
 /**
+ * Split text, in the order it is drawn, where character spacing must not go:
+ * between the points drawn before a right-to-left letter and that letter, so
+ * they stay over it. Spacing goes between the characters of each piece and
+ * between the pieces of other boundaries only.
+ *
+ * @param {string} text The text in the order it is drawn.
+ * @returns {string[]} The pieces; one piece when spacing goes everywhere.
+ */
+function spacedPieces(text) {
+  var characters = Array.from(text);
+  // Whether a mark belongs to the right-to-left letter drawn after it.
+  var before = new Array(characters.length).fill(false);
+  for (var index = characters.length - 2; index >= 0; --index) {
+    before[index] =
+      NONSPACING_MARK.test(characters[index]) &&
+      (before[index + 1] ||
+        RIGHT_TO_LEFT_SCRIPT_LETTER.test(characters[index + 1]));
+  }
+  var pieces = [""];
+  characters.forEach(function (character, index) {
+    if (index > 0 && before[index - 1]) pieces.push("");
+    pieces[pieces.length - 1] += character;
+  });
+  return pieces;
+}
+
+/**
+ * The number of character boundaries that character spacing widens, as
+ * `spacedPieces()` splits them.
+ *
+ * @param {string} text The text in the order it is drawn.
+ * @returns {number} The number of spaced boundaries.
+ */
+function spacedGaps(text) {
+  return spacedPieces(text).reduce(function (gaps, piece) {
+    var length = Array.from(piece).length;
+    return gaps + (length ? length - 1 : 0);
+  }, 0);
+}
+
+/**
  * Reorder a line made of several runs, such as the styled runs of HTML text,
  * as one line. Each returned segment is a piece of one run, already in visual
  * order, and the segments are listed from left to right. Every character,
@@ -812,5 +859,7 @@ export {
   drawnText,
   visualRuns,
   visualWords,
+  spacedPieces,
+  spacedGaps,
   useBidi,
 };

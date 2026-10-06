@@ -226,6 +226,24 @@ describe("TextDirection", function () {
     });
   });
 
+  describe("spacedPieces", function () {
+    it("keeps character spacing out of a right-to-left letter and its points", function () {
+      // Drawn order: the points of each letter come before it.
+      assert.deepEqual(
+        textDirection.spacedPieces("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1"),
+        ["\u05d0\u05b5", "\u05e8\u05b0", "\u05bc", "\u05d1"],
+      );
+      assert.equal(
+        textDirection.spacedGaps("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1"),
+        2,
+      );
+      // Marks after a left-to-right letter keep their spacing, as before.
+      assert.deepEqual(textDirection.spacedPieces("e\u0301x"), ["e\u0301x"]);
+      assert.equal(textDirection.spacedGaps("e\u0301x"), 2);
+      assert.equal(textDirection.spacedGaps(""), 0);
+    });
+  });
+
   describe("drawnText", function () {
     it("leaves out the formatting characters reordering drops", function () {
       assert.equal(textDirection.drawnText("\u2067שלום\u2069", "auto"), "שלום");

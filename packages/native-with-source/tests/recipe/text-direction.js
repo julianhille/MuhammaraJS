@@ -1619,6 +1619,44 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("adds no character spacing between a right-to-left letter and its points", async function () {
+    const output = path.join(
+      __dirname,
+      "../output/text-direction-char-space.pdf",
+    );
+    const recipe = new Recipe("new", output);
+    recipe.registerFont("arial", ARIAL);
+    const options = { font: "arial", size: 40, direction: "rtl" };
+    const pointed = "\u05d1\u05b0\u05bc\u05e8\u05b5\u05d0";
+    // Three letters take two spacings; their points take none.
+    assert.ok(
+      Math.abs(
+        recipe.textDimensions(pointed, { ...options, charSpace: 10 }).xMax -
+          recipe.textDimensions(pointed, options).xMax -
+          20,
+      ) < 0.01,
+    );
+    recipe
+      .createPage(400, 400)
+      .text(pointed, 50, 50, { ...options, charSpace: 10 });
+    await new Promise((resolve) => recipe.endPage().endPDF(resolve));
+    // The spacing after each point is taken back, so it stays over the
+    // letter drawn after it.
+    const reader = muhammara.createReader(output);
+    const contents = reader.queryDictionaryObject(
+      reader.parsePageDictionary(0),
+      "Contents",
+    );
+    const input = reader.startReadingFromStream(contents);
+    let bytes = [];
+    while (input.notEnded()) bytes = bytes.concat(Array.from(input.read(1024)));
+    reader.end();
+    assert.match(
+      Buffer.from(bytes).toString("latin1"),
+      /\[\s*<[0-9A-F]+>\s*250\s*<[0-9A-F]+>\s*250\s*<[0-9A-F]+>\s*250\s*<[0-9A-F]+>\s*\]\s*TJ/,
+    );
+  });
+
   it("keeps words joined by any non-breaking space on one line", async function () {
     for (const space of ["\u00a0", "\u2007", "\u202f"]) {
       const runs = await drawPage("text-direction-nbsp", (recipe) => {

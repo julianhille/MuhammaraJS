@@ -10,6 +10,7 @@ const {
   hasStrongCharacter,
   resolveDirection,
   paragraphDirections,
+  spacedPieces,
   splitParagraphs,
   toVisual,
   visualRuns,
@@ -711,15 +712,30 @@ exports.text = function text(text = "", x, y, options = {}) {
       };
 
       /**
-       * Show text at a position inside an open text object.
+       * Show text at a position inside an open text object. Character
+       * spacing leaves out the points drawn before a right-to-left letter,
+       * so they stay over it.
        * @param {string} word - The text, in the order it is drawn.
        * @param {number} x - Where the text starts.
        * @param {number} y - The baseline.
        * @param {Object} ctx - The content context.
+       * @param {Object} options - The run's write options.
        */
-      const emitText = (word, x, y, ctx) => {
+      const emitText = (word, x, y, ctx, options) => {
         ctx.Tm(1, 0, 0, 1, x, y);
-        ctx.Tj(word);
+        const pieces = options.charSpace ? spacedPieces(word) : [word];
+        if (pieces.length === 1) {
+          ctx.Tj(word);
+          return;
+        }
+        // A positive adjustment moves the next glyph back by the spacing
+        // added after the previous one.
+        const back = (options.charSpace * 1000) / options.size;
+        ctx.TJ(
+          ...pieces.flatMap((piece, index) =>
+            index ? [back, piece] : [piece],
+          ),
+        );
       };
 
       /**
@@ -733,7 +749,7 @@ exports.text = function text(text = "", x, y, options = {}) {
       const emitTextObject = (text, x, y, ctx, options) => {
         ctx.BT();
         addTextTraits(ctx, options);
-        emitText(text, x, y, ctx);
+        emitText(text, x, y, ctx, options);
         ctx.ET();
 
         addUnderline(x, y, ctx, options);
@@ -851,7 +867,7 @@ exports.text = function text(text = "", x, y, options = {}) {
               context,
               options,
               (word, xx) => {
-                emitText(word.value, xx, y + baseline, context);
+                emitText(word.value, xx, y + baseline, context, options);
               },
             );
           } else {

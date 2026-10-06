@@ -1,17 +1,17 @@
 var { cloneOptions, resolveFontSize, trimBreakableEnd } = require("./utils");
 var { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
-var { drawnText } = require("../text-direction");
+var { drawnText, spacedGaps } = require("../text-direction");
 
 /**
  * The width character spacing adds between the characters of a text.
  * @private
  * @param {string} text - The text.
- * @param {number} charSpace - The spacing added after each character but the last.
+ * @param {number} charSpace - The spacing added after each character but the
+ *   last, except between a right-to-left letter and the points drawn before it.
  * @returns {number} The added width.
  */
 const charSpacing = function charSpacing(text, charSpace) {
-  var characterCount = Array.from(String(text)).length;
-  return characterCount ? (characterCount - 1) * charSpace : 0;
+  return spacedGaps(String(text)) * charSpace;
 };
 
 // Have to set up word as a constant, then export it below

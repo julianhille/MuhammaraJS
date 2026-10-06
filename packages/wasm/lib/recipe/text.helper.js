@@ -1,12 +1,14 @@
+import { spacedGaps } from "../text-direction.js";
+
 /**
- * Calculates spacing between retained Unicode characters.
- * @param {string} text - Text.
+ * Calculates spacing between retained Unicode characters, except between a
+ * right-to-left letter and the points drawn before it.
+ * @param {string} text - Text, in the order it is drawn.
  * @param {number} [charSpace=0] - Spacing per character gap.
  * @returns {number} Total spacing.
  */
 export function charSpacing(text, charSpace = 0) {
-  var characterCount = Array.from(String(text)).length;
-  return characterCount ? (characterCount - 1) * charSpace : 0;
+  return spacedGaps(String(text)) * charSpace;
 }
 
 /** A measurable text fragment used by Recipe layout. */
