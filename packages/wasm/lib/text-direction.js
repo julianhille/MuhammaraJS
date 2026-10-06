@@ -570,12 +570,12 @@ function drawnText(text, direction) {
 /**
  * Reorder a line made of several runs, such as the styled runs of HTML text,
  * as one line. Each returned segment is a piece of one run, already in visual
- * order, and the segments are listed from left to right. Whitespace that
- * would start a segment ends the segment before it instead, so, as in logical
- * order, a segment ends with the space that follows its word, and no segment
- * is only whitespace. Whitespace at the start of the line, such as a list
- * indent, becomes `indent` segments at the line's start: first in a
- * left-to-right line and last in a right-to-left one, as in `toVisual()`.
+ * order, and the segments are listed from left to right. Every character,
+ * whitespace included, stays in a segment of its own run, so a run of only
+ * whitespace is a segment of its own. Whitespace at the start of the line,
+ * such as a list indent, becomes `indent` segments at the line's start: first
+ * in a left-to-right line and last in a right-to-left one, as in
+ * `toVisual()`.
  *
  * A run can keep a direction of its own, given in `runDirections`. A run
  * whose own direction is the line's, "auto", or not given follows the line.
