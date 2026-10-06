@@ -626,6 +626,21 @@ describe("TextDirection", function () {
       );
     });
 
+    it("uses the bidi-js instance loadBidi() checked its source with", async function () {
+      var factory = (await import("bidi-js")).default;
+      var built = 0;
+      try {
+        await loadBidi(() => {
+          built++;
+          return factory();
+        });
+        assert.equal(toVisual("\u05d0\u05d1", "rtl"), "\u05d1\u05d0");
+        assert.equal(built, 1);
+      } finally {
+        await loadBidi(factory);
+      }
+    });
+
     it("rejects a loadBidi() source that is not bidi-js", async function () {
       for (var source of [
         null,
@@ -633,6 +648,9 @@ describe("TextDirection", function () {
         {},
         () => 1,
         { default: () => ({}) },
+        () => {
+          throw new RangeError("not bidi-js");
+        },
       ]) {
         await assert.rejects(loadBidi(source), {
           name: "TypeError",

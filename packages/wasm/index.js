@@ -88,15 +88,19 @@ function importBidi() {
 export async function loadBidi(source) {
   if (source !== undefined) {
     var factory = typeof source === "function" ? source : source?.default;
-    if (
-      typeof factory !== "function" ||
-      typeof factory()?.getEmbeddingLevels !== "function"
-    ) {
+    // The instance built to check the source is the one used.
+    var api;
+    try {
+      api = typeof factory === "function" ? factory() : undefined;
+    } catch {
+      api = undefined;
+    }
+    if (typeof api?.getEmbeddingLevels !== "function") {
       throw new TypeError(
         "loadBidi() takes the bidi-js module or its default export",
       );
     }
-    useBidi(factory);
+    useBidi(() => api);
     bidiLoaded = true;
     return;
   }
