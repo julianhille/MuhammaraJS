@@ -5,8 +5,9 @@ import {
 } from "../../index.js";
 
 var wasmUrl = new URL("../../dist/muhammara-wasm.wasm", import.meta.url);
-// bidi-js, by URL, so pages and Workers load it without an import map.
-var bidiUrl = new URL(
+// bidi-js, by URL, so pages and Workers load it without an import map. The
+// page's import map and Pages staging point at the same file.
+export var bidiUrl = new URL(
   "../../../../node_modules/bidi-js/dist/bidi.mjs",
   import.meta.url,
 );

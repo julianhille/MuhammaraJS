@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import {
   HOW_TO_EXAMPLES,
   runHowToExample,
 } from "../../examples/browser/how-tos.mjs";
+import { bidiUrl } from "../../examples/browser/module-options.mjs";
 import { writeOutput } from "../testOutput.mjs";
 import { imagePlacements } from "../recipe/image-placement.mjs";
 
@@ -53,6 +57,34 @@ describe("Browser how-to examples", function () {
         "find-text",
         "inspect-pdf",
       ],
+    );
+  });
+
+  it("loads the installed bidi-js in the right-to-left example", async function () {
+    // The example and its import map point into node_modules; they must find
+    // the copy npm installed for the package.
+    var installed = pathToFileURL(
+      path.join(
+        path.dirname(
+          createRequire(import.meta.url).resolve("bidi-js/package.json"),
+        ),
+        "dist/bidi.mjs",
+      ),
+    ).href;
+    assert.equal(bidiUrl.href, installed);
+    var page = await readFile(
+      new URL("../../examples/browser/index.html", import.meta.url),
+      "utf8",
+    );
+    var map = JSON.parse(
+      /<script type="importmap">([\s\S]*?)<\/script>/.exec(page)[1],
+    );
+    assert.equal(
+      new URL(
+        map.imports["bidi-js"],
+        new URL("../../examples/browser/", import.meta.url),
+      ).href,
+      installed,
     );
   });
 
