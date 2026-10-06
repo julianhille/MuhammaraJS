@@ -2772,16 +2772,8 @@ function markLineComplete(toWriteTextObjects, lines = null, keepEnd = false) {
 
   // An empty flowed run has no words.
   textObj.wordsInLine[lastWordIdx]?.lastWord();
-  // Only a run that starts its line loses the spaces it starts with; one
-  // after another run on the line keeps the space between them.
-  const previous = toWriteTextObjects[toWriteTextObjects.length - 2];
-  if (
-    !previous ||
-    previous.lineComplete ||
-    previous.lineID !== textObj.lineID
-  ) {
-    textObj.text = textObj.text.trimStart();
-  }
+  // The spaces a run starts with stay, as Wasm keeps them: those of plain
+  // text that starts a line, and the one between two runs.
   if (!keepEnd) textObj.text = trimBreakableEnd(textObj.text);
   textObj.lineComplete = true;
 

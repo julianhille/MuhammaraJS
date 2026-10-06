@@ -1872,6 +1872,33 @@ describe("Recipe text direction", function () {
     }
   });
 
+  it("keeps the spaces a flowed line starts with when movedown() ends it", function () {
+    var options = { font: "arial", size: 12, direction: "auto" };
+    var box = { width: 200, textAlign: "right" };
+    for (var first of ["", null]) {
+      var runs = drawPage("text-direction-flow-leading-space", (recipe) => {
+        if (first === null) {
+          recipe.text(" \u05e2\u05d5\u05dc\u05dd", 50, 150, {
+            ...options,
+            flow: true,
+            textBox: box,
+          });
+        } else {
+          recipe
+            .text(first, 50, 150, { ...options, flow: true, textBox: box })
+            .text(" \u05e2\u05d5\u05dc\u05dd", options);
+        }
+        recipe.movedown().text("x", { ...options, flow: false });
+      });
+      // The space is kept as the indent of the line's start, on its right.
+      assert.deepEqual(
+        lineRuns(runs).map((run) => run.text),
+        ["\u05dd\u05dc\u05d5\u05e2", " "],
+        JSON.stringify(first),
+      );
+    }
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {
