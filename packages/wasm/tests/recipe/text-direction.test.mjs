@@ -1490,6 +1490,53 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("adds a text-markup annotation to each piece of a reordered flowed line", function () {
+    var recipe = new Recipe().createPage(400, 400);
+    var options = {
+      font: "arial",
+      size: 12,
+      direction: "rtl",
+      underline: true,
+    };
+    var bytes;
+    try {
+      bytes = recipe
+        .text("\u05e9\u05dc\u05d5\u05dd ", 50, 50, { ...options, flow: true })
+        .text("\u05e2\u05d5\u05dc\u05dd ", options)
+        .text("", { flow: false })
+        .endPage()
+        .endPDF();
+    } finally {
+      recipe.dispose();
+    }
+    writeOutput("text-direction-flow-markup", bytes);
+    var reader = muhammara.createReader(bytes);
+    try {
+      var runs = reader.extractPageText(0);
+      var annotations = reader
+        .parsePage(0)
+        .getDictionary()
+        .toJSObject()
+        .Annots.toJSArray()
+        .map((reference) =>
+          reader
+            .parseNewObject(reference.getObjectID())
+            .toJSObject()
+            .Rect.toJSArray()
+            .map((value) => value.value),
+        );
+    } finally {
+      reader.end();
+    }
+    // One per run, as for a left-to-right flow, each starting at its run.
+    assert.equal(annotations.length, 2, JSON.stringify(annotations));
+    assert.deepEqual(
+      annotations.map((rect) => Math.round(rect[0])),
+      runs.map((run) => Math.round(run.textMatrix[4])),
+    );
+    assert.ok(annotations[0][2] <= annotations[1][0] + 0.01);
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {

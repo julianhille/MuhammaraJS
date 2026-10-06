@@ -437,6 +437,9 @@ exports.text = function text(text = "", x, y, options = {}) {
   pathOptions.link = options.link;
   pathOptions.hilite = options.hilite;
   pathOptions.direction = options.direction;
+  // Whether this call's runs are part of a flow: it flows, or it continues
+  // the lines a flow left open.
+  pathOptions.flowed = this._flow || Boolean(this._previousTextObjects?.length);
 
   // save text state for continued text?
   this._textOptions = this._flow ? options : { textBox: {} };
@@ -1195,6 +1198,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         ) {
           x = first.startX + textBox.width - textBox.paddingRight - lineWidth;
         }
+        const markEachPiece = contents.some((content) => content.flowed);
         // Pieces that need a form, for opacity, rotation or a separation
         // color, are drawn into one form per run.
         const batches = new Map();
@@ -1220,10 +1224,13 @@ exports.text = function text(text = "", x, y, options = {}) {
             // Underline and strike-out lines stay under the glyphs.
             decorationWidth: inkWidth(piece),
             spaceWidth: 0,
-            // Text-markup annotations span the line from its first piece.
-            noMarkup: index > 0,
-            markupWidth:
-              justified && hasGaps
+            // Text-markup annotations of one text() call span the line from
+            // its first piece; the runs of a flow mark each piece of theirs,
+            // as on Wasm.
+            noMarkup: markEachPiece ? !piece.text.trim() : index > 0,
+            markupWidth: markEachPiece
+              ? span
+              : justified && hasGaps
                 ? textBox.width - textBox.paddingLeft - textBox.paddingRight
                 : lineWidth,
             // The pieces of a line, whose hilite a clip keeps in the box.
@@ -2192,6 +2199,7 @@ function makeTextObject(lines, line, lineID, textBox, options = {}) {
     lineComplete: options.lineComplete === true,
     direction: options.direction,
     runDirection: options.runDirection,
+    flowed: options.flowed,
   };
 }
 
@@ -2310,6 +2318,7 @@ function makeTextObjects(
     html: pathOptions.html,
     writeOptions: writeOptions,
     more: self._flow,
+    flowed: pathOptions.flowed,
     // The direction this text() call asked for, which its runs keep on a
     // line shared with runs of other calls.
     runDirection: readDirection(pathOptions.direction),
