@@ -1636,12 +1636,17 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     if (this._flowEndsBlock || pathOptions.startsBlock) {
       closeFlowParagraph(this);
     }
-    const openParagraph = assignParagraphDirections(
+    const texts = assignParagraphDirections(
       textObjects,
       pathOptions.direction,
       this._flowParagraph || "",
     );
-    this._flowParagraph = this._flow ? openParagraph : "";
+    settleFlowLines(
+      this._previousTextObjects || [],
+      texts[0],
+      texts.length > 1 || !this._flow,
+    );
+    this._flowParagraph = this._flow ? texts[texts.length - 1] : "";
   }
   // Top-level nodes share a line, as children of a block element do, so
   // inline runs outside any element are not split onto separate lines. In a
@@ -1971,8 +1976,8 @@ function justify(left, x, wto, textBox, position) {
  * @param {string} [direction] - The `direction` text option.
  * @param {string} openText - The text of the flow paragraph the first
  *   paragraph continues.
- * @returns {string} The text of the last paragraph, which a later flowed run
- *   on the same line continues.
+ * @returns {string[]} The text of each paragraph. The last one is still open:
+ *   a later flowed run on the same line continues it.
  */
 function assignParagraphDirections(textObjects, direction, openText) {
   const paragraphs = [[]];
@@ -2013,9 +2018,7 @@ function assignParagraphDirections(textObjects, direction, openText) {
   });
   // A closed block element ends its paragraph, but a later plain run still
   // continues its line, and with it its paragraph.
-  return texts
-    .filter((text, index) => paragraphs[index].length || !index)
-    .pop();
+  return texts.filter((text, index) => paragraphs[index].length || !index);
 }
 
 /**
@@ -2026,11 +2029,30 @@ function assignParagraphDirections(textObjects, direction, openText) {
  * @returns {void}
  */
 function closeFlowParagraph(recipe) {
-  const closed = resolveDirection(recipe._flowParagraph, TextDirection.AUTO);
-  (recipe._previousTextObjects || []).forEach((textObject) => {
-    if (textObject.direction === null) textObject.direction = closed;
-  });
+  settleFlowLines(
+    recipe._previousTextObjects || [],
+    recipe._flowParagraph || "",
+    true,
+  );
   recipe._flowParagraph = "";
+}
+
+/**
+ * Give the lines of a flow that wait for their paragraph's direction the one
+ * it has, once it has a letter or ends. They asked for "auto", so they take
+ * the paragraph's own direction, whatever the runs after them asked for.
+ * @private
+ * @param {Object[]} textObjects - The flow's laid-out lines.
+ * @param {string} paragraph - The paragraph's text so far.
+ * @param {boolean} closed - Whether the paragraph has ended.
+ * @returns {void}
+ */
+function settleFlowLines(textObjects, paragraph, closed) {
+  if (!closed && !hasStrongCharacter(paragraph)) return;
+  const direction = resolveDirection(paragraph, TextDirection.AUTO);
+  textObjects.forEach((textObject) => {
+    if (textObject.direction === null) textObject.direction = direction;
+  });
 }
 
 /**
@@ -2330,15 +2352,12 @@ function makeTextObjects(
       : paragraphDirectionAt(offset + flowParagraph.length);
   // Lines laid out while the open paragraph had no direction yet take it
   // once this run gives it one.
-  const openDirection = directionAt(-flowParagraph.length);
-  if (openDirection !== null) {
-    toWriteTextObjects.forEach((toWriteTextObject) => {
-      if (toWriteTextObject.direction === null) {
-        toWriteTextObject.direction = openDirection;
-      }
-    });
-  }
   if (!textObject.paragraphDirection) {
+    settleFlowLines(
+      toWriteTextObjects,
+      paragraphs[0],
+      paragraphs.length > 1 || !self._flow,
+    );
     self._flowParagraph = self._flow ? openParagraph : "";
   }
   let lineStart = 0;

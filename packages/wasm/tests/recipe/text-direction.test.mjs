@@ -1413,6 +1413,43 @@ describe("Recipe text direction", function () {
     }
   });
 
+  it("resolves a waiting flowed paragraph with the direction its lines asked for", function () {
+    var cases = [
+      [
+        "\u2067\u05e9\u05dc\u05d5\u05dd\u2069 ",
+        "none",
+        "\u05dd\u05d5\u05dc\u05e9",
+      ],
+      [
+        "\u2067\u05e9\u05dc\u05d5\u05dd\u2069 ",
+        "rtl",
+        "\u05dd\u05d5\u05dc\u05e9",
+      ],
+      [
+        "\u0661\u0662\u0663 - \u0664\u0665\u0666 ",
+        "none",
+        "\u0664\u0665\u0666 - \u0661\u0662\u0663",
+      ],
+    ];
+    for (var [text, direction, visual] of cases) {
+      var runs = drawPage("text-direction-flow-waiting", (recipe) => {
+        var options = { font: "arial", size: 12 };
+        recipe
+          .text(text, 50, 50, { ...options, direction: "auto", flow: true })
+          .text("abc", { ...options, direction })
+          .text("", { flow: false });
+      });
+      // The first run has no letter of its own, so its "auto" paragraph
+      // takes the left-to-right direction of "abc", whatever "abc" asked
+      // for, and the first run is still reordered.
+      assert.deepEqual(
+        runs.map((run) => run.text.trim()),
+        [visual, "abc"],
+        direction,
+      );
+    }
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {
