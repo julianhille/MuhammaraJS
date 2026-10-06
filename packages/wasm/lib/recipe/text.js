@@ -62,18 +62,19 @@ function padding(value = 0) {
 function splitWords(value) {
   return (
     String(value).match(
-      /(?:\S|\u00a0)+(?:(?!\u00a0)\s)*|(?:(?!\u00a0)\s)+/g,
+      /(?:\S|[\u00a0\u2007\u202f])+(?:(?![\u00a0\u2007\u202f])\s)*|(?:(?![\u00a0\u2007\u202f])\s)+/g,
     ) || [""]
   );
 }
 
 /**
- * Removes trailing breakable whitespace while preserving U+00A0.
+ * Removes trailing breakable whitespace while preserving the non-breaking
+ * spaces U+00A0, U+2007 and U+202F.
  * @param {string} value - Text.
  * @returns {string} The trimmed text.
  */
 function trimBreakableEnd(value) {
-  return value.replace(/(?:(?!\u00a0)\s)+$/, "");
+  return value.replace(/(?:(?![\u00a0\u2007\u202f])\s)+$/, "");
 }
 
 /**
@@ -82,7 +83,7 @@ function trimBreakableEnd(value) {
  * @returns {boolean} Whether it has visible content.
  */
 function hasText(value) {
-  return /(?:\S|\u00a0)/.test(value);
+  return /(?:\S|[\u00a0\u2007\u202f])/.test(value);
 }
 
 /**
@@ -91,7 +92,7 @@ function hasText(value) {
  * @returns {boolean} Whether it starts with breakable whitespace.
  */
 function startsWithBreakableSpace(value) {
-  return value[0] !== "\u00a0" && /^\s/.test(value);
+  return !/^[\u00a0\u2007\u202f]/.test(value) && /^\s/.test(value);
 }
 
 /**
@@ -100,7 +101,7 @@ function startsWithBreakableSpace(value) {
  * @returns {boolean} Whether it ends with breakable whitespace.
  */
 function endsWithBreakableSpace(value) {
-  return value[value.length - 1] !== "\u00a0" && /\s$/.test(value);
+  return !/[\u00a0\u2007\u202f]$/.test(value) && /\s$/.test(value);
 }
 
 /**
@@ -373,7 +374,7 @@ function htmlLines(source, width, measure, options, wrap) {
             collapseLeadingSpace = false;
             var lastPart = parts[parts.length - 1];
             if (lastPart && endsWithBreakableSpace(lastPart.text)) {
-              word = word.replace(/^(?:(?!\u00a0)\s)+/, "");
+              word = word.replace(/^(?:(?![\u00a0\u2007\u202f])\s)+/, "");
               if (!word) return;
             }
           }

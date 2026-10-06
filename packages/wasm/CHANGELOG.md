@@ -27,6 +27,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Keep a word joined by a non-breaking space (U+00A0) together on a
   justified Recipe line instead of widening the gap inside it, as native does
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Keep words joined by a figure space (U+2007) or a narrow no-break space
+  (U+202F) on one Recipe line, as native does and as U+00A0 already was;
+  Wasm wrapped lines at them
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 - End right-aligned Recipe text where its glyphs end, at the right edge of a
   text box's content, as native does. It ended the box's left padding plus
   the first glyph's side bearing past that edge. Centered text in a box

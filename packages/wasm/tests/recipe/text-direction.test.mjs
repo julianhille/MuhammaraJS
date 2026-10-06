@@ -1322,6 +1322,23 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("keeps words joined by any non-breaking space on one line", function () {
+    for (var space of ["\u00a0", "\u2007", "\u202f"]) {
+      var runs = drawPage("text-direction-nbsp", (recipe) => {
+        recipe.text("aaaa bbbb" + space + "cccc dddd", 20, 20, {
+          font: "arial",
+          size: 12,
+          textBox: { width: 70 },
+        });
+      });
+      assert.deepEqual(
+        runs.map((run) => run.text),
+        ["aaaa", "bbbb" + space + "cccc", "dddd"],
+        JSON.stringify(space),
+      );
+    }
+  });
+
   it("rejects an unknown direction before drawing", function () {
     var recipe = new Recipe().createPage(200, 200);
     try {
