@@ -623,8 +623,8 @@ export function createTextMethods({ drawText, measure, module }) {
     // Formatting characters that reordering drops are not measured.
     value = drawnText(String(value), options.direction);
     var result = measure.call(recipe, value, options);
-    result.width += charSpacing(value, options.charSpace);
-    result.xMax += charSpacing(value, options.charSpace);
+    result.width += charSpacing(value, options.charSpace, options.direction);
+    result.xMax += charSpacing(value, options.charSpace, options.direction);
     return result;
   }
 

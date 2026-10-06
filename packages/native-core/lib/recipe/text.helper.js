@@ -8,10 +8,11 @@ var { drawnText, spacedGaps } = require("../text-direction");
  * @param {string} text - The text.
  * @param {number} charSpace - The spacing added after each character but the
  *   last, except between a right-to-left letter and the points drawn before it.
+ * @param {string} [direction] - The `direction` text option.
  * @returns {number} The added width.
  */
-const charSpacing = function charSpacing(text, charSpace) {
-  return spacedGaps(String(text)) * charSpace;
+const charSpacing = function charSpacing(text, charSpace, direction) {
+  return spacedGaps(String(text), direction) * charSpace;
 };
 
 // Have to set up word as a constant, then export it below
@@ -69,7 +70,11 @@ const Word = class Word {
    * @returns {number} The width character spacing adds to the word.
    */
   get charSpacing() {
-    return charSpacing(this._text, this._pathOptions.charSpace);
+    return charSpacing(
+      this._text,
+      this._pathOptions.charSpace,
+      this._pathOptions.direction,
+    );
   }
 
   /**
@@ -195,7 +200,11 @@ exports.Line = class Line {
    * @returns {number} The width character spacing adds to the text.
    */
   charSpacing(text) {
-    return charSpacing(text, this._pathOptions.charSpace);
+    return charSpacing(
+      text,
+      this._pathOptions.charSpace,
+      this._pathOptions.direction,
+    );
   }
 
   /**
@@ -384,7 +393,7 @@ exports.textDimensions = function textDimensions(text, options = {}) {
 
   if (font) {
     if (options.charSpace) {
-      charSpaces = charSpacing(text, options.charSpace);
+      charSpaces = charSpacing(text, options.charSpace, options.direction);
     }
     const fontSize = resolveFontSize(options, this.current.defaultFontSize);
     dimensions = font.calculateTextDimensions(text, fontSize);

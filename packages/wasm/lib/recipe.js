@@ -665,7 +665,7 @@ export function createRecipeFactory({
       // Character spacing leaves out the points drawn before a right-to-left
       // letter, so they stay over it.
       var pieces = characterSpacing
-        ? spacedPieces(String(value))
+        ? spacedPieces(String(value), options.direction)
         : [String(value)];
       if (this._pageContext) {
         var editContext = this._pageContext

@@ -5,10 +5,11 @@ import { spacedGaps } from "../text-direction.js";
  * right-to-left letter and the points drawn before it.
  * @param {string} text - Text, in the order it is drawn.
  * @param {number} [charSpace=0] - Spacing per character gap.
+ * @param {string} [direction] - The `direction` text option.
  * @returns {number} Total spacing.
  */
-export function charSpacing(text, charSpace = 0) {
-  return spacedGaps(String(text)) * charSpace;
+export function charSpacing(text, charSpace = 0, direction = undefined) {
+  return spacedGaps(String(text), direction) * charSpace;
 }
 
 /** A measurable text fragment used by Recipe layout. */
@@ -25,7 +26,7 @@ export class Word {
   get width() {
     return (
       this.measure(this.value, this.options).width +
-      charSpacing(this.value, this.options.charSpace)
+      charSpacing(this.value, this.options.charSpace, this.options.direction)
     );
   }
 }
@@ -52,7 +53,7 @@ export class Line {
   get currentWidth() {
     return (
       this.measure(this.value, this.options).width +
-      charSpacing(this.value, this.options.charSpace)
+      charSpacing(this.value, this.options.charSpace, this.options.direction)
     );
   }
   /**

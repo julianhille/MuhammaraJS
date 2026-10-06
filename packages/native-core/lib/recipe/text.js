@@ -728,7 +728,9 @@ exports.text = function text(text = "", x, y, options = {}) {
        */
       const emitText = (word, x, y, ctx, options) => {
         ctx.Tm(1, 0, 0, 1, x, y);
-        const pieces = options.charSpace ? spacedPieces(word) : [word];
+        const pieces = options.charSpace
+          ? spacedPieces(word, options.direction)
+          : [word];
         if (pieces.length === 1) {
           ctx.Tj(word);
           return;

@@ -37,6 +37,7 @@ var COMBINING_MARK = /^\p{M}$/u;
 var HAS_COMBINING_MARK = /\p{M}/u;
 // Marks a font draws over a letter, without an advance of their own.
 var NONSPACING_MARK = /^[\p{Mn}\p{Me}]$/u;
+var LETTER = /^\p{L}$/u;
 // Letters of the main right-to-left scripts, for text that is not reordered
 // because bidi-js is not loaded.
 var RIGHT_TO_LEFT_SCRIPT_LETTER =
@@ -605,28 +606,39 @@ function drawnText(text, direction) {
 
 /**
  * Whether a character is a letter drawn after its marks: a right-to-left
- * letter, as reordering tells them apart. Without bidi-js nothing is
- * reordered, and the main right-to-left scripts stand in.
+ * letter, as reordering tells them apart, and not punctuation. Without
+ * bidi-js no right-to-left text is reordered, and the main right-to-left
+ * scripts stand in.
  *
  * @param {string} character One character.
  * @returns {boolean} Whether the marks before it are its own.
  */
 function drawnAfterItsMarks(character) {
   return typeof bidiFactory === "function"
-    ? isRightToLeftLetter(character, 0)
+    ? LETTER.test(character) && isRightToLeftLetter(character, 0)
     : RIGHT_TO_LEFT_SCRIPT_LETTER.test(character);
 }
 
 /**
  * Split text, in the order it is drawn, where character spacing must not go:
  * between the points drawn before a right-to-left letter and that letter, so
- * they stay over it. Spacing goes between the characters of each piece and
- * between the pieces of other boundaries only.
+ * they stay over it. Only reordered text draws points before their letter;
+ * text drawn as given, with direction "none", keeps spacing everywhere.
+ * Spacing goes between the characters of each piece and between the pieces
+ * of other boundaries only.
  *
  * @param {string} text The text in the order it is drawn.
+ * @param {string} [direction] The `TextDirection` value it was drawn with;
+ *   defaults to "none".
  * @returns {string[]} The pieces; one piece when spacing goes everywhere.
  */
-function spacedPieces(text) {
+function spacedPieces(text, direction) {
+  if (
+    readDirection(direction) === TextDirection.NONE ||
+    !HAS_COMBINING_MARK.test(text)
+  ) {
+    return [text];
+  }
   var characters = Array.from(text);
   // Whether a mark belongs to the right-to-left letter drawn after it.
   var before = new Array(characters.length).fill(false);
@@ -648,10 +660,12 @@ function spacedPieces(text) {
  * `spacedPieces()` splits them.
  *
  * @param {string} text The text in the order it is drawn.
+ * @param {string} [direction] The `TextDirection` value it was drawn with;
+ *   defaults to "none".
  * @returns {number} The number of spaced boundaries.
  */
-function spacedGaps(text) {
-  return spacedPieces(text).reduce(function (gaps, piece) {
+function spacedGaps(text, direction) {
+  return spacedPieces(text, direction).reduce(function (gaps, piece) {
     var length = Array.from(piece).length;
     return gaps + (length ? length - 1 : 0);
   }, 0);

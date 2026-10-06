@@ -230,24 +230,45 @@ describe("TextDirection", function () {
     it("keeps character spacing out of a right-to-left letter and its points", function () {
       // Drawn order: the points of each letter come before it.
       assert.deepEqual(
-        textDirection.spacedPieces("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1"),
+        textDirection.spacedPieces(
+          "\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1",
+          "rtl",
+        ),
         ["\u05d0\u05b5", "\u05e8\u05b0", "\u05bc", "\u05d1"],
       );
       assert.equal(
-        textDirection.spacedGaps("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1"),
+        textDirection.spacedGaps("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1", "rtl"),
         2,
       );
       // Marks after a left-to-right letter keep their spacing, as before.
-      assert.deepEqual(textDirection.spacedPieces("e\u0301x"), ["e\u0301x"]);
-      assert.equal(textDirection.spacedGaps("e\u0301x"), 2);
+      assert.deepEqual(textDirection.spacedPieces("e\u0301x", "rtl"), [
+        "e\u0301x",
+      ]);
+      assert.equal(textDirection.spacedGaps("e\u0301x", "rtl"), 2);
       assert.equal(textDirection.spacedGaps(""), 0);
       // Any right-to-left letter, as reordering tells them apart.
       assert.equal(
         textDirection.spacedGaps(
           textDirection.drawnText("\u{1e900}\u{1e944}\u{1e901}", "rtl"),
+          "rtl",
         ),
         1,
       );
+      // Punctuation after points does not take them.
+      assert.equal(textDirection.spacedGaps("\u05db\u05b8\u05be", "rtl"), 2);
+      assert.equal(
+        textDirection.spacedGaps(
+          textDirection.drawnText("\u05d0\u05b8\u05f4", "rtl"),
+          "rtl",
+        ),
+        1,
+      );
+      // Text drawn as given keeps spacing everywhere, with or without
+      // bidi-js.
+      assert.deepEqual(textDirection.spacedPieces("\u05d0\u05b5\u05e8"), [
+        "\u05d0\u05b5\u05e8",
+      ]);
+      assert.equal(textDirection.spacedGaps("\u05b0\u05d1", "none"), 1);
     });
   });
 
@@ -560,7 +581,7 @@ describe("TextDirection", function () {
       var cause = new Error("Cannot find module 'bidi-js'");
       textDirection.useBidi(cause);
       // Character spacing works without it.
-      assert.equal(textDirection.spacedGaps("\u05b0\u05d1 a"), 2);
+      assert.equal(textDirection.spacedGaps("\u05b0\u05d1 a", "rtl"), 2);
       assert.equal(textDirection.toVisual(text, "none"), text);
       assert.equal(textDirection.toVisual("abc", "auto"), "abc");
       var error;
