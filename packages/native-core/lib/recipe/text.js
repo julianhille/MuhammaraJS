@@ -201,6 +201,7 @@ function _initOptions(self, x = {}, y, options = {}) {
     self._textOptions = { textBox: {} };
     self._previousTextObjects = [];
     self._flowParagraph = "";
+    self._flowWaits = false;
     self._flow = options.flow || false;
 
     if (options.layout) {
@@ -1677,11 +1678,13 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       this._flow && readDirection(pathOptions.direction) === TextDirection.AUTO,
     );
     settleFlowLines(
+      this,
       this._previousTextObjects || [],
       texts[0],
       texts.length > 1 || !this._flow,
     );
     this._flowParagraph = this._flow ? open : "";
+    if (textObjects.some(hasPendingParagraph)) this._flowWaits = true;
   }
   // Top-level nodes share a line, as children of a block element do, so
   // inline runs outside any element are not split onto separate lines. In a
@@ -2091,6 +2094,7 @@ function assignParagraphDirections(textObjects, direction, openText, waits) {
  */
 function closeFlowParagraph(recipe) {
   settleFlowLines(
+    recipe,
     recipe._previousTextObjects || [],
     recipe._flowParagraph || "",
     true,
@@ -2103,17 +2107,35 @@ function closeFlowParagraph(recipe) {
  * it has, once it has a letter or ends. They asked for "auto", so they take
  * the paragraph's own direction, whatever the runs after them asked for.
  * @private
+ * @param {Object} recipe - The Recipe, whose `_flowWaits` tells whether any
+ *   line waits, so a flow without waiting lines is not searched.
  * @param {Object[]} textObjects - The flow's laid-out lines.
  * @param {string} paragraph - The paragraph's text so far.
  * @param {boolean} closed - Whether the paragraph has ended.
  * @returns {void}
  */
-function settleFlowLines(textObjects, paragraph, closed) {
+function settleFlowLines(recipe, textObjects, paragraph, closed) {
+  if (!recipe._flowWaits) return;
   if (!closed && !hasStrongCharacter(paragraph)) return;
   const direction = resolveDirection(paragraph, TextDirection.AUTO);
   textObjects.forEach((textObject) => {
     if (textObject.direction === null) textObject.direction = direction;
   });
+  recipe._flowWaits = false;
+}
+
+/**
+ * Whether an HTML node, or one inside it, waits for its paragraph's
+ * direction.
+ * @private
+ * @param {Object} node - An HTML layout node.
+ * @returns {boolean} Whether it waits.
+ */
+function hasPendingParagraph(node) {
+  return (
+    Boolean(node.paragraphPending) ||
+    (node.childs || []).some(hasPendingParagraph)
+  );
 }
 
 /**
@@ -2419,11 +2441,13 @@ function makeTextObjects(
   // once this run gives it one.
   if (!textObject.paragraphDirection) {
     settleFlowLines(
+      self,
       toWriteTextObjects,
       paragraphs[0],
       paragraphs.length > 1 || !self._flow,
     );
     self._flowParagraph = self._flow ? openParagraph : "";
+    if (pending) self._flowWaits = true;
   }
   let lineStart = 0;
   const indent = textObject.indent || 0;
