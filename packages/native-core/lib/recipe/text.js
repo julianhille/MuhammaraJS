@@ -2772,7 +2772,16 @@ function markLineComplete(toWriteTextObjects, lines = null, keepEnd = false) {
 
   // An empty flowed run has no words.
   textObj.wordsInLine[lastWordIdx]?.lastWord();
-  textObj.text = textObj.text.trimStart();
+  // Only a run that starts its line loses the spaces it starts with; one
+  // after another run on the line keeps the space between them.
+  const previous = toWriteTextObjects[toWriteTextObjects.length - 2];
+  if (
+    !previous ||
+    previous.lineComplete ||
+    previous.lineID !== textObj.lineID
+  ) {
+    textObj.text = textObj.text.trimStart();
+  }
   if (!keepEnd) textObj.text = trimBreakableEnd(textObj.text);
   textObj.lineComplete = true;
 

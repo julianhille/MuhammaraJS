@@ -1834,6 +1834,27 @@ describe("Recipe text direction", function () {
     assert.ok(expected[2][1] < expected[1][1]);
   });
 
+  it("keeps the space a flowed run starts with on a line movedown() ends", function () {
+    var options = { font: "arial", size: 12, direction: "auto" };
+    for (var ending of ["movedown", "\n"]) {
+      var runs = drawPage("text-direction-flow-ended-space", (recipe) => {
+        recipe.text("x", 50, 50, { ...options, flow: true });
+        if (ending === "movedown") {
+          recipe.text(" \u05e2\u05d5\u05dc\u05dd", options).movedown();
+        } else {
+          recipe.text(" \u05e2\u05d5\u05dc\u05dd" + ending, options);
+        }
+        recipe.text("def", { ...options, flow: false });
+      });
+      // The space keeps "x" and the Hebrew word apart.
+      assert.deepEqual(
+        runs.map((run) => run.text),
+        ["x", " \u05dd\u05dc\u05d5\u05e2", "def"],
+        ending,
+      );
+    }
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {
