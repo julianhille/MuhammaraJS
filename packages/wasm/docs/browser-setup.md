@@ -58,8 +58,10 @@ Pass `bidi: false` to `createMuhammaraWasm()` or `createRecipe()` to skip
 loading it when the page never sets `direction`. Without bidi-js, whether
 skipped or unresolved, everything else works, and every call that has to order
 text by direction throws an error that names bidi-js instead of drawing the
-text in the wrong order: text with right-to-left characters, `"rtl"` text,
-and a line whose flowed runs ask for different directions.
+text in the wrong order: text with right-to-left characters and an `"auto"`,
+`"ltr"` or `"rtl"` direction, `"rtl"` text, and a line whose flowed runs ask
+for different directions. Text drawn as given, with the default `"none"`,
+needs no bidi-js, right-to-left characters included.
 
 Module Workers do not read the page's import map in every browser; bundle
 the Worker, or load bidi-js there yourself.
