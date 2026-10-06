@@ -1,5 +1,6 @@
 const fs = require("fs");
 const { Permission } = require("../recipe-constants");
+const PDFWStreamForBuffer = require("../PDFWStreamForBuffer");
 
 /**
  * Encryption user access permissions
@@ -101,8 +102,9 @@ exports._getEncryptOptions = function _getEncryptOptions(
  * @param {string} [options.ownerPassword] - The password for editing.
  * @param {string} [options.userPassword] - The password for viewing & encryption.
  * @param {number} [options.userProtectionFlag] - The flag for the security level, see `permission()`.
- * @returns {Recipe} The recipe instance. The file is encrypted by `endPDF()`;
- *   Buffer sources are not encrypted.
+ * @returns {Recipe} The recipe instance. The output is encrypted by `endPDF()`:
+ *   the output file for a path source, and the Buffer passed to the callback
+ *   (or written to the output path) for a Buffer source.
  */
 exports.encrypt = function encrypt(options = {}) {
   this.needToEncrypt = true;
@@ -113,13 +115,29 @@ exports.encrypt = function encrypt(options = {}) {
 
 // http://pdfhummus.com/post/147451287581/hummus-1058-and-pdf-writer-updates-encryption
 /**
- * Re-encrypt the finished output file with the encrypt() options.
+ * Re-encrypt the finished output with the encrypt() options. A path source
+ * re-encrypts the output file in place; a Buffer source re-encrypts the
+ * collected output bytes, so the callback and an output path receive the
+ * encrypted PDF.
  * @private
  * @returns {void}
  * @throws {Error} If the output cannot be renamed, re-encrypted or removed.
  */
 exports._encrypt = function _encrypt() {
   if (!this.encryption_) {
+    return;
+  }
+
+  if (this.isBufferSrc) {
+    const encrypted = new PDFWStreamForBuffer();
+    this.muhammara.recrypt(
+      new this.muhammara.PDFRStreamForBuffer(
+        this.outStream.buffer || Buffer.alloc(0),
+      ),
+      encrypted,
+      this.encryption_,
+    );
+    this.outStream = encrypted;
     return;
   }
 

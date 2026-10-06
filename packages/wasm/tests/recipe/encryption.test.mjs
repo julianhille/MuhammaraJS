@@ -1,6 +1,23 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import { writeOutput } from "../testOutput.mjs";
+
+/**
+ * Reads a shared native Recipe fixture.
+ * @param {string} name - The fixture file name without extension.
+ * @returns {Promise<Uint8Array>} The fixture bytes.
+ */
+async function readRecipeFixture(name) {
+  return new Uint8Array(
+    await readFile(
+      new URL(
+        `../../../native-with-source/tests/TestMaterials/recipe/${name}.pdf`,
+        import.meta.url,
+      ),
+    ),
+  );
+}
 
 describe("Recipe encryption", function () {
   it("encrypts the final bytes and caches the encrypted result", async function () {
@@ -21,6 +38,33 @@ describe("Recipe encryption", function () {
     var plainReader = muhammara.createReader(plain);
     assert.equal(plainReader.getPagesCount(), 1);
     plainReader.end();
+    recipe.dispose();
+    Recipe.disposeAssets();
+  });
+
+  // Mirrors native "Buffer source with view password" (GH-446): a modified
+  // source is encrypted by endPDF() just like a new document.
+  it("encrypts a modified source with a view password", async function () {
+    var Recipe = await createRecipe();
+    var source = await readRecipeFixture("test2");
+    var recipe = new Recipe(source)
+      .editPage(1)
+      .text("Encrypted from a byte source", 150, 300)
+      .endPage()
+      .encrypt({ userPassword: "123" });
+    var encrypted = recipe.endPDF();
+    writeOutput("encryption-modified-source-view-password", encrypted);
+    assert.strictEqual(recipe.endPDF(), encrypted);
+
+    var muhammara = await createMuhammaraWasm();
+    var locked = muhammara.createReader(encrypted);
+    assert.equal(locked.isEncrypted(), true);
+    assert.equal(locked.getPagesCount(), 0);
+    locked.end();
+    var unlocked = muhammara.createReader(encrypted, { password: "123" });
+    assert.equal(unlocked.isEncrypted(), true);
+    assert.ok(unlocked.getPagesCount() > 0);
+    unlocked.end();
     recipe.dispose();
     Recipe.disposeAssets();
   });
