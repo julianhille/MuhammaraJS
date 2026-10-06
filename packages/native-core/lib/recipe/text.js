@@ -17,6 +17,8 @@ const {
   visualWords,
 } = require("../text-direction");
 
+// HTML whose text starts with a space, after any tags that open it.
+const LEADING_HTML_SPACE = /^(?:<[^>]*>|\s)*?\s/;
 // The line breaks that end a text, every paragraph separator among them.
 const TRAILING_LINE_BREAKS = /(?:\r\n|[\n\v\f\r\u0085\u2028\u2029])+$/;
 const {
@@ -488,7 +490,7 @@ exports.text = function text(text = "", x, y, options = {}) {
     this._previousTextObjects[this._previousTextObjects.length - 1];
   if (
     options.html &&
-    /^\s/.test(text) &&
+    LEADING_HTML_SPACE.test(text) &&
     openRun &&
     !openRun.lineComplete &&
     /\S$/.test(openRun.text) &&

@@ -1969,6 +1969,24 @@ describe("Recipe text direction", function () {
     }
   });
 
+  it("keeps the space a flowed HTML run starts with inside its first element", async function () {
+    const options = { font: "arial", size: 12, direction: "auto" };
+    const runs = await drawPage("text-direction-flow-html-space", (recipe) => {
+      recipe
+        .text("1 2 3 4 5", 50, 150, { ...options, flow: true })
+        .text("<span> 6 7</span>", { ...options, html: true })
+        .text(" \u05e9\u05dc\u05d5\u05dd", { ...options, html: false })
+        .text("", { ...options, flow: false });
+    });
+    // "5" and "6" stay two numbers, so the line keeps their order.
+    assert.equal(
+      lineRuns(runs)
+        .map((run) => run.text)
+        .join(""),
+      "\u05dd\u05d5\u05dc\u05e9 7 6 5 4 3 2 1",
+    );
+  });
+
   it("keeps words joined by any non-breaking space on one line", async function () {
     for (const space of ["\u00a0", "\u2007", "\u202f"]) {
       const runs = await drawPage("text-direction-nbsp", (recipe) => {
