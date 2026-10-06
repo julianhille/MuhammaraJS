@@ -223,6 +223,17 @@ describe("TextDirection", function () {
       assert.equal(drawnText("\u2067שלום\u2069", "none"), "\u2067שלום\u2069");
       assert.equal(drawnText("Hello", "auto"), "Hello");
     });
+
+    it("puts the points of a right-to-left letter before it, as drawn", function () {
+      assert.equal(drawnText("\u05d1\u05b4", "rtl"), "\u05b4\u05d1");
+      assert.equal(drawnText("\u05d1\u05b4", "auto"), "\u05b4\u05d1");
+      // A left-to-right letter keeps its marks after it.
+      assert.equal(
+        drawnText("\u05d1\u05b4 e\u0301", "rtl"),
+        "\u05b4\u05d1 e\u0301",
+      );
+      assert.equal(drawnText("\u05d1\u05b4", "none"), "\u05d1\u05b4");
+    });
   });
 
   describe("visualRuns", function () {

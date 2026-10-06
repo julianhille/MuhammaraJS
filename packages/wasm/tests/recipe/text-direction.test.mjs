@@ -1537,6 +1537,24 @@ describe("Recipe text direction", function () {
     assert.ok(annotations[0][2] <= annotations[1][0] + 0.01);
   });
 
+  it("measures a pointed right-to-left letter as it is drawn", function () {
+    // Drawn, the line is 277 points wide: the point comes before its letter
+    // and sits over it. After its letter, as typed, it would reach past the
+    // letter to 303 points and wrap the line.
+    var runs = drawPage("text-direction-pointed-width", (recipe) => {
+      recipe.text("\u05e9\u05dc\u05d5\u05dd \u05d1\u05b4", 50, 50, {
+        font: "arial",
+        size: 100,
+        direction: "rtl",
+        textBox: { width: 290 },
+      });
+    });
+    assert.deepEqual(
+      runs.map((run) => run.text),
+      ["\u05b4\u05d1 \u05dd\u05d5\u05dc\u05e9"],
+    );
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {

@@ -34,6 +34,7 @@ var FORMATTING_CHARACTERS = /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
 
 // Marks that combine with the character before them, such as Hebrew points.
 var COMBINING_MARK = /^\p{M}$/u;
+var HAS_COMBINING_MARK = /\p{M}/u;
 // Variation selectors, which choose the form of the character before them and
 // always follow it.
 var VARIATION_SELECTOR = /^[\ufe00-\ufe0f\u{e0100}-\u{e01ef}]$/u;
@@ -443,31 +444,7 @@ function visualCharacters(core, direction, opaque) {
       levels.levels[start] % 2 &&
       isRightToLeftLetter(core, start)
     ) {
-      // Right-to-left fonts place a mark over the glyph drawn after it, so
-      // on a right-to-left letter the marks come first, as the
-      // bidirectional algorithm orders them. Surrogate pairs keep their
-      // order, and variation selectors stay after the letter.
-      var units = [];
-      cluster.forEach(function (position) {
-        if (isLowSurrogateAt(core, position)) {
-          units[units.length - 1].push(position);
-        } else units.push([position]);
-      });
-      var base = units.shift();
-      var selectors = units.filter(function (unit) {
-        return VARIATION_SELECTOR.test(
-          String.fromCodePoint(core.codePointAt(unit[0])),
-        );
-      });
-      cluster = [].concat.apply(
-        [],
-        units
-          .filter(function (unit) {
-            return selectors.indexOf(unit) === -1;
-          })
-          .reverse()
-          .concat([base], selectors),
-      );
+      cluster = marksFirst(core, cluster);
     }
     cluster.forEach(function (position) {
       var character = core[position];
@@ -552,9 +529,47 @@ function toVisual(text, direction) {
 }
 
 /**
+ * Order the positions of a cluster on a right-to-left letter as they are
+ * drawn. Right-to-left fonts place a mark over the glyph drawn after it, so
+ * the marks come first, as the bidirectional algorithm orders them.
+ * Surrogate pairs keep their order, and variation selectors stay after the
+ * letter.
+ *
+ * @param {string} text The text.
+ * @param {number[]} cluster The UTF-16 positions of the cluster, its letter
+ *   first.
+ * @returns {number[]} The positions in the order they are drawn.
+ */
+function marksFirst(text, cluster) {
+  var units = [];
+  cluster.forEach(function (position) {
+    if (isLowSurrogateAt(text, position)) {
+      units[units.length - 1].push(position);
+    } else units.push([position]);
+  });
+  var base = units.shift();
+  var selectors = units.filter(function (unit) {
+    return VARIATION_SELECTOR.test(
+      String.fromCodePoint(text.codePointAt(unit[0])),
+    );
+  });
+  return [].concat.apply(
+    [],
+    units
+      .filter(function (unit) {
+        return selectors.indexOf(unit) === -1;
+      })
+      .reverse()
+      .concat([base], selectors),
+  );
+}
+
+/**
  * The characters `toVisual()` draws, still in logical order: the text without
- * its formatting characters, or unchanged for "none". Measure this text, not
- * the original, so a measured width matches the drawn one.
+ * its formatting characters, with the marks on each right-to-left letter
+ * before it, or unchanged for "none". Measure this text, not the original,
+ * so a measured width matches the drawn one: a mark drawn after its letter
+ * reaches past it.
  *
  * @param {string} text The text.
  * @param {string} [direction] A `TextDirection` value; defaults to "none".
@@ -564,7 +579,22 @@ function toVisual(text, direction) {
 function drawnText(text, direction) {
   direction = readDirection(direction);
   if (!reorders(text, direction)) return text;
-  return text.replace(FORMATTING_CHARACTERS, "");
+  var core = text.replace(FORMATTING_CHARACTERS, "");
+  if (!HAS_COMBINING_MARK.test(core)) return core;
+  var starts = clusterStarts(core);
+  var members = clusterMembers(starts);
+  var drawn = "";
+  starts.forEach(function (start, index) {
+    if (start !== index) return;
+    var cluster = members[start];
+    if (cluster.length > 1 && isRightToLeftLetter(core, start)) {
+      cluster = marksFirst(core, cluster);
+    }
+    cluster.forEach(function (position) {
+      drawn += core[position];
+    });
+  });
+  return drawn;
 }
 
 /**
