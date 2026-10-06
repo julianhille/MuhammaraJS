@@ -1448,6 +1448,40 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("breaks a flowed line at every paragraph separator", async function () {
+    for (const separator of ["\u2028", "\u2029", "\v", "\f", "\u0085", "\r"]) {
+      const runs = await drawPage("text-direction-flow-separator", (recipe) => {
+        const options = { font: "arial", size: 12, direction: "rtl" };
+        recipe
+          .text(
+            "\u05e9\u05dc\u05d5\u05dd" +
+              separator +
+              "\u05e2\u05d5\u05dc\u05dd ",
+            10,
+            10,
+            {
+              ...options,
+              flow: true,
+            },
+          )
+          .text("\u05d0\u05d1\u05d2", { ...options, color: "#f00" })
+          .text("", { flow: false });
+      });
+      // The separator is not drawn; the runs after it are reordered as the
+      // second line.
+      assert.deepEqual(
+        [0, 1].map((line) =>
+          lineRuns(runs, line).map((run) => run.text.trim()),
+        ),
+        [
+          ["\u05dd\u05d5\u05dc\u05e9"],
+          ["\u05d2\u05d1\u05d0", "\u05dd\u05dc\u05d5\u05e2"],
+        ],
+        JSON.stringify(separator),
+      );
+    }
+  });
+
   it("keeps words joined by any non-breaking space on one line", async function () {
     for (const space of ["\u00a0", "\u2007", "\u202f"]) {
       const runs = await drawPage("text-direction-nbsp", (recipe) => {

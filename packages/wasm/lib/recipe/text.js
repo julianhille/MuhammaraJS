@@ -249,6 +249,20 @@ function htmlPartsWidth(parts, measure, options) {
   }, 0);
 }
 
+// Every paragraph separator ends a line, as a line feed does.
+var LINE_BREAK_SPLIT = /(\r\n|[\n\v\f\r\u0085\u2028\u2029])/;
+
+/**
+ * Splits a run's text at its line breaks.
+ * @param {string} value - The run's text.
+ * @returns {string[]} The text between breaks, with each break as "\n".
+ */
+function breakFragments(value) {
+  return String(value)
+    .split(LINE_BREAK_SPLIT)
+    .map((fragment, index) => (index % 2 ? "\n" : fragment));
+}
+
 /**
  * Lays out styled HTML into lines while preserving list and break structure.
  * @param {object[]} source - Text objects from htmlToTextObjects(), or
@@ -312,12 +326,10 @@ function htmlLines(source, width, measure, options, wrap) {
       paragraphTexts.push("");
     }
     var first = paragraphTexts.length - 1;
-    String(sourcePart.value)
-      .split(/(\n)/)
-      .forEach((fragment) => {
-        if (fragment === "\n") paragraphTexts.push("");
-        else paragraphTexts[paragraphTexts.length - 1] += fragment;
-      });
+    breakFragments(sourcePart.value).forEach((fragment) => {
+      if (fragment === "\n") paragraphTexts.push("");
+      else paragraphTexts[paragraphTexts.length - 1] += fragment;
+    });
     return first;
   });
   var resolved = new Map();
@@ -359,84 +371,82 @@ function htmlLines(source, width, measure, options, wrap) {
         ? " ".repeat(indent + String(sourcePart.value).length + 1)
         : " ".repeat(indent);
     }
-    String(sourcePart.value)
-      .split(/(\n)/)
-      .forEach((fragment) => {
-        var direction = directionOf(paragraph, requested);
-        if (!fragment) return;
-        if (fragment === "\n") {
-          paragraph++;
-          flush(true, true);
-          // Native re-applies the indent on every line of a list item, so a
-          // <br> or block break inside one stays indented.
-          linePrefix = " ".repeat(indent);
-          truncated = false;
-          return;
+    breakFragments(sourcePart.value).forEach((fragment) => {
+      var direction = directionOf(paragraph, requested);
+      if (!fragment) return;
+      if (fragment === "\n") {
+        paragraph++;
+        flush(true, true);
+        // Native re-applies the indent on every line of a list item, so a
+        // <br> or block break inside one stays indented.
+        linePrefix = " ".repeat(indent);
+        truncated = false;
+        return;
+      }
+      // Same word split as lines(); a leading \s* would carry a fragment
+      // boundary space onto the start of the next wrapped line.
+      var words = splitWords(fragment);
+      words.forEach((word) => {
+        if (truncated) return;
+        if (collapseLeadingSpace) {
+          collapseLeadingSpace = false;
+          var lastPart = parts[parts.length - 1];
+          if (lastPart && endsWithBreakableSpace(lastPart.text)) {
+            word = word.replace(/^(?:(?![\u00a0\u2007\u202f])\s)+/, "");
+            if (!word) return;
+          }
         }
-        // Same word split as lines(); a leading \s* would carry a fragment
-        // boundary space onto the start of the next wrapped line.
-        var words = splitWords(fragment);
-        words.forEach((word) => {
-          if (truncated) return;
-          if (collapseLeadingSpace) {
-            collapseLeadingSpace = false;
-            var lastPart = parts[parts.length - 1];
-            if (lastPart && endsWithBreakableSpace(lastPart.text)) {
-              word = word.replace(/^(?:(?![\u00a0\u2007\u202f])\s)+/, "");
-              if (!word) return;
-            }
-          }
-          word = linePrefix + word;
-          linePrefix = "";
-          var candidate = [
-            ...parts,
-            {
-              text: word,
-              styles: sourcePart.styles,
-              marker: listMarker,
-              direction,
-              runDirection,
-            },
-          ];
-          var previousPart = parts[parts.length - 1];
-          // As in native, a line may also break where one flowed run ends
-          // and the next begins.
-          var breakBefore =
-            parts.length &&
-            (endsWithBreakableSpace(previousPart.text) ||
-              startsWithBreakableSpace(word) ||
-              (sourcePart.styles?._flowRun !== undefined &&
-                previousPart.styles?._flowRun !== sourcePart.styles._flowRun));
-          if (
-            width &&
-            breakBefore &&
-            htmlPartsWidth(candidate, measure, options) > width
-          ) {
-            if (wrap === TextWrap.AUTO || wrap === true) {
-              flush(false);
-              if (!hasText(word)) return;
-              word = linePrefix + word;
-              linePrefix = "";
-            } else if (wrap === TextWrap.ELLIPSIS) {
-              ellipsizeHtmlParts(parts, width, measure, options);
-              truncated = true;
-              return;
-            } else if (wrap !== TextWrap.CLIP) {
-              truncated = true;
-              return;
-            }
-          }
-          if (!parts.length && !hasText(word) && !sourcePart.keepLeadingSpace)
-            return;
-          parts.push({
+        word = linePrefix + word;
+        linePrefix = "";
+        var candidate = [
+          ...parts,
+          {
             text: word,
             styles: sourcePart.styles,
             marker: listMarker,
             direction,
             runDirection,
-          });
+          },
+        ];
+        var previousPart = parts[parts.length - 1];
+        // As in native, a line may also break where one flowed run ends
+        // and the next begins.
+        var breakBefore =
+          parts.length &&
+          (endsWithBreakableSpace(previousPart.text) ||
+            startsWithBreakableSpace(word) ||
+            (sourcePart.styles?._flowRun !== undefined &&
+              previousPart.styles?._flowRun !== sourcePart.styles._flowRun));
+        if (
+          width &&
+          breakBefore &&
+          htmlPartsWidth(candidate, measure, options) > width
+        ) {
+          if (wrap === TextWrap.AUTO || wrap === true) {
+            flush(false);
+            if (!hasText(word)) return;
+            word = linePrefix + word;
+            linePrefix = "";
+          } else if (wrap === TextWrap.ELLIPSIS) {
+            ellipsizeHtmlParts(parts, width, measure, options);
+            truncated = true;
+            return;
+          } else if (wrap !== TextWrap.CLIP) {
+            truncated = true;
+            return;
+          }
+        }
+        if (!parts.length && !hasText(word) && !sourcePart.keepLeadingSpace)
+          return;
+        parts.push({
+          text: word,
+          styles: sourcePart.styles,
+          marker: listMarker,
+          direction,
+          runDirection,
         });
       });
+    });
   });
   if (parts.length || !result.length) flush(true, !result.length);
   return result;
