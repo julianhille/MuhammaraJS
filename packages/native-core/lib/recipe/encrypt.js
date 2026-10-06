@@ -118,15 +118,21 @@ exports.encrypt = function encrypt(options = {}) {
  * Re-encrypt the finished output with the encrypt() options. A path source
  * re-encrypts the output file in place; a Buffer source re-encrypts the
  * collected output bytes, so the callback and an output path receive the
- * encrypted PDF.
+ * encrypted PDF. Nothing happens when encrypt() was given no password, as on
+ * Wasm. The finished output is opened with the password the Recipe was
+ * created with, so a PDF whose constructor options already encrypted it can
+ * still be re-encrypted with new passwords.
  * @private
  * @returns {void}
  * @throws {Error} If the output cannot be renamed, re-encrypted or removed.
  */
 exports._encrypt = function _encrypt() {
-  if (!this.encryption_) {
+  if (!this.encryption_ || Object.keys(this.encryption_).length === 0) {
     return;
   }
+  const recryptOptions = Object.assign({}, this.encryption_, {
+    password: this.encryptOptions.password || this.encryption_.password,
+  });
 
   if (this.isBufferSrc) {
     const encrypted = new PDFWStreamForBuffer();
@@ -135,14 +141,16 @@ exports._encrypt = function _encrypt() {
         this.outStream.buffer || Buffer.alloc(0),
       ),
       encrypted,
-      this.encryption_,
+      recryptOptions,
     );
-    this.outStream = encrypted;
+    // Replace the collected bytes instead of the stream, so the unencrypted
+    // output is dropped rather than kept alive next to the encrypted one.
+    this.outStream.buffer = encrypted.buffer;
     return;
   }
 
   const tmp = this.output + ".tmp.pdf";
   fs.renameSync(this.output, tmp);
-  this.muhammara.recrypt(tmp, this.output, this.encryption_);
+  this.muhammara.recrypt(tmp, this.output, recryptOptions);
   fs.unlinkSync(tmp);
 };
