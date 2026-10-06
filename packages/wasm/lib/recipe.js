@@ -697,7 +697,19 @@ export function createRecipeFactory({
           this._save();
           this._setSeparationColor(fill, false);
         }
-        if (pieces.length === 1) {
+        // The UTF-8 byte offsets where each piece but the last ends; the
+        // spacing after them is taken back, as on native.
+        var breaks = [];
+        var offset = 0;
+        pieces.slice(0, -1).forEach((piece) => {
+          offset += encoder.encode(piece).length;
+          breaks.push(offset);
+        });
+        var breaksPointer = breaks.length
+          ? module._malloc(breaks.length * 4)
+          : 0;
+        try {
+          if (breaksPointer) module.HEAP32.set(breaks, breaksPointer >>> 2);
           withString(value, (textPointer) =>
             withString(fontPath, (fontPointer) => {
               call(
@@ -711,42 +723,13 @@ export function createRecipeFactory({
                 packedFill.space,
                 packedFill.value,
                 characterSpacing,
+                breaksPointer,
+                breaks.length,
               );
             }),
           );
-        } else {
-          // The UTF-8 byte offsets where each piece but the last ends; the
-          // spacing after them is taken back, as on native.
-          var breaks = [];
-          var offset = 0;
-          pieces.slice(0, -1).forEach((piece) => {
-            offset += encoder.encode(piece).length;
-            breaks.push(offset);
-          });
-          var breaksPointer = module._malloc(breaks.length * 4);
-          try {
-            module.HEAP32.set(breaks, breaksPointer >>> 2);
-            withString(value, (textPointer) =>
-              withString(fontPath, (fontPointer) => {
-                call(
-                  "_muhammara_wasm_recipe_spaced_text",
-                  this._recipe,
-                  point.nx,
-                  point.ny,
-                  textPointer,
-                  fontPointer,
-                  fontSize,
-                  packedFill.space,
-                  packedFill.value,
-                  characterSpacing,
-                  breaksPointer,
-                  breaks.length,
-                );
-              }),
-            );
-          } finally {
-            module._free(breaksPointer);
-          }
+        } finally {
+          if (breaksPointer) module._free(breaksPointer);
         }
         if (separation) this._restore();
       }

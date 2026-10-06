@@ -853,14 +853,36 @@ int muhammara_wasm_recipe_set_opacity(WasmRecipe* recipe, double opacity) {
 // colorSpace is 0 for gray, 1 for RGB, 2 for CMYK, or 3 to keep the current
 // fill color, such as a Separation color. color packs one byte per component
 // in PDFWriter's order: 0xGG, 0xRRGGBB, or 0xCCMMYYKK; code 3 ignores it.
+// breaks are UTF-8 byte offsets into text, ascending, where a piece ends: a
+// TJ adjustment after each piece but the last takes the character spacing
+// back, so the points drawn before a right-to-left letter stay over it.
 int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
                                const char* text, const char* fontPath,
                                double fontSize, int colorSpace,
-                               unsigned int color, double characterSpacing) {
+                               unsigned int color, double characterSpacing,
+                               const int* breaks, int breakCount) {
   if (recipe == nullptr || recipe->context == nullptr || text == nullptr ||
       fontPath == nullptr || fontSize <= 0 || colorSpace < 0 ||
-      colorSpace > 3 || !std::isfinite(characterSpacing)) {
+      colorSpace > 3 || !std::isfinite(characterSpacing) || breakCount < 0 ||
+      (breakCount > 0 && breaks == nullptr)) {
     return 0;
+  }
+  StringOrDoubleList pieces;
+  if (breakCount > 0) {
+    std::string value(text);
+    size_t start = 0;
+    double back = characterSpacing * 1000 / fontSize;
+    for (int index = 0; index < breakCount; ++index) {
+      if (breaks[index] <= 0 || static_cast<size_t>(breaks[index]) <= start ||
+          static_cast<size_t>(breaks[index]) >= value.size()) {
+        return 0;
+      }
+      size_t end = static_cast<size_t>(breaks[index]);
+      pieces.push_back(StringOrDouble(value.substr(start, end - start)));
+      pieces.push_back(StringOrDouble(back));
+      start = end;
+    }
+    pieces.push_back(StringOrDouble(value.substr(start)));
   }
   // Color space 3 keeps the current fill color, such as a Separation color
   // the caller selected with cs and scn.
@@ -881,12 +903,20 @@ int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
     PDFHummus::EStatusCode endTextStatus = recipe->context->ET();
     if (status == PDFHummus::eSuccess) status = endTextStatus;
   }
-  if (status == PDFHummus::eSuccess && keepColor) {
-    status = recipe->context->BT();
+  if (status == PDFHummus::eSuccess && (keepColor || breakCount > 0)) {
+    if (!keepColor) {
+      status = recipe->context->SetupColor(AbstractContentContext::eFill,
+                                           color, textColorSpace,
+                                           NO_OPACITY_VALUE);
+    }
+    if (status == PDFHummus::eSuccess) status = recipe->context->BT();
     if (status == PDFHummus::eSuccess) {
       recipe->context->Tf(font, fontSize);
       status = recipe->context->Tm(1, 0, 0, 1, x, y);
-      if (status == PDFHummus::eSuccess) status = recipe->context->Tj(text);
+      if (status == PDFHummus::eSuccess) {
+        status = breakCount > 0 ? recipe->context->TJ(pieces)
+                                : recipe->context->Tj(text);
+      }
       PDFHummus::EStatusCode endTextStatus = recipe->context->ET();
       if (status == PDFHummus::eSuccess) status = endTextStatus;
     }
@@ -895,66 +925,6 @@ int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
         x, y, text,
         AbstractContentContext::TextOptions(font, fontSize, textColorSpace,
                                             color));
-  }
-  PDFHummus::EStatusCode restoreStatus = recipe->context->Q();
-  return status == PDFHummus::eSuccess &&
-         restoreStatus == PDFHummus::eSuccess;
-}
-
-// Draws text with character spacing taken back after each break: UTF-8 byte
-// offsets into text, ascending, where a piece ends. A TJ adjustment after
-// each piece but the last keeps the spacing out of the boundary, so the
-// points drawn before a right-to-left letter stay over it. colorSpace and
-// color are as for muhammara_wasm_recipe_text.
-int muhammara_wasm_recipe_spaced_text(WasmRecipe* recipe, double x, double y,
-                                      const char* text, const char* fontPath,
-                                      double fontSize, int colorSpace,
-                                      unsigned int color,
-                                      double characterSpacing,
-                                      const int* breaks, int breakCount) {
-  if (recipe == nullptr || recipe->context == nullptr || text == nullptr ||
-      fontPath == nullptr || fontSize <= 0 || colorSpace < 0 ||
-      colorSpace > 3 || !std::isfinite(characterSpacing) || breakCount < 0 ||
-      (breakCount > 0 && breaks == nullptr)) {
-    return 0;
-  }
-  std::string value(text);
-  StringOrDoubleList items;
-  size_t start = 0;
-  double back = characterSpacing * 1000 / fontSize;
-  for (int index = 0; index < breakCount; ++index) {
-    if (breaks[index] <= 0 || static_cast<size_t>(breaks[index]) <= start ||
-        static_cast<size_t>(breaks[index]) >= value.size()) {
-      return 0;
-    }
-    size_t end = static_cast<size_t>(breaks[index]);
-    items.push_back(StringOrDouble(value.substr(start, end - start)));
-    items.push_back(StringOrDouble(back));
-    start = end;
-  }
-  items.push_back(StringOrDouble(value.substr(start)));
-  PDFUsedFont* font = recipe->writer.GetFontForFile(fontPath);
-  if (font == nullptr) {
-    return 0;
-  }
-  if (recipe->context->q() != PDFHummus::eSuccess) return 0;
-  PDFHummus::EStatusCode status = recipe->context->BT();
-  if (status == PDFHummus::eSuccess) {
-    recipe->context->Tc(characterSpacing);
-    // Code 3 keeps the current fill color, such as a Separation color.
-    if (colorSpace != 3) {
-      recipe->context->SetupColor(
-          AbstractContentContext::eFill, color,
-          colorSpace == 0   ? AbstractContentContext::eGray
-          : colorSpace == 1 ? AbstractContentContext::eRGB
-                            : AbstractContentContext::eCMYK,
-          NO_OPACITY_VALUE);
-    }
-    recipe->context->Tf(font, fontSize);
-    status = recipe->context->Tm(1, 0, 0, 1, x, y);
-    if (status == PDFHummus::eSuccess) status = recipe->context->TJ(items);
-    PDFHummus::EStatusCode endTextStatus = recipe->context->ET();
-    if (status == PDFHummus::eSuccess) status = endTextStatus;
   }
   PDFHummus::EStatusCode restoreStatus = recipe->context->Q();
   return status == PDFHummus::eSuccess &&
