@@ -1322,6 +1322,63 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("ends a flowed paragraph where an HTML block element ends", function () {
+    var runs = drawPage("text-direction-flow-html-block", (recipe) => {
+      var options = { font: "arial", size: 12, direction: "auto" };
+      recipe
+        .text("\u05e9\u05dc\u05d5\u05dd ", 50, 50, { ...options, flow: true })
+        .text("<p>x</p>", { ...options, html: true })
+        .text("123 def.", { ...options, html: false })
+        .text("", { flow: false });
+    });
+    // "x" starts a paragraph of its own, which the plain run after it
+    // continues on the same line.
+    assert.deepEqual(
+      runs.map((run) => run.text),
+      ["\u05dd\u05d5\u05dc\u05e9", "x", "123 def."],
+    );
+  });
+
+  it("continues a right-to-left flowed paragraph with inline HTML", function () {
+    var runs = drawPage("text-direction-flow-html-inline", (recipe) => {
+      var options = { font: "arial", size: 12, direction: "auto" };
+      recipe
+        .text("\u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd ", 50, 50, {
+          ...options,
+          flow: true,
+          textBox: { width: 120 },
+        })
+        .text("<span>abc def ghi jkl mno.</span>", { ...options, html: true })
+        .text("", { flow: false });
+    });
+    // The paragraph starts with Hebrew, so its wrapped line is right to left.
+    assert.deepEqual(
+      runs.map((run) => run.text),
+      [
+        "abc def ghi ",
+        "\u05dd\u05dc\u05d5\u05e2 \u05dd\u05d5\u05dc\u05e9",
+        ".jkl mno",
+      ],
+    );
+  });
+
+  it("gives every flowed HTML block element a paragraph of its own", function () {
+    var runs = drawPage("text-direction-flow-html-blocks", (recipe) => {
+      var options = { font: "arial", size: 12, html: true, direction: "auto" };
+      recipe
+        .text("<p>\u05e9\u05dc\u05d5\u05dd</p>", 50, 50, {
+          ...options,
+          flow: true,
+        })
+        .text("<p>abc def.</p>", options)
+        .text("", { flow: false });
+    });
+    assert.deepEqual(
+      runs.map((run) => run.text),
+      ["\u05dd\u05d5\u05dc\u05e9", "abc def."],
+    );
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {

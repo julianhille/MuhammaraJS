@@ -304,14 +304,21 @@ function htmlLines(source, width, measure, options, wrap) {
   // Every paragraph resolves its direction over all of its runs, as native
   // does, so a wrapped line keeps its paragraph's direction. A flowed run
   // resolves it with the direction its own call asked for.
+  // A flowed HTML run that starts a new line after a block element starts a
+  // new paragraph too.
   var paragraphTexts = [""];
-  source.forEach((sourcePart) => {
+  var firstParagraphs = source.map((sourcePart) => {
+    if (sourcePart.breakBefore && paragraphTexts[paragraphTexts.length - 1]) {
+      paragraphTexts.push("");
+    }
+    var first = paragraphTexts.length - 1;
     String(sourcePart.value)
       .split(/(\n)/)
       .forEach((fragment) => {
         if (fragment === "\n") paragraphTexts.push("");
         else paragraphTexts[paragraphTexts.length - 1] += fragment;
       });
+    return first;
   });
   var resolved = new Map();
   /**
@@ -328,7 +335,8 @@ function htmlLines(source, width, measure, options, wrap) {
     return resolved.get(key);
   };
   var paragraph = 0;
-  source.forEach((sourcePart) => {
+  source.forEach((sourcePart, sourceIndex) => {
+    paragraph = firstParagraphs[sourceIndex];
     var listMarker = false;
     // A flowed run keeps the direction its call asked for; the runs of one
     // text() call share it.

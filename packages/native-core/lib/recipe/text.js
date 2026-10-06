@@ -1631,7 +1631,17 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     }
   };
   if (pathOptions.html) {
-    assignParagraphDirections(textObjects, pathOptions.direction);
+    // HTML in a flow continues the paragraph the runs before it left open,
+    // as it continues their line, unless it starts a new line.
+    if (this._flowEndsBlock || pathOptions.startsBlock) {
+      closeFlowParagraph(this);
+    }
+    const openParagraph = assignParagraphDirections(
+      textObjects,
+      pathOptions.direction,
+      this._flowParagraph || "",
+    );
+    this._flowParagraph = this._flow ? openParagraph : "";
   }
   // Top-level nodes share a line, as children of a block element do, so
   // inline runs outside any element are not split onto separate lines. In a
@@ -1959,9 +1969,12 @@ function justify(left, x, wto, textBox, position) {
  * @private
  * @param {Object[]} textObjects - The HTML layout nodes from htmlToTextObjects().
  * @param {string} [direction] - The `direction` text option.
- * @returns {void}
+ * @param {string} openText - The text of the flow paragraph the first
+ *   paragraph continues.
+ * @returns {string} The text of the last paragraph, which a later flowed run
+ *   on the same line continues.
  */
-function assignParagraphDirections(textObjects, direction) {
+function assignParagraphDirections(textObjects, direction, openText) {
   const paragraphs = [[]];
   /**
    * Start a new paragraph unless the current one is still empty.
@@ -1988,15 +2001,36 @@ function assignParagraphDirections(textObjects, direction) {
     if (node.needsLineBreaker) endParagraph();
   };
   textObjects.forEach(visit);
-  paragraphs.forEach((nodes) => {
-    const resolved = resolveDirection(
-      nodes.map((node) => node.value).join(""),
-      direction,
-    );
+  const texts = paragraphs.map(
+    (nodes, index) =>
+      (index ? "" : openText) + nodes.map((node) => node.value).join(""),
+  );
+  paragraphs.forEach((nodes, index) => {
+    const resolved = resolveDirection(texts[index], direction);
     nodes.forEach((node) => {
       node.paragraphDirection = resolved;
     });
   });
+  // A closed block element ends its paragraph, but a later plain run still
+  // continues its line, and with it its paragraph.
+  return texts
+    .filter((text, index) => paragraphs[index].length || !index)
+    .pop();
+}
+
+/**
+ * End a flow's open paragraph: lines still waiting for its direction take
+ * the one it has, and the next flowed run starts a new paragraph.
+ * @private
+ * @param {Object} recipe - The Recipe.
+ * @returns {void}
+ */
+function closeFlowParagraph(recipe) {
+  const closed = resolveDirection(recipe._flowParagraph, TextDirection.AUTO);
+  (recipe._previousTextObjects || []).forEach((textObject) => {
+    if (textObject.direction === null) textObject.direction = closed;
+  });
+  recipe._flowParagraph = "";
 }
 
 /**
@@ -2680,11 +2714,7 @@ exports.movedown = function movedown(lines = 1, returnCoords = false) {
     markLineComplete(this._previousTextObjects, lines);
     // The next flowed run starts a new paragraph. Lines still waiting for
     // this paragraph's direction take the one it has without that run.
-    const closed = resolveDirection(this._flowParagraph, TextDirection.AUTO);
-    this._previousTextObjects.forEach((textObject) => {
-      if (textObject.direction === null) textObject.direction = closed;
-    });
-    this._flowParagraph = "";
+    closeFlowParagraph(this);
     this._previousTextObjects[this._previousTextObjects.length - 1].lastLine =
       true;
   }
