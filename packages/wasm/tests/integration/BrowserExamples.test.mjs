@@ -48,11 +48,25 @@ describe("Browser how-to examples", function () {
         "passwords",
         "benchmark",
         "replace-text",
+        "rtl-text",
         "watermark",
         "find-text",
         "inspect-pdf",
       ],
     );
+  });
+
+  it("draws Hebrew in visual order in the right-to-left example", async function () {
+    var result = await runHowToExample("rtl-text", { assets });
+    // The first line is drawn as given; the others are reordered.
+    assert.deepEqual(result.summary.drawnHebrew.slice(0, 3), [
+      "\u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd",
+      "\u05dd\u05dc\u05d5\u05e2 \u05dd\u05d5\u05dc\u05e9",
+      "(\u05de\u05f4\u05e2\u05de \u05dc\u05dc\u05d5\u05db) \u05d7\u05f4\u05e9 120 \u05e8\u05d9\u05d7\u05de",
+    ]);
+    await assert.rejects(runHowToExample("rtl-text", { assets: {} }), {
+      message: /font with Hebrew glyphs/,
+    });
   });
 
   it("renders a tab for every focused example", async function () {

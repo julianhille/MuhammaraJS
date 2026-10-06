@@ -53,6 +53,10 @@ async function stagePagesExample() {
     moduleOptionsPath,
     moduleOptions
       .replace('from "../../index.js"', 'from "./index.js"')
+      .replace(
+        '"../../../../node_modules/bidi-js/dist/bidi.mjs"',
+        '"./bidi-js/bidi.mjs"',
+      )
       .replace('"../../dist/', '"./dist/'),
   );
   await rm(path.join(targetRoot, "README.md"));
