@@ -1756,6 +1756,40 @@ describe("Recipe text direction", function () {
     ]);
   });
 
+  it("ends a flowed line at any paragraph separator that ends a run", function () {
+    var options = { font: "arial", size: 12, direction: "auto" };
+    var draw = (separator, movedown) =>
+      drawPage("text-direction-flow-trailing-separator", (recipe) => {
+        recipe.text("\u05e9\u05dc\u05d5\u05dd" + separator, 50, 50, {
+          ...options,
+          flow: true,
+          textBox: { width: 300 },
+        });
+        if (movedown) recipe.movedown(0);
+        recipe.text("\u05e2\u05d5\u05dc\u05dd", { ...options, flow: false });
+      });
+    for (var movedown of [false, true]) {
+      var expected = draw("\n", movedown).map((run) => [run.text, run.y]);
+      for (var separator of [
+        "\u2029",
+        "\u2028",
+        "\r\n",
+        "\r",
+        "\v",
+        "\f",
+        "\u0085",
+      ]) {
+        // Not drawn; the next run starts the next line, as after "\n".
+        assert.deepEqual(
+          draw(separator, movedown).map((run) => [run.text, run.y]),
+          expected,
+          JSON.stringify(separator) + (movedown ? " with movedown(0)" : ""),
+        );
+      }
+      assert.notEqual(expected[0][1], expected[1][1]);
+    }
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {

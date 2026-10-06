@@ -16,6 +16,9 @@ const {
   visualRuns,
   visualWords,
 } = require("../text-direction");
+
+// The line breaks that end a text, every paragraph separator among them.
+const TRAILING_LINE_BREAKS = /(?:\r\n|[\n\v\f\r\u0085\u2028\u2029])+$/;
 const {
   TextWrap,
   TextAlign,
@@ -451,9 +454,9 @@ exports.text = function text(text = "", x, y, options = {}) {
   // instead of being drawn.
   let trailingBreaks = 0;
   if (this._flow) {
-    const breaks = /\n+$/.exec(text);
+    const breaks = TRAILING_LINE_BREAKS.exec(text);
     if (breaks) {
-      trailingBreaks = breaks[0].length;
+      trailingBreaks = splitParagraphs(breaks[0]).length - 1;
       text = text.slice(0, breaks.index);
       if (text === "" && this._previousTextObjects.length) {
         return this.movedown(trailingBreaks);

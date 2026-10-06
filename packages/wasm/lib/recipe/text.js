@@ -251,6 +251,7 @@ function htmlPartsWidth(parts, measure, options) {
 
 // Every paragraph separator ends a line, as a line feed does.
 var LINE_BREAK_SPLIT = /(\r\n|[\n\v\f\r\u0085\u2028\u2029])/;
+var ENDS_WITH_LINE_BREAK = /[\n\v\f\r\u0085\u2028\u2029]$/;
 
 /**
  * Splits a run's text at its line breaks.
@@ -1067,7 +1068,7 @@ export function createTextMethods({ drawText, measure, module }) {
         // not laid out yet, so the coordinates are its origin, as in native.
         var lastValue = flow.source[flow.source.length - 1]?.value ?? "";
         flow.endsBlock = false;
-        if (count > 0 || !/\n$/.test(lastValue))
+        if (count > 0 || !ENDS_WITH_LINE_BREAK.test(lastValue))
           flow.source.push(
             ...flowRunSource(
               "\n".repeat(Math.max(count, 1)),
