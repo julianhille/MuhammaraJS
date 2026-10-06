@@ -1884,11 +1884,11 @@ export function createTextMethods({ drawText, measure, module }) {
               top +
               (entryHeights[lastLineIndex] - this._lastLineHeight),
       };
-      // As in native, styled text that ends its last line, with a line
+      // As in native, styled text that ends its last line, with any line
       // break or with movedown() in a flow, leaves the cursor on the line
       // after it.
       var lastPart = source?.findLast((part) => String(part.value) !== "");
-      if (/\n$/.test(lastPart?.value ?? "")) {
+      if (ENDS_WITH_LINE_BREAK.test(lastPart?.value ?? "")) {
         this._textCursor.y += this._lastLineHeight;
       }
       this._textBoxOrigin = { x, y };

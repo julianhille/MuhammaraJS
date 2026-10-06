@@ -1808,6 +1808,32 @@ describe("Recipe text direction", function () {
     }
   });
 
+  it("moves the cursor below a flow that ends with any paragraph separator", function () {
+    var options = { font: "arial", size: 12, direction: "auto" };
+    var draw = (separator) =>
+      drawPage("text-direction-flow-cursor", (recipe) => {
+        recipe
+          .text("\u05e9\u05dc\u05d5\u05dd" + separator, 50, 50, {
+            ...options,
+            flow: true,
+            textBox: { width: 300 },
+          })
+          .text("abc" + separator, options)
+          .text("", { ...options, flow: false })
+          .text("after", options);
+      });
+    var expected = draw("\n").map((run) => [run.text, run.y]);
+    for (var separator of ["\u2029", "\u2028", "\r", "\v", "\f", "\u0085"]) {
+      assert.deepEqual(
+        draw(separator).map((run) => [run.text, run.y]),
+        expected,
+        JSON.stringify(separator),
+      );
+    }
+    // "after" starts the line below "abc".
+    assert.ok(expected[2][1] < expected[1][1]);
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {
