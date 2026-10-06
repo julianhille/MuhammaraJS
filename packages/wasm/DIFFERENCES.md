@@ -100,6 +100,12 @@ bytes use the family name `default`. The low-level runtime never imports Roboto.
 These initialization options are specific to the byte-first Wasm factory;
 native Recipe loads its bundled fonts synchronously.
 
+Wasm loads bidi-js, which the `direction` option reorders right-to-left text
+with, by importing `"bidi-js"` when `createMuhammaraWasm()` or
+`createRecipe()` runs, unless given `bidi: false`. The Wasm-only `loadBidi()`
+loads it later, from that import or from a module the caller passes. Without
+it, calls that have to order text by direction throw. Native always has it.
+
 No filesystem PDF output or plugin loader is emulated. Recipe always returns an
 owned `Uint8Array` from `endPDF()` and its optional callback; custom assets must
 be registered from bytes. Integer Recipe version enums (`10` through `17` and

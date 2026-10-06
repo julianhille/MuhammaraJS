@@ -7,6 +7,7 @@ import {
   TextDirection,
   createMuhammaraWasm,
   createRecipe,
+  loadBidi,
 } from "../../index.js";
 import {
   drawnText,
@@ -539,6 +540,44 @@ describe("TextDirection", function () {
         ),
         "none;Reordering right-to-left text needs bidi-js",
       );
+    });
+
+    it("loads bidi-js later with loadBidi()", async function () {
+      this.timeout(30000);
+      var index = JSON.stringify(
+        new URL("../../index.js", import.meta.url).href,
+      );
+      for (var load of [
+        "loadBidi()",
+        `loadBidi(await import(${JSON.stringify(import.meta.resolve("bidi-js"))}))`,
+      ]) {
+        assert.equal(
+          await freshProcess(
+            [
+              `var { loadBidi } = await import(${index});`,
+              "var Recipe = await createRecipe({ defaultFont: false, recryptWorker: false, bidi: false });",
+              "try {",
+              '  toVisual(text, "auto");',
+              "} catch (error) {",
+              '  process.stdout.write("before: " + error.message + ";");',
+              "}",
+              `await ${load};`,
+              'process.stdout.write(toVisual(text, "auto"));',
+            ].join("\n"),
+          ),
+          "before: Reordering right-to-left text needs bidi-js;abc \u05dd\u05d5\u05dc\u05e9",
+          load,
+        );
+      }
+    });
+
+    it("rejects a loadBidi() source that is not bidi-js", async function () {
+      for (var source of [null, "bidi-js", {}]) {
+        await assert.rejects(loadBidi(source), {
+          name: "TypeError",
+          message: "loadBidi() takes the bidi-js module or its default export",
+        });
+      }
     });
 
     it("rejects a bidi option that is not a boolean", async function () {

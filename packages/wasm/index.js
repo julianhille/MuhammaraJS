@@ -41,23 +41,63 @@ import {
 import { TextDirection, useBidi } from "./lib/text-direction.js";
 
 var bidiLoading;
+// Whether bidi-js was loaded, by a factory or by loadBidi().
+var bidiLoaded = false;
 
 /**
- * Loads bidi-js, which reorders right-to-left text, once per page. Bundlers
+ * Imports bidi-js, which reorders right-to-left text, once per page. Bundlers
  * keep the dynamic import as a chunk; without one, the page maps the bare
  * "bidi-js" specifier with an import map. A failed load fails the calls that
- * have to order text by direction, and the next factory call tries again.
- * @returns {Promise<void>} Settles once bidi-js is loaded or has failed.
+ * have to order text by direction, unless bidi-js was loaded before, and the
+ * next call tries again.
+ * @returns {Promise<Error|undefined>} Settles once bidi-js is loaded, with
+ *   the error when the import failed.
  */
-function loadBidi() {
+function importBidi() {
+  if (bidiLoaded) return Promise.resolve(undefined);
   bidiLoading ??= import("bidi-js").then(
-    (bidiModule) => useBidi(bidiModule.default),
+    (bidiModule) => {
+      useBidi(bidiModule.default);
+      bidiLoaded = true;
+      return undefined;
+    },
     (error) => {
       bidiLoading = undefined;
-      useBidi(error);
+      if (!bidiLoaded) useBidi(error);
+      return error;
     },
   );
   return bidiLoading;
+}
+
+/**
+ * Loads bidi-js, which the `direction` option reorders right-to-left text
+ * with, after `createMuhammaraWasm()` or `createRecipe()` skipped it with
+ * `bidi: false` or could not import it. Instances already created reorder
+ * text as soon as it resolves. Without a source, it imports `"bidi-js"`, as
+ * the factories do; a page or Worker that cannot resolve that specifier
+ * passes the module it imported itself.
+ * @param {object|Function} [source] - The bidi-js module, or its default
+ *   export.
+ * @returns {Promise<void>} Resolves once text can be reordered.
+ * @throws {TypeError} If `source` is neither the module nor its default
+ *   export.
+ * @throws {Error} If `"bidi-js"` cannot be imported; the promise rejects.
+ */
+export async function loadBidi(source) {
+  if (source !== undefined) {
+    var factory = typeof source === "function" ? source : source?.default;
+    if (typeof factory !== "function") {
+      throw new TypeError(
+        "loadBidi() takes the bidi-js module or its default export",
+      );
+    }
+    useBidi(factory);
+    bidiLoaded = true;
+    return;
+  }
+  var error = await importBidi();
+  if (error) throw error;
 }
 
 export {
@@ -152,9 +192,9 @@ async function createRuntime(options) {
         ? wasmBinary.slice(0)
         : Uint8Array.prototype.slice.call(wasmBinary);
   }
-  var bidiLoaded = useBidiJs && loadBidi();
+  var bidiImport = useBidiJs && importBidi();
   var module = await createModule(moduleOptions);
-  await bidiLoaded;
+  await bidiImport;
   /**
    * Copies byte input and enforces `maxInputBytes`.
    * @param {ByteSource} value - Bytes.

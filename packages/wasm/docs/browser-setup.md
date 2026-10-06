@@ -59,9 +59,24 @@ loading it when the page never sets `direction`. Without bidi-js, whether
 skipped or unresolved, everything else works, and every call that has to order
 text by direction throws an error that names bidi-js instead of drawing the
 text in the wrong order: text with right-to-left characters, `"rtl"` text,
-and a line whose flowed runs ask for different directions. Module Workers do not read the page's
-import map in every browser; reorder text on the page there, or bundle the
-Worker.
+and a line whose flowed runs ask for different directions.
+
+Module Workers do not read the page's import map in every browser; bundle
+the Worker, or load bidi-js there yourself.
+
+Call `loadBidi()` to load bidi-js later, for example once a document first
+needs right-to-left text after a factory ran with `bidi: false`. Instances
+already created reorder text as soon as it resolves. Without an argument it
+imports `"bidi-js"`; where that specifier does not resolve, pass the module
+you imported yourself:
+
+```js
+import { createRecipe, loadBidi } from "@muhammara/wasm";
+
+var Recipe = await createRecipe({ bidi: false });
+// Later, when right-to-left text is needed:
+await loadBidi(await import("/node_modules/bidi-js/dist/bidi.mjs"));
+```
 
 ## Work With Bytes
 

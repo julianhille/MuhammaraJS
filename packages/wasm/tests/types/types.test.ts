@@ -5,6 +5,7 @@ import {
   PDFImageType,
   createMuhammaraWasm,
   createRecipe,
+  loadBidi,
   DeviceColorSpace as DeviceColorSpaces,
   ImageFit as ImageFitPolicies,
   PageBox as PageBoxes,
@@ -188,6 +189,8 @@ async function usesLowLevelSurface() {
   // @ts-expect-error recryptWorker is a boolean.
   void createMuhammaraWasm({ recryptWorker: "no" });
   void createRecipe({ bidi: false });
+  void loadBidi();
+  void loadBidi(await import("bidi-js"));
   // @ts-expect-error bidi is a boolean.
   void createMuhammaraWasm({ bidi: "yes" });
   muhammara.recrypt(source, null);

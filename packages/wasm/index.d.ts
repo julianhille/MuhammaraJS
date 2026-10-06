@@ -2722,3 +2722,14 @@ export interface CreateRecipeOptions extends MuhammaraWasmOptions {
 export function createRecipe(
   options?: CreateRecipeOptions,
 ): Promise<RecipeConstructor>;
+
+/**
+ * Loads bidi-js, which the `direction` option reorders right-to-left text
+ * with, after `createMuhammaraWasm()` or `createRecipe()` skipped it with
+ * `bidi: false` or could not import it. Instances already created reorder
+ * text once it resolves. Without a source it imports `"bidi-js"`; a page or
+ * Worker that cannot resolve that specifier passes the bidi-js module, or
+ * its default export, that it imported itself. Rejects with a `TypeError`
+ * for any other source, or with the import's error.
+ */
+export function loadBidi(source?: object | (() => unknown)): Promise<void>;
