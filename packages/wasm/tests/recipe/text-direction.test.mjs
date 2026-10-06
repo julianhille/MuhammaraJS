@@ -370,13 +370,19 @@ describe("Recipe text direction", function () {
     });
     var line = lineRuns(runs);
     assert.deepEqual(
-      line.slice(-3).map((run) => run.text.trim()),
+      line
+        .map((run) => run.text.trim())
+        .filter(Boolean)
+        .slice(-3),
       ["שולש", "םייתש", "תחא"],
     );
-    // Justified, the line spans the box from edge to edge.
+    // Justified, the line spans the box from edge to edge. A space drawn by
+    // its own run may come after the last word.
     assert.ok(Math.abs(line[0].x - 20) < 1, JSON.stringify(line));
     assert.ok(
-      Math.abs(inkRight(line[line.length - 1], 12) - 140) < 1,
+      Math.abs(
+        inkRight(line.filter((run) => run.text.trim()).pop(), 12) - 140,
+      ) < 1,
       JSON.stringify(line),
     );
   });
@@ -410,7 +416,7 @@ describe("Recipe text direction", function () {
       run.x +
       writer
         .getFontForBytes("arial")
-        .calculateTextDimensions(run.text.trim(), size).xMax
+        .calculateTextDimensions(run.text.trimEnd(), size).xMax
     );
   }
 
@@ -434,9 +440,18 @@ describe("Recipe text direction", function () {
       ) < 0.5,
     );
     assert.ok(Math.abs(left[0].x - 20) < 0.5);
-    // Each word keeps a space before the next one.
+    // Each word keeps a space before the next one, which may be drawn by
+    // either run.
+    var font = muhammara.createWriter().getFontForBytes("arial");
+    var inkLeft = (run) => {
+      var word = font.calculateTextDimensions(run.text.trim(), 16);
+      return inkRight(run, 16) - word.xMax + word.xMin;
+    };
     right.slice(1).forEach((run, index) => {
-      assert.ok(run.x - inkRight(right[index], 16) > 3, JSON.stringify(right));
+      assert.ok(
+        inkLeft(run) - inkRight(right[index], 16) > 3,
+        JSON.stringify(right),
+      );
     });
   });
 
@@ -1214,7 +1229,9 @@ describe("Recipe text direction", function () {
     var last = line[line.length - 1];
     assert.ok(
       Math.abs(
-        last.x + font.calculateTextDimensions(last.text.trim(), 12).xMax - 300,
+        last.x +
+          font.calculateTextDimensions(last.text.trimEnd(), 12).xMax -
+          300,
       ) < 1,
       JSON.stringify(line),
     );
@@ -1352,11 +1369,12 @@ describe("Recipe text direction", function () {
         .text("", { flow: false });
     });
     // The paragraph starts with Hebrew, so its wrapped line is right to left.
+    // The space after the Hebrew run is its own, drawn on its left.
     assert.deepEqual(
       runs.map((run) => run.text),
       [
-        "abc def ghi ",
-        "\u05dd\u05dc\u05d5\u05e2 \u05dd\u05d5\u05dc\u05e9",
+        "abc def ghi",
+        " \u05dd\u05dc\u05d5\u05e2 \u05dd\u05d5\u05dc\u05e9",
         ".jkl mno",
       ],
     );
@@ -1448,6 +1466,28 @@ describe("Recipe text direction", function () {
         direction,
       );
     }
+  });
+
+  it("draws each space of a reordered line with its own run", function () {
+    var runs = drawPage("text-direction-run-spaces", (recipe) => {
+      var options = { font: "arial", size: 12, direction: "rtl" };
+      recipe
+        .text("  \u05d0\u05d1 ", 50, 50, {
+          ...options,
+          flow: true,
+          hilite: { color: "#ff0" },
+        })
+        .text("abc  ", { ...options, size: 24 })
+        .text("", { flow: false });
+    });
+    // The space after the Hebrew run is that run's, drawn at its size on the
+    // left of its word, not with the larger Latin run.
+    assert.deepEqual(
+      lineRuns(runs)
+        .slice(0, 2)
+        .map((run) => run.text),
+      ["abc", " \u05d1\u05d0"],
+    );
   });
 
   it("keeps words joined by any non-breaking space on one line", function () {

@@ -344,18 +344,24 @@ describe("Recipe text direction", function () {
     });
     const line = lineRuns(runs);
     assert.deepEqual(
-      line.slice(-3).map((run) => run.text.trim()),
+      line
+        .map((run) => run.text.trim())
+        .filter(Boolean)
+        .slice(-3),
       ["שולש", "םייתש", "תחא"],
     );
     // Justified, the line spans the box from edge to edge.
     const font = muhammara
       .createWriter(new muhammara.PDFWStreamForBuffer())
       .getFontForFile(ARIAL);
-    const last = line[line.length - 1];
+    // A space drawn by its own run may come after the last word.
+    const last = line.filter((run) => run.text.trim()).pop();
     assert.ok(Math.abs(line[0].x - 20) < 1, JSON.stringify(line));
     assert.ok(
       Math.abs(
-        last.x + font.calculateTextDimensions(last.text.trim(), 12).xMax - 140,
+        last.x +
+          font.calculateTextDimensions(last.text.trimEnd(), 12).xMax -
+          140,
       ) < 1,
       JSON.stringify(line),
     );
@@ -407,7 +413,7 @@ describe("Recipe text direction", function () {
      * @returns {number} The x of its right glyph edge.
      */
     const inkRight = (run) =>
-      run.x + font.calculateTextDimensions(run.text.trim(), 16).xMax;
+      run.x + font.calculateTextDimensions(run.text.trimEnd(), 16).xMax;
     const runs = await drawPage("text-direction-html-align", (recipe) => {
       ["right", "center", "left"].forEach((textAlign, index) => {
         recipe.text("<p>שלום <u>עולם</u> יפה</p>", 20, 20 + index * 30, {
@@ -426,9 +432,17 @@ describe("Recipe text direction", function () {
         0.5,
     );
     assert.ok(Math.abs(left[0].x - 20) < 0.5);
-    // Each word keeps a space before the next one.
+    // Each word keeps a space before the next one, which may be drawn by
+    // either run.
+    const inkLeft = (run) => {
+      const word = font.calculateTextDimensions(run.text.trim(), 16);
+      return inkRight(run) - word.xMax + word.xMin;
+    };
     right.slice(1).forEach((run, index) => {
-      assert.ok(run.x - inkRight(right[index]) > 3, JSON.stringify(right));
+      assert.ok(
+        inkLeft(run) - inkRight(right[index]) > 3,
+        JSON.stringify(right),
+      );
     });
   });
 
@@ -455,7 +469,7 @@ describe("Recipe text direction", function () {
     assert.ok(
       Math.abs(
         rtlLast.x +
-          font.calculateTextDimensions(rtlLast.text.trim(), 12).xMax -
+          font.calculateTextDimensions(rtlLast.text.trimEnd(), 12).xMax -
           220,
       ) < 0.5,
       JSON.stringify(rtlLast),
@@ -778,7 +792,9 @@ describe("Recipe text direction", function () {
     const last = line[line.length - 1];
     assert.ok(
       Math.abs(
-        last.x + font.calculateTextDimensions(last.text.trim(), 12).xMax - 300,
+        last.x +
+          font.calculateTextDimensions(last.text.trimEnd(), 12).xMax -
+          300,
       ) < 1,
       JSON.stringify(line),
     );
@@ -811,7 +827,7 @@ describe("Recipe text direction", function () {
      * @returns {number} The x of its right glyph edge.
      */
     const inkRight = (run) =>
-      run.x + font.calculateTextDimensions(run.text.trim(), 12).xMax;
+      run.x + font.calculateTextDimensions(run.text.trimEnd(), 12).xMax;
     const runs = await drawPage("text-direction-clip-padding", (recipe) => {
       const options = {
         font: "arial",
@@ -1416,11 +1432,12 @@ describe("Recipe text direction", function () {
         .text("", { flow: false });
     });
     // The paragraph starts with Hebrew, so its wrapped line is right to left.
+    // The space after the Hebrew run is its own, drawn on its left.
     assert.deepEqual(
       runs.map((run) => run.text),
       [
-        "abc def ghi ",
-        "\u05dd\u05dc\u05d5\u05e2 \u05dd\u05d5\u05dc\u05e9",
+        "abc def ghi",
+        " \u05dd\u05dc\u05d5\u05e2 \u05dd\u05d5\u05dc\u05e9",
         ".jkl mno",
       ],
     );
@@ -1517,6 +1534,28 @@ describe("Recipe text direction", function () {
         direction,
       );
     }
+  });
+
+  it("draws each space of a reordered line with its own run", async function () {
+    const runs = await drawPage("text-direction-run-spaces", (recipe) => {
+      const options = { font: "arial", size: 12, direction: "rtl" };
+      recipe
+        .text("  \u05d0\u05d1 ", 50, 50, {
+          ...options,
+          flow: true,
+          hilite: { color: "#ff0" },
+        })
+        .text("abc  ", { ...options, size: 24 })
+        .text("", { flow: false });
+    });
+    // The space after the Hebrew run is that run's, drawn at its size on the
+    // left of its word, not with the larger Latin run.
+    assert.deepEqual(
+      lineRuns(runs)
+        .slice(0, 2)
+        .map((run) => run.text),
+      ["abc", " \u05d1\u05d0"],
+    );
   });
 
   it("keeps words joined by any non-breaking space on one line", async function () {

@@ -65,8 +65,8 @@ var CLASS_STAND_IN = {
 var PARAGRAPH_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/g;
 // The same breaks, captured, to split text into paragraphs and breaks.
 var PARAGRAPH_SPLIT = /(\r\n|[\n\v\f\r\u0085\u2028\u2029])/;
-// Whitespace a line may break at; non-breaking spaces belong to their word.
-var BREAKABLE_SPACE = /^(?:(?![\u00a0\u2007\u202f])\s)+/;
+// Whitespace a line may break at, ending a text; non-breaking spaces belong
+// to their word.
 var TRAILING_BREAKABLE_SPACE = /(?:(?![\u00a0\u2007\u202f])\s)+$/;
 
 // Isolates that place a run with a direction of its own in a line, and the
@@ -683,23 +683,9 @@ function visualRuns(texts, direction, runDirections) {
     });
     return groups;
   }
+  // Every character stays in its own run's segment, spaces included, so it
+  // is drawn and measured with its run's font, size, hilite and lines.
   var segments = group(characters, false);
-  for (index = 1; index < segments.length; ++index) {
-    var space = BREAKABLE_SPACE.exec(segments[index].text);
-    if (space) {
-      segments[index - 1].text += space[0];
-      segments[index].text = segments[index].text.slice(space[0].length);
-    }
-  }
-  // Moving spaces can leave a segment with only whitespace, such as the
-  // space between two words of other runs; it joins the segment before it.
-  segments = segments.reduce(function (kept, segment) {
-    if (segment.text === "") return kept;
-    if (kept.length && segment.text.trim() === "") {
-      kept[kept.length - 1].text += segment.text;
-    } else kept.push(segment);
-    return kept;
-  }, []);
   var indent = [];
   for (index = 0; index < leading; ++index) {
     indent.push({ index: index, character: line[index] });
@@ -753,20 +739,31 @@ function visualWords(segments) {
       });
       return;
     }
+    // Whitespace that starts a segment, or makes up all of it, is a word of
+    // its own: it belongs to its run, not to the word before it.
     var pattern =
-      /(?:(?![\u00a0\u2007\u202f])\s)*(?:[^\s]|[\u00a0\u2007\u202f])+(?:(?![\u00a0\u2007\u202f])\s)*|\s+/g;
+      /(?:[^\s]|[\u00a0\u2007\u202f])+(?:(?![\u00a0\u2007\u202f])\s)*|(?:(?![\u00a0\u2007\u202f])\s)+/g;
     var match;
     while ((match = pattern.exec(segment.text))) {
       words.push({ run: segment.run, text: match[0], gap: false });
     }
   });
-  // From the right, so each word knows whether visible text follows it.
+  // A gap is breakable whitespace between visible text: that ending a word,
+  // or a word of only whitespace. From the right, so each word knows
+  // whether visible text follows it.
+  var seen = false;
+  var textBefore = words.map(function (word) {
+    var before = seen;
+    seen = seen || word.text.trim() !== "";
+    return before;
+  });
   var textFollows = false;
   for (var index = words.length - 1; index >= 0; --index) {
     var visible = words[index].text.trim() !== "";
     words[index].gap =
-      visible &&
+      !words[index].indent &&
       textFollows &&
+      (visible || textBefore[index]) &&
       TRAILING_BREAKABLE_SPACE.test(words[index].text);
     textFollows = textFollows || visible;
   }

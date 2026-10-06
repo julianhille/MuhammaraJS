@@ -229,8 +229,8 @@ describe("TextDirection", function () {
     it("orders the runs of a right-to-left line from right to left", function () {
       assert.deepEqual(visualRuns(["שלום ", "עולם", " יפה"], "auto"), [
         { run: 2, text: "הפי " },
-        { run: 1, text: "םלוע " },
-        { run: 0, text: "םולש" },
+        { run: 1, text: "םלוע" },
+        { run: 0, text: " םולש" },
       ]);
     });
 
@@ -246,14 +246,23 @@ describe("TextDirection", function () {
       ]);
     });
 
-    it("never returns a segment of only whitespace", function () {
+    it("keeps every space in its own run's segment", function () {
       assert.deepEqual(visualRuns(["abc", " ", " def שלום"], "ltr"), [
-        { run: 0, text: "abc  " },
-        { run: 2, text: "def םולש" },
+        { run: 0, text: "abc" },
+        { run: 1, text: " " },
+        { run: 2, text: " def םולש" },
       ]);
       assert.deepEqual(visualRuns(["שלום ", "\u00a0", "עולם"], "rtl"), [
-        { run: 2, text: "םלוע\u00a0 " },
-        { run: 0, text: "םולש" },
+        { run: 2, text: "םלוע" },
+        { run: 1, text: "\u00a0" },
+        { run: 0, text: " םולש" },
+      ]);
+      // Spaces that end a run stay in it, at the end of the line.
+      assert.deepEqual(visualRuns(["  אב ", "abc  "], "rtl"), [
+        { run: 1, text: "abc" },
+        { run: 0, text: " בא" },
+        { run: 1, text: "  " },
+        { run: 0, text: "  ", indent: true },
       ]);
     });
 
@@ -270,12 +279,12 @@ describe("TextDirection", function () {
       // A "none" run in a right-to-left line stays exactly as given.
       assert.deepEqual(
         runs(["שלום ", "abc ופ", " עולם"], "rtl", ["rtl", "none", "rtl"]),
-        ["2:םלוע ", "1:abc ופ ", "0:םולש"],
+        ["2:םלוע ", "1:abc ופ", "0: םולש"],
       );
       // A right-to-left run in a left-to-right line keeps its punctuation.
       assert.deepEqual(
         runs(["abc ", "שלום עולם!", " def"], "ltr", ["ltr", "rtl", "ltr"]),
-        ["0:abc ", "1:!םלוע םולש ", "2:def"],
+        ["0:abc ", "1:!םלוע םולש", "2: def"],
       );
       // Runs that follow the line, or keep their order, change nothing.
       assert.equal(visualRuns(["abc ", "def"], "ltr", ["ltr", "rtl"]), null);
@@ -297,7 +306,9 @@ describe("TextDirection", function () {
       assert.deepEqual(
         visualWords(visualRuns(["  מחיר 120\u00a0ש״ח ", "עולם"], "rtl")),
         [
-          { run: 1, text: "םלוע ", gap: true },
+          { run: 1, text: "םלוע", gap: false },
+          // The space after the second run's first word is its own.
+          { run: 0, text: " ", gap: true },
           { run: 0, text: "ח״ש\u00a0120 ", gap: true },
           { run: 0, text: "ריחמ", gap: false },
           // The indent stays at the line's start, its right end.
