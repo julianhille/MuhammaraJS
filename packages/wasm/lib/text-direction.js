@@ -3,8 +3,6 @@
 // packages/native-core/lib/text-direction.js; keep both files identical apart
 // from the module syntax.
 
-import bidiFactory from "./vendor/bidi-js.js";
-
 // How text is ordered before it is written.
 var TextDirection = Object.freeze({
   // The first strong letter of each paragraph picks its direction.
@@ -79,6 +77,9 @@ var POP_ISOLATE = "\u2069";
 var RUN_FOLLOWS = "follows";
 var RUN_KEPT = "kept";
 
+// The bidi-js factory, or the error that kept it from loading. The package
+// entry point loads bidi-js and hands it over with useBidi().
+var bidiFactory = null;
 var bidi = null;
 // The grapheme segmenter, created on first use; false without
 // Intl.Segmenter.
@@ -90,8 +91,28 @@ var graphemeSegmenter = null;
  * @returns {object} The bidi-js API.
  */
 function getBidi() {
-  if (!bidi) bidi = bidiFactory();
+  if (!bidi) {
+    if (typeof bidiFactory !== "function") {
+      throw new Error("Reordering right-to-left text needs bidi-js", {
+        cause: bidiFactory || undefined,
+      });
+    }
+    bidi = bidiFactory();
+  }
   return bidi;
+}
+
+/**
+ * Sets the bidi-js factory text is reordered with. A failed load passes its
+ * error instead, which reordering then throws as its cause; text drawn with
+ * direction "none" never needs bidi-js.
+ *
+ * @param {Function|Error} factory The bidi-js default export, or the error
+ *   loading it threw.
+ */
+function useBidi(factory) {
+  bidiFactory = factory;
+  bidi = null;
 }
 
 /**
@@ -764,4 +785,5 @@ export {
   drawnText,
   visualRuns,
   visualWords,
+  useBidi,
 };

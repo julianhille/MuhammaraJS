@@ -493,4 +493,31 @@ describe("TextDirection", function () {
       }, "does not export PageContentContext");
     });
   });
+
+  describe("loading bidi-js", function () {
+    afterEach(function () {
+      textDirection.useBidi(require("bidi-js"));
+    });
+
+    it("draws text as given without bidi-js and names it when reordering", function () {
+      var text = "שלום abc";
+      var cause = new Error("Cannot find module 'bidi-js'");
+      textDirection.useBidi(cause);
+      assert.equal(textDirection.toVisual(text, "none"), text);
+      assert.equal(textDirection.toVisual("abc", "auto"), "abc");
+      var error;
+      try {
+        textDirection.toVisual(text, "auto");
+      } catch (thrown) {
+        error = thrown;
+      }
+      assert.match(error.message, /needs bidi-js/);
+      assert.strictEqual(error.cause, cause);
+    });
+
+    it("reorders with the factory it is given", function () {
+      textDirection.useBidi(require("bidi-js"));
+      assert.equal(textDirection.toVisual("שלום abc", "auto"), "abc םולש");
+    });
+  });
 });

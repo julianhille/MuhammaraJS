@@ -38,7 +38,24 @@ import {
   LineCapStyle,
   EEncoding,
 } from "./lib/value-sets.js";
-import { TextDirection } from "./lib/text-direction.js";
+import { TextDirection, useBidi } from "./lib/text-direction.js";
+
+var bidiLoading;
+
+/**
+ * Loads bidi-js, which reorders right-to-left text, once per page. Bundlers
+ * keep the dynamic import as a chunk; without one, the page maps the bare
+ * "bidi-js" specifier with an import map. A failed load only fails the calls
+ * that reorder text.
+ * @returns {Promise<void>} Settles once bidi-js is loaded or has failed.
+ */
+function loadBidi() {
+  bidiLoading ??= import("bidi-js").then(
+    (bidiModule) => useBidi(bidiModule.default),
+    (error) => useBidi(error),
+  );
+  return bidiLoading;
+}
 
 export {
   ByteReader,
@@ -127,7 +144,9 @@ async function createRuntime(options) {
         ? wasmBinary.slice(0)
         : Uint8Array.prototype.slice.call(wasmBinary);
   }
+  var bidiLoaded = loadBidi();
   var module = await createModule(moduleOptions);
+  await bidiLoaded;
   /**
    * Copies byte input and enforces `maxInputBytes`.
    * @param {ByteSource} value - Bytes.

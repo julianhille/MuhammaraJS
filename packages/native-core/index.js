@@ -6,6 +6,8 @@ var fontText = require("./lib/font-text");
 var { createRecipe } = require("./lib/Recipe");
 var textDirection = require("./lib/text-direction");
 
+textDirection.useBidi(require("bidi-js"));
+
 // The addon's own functions, kept on the addon so every createMuhammara call
 // wraps the originals, never an earlier wrapper. Module state would not do:
 // Jest loads this module again for every test file while the addon stays

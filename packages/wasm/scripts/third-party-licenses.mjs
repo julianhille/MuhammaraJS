@@ -2,7 +2,7 @@
 // and copyright notice is read from at build time: the verbatim license files
 // in each vendored library's licenses/ folder, the Emscripten installation in
 // the pinned emsdk image that linked the wasm, the bundled Roboto font, and
-// native-core's licenses/ folder for the Adobe Glyph List and bidi-js.
+// native-core's licenses/ folder for the Adobe Glyph List.
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -229,30 +229,11 @@ export var components = [
     shippedIn: "lib/glyph-list.js (not in the .wasm)",
     pieces: [{ file: "packages/native-core/licenses/AdobeGlyphList.txt" }],
   },
-  {
-    name: "bidi-js",
-    version: "1.1.0",
-    license: "MIT",
-    source: "https://github.com/lojjic/bidi-js",
-    shippedIn: "lib/vendor/bidi-js.js (not in the .wasm)",
-    pieces: [{ file: "packages/native-core/licenses/bidi-js.txt" }],
-  },
 ];
 
 // Each vendored library's version as its headers state it, so a dependency
 // update without a matching component entry fails the build.
 export var versionChecks = [
-  {
-    names: ["bidi-js"],
-    file: "packages/wasm/lib/vendor/bidi-js.js",
-    read: (source) => source.match(/^\/\/ bidi-js (\d+\.\d+\.\d+) /)?.[1],
-  },
-  {
-    // native-core installs bidi-js from npm; it must be the vendored version.
-    names: ["bidi-js"],
-    file: "packages/native-core/package.json",
-    read: (source) => JSON.parse(source).dependencies["bidi-js"],
-  },
   {
     names: [
       "FreeType",

@@ -35,6 +35,30 @@ supply bytes the application retrieved itself, use the `locateFile` or
 `wasmBinary` options described in [Load the WebAssembly Binary From a CDN or
 Your Own Bytes](how-to/load-the-wasm-binary.md).
 
+## Load bidi-js Without a Bundler
+
+Reordering right-to-left text, with the `direction` option, uses the
+[bidi-js](https://github.com/lojjic/bidi-js) package, which installs with
+`@muhammara/wasm`. The package loads it with `import("bidi-js")` when it
+starts, so bundlers such as Vite and webpack keep it as a chunk. A page that
+loads the package's modules without a bundler maps the bare specifier itself:
+
+```html
+<script type="importmap">
+  {
+    "imports": {
+      "@muhammara/wasm": "/node_modules/@muhammara/wasm/index.js",
+      "bidi-js": "/node_modules/bidi-js/dist/bidi.mjs"
+    }
+  }
+</script>
+```
+
+Without the entry, everything else works and only calls that reorder text
+throw an error that names bidi-js. Module Workers do not read the page's
+import map in every browser; reorder text on the page there, or bundle the
+Worker.
+
 ## Work With Bytes
 
 Keep source PDFs, fonts, and images as bytes in application code. Inputs are

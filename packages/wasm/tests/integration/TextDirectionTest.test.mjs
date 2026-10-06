@@ -1,6 +1,8 @@
 // Byte-first port of tests/TextDirectionTest.js.
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import { promisify } from "node:util";
 import {
   TextDirection,
   createMuhammaraWasm,
@@ -13,6 +15,7 @@ import {
   readDirection,
   resolveDirection,
   toVisual,
+  useBidi,
   visualRuns,
   visualWords,
 } from "../../lib/text-direction.js";
@@ -409,6 +412,45 @@ describe("TextDirection", function () {
           }),
         { name: "TypeError", message: /direction must be/ },
       );
+    });
+  });
+
+  describe("loading bidi-js", function () {
+    afterEach(async function () {
+      useBidi((await import("bidi-js")).default);
+    });
+
+    it("draws text as given without bidi-js and names it when reordering", function () {
+      var text = "שלום abc";
+      var cause = new TypeError('Failed to resolve module specifier "bidi-js"');
+      useBidi(cause);
+      assert.equal(toVisual(text, "none"), text);
+      assert.equal(toVisual("abc", "auto"), "abc");
+      assert.throws(
+        () => toVisual(text, "auto"),
+        (error) => /needs bidi-js/.test(error.message) && error.cause === cause,
+      );
+    });
+
+    it("is loaded by createMuhammaraWasm() in a fresh process", async function () {
+      this.timeout(30000);
+      // A literal specifier, so bundlers keep bidi-js as a chunk.
+      assert.match(
+        await readFile(new URL("../../index.js", import.meta.url), "utf8"),
+        /import\("bidi-js"\)/,
+      );
+      var script = [
+        `import { createMuhammaraWasm } from ${JSON.stringify(new URL("../../index.js", import.meta.url).href)};`,
+        `import { toVisual } from ${JSON.stringify(new URL("../../lib/text-direction.js", import.meta.url).href)};`,
+        "await createMuhammaraWasm({ recryptWorker: false });",
+        'process.stdout.write(toVisual("\\u05e9\\u05dc\\u05d5\\u05dd abc", "auto"));',
+      ].join("\n");
+      var { stdout } = await promisify(execFile)(process.execPath, [
+        "--input-type=module",
+        "--eval",
+        script,
+      ]);
+      assert.equal(stdout, "abc םולש");
     });
   });
 });

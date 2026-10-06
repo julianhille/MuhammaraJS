@@ -1,4 +1,5 @@
 import { runValidation } from "./validation.mjs";
+import { toVisual } from "../../lib/text-direction.js";
 
 var resultElement = document.getElementById("result");
 
@@ -24,6 +25,15 @@ function workerValidation() {
   });
 }
 
+// runValidation() loaded bidi-js through the page's import map.
+function rtlValidation() {
+  var visual = toVisual("\u05e9\u05dc\u05d5\u05dd abc", "auto");
+  if (visual !== "abc \u05dd\u05d5\u05dc\u05e9") {
+    throw new Error(`right-to-left text reorders: ${JSON.stringify(visual)}`);
+  }
+  return { assertions: 1 };
+}
+
 async function report(result) {
   resultElement.textContent = JSON.stringify(result);
   await fetch("/__wasm_browser_result__", {
@@ -35,8 +45,9 @@ async function report(result) {
 
 try {
   var page = await runValidation();
+  var rtl = rtlValidation();
   var worker = await workerValidation();
-  await report({ passed: true, page, worker });
+  await report({ passed: true, page, rtl, worker });
 } catch (error) {
   await report({
     passed: false,

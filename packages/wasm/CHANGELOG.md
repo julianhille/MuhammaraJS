@@ -11,8 +11,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `Recipe.TextDirection`). `"auto"` takes each paragraph's direction from its
   first strong letter, and `"ltr"` and `"rtl"` set it. Text is reordered with
   the Unicode Bidirectional Algorithm ([bidi-js](https://github.com/lojjic/bidi-js),
-  MIT, vendored as `lib/vendor/bidi-js.js` and listed in the embedded license
-  notices and `THIRD_PARTY_LICENSES.md`): numbers and Latin words inside
+  MIT, a new dependency loaded with `import("bidi-js")` when the package
+  starts; a page without a bundler maps it in an import map): numbers and Latin words inside
   Hebrew keep their order, brackets are mirrored, points are drawn on their
   letters, and invisible direction marks are neither drawn nor measured. Recipe reorders each wrapped line with
   its paragraph's direction, also across the styled runs of an HTML line,
