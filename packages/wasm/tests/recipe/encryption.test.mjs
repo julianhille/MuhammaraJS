@@ -1,23 +1,7 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import { recipeFixture } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
-
-/**
- * Reads a shared native Recipe fixture.
- * @param {string} name - The fixture file name without extension.
- * @returns {Promise<Uint8Array>} The fixture bytes.
- */
-async function readRecipeFixture(name) {
-  return new Uint8Array(
-    await readFile(
-      new URL(
-        `../../../native-with-source/tests/TestMaterials/recipe/${name}.pdf`,
-        import.meta.url,
-      ),
-    ),
-  );
-}
 
 describe("Recipe encryption", function () {
   it("encrypts the final bytes and caches the encrypted result", async function () {
@@ -46,7 +30,7 @@ describe("Recipe encryption", function () {
   // source is encrypted by endPDF() just like a new document.
   it("encrypts a modified source with a view password", async function () {
     var Recipe = await createRecipe();
-    var source = await readRecipeFixture("test2");
+    var source = recipeFixture("test2");
     var recipe = new Recipe(source)
       .editPage(1)
       .text("Encrypted from a byte source", 150, 300)
@@ -65,6 +49,28 @@ describe("Recipe encryption", function () {
     assert.equal(unlocked.isEncrypted(), true);
     assert.ok(unlocked.getPagesCount() > 0);
     unlocked.end();
+    recipe.dispose();
+    Recipe.disposeAssets();
+  });
+
+  // Mirrors native "New Buffer file with constructor password re-encrypted".
+  it("re-encrypts a document the constructor already encrypted", async function () {
+    var Recipe = await createRecipe();
+    var recipe = new Recipe({ userPassword: "first" })
+      .createPage(100, 100)
+      .endPage()
+      .encrypt({ userPassword: "second" });
+    var encrypted = recipe.endPDF();
+    writeOutput("encryption-constructor-then-encrypt", encrypted);
+
+    var muhammara = await createMuhammaraWasm();
+    var stale = muhammara.createReader(encrypted, { password: "first" });
+    assert.equal(stale.getPagesCount(), 0);
+    stale.end();
+    var reader = muhammara.createReader(encrypted, { password: "second" });
+    assert.equal(reader.isEncrypted(), true);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
     recipe.dispose();
     Recipe.disposeAssets();
   });

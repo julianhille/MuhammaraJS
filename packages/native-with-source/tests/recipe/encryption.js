@@ -221,6 +221,63 @@ describe("Encryption", () => {
       });
   });
 
+  const taskCRE = "New file with constructor password re-encrypted";
+  it(taskCRE, (done) => {
+    const output = path.join(__dirname, `../output/${taskCRE}.pdf`);
+    fs.rmSync(output, { force: true });
+    const recipe = new Recipe("new", output, { userPassword: "first" });
+    recipe
+      .createPage("letter")
+      .text("encrypt() replaces the constructor password", 150, 300)
+      .endPage()
+      .encrypt({ userPassword: "second" })
+      .endPDF(() => {
+        assertPdfEncryption(output, "second", true);
+        assertPdfCannotBeReadWithoutPassword(output);
+        done();
+      });
+  });
+
+  const taskBRE = "New Buffer file with constructor password re-encrypted";
+  it(taskBRE, (done) => {
+    const recipe = new Recipe(Buffer.from("new"), undefined, {
+      userPassword: "first",
+    });
+    recipe
+      .createPage("letter")
+      .text("encrypt() replaces the constructor password", 150, 300)
+      .endPage()
+      .encrypt({ userPassword: "second" })
+      .endPDF((buffer) => {
+        fs.writeFileSync(
+          path.join(__dirname, `../output/${taskBRE}.pdf`),
+          buffer,
+        );
+        assertBufferEncryption(buffer, "second", true);
+        const stale = muhammara.createReader(
+          new muhammara.PDFRStreamForBuffer(buffer),
+          { password: "first" },
+        );
+        try {
+          assert.equal(stale.getPagesCount(), 0);
+        } finally {
+          stale.end();
+        }
+        done();
+      });
+  });
+
+  const taskBNE = "Buffer source with empty encrypt() stays unencrypted";
+  it(taskBNE, (done) => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "../TestMaterials/recipe/test2.pdf"),
+    );
+    new Recipe(src).encrypt({}).endPDF((buffer) => {
+      assertBufferEncryption(buffer, undefined, false);
+      done();
+    });
+  });
+
   // TODO: this seems to be broken
   // const taskMPF = 'Modify file with view password';
   // it(taskMPF, (done) => {
