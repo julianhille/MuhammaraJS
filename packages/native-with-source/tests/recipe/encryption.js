@@ -137,6 +137,90 @@ describe("Encryption", () => {
       });
   });
 
+  function assertBufferEncryption(buffer, password, encrypted) {
+    const reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(buffer),
+      password ? { password } : {},
+    );
+    try {
+      assert.equal(reader.isEncrypted(), encrypted);
+      assert.ok(reader.getPagesCount() > 0);
+    } finally {
+      reader.end();
+    }
+  }
+
+  // GH-446: a Buffer source used to skip encrypt() and only log a message.
+  const taskBVP = "Buffer source with view password";
+  it(taskBVP, (done) => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "../TestMaterials/recipe/test2.pdf"),
+    );
+    const recipe = new Recipe(src);
+    recipe
+      .editPage(1)
+      .text("Encrypted from a Buffer source", 150, 300)
+      .endPage()
+      .encrypt({ userPassword: "123" })
+      .endPDF((buffer) => {
+        assert.ok(Buffer.isBuffer(buffer));
+        fs.writeFileSync(
+          path.join(__dirname, `../output/${taskBVP}.pdf`),
+          buffer,
+        );
+        assertBufferEncryption(buffer, "123", true);
+        const locked = muhammara.createReader(
+          new muhammara.PDFRStreamForBuffer(buffer),
+        );
+        try {
+          assert.equal(locked.isEncrypted(), true);
+          assert.equal(locked.getPagesCount(), 0);
+        } finally {
+          locked.end();
+        }
+        // A repeated endPDF() hands out the same encrypted bytes.
+        recipe.endPDF((again) => {
+          assert.ok(again.equals(buffer));
+          done();
+        });
+      });
+  });
+
+  const taskBOP = "Buffer source with output path and edit password";
+  it(taskBOP, (done) => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "../TestMaterials/recipe/test2.pdf"),
+    );
+    const output = path.join(__dirname, `../output/${taskBOP}.pdf`);
+    fs.rmSync(output, { force: true });
+    const recipe = new Recipe(src, output);
+    recipe
+      .encrypt({ ownerPassword: "123", userProtectionFlag: 4 })
+      .endPDF((outputPath) => {
+        assert.equal(outputPath, output);
+        assertPdfEncryption(output, undefined, true);
+        done();
+      });
+  });
+
+  const taskBNP = "New Buffer file with encrypt()";
+  it(taskBNP, (done) => {
+    const recipe = new Recipe(Buffer.from("new"));
+    recipe
+      .createPage("letter")
+      .text("encrypt() also works for a new Buffer PDF", 150, 300)
+      .endPage()
+      .encrypt({ userPassword: "123", ownerPassword: "456" })
+      .endPDF((buffer) => {
+        fs.writeFileSync(
+          path.join(__dirname, `../output/${taskBNP}.pdf`),
+          buffer,
+        );
+        assertBufferEncryption(buffer, "123", true);
+        done();
+      });
+  });
+
   // TODO: this seems to be broken
   // const taskMPF = 'Modify file with view password';
   // it(taskMPF, (done) => {
