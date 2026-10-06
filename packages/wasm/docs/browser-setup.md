@@ -56,8 +56,10 @@ loads the package's modules without a bundler maps the bare specifier itself:
 
 Pass `bidi: false` to `createMuhammaraWasm()` or `createRecipe()` to skip
 loading it when the page never sets `direction`. Without bidi-js, whether
-skipped or unresolved, everything else works and only calls that reorder text
-throw an error that names bidi-js. Module Workers do not read the page's
+skipped or unresolved, everything else works, and every call that has to order
+text by direction throws an error that names bidi-js instead of drawing the
+text in the wrong order: text with right-to-left characters, `"rtl"` text,
+and a line whose flowed runs ask for different directions. Module Workers do not read the page's
 import map in every browser; reorder text on the page there, or bundle the
 Worker.
 

@@ -45,8 +45,8 @@ var bidiLoading;
 /**
  * Loads bidi-js, which reorders right-to-left text, once per page. Bundlers
  * keep the dynamic import as a chunk; without one, the page maps the bare
- * "bidi-js" specifier with an import map. A failed load only fails the calls
- * that reorder text, and the next factory call tries again.
+ * "bidi-js" specifier with an import map. A failed load fails the calls that
+ * have to order text by direction, and the next factory call tries again.
  * @returns {Promise<void>} Settles once bidi-js is loaded or has failed.
  */
 function loadBidi() {
@@ -645,7 +645,8 @@ async function createRuntime(options) {
  * `locateFile`, and `limits`, it recrypts on the calling thread.
  * @param {boolean} [options.bidi=true] Whether to load bidi-js, which the
  * `direction` option reorders right-to-left text with. With `false`, or when
- * it cannot be loaded, only calls that reorder text throw.
+ * it cannot be loaded, every call that has to order text by direction throws
+ * instead of drawing it in the wrong order.
  * @returns {Promise<object>} The initialized Muhammara API.
  */
 export async function createMuhammaraWasm(options) {
