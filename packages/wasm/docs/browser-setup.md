@@ -54,7 +54,9 @@ loads the package's modules without a bundler maps the bare specifier itself:
 </script>
 ```
 
-Without the entry, everything else works and only calls that reorder text
+Pass `bidi: false` to `createMuhammaraWasm()` or `createRecipe()` to skip
+loading it when the page never sets `direction`. Without bidi-js, whether
+skipped or unresolved, everything else works and only calls that reorder text
 throw an error that names bidi-js. Module Workers do not read the page's
 import map in every browser; reorder text on the page there, or bundle the
 Worker.

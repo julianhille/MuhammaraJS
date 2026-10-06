@@ -23,7 +23,8 @@ Use a font that has Hebrew glyphs, such as Arial or Noto Sans Hebrew, and
 register its bytes; the bundled Roboto default has none.
 
 Reordering uses the [bidi-js](https://github.com/lojjic/bidi-js) package,
-which installs with `@muhammara/wasm` and loads when the package starts.
+which installs with `@muhammara/wasm` and loads when `createMuhammaraWasm()`
+or `createRecipe()` runs, unless it is given `bidi: false`.
 Bundlers keep it; a page without a bundler maps `"bidi-js"` in an import map,
 as [Browser Setup](../browser-setup.md#load-bidi-js-without-a-bundler) shows.
 

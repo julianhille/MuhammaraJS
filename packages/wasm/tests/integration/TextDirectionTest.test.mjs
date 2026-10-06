@@ -432,25 +432,74 @@ describe("TextDirection", function () {
       );
     });
 
-    it("is loaded by createMuhammaraWasm() in a fresh process", async function () {
-      this.timeout(30000);
-      // A literal specifier, so bundlers keep bidi-js as a chunk.
-      assert.match(
-        await readFile(new URL("../../index.js", import.meta.url), "utf8"),
-        /import\("bidi-js"\)/,
-      );
+    /**
+     * Runs `body` in a fresh Node process, where nothing has loaded bidi-js.
+     *
+     * @param {string} body Module code with createMuhammaraWasm, createRecipe
+     *   and toVisual in scope.
+     * @returns {Promise<string>} What it wrote to stdout.
+     */
+    async function freshProcess(body) {
       var script = [
-        `import { createMuhammaraWasm } from ${JSON.stringify(new URL("../../index.js", import.meta.url).href)};`,
+        `import { createMuhammaraWasm, createRecipe } from ${JSON.stringify(new URL("../../index.js", import.meta.url).href)};`,
         `import { toVisual } from ${JSON.stringify(new URL("../../lib/text-direction.js", import.meta.url).href)};`,
-        "await createMuhammaraWasm({ recryptWorker: false });",
-        'process.stdout.write(toVisual("\\u05e9\\u05dc\\u05d5\\u05dd abc", "auto"));',
+        'var text = "\\u05e9\\u05dc\\u05d5\\u05dd abc";',
+        body,
       ].join("\n");
       var { stdout } = await promisify(execFile)(process.execPath, [
         "--input-type=module",
         "--eval",
         script,
       ]);
-      assert.equal(stdout, "abc םולש");
+      return stdout;
+    }
+
+    it("is loaded by createMuhammaraWasm() and createRecipe() by default", async function () {
+      this.timeout(30000);
+      // A literal specifier, so bundlers keep bidi-js as a chunk.
+      assert.match(
+        await readFile(new URL("../../index.js", import.meta.url), "utf8"),
+        /import\("bidi-js"\)/,
+      );
+      for (var factory of [
+        "createMuhammaraWasm({ recryptWorker: false })",
+        "createRecipe({ defaultFont: false, recryptWorker: false })",
+      ]) {
+        assert.equal(
+          await freshProcess(
+            `await ${factory};\nprocess.stdout.write(toVisual(text, "auto"));`,
+          ),
+          "abc םולש",
+          factory,
+        );
+      }
+    });
+
+    it("is not loaded with bidi: false", async function () {
+      this.timeout(30000);
+      assert.equal(
+        await freshProcess(
+          [
+            "await createRecipe({ defaultFont: false, recryptWorker: false, bidi: false });",
+            'process.stdout.write(toVisual(text, "none") === text ? "none;" : "reordered;");',
+            "try {",
+            '  toVisual(text, "auto");',
+            "} catch (error) {",
+            "  process.stdout.write(error.message);",
+            "}",
+          ].join("\n"),
+        ),
+        "none;Reordering right-to-left text needs bidi-js",
+      );
+    });
+
+    it("rejects a bidi option that is not a boolean", async function () {
+      for (var factory of [createMuhammaraWasm, createRecipe]) {
+        await assert.rejects(factory({ bidi: "yes" }), {
+          name: "TypeError",
+          message: "bidi must be a boolean",
+        });
+      }
     });
   });
 });

@@ -187,6 +187,9 @@ async function usesLowLevelSurface() {
   void recryptedHere;
   // @ts-expect-error recryptWorker is a boolean.
   void createMuhammaraWasm({ recryptWorker: "no" });
+  void createRecipe({ bidi: false });
+  // @ts-expect-error bidi is a boolean.
+  void createMuhammaraWasm({ bidi: "yes" });
   muhammara.recrypt(source, null);
   void muhammara.recryptAsync(source, null);
   var reader = muhammara.createReader(source);

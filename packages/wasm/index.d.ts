@@ -2695,6 +2695,13 @@ export interface MuhammaraWasmOptions {
    * `limits`, it recrypts on the calling thread.
    */
   recryptWorker?: boolean;
+  /**
+   * Whether to load bidi-js, which the `direction` option reorders
+   * right-to-left text with, with `import("bidi-js")`. Defaults to `true`.
+   * With `false`, or when it cannot be loaded, everything else works and only
+   * calls that reorder text throw.
+   */
+  bidi?: boolean;
   [key: string]: unknown;
 }
 export function createMuhammaraWasm(

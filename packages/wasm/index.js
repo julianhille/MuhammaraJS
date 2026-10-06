@@ -46,13 +46,16 @@ var bidiLoading;
  * Loads bidi-js, which reorders right-to-left text, once per page. Bundlers
  * keep the dynamic import as a chunk; without one, the page maps the bare
  * "bidi-js" specifier with an import map. A failed load only fails the calls
- * that reorder text.
+ * that reorder text, and the next factory call tries again.
  * @returns {Promise<void>} Settles once bidi-js is loaded or has failed.
  */
 function loadBidi() {
   bidiLoading ??= import("bidi-js").then(
     (bidiModule) => useBidi(bidiModule.default),
-    (error) => useBidi(error),
+    (error) => {
+      bidiLoading = undefined;
+      useBidi(error);
+    },
   );
   return bidiLoading;
 }
@@ -81,7 +84,7 @@ export {
  * @param {MuhammaraWasmOptions} [options] - Emscripten options and byte `limits`.
  * @returns {Promise<object>} The API, module, helpers, and byte guards.
  * @throws {TypeError} If `limits` is not an object, `wasmBinary` is not bytes,
- *   or `recryptWorker` is not a boolean.
+ *   or `recryptWorker` or `bidi` is not a boolean.
  * @throws {RangeError} If a byte limit is not a positive safe integer.
  */
 async function createRuntime(options) {
@@ -103,6 +106,11 @@ async function createRuntime(options) {
     throw new TypeError("recryptWorker must be a boolean");
   }
   delete moduleOptions.recryptWorker;
+  var useBidiJs = moduleOptions.bidi ?? true;
+  if (typeof useBidiJs !== "boolean") {
+    throw new TypeError("bidi must be a boolean");
+  }
+  delete moduleOptions.bidi;
   // A worker loads its own instance. It receives wasmBinary, and the binary
   // location locateFile returns here; any other module option, such as
   // instantiateWasm, keeps recrypting on this thread. Checked before
@@ -144,7 +152,7 @@ async function createRuntime(options) {
         ? wasmBinary.slice(0)
         : Uint8Array.prototype.slice.call(wasmBinary);
   }
-  var bidiLoaded = loadBidi();
+  var bidiLoaded = useBidiJs && loadBidi();
   var module = await createModule(moduleOptions);
   await bidiLoaded;
   /**
@@ -635,6 +643,9 @@ async function createRuntime(options) {
  * @param {boolean} [options.recryptWorker=true] Whether `recryptAsync()` runs
  * in a worker. With `false`, or with module options other than `wasmBinary`,
  * `locateFile`, and `limits`, it recrypts on the calling thread.
+ * @param {boolean} [options.bidi=true] Whether to load bidi-js, which the
+ * `direction` option reorders right-to-left text with. With `false`, or when
+ * it cannot be loaded, only calls that reorder text throw.
  * @returns {Promise<object>} The initialized Muhammara API.
  */
 export async function createMuhammaraWasm(options) {
@@ -650,6 +661,8 @@ export async function createMuhammaraWasm(options) {
  * @param {Uint8Array|ArrayBuffer|Blob|false} [options.defaultFont] Custom default
  * font bytes (also accepts File), or false to require explicit registered fonts.
  * Omitting this option dynamically imports bundled Roboto Regular.
+ * @param {boolean} [options.bidi=true] Whether to load bidi-js, which the
+ * `direction` option reorders right-to-left text with.
  * @returns {Promise<Function>} The initialized Recipe constructor.
  */
 export async function createRecipe(options) {
