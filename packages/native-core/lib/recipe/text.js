@@ -1659,17 +1659,18 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     if (this._flowEndsBlock || pathOptions.startsBlock) {
       closeFlowParagraph(this);
     }
-    const texts = assignParagraphDirections(
+    const { texts, open } = assignParagraphDirections(
       textObjects,
       pathOptions.direction,
       this._flowParagraph || "",
+      this._flow && readDirection(pathOptions.direction) === TextDirection.AUTO,
     );
     settleFlowLines(
       this._previousTextObjects || [],
       texts[0],
       texts.length > 1 || !this._flow,
     );
-    this._flowParagraph = this._flow ? texts[texts.length - 1] : "";
+    this._flowParagraph = this._flow ? open : "";
   }
   // Top-level nodes share a line, as children of a block element do, so
   // inline runs outside any element are not split onto separate lines. In a
@@ -1999,17 +2000,28 @@ function justify(left, x, wto, textBox, position) {
  * @param {string} [direction] - The `direction` text option.
  * @param {string} openText - The text of the flow paragraph the first
  *   paragraph continues.
- * @returns {string[]} The text of each paragraph. The last one is still open:
- *   a later flowed run on the same line continues it.
+ * @param {boolean} waits - Whether the run flows with "auto": its open
+ *   paragraph then waits for a letter while it has none.
+ * @returns {{texts: string[], open: string}} The text of each paragraph, and
+ *   that of the paragraph a later flowed run continues: "" after a line
+ *   break.
  */
-function assignParagraphDirections(textObjects, direction, openText) {
+function assignParagraphDirections(textObjects, direction, openText, waits) {
   const paragraphs = [[]];
+  // Whether the run ends with a line break, which ends its last paragraph.
+  let lineBroken = false;
   /**
-   * Start a new paragraph unless the current one is still empty.
+   * Start a new paragraph unless the current one is still empty. The first
+   * paragraph holds the flow's open text even without nodes.
    * @returns {void}
    */
   const endParagraph = () => {
-    if (paragraphs[paragraphs.length - 1].length) paragraphs.push([]);
+    if (
+      paragraphs[paragraphs.length - 1].length ||
+      (paragraphs.length === 1 && openText)
+    ) {
+      paragraphs.push([]);
+    }
   };
   /**
    * Collect a node's text in the order the layout writes it.
@@ -2019,11 +2031,13 @@ function assignParagraphDirections(textObjects, direction, openText) {
   const visit = (node) => {
     if (node.lineBreak) {
       endParagraph();
+      lineBroken = true;
       return;
     }
     if (node.needsLineBreaker) endParagraph();
     if (typeof node.value === "string" && node.value !== "") {
       paragraphs[paragraphs.length - 1].push(node);
+      lineBroken = false;
     }
     (node.childs || []).forEach(visit);
     if (node.needsLineBreaker) endParagraph();
@@ -2033,15 +2047,28 @@ function assignParagraphDirections(textObjects, direction, openText) {
     (nodes, index) =>
       (index ? "" : openText) + nodes.map((node) => node.value).join(""),
   );
+  // A closed block element ends its paragraph, but a later plain run still
+  // continues its line, and with it its last paragraph; a line break ends
+  // both.
+  let openIndex = 0;
+  paragraphs.forEach((nodes, index) => {
+    if (nodes.length) openIndex = index;
+  });
+  const open = lineBroken ? "" : texts[openIndex];
   paragraphs.forEach((nodes, index) => {
     const resolved = resolveDirection(texts[index], direction);
+    // The open paragraph of a flow waits for a letter in a later run.
+    const pending =
+      waits &&
+      !lineBroken &&
+      index === openIndex &&
+      !hasStrongCharacter(texts[index]);
     nodes.forEach((node) => {
       node.paragraphDirection = resolved;
+      node.paragraphPending = pending;
     });
   });
-  // A closed block element ends its paragraph, but a later plain run still
-  // continues its line, and with it its paragraph.
-  return texts.filter((text, index) => paragraphs[index].length || !index);
+  return { texts, open };
 }
 
 /**
@@ -2353,7 +2380,7 @@ function makeTextObjects(
        * The direction of the HTML paragraph this run is in.
        * @returns {string} A `TextDirection` value.
        */
-      () => textObject.paragraphDirection
+      () => (textObject.paragraphPending ? null : textObject.paragraphDirection)
     : paragraphDirections(flowParagraph + text, pathOptions.direction);
   // While a flow's open paragraph has no strong character yet, its
   // direction comes from the runs that follow.

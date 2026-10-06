@@ -1657,6 +1657,88 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("lets a flowed HTML paragraph without letters wait for a later run", async function () {
+    const options = { font: "arial", size: 12, direction: "auto" };
+    const lines = (runs) =>
+      [0, 1].map((line) => lineRuns(runs, line).map((run) => run.text));
+    const html = await drawPage(
+      "text-direction-flow-html-waiting",
+      (recipe) => {
+        recipe
+          .text("123 (5)<br>456 (7) ", 50, 50, {
+            ...options,
+            html: true,
+            flow: true,
+          })
+          .text("\u05e9\u05dc\u05d5\u05dd", {
+            ...options,
+            html: false,
+            flow: false,
+          });
+      },
+    );
+    // The second paragraph's first letter is the Hebrew of the later run.
+    assert.deepEqual(lines(html), [
+      ["123 (5)"],
+      ["\u05dd\u05d5\u05dc\u05e9", " (7) 456"],
+    ]);
+    const mixed = await drawPage(
+      "text-direction-flow-html-waiting-mixed",
+      (recipe) => {
+        recipe
+          .text("123 (5) ", 50, 50, { ...options, flow: true })
+          .text("456 (7)<br>789 ", { ...options, html: true })
+          .text("\u05e9\u05dc\u05d5\u05dd", {
+            ...options,
+            html: false,
+            flow: false,
+          });
+      },
+    );
+    assert.deepEqual(lines(mixed), [
+      ["123 (5) ", "456 (7)"],
+      ["\u05dd\u05d5\u05dc\u05e9", " 789"],
+    ]);
+  });
+
+  it("ends a flowed paragraph at a line break that starts or ends an HTML run", async function () {
+    const options = { font: "arial", size: 12, direction: "auto" };
+    const ending = await drawPage(
+      "text-direction-flow-html-break-end",
+      (recipe) => {
+        recipe
+          .text("123 (5) ", 50, 50, { ...options, flow: true })
+          .text("<span>456</span><br>", { ...options, html: true })
+          .text("\u05e9\u05dc\u05d5\u05dd", {
+            ...options,
+            html: false,
+            flow: false,
+          });
+      },
+    );
+    // The Hebrew after the break leaves the line before it left to right.
+    assert.deepEqual(
+      lineRuns(ending).map((run) => run.text),
+      ["123 (5) ", "456"],
+    );
+    const starting = await drawPage(
+      "text-direction-flow-html-break-start",
+      (recipe) => {
+        recipe
+          .text("123 (5) ", 50, 50, { ...options, flow: true })
+          .text("<br>\u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd", {
+            ...options,
+            html: true,
+            flow: false,
+          });
+      },
+    );
+    assert.deepEqual(
+      lineRuns(starting).map((run) => run.text),
+      ["123 (5)"],
+    );
+  });
+
   it("keeps words joined by any non-breaking space on one line", async function () {
     for (const space of ["\u00a0", "\u2007", "\u202f"]) {
       const runs = await drawPage("text-direction-nbsp", (recipe) => {
