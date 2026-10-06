@@ -584,8 +584,43 @@ describe("TextDirection", function () {
       }
     });
 
+    it("keeps the bidi-js loadBidi() was given when a factory's import ends later", async function () {
+      this.timeout(30000);
+      var index = JSON.stringify(
+        new URL("../../index.js", import.meta.url).href,
+      );
+      var bidi = JSON.stringify(import.meta.resolve("bidi-js"));
+      // The factory's import of "bidi-js" ends after loadBidi() installed a
+      // copy of its own, which marks the text it reorders.
+      assert.equal(
+        await freshProcess(
+          [
+            `var { loadBidi } = await import(${index});`,
+            `var factory = (await import(${bidi})).default;`,
+            "var own = () => {",
+            "  var api = factory();",
+            "  var levels = api.getEmbeddingLevels;",
+            '  api.getEmbeddingLevels = (...args) => (process.stdout.write("own;"), levels(...args));',
+            "  return api;",
+            "};",
+            "var pending = createRecipe({ defaultFont: false, recryptWorker: false });",
+            "await loadBidi(own);",
+            "await pending;",
+            'toVisual(text, "auto");',
+          ].join("\n"),
+        ),
+        "own;",
+      );
+    });
+
     it("rejects a loadBidi() source that is not bidi-js", async function () {
-      for (var source of [null, "bidi-js", {}]) {
+      for (var source of [
+        null,
+        "bidi-js",
+        {},
+        () => 1,
+        { default: () => ({}) },
+      ]) {
         await assert.rejects(loadBidi(source), {
           name: "TypeError",
           message: "loadBidi() takes the bidi-js module or its default export",

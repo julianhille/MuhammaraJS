@@ -57,7 +57,8 @@ function importBidi() {
   if (bidiLoaded) return Promise.resolve(undefined);
   bidiLoading ??= import("bidi-js").then(
     (bidiModule) => {
-      useBidi(bidiModule.default);
+      // A module loadBidi() was given in the meantime stays.
+      if (!bidiLoaded) useBidi(bidiModule.default);
       bidiLoaded = true;
       return undefined;
     },
@@ -87,7 +88,10 @@ function importBidi() {
 export async function loadBidi(source) {
   if (source !== undefined) {
     var factory = typeof source === "function" ? source : source?.default;
-    if (typeof factory !== "function") {
+    if (
+      typeof factory !== "function" ||
+      typeof factory()?.getEmbeddingLevels !== "function"
+    ) {
       throw new TypeError(
         "loadBidi() takes the bidi-js module or its default export",
       );
