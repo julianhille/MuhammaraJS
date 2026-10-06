@@ -28,7 +28,7 @@ import { createVectorMethods } from "./recipe/vector.js";
 import { createTextMethods } from "./recipe/text.js";
 import { resolveFontSize } from "./recipe/text.helper.js";
 import { htmlToTextObjects } from "./recipe/htmlToTextObjects.js";
-import { spacedPieces, TextDirection } from "./text-direction.js";
+import { spacedPieces } from "./text-direction.js";
 import { createTableMethods } from "./recipe/table.js";
 import { createAnnotationMethods } from "./recipe/annotation.js";
 import {
@@ -697,30 +697,13 @@ export function createRecipeFactory({
           this._save();
           this._setSeparationColor(fill, false);
         }
-        // Each piece is drawn where the spacing before it leaves it: after
-        // the advance of the text before it and the spacing inside that.
-        var measureOptions = {
-          ...options,
-          fontSize,
-          charSpace: 0,
-          direction: TextDirection.NONE,
-        };
-        var drawn = "";
-        var spacing = 0;
-        pieces.forEach((piece, index) => {
-          var offset = index
-            ? this.textDimensions(drawn + "o", measureOptions).xMax -
-              this.textDimensions("o", measureOptions).xMax +
-              spacing
-            : 0;
-          drawn += piece;
-          spacing += (Array.from(piece).length - 1) * characterSpacing;
-          withString(piece, (textPointer) =>
+        if (pieces.length === 1) {
+          withString(value, (textPointer) =>
             withString(fontPath, (fontPointer) => {
               call(
                 "_muhammara_wasm_recipe_text",
                 this._recipe,
-                point.nx + offset,
+                point.nx,
                 point.ny,
                 textPointer,
                 fontPointer,
@@ -731,7 +714,40 @@ export function createRecipeFactory({
               );
             }),
           );
-        });
+        } else {
+          // The UTF-8 byte offsets where each piece but the last ends; the
+          // spacing after them is taken back, as on native.
+          var breaks = [];
+          var offset = 0;
+          pieces.slice(0, -1).forEach((piece) => {
+            offset += encoder.encode(piece).length;
+            breaks.push(offset);
+          });
+          var breaksPointer = module._malloc(breaks.length * 4);
+          try {
+            module.HEAP32.set(breaks, breaksPointer >>> 2);
+            withString(value, (textPointer) =>
+              withString(fontPath, (fontPointer) => {
+                call(
+                  "_muhammara_wasm_recipe_spaced_text",
+                  this._recipe,
+                  point.nx,
+                  point.ny,
+                  textPointer,
+                  fontPointer,
+                  fontSize,
+                  packedFill.space,
+                  packedFill.value,
+                  characterSpacing,
+                  breaksPointer,
+                  breaks.length,
+                );
+              }),
+            );
+          } finally {
+            module._free(breaksPointer);
+          }
+        }
         if (separation) this._restore();
       }
       // Text-markup annotations are added per line by text(); only HTML

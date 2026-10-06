@@ -1571,16 +1571,34 @@ describe("Recipe text direction", function () {
     } finally {
       recipe.dispose();
     }
-    var runs = drawPage("text-direction-char-space", (page) => {
-      page.text(pointed, 50, 50, { ...options, charSpace: 10 });
-    });
-    // A point is drawn where the letter after it starts, so it stays over
-    // that letter.
-    var bet = runs.find((run) => run.text === "\u05d1");
-    assert.ok(bet, JSON.stringify(runs));
-    assert.ok(
-      runs.some((run) => run !== bet && Math.abs(run.x - bet.x) < 0.01),
-      JSON.stringify(runs),
+    var page = new Recipe().createPage(400, 400);
+    var bytes;
+    try {
+      bytes = page
+        .text(pointed, 50, 50, { ...options, charSpace: 10 })
+        .endPage()
+        .endPDF();
+    } finally {
+      page.dispose();
+    }
+    writeOutput("text-direction-char-space", bytes);
+    // The spacing after each point is taken back, so it stays over the
+    // letter drawn after it, in one text run as on native.
+    var reader = muhammara.createReader(bytes);
+    try {
+      var contents = reader.queryDictionaryObject(
+        reader.parsePageDictionary(0),
+        "Contents",
+      );
+      var input = reader.startReadingFromStream(contents);
+      var content = [];
+      while (input.notEnded()) content.push(...input.read(1024));
+    } finally {
+      reader.end();
+    }
+    assert.match(
+      new TextDecoder("latin1").decode(new Uint8Array(content)),
+      /\[\s*<[0-9A-F]+>\s*250\s*<[0-9A-F]+>\s*250\s*<[0-9A-F]+>\s*250\s*<[0-9A-F]+>\s*\]\s*TJ/,
     );
   });
 
