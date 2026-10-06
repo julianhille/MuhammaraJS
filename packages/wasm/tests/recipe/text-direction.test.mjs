@@ -1657,6 +1657,105 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("marks each piece of a reordered flowed line with its own run's markup", function () {
+    /**
+     * Draw a flow and read the left and right edges of its annotations.
+     *
+     * @param {string} name Output file name.
+     * @param {function(object): void} draw Draws on the page.
+     * @returns {number[][]} Each annotation's rounded left and right.
+     */
+    var annotations = (name, draw) => {
+      var recipe = new Recipe();
+      var bytes;
+      try {
+        draw(recipe.createPage(400, 400));
+        bytes = recipe.endPage().endPDF();
+      } finally {
+        recipe.dispose();
+      }
+      writeOutput(name, bytes);
+      var reader = muhammara.createReader(bytes);
+      try {
+        var annots = reader.parsePage(0).getDictionary().toJSObject().Annots;
+        return annots
+          ? annots.toJSArray().map((reference) => {
+              var rect = reader
+                .parseNewObject(reference.getObjectID())
+                .toJSObject()
+                .Rect.toJSArray()
+                .map((value) => value.value);
+              return [Math.round(rect[0]), Math.round(rect[2])];
+            })
+          : [];
+      } finally {
+        reader.end();
+      }
+    };
+    var options = { font: "arial", size: 12, direction: "auto" };
+    // Only the run that asks for a highlight is highlighted.
+    assert.deepEqual(
+      annotations("text-direction-flow-markup-own", (recipe) =>
+        recipe
+          .text("\u05e9\u05dc\u05d5\u05dd ", 50, 50, {
+            ...options,
+            flow: true,
+            textBox: { width: 300 },
+          })
+          .text("\u05e2\u05d5\u05dc\u05dd", {
+            ...options,
+            flow: false,
+            highlight: true,
+          }),
+      ),
+      [[50, 71]],
+    );
+    assert.deepEqual(
+      annotations("text-direction-flow-markup-first", (recipe) =>
+        recipe
+          .text("\u05e9\u05dc\u05d5\u05dd ", 50, 50, {
+            ...options,
+            flow: true,
+            highlight: true,
+            textBox: { width: 300 },
+          })
+          .text("\u05e2\u05d5\u05dc\u05dd", {
+            ...options,
+            flow: false,
+            highlight: false,
+          }),
+      ),
+      [[71, 98]],
+    );
+    // On a justified line each annotation ends at its word's glyphs.
+    var justified = annotations(
+      "text-direction-flow-markup-justify",
+      (recipe) =>
+        recipe
+          .text("\u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd ", 50, 50, {
+            ...options,
+            direction: "rtl",
+            flow: true,
+            highlight: true,
+            textBox: { width: 200, textAlign: "justify" },
+          })
+          .text(
+            "\u05d8\u05d5\u05d1 \u05de\u05d0\u05d5\u05d3 \u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd \u05d8\u05d5\u05d1 \u05de\u05d0\u05d5\u05d3 \u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd \u05d8\u05d5\u05d1",
+            {
+              ...options,
+              direction: "rtl",
+              flow: false,
+              highlight: true,
+            },
+          ),
+    );
+    assert.deepEqual(justified.slice(0, 3), [
+      [50, 72],
+      [77, 93],
+      [98, 119],
+    ]);
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {

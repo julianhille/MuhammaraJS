@@ -441,6 +441,8 @@ exports.text = function text(text = "", x, y, options = {}) {
   // Whether this call's runs are part of a flow: it flows, or it continues
   // the lines a flow left open.
   pathOptions.flowed = this._flow || Boolean(this._previousTextObjects?.length);
+  // The call's own text-markup options, which its runs keep in a flow.
+  pathOptions.markup = options;
 
   // save text state for continued text?
   this._textOptions = this._flow ? options : { textBox: {} };
@@ -985,16 +987,15 @@ exports.text = function text(text = "", x, y, options = {}) {
           if (markupWidth <= 0 || markupHeight <= 0) return next_x;
         }
 
-        for (let key in wto.noMarkup ? {} : targetAnnotations) {
+        // A piece of a flowed run marks itself with its own run's markup.
+        const markup = wto.pieceMarkup || targetAnnotations;
+        for (let key in wto.noMarkup ? {} : markup) {
           const subtype = this._getTextMarkupAnnotationSubtype(key);
-          if (subtype && targetAnnotations[key]) {
+          if (subtype && markup[key]) {
             // Copy so the caller's markup options are not modified.
             const markupOption =
-              typeof targetAnnotations[key] != "object"
-                ? {}
-                : { ...targetAnnotations[key] };
-            const { title, open, richText, flag, icon, date, subject } =
-              targetAnnotations;
+              typeof markup[key] != "object" ? {} : { ...markup[key] };
+            const { title, open, richText, flag, icon, date, subject } = markup;
             Object.assign(markupOption, {
               height: markupHeight,
               width: markupWidth,
@@ -1241,11 +1242,16 @@ exports.text = function text(text = "", x, y, options = {}) {
             decorationWidth: inkWidth(piece),
             spaceWidth: 0,
             // Text-markup annotations of one text() call span the line from
-            // its first piece; the runs of a flow mark each piece of theirs,
-            // as on Wasm.
+            // its first piece; the runs of a flow mark each piece of theirs
+            // with their own markup, as on Wasm.
             noMarkup: markEachPiece ? !piece.text.trim() : index > 0,
+            pieceMarkup: markEachPiece ? content.markup : undefined,
+            // A justified piece's annotation ends at its glyphs, not across
+            // the widened gap after it.
             markupWidth: markEachPiece
-              ? span
+              ? justified
+                ? roomOf(piece)
+                : span
               : justified && hasGaps
                 ? textBox.width - textBox.paddingLeft - textBox.paddingRight
                 : lineWidth,
@@ -2243,6 +2249,7 @@ function makeTextObject(lines, line, lineID, textBox, options = {}) {
     direction: options.direction,
     runDirection: options.runDirection,
     flowed: options.flowed,
+    markup: options.markup,
   };
 }
 
@@ -2362,6 +2369,7 @@ function makeTextObjects(
     writeOptions: writeOptions,
     more: self._flow,
     flowed: pathOptions.flowed,
+    markup: pathOptions.markup,
     // The direction this text() call asked for, which its runs keep on a
     // line shared with runs of other calls.
     runDirection: readDirection(pathOptions.direction),
