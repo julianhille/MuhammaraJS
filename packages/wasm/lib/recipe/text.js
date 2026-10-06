@@ -291,33 +291,52 @@ function htmlLines(source, width, measure, options, wrap) {
       text: parts.map((part) => part.text).join(""),
       parts,
       last,
-      // The direction of the paragraph the line was wrapped from.
-      direction: parts[0]?.direction,
+      // The direction of the paragraph the line was wrapped from, as its
+      // first run with text sees it.
+      direction: (parts.find((part) => hasText(part.text)) || parts[0])
+        ?.direction,
     });
     parts = [];
     if (!last) linePrefix = continuationPrefix;
   };
 
-  // Every paragraph resolves its direction once over all of its runs, as
-  // native does, so a wrapped line keeps its paragraph's direction.
-  var directions = [];
-  var paragraph = 0;
-  var paragraphText = "";
+  // Every paragraph resolves its direction over all of its runs, as native
+  // does, so a wrapped line keeps its paragraph's direction. A flowed run
+  // resolves it with the direction its own call asked for.
+  var paragraphTexts = [""];
   source.forEach((sourcePart) => {
     String(sourcePart.value)
       .split(/(\n)/)
       .forEach((fragment) => {
-        if (fragment === "\n") {
-          directions.push(resolveDirection(paragraphText, options.direction));
-          paragraphText = "";
-          return;
-        }
-        paragraphText += fragment;
+        if (fragment === "\n") paragraphTexts.push("");
+        else paragraphTexts[paragraphTexts.length - 1] += fragment;
       });
   });
-  directions.push(resolveDirection(paragraphText, options.direction));
+  var resolved = new Map();
+  /**
+   * The direction a run of a paragraph is laid out in.
+   * @param {number} index - The paragraph.
+   * @param {string|undefined} requested - The direction the run asked for.
+   * @returns {string} A `Recipe.TextDirection` value.
+   */
+  var directionOf = (index, requested) => {
+    var key = index + ":" + requested;
+    if (!resolved.has(key)) {
+      resolved.set(key, resolveDirection(paragraphTexts[index], requested));
+    }
+    return resolved.get(key);
+  };
+  var paragraph = 0;
   source.forEach((sourcePart) => {
     var listMarker = false;
+    // A flowed run keeps the direction its call asked for; the runs of one
+    // text() call share it.
+    var runDirection =
+      sourcePart.styles?._flowRun !== undefined
+        ? readDirection(sourcePart.styles.direction)
+        : undefined;
+    var requested =
+      runDirection === undefined ? options.direction : runDirection;
     if (sourcePart.breakBefore && parts.length) flush(true);
     var collapseLeadingSpace = sourcePart.collapseLeadingSpace;
     if (sourcePart.indent !== undefined) {
@@ -334,7 +353,7 @@ function htmlLines(source, width, measure, options, wrap) {
     String(sourcePart.value)
       .split(/(\n)/)
       .forEach((fragment) => {
-        var direction = directions[paragraph];
+        var direction = directionOf(paragraph, requested);
         if (!fragment) return;
         if (fragment === "\n") {
           paragraph++;
@@ -367,6 +386,7 @@ function htmlLines(source, width, measure, options, wrap) {
               styles: sourcePart.styles,
               marker: listMarker,
               direction,
+              runDirection,
             },
           ];
           var previousPart = parts[parts.length - 1];
@@ -404,6 +424,7 @@ function htmlLines(source, width, measure, options, wrap) {
             styles: sourcePart.styles,
             marker: listMarker,
             direction,
+            runDirection,
           });
         });
       });
@@ -838,6 +859,7 @@ export function createTextMethods({ drawText, measure, module }) {
    */
   function validateRun(recipe, options) {
     rotationOption(options.rotation);
+    readDirection(options.direction);
     // Text does not use the miter limit, but native rejects it like shapes do.
     miterLimitOption(options.miterLimit);
     // Drawing checks this only when the flow ends; native rejects the call.
@@ -1514,11 +1536,22 @@ export function createTextMethods({ drawText, measure, module }) {
             : groupedHtmlParts(entry.parts);
           // Parts that reorder are drawn as one line in visual order, piece
           // by piece, each piece with its own part's styles.
+          // Each flowed run keeps the direction its call asked for: a run
+          // that asked for another direction than the line's is placed as
+          // one block, and an "auto" run follows the line, or its paragraph
+          // in a "none" line, as native does.
           var segments =
             entry.segments ||
             visualRuns(
               logicalParts.map((part) => part.text),
               entry.direction,
+              logicalParts.map((part) =>
+                part.runDirection === TextDirection.AUTO
+                  ? entry.direction === TextDirection.NONE
+                    ? part.direction
+                    : undefined
+                  : part.runDirection,
+              ),
             );
           var drawParts = segments
             ? (justify ? visualWords(segments) : segments).map((piece) => ({

@@ -1073,6 +1073,223 @@ describe("Recipe text direction", function () {
     });
   });
 
+  it("orders flowed runs of one line as one line", function () {
+    var runs = drawPage("text-direction-flow", (recipe) => {
+      var options = {
+        font: "arial",
+        size: 12,
+        direction: "auto",
+        flow: true,
+        textBox: { width: 300 },
+      };
+      recipe
+        .text("שלום ", 20, 20, options)
+        .text("עולם יפה", options)
+        .text("", { flow: false });
+    });
+    assert.deepEqual(
+      lineRuns(runs).map((run) => run.text.trim()),
+      ["הפי םלוע", "םולש"],
+    );
+  });
+
+  it("gives flowed runs the direction of the paragraph they continue", function () {
+    var lines = {};
+    for (var flow of [true, false]) {
+      var runs = drawPage("text-direction-flow-paragraph-" + flow, (recipe) => {
+        var options = {
+          font: "arial",
+          size: 12,
+          direction: "auto",
+          textBox: { width: 90 },
+        };
+        if (flow) {
+          recipe
+            .text("Hello there ", 20, 20, { ...options, flow: true })
+            .text("שלום abc עולם def", options)
+            .text("", { flow: false });
+        } else {
+          recipe.text("Hello there שלום abc עולם def", 20, 20, options);
+        }
+      });
+      lines[flow] = lineRuns(runs, 1).map((run) => run.text.trim());
+    }
+    // The paragraph starts with a Latin word, so it runs left to right.
+    assert.deepEqual(lines[true], ["abc םלוע def"]);
+    assert.deepEqual(lines[true], lines[false]);
+  });
+
+  it("lets a flowed run without letters take the direction of the runs after it", function () {
+    var lines = {};
+    for (var flow of [true, false]) {
+      var runs = drawPage("text-direction-flow-number-" + flow, (recipe) => {
+        var options = {
+          font: "arial",
+          size: 12,
+          direction: "auto",
+          textBox: { width: 200 },
+        };
+        if (flow) {
+          recipe
+            .text("(1) ", 20, 20, { ...options, flow: true })
+            .text("שלום עולם", options)
+            .text("", { flow: false });
+        } else {
+          recipe.text("(1) שלום עולם", 20, 20, options);
+        }
+      });
+      lines[flow] = lineRuns(runs)
+        .map((run) => run.text.trim())
+        .join(" ");
+    }
+    assert.equal(lines[true], "םלוע םולש (1)");
+    assert.equal(lines[true], lines[false]);
+  });
+
+  it("gives earlier wrapped lines of a flowed paragraph the direction found later", function () {
+    var lines = {};
+    for (var flow of [true, false]) {
+      var runs = drawPage("text-direction-flow-wrapped-" + flow, (recipe) => {
+        var options = {
+          font: "arial",
+          size: 12,
+          direction: "auto",
+          textBox: { width: 60 },
+        };
+        if (flow) {
+          recipe
+            .text("(1) 2345 6789 1234 5678 9012 ", 20, 20, {
+              ...options,
+              flow: true,
+            })
+            .text("שלום עולם", options)
+            .text("", { flow: false });
+        } else {
+          recipe.text(
+            "(1) 2345 6789 1234 5678 9012 שלום עולם",
+            20,
+            20,
+            options,
+          );
+        }
+      });
+      var ys = [...new Set(runs.map((run) => run.y))];
+      lines[flow] = ys.map((y, index) =>
+        lineRuns(runs, index)
+          .map((run) => run.text.trim())
+          .join(" "),
+      );
+    }
+    // The first strong letter is Hebrew, on the last line, so every line of
+    // the paragraph runs right to left.
+    assert.deepEqual(lines[false], [
+      "2345 (1)",
+      "1234 6789",
+      "9012 5678",
+      "םלוע םולש",
+    ]);
+    assert.deepEqual(lines[true], lines[false]);
+  });
+
+  it("ends the last line of a flowed justified right-to-left paragraph at the right edge", function () {
+    var font = muhammara.createWriter().getFontForBytes("arial");
+    var runs = drawPage("text-direction-flow-justify", (recipe) => {
+      var options = {
+        font: "arial",
+        size: 12,
+        direction: "rtl",
+        flow: true,
+        textBox: { width: 200, textAlign: "justify" },
+      };
+      recipe
+        .text("שלום עולם ", 100, 20, options)
+        .text("זהו טקסט", options)
+        .text("", { flow: false });
+    });
+    var line = lineRuns(runs);
+    assert.deepEqual(
+      line.map((run) => run.text.trim()),
+      ["טסקט והז", "םלוע םולש"],
+    );
+    var last = line[line.length - 1];
+    assert.ok(
+      Math.abs(
+        last.x + font.calculateTextDimensions(last.text.trim(), 12).xMax - 300,
+      ) < 1,
+      JSON.stringify(line),
+    );
+  });
+
+  it("gives each flowed run the direction it asked for", function () {
+    // Runs and the line they draw, read from left to right.
+    var cases = [
+      [
+        [
+          ["Hello ", undefined],
+          ["שלום עולם", "rtl"],
+        ],
+        "Hello םלוע םולש",
+      ],
+      [
+        [
+          ["שלום ", "rtl"],
+          ["עולם", "rtl"],
+          [" יפה", "rtl"],
+        ],
+        "הפי םלוע םולש",
+      ],
+      [
+        [
+          ["שלום ", "rtl"],
+          ["abc ופ", "none"],
+          [" עולם", "rtl"],
+        ],
+        "םלוע abc ופ םולש",
+      ],
+      [
+        [
+          ["שלום ", "auto"],
+          ["abc", "auto"],
+        ],
+        "abc םולש",
+      ],
+      [
+        [
+          ["שלום ", "rtl"],
+          ["abc def", "ltr"],
+          [" עולם", "rtl"],
+        ],
+        "םלוע abc def םולש",
+      ],
+      [
+        [
+          ["abc ", "ltr"],
+          ["שלום עולם!", "rtl"],
+          [" def", "ltr"],
+        ],
+        "abc !םלוע םולש def",
+      ],
+    ];
+    for (var [index, [texts, expected]] of cases.entries()) {
+      var runs = drawPage("text-direction-run-" + index, (recipe) => {
+        texts.forEach(([text, direction], run) => {
+          var options = { font: "arial", size: 12, direction };
+          if (run === 0) recipe.text(text, 20, 20, { ...options, flow: true });
+          else recipe.text(text, { ...options, flow: run < texts.length - 1 });
+        });
+      });
+      assert.equal(
+        lineRuns(runs)
+          .map((run) => run.text)
+          .join("")
+          .replace(/\s+/g, " ")
+          .trim(),
+        expected,
+        JSON.stringify(texts),
+      );
+    }
+  });
+
   it("rejects an unknown direction before drawing", function () {
     var recipe = new Recipe().createPage(200, 200);
     try {

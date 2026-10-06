@@ -245,6 +245,34 @@ describe("TextDirection", function () {
       ]);
     });
 
+    it("places a run with a direction of its own as one block", function () {
+      var runs = (texts, direction, runDirections) =>
+        visualRuns(texts, direction, runDirections).map(
+          (segment) => segment.run + ":" + segment.text,
+        );
+      // An "rtl" run in a "none" line is reordered on its own.
+      assert.deepEqual(runs(["Hello ", "שלום עולם"], "none", ["none", "rtl"]), [
+        "0:Hello ",
+        "1:םלוע םולש",
+      ]);
+      // A "none" run in a right-to-left line stays exactly as given.
+      assert.deepEqual(
+        runs(["שלום ", "abc ופ", " עולם"], "rtl", ["rtl", "none", "rtl"]),
+        ["2:םלוע ", "1:abc ופ ", "0:םולש"],
+      );
+      // A right-to-left run in a left-to-right line keeps its punctuation.
+      assert.deepEqual(
+        runs(["abc ", "שלום עולם!", " def"], "ltr", ["ltr", "rtl", "ltr"]),
+        ["0:abc ", "1:!םלוע םולש ", "2:def"],
+      );
+      // Runs that follow the line, or keep their order, change nothing.
+      assert.equal(visualRuns(["abc ", "def"], "ltr", ["ltr", "rtl"]), null);
+      assert.equal(
+        visualRuns(["שלום ", "abc"], "none", [undefined, "none"]),
+        null,
+      );
+    });
+
     it("keeps lines that do not reorder", function () {
       assert.equal(visualRuns(["Hello ", "world"], "auto"), null);
       assert.equal(visualRuns(["שלום ", "עולם"]), null);

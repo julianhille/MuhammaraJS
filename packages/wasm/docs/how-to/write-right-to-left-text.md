@@ -85,10 +85,14 @@ var outputBytes = new Recipe()
   the right edge of a right-to-left line.
 - With `wrap: "clip"`, a right-to-left line that overflows its box keeps
   its start and loses its end, on the left.
-- A line made of several styled HTML runs is reordered as one line, so
-  `<p>שלום <b>עולם</b></p>` reads in the right order. Every line of an HTML
-  paragraph takes that paragraph's direction, even a line inside one styled
-  run.
+- A line made of several styled runs, from HTML or from flowed `text()`
+  calls, is reordered as one line, so `<p>שלום <b>עולם</b></p>` reads in the
+  right order. Every line of an HTML paragraph takes that paragraph's
+  direction, even a line inside one styled run.
+- A flowed `text()` call keeps the `direction` it asks for. A call whose
+  direction differs from its line's is placed in the line as one block, like
+  a word: an `"rtl"` or `"ltr"` call is reordered on its own, and a `"none"`
+  call is drawn exactly as given. An `"auto"` call continues its paragraph.
 - `textDimensions()` takes the same `direction` option and then leaves out
   invisible direction marks, as `text()` does.
 

@@ -87,6 +87,10 @@ new muhammara.Recipe("new", "recipe-hebrew.pdf")
   calls, is reordered as one line, so `<p>שלום <b>עולם</b></p>` reads in the
   right order. Every line of an HTML paragraph takes that paragraph's
   direction, even a line inside one styled run.
+- A flowed `text()` call keeps the `direction` it asks for. A call whose
+  direction differs from its line's is placed in the line as one block, like
+  a word: an `"rtl"` or `"ltr"` call is reordered on its own, and a `"none"`
+  call is drawn exactly as given. An `"auto"` call continues its paragraph.
 - `textDimensions()` takes the same `direction` option and then leaves out
   invisible direction marks, as `text()` does.
 

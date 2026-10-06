@@ -1269,6 +1269,76 @@ describe("Recipe text direction", function () {
     }
   });
 
+  it("gives each flowed run the direction it asked for", async function () {
+    // Runs and the line they draw, read from left to right.
+    const cases = [
+      [
+        [
+          ["Hello ", undefined],
+          ["שלום עולם", "rtl"],
+        ],
+        "Hello םלוע םולש",
+      ],
+      [
+        [
+          ["שלום ", "rtl"],
+          ["עולם", "rtl"],
+          [" יפה", "rtl"],
+        ],
+        "הפי םלוע םולש",
+      ],
+      [
+        [
+          ["שלום ", "rtl"],
+          ["abc ופ", "none"],
+          [" עולם", "rtl"],
+        ],
+        "םלוע abc ופ םולש",
+      ],
+      [
+        [
+          ["שלום ", "auto"],
+          ["abc", "auto"],
+        ],
+        "abc םולש",
+      ],
+      [
+        [
+          ["שלום ", "rtl"],
+          ["abc def", "ltr"],
+          [" עולם", "rtl"],
+        ],
+        "םלוע abc def םולש",
+      ],
+      [
+        [
+          ["abc ", "ltr"],
+          ["שלום עולם!", "rtl"],
+          [" def", "ltr"],
+        ],
+        "abc !םלוע םולש def",
+      ],
+    ];
+    for (const [index, [texts, expected]] of cases.entries()) {
+      const runs = await drawPage("text-direction-run-" + index, (recipe) => {
+        texts.forEach(([text, direction], run) => {
+          const options = { font: "arial", size: 12, direction };
+          if (run === 0) recipe.text(text, 20, 20, { ...options, flow: true });
+          else recipe.text(text, { ...options, flow: run < texts.length - 1 });
+        });
+      });
+      assert.equal(
+        lineRuns(runs)
+          .map((run) => run.text)
+          .join("")
+          .replace(/\s+/g, " ")
+          .trim(),
+        expected,
+        JSON.stringify(texts),
+      );
+    }
+  });
+
   it("rejects an unknown direction before drawing", function () {
     const recipe = new Recipe(
       "new",

@@ -339,7 +339,8 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {Recipe.TextDirection} [options.direction='none'] - How right-to-left text such as Hebrew is ordered:
  * 'auto' picks each paragraph's direction from its first strong letter, 'ltr' and 'rtl' set it, and 'none' writes
  * the text exactly as given. Each laid-out line is reordered on its own; a line made of several HTML or flowed runs
- * is reordered as one line in its paragraph's direction.
+ * is reordered as one line in its paragraph's direction, and a flowed call whose direction differs from the line's
+ * is placed in it as one block.
  * @param {Boolean} [options.flow] - Used to activate/deactivate text flow which is the
  * ability to use multiple calls to 'text' to create an overall text box. Defaults to
  * `true` for a call without coordinates and `false` for a call with them.
@@ -1048,9 +1049,19 @@ exports.text = function text(text = "", x, y, options = {}) {
             contents.find((content) => content.text.trim()) ||
             first
           ).direction || TextDirection.LTR;
+        // Each run keeps the direction its call asked for: a run that asked
+        // for another direction than the line's is placed as one block, and
+        // an "auto" run follows the line, or its paragraph in a "none" line.
         const segments = visualRuns(
           contents.map((content) => content.text),
           lineDirection,
+          contents.map((content) =>
+            content.runDirection === TextDirection.AUTO
+              ? lineDirection === TextDirection.NONE
+                ? content.direction || undefined
+                : undefined
+              : content.runDirection,
+          ),
         );
         if (!segments) {
           let next_x = 0;
@@ -2124,6 +2135,7 @@ function makeTextObject(lines, line, lineID, textBox, options = {}) {
     writeOptions: options.writeOptions,
     lineComplete: options.lineComplete === true,
     direction: options.direction,
+    runDirection: options.runDirection,
   };
 }
 
@@ -2242,6 +2254,9 @@ function makeTextObjects(
     html: pathOptions.html,
     writeOptions: writeOptions,
     more: self._flow,
+    // The direction this text() call asked for, which its runs keep on a
+    // line shared with runs of other calls.
+    runDirection: readDirection(pathOptions.direction),
   };
 
   const breaker = new LineBreaker(text);

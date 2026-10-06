@@ -71,6 +71,14 @@ var PARAGRAPH_SPLIT = /(\r\n|[\n\v\f\r\u0085\u2028\u2029])/;
 var BREAKABLE_SPACE = /^(?:(?![\u00a0\u2007\u202f])\s)+/;
 var TRAILING_BREAKABLE_SPACE = /(?:(?![\u00a0\u2007\u202f])\s)+$/;
 
+// Isolates that place a run with a direction of its own in a line, and the
+// modes of a run in a line besides "ltr" and "rtl".
+var ISOLATE_LTR = "\u2066";
+var ISOLATE_RTL = "\u2067";
+var POP_ISOLATE = "\u2069";
+var RUN_FOLLOWS = "follows";
+var RUN_KEPT = "kept";
+
 var bidi = null;
 // The grapheme segmenter, created on first use; false without
 // Intl.Segmenter.
@@ -361,13 +369,25 @@ function clusterMembers(starts) {
  *
  * @param {string} core The paragraph text.
  * @param {string} direction "auto", "ltr" or "rtl".
+ * @param {boolean[]} [opaque] True at every UTF-16 index of `core` that is
+ * kept as given: classified as a left-to-right letter, so it keeps its order
+ * inside the isolate around it, never mirrored, and drawn even when it is a
+ * formatting character.
  * @returns {{characters: Array<{index: number, character: string}>, rtl:
  * boolean}} Each drawn character with its UTF-16 index in `core`, from left
  * to right, and whether the paragraph is right to left.
  */
-function visualCharacters(core, direction) {
+function visualCharacters(core, direction, opaque) {
   var api = getBidi();
   var classified = bidiText(core);
+  if (opaque) {
+    classified = classified
+      .split("")
+      .map(function (character, index) {
+        return opaque[index] ? CLASS_STAND_IN.L : character;
+      })
+      .join("");
+  }
   var levels = api.getEmbeddingLevels(
     classified,
     direction === TextDirection.AUTO ? undefined : direction,
@@ -383,7 +403,11 @@ function visualCharacters(core, direction) {
     if (written[start]) return;
     written[start] = true;
     var cluster = members[start];
-    if (levels.levels[start] % 2 && isRightToLeftLetter(core, start)) {
+    if (
+      !(opaque && opaque[start]) &&
+      levels.levels[start] % 2 &&
+      isRightToLeftLetter(core, start)
+    ) {
       // Right-to-left fonts place a mark over the glyph drawn after it, so
       // on a right-to-left letter the marks come first, as the
       // bidirectional algorithm orders them. Surrogate pairs keep their
@@ -412,7 +436,9 @@ function visualCharacters(core, direction) {
     }
     cluster.forEach(function (position) {
       var character = core[position];
-      if (!FORMATTING_CHARACTER.test(character)) {
+      if (opaque && opaque[position]) {
+        visual.push({ index: position, character: character });
+      } else if (!FORMATTING_CHARACTER.test(character)) {
         visual.push({
           index: position,
           character: mirrored.get(position) || character,
@@ -516,30 +542,82 @@ function drawnText(text, direction) {
  * indent, becomes `indent` segments at the line's start: first in a
  * left-to-right line and last in a right-to-left one, as in `toVisual()`.
  *
+ * A run can keep a direction of its own, given in `runDirections`. A run
+ * whose own direction is the line's, "auto", or not given follows the line.
+ * Any other run is a block placed in the line like one word, as a Unicode
+ * isolate: an "ltr" or "rtl" run is reordered on its own in that direction,
+ * and a "none" run is kept exactly as given. In a "none" line, every run
+ * that follows the line is kept as given too.
+ *
  * @param {string[]} texts The runs of the line in logical order.
  * @param {string} [direction] A `TextDirection` value; defaults to "none".
  * "auto" takes the direction of the line's first strong letter.
+ * @param {Array<(string|undefined)>} [runDirections] The direction each run
+ * asked for, a `TextDirection` value or undefined to follow the line.
  * @returns {Array<{run: number, text: string, indent: (boolean|undefined)}>|null}
  * The segments, with the index of the run each one belongs to, or null when
  * the line keeps its logical order: for "none", for left-to-right text, for
  * a line of only whitespace and formatting characters, and for a line
  * holding a paragraph break.
- * @throws {TypeError} If `direction` is not a `TextDirection` value.
+ * @throws {TypeError} If `direction` or a run direction is not a
+ * `TextDirection` value.
  */
-function visualRuns(texts, direction) {
+function visualRuns(texts, direction, runDirections) {
   direction = readDirection(direction);
-  var line = texts.join("");
-  if (!reorders(line, direction)) return null;
+  var modes = texts.map(function (text, run) {
+    var own = runDirections ? runDirections[run] : undefined;
+    if (own === undefined || own === null) own = TextDirection.AUTO;
+    own = readDirection(own);
+    if (own === TextDirection.NONE) return RUN_KEPT;
+    if (own === TextDirection.AUTO || own === direction) {
+      return direction === TextDirection.NONE ? RUN_KEPT : RUN_FOLLOWS;
+    }
+    return own;
+  });
+  var isolated = modes.some(function (mode) {
+    return mode !== RUN_FOLLOWS;
+  });
+  var joined = texts.join("");
   PARAGRAPH_BREAK.lastIndex = 0;
-  if (PARAGRAPH_BREAK.test(line)) return null;
+  if (PARAGRAPH_BREAK.test(joined)) return null;
+  if (!isolated && !reorders(joined, direction)) return null;
+  if (
+    modes.every(function (mode) {
+      return mode === RUN_KEPT;
+    })
+  ) {
+    return null;
+  }
+  // A run with a direction of its own is wrapped in an isolate.
+  var line = "";
   var owners = [];
+  var opaque = [];
   texts.forEach(function (text, run) {
-    for (var index = 0; index < text.length; ++index) owners.push(run);
+    var mode = modes[run];
+    var open =
+      mode === TextDirection.RTL
+        ? ISOLATE_RTL
+        : mode === RUN_FOLLOWS
+          ? ""
+          : ISOLATE_LTR;
+    var close = open ? POP_ISOLATE : "";
+    var piece = open + text + close;
+    for (var index = 0; index < piece.length; ++index) {
+      owners.push(run);
+      opaque.push(
+        mode === RUN_KEPT && index >= open.length && index < piece.length - 1,
+      );
+    }
+    line += piece;
   });
   var edges = /^(\s*)([\s\S]*?)(\s*)$/.exec(line);
   if (!edges[2]) return null;
   var leading = edges[1].length;
-  var visual = visualCharacters(edges[2], direction);
+  var visual = visualCharacters(
+    edges[2],
+    direction === TextDirection.NONE ? TextDirection.LTR : direction,
+    isolated ? opaque.slice(leading, leading + edges[2].length) : undefined,
+  );
   var characters = visual.characters.map(function (entry) {
     return { index: entry.index + leading, character: entry.character };
   });
@@ -601,7 +679,19 @@ function visualRuns(texts, direction) {
   ) {
     return null;
   }
-  return visual.rtl ? segments.concat(indent) : indent.concat(segments);
+  var ordered = visual.rtl ? segments.concat(indent) : indent.concat(segments);
+  // A line whose runs all stay as they are keeps its logical order.
+  if (
+    isolated &&
+    ordered
+      .map(function (segment) {
+        return segment.text;
+      })
+      .join("") === joined
+  ) {
+    return null;
+  }
+  return ordered;
 }
 
 /**

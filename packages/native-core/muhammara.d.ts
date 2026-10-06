@@ -4568,7 +4568,8 @@ declare namespace muhammara {
      * @param options.direction - How right-to-left text such as Hebrew is ordered, a `Recipe.TextDirection` value:
      * 'auto' picks each paragraph's direction from its first strong letter, 'ltr' and 'rtl' set it, and 'none' writes
      * the text exactly as given. Each laid-out line is reordered on its own; a line made of several HTML or flowed runs
-     * is reordered as one line in its paragraph's direction; defaults to 'none'.
+     * is reordered as one line in its paragraph's direction, and a flowed call whose direction differs from the
+     * line's is placed in it as one block; defaults to 'none'.
      * @param options.flow - Used to activate/deactivate text flow which is the
      * ability to use multiple calls to 'text' to create an overall text box. Defaults to
      * `true` for a call without coordinates and `false` for a call with them.
