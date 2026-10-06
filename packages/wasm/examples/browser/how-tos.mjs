@@ -856,11 +856,15 @@ async function rightToLeftExample(assets) {
     var bytes = recipe.endPDF();
     var muhammara = await createMuhammaraWasm();
     var reader = muhammara.createReader(bytes);
-    var lines = reader
-      .extractPageText(0)
-      .map((item) => item.text)
-      .filter((text) => /[\u0590-\u05ff]/.test(text));
-    reader.end();
+    try {
+      var lines = reader
+        .extractPageText(0)
+        .map((item) => item.text)
+        .filter((text) => /[\u0590-\u05ff]/.test(text));
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
     return {
       bytes,
       filename: "muhammara-right-to-left.pdf",
