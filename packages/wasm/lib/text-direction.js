@@ -37,7 +37,6 @@ var COMBINING_MARK = /^\p{M}$/u;
 var HAS_COMBINING_MARK = /\p{M}/u;
 // Marks a font draws over a letter, without an advance of their own.
 var NONSPACING_MARK = /^[\p{Mn}\p{Me}]$/u;
-var LETTER = /^\p{L}$/u;
 // Letters of the main right-to-left scripts, for text that is not reordered
 // because bidi-js is not loaded.
 var RIGHT_TO_LEFT_SCRIPT_LETTER =
@@ -605,17 +604,16 @@ function drawnText(text, direction) {
 }
 
 /**
- * Whether a character is a letter drawn after its marks: a right-to-left
- * letter, as reordering tells them apart, and not punctuation. Without
- * bidi-js no right-to-left text is reordered, and the main right-to-left
- * scripts stand in.
+ * Whether a character is drawn after its marks: one of a right-to-left class,
+ * as reordering tells them apart. Without bidi-js no right-to-left text is
+ * reordered, and the letters of the main right-to-left scripts stand in.
  *
  * @param {string} character One character.
- * @returns {boolean} Whether the marks before it are its own.
+ * @returns {boolean} Whether the marks of the character come before it.
  */
 function drawnAfterItsMarks(character) {
   return typeof bidiFactory === "function"
-    ? LETTER.test(character) && isRightToLeftLetter(character, 0)
+    ? isRightToLeftLetter(character, 0)
     : RIGHT_TO_LEFT_SCRIPT_LETTER.test(character);
 }
 
@@ -640,12 +638,32 @@ function spacedPieces(text, direction) {
     return [text];
   }
   var characters = Array.from(text);
-  // Whether a mark belongs to the right-to-left letter drawn after it.
+  // Whether a mark belongs to the character drawn after it. Reordering puts
+  // the marks of a right-to-left character before it, and leaves those of
+  // any other character after it, so marks right after another character
+  // belong to that one, unless it is right-to-left itself or a space.
   var before = new Array(characters.length).fill(false);
-  for (var index = characters.length - 2; index >= 0; --index) {
-    before[index] =
-      NONSPACING_MARK.test(characters[index]) &&
-      (before[index + 1] || drawnAfterItsMarks(characters[index + 1]));
+  var index = 0;
+  while (index < characters.length) {
+    if (!NONSPACING_MARK.test(characters[index])) {
+      ++index;
+      continue;
+    }
+    var end = index;
+    while (end < characters.length && NONSPACING_MARK.test(characters[end])) {
+      ++end;
+    }
+    var previous = characters[index - 1];
+    if (
+      end < characters.length &&
+      drawnAfterItsMarks(characters[end]) &&
+      (previous === undefined ||
+        /^\s$/.test(previous) ||
+        drawnAfterItsMarks(previous))
+    ) {
+      before.fill(true, index, end);
+    }
+    index = end;
   }
   var pieces = [""];
   characters.forEach(function (character, index) {

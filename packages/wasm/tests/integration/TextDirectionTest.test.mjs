@@ -239,12 +239,25 @@ describe("TextDirection", function () {
         spacedGaps(drawnText("\u{1e900}\u{1e944}\u{1e901}", "rtl"), "rtl"),
         1,
       );
-      // Punctuation after points does not take them.
-      assert.equal(spacedGaps("\u05db\u05b8\u05be", "rtl"), 2);
-      assert.equal(
-        spacedGaps(drawnText("\u05d0\u05b8\u05f4", "rtl"), "rtl"),
-        1,
-      );
+      // Points stay with the character reordering drew them before, a
+      // right-to-left punctuation mark too, and marks after any other
+      // character stay with it.
+      for (var [text, direction, gaps] of [
+        ["\u05d0\u05c3\u0591\u05d1", "rtl", 2],
+        ["\u05d0\u05be\u05b8\u05d1", "rtl", 2],
+        ["\u05d0\u05b8\u05f4", "rtl", 1],
+        ["e\u0301\u05d0 x", "ltr", 4],
+        ["\u05d0Cafe\u0301", "rtl", 5],
+      ]) {
+        var drawn = toVisual(text, direction);
+        assert.equal(spacedGaps(drawn, direction), gaps, text);
+        // Measured in logical order, the text takes the same spacing.
+        assert.equal(
+          spacedGaps(drawnText(text, direction), direction),
+          gaps,
+          text,
+        );
+      }
       // Text drawn as given keeps spacing everywhere, with or without
       // bidi-js.
       assert.deepEqual(spacedPieces("\u05d0\u05b5\u05e8"), [
