@@ -241,6 +241,13 @@ describe("TextDirection", function () {
       assert.deepEqual(textDirection.spacedPieces("e\u0301x"), ["e\u0301x"]);
       assert.equal(textDirection.spacedGaps("e\u0301x"), 2);
       assert.equal(textDirection.spacedGaps(""), 0);
+      // Any right-to-left letter, as reordering tells them apart.
+      assert.equal(
+        textDirection.spacedGaps(
+          textDirection.drawnText("\u{1e900}\u{1e944}\u{1e901}", "rtl"),
+        ),
+        1,
+      );
     });
   });
 
@@ -552,6 +559,8 @@ describe("TextDirection", function () {
       var text = "שלום abc";
       var cause = new Error("Cannot find module 'bidi-js'");
       textDirection.useBidi(cause);
+      // Character spacing works without it.
+      assert.equal(textDirection.spacedGaps("\u05b0\u05d1 a"), 2);
       assert.equal(textDirection.toVisual(text, "none"), text);
       assert.equal(textDirection.toVisual("abc", "auto"), "abc");
       var error;

@@ -37,8 +37,8 @@ var COMBINING_MARK = /^\p{M}$/u;
 var HAS_COMBINING_MARK = /\p{M}/u;
 // Marks a font draws over a letter, without an advance of their own.
 var NONSPACING_MARK = /^[\p{Mn}\p{Me}]$/u;
-// Letters of right-to-left scripts, without asking bidi-js, so character
-// spacing works without it.
+// Letters of the main right-to-left scripts, for text that is not reordered
+// because bidi-js is not loaded.
 var RIGHT_TO_LEFT_SCRIPT_LETTER =
   /^(?=\p{L})[\p{sc=Hebrew}\p{sc=Arabic}\p{sc=Syriac}\p{sc=Thaana}\p{sc=Nko}\p{sc=Samaritan}\p{sc=Mandaic}]$/u;
 // Variation selectors, which choose the form of the character before them and
@@ -604,6 +604,20 @@ function drawnText(text, direction) {
 }
 
 /**
+ * Whether a character is a letter drawn after its marks: a right-to-left
+ * letter, as reordering tells them apart. Without bidi-js nothing is
+ * reordered, and the main right-to-left scripts stand in.
+ *
+ * @param {string} character One character.
+ * @returns {boolean} Whether the marks before it are its own.
+ */
+function drawnAfterItsMarks(character) {
+  return typeof bidiFactory === "function"
+    ? isRightToLeftLetter(character, 0)
+    : RIGHT_TO_LEFT_SCRIPT_LETTER.test(character);
+}
+
+/**
  * Split text, in the order it is drawn, where character spacing must not go:
  * between the points drawn before a right-to-left letter and that letter, so
  * they stay over it. Spacing goes between the characters of each piece and
@@ -619,8 +633,7 @@ function spacedPieces(text) {
   for (var index = characters.length - 2; index >= 0; --index) {
     before[index] =
       NONSPACING_MARK.test(characters[index]) &&
-      (before[index + 1] ||
-        RIGHT_TO_LEFT_SCRIPT_LETTER.test(characters[index + 1]));
+      (before[index + 1] || drawnAfterItsMarks(characters[index + 1]));
   }
   var pieces = [""];
   characters.forEach(function (character, index) {
