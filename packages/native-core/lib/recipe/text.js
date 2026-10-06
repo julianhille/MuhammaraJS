@@ -2678,7 +2678,12 @@ exports.movedown = function movedown(lines = 1, returnCoords = false) {
   } else {
     // This handles continuous text positioning
     markLineComplete(this._previousTextObjects, lines);
-    // The next flowed run starts a new paragraph.
+    // The next flowed run starts a new paragraph. Lines still waiting for
+    // this paragraph's direction take the one it has without that run.
+    const closed = resolveDirection(this._flowParagraph, TextDirection.AUTO);
+    this._previousTextObjects.forEach((textObject) => {
+      if (textObject.direction === null) textObject.direction = closed;
+    });
     this._flowParagraph = "";
     this._previousTextObjects[this._previousTextObjects.length - 1].lastLine =
       true;

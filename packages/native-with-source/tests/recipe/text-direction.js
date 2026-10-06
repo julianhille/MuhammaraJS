@@ -1339,6 +1339,23 @@ describe("Recipe text direction", function () {
     }
   });
 
+  it("closes a flowed paragraph's direction at movedown()", async function () {
+    const runs = await drawPage("text-direction-flow-movedown", (recipe) => {
+      const options = { font: "arial", size: 12, direction: "auto" };
+      recipe
+        .text("1 - 2", 20, 20, { ...options, flow: true })
+        .movedown()
+        .text("שלום", { ...options, flow: true })
+        .text("", { flow: false });
+    });
+    // The first paragraph has no letter, so it keeps its order; the
+    // Hebrew paragraph after movedown() does not change it.
+    assert.deepEqual(
+      runs.map((run) => run.text),
+      ["1 - 2", "םולש"],
+    );
+  });
+
   it("rejects an unknown direction before drawing", function () {
     const recipe = new Recipe(
       "new",
