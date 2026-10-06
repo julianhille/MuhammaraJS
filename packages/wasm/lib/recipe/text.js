@@ -252,6 +252,9 @@ function htmlPartsWidth(parts, measure, options) {
 // Every paragraph separator ends a line, as a line feed does.
 var LINE_BREAK_SPLIT = /(\r\n|[\n\v\f\r\u0085\u2028\u2029])/;
 var ENDS_WITH_LINE_BREAK = /[\n\v\f\r\u0085\u2028\u2029]$/;
+var HAS_TEXT_OR_LINE_BREAK = /[^\s]|[\n\v\f\r\u0085\u2028\u2029]/;
+// Whitespace that is not a line break, at the end of a text.
+var TRAILING_SPACES = /[^\S\n\v\f\r\u0085\u2028\u2029]+$/;
 
 /**
  * Splits a run's text at its line breaks.
@@ -1887,8 +1890,16 @@ export function createTextMethods({ drawText, measure, module }) {
       // As in native, styled text that ends its last line, with any line
       // break or with movedown() in a flow, leaves the cursor on the line
       // after it.
-      var lastPart = source?.findLast((part) => String(part.value) !== "");
-      if (ENDS_WITH_LINE_BREAK.test(lastPart?.value ?? "")) {
+      // Spaces after the break, such as a run of only a space, stay on the
+      // line the break started.
+      var lastPart = source?.findLast((part) =>
+        HAS_TEXT_OR_LINE_BREAK.test(String(part.value)),
+      );
+      if (
+        ENDS_WITH_LINE_BREAK.test(
+          String(lastPart?.value ?? "").replace(TRAILING_SPACES, ""),
+        )
+      ) {
         this._textCursor.y += this._lastLineHeight;
       }
       this._textBoxOrigin = { x, y };

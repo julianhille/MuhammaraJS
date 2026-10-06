@@ -1855,6 +1855,23 @@ describe("Recipe text direction", function () {
     }
   });
 
+  it("moves the cursor below a flow whose break a run of spaces follows", function () {
+    var options = { font: "arial", size: 12, direction: "auto" };
+    for (var separator of ["\n", "\u2029", "\r\n", "\u0085"]) {
+      var runs = drawPage("text-direction-flow-cursor-spaces", (recipe) => {
+        recipe
+          .text("abc", 50, 150, { ...options, flow: true })
+          .text("\u05d0" + separator, options)
+          .text(" ", options)
+          .text("", { ...options, flow: false })
+          .text("after", options);
+      });
+      var after = runs.find((run) => run.text === "after");
+      // The next text starts below the flow, not over its line.
+      assert.ok(after.y < runs[0].y - 5, JSON.stringify(separator));
+    }
+  });
+
   it("keeps words joined by any non-breaking space on one line", function () {
     for (var space of ["\u00a0", "\u2007", "\u202f"]) {
       var runs = drawPage("text-direction-nbsp", (recipe) => {
