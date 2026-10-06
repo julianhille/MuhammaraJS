@@ -276,6 +276,39 @@ describe("Recipe text direction", function () {
     });
   });
 
+  it("wraps text with character spacing and direction marks as Wasm does", async function () {
+    const cases = [
+      [
+        "one two three four five six seven",
+        {},
+        ["one two three", "four five six", "seven"],
+      ],
+      [
+        "\u200fשלום\u200f עולם\u200f גדול\u200f מאוד\u200f יפה\u200f",
+        { direction: "rtl" },
+        ["לודג םלוע םולש", "הפי דואמ"],
+      ],
+    ];
+    for (const [index, [text, options, expected]] of cases.entries()) {
+      const runs = await drawPage(
+        "text-direction-char-space-" + index,
+        (recipe) => {
+          recipe.text(text, 20, 20, {
+            font: "arial",
+            size: 12,
+            charSpace: 2,
+            textBox: { width: 110 },
+            ...options,
+          });
+        },
+      );
+      assert.deepEqual(
+        runs.map((run) => run.text),
+        expected,
+      );
+    }
+  });
+
   it("orders the styled runs of an HTML line as one line", async function () {
     const runs = await drawPage("text-direction-html", (recipe) => {
       recipe.text("<p>שלום <u>עולם</u> יפה</p>", 20, 20, {
