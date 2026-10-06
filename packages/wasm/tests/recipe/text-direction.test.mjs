@@ -1307,6 +1307,21 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("gives a paragraph starting with an isolate a later letter's direction, as native", function () {
+    var runs = drawPage("text-direction-isolate-paragraph", (recipe) => {
+      recipe.text("\u2067abc\u2069 1 2 3 4 5 6 7 8 9 שלום", 20, 20, {
+        font: "arial",
+        size: 12,
+        direction: "auto",
+        textBox: { width: 60 },
+      });
+    });
+    assert.deepEqual(
+      runs.map((run) => run.text),
+      ["4 3 2 1 abc", "9 8 7 6 5", "םולש"],
+    );
+  });
+
   it("rejects an unknown direction before drawing", function () {
     var recipe = new Recipe().createPage(200, 200);
     try {

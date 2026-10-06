@@ -156,18 +156,32 @@ var STRONG_CLASSES = Object.freeze(["L", "R", "AL"]);
 
 /**
  * Whether text holds a character that can set its paragraph's direction: a
- * letter of either direction, or a left-to-right or right-to-left mark.
+ * letter of either direction, or a left-to-right or right-to-left mark,
+ * outside any isolate, which the paragraph's direction skips.
  *
  * @param {string} text The text.
- * @returns {boolean} True for text with a character of class L, R or AL.
+ * @returns {boolean} True for text with a character of class L, R or AL
+ * outside an isolate.
  */
 function hasStrongCharacter(text) {
   var api = getBidi();
+  var isolates = 0;
   for (var index = 0; index < text.length; ++index) {
-    var type = api.getBidiCharTypeName(
-      String.fromCodePoint(text.codePointAt(index)),
-    );
-    if (STRONG_CLASSES.indexOf(type) !== -1) return true;
+    var code = text.charCodeAt(index);
+    if (code >= 0x2066 && code <= 0x2068) {
+      ++isolates;
+      continue;
+    }
+    if (code === 0x2069) {
+      if (isolates) --isolates;
+      continue;
+    }
+    if (!isolates) {
+      var type = api.getBidiCharTypeName(
+        String.fromCodePoint(text.codePointAt(index)),
+      );
+      if (STRONG_CLASSES.indexOf(type) !== -1) return true;
+    }
     if (isLowSurrogateAt(text, index + 1)) ++index;
   }
   return false;

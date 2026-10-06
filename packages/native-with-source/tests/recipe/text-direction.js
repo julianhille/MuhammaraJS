@@ -1356,6 +1356,36 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("lets a flowed paragraph starting with an isolate take a later letter's direction", async function () {
+    const text = "\u2067abc\u2069 1 2 3 4 5 6 7 8 9 ";
+    const lines = {};
+    for (const flow of [true, false]) {
+      const runs = await drawPage(
+        "text-direction-flow-isolate-" + flow,
+        (recipe) => {
+          const options = {
+            font: "arial",
+            size: 12,
+            direction: "auto",
+            textBox: { width: 60 },
+          };
+          if (flow) {
+            recipe
+              .text(text, 20, 20, { ...options, flow: true })
+              .text("שלום", { ...options, flow: false });
+          } else {
+            recipe.text(text + "שלום", 20, 20, options);
+          }
+        },
+      );
+      lines[flow] = runs.map((run) => run.text);
+    }
+    // The isolate's letters do not set the paragraph's direction; the
+    // Hebrew word after it does.
+    assert.deepEqual(lines[false], ["4 3 2 1 abc", "9 8 7 6 5", "םולש"]);
+    assert.deepEqual(lines[true], lines[false]);
+  });
+
   it("rejects an unknown direction before drawing", function () {
     const recipe = new Recipe(
       "new",

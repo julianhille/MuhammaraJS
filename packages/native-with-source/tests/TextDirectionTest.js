@@ -215,6 +215,17 @@ describe("TextDirection", function () {
     });
   });
 
+  describe("hasStrongCharacter outside isolates", function () {
+    it("skips the letters of an isolate, as the paragraph direction does", function () {
+      assert.isFalse(textDirection.hasStrongCharacter("\u2067abc\u2069 1 2"));
+      assert.isFalse(
+        textDirection.hasStrongCharacter("\u2068\u2066שלום\u2069\u2069"),
+      );
+      assert.isTrue(textDirection.hasStrongCharacter("\u2067abc\u2069 שלום"));
+      assert.isTrue(textDirection.hasStrongCharacter("\u202babc\u202c"));
+    });
+  });
+
   describe("drawnText", function () {
     it("leaves out the formatting characters reordering drops", function () {
       assert.equal(textDirection.drawnText("\u2067שלום\u2069", "auto"), "שלום");
