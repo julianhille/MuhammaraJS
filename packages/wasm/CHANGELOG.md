@@ -6,6 +6,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Changed
 
+- GitHub releases carry generated notes: the changelog section of the
+  released version, the pull requests merged since the previous release with
+  the issues they close, the contributors, the first-time contributors, and a
+  compare link. A release tag whose version has no changelog section fails
+  before anything is published
+  [#962](https://github.com/julianhille/MuhammaraJS/issues/962)
+
 - Publish an index page at the GitHub Pages root,
   <https://julianhille.github.io/MuhammaraJS/>, that links every deployed
   browser example version. The root answered with a 404 before, so the

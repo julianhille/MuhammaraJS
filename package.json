@@ -8,6 +8,7 @@
     "test": "npm run test --workspace=@muhammara/native-with-source",
     "test:codestyle": "npx prettier -c ./",
     "test:electron-matrix": "node .github/scripts/validate-electron-matrix.mjs",
+    "test:release-notes": "node --test .github/scripts/release-notes.test.mjs",
     "test:jest": "npm run test:jest --workspace=@muhammara/native-with-source",
     "test:electron": "npm run test:electron --workspace=@muhammara/native-with-source",
     "package": "npm run package --workspace=@muhammara/native-with-source",

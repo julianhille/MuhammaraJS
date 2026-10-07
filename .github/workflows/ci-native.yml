@@ -639,6 +639,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -664,6 +665,10 @@ jobs:
           merge-multiple: true
       - name: Verify package version
         run: test "$(node -p "require('./packages/native-core/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native/package.json').version")" = "${GITHUB_REF_NAME#native-v}" && test "$(node -p "require('./packages/native-with-source/package.json').version")" = "${GITHUB_REF_NAME#native-v}"
+      - name: Generate release notes
+        run: node .github/scripts/release-notes.mjs CHANGELOG.md native-v "$GITHUB_REF_NAME" --output "$RUNNER_TEMP/release-notes.md"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - id: npm-tag
         run: |
           case "${GITHUB_REF_NAME#native-v}" in
@@ -695,6 +700,7 @@ jobs:
           files: "builds/release/*"
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
+          body_path: ${{ runner.temp }}/release-notes.md
           draft: false
           prerelease: ${{ steps.npm-tag.outputs.value != 'latest' }}
       - id: pending

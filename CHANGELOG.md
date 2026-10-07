@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- GitHub releases carry generated notes: the changelog section of the
+  released version, the pull requests merged since the previous release with
+  the issues they close, the contributors, the first-time contributors, and a
+  compare link. A release tag whose version has no changelog section fails
+  before anything is published
+  [#962](https://github.com/julianhille/MuhammaraJS/issues/962)
+
 ### Fixed
 
 - Encrypt the output of a `Buffer`-sourced `Recipe` when `encrypt()` is
