@@ -1019,6 +1019,22 @@ function visualWords(segments) {
 }
 
 /**
+ * Throw, as reordering would, when text drawn in a direction has to be
+ * reordered and bidi-js is not loaded, so a call can check before it draws
+ * anything. Text drawn as given, with "none", and left-to-right text in a
+ * left-to-right paragraph need no bidi-js.
+ *
+ * @param {string} text The text.
+ * @param {string} [direction] A `TextDirection` value; defaults to "none".
+ * @returns {void}
+ * @throws {Error} If the text needs bidi-js and it is not loaded.
+ * @throws {TypeError} If `direction` is not a `TextDirection` value.
+ */
+function requireBidiFor(text, direction) {
+  if (reorders(String(text), readDirection(direction))) getBidi();
+}
+
+/**
  * Remove the spaces that end a text and that a line drops, a next line
  * (U+0085) included; the no-break spaces U+00A0, U+2007 and U+202F stay.
  *
@@ -1048,6 +1064,7 @@ module.exports = {
   drawnGaps: drawnGaps,
   useBidi: useBidi,
   trimBreakableEnd: trimBreakableEnd,
+  requireBidiFor: requireBidiFor,
   NO_BREAK_SPACES: NO_BREAK_SPACES,
   LINE_BREAKS: LINE_BREAKS,
   BREAKABLE_SPACE: BREAKABLE_SPACE,

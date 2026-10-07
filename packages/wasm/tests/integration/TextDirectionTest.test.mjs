@@ -771,6 +771,36 @@ describe("TextDirection", function () {
       );
     });
 
+    it("throws before drawing text that needs bidi-js without it", async function () {
+      this.timeout(30000);
+      // The first line needs no reordering, the second does: nothing of the
+      // call is drawn, its box neither.
+      assert.equal(
+        await freshProcess(
+          [
+            "var Recipe = await createRecipe({ recryptWorker: false, bidi: false });",
+            "var muhammara = await createMuhammaraWasm({ recryptWorker: false, bidi: false });",
+            "var recipe = new Recipe().createPage(300, 300);",
+            "try {",
+            '  recipe.text("Hello\\n" + text, 20, 20, {',
+            '    direction: "ltr",',
+            '    textBox: { width: 200, style: { fill: "#eeeeee" } },',
+            "  });",
+            "} catch (error) {",
+            '  process.stdout.write(error.message + ";");',
+            "}",
+            "var reader = muhammara.createReader(recipe.endPage().endPDF());",
+            "var page = reader.parsePage(0);",
+            "process.stdout.write(",
+            '  reader.extractPageText(0).length + " runs, " +',
+            '  (page.getDictionary().exists("Contents") ? "content" : "no content"),',
+            ");",
+          ].join("\n"),
+        ),
+        "Reordering right-to-left text needs bidi-js;0 runs, no content",
+      );
+    });
+
     it("spaces left-to-right text with marks without bidi-js", async function () {
       this.timeout(30000);
       // Placing the spacing around a mark between two letters asks whether

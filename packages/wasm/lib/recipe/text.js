@@ -12,6 +12,7 @@ import {
   TextDirection,
   drawnText,
   readDirection,
+  requireBidiFor,
   resolveDirection,
   spaceAdvance,
   splitParagraphs,
@@ -1233,6 +1234,12 @@ export function createTextMethods({ drawText, measure, module, fontKey }) {
       rotationOption(options.rotation);
       miterLimitOption(options.miterLimit);
       readDirection(options.direction);
+      // Text that has to be reordered needs bidi-js; without it the call
+      // throws before it draws anything.
+      requireBidiFor(value, options.direction);
+      (flowSource || []).forEach((part) =>
+        requireBidiFor(part.value, part.styles?.direction ?? options.direction),
+      );
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
       var layout = options.layout && this._layouts?.[options.layout];
