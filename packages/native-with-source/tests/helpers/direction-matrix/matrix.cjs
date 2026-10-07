@@ -30,10 +30,6 @@ var KNOWN_DIFFERENCES = [
     "Wasm justifies a line drawn as given with slightly different gaps",
   ],
   [
-    /^flow plain-html /,
-    "native drops a space inside an HTML run's first element",
-  ],
-  [
     /^(flow-break \w+ figure-space|single-break nel) /,
     "native trims a figure space at a line's end and keeps a next line there",
   ],

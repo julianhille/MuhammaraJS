@@ -18,7 +18,7 @@ const {
 } = require("../text-direction");
 
 // HTML whose text starts with a space, after any tags that open it.
-const LEADING_HTML_SPACE = /^(?:<[^>]*>|\s)*?\s/;
+const LEADING_HTML_SPACE = /^(?:<(?:[^>"']|"[^"]*"|'[^']*')*>|\s)*?\s/;
 // The line breaks that end a text, every paragraph separator among them.
 const TRAILING_LINE_BREAKS = /(?:\r\n|[\n\v\f\r\u0085\u2028\u2029])+$/;
 const {
@@ -499,9 +499,11 @@ exports.text = function text(text = "", x, y, options = {}) {
   ) {
     const first = firstInlineText(textObjects);
     if (first && !/^\s/.test(first.value)) {
-      // A space before an element is a run of its own, as in one call.
-      if (textObjects.includes(first)) first.value = " " + first.value;
-      else {
+      // A space inside the first element starts its text, as on Wasm; one
+      // before an element is a run of its own, as in one call.
+      if (!/^\s/.test(text) || textObjects.includes(first)) {
+        first.value = " " + first.value;
+      } else {
         textObjects.unshift(
           ...this._makeTextObject(" ", pathOptions.size, options),
         );
