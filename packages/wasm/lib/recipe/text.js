@@ -613,12 +613,40 @@ function flowRunSource(value, options, fontSize, index) {
   return parts;
 }
 
+// The measurements a Recipe keeps before it starts over.
+var MEASURED_LIMIT = 4096;
+
 /**
  * Creates Recipe text measurement, layout, and drawing methods.
- * @param {{drawText: Function, measure: Function, module: object}} dependencies - Run drawing and measuring callbacks.
+ * @param {{drawText: Function, measure: Function, module: object, fontKey: Function}} dependencies - Run drawing and measuring callbacks, and the key of the font and size text options measure in.
  * @returns {object} Methods mixed into Recipe.prototype.
  */
-export function createTextMethods({ drawText, measure, module }) {
+export function createTextMethods({ drawText, measure, module, fontKey }) {
+  // Each Recipe's measurements, by the font and size and the text: a flow
+  // measures its line height and its words again and again, and each
+  // measurement reads the glyphs from the font file.
+  var measured = new WeakMap();
+
+  /**
+   * Measures text once for each font and size.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} text - Text, as drawn.
+   * @param {object} options - Text options.
+   * @returns {TextDimensions} A copy of the measurement.
+   */
+  function measureOnce(recipe, text, options) {
+    var cache = measured.get(recipe);
+    if (!cache) measured.set(recipe, (cache = new Map()));
+    var key = fontKey(options) + "\u0000" + text;
+    var result = cache.get(key);
+    if (!result) {
+      if (cache.size >= MEASURED_LIMIT) cache.clear();
+      result = measure.call(recipe, text, options);
+      cache.set(key, result);
+    }
+    return { ...result };
+  }
+
   /**
    * Measures text including character spacing.
    * @param {Recipe} recipe - Recipe instance.
@@ -633,7 +661,7 @@ export function createTextMethods({ drawText, measure, module }) {
     var drawn = options._drawn
       ? String(value)
       : drawnText(String(value), options.direction);
-    var result = measure.call(recipe, drawn, options);
+    var result = measureOnce(recipe, drawn, options);
     var spacing = charSpacing(
       value,
       options.charSpace,

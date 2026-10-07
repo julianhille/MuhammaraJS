@@ -47,6 +47,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   flow, as native does, instead of over its last line; `movedown(0)` no
   longer adds a blank line after such a flow
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Measure each text once for each font and size in a Recipe: every
+  measurement read its glyphs from the font file, about a millisecond each,
+  and Recipe measured each line's height and each flowed word again and
+  again, so a flow of 3000 runs took 8.6 seconds instead of 0.2
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 
 ## [1.1.0] - 2026-10-05
 

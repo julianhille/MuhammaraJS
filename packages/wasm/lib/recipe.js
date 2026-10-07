@@ -777,6 +777,15 @@ export function createRecipeFactory({
     createTextMethods({
       module,
       /**
+       * The font and size text options measure in. A font registered again
+       * has a path of its own.
+       * @param {object} options - Font and size options.
+       * @returns {string} The key.
+       * @throws {Error} If the font is not registered.
+       */
+      fontKey: (options) =>
+        resolveFont(options) + "\u0000" + resolveFontSize(options),
+      /**
        * Draws one text run for the shared text methods.
        * @param {string} value - Text.
        * @param {number} x - Recipe x.

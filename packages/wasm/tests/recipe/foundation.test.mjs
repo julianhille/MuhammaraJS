@@ -241,6 +241,24 @@ describe("Recipe foundation", function () {
     writeOutput("foundation-font-styles", recipe.endPDF());
   });
 
+  it("measures a font registered again under the same name anew", async function () {
+    var Recipe = await createRecipe();
+    Recipe.registerFont(
+      "again",
+      new Uint8Array(await readFile("tests/TestMaterials/fonts/arial.ttf")),
+    );
+    var recipe = new Recipe();
+    var options = { font: "again", fontSize: 12 };
+    var first = recipe.textDimensions("Hello world", options).width;
+    Recipe.registerFont(
+      "again",
+      new Uint8Array(await readFile("tests/TestMaterials/fonts/Couri.ttf")),
+    );
+    // Measurements are kept by the font they were taken in, not its name.
+    assert.notEqual(recipe.textDimensions("Hello world", options).width, first);
+    recipe.endPDF();
+  });
+
   it("uses explicit async byte asset APIs and rejects paths and encrypted sources", async function () {
     var Recipe = await createRecipe();
     var font = new Uint8Array(
