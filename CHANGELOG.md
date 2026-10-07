@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#470](https://github.com/julianhille/MuhammaraJS/pull/470)
 - `registerFont()` takes an `isDefault` boolean after the style that makes
   the registered family the Recipe's default font family. The latest default
-  set, by the option or a registration, applies
+  set, by the option or a registration, applies. A missing font file throws when it
+  is registered as the default
   [#470](https://github.com/julianhille/MuhammaraJS/pull/470)
 
 ## [7.1.0] - 2026-10-05

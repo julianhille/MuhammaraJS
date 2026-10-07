@@ -158,18 +158,19 @@ function defaultFontFamilyOption(family) {
  * Validates the `defaultFontSize` Recipe option.
  * @private
  * @param {*} size - The option value.
- * @returns {number} The size, or 14 when omitted.
+ * Accepts what the `size` text option accepts, such as a numeric string.
+ * @returns {number} The size as a number, or 14 when omitted.
  * @throws {RangeError} If the size is given and is not a finite number
  *   greater than zero.
  */
 function defaultFontSizeOption(size) {
   if (size == null) return DEFAULT_FONT_SIZE;
-  if (typeof size !== "number" || !(size > 0) || size === Infinity) {
+  if (!(size > 0) || size === Infinity) {
     throw new RangeError(
       `Recipe defaultFontSize must be a number greater than zero, received ${size}`,
     );
   }
-  return size;
+  return Number(size);
 }
 
 /**

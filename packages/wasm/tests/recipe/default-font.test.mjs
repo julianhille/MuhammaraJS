@@ -295,9 +295,20 @@ describe("Recipe default font", function () {
   });
 
   it("rejects invalid default font options", function () {
-    [0, -1, NaN, Infinity, "12"].forEach((defaultFontSize) => {
+    [0, -1, NaN, Infinity, "0", "abc"].forEach((defaultFontSize) => {
       assert.throws(() => new Recipe({ defaultFontSize }), RangeError);
     });
+    // Like the size text option, a numeric string is accepted as a number.
+    var recipe = new Recipe({ defaultFontSize: "20" }).createPage("letter");
+    try {
+      assert.equal(recipe.default.fontSize, 20);
+      assert.deepEqual(
+        recipe.textDimensions("Hello"),
+        recipe.textDimensions("Hello", { size: 20 }),
+      );
+    } finally {
+      recipe.dispose();
+    }
     ["", 12].forEach((defaultFontFamily) => {
       assert.throws(() => new Recipe({ defaultFontFamily }), TypeError);
     });

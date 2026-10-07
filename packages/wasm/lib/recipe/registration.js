@@ -73,7 +73,9 @@ export function createRegistrationMethods({
      * @param {AsyncByteSource} bytes Font bytes or an asynchronous byte source.
      * @param {RecipeFontStyle} [type="regular"] Font family style.
      * @param {boolean} [isDefault=false] Make this family the default font
-     * family of every Recipe from this runtime, as `registerFont()` does.
+     * family of every Recipe from this runtime, as `registerFont()` does. It
+     * takes effect when the bytes are read, so of two pending calls the one
+     * that finishes last sets the default; await each call to keep the order.
      * @returns {Promise<void>} Resolves after the font is registered.
      * @throws {TypeError} If the name is empty, the bytes are unsupported, or
      * `isDefault` is not a boolean.

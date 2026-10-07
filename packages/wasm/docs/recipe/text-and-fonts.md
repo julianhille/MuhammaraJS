@@ -152,12 +152,18 @@ await Recipe.registerFontAsync("report", fontFile, "regular", true);
 var recipe = new Recipe(); // uses "report"
 ```
 
+`registerFontAsync()` sets the default when it has read the bytes, not when it
+is called. Of two pending calls with `isDefault`, the one that finishes last
+sets the default, whatever order they were started in. Await each call before
+starting the next when the order matters.
+
 The family name is case-insensitive and is resolved when text is drawn or
 measured, so it can be registered after the Recipe is created; text throws
 `Unknown font: <name>` while it is not registered. A `defaultFontFamily` that
 is not a non-empty string throws a `TypeError`, and a `defaultFontSize` that is
 not a finite number greater than zero throws a `RangeError`, when the Recipe
-is created.
+is created. Like the `size` text option, `defaultFontSize` also accepts a
+numeric string such as `"12"`.
 
 ## Wrapping And HTML
 

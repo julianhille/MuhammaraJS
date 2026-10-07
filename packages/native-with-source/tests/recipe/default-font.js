@@ -100,12 +100,21 @@ describe("Recipe default font", function () {
 
   it("rejects invalid default font options", function () {
     var output = path.join(__dirname, "../output/default-font-invalid.pdf");
-    [0, -1, NaN, Infinity, "12"].forEach((defaultFontSize) => {
+    [0, -1, NaN, Infinity, "0", "abc"].forEach((defaultFontSize) => {
       assert.throws(
         () => new Recipe("new", output, { defaultFontSize }),
         RangeError,
       );
     });
+    // Like the size text option, a numeric string is accepted as a number.
+    var recipe = new Recipe("new", output, { defaultFontSize: "20" });
+    assert.strictEqual(recipe.current.defaultFontSize, 20);
+    recipe = recipe.createPage("letter");
+    assert.deepStrictEqual(
+      recipe.textDimensions("Hello"),
+      recipe.textDimensions("Hello", { size: 20 }),
+    );
+    recipe.endPage().endPDF();
     ["", 12].forEach((defaultFontFamily) => {
       assert.throws(
         () => new Recipe("new", output, { defaultFontFamily }),
@@ -140,6 +149,13 @@ describe("Recipe default font", function () {
         recipe.registerFont("", path.join(fontsDir, "Roboto.ttf"), "r", true),
       /Font names must be non-empty strings/,
     );
+    // A default whose file is missing fails here, and the default stays.
+    var missing = path.join(fontsDir, "missing.ttf");
+    assert.throws(
+      () => recipe.registerFont("missing", missing, "r", true),
+      /Cannot find font file: .*missing\.ttf/,
+    );
+    assert.deepStrictEqual(recipe.textDimensions("Hello"), georgia);
     recipe.endPage().endPDF();
   });
 });

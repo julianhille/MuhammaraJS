@@ -928,7 +928,9 @@ export function createRecipeFactory({
      * @param {AsyncByteSource} bytes - Font bytes or a blob-like source.
      * @param {RecipeFontStyle} [type="regular"] - Font family style.
      * @param {boolean} [isDefault=false] - Make this family this Recipe's
-     * default font family, as `registerFont()` does.
+     * default font family, as `registerFont()` does. It takes effect when the
+     * bytes are read, so of two pending calls the one that finishes last sets
+     * the default; await each call to keep the order.
      * @returns {Promise<Recipe>} The Recipe instance after registration.
      * @throws {TypeError} If the name, bytes, or `isDefault` are invalid.
      */

@@ -4216,6 +4216,7 @@ declare namespace muhammara {
      * @returns The recipe instance.
      * @throws {TypeError} If `isDefault` is not a boolean, or is true and the
      *   font name is empty.
+     * @throws {Error} If `isDefault` is true and the font file does not exist.
      */
     registerFont(
       fontName: string,

@@ -26,6 +26,8 @@ const FontSlot = Object.freeze({
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If `isDefault` is not a boolean, or is true and the
  *   font name is empty.
+ * @throws {Error} If `isDefault` is true and the font file does not exist,
+ *   so a broken default fails here instead of when text is drawn.
  */
 exports.registerFont = function registerFont(
   fontName = "",
@@ -40,6 +42,9 @@ exports.registerFont = function registerFont(
   }
   if (isDefault && (typeof fontName !== "string" || !fontName)) {
     throw new TypeError("Font names must be non-empty strings");
+  }
+  if (isDefault && !fs.existsSync(fontSrcPath)) {
+    throw new Error(`Cannot find font file: ${fontSrcPath}`);
   }
   this._registerFont(fontName, fontSrcPath, type);
   if (isDefault) this.current.defaultFontFamily = fontName.toLowerCase();

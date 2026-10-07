@@ -47,11 +47,16 @@ overrides the option, and a later one overrides it again:
 pdfDoc.registerFont("body", "./fonts/body.ttf", "regular", true);
 ```
 
+With `true`, the font file must exist: a missing file throws when
+`registerFont()` is called, instead of when text is drawn.
+
 The family is resolved when text is drawn or measured, so it can come from
 `fontSrcPath` or a later `registerFont()`; text throws `Unknown font: <name>`
 while it is not registered. A `defaultFontFamily` that is not a non-empty
 string throws a `TypeError`, and a `defaultFontSize` that is not a finite number
-greater than zero throws a `RangeError`, when the Recipe is created.
+greater than zero throws a `RangeError`, when the Recipe is created. Like the
+`size` text option, `defaultFontSize` also accepts a numeric string such as
+`"12"`.
 
 Character-spacing measurements include retained leading and trailing whitespace
 and count each Unicode code point once, so non-BMP characters do not add an

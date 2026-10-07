@@ -628,6 +628,8 @@ export interface Recipe {
   /**
    * `isDefault` makes the family this Recipe's default font family, as the
    * `defaultFontFamily` option does; the latest default set applies.
+   * `registerFontAsync()` sets it when the bytes are read, so of two pending
+   * calls the one that finishes last wins; await each call to keep the order.
    */
   registerFont(
     name: string,
@@ -1395,6 +1397,8 @@ export interface RecipeConstructor {
    * `isDefault` makes the family the default font family of every Recipe from
    * this runtime; the latest default set, by this, a Recipe's
    * `defaultFontFamily` option, or its own `registerFont()`, applies.
+   * `registerFontAsync()` sets it when the bytes are read, so of two pending
+   * calls the one that finishes last wins; await each call to keep the order.
    */
   registerFont(
     name: string,
