@@ -1816,7 +1816,8 @@ export function createTextMethods({ drawText, measure, module, fontKey }) {
               drawOptions,
             );
             if (clipEachPart) this._restore();
-            if (partOptions.link) {
+            // An indent is only whitespace; it links nowhere, as on native.
+            if (partOptions.link && !part.indent) {
               var linkBounds = dimensions(this, part.text, partOptions);
               var nextPart = drawParts
                 .slice(partIndex + 1)

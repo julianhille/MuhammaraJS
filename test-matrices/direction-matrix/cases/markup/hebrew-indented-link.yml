@@ -1,0 +1,44 @@
+description: Indented Hebrew text with a link
+kind: markup
+text: "  שלום עולם"
+options:
+  link: https://example.com
+  textBox:
+    width: 180
+expected:
+  none left:
+    native:
+      lines:
+        - [["  שלום עולם", 20], ["  שלום עולם", 220]]
+      annotations: [[20, 75.1], [220, 275.1]]
+    wasm: same
+  none right:
+    native:
+      lines:
+        - [["  שלום עולם", 144.86], ["  שלום עולם", 344.86]]
+      annotations: [[144.9, 200], [344.9, 400]]
+    wasm: same
+  auto left:
+    native:
+      lines:
+        - [["  שלום עולם", 20], ["םלוע םולש", 220], ["  ", 268.76]]
+      annotations: [[20, 75.1], [220, 268.8]]
+    wasm: same
+  auto right:
+    native:
+      lines:
+        - [["  שלום עולם", 144.86], ["םלוע םולש", 344.6], ["  ", 393.35]]
+      annotations: [[144.9, 200], [344.6, 393.4]]
+    wasm: same
+  rtl left:
+    native:
+      lines:
+        - [["  שלום עולם", 20], ["םלוע םולש", 220], ["  ", 268.76]]
+      annotations: [[20, 75.1], [220, 268.8]]
+    wasm: same
+  rtl right:
+    native:
+      lines:
+        - [["  שלום עולם", 144.86], ["םלוע םולש", 344.6], ["  ", 393.35]]
+      annotations: [[144.9, 200], [344.6, 393.4]]
+    wasm: same
