@@ -1401,6 +1401,35 @@ describe("Recipe text direction", function () {
     assert.ok(line.length > 1);
   });
 
+  it("measures a wrapping line from its words as drawn", function () {
+    const {
+      Word,
+      Line,
+    } = require("@muhammara/native-core/lib/recipe/text.helper");
+    const { drawnText } = require("@muhammara/native-core/lib/text-direction");
+    const font = muhammara
+      .createWriter(new muhammara.PDFWStreamForBuffer())
+      .getFontForFile(ARIAL);
+    for (const [direction, words] of [
+      ["rtl", ["\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd ", "abc ", "12"]],
+      ["auto", ["\u2067\u05d0\u2069 ", "\u05d1\u200d", "\u05b8x"]],
+      ["none", ["Hello ", "w\u0301orld"]],
+    ]) {
+      const options = { font, size: 12, direction, charSpace: 2 };
+      const line = new Line(1000, 12, 12, options);
+      words.forEach((word) => line.addWord(new Word(word, options)));
+      // The line adds up its words, and draws a word that continues the
+      // cluster before it with that cluster, as the whole line is drawn.
+      const value = words.join("");
+      assert.equal(
+        line.currentWidth,
+        font.calculateTextDimensions(drawnText(value, direction), 12).xMax +
+          line.charSpacing(value),
+        direction,
+      );
+    }
+  });
+
   it("forgets a flow's paragraph state at a new page and a table", async function () {
     const stale = (recipe) => {
       recipe._flowParagraph = "\u05d0";
