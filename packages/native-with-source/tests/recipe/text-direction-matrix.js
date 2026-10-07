@@ -1,4 +1,4 @@
-// The direction test matrix on native: see helpers/direction-matrix.
+// The direction test matrix on native: see test-matrices/direction-matrix.
 const assert = require("node:assert/strict");
 const path = require("path");
 const muhammara = require("@muhammara/native-with-source");
@@ -11,7 +11,7 @@ const {
   writeExpected,
   knownDifference,
   update,
-} = require("../helpers/direction-matrix/matrix.cjs");
+} = require("../../../../test-matrices/direction-matrix/matrix.cjs");
 
 const { Recipe } = muhammara;
 const ARIAL = path.join(__dirname, "../TestMaterials/fonts/arial.ttf");

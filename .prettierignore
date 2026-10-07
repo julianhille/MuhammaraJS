@@ -1,2 +1,2 @@
 src/
-packages/native-with-source/tests/helpers/direction-matrix/expected.json
+test-matrices/direction-matrix/expected.json

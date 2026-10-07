@@ -1,5 +1,4 @@
-// The direction test matrix on Wasm: see
-// packages/native-with-source/tests/helpers/direction-matrix.
+// The direction test matrix on Wasm: see test-matrices/direction-matrix.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -15,7 +14,7 @@ var {
   writeExpected,
   knownDifference,
   update,
-} = require("../../../native-with-source/tests/helpers/direction-matrix/matrix.cjs");
+} = require("../../../../test-matrices/direction-matrix/matrix.cjs");
 
 describe("Recipe text direction matrix", function () {
   var muhammara;
