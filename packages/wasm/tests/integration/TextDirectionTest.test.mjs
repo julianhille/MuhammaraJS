@@ -597,6 +597,27 @@ describe("TextDirection", function () {
       );
     });
 
+    it("spaces left-to-right text with marks without bidi-js", async function () {
+      this.timeout(30000);
+      // Placing the spacing around a mark between two letters asks whether
+      // the letter after it is right to left, which left-to-right text
+      // answers without bidi-js.
+      assert.equal(
+        await freshProcess(
+          [
+            "var Recipe = await createRecipe({ recryptWorker: false, bidi: false });",
+            "new Recipe()",
+            "  .createPage(200, 200)",
+            '  .text("Cafe\\u0301 a\\u0301b", 10, 10, { direction: "auto", charSpace: 2 })',
+            "  .endPage()",
+            "  .endPDF();",
+            'process.stdout.write("drawn");',
+          ].join("\n"),
+        ),
+        "drawn",
+      );
+    });
+
     it("loads bidi-js later with loadBidi()", async function () {
       this.timeout(30000);
       var index = JSON.stringify(

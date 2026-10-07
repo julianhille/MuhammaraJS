@@ -37,10 +37,6 @@ var COMBINING_MARK = /^\p{M}$/u;
 var HAS_COMBINING_MARK = /\p{M}/u;
 // Marks a font draws over a letter, without an advance of their own.
 var NONSPACING_MARK = /^[\p{Mn}\p{Me}]$/u;
-// Letters of the main right-to-left scripts, for text that is not reordered
-// because bidi-js is not loaded.
-var RIGHT_TO_LEFT_SCRIPT_LETTER =
-  /^(?=\p{L})[\p{sc=Hebrew}\p{sc=Arabic}\p{sc=Syriac}\p{sc=Thaana}\p{sc=Nko}\p{sc=Samaritan}\p{sc=Mandaic}]$/u;
 // Variation selectors, which choose the form of the character before them and
 // always follow it.
 var VARIATION_SELECTOR = /^[\ufe00-\ufe0f\u{e0100}-\u{e01ef}]$/u;
@@ -611,16 +607,17 @@ function drawnText(text, direction) {
 
 /**
  * Whether a character is drawn after its marks: one of a right-to-left class,
- * as reordering tells them apart. Without bidi-js no right-to-left text is
- * reordered, and the letters of the main right-to-left scripts stand in.
+ * as reordering tells them apart. A character that cannot reorder text is
+ * left to right without asking bidi-js, so text drawn without it never
+ * needs it here; right-to-left text was reordered with it.
  *
  * @param {string} character One character.
  * @returns {boolean} Whether the marks of the character come before it.
  */
 function drawnAfterItsMarks(character) {
-  return typeof bidiFactory === "function"
-    ? isRightToLeftLetter(character, 0)
-    : RIGHT_TO_LEFT_SCRIPT_LETTER.test(character);
+  return (
+    hasReorderingCharacters(character) && isRightToLeftLetter(character, 0)
+  );
 }
 
 /**
