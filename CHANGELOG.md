@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Encrypt the output of a `Buffer`-sourced `Recipe` when `encrypt()` is
+  called. `endPDF()` used to log "Encryption is not supported in Buffer Mode
+  yet." and hand the callback (or write to the output path) an unencrypted
+  PDF; it now delivers the encrypted PDF, as it does for a path source
+  [#446](https://github.com/julianhille/MuhammaraJS/issues/446)
+- Let `Recipe#encrypt()` replace the passwords a new PDF was created with.
+  `endPDF()` used to fail with "Unable to recrypt files" when the constructor
+  options already encrypted the document; the finished PDF is now opened with
+  the constructor password before it is re-encrypted. `encrypt()` without a
+  password no longer rewrites the output, as on Wasm
+  [#446](https://github.com/julianhille/MuhammaraJS/issues/446)
+
 ## [7.1.0] - 2026-10-05
 
 ### Added

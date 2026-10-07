@@ -390,14 +390,7 @@ class Recipe {
         }
       }
       if (this.needToEncrypt) {
-        if (this.isBufferSrc) {
-          // eslint-disable-next-line no-console
-          console.log(
-            "Feature: Encryption is not supported in Buffer Mode yet.",
-          );
-        } else {
-          this._encrypt();
-        }
+        this._encrypt();
       }
 
       if (this.isBufferSrc && this.output) {

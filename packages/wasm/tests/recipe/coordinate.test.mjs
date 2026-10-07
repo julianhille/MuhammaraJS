@@ -1,16 +1,7 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import { recipeFixture as rotationFixture } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
-
-function rotationFixture(name) {
-  return readFileSync(
-    new URL(
-      `../../../native-with-source/tests/TestMaterials/recipe/${name}.pdf`,
-      import.meta.url,
-    ),
-  );
-}
 
 describe("Recipe coordinates", function () {
   it("uses canonical rotated source geometry and calibrated edit coordinates", async function () {
