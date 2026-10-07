@@ -48,6 +48,8 @@ expected:
   `matrix.cjs`. In `direction-matrix` they are:
   - `single`: one `text()` call. It takes `text` and is drawn in every
     direction, character spacing and alignment.
+  - `fit`: one right-aligned `text()` call with `charSpace` in a box of
+    `width` only just wide enough for it, which must stay on one line.
   - `break`: a `break` character ending a plain text, and ending a flow's run
     with something after it.
   - `flow`: a flow of `runs`, each with its `text` and its own options, drawn

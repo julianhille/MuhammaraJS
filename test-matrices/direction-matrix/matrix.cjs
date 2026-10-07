@@ -54,6 +54,34 @@ var KINDS = {
     },
   },
 
+  // One text() call in a box only just wide enough for its text, which
+  // must stay on one line.
+  fit: {
+    variations: () => product({ direction: ["auto", "rtl", "ltr"] }),
+    key: (v) => v.direction,
+    title: (v) => `${v.direction}, right aligned`,
+    build(scenario, v) {
+      return {
+        oneLine: true,
+        rightEdge: 50 + scenario.width,
+        options: {
+          size: SIZE,
+          direction: v.direction,
+          charSpace: scenario.charSpace,
+        },
+        draw(recipe) {
+          recipe.text(scenario.text, 50, 50, {
+            font: "arial",
+            size: SIZE,
+            direction: v.direction,
+            charSpace: scenario.charSpace,
+            textBox: { width: scenario.width, textAlign: "right" },
+          });
+        },
+      };
+    },
+  },
+
   // A break ending a plain text, and ending a flow's run with something
   // following it.
   break: {
@@ -247,6 +275,12 @@ function brokenProperties(testCase, summary, drawnRight) {
     if (after <= lastShown) {
       broken.push("text after the flow is drawn on one of its lines");
     }
+  }
+  if (testCase.oneLine) {
+    var shown = summary.lines.filter((line) =>
+      line.some(([text]) => text.trim() !== ""),
+    );
+    if (shown.length !== 1) broken.push(`drawn on ${shown.length} lines`);
   }
   if (testCase.rightEdge !== undefined) {
     summary.lines.forEach((line, index) => {

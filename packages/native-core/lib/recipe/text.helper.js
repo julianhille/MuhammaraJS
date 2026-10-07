@@ -237,10 +237,14 @@ exports.Line = class Line {
     // Measuring the whole line for every word is quadratic in its length, and
     // a line without a text box never wraps.
     if (this._width >= UNBOUNDED_LINE_WIDTH) return true;
-    const tempValue = this.measured(this.value + wordObject.value);
+    // Spacing is counted on the text as typed: drawn, its points come
+    // before their letters.
+    const value = this.value + wordObject.value;
     const toWidth =
-      this._pathOptions.font.calculateTextDimensions(tempValue, this.size)
-        .xMax + this.charSpacing(tempValue);
+      this._pathOptions.font.calculateTextDimensions(
+        this.measured(value),
+        this.size,
+      ).xMax + this.charSpacing(value);
     return toWidth <= this.width;
   }
 
@@ -287,10 +291,11 @@ exports.Line = class Line {
    * @returns {number} The measured width of the line text.
    */
   get currentWidth() {
-    const value = this.measured(this.value);
     return (
-      this._pathOptions.font.calculateTextDimensions(value, this.size).xMax +
-      this.charSpacing(value)
+      this._pathOptions.font.calculateTextDimensions(
+        this.measured(this.value),
+        this.size,
+      ).xMax + this.charSpacing(this.value)
     );
   }
 
