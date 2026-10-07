@@ -99,8 +99,9 @@ export class Column {
 
 /**
  * Resolves the font size for a text call from `fontSize`, its `size` alias, or
- * the Recipe's default size, 14pt unless `defaultFontSize` sets it, rejecting sizes that are not finite and greater than zero before they
- * reach a measuring or drawing call. Zero, negative, and infinite sizes produce no
+ * the Recipe's default size, 14pt unless `defaultFontSize` sets it, rejecting
+ * sizes that are not finite and greater than zero before they reach a
+ * measuring or drawing call. Zero, negative, and infinite sizes produce no
  * readable output and nonsensical font metrics, so they are reported as invalid
  * input naming the option and the value. Omitting both options, or passing
  * `null` or `undefined`, selects the default.

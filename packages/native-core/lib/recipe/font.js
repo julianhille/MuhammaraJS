@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 const { FontStyle } = require("../recipe-constants");
-const { defaultFontFamilyOption } = require("./utils");
 
 // Keys of the per-style font files stored for each family in this.fonts.
 const FontSlot = Object.freeze({
@@ -39,9 +38,11 @@ exports.registerFont = function registerFont(
       `registerFont isDefault must be a boolean, received ${isDefault}`,
     );
   }
-  const defaultFamily = isDefault && defaultFontFamilyOption(fontName);
+  if (isDefault && (typeof fontName !== "string" || !fontName)) {
+    throw new TypeError("Font names must be non-empty strings");
+  }
   this._registerFont(fontName, fontSrcPath, type);
-  if (defaultFamily) this.current.defaultFontFamily = defaultFamily;
+  if (isDefault) this.current.defaultFontFamily = fontName.toLowerCase();
   return this;
 };
 

@@ -315,7 +315,7 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {number} [options.rotation=0] - Clockwise rotation in degrees, +/- 0 through 360.
  * @param {number[]} [options.rotationOrigin=[x,y]] - [originX, originY]
  * @param {string} [options.font] - The font. 'Arial', 'Helvetica'...; defaults to the Recipe's `defaultFontFamily`
- * @param {number} [options.size=14] - The font size
+ * @param {number} [options.size] - The font size; defaults to the Recipe's `defaultFontSize`
  * @param {number} [options.charSpace=0] - space to be added between characters, units in points.
  * @param {string} [options.align='left top'] - This is the alignment of the text in relationship to its position
  * coordinates, specified as 'horizontal vertical': a `Recipe.HorizontalAlign` value, optionally followed by a

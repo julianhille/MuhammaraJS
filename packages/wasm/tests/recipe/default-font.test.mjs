@@ -343,6 +343,10 @@ describe("Recipe default font", function () {
 
       assert.throws(() => Recipe.registerFont("x", arial, "r", 1), TypeError);
       assert.throws(
+        () => first.registerFont("", arial, "r", true),
+        /Font names must be non-empty strings/,
+      );
+      assert.throws(
         () => first.registerFont("x", arial, "r", "yes"),
         TypeError,
       );

@@ -1,6 +1,6 @@
 import { fontStyleKey } from "./font.js";
 import { FontStyle } from "../value-sets.js";
-import { defaultFontFamilyOption, defaultFontFlag } from "./parameters.js";
+import { defaultFontFlag } from "./parameters.js";
 /**
  * Creates Recipe asset registration and removal methods.
  * @param {object} dependencies - Module, registries, byte helpers, and writer font hooks.
@@ -42,7 +42,7 @@ export function createRegistrationMethods({
       if (typeof name !== "string" || !name) {
         throw new TypeError("Font names must be non-empty strings");
       }
-      var family = defaultFontFlag(isDefault) && defaultFontFamilyOption(name);
+      defaultFontFlag(isDefault);
       bytes = normalizeBytes(bytes, "Font bytes");
       var path = `/fonts/${state.nextFont++}.font`;
       module.FS.mkdirTree("/fonts");
@@ -54,7 +54,12 @@ export function createRegistrationMethods({
         unregisterWriterFont(previous);
         removeFile(previous);
       }
-      if (family) state.defaultFont = { family, order: ++state.defaultOrder };
+      if (isDefault) {
+        state.defaultFont = {
+          family: name.toLowerCase(),
+          order: ++state.defaultOrder,
+        };
+      }
     },
     /**
      * Asynchronously registers a font for future Recipe instances.

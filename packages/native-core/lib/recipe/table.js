@@ -177,7 +177,7 @@ function tableFields(contents, options) {
  * @param {string|number[]} [options.columns[].color] - Text color (HexColor, PercentColor or DecimalColor)
  * @param {number} [options.columns[].opacity=1] - opacity
  * @param {string} [options.columns[].font] - The font. 'Arial', 'Helvetica'...; defaults to the Recipe's `defaultFontFamily`
- * @param {number} [options.columns[].size=14] - The font size
+ * @param {number} [options.columns[].size] - The font size; defaults to the Recipe's `defaultFontSize`
  * @param {function} [options.columns[].renderer] - function to be called which can be used to modify the text options for a particular
  * table cell. The function is called with `(text, data, field, row)`, where `text` is the text to be written in the cell,
  * `data` holds the text elements in the table row, `field` is the column field, and `row` is the one-based row number. The function returns an object with the text attributes that

@@ -76,7 +76,7 @@ export function recipeVersion(version) {
  *   omitted so text uses the runtime's default font.
  * @throws {TypeError} If the family is given and is not a non-empty string.
  */
-export function defaultFontFamilyOption(family) {
+function defaultFontFamilyOption(family) {
   if (family == null) return undefined;
   if (typeof family !== "string" || !family) {
     throw new TypeError(

@@ -135,6 +135,11 @@ describe("Recipe default font", function () {
       () => recipe.registerFont("x", path.join(fontsDir, "Roboto.ttf"), "r", 1),
       TypeError,
     );
+    assert.throws(
+      () =>
+        recipe.registerFont("", path.join(fontsDir, "Roboto.ttf"), "r", true),
+      /Font names must be non-empty strings/,
+    );
     recipe.endPage().endPDF();
   });
 });

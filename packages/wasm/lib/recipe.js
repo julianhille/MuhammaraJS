@@ -11,7 +11,6 @@ import { endPDF } from "./recipe/end.js";
 import { getFont, registerFont } from "./recipe/font.js";
 import { createImageMethods } from "./recipe/image.js";
 import {
-  defaultFontFamilyOption,
   defaultFontFlag,
   initializeRecipe,
   recipeVersion,
@@ -913,9 +912,9 @@ export function createRecipeFactory({
      * @throws {TypeError} If the name, bytes, or `isDefault` are invalid.
      */
     registerFont: function (name, bytes, type, isDefault) {
-      var family = defaultFontFlag(isDefault) && defaultFontFamilyOption(name);
+      defaultFontFlag(isDefault);
       Recipe.registerFont(name, bytes, type);
-      if (family) setDefaultFamily(this, family);
+      if (isDefault) setDefaultFamily(this, name.toLowerCase());
       return this;
     },
     /**
@@ -934,9 +933,9 @@ export function createRecipeFactory({
      * @throws {TypeError} If the name, bytes, or `isDefault` are invalid.
      */
     registerFontAsync: async function (name, bytes, type, isDefault) {
-      var family = defaultFontFlag(isDefault) && defaultFontFamilyOption(name);
+      defaultFontFlag(isDefault);
       await Recipe.registerFontAsync(name, bytes, type);
-      if (family) setDefaultFamily(this, family);
+      if (isDefault) setDefaultFamily(this, name.toLowerCase());
       return this;
     },
   });
