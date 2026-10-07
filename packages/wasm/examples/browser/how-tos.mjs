@@ -111,7 +111,7 @@ export var HOW_TO_EXAMPLES = [
     label: "Right to left",
     title: "Write right-to-left Hebrew text",
     description:
-      "Reorder Hebrew with the direction option: numbers and Latin words inside it, points, an HTML paragraph, and a justified box. The Recipe skips bidi-js until this example loads it with loadBidi().",
+      "Reorder Hebrew with the direction option: numbers and Latin words inside it, points, an HTML paragraph, and a justified box. Its Recipe is created with bidi: false and loads bidi-js with loadBidi(), which does nothing when another tab already loaded it.",
     assets: ["font"],
     requirement:
       "Requires a TTF or OTF font with Hebrew glyphs, such as Noto Sans Hebrew or Arial.",
