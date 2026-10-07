@@ -416,7 +416,7 @@ function expectedYaml(expected) {
       out.push(`    ${end}:`);
       if (summary.lines.length) {
         out.push("      lines:");
-        summary.lines.forEach((line) => out.push(`        - ${flow(line)}`));
+        summary.lines.forEach((line) => out.push(item(line, 8)));
       } else out.push("      lines: []");
       out.push(`      annotations: ${flow(summary.annotations)}`);
     });
@@ -434,6 +434,42 @@ function expectedYaml(expected) {
 function flow(value) {
   if (Array.isArray(value)) return `[${value.map(flow).join(", ")}]`;
   return typeof value === "string" ? quote(value) : String(value);
+}
+
+// The width Prettier keeps a line within.
+var WIDTH = 80;
+
+/**
+ * A sequence item holding an array, as Prettier writes it: on one line when
+ * it fits, else one element a line, so the files stay formatted.
+ *
+ * @param {Array} value The array.
+ * @param {number} indent The column of the item's dash.
+ * @returns {string} The item's lines.
+ */
+function item(value, indent) {
+  var line = " ".repeat(indent) + "- " + flow(value);
+  if (line.length <= WIDTH) return line;
+  return " ".repeat(indent) + "- " + broken(value, indent + 2);
+}
+
+/**
+ * An array broken over lines as Prettier breaks one that does not fit: its
+ * elements one a line, each on one line when it fits and broken the same
+ * way when not, with a comma after every element.
+ *
+ * @param {Array} value The array.
+ * @param {number} indent The column of its opening bracket.
+ * @returns {string} The array, its first line without indent.
+ */
+function broken(value, indent) {
+  var inner = " ".repeat(indent + 2);
+  var elements = value.map((element) => {
+    var line = inner + flow(element) + ",";
+    if (!Array.isArray(element) || line.length <= WIDTH) return line;
+    return inner + broken(element, indent + 2) + ",";
+  });
+  return ["[", ...elements, " ".repeat(indent) + "]"].join("\n");
 }
 
 /**
