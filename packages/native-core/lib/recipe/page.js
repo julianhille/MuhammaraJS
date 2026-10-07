@@ -630,6 +630,7 @@ function resetTextBox(recipe, x, y) {
   recipe.box = undefined;
   recipe._textOptions = undefined;
   recipe._previousTextObjects = [];
+  recipe._flowLines = [];
   recipe._firstLineHeight = 0;
 }
 

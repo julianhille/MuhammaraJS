@@ -1193,6 +1193,30 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       expect(withBlank - withoutBlank).to.be.above(20);
     });
 
+    it("lays out each flowed run after the flow's open line only", () => {
+      const kept = [];
+      const runs = drawRuns("continued-flow-open-line", (recipe) => {
+        const options = { font: "arial", size: 12 };
+        recipe.text("start ", 20, 20, {
+          ...options,
+          flow: true,
+          textBox: { width: 200, textAlign: "justify" },
+        });
+        for (let index = 0; index < 200; ++index) {
+          recipe.text(index % 3 ? "word " : "longer ", options);
+          kept.push(recipe._previousTextObjects.length);
+        }
+        recipe.text("", { flow: false });
+      });
+      // Copying and searching every earlier run for each run took time
+      // with the square of the runs; a line holds a few dozen of them.
+      expect(Math.max(...kept)).to.be.below(40);
+      expect(runs).to.have.length(201);
+      expect(runs.map((run) => run.text).join("")).to.match(/^start /);
+      const lines = new Set(runs.map((run) => run.y));
+      expect(lines.size).to.be.above(10);
+    });
+
     it("flows calls without coordinates unless they pass flow: false", () => {
       const runs = drawRuns("continued-flow-implicit", (recipe) => {
         recipe

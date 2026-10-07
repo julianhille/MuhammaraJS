@@ -203,6 +203,7 @@ function _initOptions(self, x = {}, y, options = {}) {
     self._firstLineHeight = 0; // indicates not set yet, determined later.
     self._textOptions = { textBox: {} };
     self._previousTextObjects = [];
+    self._flowLines = [];
     self._flowParagraph = "";
     self._flowWaits = false;
     self._flow = options.flow || false;
@@ -221,6 +222,7 @@ function _initOptions(self, x = {}, y, options = {}) {
   }
 
   self._previousTextObjects = self._previousTextObjects || [];
+  self._flowLines = self._flowLines || [];
 
   // Merge any previous options with new options
   const mergedOpts = self._merge(self._textOptions, options);
@@ -525,16 +527,24 @@ exports.text = function text(text = "", x, y, options = {}) {
     pathOptions,
   );
   const linkAnnotations = [];
+  // A flow's earlier lines are written with the line it ends with.
+  if (!this._flow && this._flowLines.length) {
+    toWriteTextObjects = this._flowLines.concat(toWriteTextObjects);
+    this._previousTextObjects = this._flowLines.concat(
+      this._previousTextObjects,
+    );
+    this._flowLines = [];
+  }
 
   if (!textBox.width) {
-    textBox.width = toWriteTextObjects[0].lineWidth;
+    textBox.width = (this._flowLines[0] || toWriteTextObjects[0]).lineWidth;
   }
 
   textBox.firstLineHeight = this._firstLineHeight;
 
   // need to collect all the text that is 'flowing' before processing.
   if (this._flow) {
-    this._previousTextObjects = [...toWriteTextObjects];
+    keepFlowLines(this, toWriteTextObjects);
     // A later HTML run starts a new line after a closed block element.
     this._flowEndsBlock = Boolean(options.html) && BLOCK_END.test(text);
     if (trailingBreaks) this.movedown(trailingBreaks);
@@ -1539,7 +1549,9 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     ];
 
     if (!firstLineHeight) {
-      this._lineHeight = firstLineHeight = toWriteTextObjects[0].lineHeight;
+      this._lineHeight = firstLineHeight = (
+        this._flowLines?.[0] || toWriteTextObjects[0]
+      ).lineHeight;
       if (!this._firstLineHeight) {
         this._firstLineHeight = this._lineHeight; // used in textbox coordinate computation
       }
@@ -2108,6 +2120,26 @@ function keptParagraph(paragraph) {
 }
 
 /**
+ * Keep a flow's laid-out runs: those of its open line, which later runs
+ * continue, and apart from them those of the lines before it, which no
+ * later run changes, so each run is laid out after the open line only
+ * instead of every line the flow has.
+ * @private
+ * @param {Object} recipe - The Recipe.
+ * @param {Object[]} textObjects - The flow's runs after this call.
+ * @returns {void}
+ */
+function keepFlowLines(recipe, textObjects) {
+  let start = textObjects.length;
+  const lineID = textObjects[start - 1]?.lineID;
+  while (start > 0 && textObjects[start - 1].lineID === lineID) --start;
+  for (let index = 0; index < start; ++index) {
+    recipe._flowLines.push(textObjects[index]);
+  }
+  recipe._previousTextObjects = textObjects.slice(start);
+}
+
+/**
  * End a flow's open paragraph: lines still waiting for its direction take
  * the one it has, and the next flowed run starts a new paragraph.
  * @private
@@ -2140,9 +2172,11 @@ function settleFlowLines(recipe, textObjects, paragraph, closed) {
   if (!recipe._flowWaits) return;
   if (!closed && !hasStrongCharacter(paragraph)) return;
   const direction = resolveDirection(paragraph, TextDirection.AUTO);
-  textObjects.forEach((textObject) => {
-    if (textObject.direction === null) textObject.direction = direction;
-  });
+  [recipe._flowLines || [], textObjects].forEach((objects) =>
+    objects.forEach((textObject) => {
+      if (textObject.direction === null) textObject.direction = direction;
+    }),
+  );
   recipe._flowWaits = false;
 }
 
@@ -2837,6 +2871,7 @@ exports._flushTextFlow = function _flushTextFlow() {
 exports.movedown = function movedown(lines = 1, returnCoords = false) {
   if (!this._flow || this._previousTextObjects.length === 0) {
     this._previousTextObjects = [];
+    this._flowLines = [];
     // Before any text is written there is no cursor or line height yet.
     this.y = (this.y || 0) + (this._lineHeight || 14) * lines;
     this.x = this.box ? this.box.x : this.x || 0;

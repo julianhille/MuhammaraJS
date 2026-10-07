@@ -233,6 +233,8 @@ exports.table = function table(x, y, contents, options = {}) {
   }, 0);
 
   this._previousTextObjects = [];
+
+  this._flowLines = [];
   var nth;
   var rowOptions = {};
 
@@ -429,6 +431,7 @@ exports.table = function table(x, y, contents, options = {}) {
   this.box = { x, y: currentY };
   this._flow = false;
   this._previousTextObjects = [];
+  this._flowLines = [];
 
   return this;
 };

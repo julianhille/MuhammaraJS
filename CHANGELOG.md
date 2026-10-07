@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Keep a figure space (U+2007) or a narrow no-break space (U+202F) at the end
   of a Recipe line, as the no-break space (U+00A0) already was and as Wasm
   does [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Lay out a long Recipe text flow in time that grows with its runs: each
+  flowed `text()` call copied and searched every run the flow had, so a
+  flow built word by word took time with the square of its words
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 
 ## [7.1.0] - 2026-10-05
 
