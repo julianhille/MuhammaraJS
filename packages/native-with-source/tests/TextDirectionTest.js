@@ -126,6 +126,28 @@ describe("TextDirection", function () {
         "auto",
       ],
     ].forEach(function (testCase) {
+      it("drops the spaces that end a line but the no-break spaces", function () {
+        // Both ends trim lines and build their patterns from these classes.
+        assert.equal(textDirection.trimBreakableEnd("a \t\u0085\u2028 "), "a");
+        for (var space of ["\u00a0", "\u2007", "\u202f"]) {
+          assert.equal(
+            textDirection.trimBreakableEnd("a" + space + " "),
+            "a" + space,
+          );
+          assert.ok(
+            textDirection.NO_BREAK_SPACES.includes(
+              space.codePointAt(0).toString(16),
+            ),
+          );
+        }
+        assert.deepEqual(
+          "a\r\nb\vc\fd\u0085e\u2028f\u2029g".split(
+            new RegExp("\\r\\n|[" + textDirection.LINE_BREAKS + "]"),
+          ),
+          ["a", "b", "c", "d", "e", "f", "g"],
+        );
+      });
+
       it("draws a no-break space ending a right-to-left line on its left", function () {
         // The bidirectional algorithm places U+00A0 and U+202F as separators
         // and U+2007 as whitespace at the line's end, on the left; spaces a

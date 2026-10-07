@@ -14,6 +14,9 @@ import {
   hasStrongCharacter,
   paragraphDirections,
   spaceAdvance,
+  trimBreakableEnd,
+  NO_BREAK_SPACES,
+  LINE_BREAKS,
   readDirection,
   resolveDirection,
   drawnGaps,
@@ -142,6 +145,23 @@ describe("TextDirection", function () {
 
     /** Check that `text` reorders to `visual`, with direction "auto" by default. */
     function addToVisualTest(name, text, visual, direction = "auto") {
+      it("drops the spaces that end a line but the no-break spaces", function () {
+        // Both ends trim lines and build their patterns from these classes.
+        assert.equal(trimBreakableEnd("a \t\u0085\u2028 "), "a");
+        for (var space of ["\u00a0", "\u2007", "\u202f"]) {
+          assert.equal(trimBreakableEnd("a" + space + " "), "a" + space);
+          assert.ok(
+            NO_BREAK_SPACES.includes(space.codePointAt(0).toString(16)),
+          );
+        }
+        assert.deepEqual(
+          "a\r\nb\vc\fd\u0085e\u2028f\u2029g".split(
+            new RegExp("\\r\\n|[" + LINE_BREAKS + "]"),
+          ),
+          ["a", "b", "c", "d", "e", "f", "g"],
+        );
+      });
+
       it("draws a no-break space ending a right-to-left line on its left", function () {
         // The bidirectional algorithm places U+00A0 and U+202F as separators
         // and U+2007 as whitespace at the line's end, on the left; spaces a

@@ -15,6 +15,11 @@ import {
   resolveDirection,
   spaceAdvance,
   splitParagraphs,
+  trimBreakableEnd,
+  BREAKABLE_SPACE,
+  LINE_BREAKS,
+  NO_BREAK_SPACES,
+  WORD,
   toVisual,
   visualRuns,
   visualWords,
@@ -55,6 +60,12 @@ function padding(value = 0) {
   ];
 }
 
+// Text a line shows: anything but the spaces it may break at.
+var HAS_VISIBLE_TEXT = new RegExp(`\\S|[${NO_BREAK_SPACES}]`);
+var STARTS_WITH_BREAKABLE_SPACE = new RegExp(`^${BREAKABLE_SPACE}`);
+var ENDS_WITH_BREAKABLE_SPACE = new RegExp(`${BREAKABLE_SPACE}$`);
+var LEADING_BREAKABLE_SPACES = new RegExp(`^${BREAKABLE_SPACE}+`);
+
 /**
  * Splits text into wrapping units while keeping non-breaking spaces inside words.
  * @param {string} value - Text.
@@ -62,20 +73,8 @@ function padding(value = 0) {
  */
 function splitWords(value) {
   return (
-    String(value).match(
-      /(?:\S|[\u00a0\u2007\u202f])+(?:(?![\u00a0\u2007\u202f])\s)*|(?:(?![\u00a0\u2007\u202f])\s)+/g,
-    ) || [""]
+    String(value).match(new RegExp(`${WORD}|${BREAKABLE_SPACE}+`, "g")) || [""]
   );
-}
-
-/**
- * Removes trailing breakable whitespace while preserving the non-breaking
- * spaces U+00A0, U+2007 and U+202F.
- * @param {string} value - Text.
- * @returns {string} The trimmed text.
- */
-function trimBreakableEnd(value) {
-  return value.replace(/(?:(?![\u00a0\u2007\u202f])\s)+$/, "");
 }
 
 /**
@@ -84,7 +83,7 @@ function trimBreakableEnd(value) {
  * @returns {boolean} Whether it has visible content.
  */
 function hasText(value) {
-  return /(?:\S|[\u00a0\u2007\u202f])/.test(value);
+  return HAS_VISIBLE_TEXT.test(value);
 }
 
 /**
@@ -93,7 +92,7 @@ function hasText(value) {
  * @returns {boolean} Whether it starts with breakable whitespace.
  */
 function startsWithBreakableSpace(value) {
-  return !/^[\u00a0\u2007\u202f]/.test(value) && /^\s/.test(value);
+  return STARTS_WITH_BREAKABLE_SPACE.test(value);
 }
 
 /**
@@ -102,7 +101,7 @@ function startsWithBreakableSpace(value) {
  * @returns {boolean} Whether it ends with breakable whitespace.
  */
 function endsWithBreakableSpace(value) {
-  return !/[\u00a0\u2007\u202f]$/.test(value) && /\s$/.test(value);
+  return ENDS_WITH_BREAKABLE_SPACE.test(value);
 }
 
 /**
@@ -251,14 +250,15 @@ function htmlPartsWidth(parts, measure, options) {
 }
 
 // Every paragraph separator ends a line, as a line feed does.
-var LINE_BREAK_SPLIT = /(\r\n|[\n\v\f\r\u0085\u2028\u2029])/;
-var ENDS_WITH_LINE_BREAK = /[\n\v\f\r\u0085\u2028\u2029]$/;
+var LINE_BREAK_SPLIT = new RegExp(`(\\r\\n|[${LINE_BREAKS}])`);
+var ENDS_WITH_LINE_BREAK = new RegExp(`[${LINE_BREAKS}]$`);
 // A line break followed only by spaces a line drops, at the end of a text;
 // a non-breaking space holds its line.
-var ENDS_WITH_DROPPED_LINE =
-  /[\n\v\f\r\u0085\u2028\u2029](?:(?![\n\v\f\r\u0085\u2028\u2029\u00a0\u2007\u202f])\s)*$/;
+var ENDS_WITH_DROPPED_LINE = new RegExp(
+  `[${LINE_BREAKS}](?:(?![${LINE_BREAKS}])${BREAKABLE_SPACE})*$`,
+);
 // Text a line keeps: anything but breakable spaces.
-var HAS_KEPT_TEXT = /[^\s]|[\n\v\f\r\u0085\u2028\u2029\u00a0\u2007\u202f]/;
+var HAS_KEPT_TEXT = new RegExp(`\\S|[${LINE_BREAKS}${NO_BREAK_SPACES}]`);
 
 /**
  * Splits a run's text at its line breaks.
@@ -400,7 +400,7 @@ function htmlLines(source, width, measure, options, wrap) {
           collapseLeadingSpace = false;
           var lastPart = parts[parts.length - 1];
           if (lastPart && endsWithBreakableSpace(lastPart.text)) {
-            word = word.replace(/^(?:(?![\u00a0\u2007\u202f])\s)+/, "");
+            word = word.replace(LEADING_BREAKABLE_SPACES, "");
             if (!word) return;
           }
         }
@@ -1867,9 +1867,7 @@ export function createTextMethods({ drawText, measure, module, fontKey }) {
           linkWidth = segments || justify ? drawX - linkX : alignWidth;
         } else if (isJustifiedLine) {
           // Non-breaking spaces stay inside their word, as on native.
-          var words = entry.text.match(
-            /(?:[^\s]|[\u00a0\u2007\u202f])+(?:(?![\u00a0\u2007\u202f])\s)*/g,
-          ) || [entry.text];
+          var words = entry.text.match(new RegExp(WORD, "g")) || [entry.text];
           var wordsWidth = words.reduce(
             (sum, word) => sum + dimensions(this, word, textOptions).width,
             0,

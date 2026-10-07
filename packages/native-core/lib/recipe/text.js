@@ -12,6 +12,7 @@ const {
   paragraphDirections,
   spacedPieces,
   spaceAdvance,
+  LINE_BREAKS,
   splitParagraphs,
   toVisual,
   visualRuns,
@@ -21,7 +22,7 @@ const {
 // HTML whose text starts with a space, after any tags that open it.
 const LEADING_HTML_SPACE = /^(?:<(?:[^>"']|"[^"]*"|'[^']*')*>|\s)*?\s/;
 // The line breaks that end a text, every paragraph separator among them.
-const TRAILING_LINE_BREAKS = /(?:\r\n|[\n\v\f\r\u0085\u2028\u2029])+$/;
+const TRAILING_LINE_BREAKS = new RegExp(`(?:\\r\\n|[${LINE_BREAKS}])+$`);
 const {
   TextWrap,
   TextAlign,
@@ -44,7 +45,7 @@ const BLOCK_START = /^\s*<(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\b/i;
 /**
  * Matches the line break that ends a word at a required break.
  */
-const LINE_BREAK_END = /(?:\r\n|[\n\r\v\f\u0085\u2028\u2029])$/;
+const LINE_BREAK_END = new RegExp(`(?:\\r\\n|[${LINE_BREAKS}])$`);
 
 /**
  * Find the first node with text, unless a line break or block element comes

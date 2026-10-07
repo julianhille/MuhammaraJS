@@ -26,16 +26,35 @@ var DIRECTIONS = Object.keys(TextDirection).map(function (key) {
 var REORDERING_CHARACTER =
   /[\u0590-\u08ff\u200e\u200f\u202a-\u202e\u2066-\u2069\ufb1d-\ufdff\ufe70-\ufefe\ud802\ud803\ud83a\ud83b]/;
 
+// The no-break spaces a line keeps where it would drop the spaces it breaks
+// at, and the mandatory breaks that end a line and its paragraph: the bodies
+// of the character classes both ends build their text patterns from.
+var NO_BREAK_SPACES = "\\u00a0\\u2007\\u202f";
+var LINE_BREAKS = "\\n\\v\\f\\r\\u0085\\u2028\\u2029";
+// A space a line may break at: whitespace but a no-break space.
+var BREAKABLE_SPACE = "(?:(?![" + NO_BREAK_SPACES + "])\\s)";
+// A word with the spaces a line may break at after it; no-break spaces
+// belong to their word.
+var WORD = "(?:\\S|[" + NO_BREAK_SPACES + "])+" + BREAKABLE_SPACE + "*";
+// The spaces that end a text and that a line drops, a next line (U+0085)
+// included.
+var TRAILING_BREAKABLE_SPACES = new RegExp(
+  "(?:(?![" + NO_BREAK_SPACES + "])[\\s\\u0085])+$",
+);
+
+// The whitespace at a line's start and end, kept at the paragraph's start
+// and the text's end, where a line breaks: not the no-break spaces, which a
+// line keeps, or U+FEFF. They are placed as the bidirectional algorithm
+// places them, so a no-break space ending a right-to-left line is drawn on
+// its left.
+var EDGE_SPACE = "(?:(?![" + NO_BREAK_SPACES + "\\ufeff])\\s)*";
+var LINE_EDGES = new RegExp(
+  "^(" + EDGE_SPACE + ")([\\s\\S]*?)(" + EDGE_SPACE + ")$",
+);
+
 // Invisible bidirectional formatting characters. They only steer the
 // reordering, so they are dropped instead of drawn as missing glyphs.
 var FORMATTING_CHARACTER = /^[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]$/;
-// The whitespace at a line's start and end, kept at the paragraph's start
-// and the text's end, where a line breaks: not the no-break spaces U+00A0,
-// U+2007 and U+202F, which a line keeps, or U+FEFF. They are placed as the
-// bidirectional algorithm places them, so a no-break space ending a
-// right-to-left line is drawn on its left.
-var LINE_EDGES =
-  /^((?:(?![\u00a0\u2007\u202f\ufeff])\s)*)([\s\S]*?)((?:(?![\u00a0\u2007\u202f\ufeff])\s)*)$/;
 // The formatting characters that start or end a run of their own: the
 // isolates and embeddings, not the direction marks.
 var RUN_BOUNDARY = /^[\u202a-\u202e\u2066-\u2069]$/;
@@ -75,12 +94,12 @@ var CLASS_STAND_IN = {
 };
 
 // The breaks that end a paragraph; the same mandatory breaks Recipe wraps at.
-var PARAGRAPH_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/g;
+var PARAGRAPH_BREAK = new RegExp("\\r\\n|[" + LINE_BREAKS + "]", "g");
 // The same breaks, captured, to split text into paragraphs and breaks.
-var PARAGRAPH_SPLIT = /(\r\n|[\n\v\f\r\u0085\u2028\u2029])/;
+var PARAGRAPH_SPLIT = new RegExp("(\\r\\n|[" + LINE_BREAKS + "])");
 // Whitespace a line may break at, ending a text; non-breaking spaces belong
 // to their word.
-var TRAILING_BREAKABLE_SPACE = /(?:(?![\u00a0\u2007\u202f])\s)+$/;
+var TRAILING_BREAKABLE_SPACE = new RegExp(BREAKABLE_SPACE + "+$");
 
 // Isolates that place a run with a direction of its own in a line, and the
 // modes of a run in a line besides "ltr" and "rtl".
@@ -950,8 +969,7 @@ function visualWords(segments) {
     }
     // Whitespace that starts a segment, or makes up all of it, is a word of
     // its own: it belongs to its run, not to the word before it.
-    var pattern =
-      /(?:[^\s]|[\u00a0\u2007\u202f])+(?:(?![\u00a0\u2007\u202f])\s)*|(?:(?![\u00a0\u2007\u202f])\s)+/g;
+    var pattern = new RegExp(WORD + "|" + BREAKABLE_SPACE + "+", "g");
     var match;
     while ((match = pattern.exec(segment.text))) {
       words.push({ run: segment.run, text: match[0], gap: false });
@@ -979,6 +997,17 @@ function visualWords(segments) {
   return words;
 }
 
+/**
+ * Remove the spaces that end a text and that a line drops, a next line
+ * (U+0085) included; the no-break spaces U+00A0, U+2007 and U+202F stay.
+ *
+ * @param {string} value The text.
+ * @returns {string} The trimmed text.
+ */
+function trimBreakableEnd(value) {
+  return value.replace(TRAILING_BREAKABLE_SPACES, "");
+}
+
 export {
   TextDirection,
   readDirection,
@@ -996,4 +1025,9 @@ export {
   spaceAdvance,
   drawnGaps,
   useBidi,
+  trimBreakableEnd,
+  NO_BREAK_SPACES,
+  LINE_BREAKS,
+  BREAKABLE_SPACE,
+  WORD,
 };

@@ -1,3 +1,5 @@
+const { trimBreakableEnd } = require("../text-direction");
+
 const ANNOTATION_PREFIX = "Annots";
 
 /** Recipe page content-stream lifecycle states. */
@@ -130,17 +132,6 @@ function resolveFontSize(options = {}, fallback) {
     );
   }
   return size;
-}
-
-/**
- * Remove the breakable whitespace that ends a text, a next line (U+0085)
- * included; non-breaking spaces (U+00A0, U+2007, U+202F) stay, as in Wasm.
- * @private
- * @param {string} value - The text.
- * @returns {string} The trimmed text.
- */
-function trimBreakableEnd(value) {
-  return value.replace(/(?:(?![\u00a0\u2007\u202f])[\s\u0085])+$/, "");
 }
 
 /**
