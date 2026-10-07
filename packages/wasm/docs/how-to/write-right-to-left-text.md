@@ -105,6 +105,8 @@ var outputBytes = new Recipe()
   direction differs from its line's is placed in the line as one block, like
   a word: an `"rtl"` or `"ltr"` call is reordered on its own, and a `"none"`
   call is drawn exactly as given. An `"auto"` call continues its paragraph.
+- A table's cells and headers take the `direction` of their column, or of
+  the table; a header or cell option of its own wins.
 - `textDimensions()` takes the same `direction` option and then leaves out
   invisible direction marks, as `text()` does.
 

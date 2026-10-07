@@ -243,6 +243,11 @@ export function createTableMethods() {
         if (column.options.hcell) {
           header.textBox = merge(header.textBox, column.options.hcell);
         }
+        // A header reads in the direction of its column, the table's or its
+        // own, as native.
+        if (header.direction === undefined) {
+          header.direction = column.options.direction ?? options.direction;
+        }
         return header;
       };
       /** Writes a repeated header at the current segment's top. */

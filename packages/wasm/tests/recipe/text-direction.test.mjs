@@ -961,6 +961,41 @@ describe("Recipe text direction", function () {
     assert.equal(heights[heights.length - 1], heights[0]);
   });
 
+  it("gives table headers the direction of their column or table", function () {
+    for (var [tableOptions, columnOptions, header] of [
+      [{ direction: "auto" }, {}, "\u05d0\u05dc\u05de \u05dd\u05e9"],
+      [{}, { direction: "rtl" }, "\u05d0\u05dc\u05de \u05dd\u05e9"],
+      // A header's own direction wins.
+      [
+        { direction: "rtl", header: { font: "arial", direction: "none" } },
+        {},
+        "\u05e9\u05dd \u05de\u05dc\u05d0",
+      ],
+    ]) {
+      var runs = drawPage("text-direction-table-header", (recipe) => {
+        recipe.table(20, 20, [{ name: "\u05d3\u05e0\u05d9" }], {
+          font: "arial",
+          header: { font: "arial" },
+          ...tableOptions,
+          columns: [
+            {
+              name: "name",
+              text: "\u05e9\u05dd \u05de\u05dc\u05d0",
+              width: 120,
+              font: "arial",
+              header: { font: "arial" },
+              ...columnOptions,
+            },
+          ],
+        });
+      });
+      assert.deepEqual(
+        runs.map((run) => run.text),
+        [header, "\u05d9\u05e0\u05d3"],
+      );
+    }
+  });
+
   it("reorders each line once, as native does", function () {
     var segment = Intl.Segmenter.prototype.segment;
     var calls = 0;

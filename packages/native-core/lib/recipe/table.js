@@ -254,6 +254,10 @@ exports.table = function table(x, y, contents, options = {}) {
         clone(cellOptions.textBox),
       );
     }
+    // A header reads in the direction of its column, the table's or its own.
+    if (colOptions.direction === undefined) {
+      colOptions.direction = column.options.direction ?? options.direction;
+    }
     return colOptions;
   };
 
