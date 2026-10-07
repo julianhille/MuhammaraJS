@@ -4182,8 +4182,9 @@ declare namespace muhammara {
      * @param options.ownerPassword - The password for editing.
      * @param options.userPassword - The password for viewing & encryption.
      * @param options.userProtectionFlag - The flag for the security level, see `permission()`.
-     * @returns The recipe instance. The file is encrypted by `endPDF()`;
-     *   Buffer sources are not encrypted.
+     * @returns The recipe instance. The output is encrypted by `endPDF()`:
+     *   the output file for a path source, and the Buffer passed to the
+     *   callback (or written to the output path) for a Buffer source.
      */
     encrypt(options?: Recipe.EncryptOptions): Recipe;
 

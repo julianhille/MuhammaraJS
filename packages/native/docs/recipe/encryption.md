@@ -15,6 +15,17 @@ pdfDoc
   .endPDF();
 ```
 
+A `Buffer` source is encrypted the same way. `endPDF()` passes the encrypted
+PDF to its callback, or writes it to the output path when one was given:
+
+```javascript
+var pdfDoc = new Recipe(fs.readFileSync("input.pdf"));
+
+pdfDoc.encrypt({ userPassword: "open-password" }).endPDF(function (pdfBuffer) {
+  // pdfBuffer holds the encrypted PDF.
+});
+```
+
 Encryption options can also be supplied while creating a new Recipe document.
 See [Change PDF Passwords](../how-to/change-pdf-passwords.md) for password
 replacement and encryption removal.

@@ -102,6 +102,11 @@ byte-first low-level and Recipe APIs.
 The Wasm documentation source is in
 [`packages/wasm/docs/`](packages/wasm/docs/).
 
+The executable browser example is deployed to
+[GitHub Pages](https://julianhille.github.io/MuhammaraJS/). Its root page
+lists every deployed example version, including `dev`, which tracks the
+`develop` branch.
+
 ## HummusJS Is The Base
 
 MuhammaraJS is a drop-in replacement for HummusJS, originally created by

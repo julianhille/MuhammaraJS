@@ -13,6 +13,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   before anything is published
   [#962](https://github.com/julianhille/MuhammaraJS/issues/962)
 
+- Publish an index page at the GitHub Pages root,
+  <https://julianhille.github.io/MuhammaraJS/>, that links every deployed
+  browser example version. The root answered with a 404 before, so the
+  example could only be reached through its direct URL. Wasm CI rewrites the
+  page on every Pages deployment
+  [#964](https://github.com/julianhille/MuhammaraJS/issues/964)
+
 ## [1.1.0] - 2026-10-05
 
 ### Breaking Changes
