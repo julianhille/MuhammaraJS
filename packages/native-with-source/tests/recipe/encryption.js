@@ -348,6 +348,51 @@ describe("Encryption", () => {
       });
   });
 
+  // A userProtectionFlag alone encrypts a new PDF with an empty user password.
+  function newFlagOnlyRecipe() {
+    return new Recipe(Buffer.from("new"), undefined, {
+      userProtectionFlag: 4,
+    })
+      .createPage("letter")
+      .endPage();
+  }
+
+  const taskBFRE = "New Buffer file with constructor flag re-encrypted";
+  it(taskBFRE, (done) => {
+    newFlagOnlyRecipe()
+      .encrypt({ userPassword: "second" })
+      .endPDF((buffer) => {
+        assertBufferEncryption(buffer, "second", true);
+        const locked = muhammara.createReader(
+          new muhammara.PDFRStreamForBuffer(buffer),
+        );
+        try {
+          assert.equal(locked.getPagesCount(), 0);
+        } finally {
+          locked.end();
+        }
+        done();
+      });
+  });
+
+  const taskBFNE = "New Buffer file with constructor flag and empty encrypt()";
+  it(taskBFNE, (done) => {
+    newFlagOnlyRecipe()
+      .encrypt({})
+      .endPDF((buffer) => {
+        assertBufferEncryption(buffer, undefined, false);
+        done();
+      });
+  });
+
+  const taskBFKE = "New Buffer file with constructor flag and no encrypt()";
+  it(taskBFKE, (done) => {
+    newFlagOnlyRecipe().endPDF((buffer) => {
+      assertBufferEncryption(buffer, undefined, true);
+      done();
+    });
+  });
+
   // TODO: this seems to be broken
   // const taskMPF = 'Modify file with view password';
   // it(taskMPF, (done) => {

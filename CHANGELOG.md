@@ -16,8 +16,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#446](https://github.com/julianhille/MuhammaraJS/issues/446)
 - Let `Recipe#encrypt()` replace the passwords a new PDF was created with.
   `endPDF()` used to fail with "Unable to recrypt files" when the constructor
-  options already encrypted the document; the finished PDF is now opened with
-  the constructor password before it is re-encrypted. `encrypt()` without a
+  options already encrypted the document, even with only a
+  `userProtectionFlag`; the finished PDF is now opened with the constructor
+  password, or the empty user password, before it is re-encrypted. `encrypt()` without a
   password or `userProtectionFlag` now leaves the output unencrypted, as on
   Wasm: it removes the constructor encryption, and no longer rewrites an output
   that was never encrypted

@@ -111,6 +111,48 @@ describe("Recipe encryption", function () {
     Recipe.disposeAssets();
   });
 
+  // Mirrors native "New Buffer file with constructor flag re-encrypted" and
+  // "... and empty encrypt()".
+  it("replaces encryption from a constructor userProtectionFlag", async function () {
+    var Recipe = await createRecipe();
+    var muhammara = await createMuhammaraWasm();
+
+    var flagged = new Recipe({ userProtectionFlag: 4 })
+      .createPage(100, 100)
+      .endPage();
+    var bytes = flagged.endPDF();
+    var reader = muhammara.createReader(bytes);
+    assert.equal(reader.isEncrypted(), true);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
+    flagged.dispose();
+
+    var replaced = new Recipe({ userProtectionFlag: 4 })
+      .createPage(100, 100)
+      .endPage()
+      .encrypt({ userPassword: "second" });
+    bytes = replaced.endPDF();
+    writeOutput("encryption-constructor-flag-then-encrypt", bytes);
+    reader = muhammara.createReader(bytes);
+    assert.equal(reader.getPagesCount(), 0);
+    reader.end();
+    reader = muhammara.createReader(bytes, { password: "second" });
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
+    replaced.dispose();
+
+    var removed = new Recipe({ userProtectionFlag: 4 })
+      .createPage(100, 100)
+      .endPage()
+      .encrypt({});
+    bytes = removed.endPDF();
+    reader = muhammara.createReader(bytes);
+    assert.equal(reader.isEncrypted(), false);
+    reader.end();
+    removed.dispose();
+    Recipe.disposeAssets();
+  });
+
   it("queues native Recipe password aliases", async function () {
     var Recipe = await createRecipe();
     var recipe = new Recipe().createPage(100, 100).endPage();

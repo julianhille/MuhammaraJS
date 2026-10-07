@@ -130,14 +130,21 @@ exports.encrypt = function encrypt(options = {}) {
  */
 exports._encrypt = function _encrypt() {
   const encryption = this.encryption_ || {};
-  const hasEncryption = Object.keys(encryption).length > 0;
-  if (!hasEncryption && !this.encryptOptions.password) {
+  // Constructor options encrypt a new PDF even without a password: a
+  // userProtectionFlag alone encrypts it with an empty user password. For a
+  // source they hold only the password that opens it.
+  const constructorEncrypted = Object.keys(this.encryptOptions).length > 0;
+  if (Object.keys(encryption).length === 0 && !constructorEncrypted) {
     return;
   }
-  // Without new passwords, recrypt only decrypts with the opening password.
-  const recryptOptions = Object.assign({}, encryption, {
-    password: this.encryptOptions.password || encryption.password,
-  });
+  // recrypt opens its input with `password`, so it must be the constructor
+  // password, never the new one encrypt() set. Without one, recrypt opens a
+  // PDF with an empty user password. Without new passwords it only decrypts.
+  const recryptOptions = Object.assign({}, encryption);
+  delete recryptOptions.password;
+  if (this.encryptOptions.password) {
+    recryptOptions.password = this.encryptOptions.password;
+  }
 
   if (this.isBufferSrc) {
     const encrypted = new PDFWStreamForBuffer();
