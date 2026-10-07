@@ -6,7 +6,9 @@ The executable browser example creates PDFs on the page or in a module Worker.
 
 Wasm CI publishes the current `dev` example and versioned release examples to
 GitHub Pages. The unversioned URL redirects to `dev`; select another version in
-the example to run its matching Wasm build. To run the current checkout locally,
+the example to run its matching Wasm build, or start from the
+[GitHub Pages root](https://julianhille.github.io/MuhammaraJS/), which lists
+every deployed version. To run the current checkout locally,
 build the package, run
 `npm run wasm:server:browser` from the repository root, and open
 <http://127.0.0.1:8080/>.

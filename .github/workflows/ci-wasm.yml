@@ -171,6 +171,21 @@ jobs:
         with:
           ref: gh-pages
           path: pages
+      - name: Update the GitHub Pages root index
+        run: |
+          node packages/wasm/scripts/generate-pages-index.mjs pages
+          git -C pages add index.html
+          if git -C pages diff --cached --quiet; then
+            echo "The GitHub Pages root index is up to date"
+          else
+            git -C pages commit -m "Update the GitHub Pages root index"
+            git -C pages push origin HEAD:gh-pages
+          fi
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
       - uses: actions/upload-pages-artifact@v5
         with:
           path: pages
@@ -322,6 +337,21 @@ jobs:
         with:
           ref: gh-pages
           path: pages
+      - name: Update the GitHub Pages root index
+        run: |
+          node packages/wasm/scripts/generate-pages-index.mjs pages
+          git -C pages add index.html
+          if git -C pages diff --cached --quiet; then
+            echo "The GitHub Pages root index is up to date"
+          else
+            git -C pages commit -m "Update the GitHub Pages root index"
+            git -C pages push origin HEAD:gh-pages
+          fi
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
       - uses: actions/upload-pages-artifact@v5
         with:
           path: pages

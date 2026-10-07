@@ -24,6 +24,15 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   as before; see [Write Right-to-Left Text](docs/how-to/write-right-to-left-text.md)
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 
+### Changed
+
+- Publish an index page at the GitHub Pages root,
+  <https://julianhille.github.io/MuhammaraJS/>, that links every deployed
+  browser example version. The root answered with a 404 before, so the
+  example could only be reached through its direct URL. Wasm CI rewrites the
+  page on every Pages deployment
+  [#964](https://github.com/julianhille/MuhammaraJS/issues/964)
+
 ### Fixed
 
 - Keep a word joined by a non-breaking space (U+00A0) together on a
