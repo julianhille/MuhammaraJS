@@ -103,8 +103,10 @@ native Recipe loads its bundled fonts synchronously.
 Wasm loads bidi-js, which the `direction` option reorders right-to-left text
 with, by importing `"bidi-js"` when `createMuhammaraWasm()` or
 `createRecipe()` runs, unless given `bidi: false`. The Wasm-only `loadBidi()`
-loads it later, from that import or from a module the caller passes. Without
-it, calls that have to order text by direction throw. Native always has it.
+loads it later, from that import or from a module the caller passes. It is
+loaded once for the page, Worker or process and shared by every instance.
+Without it, calls that have to order text by direction throw. Native always
+has it.
 
 No filesystem PDF output or plugin loader is emulated. Recipe always returns an
 owned `Uint8Array` from `endPDF()` and its optional callback; custom assets must

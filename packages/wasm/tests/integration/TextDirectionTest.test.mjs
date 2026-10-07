@@ -597,6 +597,22 @@ describe("TextDirection", function () {
       );
     });
 
+    it("is shared by every instance, bidi: false ones too", async function () {
+      this.timeout(30000);
+      // bidi: false skips loading bidi-js; it does not take it away from an
+      // instance once another call loaded it.
+      assert.equal(
+        await freshProcess(
+          [
+            "await createRecipe({ defaultFont: false, recryptWorker: false });",
+            "await createMuhammaraWasm({ recryptWorker: false, bidi: false });",
+            'process.stdout.write(toVisual(text, "auto"));',
+          ].join("\n"),
+        ),
+        "abc \u05dd\u05d5\u05dc\u05e9",
+      );
+    });
+
     it("spaces left-to-right text with marks without bidi-js", async function () {
       this.timeout(30000);
       // Placing the spacing around a mark between two letters asks whether

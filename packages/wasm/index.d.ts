@@ -2698,9 +2698,11 @@ export interface MuhammaraWasmOptions {
   /**
    * Whether to load bidi-js, which the `direction` option reorders
    * right-to-left text with, with `import("bidi-js")`. Defaults to `true`.
-   * With `false`, or when it cannot be loaded, everything else works, and
-   * every call that has to order text by direction throws instead of drawing
-   * it in the wrong order.
+   * It is loaded once for the page, Worker or process, and every instance
+   * shares it. With `false`, this call does not load it; while nothing has
+   * loaded it, or when it cannot be loaded, everything else works, and every
+   * call that has to order text by direction throws instead of drawing it in
+   * the wrong order.
    */
   bidi?: boolean;
   [key: string]: unknown;

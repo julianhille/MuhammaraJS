@@ -25,7 +25,8 @@ register its bytes; the bundled Roboto default has none.
 Reordering uses the [bidi-js](https://github.com/lojjic/bidi-js) package,
 which installs with `@muhammara/wasm` and loads when `createMuhammaraWasm()`
 or `createRecipe()` runs, unless it is given `bidi: false`; `loadBidi()`
-loads it later.
+loads it later. It is loaded once for the page, Worker or process, and every
+instance shares it.
 Bundlers keep it; a page without a bundler maps `"bidi-js"` in an import map,
 as [Browser Setup](../browser-setup.md#load-bidi-js-without-a-bundler) shows.
 

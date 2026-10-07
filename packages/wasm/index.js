@@ -692,9 +692,11 @@ async function createRuntime(options) {
  * in a worker. With `false`, or with module options other than `wasmBinary`,
  * `locateFile`, and `limits`, it recrypts on the calling thread.
  * @param {boolean} [options.bidi=true] Whether to load bidi-js, which the
- * `direction` option reorders right-to-left text with. With `false`, or when
- * it cannot be loaded, every call that has to order text by direction throws
- * instead of drawing it in the wrong order.
+ * `direction` option reorders right-to-left text with. It is loaded once for
+ * the page, Worker or process, and every instance shares it. With `false`,
+ * this call does not load it; while nothing has loaded it, or when it cannot
+ * be loaded, every call that has to order text by direction throws instead
+ * of drawing it in the wrong order.
  * @returns {Promise<object>} The initialized Muhammara API.
  */
 export async function createMuhammaraWasm(options) {
@@ -711,7 +713,9 @@ export async function createMuhammaraWasm(options) {
  * font bytes (also accepts File), or false to require explicit registered fonts.
  * Omitting this option dynamically imports bundled Roboto Regular.
  * @param {boolean} [options.bidi=true] Whether to load bidi-js, which the
- * `direction` option reorders right-to-left text with.
+ * `direction` option reorders right-to-left text with. It is loaded once for
+ * the page, Worker or process, and every instance shares it; with `false`,
+ * this call does not load it.
  * @returns {Promise<Function>} The initialized Recipe constructor.
  */
 export async function createRecipe(options) {

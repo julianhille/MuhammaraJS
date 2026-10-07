@@ -54,13 +54,15 @@ loads the package's modules without a bundler maps the bare specifier itself:
 </script>
 ```
 
-Pass `bidi: false` to `createMuhammaraWasm()` or `createRecipe()` to skip
-loading it when the page never sets `direction`. Without bidi-js, whether
-skipped or unresolved, everything else works, and every call that has to order
-text by direction throws an error that names bidi-js instead of drawing the
-text in the wrong order: text with right-to-left characters and an `"auto"`,
-`"ltr"` or `"rtl"` direction, `"rtl"` text, and a line whose flowed runs ask
-for different directions. Text drawn as given, with the default `"none"`,
+bidi-js is loaded once for the page, Worker or process, and every instance
+shares it. Pass `bidi: false` to `createMuhammaraWasm()` or `createRecipe()`
+to skip loading it when the page never sets `direction`; once another call
+or `loadBidi()` has loaded it, instances made with `bidi: false` reorder text
+too. Without bidi-js, whether skipped or unresolved, everything else works,
+and every call that has to order text by direction throws an error that
+names bidi-js instead of drawing the text in the wrong order: text with
+right-to-left characters and an `"auto"`, `"ltr"` or `"rtl"` direction,
+`"rtl"` text, and a line whose flowed runs ask for different directions. Text drawn as given, with the default `"none"`,
 needs no bidi-js, right-to-left characters included.
 
 Module Workers do not read the page's import map in every browser; bundle
