@@ -1217,6 +1217,40 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       expect(lines.size).to.be.above(10);
     });
 
+    it("measures a font's line height once for each size", () => {
+      const fontType = Object.getPrototypeOf(
+        muhammara
+          .createWriter(new muhammara.PDFWStreamForBuffer())
+          .getFontForFile(
+            path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+          ),
+      );
+      const measure = fontType.calculateTextDimensions;
+      const sizes = [];
+      fontType.calculateTextDimensions = function (text, size) {
+        if (text === "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}") sizes.push(size);
+        return measure.apply(this, arguments);
+      };
+      try {
+        drawRuns("continued-flow-line-height", (recipe) => {
+          recipe.text("start ", 20, 20, {
+            font: "arial",
+            size: 12,
+            flow: true,
+            textBox: { width: 200 },
+          });
+          for (let index = 0; index < 50; ++index) {
+            recipe.text("word ", { font: "arial", size: index % 2 ? 12 : 9 });
+          }
+          recipe.text("", { flow: false });
+        });
+      } finally {
+        fontType.calculateTextDimensions = measure;
+      }
+      // Measuring it for each run took a millisecond each time.
+      expect(sizes.sort((a, b) => a - b)).to.deep.equal([9, 12]);
+    });
+
     it("flows calls without coordinates unless they pass flow: false", () => {
       const runs = drawRuns("continued-flow-implicit", (recipe) => {
         recipe

@@ -46,6 +46,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   flowed `text()` call copied and searched every run the flow had, so a
   flow built word by word took time with the square of its words
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Measure the line height of a Recipe font once for each size instead of for
+  every `text()` call, which took about a millisecond each
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 
 ## [7.1.0] - 2026-10-05
 

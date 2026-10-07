@@ -2119,6 +2119,32 @@ function keptParagraph(paragraph) {
     : "a";
 }
 
+// The line dimensions of each font by size, as lineDimensions() measures
+// them.
+const LINE_DIMENSIONS = new WeakMap();
+
+/**
+ * The dimensions every line of a font has at a size, measured once for each
+ * font and size instead of once for each run. The same string gives every
+ * text the same height: lowercase "gjpqy" includes the descenders, and "|}"
+ * the ascenders that go beyond upper case letters.
+ * @private
+ * @param {Object} font - The font.
+ * @param {number} size - The font size.
+ * @returns {Object} Its text dimensions.
+ */
+function lineDimensions(font, size) {
+  let sizes = LINE_DIMENSIONS.get(font);
+  if (!sizes) LINE_DIMENSIONS.set(font, (sizes = new Map()));
+  if (!sizes.has(size)) {
+    sizes.set(
+      size,
+      font.calculateTextDimensions("ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}", size),
+    );
+  }
+  return sizes.get(size);
+}
+
 /**
  * Keep a flow's laid-out runs: those of its open line, which later runs
  * continue, and apart from them those of the lines before it, which no
@@ -2418,13 +2444,7 @@ function makeTextObjects(
     (textObject.appendValue ? textObject.appendValue : "");
 
   const size = textObject.size || pathOptions.size;
-  // Use the same string to get the same height for each string with the same font.
-  // Need lowercase 'gjpqy' so descenders are included in text height.
-  // Need special characters '|}' because they have ascenders that go beyond upper case letters.
-  const textDimensions = pathOptions.font.calculateTextDimensions(
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
-    size,
-  );
+  const textDimensions = lineDimensions(pathOptions.font, size);
   const textHeight = textDimensions.height;
 
   pathOptions.textHeight = textHeight;
