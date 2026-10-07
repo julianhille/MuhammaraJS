@@ -3,6 +3,10 @@ const fs = require("fs");
 const PDFWStreamForBuffer = require("./PDFWStreamForBuffer");
 var { standardInfoKeys } = require("./recipe-info");
 var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
+var {
+  defaultFontFamilyOption,
+  defaultFontSizeOption,
+} = require("./recipe/utils");
 
 /**
  * @name Recipe
@@ -28,6 +32,13 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  * @param {string} [options.ownerPassword] - The 'edit' password.
  * @param {number} [options.userProtectionFlag] - Encryption permission flags, see `permission()`.
  * @param {string|string[]} [options.fontSrcPath] - Directory location(s) of additional fonts.
+ * @param {string} [options.defaultFontFamily='helvetica'] - The font family
+ *   text uses when it names no `font`, matched case-insensitively. Text throws
+ *   if the family is not registered when it is drawn or measured.
+ * @param {number} [options.defaultFontSize=14] - The size text uses when it
+ *   gives neither `size` nor `fontSize`.
+ * @throws {TypeError} If `defaultFontFamily` is not a non-empty string.
+ * @throws {RangeError} If `defaultFontSize` is not a finite number greater than zero.
  * @throws {Error} If an existing source PDF cannot be read or opened for editing.
  */
 class Recipe {
@@ -41,7 +52,12 @@ class Recipe {
     this.encryptOptions = this._getEncryptOptions(options, this.isNewPDF);
     this.options = Object.assign({}, options, this.encryptOptions);
     this.current = {};
-    this.current.defaultFontSize = 14;
+    this.current.defaultFontSize = defaultFontSizeOption(
+      options.defaultFontSize,
+    );
+    this.current.defaultFontFamily = defaultFontFamilyOption(
+      options.defaultFontFamily,
+    );
     // Each Recipe registers colors in its own copy of the defaults, as Wasm
     // does; the prototype keeps the defaults unchanged.
     this.knownColors = Object.fromEntries(

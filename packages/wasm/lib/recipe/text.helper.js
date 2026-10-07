@@ -99,22 +99,23 @@ export class Column {
 
 /**
  * Resolves the font size for a text call from `fontSize`, its `size` alias, or
- * the 14pt default, rejecting sizes that are not finite and greater than zero before they
+ * the Recipe's default size, 14pt unless `defaultFontSize` sets it, rejecting sizes that are not finite and greater than zero before they
  * reach a measuring or drawing call. Zero, negative, and infinite sizes produce no
  * readable output and nonsensical font metrics, so they are reported as invalid
  * input naming the option and the value. Omitting both options, or passing
  * `null` or `undefined`, selects the default.
  *
  * @param {object} [options] - Text options holding `fontSize` or `size`.
+ * @param {number} [fallback=14] - Size used when neither option is given.
  * @returns {number} The resolved font size in PDF points.
  * @throws {RangeError} If the given size is not a finite number greater than
  *   zero.
  */
-export function resolveFontSize(options = {}) {
+export function resolveFontSize(options = {}, fallback = 14) {
   var name = options.fontSize == null ? "size" : "fontSize";
   var size = options[name];
   if (size == null) {
-    return 14;
+    return fallback;
   }
   if (!(size > 0) || size === Infinity) {
     throw new RangeError(

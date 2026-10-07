@@ -347,8 +347,8 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
  * @memberof Recipe#
  * @param {string} text - text to be measured
  * @param {Object} [options] - The options
- * @param {string} [options.font='helvetica'] - name of font from which measurements are to be taken
- * @param {number} [options.size=14] - size of font to be used in taking measurements
+ * @param {string} [options.font] - name of font from which measurements are to be taken; defaults to the Recipe's `defaultFontFamily`
+ * @param {number} [options.size] - size of font to be used in taking measurements; defaults to the Recipe's `defaultFontSize`
  * @param {number} [options.charSpace=0] - character spacing being applied to the given text.
  * @param {boolean} [options.bold] - Measure with the bold style of the font.
  * @param {boolean} [options.italic] - Measure with the italic style of the font.

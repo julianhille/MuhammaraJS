@@ -115,15 +115,19 @@ exports._registerFont = function _registerFont(
 };
 
 /**
- * Pick the registered font file for the family and bold/italic options,
- * falling back to Helvetica when the family, style or file is unavailable.
+ * Pick the registered font file for the family and bold/italic options. A
+ * family that is unknown or lacks the style, or whose file is inaccessible,
+ * falls back to the Recipe's default family in that style, then to its
+ * regular face.
  * @private
  * @param {Recipe} self - The recipe instance.
  * @param {Object} [options] - Text options: font, and bold/isBold, italic/isItalic.
  * @returns {string} The font file path.
+ * @throws {Error} If the default family is not registered.
  */
 function _getFontFile(self, options = {}) {
   let fontFile;
+  const defaultFamily = self.current.defaultFontFamily;
   // Need to choose appropriate file based on bold/italic considerations
   // Note, if this is not done explicitly, the font dimensions will be incorrect.
   let type =
@@ -144,11 +148,17 @@ function _getFontFile(self, options = {}) {
 
   // when file inaccessible ...
   if (!fontFile || !fs.existsSync(fontFile)) {
-    fontFile = self.fonts["helvetica"][type]; // use default font when otherwise unavailable.
-  }
-
-  if (!fontFile) {
-    fontFile = self.fonts["helvetica"][FontSlot.REGULAR]; // use default font when otherwise unavailable.
+    const fallback = self.fonts[defaultFamily];
+    if (!fallback) {
+      throw new Error(`Unknown font: ${defaultFamily}`);
+    }
+    // use the default family when otherwise unavailable.
+    fontFile =
+      fallback[type] ||
+      fallback[FontSlot.REGULAR] ||
+      fallback[FontSlot.BOLD] ||
+      fallback[FontSlot.ITALIC] ||
+      fallback[FontSlot.BOLD_ITALIC];
   }
 
   return fontFile;

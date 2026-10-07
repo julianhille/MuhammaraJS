@@ -24,6 +24,27 @@ number greater than zero, including zero, a negative number, `NaN`, and
 naming the option and the value, because such a size draws nothing readable and
 measures to nonsensical metrics. Pass `null`, `undefined`, or neither option to
 select the default.
+
+The `defaultFontFamily` and `defaultFontSize` Recipe options change those
+defaults for one Recipe. Text that names no `font` uses `defaultFontFamily`,
+Helvetica unless set, matched case-insensitively; an unknown `font`, or a style
+the family lacks, falls back to the default family in that style and then to
+its regular face. Text that gives neither `size` nor `fontSize` uses
+`defaultFontSize`, 14 unless set. Wasm Recipe accepts the same options.
+
+```javascript
+var pdfDoc = new Recipe("new", "output.pdf", {
+  defaultFontFamily: "Roboto",
+  defaultFontSize: 11,
+});
+```
+
+The family is resolved when text is drawn or measured, so it can come from
+`fontSrcPath` or a later `registerFont()`; text throws `Unknown font: <name>`
+while it is not registered. A `defaultFontFamily` that is not a non-empty
+string throws a `TypeError`, and a `defaultFontSize` that is not a finite number
+greater than zero throws a `RangeError`, when the Recipe is created.
+
 Character-spacing measurements include retained leading and trailing whitespace
 and count each Unicode code point once, so non-BMP characters do not add an
 extra spacing interval.

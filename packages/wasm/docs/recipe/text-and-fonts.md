@@ -118,6 +118,32 @@ are synchronous; registering a font later cannot undo the initialization-time
 font download. See [Byte Assets](../byte-assets.md) for registration and
 lifecycle details.
 
+## Per-Recipe Defaults
+
+The `defaultFontFamily` and `defaultFontSize` Recipe options set the family and
+size that text and `textDimensions()` use when a call names no `font` or gives
+neither `size` nor `fontSize`. They apply to one Recipe only, take the same
+values as on native, and default to the `createRecipe()` default font and 14
+points:
+
+```js
+var Recipe = await createRecipe();
+await Recipe.registerFontAsync("report", fontFile);
+
+var pdfBytes = new Recipe({ defaultFontFamily: "report", defaultFontSize: 11 })
+  .createPage("letter")
+  .text("Report body at 11 points", 72, 72)
+  .endPage()
+  .endPDF();
+```
+
+The family name is case-insensitive and is resolved when text is drawn or
+measured, so it can be registered after the Recipe is created; text throws
+`Unknown font: <name>` while it is not registered. A `defaultFontFamily` that
+is not a non-empty string throws a `TypeError`, and a `defaultFontSize` that is
+not a finite number greater than zero throws a `RangeError`, when the Recipe
+is created.
+
 ## Wrapping And HTML
 
 `textBox` supports wrapping, alignment, padding, background, border, fixed-height

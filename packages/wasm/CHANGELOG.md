@@ -4,6 +4,17 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `defaultFontFamily` and `defaultFontSize` Recipe options, as on native,
+  set the font family and size that text and `textDimensions()` use when a
+  call names no `font` or gives neither `size` nor `fontSize`, for one Recipe.
+  They default to the `createRecipe()` default font and 14 points. The family
+  is resolved when text is drawn or measured and throws
+  `Unknown font: <name>` while it is not registered; an invalid option throws
+  when the Recipe is created
+  [#470](https://github.com/julianhille/MuhammaraJS/pull/470)
+
 ### Changed
 
 - Publish an index page at the GitHub Pages root,

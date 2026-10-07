@@ -70,10 +70,46 @@ export function recipeVersion(version) {
 }
 
 /**
+ * Validates the `defaultFontFamily` Recipe option.
+ * @param {*} family - The option value.
+ * @returns {string|undefined} The lower-cased family, or undefined when
+ *   omitted so text uses the runtime's default font.
+ * @throws {TypeError} If the family is given and is not a non-empty string.
+ */
+function defaultFontFamilyOption(family) {
+  if (family == null) return undefined;
+  if (typeof family !== "string" || !family) {
+    throw new TypeError(
+      `Recipe defaultFontFamily must be a non-empty string, received ${family}`,
+    );
+  }
+  return family.toLowerCase();
+}
+
+/**
+ * Validates the `defaultFontSize` Recipe option.
+ * @param {*} size - The option value.
+ * @returns {number} The size, or 14 when omitted.
+ * @throws {RangeError} If the size is given and is not a finite number
+ *   greater than zero.
+ */
+function defaultFontSizeOption(size) {
+  if (size == null) return 14;
+  if (typeof size !== "number" || !(size > 0) || size === Infinity) {
+    throw new RangeError(
+      `Recipe defaultFontSize must be a number greater than zero, received ${size}`,
+    );
+  }
+  return size;
+}
+
+/**
  * Initializes mutable state for a newly created Recipe instance.
  * @param {Recipe} recipe - Recipe instance.
  * @param {RecipeOptions} options - Recipe options.
  * @returns {void}
+ * @throws {TypeError} If `defaultFontFamily` is not a non-empty string.
+ * @throws {RangeError} If `defaultFontSize` is not a finite number greater than zero.
  */
 export function initializeRecipe(recipe, options) {
   recipe.options = options;
@@ -81,6 +117,8 @@ export function initializeRecipe(recipe, options) {
     pageSize: mediumSizes[PageSize.LETTER].slice(),
     pageMargin: { left: 72, right: 72, top: 72, bottom: 72 },
     mediumSizes,
+    fontFamily: defaultFontFamilyOption(options.defaultFontFamily),
+    fontSize: defaultFontSizeOption(options.defaultFontSize),
   };
   recipe._pageHeight = 0;
   recipe._pageWidth = 0;

@@ -803,7 +803,7 @@ export function createTextMethods({ drawText, measure, module }) {
     if (!Number.isFinite(options.charSpace ?? 0)) {
       throw new TypeError("charSpace must be a finite number");
     }
-    var fontSize = resolveFontSize(options);
+    var fontSize = resolveFontSize(options, recipe.default.fontSize);
     addTextMarkup(recipe, { ...options, fontSize }, 0, 0, 1, true);
     dimensions(recipe, "", { ...options, fontSize });
     return fontSize;
@@ -849,7 +849,7 @@ export function createTextMethods({ drawText, measure, module }) {
       if (options === null) options = {};
       return dimensions(this, value, {
         ...options,
-        fontSize: resolveFontSize(options),
+        fontSize: resolveFontSize(options, this.default.fontSize),
       });
     },
 
@@ -863,7 +863,7 @@ export function createTextMethods({ drawText, measure, module }) {
     _measureTextBoxHeight(value, options = {}) {
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
-      var fontSize = resolveFontSize(options);
+      var fontSize = resolveFontSize(options, this.default.fontSize);
       var width = box.width || 0;
       var lineHeight =
         box.lineHeight ||
@@ -989,14 +989,15 @@ export function createTextMethods({ drawText, measure, module }) {
             ...flowRunSource(
               "\n".repeat(Math.max(count, 1)),
               flow.options,
-              resolveFontSize(flow.options),
+              resolveFontSize(flow.options, this.default.fontSize),
               flow.runs++,
             ),
           );
         return returnCoords ? [flow.x, flow.y] : this;
       }
       this._textCursor.x = this._textBoxOrigin?.x ?? this._textCursor.x;
-      this._textCursor.y += count * (this._lastLineHeight || 14);
+      this._textCursor.y +=
+        count * (this._lastLineHeight || this.default.fontSize);
       return returnCoords ? [this._textCursor.x, this._textCursor.y] : this;
     },
 
@@ -1114,7 +1115,7 @@ export function createTextMethods({ drawText, measure, module }) {
       // Like native, rotation turns the whole text around the given point,
       // before alignment moves it.
       var textOrigin = [x, y];
-      var fontSize = resolveFontSize(options);
+      var fontSize = resolveFontSize(options, this.default.fontSize);
       var width =
         box.width ||
         (flowSource ? this._pageWidth - x - this._margin.right : 0);

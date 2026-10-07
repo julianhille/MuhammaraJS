@@ -145,6 +145,19 @@ export interface RecipeOptions {
   ownerPassword?: string;
   userPassword?: string;
   userProtectionFlag?: number;
+  /**
+   * Font family text uses when it names no `font`, matched case-insensitively.
+   * Defaults to the `createRecipe()` default font. Text throws if the family is
+   * not registered when it is drawn or measured. A value that is not a
+   * non-empty string throws TypeError.
+   */
+  defaultFontFamily?: string;
+  /**
+   * Font size in points text uses when it gives neither `size` nor
+   * `fontSize`; defaults to 14. A size that is not a finite number greater
+   * than zero throws RangeError.
+   */
+  defaultFontSize?: number;
 }
 export interface RecipeEncryptOptions {
   password?: string;
@@ -378,9 +391,9 @@ export interface RecipeTextOptions
   color?: RecipeColor;
   /** Font family; uses createRecipe's default font when omitted (bundled Roboto unless configured). */
   font?: string;
-  /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. A size that is not a finite number greater than zero throws RangeError. */
+  /** Font size in points for text() and textDimensions(); defaults to the Recipe's defaultFontSize, 14 unless set, when both fontSize and size are omitted. A size that is not a finite number greater than zero throws RangeError. */
   fontSize?: number;
-  /** Alternative font size in points; defaults to 14 when both size and fontSize are omitted. A size that is not a finite number greater than zero throws RangeError. */
+  /** Alternative font size in points; defaults to the Recipe's defaultFontSize, 14 unless set, when both size and fontSize are omitted. A size that is not a finite number greater than zero throws RangeError. */
   size?: number;
   bold?: boolean;
   italic?: boolean;

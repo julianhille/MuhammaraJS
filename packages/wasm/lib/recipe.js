@@ -97,12 +97,13 @@ export function createRecipeFactory({
 
   /**
    * Resolves the registered font path for text options, registering the default font on first use.
+   * @param {Recipe} recipe - Recipe whose `defaultFontFamily` applies when `font` is omitted.
    * @param {object} [options={}] - Text options with `font`, `bold`, and `italic`.
    * @returns {string} Virtual path of the font.
    * @throws {Error} If the font is not registered.
    */
-  function resolveFont(options = {}) {
-    var name = options.font || defaultFont?.name;
+  function resolveFont(recipe, options = {}) {
+    var name = options.font || recipe.default.fontFamily || defaultFont?.name;
     if (
       defaultFont &&
       String(name).toLowerCase() === defaultFont.name.toLowerCase() &&
@@ -659,8 +660,8 @@ export function createRecipeFactory({
           );
         }
       }
-      var fontPath = resolveFont(options);
-      var fontSize = resolveFontSize(options);
+      var fontPath = resolveFont(this, options);
+      var fontSize = resolveFontSize(options, this.default.fontSize);
       if (this._pageContext) {
         var editContext = this._pageContext
           .BT()
@@ -756,11 +757,14 @@ export function createRecipeFactory({
        * @throws {Error} If the font is not registered or the text cannot be measured.
        */
       measure: function (value, options) {
-        var fontPath = resolveFont(options);
+        var fontPath = resolveFont(this, options);
         if (this._sourceMode) {
           return this.writer
             .getFontForBytes(fontPath)
-            .calculateTextDimensions(String(value), resolveFontSize(options));
+            .calculateTextDimensions(
+              String(value),
+              resolveFontSize(options, this.default.fontSize),
+            );
         }
         var resultPointer = module._malloc(48);
         try {
@@ -771,7 +775,7 @@ export function createRecipeFactory({
                 this._recipe,
                 textPointer,
                 fontPointer,
-                resolveFontSize(options),
+                resolveFontSize(options, this.default.fontSize),
                 resultPointer,
               );
               var offset = resultPointer >>> 3;

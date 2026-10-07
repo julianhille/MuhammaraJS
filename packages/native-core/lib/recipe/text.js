@@ -314,7 +314,7 @@ exports._makeTextBox = function _makeTextBox(options) {
  * @param {number} [options.opacity=1] - opacity
  * @param {number} [options.rotation=0] - Clockwise rotation in degrees, +/- 0 through 360.
  * @param {number[]} [options.rotationOrigin=[x,y]] - [originX, originY]
- * @param {string} [options.font=Helvetica] - The font. 'Arial', 'Helvetica'...
+ * @param {string} [options.font] - The font. 'Arial', 'Helvetica'...; defaults to the Recipe's `defaultFontFamily`
  * @param {number} [options.size=14] - The font size
  * @param {number} [options.charSpace=0] - space to be added between characters, units in points.
  * @param {string} [options.align='left top'] - This is the alignment of the text in relationship to its position
@@ -2218,7 +2218,9 @@ exports.movedown = function movedown(lines = 1, returnCoords = false) {
   if (!this._flow || this._previousTextObjects.length === 0) {
     this._previousTextObjects = [];
     // Before any text is written there is no cursor or line height yet.
-    this.y = (this.y || 0) + (this._lineHeight || 14) * lines;
+    this.y =
+      (this.y || 0) +
+      (this._lineHeight || this.current.defaultFontSize) * lines;
     this.x = this.box ? this.box.x : this.x || 0;
   } else {
     // This handles continuous text positioning

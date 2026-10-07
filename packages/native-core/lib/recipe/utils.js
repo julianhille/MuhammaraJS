@@ -132,6 +132,46 @@ function resolveFontSize(options = {}, fallback) {
   return size;
 }
 
+/** Font family text uses when neither the text nor the Recipe names one. */
+const DEFAULT_FONT_FAMILY = "helvetica";
+/** Font size text uses when neither the text nor the Recipe gives one. */
+const DEFAULT_FONT_SIZE = 14;
+
+/**
+ * Validates the `defaultFontFamily` Recipe option.
+ * @private
+ * @param {*} family - The option value.
+ * @returns {string} The lower-cased family, or Helvetica when omitted.
+ * @throws {TypeError} If the family is given and is not a non-empty string.
+ */
+function defaultFontFamilyOption(family) {
+  if (family == null) return DEFAULT_FONT_FAMILY;
+  if (typeof family !== "string" || !family) {
+    throw new TypeError(
+      `Recipe defaultFontFamily must be a non-empty string, received ${family}`,
+    );
+  }
+  return family.toLowerCase();
+}
+
+/**
+ * Validates the `defaultFontSize` Recipe option.
+ * @private
+ * @param {*} size - The option value.
+ * @returns {number} The size, or 14 when omitted.
+ * @throws {RangeError} If the size is given and is not a finite number
+ *   greater than zero.
+ */
+function defaultFontSizeOption(size) {
+  if (size == null) return DEFAULT_FONT_SIZE;
+  if (typeof size !== "number" || !(size > 0) || size === Infinity) {
+    throw new RangeError(
+      `Recipe defaultFontSize must be a number greater than zero, received ${size}`,
+    );
+  }
+  return size;
+}
+
 /**
  * Remove the breakable whitespace that ends a text; a non-breaking space
  * (U+00A0) stays, as in Wasm.
@@ -147,6 +187,10 @@ exports.ANNOTATION_PREFIX = ANNOTATION_PREFIX;
 exports.PAGE_CONTEXT_STATE = PAGE_CONTEXT_STATE;
 exports.cloneOptions = cloneOptions;
 exports.resolveFontSize = resolveFontSize;
+exports.DEFAULT_FONT_FAMILY = DEFAULT_FONT_FAMILY;
+exports.DEFAULT_FONT_SIZE = DEFAULT_FONT_SIZE;
+exports.defaultFontFamilyOption = defaultFontFamilyOption;
+exports.defaultFontSizeOption = defaultFontSizeOption;
 exports.trimBreakableEnd = trimBreakableEnd;
 exports.appendPDFPageFromPDFWithAnnotations =
   appendPDFPageFromPDFWithAnnotations;

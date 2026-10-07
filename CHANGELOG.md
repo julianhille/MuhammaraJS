@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `defaultFontFamily` and `defaultFontSize` Recipe options set the font
+  family and size that text and `textDimensions()` use when a call names no
+  `font` or gives neither `size` nor `fontSize`. An unknown `font`, or a style
+  the family lacks, falls back to the default family instead of always to
+  Helvetica, and the debug labels of `editPage()` use it too. The family is
+  resolved when text is drawn or measured and throws `Unknown font: <name>`
+  while it is not registered; an invalid option throws when the Recipe is
+  created. Wasm Recipe accepts the same options
+  [#470](https://github.com/julianhille/MuhammaraJS/pull/470)
+
 ## [7.1.0] - 2026-10-05
 
 ### Added

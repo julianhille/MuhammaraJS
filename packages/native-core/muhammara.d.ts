@@ -3282,6 +3282,18 @@ declare namespace muhammara {
       userProtectionFlag?: number;
       /** Directory location(s) of additional fonts. */
       fontSrcPath?: string | string[];
+      /**
+       * Font family text uses when it names no `font`, matched
+       * case-insensitively; defaults to 'helvetica'. Text throws if the
+       * family is not registered when it is drawn or measured.
+       */
+      defaultFontFamily?: string;
+      /**
+       * Font size in points text uses when it gives neither `size` nor
+       * `fontSize`; defaults to 14. A size that is not a finite number
+       * greater than zero throws RangeError.
+       */
+      defaultFontSize?: number;
     }
 
     interface RecipeMargins {
@@ -3517,9 +3529,9 @@ declare namespace muhammara {
       rotation?: number;
       rotationOrigin?: readonly [number, number];
       font?: string;
-      /** Font size in points for text() and textDimensions(); defaults to 14 when both fontSize and size are omitted. A size that is not a finite number greater than zero throws RangeError. */
+      /** Font size in points for text() and textDimensions(); defaults to the Recipe's defaultFontSize, 14 unless set, when both fontSize and size are omitted. A size that is not a finite number greater than zero throws RangeError. */
       fontSize?: number;
-      /** Font size in points for text() and textDimensions(); defaults to 14. A size that is not a finite number greater than zero throws RangeError. */
+      /** Font size in points for text() and textDimensions(); defaults to the Recipe's defaultFontSize, 14 unless set. A size that is not a finite number greater than zero throws RangeError. */
       size?: number;
       bold?: boolean;
       italic?: boolean;
@@ -3815,6 +3827,10 @@ declare namespace muhammara {
      * @param options.ownerPassword - The 'edit' password.
      * @param options.userProtectionFlag - Encryption permission flags, see `permission()`.
      * @param options.fontSrcPath - Directory location(s) of additional fonts.
+     * @param options.defaultFontFamily - The family text uses when it names no `font`; defaults to 'helvetica'.
+     * @param options.defaultFontSize - The size text uses when it gives neither `size` nor `fontSize`; defaults to 14.
+     * @throws {TypeError} If `defaultFontFamily` is not a non-empty string.
+     * @throws {RangeError} If `defaultFontSize` is not a finite number greater than zero.
      * @throws {Error} If an existing source PDF cannot be read or opened for editing.
      */
     constructor(
@@ -4584,8 +4600,8 @@ declare namespace muhammara {
      * Get text dimensions
      * @param text - text to be measured
      * @param options - The options
-     * @param options.font - name of font from which measurements are to be taken; defaults to 'helvetica'.
-     * @param options.size - size of font to be used in taking measurements; defaults to 14.
+     * @param options.font - name of font from which measurements are to be taken; defaults to the Recipe's `defaultFontFamily`.
+     * @param options.size - size of font to be used in taking measurements; defaults to the Recipe's `defaultFontSize`.
      * @param options.charSpace - character spacing being applied to the given text; defaults to 0.
      * @param options.bold - Measure with the bold style of the font.
      * @param options.italic - Measure with the italic style of the font.

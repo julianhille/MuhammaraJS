@@ -238,4 +238,68 @@ describe("Recipe default font", function () {
       /Default font bytes exceeds maxInputBytes/,
     );
   });
+
+  it("uses the defaultFontFamily and defaultFontSize options", async function () {
+    Recipe.registerFont(
+      "body",
+      new Uint8Array(await readFile("tests/TestMaterials/fonts/arial.ttf")),
+    );
+    var recipe = new Recipe({
+      defaultFontFamily: "BODY",
+      defaultFontSize: 20,
+    }).createPage("letter");
+    try {
+      assert.deepEqual(
+        recipe.textDimensions("Hello"),
+        recipe.textDimensions("Hello", { font: "body", size: 20 }),
+      );
+      var bytes = recipe.text("Hello", 72, 72).endPage().endPDF();
+      writeOutput("default-font-options", bytes);
+      checkText(bytes, ["Hello"]);
+      var output = new TextDecoder().decode(bytes);
+      assert.match(output, /Arial/);
+      assert.doesNotMatch(output, /Roboto-Regular/);
+    } finally {
+      recipe.dispose();
+    }
+
+    // The bundled default can be named too, case-insensitively.
+    recipe = new Recipe({ defaultFontFamily: "ROBOTO" }).createPage("letter");
+    try {
+      assert.deepEqual(
+        recipe.textDimensions("Hello"),
+        recipe.textDimensions("Hello", { font: "Roboto", size: 14 }),
+      );
+    } finally {
+      recipe.dispose();
+    }
+  });
+
+  it("throws when the default family is not registered", async function () {
+    var recipe = new Recipe({ defaultFontFamily: "missing" }).createPage(
+      "letter",
+    );
+    try {
+      assert.throws(
+        () => recipe.text("Hello", 72, 72),
+        /Unknown font: missing/,
+      );
+      recipe.registerFont(
+        "missing",
+        new Uint8Array(await readFile("tests/TestMaterials/fonts/arial.ttf")),
+      );
+      checkText(recipe.text("Hello", 72, 72).endPage().endPDF(), ["Hello"]);
+    } finally {
+      recipe.dispose();
+    }
+  });
+
+  it("rejects invalid default font options", function () {
+    [0, -1, NaN, Infinity, "12"].forEach((defaultFontSize) => {
+      assert.throws(() => new Recipe({ defaultFontSize }), RangeError);
+    });
+    ["", 12].forEach((defaultFontFamily) => {
+      assert.throws(() => new Recipe({ defaultFontFamily }), TypeError);
+    });
+  });
 });

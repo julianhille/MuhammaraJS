@@ -818,7 +818,7 @@ exports.editPage = function editPage(pageNumber) {
     const startX = mediaBox[0];
     const startY = mediaBox[1];
     const textOptions = {
-      font: this.writer.getFontForFile(this.fonts.helvetica.b),
+      font: this._getFont({ bold: true }),
       size: 50,
       colorspace: Colorspace.GRAY,
       color: 0x00,
