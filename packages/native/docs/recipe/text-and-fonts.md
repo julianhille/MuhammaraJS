@@ -39,6 +39,14 @@ var pdfDoc = new Recipe("new", "output.pdf", {
 });
 ```
 
+`registerFont(name, path, type, true)` also makes the registered family the
+default. The latest default set applies, so a registration with `true`
+overrides the option, and a later one overrides it again:
+
+```javascript
+pdfDoc.registerFont("body", "./fonts/body.ttf", "regular", true);
+```
+
 The family is resolved when text is drawn or measured, so it can come from
 `fontSrcPath` or a later `registerFont()`; text throws `Unknown font: <name>`
 while it is not registered. A `defaultFontFamily` that is not a non-empty

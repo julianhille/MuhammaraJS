@@ -14,6 +14,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `Unknown font: <name>` while it is not registered; an invalid option throws
   when the Recipe is created
   [#470](https://github.com/julianhille/MuhammaraJS/pull/470)
+- `registerFont()` and `registerFontAsync()` take an `isDefault` boolean after
+  the style that makes the registered family the default font family: of
+  that Recipe on an instance, as on native, and of every Recipe from the
+  runtime on the `Recipe` constructor. The latest default set applies, and
+  `Recipe.disposeAssets()` removes the runtime-wide default
+  [#470](https://github.com/julianhille/MuhammaraJS/pull/470)
 
 ### Changed
 

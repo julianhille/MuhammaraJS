@@ -137,6 +137,20 @@ var pdfBytes = new Recipe({ defaultFontFamily: "report", defaultFontSize: 11 })
   .endPDF();
 ```
 
+`registerFont()` and `registerFontAsync()` take an `isDefault` boolean after
+the style that also makes the registered family the default. On a Recipe it
+sets that Recipe's default, as the option does. On the `Recipe` constructor it
+sets the default of every Recipe from that `createRecipe()` runtime, including
+ones already created. The latest default set applies: a static registration
+overrides the option of earlier Recipes, a Recipe created later or a later
+instance registration overrides the static one for that Recipe, and
+`Recipe.disposeAssets()` removes the static default with the fonts.
+
+```js
+await Recipe.registerFontAsync("report", fontFile, "regular", true);
+var recipe = new Recipe(); // uses "report"
+```
+
 The family name is case-insensitive and is resolved when text is drawn or
 measured, so it can be registered after the Recipe is created; text throws
 `Unknown font: <name>` while it is not registered. A `defaultFontFamily` that

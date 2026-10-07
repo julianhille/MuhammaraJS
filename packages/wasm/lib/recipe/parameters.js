@@ -76,7 +76,7 @@ export function recipeVersion(version) {
  *   omitted so text uses the runtime's default font.
  * @throws {TypeError} If the family is given and is not a non-empty string.
  */
-function defaultFontFamilyOption(family) {
+export function defaultFontFamilyOption(family) {
   if (family == null) return undefined;
   if (typeof family !== "string" || !family) {
     throw new TypeError(
@@ -84,6 +84,21 @@ function defaultFontFamilyOption(family) {
     );
   }
   return family.toLowerCase();
+}
+
+/**
+ * Validates the `isDefault` argument of `registerFont()`.
+ * @param {*} isDefault - The argument value.
+ * @returns {boolean} The flag; false when omitted.
+ * @throws {TypeError} If the value is given and is not a boolean.
+ */
+export function defaultFontFlag(isDefault = false) {
+  if (typeof isDefault !== "boolean") {
+    throw new TypeError(
+      `registerFont isDefault must be a boolean, received ${isDefault}`,
+    );
+  }
+  return isDefault;
 }
 
 /**

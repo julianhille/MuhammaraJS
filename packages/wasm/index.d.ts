@@ -625,11 +625,21 @@ export interface Recipe {
   register<Arguments extends unknown[], Result>(
     callback: RecipeExtension<Arguments, Result>,
   ): this;
-  registerFont(name: string, bytes: ByteSource, type?: RecipeFontStyle): this;
+  /**
+   * `isDefault` makes the family this Recipe's default font family, as the
+   * `defaultFontFamily` option does; the latest default set applies.
+   */
+  registerFont(
+    name: string,
+    bytes: ByteSource,
+    type?: RecipeFontStyle,
+    isDefault?: boolean,
+  ): this;
   registerFontAsync(
     name: string,
     bytes: AsyncByteSource,
     type?: RecipeFontStyle,
+    isDefault?: boolean,
   ): Promise<this>;
   htmlToTextObjects(
     html: string,
@@ -1381,11 +1391,22 @@ export interface RecipeConstructor {
   };
   new (options?: RecipeOptions): Recipe;
   new (source: ByteSource, options?: RecipeOptions): Recipe;
-  registerFont(name: string, bytes: ByteSource, style?: RecipeFontStyle): void;
+  /**
+   * `isDefault` makes the family the default font family of every Recipe from
+   * this runtime; the latest default set, by this, a Recipe's
+   * `defaultFontFamily` option, or its own `registerFont()`, applies.
+   */
+  registerFont(
+    name: string,
+    bytes: ByteSource,
+    style?: RecipeFontStyle,
+    isDefault?: boolean,
+  ): void;
   registerFontAsync(
     name: string,
     bytes: AsyncByteSource,
     style?: RecipeFontStyle,
+    isDefault?: boolean,
   ): Promise<void>;
   registerImage(name: string, bytes: ByteSource, extension: string): void;
   registerImageAsync(

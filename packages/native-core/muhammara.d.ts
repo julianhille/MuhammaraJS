@@ -4210,12 +4210,18 @@ declare namespace muhammara {
      * @param type - The style this file provides,; defaults to 'regular'.
      *   one of the `Recipe.FontStyle` values or its short form r, b, i or bi.
      *   Any other value registers the regular style.
+     * @param isDefault - Make this family the Recipe's default font family,
+     *   as the `defaultFontFamily` option does; defaults to false. The latest
+     *   default set, by the option or by a registration, applies.
      * @returns The recipe instance.
+     * @throws {TypeError} If `isDefault` is not a boolean, or is true and the
+     *   font name is empty.
      */
     registerFont(
       fontName: string,
       fontSrcPath: string,
       type?: Recipe.RecipeFontStyle,
+      isDefault?: boolean,
     ): Recipe;
 
     /**

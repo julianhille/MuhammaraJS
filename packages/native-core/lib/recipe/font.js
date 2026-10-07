@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { FontStyle } = require("../recipe-constants");
+const { defaultFontFamilyOption } = require("./utils");
 
 // Keys of the per-style font files stored for each family in this.fonts.
 const FontSlot = Object.freeze({
@@ -20,14 +21,28 @@ const FontSlot = Object.freeze({
  * @param {Recipe.FontStyle} [type='regular'] - The style this file provides,
  *   one of the `Recipe.FontStyle` values or its short form r, b, i or bi.
  *   Any other value registers the regular style.
+ * @param {boolean} [isDefault=false] - Make this family the Recipe's default
+ *   font family, as the `defaultFontFamily` option does. The latest default
+ *   set, by the option or by a registration, applies.
  * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If `isDefault` is not a boolean, or is true and the
+ *   font name is empty.
  */
 exports.registerFont = function registerFont(
   fontName = "",
   fontSrcPath = "",
   type = FontStyle.REGULAR,
+  isDefault = false,
 ) {
-  return this._registerFont(fontName, fontSrcPath, type);
+  if (typeof isDefault !== "boolean") {
+    throw new TypeError(
+      `registerFont isDefault must be a boolean, received ${isDefault}`,
+    );
+  }
+  const defaultFamily = isDefault && defaultFontFamilyOption(fontName);
+  this._registerFont(fontName, fontSrcPath, type);
+  if (defaultFamily) this.current.defaultFontFamily = defaultFamily;
+  return this;
 };
 
 /**

@@ -10,7 +10,12 @@ import {
 import { endPDF } from "./recipe/end.js";
 import { getFont, registerFont } from "./recipe/font.js";
 import { createImageMethods } from "./recipe/image.js";
-import { initializeRecipe, recipeVersion } from "./recipe/parameters.js";
+import {
+  defaultFontFamilyOption,
+  defaultFontFlag,
+  initializeRecipe,
+  recipeVersion,
+} from "./recipe/parameters.js";
 import {
   createPageMethods,
   endActivePage,
@@ -93,17 +98,32 @@ export function createRecipeFactory({
   var fonts = new Map();
   var images = new Map();
   var pdfs = new Map();
-  var state = { nextFont: 0, nextImage: 0, nextPdf: 0 };
+  var state = {
+    nextFont: 0,
+    nextImage: 0,
+    nextPdf: 0,
+    // The default family set by static registerFont(..., true), and the
+    // order of every default set, so the latest one applies.
+    defaultFont: null,
+    defaultOrder: 0,
+  };
 
   /**
    * Resolves the registered font path for text options, registering the default font on first use.
-   * @param {Recipe} recipe - Recipe whose `defaultFontFamily` applies when `font` is omitted.
+   * When `font` is omitted, the latest default family set applies: the
+   * Recipe's own or the runtime's from static `registerFont(..., true)`.
+   * @param {Recipe} recipe - Recipe whose default family applies when `font` is omitted.
    * @param {object} [options={}] - Text options with `font`, `bold`, and `italic`.
    * @returns {string} Virtual path of the font.
    * @throws {Error} If the font is not registered.
    */
   function resolveFont(recipe, options = {}) {
-    var name = options.font || recipe.default.fontFamily || defaultFont?.name;
+    var shared = state.defaultFont;
+    var family =
+      shared && !(recipe._defaultFontOrder > shared.order)
+        ? shared.family
+        : recipe.default.fontFamily;
+    var name = options.font || family || defaultFont?.name;
     if (
       defaultFont &&
       String(name).toLowerCase() === defaultFont.name.toLowerCase() &&
@@ -112,6 +132,17 @@ export function createRecipeFactory({
       Recipe.registerFont(defaultFont.name, defaultFont.loadBytes());
     }
     return getFont(fonts, { ...options, font: name });
+  }
+
+  /**
+   * Makes a family a Recipe's default font family, ahead of every default set before.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} family - Lower-cased family name.
+   * @returns {void}
+   */
+  function setDefaultFamily(recipe, family) {
+    recipe.default.fontFamily = family;
+    recipe._defaultFontOrder = ++state.defaultOrder;
   }
 
   /**
@@ -161,6 +192,9 @@ export function createRecipeFactory({
       }
       var version = recipeVersion(options.version);
       initializeRecipe(this, options);
+      if (this.default.fontFamily) {
+        this._defaultFontOrder = ++state.defaultOrder;
+      }
       this.encryption_ = hasSource ? {} : this._getEncryptOptions(options);
       this._version = version;
       this._recipe = 0;
@@ -872,11 +906,16 @@ export function createRecipeFactory({
      * @param {string} name - Non-empty font family name.
      * @param {ByteSource} bytes - Font bytes.
      * @param {RecipeFontStyle} [type="regular"] - Font family style.
+     * @param {boolean} [isDefault=false] - Make this family this Recipe's
+     * default font family, as the `defaultFontFamily` option does. The latest
+     * default set applies.
      * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If the name or bytes are invalid.
+     * @throws {TypeError} If the name, bytes, or `isDefault` are invalid.
      */
-    registerFont: function (name, bytes, type) {
+    registerFont: function (name, bytes, type, isDefault) {
+      var family = defaultFontFlag(isDefault) && defaultFontFamilyOption(name);
       Recipe.registerFont(name, bytes, type);
+      if (family) setDefaultFamily(this, family);
       return this;
     },
     /**
@@ -889,11 +928,15 @@ export function createRecipeFactory({
      * @param {string} name - Non-empty font family name.
      * @param {AsyncByteSource} bytes - Font bytes or a blob-like source.
      * @param {RecipeFontStyle} [type="regular"] - Font family style.
+     * @param {boolean} [isDefault=false] - Make this family this Recipe's
+     * default font family, as `registerFont()` does.
      * @returns {Promise<Recipe>} The Recipe instance after registration.
-     * @throws {TypeError} If the name or bytes are invalid.
+     * @throws {TypeError} If the name, bytes, or `isDefault` are invalid.
      */
-    registerFontAsync: async function (name, bytes, type) {
+    registerFontAsync: async function (name, bytes, type, isDefault) {
+      var family = defaultFontFlag(isDefault) && defaultFontFamilyOption(name);
       await Recipe.registerFontAsync(name, bytes, type);
+      if (family) setDefaultFamily(this, family);
       return this;
     },
   });

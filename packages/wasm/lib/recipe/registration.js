@@ -1,5 +1,6 @@
 import { fontStyleKey } from "./font.js";
 import { FontStyle } from "../value-sets.js";
+import { defaultFontFamilyOption, defaultFontFlag } from "./parameters.js";
 /**
  * Creates Recipe asset registration and removal methods.
  * @param {object} dependencies - Module, registries, byte helpers, and writer font hooks.
@@ -29,13 +30,19 @@ export function createRegistrationMethods({
      * @param {string} name Non-empty font family name used by Recipe text.
      * @param {ByteSource} bytes Font bytes.
      * @param {RecipeFontStyle} [type="regular"] Font family style.
+     * @param {boolean} [isDefault=false] Make this family the default font
+     * family of every Recipe from this runtime. The latest default set, by
+     * this, by a Recipe's `defaultFontFamily` option, or by its own
+     * `registerFont()`, applies.
      * @returns {void}
-     * @throws {TypeError} If the name is empty or the bytes are unsupported.
+     * @throws {TypeError} If the name is empty, the bytes are unsupported, or
+     * `isDefault` is not a boolean.
      */
-    registerFont: function (name, bytes, type) {
+    registerFont: function (name, bytes, type, isDefault) {
       if (typeof name !== "string" || !name) {
         throw new TypeError("Font names must be non-empty strings");
       }
+      var family = defaultFontFlag(isDefault) && defaultFontFamilyOption(name);
       bytes = normalizeBytes(bytes, "Font bytes");
       var path = `/fonts/${state.nextFont++}.font`;
       module.FS.mkdirTree("/fonts");
@@ -47,6 +54,7 @@ export function createRegistrationMethods({
         unregisterWriterFont(previous);
         removeFile(previous);
       }
+      if (family) state.defaultFont = { family, order: ++state.defaultOrder };
     },
     /**
      * Asynchronously registers a font for future Recipe instances.
@@ -59,14 +67,19 @@ export function createRegistrationMethods({
      * @param {string} name Non-empty font family name used by Recipe text.
      * @param {AsyncByteSource} bytes Font bytes or an asynchronous byte source.
      * @param {RecipeFontStyle} [type="regular"] Font family style.
+     * @param {boolean} [isDefault=false] Make this family the default font
+     * family of every Recipe from this runtime, as `registerFont()` does.
      * @returns {Promise<void>} Resolves after the font is registered.
-     * @throws {TypeError} If the name is empty or the bytes are unsupported.
+     * @throws {TypeError} If the name is empty, the bytes are unsupported, or
+     * `isDefault` is not a boolean.
      */
-    registerFontAsync: async function (name, bytes, type) {
+    registerFontAsync: async function (name, bytes, type, isDefault) {
+      defaultFontFlag(isDefault);
       return this.registerFont(
         name,
         await normalizeBytesAsync(bytes, "Font bytes"),
         type,
+        isDefault,
       );
     },
     /**
@@ -228,6 +241,8 @@ export function createRegistrationMethods({
       );
       new Set([...images.values(), ...pdfs.values()]).forEach(removeFile);
       fonts.clear();
+      // The families are gone, so text falls back to the runtime default.
+      state.defaultFont = null;
       images.clear();
       pdfs.clear();
     },

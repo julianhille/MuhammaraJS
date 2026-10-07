@@ -113,4 +113,28 @@ describe("Recipe default font", function () {
       );
     });
   });
+
+  it("makes a registered font the default, latest default wins", function () {
+    var fontsDir = path.join(__dirname, "../../../native-core/fonts");
+    var recipe = new Recipe(
+      "new",
+      path.join(__dirname, "../output/default-font-register.pdf"),
+      { defaultFontFamily: "georgia" },
+    ).createPage("letter");
+    var georgia = recipe.textDimensions("Hello", { font: "georgia" });
+    var roboto = recipe.textDimensions("Hello", { font: "roboto" });
+    assert.deepStrictEqual(recipe.textDimensions("Hello"), georgia);
+    // A registration without isDefault keeps the default.
+    recipe.registerFont("body", path.join(fontsDir, "Roboto.ttf"));
+    assert.deepStrictEqual(recipe.textDimensions("Hello"), georgia);
+    recipe.registerFont("Body", path.join(fontsDir, "Roboto.ttf"), "r", true);
+    assert.deepStrictEqual(recipe.textDimensions("Hello"), roboto);
+    recipe.registerFont("serif", path.join(fontsDir, "Georgia.ttf"), "r", true);
+    assert.deepStrictEqual(recipe.textDimensions("Hello"), georgia);
+    assert.throws(
+      () => recipe.registerFont("x", path.join(fontsDir, "Roboto.ttf"), "r", 1),
+      TypeError,
+    );
+    recipe.endPage().endPDF();
+  });
 });

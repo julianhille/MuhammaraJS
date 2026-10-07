@@ -302,4 +302,66 @@ describe("Recipe default font", function () {
       assert.throws(() => new Recipe({ defaultFontFamily }), TypeError);
     });
   });
+
+  it("makes a registered font the default, latest default wins", async function () {
+    var arial = new Uint8Array(
+      await readFile("tests/TestMaterials/fonts/arial.ttf"),
+    );
+    var roboto = defaultFontBytes();
+    Recipe.registerFont("serif", arial);
+    var first = new Recipe({ defaultFontFamily: "serif" }).createPage("letter");
+    var second = new Recipe().createPage("letter");
+    try {
+      var arialSize = first.textDimensions("Hello", { font: "serif" });
+      var robotoSize = first.textDimensions("Hello", { font: "Roboto" });
+      assert.deepEqual(first.textDimensions("Hello"), arialSize);
+      assert.deepEqual(second.textDimensions("Hello"), robotoSize);
+
+      // A runtime-wide default applies to every Recipe, overriding earlier
+      // defaults, including the first Recipe's option.
+      Recipe.registerFont("Shared", roboto, "regular", true);
+      assert.deepEqual(first.textDimensions("Hello"), robotoSize);
+      assert.deepEqual(second.textDimensions("Hello"), robotoSize);
+
+      // A later instance registration overrides it for that Recipe only.
+      first.registerFont("Mine", arial, "regular", true);
+      assert.deepEqual(first.textDimensions("Hello"), arialSize);
+      assert.deepEqual(second.textDimensions("Hello"), robotoSize);
+
+      // Recipes created afterwards use their own option.
+      var third = new Recipe({ defaultFontFamily: "serif" });
+      third.createPage("letter");
+      try {
+        assert.deepEqual(third.textDimensions("Hello"), arialSize);
+      } finally {
+        third.dispose();
+      }
+
+      await Recipe.registerFontAsync("async", new Blob([arial]), "r", true);
+      assert.deepEqual(second.textDimensions("Hello"), arialSize);
+      assert.deepEqual(first.textDimensions("Hello"), arialSize);
+
+      assert.throws(() => Recipe.registerFont("x", arial, "r", 1), TypeError);
+      assert.throws(
+        () => first.registerFont("x", arial, "r", "yes"),
+        TypeError,
+      );
+      await assert.rejects(
+        Recipe.registerFontAsync("x", arial, "r", 1),
+        TypeError,
+      );
+    } finally {
+      first.dispose();
+      second.dispose();
+    }
+
+    // disposeAssets() removes the families and the runtime-wide default.
+    Recipe.disposeAssets();
+    var recipe = new Recipe().createPage("letter");
+    try {
+      checkText(recipe.text("Hello", 72, 72).endPage().endPDF(), ["Hello"]);
+    } finally {
+      recipe.dispose();
+    }
+  });
 });
