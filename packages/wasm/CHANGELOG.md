@@ -39,9 +39,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   without padding was off by half that bearing, and the text-markup
   annotations of HTML lines ended that bearing short of their glyphs
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
-- Start a new line of plain (non-HTML) Recipe text at every mandatory line
-  break, as native does: `\r\n`, `\r`, vertical tab, form feed, U+0085,
-  U+2028 and U+2029 no longer draw as missing glyphs on the same line
+- Start a new line of plain (non-HTML) Recipe text, and of flowed runs, at
+  every mandatory line break, as native does: `\r\n`, `\r`, vertical tab,
+  form feed, U+0085, U+2028 and U+2029 no longer draw as missing glyphs on
+  the same line [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Draw text written after a flow that ends with a line break below the
+  flow, as native does, instead of over its last line; `movedown(0)` no
+  longer adds a blank line after such a flow
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 
 ## [1.1.0] - 2026-10-05

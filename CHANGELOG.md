@@ -24,6 +24,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   as before; see [Write Right-to-Left Text](packages/native/docs/how-to/write-right-to-left-text.md)
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 
+### Fixed
+
+- End a flowed Recipe line at every paragraph separator that ends a run:
+  `\r\n`, `\r`, vertical tab, form feed, U+0085, U+2028 and U+2029 no
+  longer draw as missing glyphs with the next run on the same line, as `\n`
+  already did, and a plain line ending in U+0085 no longer ends a missing
+  glyph short of the right edge
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Keep the spaces a flowed Recipe line starts with when `movedown()` or a
+  line break ends it, as Wasm does; they were dropped only on such lines
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Keep the space that the first element of a flowed HTML run starts with,
+  as in `<span> 6 7</span>`, inside that element, as Wasm does; it was
+  dropped, so the run touched the text before it
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Keep a figure space (U+2007) or a narrow no-break space (U+202F) at the end
+  of a Recipe line, as the no-break space (U+00A0) already was and as Wasm
+  does [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+
 ## [7.1.0] - 2026-10-05
 
 ### Added
