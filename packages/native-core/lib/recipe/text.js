@@ -2104,16 +2104,25 @@ function assignParagraphDirections(textObjects, direction, openText, waits) {
 }
 
 /**
- * What a flow keeps of its open paragraph for the runs after it: its text
- * while it has no letter to take its direction from, and then one letter of
- * that direction, all the runs after it read, so a long paragraph is not
- * searched again for each run.
+ * What a flow keeps of its open paragraph for the runs after it, which only
+ * read the letter it takes its direction from: once it has one, one letter
+ * of that direction, and before that a space for its text and the isolates
+ * it leaves open, inside which a later letter does not count. A long paragraph is then not kept
+ * and searched again for each run.
  * @private
  * @param {string} paragraph - The open paragraph's text.
  * @returns {string} The text to keep.
  */
 function keptParagraph(paragraph) {
-  if (paragraph.length < 2 || !hasStrongCharacter(paragraph)) return paragraph;
+  if (!hasStrongCharacter(paragraph)) {
+    let open = 0;
+    for (const character of paragraph) {
+      if (character >= "\u2066" && character <= "\u2068") ++open;
+      else if (character === "\u2069" && open) --open;
+    }
+    // A space tells the runs after it that the paragraph has begun.
+    return paragraph && " " + "\u2066".repeat(open);
+  }
   return resolveDirection(paragraph, TextDirection.AUTO) === TextDirection.RTL
     ? "\u05d0"
     : "a";

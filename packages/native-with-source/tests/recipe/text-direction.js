@@ -1401,6 +1401,49 @@ describe("Recipe text direction", function () {
     assert.ok(line.length > 1);
   });
 
+  it("keeps only the open isolates of a flowed paragraph without a letter", async function () {
+    const kept = [];
+    const lines = {};
+    for (const flow of [true, false]) {
+      const runs = await drawPage(
+        "text-direction-flow-neutral-" + flow,
+        (recipe) => {
+          const options = {
+            font: "arial",
+            size: 12,
+            direction: "auto",
+            textBox: { width: 360 },
+          };
+          const parts = [
+            "(1) ",
+            "\u2067abc ",
+            "2 - 3 ",
+            "\u2069 4 ",
+            "\u05e9\u05dc\u05d5\u05dd",
+          ];
+          if (flow) {
+            recipe.text(parts[0], 20, 20, { ...options, flow: true });
+            for (const part of parts.slice(1)) {
+              recipe.text(part, options);
+              kept.push(recipe._flowParagraph);
+            }
+            recipe.text("", { flow: false });
+          } else recipe.text(parts.join(""), 20, 20, options);
+        },
+      );
+      lines[flow] = runs
+        .slice()
+        .sort((a, b) => a.x - b.x)
+        .map((run) => run.text)
+        .join("");
+    }
+    // The paragraph without a letter kept growing with each run.
+    assert.deepEqual(kept, [" \u2066", " \u2066", " ", "\u05d0"]);
+    // The isolate's letters do not give the flowed paragraph its direction,
+    // as in one call.
+    assert.equal(lines.true, lines.false);
+  });
+
   it("lets a flowed paragraph starting with an isolate take a later letter's direction", async function () {
     const text = "\u2067abc\u2069 1 2 3 4 5 6 7 8 9 ";
     const lines = {};
