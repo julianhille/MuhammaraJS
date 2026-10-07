@@ -1,4 +1,4 @@
-import { spacedGaps } from "../text-direction.js";
+import { drawnGaps, spacedGaps } from "../text-direction.js";
 
 /**
  * Calculates spacing between retained Unicode characters, except between a
@@ -6,10 +6,18 @@ import { spacedGaps } from "../text-direction.js";
  * @param {string} text - Text, in the order it is drawn.
  * @param {number} [charSpace=0] - Spacing per character gap.
  * @param {string} [direction] - The `direction` text option.
+ * @param {boolean} [drawn=false] - Whether the text is already in the order
+ *   it is drawn, as a piece of a reordered line is; otherwise it is in the
+ *   order it is typed.
  * @returns {number} Total spacing.
  */
-export function charSpacing(text, charSpace = 0, direction = undefined) {
-  return spacedGaps(String(text), direction) * charSpace;
+export function charSpacing(
+  text,
+  charSpace = 0,
+  direction = undefined,
+  drawn = false,
+) {
+  return (drawn ? drawnGaps : spacedGaps)(String(text), direction) * charSpace;
 }
 
 /** A measurable text fragment used by Recipe layout. */

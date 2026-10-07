@@ -623,11 +623,21 @@ export function createTextMethods({ drawText, measure, module }) {
    * @returns {TextDimensions} Bounds and width in points.
    */
   function dimensions(recipe, value, options = {}) {
-    // Formatting characters that reordering drops are not measured.
-    value = drawnText(String(value), options.direction);
-    var result = measure.call(recipe, value, options);
-    result.width += charSpacing(value, options.charSpace, options.direction);
-    result.xMax += charSpacing(value, options.charSpace, options.direction);
+    // Formatting characters that reordering drops are not measured. A piece
+    // of a reordered line, marked _drawn, is already as it is drawn; other
+    // text is in the order it is typed.
+    var drawn = options._drawn
+      ? String(value)
+      : drawnText(String(value), options.direction);
+    var result = measure.call(recipe, drawn, options);
+    var spacing = charSpacing(
+      value,
+      options.charSpace,
+      options.direction,
+      options._drawn,
+    );
+    result.width += spacing;
+    result.xMax += spacing;
     return result;
   }
 
@@ -1520,7 +1530,11 @@ export function createTextMethods({ drawText, measure, module }) {
          */
         var metricsOf = (part) => {
           if (!pieceMetrics.has(part)) {
-            var partOptions = fragmentOptions(options, part.styles, fontSize);
+            var partOptions = {
+              ...fragmentOptions(options, part.styles, fontSize),
+            };
+            // The piece is in visual order already.
+            partOptions._drawn = true;
             var trimmed = part.text.replace(/\s+$/, "");
             var spaces = part.text.length - trimmed.length;
             if (spaces && !spaceAdvances.has(part.styles)) {

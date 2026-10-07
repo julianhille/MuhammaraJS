@@ -1,6 +1,6 @@
 var { cloneOptions, resolveFontSize, trimBreakableEnd } = require("./utils");
 var { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
-var { drawnText, spacedGaps } = require("../text-direction");
+var { drawnText, drawnGaps, spacedGaps } = require("../text-direction");
 
 /**
  * The width character spacing adds between the characters of a text.
@@ -9,10 +9,13 @@ var { drawnText, spacedGaps } = require("../text-direction");
  * @param {number} charSpace - The spacing added after each character but the
  *   last, except between a right-to-left letter and the points drawn before it.
  * @param {string} [direction] - The `direction` text option.
+ * @param {boolean} [drawn=false] - Whether the text is already in the order
+ *   it is drawn, as a piece of a reordered line is; otherwise it is in the
+ *   order it is typed.
  * @returns {number} The added width.
  */
-const charSpacing = function charSpacing(text, charSpace, direction) {
-  return spacedGaps(String(text), direction) * charSpace;
+const charSpacing = function charSpacing(text, charSpace, direction, drawn) {
+  return (drawn ? drawnGaps : spacedGaps)(String(text), direction) * charSpace;
 };
 
 // Have to set up word as a constant, then export it below
@@ -32,8 +35,14 @@ const Word = class Word {
     this._pathOptions = pathOptions;
     this._last = false;
     // allows space to get an actual dimension; formatting characters that
-    // reordering drops are not measured
-    this._text = word === " " ? "o" : drawnText(word, pathOptions.direction);
+    // reordering drops are not measured. A piece of a reordered line, marked
+    // _drawn, is already as it is drawn.
+    this._text =
+      word === " "
+        ? "o"
+        : pathOptions._drawn
+          ? word
+          : drawnText(word, pathOptions.direction);
   }
 
   /**
@@ -71,9 +80,10 @@ const Word = class Word {
    */
   get charSpacing() {
     return charSpacing(
-      this._text,
+      this._value,
       this._pathOptions.charSpace,
       this._pathOptions.direction,
+      this._pathOptions._drawn,
     );
   }
 
@@ -89,7 +99,9 @@ const Word = class Word {
     if (this._last) {
       const trimmed = trimBreakableEnd(this._value.trimStart());
       // Formatting characters that reordering drops are not measured.
-      const text = drawnText(trimmed, this._pathOptions.direction);
+      const text = this._pathOptions._drawn
+        ? trimmed
+        : drawnText(trimmed, this._pathOptions.direction);
       this._value = trimmed;
       if (text === this._text) return;
       this._text = text;
@@ -386,17 +398,18 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
 exports.textDimensions = function textDimensions(text, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
-  text = drawnText(text, options.direction);
+  const drawn = drawnText(text, options.direction);
   const font = this._getFont(options);
   let dimensions = {};
   let charSpaces = 0;
 
   if (font) {
+    // Spacing is counted in the order the text is typed.
     if (options.charSpace) {
       charSpaces = charSpacing(text, options.charSpace, options.direction);
     }
     const fontSize = resolveFontSize(options, this.current.defaultFontSize);
-    dimensions = font.calculateTextDimensions(text, fontSize);
+    dimensions = font.calculateTextDimensions(drawn, fontSize);
     dimensions.xMax += charSpaces;
   }
 

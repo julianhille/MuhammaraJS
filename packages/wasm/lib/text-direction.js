@@ -674,19 +674,48 @@ function spacedPieces(text, direction) {
 }
 
 /**
- * The number of character boundaries that character spacing widens, as
- * `spacedPieces()` splits them.
+ * The number of character boundaries that character spacing widens in text
+ * drawn as it is, as `spacedPieces()` splits it: for the pieces of a line
+ * that are already in visual order.
  *
  * @param {string} text The text in the order it is drawn.
  * @param {string} [direction] The `TextDirection` value it was drawn with;
  *   defaults to "none".
  * @returns {number} The number of spaced boundaries.
  */
-function spacedGaps(text, direction) {
+function drawnGaps(text, direction) {
   return spacedPieces(text, direction).reduce(function (gaps, piece) {
     var length = Array.from(piece).length;
     return gaps + (length ? length - 1 : 0);
   }, 0);
+}
+
+/**
+ * The number of character boundaries that character spacing widens once
+ * text is drawn, counted in the order it is typed, where every mark follows
+ * the character it belongs to: the marks of a right-to-left character take
+ * no spacing in reordered text, and formatting characters reordering drops
+ * take none. The count does not depend on the order the text is drawn in,
+ * so it is the same as `drawnGaps()` of the drawn text.
+ *
+ * @param {string} text The text in the order it is typed.
+ * @param {string} [direction] The `TextDirection` value it is drawn with;
+ *   defaults to "none".
+ * @returns {number} The number of spaced boundaries.
+ */
+function spacedGaps(text, direction) {
+  text = String(text);
+  if (readDirection(direction) === TextDirection.NONE) {
+    return Math.max(Array.from(text).length - 1, 0);
+  }
+  var characters = Array.from(text.replace(FORMATTING_CHARACTERS, ""));
+  var gaps = Math.max(characters.length - 1, 0);
+  var base;
+  characters.forEach(function (character) {
+    if (!NONSPACING_MARK.test(character)) base = character;
+    else if (base !== undefined && drawnAfterItsMarks(base)) gaps -= 1;
+  });
+  return gaps;
 }
 
 /**
@@ -906,5 +935,6 @@ export {
   visualWords,
   spacedPieces,
   spacedGaps,
+  drawnGaps,
   useBidi,
 };

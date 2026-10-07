@@ -15,6 +15,7 @@ import {
   paragraphDirections,
   readDirection,
   resolveDirection,
+  drawnGaps,
   spacedGaps,
   spacedPieces,
   toVisual,
@@ -226,44 +227,41 @@ describe("TextDirection", function () {
         spacedPieces("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1", "rtl"),
         ["\u05d0\u05b5", "\u05e8\u05b0", "\u05bc", "\u05d1"],
       );
-      assert.equal(
-        spacedGaps("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1", "rtl"),
-        2,
-      );
-      // Marks after a left-to-right letter keep their spacing, as before.
-      assert.deepEqual(spacedPieces("e\u0301x", "rtl"), ["e\u0301x"]);
-      assert.equal(spacedGaps("e\u0301x", "rtl"), 2);
-      assert.equal(spacedGaps(""), 0);
-      // Any right-to-left letter, as reordering tells them apart.
-      assert.equal(
-        spacedGaps(drawnText("\u{1e900}\u{1e944}\u{1e901}", "rtl"), "rtl"),
-        1,
-      );
-      // Points stay with the character reordering drew them before, a
-      // right-to-left punctuation mark too, and marks after any other
-      // character stay with it.
-      for (var [text, direction, gaps] of [
-        ["\u05d0\u05c3\u0591\u05d1", "rtl", 2],
-        ["\u05d0\u05be\u05b8\u05d1", "rtl", 2],
-        ["\u05d0\u05b8\u05f4", "rtl", 1],
-        ["e\u0301\u05d0 x", "ltr", 4],
-        ["\u05d0Cafe\u0301", "rtl", 5],
-      ]) {
-        var drawn = toVisual(text, direction);
-        assert.equal(spacedGaps(drawn, direction), gaps, text);
-        // Measured in logical order, the text takes the same spacing.
-        assert.equal(
-          spacedGaps(drawnText(text, direction), direction),
-          gaps,
-          text,
-        );
-      }
+      assert.equal(drawnGaps("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1", "rtl"), 2);
       // Text drawn as given keeps spacing everywhere, with or without
       // bidi-js.
       assert.deepEqual(spacedPieces("\u05d0\u05b5\u05e8"), [
         "\u05d0\u05b5\u05e8",
       ]);
-      assert.equal(spacedGaps("\u05b0\u05d1", "none"), 1);
+      assert.equal(spacedGaps("\u05d1\u05b0", "none"), 1);
+      assert.equal(spacedGaps(""), 0);
+    });
+
+    it("counts the same spacing in typed and in drawn order", function () {
+      // Points stay with the character reordering drew them before, a
+      // right-to-left punctuation mark too, and marks after any other
+      // character stay with it, wherever neutral characters stand.
+      for (var [text, direction, gaps] of [
+        ["\u05d1\u05b0\u05bc\u05e8\u05b5\u05d0", "rtl", 2],
+        ["\u05d0\u05c3\u0591\u05d1", "rtl", 2],
+        ["\u05d0\u05be\u05b8\u05d1", "rtl", 2],
+        ["\u05d0\u05b8\u05f4", "rtl", 1],
+        ["e\u0301\u05d0 x", "ltr", 4],
+        ["\u05d0Cafe\u0301", "rtl", 5],
+        ["\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd.", "rtl", 4],
+        ['"\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd"', "rtl", 5],
+        ["(\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd)", "auto", 5],
+        ["\u05d0\u05b8\u05d11", "rtl", 2],
+        ["\u{1e900}\u{1e944}\u{1e901}", "rtl", 1],
+        ["\u200f\u05d0\u05b8\u05d1", "rtl", 1],
+      ]) {
+        assert.equal(spacedGaps(text, direction), gaps, text);
+        assert.equal(
+          drawnGaps(toVisual(text, direction), direction),
+          gaps,
+          text,
+        );
+      }
     });
   });
 
@@ -498,7 +496,7 @@ describe("TextDirection", function () {
       var cause = new TypeError('Failed to resolve module specifier "bidi-js"');
       useBidi(cause);
       // Character spacing works without it.
-      assert.equal(spacedGaps("\u05b0\u05d1 a", "rtl"), 2);
+      assert.equal(drawnGaps("\u05b0\u05d1 a", "rtl"), 2);
       assert.equal(toVisual(text, "none"), text);
       assert.equal(toVisual("abc", "auto"), "abc");
       assert.throws(

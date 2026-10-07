@@ -237,51 +237,46 @@ describe("TextDirection", function () {
         ["\u05d0\u05b5", "\u05e8\u05b0", "\u05bc", "\u05d1"],
       );
       assert.equal(
-        textDirection.spacedGaps("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1", "rtl"),
+        textDirection.drawnGaps("\u05d0\u05b5\u05e8\u05b0\u05bc\u05d1", "rtl"),
         2,
       );
-      // Marks after a left-to-right letter keep their spacing, as before.
-      assert.deepEqual(textDirection.spacedPieces("e\u0301x", "rtl"), [
-        "e\u0301x",
+      // Text drawn as given keeps spacing everywhere, with or without
+      // bidi-js.
+      assert.deepEqual(textDirection.spacedPieces("\u05d0\u05b5\u05e8"), [
+        "\u05d0\u05b5\u05e8",
       ]);
-      assert.equal(textDirection.spacedGaps("e\u0301x", "rtl"), 2);
+      assert.equal(textDirection.spacedGaps("\u05d1\u05b0", "none"), 1);
       assert.equal(textDirection.spacedGaps(""), 0);
-      // Any right-to-left letter, as reordering tells them apart.
-      assert.equal(
-        textDirection.spacedGaps(
-          textDirection.drawnText("\u{1e900}\u{1e944}\u{1e901}", "rtl"),
-          "rtl",
-        ),
-        1,
-      );
+    });
+
+    it("counts the same spacing in typed and in drawn order", function () {
       // Points stay with the character reordering drew them before, a
       // right-to-left punctuation mark too, and marks after any other
-      // character stay with it.
+      // character stay with it, wherever neutral characters stand.
       for (var [text, direction, gaps] of [
+        ["\u05d1\u05b0\u05bc\u05e8\u05b5\u05d0", "rtl", 2],
         ["\u05d0\u05c3\u0591\u05d1", "rtl", 2],
         ["\u05d0\u05be\u05b8\u05d1", "rtl", 2],
         ["\u05d0\u05b8\u05f4", "rtl", 1],
         ["e\u0301\u05d0 x", "ltr", 4],
         ["\u05d0Cafe\u0301", "rtl", 5],
+        ["\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd.", "rtl", 4],
+        ['"\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd"', "rtl", 5],
+        ["(\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd)", "auto", 5],
+        ["\u05d0\u05b8\u05d11", "rtl", 2],
+        ["\u{1e900}\u{1e944}\u{1e901}", "rtl", 1],
+        ["\u200f\u05d0\u05b8\u05d1", "rtl", 1],
       ]) {
-        var drawn = textDirection.toVisual(text, direction);
-        assert.equal(textDirection.spacedGaps(drawn, direction), gaps, text);
-        // Measured in logical order, the text takes the same spacing.
+        assert.equal(textDirection.spacedGaps(text, direction), gaps, text);
         assert.equal(
-          textDirection.spacedGaps(
-            textDirection.drawnText(text, direction),
+          textDirection.drawnGaps(
+            textDirection.toVisual(text, direction),
             direction,
           ),
           gaps,
           text,
         );
       }
-      // Text drawn as given keeps spacing everywhere, with or without
-      // bidi-js.
-      assert.deepEqual(textDirection.spacedPieces("\u05d0\u05b5\u05e8"), [
-        "\u05d0\u05b5\u05e8",
-      ]);
-      assert.equal(textDirection.spacedGaps("\u05b0\u05d1", "none"), 1);
     });
   });
 
@@ -594,7 +589,7 @@ describe("TextDirection", function () {
       var cause = new Error("Cannot find module 'bidi-js'");
       textDirection.useBidi(cause);
       // Character spacing works without it.
-      assert.equal(textDirection.spacedGaps("\u05b0\u05d1 a", "rtl"), 2);
+      assert.equal(textDirection.drawnGaps("\u05b0\u05d1 a", "rtl"), 2);
       assert.equal(textDirection.toVisual(text, "none"), text);
       assert.equal(textDirection.toVisual("abc", "auto"), "abc");
       var error;

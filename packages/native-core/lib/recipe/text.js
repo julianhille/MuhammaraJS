@@ -1135,8 +1135,11 @@ exports.text = function text(text = "", x, y, options = {}) {
               piece,
               {
                 ink: trimmed
-                  ? new Word(trimmed, contents[piece.run].writeOptions)
-                      .dimensions.xMax
+                  ? new Word(
+                      trimmed,
+                      // The piece is in visual order already.
+                      { ...contents[piece.run].writeOptions, _drawn: true },
+                    ).dimensions.xMax
                   : 0,
                 space: spaces ? spaces * runSpace(piece.run) : 0,
               },
