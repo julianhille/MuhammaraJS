@@ -619,11 +619,17 @@ function drawnAfterItsMarks(character) {
 
 /**
  * Split text, in the order it is drawn, where character spacing must not go:
- * between the points drawn before a right-to-left letter and that letter, so
- * they stay over it. Only reordered text draws points before their letter;
- * text drawn as given, with direction "none", keeps spacing everywhere.
- * Spacing goes between the characters of each piece and between the pieces
- * of other boundaries only.
+ * between a mark and the character it belongs to, so the mark stays over it.
+ * Reordering draws the marks of a right-to-left letter before it and those
+ * of any other character after it; marks drawn between two characters go
+ * with the one after them when that is a right-to-left letter. Text drawn as
+ * given, with direction "none", keeps spacing everywhere. Spacing goes
+ * between the characters of each piece only.
+ *
+ * Whichever character marks between two others belong to, they take one
+ * boundary out of the spacing each, so a text takes spacing at one boundary
+ * fewer than it has characters other than marks, in the order it is typed
+ * and in the order it is drawn.
  *
  * @param {string} text The text in the order it is drawn.
  * @param {string} [direction] The `TextDirection` value it was drawn with;
@@ -638,11 +644,8 @@ function spacedPieces(text, direction) {
     return [text];
   }
   var characters = Array.from(text);
-  // Whether a mark belongs to the character drawn after it. Reordering puts
-  // the marks of a right-to-left character before it, and leaves those of
-  // any other character after it, so marks right after another character
-  // belong to that one, unless it is right-to-left itself or a space.
-  var before = new Array(characters.length).fill(false);
+  // Whether no spacing goes between a character and the one before it.
+  var joined = new Array(characters.length).fill(false);
   var index = 0;
   while (index < characters.length) {
     if (!NONSPACING_MARK.test(characters[index])) {
@@ -651,23 +654,20 @@ function spacedPieces(text, direction) {
     }
     var end = index;
     while (end < characters.length && NONSPACING_MARK.test(characters[end])) {
+      joined[end] = end > index;
       ++end;
     }
-    var previous = characters[index - 1];
     if (
       end < characters.length &&
-      drawnAfterItsMarks(characters[end]) &&
-      (previous === undefined ||
-        /^\s$/.test(previous) ||
-        drawnAfterItsMarks(previous))
+      (index === 0 || drawnAfterItsMarks(characters[end]))
     ) {
-      before.fill(true, index, end);
-    }
+      joined[end] = true;
+    } else if (index > 0) joined[index] = true;
     index = end;
   }
   var pieces = [""];
   characters.forEach(function (character, index) {
-    if (index > 0 && before[index - 1]) pieces.push("");
+    if (joined[index]) pieces.push("");
     pieces[pieces.length - 1] += character;
   });
   return pieces;
@@ -692,11 +692,12 @@ function drawnGaps(text, direction) {
 
 /**
  * The number of character boundaries that character spacing widens once
- * text is drawn, counted in the order it is typed, where every mark follows
- * the character it belongs to: the marks of a right-to-left character take
- * no spacing in reordered text, and formatting characters reordering drops
- * take none. The count does not depend on the order the text is drawn in,
- * so it is the same as `drawnGaps()` of the drawn text.
+ * text is drawn, counted in the order it is typed: every boundary for text
+ * drawn as given, with direction "none"; otherwise one fewer than the
+ * characters other than marks, as marks take no spacing on their character
+ * and formatting characters reordering drops take none. The count does not
+ * depend on the order the text is drawn in, so it is the same as
+ * `drawnGaps()` of the drawn text.
  *
  * @param {string} text The text in the order it is typed.
  * @param {string} [direction] The `TextDirection` value it is drawn with;
@@ -709,13 +710,10 @@ function spacedGaps(text, direction) {
     return Math.max(Array.from(text).length - 1, 0);
   }
   var characters = Array.from(text.replace(FORMATTING_CHARACTERS, ""));
-  var gaps = Math.max(characters.length - 1, 0);
-  var base;
-  characters.forEach(function (character) {
-    if (!NONSPACING_MARK.test(character)) base = character;
-    else if (base !== undefined && drawnAfterItsMarks(base)) gaps -= 1;
-  });
-  return gaps;
+  var spaced = characters.filter(function (character) {
+    return !NONSPACING_MARK.test(character);
+  }).length;
+  return Math.max(spaced - 1, 0);
 }
 
 /**

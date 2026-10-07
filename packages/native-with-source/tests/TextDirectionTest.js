@@ -249,17 +249,32 @@ describe("TextDirection", function () {
       assert.equal(textDirection.spacedGaps(""), 0);
     });
 
+    it("keeps a point drawn after a left-to-right character on its letter", function () {
+      // Drawn after "abc", the point of the right-to-left letter still
+      // takes no spacing before that letter.
+      assert.deepEqual(textDirection.spacedPieces("abc\u05b8\u05d0", "rtl"), [
+        "abc\u05b8",
+        "\u05d0",
+      ]);
+      assert.deepEqual(textDirection.spacedPieces("Cafe\u0301", "auto"), [
+        "Cafe",
+        "\u0301",
+      ]);
+    });
+
     it("counts the same spacing in typed and in drawn order", function () {
-      // Points stay with the character reordering drew them before, a
-      // right-to-left punctuation mark too, and marks after any other
-      // character stay with it, wherever neutral characters stand.
+      // Marks take no spacing on their character, so a text takes spacing
+      // at one boundary fewer than its characters other than marks, however
+      // reordering places them.
       for (var [text, direction, gaps] of [
         ["\u05d1\u05b0\u05bc\u05e8\u05b5\u05d0", "rtl", 2],
         ["\u05d0\u05c3\u0591\u05d1", "rtl", 2],
         ["\u05d0\u05be\u05b8\u05d1", "rtl", 2],
         ["\u05d0\u05b8\u05f4", "rtl", 1],
-        ["e\u0301\u05d0 x", "ltr", 4],
-        ["\u05d0Cafe\u0301", "rtl", 5],
+        ["e\u0301\u05d0 x", "ltr", 3],
+        ["\u05d0Cafe\u0301", "rtl", 4],
+        ["\u05d0\u05b8abc", "rtl", 3],
+        ["\u05d0\u05b8123", "rtl", 3],
         ["\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd.", "rtl", 4],
         ['"\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd"', "rtl", 5],
         ["(\u05e9\u05c1\u05b8\u05dc\u05d5\u05b9\u05dd)", "auto", 5],

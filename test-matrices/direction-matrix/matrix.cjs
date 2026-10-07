@@ -63,6 +63,7 @@ var KINDS = {
     build(scenario, v) {
       return {
         oneLine: true,
+        leftEdge: 50,
         rightEdge: 50 + scenario.width,
         options: {
           size: SIZE,
@@ -281,6 +282,18 @@ function brokenProperties(testCase, summary, drawnRight) {
       line.some(([text]) => text.trim() !== ""),
     );
     if (shown.length !== 1) broken.push(`drawn on ${shown.length} lines`);
+  }
+  if (testCase.leftEdge !== undefined) {
+    // The box is only just wider than the text, so a line drawn wider than
+    // it was measured starts left of it.
+    summary.lines.forEach((line, index) => {
+      var visible = line.filter(([text]) => text.trim() !== "");
+      if (visible.length && visible[0][1] < testCase.leftEdge - 0.01) {
+        broken.push(
+          `line ${index} starts at ${visible[0][1]}, left of the box at ${testCase.leftEdge}`,
+        );
+      }
+    });
   }
   if (testCase.rightEdge !== undefined) {
     summary.lines.forEach((line, index) => {
