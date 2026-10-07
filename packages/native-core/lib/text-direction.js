@@ -64,6 +64,8 @@ var FORMATTING_CHARACTERS = /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
 // Marks that combine with the character before them, such as Hebrew points.
 var COMBINING_MARK = /^\p{M}$/u;
 var HAS_COMBINING_MARK = /\p{M}/u;
+// What can continue a letter's cluster: a mark or a joiner.
+var HAS_CLUSTER_CONTINUATION = /[\p{M}\u200c\u200d]/u;
 // Marks a font draws over a letter, without an advance of their own.
 var NONSPACING_MARK = /^[\p{Mn}\p{Me}]$/u;
 // Variation selectors, which choose the form of the character before them and
@@ -641,19 +643,22 @@ function marksFirst(text, cluster) {
 function drawnText(text, direction) {
   direction = readDirection(direction);
   if (!reorders(text, direction)) return text;
-  var core = text.replace(FORMATTING_CHARACTERS, "");
-  if (!HAS_COMBINING_MARK.test(core)) return core;
-  var starts = clusterStarts(core);
+  if (!HAS_CLUSTER_CONTINUATION.test(text)) {
+    return text.replace(FORMATTING_CHARACTERS, "");
+  }
+  // Clusters are found with the formatting characters in place, as
+  // reordering finds them: a mark after an isolate is not its letter's.
+  var starts = clusterStarts(text);
   var members = clusterMembers(starts);
   var drawn = "";
   starts.forEach(function (start, index) {
     if (start !== index) return;
     var cluster = members[start];
-    if (cluster.length > 1 && isRightToLeftLetter(core, start)) {
-      cluster = marksFirst(core, cluster);
+    if (cluster.length > 1 && isRightToLeftLetter(text, start)) {
+      cluster = marksFirst(text, cluster);
     }
     cluster.forEach(function (position) {
-      drawn += core[position];
+      if (!FORMATTING_CHARACTER.test(text[position])) drawn += text[position];
     });
   });
   return drawn;
@@ -762,15 +767,31 @@ function drawnGaps(text, direction) {
  * @returns {number} The number of spaced boundaries.
  */
 function spacedGaps(text, direction) {
+  return Math.max(spacedCharacters(text, direction) - 1, 0);
+}
+
+/**
+ * The number of characters character spacing goes between, as
+ * `spacedGaps()` counts them: every character for text drawn as given, with
+ * direction "none", and otherwise the characters other than marks and the
+ * formatting characters reordering drops. Texts drawn one after another
+ * take spacing between the sum of theirs.
+ *
+ * @param {string} text The text in the order it is typed.
+ * @param {string} [direction] The `TextDirection` value it is drawn with;
+ *   defaults to "none".
+ * @returns {number} The number of spaced characters.
+ */
+function spacedCharacters(text, direction) {
   text = String(text);
   if (readDirection(direction) === TextDirection.NONE) {
-    return Math.max(Array.from(text).length - 1, 0);
+    return Array.from(text).length;
   }
-  var characters = Array.from(text.replace(FORMATTING_CHARACTERS, ""));
-  var spaced = characters.filter(function (character) {
-    return !NONSPACING_MARK.test(character);
-  }).length;
-  return Math.max(spaced - 1, 0);
+  return Array.from(text.replace(FORMATTING_CHARACTERS, "")).filter(
+    function (character) {
+      return !NONSPACING_MARK.test(character);
+    },
+  ).length;
 }
 
 /**
@@ -1022,6 +1043,7 @@ module.exports = {
   visualWords: visualWords,
   spacedPieces: spacedPieces,
   spacedGaps: spacedGaps,
+  spacedCharacters: spacedCharacters,
   spaceAdvance: spaceAdvance,
   drawnGaps: drawnGaps,
   useBidi: useBidi,

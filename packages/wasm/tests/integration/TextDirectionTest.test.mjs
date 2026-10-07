@@ -377,6 +377,19 @@ describe("TextDirection", function () {
   });
 
   describe("drawnText", function () {
+    it("forms clusters as reordering does", function () {
+      // A joiner on a right-to-left letter is drawn before it, as toVisual()
+      // draws it, also in text without a mark.
+      assert.equal(
+        drawnText("\u05e9\u200d", "rtl"),
+        toVisual("\u05e9\u200d", "rtl"),
+      );
+      // A mark after an isolate is not the letter's before it; after a
+      // direction mark it is.
+      assert.equal(drawnText("\u05e9\u2069\u05b8", "rtl"), "\u05e9\u05b8");
+      assert.equal(drawnText("\u05e9\u200f\u05b8", "rtl"), "\u05b8\u05e9");
+    });
+
     it("leaves out the formatting characters reordering drops", function () {
       assert.equal(drawnText("\u2067שלום\u2069", "auto"), "שלום");
       assert.equal(drawnText("abc\u200e", "ltr"), "abc");
