@@ -306,11 +306,17 @@ function paragraphDirections(text, direction) {
     end: Infinity,
     direction: resolveDirection(text.slice(start), TextDirection.AUTO),
   });
+  // The paragraphs are sorted by their end, so a line of a long text finds
+  // its own without walking every paragraph before it.
   return function (offset) {
-    for (var index = 0; index < paragraphs.length; ++index) {
-      if (offset < paragraphs[index].end) return paragraphs[index].direction;
+    var low = 0;
+    var high = paragraphs.length - 1;
+    while (low < high) {
+      var middle = (low + high) >> 1;
+      if (offset < paragraphs[middle].end) high = middle;
+      else low = middle + 1;
     }
-    return paragraphs[paragraphs.length - 1].direction;
+    return paragraphs[low].direction;
   };
 }
 

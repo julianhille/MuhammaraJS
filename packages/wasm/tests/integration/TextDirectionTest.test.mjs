@@ -170,6 +170,25 @@ describe("TextDirection", function () {
       assert.throws(() => readDirection("RTL"), TypeError);
     });
 
+    it("finds the paragraph at any offset, its break included", function () {
+      // A paragraph's break belongs to it; offsets are looked up in any
+      // order, past the text's end too.
+      var directionAt = paragraphDirections("ab\r\n\u05d0\u05d1\nc", "auto");
+      var expected = ["ltr", "ltr", "ltr", "ltr", "rtl", "rtl", "rtl", "ltr"];
+      for (var offset = expected.length - 1; offset >= 0; --offset) {
+        assert.equal(directionAt(offset), expected[offset], String(offset));
+      }
+      assert.equal(directionAt(100), "ltr");
+      var paragraphs = [];
+      for (var index = 0; index < 1000; ++index) {
+        paragraphs.push(index % 3 ? "abc" : "\u05d0\u05d1\u05d2");
+      }
+      var longAt = paragraphDirections(paragraphs.join("\n"), "auto");
+      for (index = 999; index >= 0; index -= 7) {
+        assert.equal(longAt(index * 4 + 1), index % 3 ? "ltr" : "rtl");
+      }
+    });
+
     it("resolves each paragraph's direction", function () {
       var directionAt = paragraphDirections("Hello\nשלום abc\n\n123", "auto");
       assert.equal(directionAt(0), "ltr");
