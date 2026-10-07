@@ -30,10 +30,6 @@ var KNOWN_DIFFERENCES = [
     "Wasm justifies a line drawn as given with slightly different gaps",
   ],
   [
-    /^flow (html-break-end|html-waiting|isolate-waiting) .* right$/,
-    "Wasm aligns a line of several runs by its first glyph's bearing too",
-  ],
-  [
     /^flow-break \w+ nbsp /,
     "Wasm moves the cursor past the line a non-breaking space holds",
   ],

@@ -1410,9 +1410,10 @@ export function createTextMethods({ drawText, measure, module }) {
         // Lines are aligned by where their glyphs end, as native does: the
         // width of the glyphs before the last run plus the last run's xMax,
         // so right-aligned text ends at the edge instead of a bearing past it.
-        var lastRun = entry.parts
-          ? groupedHtmlParts(entry.parts).pop()
-          : undefined;
+        // htmlPartsWidth() measures a line of one run from its first glyph
+        // to its last, and a line of several from its start already.
+        var runs = entry.parts ? groupedHtmlParts(entry.parts) : undefined;
+        var lastRun = runs?.length === 1 ? runs[0] : undefined;
         var alignWidth = entry.parts
           ? textWidth +
             (lastRun
