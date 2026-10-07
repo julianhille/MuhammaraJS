@@ -365,6 +365,35 @@ describe("TextDirection", function () {
   });
 
   describe("visualRuns", function () {
+    it("keeps left-to-right runs as typed whatever directions they ask for", function () {
+      for (var direction of ["none", "auto", "ltr"]) {
+        assert.equal(
+          textDirection.visualRuns(
+            ["Hello, ", "world (1) ", "again."],
+            direction,
+            [undefined, "ltr", "none"],
+          ),
+          null,
+          direction,
+        );
+      }
+      // A right-to-left run or line still reorders.
+      assert.notEqual(
+        textDirection.visualRuns(["Hello, ", "world!"], "auto", [
+          undefined,
+          "rtl",
+        ]),
+        null,
+      );
+      assert.notEqual(
+        textDirection.visualRuns(["Hello, ", "world"], "rtl", [
+          undefined,
+          "ltr",
+        ]),
+        null,
+      );
+    });
+
     it("keeps a run that starts with a mark in one piece", function () {
       // The mark has no letter in its run; it does not join the last letter
       // of the run before it.

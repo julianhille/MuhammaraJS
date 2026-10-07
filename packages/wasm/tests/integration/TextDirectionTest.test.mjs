@@ -330,6 +330,29 @@ describe("TextDirection", function () {
   });
 
   describe("visualRuns", function () {
+    it("keeps left-to-right runs as typed whatever directions they ask for", function () {
+      for (var direction of ["none", "auto", "ltr"]) {
+        assert.equal(
+          visualRuns(["Hello, ", "world (1) ", "again."], direction, [
+            undefined,
+            "ltr",
+            "none",
+          ]),
+          null,
+          direction,
+        );
+      }
+      // A right-to-left run or line still reorders.
+      assert.notEqual(
+        visualRuns(["Hello, ", "world!"], "auto", [undefined, "rtl"]),
+        null,
+      );
+      assert.notEqual(
+        visualRuns(["Hello, ", "world"], "rtl", [undefined, "ltr"]),
+        null,
+      );
+    });
+
     it("keeps a run that starts with a mark in one piece", function () {
       // The mark has no letter in its run; it does not join the last letter
       // of the run before it.
@@ -643,6 +666,28 @@ describe("TextDirection", function () {
           ].join("\n"),
         ),
         "abc \u05dd\u05d5\u05dc\u05e9",
+      );
+    });
+
+    it("draws flowed left-to-right runs that ask for different directions without bidi-js", async function () {
+      this.timeout(30000);
+      assert.equal(
+        await freshProcess(
+          [
+            "var Recipe = await createRecipe({ recryptWorker: false, bidi: false });",
+            'for (var [first, second] of [[undefined, "ltr"], ["auto", "none"]]) {',
+            "  new Recipe()",
+            "    .createPage(300, 300)",
+            '    .text("Hello ", 50, 50, { flow: true, direction: first })',
+            '    .text("world", { direction: second })',
+            '    .text("", { flow: false })',
+            "    .endPage()",
+            "    .endPDF();",
+            '  process.stdout.write("drawn;");',
+            "}",
+          ].join("\n"),
+        ),
+        "drawn;drawn;",
       );
     });
 

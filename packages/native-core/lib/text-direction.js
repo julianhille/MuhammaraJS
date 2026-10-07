@@ -786,6 +786,15 @@ function visualRuns(texts, direction, runDirections) {
   PARAGRAPH_BREAK.lastIndex = 0;
   if (PARAGRAPH_BREAK.test(joined)) return null;
   if (!isolated && !reorders(joined, direction)) return null;
+  // Without right-to-left text, or a run or line that asks for it, the line
+  // is drawn as typed, whatever its runs ask for.
+  if (
+    !hasReorderingCharacters(joined) &&
+    direction !== TextDirection.RTL &&
+    modes.indexOf(TextDirection.RTL) === -1
+  ) {
+    return null;
+  }
   if (
     modes.every(function (mode) {
       return mode === RUN_KEPT;
