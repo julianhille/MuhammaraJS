@@ -184,20 +184,19 @@ function isRightToLeftLetter(text, index) {
   return RIGHT_TO_LEFT_CLASSES.indexOf(type) !== -1;
 }
 
-// The bidirectional classes of strong letters, which set the direction of
-// the paragraph they start.
-var STRONG_CLASSES = Object.freeze(["L", "R", "AL"]);
-
 /**
- * Whether text holds a character that can set its paragraph's direction: a
- * letter of either direction, or a left-to-right or right-to-left mark,
- * outside any isolate, which the paragraph's direction skips.
+ * The direction of the first character that can set a paragraph's
+ * direction: a letter of either direction, or a left-to-right or
+ * right-to-left mark, outside any isolate, which the paragraph's direction
+ * skips. This is the direction the bidirectional algorithm gives the
+ * paragraph, found without running it on the whole text.
  *
  * @param {string} text The text.
- * @returns {boolean} True for text with a character of class L, R or AL
- * outside an isolate.
+ * @param {boolean} [paragraph=false] Whether to stop at the first
+ *   paragraph separator, as the paragraph's direction does.
+ * @returns {string|null} "ltr" or "rtl", or null without such a character.
  */
-function hasStrongCharacter(text) {
+function firstStrongDirection(text, paragraph) {
   var api = getBidi();
   var isolates = 0;
   for (var index = 0; index < text.length; ++index) {
@@ -210,15 +209,41 @@ function hasStrongCharacter(text) {
       if (isolates) --isolates;
       continue;
     }
-    if (!isolates) {
+    var pair =
+      code >= 0xd800 && code <= 0xdbff && isLowSurrogateAt(text, index + 1);
+    // U+001C-U+001E do not end a paragraph here, and a lone surrogate is
+    // neutral, as bidiText() classifies them.
+    var neutral =
+      (code >= 0x1c && code <= 0x1e) ||
+      (code >= 0xd800 && code <= 0xdfff && !pair);
+    if (!neutral) {
       var type = api.getBidiCharTypeName(
         String.fromCodePoint(text.codePointAt(index)),
       );
-      if (STRONG_CLASSES.indexOf(type) !== -1) return true;
+      if (type === "B" && paragraph) return null;
+      if (!isolates) {
+        if (type === "L") return TextDirection.LTR;
+        if (RIGHT_TO_LEFT_CLASSES.indexOf(type) !== -1) {
+          return TextDirection.RTL;
+        }
+      }
     }
-    if (isLowSurrogateAt(text, index + 1)) ++index;
+    if (pair) ++index;
   }
-  return false;
+  return null;
+}
+
+/**
+ * Whether text holds a character that can set its paragraph's direction: a
+ * letter of either direction, or a left-to-right or right-to-left mark,
+ * outside any isolate, which the paragraph's direction skips.
+ *
+ * @param {string} text The text.
+ * @returns {boolean} True for text with a character of class L, R or AL
+ * outside an isolate.
+ */
+function hasStrongCharacter(text) {
+  return firstStrongDirection(text) !== null;
 }
 
 /**
@@ -270,9 +295,7 @@ function resolveDirection(text, direction) {
   direction = readDirection(direction);
   if (direction !== TextDirection.AUTO) return direction;
   if (!hasReorderingCharacters(text)) return TextDirection.LTR;
-  return getBidi().getEmbeddingLevels(bidiText(text)).paragraphs[0].level % 2
-    ? TextDirection.RTL
-    : TextDirection.LTR;
+  return firstStrongDirection(text, true) || TextDirection.LTR;
 }
 
 /**

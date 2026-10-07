@@ -218,6 +218,37 @@ describe("TextDirection", function () {
       }
     });
 
+    it("resolves a paragraph's direction as the bidirectional algorithm does", async function () {
+      var bidi = (await import("bidi-js")).default();
+      for (var text of [
+        "1 (\u05d0) b",
+        "\u2067abc\u2069 \u05d0",
+        "\u2067abc \u05d0",
+        "\u202babc\u202c \u05d0",
+        "\u200f abc",
+        "12 \n\u05d0",
+        "\u2029\u05d0",
+        "\u001c\u05d0",
+        "\u{1e900} abc",
+        "\u{10400} \u05d0",
+        "\ud800 \u05d0",
+        "1 2 3",
+      ]) {
+        // The algorithm runs on the text as reordering classifies it: a
+        // lone surrogate and U+001C-U+001E are neutral there.
+        var classified = text
+          .replace(/[\u001c-\u001e]|[\ud800-\udbff](?![\udc00-\udfff])/g, "!")
+          .replace(/\u{1e900}/gu, "\u05d0\u05b8")
+          .replace(/\u{10400}/gu, "a\u05b8");
+        var level = bidi.getEmbeddingLevels(classified).paragraphs[0].level;
+        assert.equal(
+          resolveDirection(text, "auto"),
+          level % 2 ? "rtl" : "ltr",
+          JSON.stringify(text),
+        );
+      }
+    });
+
     it("resolves each paragraph's direction", function () {
       var directionAt = paragraphDirections("Hello\nשלום abc\n\n123", "auto");
       assert.equal(directionAt(0), "ltr");
