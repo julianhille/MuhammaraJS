@@ -853,9 +853,8 @@ int muhammara_wasm_recipe_set_opacity(WasmRecipe* recipe, double opacity) {
 // colorSpace is 0 for gray, 1 for RGB, 2 for CMYK, or 3 to keep the current
 // fill color, such as a Separation color. color packs one byte per component
 // in PDFWriter's order: 0xGG, 0xRRGGBB, or 0xCCMMYYKK; code 3 ignores it.
-// breaks are UTF-8 byte offsets into text, ascending, where a piece ends: a
-// TJ adjustment after each piece but the last takes the character spacing
-// back, so the points drawn before a right-to-left letter stay over it.
+// breaks are ascending UTF-8 byte offsets into text where a TJ adjustment
+// takes the character spacing back.
 int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
                                const char* text, const char* fontPath,
                                double fontSize, int colorSpace,
