@@ -168,6 +168,18 @@ describe("TextDirection", function () {
       }, TypeError);
     });
 
+    it("measures a space as the advance it takes between letters", function () {
+      var measured = [];
+      assert.equal(
+        textDirection.spaceAdvance(function (text) {
+          measured.push(text);
+          return { "o o": 13.5, oo: 10 }[text];
+        }),
+        3.5,
+      );
+      assert.deepEqual(measured, ["o o", "oo"]);
+    });
+
     it("finds the paragraph at any offset, its break included", function () {
       // A paragraph's break belongs to it; offsets are looked up in any
       // order, past the text's end too.

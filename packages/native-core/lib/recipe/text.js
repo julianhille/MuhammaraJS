@@ -11,6 +11,7 @@ const {
   resolveDirection,
   paragraphDirections,
   spacedPieces,
+  spaceAdvance,
   splitParagraphs,
   toVisual,
   visualRuns,
@@ -1109,9 +1110,8 @@ exports.text = function text(text = "", x, y, options = {}) {
           ? visualWords(segments)
           : segments.map((segment) => Object.assign({ gap: false }, segment));
         // Each piece is measured once: the width of its glyphs, without
-        // its trailing whitespace, and the advance of that whitespace,
-        // measured as real spaces, which text bounds leave out. A run's
-        // space advance is measured once.
+        // its trailing whitespace, and the advance of that whitespace as
+        // drawn. A run's space advance is measured once.
         const runSpaces = new Map();
         /**
          * The advance of one space in a run.
@@ -1123,8 +1123,7 @@ exports.text = function text(text = "", x, y, options = {}) {
             const options = contents[run].writeOptions;
             runSpaces.set(
               run,
-              new Word("o o", options).dimensions.xMax -
-                new Word("oo", options).dimensions.xMax,
+              spaceAdvance((text) => new Word(text, options).dimensions.xMax),
             );
           }
           return runSpaces.get(run);

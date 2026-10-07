@@ -13,6 +13,7 @@ import {
   drawnText,
   readDirection,
   resolveDirection,
+  spaceAdvance,
   splitParagraphs,
   toVisual,
   visualRuns,
@@ -1523,8 +1524,7 @@ export function createTextMethods({ drawText, measure, module }) {
         if (clipping && !clipEachPart) clipLine(textOptions);
         // Each reordered piece is measured once: where its glyphs end,
         // without its trailing whitespace, and the advance of that
-        // whitespace at a real space advance, which measured text bounds
-        // leave out. The space advance is measured once per style.
+        // whitespace as drawn. The space advance is measured once per style.
         var spaceAdvances = new Map();
         var pieceMetrics = new Map();
         /**
@@ -1544,8 +1544,9 @@ export function createTextMethods({ drawText, measure, module }) {
             if (spaces && !spaceAdvances.has(part.styles)) {
               spaceAdvances.set(
                 part.styles,
-                dimensions(this, "o o", partOptions).xMax -
-                  dimensions(this, "oo", partOptions).xMax,
+                spaceAdvance(
+                  (text) => dimensions(this, text, partOptions).xMax,
+                ),
               );
             }
             pieceMetrics.set(part, {

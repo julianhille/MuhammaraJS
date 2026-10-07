@@ -720,6 +720,19 @@ function spacedGaps(text, direction) {
 }
 
 /**
+ * The advance one space takes when drawn. Measured text bounds leave out
+ * the whitespace at their ends, so it is where "o o" ends less where "oo"
+ * ends.
+ *
+ * @param {function(string): number} glyphsEnd Where the glyphs of a text
+ *   end, in points, in the font and size to measure.
+ * @returns {number} The advance in points.
+ */
+function spaceAdvance(glyphsEnd) {
+  return glyphsEnd("o o") - glyphsEnd("oo");
+}
+
+/**
  * Reorder a line made of several runs, such as the styled runs of HTML text,
  * as one line. Each returned segment is a piece of one run, already in visual
  * order, and the segments are listed from left to right. Every character,
@@ -936,6 +949,7 @@ module.exports = {
   visualWords: visualWords,
   spacedPieces: spacedPieces,
   spacedGaps: spacedGaps,
+  spaceAdvance: spaceAdvance,
   drawnGaps: drawnGaps,
   useBidi: useBidi,
 };

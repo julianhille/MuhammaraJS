@@ -270,7 +270,9 @@ exports.Line = class Line {
   }
 
   /**
-   * @returns {number} The width of one space, measured as "o".
+   * @returns {number} The room a space ending a line is given, measured as
+   *   "o", as Wasm measures it. The advance a drawn space takes is
+   *   `spaceAdvance()` of `text-direction`.
    */
   get spaceWidth() {
     return this._pathOptions.font.calculateTextDimensions("o", this.size).width;

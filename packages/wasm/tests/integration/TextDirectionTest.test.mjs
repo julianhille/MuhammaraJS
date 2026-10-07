@@ -13,6 +13,7 @@ import {
   drawnText,
   hasStrongCharacter,
   paragraphDirections,
+  spaceAdvance,
   readDirection,
   resolveDirection,
   drawnGaps,
@@ -168,6 +169,18 @@ describe("TextDirection", function () {
     it("rejects unknown directions", function () {
       assert.throws(() => toVisual("abc", "up"), TypeError);
       assert.throws(() => readDirection("RTL"), TypeError);
+    });
+
+    it("measures a space as the advance it takes between letters", function () {
+      var measured = [];
+      assert.equal(
+        spaceAdvance(function (text) {
+          measured.push(text);
+          return { "o o": 13.5, oo: 10 }[text];
+        }),
+        3.5,
+      );
+      assert.deepEqual(measured, ["o o", "oo"]);
     });
 
     it("finds the paragraph at any offset, its break included", function () {
