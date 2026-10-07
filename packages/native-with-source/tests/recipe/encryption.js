@@ -299,6 +299,28 @@ describe("Encryption", () => {
     assertPdfEncryption(output, undefined, false);
   });
 
+  const taskPPNE =
+    "Unencrypted source with constructor password and empty encrypt()";
+  it(taskPPNE, () => {
+    const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const output = path.join(__dirname, `../output/${taskPPNE}.pdf`);
+    fs.rmSync(output, { force: true });
+    // The password opens nothing here, so there is no encryption to remove.
+    const recrypt = muhammara.recrypt;
+    let recrypts = 0;
+    muhammara.recrypt = function () {
+      recrypts += 1;
+      return recrypt.apply(this, arguments);
+    };
+    try {
+      new Recipe(src, output, { password: "unused" }).encrypt({}).endPDF();
+    } finally {
+      muhammara.recrypt = recrypt;
+    }
+    assert.equal(recrypts, 0);
+    assertPdfEncryption(output, undefined, false);
+  });
+
   // Matches Wasm: encrypt() without a password or userProtectionFlag drops
   // constructor encryption.
   const taskCNE = "New file with constructor password and empty encrypt()";
@@ -320,11 +342,10 @@ describe("Encryption", () => {
   const taskBCNE =
     "New Buffer file with constructor password and empty encrypt()";
   it(taskBCNE, (done) => {
-    const recipe = new Recipe(Buffer.from("new"), undefined, {
+    new Recipe(Buffer.from("new"), undefined, {
       ownerPassword: "owner",
       userPassword: "first",
-    });
-    recipe
+    })
       .createPage("letter")
       .endPage()
       .encrypt({})
@@ -336,10 +357,9 @@ describe("Encryption", () => {
 
   const taskBCKE = "New Buffer file with constructor password and no encrypt()";
   it(taskBCKE, (done) => {
-    const recipe = new Recipe(Buffer.from("new"), undefined, {
+    new Recipe(Buffer.from("new"), undefined, {
       userPassword: "first",
-    });
-    recipe
+    })
       .createPage("letter")
       .endPage()
       .endPDF((buffer) => {

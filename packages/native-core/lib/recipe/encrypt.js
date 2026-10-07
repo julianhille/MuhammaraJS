@@ -131,10 +131,12 @@ exports.encrypt = function encrypt(options = {}) {
 exports._encrypt = function _encrypt() {
   const encryption = this.encryption_ || {};
   // Constructor options encrypt a new PDF even without a password: a
-  // userProtectionFlag alone encrypts it with an empty user password. For a
-  // source they hold only the password that opens it.
-  const constructorEncrypted = Object.keys(this.encryptOptions).length > 0;
-  if (Object.keys(encryption).length === 0 && !constructorEncrypted) {
+  // userProtectionFlag alone encrypts it with an empty user password. An
+  // edited source keeps its own encryption, whatever the options hold.
+  const outputEncrypted = this.isNewPDF
+    ? Object.keys(this.encryptOptions).length > 0
+    : this.sourceEncrypted;
+  if (Object.keys(encryption).length === 0 && !outputEncrypted) {
     return;
   }
   // recrypt opens its input with `password`, so it must be the constructor

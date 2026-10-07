@@ -251,6 +251,8 @@ class Recipe {
         this.pdfReader = pdfReader;
         this.metadata = metadata;
         this.sourcePageCount = pages;
+        // _encrypt() decrypts the output only when the source was encrypted.
+        this.sourceEncrypted = pdfReader.isEncrypted();
         isAdopted = true;
       }
       return metadata;
