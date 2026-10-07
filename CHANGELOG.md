@@ -18,8 +18,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `endPDF()` used to fail with "Unable to recrypt files" when the constructor
   options already encrypted the document; the finished PDF is now opened with
   the constructor password before it is re-encrypted. `encrypt()` without a
-  password no longer rewrites the output, as on Wasm
-  [#446](https://github.com/julianhille/MuhammaraJS/issues/446)
+  password now leaves the output unencrypted, as on Wasm: it removes the
+  constructor encryption, and no longer rewrites an output that was never
+  encrypted [#446](https://github.com/julianhille/MuhammaraJS/issues/446)
 
 ## [7.1.0] - 2026-10-05
 

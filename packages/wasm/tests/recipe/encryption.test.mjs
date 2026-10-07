@@ -91,6 +91,26 @@ describe("Recipe encryption", function () {
     Recipe.disposeAssets();
   });
 
+  // Mirrors native "New Buffer file with constructor password and empty
+  // encrypt()".
+  it("drops constructor encryption when encrypt() has no password", async function () {
+    var Recipe = await createRecipe();
+    var recipe = new Recipe({ ownerPassword: "owner", userPassword: "first" })
+      .createPage(100, 100)
+      .endPage()
+      .encrypt({});
+    var bytes = recipe.endPDF();
+    writeOutput("encryption-constructor-then-empty-encrypt", bytes);
+
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(bytes);
+    assert.equal(reader.isEncrypted(), false);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
+    recipe.dispose();
+    Recipe.disposeAssets();
+  });
+
   it("queues native Recipe password aliases", async function () {
     var Recipe = await createRecipe();
     var recipe = new Recipe().createPage(100, 100).endPage();

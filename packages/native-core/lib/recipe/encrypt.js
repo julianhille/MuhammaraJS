@@ -118,20 +118,24 @@ exports.encrypt = function encrypt(options = {}) {
  * Re-encrypt the finished output with the encrypt() options. A path source
  * re-encrypts the output file in place; a Buffer source re-encrypts the
  * collected output bytes, so the callback and an output path receive the
- * encrypted PDF. Nothing happens when encrypt() was given no password, as on
- * Wasm. The finished output is opened with the password the Recipe was
- * created with, so a PDF whose constructor options already encrypted it can
- * still be re-encrypted with new passwords.
+ * encrypted PDF. The finished output is opened with the password the Recipe
+ * was created with, so a PDF whose constructor options already encrypted it
+ * can still be re-encrypted with new passwords. encrypt() without a password
+ * leaves the output unencrypted, as on Wasm: it removes the constructor
+ * encryption, and does nothing when the Recipe was created without one.
  * @private
  * @returns {void}
  * @throws {Error} If the output cannot be renamed, re-encrypted or removed.
  */
 exports._encrypt = function _encrypt() {
-  if (!this.encryption_ || Object.keys(this.encryption_).length === 0) {
+  const encryption = this.encryption_ || {};
+  const hasEncryption = Object.keys(encryption).length > 0;
+  if (!hasEncryption && !this.encryptOptions.password) {
     return;
   }
-  const recryptOptions = Object.assign({}, this.encryption_, {
-    password: this.encryptOptions.password || this.encryption_.password,
+  // Without new passwords, recrypt only decrypts with the opening password.
+  const recryptOptions = Object.assign({}, encryption, {
+    password: this.encryptOptions.password || encryption.password,
   });
 
   if (this.isBufferSrc) {

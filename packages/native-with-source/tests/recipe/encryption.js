@@ -278,6 +278,67 @@ describe("Encryption", () => {
     });
   });
 
+  const taskPNE = "Path source with empty encrypt() is left as written";
+  it(taskPNE, (done) => {
+    const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
+    const output = path.join(__dirname, `../output/${taskPNE}.pdf`);
+    fs.rmSync(output, { force: true });
+    new Recipe(src, output).encrypt({}).endPDF(() => {
+      assertPdfEncryption(output, undefined, false);
+      // No recrypt ran, so its temporary file was never created.
+      assert.equal(fs.existsSync(output + ".tmp.pdf"), false);
+      done();
+    });
+  });
+
+  // Matches Wasm: encrypt() without a password drops constructor encryption.
+  const taskCNE = "New file with constructor password and empty encrypt()";
+  it(taskCNE, (done) => {
+    const output = path.join(__dirname, `../output/${taskCNE}.pdf`);
+    fs.rmSync(output, { force: true });
+    const recipe = new Recipe("new", output, { userPassword: "first" });
+    recipe
+      .createPage("letter")
+      .text("encrypt({}) removes the constructor password", 150, 300)
+      .endPage()
+      .encrypt({})
+      .endPDF(() => {
+        assertPdfEncryption(output, undefined, false);
+        done();
+      });
+  });
+
+  const taskBCNE =
+    "New Buffer file with constructor password and empty encrypt()";
+  it(taskBCNE, (done) => {
+    const recipe = new Recipe(Buffer.from("new"), undefined, {
+      ownerPassword: "owner",
+      userPassword: "first",
+    });
+    recipe
+      .createPage("letter")
+      .endPage()
+      .encrypt({})
+      .endPDF((buffer) => {
+        assertBufferEncryption(buffer, undefined, false);
+        done();
+      });
+  });
+
+  const taskBCKE = "New Buffer file with constructor password and no encrypt()";
+  it(taskBCKE, (done) => {
+    const recipe = new Recipe(Buffer.from("new"), undefined, {
+      userPassword: "first",
+    });
+    recipe
+      .createPage("letter")
+      .endPage()
+      .endPDF((buffer) => {
+        assertBufferEncryption(buffer, "first", true);
+        done();
+      });
+  });
+
   // TODO: this seems to be broken
   // const taskMPF = 'Modify file with view password';
   // it(taskMPF, (done) => {

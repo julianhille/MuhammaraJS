@@ -77,5 +77,5 @@ pdfDoc.endPDF(function (outputBuffer) {
 ```
 
 Passing an output path alongside a `Buffer` source writes that file and gives
-the path to the callback instead of the bytes. Page insertion and encryption are
-not available in buffer mode.
+the path to the callback instead of the bytes. Page insertion is not available
+in buffer mode.
