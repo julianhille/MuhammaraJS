@@ -24,7 +24,9 @@ function writeHebrew(outputPath, fontPath) {
     .writeText("מחיר 120 ש״ח", 72, 730, options);
 
   // x is the left edge of the drawn text, so subtract where its glyphs end
-  // to end the line at the right margin.
+  // to end the line at the right margin. The text is measured as typed, so
+  // the drawn text can end a fraction of a point from the margin; Recipe's
+  // textAlign "right" measures it as drawn.
   var text = "שלום עולם";
   var width = font.calculateTextDimensions(text, 14).xMax;
   context.writeText(text, 523 - width, 700, options);

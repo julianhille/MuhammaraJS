@@ -53,8 +53,12 @@ writer.writePage(page);
 writer.end();
 ```
 
-`calculateTextDimensions()` measures the string as given, so leave invisible
-direction marks out of the text you measure.
+`calculateTextDimensions()` measures the string as given, in the order it is
+typed, so leave invisible direction marks out of the text you measure. The
+drawn text can end a fraction of a point from that measure, as its last glyph
+is another one, and points drawn before their letters reach a little further.
+To end lines exactly at an edge, use Recipe with `textAlign: "right"`, which
+measures the text as it is drawn.
 
 ## Recipe
 

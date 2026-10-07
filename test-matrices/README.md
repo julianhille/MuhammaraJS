@@ -55,6 +55,10 @@ expected:
     with something after it.
   - `flow`: a flow of `runs`, each with its `text` and its own options, drawn
     with different endings, directions and alignments.
+  - `markup`: one `text()` call with its `options`, such as a link, underline
+    or clipping, drawn as typed on the left of the page and in each
+    direction on its right. With `sameAsTyped: true`, for text that keeps its
+    order, its annotations must end where they do as typed.
 - `expected` holds each variation's output: the runs of each line from top to
   bottom, as `[text, x]`, and each annotation's `[left, right]`. `wasm: same`
   means Wasm draws exactly what native draws.
