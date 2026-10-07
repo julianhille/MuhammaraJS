@@ -121,8 +121,9 @@ exports.encrypt = function encrypt(options = {}) {
  * encrypted PDF. The finished output is opened with the password the Recipe
  * was created with, so a PDF whose constructor options already encrypted it
  * can still be re-encrypted with new passwords. encrypt() without a password
- * leaves the output unencrypted, as on Wasm: it removes the constructor
- * encryption, and does nothing when the Recipe was created without one.
+ * or userProtectionFlag leaves the output unencrypted, as on Wasm: it removes
+ * the constructor encryption, and does nothing when the Recipe was created
+ * without one.
  * @private
  * @returns {void}
  * @throws {Error} If the output cannot be renamed, re-encrypted or removed.

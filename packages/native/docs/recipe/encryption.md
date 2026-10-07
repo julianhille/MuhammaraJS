@@ -28,6 +28,8 @@ pdfDoc.encrypt({ userPassword: "open-password" }).endPDF(function (pdfBuffer) {
 
 Encryption options can also be supplied while creating a new Recipe document.
 A later `encrypt()` call replaces them: its passwords are used instead, and
-`encrypt()` without a password leaves the PDF unencrypted. See
+`encrypt()` without a password or `userProtectionFlag` leaves the PDF
+unencrypted. A `userProtectionFlag` alone still encrypts, with an empty user
+password. See
 [Change PDF Passwords](../how-to/change-pdf-passwords.md) for password
 replacement and encryption removal.

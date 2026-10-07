@@ -279,19 +279,28 @@ describe("Encryption", () => {
   });
 
   const taskPNE = "Path source with empty encrypt() is left as written";
-  it(taskPNE, (done) => {
+  it(taskPNE, () => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
     const output = path.join(__dirname, `../output/${taskPNE}.pdf`);
     fs.rmSync(output, { force: true });
-    new Recipe(src, output).encrypt({}).endPDF(() => {
-      assertPdfEncryption(output, undefined, false);
-      // No recrypt ran, so its temporary file was never created.
-      assert.equal(fs.existsSync(output + ".tmp.pdf"), false);
-      done();
-    });
+    // A recrypt would also leave an unencrypted file, so count the calls.
+    const recrypt = muhammara.recrypt;
+    let recrypts = 0;
+    muhammara.recrypt = function () {
+      recrypts += 1;
+      return recrypt.apply(this, arguments);
+    };
+    try {
+      new Recipe(src, output).encrypt({}).endPDF();
+    } finally {
+      muhammara.recrypt = recrypt;
+    }
+    assert.equal(recrypts, 0);
+    assertPdfEncryption(output, undefined, false);
   });
 
-  // Matches Wasm: encrypt() without a password drops constructor encryption.
+  // Matches Wasm: encrypt() without a password or userProtectionFlag drops
+  // constructor encryption.
   const taskCNE = "New file with constructor password and empty encrypt()";
   it(taskCNE, (done) => {
     const output = path.join(__dirname, `../output/${taskCNE}.pdf`);
